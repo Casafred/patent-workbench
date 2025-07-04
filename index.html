@@ -188,8 +188,8 @@
 // --- 全局配置 ---
 const BACKEND_URL = 'http://127.0.0.1:5001'; // 本地开发URL
 const PRESET_TEMPLATES = [
-    { name: "核心发明点提取", model: "glm-4", temperature: 0.4, systemPrompt: "你是一位资深专利技术分析专家，任务是精准、客观、精炼地从专利的摘要和权利要求中提取核心发明点。请以JSON格式输出，包含三个字段：'technical_problem'（所解决的技术问题）、'technical_solution'（技术方案关键特征）、'beneficial_effects'（有益效果）。", userPrompt: "请根据以下专利信息提取核心发明点。\n\n摘要：\n{{column_1}}\n\n权利要求：\n{{column_2}}" },
-    { name: "摘要和权要翻译", model: "glm-4", temperature: 0.1, systemPrompt: "你是一个专业的科技文献翻译引擎，请将用户提供的文本翻译成流畅、专业的英文。请以JSON格式输出，包含两个字段：'abstract_en'（摘要的英文翻译）和'claims_en'（权利要求的英文翻译）。", userPrompt: "请将以下内容翻译成英文。\n\n摘要原文：\n{{column_1}}\n\n权利要求原文：\n{{column_2}}" }
+    { name: "核心发明点提取", model: "glm-4-flash", temperature: 0.4, systemPrompt: "你是一位资深专利技术分析专家，任务是精准、客观、精炼地从专利的摘要和权利要求中提取核心发明点。请以JSON格式输出，包含三个字段：'technical_problem'（所解决的技术问题）、'technical_solution'（技术方案关键特征）、'beneficial_effects'（有益效果）。", userPrompt: "请根据以下专利信息提取核心发明点。\n\n摘要：\n{{column_1}}\n\n权利要求：\n{{column_2}}" },
+    { name: "摘要和权要翻译", model: "glm-4-flash", temperature: 0.1, systemPrompt: "你是一个专业的科技文献翻译引擎，请将用户提供的文本翻译成流畅、专业的英文。请以JSON格式输出，包含两个字段：'abstract_en'（摘要的英文翻译）和'claims_en'（权利要求的英文翻译）。", userPrompt: "请将以下内容翻译成英文。\n\n摘要原文：\n{{column_1}}\n\n权利要求原文：\n{{column_2}}" }
 ];
 
 // --- 全局变量 ---
