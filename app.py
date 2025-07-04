@@ -14,7 +14,7 @@ CORS(app)  # 允许跨域，这对于本地开发和部署至关重要
 def create_response(data=None, error=None, status_code=200):
     """创建一个标准格式的JSON响应"""
     response_data = {}
-    if data is not a None:
+    if data is not None:
         response_data['success'] = True
         response_data['data'] = data
     if error is not None:
