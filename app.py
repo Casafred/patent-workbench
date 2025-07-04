@@ -33,8 +33,7 @@ def create_response(data=None, error=None, status_code=200):
 # --- 主页路由：提供HTML文件 ---
 @app.route('/')
 def index():
-    # --- 核心修正 ---
-    # 根据您的要求，这里现在为前端提供 index.html 文件
+    # 根据您的要求，这里为前端提供 index.html 文件
     return send_from_directory('.', 'index.html')
 
 # --- API 端点定义 ---
@@ -94,6 +93,7 @@ def check_batch_status():
     except Exception as e:
         return create_response(error=f"检查Batch状态时发生错误: {str(e)}")
 
+# --- 核心修正点 ---
 @app.route('/api/download_result', methods=['POST'])
 def download_result_file():
     req_data = request.get_json()
@@ -105,9 +105,13 @@ def download_result_file():
 
     try:
         client = ZhipuAI(api_key=api_key)
+        # content() 返回一个包含多种方法的响应对象
         response_content = client.files.content(file_id)
-        file_content_str = response_content.text
+
+        # 修正：调用 .text() 方法来获取字符串内容
+        file_content_str = response_content.text()
         
+        # 构造返回给前端的数据
         response_data = {
             'message': f"文件内容 (ID: {file_id}) 已成功获取并返回。",
             'fileContent': file_content_str
@@ -116,6 +120,9 @@ def download_result_file():
         return create_response(data=response_data)
         
     except Exception as e:
+        # 提供更详细的错误日志
+        import traceback
+        print(f"Error in download_result_file: {traceback.format_exc()}")
         return create_response(error=f"获取文件内容时发生错误: {str(e)}")
 
 

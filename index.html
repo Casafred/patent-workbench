@@ -207,22 +207,20 @@
 <script>
 // --- 全局配置 ---
 // !!! 关键修改 !!!
-// 请将您在Render上部署的【后端】服务的URL粘贴到这里。
-// 它看起来会像这样: https://your-backend-app-name.onrender.com
 const BACKEND_URL = 'https://patent-workbench-backend.onrender.com'; 
 
 // --- 预设模板 ---
 const PRESET_TEMPLATES = [
     {
         name: "核心发明点提取",
-        model: "glm-4",
+        model: "glm-4-flash",
         temperature: 0.4,
         systemPrompt: "你是一位资深的专利技术分析专家，任务是精准、客观、专业地从专利文件中提取信息，并严格按照JSON格式输出。你的输出除了JSON对象外，不能包含任何其他说明性文字或```json标记。",
         userPrompt: `请分析以下专利信息：\n摘要：{{col_1}}\n权利要求：{{col_2}}\n\n并以JSON格式返回以下字段：\n1. "technical_problem": 解决的技术问题\n2. "technical_solution": 核心技术方案（关键技术特征的组合）\n3. "beneficial_effects": 有益效果\n4. "keywords": 5个最相关的技术关键词（数组形式）`
     },
     {
         name: "摘要和权要翻译",
-        model: "glm-4",
+        model: "glm-4-flash",
         temperature: 0.1,
         systemPrompt: "你是一个专业的科技文献翻译引擎，专门将中文专利文本翻译成流畅、准确、专业的英文。请严格按照JSON格式输出，除了JSON对象外，不要有其他任何解释。",
         userPrompt: `请将以下专利信息翻译成英文：\n中文摘要：{{col_1}}\n中文权利要求：{{col_2}}\n\n并以JSON格式返回以下两个字段：\n1. "translated_abstract"\n2. "translated_claims"`
