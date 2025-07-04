@@ -35,46 +35,55 @@ def index():
 
 @app.route('/api/upload', methods=['POST'])
 def upload_file():
-    print("--- /api/upload endpoint hit ---")  # 1. 确认接口被调用
+    print("--- /api/upload endpoint hit ---")
     try:
-        req_data = request.get_json()
-        if req_data is None:
-            print("Error: Request body is not valid JSON.")
-            return create_response(error="Request body is not valid JSON.", status_code=400)
+        # 获取JSON数据，如果请求不是JSON或为空，request.get_json()会返回None
+        req_data = request.get_json() 
 
-        print(f"Received data: {req_data}") # 2. 打印收到的完整数据
+        # 正确的检查方式
+        if req_data is None:
+            print("Error: Request body is not valid JSON or is empty.")
+            # 返回一个400 Bad Request错误
+            return create_response(error="请求体不是有效的JSON或内容为空", status_code=400)
+
+        print(f"Received data keys: {list(req_data.keys())}") # 打印收到的数据键，避免打印敏感信息
         
         api_key = req_data.get('apiKey')
         jsonl_content = req_data.get('jsonlContent')
         
         if not api_key or not jsonl_content:
             print("Error: API Key or jsonlContent is missing.")
-            return create_response(error="API Key 和 JSONL 内容不能为空")
+            return create_response(error="API Key 和 JSONL 内容不能为空", status_code=400)
 
-        print("--- Content to be uploaded ---")
-        print(jsonl_content[:500] + "...") # 3. 打印内容的前500个字符
-        print("------------------------------")
+        print(f"--- JSONL Content (first 200 chars) ---")
+        print(jsonl_content[:200] + "...")
+        print("------------------------------------")
         
         client = ZhipuAI(api_key=api_key)
+        
+        # 使用BytesIO在内存中创建文件对象
+        file_name = req_data.get('fileName', 'batch_upload.jsonl')
         bytes_io = BytesIO(jsonl_content.encode('utf-8'))
         
+        # 调用SDK上传文件
         result = client.files.create(
-            file=('batch_upload.jsonl', bytes_io),
+            file=(file_name, bytes_io),
             purpose="batch"
         )
         
-        print(f"File uploaded successfully. File ID: {result.id}")
+        print(f"File uploaded successfully to Zhipu AI. File ID: {result.id}")
         return create_response(data={'fileId': result.id, 'message': '文件上传成功！'})
 
     except Exception as e:
-        # 4. 捕获并打印详细异常
+        # 捕获并打印详细异常
         import traceback
-        print("--- AN EXCEPTION OCCURRED ---")
+        print("--- AN EXCEPTION OCCURRED IN /api/upload ---")
         print(f"Exception type: {type(e)}")
-        print(f"Exception message: {e}")
-        traceback.print_exc() # 打印完整的堆栈跟踪
-        print("-----------------------------")
-        return create_response(error=f"上传过程中发生严重错误: {str(e)}", status_code=500)
+        print(f"Exception message: {str(e)}")
+        traceback.print_exc() # 打印完整的堆栈跟踪到日志
+        print("------------------------------------------")
+        # 向前端返回一个通用的错误信息
+        return create_response(error=f"后端处理时发生错误: {str(e)}", status_code=500)
 
 @app.route('/api/create_batch', methods=['POST'])
 def create_batch_task():
