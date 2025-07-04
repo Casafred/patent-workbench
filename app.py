@@ -35,29 +35,46 @@ def index():
 
 @app.route('/api/upload', methods=['POST'])
 def upload_file():
-    """上传本地生成的JSONL文件到智谱AI"""
-    req_data = request.get_json()
-    api_key = req_data.get('apiKey')
-    jsonl_content = req_data.get('jsonlContent')
-    file_name = req_data.get('fileName', 'temp_batch_upload.jsonl')
-
-    if not api_key or not jsonl_content:
-        return create_response(error="API Key 和 JSONL 内容不能为空")
-
+    print("--- /api/upload endpoint hit ---")  # 1. 确认接口被调用
     try:
+        req_data = request.get_json()
+        if req_data is None:
+            print("Error: Request body is not valid JSON.")
+            return create_response(error="Request body is not valid JSON.", status_code=400)
+
+        print(f"Received data: {req_data}") # 2. 打印收到的完整数据
+        
+        api_key = req_data.get('apiKey')
+        jsonl_content = req_data.get('jsonlContent')
+        
+        if not api_key or not jsonl_content:
+            print("Error: API Key or jsonlContent is missing.")
+            return create_response(error="API Key 和 JSONL 内容不能为空")
+
+        print("--- Content to be uploaded ---")
+        print(jsonl_content[:500] + "...") # 3. 打印内容的前500个字符
+        print("------------------------------")
+        
         client = ZhipuAI(api_key=api_key)
-        # 使用BytesIO在内存中创建文件对象，避免写入磁盘
         bytes_io = BytesIO(jsonl_content.encode('utf-8'))
         
-        # 调用SDK上传文件
         result = client.files.create(
-            file=(file_name, bytes_io),
+            file=('batch_upload.jsonl', bytes_io),
             purpose="batch"
         )
         
+        print(f"File uploaded successfully. File ID: {result.id}")
         return create_response(data={'fileId': result.id, 'message': '文件上传成功！'})
+
     except Exception as e:
-        return create_response(error=f"上传过程中发生错误: {str(e)}", status_code=500)
+        # 4. 捕获并打印详细异常
+        import traceback
+        print("--- AN EXCEPTION OCCURRED ---")
+        print(f"Exception type: {type(e)}")
+        print(f"Exception message: {e}")
+        traceback.print_exc() # 打印完整的堆栈跟踪
+        print("-----------------------------")
+        return create_response(error=f"上传过程中发生严重错误: {str(e)}", status_code=500)
 
 @app.route('/api/create_batch', methods=['POST'])
 def create_batch_task():
