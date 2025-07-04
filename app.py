@@ -29,7 +29,7 @@ def create_response(data=None, error=None, status_code=200):
 def index():
     """提供主应用页面"""
     # 假设您的HTML文件名已更新
-    return send_from_directory('.', 'patent_workbench_v4.0.html')
+    return send_from_directory('.', 'index.html')
 
 # --- API 端点定义 ---
 
