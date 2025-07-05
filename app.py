@@ -53,11 +53,11 @@ def instant_request():
         # 为不同任务类型定义不同的 Prompt 模板
         prompts = {
             "translate": {
-                "system": "你是一个专业的、精通多种语言的翻译引擎。你的任务是自动检测用户输入文本的语言，并将其翻译成另一种主要语言（例如，中文翻译成英文，英文翻译成中文）。请直接返回翻译后的文本，不要添加任何额外的解释或说明。",
+                "system": "你是一个专业的、精通多种语言的专利翻译引擎。你的任务是自动检测用户输入专利文本的语言，并将其精准翻译成中文。请直接返回翻译后的文本，不要添加任何额外的解释或说明。",
                 "user": "请翻译以下内容：\n\n{}"
             },
             "summarize": {
-                "system": "你是一位顶级的分析师和信息架构师，极其擅长从复杂、冗长的文本中快速提炼核心原理、关键论点和主要摘要。你的输出应该是结构清晰、逻辑严谨、高度浓缩的精华内容。",
+                "system": "你是一位顶级的专利分析师和信息架构师，极其擅长从复杂、冗长的文本中快速提炼技术核心原理。你的输出应该是结构清晰、逻辑严谨的技术精华内容。",
                 "user": "请深入分析以下文本，并总结其核心原理和内容摘要：\n\n{}"
             },
             "expand_keywords": {
@@ -78,10 +78,10 @@ def instant_request():
 
         # 使用同步调用
         response = client.chat.completions.create(
-            model="glm-4",  # 对于即时交互，glm-4 或 glm-4-flash 都是不错的选择
+            model="GLM-4-Flash-250414",  
             messages=messages,
             stream=False, # 确保是同步调用
-            temperature=0.7,
+            temperature=0.2,
         )
         
         content = response.choices[0].message.content
