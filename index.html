@@ -549,28 +549,29 @@ function initInstantTools() {
     }
 }
 
+// --- ✨ 核心修复：前端主导，构建完整请求 ✨ ---
 async function handleInstantRequest(taskType) {
     // 1. 从UI获取所有需要的参数，包括可编辑的模板内容
     const apiKey = instantApiKeyInput.value.trim();
-    const mainInputText = instantInput.value.trim();
+    const userInput = instantInput.value.trim();
     const model = instantModelSelect.value;
     const temperature = parseFloat(instantTempInput.value);
     
-    // 实时读取用户可能已经修改过的模板
+    // 实时读取用户可能已经修改过的模板内容
     const systemPrompt = getEl(`instant_${taskType}_system`).value.trim();
     const userPromptTemplate = getEl(`instant_${taskType}_user`).value.trim();
 
     // 2. 输入验证
     if (!apiKey) { instantOutput.innerHTML = `<div class="info error">错误：请输入您的 API Key。</div>`; return; }
-    if (!mainInputText) { instantOutput.innerHTML = `<div class="info error">错误：请输入需要处理的内容。</div>`; return; }
+    if (!userInput) { instantOutput.innerHTML = `<div class="info error">错误：请输入需要处理的内容。</div>`; return; }
     if (!systemPrompt || !userPromptTemplate) { instantOutput.innerHTML = `<div class="info error">错误：System 或 User 提示模板不能为空。</div>`; return; }
     if (userPromptTemplate.indexOf('{userInput}') === -1) {
         instantOutput.innerHTML = `<div class="info error">错误：User 提示模板中必须包含 {userInput} 占位符。</div>`;
         return;
     }
 
-    // 3. 构建符合智谱API v4规范的 `messages` 数组
-    const finalUserPrompt = userPromptTemplate.replace('{userInput}', mainInputText);
+    // 3. 在前端构建符合智谱API v4规范的 `messages` 数组
+    const finalUserPrompt = userPromptTemplate.replace('{userInput}', userInput);
     const messages = [
         { "role": "system", "content": systemPrompt },
         { "role": "user", "content": finalUserPrompt }
@@ -581,11 +582,11 @@ async function handleInstantRequest(taskType) {
     instantOutput.innerHTML = '<div class="spinner"></div><p style="text-align:center;">正在请求，请稍候...</p>';
     
     try {
-        // 4. 构建发送到后端代理的请求体 (需要后端支持)
+        // 4. 构建发送到后端代理的完整请求体
         const requestBody = {
             apiKey: apiKey,
             model: model,
-            messages: messages,
+            messages: messages, // 发送构建好的 messages
             temperature: temperature
         };
 
@@ -603,7 +604,7 @@ async function handleInstantRequest(taskType) {
             throw new Error(errorMessage); 
         }
         
-        const content = result.data?.choices?.[0]?.message?.content || result.data?.content || JSON.stringify(result.data);
+        const content = result.data?.content || "未能获取到返回内容。";
         instantOutput.style.whiteSpace = 'pre-wrap';
         instantOutput.textContent = content;
 

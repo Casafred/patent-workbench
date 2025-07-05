@@ -1,3 +1,4 @@
+# app.py (已更新为“智能代理”模式)
 import os
 from flask import Flask, request, jsonify, make_response, send_from_directory
 from flask_cors import CORS
@@ -8,11 +9,6 @@ from io import BytesIO
 # --- 初始化 Flask 应用 ---
 app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app)  # 允许跨域
-
-# --- 文件目录设置 ---
-DOWNLOADS_DIR = 'batch_downloads'
-if not os.path.exists(DOWNLOADS_DIR):
-    os.makedirs(DOWNLOADS_DIR)
 
 # --- 辅助函数：创建标准化的JSON响应 ---
 def create_response(data=None, error=None, status_code=200):
@@ -34,54 +30,36 @@ def create_response(data=None, error=None, status_code=200):
 def index():
     return send_from_directory('.', 'index.html')
 
-# --- API 端点定义 ---
 
-# [新功能] 即时同步请求端点
+# --- [核心修改] 即时同步请求端点 (智能代理模式) ---
 @app.route('/api/instant_request', methods=['POST'])
 def instant_request():
     req_data = request.get_json()
+    
+    # 1. 从前端获取所有需要的参数，包括已经构建好的messages
     api_key = req_data.get('apiKey')
-    user_input = req_data.get('userInput')
-    task_type = req_data.get('taskType') # 'translate', 'summarize', 'expand_keywords'
+    model = req_data.get('model')
+    temperature = req_data.get('temperature')
+    messages = req_data.get('messages') # 直接接收前端构建好的messages
 
-    if not all([api_key, user_input, task_type]):
-        return create_response(error="apiKey, userInput, 和 taskType 均为必填项。")
+    # 2. 校验参数
+    if not all([api_key, model, messages]):
+        return create_response(error="apiKey, model, 和 messages 均为必填项。")
+    if temperature is None: # temperature可以是0，所以要检查是否为None
+        return create_response(error="temperature 是必填项。")
+    if not isinstance(messages, list) or len(messages) == 0:
+        return create_response(error="messages 必须是一个非空列表。")
+
 
     try:
         client = ZhipuAI(api_key=api_key)
 
-        # 为不同任务类型定义不同的 Prompt 模板
-        prompts = {
-            "translate": {
-                "system": "你是一个专业的、精通多种语言的专利翻译引擎。你的任务是自动检测用户输入专利文本的语言，并将其精准翻译成中文。请直接返回翻译后的文本，不要添加任何额外的解释或说明。",
-                "user": "请翻译以下内容：\n\n{}"
-            },
-            "summarize": {
-                "system": "你是一位顶级的专利分析师和信息架构师，极其擅长从复杂、冗长的文本中快速提炼技术核心原理。你的输出应该是结构清晰、逻辑严谨的技术精华内容。",
-                "user": "请深入分析以下文本，并总结其核心原理和内容摘要：\n\n{}"
-            },
-            "expand_keywords": {
-                "system": "你是一名资深的专利检索专家和技术分析师。你的任务是根据用户提供的核心技术关键词，拓展出一系列用于专利数据库检索的同义词、近义词、上下位概念、相关技术术语以及不同表达方式。输出应该是一个清晰、逗号分隔的关键词列表。",
-                "user": "请围绕以下核心关键词进行专利检索词拓展，提供一个全面的关键词列表：\n\n{}"
-            }
-        }
-
-        if task_type not in prompts:
-            return create_response(error="无效的任务类型。")
-
-        selected_prompt = prompts[task_type]
-        
-        messages = [
-            {"role": "system", "content": selected_prompt["system"]},
-            {"role": "user", "content": selected_prompt["user"].format(user_input)}
-        ]
-
-        # 使用同步调用
+        # 3. 直接使用前端传来的参数调用ZhipuAI SDK
         response = client.chat.completions.create(
-            model="GLM-4-Flash-250414",  
+            model=model,
             messages=messages,
-            stream=False, # 确保是同步调用
-            temperature=0.2,
+            stream=False,
+            temperature=temperature,
         )
         
         content = response.choices[0].message.content
@@ -94,7 +72,7 @@ def instant_request():
 
 
 # --- 批量处理相关端点 (保持不变) ---
-
+# ... (您的批量处理代码无需改动，此处省略)
 @app.route('/api/upload', methods=['POST'])
 def upload_file():
     req_data = request.get_json()
