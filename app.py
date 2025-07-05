@@ -10,7 +10,6 @@ app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app)  # 允许跨域
 
 # --- 文件目录设置 ---
-# 在Render这样的环境中，这个目录是临时的
 DOWNLOADS_DIR = 'batch_downloads'
 if not os.path.exists(DOWNLOADS_DIR):
     os.makedirs(DOWNLOADS_DIR)
@@ -33,7 +32,6 @@ def create_response(data=None, error=None, status_code=200):
 # --- 主页路由：提供HTML文件 ---
 @app.route('/')
 def index():
-    # 根据您的要求，这里为前端提供 index.html 文件
     return send_from_directory('.', 'index.html')
 
 # --- API 端点定义 ---
@@ -93,7 +91,7 @@ def check_batch_status():
     except Exception as e:
         return create_response(error=f"检查Batch状态时发生错误: {str(e)}")
 
-# --- 核心修正点 ---
+# --- 核心修正点 (v3) ---
 @app.route('/api/download_result', methods=['POST'])
 def download_result_file():
     req_data = request.get_json()
@@ -105,13 +103,16 @@ def download_result_file():
 
     try:
         client = ZhipuAI(api_key=api_key)
-        # content() 返回一个包含多种方法的响应对象
-        response_content = client.files.content(file_id)
+        # 1. 获取包含二进制内容的响应对象
+        response_content_object = client.files.content(file_id)
 
-        # 修正：调用 .text() 方法来获取字符串内容
-        file_content_str = response_content.text()
+        # 2. 从响应对象中获取原始的二进制内容 (bytes)
+        raw_bytes = response_content_object.content
+
+        # 3. 将二进制内容(bytes)解码(decode)成字符串(string)，使用 'utf-8' 编码
+        file_content_str = raw_bytes.decode('utf-8')
         
-        # 构造返回给前端的数据
+        # 4. 将解码后的字符串返回给前端
         response_data = {
             'message': f"文件内容 (ID: {file_id}) 已成功获取并返回。",
             'fileContent': file_content_str
@@ -120,7 +121,6 @@ def download_result_file():
         return create_response(data=response_data)
         
     except Exception as e:
-        # 提供更详细的错误日志
         import traceback
         print(f"Error in download_result_file: {traceback.format_exc()}")
         return create_response(error=f"获取文件内容时发生错误: {str(e)}")
