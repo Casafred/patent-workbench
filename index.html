@@ -960,8 +960,11 @@ function buildUserPrompt() {
     }
     return [rules, contentInsertionTemplate.trim(), outputFormat].filter(Boolean).join('\n\n');
 }
+// index.html (find and replace this entire function)
+
 function generateJsonl() {
     if (!gen_currentSheetData) return;
+
     const userPromptTemplate = buildUserPrompt();
     const columnSelectors = document.querySelectorAll('.column-selector');
     const selectedColumns = Array.from(columnSelectors).map(sel => sel.value);
@@ -969,14 +972,17 @@ function generateJsonl() {
     const requests = gen_currentSheetData.map((row, index) => {
         let finalUserPrompt = userPromptTemplate;
         selectedColumns.forEach(colName => {
+            // Use a regex with the 'g' flag to replace all occurrences of the placeholder
             const placeholder = new RegExp(`{${colName}}`, 'g');
             finalUserPrompt = finalUserPrompt.replace(placeholder, row[colName] || '');
         });
 
+        // --- ✨ [CORE FIX] Construct the request object according to the official batch API spec ---
         return {
-            custom_id: `request-${index + 1}`,
-            request_id: `request-${index + 1}`,
-            body: {
+            "custom_id": `request-${index + 1}`, // Unique ID for matching results
+            "method": "POST",                    // Added: Required by the API
+            "url": "/v4/chat/completions",       // Added: Required by the API
+            "body": {
                 model: apiModelSelect.value,
                 messages: [
                     { role: 'system', content: apiSystemInput.value },
@@ -985,13 +991,19 @@ function generateJsonl() {
                 temperature: parseFloat(apiTempInput.value)
             }
         };
+        // The incorrect "request_id" field has been removed.
     });
+
     gen_jsonlContent = requests.map(JSON.stringify).join('\n');
+    
+    // Update UI
     genPreviewOutput.style.display = 'block';
+    // Preview the first 3 generated requests to verify the new format
     genPreviewOutput.innerHTML = requests.slice(0, 3).map(req => `<div class="preview-item">${JSON.stringify(req, null, 2)}</div>`).join('');
     genDownloadBtn.style.display = 'inline-block';
     genReadyInfo.style.display = 'block';
 }
+
 function addOutputField(name = '', desc = '') {
     const fieldId = `field-${Date.now()}`;
     const fieldDiv = document.createElement('div');
