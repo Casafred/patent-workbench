@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>专利分析智能工作台 v8.0</title>
+    <title>专利分析智能工作台 v8.1</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -93,7 +93,7 @@
             cursor: pointer;
             font-size: 1.05em;
             font-weight: 500;
-            color: var(--text-color-secondary);
+            color: #d4d9e0;
             transition: all 0.3s ease;
             
             border-radius: 8px 8px 0 0;
@@ -212,8 +212,6 @@
         .spinner { border: 4px solid var(--border-color); width: 36px; height: 36px; border-radius: 50%; border-left-color: var(--primary-color); animation: spin 1s ease-in-out infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 </style>
-
-
 </head>
 <body>
 
@@ -222,7 +220,7 @@
         <h1 class="banner-text-logo">ALFRED X IP</h1>
         <div class="copyright-info">
             <span>Copyright © 2025 Alfred Shi 保留所有权利.</span>
-            <span class="version-number">版本号: v8.0 (ELEVATE Design)</span>
+            <span class="version-number">版本号: v8.1 (Flex-Prompt)</span>
         </div>
     </header>
 
@@ -234,8 +232,6 @@
             <button class="tab-button" onclick="switchTab('instant')">功能四：即时工具</button>
         </div>
 
-        <!-- HTML结构和JavaScript保持不变 -->
-        
         <!-- 功能一：生成请求文件 -->
         <div id="generator-tab" class="tab-content active">
             <div class="step">
@@ -268,7 +264,7 @@
                     </div>
 
                     <div class="config-item row-flex"><label for="api-model">模型 (model):</label><div class="input-wrapper"><select id="api-model"></select></div></div>
-                    <div class="config-item row-flex"><label for="api-temperature">温度 (temperature):</label><div class="input-wrapper"><input type="number" id="api-temperature" value="0.7" step="0.1" min="0" max="1"></div></div>
+                    <div class="config-item row-flex"><label for="api-temperature">温度 (temperature):</label><div class="input-wrapper"><input type="number" id="api-temperature" value="0.1" step="0.1" min="0" max="1"></div></div>
                     
                     <div class="config-item">
                         <label for="api-system-prompt">系统提示 (System Prompt):</label>
@@ -391,28 +387,26 @@
                 <div class="step-header">步骤 1: 参数配置</div>
                 <div class="step-content">
                     <div class="config-item row-flex"><label for="instant_api_key_input">API Key:</label><div class="input-wrapper"><input type="password" id="instant_api_key_input" placeholder="请在此处粘贴您的智谱AI API Key"></div></div>
-                    
-                    <!-- 这些UI保留，但数据不会直接发送到后端，因为后端有自己的模板 -->
                     <div class="config-item row-flex"><label for="instant_model_select">模型 (model):</label><div class="input-wrapper"><select id="instant_model_select"></select></div></div>
-                    <div class="config-item row-flex"><label for="instant_temperature_input">温度 (temperature):</label><div class="input-wrapper"><input type="number" id="instant_temperature_input" value="0.7" step="0.1" min="0" max="1"></div></div>
+                    <div class="config-item row-flex"><label for="instant_temperature_input">温度 (temperature):</label><div class="input-wrapper"><input type="number" id="instant_temperature_input" value="0.1" step="0.1" min="0" max="1"></div></div>
                     
-                    <details>
-                        <summary>自定义请求模板 (仅供参考，后端使用预设模板)</summary>
-                         <div class="info warning">注意：当前后端服务使用固定的任务模板，此处修改不会生效，仅用于您未来参考或扩展。后端会根据您点击的按钮（如"一键翻译"）来决定使用哪个模板。</div>
+                    <details open>
+                        <summary>可编辑的请求模板</summary>
+                         <div class="info warning">您可以按需修改下方的System和User提示。User提示中的 <strong>{userInput}</strong> 会被自动替换为下方输入框中的实际内容。</div>
                          <div class="prompt-section">
                             <div class="prompt-section-title">任务一：一键翻译</div>
-                            <div class="config-item"><label for="instant_translate_system">System Prompt:</label><textarea id="instant_translate_system" rows="3" readonly></textarea></div>
-                            <div class="config-item"><label for="instant_translate_user">User Prompt:</label><textarea id="instant_translate_user" rows="2" readonly></textarea></div>
+                            <div class="config-item"><label for="instant_translate_system">System Prompt:</label><textarea id="instant_translate_system" rows="3"></textarea></div>
+                            <div class="config-item"><label for="instant_translate_user">User Prompt:</label><textarea id="instant_translate_user" rows="2"></textarea></div>
                         </div>
                         <div class="prompt-section">
                             <div class="prompt-section-title">任务二：核心总结</div>
-                            <div class="config-item"><label for="instant_summarize_system">System Prompt:</label><textarea id="instant_summarize_system" rows="3" readonly></textarea></div>
-                            <div class="config-item"><label for="instant_summarize_user">User Prompt:</label><textarea id="instant_summarize_user" rows="2" readonly></textarea></div>
+                            <div class="config-item"><label for="instant_summarize_system">System Prompt:</label><textarea id="instant_summarize_system" rows="3"></textarea></div>
+                            <div class="config-item"><label for="instant_summarize_user">User Prompt:</label><textarea id="instant_summarize_user" rows="2"></textarea></div>
                         </div>
                         <div class="prompt-section">
                             <div class="prompt-section-title">任务三：专利词拓展</div>
-                            <div class="config-item"><label for="instant_expand_keywords_system">System Prompt:</label><textarea id="instant_expand_keywords_system" rows="3" readonly></textarea></div>
-                            <div class="config-item"><label for="instant_expand_keywords_user">User Prompt:</label><textarea id="instant_expand_keywords_user" rows="2" readonly></textarea></div>
+                            <div class="config-item"><label for="instant_expand_keywords_system">System Prompt:</label><textarea id="instant_expand_keywords_system" rows="3"></textarea></div>
+                            <div class="config-item"><label for="instant_expand_keywords_user">User Prompt:</label><textarea id="instant_expand_keywords_user" rows="2"></textarea></div>
                         </div>
                     </details>
                 </div>
@@ -444,18 +438,18 @@
 <script>
 // --- 全局配置与变量 ---
 const BACKEND_URL = 'https://patent-workbench-backend.onrender.com';
-const AVAILABLE_MODELS = ["glm-4", "glm-4-flash", "glm-4-long", "GLM-4-FlashX-250414"];
+const AVAILABLE_MODELS = ["glm-4-flashX-250414", "glm-4-flash", "glm-4-long"];
 const INSTANT_PROMPT_TEMPLATES = {
     "translate": {
-        "system": "你是一个专业的、精通多种语言的翻译引擎。你的任务是自动检测用户输入文本的语言，并将其翻译成另一种主要语言（例如，中文翻译成英文，英文翻译成中文）。请直接返回翻译后的文本，不要添加任何额外的解释或说明。",
+        "system": "你是一个专业精通各技术领域术语的、精通多国语言的专利文本翻译引擎。你的任务是自动检测用户输入专利文本的语言并将其翻译成中文。请直接返回翻译后的文本，不要添加任何额外的解释或说明。",
         "user": "请翻译以下内容：\n\n{userInput}"
     },
     "summarize": {
-        "system": "你是一位顶级的分析师和信息架构师，极其擅长从复杂、冗长的文本中快速提炼核心原理、关键论点和主要摘要。你的输出应该是结构清晰、逻辑严谨、高度浓缩的精华内容。",
-        "user": "请深入分析以下文本，并总结其核心原理和内容摘要：\n\n{userInput}"
+        "system": "你是一位顶级的专利分析师和信息架构师，极其擅长从复杂、冗长的专利文本中快速提炼核心技术原理、技术方案摘要。你的输出应该是结构清晰、逻辑严谨、高度浓缩的技术方案摘要和原理内容。",
+        "user": "请深入分析以下专利文本，并总结其核心原理和内容摘要：\n\n{userInput}"
     },
     "expand_keywords": {
-        "system": "你是一名资深的专利检索专家和技术分析师。你的任务是根据用户提供的核心技术关键词，拓展出一系列用于专利数据库检索的同义词、近义词、上下位概念、相关技术术语以及不同表达方式。输出应该是一个清晰、逗号分隔的关键词列表。",
+        "system": "你是一名资深的专利检索专家和技术分析师。你的任务是根据用户提供的技术方案点，拓展出一系列用于专利数据库检索的中文以及英文同义词、近义词、上下位概念、相关技术术语以及不同表达方式。输出应该是一个清晰、逗号分隔的中英文关键词或短语列表，并附上相关简单例句。",
         "user": "请围绕以下核心关键词进行专利检索词拓展，提供一个全面的关键词列表：\n\n{userInput}"
     }
 };
@@ -467,8 +461,8 @@ let batch_fileId = null, batch_batchId = null, batch_outputFileId = null, batch_
 let batch_result_jsonl_content = null;
 let custom_templates = [];
 const preset_templates = [
-    { name: "核心技术主题提取", isPreset: true, system: "你是一个精通全球专利业务的AI助手，擅长阅读、理解和分析专利文件。你的任务是根据用户提供的专利内容，精准地识别出该专利的核心技术主题，并以简洁的短语形式返回。你必须严格遵循输出格式要求。", user: { rules: "请基于以下信息，分析并总结出该专利的核心技术主题。\n要求：\n1. 结果必须是3-5个字的中文短语。\n2. 仅输出这个短语，不要包含任何其他解释、前缀或标点符号。", outputFields: [] }},
-    { name: "技术领域与应用场景分析", isPreset: true, system: "你是一位资深的技术分析师和行业顾问。你的任务是基于专利内容，判断其所属的技术领域，并预测其最可能的应用场景。", user: { rules: "请分析此专利并按以下JSON格式输出：", outputFields: [ { name: "technical_field", desc: "此处填写技术领域，如：人工智能、生物医药、通信技术等" }, { name: "application_scenario", desc: "此处填写最可能的应用场景，如：自动驾驶车辆的障碍物识别、靶向药的药物递送系统等" } ] }}
+    { name: "专利文本翻译", isPreset: true, system: "是一个专业精通各技术领域术语的、精通多国语言的专利文本翻译引擎。你的任务是自动检测用户输入专利文本的语言并将其翻译成中文。请直接返回翻译后的文本，不要添加任何额外的解释或说明。你必须严格遵循输出格式要求。", user: { rules: "请基于以下文本，直接输出翻译后的内容。\n要求：\n1. 结果必须是直接的翻译后中文文本，必须忠实于原文不得臆测，并选择贴合技术领域的专业术语表达", outputFields: [] }},
+    { name: "技术方案解读", isPreset: true, system: "你是一位资深的专利技术分析师。你的任务是基于专利内容，梳理总结其要解决的技术问题，采用的核心方案内容、以及实现的技术效果和最重要的核心关键词短语。", user: { rules: "请分析此专利并按以下JSON格式输出：", outputFields: [ { name: "技术方案", desc: "此处填写技术方案，总结专利的主要方案内容" }, { name: "技术问题", desc: "此处填写该专利可能主要解决的技术问题" }, { name: "技术效果", desc: "此处填写该专利可能带来的技术效果" }, { name: "技术关键词", desc: "此处按照专利文本中构成核心方案的重要程度输出15个关键词或短语" }] }}
 ];
 let autoCheckTimer = null;
 
@@ -555,50 +549,63 @@ function initInstantTools() {
     }
 }
 
-// --- ✨ 核心修复：还原为v4.2版本的简单API调用逻辑 ✨ ---
 async function handleInstantRequest(taskType) {
+    // 1. 从UI获取所有需要的参数，包括可编辑的模板内容
     const apiKey = instantApiKeyInput.value.trim();
-    // 1. 获取主输入框的内容，这是后端需要的 `userInput`
-    const userInput = instantInput.value.trim();
+    const mainInputText = instantInput.value.trim();
+    const model = instantModelSelect.value;
+    const temperature = parseFloat(instantTempInput.value);
+    
+    // 实时读取用户可能已经修改过的模板
+    const systemPrompt = getEl(`instant_${taskType}_system`).value.trim();
+    const userPromptTemplate = getEl(`instant_${taskType}_user`).value.trim();
 
-    if (!apiKey) {
-        instantOutput.innerHTML = `<div class="info error">错误：请输入您的 API Key。</div>`;
+    // 2. 输入验证
+    if (!apiKey) { instantOutput.innerHTML = `<div class="info error">错误：请输入您的 API Key。</div>`; return; }
+    if (!mainInputText) { instantOutput.innerHTML = `<div class="info error">错误：请输入需要处理的内容。</div>`; return; }
+    if (!systemPrompt || !userPromptTemplate) { instantOutput.innerHTML = `<div class="info error">错误：System 或 User 提示模板不能为空。</div>`; return; }
+    if (userPromptTemplate.indexOf('{userInput}') === -1) {
+        instantOutput.innerHTML = `<div class="info error">错误：User 提示模板中必须包含 {userInput} 占位符。</div>`;
         return;
     }
-    if (!userInput) {
-        instantOutput.innerHTML = `<div class="info error">错误：请输入需要处理的内容。</div>`;
-        return;
-    }
+
+    // 3. 构建符合智谱API v4规范的 `messages` 数组
+    const finalUserPrompt = userPromptTemplate.replace('{userInput}', mainInputText);
+    const messages = [
+        { "role": "system", "content": systemPrompt },
+        { "role": "user", "content": finalUserPrompt }
+    ];
 
     const allButtons = [instantTranslateBtn, instantSummarizeBtn, instantKeywordsBtn];
     allButtons.forEach(btn => btn.disabled = true);
     instantOutput.innerHTML = '<div class="spinner"></div><p style="text-align:center;">正在请求，请稍候...</p>';
     
     try {
-        // 2. 构建后端服务期望的、非常简单的JSON对象
+        // 4. 构建发送到后端代理的请求体 (需要后端支持)
         const requestBody = {
             apiKey: apiKey,
-            userInput: userInput,
-            taskType: taskType
+            model: model,
+            messages: messages,
+            temperature: temperature
         };
 
         const response = await fetch(`${BACKEND_URL}/api/instant_request`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            // 3. 将这个简单对象发送给后端
             body: JSON.stringify(requestBody)
         });
 
         const result = await response.json();
 
-        if (!response.ok || !result.success) {
-            const errorMessage = result.error || '请求失败，未知错误。';
-            throw new Error(errorMessage);
+        // 5. 处理响应
+        if (!response.ok || !result.success) { 
+            const errorMessage = result.error || (result.data ? JSON.stringify(result.data) : '请求失败，未知错误。');
+            throw new Error(errorMessage); 
         }
         
-        // 4. 后端成功后，会返回包含 `content` 的数据
+        const content = result.data?.choices?.[0]?.message?.content || result.data?.content || JSON.stringify(result.data);
         instantOutput.style.whiteSpace = 'pre-wrap';
-        instantOutput.textContent = result.data.content;
+        instantOutput.textContent = content;
 
     } catch (error) {
         instantOutput.innerHTML = `<div class="info error">请求失败: ${error.message}</div>`;
@@ -606,7 +613,6 @@ async function handleInstantRequest(taskType) {
         allButtons.forEach(btn => btn.disabled = false);
     }
 }
-// --- ✨ 修复结束 ✨ ---
 
 // =================================================================================
 // 功能三：解析结果生成报告
@@ -875,7 +881,7 @@ async function recoverBatchState(){
 // 功能一：生成请求文件
 // =================================================================================
 function initModelSelector() {
-    const batchModels = ["glm-4-flash", "GLM-4-FlashX-250414", "glm-4-long"];
+    const batchModels = ["glm-4-flashX-250414" , "glm-4-flash","glm-4-long"];
     apiModelSelect.innerHTML = batchModels.map(m => `<option value="${m}">${m}</option>`).join('');
 }
 function handleGenFile(event) {
