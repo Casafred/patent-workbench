@@ -391,26 +391,28 @@
                 <div class="step-header">步骤 1: 参数配置</div>
                 <div class="step-content">
                     <div class="config-item row-flex"><label for="instant_api_key_input">API Key:</label><div class="input-wrapper"><input type="password" id="instant_api_key_input" placeholder="请在此处粘贴您的智谱AI API Key"></div></div>
+                    
+                    <!-- 这些UI保留，但数据不会直接发送到后端，因为后端有自己的模板 -->
                     <div class="config-item row-flex"><label for="instant_model_select">模型 (model):</label><div class="input-wrapper"><select id="instant_model_select"></select></div></div>
                     <div class="config-item row-flex"><label for="instant_temperature_input">温度 (temperature):</label><div class="input-wrapper"><input type="number" id="instant_temperature_input" value="0.7" step="0.1" min="0" max="1"></div></div>
                     
                     <details>
-                        <summary>自定义请求模板</summary>
-                         <div class="info warning">您可以按需修改下方的System和User提示。User提示中的 <strong>{userInput}</strong> 会被自动替换为下方输入框中的实际内容。</div>
+                        <summary>自定义请求模板 (仅供参考，后端使用预设模板)</summary>
+                         <div class="info warning">注意：当前后端服务使用固定的任务模板，此处修改不会生效，仅用于您未来参考或扩展。后端会根据您点击的按钮（如"一键翻译"）来决定使用哪个模板。</div>
                          <div class="prompt-section">
                             <div class="prompt-section-title">任务一：一键翻译</div>
-                            <div class="config-item"><label for="instant_translate_system">System Prompt:</label><textarea id="instant_translate_system" rows="3"></textarea></div>
-                            <div class="config-item"><label for="instant_translate_user">User Prompt:</label><textarea id="instant_translate_user" rows="2"></textarea></div>
+                            <div class="config-item"><label for="instant_translate_system">System Prompt:</label><textarea id="instant_translate_system" rows="3" readonly></textarea></div>
+                            <div class="config-item"><label for="instant_translate_user">User Prompt:</label><textarea id="instant_translate_user" rows="2" readonly></textarea></div>
                         </div>
                         <div class="prompt-section">
                             <div class="prompt-section-title">任务二：核心总结</div>
-                            <div class="config-item"><label for="instant_summarize_system">System Prompt:</label><textarea id="instant_summarize_system" rows="3"></textarea></div>
-                            <div class="config-item"><label for="instant_summarize_user">User Prompt:</label><textarea id="instant_summarize_user" rows="2"></textarea></div>
+                            <div class="config-item"><label for="instant_summarize_system">System Prompt:</label><textarea id="instant_summarize_system" rows="3" readonly></textarea></div>
+                            <div class="config-item"><label for="instant_summarize_user">User Prompt:</label><textarea id="instant_summarize_user" rows="2" readonly></textarea></div>
                         </div>
                         <div class="prompt-section">
                             <div class="prompt-section-title">任务三：专利词拓展</div>
-                            <div class="config-item"><label for="instant_expand_keywords_system">System Prompt:</label><textarea id="instant_expand_keywords_system" rows="3"></textarea></div>
-                            <div class="config-item"><label for="instant_expand_keywords_user">User Prompt:</label><textarea id="instant_expand_keywords_user" rows="2"></textarea></div>
+                            <div class="config-item"><label for="instant_expand_keywords_system">System Prompt:</label><textarea id="instant_expand_keywords_system" rows="3" readonly></textarea></div>
+                            <div class="config-item"><label for="instant_expand_keywords_user">User Prompt:</label><textarea id="instant_expand_keywords_user" rows="2" readonly></textarea></div>
                         </div>
                     </details>
                 </div>
@@ -440,7 +442,6 @@
 </div>
 
 <script>
-// The entire <script> block remains the same, except for the handleInstantRequest function.
 // --- 全局配置与变量 ---
 const BACKEND_URL = 'https://patent-workbench-backend.onrender.com';
 const AVAILABLE_MODELS = ["glm-4", "glm-4-flash", "glm-4-long", "GLM-4-FlashX-250414"];
@@ -554,63 +555,50 @@ function initInstantTools() {
     }
 }
 
-// --- ✨ 核心修改点：修复即时工具的API调用函数 ✨ ---
+// --- ✨ 核心修复：还原为v4.2版本的简单API调用逻辑 ✨ ---
 async function handleInstantRequest(taskType) {
     const apiKey = instantApiKeyInput.value.trim();
-    const mainInputText = instantInput.value.trim();
-    const model = instantModelSelect.value;
-    const temperature = parseFloat(instantTempInput.value);
-    const systemPrompt = getEl(`instant_${taskType}_system`).value.trim();
-    const userPromptTemplate = getEl(`instant_${taskType}_user`).value.trim();
+    // 1. 获取主输入框的内容，这是后端需要的 `userInput`
+    const userInput = instantInput.value.trim();
 
-    // 1. 输入验证 (保持不变)
-    if (!apiKey) { instantOutput.innerHTML = `<div class="info error">错误：请输入您的 API Key。</div>`; return; }
-    if (!mainInputText) { instantOutput.innerHTML = `<div class="info error">错误：请输入需要处理的内容。</div>`; return; }
-    if (!systemPrompt || !userPromptTemplate) { instantOutput.innerHTML = `<div class="info error">错误：System 或 User 提示模板不能为空。</div>`; return; }
-    if (userPromptTemplate.indexOf('{userInput}') === -1) { instantOutput.innerHTML = `<div class="info error">错误：User 提示模板中必须包含 {userInput} 占位符。</div>`; return; }
-
-    // 2. 构建符合智谱API v4规范的 `messages` 数组
-    const finalUserPrompt = userPromptTemplate.replace('{userInput}', mainInputText);
-    const messages = [
-        { "role": "system", "content": systemPrompt },
-        { "role": "user", "content": finalUserPrompt }
-    ];
+    if (!apiKey) {
+        instantOutput.innerHTML = `<div class="info error">错误：请输入您的 API Key。</div>`;
+        return;
+    }
+    if (!userInput) {
+        instantOutput.innerHTML = `<div class="info error">错误：请输入需要处理的内容。</div>`;
+        return;
+    }
 
     const allButtons = [instantTranslateBtn, instantSummarizeBtn, instantKeywordsBtn];
     allButtons.forEach(btn => btn.disabled = true);
     instantOutput.innerHTML = '<div class="spinner"></div><p style="text-align:center;">正在请求，请稍候...</p>';
     
     try {
-        // 3. 构建发送到后端代理的请求体
-        // 这个结构现在包含了 apiKey (给代理用) 和一个符合智谱API规范的对象 (代理转发给智谱)
+        // 2. 构建后端服务期望的、非常简单的JSON对象
         const requestBody = {
             apiKey: apiKey,
-            // --- 以下为要转发给智谱API的参数 ---
-            model: model,
-            messages: messages,
-            temperature: temperature
+            userInput: userInput,
+            taskType: taskType
         };
 
         const response = await fetch(`${BACKEND_URL}/api/instant_request`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            // 3. 将这个简单对象发送给后端
             body: JSON.stringify(requestBody)
         });
 
         const result = await response.json();
 
-        // 4. 处理响应 (假设后端代理成功后，会返回智谱的原始响应或一个包含结果的结构)
-        if (!response.ok || !result.success) { 
-            // 优先显示后端返回的明确错误信息
-            const errorMessage = result.error || (result.data ? JSON.stringify(result.data) : '请求失败，未知错误。');
-            throw new Error(errorMessage); 
+        if (!response.ok || !result.success) {
+            const errorMessage = result.error || '请求失败，未知错误。';
+            throw new Error(errorMessage);
         }
         
-        // 假设成功时，内容在 result.data.choices[0].message.content
-        // 为了兼容性，我们检查几种可能的路径
-        const content = result.data?.choices?.[0]?.message?.content || result.data?.content || JSON.stringify(result.data);
+        // 4. 后端成功后，会返回包含 `content` 的数据
         instantOutput.style.whiteSpace = 'pre-wrap';
-        instantOutput.textContent = content;
+        instantOutput.textContent = result.data.content;
 
     } catch (error) {
         instantOutput.innerHTML = `<div class="info error">请求失败: ${error.message}</div>`;
@@ -618,10 +606,10 @@ async function handleInstantRequest(taskType) {
         allButtons.forEach(btn => btn.disabled = false);
     }
 }
-// --- ✨ 修改结束 ✨ ---
+// --- ✨ 修复结束 ✨ ---
 
 // =================================================================================
-// 功能三：解析结果生成报告 (无变动)
+// 功能三：解析结果生成报告
 // =================================================================================
 function parseFaultTolerantJson(text) {
     try {
@@ -746,7 +734,7 @@ function downloadFinalReport(){
 }
 
 // =================================================================================
-// 功能二：批量处理 (无变动)
+// 功能二：批量处理
 // =================================================================================
 async function apiCall(endpoint,body){
     const apiPath=`/api${endpoint.startsWith("/")?endpoint:"/"+endpoint}`;
@@ -884,7 +872,7 @@ async function recoverBatchState(){
 }
 
 // =================================================================================
-// 功能一：生成请求文件 (无变动)
+// 功能一：生成请求文件
 // =================================================================================
 function initModelSelector() {
     const batchModels = ["glm-4-flash", "GLM-4-FlashX-250414", "glm-4-long"];
@@ -1033,7 +1021,7 @@ function downloadJsonl(){
 }
 
 // =================================================================================
-// 模板管理 (无变动)
+// 模板管理
 // =================================================================================
 function loadTemplateUI(template) {
     if (!template) return;
@@ -1151,7 +1139,7 @@ function importTemplate(event) {
 }
 
 // =================================================================================
-// 通用工具 (无变动)
+// 通用工具
 // =================================================================================
 function switchTab(tabName) {
     document.querySelectorAll(".tab-content, .tab-button").forEach(el => el.classList.remove("active"));
