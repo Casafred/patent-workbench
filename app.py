@@ -36,6 +36,65 @@ def index():
 
 # --- API 端点定义 ---
 
+# [新功能] 即时同步请求端点
+@app.route('/api/instant_request', methods=['POST'])
+def instant_request():
+    req_data = request.get_json()
+    api_key = req_data.get('apiKey')
+    user_input = req_data.get('userInput')
+    task_type = req_data.get('taskType') # 'translate', 'summarize', 'expand_keywords'
+
+    if not all([api_key, user_input, task_type]):
+        return create_response(error="apiKey, userInput, 和 taskType 均为必填项。")
+
+    try:
+        client = ZhipuAI(api_key=api_key)
+
+        # 为不同任务类型定义不同的 Prompt 模板
+        prompts = {
+            "translate": {
+                "system": "你是一个专业的、精通多种语言的翻译引擎。你的任务是自动检测用户输入文本的语言，并将其翻译成另一种主要语言（例如，中文翻译成英文，英文翻译成中文）。请直接返回翻译后的文本，不要添加任何额外的解释或说明。",
+                "user": "请翻译以下内容：\n\n{}"
+            },
+            "summarize": {
+                "system": "你是一位顶级的分析师和信息架构师，极其擅长从复杂、冗长的文本中快速提炼核心原理、关键论点和主要摘要。你的输出应该是结构清晰、逻辑严谨、高度浓缩的精华内容。",
+                "user": "请深入分析以下文本，并总结其核心原理和内容摘要：\n\n{}"
+            },
+            "expand_keywords": {
+                "system": "你是一名资深的专利检索专家和技术分析师。你的任务是根据用户提供的核心技术关键词，拓展出一系列用于专利数据库检索的同义词、近义词、上下位概念、相关技术术语以及不同表达方式。输出应该是一个清晰、逗号分隔的关键词列表。",
+                "user": "请围绕以下核心关键词进行专利检索词拓展，提供一个全面的关键词列表：\n\n{}"
+            }
+        }
+
+        if task_type not in prompts:
+            return create_response(error="无效的任务类型。")
+
+        selected_prompt = prompts[task_type]
+        
+        messages = [
+            {"role": "system", "content": selected_prompt["system"]},
+            {"role": "user", "content": selected_prompt["user"].format(user_input)}
+        ]
+
+        # 使用同步调用
+        response = client.chat.completions.create(
+            model="glm-4",  # 对于即时交互，glm-4 或 glm-4-flash 都是不错的选择
+            messages=messages,
+            stream=False, # 确保是同步调用
+            temperature=0.7,
+        )
+        
+        content = response.choices[0].message.content
+        return create_response(data={"content": content})
+
+    except Exception as e:
+        import traceback
+        print(f"Error in instant_request: {traceback.format_exc()}")
+        return create_response(error=f"即时请求过程中发生错误: {str(e)}")
+
+
+# --- 批量处理相关端点 (保持不变) ---
+
 @app.route('/api/upload', methods=['POST'])
 def upload_file():
     req_data = request.get_json()
@@ -91,7 +150,6 @@ def check_batch_status():
     except Exception as e:
         return create_response(error=f"检查Batch状态时发生错误: {str(e)}")
 
-# --- 核心修正点 (v3) ---
 @app.route('/api/download_result', methods=['POST'])
 def download_result_file():
     req_data = request.get_json()
@@ -103,16 +161,10 @@ def download_result_file():
 
     try:
         client = ZhipuAI(api_key=api_key)
-        # 1. 获取包含二进制内容的响应对象
         response_content_object = client.files.content(file_id)
-
-        # 2. 从响应对象中获取原始的二进制内容 (bytes)
         raw_bytes = response_content_object.content
-
-        # 3. 将二进制内容(bytes)解码(decode)成字符串(string)，使用 'utf-8' 编码
         file_content_str = raw_bytes.decode('utf-8')
         
-        # 4. 将解码后的字符串返回给前端
         response_data = {
             'message': f"文件内容 (ID: {file_id}) 已成功获取并返回。",
             'fileContent': file_content_str
@@ -126,6 +178,7 @@ def download_result_file():
         return create_response(error=f"获取文件内容时发生错误: {str(e)}")
 
 
-# 用于本地开发的启动命令 (Gunicorn在生产环境会忽略这个)
+# 用于本地开发的启动命令
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5001)), debug=True)
+
