@@ -3,24 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>专利分析智能工作台 v3.9</title>
+    <title>专利分析智能工作台 v4.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #28a745; /* 主色调 - 绿色 */
-            --primary-hover-color: #218838; /* 悬停/激活色 */
-            --primary-dark-color: #1e7e34; /* 标题/深色 */
-            --secondary-color: #007bff; /* 用于自定义模板的颜色 */
-            --secondary-hover-color: #0056b3;
-            --background-color: #f4f8f5; /* 背景色 */
+            --primary-color: #28a745; /* 主色调 - 统一绿色 */
+            --primary-hover-color: #218838;
+            --primary-dark-color: #1e7e34;
+            --background-color: #f4f8f5;
             --container-bg-color: #ffffff;
             --border-color: #dce5dd;
             --text-color: #333;
             --light-info-bg: #e9f5ec;
-            --white-glow-color: rgba(255, 255, 255, 0.8);
             --code-bg-color: #2d2d2d;
             --code-text-color: #e6e6e6;
             --error-color: #dc3545;
@@ -29,13 +26,13 @@
         }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; line-height: 1.6; color: var(--text-color); background-color: var(--background-color); margin: 0; padding: 20px; }
         .container { max-width: 1200px; margin: 0 auto; background-color: var(--container-bg-color); padding: 0; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); overflow: hidden; }
-        .app-banner { display: flex; flex-direction: column; align-items: center; padding: 15px 20px; background-color: var(--primary-dark-color); color: #fff; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .banner-text-logo { font-family: 'Orbitron', sans-serif; font-size: 2.8rem; font-weight: 900; margin: 0; padding: 0; letter-spacing: 4px; background: linear-gradient(145deg, #ffffff, #e0ffe8); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: 0 0 6px var(--white-glow-color), 0 0 15px rgba(255, 255, 255, 0.5); }
-        .copyright-info { margin-top: 8px; display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: normal; color: rgba(255, 255, 255, 0.7); }
+        .app-banner { display: flex; flex-direction: column; align-items: center; padding: 15px 20px; background-color: var(--primary-dark-color); color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .banner-text-logo { font-family: 'Orbitron', sans-serif; font-size: 2.8rem; font-weight: 900; background: linear-gradient(145deg, #ffffff, #e0ffe8); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: 0 0 6px rgba(255, 255, 255, 0.8), 0 0 15px rgba(255, 255, 255, 0.5); }
+        .copyright-info { margin-top: 8px; font-size: 11px; color: rgba(255, 255, 255, 0.7); }
         .version-number { font-size: 10px; opacity: 0.8; margin-top: 2px; }
         .main-content { padding: 25px; }
         .tab-container { border-bottom: 1px solid var(--border-color); margin-bottom: 20px; }
-        .tab-button { background-color: transparent; border: 1px solid transparent; border-bottom: none; padding: 10px 20px; cursor: pointer; font-size: 1.1em; border-radius: 5px 5px 0 0; color: #495057; }
+        .tab-button { background-color: transparent; border: 1px solid transparent; padding: 10px 20px; cursor: pointer; font-size: 1.1em; border-radius: 5px 5px 0 0; color: #495057; }
         .tab-button.active { background-color: var(--container-bg-color); border-color: var(--border-color); border-bottom: 1px solid var(--container-bg-color); margin-bottom: -1px; font-weight: bold; color: var(--primary-color); }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
@@ -47,19 +44,16 @@
         button:disabled { background-color: #a0c7af; cursor: not-allowed; }
         .action-button { min-width: 220px; display: inline-block; margin: 5px; }
         .small-button { padding: 5px 10px; font-size: 0.9em; margin-left: 10px; }
-        .custom-template-button { background-color: var(--secondary-color); }
-        .custom-template-button:hover { background-color: var(--secondary-hover-color); }
-        .delete-button { background-color: var(--error-color); }
+        /* 移除特定的颜色按钮样式，使其继承通用按钮样式 */
         .config-item { margin-bottom: 15px; display: flex; align-items: flex-start; }
         .config-item label { display: inline-block; width: 170px; font-weight: 500; flex-shrink: 0; padding-top: 8px; }
         .config-item .input-wrapper { width: 100%; }
         .config-item select, .config-item input, .config-item textarea { padding: 8px; border-radius: 4px; border: 1px solid #ced4da; width: 100%; box-sizing: border-box; }
         .preview-output { background-color: var(--code-bg-color); color: var(--code-text-color); padding: 15px; border-radius: 5px; max-height: 500px; overflow-y: auto; font-family: "Courier New", Courier, monospace; white-space: pre-wrap; word-break: break-all; }
-        .preview-item { padding-bottom: 15px; margin-bottom: 15px; border-bottom: 1px dashed #4a4a4a; }
-        .preview-item:last-child { border-bottom: none; margin-bottom: 0; }
         .info { font-size: 0.9em; color: var(--primary-dark-color); margin-top: 15px; background-color: var(--light-info-bg); padding: 10px; border-radius: 4px; border-left: 4px solid var(--primary-color); }
         .info.success { border-left-color: var(--success-color); background-color: #e9f5ec;}
         .info.warning { border-left-color: var(--warning-color); background-color: #fff8e1;}
+        .info.error { border-left-color: var(--error-color); background-color: #f8d7da;}
         .reporter-uploads { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         details { border: 1px solid var(--border-color); border-radius: 5px; margin-top: 25px; background-color: #fafdfb; }
         summary { font-size: 1.2em; font-weight: bold; color: #495057; padding: 15px 20px; cursor: pointer; list-style: none; }
@@ -72,10 +66,11 @@
         .log-entry.success { color: var(--success-color); font-weight: bold; }
         .log-entry.auto-check { color: #007bff; font-style: italic; }
         hr { border: none; border-top: 1px solid var(--border-color); margin: 20px 0; }
-        .template-actions { margin-top: 15px; }
+        .template-actions { margin-top: 15px; display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
         .auto-check-controls { margin-top: 15px; }
         .auto-check-controls button { background-color: var(--warning-color); color: #212529;}
         .auto-check-controls button:hover { background-color: #e0a800; }
+        #column-config-area .config-item { margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -85,7 +80,7 @@
         <h1 class="banner-text-logo">ALFRED X IP</h1>
         <div class="copyright-info">
             <span>Copyright © 2025 Alfred Shi 保留所有权利.</span>
-            <span class="version-number">版本号: v3.9 (健壮版)</span>
+            <span class="version-number">版本号: v4.0 (高定版)</span>
         </div>
     </header>
 
@@ -99,38 +94,40 @@
         <!-- 功能一：生成请求文件 -->
         <div id="generator-tab" class="tab-content active">
             <div class="step">
-                <div class="step-header">步骤 1: 上传包含专利数据的 Excel 文件</div>
+                <div class="step-header">步骤 1: 上传专利数据 Excel 并配置分析列</div>
                 <input type="file" id="gen_file-input" accept=".xlsx, .xls">
                 <select id="gen_sheet-selector" style="display:none; margin-left: 10px;"></select>
-                <div class="info">请确保Excel文件中包含名为 '摘要' 和 '权利要求' 的列。</div>
+                <div id="column-config-container" style="display:none; margin-top: 20px;">
+                    <div class="config-item">
+                        <label for="column-count">选择分析列数量:</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="column-count" value="2" min="1" max="10" style="width: 100px;">
+                        </div>
+                    </div>
+                    <div id="column-config-area"></div>
+                    <div class="info">请在下方的“用户提示”中使用占位符 `{配置列1}`, `{配置列2}` ... 来引用您在此处选择的数据列。</div>
+                </div>
             </div>
             
             <div class="step">
-                <div class="step-header">步骤 2: 配置 API 请求参数</div>
+                <div class="step-header">步骤 2: 配置 API 请求模板</div>
                 <div class="config-item"><label for="api-model">模型 (model):</label><div class="input-wrapper"><input type="text" id="api-model" value="glm-4"></div></div>
                 <div class="config-item"><label for="api-temperature">温度 (temperature):</label><div class="input-wrapper"><input type="number" id="api-temperature" value="0.7" step="0.1" min="0" max="1"></div></div>
                 <div class="config-item">
                     <label for="api-system-prompt">系统提示 (system prompt):</label>
-                    <div class="input-wrapper"><textarea id="api-system-prompt" rows="3">你是一个精通全球专利业务的AI助手，擅长阅读、理解和分析专利文件。你的任务是根据用户提供的专利“摘要”和“权利要求”内容，精准地识别出该专利的核心技术主题，并以简洁的短语形式返回。你必须严格遵循输出格式要求。</textarea></div>
+                    <div class="input-wrapper"><textarea id="api-system-prompt" rows="3"></textarea></div>
                 </div>
                 <div class="config-item">
                     <label for="api-user-prompt">用户提示 (user prompt):</label>
                     <div class="input-wrapper">
-                        <textarea id="api-user-prompt" rows="8">这是专利的详细信息：
-摘要：
-{摘要}
-
-权利要求：
-{权利要求}
-
-请基于以上信息，分析并总结出该专利的核心技术主题。
-要求：
-1. 结果必须是3-5个字的中文短语。
-2. 仅输出这个短语，不要包含任何其他解释、前缀或标点符号。</textarea>
+                        <textarea id="api-user-prompt" rows="8"></textarea>
                         <div class="template-actions">
-                            <button id="save_template_btn" class="small-button custom-template-button">保存为自定义模板</button>
-                            <select id="template_selector" style="margin-left: 10px;"></select>
-                            <button id="delete_template_btn" class="small-button delete-button">删除选中模板</button>
+                            <select id="template_selector" style="padding: 8px;"></select>
+                            <button id="save_template_btn" class="small-button">保存为自定义模板</button>
+                            <button id="import_template_btn" class="small-button">导入模板</button>
+                            <input type="file" id="template_file_input" accept=".json" style="display:none;">
+                            <button id="export_template_btn" class="small-button">导出当前模板</button>
+                            <button id="delete_template_btn" class="small-button">删除选中模板</button>
                         </div>
                     </div>
                 </div>
@@ -156,6 +153,7 @@
                 <p>请按照1-4的顺序执行。点击步骤2后将启动自动状态检查。</p>
                 <button id="batch_step1_upload" class="action-button">1. 上传请求文件</button>
                 <button id="batch_step2_create" class="action-button" disabled>2. 创建Batch任务</button>
+                <div id="batch_id_reminder" class="info success" style="display: none; margin-top: 10px;"></div>
                 <button id="batch_step3_check" class="action-button" disabled>3. 手动检查状态</button>
                 <button id="batch_step4_download" class="action-button" disabled>4. 获取结果内容</button>
 
@@ -166,14 +164,14 @@
             </div>
             
             <details>
-                <summary>断点续查 / 结果恢复</summary>
+                <summary>断点续查 / 任务恢复</summary>
                 <div class="step" style="border-top: none; margin-top: 0;">
-                    <p class="info warning">如果您因关闭浏览器等原因中断了流程，但已记录下 Output File ID，可在此直接加载结果。</p>
+                    <p class="info warning">如果您因关闭浏览器等原因中断了流程，但已记录下 Batch ID，可在此恢复任务状态。</p>
                     <div class="config-item">
-                        <label for="direct_output_id_input">Output File ID:</label>
-                        <div class="input-wrapper"><input type="text" id="direct_output_id_input" placeholder="粘贴已完成任务的 Output File ID"></div>
+                        <label for="recover_batch_id_input">Batch ID:</label>
+                        <div class="input-wrapper"><input type="text" id="recover_batch_id_input" placeholder="粘贴您记录的 Batch ID"></div>
                     </div>
-                    <button id="direct_download_btn" class="action-button custom-template-button">直接加载结果</button>
+                    <button id="recover_state_btn" class="action-button">恢复查询状态</button>
                 </div>
             </details>
 
@@ -189,9 +187,9 @@
                 <div class="step-header">步骤 1: 准备数据源</div>
                 <div class="reporter-uploads">
                     <div>
-                        <p><strong>A. 上传原始 Excel 文件</strong></p>
+                        <p><strong>A. 上传原始 Excel 文件</strong> (用于数据匹配)</p>
                         <input type="file" id="rep_excel-input" accept=".xlsx, .xls">
-                        <div class="info">请上传您在【功能一】中使用的同一个Excel文件，用于数据匹配。</div>
+                        <select id="rep_sheet-selector" style="display:none; margin-left: 10px; margin-top: 5px;"></select>
                     </div>
                     <div>
                         <p><strong>B. 加载 Batch 任务结果文件</strong></p>
@@ -214,59 +212,58 @@
 </div>
 
 <script>
-// --- 全局配置 ---
-// !!! 关键修改: 如果您将后端部署到云服务 (如 Render), 请在此处粘贴您后端的 URL
-// 例如: const BACKEND_URL = 'https://your-backend-app-name.onrender.com';
-const BACKEND_URL = 'https://patent-workbench-backend.onrender.com'; // 本地运行时留空即可
-
-// --- 全局变量 ---
-let gen_workbook = null, gen_currentSheetData = null, gen_jsonlContent = "";
+// --- 全局配置与变量 ---
+const BACKEND_URL = ''; // 本地运行留空, 部署后填写: 'https://your-backend-app-name.onrender.com'
+let gen_workbook = null, gen_currentSheetData = null, gen_columnHeaders = [], gen_jsonlContent = "";
 let rep_workbook = null, rep_sheetData = null, rep_jsonlData = null;
 let rep_finalOutputData = [], rep_outputHeaders = [];
 let batch_fileId = null, batch_batchId = null, batch_outputFileId = null, batch_errorFileId = null;
 let batch_result_jsonl_content = null;
 let custom_templates = [];
-let autoCheckTimer = null; // 用于自动检查的计时器
+const preset_templates = [
+    {
+        name: "核心技术主题提取 (默认)",
+        system: "你是一个精通全球专利业务的AI助手，擅长阅读、理解和分析专利文件。你的任务是根据用户提供的专利内容，精准地识别出该专利的核心技术主题，并以简洁的短语形式返回。你必须严格遵循输出格式要求。",
+        user: "这是专利的详细信息：\n摘要：\n{配置列1}\n\n权利要求：\n{配置列2}\n\n请基于以上信息，分析并总结出该专利的核心技术主题。\n要求：\n1. 结果必须是3-5个字的中文短语。\n2. 仅输出这个短语，不要包含任何其他解释、前缀或标点符号。"
+    },
+    {
+        name: "技术领域与应用场景分析",
+        system: "你是一位资深的技术分析师和行业顾问。你的任务是基于专利内容，判断其所属的技术领域，并预测其最可能的应用场景。",
+        user: "专利内容如下：\n{配置列1}\n\n请分析此专利并按以下JSON格式输出：\n{\n  \"technical_field\": \"[此处填写技术领域，如：人工智能、生物医药、通信技术等]\",\n  \"application_scenario\": \"[此处填写最可能的应用场景，如：自动驾驶车辆的障碍物识别、靶向药的药物递送系统等]\"\n}"
+    }
+];
+let autoCheckTimer = null;
 
-// --- DOM 元素获取 ---
-const genFileInput = document.getElementById('gen_file-input');
-const genSheetSelector = document.getElementById('gen_sheet-selector');
-const genGenerateBtn = document.getElementById('gen_generate-btn');
-const genPreviewOutput = document.getElementById('gen_preview_output');
-const genDownloadBtn = document.getElementById('gen_download-btn');
-const genReadyInfo = document.getElementById('gen_ready_info');
-const apiModelInput = document.getElementById('api-model');
-const apiTempInput = document.getElementById('api-temperature');
-const apiSystemInput = document.getElementById('api-system-prompt');
-const apiUserInput = document.getElementById('api-user-prompt');
-
-const batch_log = document.getElementById('batch_log');
-const btnUpload = document.getElementById('batch_step1_upload');
-const btnCreate = document.getElementById('batch_step2_create');
-const btnCheck = document.getElementById('batch_step3_check');
-const btnDownload = document.getElementById('batch_step4_download');
-const autoCheckContainer = document.getElementById('auto-check-container');
-const autoCheckStatusEl = document.getElementById('auto_check_status');
-
-const repExcelInput = document.getElementById('rep_excel-input');
-const repJsonlInput = document.getElementById('rep_jsonl-input');
-const repGenerateBtn = document.getElementById('rep_generate-report-btn');
-const repPreview = document.getElementById('rep_output_preview');
-const repDownloadBtn = document.getElementById('rep_download-report-btn');
-const repInfoBox = document.getElementById('reporter-info-box');
+// --- DOM 元素缓存 ---
+const getEl = id => document.getElementById(id);
+const genFileInput = getEl('gen_file-input'), genSheetSelector = getEl('gen_sheet-selector');
+const columnConfigContainer = getEl('column-config-container'), columnCountInput = getEl('column-count'), columnConfigArea = getEl('column-config-area');
+const genGenerateBtn = getEl('gen_generate-btn'), genPreviewOutput = getEl('gen_preview_output'), genDownloadBtn = getEl('gen_download-btn'), genReadyInfo = getEl('gen_ready_info');
+const apiModelInput = getEl('api-model'), apiTempInput = getEl('api-temperature'), apiSystemInput = getEl('api-system-prompt'), apiUserInput = getEl('api-user-prompt');
+const templateSelector = getEl('template_selector'), templateFileInput = getEl('template_file_input');
+const batchLog = getEl('batch_log'), batchIdReminder = getEl('batch_id_reminder');
+const btnUpload = getEl('batch_step1_upload'), btnCreate = getEl('batch_step2_create'), btnCheck = getEl('batch_step3_check'), btnDownload = getEl('batch_step4_download');
+const autoCheckContainer = getEl('auto-check-container'), autoCheckStatusEl = getEl('auto_check_status');
+const recoverIdInput = getEl('recover_batch_id_input');
+const repExcelInput = getEl('rep_excel-input'), repSheetSelector = getEl('rep_sheet-selector'), repJsonlInput = getEl('rep_jsonl-input');
+const repGenerateBtn = getEl('rep_generate-report-btn'), repPreview = getEl('rep_output_preview'), repDownloadBtn = getEl('rep_download-report-btn'), repInfoBox = getEl('reporter-info-box');
 
 // =================================================================================
 // 初始化
 // =================================================================================
 document.addEventListener('DOMContentLoaded', () => {
     // 功能一
-    genFileInput.addEventListener('change', handleFile);
-    genSheetSelector.addEventListener('change', (e) => loadSheet(e.target.value));
+    genFileInput.addEventListener('change', handleGenFile);
+    genSheetSelector.addEventListener('change', e => loadGenSheet(e.target.value));
+    columnCountInput.addEventListener('change', updateColumnSelectors);
     genGenerateBtn.addEventListener('click', generateJsonl);
     genDownloadBtn.addEventListener('click', downloadJsonl);
-    document.getElementById('save_template_btn').addEventListener('click', saveTemplate);
-    document.getElementById('template_selector').addEventListener('change', loadTemplate);
-    document.getElementById('delete_template_btn').addEventListener('click', deleteTemplate);
+    templateSelector.addEventListener('change', loadTemplate);
+    getEl('save_template_btn').addEventListener('click', saveTemplate);
+    getEl('delete_template_btn').addEventListener('click', deleteTemplate);
+    getEl('export_template_btn').addEventListener('click', exportTemplate);
+    getEl('import_template_btn').addEventListener('click', () => templateFileInput.click());
+    templateFileInput.addEventListener('change', importTemplate);
     initTemplates();
 
     // 功能二
@@ -274,12 +271,12 @@ document.addEventListener('DOMContentLoaded', () => {
     btnCreate.addEventListener('click', runStep2_Create);
     btnCheck.addEventListener('click', runStep3_Check);
     btnDownload.addEventListener('click', runStep4_Download);
-    document.getElementById('batch_stop_check_btn').addEventListener('click', stopAutoCheck);
-    document.getElementById('direct_download_btn').addEventListener('click', runDirectDownload);
-
+    getEl('batch_stop_check_btn').addEventListener('click', stopAutoCheck);
+    getEl('recover_state_btn').addEventListener('click', recoverBatchState);
 
     // 功能三
     repExcelInput.addEventListener('change', handleReporterExcel);
+    repSheetSelector.addEventListener('change', e => loadReporterSheet(e.target.value));
     repJsonlInput.addEventListener('change', handleReporterJsonl);
     repGenerateBtn.addEventListener('click', parseAndGenerateReport);
     repDownloadBtn.addEventListener('click', downloadFinalReport);
@@ -289,20 +286,15 @@ document.addEventListener('DOMContentLoaded', () => {
 // 通用函数
 // =================================================================================
 function switchTab(tabName) {
-    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-
-    document.getElementById(`${tabName}-tab`).classList.add('active');
+    document.querySelectorAll('.tab-content, .tab-button').forEach(el => el.classList.remove('active'));
+    getEl(`${tabName}-tab`).classList.add('active');
     document.querySelector(`.tab-button[onclick="switchTab('${tabName}')"]`).classList.add('active');
-
-    if (tabName === 'reporter') {
-        if (batch_result_jsonl_content) {
-            repInfoBox.style.display = 'block';
-            rep_jsonlData = parseJsonl(batch_result_jsonl_content);
-            checkReporterReady();
-        } else {
-            repInfoBox.style.display = 'none';
-        }
+    if (tabName === 'reporter' && batch_result_jsonl_content) {
+        repInfoBox.style.display = 'block';
+        rep_jsonlData = parseJsonl(batch_result_jsonl_content);
+        checkReporterReady();
+    } else {
+        repInfoBox.style.display = 'none';
     }
 }
 
@@ -315,14 +307,11 @@ async function apiCall(endpoint, body) {
             body: JSON.stringify(body),
         });
         const result = await response.json();
-        if (!result.success) {
-            throw new Error(result.error || '未知错误');
-        }
+        if (!result.success) throw new Error(result.error || '未知错误');
         return result.data;
     } catch (error) {
-        const errorMessage = `请求失败: ${error.message}`;
-        addLog(errorMessage, 'error');
-        console.error(errorMessage, error);
+        addLog(`请求失败: ${error.message}`, 'error');
+        console.error(`API Call Error to ${endpoint}:`, error);
         return null;
     }
 }
@@ -330,20 +319,19 @@ async function apiCall(endpoint, body) {
 function addLog(message, type = 'info') {
     const logEntry = document.createElement('div');
     logEntry.className = `log-entry ${type}`;
-    const timestamp = new Date().toLocaleTimeString();
-    logEntry.textContent = `[${timestamp}] ${message}`;
-    batch_log.appendChild(logEntry);
-    batch_log.scrollTop = batch_log.scrollHeight;
+    logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+    batchLog.appendChild(logEntry);
+    batchLog.scrollTop = batchLog.scrollHeight;
 }
-
 
 // =================================================================================
 // 功能一：生成请求文件
 // =================================================================================
-function handleFile(event) {
+function handleGenFile(event) {
     const file = event.target.files[0];
+    if (!file) return;
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = e => {
         const data = new Uint8Array(e.target.result);
         gen_workbook = XLSX.read(data, { type: 'array' });
         genSheetSelector.innerHTML = '';
@@ -353,34 +341,63 @@ function handleFile(event) {
             genSheetSelector.appendChild(option);
         });
         genSheetSelector.style.display = 'inline-block';
-        loadSheet(gen_workbook.SheetNames[0]);
+        loadGenSheet(gen_workbook.SheetNames[0]);
     };
     reader.readAsArrayBuffer(file);
 }
 
-function loadSheet(sheetName) {
+function loadGenSheet(sheetName) {
     const worksheet = gen_workbook.Sheets[sheetName];
-    gen_currentSheetData = XLSX.utils.sheet_to_json(worksheet);
+    gen_currentSheetData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
     genGenerateBtn.disabled = !gen_currentSheetData || gen_currentSheetData.length === 0;
+    if (gen_currentSheetData.length > 0) {
+        gen_columnHeaders = Object.keys(gen_currentSheetData[0]);
+        columnConfigContainer.style.display = 'block';
+        updateColumnSelectors();
+    }
+}
+
+function updateColumnSelectors() {
+    columnConfigArea.innerHTML = '';
+    const count = parseInt(columnCountInput.value, 10);
+    for (let i = 1; i <= count; i++) {
+        const div = document.createElement('div');
+        div.className = 'config-item';
+        const label = document.createElement('label');
+        label.htmlFor = `column-selector-${i}`;
+        label.textContent = `第 ${i} 配置列:`;
+        const wrapper = document.createElement('div');
+        wrapper.className = 'input-wrapper';
+        const select = document.createElement('select');
+        select.id = `column-selector-${i}`;
+        select.className = 'column-selector';
+        gen_columnHeaders.forEach(header => {
+            const option = document.createElement('option');
+            option.value = option.textContent = header;
+            select.appendChild(option);
+        });
+        // 尝试智能选择默认值
+        if (i === 1 && gen_columnHeaders.includes('摘要')) select.value = '摘要';
+        if (i === 2 && gen_columnHeaders.includes('权利要求')) select.value = '权利要求';
+
+        wrapper.appendChild(select);
+        div.appendChild(label);
+        div.appendChild(wrapper);
+        columnConfigArea.appendChild(div);
+    }
 }
 
 function generateJsonl() {
     if (!gen_currentSheetData) return;
-    const abstractCol = '摘要';
-    const claimsCol = '权利要求';
-
-    let missingCols = [];
-    if (!gen_currentSheetData[0] || gen_currentSheetData[0][abstractCol] === undefined) missingCols.push(abstractCol);
-    if (!gen_currentSheetData[0] || gen_currentSheetData[0][claimsCol] === undefined) missingCols.push(claimsCol);
-    if (missingCols.length > 0) {
-        alert(`错误：Excel中缺少必需的列: ${missingCols.join(', ')}`);
-        return;
-    }
+    const columnSelectors = document.querySelectorAll('.column-selector');
+    const selectedColumns = Array.from(columnSelectors).map(sel => sel.value);
 
     const requests = gen_currentSheetData.map((row, index) => {
-        const userPrompt = apiUserInput.value
-            .replace('{摘要}', row[abstractCol] || '')
-            .replace('{权利要求}', row[claimsCol] || '');
+        let userPrompt = apiUserInput.value;
+        selectedColumns.forEach((colName, i) => {
+            const placeholder = new RegExp(`{配置列${i + 1}}`, 'g');
+            userPrompt = userPrompt.replace(placeholder, row[colName] || '');
+        });
         
         return {
             custom_id: `request-${index + 1}`,
@@ -398,13 +415,7 @@ function generateJsonl() {
 
     gen_jsonlContent = requests.map(JSON.stringify).join('\n');
     genPreviewOutput.style.display = 'block';
-    genPreviewOutput.innerHTML = '';
-    requests.slice(0, 3).forEach(req => {
-        const itemDiv = document.createElement('div');
-        itemDiv.className = 'preview-item';
-        itemDiv.textContent = JSON.stringify(req, null, 2);
-        genPreviewOutput.appendChild(itemDiv);
-    });
+    genPreviewOutput.innerHTML = requests.slice(0, 3).map(req => `<div class="preview-item">${JSON.stringify(req, null, 2)}</div>`).join('');
     genDownloadBtn.style.display = 'inline-block';
     genReadyInfo.style.display = 'block';
 }
@@ -412,66 +423,118 @@ function generateJsonl() {
 function downloadJsonl() {
     if (!gen_jsonlContent) return;
     const blob = new Blob([gen_jsonlContent], { type: 'application/jsonl' });
-    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
+    a.href = URL.createObjectURL(blob);
     a.download = 'batch_requests.jsonl';
-    document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    URL.revokeObjectURL(a.href);
 }
 
-// 模板管理
+// --- Template Management ---
 function initTemplates() {
     custom_templates = JSON.parse(localStorage.getItem('custom_templates') || '[]');
     updateTemplateSelector();
+    // Load default template on first visit
+    if (templateSelector.value) {
+        loadTemplate();
+    }
 }
 
-function saveTemplate() {
-    const name = prompt("请输入模板名称:", `模板_${Date.now()}`);
-    if (!name) return;
-    const template = {
-        name: name,
-        system: apiSystemInput.value,
-        user: apiUserInput.value
+function updateTemplateSelector() {
+    templateSelector.innerHTML = '';
+    const createOptgroup = (label, templates) => {
+        const group = document.createElement('optgroup');
+        group.label = label;
+        templates.forEach(t => {
+            const option = document.createElement('option');
+            option.value = t.name;
+            option.textContent = t.name;
+            group.appendChild(option);
+        });
+        return group;
     };
-    custom_templates.push(template);
-    localStorage.setItem('custom_templates', JSON.stringify(custom_templates));
-    updateTemplateSelector();
-    alert("模板已保存！");
+    templateSelector.appendChild(createOptgroup('预设模板', preset_templates));
+    if (custom_templates.length > 0) {
+        templateSelector.appendChild(createOptgroup('自定义模板', custom_templates));
+    }
 }
 
 function loadTemplate() {
-    const selector = document.getElementById('template_selector');
-    const selectedName = selector.value;
-    const template = custom_templates.find(t => t.name === selectedName);
+    const selectedName = templateSelector.value;
+    const template = [...preset_templates, ...custom_templates].find(t => t.name === selectedName);
     if (template) {
         apiSystemInput.value = template.system;
         apiUserInput.value = template.user;
     }
 }
 
-function deleteTemplate() {
-    const selector = document.getElementById('template_selector');
-    const selectedName = selector.value;
-    if (!selectedName || !confirm(`确定要删除模板 "${selectedName}" 吗？`)) return;
-    custom_templates = custom_templates.filter(t => t.name !== selectedName);
+function saveTemplate() {
+    const name = prompt("请输入新模板的名称:", `自定义模板_${Date.now()}`);
+    if (!name || !name.trim()) return;
+    if ([...preset_templates, ...custom_templates].some(t => t.name === name)) {
+        alert("错误：该模板名称已存在！");
+        return;
+    }
+    const template = { name: name.trim(), system: apiSystemInput.value, user: apiUserInput.value };
+    custom_templates.push(template);
     localStorage.setItem('custom_templates', JSON.stringify(custom_templates));
     updateTemplateSelector();
-    alert("模板已删除！");
+    templateSelector.value = name;
+    alert("模板已保存！");
 }
 
-function updateTemplateSelector() {
-    const selector = document.getElementById('template_selector');
-    selector.innerHTML = '<option value="">--选择自定义模板--</option>';
-    custom_templates.forEach(t => {
-        const option = document.createElement('option');
-        option.value = t.name;
-        option.textContent = t.name;
-        selector.appendChild(option);
-    });
+function deleteTemplate() {
+    const selectedName = templateSelector.value;
+    if (!custom_templates.some(t => t.name === selectedName)) {
+        alert("错误：只能删除自定义模板。");
+        return;
+    }
+    if (confirm(`确定要删除模板 "${selectedName}" 吗？`)) {
+        custom_templates = custom_templates.filter(t => t.name !== selectedName);
+        localStorage.setItem('custom_templates', JSON.stringify(custom_templates));
+        initTemplates();
+        alert("模板已删除！");
+    }
 }
+
+function exportTemplate() {
+    const template = { name: "exported_template", system: apiSystemInput.value, user: apiUserInput.value };
+    const blob = new Blob([JSON.stringify(template, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'patent_workbench_template.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
+function importTemplate(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        try {
+            const t = JSON.parse(e.target.result);
+            if (!t.name || !t.system || !t.user) throw new Error("模板文件格式不正确。");
+            let newName = t.name;
+            while ([...preset_templates, ...custom_templates].some(temp => temp.name === newName)) {
+                newName = `${t.name}_${Date.now()}`;
+            }
+            if (newName !== t.name) alert(`模板名称冲突，已重命名为 "${newName}"`);
+            t.name = newName;
+            custom_templates.push(t);
+            localStorage.setItem('custom_templates', JSON.stringify(custom_templates));
+            updateTemplateSelector();
+            templateSelector.value = newName;
+            loadTemplate();
+            alert("模板导入成功！");
+        } catch (err) {
+            alert(`导入失败: ${err.message}`);
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = ''; // Reset file input
+}
+
 
 // =================================================================================
 // 功能二：批量请求
@@ -479,11 +542,11 @@ function updateTemplateSelector() {
 async function runStep1_Upload() {
     addLog('开始执行步骤1：上传请求文件...');
     if (!gen_jsonlContent) { addLog('错误：请先在【功能一】中生成请求文件内容。', 'error'); return; }
-    const apiKey = document.getElementById('batch_api_key_input').value.trim();
+    const apiKey = getEl('batch_api_key_input').value.trim();
     if (!apiKey) { addLog('错误：请输入API Key。', 'error'); return; }
     
     btnUpload.disabled = true;
-    const data = await apiCall('/api/upload', { 
+    const data = await apiCall('/upload', { 
         apiKey: apiKey,
         jsonlContent: gen_jsonlContent,
         fileName: `patent_requests_${Date.now()}.jsonl`
@@ -497,41 +560,43 @@ async function runStep1_Upload() {
         btnCreate.disabled = false;
         btnCheck.disabled = true;
         btnDownload.disabled = true;
-        stopAutoCheck(); // 如果重新上传，停止旧的检查
+        batchIdReminder.style.display = 'none';
+        stopAutoCheck();
     }
 }
 
 async function runStep2_Create() {
     addLog('开始执行步骤2：创建Batch任务...');
-    const apiKey = document.getElementById('batch_api_key_input').value.trim();
+    const apiKey = getEl('batch_api_key_input').value.trim();
     if (!apiKey || !batch_fileId) { addLog('错误：API Key 或 File ID 缺失。', 'error'); return; }
 
     btnCreate.disabled = true;
-    const data = await apiCall('/api/create_batch', { apiKey, fileId: batch_fileId });
+    const data = await apiCall('/create_batch', { apiKey, fileId: batch_fileId });
     btnCreate.disabled = false;
 
     if (data) {
         batch_batchId = data.id;
         addLog(`成功: Batch任务创建成功！`, 'success');
         addLog(`获取到 Batch ID: ${batch_batchId}`);
+        batchIdReminder.innerHTML = `<strong>任务已创建！请务必记录您的 Batch ID: <span style="color:var(--error-color); user-select:all;">${batch_batchId}</span></strong>，以便在关闭浏览器后可以恢复任务状态。`;
+        batchIdReminder.style.display = 'block';
         addLog(`任务初始状态: ${data.status}`);
         btnCheck.disabled = false;
         btnDownload.disabled = true;
-        
         startAutoCheck();
     }
 }
 
 async function runStep3_Check() {
     addLog('正在检查任务状态...', 'auto-check');
-    const apiKey = document.getElementById('batch_api_key_input').value.trim();
+    const apiKey = getEl('batch_api_key_input').value.trim();
     if (!apiKey || !batch_batchId) {
         addLog('错误：API Key 或 Batch ID 缺失，无法检查状态。', 'error');
         stopAutoCheck(); 
         return;
     }
 
-    const data = await apiCall('/api/check_status', { apiKey, batchId: batch_batchId });
+    const data = await apiCall('/check_status', { apiKey, batchId: batch_batchId });
 
     if (data) {
         addLog(`任务状态: ${data.status}`, data.status === 'completed' ? 'success' : 'info');
@@ -553,11 +618,11 @@ async function runStep3_Check() {
 
 async function runStep4_Download() {
     addLog('开始执行步骤4：获取结果内容...');
-    const apiKey = document.getElementById('batch_api_key_input').value.trim();
+    const apiKey = getEl('batch_api_key_input').value.trim();
     if (!apiKey || !batch_outputFileId) { addLog('错误：API Key 或 Output File ID 缺失。', 'error'); return; }
     
     btnDownload.disabled = true;
-    const data = await apiCall('/api/download_result', { apiKey, fileId: batch_outputFileId });
+    const data = await apiCall('/download_result', { apiKey, fileId: batch_outputFileId });
     btnDownload.disabled = false;
 
     if (data && data.fileContent) {
@@ -567,29 +632,6 @@ async function runStep4_Download() {
         switchTab('reporter');
     } else {
         addLog('获取结果内容失败，请检查日志。', 'error');
-    }
-}
-
-async function runDirectDownload() {
-    addLog('开始执行直接加载...');
-    const apiKey = document.getElementById('batch_api_key_input').value.trim();
-    const directFileId = document.getElementById('direct_output_id_input').value.trim();
-
-    if (!apiKey) { addLog('错误：请输入API Key。', 'error'); return; }
-    if (!directFileId) { addLog('错误：请输入Output File ID。', 'error'); return; }
-    
-    const btn = document.getElementById('direct_download_btn');
-    btn.disabled = true;
-    const data = await apiCall('/api/download_result', { apiKey, fileId: directFileId });
-    btn.disabled = false;
-
-    if (data && data.fileContent) {
-        batch_result_jsonl_content = data.fileContent;
-        addLog(`成功: 已通过ID ${directFileId} 将结果文件加载到内存！`, 'success');
-        addLog('请切换到【功能三】，您将看到直接解析的选项。');
-        switchTab('reporter');
-    } else {
-        addLog('通过直接ID获取结果内容失败，请检查ID是否正确或查看日志。', 'error');
     }
 }
 
@@ -612,30 +654,60 @@ function stopAutoCheck() {
     }
 }
 
+async function recoverBatchState() {
+    const recoverId = recoverIdInput.value.trim();
+    if (!recoverId) {
+        addLog("错误：请输入要恢复的 Batch ID。", 'error');
+        return;
+    }
+    addLog(`正在尝试恢复 Batch ID: ${recoverId}...`);
+    batch_batchId = recoverId; // Set global batch id
+    btnCheck.disabled = false;
+    await runStep3_Check(); // Immediately check status
+    // If not completed, start auto-checking
+    if (autoCheckTimer === null && !btnDownload.disabled) { // A bit of a hacky check, means it's not finished
+        // runStep3_Check enables download button on completion, so if it's still disabled, the job is running
+        const jobStatus = batchLog.lastChild.textContent; // get status from log
+        if (!jobStatus.includes('completed') && !jobStatus.includes('failed')) {
+            startAutoCheck();
+        }
+    }
+}
 
 // =================================================================================
 // 功能三：解析结果生成报告
 // =================================================================================
 function handleReporterExcel(event) {
     const file = event.target.files[0];
+    if(!file) return;
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = e => {
         const data = new Uint8Array(e.target.result);
         rep_workbook = XLSX.read(data, { type: 'array' });
-        // 假设使用第一个sheet
-        const worksheet = rep_workbook.Sheets[rep_workbook.SheetNames[0]];
-        rep_sheetData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-        checkReporterReady();
+        repSheetSelector.innerHTML = '';
+        rep_workbook.SheetNames.forEach(name => {
+            const option = document.createElement('option');
+            option.value = option.textContent = name;
+            repSheetSelector.appendChild(option);
+        });
+        repSheetSelector.style.display = 'inline-block';
+        loadReporterSheet(rep_workbook.SheetNames[0]);
     };
     reader.readAsArrayBuffer(file);
 }
 
+function loadReporterSheet(sheetName) {
+    const worksheet = rep_workbook.Sheets[sheetName];
+    rep_sheetData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+    checkReporterReady();
+}
+
 function handleReporterJsonl(event) {
     const file = event.target.files[0];
+    if(!file) return;
     const reader = new FileReader();
-    reader.onload = (e) => {
-        const content = e.target.result;
-        rep_jsonlData = parseJsonl(content);
+    reader.onload = e => {
+        rep_jsonlData = parseJsonl(e.target.result);
         checkReporterReady();
     };
     reader.readAsText(file);
@@ -645,7 +717,7 @@ function parseJsonl(content) {
     return content.trim().split('\n').map(line => {
         try { return JSON.parse(line); } 
         catch (e) { console.error("Failed to parse line:", line); return null; }
-    }).filter(item => item !== null);
+    }).filter(item => item);
 }
 
 function checkReporterReady() {
@@ -657,24 +729,21 @@ function parseAndGenerateReport() {
 
     const resultMap = new Map();
     rep_jsonlData.forEach(item => {
-        if(item.response && item.response.body && item.response.body.choices && item.response.body.choices[0]){
-            const content = item.response.body.choices[0].message.content;
-            resultMap.set(item.custom_id, content.trim());
+        if(item?.response?.body?.choices?.[0]?.message?.content){
+            resultMap.set(item.custom_id, item.response.body.choices[0].message.content.trim());
         }
     });
 
-    rep_finalOutputData = rep_sheetData.map((row, index) => {
-        const requestId = `request-${index + 1}`;
-        const newRow = { ...row };
-        newRow['核心技术主题'] = resultMap.get(requestId) || '未找到结果';
-        return newRow;
-    });
+    rep_finalOutputData = rep_sheetData.map((row, index) => ({
+        ...row,
+        'AI分析结果': resultMap.get(`request-${index + 1}`) || '未找到结果'
+    }));
 
     if (rep_finalOutputData.length > 0) {
         rep_outputHeaders = Object.keys(rep_finalOutputData[0]);
         repPreview.style.display = 'block';
         repPreview.innerHTML = `
-            <p><strong>预览前 5 条合并结果:</strong></p>
+            <p><strong>预览前 5 条合并结果 (新增“AI分析结果”列):</strong></p>
             <pre>${JSON.stringify(rep_finalOutputData.slice(0, 5), null, 2)}</pre>
         `;
         repDownloadBtn.style.display = 'inline-block';
