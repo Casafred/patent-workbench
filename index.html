@@ -299,22 +299,42 @@ function switchTab(tabName) {
 }
 
 async function apiCall(endpoint, body) {
-    const url = BACKEND_URL ? `${BACKEND_URL}${endpoint}` : `/api${endpoint.split('/api')[1]}`;
+    // 确保 endpoint 以 / 开头
+    const apiPath = `/api${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`;
+    
+    // 构建最终的 URL
+    const url = BACKEND_URL ? `${BACKEND_URL}${apiPath}` : apiPath;
+
     try {
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body),
         });
+        
+        // 改进的错误处理：先检查响应是否OK
+        if (!response.ok) {
+            // 尝试读取文本内容，因为它可能是HTML错误页面
+            const errorText = await response.text();
+            // 抛出一个更具体的错误，包含了状态码和服务器返回的内容
+            throw new Error(`服务器错误: ${response.status} ${response.statusText}. 响应内容: ${errorText}`);
+        }
+        
         const result = await response.json();
-        if (!result.success) throw new Error(result.error || '未知错误');
+
+        if (!result.success) {
+            throw new Error(result.error || '后端返回操作失败');
+        }
         return result.data;
     } catch (error) {
-        addLog(`请求失败: ${error.message}`, 'error');
-        console.error(`API Call Error to ${endpoint}:`, error);
+        // 现在这里能捕获到更详细的错误信息
+        const errorMessage = `请求失败: ${error.message}`;
+        addLog(errorMessage, 'error');
+        console.error(`API 调用失败，目标: ${endpoint}`, error);
         return null;
     }
 }
+
 
 function addLog(message, type = 'info') {
     const logEntry = document.createElement('div');
