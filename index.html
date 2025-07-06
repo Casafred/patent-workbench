@@ -3,214 +3,243 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>专利分析智能工作台 v8.1</title>
+    <title>专利分析智能工作台 v9.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.0.12/marked.min.js"></script> <!-- ✨ 新增：用于渲染Markdown -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
-        /* --- [v8.2 FUSION Design System] --- */
-        :root {
-            --bg-color: #F7F9FC;
-            --surface-color: #FFFFFF;
-            --border-color: #CBD5E0;
-            --text-color: #2D3748;
-            --text-color-secondary: #718096;
-            
-            --primary-color: #4CAF50;
-            --primary-color-dark: #45a049;
-            --primary-color-glow: rgba(76, 175, 80, 0.4);
-            
-            --error-color: #EF4444;
-            --success-color: #22C55E;
-            --warning-color: #F59E0B;
-        }
-
-        *, *::before, *::after {
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            line-height: 1.7;
-            color: var(--text-color);
-            background-color: var(--bg-color);
-            background-image:
-                linear-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
-            background-size: 25px 25px;
-            margin: 0;
-            padding: 40px 20px;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background-color: var(--surface-color);
-            border-radius: 12px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
-            border: 1px solid var(--border-color);
-            transform: scale(0.8);
-            transform-origin: top center;
-        }
-
-        .app-banner {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 0 20px;
-            background-color: var(--surface-color);
-            border-bottom: 1px solid var(--border-color);
-        }
-        .banner-text-logo {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 3.2rem;
-            font-weight: 900;
-            background: linear-gradient(45deg, var(--primary-color-dark), var(--primary-color));
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            text-shadow: 0 0 20px var(--primary-color-glow);
-        }
-        .copyright-info { margin-top: 2px; font-size: 14px; color: var(--text-color-secondary); }
-        .version-number { font-size: 12px; opacity: 0.8; margin-top: 2px; }
-
-        .main-content { padding: 30px; }
-
-        .tab-container {
-            display: flex;
-            justify-content: center; 
-            gap: 15px; 
-            border-bottom: 1px solid var(--border-color);
-            margin-bottom: 30px;
-        }
-        .tab-button {
-            background-color: transparent;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            font-size: 1.05em;
-            font-weight: 500;
-            color: #d4d9e0;
-            transition: all 0.3s ease;
-            
-            border-radius: 8px 8px 0 0;
-            margin-bottom: -1px;
-            border-bottom: 3px solid transparent;
-        }
-        .tab-button:hover {
-            color: var(--primary-color-dark);
-        }
-        .tab-button.active {
-            background: linear-gradient(45deg, var(--primary-color-dark), var(--primary-color));
-            color: #FFFFFF;
-            font-weight: 700;
-            text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
-            border-bottom-color: transparent;
-            box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
-        }
-
-        .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fade-in 0.5s ease; }
-        @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    /* --- [v9.0 FUSION Design System] --- */
+    :root {
+        --bg-color: #F7F9FC;
+        --surface-color: #FFFFFF;
+        --border-color: #E2E8F0; /* Softer border */
+        --text-color: #2D3748;
+        --text-color-secondary: #718096;
         
-        .step {
-            margin-bottom: 30px;
-            padding: 25px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            background-color: var(--surface-color);
-        }
-        .step-header {
-            font-size: 1.1em;
-            font-weight: 700;
-            color: #FFFFFF;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
-            background: linear-gradient(90deg, var(--primary-color-dark), var(--primary-color));
-            
-            margin: -25px -25px 20px -25px;
-            padding: 12px 25px;
-            
-            border-radius: 8px 8px 0 0;
-            border-bottom: none;
-        }
-
-        button {
-            background: linear-gradient(45deg, var(--primary-color-dark), var(--primary-color));
-            color: #FFFFFF;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-            font-weight: bold;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1em;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0,0,0,0.08);
-            display: inline-block;
-            text-align: center;
-            font-family: inherit;
-        }
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 7px 20px var(--primary-color-glow), 0 2px 6px rgba(0,0,0,0.1);
-            filter: brightness(1.05);
-        }
-        button:active { transform: translateY(-1px); filter: brightness(1); }
-        button:disabled { background: #BCC5D3; color: #F7F9FC; cursor: not-allowed; transform: none; box-shadow: none; filter: none; text-shadow: none; }
-        .action-button { min-width: 200px; margin: 5px; }
-
-        .small-button { padding: 8px 16px; font-size: 0.9em; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); }
-        .small-button:hover { box-shadow: 0 4px 12px var(--primary-color-glow); }
-        .delete-button { background: linear-gradient(45deg, #FF7171, var(--error-color)); }
-        .delete-button:hover { box-shadow: 0 7px 20px rgba(239, 68, 68, 0.3); }
-
-        input[type="file"] { border: 1px solid var(--border-color); display: inline-block; padding: 8px 12px; cursor: pointer; border-radius: 6px; color: var(--text-color-secondary); transition: all 0.3s ease; }
-        input[type="file"]:hover { color: var(--primary-color); border-color: var(--primary-color); }
+        --primary-color: #4CAF50;
+        --primary-color-dark: #45a049;
+        --primary-color-glow: rgba(76, 175, 80, 0.3);
         
-        select, input[type="text"], input[type="number"], input[type="password"], textarea {
-            background-color: #FFFFFF;
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            padding: 12px;
-            border-radius: 8px;
-            width: 100%;
-            font-size: 1em;
-            transition: all 0.3s ease;
-            font-family: inherit;
-        }
-        select:focus, input:focus, textarea:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px var(--primary-color-glow); }
-        textarea { resize: vertical; min-height: 120px; }
-        #instant_input { min-height: 300px; width: 100%; }
+        --error-color: #EF4444;
+        --success-color: #22C55E;
+        --warning-color: #F59E0B;
 
-        .config-item { margin-bottom: 15px; }
-        .config-item label { font-weight: 500; margin-bottom: 8px; display: block; color: var(--text-color-secondary); }
-        .config-item.row-flex { display: flex; align-items: center; gap: 15px; }
-        .config-item.row-flex label { width: 170px; flex-shrink: 0; margin-bottom: 0; }
-        .config-item .input-wrapper { width: 100%; }
+        --chat-bg: #F9FAFB;
+        --chat-user-bubble: #DCF8C6;
+        --chat-assistant-bubble: #FFFFFF;
+    }
 
-        .preview-output { background-color: var(--bg-color); color: var(--text-color); padding: 15px; border-radius: 8px; max-height: 500px; overflow-y: auto; font-family: "SF Mono", "Fira Code", "Courier New", monospace; white-space: pre-wrap; word-break: break-all; margin-top: 15px; border: 1px solid var(--border-color); }
-        
-        .info { font-size: 0.95em; margin-top: 15px; padding: 15px 20px; border-radius: 8px; border-left: 5px solid; background-color: var(--surface-color); border-color: var(--text-color-secondary); }
-        .info.success { border-color: var(--success-color); background-color: rgba(34, 197, 94, 0.05); }
-        .info.warning { border-color: var(--warning-color); background-color: rgba(245, 158, 11, 0.05); }
-        .info.error { border-color: var(--error-color); background-color: rgba(239, 68, 68, 0.05); }
-        
-        details { border: 1px solid var(--border-color); border-radius: 8px; margin-top: 25px; background-color: transparent; transition: background-color 0.3s ease; }
-        details[open] { background-color: var(--surface-color); }
-        summary { font-size: 1.2em; font-weight: 500; color: var(--text-color); padding: 15px 20px; cursor: pointer; list-style: none; }
-        summary::-webkit-details-marker { display: none; }
-        summary::before { content: '▶ '; font-size: 0.8em; margin-right: 8px; transition: transform 0.2s; display: inline-block; color: var(--primary-color); }
-        details[open] > summary::before { transform: rotate(90deg); }
-        
-        #batch_log { margin-top: 15px; background-color: #f1f5f9; padding: 15px; border-radius: 4px; min-height: 100px; max-height: 400px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; font-family: monospace; }
-        .prompt-section { border: 1px dashed var(--border-color); padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-        .prompt-section-title { font-weight: bold; margin-bottom: 15px; color: var(--primary-color); }
+    *, *::before, *::after {
+        box-sizing: border-box;
+    }
 
-        .spinner { border: 4px solid var(--border-color); width: 36px; height: 36px; border-radius: 50%; border-left-color: var(--primary-color); animation: spin 1s ease-in-out infinite; margin: 20px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    body {
+        font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        line-height: 1.7;
+        color: var(--text-color);
+        background-color: var(--bg-color);
+        background-image:
+            linear-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+        background-size: 25px 25px;
+        margin: 0;
+        padding: 40px 20px;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background-color: var(--surface-color);
+        border-radius: 12px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+        transform: scale(0.85);
+        transform-origin: top center;
+    }
+
+    .app-banner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 0 20px;
+        background-color: var(--surface-color);
+        border-bottom: 1px solid var(--border-color);
+    }
+    .banner-text-logo {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 3.2rem;
+        font-weight: 900;
+        background: linear-gradient(45deg, var(--primary-color-dark), var(--primary-color));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-shadow: 0 0 20px var(--primary-color-glow);
+    }
+    .copyright-info { margin-top: 2px; font-size: 14px; color: var(--text-color-secondary); }
+    .version-number { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+
+    .main-content { padding: 30px; }
+
+    .tab-container {
+        display: flex;
+        justify-content: center; 
+        gap: 15px; 
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+    }
+    .tab-button {
+        background-color: transparent;
+        border: none;
+        padding: 10px 20px;
+        cursor: pointer;
+        font-size: 1.05em;
+        font-weight: 500;
+        color: var(--text-color-secondary);
+        transition: all 0.3s ease;
+        border-radius: 8px 8px 0 0;
+        margin-bottom: -1px;
+        border-bottom: 3px solid transparent;
+    }
+    .tab-button:hover {
+        color: var(--primary-color-dark);
+    }
+    .tab-button.active {
+        background: linear-gradient(45deg, var(--primary-color-dark), var(--primary-color));
+        color: #FFFFFF;
+        font-weight: 700;
+        text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fade-in 0.5s ease; }
+    @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .step {
+        margin-bottom: 30px;
+        padding: 25px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background-color: var(--surface-color);
+    }
+    .step-header {
+        font-size: 1.1em;
+        font-weight: 700;
+        color: #FFFFFF;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+        background: linear-gradient(90deg, var(--primary-color-dark), var(--primary-color));
+        margin: -25px -25px 20px -25px;
+        padding: 12px 25px;
+        border-radius: 8px 8px 0 0;
+        border-bottom: none;
+    }
+
+    button {
+        background: linear-gradient(45deg, var(--primary-color-dark), var(--primary-color));
+        color: #FFFFFF;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        font-weight: bold;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1em;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0,0,0,0.08);
+        display: inline-block;
+        text-align: center;
+        font-family: inherit;
+    }
+    button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 7px 20px var(--primary-color-glow), 0 2px 6px rgba(0,0,0,0.1);
+        filter: brightness(1.05);
+    }
+    button:active { transform: translateY(-1px); filter: brightness(1); }
+    button:disabled { background: #BCC5D3; color: #F7F9FC; cursor: not-allowed; transform: none; box-shadow: none; filter: none; text-shadow: none; }
+    .action-button { min-width: 200px; margin: 5px; }
+
+    .small-button { padding: 8px 16px; font-size: 0.9em; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); }
+    .small-button:hover { box-shadow: 0 4px 12px var(--primary-color-glow); }
+    .delete-button { background: linear-gradient(45deg, #FF7171, var(--error-color)); }
+    .delete-button:hover { box-shadow: 0 7px 20px rgba(239, 68, 68, 0.3); }
+
+    input[type="file"] { border: 1px solid var(--border-color); display: inline-block; padding: 8px 12px; cursor: pointer; border-radius: 6px; color: var(--text-color-secondary); transition: all 0.3s ease; }
+    input[type="file"]:hover { color: var(--primary-color); border-color: var(--primary-color); }
+    
+    select, input, textarea {
+        background-color: #FFFFFF;
+        border: 1px solid var(--border-color);
+        color: var(--text-color);
+        padding: 12px;
+        border-radius: 8px;
+        width: 100%;
+        font-size: 1em;
+        transition: all 0.3s ease;
+        font-family: inherit;
+    }
+    select:focus, input:focus, textarea:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px var(--primary-color-glow); }
+    textarea { resize: vertical; min-height: 120px; }
+
+    .config-item { margin-bottom: 15px; }
+    .config-item label { font-weight: 500; margin-bottom: 8px; display: block; color: var(--text-color-secondary); }
+    .config-item.row-flex { display: flex; align-items: center; gap: 15px; }
+    .config-item.row-flex label { width: 170px; flex-shrink: 0; margin-bottom: 0; }
+    .config-item .input-wrapper { width: 100%; }
+
+    .preview-output { background-color: var(--bg-color); color: var(--text-color); padding: 15px; border-radius: 8px; max-height: 500px; overflow-y: auto; font-family: "SF Mono", "Fira Code", "Courier New", monospace; white-space: pre-wrap; word-break: break-all; margin-top: 15px; border: 1px solid var(--border-color); }
+    
+    .info { font-size: 0.95em; margin-top: 15px; padding: 15px 20px; border-radius: 8px; border-left: 5px solid; background-color: var(--surface-color); }
+    .info.success { border-color: var(--success-color); background-color: rgba(34, 197, 94, 0.05); }
+    .info.warning { border-color: var(--warning-color); background-color: rgba(245, 158, 11, 0.05); }
+    .info.error { border-color: var(--error-color); background-color: rgba(239, 68, 68, 0.05); }
+    
+    details { border: 1px solid var(--border-color); border-radius: 8px; margin-top: 25px; background-color: transparent; transition: background-color 0.3s ease; }
+    details[open] { background-color: var(--surface-color); }
+    summary { font-size: 1.2em; font-weight: 500; color: var(--text-color); padding: 15px 20px; cursor: pointer; list-style: none; }
+    summary::-webkit-details-marker { display: none; }
+    summary::before { content: '▶ '; font-size: 0.8em; margin-right: 8px; transition: transform 0.2s; display: inline-block; color: var(--primary-color); }
+    details[open] > summary::before { transform: rotate(90deg); }
+    
+    #batch_log { margin-top: 15px; background-color: #f1f5f9; padding: 15px; border-radius: 4px; min-height: 100px; max-height: 400px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; font-family: monospace; }
+    .prompt-section { border: 1px dashed var(--border-color); padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+    .prompt-section-title { font-weight: bold; margin-bottom: 15px; color: var(--primary-color); }
+
+    .spinner { border: 4px solid var(--border-color); width: 36px; height: 36px; border-radius: 50%; border-left-color: var(--primary-color); animation: spin 1s ease-in-out infinite; margin: 20px auto; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    /* --- ✨ 新增: Chat & Async UI Styles --- */
+    #chat_container { display: flex; flex-direction: column; height: 70vh; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; }
+    #chat_window { flex-grow: 1; overflow-y: auto; padding: 20px; background-color: var(--chat-bg); display: flex; flex-direction: column;}
+    .chat-message { display: flex; margin-bottom: 20px; max-width: 85%; }
+    .chat-message .avatar { width: 40px; height: 40px; border-radius: 50%; background-color: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; }
+    .chat-message .message-content { margin-left: 15px; padding: 12px 18px; border-radius: 18px; word-break: break-word; }
+    .chat-message.user-message { align-self: flex-end; flex-direction: row-reverse; }
+    .chat-message.user-message .message-content { background-color: var(--chat-user-bubble); margin-left: 0; margin-right: 15px; }
+    .chat-message.assistant-message { align-self: flex-start; }
+    .chat-message.assistant-message .message-content { background-color: var(--chat-assistant-bubble); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .message-content p { margin: 0 0 10px 0; }
+    .message-content pre { background-color: #2D3748; color: #F7F9FC; padding: 15px; border-radius: 8px; overflow-x: auto;}
+    .message-content code { background-color: #E2E8F0; padding: 2px 5px; border-radius: 4px; font-family: "SF Mono", monospace; }
+    .blinking-cursor { animation: blink 1s step-end infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+    #chat_input_area { display: flex; padding: 15px; border-top: 1px solid var(--border-color); background-color: var(--surface-color); align-items: center; }
+    #chat_input { min-height: 50px; height: 50px; flex-grow: 1; border-radius: 25px; padding: 12px 20px; resize: none; margin-right: 15px; }
+    #chat_send_btn { border-radius: 25px; padding: 0 25px; height: 50px; flex-shrink: 0;}
+    .chat-controls { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;}
+
+    #async_results_table { width: 100%; margin-top: 20px; border-collapse: collapse; }
+    #async_results_table th, #async_results_table td { border: 1px solid var(--border-color); padding: 12px; text-align: left; vertical-align: top;}
+    #async_results_table th { background-color: var(--bg-color); }
+    .status-processing { color: var(--warning-color); font-weight: bold; }
+    .status-success { color: var(--success-color); font-weight: bold; }
+    .status-fail { color: var(--error-color); font-weight: bold; }
+    .result-cell pre { white-space: pre-wrap; word-break: break-all; margin: 0; font-size: 0.9em; }
+
 </style>
 </head>
 <body>
@@ -220,20 +249,21 @@
         <h1 class="banner-text-logo">ALFRED X IP</h1>
         <div class="copyright-info">
             <span>Copyright © 2025 Alfred Shi 保留所有权利.</span>
-            <span class="version-number">版本号: v8.1 (Flex-Prompt)</span>
+            <span class="version-number">版本号: v9.0 (Stream & Async)</span>
         </div>
     </header>
 
     <div class="main-content">
         <div class="tab-container">
-            <button class="tab-button active" onclick="switchTab('generator')">功能一：生成请求文件</button>
-            <button class="tab-button" onclick="switchTab('batch')">功能二：批量请求</button>
-            <button class="tab-button" onclick="switchTab('reporter')">功能三：生成报告</button>
-            <button class="tab-button" onclick="switchTab('instant')">功能四：即时工具</button>
+            <button class="tab-button" onclick="switchTab('generator')">功能一：批处理文件</button>
+            <button class="tab-button" onclick="switchTab('batch')">功能二：大型批处理</button>
+            <button class="tab-button" onclick="switchTab('reporter')">功能三：报告生成</button>
+            <button class="tab-button active" onclick="switchTab('instant')">功能四：即时对话</button>
+            <button class="tab-button" onclick="switchTab('async_batch')">功能五：小批量异步</button>
         </div>
 
         <!-- 功能一：生成请求文件 -->
-        <div id="generator-tab" class="tab-content active">
+        <div id="generator-tab" class="tab-content">
             <div class="step">
                 <div class="step-header">步骤 1: 上传专利数据 Excel 并配置分析列</div>
                 <div class="step-content">
@@ -381,52 +411,57 @@
             </div>
         </div>
 
-        <!-- 功能四：即时工具 -->
+        <!-- ✨ 功能四: 即时对话 (全新改造) ✨ -->
         <div id="instant-tab" class="tab-content">
             <div class="step">
-                <div class="step-header">步骤 1: 参数配置</div>
+                <div class="step-header">对话参数配置</div>
                 <div class="step-content">
-                    <div class="config-item row-flex"><label for="instant_api_key_input">API Key:</label><div class="input-wrapper"><input type="password" id="instant_api_key_input" placeholder="请在此处粘贴您的智谱AI API Key"></div></div>
-                    <div class="config-item row-flex"><label for="instant_model_select">模型 (model):</label><div class="input-wrapper"><select id="instant_model_select"></select></div></div>
-                    <div class="config-item row-flex"><label for="instant_temperature_input">温度 (temperature):</label><div class="input-wrapper"><input type="number" id="instant_temperature_input" value="0.1" step="0.1" min="0" max="1"></div></div>
-                    
-                    <details open>
-                        <summary>可编辑的请求模板</summary>
-                         <div class="info warning">您可以按需修改下方的System和User提示。User提示中的 <strong>{userInput}</strong> 会被自动替换为下方输入框中的实际内容。</div>
-                         <div class="prompt-section">
-                            <div class="prompt-section-title">任务一：一键翻译</div>
-                            <div class="config-item"><label for="instant_translate_system">System Prompt:</label><textarea id="instant_translate_system" rows="3"></textarea></div>
-                            <div class="config-item"><label for="instant_translate_user">User Prompt:</label><textarea id="instant_translate_user" rows="2"></textarea></div>
-                        </div>
-                        <div class="prompt-section">
-                            <div class="prompt-section-title">任务二：核心总结</div>
-                            <div class="config-item"><label for="instant_summarize_system">System Prompt:</label><textarea id="instant_summarize_system" rows="3"></textarea></div>
-                            <div class="config-item"><label for="instant_summarize_user">User Prompt:</label><textarea id="instant_summarize_user" rows="2"></textarea></div>
-                        </div>
-                        <div class="prompt-section">
-                            <div class="prompt-section-title">任务三：专利词拓展</div>
-                            <div class="config-item"><label for="instant_expand_keywords_system">System Prompt:</label><textarea id="instant_expand_keywords_system" rows="3"></textarea></div>
-                            <div class="config-item"><label for="instant_expand_keywords_user">User Prompt:</label><textarea id="instant_expand_keywords_user" rows="2"></textarea></div>
-                        </div>
-                    </details>
+                    <div class="config-item row-flex"><label for="chat_api_key_input">API Key:</label><div class="input-wrapper"><input type="password" id="chat_api_key_input" placeholder="请在此处粘贴您的智谱AI API Key"></div></div>
+                    <div class="chat-controls">
+                        <div class="config-item row-flex" style="flex-grow:1;"><label for="chat_model_select">模型:</label><div class="input-wrapper"><select id="chat_model_select"></select></div></div>
+                        <div class="config-item row-flex" style="flex-grow:1;"><label for="chat_persona_select">对话角色:</label><div class="input-wrapper"><select id="chat_persona_select"></select></div></div>
+                        <button id="chat_new_btn" class="small-button">开启新对话</button>
+                    </div>
+                </div>
+            </div>
+            <div id="chat_container">
+                <div id="chat_window">
+                    <!-- 聊天消息会动态插入这里 -->
+                </div>
+                <div id="chat_input_area">
+                    <textarea id="chat_input" placeholder="输入您的问题..." rows="1"></textarea>
+                    <button id="chat_send_btn">发送</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ✨ 功能五: 小批量异步 (全新) ✨ -->
+        <div id="async_batch-tab" class="tab-content">
+            <div class="step">
+                <div class="step-header">步骤 1: 配置与输入</div>
+                <div class="step-content">
+                    <div class="config-item row-flex"><label for="async_api_key_input">API Key:</label><div class="input-wrapper"><input type="password" id="async_api_key_input" placeholder="请在此处粘贴您的智谱AI API Key"></div></div>
+                    <div class="config-item row-flex"><label for="async_model_select">模型 (推荐 Flash):</label><div class="input-wrapper"><select id="async_model_select"></select></div></div>
+                    <div class="config-item">
+                        <label for="async_system_prompt">系统提示 (将应用于所有任务):</label>
+                        <textarea id="async_system_prompt" rows="3">你是一个高效的专利文本分析助手，请根据用户要求对提供的文本进行处理，并只返回核心结果。</textarea>
+                    </div>
+                    <div class="config-item">
+                        <label for="async_input_list">输入列表 (每行一个任务):</label>
+                        <textarea id="async_input_list" rows="10" placeholder="例如：&#10;总结这段文本的核心技术点：...[专利摘要1]...&#10;翻译这个句子：...[句子1]...&#10;提取该发明的关键词：...[权利要求1]..."></textarea>
+                    </div>
+                    <button id="async_start_btn">提交异步任务</button>
                 </div>
             </div>
             <div class="step">
-                <div class="step-header">步骤 2: 输入内容并选择操作</div>
+                <div class="step-header">步骤 2: 任务进度与结果</div>
                 <div class="step-content">
-                     <textarea id="instant_input" placeholder="在此处粘贴或输入您想处理的内容..."></textarea>
-                     <div style="display: flex; justify-content: center; gap: 15px; margin-top: 20px; flex-wrap: wrap;">
-                        <button id="instant_translate_btn" class="action-button">一键翻译</button>
-                        <button id="instant_summarize_btn" class="action-button">核心总结</button>
-                        <button id="instant_keywords_btn" class="action-button">专利词拓展</button>
-                     </div>
-                </div>
-            </div>
-            <div class="step">
-                <div class="step-header">步骤 3: 即时结果</div>
-                <div class="step-content">
-                    <div id="instant_output" class="preview-output" style="min-height: 150px;">
-                        请在上方输入内容并选择操作...
+                    <div id="async_progress_info" class="info" style="text-align:center;">等待提交任务...</div>
+                    <div style="overflow-x:auto;">
+                        <table id="async_results_table">
+                            <thead><tr><th>#</th><th>输入内容 (预览)</th><th>状态</th><th>结果 / 错误</th></tr></thead>
+                            <tbody id="async_results_tbody"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -436,24 +471,29 @@
 </div>
 
 <script>
-// --- 全局配置与变量 ---
+// --- [v9.0] 全局配置与变量 ---
 const BACKEND_URL = 'https://patent-workbench-backend.onrender.com';
-const AVAILABLE_MODELS = ["glm-4-flashX-250414", "glm-4-flash", "glm-4-long"];
-const INSTANT_PROMPT_TEMPLATES = {
-    "translate": {
-        "system": "你是一个专业精通各技术领域术语的、精通多国语言的专利文本翻译引擎。你的任务是自动检测用户输入专利文本的语言并将其翻译成中文。请直接返回翻译后的文本，不要添加任何额外的解释或说明。",
-        "user": "请翻译以下内容：\n\n{userInput}"
+const AVAILABLE_MODELS = ["glm-4-flash-250414", "glm-4-flashX-250414", "glm-4-flash", "glm-4-long"];
+const CHAT_PERSONAS = {
+    "patent_analyzer": {
+        "name": "资深专利分析师",
+        "system": "你是一位顶级的专利分析师和信息架构师，极其擅长从复杂、冗长的专利文本中快速提炼核心技术原理、解决方案、技术问题和效果。你的回答应该专业、结构清晰、逻辑严谨。"
     },
-    "summarize": {
-        "system": "你是一位顶级的专利分析师和信息架构师，极其擅长从复杂、冗长的专利文本中快速提炼核心技术原理、技术方案摘要。你的输出应该是结构清晰、逻辑严谨、高度浓缩的技术方案摘要和原理内容。",
-        "user": "请深入分析以下专利文本，并总结其核心原理和内容摘要：\n\n{userInput}"
+    "translator": {
+        "name": "专业技术翻译",
+        "system": "你是一个专业精通各技术领域术语的、精通多国语言的专利文本翻译引擎。你的任务是自动检测用户输入专利文本的语言并将其翻译成中文或英文。请直接返回翻译后的文本，不要添加任何额外的解释或说明。"
     },
-    "expand_keywords": {
-        "system": "你是一名资深的专利检索专家和技术分析师。你的任务是根据用户提供的技术方案点，拓展出一系列用于专利数据库检索的中文以及英文同义词、近义词、上下位概念、相关技术术语以及不同表达方式。输出应该是一个清晰、逗号分隔的中英文关键词或短语列表，并附上相关简单例句。",
-        "user": "请围绕以下核心关键词进行专利检索词拓展，提供一个全面的关键词列表：\n\n{userInput}"
+    "keyword_expander": {
+        "name": "专利检索词专家",
+        "system": "你是一名资深的专利检索专家。你的任务是根据用户提供的技术点，拓展出一系列用于专利数据库检索的中英文同义词、近义词、上下位概念和相关技术术语。输出应该清晰、格式化，便于复制使用。"
+    },
+    "general_assistant": {
+        "name": "通用助手",
+        "system": "你是一个乐于助人的通用AI助手，可以回答各种问题。"
     }
 };
 
+// 旧功能变量
 let gen_workbook = null, gen_currentSheetData = null, gen_columnHeaders = [], gen_jsonlContent = "";
 let rep_workbook = null, rep_sheetData = null, rep_jsonlData = null;
 let rep_finalOutputData = [], rep_outputHeaders = [];
@@ -461,33 +501,49 @@ let batch_fileId = null, batch_batchId = null, batch_outputFileId = null, batch_
 let batch_result_jsonl_content = null;
 let custom_templates = [];
 const preset_templates = [
-    { name: "专利文本翻译", isPreset: true, system: "是一个专业精通各技术领域术语的、精通多国语言的专利文本翻译引擎。你的任务是自动检测用户输入专利文本的语言并将其翻译成中文。请直接返回翻译后的文本，不要添加任何额外的解释或说明。你必须严格遵循输出格式要求。", user: { rules: "请基于以下文本，直接输出翻译后的内容。\n要求：\n1. 结果必须是直接的翻译后中文文本，必须忠实于原文不得臆测，并选择贴合技术领域的专业术语表达", outputFields: [] }},
+    { name: "专利文本翻译", isPreset: true, system: "你是一个专业精通各技术领域术语的、精通多国语言的专利文本翻译引擎。你的任务是自动检测用户输入专利文本的语言并将其翻译成中文。请直接返回翻译后的文本，不要添加任何额外的解释或说明。你必须严格遵循输出格式要求。", user: { rules: "请基于以下文本，直接输出翻译后的内容。\n要求：\n1. 结果必须是直接的翻译后中文文本，必须忠实于原文不得臆测，并选择贴合技术领域的专业术语表达", outputFields: [] }},
     { name: "技术方案解读", isPreset: true, system: "你是一位资深的专利技术分析师。你的任务是基于专利内容，梳理总结其要解决的技术问题，采用的核心方案内容、以及实现的技术效果和最重要的核心关键词短语。", user: { rules: "请分析此专利并按以下JSON格式输出：", outputFields: [ { name: "技术方案", desc: "此处填写技术方案，总结专利的主要方案内容" }, { name: "技术问题", desc: "此处填写该专利可能主要解决的技术问题" }, { name: "技术效果", desc: "此处填写该专利可能带来的技术效果" }, { name: "技术关键词", desc: "此处按照专利文本中构成核心方案的重要程度输出15个关键词或短语" }] }}
 ];
 let autoCheckTimer = null;
 
+// 新功能变量
+let chat_messages = [];
+let async_tasks = {}; // { "task_1": { id: "zhipu_task_id", status: "processing", input: "..." } }
+let async_polling_interval = null;
+
 // --- DOM 元素缓存 ---
 const getEl = id => document.getElementById(id);
+// 功能一
 const genFileInput = getEl('gen_file-input'), genSheetSelector = getEl('gen_sheet-selector');
 const columnConfigContainer = getEl('column-config-container'), columnCountInput = getEl('column-count'), columnConfigArea = getEl('column-config-area');
 const genGenerateBtn = getEl('gen_generate-btn'), genPreviewOutput = getEl('gen_preview_output'), genDownloadBtn = getEl('gen_download-btn'), genReadyInfo = getEl('gen_ready_info');
 const apiModelSelect = getEl('api-model'), apiTempInput = getEl('api-temperature'), apiSystemInput = getEl('api-system-prompt');
 const templateSelector = getEl('template_selector'), templateFileInput = getEl('template_file_input');
 const promptRules = getEl('prompt-rules'), contentInsertionPreview = getEl('content-insertion-preview'), outputFieldsContainer = getEl('output-fields-container');
+// 功能二
 const batchLog = getEl('batch_log'), batchIdReminder = getEl('batch_id_reminder');
 const btnUpload = getEl('batch_step1_upload'), btnCreate = getEl('batch_step2_create'), btnCheck = getEl('batch_step3_check'), btnDownload = getEl('batch_step4_download');
 const autoCheckContainer = getEl('auto-check-container'), autoCheckStatusEl = getEl('auto_check_status');
 const recoverIdInput = getEl('recover_batch_id_input');
+// 功能三
 const repExcelInput = getEl('rep_excel-input'), repSheetSelector = getEl('rep_sheet-selector'), repJsonlInput = getEl('rep_jsonl-input');
 const repGenerateBtn = getEl('rep_generate-report-btn'), repPreview = getEl('rep_output_preview'), repDownloadBtn = getEl('rep_download-report-btn'), repInfoBox = getEl('reporter-info-box');
-const instantApiKeyInput = getEl('instant_api_key_input');
-const instantModelSelect = getEl('instant_model_select');
-const instantTempInput = getEl('instant_temperature_input');
-const instantInput = getEl('instant_input');
-const instantOutput = getEl('instant_output');
-const instantTranslateBtn = getEl('instant_translate_btn');
-const instantSummarizeBtn = getEl('instant_summarize_btn');
-const instantKeywordsBtn = getEl('instant_keywords_btn');
+// 功能四 & 五
+const chatApiKeyInput = getEl('chat_api_key_input');
+const chatModelSelect = getEl('chat_model_select');
+const chatPersonaSelect = getEl('chat_persona_select');
+const chatNewBtn = getEl('chat_new_btn');
+const chatWindow = getEl('chat_window');
+const chatInput = getEl('chat_input');
+const chatSendBtn = getEl('chat_send_btn');
+const asyncApiKeyInput = getEl('async_api_key_input');
+const asyncModelSelect = getEl('async_model_select');
+const asyncSystemPrompt = getEl('async_system_prompt');
+const asyncInputList = getEl('async_input_list');
+const asyncStartBtn = getEl('async_start_btn');
+const asyncProgressInfo = getEl('async_progress_info');
+const asyncResultsTbody = getEl('async_results_tbody');
+
 
 // =================================================================================
 // 初始化
@@ -529,91 +585,266 @@ document.addEventListener('DOMContentLoaded', () => {
     repGenerateBtn.addEventListener('click', parseAndGenerateReport);
     repDownloadBtn.addEventListener('click', downloadFinalReport);
 
-    // 功能四
-    initInstantTools();
-    instantTranslateBtn.addEventListener('click', () => handleInstantRequest('translate'));
-    instantSummarizeBtn.addEventListener('click', () => handleInstantRequest('summarize'));
-    instantKeywordsBtn.addEventListener('click', () => handleInstantRequest('expand_keywords'));
+    // ✨ 初始化新增功能
+    initChat();
+    initAsyncBatch();
+
+    // 默认打开即时对话
+    switchTab('instant');
 });
 
 // =================================================================================
-// 功能四：即时工具
+// ✨ 功能四：即时对话 (流式)
 // =================================================================================
-function initInstantTools() {
-    instantModelSelect.innerHTML = AVAILABLE_MODELS.map(m => `<option value="${m}">${m}</option>`).join('');
-    instantModelSelect.value = "glm-4";
-
-    for (const taskType in INSTANT_PROMPT_TEMPLATES) {
-        getEl(`instant_${taskType}_system`).value = INSTANT_PROMPT_TEMPLATES[taskType].system;
-        getEl(`instant_${taskType}_user`).value = INSTANT_PROMPT_TEMPLATES[taskType].user;
-    }
+function initChat() {
+    chatModelSelect.innerHTML = AVAILABLE_MODELS.map(m => `<option value="${m}">${m}</option>`).join('');
+    chatPersonaSelect.innerHTML = Object.keys(CHAT_PERSONAS).map(key => `<option value="${key}">${CHAT_PERSONAS[key].name}</option>`).join('');
+    
+    chatSendBtn.addEventListener('click', handleStreamChatRequest);
+    chatNewBtn.addEventListener('click', startNewChat);
+    chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleStreamChatRequest();
+        }
+    });
+    chatPersonaSelect.addEventListener('change', startNewChat);
+    
+    startNewChat();
 }
 
-// --- ✨ 核心修复：前端主导，构建完整请求 ✨ ---
-async function handleInstantRequest(taskType) {
-    // 1. 从UI获取所有需要的参数，包括可编辑的模板内容
-    const apiKey = instantApiKeyInput.value.trim();
-    const userInput = instantInput.value.trim();
-    const model = instantModelSelect.value;
-    const temperature = parseFloat(instantTempInput.value);
-    
-    // 实时读取用户可能已经修改过的模板内容
-    const systemPrompt = getEl(`instant_${taskType}_system`).value.trim();
-    const userPromptTemplate = getEl(`instant_${taskType}_user`).value.trim();
+function startNewChat() {
+    const personaKey = chatPersonaSelect.value;
+    const persona = CHAT_PERSONAS[personaKey];
+    chat_messages = [{ role: 'system', content: persona.system }];
+    chatWindow.innerHTML = `<div class="info">新对话已开始。当前角色：<strong>${persona.name}</strong></div>`;
+}
 
-    // 2. 输入验证
-    if (!apiKey) { instantOutput.innerHTML = `<div class="info error">错误：请输入您的 API Key。</div>`; return; }
-    if (!userInput) { instantOutput.innerHTML = `<div class="info error">错误：请输入需要处理的内容。</div>`; return; }
-    if (!systemPrompt || !userPromptTemplate) { instantOutput.innerHTML = `<div class="info error">错误：System 或 User 提示模板不能为空。</div>`; return; }
-    if (userPromptTemplate.indexOf('{userInput}') === -1) {
-        instantOutput.innerHTML = `<div class="info error">错误：User 提示模板中必须包含 {userInput} 占位符。</div>`;
+function addMessageToChatWindow(role, content) {
+    const messageId = `msg-${Date.now()}`;
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `chat-message ${role}-message`;
+    
+    const avatar = `<div class="avatar">${role === 'user' ? 'U' : 'AI'}</div>`;
+    // For user messages, just render the text. For AI, prepare a div to be filled with Markdown.
+    const rawContent = role === 'user' ? content.replace(/</g, "&lt;").replace(/>/g, "&gt;") : content;
+    const contentDiv = `<div id="${messageId}" class="message-content">${rawContent}</div>`;
+
+    if (role === 'user') {
+        messageDiv.innerHTML = contentDiv + avatar;
+    } else {
+        messageDiv.innerHTML = avatar + contentDiv;
+    }
+    
+    chatWindow.appendChild(messageDiv);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+    return messageId;
+}
+
+async function handleStreamChatRequest() {
+    const apiKey = chatApiKeyInput.value.trim();
+    const userInput = chatInput.value.trim();
+    if (!apiKey || !userInput) {
+        alert("请输入 API Key 和您的问题。");
         return;
     }
 
-    // 3. 在前端构建符合智谱API v4规范的 `messages` 数组
-    const finalUserPrompt = userPromptTemplate.replace('{userInput}', userInput);
-    const messages = [
-        { "role": "system", "content": systemPrompt },
-        { "role": "user", "content": finalUserPrompt }
-    ];
+    // 1. 更新对话历史和UI
+    chat_messages.push({ role: 'user', content: userInput });
+    addMessageToChatWindow('user', userInput);
+    chatInput.value = '';
+    chatInput.style.height = '50px';
+    chatSendBtn.disabled = true;
 
-    const allButtons = [instantTranslateBtn, instantSummarizeBtn, instantKeywordsBtn];
-    allButtons.forEach(btn => btn.disabled = true);
-    instantOutput.innerHTML = '<div class="spinner"></div><p style="text-align:center;">正在请求，请稍候...</p>';
-    
+    // 2. 为AI的回答创建占位符
+    const assistantMessageId = addMessageToChatWindow('assistant', '<span class="blinking-cursor">|</span>');
+    const assistantContentEl = getEl(assistantMessageId);
+    let fullResponse = "";
+
     try {
-        // 4. 构建发送到后端代理的完整请求体
-        const requestBody = {
-            apiKey: apiKey,
-            model: model,
-            messages: messages, // 发送构建好的 messages
-            temperature: temperature
-        };
-
-        const response = await fetch(`${BACKEND_URL}/api/instant_request`, {
+        const response = await fetch(`${BACKEND_URL}/api/stream_chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody)
+            body: JSON.stringify({
+                apiKey: apiKey,
+                model: chatModelSelect.value,
+                temperature: 0.7, // A bit more creative for chat
+                messages: chat_messages
+            })
         });
 
-        const result = await response.json();
-
-        // 5. 处理响应
-        if (!response.ok || !result.success) { 
-            const errorMessage = result.error || (result.data ? JSON.stringify(result.data) : '请求失败，未知错误。');
-            throw new Error(errorMessage); 
+        if (!response.ok) {
+            throw new Error(`服务器错误: ${response.status}`);
         }
-        
-        const content = result.data?.content || "未能获取到返回内容。";
-        instantOutput.style.whiteSpace = 'pre-wrap';
-        instantOutput.textContent = content;
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n\n').filter(line => line.startsWith('data: '));
+
+            for (const line of lines) {
+                const data = line.substring(6);
+                if (data === '[DONE]') {
+                    assistantContentEl.innerHTML = marked.parse(fullResponse); // 使用Marked渲染最终内容
+                    continue;
+                }
+                
+                const parsed = JSON.parse(data);
+                if (parsed.error) {
+                    throw new Error(parsed.error);
+                }
+
+                const delta = parsed.choices[0]?.delta?.content || "";
+                if (delta) {
+                    fullResponse += delta;
+                    // 实时渲染Markdown，平滑显示
+                    assistantContentEl.innerHTML = marked.parse(fullResponse + '<span class="blinking-cursor">|</span>');
+                    chatWindow.scrollTop = chatWindow.scrollHeight;
+                }
+            }
+        }
+        chat_messages.push({ role: 'assistant', content: fullResponse });
 
     } catch (error) {
-        instantOutput.innerHTML = `<div class="info error">请求失败: ${error.message}</div>`;
+        assistantContentEl.innerHTML = `<div class="info error">请求失败: ${error.message}</div>`;
     } finally {
-        allButtons.forEach(btn => btn.disabled = false);
+        chatSendBtn.disabled = false;
+        chatInput.focus();
     }
 }
+
+// =================================================================================
+// ✨ 功能五：小批量异步 (Async Batch)
+// =================================================================================
+function initAsyncBatch() {
+    asyncModelSelect.innerHTML = AVAILABLE_MODELS.filter(m => m.includes('flash')).map(m => `<option value="${m}">${m}</option>`).join('');
+    asyncStartBtn.addEventListener('click', handleAsyncBatchSubmit);
+}
+
+async function handleAsyncBatchSubmit() {
+    const apiKey = asyncApiKeyInput.value.trim();
+    const systemPrompt = asyncSystemPrompt.value.trim();
+    const inputs = asyncInputList.value.trim().split('\n').filter(line => line.trim() !== '');
+
+    if (!apiKey || inputs.length === 0) {
+        alert("请输入 API Key 和至少一个任务。");
+        return;
+    }
+    
+    asyncStartBtn.disabled = true;
+    asyncResultsTbody.innerHTML = '';
+    async_tasks = {};
+
+    const submissionPromises = inputs.map(async (inputLine, index) => {
+        const taskId = `task_${index + 1}`;
+        async_tasks[taskId] = { status: 'submitting', input: inputLine, id: null };
+        
+        // Add row to table
+        const row = asyncResultsTbody.insertRow();
+        row.id = `row-${taskId}`;
+        row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${inputLine.substring(0, 50)}...</td>
+            <td class="status-cell">提交中...</td>
+            <td class="result-cell"><div class="spinner" style="width:18px;height:18px;margin:0;"></div></td>
+        `;
+
+        try {
+            const response = await fetch(`${BACKEND_URL}/api/async_submit`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    apiKey: apiKey,
+                    model: asyncModelSelect.value,
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        { role: 'user', content: inputLine }
+                    ]
+                })
+            });
+            const result = await response.json();
+            if (!result.success) throw new Error(result.error);
+            
+            async_tasks[taskId].id = result.data.task_id;
+            async_tasks[taskId].status = 'processing';
+            updateAsyncTableRow(taskId, 'processing', '已提交，等待处理...');
+
+        } catch (error) {
+            async_tasks[taskId].status = 'fail';
+            updateAsyncTableRow(taskId, 'fail', `提交失败: ${error.message}`);
+        }
+    });
+
+    await Promise.all(submissionPromises);
+    startAsyncPolling();
+}
+
+function updateAsyncTableRow(taskId, status, content) {
+    const row = getEl(`row-${taskId}`);
+    if (!row) return;
+    
+    const statusClass = `status-${status.toLowerCase()}`;
+    row.querySelector('.status-cell').innerHTML = `<span class="${statusClass}">${status.toUpperCase()}</span>`;
+    row.querySelector('.result-cell').innerHTML = content;
+}
+
+function startAsyncPolling() {
+    if (async_polling_interval) clearInterval(async_polling_interval);
+    
+    let completed = 0;
+    const total = Object.keys(async_tasks).length;
+    asyncProgressInfo.innerHTML = `任务轮询中... 已完成 ${completed} / ${total}`;
+    asyncProgressInfo.style.display = 'block';
+
+    async_polling_interval = setInterval(async () => {
+        const apiKey = asyncApiKeyInput.value.trim();
+        let tasksToCheck = Object.entries(async_tasks).filter(([_, task]) => task.status === 'processing');
+        
+        if (tasksToCheck.length === 0) {
+            clearInterval(async_polling_interval);
+            async_polling_interval = null;
+            asyncStartBtn.disabled = false;
+            asyncProgressInfo.innerHTML = `所有任务处理完毕！已完成 ${completed} / ${total}`;
+            return;
+        }
+
+        for (const [localId, task] of tasksToCheck) {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/async_retrieve`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ apiKey: apiKey, task_id: task.id })
+                });
+                const result = await response.json();
+                if (!result.success) throw new Error(result.error);
+                
+                const taskData = result.data;
+                if (taskData.task_status === 'SUCCESS') {
+                    async_tasks[localId].status = 'success';
+                    const content = taskData.choices[0].message.content;
+                    updateAsyncTableRow(localId, 'success', `<pre>${content}</pre>`);
+                    completed++;
+                } else if (taskData.task_status === 'FAIL') {
+                    async_tasks[localId].status = 'fail';
+                    updateAsyncTableRow(localId, 'fail', `任务失败: ${taskData.error?.message || '未知错误'}`);
+                    completed++;
+                }
+            } catch (error) {
+                 async_tasks[localId].status = 'fail';
+                 updateAsyncTableRow(localId, 'fail', `查询失败: ${error.message}`);
+                 completed++;
+            }
+        }
+        asyncProgressInfo.innerHTML = `任务轮询中... 已完成 ${completed} / ${total}`;
+
+    }, 5000); // Poll every 5 seconds
+}
+
 
 // =================================================================================
 // 功能三：解析结果生成报告
@@ -960,8 +1191,6 @@ function buildUserPrompt() {
     }
     return [rules, contentInsertionTemplate.trim(), outputFormat].filter(Boolean).join('\n\n');
 }
-// index.html (find and replace this entire function)
-
 function generateJsonl() {
     if (!gen_currentSheetData) return;
 
@@ -972,16 +1201,14 @@ function generateJsonl() {
     const requests = gen_currentSheetData.map((row, index) => {
         let finalUserPrompt = userPromptTemplate;
         selectedColumns.forEach(colName => {
-            // Use a regex with the 'g' flag to replace all occurrences of the placeholder
             const placeholder = new RegExp(`{${colName}}`, 'g');
             finalUserPrompt = finalUserPrompt.replace(placeholder, row[colName] || '');
         });
 
-        // --- ✨ [CORE FIX] Construct the request object according to the official batch API spec ---
         return {
-            "custom_id": `request-${index + 1}`, // Unique ID for matching results
-            "method": "POST",                    // Added: Required by the API
-            "url": "/v4/chat/completions",       // Added: Required by the API
+            "custom_id": `request-${index + 1}`,
+            "method": "POST",
+            "url": "/v4/chat/completions",
             "body": {
                 model: apiModelSelect.value,
                 messages: [
@@ -991,14 +1218,11 @@ function generateJsonl() {
                 temperature: parseFloat(apiTempInput.value)
             }
         };
-        // The incorrect "request_id" field has been removed.
     });
 
     gen_jsonlContent = requests.map(JSON.stringify).join('\n');
     
-    // Update UI
     genPreviewOutput.style.display = 'block';
-    // Preview the first 3 generated requests to verify the new format
     genPreviewOutput.innerHTML = requests.slice(0, 3).map(req => `<div class="preview-item">${JSON.stringify(req, null, 2)}</div>`).join('');
     genDownloadBtn.style.display = 'inline-block';
     genReadyInfo.style.display = 'block';
@@ -1165,6 +1389,14 @@ function switchTab(tabName) {
     getEl(`${tabName}-tab`).classList.add("active");
     document.querySelector(`.tab-button[onclick="switchTab('${tabName}')"]`).classList.add("active");
 
+    // Clear polling interval when leaving async tab
+    if (tabName !== 'async_batch' && async_polling_interval) {
+        clearInterval(async_polling_interval);
+        async_polling_interval = null;
+        console.log("Async polling stopped due to tab switch.");
+    }
+    
+    // Handle reporter tab logic
     if (tabName === 'reporter' && batch_result_jsonl_content) {
         repInfoBox.style.display = 'block';
         rep_jsonlData = parseJsonl(batch_result_jsonl_content);

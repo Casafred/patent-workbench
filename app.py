@@ -1,10 +1,11 @@
-# app.py (已更新为“智能代理”模式)
+# app.py (v9.0 - Now with Streaming and Async support)
 import os
-from flask import Flask, request, jsonify, make_response, send_from_directory
+import json
+import traceback
+from io import BytesIO
+from flask import Flask, request, jsonify, make_response, send_from_directory, Response
 from flask_cors import CORS
 from zhipuai import ZhipuAI
-import json
-from io import BytesIO
 
 # --- 初始化 Flask 应用 ---
 app = Flask(__name__, static_folder='.', static_url_path='')
@@ -31,50 +32,92 @@ def index():
     return send_from_directory('.', 'index.html')
 
 
-# --- [核心修改] 即时同步请求端点 (智能代理模式) ---
-@app.route('/api/instant_request', methods=['POST'])
-def instant_request():
+# --- [新增] 功能四：即时对话 (流式输出) ---
+@app.route('/api/stream_chat', methods=['POST'])
+def stream_chat():
     req_data = request.get_json()
-    
-    # 1. 从前端获取所有需要的参数，包括已经构建好的messages
     api_key = req_data.get('apiKey')
     model = req_data.get('model')
     temperature = req_data.get('temperature')
-    messages = req_data.get('messages') # 直接接收前端构建好的messages
+    messages = req_data.get('messages')
 
-    # 2. 校验参数
     if not all([api_key, model, messages]):
-        return create_response(error="apiKey, model, 和 messages 均为必填项。")
-    if temperature is None: # temperature可以是0，所以要检查是否为None
-        return create_response(error="temperature 是必填项。")
-    if not isinstance(messages, list) or len(messages) == 0:
-        return create_response(error="messages 必须是一个非空列表。")
+        return "Error: apiKey, model, and messages are required.", 400
 
+    def generate():
+        try:
+            client = ZhipuAI(api_key=api_key)
+            response = client.chat.completions.create(
+                model=model,
+                messages=messages,
+                stream=True,
+                temperature=temperature,
+            )
+            for chunk in response:
+                # SSE format: data: {...}\n\n
+                yield f"data: {chunk.model_dump_json()}\n\n"
+            # Send a final DONE message (optional, but good practice)
+            yield "data: [DONE]\n\n"
+        except Exception as e:
+            print(f"Error during stream generation: {traceback.format_exc()}")
+            error_message = json.dumps({"error": str(e)})
+            yield f"data: {error_message}\n\n"
+
+    return Response(generate(), mimetype='text/event-stream')
+
+
+# --- [新增] 功能五：小批量异步 - 提交任务 ---
+@app.route('/api/async_submit', methods=['POST'])
+def async_submit():
+    req_data = request.get_json()
+    api_key = req_data.get('apiKey')
+    # Let's use a fixed, fast model for async tasks, or get it from request
+    model = req_data.get('model', 'glm-4-flash') 
+    temperature = req_data.get('temperature', 0.1)
+    messages = req_data.get('messages')
+
+    if not all([api_key, messages]):
+        return create_response(error="apiKey and messages are required.")
+    
+    try:
+        client = ZhipuAI(api_key=api_key)
+        response = client.chat.asyncCompletions.create(
+            model=model,
+            messages=messages,
+            temperature=temperature,
+        )
+        # Return the task ID so the frontend can track it
+        return create_response(data={'task_id': response.id})
+    except Exception as e:
+        print(f"Error in async_submit: {traceback.format_exc()}")
+        return create_response(error=f"提交异步任务时发生错误: {str(e)}")
+
+
+# --- [新增] 功能五：小批量异步 - 查询结果 ---
+@app.route('/api/async_retrieve', methods=['POST'])
+def async_retrieve():
+    req_data = request.get_json()
+    api_key = req_data.get('apiKey')
+    task_id = req_data.get('task_id')
+
+    if not all([api_key, task_id]):
+        return create_response(error="apiKey and task_id are required.")
 
     try:
         client = ZhipuAI(api_key=api_key)
-
-        # 3. 直接使用前端传来的参数调用ZhipuAI SDK
-        response = client.chat.completions.create(
-            model=model,
-            messages=messages,
-            stream=False,
-            temperature=temperature,
-        )
-        
-        content = response.choices[0].message.content
-        return create_response(data={"content": content})
-
+        retrieved_task = client.chat.asyncCompletions.retrieve(id=task_id)
+        # Convert the Pydantic model to a dictionary to be JSON-serializable
+        task_data = json.loads(retrieved_task.model_dump_json())
+        return create_response(data=task_data)
     except Exception as e:
-        import traceback
-        print(f"Error in instant_request: {traceback.format_exc()}")
-        return create_response(error=f"即时请求过程中发生错误: {str(e)}")
+        print(f"Error in async_retrieve: {traceback.format_exc()}")
+        return create_response(error=f"查询异步任务时发生错误: {str(e)}")
 
 
 # --- 批量处理相关端点 (保持不变) ---
-# ... (您的批量处理代码无需改动，此处省略)
 @app.route('/api/upload', methods=['POST'])
 def upload_file():
+    # (此部分代码保持不变，此处省略)
     req_data = request.get_json()
     api_key = req_data.get('apiKey')
     jsonl_content = req_data.get('jsonlContent')
@@ -93,6 +136,7 @@ def upload_file():
 
 @app.route('/api/create_batch', methods=['POST'])
 def create_batch_task():
+    # (此部分代码保持不变，此处省略)
     req_data = request.get_json()
     api_key = req_data.get('apiKey')
     file_id = req_data.get('fileId')
@@ -114,6 +158,7 @@ def create_batch_task():
 
 @app.route('/api/check_status', methods=['POST'])
 def check_batch_status():
+    # (此部分代码保持不变，此处省略)
     req_data = request.get_json()
     api_key = req_data.get('apiKey')
     batch_id = req_data.get('batchId')
@@ -130,6 +175,7 @@ def check_batch_status():
 
 @app.route('/api/download_result', methods=['POST'])
 def download_result_file():
+    # (此部分代码保持不变，此处省略)
     req_data = request.get_json()
     api_key = req_data.get('apiKey')
     file_id = req_data.get('fileId')
@@ -155,8 +201,6 @@ def download_result_file():
         print(f"Error in download_result_file: {traceback.format_exc()}")
         return create_response(error=f"获取文件内容时发生错误: {str(e)}")
 
-
 # 用于本地开发的启动命令
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5001)), debug=True)
-
