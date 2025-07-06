@@ -689,23 +689,32 @@ async function handleStreamChatRequest() {
 
             for (const line of lines) {
                 const data = line.substring(6);
-                if (data === '[DONE]') {
-                    assistantContentEl.innerHTML = marked.parse(fullResponse); // 使用Marked渲染最终内容
-                    continue;
-                }
+if (data === '[DONE]') {
+    // ✨ 核心修复：在调用前检查 marked 是否存在
+    if (typeof marked !== 'undefined') {
+        assistantContentEl.innerHTML = marked.parse(fullResponse); // 库存在，用Marked渲染
+    } else {
+        assistantContentEl.textContent = fullResponse; // 库不存在，显示纯文本
+    }
+    continue;
+}
                 
                 const parsed = JSON.parse(data);
                 if (parsed.error) {
                     throw new Error(parsed.error);
                 }
 
-                const delta = parsed.choices[0]?.delta?.content || "";
-                if (delta) {
-                    fullResponse += delta;
-                    // 实时渲染Markdown，平滑显示
-                    assistantContentEl.innerHTML = marked.parse(fullResponse + '<span class="blinking-cursor">|</span>');
-                    chatWindow.scrollTop = chatWindow.scrollHeight;
-                }
+const delta = parsed.choices[0]?.delta?.content || "";
+if (delta) {
+    fullResponse += delta;
+    // ✨ 核心修复：实时渲染时也增加检查
+    if (typeof marked !== 'undefined') {
+        assistantContentEl.innerHTML = marked.parse(fullResponse + '<span class="blinking-cursor">|</span>');
+    } else {
+        assistantContentEl.textContent = fullResponse + '|';
+    }
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+}
             }
         }
         chat_messages.push({ role: 'assistant', content: fullResponse });
