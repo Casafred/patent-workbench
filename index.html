@@ -558,6 +558,7 @@ const appState = {
     }
 };
 
+const BACKEND_URL = 'https://patent-workbench-backend.onrender.com';
 const AVAILABLE_MODELS = ["glm-4-flash-250414", "glm-4-flashX-250414", "glm-4-flash", "glm-4-long"];
 const BATCH_MODELS = ["glm-4-flashX-250414" , "glm-4-flash","glm-4-long"];
 const ASYNC_MODELS = ["glm-4-flash", "glm-4-flashX-250414", "glm-4-flash-250414"];
@@ -660,6 +661,8 @@ function initApiKeyConfig() {
     });
 }
 
+// 你可以直接复制下面的整个函数，替换掉你文件里原来的 apiCall 函数
+
 async function apiCall(endpoint, body, method = 'POST', isStream = false) {
     if (!appState.apiKey) {
         alert("请点击右上角 ⚙️ 设置并保存您的 API Key。");
@@ -671,37 +674,35 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false) {
         'Authorization': `Bearer ${appState.apiKey}`
     };
 
-    // 此处假设您有一个后端代理在 `/api` 路径下转发请求到智谱AI
-    const response = await fetch(`/api${endpoint}`, {
-        method,
-        headers,
-        body: body ? JSON.stringify(body) : null
-    });
-    
-    if (isStream) {
-        if (!response.ok) throw new Error(`服务器流式传输错误: ${response.status} ${response.statusText}`);
-        return response.body.getReader();
-    }
+    // 使用我们定义的后端URL常量来创建完整的请求地址
+    const fullUrl = `${BACKEND_URL}/api${endpoint}`;
 
-    const responseText = await response.text();
-    let result;
     try {
-        result = JSON.parse(responseText);
-    } catch(e) {
-        throw new Error(`无法解析服务器响应: ${responseText}`);
-    }
+        const response = await fetch(fullUrl, {
+            method,
+            headers,
+            body: body ? JSON.stringify(body) : null
+        });
 
-    if (!response.ok) {
-        const errorMessage = result?.error?.message || result.error || `HTTP 错误: ${response.status}`;
-        throw new Error(errorMessage);
-    }
-    
-    if (result.success === false) {
-        throw new Error(result.error || '后端返回操作失败');
-    }
+        if (!response.ok) {
+            // 如果服务器返回错误状态码 (如 4xx, 5xx)，则尝试解析错误信息
+            const errorData = await response.json().catch(() => ({ message: response.statusText }));
+            throw new Error(`请求失败: ${errorData.message || response.statusText}`);
+        }
 
-    return result.data || result;
+        if (isStream) {
+            return response.body.getReader();
+        } else {
+            return await response.json();
+        }
+    } catch (error) {
+        console.error('API Call Error:', error);
+        // 你可以在这里添加更友好的用户错误提示
+        // 例如: displayErrorInChat(`API调用失败: ${error.message}`);
+        throw error; // 重新抛出错误，让调用者知道失败了
+    }
 }
+
 
 
 // =================================================================================
