@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>专利分析智能工作台 v12.0 REFACTORED</title>
+    <title>专利分析智能工作台 v12.1 LINKER</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="marked.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
-    /* --- [v12.0 REFACTORED Design System] --- */
+    /* --- [v12.1 LINKER Design System] --- */
     :root {
         --bg-color: #F0FDF4; 
         --surface-color: #FFFFFF;
@@ -87,20 +87,19 @@
     summary::-webkit-details-marker { display: none; }
     .prompt-section { border: 1px dashed var(--border-color); padding: 15px; border-radius: 8px; margin-bottom: 20px; }
     .prompt-section-title { font-weight: bold; margin-bottom: 15px; color: var(--primary-color-dark); }
-    /* --- Chat UI --- */
+    
+    /* --- [MODIFIED] Chat UI --- */
     #chat_container { display: flex; flex-direction: column; height: 65vh; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; }
     #chat_window { flex-grow: 1; overflow-y: auto; padding: 20px; background-color: var(--chat-bg); display: flex; flex-direction: column;}
-    .chat-message { display: flex; margin-bottom: 20px; max-width: 85%; position: relative;}
-    .chat-message .avatar { width: 40px; height: 40px; border-radius: 50%; background-color: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; }
-    .chat-message .message-content { margin-left: 15px; padding: 12px 18px; border-radius: 18px; word-break: break-word; }
-    .chat-message .message-actions { position: absolute; top: -10px; display: flex; gap: 5px; background: var(--surface-color); border-radius: 20px; padding: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); opacity: 0; visibility: hidden; transition: all .2s; }
-    .chat-message:hover .message-actions { opacity: 1; visibility: visible; }
+    .chat-message { display: flex; gap: 15px; margin-bottom: 20px; max-width: 90%; }
+    .chat-message .avatar { width: 40px; height: 40px; border-radius: 50%; background-color: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; margin-top: 5px; }
+    .message-body { flex-grow: 1; display: flex; flex-direction: column; }
+    .message-content { padding: 12px 18px; border-radius: 18px; word-break: break-word; }
+    .message-footer { display: flex; justify-content: flex-end; padding: 8px 10px 0 10px; border-top: 1px solid rgba(0,0,0,0.05); margin-top: 10px; }
     .chat-message.user-message { align-self: flex-end; flex-direction: row-reverse; }
-    .chat-message.user-message .message-content { background-color: var(--chat-user-bubble); margin-left: 0; margin-right: 15px; }
-    .chat-message.user-message .message-actions { right: 55px; }
+    .chat-message.user-message .message-content { background-color: var(--chat-user-bubble); }
     .chat-message.assistant-message { align-self: flex-start; }
     .chat-message.assistant-message .message-content { background-color: var(--chat-assistant-bubble); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    .chat-message.assistant-message .message-actions { left: 55px; }
     .message-content p { margin: 0 0 10px 0; }
     .message-content pre { background-color: #2D3748; color: #F7F9FC; padding: 15px; border-radius: 8px; overflow-x: auto;}
     .blinking-cursor { animation: blink 1s step-end infinite; }
@@ -110,17 +109,20 @@
     #chat_input { min-height: 50px; max-height: 300px; height: 50px; padding: 12px 50px 12px 20px; overflow-y: auto; }
     #chat_char_count { position: absolute; bottom: 8px; right: 15px; font-size: 12px; color: var(--text-color-secondary); pointer-events: none; }
     #chat_send_btn { height: 50px; flex-shrink: 0; }
-    .chat-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 20px;}
-    .chat-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
-    /* --- NEW Async Batch Styles --- */
+    
+    /* --- [MODIFIED] Async Batch Styles --- */
     .async-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
     @media (max-width: 992px) { .async-layout { grid-template-columns: 1fr; } }
     .async-column .step-header { margin-top: 0; }
     .scrollable-list { max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color); padding: 10px; border-radius: 8px; }
     .list-item { display: flex; align-items: center; padding: 8px; border-bottom: 1px solid var(--border-color); gap: 10px; }
     .list-item:last-child { border-bottom: none; }
-    .list-item input[type="text"] { flex-grow: 1; }
     .list-item .item-content { flex-grow: 1; font-size: 0.9em; line-height: 1.4; word-break: break-all; }
+    .async-linker-layout { display: grid; grid-template-columns: 1fr auto 1fr; gap: 20px; align-items: center; margin-top: 20px; }
+    .async-linker-column { padding: 15px; border: 1px solid var(--border-color); border-radius: 8px; }
+    .async-linker-column h4 { margin-top: 0; color: var(--primary-color-dark); }
+    #async-requests-preview-list .request-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px dashed var(--border-color); font-size: 0.9em; }
+    
     #async_results_table { width: 100%; margin-top: 20px; border-collapse: collapse; }
     #async_results_table th, #async_results_table td { border: 1px solid var(--border-color); padding: 12px; text-align: left; vertical-align: top;}
     .status-processing { color: var(--warning-color); font-weight: bold; }
@@ -136,9 +138,9 @@
         <div class="app-branding">
             <div class="logo-container">
                 <h1 class="banner-text-logo">ALFRED X IP</h1>
-                <img src="Alfred X IP LOGO.webp" alt="Alfred X IP Logo" class="image-logo">
+                <img src="Alfred X IP Logo.jpg" alt="Alfred X IP Logo" class="image-logo">
             </div>
-            <div class="version-number">版本号: v12.0 REFACTORED</div>
+            <div class="version-number">版本号: v12.1 LINKER</div>
         </div>
         <div class="api-config-section">
             <button id="api_config_toggle_btn" class="api-config-toggle" title="API Key 设置">⚙️</button>
@@ -175,13 +177,13 @@
         <div id="instant-tab" class="tab-content">
             <div class="step">
                 <div class="step-header">对话参数配置</div>
-                <div class="chat-controls">
+                <div class="chat-controls" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 20px;">
                     <div class="config-item"><label for="chat_model_select">模型:</label><select id="chat_model_select"></select></div>
                     <div class="config-item"><label for="chat_context_count">上下文条数 (最近N条):</label><input type="number" id="chat_context_count" value="10" min="0" max="50"></div>
                     <div class="config-item"><label for="chat_persona_select">对话角色:</label><select id="chat_persona_select"></select></div>
                     <div class="config-item"><label for="chat_temperature">温度:</label><input type="number" id="chat_temperature" value="0.7" step="0.1" min="0" max="1"></div>
                 </div>
-                 <div class="chat-actions">
+                 <div class="chat-actions" style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
                     <button id="chat_new_btn" class="small-button">开启新对话</button>
                     <button id="chat_export_btn" class="small-button">导出聊天记录</button>
                     <button id="chat_add_persona_btn" class="small-button">新增角色</button>
@@ -228,7 +230,7 @@
                         </div>
                         <button id="async_add_template_btn" class="small-button">保存为新模板</button>
                         <hr style="margin: 20px 0; border-color: var(--border-color);">
-                        <label><strong>已保存的模板 (勾选以使用):</strong></label>
+                        <label><strong>已保存的模板 (点击删除):</strong></label>
                         <div id="async_templates_list" class="scrollable-list"></div>
                     </div>
                 </div>
@@ -236,7 +238,6 @@
                 <div class="async-column">
                      <div class="step">
                         <div class="step-header">步骤 3: 添加输入内容</div>
-                        <!-- Sub-tabs for input method -->
                         <div class="sub-tab-container" style="margin-bottom: 20px;">
                             <button class="sub-tab-button active" onclick="switchAsyncInput(event, 'manual')">手动添加</button>
                             <button class="sub-tab-button" onclick="switchAsyncInput(event, 'excel')">Excel导入</button>
@@ -264,17 +265,37 @@
                             <button id="async_load_excel_btn" class="small-button" disabled>从Excel加载输入</button>
                         </div>
                         <hr style="margin: 20px 0; border-color: var(--border-color);">
-                        <label><strong>已添加的输入 (勾选以使用):</strong></label>
+                        <label><strong>已添加的输入 (点击删除):</strong></label>
                         <div id="async_inputs_list" class="scrollable-list"></div>
                     </div>
                 </div>
             </div>
-
+            
+            <!-- [MODIFIED] Step 4 for linking -->
             <div class="step">
-                <div class="step-header">步骤 4: 组合并提交任务</div>
-                <button id="async_prepare_requests_btn">1. 生成请求预览</button>
-                <div class="info" id="async_requests_preview" style="margin-top:15px; display:none;"></div>
-                <button id="async_submit_batch_btn" style="margin-top:15px; display:none;">2. 提交全部请求</button>
+                <div class="step-header">步骤 4: 组合请求任务</div>
+                <div class="async-linker-layout">
+                    <div class="async-linker-column">
+                        <h4>可用输入</h4>
+                        <div id="async_link_inputs_list" class="scrollable-list"></div>
+                    </div>
+                    <button id="async_link_btn" title="将右侧选中的模板，链接到左侧选中的输入">🔗<br>链接<br>选中项</button>
+                    <div class="async-linker-column">
+                        <h4>可用模板</h4>
+                        <div id="async_link_templates_list" class="scrollable-list"></div>
+                    </div>
+                </div>
+                
+                <hr style="margin: 25px 0; border-color: var(--border-color);">
+
+                <h4>待提交的请求列表 (<span id="async_requests_count">0</span>)</h4>
+                <div id="async_requests_preview_list" class="scrollable-list" style="max-height: 300px;">
+                    <div class="info">请通过上面的“链接选中项”按钮来创建请求。</div>
+                </div>
+                <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center;">
+                     <button id="async_clear_requests_btn" class="small-button delete-button">全部清空</button>
+                     <button id="async_submit_batch_btn" disabled>提交全部请求</button>
+                </div>
             </div>
 
             <div class="step">
@@ -426,7 +447,7 @@
 
 <script>
 // =================================================================================
-// v12.0 - 全局应用状态与配置
+// v12.1 - 全局应用状态与配置
 // =================================================================================
 const appState = {
     apiKey: '',
@@ -435,17 +456,18 @@ const appState = {
         histories: {},
         currentPersonaId: null,
     },
-    // [REFACTORED] asyncBatch state
+    // [MODIFIED] asyncBatch state
     asyncBatch: {
         model: 'glm-4-flash',
         temperature: 0.1,
         inputs: [], // { id, content }
         templates: [], // { id, name, systemPrompt, userPromptTemplate }
-        requests: [], // { requestId, input, template }
-        tasks: {}, // { zhipuTaskId, status, result... } for a local requestId
+        requests: [], // { localId, inputId, templateId }
+        tasks: {}, // { zhipuTaskId, status, result... } for a localRequestId
         pollingInterval: null,
         nextInputId: 1,
         nextTemplateId: 1,
+        nextRequestId: 1,
         excelFile: null,
     },
     batch: {
@@ -597,10 +619,7 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false) {
         const response = await fetch(fullUrl, fetchOptions);
 
         if (isStream) {
-            // For streams, we handle errors differently. We don't try to parse JSON on failure.
-            // The stream reader itself will receive the error message if backend sends it correctly.
             if (!response.ok) {
-                // We'll let the streaming function handle the error message from the body
                  throw new Error(`请求失败 (Stream): ${response.statusText}`);
             }
             return response.body.getReader();
@@ -619,7 +638,7 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false) {
 }
 
 // =================================================================================
-// 功能一: 即时对话 (已修复BUG并增加新功能)
+// 功能一: 即时对话 (已修改)
 // =================================================================================
 function initChat() {
     chatModelSelect.innerHTML = AVAILABLE_MODELS.map(m => `<option value="${m}">${m}</option>`).join('');
@@ -629,10 +648,10 @@ function initChat() {
         appState.chat.personas = savedPersonas;
     } else {
         appState.chat.personas = {
-            "patent_analyzer": { "name": "资深专利分析师", "system": "你是一位顶级的专利分析师和信息架构师，极其擅长从复杂、冗长的专利文本中快速提炼核心技术原理、解决方案、技术问题和效果。你的回答应该专业、结构清晰、逻辑严谨。" },
-            "translator": { "name": "专业技术翻译", "system": "你是一个专业精通各技术领域术语的、精通多国语言的专利文本翻译引擎。你的任务是自动检测用户输入专利文本的语言并将其翻译成中文或英文。请直接返回翻译后的文本，不要添加任何额外的解释或说明。" },
-            "keyword_expander": { "name": "专利检索词专家", "system": "你是一名资深的专利检索专家。你的任务是根据用户提供的技术点，拓展出一系列用于专利数据库检索的中英文同义词、近义词、上下位概念和相关技术术语。输出应该清晰、格式化，便于复制使用。" },
-            "general_assistant": { "name": "通用助手", "system": "你是一个乐于助人的通用AI助手，可以回答各种问题。" }
+            "patent_analyzer": { name: "资深专利分析师", system: "你是一位顶级的专利分析师和信息架构师，极其擅长从复杂、冗长的专利文本中快速提炼核心技术原理、解决方案、技术问题和效果。你的回答应该专业、结构清晰、逻辑严谨。", isCustom: false },
+            "translator": { name: "专业技术翻译", system: "你是一个专业精通各技术领域术语的、精通多国语言的专利文本翻译引擎。你的任务是自动检测用户输入专利文本的语言并将其翻译成中文或英文。请直接返回翻译后的文本，不要添加任何额外的解释或说明。", isCustom: false },
+            "keyword_expander": { name: "专利检索词专家", system: "你是一名资深的专利检索专家。你的任务是根据用户提供的技术点，拓展出一系列用于专利数据库检索的中英文同义词、近义词、上下位概念和相关技术术语。输出应该清晰、格式化，便于复制使用。", isCustom: false },
+            "general_assistant": { name: "通用助手", system: "你是一个乐于助人的通用AI助手，可以回答各种问题。", isCustom: false }
         };
         savePersonas();
     }
@@ -698,7 +717,6 @@ function renderChatHistory() {
     chatWindow.innerHTML = '';
     
     if (history) {
-        // Start from index 1 to skip system message
         for (let i = 1; i < history.length; i++) {
             const msg = history[i];
             addMessageToDOM(msg.role, msg.content, i);
@@ -712,33 +730,34 @@ function addMessageToDOM(role, content, index, isStreaming = false) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `chat-message ${role}-message`;
     messageDiv.id = messageId;
-    // Add index as a data attribute for easy access later
     if (index) {
         messageDiv.dataset.index = index;
     }
 
-    const avatar = `<div class="avatar">${role === 'user' ? 'U' : 'AI'}</div>`;
-    
-    // [FIX] Use innerHTML for streaming content to render the cursor span
-    const renderedContent = (isStreaming) 
+    const renderedContent = isStreaming 
         ? content 
         : (window.marked ? window.marked.parse(content) : content.replace(/</g, "&lt;").replace(/>/g, "&gt;"));
+
+    messageDiv.innerHTML = `
+        <div class="avatar">${role === 'user' ? 'U' : 'AI'}</div>
+        <div class="message-body">
+            <div class="message-content">${renderedContent}</div>
+            <div class="message-footer">
+                <button class="icon-button" title="复制" onclick="copyMessage(this)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2Zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6Z M2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1H2Z"></path></svg>
+                </button>
+                <button class="icon-button" title="删除" onclick="deleteMessage(this)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"></path><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"></path></svg>
+                </button>
+            </div>
+        </div>
+    `;
     
-    const contentDiv = `<div class="message-content">${renderedContent}</div>`;
-    
-    // [NEW] Add action buttons
-    const actionsDiv = `
-        <div class="message-actions">
-            <button class="icon-button" title="复制" onclick="copyMessage(this)">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2Zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6Z M2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1H2Z"></path></svg>
-            </button>
-            <button class="icon-button" title="删除" onclick="deleteMessage(this)">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"></path><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"></path></svg>
-            </button>
-        </div>`;
-    
-    messageDiv.innerHTML = (role === 'user') ? contentDiv + actionsDiv + avatar : avatar + actionsDiv + contentDiv;
-    
+    const footer = messageDiv.querySelector('.message-footer');
+    if (isStreaming) {
+        footer.style.display = 'none';
+    }
+
     chatWindow.appendChild(messageDiv);
     chatWindow.scrollTop = chatWindow.scrollHeight;
     return messageId;
@@ -754,20 +773,20 @@ async function handleStreamChatRequest() {
     const personaId = appState.chat.currentPersonaId;
     const history = appState.chat.histories[personaId];
     history.push({ role: 'user', content: userInput });
-    renderChatHistory(); // Re-render to show new user message with correct index
+    renderChatHistory(); 
     chatInput.value = '';
     chatInput.style.height = '50px';
     chatCharCount.textContent = '0';
 
-    const assistantMessageId = addMessageToDOM('assistant', '<div class="message-content"><span class="blinking-cursor">|</span></div>', history.length, true);
+    const assistantMessageId = addMessageToDOM('assistant', '<span class="blinking-cursor">|</span>', history.length, true);
     const assistantContentEl = getEl(assistantMessageId).querySelector('.message-content');
     
     let fullResponse = "";
     try {
         const contextCount = parseInt(chatContextCount.value, 10);
         const messagesToSend = [
-            history[0], // System prompt
-            ...history.slice(1).slice(-(contextCount * 2)) // Get user+asst pairs
+            history[0], 
+            ...history.slice(1).slice(-(contextCount * 2)) 
         ];
         
         const reader = await apiCall('/stream_chat', {
@@ -781,7 +800,7 @@ async function handleStreamChatRequest() {
             const { value, done } = await reader.read();
             if (done) break;
             
-            const chunk = decoder.decode(value);
+            const chunk = decoder.decode(value, { stream: true });
             const lines = chunk.split('\n\n').filter(line => line.startsWith('data: '));
 
             for (const line of lines) {
@@ -790,42 +809,30 @@ async function handleStreamChatRequest() {
                 
                 try {
                     const parsed = JSON.parse(data);
-                    if (parsed.error) {
-                        // If the stream itself returns a structured error
-                        throw new Error(parsed.error.message || JSON.stringify(parsed.error));
-                    }
+                    if (parsed.error) throw new Error(parsed.error.message || JSON.stringify(parsed.error));
+                    
                     const delta = parsed.choices[0]?.delta?.content || "";
                     if (delta) {
                         fullResponse += delta;
-                        if (window.marked) {
-                           assistantContentEl.innerHTML = window.marked.parse(fullResponse + '<span class="blinking-cursor">|</span>');
-                        } else {
-                           assistantContentEl.textContent = fullResponse + '|'; // Fallback for no marked
-                        }
+                        assistantContentEl.innerHTML = window.marked.parse(fullResponse + '<span class="blinking-cursor">|</span>');
                         chatWindow.scrollTop = chatWindow.scrollHeight;
                     }
                 } catch(e) {
                      console.error("Error parsing stream data:", data, e);
-                     // This could be a malformed JSON chunk, we'll just skip it
                 }
             }
         }
         
-        // Final render, removing the cursor
-        if (window.marked) {
-            assistantContentEl.innerHTML = window.marked.parse(fullResponse);
-        } else {
-            assistantContentEl.textContent = fullResponse;
-        }
-
+        assistantContentEl.innerHTML = window.marked.parse(fullResponse);
         history.push({ role: 'assistant', content: fullResponse });
-        getEl(assistantMessageId).dataset.index = history.length - 1; // Set the final index
+        getEl(assistantMessageId).dataset.index = history.length - 1;
+        getEl(assistantMessageId).querySelector('.message-footer').style.display = 'flex';
 
     } catch (error) {
         assistantContentEl.innerHTML = `<div class="info error">请求失败: ${error.message}</div>`;
-        // Add a placeholder to history so indexes don't get messed up if user continues chat
         history.push({ role: 'assistant', content: `[ERROR] ${error.message}` });
         getEl(assistantMessageId).dataset.index = history.length - 1;
+        getEl(assistantMessageId).querySelector('.message-footer').style.display = 'flex';
     } finally {
         chatSendBtn.disabled = false;
         chatInput.disabled = false;
@@ -902,8 +909,8 @@ function deletePersona() {
 }
 
 function copyMessage(buttonElement) {
-    const messageDiv = buttonElement.closest('.chat-message');
-    const contentDiv = messageDiv.querySelector('.message-content');
+    const messageBody = buttonElement.closest('.message-body');
+    const contentDiv = messageBody.querySelector('.message-content');
     navigator.clipboard.writeText(contentDiv.innerText).then(() => {
         const originalTitle = buttonElement.title;
         buttonElement.title = '已复制!';
@@ -920,9 +927,9 @@ function deleteMessage(buttonElement) {
     const index = parseInt(messageDiv.dataset.index, 10);
     const personaId = appState.chat.currentPersonaId;
 
-    if (!isNaN(index) && appState.chat.histories[personaId] && appState.chat.histories[personaId][index]) {
+    if (!isNaN(index) && appState.chat.histories[personaId]?.[index]) {
         appState.chat.histories[personaId].splice(index, 1);
-        renderChatHistory(); // Re-render the entire chat
+        renderChatHistory();
     }
 }
 
@@ -937,27 +944,25 @@ function initAsyncBatch() {
     const systemPromptInput = getEl('async_system_prompt');
     const userPromptInput = getEl('async_user_prompt');
     const addTemplateBtn = getEl('async_add_template_btn');
-    const templatesListDiv = getEl('async_templates_list');
     const manualInput = getEl('async_manual_input');
     const addInputBtn = getEl('async_add_input_btn');
     const excelFile = getEl('async_excel_file');
     const excelSheet = getEl('async_excel_sheet');
     const excelColumn = getEl('async_excel_column');
     const loadExcelBtn = getEl('async_load_excel_btn');
-    const inputsListDiv = getEl('async_inputs_list');
-    const prepareBtn = getEl('async_prepare_requests_btn');
-    const previewDiv = getEl('async_requests_preview');
+    const linkBtn = getEl('async_link_btn');
+    const clearRequestsBtn = getEl('async_clear_requests_btn');
     const submitBtn = getEl('async_submit_batch_btn');
 
     modelSelect.innerHTML = ASYNC_MODELS.map(m => `<option value="${m}">${m}</option>`).join('');
     modelSelect.value = appState.asyncBatch.model;
 
+    // Event Listeners
     modelSelect.addEventListener('change', e => appState.asyncBatch.model = e.target.value);
     tempInput.addEventListener('change', e => appState.asyncBatch.temperature = parseFloat(e.target.value));
 
     addTemplateBtn.addEventListener('click', () => {
         const name = templateNameInput.value.trim();
-        const system = systemPromptInput.value.trim();
         const user = userPromptInput.value.trim();
         if (!name || !user) {
             alert('模板名称和用户提示模板不能为空！');
@@ -968,12 +973,12 @@ function initAsyncBatch() {
             return;
         }
         appState.asyncBatch.templates.push({
-            id: `t${appState.asyncBatch.nextTemplateId++}`,
+            id: `T${appState.asyncBatch.nextTemplateId++}`,
             name: name,
-            systemPrompt: system,
+            systemPrompt: systemPromptInput.value.trim(),
             userPromptTemplate: user
         });
-        renderTemplatesList();
+        renderAsyncLists();
         templateNameInput.value = '';
     });
     
@@ -981,11 +986,11 @@ function initAsyncBatch() {
         const lines = manualInput.value.trim().split('\n').filter(Boolean);
         lines.forEach(line => {
              appState.asyncBatch.inputs.push({
-                id: `i${appState.asyncBatch.nextInputId++}`,
+                id: `I${appState.asyncBatch.nextInputId++}`,
                 content: line.trim()
             });
         });
-        renderInputsList();
+        renderAsyncLists();
         manualInput.value = '';
     });
 
@@ -1002,9 +1007,7 @@ function initAsyncBatch() {
             excelSheet.disabled = false;
             excelColumn.disabled = false;
             loadExcelBtn.disabled = false;
-        } catch (error) {
-            alert(`解析Excel失败: ${error.message}`);
-        }
+        } catch (error) { alert(`解析Excel失败: ${error.message}`); }
     });
 
     loadExcelBtn.addEventListener('click', async () => {
@@ -1018,88 +1021,124 @@ function initAsyncBatch() {
             const data = await apiCall('/get_excel_column', formData, 'POST');
             data.column_data.forEach(item => {
                  appState.asyncBatch.inputs.push({
-                    id: `i${appState.asyncBatch.nextInputId++}`,
+                    id: `I${appState.asyncBatch.nextInputId++}`,
                     content: item
                 });
             });
-            renderInputsList();
-        } catch (error) {
-             alert(`加载Excel列数据失败: ${error.message}`);
-        } finally {
+            renderAsyncLists();
+        } catch (error) { alert(`加载Excel列数据失败: ${error.message}`); }
+        finally {
             loadExcelBtn.disabled = false;
             loadExcelBtn.textContent = '从Excel加载输入';
         }
     });
 
-    prepareBtn.addEventListener('click', () => {
-        const selectedInputIds = Array.from(inputsListDiv.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
-        const selectedTemplateIds = Array.from(templatesListDiv.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+    linkBtn.addEventListener('click', () => {
+        const selectedInputIds = Array.from(getEl('async_link_inputs_list').querySelectorAll('input:checked')).map(cb => cb.value);
+        const selectedTemplateIds = Array.from(getEl('async_link_templates_list').querySelectorAll('input:checked')).map(cb => cb.value);
 
         if (selectedInputIds.length === 0 || selectedTemplateIds.length === 0) {
-            alert('请至少勾选一个输入和一个模板！');
+            alert('请在左右两栏中至少各勾选一项！');
             return;
         }
 
-        appState.asyncBatch.requests = [];
-        let requestIdCounter = 1;
         for (const inputId of selectedInputIds) {
             for (const templateId of selectedTemplateIds) {
-                const input = appState.asyncBatch.inputs.find(i => i.id === inputId);
-                const template = appState.asyncBatch.templates.find(t => t.id === templateId);
-                if (input && template) {
-                    appState.asyncBatch.requests.push({
-                        requestId: `req-${requestIdCounter++}`,
-                        input: input,
-                        template: template,
-                    });
-                }
+                appState.asyncBatch.requests.push({
+                    localId: `R${appState.asyncBatch.nextRequestId++}`,
+                    inputId: inputId,
+                    templateId: templateId
+                });
             }
         }
-        
-        previewDiv.innerHTML = `将创建 <strong>${appState.asyncBatch.requests.length}</strong> 个请求。<br>点击“提交全部请求”按钮开始处理。`;
-        previewDiv.style.display = 'block';
-        submitBtn.style.display = 'inline-block';
+        renderRequestsPreview();
     });
     
+    clearRequestsBtn.addEventListener('click', () => {
+        if (confirm('确定要清空所有待提交的请求吗？')) {
+            appState.asyncBatch.requests = [];
+            renderRequestsPreview();
+        }
+    });
+
     submitBtn.addEventListener('click', handleAsyncBatchSubmit);
 }
 
-function renderTemplatesList() {
-    const listDiv = getEl('async_templates_list');
-    listDiv.innerHTML = appState.asyncBatch.templates.map(t => `
+function renderAsyncLists() {
+    const inputsListDiv = getEl('async_inputs_list');
+    const templatesListDiv = getEl('async_templates_list');
+    const linkInputsListDiv = getEl('async_link_inputs_list');
+    const linkTemplatesListDiv = getEl('async_link_templates_list');
+
+    inputsListDiv.innerHTML = appState.asyncBatch.inputs.map(i => `
         <div class="list-item">
-            <input type="checkbox" value="${t.id}" id="tpl-${t.id}" checked>
-            <label for="tpl-${t.id}" class="item-content" style="cursor:pointer;"><strong>${t.name}</strong></label>
-            <button class="icon-button" title="删除模板" onclick="deleteAsyncTemplate('${t.id}')">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
-            </button>
+            <span class="item-content"><strong>${i.id}:</strong> ${i.content.substring(0, 100)}...</span>
+            <button class="icon-button" title="删除" onclick="deleteAsyncInput('${i.id}')">🗑️</button>
         </div>
-    `).join('') || '<div class="info" style="padding: 10px;">暂无模板</div>';
+    `).join('') || '<div class="info" style="padding:10px">暂无输入</div>';
+
+    templatesListDiv.innerHTML = appState.asyncBatch.templates.map(t => `
+        <div class="list-item">
+            <span class="item-content"><strong>${t.id}:</strong> ${t.name}</span>
+            <button class="icon-button" title="删除" onclick="deleteAsyncTemplate('${t.id}')">🗑️</button>
+        </div>
+    `).join('') || '<div class="info" style="padding:10px">暂无模板</div>';
+
+    linkInputsListDiv.innerHTML = appState.asyncBatch.inputs.map(i => `
+        <div class="list-item"><input type="checkbox" value="${i.id}" id="link-${i.id}"><label for="link-${i.id}" style="cursor:pointer" class="item-content"><strong>${i.id}:</strong> ${i.content.substring(0, 50)}...</label></div>
+    `).join('') || '<div class="info" style="padding:10px">暂无输入</div>';
+
+    linkTemplatesListDiv.innerHTML = appState.asyncBatch.templates.map(t => `
+        <div class="list-item"><input type="checkbox" value="${t.id}" id="link-${t.id}"><label for="link-${t.id}" style="cursor:pointer" class="item-content"><strong>${t.id}:</strong> ${t.name}</label></div>
+    `).join('') || '<div class="info" style="padding:10px">暂无模板</div>';
 }
 
 function deleteAsyncTemplate(templateId) {
+    if (!confirm(`确定删除模板 ${templateId} 吗？所有使用此模板的待提交请求也将被移除。`)) return;
     appState.asyncBatch.templates = appState.asyncBatch.templates.filter(t => t.id !== templateId);
-    renderTemplatesList();
-}
-
-function renderInputsList() {
-    const listDiv = getEl('async_inputs_list');
-    listDiv.innerHTML = appState.asyncBatch.inputs.map(i => `
-        <div class="list-item">
-            <input type="checkbox" value="${i.id}" id="inp-${i.id}" checked>
-            <label for="inp-${i.id}" class="item-content" style="cursor:pointer;">
-                <strong>${i.id.replace('i', '#')}:</strong> ${i.content.substring(0, 100)}${i.content.length > 100 ? '...' : ''}
-            </label>
-            <button class="icon-button" title="删除输入" onclick="deleteAsyncInput('${i.id}')">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
-            </button>
-        </div>
-    `).join('') || '<div class="info" style="padding: 10px;">暂无输入</div>';
+    appState.asyncBatch.requests = appState.asyncBatch.requests.filter(r => r.templateId !== templateId);
+    renderAsyncLists();
+    renderRequestsPreview();
 }
 
 function deleteAsyncInput(inputId) {
+    if (!confirm(`确定删除输入 ${inputId} 吗？所有使用此输入的待提交请求也将被移除。`)) return;
     appState.asyncBatch.inputs = appState.asyncBatch.inputs.filter(i => i.id !== inputId);
-    renderInputsList();
+    appState.asyncBatch.requests = appState.asyncBatch.requests.filter(r => r.inputId !== inputId);
+    renderAsyncLists();
+    renderRequestsPreview();
+}
+
+function renderRequestsPreview() {
+    const previewList = getEl('async_requests_preview_list');
+    const countSpan = getEl('async_requests_count');
+    const submitBtn = getEl('async_submit_batch_btn');
+
+    countSpan.textContent = appState.asyncBatch.requests.length;
+    submitBtn.disabled = appState.asyncBatch.requests.length === 0;
+
+    if (appState.asyncBatch.requests.length === 0) {
+        previewList.innerHTML = '<div class="info">请通过上面的“链接选中项”按钮来创建请求。</div>';
+        return;
+    }
+
+    previewList.innerHTML = appState.asyncBatch.requests.map(req => {
+        const input = appState.asyncBatch.inputs.find(i => i.id === req.inputId);
+        const template = appState.asyncBatch.templates.find(t => t.id === req.templateId);
+        // Handle cases where input/template might have been deleted but request not cleaned up
+        if (!input || !template) return ''; 
+        return `
+            <div class="request-item">
+                <span><strong>${input.id} &rarr; ${template.id}</strong>: ${input.content.substring(0,40)}... &rarr; ${template.name}</span>
+                <button class="icon-button" title="删除此请求" onclick="deleteAsyncRequest('${req.localId}')">🗑️</button>
+            </div>
+        `;
+    }).join('');
+}
+
+function deleteAsyncRequest(localId) {
+    appState.asyncBatch.requests = appState.asyncBatch.requests.filter(r => r.localId !== localId);
+    renderRequestsPreview();
 }
 
 function switchAsyncInput(event, type) {
@@ -1114,7 +1153,7 @@ function switchAsyncInput(event, type) {
 
 async function handleAsyncBatchSubmit() {
     if (appState.asyncBatch.requests.length === 0) {
-        alert("没有准备好的请求。请先点击“生成请求预览”。");
+        alert("没有待提交的请求。");
         return;
     }
 
@@ -1123,36 +1162,39 @@ async function handleAsyncBatchSubmit() {
     appState.asyncBatch.tasks = {};
 
     const submissionPromises = appState.asyncBatch.requests.map(request => {
+        const input = appState.asyncBatch.inputs.find(i => i.id === request.inputId);
+        const template = appState.asyncBatch.templates.find(t => t.id === request.templateId);
+
         const row = getEl('async_results_tbody').insertRow();
-        row.id = `row-${request.requestId}`;
+        row.id = `row-${request.localId}`;
         row.innerHTML = `
-            <td>${request.requestId}</td>
-            <td>${request.input.content.substring(0, 50)}...</td>
-            <td>${request.template.name}</td>
+            <td>${request.localId}</td>
+            <td>${input.content.substring(0, 50)}...</td>
+            <td>${template.name} (${template.id})</td>
             <td class="status-cell">提交中...</td>
             <td class="result-cell">...</td>
         `;
 
-        const userPrompt = request.template.userPromptTemplate.replace('{{INPUT}}', request.input.content);
+        const userPrompt = template.userPromptTemplate.replace('{{INPUT}}', input.content);
         const messages = [{ role: 'user', content: userPrompt }];
-        if (request.template.systemPrompt) {
-            messages.unshift({ role: 'system', content: request.template.systemPrompt });
+        if (template.systemPrompt) {
+            messages.unshift({ role: 'system', content: template.systemPrompt });
         }
         
         return apiCall("/async_submit", {
             model: appState.asyncBatch.model,
             temperature: appState.asyncBatch.temperature,
             messages: messages,
-            request_id: request.requestId,
+            request_id: request.localId,
         }).then(data => {
-            appState.asyncBatch.tasks[request.requestId] = { 
+            appState.asyncBatch.tasks[request.localId] = { 
                 zhipuTaskId: data.task_id, 
                 status: 'processing',
             };
-            updateAsyncTableRow(request.requestId, 'processing', '已提交，等待处理...');
+            updateAsyncTableRow(request.localId, 'processing', '已提交...');
         }).catch(error => {
-            appState.asyncBatch.tasks[request.requestId] = { status: 'fail' };
-            updateAsyncTableRow(request.requestId, 'fail', `提交失败: ${error.message}`);
+            appState.asyncBatch.tasks[request.localId] = { status: 'fail' };
+            updateAsyncTableRow(request.localId, 'fail', `提交失败: ${error.message}`);
         });
     });
 
@@ -1217,7 +1259,6 @@ function startAsyncPolling() {
     poll();
 }
 
-
 // =================================================================================
 // 功能三: 大批量处理
 // =================================================================================
@@ -1225,7 +1266,7 @@ function initLargeBatch() {
     initGenerator();
     initBatchWorkflow();
     initReporter();
-    switchSubTab('generator', document.querySelector('.sub-tab-button'));
+    switchSubTab('generator', document.querySelector('#large_batch-tab .sub-tab-button'));
 }
 
 function initGenerator() {
@@ -1357,12 +1398,14 @@ function addOutputField(name = '', desc = '') {
     fieldDiv.innerHTML = `<input type="text" class="output-field-name" placeholder="字段名" value="${name}" style="flex-grow: 1;"><input type="text" class="output-field-desc" placeholder="字段描述" value="${desc}" style="flex-grow: 2;"><button type="button" class="small-button delete-button" onclick="document.getElementById('${fieldId}').remove()">删除</button>`;
     outputFieldsContainer.appendChild(fieldDiv);
 }
+
 function getOutputFieldsFromUI() {
     return Array.from(document.querySelectorAll('.output-field')).map(div => ({
         name: div.querySelector('.output-field-name').value.trim(),
         desc: div.querySelector('.output-field-desc').value.trim()
     })).filter(f => f.name);
 }
+
 function downloadJsonl(){
     if(!appState.batch.jsonlContent)return;
     const blob = new Blob([appState.batch.jsonlContent],{type:"application/jsonl"});
@@ -1372,6 +1415,7 @@ function downloadJsonl(){
     a.click();
     URL.revokeObjectURL(a.href);
 }
+
 function loadTemplateUI(template) {
     if (!template) return;
     apiSystemInput.value = template.system || '';
@@ -1386,11 +1430,13 @@ function loadTemplateUI(template) {
         }
     }
 }
+
 function initTemplates() {
     appState.generator.customTemplates = JSON.parse(localStorage.getItem('custom_templates') || '[]');
     updateTemplateSelector();
     loadTemplate();
 }
+
 function updateTemplateSelector() {
     const selectedValue = templateSelector.value;
     templateSelector.innerHTML = '';
@@ -1406,11 +1452,13 @@ function updateTemplateSelector() {
     });
     if (allTemplates.some(t => t.name === selectedValue)) templateSelector.value = selectedValue;
 }
+
 function loadTemplate() {
     const selectedName = templateSelector.value;
     const template = [...appState.generator.presetTemplates, ...appState.generator.customTemplates].find(t => t.name === selectedName);
     loadTemplateUI(template);
 }
+
 function saveTemplate() {
     const name = prompt("请输入新模板的名称:", `自定义模板_${new Date().toISOString().slice(0, 10)}`);
     if (!name || !name.trim()) return;
@@ -1424,6 +1472,7 @@ function saveTemplate() {
     templateSelector.value = name;
     alert("模板已保存！");
 }
+
 function deleteTemplate() {
     const selectedName = templateSelector.value;
     const template = appState.generator.customTemplates.find(t => t.name === selectedName);
@@ -1435,6 +1484,7 @@ function deleteTemplate() {
         alert("模板已删除！");
     }
 }
+
 function exportTemplate() {
     const selectedName = templateSelector.value;
     const template = [...appState.generator.presetTemplates, ...appState.generator.customTemplates].find(t => t.name === selectedName);
@@ -1446,6 +1496,7 @@ function exportTemplate() {
     a.click();
     URL.revokeObjectURL(a.href);
 }
+
 function importTemplate(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -1642,11 +1693,13 @@ function handleReporterExcel(event){
     };
     reader.readAsArrayBuffer(file);
 }
+
 function loadReporterSheet(sheetName){
     const worksheet = appState.reporter.workbook.Sheets[sheetName];
     appState.reporter.sheetData = XLSX.utils.sheet_to_json(worksheet,{defval:""});
     checkReporterReady();
 }
+
 function handleReporterJsonl(event){
     const file = event.target.files[0];
     if(!file) return;
@@ -1657,15 +1710,18 @@ function handleReporterJsonl(event){
     };
     reader.readAsText(file);
 }
+
 function parseJsonl(content){
     if(!content) return [];
     return content.trim().split("\n").map(line => {
         try { return JSON.parse(line) } catch(e) { console.error("Failed to parse JSONL line:", line); return null }
     }).filter(item => item);
 }
+
 function checkReporterReady(){
     repGenerateBtn.disabled = !(appState.reporter.sheetData && appState.reporter.jsonlData && appState.reporter.jsonlData.length > 0);
 }
+
 function parseAndGenerateReport() {
     if (!appState.reporter.sheetData || !appState.reporter.jsonlData) {
         return alert("请先上传原始Excel和结果JSONL文件。");
@@ -1682,7 +1738,6 @@ function parseAndGenerateReport() {
         const ai_content = resultMap.get(`request-${index + 1}`);
         if (ai_content) {
             try {
-                // More robust JSON parsing
                 const jsonMatch = ai_content.match(/```json\s*([\s\S]*?)\s*```|({[\s\S]*})/);
                 if (!jsonMatch) throw new Error("No JSON block found");
                 const jsonString = jsonMatch[1] || jsonMatch[2];
@@ -1709,6 +1764,7 @@ function parseAndGenerateReport() {
         alert("处理完成，但没有生成任何数据。");
     }
 }
+
 function downloadFinalReport(){
     if(appState.reporter.finalOutputData.length === 0) return;
     const consistentData = appState.reporter.finalOutputData.map(row => {
