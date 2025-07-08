@@ -88,7 +88,6 @@
     .prompt-section { border: 1px dashed var(--border-color); padding: 15px; border-radius: 8px; margin-bottom: 20px; }
     .prompt-section-title { font-weight: bold; margin-bottom: 15px; color: var(--primary-color-dark); }
     
-    /* --- [MODIFIED] Chat UI --- */
     #chat_container { display: flex; flex-direction: column; height: 65vh; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; }
     #chat_window { flex-grow: 1; overflow-y: auto; padding: 20px; background-color: var(--chat-bg); display: flex; flex-direction: column;}
     .chat-message { display: flex; gap: 15px; margin-bottom: 20px; max-width: 90%; }
@@ -110,14 +109,17 @@
     #chat_char_count { position: absolute; bottom: 8px; right: 15px; font-size: 12px; color: var(--text-color-secondary); pointer-events: none; }
     #chat_send_btn { height: 50px; flex-shrink: 0; }
     
-    /* --- [MODIFIED] Async Batch Styles --- */
     .async-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
     @media (max-width: 992px) { .async-layout { grid-template-columns: 1fr; } }
     .async-column .step-header { margin-top: 0; }
     .scrollable-list { max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color); padding: 10px; border-radius: 8px; }
-    .list-item { display: flex; align-items: center; padding: 8px; border-bottom: 1px solid var(--border-color); gap: 10px; }
+
+    /* --- [MODIFIED] CSS Fix for Checkbox list --- */
+    .list-item { display: flex; align-items: center; padding: 8px; border-bottom: 1px solid var(--border-color); }
     .list-item:last-child { border-bottom: none; }
-    .list-item .item-content { flex-grow: 1; font-size: 0.9em; line-height: 1.4; word-break: break-all; }
+    .list-item input[type="checkbox"] { flex-shrink: 0; margin-right: 10px; }
+    .list-item .item-content { flex-grow: 1; font-size: 0.9em; line-height: 1.4; word-break: break-all; min-width: 0; /* Critical for flexbox truncation/wrapping */ }
+    
     .async-linker-layout { display: grid; grid-template-columns: 1fr auto 1fr; gap: 20px; align-items: center; margin-top: 20px; }
     .async-linker-column { padding: 15px; border: 1px solid var(--border-color); border-radius: 8px; }
     .async-linker-column h4 { margin-top: 0; color: var(--primary-color-dark); }
@@ -138,7 +140,7 @@
         <div class="app-branding">
             <div class="logo-container">
                 <h1 class="banner-text-logo">ALFRED X IP</h1>
-                <img src="Alfred X IP Logo.jpg" alt="Alfred X IP Logo" class="image-logo">
+                <img src="ALFRED X IP LOGO.webp" alt="Alfred X IP Logo" class="image-logo">
             </div>
             <div class="version-number">版本号: v12.1 LINKER</div>
         </div>
@@ -203,7 +205,7 @@
             </div>
         </div>
         
-        <!-- 功能二：小批量异步 (已重构) -->
+        <!-- 功能二：小批量异步 -->
         <div id="async_batch-tab" class="tab-content">
             <div class="step">
                 <div class="step-header">步骤 1: 通用配置</div>
@@ -271,7 +273,6 @@
                 </div>
             </div>
             
-            <!-- [MODIFIED] Step 4 for linking -->
             <div class="step">
                 <div class="step-header">步骤 4: 组合请求任务</div>
                 <div class="async-linker-layout">
@@ -456,7 +457,6 @@ const appState = {
         histories: {},
         currentPersonaId: null,
     },
-    // [MODIFIED] asyncBatch state
     asyncBatch: {
         model: 'glm-4-flash',
         temperature: 0.1,
@@ -468,7 +468,8 @@ const appState = {
         nextInputId: 1,
         nextTemplateId: 1,
         nextRequestId: 1,
-        excelFile: null,
+        // [MODIFIED] Store workbook object, not file object
+        excelWorkbook: null, 
     },
     batch: {
         jsonlContent: "",
@@ -542,8 +543,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initChat();
     initAsyncBatch();
     initLargeBatch();
-
-    // 默认打开第一个Tab
     switchTab('instant', document.querySelector('.tab-button'));
 });
 
@@ -553,24 +552,20 @@ document.addEventListener('DOMContentLoaded', () => {
 function initApiKeyConfig() {
     appState.apiKey = localStorage.getItem('globalApiKey') || '';
     globalApiKeyInput.value = appState.apiKey;
-
     apiKeySaveBtn.addEventListener('click', () => {
         appState.apiKey = globalApiKeyInput.value.trim();
         localStorage.setItem('globalApiKey', appState.apiKey);
         apiKeySaveStatus.textContent = "已保存!";
         setTimeout(() => { apiKeySaveStatus.textContent = ""; }, 2000);
     });
-    
     apiConfigToggleBtn.addEventListener('click', () => {
         apiConfigContainer.classList.toggle('visible');
     });
-
     apiKeyToggleVisibilityBtn.addEventListener('click', () => {
         const isPassword = globalApiKeyInput.type === 'password';
         globalApiKeyInput.type = isPassword ? 'text' : 'password';
         apiKeyToggleVisibilityBtn.textContent = isPassword ? '🙈' : '👁️';
     });
-    
     apiKeyCopyBtn.addEventListener('click', () => {
         if (!globalApiKeyInput.value) return;
         navigator.clipboard.writeText(globalApiKeyInput.value).then(() => {
@@ -578,11 +573,9 @@ function initApiKeyConfig() {
             setTimeout(() => { apiKeyCopyBtn.textContent = '📋'; }, 1500);
         });
     });
-
     apiKeyDeleteBtn.addEventListener('click', () => {
         globalApiKeyInput.value = '';
     });
-
     document.addEventListener('click', (event) => {
         if (!apiConfigContainer.contains(event.target) && !apiConfigToggleBtn.contains(event.target)) {
             apiConfigContainer.classList.remove('visible');
@@ -595,42 +588,26 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false) {
         alert("请点击右上角 ⚙️ 设置并保存您的 API Key。");
         throw new Error("API Key 未配置。");
     }
-
-    const headers = {
-        'Authorization': `Bearer ${appState.apiKey}`
-    };
-    
+    const headers = { 'Authorization': `Bearer ${appState.apiKey}` };
     if (!(body instanceof FormData)) {
         headers['Content-Type'] = 'application/json';
     }
-
     const fullUrl = `${BACKEND_URL}/api${endpoint}`;
-
     try {
-        const fetchOptions = {
-            method,
-            headers,
-        };
-        
+        const fetchOptions = { method, headers };
         if (body) {
             fetchOptions.body = (body instanceof FormData) ? body : JSON.stringify(body);
         }
-
         const response = await fetch(fullUrl, fetchOptions);
-
         if (isStream) {
-            if (!response.ok) {
-                 throw new Error(`请求失败 (Stream): ${response.statusText}`);
-            }
+            if (!response.ok) throw new Error(`请求失败 (Stream): ${response.statusText}`);
             return response.body.getReader();
         }
-        
         const result = await response.json();
         if (!response.ok || result.success === false) {
             throw new Error(result.error || `HTTP ${response.status}: ${response.statusText}`);
         }
         return result.data;
-
     } catch (error) {
         console.error(`API Call Error to ${endpoint}:`, error);
         throw error;
@@ -638,11 +615,10 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false) {
 }
 
 // =================================================================================
-// 功能一: 即时对话 (已修改)
+// 功能一: 即时对话
 // =================================================================================
 function initChat() {
     chatModelSelect.innerHTML = AVAILABLE_MODELS.map(m => `<option value="${m}">${m}</option>`).join('');
-    
     const savedPersonas = JSON.parse(localStorage.getItem('chatPersonas'));
     if (savedPersonas && Object.keys(savedPersonas).length > 0) {
         appState.chat.personas = savedPersonas;
@@ -655,7 +631,6 @@ function initChat() {
         };
         savePersonas();
     }
-
     chatSendBtn.addEventListener('click', handleStreamChatRequest);
     chatInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleStreamChatRequest(); }});
     chatInput.addEventListener('input', () => {
@@ -669,7 +644,6 @@ function initChat() {
     chatAddPersonaBtn.addEventListener('click', addPersona);
     chatEditPersonaBtn.addEventListener('click', editPersona);
     chatDeletePersonaBtn.addEventListener('click', deletePersona);
-
     updatePersonaSelector();
     switchPersona();
 }
@@ -682,9 +656,7 @@ function updatePersonaSelector() {
     appState.chat.currentPersonaId = chatPersonaSelect.value;
 }
 
-function savePersonas() {
-    localStorage.setItem('chatPersonas', JSON.stringify(appState.chat.personas));
-}
+function savePersonas() { localStorage.setItem('chatPersonas', JSON.stringify(appState.chat.personas)); }
 
 function switchPersona() {
     appState.chat.currentPersonaId = chatPersonaSelect.value;
@@ -715,11 +687,9 @@ function renderChatHistory() {
     const personaId = appState.chat.currentPersonaId;
     const history = appState.chat.histories[personaId];
     chatWindow.innerHTML = '';
-    
     if (history) {
         for (let i = 1; i < history.length; i++) {
-            const msg = history[i];
-            addMessageToDOM(msg.role, msg.content, i);
+            addMessageToDOM(history[i].role, history[i].content, i);
         }
     }
     chatWindow.scrollTop = chatWindow.scrollHeight;
@@ -730,34 +700,11 @@ function addMessageToDOM(role, content, index, isStreaming = false) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `chat-message ${role}-message`;
     messageDiv.id = messageId;
-    if (index) {
-        messageDiv.dataset.index = index;
-    }
-
-    const renderedContent = isStreaming 
-        ? content 
-        : (window.marked ? window.marked.parse(content) : content.replace(/</g, "&lt;").replace(/>/g, "&gt;"));
-
-    messageDiv.innerHTML = `
-        <div class="avatar">${role === 'user' ? 'U' : 'AI'}</div>
-        <div class="message-body">
-            <div class="message-content">${renderedContent}</div>
-            <div class="message-footer">
-                <button class="icon-button" title="复制" onclick="copyMessage(this)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2Zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6Z M2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1H2Z"></path></svg>
-                </button>
-                <button class="icon-button" title="删除" onclick="deleteMessage(this)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"></path><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"></path></svg>
-                </button>
-            </div>
-        </div>
-    `;
-    
+    if (index) messageDiv.dataset.index = index;
+    const renderedContent = isStreaming ? content : (window.marked ? window.marked.parse(content) : content.replace(/</g, "&lt;").replace(/>/g, "&gt;"));
+    messageDiv.innerHTML = `<div class="avatar">${role === 'user' ? 'U' : 'AI'}</div><div class="message-body"><div class="message-content">${renderedContent}</div><div class="message-footer"><button class="icon-button" title="复制" onclick="copyMessage(this)"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2Zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6Z M2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1H2Z"></path></svg></button><button class="icon-button" title="删除" onclick="deleteMessage(this)"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"></path><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"></path></svg></button></div></div>`;
     const footer = messageDiv.querySelector('.message-footer');
-    if (isStreaming) {
-        footer.style.display = 'none';
-    }
-
+    if (isStreaming) footer.style.display = 'none';
     chatWindow.appendChild(messageDiv);
     chatWindow.scrollTop = chatWindow.scrollHeight;
     return messageId;
@@ -766,10 +713,8 @@ function addMessageToDOM(role, content, index, isStreaming = false) {
 async function handleStreamChatRequest() {
     const userInput = chatInput.value.trim();
     if (!userInput) return;
-
     chatSendBtn.disabled = true;
     chatInput.disabled = true;
-    
     const personaId = appState.chat.currentPersonaId;
     const history = appState.chat.histories[personaId];
     history.push({ role: 'user', content: userInput });
@@ -777,57 +722,38 @@ async function handleStreamChatRequest() {
     chatInput.value = '';
     chatInput.style.height = '50px';
     chatCharCount.textContent = '0';
-
     const assistantMessageId = addMessageToDOM('assistant', '<span class="blinking-cursor">|</span>', history.length, true);
     const assistantContentEl = getEl(assistantMessageId).querySelector('.message-content');
-    
     let fullResponse = "";
     try {
         const contextCount = parseInt(chatContextCount.value, 10);
-        const messagesToSend = [
-            history[0], 
-            ...history.slice(1).slice(-(contextCount * 2)) 
-        ];
-        
-        const reader = await apiCall('/stream_chat', {
-            model: chatModelSelect.value,
-            temperature: parseFloat(chatTempInput.value),
-            messages: messagesToSend
-        }, 'POST', true);
-
+        const messagesToSend = [history[0], ...history.slice(1).slice(-(contextCount * 2))];
+        const reader = await apiCall('/stream_chat', { model: chatModelSelect.value, temperature: parseFloat(chatTempInput.value), messages: messagesToSend }, 'POST', true);
         const decoder = new TextDecoder();
         while (true) {
             const { value, done } = await reader.read();
             if (done) break;
-            
             const chunk = decoder.decode(value, { stream: true });
             const lines = chunk.split('\n\n').filter(line => line.startsWith('data: '));
-
             for (const line of lines) {
                 const data = line.substring(6);
                 if (data === '[DONE]') continue;
-                
                 try {
                     const parsed = JSON.parse(data);
                     if (parsed.error) throw new Error(parsed.error.message || JSON.stringify(parsed.error));
-                    
                     const delta = parsed.choices[0]?.delta?.content || "";
                     if (delta) {
                         fullResponse += delta;
                         assistantContentEl.innerHTML = window.marked.parse(fullResponse + '<span class="blinking-cursor">|</span>');
                         chatWindow.scrollTop = chatWindow.scrollHeight;
                     }
-                } catch(e) {
-                     console.error("Error parsing stream data:", data, e);
-                }
+                } catch(e) { console.error("Error parsing stream data:", data, e); }
             }
         }
-        
         assistantContentEl.innerHTML = window.marked.parse(fullResponse);
         history.push({ role: 'assistant', content: fullResponse });
         getEl(assistantMessageId).dataset.index = history.length - 1;
         getEl(assistantMessageId).querySelector('.message-footer').style.display = 'flex';
-
     } catch (error) {
         assistantContentEl.innerHTML = `<div class="info error">请求失败: ${error.message}</div>`;
         history.push({ role: 'assistant', content: `[ERROR] ${error.message}` });
@@ -842,18 +768,10 @@ async function handleStreamChatRequest() {
 
 function exportChatHistory() {
     const history = appState.chat.histories[appState.chat.currentPersonaId];
-    if (!history || history.length <= 1) {
-        alert("没有聊天记录可导出。");
-        return;
-    }
+    if (!history || history.length <= 1) return alert("没有聊天记录可导出。");
     const personaName = appState.chat.personas[appState.chat.currentPersonaId].name;
     let content = `聊天记录 - ${personaName}\n========================\n\n`;
-    history.forEach(msg => {
-        if (msg.role !== 'system') {
-           content += `[${msg.role.toUpperCase()}]\n${msg.content}\n\n------------------------\n\n`;
-        }
-    });
-    
+    history.forEach(msg => { if (msg.role !== 'system') content += `[${msg.role.toUpperCase()}]\n${msg.content}\n\n------------------------\n\n`; });
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -867,7 +785,6 @@ function addPersona() {
     if (!name) return;
     const system = prompt(`请输入角色 "${name}" 的系统提示 (System Prompt):`);
     if (system === null) return;
-    
     const id = `custom-${Date.now()}`;
     appState.chat.personas[id] = { name, system, isCustom: true };
     savePersonas();
@@ -883,9 +800,7 @@ function editPersona() {
     const newSystem = prompt(`正在编辑角色 "${persona.name}" 的系统提示:`, persona.system);
     if (newSystem !== null) {
         persona.system = newSystem;
-        if (appState.chat.histories[id]) {
-            appState.chat.histories[id][0].content = newSystem;
-        }
+        if (appState.chat.histories[id]) appState.chat.histories[id][0].content = newSystem;
         savePersonas();
         alert("角色已更新！当前对话将使用新的系统提示。");
     }
@@ -894,10 +809,7 @@ function editPersona() {
 function deletePersona() {
     const id = appState.chat.currentPersonaId;
     const persona = appState.chat.personas[id];
-    if (!persona.isCustom) {
-        alert("抱歉，不能删除预设角色。");
-        return;
-    }
+    if (!persona.isCustom) return alert("抱歉，不能删除预设角色。");
     if (confirm(`确定要删除角色 "${persona.name}" 吗？该角色的聊天记录也将被删除。`)) {
         delete appState.chat.personas[id];
         delete appState.chat.histories[id];
@@ -909,16 +821,12 @@ function deletePersona() {
 }
 
 function copyMessage(buttonElement) {
-    const messageBody = buttonElement.closest('.message-body');
-    const contentDiv = messageBody.querySelector('.message-content');
+    const contentDiv = buttonElement.closest('.message-body').querySelector('.message-content');
     navigator.clipboard.writeText(contentDiv.innerText).then(() => {
         const originalTitle = buttonElement.title;
         buttonElement.title = '已复制!';
         setTimeout(() => { buttonElement.title = originalTitle; }, 1500);
-    }).catch(err => {
-        console.error('Failed to copy text: ', err);
-        alert('复制失败!');
-    });
+    }).catch(err => alert('复制失败!'));
 }
 
 function deleteMessage(buttonElement) {
@@ -926,7 +834,6 @@ function deleteMessage(buttonElement) {
     const messageDiv = buttonElement.closest('.chat-message');
     const index = parseInt(messageDiv.dataset.index, 10);
     const personaId = appState.chat.currentPersonaId;
-
     if (!isNaN(index) && appState.chat.histories[personaId]?.[index]) {
         appState.chat.histories[personaId].splice(index, 1);
         renderChatHistory();
@@ -934,10 +841,9 @@ function deleteMessage(buttonElement) {
 }
 
 // =================================================================================
-// 功能二: 小批量异步 (完全重构)
+// 功能二: 小批量异步
 // =================================================================================
 function initAsyncBatch() {
-    // Cache DOM elements
     const modelSelect = getEl('async_model_select');
     const tempInput = getEl('async_temperature');
     const templateNameInput = getEl('async_template_name');
@@ -957,98 +863,92 @@ function initAsyncBatch() {
     modelSelect.innerHTML = ASYNC_MODELS.map(m => `<option value="${m}">${m}</option>`).join('');
     modelSelect.value = appState.asyncBatch.model;
 
-    // Event Listeners
     modelSelect.addEventListener('change', e => appState.asyncBatch.model = e.target.value);
     tempInput.addEventListener('change', e => appState.asyncBatch.temperature = parseFloat(e.target.value));
 
     addTemplateBtn.addEventListener('click', () => {
         const name = templateNameInput.value.trim();
         const user = userPromptInput.value.trim();
-        if (!name || !user) {
-            alert('模板名称和用户提示模板不能为空！');
-            return;
-        }
-        if (!user.includes('{{INPUT}}')) {
-            alert('用户提示模板必须包含 {{INPUT}} 占位符！');
-            return;
-        }
-        appState.asyncBatch.templates.push({
-            id: `T${appState.asyncBatch.nextTemplateId++}`,
-            name: name,
-            systemPrompt: systemPromptInput.value.trim(),
-            userPromptTemplate: user
-        });
+        if (!name || !user) return alert('模板名称和用户提示模板不能为空！');
+        if (!user.includes('{{INPUT}}')) return alert('用户提示模板必须包含 {{INPUT}} 占位符！');
+        appState.asyncBatch.templates.push({ id: `T${appState.asyncBatch.nextTemplateId++}`, name, systemPrompt: systemPromptInput.value.trim(), userPromptTemplate: user });
         renderAsyncLists();
         templateNameInput.value = '';
     });
     
     addInputBtn.addEventListener('click', () => {
-        const lines = manualInput.value.trim().split('\n').filter(Boolean);
-        lines.forEach(line => {
-             appState.asyncBatch.inputs.push({
-                id: `I${appState.asyncBatch.nextInputId++}`,
-                content: line.trim()
-            });
+        manualInput.value.trim().split('\n').filter(Boolean).forEach(line => {
+             appState.asyncBatch.inputs.push({ id: `I${appState.asyncBatch.nextInputId++}`, content: line.trim() });
         });
         renderAsyncLists();
         manualInput.value = '';
     });
 
-    excelFile.addEventListener('change', async (e) => {
+    // [MODIFIED] Excel parsing is now client-side
+    excelFile.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        appState.asyncBatch.excelFile = file;
-        const formData = new FormData();
-        formData.append('file', file);
-        try {
-            const data = await apiCall('/parse_excel', formData, 'POST');
-            excelSheet.innerHTML = data.sheet_names.map(name => `<option value="${name}">${name}</option>`).join('');
-            excelColumn.innerHTML = data.columns.map(name => `<option value="${name}">${name}</option>`).join('');
-            excelSheet.disabled = false;
-            excelColumn.disabled = false;
-            loadExcelBtn.disabled = false;
-        } catch (error) { alert(`解析Excel失败: ${error.message}`); }
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const data = new Uint8Array(event.target.result);
+                appState.asyncBatch.excelWorkbook = XLSX.read(data, { type: 'array' });
+                excelSheet.innerHTML = appState.asyncBatch.excelWorkbook.SheetNames.map(name => `<option value="${name}">${name}</option>`).join('');
+                excelSheet.disabled = false;
+                excelColumn.disabled = true; 
+                loadExcelBtn.disabled = true;
+                handleAsyncSheetChange(); // Trigger column update for the first sheet
+            } catch (err) {
+                alert(`解析Excel失败: ${err.message}`);
+                console.error(err);
+            }
+        };
+        reader.readAsArrayBuffer(file);
     });
 
-    loadExcelBtn.addEventListener('click', async () => {
-        const formData = new FormData();
-        formData.append('file', appState.asyncBatch.excelFile);
-        formData.append('sheet', excelSheet.value);
-        formData.append('column', excelColumn.value);
-        loadExcelBtn.disabled = true;
-        loadExcelBtn.textContent = '加载中...';
-        try {
-            const data = await apiCall('/get_excel_column', formData, 'POST');
-            data.column_data.forEach(item => {
-                 appState.asyncBatch.inputs.push({
-                    id: `I${appState.asyncBatch.nextInputId++}`,
-                    content: item
-                });
-            });
-            renderAsyncLists();
-        } catch (error) { alert(`加载Excel列数据失败: ${error.message}`); }
-        finally {
+    excelSheet.addEventListener('change', handleAsyncSheetChange);
+
+    function handleAsyncSheetChange() {
+        const sheetName = excelSheet.value;
+        const worksheet = appState.asyncBatch.excelWorkbook.Sheets[sheetName];
+        const sheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+        if (sheetData.length > 0) {
+            const headers = sheetData[0];
+            excelColumn.innerHTML = headers.map(h => `<option value="${h}">${h}</option>`).join('');
+            excelColumn.disabled = false;
             loadExcelBtn.disabled = false;
-            loadExcelBtn.textContent = '从Excel加载输入';
+        } else {
+            excelColumn.innerHTML = '';
+            excelColumn.disabled = true;
+            loadExcelBtn.disabled = true;
         }
+    }
+    
+    loadExcelBtn.addEventListener('click', () => {
+        const sheetName = excelSheet.value;
+        const columnName = excelColumn.value;
+        const worksheet = appState.asyncBatch.excelWorkbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+        
+        jsonData.forEach(row => {
+            if (row[columnName]) {
+                appState.asyncBatch.inputs.push({
+                    id: `I${appState.asyncBatch.nextInputId++}`,
+                    content: String(row[columnName]).trim()
+                });
+            }
+        });
+        renderAsyncLists();
+        alert(`已成功从列 "${columnName}" 加载 ${jsonData.filter(r => r[columnName]).length} 条输入。`);
     });
 
     linkBtn.addEventListener('click', () => {
         const selectedInputIds = Array.from(getEl('async_link_inputs_list').querySelectorAll('input:checked')).map(cb => cb.value);
         const selectedTemplateIds = Array.from(getEl('async_link_templates_list').querySelectorAll('input:checked')).map(cb => cb.value);
-
-        if (selectedInputIds.length === 0 || selectedTemplateIds.length === 0) {
-            alert('请在左右两栏中至少各勾选一项！');
-            return;
-        }
-
+        if (selectedInputIds.length === 0 || selectedTemplateIds.length === 0) return alert('请在左右两栏中至少各勾选一项！');
         for (const inputId of selectedInputIds) {
             for (const templateId of selectedTemplateIds) {
-                appState.asyncBatch.requests.push({
-                    localId: `R${appState.asyncBatch.nextRequestId++}`,
-                    inputId: inputId,
-                    templateId: templateId
-                });
+                appState.asyncBatch.requests.push({ localId: `R${appState.asyncBatch.nextRequestId++}`, inputId, templateId });
             }
         }
         renderRequestsPreview();
@@ -1070,27 +970,10 @@ function renderAsyncLists() {
     const linkInputsListDiv = getEl('async_link_inputs_list');
     const linkTemplatesListDiv = getEl('async_link_templates_list');
 
-    inputsListDiv.innerHTML = appState.asyncBatch.inputs.map(i => `
-        <div class="list-item">
-            <span class="item-content"><strong>${i.id}:</strong> ${i.content.substring(0, 100)}...</span>
-            <button class="icon-button" title="删除" onclick="deleteAsyncInput('${i.id}')">🗑️</button>
-        </div>
-    `).join('') || '<div class="info" style="padding:10px">暂无输入</div>';
-
-    templatesListDiv.innerHTML = appState.asyncBatch.templates.map(t => `
-        <div class="list-item">
-            <span class="item-content"><strong>${t.id}:</strong> ${t.name}</span>
-            <button class="icon-button" title="删除" onclick="deleteAsyncTemplate('${t.id}')">🗑️</button>
-        </div>
-    `).join('') || '<div class="info" style="padding:10px">暂无模板</div>';
-
-    linkInputsListDiv.innerHTML = appState.asyncBatch.inputs.map(i => `
-        <div class="list-item"><input type="checkbox" value="${i.id}" id="link-${i.id}"><label for="link-${i.id}" style="cursor:pointer" class="item-content"><strong>${i.id}:</strong> ${i.content.substring(0, 50)}...</label></div>
-    `).join('') || '<div class="info" style="padding:10px">暂无输入</div>';
-
-    linkTemplatesListDiv.innerHTML = appState.asyncBatch.templates.map(t => `
-        <div class="list-item"><input type="checkbox" value="${t.id}" id="link-${t.id}"><label for="link-${t.id}" style="cursor:pointer" class="item-content"><strong>${t.id}:</strong> ${t.name}</label></div>
-    `).join('') || '<div class="info" style="padding:10px">暂无模板</div>';
+    inputsListDiv.innerHTML = appState.asyncBatch.inputs.map(i => `<div class="list-item"><span class="item-content"><strong>${i.id}:</strong> ${i.content.substring(0, 100)}...</span><button class="icon-button" title="删除" onclick="deleteAsyncInput('${i.id}')">🗑️</button></div>`).join('') || '<div class="info" style="padding:10px">暂无输入</div>';
+    templatesListDiv.innerHTML = appState.asyncBatch.templates.map(t => `<div class="list-item"><span class="item-content"><strong>${t.id}:</strong> ${t.name}</span><button class="icon-button" title="删除" onclick="deleteAsyncTemplate('${t.id}')">🗑️</button></div>`).join('') || '<div class="info" style="padding:10px">暂无模板</div>';
+    linkInputsListDiv.innerHTML = appState.asyncBatch.inputs.map(i => `<div class="list-item"><input type="checkbox" value="${i.id}" id="link-${i.id}"><label for="link-${i.id}" style="cursor:pointer" class="item-content"><strong>${i.id}:</strong> ${i.content.substring(0, 50)}...</label></div>`).join('') || '<div class="info" style="padding:10px">暂无输入</div>';
+    linkTemplatesListDiv.innerHTML = appState.asyncBatch.templates.map(t => `<div class="list-item"><input type="checkbox" value="${t.id}" id="link-${t.id}"><label for="link-${t.id}" style="cursor:pointer" class="item-content"><strong>${t.id}:</strong> ${t.name}</label></div>`).join('') || '<div class="info" style="padding:10px">暂无模板</div>';
 }
 
 function deleteAsyncTemplate(templateId) {
@@ -1113,26 +996,17 @@ function renderRequestsPreview() {
     const previewList = getEl('async_requests_preview_list');
     const countSpan = getEl('async_requests_count');
     const submitBtn = getEl('async_submit_batch_btn');
-
     countSpan.textContent = appState.asyncBatch.requests.length;
     submitBtn.disabled = appState.asyncBatch.requests.length === 0;
-
     if (appState.asyncBatch.requests.length === 0) {
         previewList.innerHTML = '<div class="info">请通过上面的“链接选中项”按钮来创建请求。</div>';
         return;
     }
-
     previewList.innerHTML = appState.asyncBatch.requests.map(req => {
         const input = appState.asyncBatch.inputs.find(i => i.id === req.inputId);
         const template = appState.asyncBatch.templates.find(t => t.id === req.templateId);
-        // Handle cases where input/template might have been deleted but request not cleaned up
         if (!input || !template) return ''; 
-        return `
-            <div class="request-item">
-                <span><strong>${input.id} &rarr; ${template.id}</strong>: ${input.content.substring(0,40)}... &rarr; ${template.name}</span>
-                <button class="icon-button" title="删除此请求" onclick="deleteAsyncRequest('${req.localId}')">🗑️</button>
-            </div>
-        `;
+        return `<div class="request-item"><span><strong>${input.id} &rarr; ${template.id}</strong>: ${input.content.substring(0,40)}... &rarr; ${template.name}</span><button class="icon-button" title="删除此请求" onclick="deleteAsyncRequest('${req.localId}')">🗑️</button></div>`;
     }).join('');
 }
 
@@ -1145,59 +1019,29 @@ function switchAsyncInput(event, type) {
     const parent = event.target.closest('.sub-tab-container');
     parent.querySelectorAll('.sub-tab-button').forEach(btn => btn.classList.remove('active'));
     event.target.classList.add('active');
-
     const contentParent = parent.parentElement;
     contentParent.querySelectorAll('.sub-tab-content').forEach(el => el.classList.remove('active'));
     getEl(`async-input-${type}`).classList.add('active');
 }
 
 async function handleAsyncBatchSubmit() {
-    if (appState.asyncBatch.requests.length === 0) {
-        alert("没有待提交的请求。");
-        return;
-    }
-
+    if (appState.asyncBatch.requests.length === 0) return alert("没有待提交的请求。");
     getEl('async_submit_batch_btn').disabled = true;
     getEl('async_results_tbody').innerHTML = '';
     appState.asyncBatch.tasks = {};
-
     const submissionPromises = appState.asyncBatch.requests.map(request => {
         const input = appState.asyncBatch.inputs.find(i => i.id === request.inputId);
         const template = appState.asyncBatch.templates.find(t => t.id === request.templateId);
-
         const row = getEl('async_results_tbody').insertRow();
         row.id = `row-${request.localId}`;
-        row.innerHTML = `
-            <td>${request.localId}</td>
-            <td>${input.content.substring(0, 50)}...</td>
-            <td>${template.name} (${template.id})</td>
-            <td class="status-cell">提交中...</td>
-            <td class="result-cell">...</td>
-        `;
-
+        row.innerHTML = `<td>${request.localId}</td><td>${input.content.substring(0, 50)}...</td><td>${template.name} (${template.id})</td><td class="status-cell">提交中...</td><td class="result-cell">...</td>`;
         const userPrompt = template.userPromptTemplate.replace('{{INPUT}}', input.content);
         const messages = [{ role: 'user', content: userPrompt }];
-        if (template.systemPrompt) {
-            messages.unshift({ role: 'system', content: template.systemPrompt });
-        }
-        
-        return apiCall("/async_submit", {
-            model: appState.asyncBatch.model,
-            temperature: appState.asyncBatch.temperature,
-            messages: messages,
-            request_id: request.localId,
-        }).then(data => {
-            appState.asyncBatch.tasks[request.localId] = { 
-                zhipuTaskId: data.task_id, 
-                status: 'processing',
-            };
-            updateAsyncTableRow(request.localId, 'processing', '已提交...');
-        }).catch(error => {
-            appState.asyncBatch.tasks[request.localId] = { status: 'fail' };
-            updateAsyncTableRow(request.localId, 'fail', `提交失败: ${error.message}`);
-        });
+        if (template.systemPrompt) messages.unshift({ role: 'system', content: template.systemPrompt });
+        return apiCall("/async_submit", { model: appState.asyncBatch.model, temperature: appState.asyncBatch.temperature, messages: messages, request_id: request.localId, })
+            .then(data => { appState.asyncBatch.tasks[request.localId] = { zhipuTaskId: data.task_id, status: 'processing' }; updateAsyncTableRow(request.localId, 'processing', '已提交...'); })
+            .catch(error => { appState.asyncBatch.tasks[request.localId] = { status: 'fail' }; updateAsyncTableRow(request.localId, 'fail', `提交失败: ${error.message}`); });
     });
-
     await Promise.all(submissionPromises);
     startAsyncPolling();
 }
@@ -1205,14 +1049,10 @@ async function handleAsyncBatchSubmit() {
 function updateAsyncTableRow(localRequestId, status, content) {
     const row = getEl(`row-${localRequestId}`);
     if (!row) return;
-    
-    let statusText = status.toUpperCase();
-    let statusClass = `status-${status.toLowerCase()}`;
-    
+    let statusText = status.toUpperCase(), statusClass = `status-${status.toLowerCase()}`;
     if (status === 'processing') statusText = "处理中";
     if (status === 'success') statusText = "成功";
     if (status === 'fail') statusText = "失败";
-
     row.querySelector('.status-cell').innerHTML = `<span class="${statusClass}">${statusText}</span>`;
     row.querySelector('.result-cell').innerHTML = content;
 }
@@ -1220,14 +1060,11 @@ function updateAsyncTableRow(localRequestId, status, content) {
 function startAsyncPolling() {
     const progressInfo = getEl('async_progress_info');
     if (appState.asyncBatch.pollingInterval) clearInterval(appState.asyncBatch.pollingInterval);
-    
     const poll = async () => {
         const total = Object.keys(appState.asyncBatch.tasks).length;
         const tasksToCheck = Object.entries(appState.asyncBatch.tasks).filter(([_, task]) => task.status === 'processing');
-        
         let completed = total - tasksToCheck.length;
         progressInfo.innerHTML = `任务轮询中... 已完成 ${completed} / ${total}`;
-
         if (tasksToCheck.length === 0) {
             clearInterval(appState.asyncBatch.pollingInterval);
             appState.asyncBatch.pollingInterval = null;
@@ -1235,11 +1072,9 @@ function startAsyncPolling() {
             getEl('async_submit_batch_btn').disabled = false;
             return;
         }
-
         for (const [localId, task] of tasksToCheck) {
             try {
                 const data = await apiCall(`/async_retrieve`, { task_id: task.zhipuTaskId }, "POST");
-                
                 if (data.task_status === 'SUCCESS') {
                     appState.asyncBatch.tasks[localId].status = 'success';
                     const content = data.choices[0].message.content;
@@ -1254,7 +1089,6 @@ function startAsyncPolling() {
             }
         }
     };
-
     appState.asyncBatch.pollingInterval = setInterval(poll, 5000);
     poll();
 }
@@ -1296,16 +1130,11 @@ function handleGenFile(event) {
             appState.generator.workbook = XLSX.read(data, { type: 'array' });
             genSheetSelector.innerHTML = '';
             appState.generator.workbook.SheetNames.forEach(name => {
-                const option = document.createElement('option');
-                option.value = option.textContent = name;
-                genSheetSelector.appendChild(option);
+                genSheetSelector.innerHTML += `<option value="${name}">${name}</option>`;
             });
             genSheetSelector.style.display = 'inline-block';
             loadGenSheet(appState.generator.workbook.SheetNames[0]);
-        } catch (err) {
-            alert('无法解析文件，请确保是有效的Excel文件。');
-            console.error(err);
-        }
+        } catch (err) { alert('无法解析文件，请确保是有效的Excel文件。'); console.error(err); }
     };
     reader.readAsArrayBuffer(file);
 }
@@ -1333,25 +1162,20 @@ function updateColumnSelectors() {
         columnConfigArea.appendChild(div);
         const select = div.querySelector('select');
         select.addEventListener('change', updateContentInsertionPreview);
-        if (appState.generator.columnHeaders.length >= i) {
-            select.value = appState.generator.columnHeaders[i - 1];
-        }
+        if (appState.generator.columnHeaders.length >= i) select.value = appState.generator.columnHeaders[i - 1];
     }
     updateContentInsertionPreview();
 }
 
 function updateContentInsertionPreview() {
     const selectors = document.querySelectorAll('.column-selector');
-    let placeholders = [];
-    selectors.forEach((sel, i) => { placeholders.push(`{${sel.value || `配置列${i+1}`}}`); });
+    let placeholders = Array.from(selectors).map((sel, i) => `{${sel.value || `配置列${i+1}`}}`);
     contentInsertionPreview.textContent = `专利内容如下：\n${placeholders.join('\n\n')}`;
 }
 
 function buildUserPrompt() {
     const rules = promptRules.value.trim();
-    const columnSelectors = document.querySelectorAll('.column-selector');
-    let contentInsertionTemplate = "专利内容如下：\n" + Array.from(columnSelectors).map(sel => `{${sel.value}}`).join('\n\n');
-    
+    const contentInsertionTemplate = "专利内容如下：\n" + Array.from(document.querySelectorAll('.column-selector')).map(sel => `{${sel.value}}`).join('\n\n');
     const outputFields = getOutputFieldsFromUI();
     let outputFormat = "";
     if (outputFields.length > 0) {
@@ -1365,23 +1189,11 @@ function generateJsonl() {
     if (!appState.generator.currentSheetData) return;
     const userPromptTemplate = buildUserPrompt();
     const selectedColumns = Array.from(document.querySelectorAll('.column-selector')).map(sel => sel.value);
-    
     const requests = appState.generator.currentSheetData.map((row, index) => {
         let finalUserPrompt = userPromptTemplate;
-        selectedColumns.forEach(colName => {
-            finalUserPrompt = finalUserPrompt.replace(new RegExp(`{${colName}}`, 'g'), row[colName] || '');
-        });
-
-        return {
-            "custom_id": `request-${index + 1}`, "method": "POST", "url": "/v4/chat/completions",
-            "body": {
-                model: apiModelSelect.value,
-                messages: [{ role: 'system', content: apiSystemInput.value }, { role: 'user', content: finalUserPrompt }],
-                temperature: parseFloat(apiTempInput.value)
-            }
-        };
+        selectedColumns.forEach(colName => { finalUserPrompt = finalUserPrompt.replace(new RegExp(`{${colName}}`, 'g'), row[colName] || ''); });
+        return { "custom_id": `request-${index + 1}`, "method": "POST", "url": "/v4/chat/completions", "body": { model: apiModelSelect.value, messages: [{ role: 'system', content: apiSystemInput.value }, { role: 'user', content: finalUserPrompt }], temperature: parseFloat(apiTempInput.value) } };
     });
-
     appState.batch.jsonlContent = requests.map(JSON.stringify).join('\n');
     genPreviewOutput.style.display = 'block';
     genPreviewOutput.innerHTML = requests.slice(0, 3).map(req => JSON.stringify(req, null, 2).replace(/</g, '&lt;')).join('<hr style="border-color: var(--border-color); margin: 10px 0;">');
@@ -1400,10 +1212,7 @@ function addOutputField(name = '', desc = '') {
 }
 
 function getOutputFieldsFromUI() {
-    return Array.from(document.querySelectorAll('.output-field')).map(div => ({
-        name: div.querySelector('.output-field-name').value.trim(),
-        desc: div.querySelector('.output-field-desc').value.trim()
-    })).filter(f => f.name);
+    return Array.from(document.querySelectorAll('.output-field')).map(div => ({ name: div.querySelector('.output-field-name').value.trim(), desc: div.querySelector('.output-field-desc').value.trim() })).filter(f => f.name);
 }
 
 function downloadJsonl(){
@@ -1425,9 +1234,7 @@ function loadTemplateUI(template) {
     } else if (template.user && typeof template.user === 'object') {
         promptRules.value = template.user.rules || '';
         outputFieldsContainer.innerHTML = '';
-        if(template.user.outputFields) {
-           template.user.outputFields.forEach(f => addOutputField(f.name, f.desc));
-        }
+        if(template.user.outputFields) template.user.outputFields.forEach(f => addOutputField(f.name, f.desc));
     }
 }
 
@@ -1462,9 +1269,7 @@ function loadTemplate() {
 function saveTemplate() {
     const name = prompt("请输入新模板的名称:", `自定义模板_${new Date().toISOString().slice(0, 10)}`);
     if (!name || !name.trim()) return;
-    if ([...appState.generator.presetTemplates, ...appState.generator.customTemplates].some(t => t.name === name)) {
-        return alert("错误：该模板名称已存在！");
-    }
+    if ([...appState.generator.presetTemplates, ...appState.generator.customTemplates].some(t => t.name === name)) return alert("错误：该模板名称已存在！");
     const template = { name: name.trim(), system: apiSystemInput.value, user: { rules: promptRules.value, outputFields: getOutputFieldsFromUI() } };
     appState.generator.customTemplates.push(template);
     localStorage.setItem('custom_templates', JSON.stringify(appState.generator.customTemplates));
@@ -1506,10 +1311,7 @@ function importTemplate(event) {
             const t = JSON.parse(e.target.result);
             if (!t.name || !t.system || !t.user) throw new Error("模板文件格式不正确。");
             let newName = t.name;
-            if ([...appState.generator.presetTemplates, ...appState.generator.customTemplates].some(temp => temp.name === newName)) { 
-                newName = `${t.name}_imported_${Date.now()}`;
-                alert(`模板名称冲突，已重命名为 "${newName}"`);
-            }
+            if ([...appState.generator.presetTemplates, ...appState.generator.customTemplates].some(temp => temp.name === newName)) { newName = `${t.name}_imported_${Date.now()}`; alert(`模板名称冲突，已重命名为 "${newName}"`); }
             t.name = newName;
             delete t.isPreset;
             appState.generator.customTemplates.push(t);
@@ -1548,23 +1350,14 @@ async function runStep1_Upload(){
     if(!appState.batch.jsonlContent) return addLog("错误：请先在【1. 生成请求文件】中生成内容。","error");
     btnUpload.disabled = true;
     try {
-        const data = await apiCall("/upload", { 
-            jsonlContent: appState.batch.jsonlContent,
-            fileName: `patent_requests_${Date.now()}.jsonl`
-        });
+        const data = await apiCall("/upload", { jsonlContent: appState.batch.jsonlContent, fileName: `patent_requests_${Date.now()}.jsonl` });
         appState.batch.fileId = data.fileId;
         addLog(`成功: ${data.message}`,"success");
         addLog(`获取到 File ID: ${appState.batch.fileId}`);
-        btnCreate.disabled = false;
-        btnCheck.disabled = true;
-        btnDownload.disabled = true;
+        btnCreate.disabled = false; btnCheck.disabled = true; btnDownload.disabled = true;
         batchIdReminder.style.display = "none";
         stopAutoCheck();
-    } catch(e) {
-        addLog(`错误: ${e.message}`, "error");
-    } finally {
-        btnUpload.disabled = false;
-    }
+    } catch(e) { addLog(`错误: ${e.message}`, "error"); } finally { btnUpload.disabled = false; }
 }
 
 async function runStep2_Create(){
@@ -1579,23 +1372,14 @@ async function runStep2_Create(){
         batchIdReminder.innerHTML=`<strong>任务已创建！请务必记录您的 Batch ID: <span style="user-select:all; background: #eee; padding: 2px 6px;">${appState.batch.batchId}</span></strong>`;
         batchIdReminder.style.display = "block";
         addLog(`任务初始状态: ${data.status}`);
-        btnCheck.disabled = false;
-        btnDownload.disabled = true;
+        btnCheck.disabled = false; btnDownload.disabled = true;
         startAutoCheck();
-    } catch(e) {
-        addLog(`错误: ${e.message}`, "error");
-    } finally {
-        btnCreate.disabled = false;
-    }
+    } catch(e) { addLog(`错误: ${e.message}`, "error"); } finally { btnCreate.disabled = false; }
 }
 
 async function runStep3_Check(){
     addLog("正在检查任务状态...");
-    if(!appState.batch.batchId) {
-        addLog("错误：Batch ID 缺失，无法检查状态。","error");
-        stopAutoCheck();
-        return;
-    }
+    if(!appState.batch.batchId) { addLog("错误：Batch ID 缺失，无法检查状态。","error"); stopAutoCheck(); return; }
     btnCheck.disabled = true;
     try {
         const data = await apiCall(`/check_status`, { batchId: appState.batch.batchId });
@@ -1609,11 +1393,7 @@ async function runStep3_Check(){
             addLog(`任务终止。状态: ${data.status.toUpperCase()}`,"error");
             stopAutoCheck();
         }
-    } catch(e) {
-        addLog(`检查状态时发生错误: ${e.message}`, "error");
-    } finally {
-        btnCheck.disabled = false;
-    }
+    } catch(e) { addLog(`检查状态时发生错误: ${e.message}`, "error"); } finally { btnCheck.disabled = false; }
 }
 
 async function runStep4_Download(){
@@ -1626,11 +1406,7 @@ async function runStep4_Download(){
         addLog("成功: 已将结果文件内容加载到浏览器内存中！","success");
         addLog("请切换到【3. 解析报告】，您将看到直接解析的选项。");
         switchSubTab('reporter', document.querySelector('.sub-tab-button[onclick*="reporter"]'));
-    } catch(e) {
-        addLog(`错误: ${e.message}`, "error");
-    } finally {
-        btnDownload.disabled = false;
-    }
+    } catch(e) { addLog(`错误: ${e.message}`, "error"); } finally { btnDownload.disabled = false; }
 }
 
 function startAutoCheck(){
@@ -1660,9 +1436,7 @@ async function recoverBatchState(){
     btnCheck.disabled = false;
     await runStep3_Check();
     const lastLogEntry = batchLog.lastChild?.textContent || "";
-    if(!/completed|failed|expired|cancelled|cancelling/i.test(lastLogEntry)){
-        startAutoCheck();
-    }
+    if(!/completed|failed|expired|cancelled|cancelling/i.test(lastLogEntry)) startAutoCheck();
 }
 
 function initReporter() {
@@ -1674,22 +1448,17 @@ function initReporter() {
 }
 
 function handleReporterExcel(event){
-    const file = event.target.files[0];
-    if(!file) return;
+    const file = event.target.files[0]; if(!file) return;
     const reader = new FileReader();
     reader.onload = e => {
         try {
             const data = new Uint8Array(e.target.result);
             appState.reporter.workbook = XLSX.read(data, {type:"array"});
             repSheetSelector.innerHTML = "";
-            appState.reporter.workbook.SheetNames.forEach(name => {
-                repSheetSelector.innerHTML += `<option value="${name}">${name}</option>`;
-            });
+            appState.reporter.workbook.SheetNames.forEach(name => { repSheetSelector.innerHTML += `<option value="${name}">${name}</option>`; });
             repSheetSelector.style.display="block";
             loadReporterSheet(appState.reporter.workbook.SheetNames[0]);
-        } catch (err) {
-            alert('无法解析文件，请确保是有效的Excel文件。');
-        }
+        } catch (err) { alert('无法解析文件，请确保是有效的Excel文件。'); }
     };
     reader.readAsArrayBuffer(file);
 }
@@ -1701,21 +1470,15 @@ function loadReporterSheet(sheetName){
 }
 
 function handleReporterJsonl(event){
-    const file = event.target.files[0];
-    if(!file) return;
+    const file = event.target.files[0]; if(!file) return;
     const reader = new FileReader();
-    reader.onload = e => {
-        appState.reporter.jsonlData = parseJsonl(e.target.result);
-        checkReporterReady();
-    };
+    reader.onload = e => { appState.reporter.jsonlData = parseJsonl(e.target.result); checkReporterReady(); };
     reader.readAsText(file);
 }
 
 function parseJsonl(content){
     if(!content) return [];
-    return content.trim().split("\n").map(line => {
-        try { return JSON.parse(line) } catch(e) { console.error("Failed to parse JSONL line:", line); return null }
-    }).filter(item => item);
+    return content.trim().split("\n").map(line => { try { return JSON.parse(line) } catch(e) { console.error("Failed to parse JSONL line:", line); return null } }).filter(item => item);
 }
 
 function checkReporterReady(){
@@ -1723,16 +1486,9 @@ function checkReporterReady(){
 }
 
 function parseAndGenerateReport() {
-    if (!appState.reporter.sheetData || !appState.reporter.jsonlData) {
-        return alert("请先上传原始Excel和结果JSONL文件。");
-    }
-    const resultMap = new Map(appState.reporter.jsonlData.map(item => {
-        const content = item?.response?.body?.choices?.[0]?.message?.content?.trim();
-        return [item.custom_id, content];
-    }));
-    
+    if (!appState.reporter.sheetData || !appState.reporter.jsonlData) return alert("请先上传原始Excel和结果JSONL文件。");
+    const resultMap = new Map(appState.reporter.jsonlData.map(item => [item.custom_id, item?.response?.body?.choices?.[0]?.message?.content?.trim()]));
     const allGeneratedHeaders = new Set();
-    
     appState.reporter.finalOutputData = appState.reporter.sheetData.map((row, index) => {
         const newRow = { ...row };
         const ai_content = resultMap.get(`request-${index + 1}`);
@@ -1746,32 +1502,22 @@ function parseAndGenerateReport() {
                     newRow[key] = (typeof ai_json[key] === 'object') ? JSON.stringify(ai_json[key]) : ai_json[key];
                     allGeneratedHeaders.add(key);
                 });
-            } catch (e) {
-                newRow['AI原始返回'] = ai_content;
-                allGeneratedHeaders.add('AI原始返回');
-            }
+            } catch (e) { newRow['AI原始返回'] = ai_content; allGeneratedHeaders.add('AI原始返回'); }
         }
         return newRow;
     });
-
     if (appState.reporter.finalOutputData.length > 0) {
         appState.reporter.outputHeaders = [...Object.keys(appState.reporter.sheetData[0] || {}), ...Array.from(allGeneratedHeaders)];
         repPreview.style.display = 'block';
         const previewText = JSON.stringify(appState.reporter.finalOutputData.slice(0, 5), null, 2).replace(/</g, '&lt;');
         repPreview.innerHTML = `<p><strong>解析完成！预览前 5 条:</strong></p><pre>${previewText}</pre>`;
         repDownloadBtn.style.display = 'inline-block';
-    } else {
-        alert("处理完成，但没有生成任何数据。");
-    }
+    } else { alert("处理完成，但没有生成任何数据。"); }
 }
 
 function downloadFinalReport(){
     if(appState.reporter.finalOutputData.length === 0) return;
-    const consistentData = appState.reporter.finalOutputData.map(row => {
-        let newRow = {};
-        appState.reporter.outputHeaders.forEach(header => { newRow[header] = row[header] || ""; });
-        return newRow;
-    });
+    const consistentData = appState.reporter.finalOutputData.map(row => { let newRow = {}; appState.reporter.outputHeaders.forEach(header => { newRow[header] = row[header] || ""; }); return newRow; });
     const newSheet = XLSX.utils.json_to_sheet(consistentData, {header: appState.reporter.outputHeaders});
     const newWorkbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(newWorkbook, newSheet, "分析结果");
@@ -1785,10 +1531,7 @@ function switchTab(tabId, clickedButton) {
     document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
     document.querySelectorAll(".tab-button").forEach(el => el.classList.remove("active"));
     getEl(`${tabId}-tab`).classList.add("active");
-    if (clickedButton) {
-        clickedButton.classList.add("active");
-    }
-
+    if (clickedButton) clickedButton.classList.add("active");
     if (tabId !== 'async_batch' && appState.asyncBatch.pollingInterval) {
         clearInterval(appState.asyncBatch.pollingInterval);
         appState.asyncBatch.pollingInterval = null;
@@ -1801,10 +1544,7 @@ function switchSubTab(subTabId, clickedButton) {
     parent.querySelectorAll(".sub-tab-content").forEach(el => el.classList.remove("active"));
     parent.querySelectorAll(".sub-tab-button").forEach(el => el.classList.remove("active"));
     getEl(`sub-tab-${subTabId}`).classList.add("active");
-    if(clickedButton) {
-        clickedButton.classList.add("active");
-    }
-    
+    if(clickedButton) clickedButton.classList.add("active");
     if (subTabId === 'reporter' && appState.batch.resultContent) {
         repInfoBox.style.display = 'block';
         appState.reporter.jsonlData = parseJsonl(appState.batch.resultContent);
