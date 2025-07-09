@@ -105,10 +105,12 @@ def async_submit():
         return create_response(error="messages are required.")
     
     try:
+        # 增加 request_id 以便在结果中追踪
         response = client.chat.asyncCompletions.create(
             model=model,
             messages=messages,
             temperature=temperature,
+            request_id=req_data.get('request_id') # 传递前端生成的localId
         )
         return create_response(data={'task_id': response.id})
     except Exception as e:
@@ -118,24 +120,35 @@ def async_submit():
 
 @app.route('/api/async_retrieve', methods=['POST'])
 def async_retrieve():
-    """小批量异步 - 查询结果"""
+    """小批量异步 - 查询任务 (已修正身份验证)"""
+    # --- ▼▼▼▼▼ 关键修正 ▼▼▼▼▼ ---
+    # 修正1：使用与应用其他部分一致的身份验证方法
     client, error_response = get_client_from_header()
     if error_response:
         return error_response
-
-    req_data = request.get_json()
-    task_id = req_data.get('task_id')
-
-    if not task_id:
-        return create_response(error="task_id is required.")
+    # --- ▲▲▲▲▲ 关键修正 ▲▲▲▲▲ ---
+    
+    data = request.get_json()
+    if not data:
+        return create_response(error="Invalid JSON", status_code=400)
 
     try:
-        retrieved_task = client.chat.asyncCompletions.retrieve(id=task_id)
-        task_data = json.loads(retrieved_task.model_dump_json())
-        return create_response(data=task_data)
+        task_id = data.get('task_id')
+        if not task_id:
+            return create_response(error="Missing task_id", status_code=400)
+
+        # 修正2：正确的查询方法是 client.chat.completions.retrieve_async_result()
+        retrieved_task = client.chat.completions.retrieve_async_result(id=task_id)
+        
+        # 直接返回 ZhipuAI SDK 返回的 Pydantic 模型转换后的 JSON
+        # 前端可以根据 task_status 自行判断
+        return create_response(data=json.loads(retrieved_task.model_dump_json()))
+
     except Exception as e:
         print(f"Error in async_retrieve: {traceback.format_exc()}")
-        return create_response(error=f"查询异步任务时发生错误: {str(e)}")
+        # ZhipuAI 的 SDK 在找不到任务时可能会抛出 zhipuai.core.APIStatusError
+        # 我们可以根据具体的错误类型返回更精确的信息
+        return create_response(error=f"查询异步任务时发生错误: {str(e)}", status_code=500)
 
 
 @app.route('/api/upload', methods=['POST'])

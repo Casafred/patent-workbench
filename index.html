@@ -4,8 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>专利分析智能工作台 v12.1 LINKER</title>
+    <!-- 引入的库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="marked.min.js"></script>
+    <!-- 字体 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -88,13 +92,27 @@
     .prompt-section { border: 1px dashed var(--border-color); padding: 15px; border-radius: 8px; margin-bottom: 20px; }
     .prompt-section-title { font-weight: bold; margin-bottom: 15px; color: var(--primary-color-dark); }
     
-    #chat_container { display: flex; flex-direction: column; height: 65vh; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; }
+    /* --- 新增：即时对话区域布局 --- */
+    #instant-chat-layout { display: grid; grid-template-columns: 280px 1fr; gap: 20px; }
+    #chat_history_panel { border: 1px solid var(--border-color); border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; background: var(--bg-color); }
+    #chat_history_header { padding: 15px; border-bottom: 1px solid var(--border-color); font-weight: bold; text-align: center; font-size: 1.1em; }
+    #chat_history_list { flex-grow: 1; overflow-y: auto; padding: 10px; }
+    .chat-history-item { padding: 12px 15px; margin-bottom: 8px; border-radius: 8px; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; }
+    .chat-history-item:hover { background-color: var(--primary-color-hover-bg); }
+    .chat-history-item.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color-dark); }
+    .history-item-title { font-weight: bold; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .history-item-details { font-size: 0.8em; opacity: 0.7; margin-top: 4px; display: block; }
+    
+    /* --- 修改：即时对话核心区域 --- */
+    #chat_main_panel { display: flex; flex-direction: column; }
+    #chat_container { display: flex; flex-direction: column; height: 65vh; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; flex-grow: 1; }
     #chat_window { flex-grow: 1; overflow-y: auto; padding: 20px; background-color: var(--chat-bg); display: flex; flex-direction: column;}
-    .chat-message { display: flex; gap: 15px; margin-bottom: 20px; max-width: 90%; }
+    .chat-message { display: flex; gap: 15px; margin-bottom: 20px; max-width: 90%; align-items: flex-start; }
     .chat-message .avatar { width: 40px; height: 40px; border-radius: 50%; background-color: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; margin-top: 5px; }
     .message-body { flex-grow: 1; display: flex; flex-direction: column; }
-    .message-content { padding: 12px 18px; border-radius: 18px; word-break: break-word; }
-    .message-footer { display: flex; justify-content: flex-end; padding: 8px 10px 0 10px; border-top: 1px solid rgba(0,0,0,0.05); margin-top: 10px; }
+    .message-content { padding: 12px 18px; border-radius: 18px; word-break: break-word; position: relative; }
+    .message-footer { display: flex; justify-content: flex-end; padding: 8px 10px 0 10px; border-top: 1px solid rgba(0,0,0,0.05); margin-top: 10px; opacity: 0; transition: opacity 0.2s; }
+    .chat-message:hover .message-footer { opacity: 1; }
     .chat-message.user-message { align-self: flex-end; flex-direction: row-reverse; }
     .chat-message.user-message .message-content { background-color: var(--chat-user-bubble); }
     .chat-message.assistant-message { align-self: flex-start; }
@@ -108,28 +126,27 @@
     #chat_input { min-height: 50px; max-height: 300px; height: 50px; padding: 12px 50px 12px 20px; overflow-y: auto; }
     #chat_char_count { position: absolute; bottom: 8px; right: 15px; font-size: 12px; color: var(--text-color-secondary); pointer-events: none; }
     #chat_send_btn { height: 50px; flex-shrink: 0; }
-    
+    #chat_management_bar { display: none; padding: 10px; background-color: var(--primary-color-hover-bg); border-bottom: 1px solid var(--border-color); }
+    .chat-window-management-mode .message-checkbox { display: inline-block !important; margin-right: 10px; }
+    .message-checkbox { display: none; }
+
+    /* --- 修改：小批量异步布局 --- */
     .async-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
     @media (max-width: 992px) { .async-layout { grid-template-columns: 1fr; } }
     .async-column .step-header { margin-top: 0; }
     .scrollable-list { max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color); padding: 10px; border-radius: 8px; }
-
-    /* --- [MODIFIED] CSS Fix for Checkbox list --- */
     .list-item { display: flex; align-items: center; padding: 8px; border-bottom: 1px solid var(--border-color); }
     .list-item:last-child { border-bottom: none; }
-    .list-item input[type="checkbox"] { flex-shrink: 0; margin-right: 10px; }
-    .list-item .item-content { flex-grow: 1; font-size: 0.9em; line-height: 1.4; word-break: break-all; min-width: 0; /* Critical for flexbox truncation/wrapping */ }
-    
-    .async-linker-layout { display: grid; grid-template-columns: 1fr auto 1fr; gap: 20px; align-items: center; margin-top: 20px; }
-    .async-linker-column { padding: 15px; border: 1px solid var(--border-color); border-radius: 8px; }
-    .async-linker-column h4 { margin-top: 0; color: var(--primary-color-dark); }
-    #async-requests-preview-list .request-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px dashed var(--border-color); font-size: 0.9em; }
+    .list-item .item-content { flex-grow: 1; font-size: 0.9em; line-height: 1.4; word-break: break-all; min-width: 0; }
+    .list-item .item-index { font-weight: bold; color: var(--primary-color); margin-right: 10px; }
+    .template-task-creator { padding: 15px; border: 1px dashed var(--primary-color); border-radius: 8px; margin-top: 15px; }
+    .template-task-creator h5 { margin-top: 0; }
     
     #async_results_table { width: 100%; margin-top: 20px; border-collapse: collapse; }
     #async_results_table th, #async_results_table td { border: 1px solid var(--border-color); padding: 12px; text-align: left; vertical-align: top;}
     .status-processing { color: var(--warning-color); font-weight: bold; }
-    .status-success { color: var(--success-color); font-weight: bold; }
-    .status-fail { color: var(--error-color); font-weight: bold; }
+    .status-completed { color: var(--success-color); font-weight: bold; }
+    .status-failed { color: var(--error-color); font-weight: bold; }
     .result-cell pre { white-space: pre-wrap; word-break: break-all; margin: 0; font-size: 0.9em; }
 </style>
 </head>
@@ -179,28 +196,47 @@
         <div id="instant-tab" class="tab-content">
             <div class="step">
                 <div class="step-header">对话参数配置</div>
-                <div class="chat-controls" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                <div class="chat-controls" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; align-items: end;">
                     <div class="config-item"><label for="chat_model_select">模型:</label><select id="chat_model_select"></select></div>
                     <div class="config-item"><label for="chat_context_count">上下文条数 (最近N条):</label><input type="number" id="chat_context_count" value="10" min="0" max="50"></div>
                     <div class="config-item"><label for="chat_persona_select">对话角色:</label><select id="chat_persona_select"></select></div>
                     <div class="config-item"><label for="chat_temperature">温度:</label><input type="number" id="chat_temperature" value="0.7" step="0.1" min="0" max="1"></div>
                 </div>
-                 <div class="chat-actions" style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
+                 <div class="chat-actions" style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
                     <button id="chat_new_btn" class="small-button">开启新对话</button>
-                    <button id="chat_export_btn" class="small-button">导出聊天记录</button>
-                    <button id="chat_add_persona_btn" class="small-button">新增角色</button>
-                    <button id="chat_edit_persona_btn" class="small-button">编辑当前角色</button>
-                    <button id="chat_delete_persona_btn" class="small-button delete-button">删除当前角色</button>
+                    <button id="chat_export_txt_btn" class="small-button">导出为TXT</button>
+                    <button id="chat_export_png_btn" class="small-button">导出为图片</button>
+                    <button id="chat_export_pdf_btn" class="small-button">导出为PDF</button>
+                    <button id="chat_manage_btn" class="small-button">管理消息</button>
+                    <div style="margin-left:auto; display:flex; gap:10px;">
+                        <button id="chat_add_persona_btn" class="small-button">新增角色</button>
+                        <button id="chat_edit_persona_btn" class="small-button">编辑当前角色</button>
+                        <button id="chat_delete_persona_btn" class="small-button delete-button">删除当前角色</button>
+                    </div>
                 </div>
             </div>
-            <div id="chat_container">
-                <div id="chat_window"></div>
-                <div id="chat_input_area">
-                    <div id="chat_input_wrapper">
-                        <textarea id="chat_input" placeholder="输入您的问题 (Shift+Enter 换行)..." rows="1"></textarea>
-                        <span id="chat_char_count">0</span>
+            
+            <div id="instant-chat-layout">
+                <div id="chat_history_panel">
+                    <div id="chat_history_header">历史对话</div>
+                    <div id="chat_history_list"></div>
+                </div>
+                <div id="chat_main_panel">
+                    <div id="chat_container">
+                        <div id="chat_management_bar">
+                            <button id="chat_delete_selected_btn" class="small-button delete-button">删除选中</button>
+                            <button id="chat_select_all_btn" class="small-button">全部选中</button>
+                            <button id="chat_cancel_manage_btn" class="small-button">取消</button>
+                        </div>
+                        <div id="chat_window"></div>
+                        <div id="chat_input_area">
+                            <div id="chat_input_wrapper">
+                                <textarea id="chat_input" placeholder="输入您的问题 (Shift+Enter 换行)..." rows="1"></textarea>
+                                <span id="chat_char_count">0</span>
+                            </div>
+                            <button id="chat_send_btn">发送</button>
+                        </div>
                     </div>
-                    <button id="chat_send_btn">发送</button>
                 </div>
             </div>
         </div>
@@ -216,30 +252,7 @@
             <div class="async-layout">
                 <div class="async-column">
                     <div class="step">
-                        <div class="step-header">步骤 2: 添加处理模板</div>
-                        <div class="config-item">
-                            <label for="async_template_name">模板名称:</label>
-                            <input type="text" id="async_template_name" placeholder="例如：技术方案总结">
-                        </div>
-                        <div class="config-item">
-                            <label for="async_system_prompt">系统提示 (System Prompt):</label>
-                            <textarea id="async_system_prompt" rows="3">你是一个高效的专利文本分析助手。</textarea>
-                        </div>
-                        <div class="config-item">
-                            <label for="async_user_prompt">用户提示模板 (User Prompt Template):</label>
-                            <textarea id="async_user_prompt" rows="4" placeholder="例如：请根据以下文本，总结其核心技术点：\n\n{{INPUT}}"></textarea>
-                            <div class="info" style="font-size: 0.85em; padding: 8px; margin-top: 5px;">请务必使用 `{{INPUT}}`作为占位符，它将被替换为下方的每条输入内容。</div>
-                        </div>
-                        <button id="async_add_template_btn" class="small-button">保存为新模板</button>
-                        <hr style="margin: 20px 0; border-color: var(--border-color);">
-                        <label><strong>已保存的模板 (点击删除):</strong></label>
-                        <div id="async_templates_list" class="scrollable-list"></div>
-                    </div>
-                </div>
-
-                <div class="async-column">
-                     <div class="step">
-                        <div class="step-header">步骤 3: 添加输入内容</div>
+                        <div class="step-header">步骤 2: 添加输入内容</div>
                         <div class="sub-tab-container" style="margin-bottom: 20px;">
                             <button class="sub-tab-button active" onclick="switchAsyncInput(event, 'manual')">手动添加</button>
                             <button class="sub-tab-button" onclick="switchAsyncInput(event, 'excel')">Excel导入</button>
@@ -271,27 +284,42 @@
                         <div id="async_inputs_list" class="scrollable-list"></div>
                     </div>
                 </div>
+                <div class="async-column">
+                     <div class="step">
+                        <div class="step-header">步骤 3: 添加处理模板</div>
+                        <div class="config-item">
+                            <label for="async_template_name">模板名称:</label>
+                            <input type="text" id="async_template_name" placeholder="例如：技术方案总结">
+                        </div>
+                        <div class="config-item">
+                            <label for="async_system_prompt">系统提示 (System Prompt):</label>
+                            <textarea id="async_system_prompt" rows="3">你是一个高效的专利文本分析助手。</textarea>
+                        </div>
+                        <div class="config-item">
+                            <label for="async_user_prompt">用户提示模板 (User Prompt Template):</label>
+                            <textarea id="async_user_prompt" rows="4" placeholder="例如：请根据以下文本，总结其核心技术点：\n\n{{INPUT}}"></textarea>
+                            <div class="info" style="font-size: 0.85em; padding: 8px; margin-top: 5px;">请务必使用 `{{INPUT}}`作为占位符，它将被替换为每条输入内容。</div>
+                        </div>
+                        <button id="async_add_template_btn" class="small-button">保存为新模板</button>
+                        <hr style="margin: 20px 0; border-color: var(--border-color);">
+                        <label><strong>已保存的模板 (点击删除):</strong></label>
+                        <div id="async_templates_list" class="scrollable-list"></div>
+                    </div>
+                </div>
             </div>
             
             <div class="step">
-                <div class="step-header">步骤 4: 组合请求任务</div>
-                <div class="async-linker-layout">
-                    <div class="async-linker-column">
-                        <h4>可用输入</h4>
-                        <div id="async_link_inputs_list" class="scrollable-list"></div>
-                    </div>
-                    <button id="async_link_btn" title="将右侧选中的模板，链接到左侧选中的输入">🔗<br>链接<br>选中项</button>
-                    <div class="async-linker-column">
-                        <h4>可用模板</h4>
-                        <div id="async_link_templates_list" class="scrollable-list"></div>
-                    </div>
+                <div class="step-header">步骤 4: 创建并预览请求任务</div>
+                <p class="info">下方将列出您保存的模板。请为每个模板指定要处理的输入数据序号范围，然后添加到任务列表。</p>
+                <div id="async_task_creation_area">
+                    <div class="info">请先在步骤3中添加模板。</div>
                 </div>
                 
                 <hr style="margin: 25px 0; border-color: var(--border-color);">
 
                 <h4>待提交的请求列表 (<span id="async_requests_count">0</span>)</h4>
                 <div id="async_requests_preview_list" class="scrollable-list" style="max-height: 300px;">
-                    <div class="info">请通过上面的“链接选中项”按钮来创建请求。</div>
+                    <div class="info">请通过上方的模板任务创建器来添加请求。</div>
                 </div>
                 <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center;">
                      <button id="async_clear_requests_btn" class="small-button delete-button">全部清空</button>
@@ -398,7 +426,7 @@
                     </div>
                 </div>
                 
-                <details>
+                <details open>
                     <summary>断点续查 / 任务恢复</summary>
                     <div class="step" style="border-top: none; margin-top: 0;">
                         <p class="info warning">如果您因关闭浏览器等原因中断了流程，但已记录下 Batch ID，可在此恢复任务状态。</p>
@@ -454,8 +482,10 @@ const appState = {
     apiKey: '',
     chat: {
         personas: {},
-        histories: {},
-        currentPersonaId: null,
+        // 新的状态结构
+        conversations: [], // { id, title, personaId, messages, lastUpdate }
+        currentConversationId: null,
+        isManagementMode: false
     },
     asyncBatch: {
         model: 'glm-4-flash',
@@ -468,7 +498,6 @@ const appState = {
         nextInputId: 1,
         nextTemplateId: 1,
         nextRequestId: 1,
-        // [MODIFIED] Store workbook object, not file object
         excelWorkbook: null, 
     },
     batch: {
@@ -516,9 +545,15 @@ const apiConfigContainer = getEl('api_config_container');
 // Chat
 const chatModelSelect = getEl('chat_model_select'), chatContextCount = getEl('chat_context_count');
 const chatPersonaSelect = getEl('chat_persona_select'), chatTempInput = getEl('chat_temperature');
-const chatNewBtn = getEl('chat_new_btn'), chatExportBtn = getEl('chat_export_btn');
+const chatNewBtn = getEl('chat_new_btn');
+const chatExportTxtBtn = getEl('chat_export_txt_btn'), chatExportPngBtn = getEl('chat_export_png_btn'), chatExportPdfBtn = getEl('chat_export_pdf_btn');
+const chatManageBtn = getEl('chat_manage_btn');
 const chatAddPersonaBtn = getEl('chat_add_persona_btn'), chatEditPersonaBtn = getEl('chat_edit_persona_btn'), chatDeletePersonaBtn = getEl('chat_delete_persona_btn');
 const chatWindow = getEl('chat_window'), chatInput = getEl('chat_input'), chatCharCount = getEl('chat_char_count'), chatSendBtn = getEl('chat_send_btn');
+const chatHistoryList = getEl('chat_history_list');
+const chatManagementBar = getEl('chat_management_bar');
+const chatDeleteSelectedBtn = getEl('chat_delete_selected_btn'), chatSelectAllBtn = getEl('chat_select_all_btn'), chatCancelManageBtn = getEl('chat_cancel_manage_btn');
+
 // Large Batch (Generator)
 const genFileInput = getEl('gen_file-input'), genSheetSelector = getEl('gen_sheet-selector');
 const columnConfigContainer = getEl('column-config-container'), columnCountInput = getEl('column-count'), columnConfigArea = getEl('column-config-area');
@@ -615,22 +650,19 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false) {
 }
 
 // =================================================================================
-// 功能一: 即时对话
+// 功能一: 即时对话 (已重构)
 // =================================================================================
 function initChat() {
+    // 模型和温度设置
     chatModelSelect.innerHTML = AVAILABLE_MODELS.map(m => `<option value="${m}">${m}</option>`).join('');
-    const savedPersonas = JSON.parse(localStorage.getItem('chatPersonas'));
-    if (savedPersonas && Object.keys(savedPersonas).length > 0) {
-        appState.chat.personas = savedPersonas;
-    } else {
-        appState.chat.personas = {
-            "patent_analyzer": { name: "资深专利分析师", system: "你是一位顶级的专利分析师和信息架构师，极其擅长从复杂、冗长的专利文本中快速提炼核心技术原理、解决方案、技术问题和效果。你的回答应该专业、结构清晰、逻辑严谨。", isCustom: false },
-            "translator": { name: "专业技术翻译", system: "你是一个专业精通各技术领域术语的、精通多国语言的专利文本翻译引擎。你的任务是自动检测用户输入专利文本的语言并将其翻译成中文或英文。请直接返回翻译后的文本，不要添加任何额外的解释或说明。", isCustom: false },
-            "keyword_expander": { name: "专利检索词专家", system: "你是一名资深的专利检索专家。你的任务是根据用户提供的技术点，拓展出一系列用于专利数据库检索的中英文同义词、近义词、上下位概念和相关技术术语。输出应该清晰、格式化，便于复制使用。", isCustom: false },
-            "general_assistant": { name: "通用助手", system: "你是一个乐于助人的通用AI助手，可以回答各种问题。", isCustom: false }
-        };
-        savePersonas();
-    }
+    
+    // 加载角色
+    loadPersonas();
+
+    // 加载历史对话
+    loadConversations();
+    
+    // 事件监听
     chatSendBtn.addEventListener('click', handleStreamChatRequest);
     chatInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleStreamChatRequest(); }});
     chatInput.addEventListener('input', () => {
@@ -638,60 +670,104 @@ function initChat() {
         chatInput.style.height = 'auto';
         chatInput.style.height = `${Math.min(chatInput.scrollHeight, 300)}px`;
     });
-    chatPersonaSelect.addEventListener('change', switchPersona);
+    chatPersonaSelect.addEventListener('change', updateCurrentConversationPersona);
     chatNewBtn.addEventListener('click', () => startNewChat(true));
-    chatExportBtn.addEventListener('click', exportChatHistory);
+    
+    // 导出按钮
+    chatExportTxtBtn.addEventListener('click', () => exportChatHistory('txt'));
+    chatExportPngBtn.addEventListener('click', () => exportChatHistory('png'));
+    chatExportPdfBtn.addEventListener('click', () => exportChatHistory('pdf'));
+
+    // 角色管理按钮
     chatAddPersonaBtn.addEventListener('click', addPersona);
     chatEditPersonaBtn.addEventListener('click', editPersona);
     chatDeletePersonaBtn.addEventListener('click', deletePersona);
+
+    // 消息管理按钮
+    chatManageBtn.addEventListener('click', toggleManagementMode);
+    chatCancelManageBtn.addEventListener('click', () => toggleManagementMode(false));
+    chatSelectAllBtn.addEventListener('click', () => toggleSelectAllMessages(true));
+    chatDeleteSelectedBtn.addEventListener('click', deleteSelectedMessages);
+    
+    // 初始化UI
     updatePersonaSelector();
-    switchPersona();
+    renderChatHistoryList();
+    if (!appState.chat.currentConversationId) {
+        startNewChat(false);
+    } else {
+        switchConversation(appState.chat.currentConversationId);
+    }
 }
 
+// --- 对话和角色状态管理 ---
+function savePersonas() { localStorage.setItem('chatPersonas', JSON.stringify(appState.chat.personas)); }
+function loadPersonas() {
+    const savedPersonas = JSON.parse(localStorage.getItem('chatPersonas'));
+    if (savedPersonas && Object.keys(savedPersonas).length > 0) {
+        appState.chat.personas = savedPersonas;
+    } else {
+        appState.chat.personas = {
+            "patent_analyzer": { name: "资深专利分析师", system: "你是一位顶级的专利分析师和信息架构师，极其擅长从复杂、冗长的专利文本中快速提炼核心技术原理、解决方案、技术问题和效果。你的回答应该专业、结构清晰、逻辑严谨。", userTemplate: "", isCustom: false },
+            "translator": { name: "专业技术翻译", system: "你是一个专业精通各技术领域术语的、精通多国语言的专利文本翻译引擎。你的任务是自动检测用户输入专利文本的语言并将其翻译成中文或英文。请直接返回翻译后的文本，不要添加任何额外的解释或说明。", userTemplate: "", isCustom: false },
+            "keyword_expander": { name: "专利检索词专家", system: "你是一名资深的专利检索专家。你的任务是根据用户提供的技术点，拓展出一系列用于专利数据库检索的中英文同义词、近义词、上下位概念和相关技术术语。输出应该清晰、格式化，便于复制使用。", userTemplate: "", isCustom: false },
+            "general_assistant": { name: "通用助手", system: "你是一个乐于助人的通用AI助手，可以回答各种问题。", userTemplate: "", isCustom: false }
+        };
+        savePersonas();
+    }
+}
+function saveConversations() { localStorage.setItem('chatConversations', JSON.stringify(appState.chat.conversations)); }
+function loadConversations() {
+    const savedConvos = JSON.parse(localStorage.getItem('chatConversations') || '[]');
+    appState.chat.conversations = savedConvos;
+    appState.chat.currentConversationId = localStorage.getItem('currentConversationId');
+    if (savedConvos.length > 0 && (!appState.chat.currentConversationId || !savedConvos.find(c => c.id === appState.chat.currentConversationId))) {
+        appState.chat.currentConversationId = savedConvos.sort((a,b) => b.lastUpdate - a.lastUpdate)[0].id;
+    }
+}
+
+// --- UI渲染 ---
 function updatePersonaSelector() {
     const currentVal = chatPersonaSelect.value;
     chatPersonaSelect.innerHTML = Object.keys(appState.chat.personas).map(id => `<option value="${id}">${appState.chat.personas[id].name}</option>`).join('');
     if (appState.chat.personas[currentVal]) chatPersonaSelect.value = currentVal;
     else if (Object.keys(appState.chat.personas).length > 0) chatPersonaSelect.value = Object.keys(appState.chat.personas)[0];
-    appState.chat.currentPersonaId = chatPersonaSelect.value;
 }
 
-function savePersonas() { localStorage.setItem('chatPersonas', JSON.stringify(appState.chat.personas)); }
-
-function switchPersona() {
-    appState.chat.currentPersonaId = chatPersonaSelect.value;
-    if (!appState.chat.histories[appState.chat.currentPersonaId]) {
-        startNewChat(false);
-    } else {
-        renderChatHistory();
-    }
-}
-
-function startNewChat(showNotification) {
-    const personaId = appState.chat.currentPersonaId;
-    if (!personaId) return;
-    const persona = appState.chat.personas[personaId];
-    appState.chat.histories[personaId] = [{ role: 'system', content: persona.system }];
-    renderChatHistory();
-    if (showNotification) {
-         const notification = document.createElement('div');
-         notification.className = 'info';
-         notification.style.alignSelf = 'center';
-         notification.style.margin = '10px 0';
-         notification.innerHTML = `新对话已开始。当前角色：<strong>${appState.chat.personas[personaId].name}</strong>`;
-         chatWindow.appendChild(notification);
-    }
-}
-
-function renderChatHistory() {
-    const personaId = appState.chat.currentPersonaId;
-    const history = appState.chat.histories[personaId];
-    chatWindow.innerHTML = '';
-    if (history) {
-        for (let i = 1; i < history.length; i++) {
-            addMessageToDOM(history[i].role, history[i].content, i);
+function renderChatHistoryList() {
+    chatHistoryList.innerHTML = '';
+    const sortedConvos = [...appState.chat.conversations].sort((a, b) => b.lastUpdate - a.lastUpdate);
+    sortedConvos.forEach(convo => {
+        const item = document.createElement('div');
+        item.className = 'chat-history-item';
+        item.dataset.id = convo.id;
+        if (convo.id === appState.chat.currentConversationId) {
+            item.classList.add('active');
         }
+        item.innerHTML = `
+            <span class="history-item-title">${convo.title}</span>
+            <span class="history-item-details">${new Date(convo.lastUpdate).toLocaleString()}</span>
+        `;
+        item.addEventListener('click', () => switchConversation(convo.id));
+        chatHistoryList.appendChild(item);
+    });
+}
+
+function renderCurrentChat() {
+    const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
+    chatWindow.innerHTML = '';
+    if (!convo) return;
+    
+    // Sync persona selector
+    if (appState.chat.personas[convo.personaId]) {
+        chatPersonaSelect.value = convo.personaId;
     }
+    
+    convo.messages.forEach((msg, index) => {
+        if (msg.role !== 'system') {
+            addMessageToDOM(msg.role, msg.content, index);
+        }
+    });
+    
     chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
@@ -700,9 +776,22 @@ function addMessageToDOM(role, content, index, isStreaming = false) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `chat-message ${role}-message`;
     messageDiv.id = messageId;
-    if (index) messageDiv.dataset.index = index;
+    if (index !== undefined) messageDiv.dataset.index = index;
+    
     const renderedContent = isStreaming ? content : (window.marked ? window.marked.parse(content) : content.replace(/</g, "&lt;").replace(/>/g, "&gt;"));
-    messageDiv.innerHTML = `<div class="avatar">${role === 'user' ? 'U' : 'AI'}</div><div class="message-body"><div class="message-content">${renderedContent}</div><div class="message-footer"><button class="icon-button" title="复制" onclick="copyMessage(this)"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2Zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6Z M2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1H2Z"></path></svg></button><button class="icon-button" title="删除" onclick="deleteMessage(this)"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"></path><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"></path></svg></button></div></div>`;
+    
+    messageDiv.innerHTML = `
+        <input type="checkbox" class="message-checkbox" style="display:none;">
+        <div class="avatar">${role === 'user' ? 'U' : 'AI'}</div>
+        <div class="message-body">
+            <div class="message-content">${renderedContent}</div>
+            <div class="message-footer">
+                <button class="icon-button" title="复制" onclick="copyMessage(this)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2Zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6Z M2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1H2Z"></path></svg>
+                </button>
+            </div>
+        </div>
+    `;
     const footer = messageDiv.querySelector('.message-footer');
     if (isStreaming) footer.style.display = 'none';
     chatWindow.appendChild(messageDiv);
@@ -710,24 +799,100 @@ function addMessageToDOM(role, content, index, isStreaming = false) {
     return messageId;
 }
 
+// --- 核心交互逻辑 ---
+function startNewChat(fromUserClick = false) {
+    const currentConvo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
+    if (fromUserClick && currentConvo && currentConvo.messages.length > 1) {
+        if (confirm("您想在开启新对话前，导出当前的聊天记录吗？")) {
+            exportChatHistory('txt');
+        }
+    }
+    
+    const newId = `convo-${Date.now()}`;
+    const personaId = chatPersonaSelect.value || Object.keys(appState.chat.personas)[0];
+    const persona = appState.chat.personas[personaId];
+    
+    const newConvo = {
+        id: newId,
+        title: `新对话 - ${new Date().toLocaleTimeString()}`,
+        personaId: personaId,
+        messages: [{ role: 'system', content: persona.system }],
+        lastUpdate: Date.now()
+    };
+    
+    appState.chat.conversations.push(newConvo);
+    switchConversation(newId);
+    saveConversations();
+    renderChatHistoryList();
+}
+
+function switchConversation(id) {
+    appState.chat.currentConversationId = id;
+    localStorage.setItem('currentConversationId', id);
+    renderCurrentChat();
+    renderChatHistoryList(); // To update active state
+    toggleManagementMode(false); // Exit management mode on switch
+}
+
+function updateCurrentConversationPersona() {
+    const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
+    if (!convo) return;
+    
+    const newPersonaId = chatPersonaSelect.value;
+    const newPersona = appState.chat.personas[newPersonaId];
+    convo.personaId = newPersonaId;
+    convo.messages[0] = { role: 'system', content: newPersona.system };
+    convo.lastUpdate = Date.now();
+    
+    saveConversations();
+    renderChatHistoryList();
+    
+    const notification = document.createElement('div');
+    notification.className = 'info';
+    notification.style.alignSelf = 'center';
+    notification.style.margin = '10px 0';
+    notification.innerHTML = `对话角色已切换为：<strong>${newPersona.name}</strong>`;
+    chatWindow.appendChild(notification);
+}
+
 async function handleStreamChatRequest() {
     const userInput = chatInput.value.trim();
     if (!userInput) return;
+    
+    const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
+    if (!convo) return;
+    
     chatSendBtn.disabled = true;
     chatInput.disabled = true;
-    const personaId = appState.chat.currentPersonaId;
-    const history = appState.chat.histories[personaId];
-    history.push({ role: 'user', content: userInput });
-    renderChatHistory(); 
+
+    const persona = appState.chat.personas[convo.personaId];
+    let finalUserInput = userInput;
+    if (persona.userTemplate && persona.userTemplate.includes('{{INPUT}}')) {
+        finalUserInput = persona.userTemplate.replace('{{INPUT}}', userInput);
+    }
+    
+    convo.messages.push({ role: 'user', content: finalUserInput });
+    if (convo.messages.length === 2) { // First user message
+        convo.title = userInput.substring(0, 30);
+    }
+    convo.lastUpdate = Date.now();
+    
+    renderCurrentChat();
+    renderChatHistoryList();
+    saveConversations();
+    
     chatInput.value = '';
     chatInput.style.height = '50px';
     chatCharCount.textContent = '0';
-    const assistantMessageId = addMessageToDOM('assistant', '<span class="blinking-cursor">|</span>', history.length, true);
+    
+    const assistantMessageId = addMessageToDOM('assistant', '<span class="blinking-cursor">|</span>', convo.messages.length, true);
     const assistantContentEl = getEl(assistantMessageId).querySelector('.message-content');
     let fullResponse = "";
+    
     try {
         const contextCount = parseInt(chatContextCount.value, 10);
-        const messagesToSend = [history[0], ...history.slice(1).slice(-(contextCount * 2))];
+        const messagesToSend = [convo.messages[0], ...convo.messages.slice(1).slice(-(contextCount * 2))];
+        
         const reader = await apiCall('/stream_chat', { model: chatModelSelect.value, temperature: parseFloat(chatTempInput.value), messages: messagesToSend }, 'POST', true);
         const decoder = new TextDecoder();
         while (true) {
@@ -751,14 +916,16 @@ async function handleStreamChatRequest() {
             }
         }
         assistantContentEl.innerHTML = window.marked.parse(fullResponse);
-        history.push({ role: 'assistant', content: fullResponse });
-        getEl(assistantMessageId).dataset.index = history.length - 1;
+        convo.messages.push({ role: 'assistant', content: fullResponse });
+        getEl(assistantMessageId).dataset.index = convo.messages.length - 1;
         getEl(assistantMessageId).querySelector('.message-footer').style.display = 'flex';
+        saveConversations();
     } catch (error) {
         assistantContentEl.innerHTML = `<div class="info error">请求失败: ${error.message}</div>`;
-        history.push({ role: 'assistant', content: `[ERROR] ${error.message}` });
-        getEl(assistantMessageId).dataset.index = history.length - 1;
+        convo.messages.push({ role: 'assistant', content: `[ERROR] ${error.message}` });
+        getEl(assistantMessageId).dataset.index = convo.messages.length - 1;
         getEl(assistantMessageId).querySelector('.message-footer').style.display = 'flex';
+        saveConversations();
     } finally {
         chatSendBtn.disabled = false;
         chatInput.disabled = false;
@@ -766,18 +933,69 @@ async function handleStreamChatRequest() {
     }
 }
 
-function exportChatHistory() {
-    const history = appState.chat.histories[appState.chat.currentPersonaId];
-    if (!history || history.length <= 1) return alert("没有聊天记录可导出。");
-    const personaName = appState.chat.personas[appState.chat.currentPersonaId].name;
-    let content = `聊天记录 - ${personaName}\n========================\n\n`;
-    history.forEach(msg => { if (msg.role !== 'system') content += `[${msg.role.toUpperCase()}]\n${msg.content}\n\n------------------------\n\n`; });
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `聊天记录_${personaName}_${new Date().toISOString().slice(0,10)}.txt`;
-    a.click();
-    URL.revokeObjectURL(a.href);
+// --- 辅助功能：导出、复制、删除、角色管理 ---
+function exportChatHistory(format = 'txt') {
+    const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
+    if (!convo || convo.messages.length <= 1) return alert("没有聊天记录可导出。");
+
+    const personaName = appState.chat.personas[convo.personaId].name;
+    const filename = `聊天记录_${personaName}_${new Date().toISOString().slice(0,10)}`;
+
+    if (format === 'txt') {
+        let content = `聊天记录 - ${personaName}\n========================\n\n`;
+        convo.messages.forEach(msg => { if (msg.role !== 'system') content += `[${msg.role.toUpperCase()}]\n${msg.content}\n\n------------------------\n\n`; });
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${filename}.txt`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+    } else if (format === 'png') {
+        alert("正在生成图片，请稍候... 对于很长的聊天记录，这可能需要一些时间。");
+        html2canvas(chatWindow, { scale: 2, useCORS: true, backgroundColor: getComputedStyle(chatWindow).backgroundColor }).then(canvas => {
+            const a = document.createElement('a');
+            a.href = canvas.toDataURL('image/png');
+            a.download = `${filename}.png`;
+            a.click();
+        });
+    } else if (format === 'pdf') {
+        alert("正在生成PDF，请稍候... 对于很长的聊天记录，这可能需要一些时间。");
+        const { jsPDF } = window.jspdf;
+        html2canvas(chatWindow, { scale: 2, useCORS: true, backgroundColor: getComputedStyle(chatWindow).backgroundColor }).then(canvas => {
+            const imgData = canvas.toDataURL('image/jpeg', 0.9);
+            const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const canvasWidth = canvas.width;
+            const canvasHeight = canvas.height;
+            const ratio = canvasWidth / pdfWidth;
+            const imgHeight = canvasHeight / ratio;
+            let heightLeft = imgHeight;
+            let position = 0;
+            pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
+            heightLeft -= pdfHeight;
+            while (heightLeft > 0) {
+                position = heightLeft - imgHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
+                heightLeft -= pdfHeight;
+            }
+            pdf.save(`${filename}.pdf`);
+        });
+    }
+}
+
+function copyMessage(buttonElement) {
+    const contentDiv = buttonElement.closest('.message-body').querySelector('.message-content');
+    const originalContent = buttonElement.innerHTML;
+    navigator.clipboard.writeText(contentDiv.innerText).then(() => {
+        buttonElement.innerHTML = '✓';
+        buttonElement.title = '已复制!';
+        setTimeout(() => {
+            buttonElement.innerHTML = originalContent;
+            buttonElement.title = '复制';
+        }, 1500);
+    }).catch(err => alert('复制失败!'));
 }
 
 function addPersona() {
@@ -785,63 +1003,98 @@ function addPersona() {
     if (!name) return;
     const system = prompt(`请输入角色 "${name}" 的系统提示 (System Prompt):`);
     if (system === null) return;
+    const userTemplate = prompt(`(可选) 请输入用户输入模板，使用 {{INPUT}} 作为占位符。\n如果不需要，请留空直接确定。`, "");
+    if (userTemplate === null) return;
+
     const id = `custom-${Date.now()}`;
-    appState.chat.personas[id] = { name, system, isCustom: true };
+    appState.chat.personas[id] = { name, system, userTemplate, isCustom: true };
     savePersonas();
     updatePersonaSelector();
     chatPersonaSelect.value = id;
-    switchPersona();
+    updateCurrentConversationPersona();
     alert("新角色已添加！");
 }
 
 function editPersona() {
-    const id = appState.chat.currentPersonaId;
+    const id = chatPersonaSelect.value;
     const persona = appState.chat.personas[id];
-    const newSystem = prompt(`正在编辑角色 "${persona.name}" 的系统提示:`, persona.system);
-    if (newSystem !== null) {
-        persona.system = newSystem;
-        if (appState.chat.histories[id]) appState.chat.histories[id][0].content = newSystem;
-        savePersonas();
-        alert("角色已更新！当前对话将使用新的系统提示。");
-    }
+    if (!persona) return;
+    const newName = prompt("编辑角色名称：", persona.name);
+    if (!newName) return;
+    const newSystem = prompt(`正在编辑角色 "${newName}" 的系统提示:`, persona.system);
+    if (newSystem === null) return;
+    const newUserTemplate = prompt(`(可选) 编辑用户输入模板，使用 {{INPUT}} 作为占位符。`, persona.userTemplate || "");
+    if (newUserTemplate === null) return;
+
+    persona.name = newName;
+    persona.system = newSystem;
+    persona.userTemplate = newUserTemplate;
+
+    savePersonas();
+    updatePersonaSelector();
+    chatPersonaSelect.value = id; // re-select it
+    updateCurrentConversationPersona(); // update current convo if it uses this persona
+    alert("角色已更新！");
 }
 
 function deletePersona() {
-    const id = appState.chat.currentPersonaId;
+    const id = chatPersonaSelect.value;
     const persona = appState.chat.personas[id];
     if (!persona.isCustom) return alert("抱歉，不能删除预设角色。");
-    if (confirm(`确定要删除角色 "${persona.name}" 吗？该角色的聊天记录也将被删除。`)) {
+    if (confirm(`确定要删除角色 "${persona.name}" 吗？使用此角色的对话将切换为通用助手。`)) {
         delete appState.chat.personas[id];
-        delete appState.chat.histories[id];
+        appState.chat.conversations.forEach(c => {
+            if (c.personaId === id) c.personaId = 'general_assistant';
+        });
         savePersonas();
+        saveConversations();
         updatePersonaSelector();
-        switchPersona();
+        switchConversation(appState.chat.currentConversationId); // Refresh view
         alert("角色已删除。");
     }
 }
 
-function copyMessage(buttonElement) {
-    const contentDiv = buttonElement.closest('.message-body').querySelector('.message-content');
-    navigator.clipboard.writeText(contentDiv.innerText).then(() => {
-        const originalTitle = buttonElement.title;
-        buttonElement.title = '已复制!';
-        setTimeout(() => { buttonElement.title = originalTitle; }, 1500);
-    }).catch(err => alert('复制失败!'));
-}
-
-function deleteMessage(buttonElement) {
-    if (!confirm('确定要删除这条消息吗？')) return;
-    const messageDiv = buttonElement.closest('.chat-message');
-    const index = parseInt(messageDiv.dataset.index, 10);
-    const personaId = appState.chat.currentPersonaId;
-    if (!isNaN(index) && appState.chat.histories[personaId]?.[index]) {
-        appState.chat.histories[personaId].splice(index, 1);
-        renderChatHistory();
+function toggleManagementMode(forceState) {
+    appState.chat.isManagementMode = forceState !== undefined ? forceState : !appState.chat.isManagementMode;
+    chatWindow.classList.toggle('chat-window-management-mode', appState.chat.isManagementMode);
+    chatManagementBar.style.display = appState.chat.isManagementMode ? 'flex' : 'none';
+    chatManageBtn.textContent = appState.chat.isManagementMode ? '退出管理' : '管理消息';
+    if (!appState.chat.isManagementMode) {
+        toggleSelectAllMessages(false); // Uncheck all when exiting
     }
 }
 
+function toggleSelectAllMessages(select) {
+    chatWindow.querySelectorAll('.message-checkbox').forEach(cb => cb.checked = select);
+}
+
+function deleteSelectedMessages() {
+    const indicesToDelete = [];
+    chatWindow.querySelectorAll('.message-checkbox:checked').forEach(cb => {
+        const index = parseInt(cb.closest('.chat-message').dataset.index, 10);
+        if (!isNaN(index)) indicesToDelete.push(index);
+    });
+
+    if (indicesToDelete.length === 0) return alert("请先选择要删除的消息。");
+    if (!confirm(`确定要删除选中的 ${indicesToDelete.length} 条消息吗？此操作无法撤销。`)) return;
+
+    const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
+    if (!convo) return;
+    
+    // Sort descending to avoid index shifting issues during deletion
+    indicesToDelete.sort((a, b) => b - a);
+    indicesToDelete.forEach(index => {
+        convo.messages.splice(index, 1);
+    });
+
+    convo.lastUpdate = Date.now();
+    saveConversations();
+    renderCurrentChat();
+    toggleManagementMode(false);
+}
+
 // =================================================================================
-// 功能二: 小批量异步
+// 功能二: 小批量异步 (已重构)
 // =================================================================================
 function initAsyncBatch() {
     const modelSelect = getEl('async_model_select');
@@ -856,7 +1109,6 @@ function initAsyncBatch() {
     const excelSheet = getEl('async_excel_sheet');
     const excelColumn = getEl('async_excel_column');
     const loadExcelBtn = getEl('async_load_excel_btn');
-    const linkBtn = getEl('async_link_btn');
     const clearRequestsBtn = getEl('async_clear_requests_btn');
     const submitBtn = getEl('async_submit_batch_btn');
 
@@ -884,7 +1136,6 @@ function initAsyncBatch() {
         manualInput.value = '';
     });
 
-    // [MODIFIED] Excel parsing is now client-side
     excelFile.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -897,11 +1148,8 @@ function initAsyncBatch() {
                 excelSheet.disabled = false;
                 excelColumn.disabled = true; 
                 loadExcelBtn.disabled = true;
-                handleAsyncSheetChange(); // Trigger column update for the first sheet
-            } catch (err) {
-                alert(`解析Excel失败: ${err.message}`);
-                console.error(err);
-            }
+                handleAsyncSheetChange(); 
+            } catch (err) { alert(`解析Excel失败: ${err.message}`); console.error(err); }
         };
         reader.readAsArrayBuffer(file);
     });
@@ -932,26 +1180,11 @@ function initAsyncBatch() {
         
         jsonData.forEach(row => {
             if (row[columnName]) {
-                appState.asyncBatch.inputs.push({
-                    id: `I${appState.asyncBatch.nextInputId++}`,
-                    content: String(row[columnName]).trim()
-                });
+                appState.asyncBatch.inputs.push({ id: `I${appState.asyncBatch.nextInputId++}`, content: String(row[columnName]).trim() });
             }
         });
         renderAsyncLists();
         alert(`已成功从列 "${columnName}" 加载 ${jsonData.filter(r => r[columnName]).length} 条输入。`);
-    });
-
-    linkBtn.addEventListener('click', () => {
-        const selectedInputIds = Array.from(getEl('async_link_inputs_list').querySelectorAll('input:checked')).map(cb => cb.value);
-        const selectedTemplateIds = Array.from(getEl('async_link_templates_list').querySelectorAll('input:checked')).map(cb => cb.value);
-        if (selectedInputIds.length === 0 || selectedTemplateIds.length === 0) return alert('请在左右两栏中至少各勾选一项！');
-        for (const inputId of selectedInputIds) {
-            for (const templateId of selectedTemplateIds) {
-                appState.asyncBatch.requests.push({ localId: `R${appState.asyncBatch.nextRequestId++}`, inputId, templateId });
-            }
-        }
-        renderRequestsPreview();
     });
     
     clearRequestsBtn.addEventListener('click', () => {
@@ -967,13 +1200,25 @@ function initAsyncBatch() {
 function renderAsyncLists() {
     const inputsListDiv = getEl('async_inputs_list');
     const templatesListDiv = getEl('async_templates_list');
-    const linkInputsListDiv = getEl('async_link_inputs_list');
-    const linkTemplatesListDiv = getEl('async_link_templates_list');
+    const taskCreationArea = getEl('async_task_creation_area');
 
-    inputsListDiv.innerHTML = appState.asyncBatch.inputs.map(i => `<div class="list-item"><span class="item-content"><strong>${i.id}:</strong> ${i.content.substring(0, 100)}...</span><button class="icon-button" title="删除" onclick="deleteAsyncInput('${i.id}')">🗑️</button></div>`).join('') || '<div class="info" style="padding:10px">暂无输入</div>';
+    inputsListDiv.innerHTML = appState.asyncBatch.inputs.map((i, index) => `<div class="list-item"><span class="item-index">${index + 1}.</span><span class="item-content">${i.content.substring(0, 100)}...</span><button class="icon-button" title="删除" onclick="deleteAsyncInput('${i.id}')">🗑️</button></div>`).join('') || '<div class="info" style="padding:10px">暂无输入</div>';
     templatesListDiv.innerHTML = appState.asyncBatch.templates.map(t => `<div class="list-item"><span class="item-content"><strong>${t.id}:</strong> ${t.name}</span><button class="icon-button" title="删除" onclick="deleteAsyncTemplate('${t.id}')">🗑️</button></div>`).join('') || '<div class="info" style="padding:10px">暂无模板</div>';
-    linkInputsListDiv.innerHTML = appState.asyncBatch.inputs.map(i => `<div class="list-item"><input type="checkbox" value="${i.id}" id="link-${i.id}"><label for="link-${i.id}" style="cursor:pointer" class="item-content"><strong>${i.id}:</strong> ${i.content.substring(0, 50)}...</label></div>`).join('') || '<div class="info" style="padding:10px">暂无输入</div>';
-    linkTemplatesListDiv.innerHTML = appState.asyncBatch.templates.map(t => `<div class="list-item"><input type="checkbox" value="${t.id}" id="link-${t.id}"><label for="link-${t.id}" style="cursor:pointer" class="item-content"><strong>${t.id}:</strong> ${t.name}</label></div>`).join('') || '<div class="info" style="padding:10px">暂无模板</div>';
+    
+    if (appState.asyncBatch.templates.length === 0) {
+        taskCreationArea.innerHTML = '<div class="info">请先在步骤3中添加模板。</div>';
+    } else {
+        taskCreationArea.innerHTML = appState.asyncBatch.templates.map(t => `
+            <div class="template-task-creator">
+                <h5>模板: ${t.name} (${t.id})</h5>
+                <div class="config-item row-flex">
+                    <label for="range-input-${t.id}">输入序号范围:</label>
+                    <input type="text" id="range-input-${t.id}" placeholder="例: 1-10, 15, 21-30">
+                </div>
+                <button class="small-button" onclick="addAsyncTasksByRange('${t.id}')">添加至任务列表</button>
+            </div>
+        `).join('');
+    }
 }
 
 function deleteAsyncTemplate(templateId) {
@@ -992,6 +1237,53 @@ function deleteAsyncInput(inputId) {
     renderRequestsPreview();
 }
 
+function parseRangeString(rangeStr) {
+    const indices = new Set();
+    const maxIndex = appState.asyncBatch.inputs.length;
+    if (maxIndex === 0) return [];
+    
+    const parts = rangeStr.split(',');
+    for (const part of parts) {
+        const trimmedPart = part.trim();
+        if (trimmedPart.includes('-')) {
+            const [start, end] = trimmedPart.split('-').map(s => parseInt(s.trim(), 10));
+            if (!isNaN(start) && !isNaN(end) && start <= end) {
+                for (let i = start; i <= end; i++) {
+                    if (i > 0 && i <= maxIndex) indices.add(i - 1);
+                }
+            }
+        } else {
+            const num = parseInt(trimmedPart, 10);
+            if (!isNaN(num) && num > 0 && num <= maxIndex) {
+                indices.add(num - 1);
+            }
+        }
+    }
+    return Array.from(indices);
+}
+
+function addAsyncTasksByRange(templateId) {
+    const rangeInput = getEl(`range-input-${templateId}`);
+    const rangeStr = rangeInput.value;
+    const indices = parseRangeString(rangeStr);
+    
+    if (indices.length === 0) {
+        return alert("输入的范围无效或没有匹配到任何输入。请检查格式 (例: 1-5, 8) 和序号。");
+    }
+
+    indices.forEach(index => {
+        const inputId = appState.asyncBatch.inputs[index].id;
+        // Avoid adding duplicates
+        if (!appState.asyncBatch.requests.some(r => r.inputId === inputId && r.templateId === templateId)) {
+            appState.asyncBatch.requests.push({ localId: `R${appState.asyncBatch.nextRequestId++}`, inputId, templateId });
+        }
+    });
+    
+    renderRequestsPreview();
+    rangeInput.value = ''; // Clear after adding
+    alert(`已成功添加 ${indices.length} 个任务到待提交列表。`);
+}
+
 function renderRequestsPreview() {
     const previewList = getEl('async_requests_preview_list');
     const countSpan = getEl('async_requests_count');
@@ -999,7 +1291,7 @@ function renderRequestsPreview() {
     countSpan.textContent = appState.asyncBatch.requests.length;
     submitBtn.disabled = appState.asyncBatch.requests.length === 0;
     if (appState.asyncBatch.requests.length === 0) {
-        previewList.innerHTML = '<div class="info">请通过上面的“链接选中项”按钮来创建请求。</div>';
+        previewList.innerHTML = '<div class="info">请通过上方的模板任务创建器来添加请求。</div>';
         return;
     }
     previewList.innerHTML = appState.asyncBatch.requests.map(req => {
@@ -1040,7 +1332,7 @@ async function handleAsyncBatchSubmit() {
         if (template.systemPrompt) messages.unshift({ role: 'system', content: template.systemPrompt });
         return apiCall("/async_submit", { model: appState.asyncBatch.model, temperature: appState.asyncBatch.temperature, messages: messages, request_id: request.localId, })
             .then(data => { appState.asyncBatch.tasks[request.localId] = { zhipuTaskId: data.task_id, status: 'processing' }; updateAsyncTableRow(request.localId, 'processing', '已提交...'); })
-            .catch(error => { appState.asyncBatch.tasks[request.localId] = { status: 'fail' }; updateAsyncTableRow(request.localId, 'fail', `提交失败: ${error.message}`); });
+            .catch(error => { appState.asyncBatch.tasks[request.localId] = { status: 'failed' }; updateAsyncTableRow(request.localId, 'failed', `提交失败: ${error.message}`); });
     });
     await Promise.all(submissionPromises);
     startAsyncPolling();
@@ -1049,11 +1341,9 @@ async function handleAsyncBatchSubmit() {
 function updateAsyncTableRow(localRequestId, status, content) {
     const row = getEl(`row-${localRequestId}`);
     if (!row) return;
-    let statusText = status.toUpperCase(), statusClass = `status-${status.toLowerCase()}`;
-    if (status === 'processing') statusText = "处理中";
-    if (status === 'success') statusText = "成功";
-    if (status === 'fail') statusText = "失败";
-    row.querySelector('.status-cell').innerHTML = `<span class="${statusClass}">${statusText}</span>`;
+    const statusCell = row.querySelector('.status-cell');
+    statusCell.className = `status-cell status-${status}`;
+    statusCell.textContent = status.charAt(0).toUpperCase() + status.slice(1);
     row.querySelector('.result-cell').innerHTML = content;
 }
 
@@ -1076,22 +1366,23 @@ function startAsyncPolling() {
             try {
                 const data = await apiCall(`/async_retrieve`, { task_id: task.zhipuTaskId }, "POST");
                 if (data.task_status === 'SUCCESS') {
-                    appState.asyncBatch.tasks[localId].status = 'success';
+                    appState.asyncBatch.tasks[localId].status = 'completed';
                     const content = data.choices[0].message.content;
-                    updateAsyncTableRow(localId, 'success', `<pre>${content}</pre>`);
+                    updateAsyncTableRow(localId, 'completed', `<pre>${content}</pre>`);
                 } else if (data.task_status === 'FAIL') {
-                    appState.asyncBatch.tasks[localId].status = 'fail';
-                    updateAsyncTableRow(localId, 'fail', `任务失败: ${data.error?.message || '未知错误'}`);
+                    appState.asyncBatch.tasks[localId].status = 'failed';
+                    updateAsyncTableRow(localId, 'failed', `任务失败: ${data.error?.message || '未知错误'}`);
                 }
             } catch (error) {
-                 appState.asyncBatch.tasks[localId].status = 'fail';
-                 updateAsyncTableRow(localId, 'fail', `查询失败: ${error.message}`);
+                 appState.asyncBatch.tasks[localId].status = 'failed';
+                 updateAsyncTableRow(localId, 'failed', `查询失败: ${error.message}`);
             }
         }
     };
     appState.asyncBatch.pollingInterval = setInterval(poll, 5000);
     poll();
 }
+
 
 // =================================================================================
 // 功能三: 大批量处理
