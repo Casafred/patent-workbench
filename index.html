@@ -126,8 +126,8 @@
     #chat_input { min-height: 50px; max-height: 300px; height: 50px; padding: 12px 50px 12px 20px; overflow-y: auto; }
     #chat_char_count { position: absolute; bottom: 8px; right: 15px; font-size: 12px; color: var(--text-color-secondary); pointer-events: none; }
     #chat_send_btn { height: 50px; flex-shrink: 0; }
-    #chat_management_bar { display: none; padding: 10px; background-color: var(--primary-color-hover-bg); border-bottom: 1px solid var(--border-color); }
-    .chat-window-management-mode .message-checkbox { display: inline-block !important; margin-right: 10px; }
+    #chat_management_bar { display: none; padding: 10px; background-color: var(--primary-color-hover-bg); border-bottom: 1px solid var(--border-color); align-items: center; gap: 10px; }
+    .chat-window-management-mode .message-checkbox { display: inline-block !important; margin-right: 10px; flex-shrink: 0; }
     .message-checkbox { display: none; }
 
     /* --- 修改：小批量异步布局 --- */
@@ -141,6 +141,8 @@
     .list-item .item-index { font-weight: bold; color: var(--primary-color); margin-right: 10px; }
     .template-task-creator { padding: 15px; border: 1px dashed var(--primary-color); border-radius: 8px; margin-top: 15px; }
     .template-task-creator h5 { margin-top: 0; }
+    #async_inputs_management { display: none; padding: 10px 0; gap: 10px; align-items: center; }
+    #async_inputs_management.visible { display: flex; }
     
     #async_results_table { width: 100%; margin-top: 20px; border-collapse: collapse; }
     #async_results_table th, #async_results_table td { border: 1px solid var(--border-color); padding: 12px; text-align: left; vertical-align: top;}
@@ -224,9 +226,9 @@
                 <div id="chat_main_panel">
                     <div id="chat_container">
                         <div id="chat_management_bar">
+                            <button id="chat_select_all_btn" class="small-button">全选</button>
                             <button id="chat_delete_selected_btn" class="small-button delete-button">删除选中</button>
-                            <button id="chat_select_all_btn" class="small-button">全部选中</button>
-                            <button id="chat_cancel_manage_btn" class="small-button">取消</button>
+                            <button id="chat_cancel_manage_btn" class="small-button" style="margin-left: auto;">取消</button>
                         </div>
                         <div id="chat_window"></div>
                         <div id="chat_input_area">
@@ -280,7 +282,11 @@
                             <button id="async_load_excel_btn" class="small-button" disabled>从Excel加载输入</button>
                         </div>
                         <hr style="margin: 20px 0; border-color: var(--border-color);">
-                        <label><strong>已添加的输入 (点击删除):</strong></label>
+                        <label><strong>已添加的输入 (<span id="async_inputs_count">0</span>):</strong></label>
+                        <div id="async_inputs_management">
+                            <button id="async_inputs_select_all_btn" class="small-button">全选</button>
+                            <button id="async_inputs_delete_selected_btn" class="small-button delete-button">删除选中</button>
+                        </div>
                         <div id="async_inputs_list" class="scrollable-list"></div>
                     </div>
                 </div>
@@ -482,7 +488,6 @@ const appState = {
     apiKey: '',
     chat: {
         personas: {},
-        // 新的状态结构
         conversations: [], // { id, title, personaId, messages, lastUpdate }
         currentConversationId: null,
         isManagementMode: false
@@ -553,6 +558,12 @@ const chatWindow = getEl('chat_window'), chatInput = getEl('chat_input'), chatCh
 const chatHistoryList = getEl('chat_history_list');
 const chatManagementBar = getEl('chat_management_bar');
 const chatDeleteSelectedBtn = getEl('chat_delete_selected_btn'), chatSelectAllBtn = getEl('chat_select_all_btn'), chatCancelManageBtn = getEl('chat_cancel_manage_btn');
+
+// Async Batch
+const asyncInputsCount = getEl('async_inputs_count');
+const asyncInputsManagement = getEl('async_inputs_management');
+const asyncInputsSelectAllBtn = getEl('async_inputs_select_all_btn');
+const asyncInputsDeleteSelectedBtn = getEl('async_inputs_delete_selected_btn');
 
 // Large Batch (Generator)
 const genFileInput = getEl('gen_file-input'), genSheetSelector = getEl('gen_sheet-selector');
@@ -635,7 +646,10 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false) {
         }
         const response = await fetch(fullUrl, fetchOptions);
         if (isStream) {
-            if (!response.ok) throw new Error(`请求失败 (Stream): ${response.statusText}`);
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`请求失败 (Stream): ${response.statusText} - ${errorText}`);
+            }
             return response.body.getReader();
         }
         const result = await response.json();
@@ -653,16 +667,10 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false) {
 // 功能一: 即时对话 (已重构)
 // =================================================================================
 function initChat() {
-    // 模型和温度设置
     chatModelSelect.innerHTML = AVAILABLE_MODELS.map(m => `<option value="${m}">${m}</option>`).join('');
-    
-    // 加载角色
     loadPersonas();
-
-    // 加载历史对话
     loadConversations();
     
-    // 事件监听
     chatSendBtn.addEventListener('click', handleStreamChatRequest);
     chatInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleStreamChatRequest(); }});
     chatInput.addEventListener('input', () => {
@@ -673,23 +681,19 @@ function initChat() {
     chatPersonaSelect.addEventListener('change', updateCurrentConversationPersona);
     chatNewBtn.addEventListener('click', () => startNewChat(true));
     
-    // 导出按钮
     chatExportTxtBtn.addEventListener('click', () => exportChatHistory('txt'));
     chatExportPngBtn.addEventListener('click', () => exportChatHistory('png'));
     chatExportPdfBtn.addEventListener('click', () => exportChatHistory('pdf'));
 
-    // 角色管理按钮
     chatAddPersonaBtn.addEventListener('click', addPersona);
     chatEditPersonaBtn.addEventListener('click', editPersona);
     chatDeletePersonaBtn.addEventListener('click', deletePersona);
 
-    // 消息管理按钮
     chatManageBtn.addEventListener('click', toggleManagementMode);
     chatCancelManageBtn.addEventListener('click', () => toggleManagementMode(false));
     chatSelectAllBtn.addEventListener('click', () => toggleSelectAllMessages(true));
     chatDeleteSelectedBtn.addEventListener('click', deleteSelectedMessages);
     
-    // 初始化UI
     updatePersonaSelector();
     renderChatHistoryList();
     if (!appState.chat.currentConversationId) {
@@ -699,7 +703,6 @@ function initChat() {
     }
 }
 
-// --- 对话和角色状态管理 ---
 function savePersonas() { localStorage.setItem('chatPersonas', JSON.stringify(appState.chat.personas)); }
 function loadPersonas() {
     const savedPersonas = JSON.parse(localStorage.getItem('chatPersonas'));
@@ -725,7 +728,6 @@ function loadConversations() {
     }
 }
 
-// --- UI渲染 ---
 function updatePersonaSelector() {
     const currentVal = chatPersonaSelect.value;
     chatPersonaSelect.innerHTML = Object.keys(appState.chat.personas).map(id => `<option value="${id}">${appState.chat.personas[id].name}</option>`).join('');
@@ -757,7 +759,6 @@ function renderCurrentChat() {
     chatWindow.innerHTML = '';
     if (!convo) return;
     
-    // Sync persona selector
     if (appState.chat.personas[convo.personaId]) {
         chatPersonaSelect.value = convo.personaId;
     }
@@ -778,10 +779,10 @@ function addMessageToDOM(role, content, index, isStreaming = false) {
     messageDiv.id = messageId;
     if (index !== undefined) messageDiv.dataset.index = index;
     
-    const renderedContent = isStreaming ? content : (window.marked ? window.marked.parse(content) : content.replace(/</g, "&lt;").replace(/>/g, "&gt;"));
+    const renderedContent = isStreaming ? content : (window.marked ? window.marked.parse(content, { gfm: true, breaks: true }) : content.replace(/</g, "&lt;").replace(/>/g, "&gt;"));
     
     messageDiv.innerHTML = `
-        <input type="checkbox" class="message-checkbox" style="display:none;">
+        <input type="checkbox" class="message-checkbox">
         <div class="avatar">${role === 'user' ? 'U' : 'AI'}</div>
         <div class="message-body">
             <div class="message-content">${renderedContent}</div>
@@ -799,7 +800,6 @@ function addMessageToDOM(role, content, index, isStreaming = false) {
     return messageId;
 }
 
-// --- 核心交互逻辑 ---
 function startNewChat(fromUserClick = false) {
     const currentConvo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
     if (fromUserClick && currentConvo && currentConvo.messages.length > 1) {
@@ -830,8 +830,8 @@ function switchConversation(id) {
     appState.chat.currentConversationId = id;
     localStorage.setItem('currentConversationId', id);
     renderCurrentChat();
-    renderChatHistoryList(); // To update active state
-    toggleManagementMode(false); // Exit management mode on switch
+    renderChatHistoryList();
+    toggleManagementMode(false);
 }
 
 function updateCurrentConversationPersona() {
@@ -872,7 +872,7 @@ async function handleStreamChatRequest() {
     }
     
     convo.messages.push({ role: 'user', content: finalUserInput });
-    if (convo.messages.length === 2) { // First user message
+    if (convo.messages.length === 2) {
         convo.title = userInput.substring(0, 30);
     }
     convo.lastUpdate = Date.now();
@@ -909,13 +909,13 @@ async function handleStreamChatRequest() {
                     const delta = parsed.choices[0]?.delta?.content || "";
                     if (delta) {
                         fullResponse += delta;
-                        assistantContentEl.innerHTML = window.marked.parse(fullResponse + '<span class="blinking-cursor">|</span>');
+                        assistantContentEl.innerHTML = window.marked.parse(fullResponse + '<span class="blinking-cursor">|</span>', { gfm: true, breaks: true });
                         chatWindow.scrollTop = chatWindow.scrollHeight;
                     }
                 } catch(e) { console.error("Error parsing stream data:", data, e); }
             }
         }
-        assistantContentEl.innerHTML = window.marked.parse(fullResponse);
+        assistantContentEl.innerHTML = window.marked.parse(fullResponse, { gfm: true, breaks: true });
         convo.messages.push({ role: 'assistant', content: fullResponse });
         getEl(assistantMessageId).dataset.index = convo.messages.length - 1;
         getEl(assistantMessageId).querySelector('.message-footer').style.display = 'flex';
@@ -933,8 +933,7 @@ async function handleStreamChatRequest() {
     }
 }
 
-// --- 辅助功能：导出、复制、删除、角色管理 ---
-function exportChatHistory(format = 'txt') {
+async function exportChatHistory(format = 'txt') {
     const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
     if (!convo || convo.messages.length <= 1) return alert("没有聊天记录可导出。");
 
@@ -950,38 +949,50 @@ function exportChatHistory(format = 'txt') {
         a.download = `${filename}.txt`;
         a.click();
         URL.revokeObjectURL(a.href);
-    } else if (format === 'png') {
-        alert("正在生成图片，请稍候... 对于很长的聊天记录，这可能需要一些时间。");
-        html2canvas(chatWindow, { scale: 2, useCORS: true, backgroundColor: getComputedStyle(chatWindow).backgroundColor }).then(canvas => {
-            const a = document.createElement('a');
-            a.href = canvas.toDataURL('image/png');
-            a.download = `${filename}.png`;
-            a.click();
-        });
-    } else if (format === 'pdf') {
-        alert("正在生成PDF，请稍候... 对于很长的聊天记录，这可能需要一些时间。");
-        const { jsPDF } = window.jspdf;
-        html2canvas(chatWindow, { scale: 2, useCORS: true, backgroundColor: getComputedStyle(chatWindow).backgroundColor }).then(canvas => {
-            const imgData = canvas.toDataURL('image/jpeg', 0.9);
-            const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4' });
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
-            const canvasWidth = canvas.width;
-            const canvasHeight = canvas.height;
-            const ratio = canvasWidth / pdfWidth;
-            const imgHeight = canvasHeight / ratio;
-            let heightLeft = imgHeight;
-            let position = 0;
-            pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
-            heightLeft -= pdfHeight;
-            while (heightLeft > 0) {
-                position = heightLeft - imgHeight;
-                pdf.addPage();
-                pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
-                heightLeft -= pdfHeight;
+    } else { // PNG and PDF use html2canvas
+        alert("正在生成文件，请稍候... 对于很长的聊天记录，这可能需要一些时间。");
+
+        const originalStyles = {
+            height: chatWindow.style.height,
+            maxHeight: chatWindow.style.maxHeight,
+            overflowY: chatWindow.style.overflowY,
+        };
+
+        // Temporarily change styles to render the full content
+        chatWindow.style.height = 'auto';
+        chatWindow.style.maxHeight = 'none';
+        chatWindow.style.overflowY = 'visible';
+        
+        try {
+            const canvas = await html2canvas(chatWindow, { 
+                scale: 1.5, // Increase scale for better quality
+                useCORS: true, 
+                backgroundColor: getComputedStyle(chatWindow).backgroundColor,
+                scrollX: 0,
+                scrollY: -window.scrollY // Fix for capturing top of element
+            });
+
+            if (format === 'png') {
+                const a = document.createElement('a');
+                a.href = canvas.toDataURL('image/png');
+                a.download = `${filename}.png`;
+                a.click();
+            } else if (format === 'pdf') {
+                const { jsPDF } = window.jspdf;
+                const imgData = canvas.toDataURL('image/jpeg', 0.9);
+                const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: [canvas.width, canvas.height] });
+                pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
+                pdf.save(`${filename}.pdf`);
             }
-            pdf.save(`${filename}.pdf`);
-        });
+        } catch (e) {
+            console.error("Export failed:", e);
+            alert("导出失败，请查看控制台获取错误信息。");
+        } finally {
+            // IMPORTANT: Restore original styles
+            chatWindow.style.height = originalStyles.height;
+            chatWindow.style.maxHeight = originalStyles.maxHeight;
+            chatWindow.style.overflowY = originalStyles.overflowY;
+        }
     }
 }
 
@@ -1032,8 +1043,8 @@ function editPersona() {
 
     savePersonas();
     updatePersonaSelector();
-    chatPersonaSelect.value = id; // re-select it
-    updateCurrentConversationPersona(); // update current convo if it uses this persona
+    chatPersonaSelect.value = id;
+    updateCurrentConversationPersona();
     alert("角色已更新！");
 }
 
@@ -1049,7 +1060,7 @@ function deletePersona() {
         savePersonas();
         saveConversations();
         updatePersonaSelector();
-        switchConversation(appState.chat.currentConversationId); // Refresh view
+        switchConversation(appState.chat.currentConversationId);
         alert("角色已删除。");
     }
 }
@@ -1060,7 +1071,7 @@ function toggleManagementMode(forceState) {
     chatManagementBar.style.display = appState.chat.isManagementMode ? 'flex' : 'none';
     chatManageBtn.textContent = appState.chat.isManagementMode ? '退出管理' : '管理消息';
     if (!appState.chat.isManagementMode) {
-        toggleSelectAllMessages(false); // Uncheck all when exiting
+        toggleSelectAllMessages(false);
     }
 }
 
@@ -1081,7 +1092,6 @@ function deleteSelectedMessages() {
     const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
     if (!convo) return;
     
-    // Sort descending to avoid index shifting issues during deletion
     indicesToDelete.sort((a, b) => b - a);
     indicesToDelete.forEach(index => {
         convo.messages.splice(index, 1);
@@ -1173,18 +1183,32 @@ function initAsyncBatch() {
     }
     
     loadExcelBtn.addEventListener('click', () => {
+        if (appState.asyncBatch.inputs.length > 0) {
+            if (!confirm("从Excel加载将清空并替换当前所有输入内容，确定吗？")) {
+                return;
+            }
+        }
+        
+        // **修正：加载前清空**
+        appState.asyncBatch.inputs = [];
+        appState.asyncBatch.requests = [];
+        appState.asyncBatch.nextInputId = 1; // Reset counter for consistency
+
         const sheetName = excelSheet.value;
         const columnName = excelColumn.value;
         const worksheet = appState.asyncBatch.excelWorkbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
         
+        let loadedCount = 0;
         jsonData.forEach(row => {
             if (row[columnName]) {
                 appState.asyncBatch.inputs.push({ id: `I${appState.asyncBatch.nextInputId++}`, content: String(row[columnName]).trim() });
+                loadedCount++;
             }
         });
         renderAsyncLists();
-        alert(`已成功从列 "${columnName}" 加载 ${jsonData.filter(r => r[columnName]).length} 条输入。`);
+        renderRequestsPreview();
+        alert(`已成功从列 "${columnName}" 加载 ${loadedCount} 条输入，并清空了原有数据。`);
     });
     
     clearRequestsBtn.addEventListener('click', () => {
@@ -1195,6 +1219,11 @@ function initAsyncBatch() {
     });
 
     submitBtn.addEventListener('click', handleAsyncBatchSubmit);
+    asyncInputsSelectAllBtn.addEventListener('click', () => {
+        const allChecked = Array.from(document.querySelectorAll('#async_inputs_list input[type="checkbox"]')).every(cb => cb.checked);
+        document.querySelectorAll('#async_inputs_list input[type="checkbox"]').forEach(cb => cb.checked = !allChecked);
+    });
+    asyncInputsDeleteSelectedBtn.addEventListener('click', deleteSelectedAsyncInputs);
 }
 
 function renderAsyncLists() {
@@ -1202,7 +1231,19 @@ function renderAsyncLists() {
     const templatesListDiv = getEl('async_templates_list');
     const taskCreationArea = getEl('async_task_creation_area');
 
-    inputsListDiv.innerHTML = appState.asyncBatch.inputs.map((i, index) => `<div class="list-item"><span class="item-index">${index + 1}.</span><span class="item-content">${i.content.substring(0, 100)}...</span><button class="icon-button" title="删除" onclick="deleteAsyncInput('${i.id}')">🗑️</button></div>`).join('') || '<div class="info" style="padding:10px">暂无输入</div>';
+    inputsListDiv.innerHTML = appState.asyncBatch.inputs.map((i, index) => `
+        <div class="list-item">
+            <input type="checkbox" value="${i.id}" id="async-input-${i.id}" style="margin-right: 10px;">
+            <label for="async-input-${i.id}" class="item-content" style="cursor: pointer;">
+                <span class="item-index">${index + 1}.</span>
+                ${i.content.substring(0, 100)}...
+            </label>
+        </div>`
+    ).join('') || '<div class="info" style="padding:10px">暂无输入</div>';
+    
+    asyncInputsCount.textContent = appState.asyncBatch.inputs.length;
+    asyncInputsManagement.classList.toggle('visible', appState.asyncBatch.inputs.length > 0);
+
     templatesListDiv.innerHTML = appState.asyncBatch.templates.map(t => `<div class="list-item"><span class="item-content"><strong>${t.id}:</strong> ${t.name}</span><button class="icon-button" title="删除" onclick="deleteAsyncTemplate('${t.id}')">🗑️</button></div>`).join('') || '<div class="info" style="padding:10px">暂无模板</div>';
     
     if (appState.asyncBatch.templates.length === 0) {
@@ -1229,10 +1270,18 @@ function deleteAsyncTemplate(templateId) {
     renderRequestsPreview();
 }
 
-function deleteAsyncInput(inputId) {
-    if (!confirm(`确定删除输入 ${inputId} 吗？所有使用此输入的待提交请求也将被移除。`)) return;
-    appState.asyncBatch.inputs = appState.asyncBatch.inputs.filter(i => i.id !== inputId);
-    appState.asyncBatch.requests = appState.asyncBatch.requests.filter(r => r.inputId !== inputId);
+function deleteSelectedAsyncInputs() {
+    const idsToDelete = Array.from(document.querySelectorAll('#async_inputs_list input[type="checkbox"]:checked')).map(cb => cb.value);
+    if (idsToDelete.length === 0) {
+        return alert("请先勾选需要删除的输入项。");
+    }
+    if (!confirm(`确定要删除选中的 ${idsToDelete.length} 项输入吗？相关的待提交请求也会被一并移除。`)) {
+        return;
+    }
+
+    appState.asyncBatch.inputs = appState.asyncBatch.inputs.filter(i => !idsToDelete.includes(i.id));
+    appState.asyncBatch.requests = appState.asyncBatch.requests.filter(r => !idsToDelete.includes(r.inputId));
+    
     renderAsyncLists();
     renderRequestsPreview();
 }
@@ -1271,17 +1320,24 @@ function addAsyncTasksByRange(templateId) {
         return alert("输入的范围无效或没有匹配到任何输入。请检查格式 (例: 1-5, 8) 和序号。");
     }
 
+    let addedCount = 0;
     indices.forEach(index => {
         const inputId = appState.asyncBatch.inputs[index].id;
-        // Avoid adding duplicates
         if (!appState.asyncBatch.requests.some(r => r.inputId === inputId && r.templateId === templateId)) {
-            appState.asyncBatch.requests.push({ localId: `R${appState.asyncBatch.nextRequestId++}`, inputId, templateId });
+            // **修正：生成符合长度要求的 request_id**
+            const localId = `task-${Date.now()}-${appState.asyncBatch.nextRequestId++}`;
+            appState.asyncBatch.requests.push({ localId, inputId, templateId });
+            addedCount++;
         }
     });
     
     renderRequestsPreview();
-    rangeInput.value = ''; // Clear after adding
-    alert(`已成功添加 ${indices.length} 个任务到待提交列表。`);
+    rangeInput.value = '';
+    if (addedCount > 0) {
+        alert(`已成功添加 ${addedCount} 个新任务到待提交列表。`);
+    } else {
+        alert("所选范围的任务已存在于列表中，未添加新任务。");
+    }
 }
 
 function renderRequestsPreview() {
@@ -1330,7 +1386,7 @@ async function handleAsyncBatchSubmit() {
         const userPrompt = template.userPromptTemplate.replace('{{INPUT}}', input.content);
         const messages = [{ role: 'user', content: userPrompt }];
         if (template.systemPrompt) messages.unshift({ role: 'system', content: template.systemPrompt });
-        return apiCall("/async_submit", { model: appState.asyncBatch.model, temperature: appState.asyncBatch.temperature, messages: messages, request_id: request.localId, })
+        return apiCall("/async_submit", { model: appState.asyncBatch.model, temperature: appState.asyncBatch.temperature, messages: messages, request_id: request.localId })
             .then(data => { appState.asyncBatch.tasks[request.localId] = { zhipuTaskId: data.task_id, status: 'processing' }; updateAsyncTableRow(request.localId, 'processing', '已提交...'); })
             .catch(error => { appState.asyncBatch.tasks[request.localId] = { status: 'failed' }; updateAsyncTableRow(request.localId, 'failed', `提交失败: ${error.message}`); });
     });
@@ -1343,7 +1399,11 @@ function updateAsyncTableRow(localRequestId, status, content) {
     if (!row) return;
     const statusCell = row.querySelector('.status-cell');
     statusCell.className = `status-cell status-${status}`;
-    statusCell.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+    let statusText = status.charAt(0).toUpperCase() + status.slice(1);
+    if(status === 'processing') statusText = "处理中...";
+    if(status === 'completed') statusText = "成功";
+    if(status === 'failed') statusText = "失败";
+    statusCell.textContent = statusText;
     row.querySelector('.result-cell').innerHTML = content;
 }
 
@@ -1353,8 +1413,8 @@ function startAsyncPolling() {
     const poll = async () => {
         const total = Object.keys(appState.asyncBatch.tasks).length;
         const tasksToCheck = Object.entries(appState.asyncBatch.tasks).filter(([_, task]) => task.status === 'processing');
-        let completed = total - tasksToCheck.length;
-        progressInfo.innerHTML = `任务轮询中... 已完成 ${completed} / ${total}`;
+        let completedOrFailed = total - tasksToCheck.length;
+        progressInfo.innerHTML = `任务轮询中... 已处理 ${completedOrFailed} / ${total}`;
         if (tasksToCheck.length === 0) {
             clearInterval(appState.asyncBatch.pollingInterval);
             appState.asyncBatch.pollingInterval = null;
@@ -1371,7 +1431,8 @@ function startAsyncPolling() {
                     updateAsyncTableRow(localId, 'completed', `<pre>${content}</pre>`);
                 } else if (data.task_status === 'FAIL') {
                     appState.asyncBatch.tasks[localId].status = 'failed';
-                    updateAsyncTableRow(localId, 'failed', `任务失败: ${data.error?.message || '未知错误'}`);
+                    const errorMessage = data.error?.message || (data.choices && data.choices[0].message) || '未知错误';
+                    updateAsyncTableRow(localId, 'failed', `任务失败: ${errorMessage}`);
                 }
             } catch (error) {
                  appState.asyncBatch.tasks[localId].status = 'failed';
@@ -1383,9 +1444,8 @@ function startAsyncPolling() {
     poll();
 }
 
-
 // =================================================================================
-// 功能三: 大批量处理
+// 功能三: 大批量处理 (无修改，保持原样)
 // =================================================================================
 function initLargeBatch() {
     initGenerator();
