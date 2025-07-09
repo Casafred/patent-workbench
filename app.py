@@ -120,13 +120,10 @@ def async_submit():
 
 @app.route('/api/async_retrieve', methods=['POST'])
 def async_retrieve():
-    """小批量异步 - 查询任务 (已修正身份验证)"""
-    # --- ▼▼▼▼▼ 关键修正 ▼▼▼▼▼ ---
-    # 修正1：使用与应用其他部分一致的身份验证方法
+    """小批量异步 - 查询任务 (已修正身份验证和查询逻辑)"""
     client, error_response = get_client_from_header()
     if error_response:
         return error_response
-    # --- ▲▲▲▲▲ 关键修正 ▲▲▲▲▲ ---
     
     data = request.get_json()
     if not data:
@@ -137,8 +134,11 @@ def async_retrieve():
         if not task_id:
             return create_response(error="Missing task_id", status_code=400)
 
-        # 修正2：正确的查询方法是 client.chat.completions.retrieve_async_result()
-        retrieved_task = client.chat.completions.retrieve_async_result(id=task_id)
+        # --- ▼▼▼▼▼ 关键修正 ▼▼▼▼▼ ---
+        # 修正：根据官方文档，异步任务的查询应该使用 asyncCompletions.retrieve
+        # 旧的 client.chat.completions.retrieve_async_result() 方法已不存在或已废弃
+        retrieved_task = client.chat.asyncCompletions.retrieve(task_id=task_id)
+        # --- ▲▲▲▲▲ 关键修正 ▲▲▲▲▲ ---
         
         # 直接返回 ZhipuAI SDK 返回的 Pydantic 模型转换后的 JSON
         # 前端可以根据 task_status 自行判断
