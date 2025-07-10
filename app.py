@@ -6,9 +6,12 @@ from io import BytesIO
 from flask import Flask, request, jsonify, make_response, send_from_directory, Response
 from flask_cors import CORS
 from zhipuai import ZhipuAI
+import time  # 引入 time 模块
 
 # --- 初始化 Flask 应用 ---
-app = Flask(__name__, static_folder='.', static_url_path='')
+# 使用了更健壮的方式来决定静态文件夹的路径
+static_folder_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.')
+app = Flask(__name__, static_folder=static_folder_path, static_url_path='')
 CORS(app)  # 允许跨域
 
 # --- 辅助函数 ---
@@ -57,7 +60,7 @@ def stream_chat():
     """即时对话 (流式输出)"""
     client, error_response = get_client_from_header()
     if error_response:
-        # For streaming errors, we need to yield a JSON error message
+        # 对于流式错误，我们需要yield一个JSON错误消息
         error_json = json.dumps({"error": error_response.get_json()['error']})
         return Response(f"data: {error_json}\n\n", mimetype='text/event-stream', status=error_response.status_code)
         
@@ -72,6 +75,7 @@ def stream_chat():
 
     def generate():
         try:
+            # 根据智谱API文档，流式调用返回的最后一个chunk会包含usage信息
             response = client.chat.completions.create(
                 model=model,
                 messages=messages,
@@ -80,10 +84,11 @@ def stream_chat():
             )
             for chunk in response:
                 yield f"data: {chunk.model_dump_json()}\n\n"
-            yield "data: [DONE]\n\n"
+            # 最后的 [DONE] 消息由前端处理，此处无需发送
         except Exception as e:
             print(f"Error during stream generation: {traceback.format_exc()}")
-            error_message = json.dumps({"error": str(e)})
+            # 封装错误信息为JSON格式，以便前端统一处理
+            error_message = json.dumps({"error": {"message": str(e), "type": "generation_error"}})
             yield f"data: {error_message}\n\n"
 
     return Response(generate(), mimetype='text/event-stream')
@@ -105,14 +110,18 @@ def async_submit():
         return create_response(error="messages are required.")
     
     try:
-        # 增加 request_id 以便在结果中追踪
+        # ▼▼▼ 修改：增加 request_id 以便在结果中追踪，支持重试逻辑 ▼▼▼
+        # 前端在重试时会传来原始的 localId 作为 request_id
         response = client.chat.asyncCompletions.create(
             model=model,
             messages=messages,
             temperature=temperature,
-            request_id=req_data.get('request_id') # 传递前端生成的localId
+            request_id=req_data.get('request_id') # 传递前端生成的localId，确保唯一性
         )
-        return create_response(data={'task_id': response.id})
+        # ▲▲▲ 修改结束 ▲▲▲
+
+        # 返回任务ID，前端用此ID轮询结果
+        return create_response(data={'task_id': response.id, 'request_id': response.request_id})
     except Exception as e:
         print(f"Error in async_submit: {traceback.format_exc()}")
         return create_response(error=f"提交异步任务时发生错误: {str(e)}")
@@ -134,13 +143,11 @@ def async_retrieve():
         if not task_id:
             return create_response(error="Missing task_id", status_code=400)
 
-        # --- ▼▼▼▼▼ 最终、正确的关键修正 ▼▼▼▼▼ ---
         # 根据官方SDK示例，正确的方法是 client.chat.asyncCompletions.retrieve_completion_result()
         retrieved_task = client.chat.asyncCompletions.retrieve_completion_result(id=task_id)
-        # --- ▲▲▲▲▲ 最终、正确的关键修正 ▲▲▲▲▲ ---
         
         # 直接返回 ZhipuAI SDK 返回的 Pydantic 模型转换后的 JSON
-        # 前端可以根据 task_status 自行判断
+        # 前端可以根据 task_status 自行判断，并获取usage等全部信息
         return create_response(data=json.loads(retrieved_task.model_dump_json()))
 
     except Exception as e:
@@ -244,5 +251,5 @@ def download_result_file():
 
 # --- 启动命令 ---
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5001)), debug=True)
-
+    # 确保在生产环境中关闭 debug 模式
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5001)), debug=False)
