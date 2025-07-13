@@ -110,8 +110,7 @@ def async_submit():
         return create_response(error="messages are required.")
     
     try:
-        # ▼▼▼ 修改：增加 request_id 以便在结果中追踪，支持重试逻辑 ▼▼▼
-        # 前端在重试时会传来原始的 localId 作为 request_id
+        # ▼▼▼ 确保 request_id 被传递，以支持重试逻辑 ▼▼▼
         response = client.chat.asyncCompletions.create(
             model=model,
             messages=messages,

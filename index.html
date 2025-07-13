@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>专利分析智能工作台 v12.1 LINKER</title>
+    <title>专利分析智能工作台 v12.2 LINKER</title>
     <!-- 引入的库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
-    /* --- [v12.1 LINKER Design System] --- */
+    /* --- [v12.2 LINKER Design System] --- */
     :root {
         --bg-color: #F0FDF4; 
         --surface-color: #FFFFFF;
@@ -92,7 +92,7 @@
     .prompt-section { border: 1px dashed var(--border-color); padding: 15px; border-radius: 8px; margin-bottom: 20px; }
     .prompt-section-title { font-weight: bold; margin-bottom: 15px; color: var(--primary-color-dark); }
     
-    /* --- 新增：即时对话区域布局 --- */
+    /* --- 即时对话区域布局 --- */
     #instant-chat-layout { display: grid; grid-template-columns: 280px 1fr; gap: 20px; }
     #chat_history_panel { border: 1px solid var(--border-color); border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; background: var(--bg-color); }
     #chat_history_header { padding: 15px; border-bottom: 1px solid var(--border-color); font-weight: bold; text-align: center; font-size: 1.1em; }
@@ -103,17 +103,22 @@
     .history-item-title { font-weight: bold; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .history-item-details { font-size: 0.8em; opacity: 0.7; margin-top: 4px; display: block; }
     
-    /* --- 修改：即时对话核心区域 --- */
+    /* --- 即时对话核心区域 --- */
     #chat_main_panel { display: flex; flex-direction: column; }
     #chat_container { display: flex; flex-direction: column; height: 65vh; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; flex-grow: 1; }
     #chat_window { flex-grow: 1; overflow-y: auto; padding: 20px; background-color: var(--chat-bg); display: flex; flex-direction: column;}
+    /* ▼▼▼ 修改：修复管理模式UI BUG ▼▼▼ */
     .chat-message { display: flex; gap: 15px; margin-bottom: 20px; max-width: 90%; align-items: flex-start; }
+    .message-checkbox { display: none; margin: 15px 0 0 0; flex-shrink: 0; }
+    .chat-window-management-mode .message-checkbox { display: block; }
+    .chat-message.user-message.chat-window-management-mode { flex-direction: row-reverse; }
+    /* ▲▲▲ 修改结束 ▲▲▲ */
     .chat-message .avatar { width: 40px; height: 40px; border-radius: 50%; background-color: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; margin-top: 5px; }
-    .message-body { flex-grow: 1; display: flex; flex-direction: column; }
+    .message-body { flex-grow: 1; display: flex; flex-direction: column; min-width: 0;}
     .message-content { padding: 12px 18px; border-radius: 18px; word-break: break-word; position: relative; }
     .message-footer { display: flex; justify-content: flex-end; align-items: center; gap: 15px; padding: 8px 10px 0 10px; border-top: 1px solid rgba(0,0,0,0.05); margin-top: 10px; opacity: 0; transition: opacity 0.2s; }
     .chat-message:hover .message-footer { opacity: 1; }
-    .message-token-usage { font-size: 0.8em; color: var(--text-color-secondary); }
+    .message-token-usage { font-size: 0.8em; color: var(--text-color-secondary); margin-left: auto; }
     .chat-message.user-message { align-self: flex-end; flex-direction: row-reverse; }
     .chat-message.user-message .message-content { background-color: var(--chat-user-bubble); }
     .chat-message.assistant-message { align-self: flex-start; }
@@ -121,12 +126,10 @@
     .message-content p { margin: 0 0 10px 0; }
     .message-content p:last-child { margin-bottom: 0; }
     .message-content pre { background-color: #2D3748; color: #F7F9FC; padding: 15px; border-radius: 8px; overflow-x: auto;}
-    /* ▼▼▼ 修改：Markdown表格样式，使其更清晰 ▼▼▼ */
     .message-content table { border-collapse: collapse; width: 100%; margin: 1em 0; border: 1px solid var(--border-color); }
     .message-content th, .message-content td { border: 1px solid var(--border-color); padding: 8px 12px; text-align: left; }
     .message-content th { background-color: var(--primary-color-hover-bg); font-weight: bold; }
     .message-content tr:nth-child(even) { background-color: rgba(0,0,0,0.02); }
-    /* ▲▲▲ 修改结束 ▲▲▲ */
     .blinking-cursor { animation: blink 1s step-end infinite; }
     @keyframes blink { 50% { opacity: 0; } }
     #chat_input_area { display: flex; padding: 15px; border-top: 1px solid var(--border-color); background-color: var(--surface-color); align-items: flex-end; gap: 15px; }
@@ -135,32 +138,16 @@
     #chat_char_count { position: absolute; bottom: 8px; right: 15px; font-size: 12px; color: var(--text-color-secondary); pointer-events: none; }
     #chat_send_btn { height: 50px; flex-shrink: 0; }
     #chat_management_bar { display: none; padding: 10px; background-color: var(--primary-color-hover-bg); border-bottom: 1px solid var(--border-color); align-items: center; gap: 10px; }
-    /* ▼▼▼ 修改：修复管理模式下消息错位问题 ▼▼▼ */
-    .chat-window-management-mode .message-checkbox { display: block; margin-right: 0; /* gap已处理间距 */ flex-shrink: 0; }
-    .message-checkbox { display: none; }
 
-    /* --- ▼▼▼ 修改：小批量异步布局 ▼▼▼ --- */
+    /* --- 小批量异步布局 --- */
     .async-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
     @media (max-width: 992px) { .async-layout { grid-template-columns: 1fr; } }
     .async-column .step-header { margin-top: 0; }
     .scrollable-list { max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color); padding: 10px; border-radius: 8px; }
-    
-    /* 修正1: 优化输入列表项布局，确保勾选框列宽固定 */
-    .list-item { 
-        display: grid;
-        grid-template-columns: auto 1fr;
-        gap: 10px;
-        align-items: center;
-        padding: 8px; 
-        border-bottom: 1px solid var(--border-color);
-    }
+    .list-item { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; padding: 8px; border-bottom: 1px solid var(--border-color); }
     .list-item:last-child { border-bottom: none; }
-    .list-item input[type="checkbox"] {
-        margin: 0;
-        justify-self: center; /* 居中显示勾选框 */
-    }
+    .list-item input[type="checkbox"] { margin: 0; justify-self: center; }
     .list-item .item-content { font-size: 0.9em; line-height: 1.4; word-break: break-all; min-width: 0; }
-
     .list-item .item-index { font-weight: bold; color: var(--primary-color); margin-right: 10px; }
     .template-task-creator { padding: 15px; border: 1px dashed var(--primary-color); border-radius: 8px; margin-top: 15px; }
     .template-task-creator h5 { margin-top: 0; }
@@ -172,7 +159,7 @@
     .status-processing { color: var(--warning-color); font-weight: bold; }
     .status-completed { color: var(--success-color); font-weight: bold; }
     .status-failed { color: var(--error-color); font-weight: bold; }
-    .status-retrying { color: #EAB308; font-weight: bold; } /* 黄色，用于重试状态 */
+    .status-retrying { color: #EAB308; font-weight: bold; }
     .result-cell pre { white-space: pre-wrap; word-break: break-all; margin: 0; font-size: 0.9em; }
 </style>
 </head>
@@ -185,7 +172,7 @@
                 <h1 class="banner-text-logo">ALFRED X IP</h1>
                 <img src="ALFRED X IP LOGO.webp" alt="Alfred X IP Logo" class="image-logo">
             </div>
-            <div class="version-number">版本号: v12.1 LINKER</div>
+            <div class="version-number">版本号: v12.2 LINKER</div>
         </div>
         <div class="api-config-section">
             <button id="api_config_toggle_btn" class="api-config-toggle" title="API Key 设置">⚙️</button>
@@ -249,12 +236,10 @@
                 </div>
                 <div id="chat_main_panel">
                     <div id="chat_container">
-                        <!-- ▼▼▼ 修改：移除管理栏中的取消按钮，统一由主按钮控制 ▼▼▼ -->
                         <div id="chat_management_bar">
                             <button id="chat_select_all_btn" class="small-button">全选</button>
                             <button id="chat_delete_selected_btn" class="small-button delete-button">删除选中</button>
                         </div>
-                        <!-- ▲▲▲ 修改结束 ▲▲▲ -->
                         <div id="chat_window"></div>
                         <div id="chat_input_area">
                             <div id="chat_input_wrapper">
@@ -328,11 +313,9 @@
                         </div>
                         <div class="config-item">
                             <label for="async_user_prompt">用户提示模板 (User Prompt Template):</label>
-                            <!-- ▼▼▼ 修改：将占位符作为默认内容，而非placeholder ▼▼▼ -->
                             <textarea id="async_user_prompt" rows="4">请根据以下文本，总结其核心技术点：
 
 {{INPUT}}</textarea>
-                            <!-- ▲▲▲ 修改结束 ▲▲▲ -->
                             <div class="info" style="font-size: 0.85em; padding: 8px; margin-top: 5px;">请务必使用 `{{INPUT}}`作为占位符，它将被替换为每条输入内容。</div>
                         </div>
                         <button id="async_add_template_btn" class="small-button">保存为新模板</button>
@@ -362,17 +345,17 @@
                 </div>
             </div>
 
-            <!-- ▼▼▼ 修改：步骤5 任务进度与结果区域，增加导出按钮和Tokens列 ▼▼▼ -->
+            <!-- ▼▼▼ 修改：步骤5 增加断点续查按钮 ▼▼▼ -->
             <details class="step" open>
                 <summary style="font-weight: bold; font-size: 1.2em; cursor: pointer; padding-bottom: 20px; list-style: none;">
                     步骤 5: 任务进度与结果 (点击折叠/展开)
                 </summary>
-                <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 20px;">
                     <div id="async_progress_info" class="info" style="text-align:center; flex-grow: 1;">等待提交任务...</div>
-                    <button id="async_export_excel_btn" class="small-button" style="margin-left: 20px;" disabled>导出为Excel</button>
+                    <button id="async_recover_btn" class="small-button" style="background: var(--warning-color); color: #fff;" disabled>恢复上次任务</button>
+                    <button id="async_export_excel_btn" class="small-button" disabled>导出为Excel</button>
                 </div>
                 
-                <!-- 固定高度可滚动容器 -->
                 <div style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; margin-top: 15px;">
                     <div style="overflow-x:auto;">
                         <table id="async_results_table">
@@ -522,7 +505,7 @@
 
 <script>
 // =================================================================================
-// v12.1 - 全局应用状态与配置
+// v12.2 - 全局应用状态与配置
 // =================================================================================
 const appState = {
     apiKey: '',
@@ -575,7 +558,7 @@ const appState = {
 const BACKEND_URL = 'https://patent-workbench-backend.onrender.com';
 const AVAILABLE_MODELS = ["glm-4-flash-250414", "glm-4-flashX-250414", "glm-4-flash", "glm-4-long"];
 const BATCH_MODELS = ["glm-4-flashX-250414" , "glm-4-flash","glm-4-long"];
-const ASYNC_MODELS = ["glm-4-flash-250414", "glm-4-flashX-250414", "glm-4-flash", "glm-4-long"];
+const ASYNC_MODELS = ["glm-4-flash", "glm-4-flashX-250414", "glm-4-flash-250414"];
 const MAX_ASYNC_RETRIES = 3;
 
 // --- DOM 元素缓存 ---
@@ -606,6 +589,7 @@ const asyncInputsManagement = getEl('async_inputs_management');
 const asyncInputsSelectAllBtn = getEl('async_inputs_select_all_btn');
 const asyncInputsDeleteSelectedBtn = getEl('async_inputs_delete_selected_btn');
 const asyncExportExcelBtn = getEl('async_export_excel_btn');
+const asyncRecoverBtn = getEl('async_recover_btn');
 
 // Large Batch (Generator)
 const genFileInput = getEl('gen_file-input'), genSheetSelector = getEl('gen_sheet-selector');
@@ -696,11 +680,15 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false) {
         }
         const result = await response.json();
         if (!response.ok || result.success === false) {
-            throw new Error(result.error || `HTTP ${response.status}: ${response.statusText}`);
+            // 包装错误以便上层可以检查 `error.message`
+            const err = new Error(result.error || `HTTP ${response.status}: ${response.statusText}`);
+            err.response = result;
+            throw err;
         }
         return result.data;
     } catch (error) {
-        console.error(`API Call Error to ${endpoint}:`, error);
+        // 如果是网络错误, error.message会是 "Failed to fetch" 或类似
+        console.error(`API Call Error to ${endpoint}:`, error.message);
         throw error;
     }
 }
@@ -822,25 +810,26 @@ function addMessageToDOM(role, content, index, isStreaming = false, usage = null
     
     const renderedContent = isStreaming ? content : (window.marked ? window.marked.parse(content, { gfm: true, breaks: true }) : content.replace(/</g, "&lt;").replace(/>/g, "&gt;"));
     
-    const usageHtml = usage ? `<div class="message-token-usage">Tokens: ${usage.total_tokens}</div>` : `<div class="message-token-usage"></div>`;
+    const tokenUsageHtml = (usage && usage.total_tokens) ? `<div class="message-token-usage">Tokens: ${usage.total_tokens}</div>` : `<div class="message-token-usage"></div>`;
     
+    // ▼▼▼ 修改：为所有消息统一添加复制按钮 ▼▼▼
     messageDiv.innerHTML = `
         <input type="checkbox" class="message-checkbox">
         <div class="avatar">${role === 'user' ? 'U' : 'AI'}</div>
         <div class="message-body">
             <div class="message-content">${renderedContent}</div>
             <div class="message-footer">
-                ${role === 'assistant' ? usageHtml : ''}
+                ${role === 'assistant' ? tokenUsageHtml : ''}
                 <button class="icon-button" title="复制" onclick="copyMessage(this)">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2Zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6Z M2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1H2Z"></path></svg>
                 </button>
             </div>
         </div>
     `;
+    // ▲▲▲ 修改结束 ▲▲▲
+
     const footer = messageDiv.querySelector('.message-footer');
     if (isStreaming) footer.style.opacity = '0';
-    if (!isStreaming && role === 'user') footer.style.opacity = '0';
-    if (!isStreaming && role === 'assistant') footer.style.opacity = '1';
     
     chatWindow.appendChild(messageDiv);
     chatWindow.scrollTop = chatWindow.scrollHeight;
@@ -1057,6 +1046,7 @@ async function exportChatHistory(format = 'txt') {
 function copyMessage(buttonElement) {
     const contentDiv = buttonElement.closest('.message-body').querySelector('.message-content');
     const originalContent = buttonElement.innerHTML;
+    // 使用 .innerText 来复制用户看到的文本，而不是原始HTML
     navigator.clipboard.writeText(contentDiv.innerText).then(() => {
         buttonElement.innerHTML = '✓';
         buttonElement.title = '已复制!';
@@ -1126,6 +1116,13 @@ function deletePersona() {
 function toggleManagementMode(forceState) {
     appState.chat.isManagementMode = forceState !== undefined ? forceState : !appState.chat.isManagementMode;
     chatWindow.classList.toggle('chat-window-management-mode', appState.chat.isManagementMode);
+    
+    // ▼▼▼ 修改：应用class到每个消息，修复布局问题 ▼▼▼
+    chatWindow.querySelectorAll('.chat-message').forEach(el => {
+        el.classList.toggle('chat-window-management-mode', appState.chat.isManagementMode);
+    });
+    // ▲▲▲ 修改结束 ▲▲▲
+
     chatManagementBar.style.display = appState.chat.isManagementMode ? 'flex' : 'none';
     chatManageBtn.textContent = appState.chat.isManagementMode ? '退出管理' : '管理消息';
     if (!appState.chat.isManagementMode) {
@@ -1162,8 +1159,10 @@ function deleteSelectedMessages() {
 }
 
 // =================================================================================
-// 功能二: 小批量异步 (已重构)
+// 功能二: 小批量异步 (已重构，增加鲁棒性)
 // =================================================================================
+const delay = ms => new Promise(res => setTimeout(res, ms));
+
 function initAsyncBatch() {
     const modelSelect = getEl('async_model_select');
     const tempInput = getEl('async_temperature');
@@ -1182,6 +1181,11 @@ function initAsyncBatch() {
 
     modelSelect.innerHTML = ASYNC_MODELS.map(m => `<option value="${m}">${m}</option>`).join('');
     modelSelect.value = appState.asyncBatch.model;
+
+    // 检查是否有可恢复的任务
+    if (localStorage.getItem('lastAsyncBatchState')) {
+        asyncRecoverBtn.disabled = false;
+    }
 
     modelSelect.addEventListener('change', e => appState.asyncBatch.model = e.target.value);
     tempInput.addEventListener('change', e => appState.asyncBatch.temperature = parseFloat(e.target.value));
@@ -1277,6 +1281,7 @@ function initAsyncBatch() {
 
     submitBtn.addEventListener('click', handleAsyncBatchSubmit);
     asyncExportExcelBtn.addEventListener('click', exportAsyncResultsToExcel);
+    asyncRecoverBtn.addEventListener('click', recoverAsyncBatchState);
 
     asyncInputsSelectAllBtn.addEventListener('click', () => {
         const allChecked = Array.from(document.querySelectorAll('#async_inputs_list input[type="checkbox"]')).every(cb => cb.checked);
@@ -1430,10 +1435,39 @@ function switchAsyncInput(event, type) {
     getEl(`async-input-${type}`).classList.add('active');
 }
 
+async function submitTaskWithRetry(request, retries = MAX_ASYNC_RETRIES) {
+    const input = appState.asyncBatch.inputs.find(i => i.id === request.inputId);
+    const template = appState.asyncBatch.templates.find(t => t.id === request.templateId);
+    const userPrompt = template.userPromptTemplate.replace('{{INPUT}}', input.content);
+    const messages = [{ role: 'user', content: userPrompt }];
+    if (template.systemPrompt) messages.unshift({ role: 'system', content: template.systemPrompt });
+    const body = { model: appState.asyncBatch.model, temperature: appState.asyncBatch.temperature, messages, request_id: request.localId };
+    
+    for (let i = 0; i <= retries; i++) {
+        try {
+            updateAsyncTableRow(request.localId, i === 0 ? 'processing' : 'retrying', `提交中 (尝试 ${i + 1}/${retries + 1})...`);
+            const data = await apiCall("/async_submit", body);
+            appState.asyncBatch.tasks[request.localId] = { zhipuTaskId: data.task_id, status: 'processing', retryCount: 0 };
+            updateAsyncTableRow(request.localId, 'processing', '已提交，待处理...');
+            return; // Success
+        } catch (error) {
+            console.error(`Submission attempt ${i + 1} for ${request.localId} failed:`, error.message);
+            if (i === retries) {
+                appState.asyncBatch.tasks[request.localId] = { status: 'failed', retryCount: 0 };
+                updateAsyncTableRow(request.localId, 'failed', `提交失败: ${error.message}`);
+                return; // Final failure
+            }
+            await delay(2000 * (i + 1)); // Wait longer after each failure
+        }
+    }
+}
+
 async function handleAsyncBatchSubmit() {
     if (appState.asyncBatch.requests.length === 0) return alert("没有待提交的请求。");
     getEl('async_submit_batch_btn').disabled = true;
     asyncExportExcelBtn.disabled = true;
+    asyncRecoverBtn.disabled = true;
+
     getEl('async_results_tbody').innerHTML = '';
     appState.asyncBatch.tasks = {};
 
@@ -1445,26 +1479,13 @@ async function handleAsyncBatchSubmit() {
         row.innerHTML = `<td>${request.localId}</td><td>${input.content.substring(0, 50)}...</td><td>${template.name} (${template.id})</td><td class="status-cell">排队中...</td><td class="token-cell">-</td><td class="result-cell">...</td>`;
     }
     
-    // 使用 for...of 循环和 Promise.all 实现有限并发提交
-    const concurrency = 5; // 每次并发提交5个任务
+    const concurrency = 5;
     for (let i = 0; i < appState.asyncBatch.requests.length; i += concurrency) {
         const chunk = appState.asyncBatch.requests.slice(i, i + concurrency);
-        const submissionPromises = chunk.map(request => {
-            const input = appState.asyncBatch.inputs.find(i => i.id === request.inputId);
-            const template = appState.asyncBatch.templates.find(t => t.id === request.templateId);
-            updateAsyncTableRow(request.localId, 'processing', '提交中...');
-            
-            const userPrompt = template.userPromptTemplate.replace('{{INPUT}}', input.content);
-            const messages = [{ role: 'user', content: userPrompt }];
-            if (template.systemPrompt) messages.unshift({ role: 'system', content: template.systemPrompt });
-            
-            return apiCall("/async_submit", { model: appState.asyncBatch.model, temperature: appState.asyncBatch.temperature, messages: messages, request_id: request.localId })
-                .then(data => { appState.asyncBatch.tasks[request.localId] = { zhipuTaskId: data.task_id, status: 'processing', retryCount: 0 }; updateAsyncTableRow(request.localId, 'processing', '已提交，待处理...'); })
-                .catch(error => { appState.asyncBatch.tasks[request.localId] = { status: 'failed', retryCount: 0 }; updateAsyncTableRow(request.localId, 'failed', `提交失败: ${error.message}`); });
-        });
-        await Promise.all(submissionPromises);
+        await Promise.all(chunk.map(request => submitTaskWithRetry(request)));
     }
     
+    saveAsyncStateToLocalStorage();
     startAsyncPolling();
 }
 
@@ -1475,47 +1496,35 @@ function updateAsyncTableRow(localRequestId, status, content, tokens = '-') {
     const tokenCell = row.querySelector('.token-cell');
     const resultCell = row.querySelector('.result-cell');
     
-    let statusText = status.charAt(0).toUpperCase() + status.slice(1);
-    if(status === 'processing') statusText = "处理中...";
-    if(status === 'completed') statusText = "成功";
-    if(status === 'failed') statusText = "失败";
-    if(status === 'retrying') statusText = "重试中...";
+    let statusText;
+    switch(status) {
+        case 'processing': statusText = "处理中..."; break;
+        case 'completed': statusText = "成功"; break;
+        case 'failed': statusText = "失败"; break;
+        case 'retrying': statusText = "重试中..."; break;
+        default: statusText = status;
+    }
     
     statusCell.className = `status-cell status-${status}`;
     statusCell.textContent = statusText;
     tokenCell.textContent = tokens;
-    resultCell.innerHTML = content;
+    resultCell.innerHTML = `<pre>${content}</pre>`;
 }
 
-async function retryAsyncTask(localId) {
+async function retryFailedTask(localId) {
     const taskState = appState.asyncBatch.tasks[localId];
     if (!taskState || taskState.retryCount >= MAX_ASYNC_RETRIES) {
         taskState.status = 'failed';
         updateAsyncTableRow(localId, 'failed', `重试次数已用尽`);
+        saveAsyncStateToLocalStorage();
         return;
     }
     
     taskState.retryCount++;
-    updateAsyncTableRow(localId, 'retrying', `任务失败，尝试重试 (${taskState.retryCount}/${MAX_ASYNC_RETRIES})...`);
+    updateAsyncTableRow(localId, 'retrying', `任务执行失败，尝试重试 (${taskState.retryCount}/${MAX_ASYNC_RETRIES})...`);
     
     const request = appState.asyncBatch.requests.find(r => r.localId === localId);
-    const input = appState.asyncBatch.inputs.find(i => i.id === request.inputId);
-    const template = appState.asyncBatch.templates.find(t => t.id === request.templateId);
-
-    const userPrompt = template.userPromptTemplate.replace('{{INPUT}}', input.content);
-    const messages = [{ role: 'user', content: userPrompt }];
-    if (template.systemPrompt) messages.unshift({ role: 'system', content: template.systemPrompt });
-
-    try {
-        const data = await apiCall("/async_submit", { model: appState.asyncBatch.model, temperature: appState.asyncBatch.temperature, messages, request_id: localId });
-        taskState.zhipuTaskId = data.task_id;
-        taskState.status = 'processing';
-        updateAsyncTableRow(localId, 'processing', '已重新提交，待处理...');
-    } catch (error) {
-        console.error(`Resubmission for ${localId} failed:`, error);
-        // 如果重试提交也失败，暂时不改变状态，等下一次轮询再决定
-        updateAsyncTableRow(localId, 'retrying', `重试提交失败: ${error.message}`);
-    }
+    await submitTaskWithRetry(request, 0); // Attempt to resubmit once
 }
 
 function startAsyncPolling() {
@@ -1523,42 +1532,119 @@ function startAsyncPolling() {
     if (appState.asyncBatch.pollingInterval) clearInterval(appState.asyncBatch.pollingInterval);
 
     const poll = async () => {
+        const tasksToPoll = Object.entries(appState.asyncBatch.tasks).filter(([_, task]) => task.status === 'processing' || task.status === 'retrying');
         const total = Object.keys(appState.asyncBatch.tasks).length;
-        const tasksToCheck = Object.entries(appState.asyncBatch.tasks).filter(([_, task]) => task.status === 'processing');
-        let completedOrFailed = total - tasksToCheck.length;
+        const finishedCount = total - tasksToPoll.length;
 
-        progressInfo.innerHTML = `任务轮询中... 已完成/失败 ${completedOrFailed} / ${total}`;
+        progressInfo.innerHTML = `任务轮询中... 已完成 ${finishedCount} / ${total}`;
         
-        if (tasksToCheck.length === 0) {
+        if (tasksToPoll.length === 0) {
             clearInterval(appState.asyncBatch.pollingInterval);
             appState.asyncBatch.pollingInterval = null;
             progressInfo.innerHTML = `所有任务处理完成！共 ${total} 条。`;
             getEl('async_submit_batch_btn').disabled = false;
-            asyncExportExcelBtn.disabled = false;
+            asyncExportExcelBtn.disabled = appState.asyncBatch.requests.length === 0;
+            asyncRecoverBtn.disabled = !localStorage.getItem('lastAsyncBatchState');
+            saveAsyncStateToLocalStorage(); // Final save
             return;
         }
 
-        for (const [localId, task] of tasksToCheck) {
-            if (!task.zhipuTaskId) continue; // Skip tasks that failed submission initially
+        for (const [localId, task] of tasksToPoll) {
+            if (!task.zhipuTaskId) continue;
             try {
                 const data = await apiCall(`/async_retrieve`, { task_id: task.zhipuTaskId }, "POST");
                 if (data.task_status === 'SUCCESS') {
-                    const taskState = appState.asyncBatch.tasks[localId];
-                    taskState.status = 'completed';
-                    taskState.result = data.choices[0].message.content;
-                    taskState.usage = data.usage;
-                    updateAsyncTableRow(localId, 'completed', `<pre>${taskState.result}</pre>`, taskState.usage.total_tokens);
+                    task.status = 'completed';
+                    task.result = data.choices[0].message.content;
+                    task.usage = data.usage;
+                    updateAsyncTableRow(localId, 'completed', task.result, task.usage.total_tokens);
                 } else if (data.task_status === 'FAIL') {
-                    await retryAsyncTask(localId);
+                    await retryFailedTask(localId);
                 }
             } catch (error) {
-                 console.warn(`Query for ${localId} (task ID ${task.zhipuTaskId}) failed. Will try again on next poll. Error:`, error.message);
+                 console.warn(`轮询任务 ${localId} (ID: ${task.zhipuTaskId}) 失败，将在下次轮询时重试。错误:`, error.message);
             }
         }
+        saveAsyncStateToLocalStorage(); // Save state after each poll cycle
     };
 
-    appState.asyncBatch.pollingInterval = setInterval(poll, 5000); // 5秒轮询一次
-    poll(); // 立即执行一次
+    appState.asyncBatch.pollingInterval = setInterval(poll, 5000);
+    poll();
+}
+
+function saveAsyncStateToLocalStorage() {
+    if (appState.asyncBatch.requests.length > 0) {
+        const stateToSave = {
+            requests: appState.asyncBatch.requests,
+            tasks: appState.asyncBatch.tasks,
+            inputs: appState.asyncBatch.inputs,
+            templates: appState.asyncBatch.templates,
+            timestamp: new Date().toISOString()
+        };
+        localStorage.setItem('lastAsyncBatchState', JSON.stringify(stateToSave));
+        asyncRecoverBtn.disabled = false;
+    }
+}
+
+function renderAsyncResultsTableFromState() {
+    const tbody = getEl('async_results_tbody');
+    tbody.innerHTML = '';
+    if (!appState.asyncBatch.requests) return;
+
+    for (const request of appState.asyncBatch.requests) {
+        const input = appState.asyncBatch.inputs.find(i => i.id === request.inputId);
+        const template = appState.asyncBatch.templates.find(t => t.id === request.templateId);
+        const task = appState.asyncBatch.tasks[request.localId];
+        
+        const row = tbody.insertRow();
+        row.id = `row-${request.localId}`;
+        row.innerHTML = `
+            <td>${request.localId}</td>
+            <td>${input ? input.content.substring(0, 50) : 'N/A'}...</td>
+            <td>${template ? `${template.name} (${template.id})` : 'N/A'}</td>
+            <td class="status-cell">...</td>
+            <td class="token-cell">-</td>
+            <td class="result-cell">...</td>
+        `;
+        
+        if (task) {
+            updateAsyncTableRow(request.localId, task.status, task.result || `状态: ${task.status}`, (task.usage && task.usage.total_tokens) || '-');
+        } else {
+            updateAsyncTableRow(request.localId, 'pending', '待处理');
+        }
+    }
+}
+
+
+function recoverAsyncBatchState() {
+    const savedStateJSON = localStorage.getItem('lastAsyncBatchState');
+    if (!savedStateJSON) {
+        alert("未找到可恢复的任务。");
+        return;
+    }
+    if (!confirm("恢复上次任务将覆盖当前所有未提交的异步任务和输入，确定要继续吗？")) {
+        return;
+    }
+    
+    const savedState = JSON.parse(savedStateJSON);
+    
+    appState.asyncBatch.requests = savedState.requests || [];
+    appState.asyncBatch.tasks = savedState.tasks || {};
+    appState.asyncBatch.inputs = savedState.inputs || [];
+    appState.asyncBatch.templates = savedState.templates || [];
+
+    // 重新渲染UI
+    renderAsyncLists();
+    renderRequestsPreview();
+    renderAsyncResultsTableFromState();
+
+    alert(`已成功恢复 ${new Date(savedState.timestamp).toLocaleString()} 的任务状态。将开始轮询未完成的任务。`);
+    
+    // 禁用操作按钮，开始轮询
+    getEl('async_submit_batch_btn').disabled = true;
+    asyncRecoverBtn.disabled = true;
+
+    startAsyncPolling();
 }
 
 function exportAsyncResultsToExcel() {
@@ -1566,8 +1652,14 @@ function exportAsyncResultsToExcel() {
         alert("没有数据可导出。");
         return;
     }
+    // 确保按原始输入顺序排序
+    const sortedRequests = [...appState.asyncBatch.requests].sort((a, b) => {
+        const numA = parseInt(a.inputId.replace('I', ''));
+        const numB = parseInt(b.inputId.replace('I', ''));
+        return numA - numB;
+    });
 
-    const dataToExport = appState.asyncBatch.requests.map(request => {
+    const dataToExport = sortedRequests.map(request => {
         const input = appState.asyncBatch.inputs.find(i => i.id === request.inputId);
         const template = appState.asyncBatch.templates.find(t => t.id === request.templateId);
         const task = appState.asyncBatch.tasks[request.localId];
@@ -1586,15 +1678,7 @@ function exportAsyncResultsToExcel() {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "小批量异步结果");
 
-    // 设置列宽
-    worksheet['!cols'] = [
-        { wch: 25 }, // 请求ID
-        { wch: 60 }, // 输入内容
-        { wch: 20 }, // 使用模板
-        { wch: 10 }, // 状态
-        { wch: 12 }, // 消耗Tokens
-        { wch: 80 }  // 结果
-    ];
+    worksheet['!cols'] = [ { wch: 25 }, { wch: 60 }, { wch: 20 }, { wch: 10 }, { wch: 12 }, { wch: 80 } ];
     
     XLSX.writeFile(workbook, `小批量异步结果_${new Date().toISOString().slice(0, 10)}.xlsx`);
     alert("Excel文件已开始下载。");
@@ -2042,7 +2126,7 @@ function switchTab(tabId, clickedButton) {
     if (tabId !== 'async_batch' && appState.asyncBatch.pollingInterval) {
         clearInterval(appState.asyncBatch.pollingInterval);
         appState.asyncBatch.pollingInterval = null;
-        getEl('async_progress_info').textContent = "轮询已暂停。";
+        getEl('async_progress_info').textContent = "轮询已暂停。请使用“恢复上次任务”按钮继续。";
     }
 }
 
