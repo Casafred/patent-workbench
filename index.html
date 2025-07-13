@@ -3,18 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>专利分析智能工作台 v12.2 LINKER</title>
-    <!-- 引入的库 -->
+    <title>专利分析智能工作台 v12.3 LINKER</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="marked.min.js"></script>
-    <!-- 字体 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
-    /* --- [v12.2 LINKER Design System] --- */
+    /* --- [v12.3 LINKER Design System] --- */
     :root {
         --bg-color: #F0FDF4; 
         --surface-color: #FFFFFF;
@@ -75,7 +73,7 @@
     .delete-button { background: linear-gradient(45deg, #FF7171, var(--error-color)); }
     .delete-button:hover { box-shadow: 0 7px 20px rgba(239, 68, 68, 0.3); }
     select, input, textarea { background-color: #FFFFFF; border: 1px solid var(--border-color); color: var(--text-color); padding: 12px; border-radius: 8px; width: 100%; font-size: 1em; transition: all 0.3s ease; }
-    select:focus, input:focus, textarea:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px var(--primary-color-glow); }
+    selectct:focus, input:focus, textarea:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 3px var(--primary-color-glow); }
     textarea { min-height: 120px; resize: vertical; }
     .config-item { margin-bottom: 15px; }
     .config-item label { font-weight: 500; margin-bottom: 8px; display: block; color: var(--text-color-secondary); }
@@ -105,14 +103,9 @@
     
     /* --- 即时对话核心区域 --- */
     #chat_main_panel { display: flex; flex-direction: column; }
-    #chat_container { display: flex; flex-direction: column; height: 65vh; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; flex-grow: 1; }
+    #chat_container { display: flex; flex-direction: column; height: 65vh; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; flex-grow: 1; position: relative; }
     #chat_window { flex-grow: 1; overflow-y: auto; padding: 20px; background-color: var(--chat-bg); display: flex; flex-direction: column;}
-    /* ▼▼▼ 修改：修复管理模式UI BUG ▼▼▼ */
     .chat-message { display: flex; gap: 15px; margin-bottom: 20px; max-width: 90%; align-items: flex-start; }
-    .message-checkbox { display: none; margin: 15px 0 0 0; flex-shrink: 0; }
-    .chat-window-management-mode .message-checkbox { display: block; }
-    .chat-message.user-message.chat-window-management-mode { flex-direction: row-reverse; }
-    /* ▲▲▲ 修改结束 ▲▲▲ */
     .chat-message .avatar { width: 40px; height: 40px; border-radius: 50%; background-color: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; margin-top: 5px; }
     .message-body { flex-grow: 1; display: flex; flex-direction: column; min-width: 0;}
     .message-content { padding: 12px 18px; border-radius: 18px; word-break: break-word; position: relative; }
@@ -137,7 +130,19 @@
     #chat_input { min-height: 50px; max-height: 300px; height: 50px; padding: 12px 50px 12px 20px; overflow-y: auto; }
     #chat_char_count { position: absolute; bottom: 8px; right: 15px; font-size: 12px; color: var(--text-color-secondary); pointer-events: none; }
     #chat_send_btn { height: 50px; flex-shrink: 0; }
-    #chat_management_bar { display: none; padding: 10px; background-color: var(--primary-color-hover-bg); border-bottom: 1px solid var(--border-color); align-items: center; gap: 10px; }
+    
+    /* ▼▼▼ 新增：重构后的消息管理UI样式 ▼▼▼ */
+    #chat_management_bar { display: none; padding: 10px 15px; background-color: var(--primary-color-hover-bg); border-bottom: 1px solid var(--border-color); align-items: center; gap: 10px; }
+    #chat_management_view { display: none; flex-grow: 1; overflow-y: auto; padding: 10px; }
+    .manage-message-item { display: flex; align-items: center; gap: 12px; padding: 8px 15px; border-bottom: 1px solid var(--border-color); transition: background-color 0.2s; }
+    .manage-message-item:last-child { border-bottom: none; }
+    .manage-message-item:hover { background-color: rgba(0,0,0,0.03); }
+    .manage-message-item input[type="checkbox"] { flex-shrink: 0; }
+    .manage-message-role { font-weight: bold; padding: 4px 8px; border-radius: 6px; font-size: 0.85em; }
+    .manage-message-role.user { background-color: var(--chat-user-bubble); color: var(--text-color); }
+    .manage-message-role.assistant { background-color: var(--primary-color); color: white; }
+    .manage-message-content { flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.9em; color: var(--text-color-secondary); }
+    /* ▲▲▲ 新增结束 ▲▲▲ */
 
     /* --- 小批量异步布局 --- */
     .async-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
@@ -172,7 +177,7 @@
                 <h1 class="banner-text-logo">ALFRED X IP</h1>
                 <img src="ALFRED X IP LOGO.webp" alt="Alfred X IP Logo" class="image-logo">
             </div>
-            <div class="version-number">版本号: v12.2 LINKER</div>
+            <div class="version-number">版本号: v12.3 LINKER</div>
         </div>
         <div class="api-config-section">
             <button id="api_config_toggle_btn" class="api-config-toggle" title="API Key 设置">⚙️</button>
@@ -205,7 +210,6 @@
             </div>
         </div>
 
-        <!-- 功能一：即时对话 -->
         <div id="instant-tab" class="tab-content">
             <div class="step">
                 <div class="step-header">对话参数配置</div>
@@ -241,6 +245,7 @@
                             <button id="chat_delete_selected_btn" class="small-button delete-button">删除选中</button>
                         </div>
                         <div id="chat_window"></div>
+                        <div id="chat_management_view"></div>
                         <div id="chat_input_area">
                             <div id="chat_input_wrapper">
                                 <textarea id="chat_input" placeholder="输入您的问题 (Shift+Enter 换行)..." rows="1"></textarea>
@@ -253,12 +258,11 @@
             </div>
         </div>
         
-        <!-- 功能二：小批量异步 -->
         <div id="async_batch-tab" class="tab-content">
             <div class="step">
                 <div class="step-header">步骤 1: 通用配置</div>
                 <div class="config-item row-flex"><label for="async_model_select">模型 (推荐 Flash):</label><select id="async_model_select"></select></div>
-                 <div class="config-item row-flex"><label for="async_temperature">温度:</label><input type="number" id="async_temperature" value="0.1" step="0.1" min="0" max="1" style="width: 120px;"></div>
+                 <div class="config-item row-flex"><label for="async_temperature">温度:</</label><input type="number" id="async_temperature" value="0.1" step="0.1" min="0" max="1style="width: 120px;"></div>
             </div>
 
             <div class="async-layout">
@@ -302,21 +306,21 @@
                 </div>
                 <div class="async-column">
                      <div class="step">
-                        <div class="step-header">步骤 3: 添加处理模板</div>
+                        <div class="step-header">步骤 3: 添加处理模板模板</div>
                         <div class="config-item">
                             <label for="async_template_name">模板名称:</label>
-                            <input type="text" id="async_template_name" placeholder="例如：技术方案总结">
+                            <inputype="text" id="async_template_name" placeholder="例如：技术方案总结">
                         </div>
                         <div class="config-item">
                             <label for="async_system_prompt">系统提示 (System Prompt):</label>
                             <textarea id="async_system_prompt" rows="3">你是一个高效的专利文本分析助手。</textarea>
                         </div>
                         <div class="config-item">
-                            <label for="async_user_prompt">用户提示模板 (User Prompt Template):</label>
+                            <label forr="async_user_prompt">用户提示模板 (User Prompt Template):</label>
                             <textarea id="async_user_prompt" rows="4">请根据以下文本，总结其核心技术点：
 
 {{INPUT}}</textarea>
-                            <div class="info" style="font-size: 0.85em; padding: 8px; margin-top: 5px;">请务必使用 `{{INPUT}}`作为占位符，它将被替换为每条输入内容。</div>
+                            <div class="info" style="font-ize: 0.85em; padding: 8px; margin-top: 5px;">请务必使用 `{{INPUT}}`作为占位符，它将被替换为每条输入内容。</div>
                         </div>
                         <button id="async_add_template_btn" class="small-button">保存为新模板</button>
                         <hr style="margin: 20px 0; border-color: var(--border-color);">
@@ -345,17 +349,18 @@
                 </div>
             </div>
 
-            <!-- ▼▼▼ 修改：步骤5 增加断点续查按钮 ▼▼▼ -->
             <details class="step" open>
                 <summary style="font-weight: bold; font-size: 1.2em; cursor: pointer; padding-bottom: 20px; list-style: none;">
                     步骤 5: 任务进度与结果 (点击折叠/展开)
                 </summary>
-                <div style="display: flex; justify-content: space-between; align-items: center; gap: 20px;">
-                    <div id="async_progress_info" class="info" style="text-align:center; flex-grow: 1;">等待提交任务...</div>
-                    <button id="async_recover_btn" class="small-button" style="background: var(--warning-color); color: #fff;" disabled>恢复上次任务</button>
-                    <button id="async_export_excel_btn" class="small-button" disabled>导出为Excel</button>
+                <div id="async_action_bar" style="display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap;">
+                    <div id="async_progress_info" class="info" style="text-align:center; flex-grow: 1; margin: 0;">等待提交任务...</div>
+                    <div style="display: flex; gap: 10px; flex-shrink: 0;">
+                        <button id="async_stop_polling_btn" class="small-button" style="background: var(--warning-color); color: #fff; display: none;">停止轮询</button>
+                        <button id="async_recover_btn" class="small-button" style="background: var(--warning-color); color: #fff;" disabled>恢复上次任务</button>
+                        <button id="async_export_excel_btn" class="small-button" disabled>导出为Excel</button>
+                    </div>
                 </div>
-                
                 <div style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; margin-top: 15px;">
                     <div style="overflow-x:auto;">
                         <table id="async_results_table">
@@ -365,10 +370,8 @@
                     </div>
                 </div>
             </details>
-            <!-- ▲▲▲ 修改结束 ▲▲▲ -->
         </div>
 
-        <!-- 功能三：大批量处理 -->
         <div id="large_batch-tab" class="tab-content">
             <div class="sub-tab-container">
                 <button class="sub-tab-button" onclick="switchSubTab('generator', this)">1. 生成请求文件</button>
@@ -489,12 +492,12 @@
                                 检测到来自【2. 执行批处理】的结果文件已在内存中，将优先使用此数据。
                             </div>
                         </div>
-                    </div>
+                    </div>v>
                 </div>
 
                 <div class="step">
                     <div class="step-header">步骤 2: 解析并生成最终报告</div>
-                    <button id="rep_generate-report-btn" disabled>解析并生成最终报告</button>
+                    utton id="rep_generate-report-btn" disabled>解析并生成最终报告</button>
                     <div class="preview-output" id="rep_output_preview" style="display:none;"></div>
                     <button id="rep_download-report-btn" style="display:none; margin-top: 15px;">下载最终报告 (Excel)</button>
                 </div>
@@ -505,7 +508,7 @@
 
 <script>
 // =================================================================================
-// v12.2 - 全局应用状态与配置
+// v12.3 - 全局应用状态与配置
 // =================================================================================
 const appState = {
     apiKey: '',
@@ -543,7 +546,7 @@ const appState = {
         customTemplates: [],
         presetTemplates: [
             { name: "专利文本翻译", isPreset: true, system: "你是一个专业精通各技术领域术语的、精通多国语言的专利文本翻译引擎。你的任务是自动检测用户输入专利文本的语言并将其翻译成中文。请直接返回翻译后的文本，不要添加任何额外的解释或说明。你必须严格遵循输出格式要求。", user: { rules: "请基于以下文本，直接输出翻译后的内容。\n要求：\n1. 结果必须是直接的翻译后中文文本，必须忠实于原文不得臆测，并选择贴合技术领域的专业术语表达", outputFields: [] }},
-            { name: "技术方案解读", isPreset: true, system: "你是一位资深的专利技术分析师。你的任务是基于专利内容，梳理总结其要解决的技术问题，采用的核心方案内容、以及实现的技术效果和最重要的核心关键词短语。", user: { rules: "请分析此专利并按以下JSON格式输出：", outputFields: [ { name: "技术方案", desc: "此处填写技术方案，总结专利的主要方案内容" }, { name: "技术问题", desc: "此处填写该专利可能主要解决的技术问题" }, { name: "技术效果", desc: "此处填写该专利可能带来的技术效果" }, { name: "技术关键词", desc: "此处按照专利文本中构成核心方案的重要程度输出15个关键词或短语" }] }}
+            { name: "技术方案解读", isPreset: true, system: "你是一位资深的专利技术分析师。。你的任务是基于专利内容，梳理总结其要解决的技术问题，采用的核心方案内容、以及实现的技术效果和最重要的核心关键词短语。",user: { rules: "请分析此专利并按以下JSON格式输出：", outputFields: [ { name: "技术方案", desc: "此处填写写技术方案，总结专利的主要方案内容" }, { name: "技术问题", desc: "此处填写该专利可能主要解决的技术问题" }, { name "技术效果", desc: "此处填写该专利可能带来的技术效果" }, { name: "技术关键词", desc: "此处按照专利文本中构成核心方案的重要程度输出15个关键词或短语" }] }}
         ]
     },
     reporter: {
@@ -574,11 +577,11 @@ const apiConfigContainer = getEl('api_config_container');
 // Chat
 const chatModelSelect = getEl('chat_model_select'), chatContextCount = getEl('chat_context_count');
 const chatPersonaSelect = getEl('chat_persona_select'), chatTempInput = getEl('chat_temperature');
-const chatNewBtn = getEl('chat_new_btn');
-const chatExportTxtBtn = getEl('chat_export_txt_btn'), chatExportPngBtn = getEl('chat_export_png_btn'), chatExportPdfBtn = getEl('chat_export_pdf_btn');
+const chatNewBtn = getEll('chat_new_btn');
+const chatExportTxtBtn = getEl('chat_export_txt_btn'), chatExportPngBtn = getEl'chat_export_png_btn'), chatExportPdfBtn = getEl('chat_export_pdf_btn');
 const chatManageBtn = getEl('chat_manage_btn');
 const chatAddPersonaBtn = getEl('chat_add_persona_btn'), chatEditPersonaBtn = getEl('chat_edit_persona_btn'), chatDeletePersonaBtn = getEl('chat_delete_persona_btn');
-const chatWindow = getEl('chat_window'), chatInput = getEl('chat_input'), chatCharCount = getEl('chat_char_count'), chatSendBtn = getEl('chat_send_btn');
+const chatWindow = getEl('chat_window'), chatManagementView = getEl('chat_management_view'), chatInput = getEl('chat_input'), chatCharCount = getEl('chat_char_count'), chatSendBtn = getEl('chat_send_btn');
 const chatHistoryList = getEl('chat_history_list');
 const chatManagementBar = getEl('chat_management_bar');
 const chatDeleteSelectedBtn = getEl('chat_delete_selected_btn'), chatSelectAllBtn = getEl('chat_select_all_btn');
@@ -590,17 +593,18 @@ const asyncInputsSelectAllBtn = getEl('async_inputs_select_all_btn');
 const asyncInputsDeleteSelectedBtn = getEl('async_inputs_delete_selected_btn');
 const asyncExportExcelBtn = getEl('async_export_excel_btn');
 const asyncRecoverBtn = getEl('async_recover_btn');
+const asyncStopPollingBtn = getEl('async_stop_polling_btn');
 
 // Large Batch (Generator)
 const genFileInput = getEl('gen_file-input'), genSheetSelector = getEl('gen_sheet-selector');
 const columnConfigContainer = getEl('column-config-container'), columnCountInput = getEl('column-count'), columnConfigArea = getEl('column-config-area');
-const genGenerateBtn = getEl('gen_generate-btn'), genPreviewOutput = getEl('gen_preview_output'), genDownloadBtn = getEl('gen_download-btn'), genReadyInfo = getEl('gen_ready_info');
-const apiModelSelect = getEl('api-model'), apiTempInput = getEl('api-temperature'), apiSystemInput = getEl('api-system-prompt');
+const genGenerateBtn = getEl('gen_generate-btn'), genPreviewOutput = getEl('gen_preview_output'), genDownloadBtn = gettEl('gen_download-btn'), genReadyInfo = getEl('gen_ready_info');
+const apiModelSelect = getEl('api-model'),apiTempInput = getEl('api-temperature'), apiSystemInput = getEl('api-system-prompt');
 const templateSelector = getEl('template_selector'), templateFileInput = getEl('template_file_input');
 const promptRules = getEl('prompt-rules'), contentInsertionPreview = getEl('content-insertion-preview'), outputFieldsContainer = getEl('output-fields-container');
 // Large Batch (Workflow)
 const batchLog = getEl('batch_log'), batchIdReminder = getEl('batch_id_reminder');
-const btnUpload = getEl('batch_step1_upload'), btnCreate = getEl('batch_step2_create'), btnCheck = getEl('batch_step3_check'), btnDownload = getEl('batch_step4_download');
+const btnUpload = getEl('batch_step11_upload'), btnCreate = getEl('batch_step2_create'), btnCheck = getEl('batch_step3_check'), btnDownload =getEl('batch_step4_download');
 const autoCheckContainer = getEl('auto-check-container'), autoCheckStatusEl = getEl('auto_check_status'), btnStopCheck = getEl('batch_stop_check_btn');
 const recoverIdInput = getEl('recover_batch_id_input'), btnRecover = getEl('recover_state_btn');
 // Large Batch (Reporter)
@@ -680,14 +684,12 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false) {
         }
         const result = await response.json();
         if (!response.ok || result.success === false) {
-            // 包装错误以便上层可以检查 `error.message`
             const err = new Error(result.error || `HTTP ${response.status}: ${response.statusText}`);
             err.response = result;
             throw err;
         }
         return result.data;
     } catch (error) {
-        // 如果是网络错误, error.message会是 "Failed to fetch" 或类似
         console.error(`API Call Error to ${endpoint}:`, error.message);
         throw error;
     }
@@ -750,9 +752,9 @@ function loadPersonas() {
 function saveConversations() { localStorage.setItem('chatConversations', JSON.stringify(appState.chat.conversations)); }
 function loadConversations() {
     const savedConvos = JSON.parse(localStorage.getItem('chatConversations') || '[]');
-    appState.chat.conversations = savedConvos;
+    appState.chat.t.conversations = savedConvos;
     appState.chat.currentConversationId = localStorage.getItem('currentConversationId');
-    if (savedConvos.length > 0 && (!appState.chat.currentConversationId || !savedConvos.find(c => c.id === appState.chat.currentConversationId))) {
+    if (savedConvos.length 0 && (!appState.chat.currentConversationId || !savedConvos.find(c => c.id === appState.chat.currentConversationId))) {
         appState.chat.currentConversationId = savedConvos.sort((a,b) => b.lastUpdate - a.lastUpdate)[0].id;
     }
 }
@@ -812,9 +814,7 @@ function addMessageToDOM(role, content, index, isStreaming = false, usage = null
     
     const tokenUsageHtml = (usage && usage.total_tokens) ? `<div class="message-token-usage">Tokens: ${usage.total_tokens}</div>` : `<div class="message-token-usage"></div>`;
     
-    // ▼▼▼ 修改：为所有消息统一添加复制按钮 ▼▼▼
     messageDiv.innerHTML = `
-        <input type="checkbox" class="message-checkbox">
         <div class="avatar">${role === 'user' ? 'U' : 'AI'}</div>
         <div class="message-body">
             <div class="message-content">${renderedContent}</div>
@@ -826,7 +826,6 @@ function addMessageToDOM(role, content, index, isStreaming = false, usage = null
             </div>
         </div>
     `;
-    // ▲▲▲ 修改结束 ▲▲▲
 
     const footer = messageDiv.querySelector('.message-footer');
     if (isStreaming) footer.style.opacity = '0';
@@ -856,18 +855,18 @@ function startNewChat(fromUserClick = false) {
         lastUpdate: Date.now()
     };
     
-    appState.chat.conversations.push(newConvo);
+    appState.chat.converssations.push(newConvo);
     switchConversation(newId);
     saveConversations();
     renderChatHistoryList();
 }
 
-function switchConversation(id) {
+function switchonversation(id) {
     appState.chat.currentConversationId = id;
     localStorage.setItem('currentConversationId', id);
     renderCurrentChat();
     renderChatHistoryList();
-    toggleManagementMode(false);
+    toggleManagementMode(false); // 确保切换对话时退出管理模式
 }
 
 function updateCurrentConversationPersona() {
@@ -949,10 +948,10 @@ async function handleStreamChatRequest() {
                     const delta = parsed.choices[0]?.delta?.content || "";
                     if (delta) {
                         fullResponse += delta;
-                        assistantContentEl.innerHTML = window.marked.parse(fullResponse + '<span class="blinking-cursor">|</span>', { gfm: true, breaks: true });
+                        assistantContentEl.innerHTML = window.marked.parse(fullResponse + '<span class="blinking-cursor">|</span>', { gfm: true, breaks:: true });
                         chatWindow.scrollTop = chatWindow.scrollHeight;
                     }
-                } catch(e) { console.error("Error parsing stream data:", data, e); }
+                } catch(e) { console.error("Error parsing streamdata:", data, e); }
             }
         }
         assistantContentEl.innerHTML = window.marked.parse(fullResponse, { gfm: true, breaks: true });
@@ -970,8 +969,8 @@ async function handleStreamChatRequest() {
     } catch (error) {
         assistantContentEl.innerHTML = `<div class="info error">请求失败: ${error.message}</div>`;
         convo.messages.push({ role: 'assistant', content: `[ERROR] ${error.message}` });
-        assistantMessageEl.dataset.index = convo.messages.length - 1;
-        assistantMessageEl.querySelector('.message-footer').style.opacity = '1';
+        assistanttMessageEl.dataset.index = convo.messages.length - 1;
+        assistantMessageEl.querySelector('.message-footer').style.opacity ='1';
         saveConversations();
     } finally {
         chatSendBtn.disabled = false;
@@ -1005,18 +1004,14 @@ async function exportChatHistory(format = 'txt') {
             overflowY: chatWindow.style.overflowY,
         };
 
-        // Temporarily change styles to render the full content
         chatWindow.style.height = 'auto';
         chatWindow.style.maxHeight = 'none';
         chatWindow.style.overflowY = 'visible';
         
         try {
             const canvas = await html2canvas(chatWindow, { 
-                scale: 1.5, // Increase scale for better quality
-                useCORS: true, 
-                backgroundColor: getComputedStyle(chatWindow).backgroundColor,
-                scrollX: 0,
-                scrollY: -window.scrollY // Fix for capturing top of element
+                scale: 1.5, useCORS: true, backgroundColor: getComputedStyle(chatWindow).backgroundColor,
+                scrollX: 0, scrollY: -window.scrollY
             });
 
             if (format === 'png') {
@@ -1035,7 +1030,6 @@ async function exportChatHistory(format = 'txt') {
             console.error("Export failed:", e);
             alert("导出失败，请查看控制台获取错误信息。");
         } finally {
-            // IMPORTANT: Restore original styles
             chatWindow.style.height = originalStyles.height;
             chatWindow.style.maxHeight = originalStyles.maxHeight;
             chatWindow.style.overflowY = originalStyles.overflowY;
@@ -1046,7 +1040,6 @@ async function exportChatHistory(format = 'txt') {
 function copyMessage(buttonElement) {
     const contentDiv = buttonElement.closest('.message-body').querySelector('.message-content');
     const originalContent = buttonElement.innerHTML;
-    // 使用 .innerText 来复制用户看到的文本，而不是原始HTML
     navigator.clipboard.writeText(contentDiv.innerText).then(() => {
         buttonElement.innerHTML = '✓';
         buttonElement.title = '已复制!';
@@ -1113,31 +1106,52 @@ function deletePersona() {
     }
 }
 
+// ▼▼▼ 修改：管理模式UI重构 ▼▼▼
 function toggleManagementMode(forceState) {
     appState.chat.isManagementMode = forceState !== undefined ? forceState : !appState.chat.isManagementMode;
-    chatWindow.classList.toggle('chat-window-management-mode', appState.chat.isManagementMode);
     
-    // ▼▼▼ 修改：应用class到每个消息，修复布局问题 ▼▼▼
-    chatWindow.querySelectorAll('.chat-message').forEach(el => {
-        el.classList.toggle('chat-window-management-mode', appState.chat.isManagementMode);
-    });
-    // ▲▲▲ 修改结束 ▲▲▲
-
-    chatManagementBar.style.display = appState.chat.isManagementMode ? 'flex' : 'none';
-    chatManageBtn.textContent = appState.chat.isManagementMode ? '退出管理' : '管理消息';
-    if (!appState.chat.isManagementMode) {
-        toggleSelectAllMessages(false);
+    if (appState.chat.isManagementMode) {
+        chatWindow.style.display = 'none';
+        chatManagementView.style.display = 'block';
+        chatManagementBar.style.display = 'flex';
+        renderManagementView();
+        chatManageBtn.textContent = '退出管理';
+    } else {
+        chatWindow.style.display = 'flex';
+        chatManagementView.style.display = 'none';
+        chatManagementBar.style.display = 'none';
+        chatManagementView.innerHTML = '';
+        chatManageBtn.textContent = '管理消息';
     }
 }
 
+function renderManagementView() {
+    chatManagementView.innerHTML = '';
+    const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
+    if (!convo) return;
+    
+    convo.messages.forEach((msg, index) => {
+        if (msg.role === 'system') return;
+        
+        const item = document.createElement('div');
+        item.className = 'manage-message-item';
+        item.innerHTML = `
+            <input type="checkbox" class="manage-message-checkbox" data-index="${index}">
+            <span class="manage-message-role ${msg.role}">${msg.role === 'user' ? '用户' : '模型'}</span>
+            <span class="manage-message-content" title="${msg.content}">${msg.content}</span>
+        `;
+        chatManagementView.appendChild(item);
+    });
+}
+
 function toggleSelectAllMessages(select) {
-    chatWindow.querySelectorAll('.message-checkbox').forEach(cb => cb.checked = select);
+    chatManagementView.querySelectorAll('.manage-message-checkbox').forEach(cb => cb.checked = select);
 }
 
 function deleteSelectedMessages() {
     const indicesToDelete = [];
-    chatWindow.querySelectorAll('.message-checkbox:checked').forEach(cb => {
-        const index = parseInt(cb.closest('.chat-message').dataset.index, 10);
+    chatManagementView.querySelectorAll('.manage-message-checkbox:checked').forEach(cb => {
+        const index = parseInt(cb.dataset.index, 10);
         if (!isNaN(index)) indicesToDelete.push(index);
     });
 
@@ -1147,16 +1161,16 @@ function deleteSelectedMessages() {
     const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
     if (!convo) return;
     
-    indicesToDelete.sort((a, b) => b - a);
+    indicesToDelete.sort((a, b) => b - a); // 从后往前删，避免索引错乱
     indicesToDelete.forEach(index => {
         convo.messages.splice(index, 1);
     });
 
     convo.lastUpdate = Date.now();
     saveConversations();
-    renderCurrentChat();
-    toggleManagementMode(false);
+    renderManagementView(); // 重新渲染管理列表
 }
+// ▲▲▲ 修改结束 ▲▲▲
 
 // =================================================================================
 // 功能二: 小批量异步 (已重构，增加鲁棒性)
@@ -1182,14 +1196,12 @@ function initAsyncBatch() {
     modelSelect.innerHTML = ASYNC_MODELS.map(m => `<option value="${m}">${m}</option>`).join('');
     modelSelect.value = appState.asyncBatch.model;
 
-    // 检查是否有可恢复的任务
     if (localStorage.getItem('lastAsyncBatchState')) {
         asyncRecoverBtn.disabled = false;
     }
 
     modelSelect.addEventListener('change', e => appState.asyncBatch.model = e.target.value);
     tempInput.addEventListener('change', e => appState.asyncBatch.temperature = parseFloat(e.target.value));
-
     addTemplateBtn.addEventListener('click', () => {
         const name = templateNameInput.value.trim();
         const user = userPromptInput.value.trim();
@@ -1199,7 +1211,6 @@ function initAsyncBatch() {
         renderAsyncLists();
         templateNameInput.value = '';
     });
-    
     addInputBtn.addEventListener('click', () => {
         manualInput.value.trim().split('\n').filter(Boolean).forEach(line => {
              appState.asyncBatch.inputs.push({ id: `I${appState.asyncBatch.nextInputId++}`, content: line.trim() });
@@ -1207,7 +1218,6 @@ function initAsyncBatch() {
         renderAsyncLists();
         manualInput.value = '';
     });
-
     excelFile.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -1225,9 +1235,7 @@ function initAsyncBatch() {
         };
         reader.readAsArrayBuffer(file);
     });
-
     excelSheet.addEventListener('change', handleAsyncSheetChange);
-
     function handleAsyncSheetChange() {
         const sheetName = excelSheet.value;
         const worksheet = appState.asyncBatch.excelWorkbook.Sheets[sheetName];
@@ -1243,23 +1251,15 @@ function initAsyncBatch() {
             loadExcelBtn.disabled = true;
         }
     }
-    
     loadExcelBtn.addEventListener('click', () => {
-        if (appState.asyncBatch.inputs.length > 0) {
-            if (!confirm("从Excel加载将清空并替换当前所有输入内容，确定吗？")) {
-                return;
-            }
-        }
-        
+        if (appState.asyncBatch.inputs.length > 0 && !confirm("从Excel加载将清空并替换当前所有输入内容，确定吗？")) return;
         appState.asyncBatch.inputs = [];
         appState.asyncBatch.requests = [];
         appState.asyncBatch.nextInputId = 1;
-
         const sheetName = excelSheet.value;
         const columnName = excelColumn.value;
         const worksheet = appState.asyncBatch.excelWorkbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-        
         let loadedCount = 0;
         jsonData.forEach(row => {
             if (row[columnName]) {
@@ -1271,18 +1271,16 @@ function initAsyncBatch() {
         renderRequestsPreview();
         alert(`已成功从列 "${columnName}" 加载 ${loadedCount} 条输入，并清空了原有数据。`);
     });
-    
     clearRequestsBtn.addEventListener('click', () => {
         if (confirm('确定要清空所有待提交的请求吗？')) {
             appState.asyncBatch.requests = [];
             renderRequestsPreview();
         }
     });
-
     submitBtn.addEventListener('click', handleAsyncBatchSubmit);
     asyncExportExcelBtn.addEventListener('click', exportAsyncResultsToExcel);
     asyncRecoverBtn.addEventListener('click', recoverAsyncBatchState);
-
+    asyncStopPollingBtn.addEventListener('click', stopAsyncPolling);
     asyncInputsSelectAllBtn.addEventListener('click', () => {
         const allChecked = Array.from(document.querySelectorAll('#async_inputs_list input[type="checkbox"]')).every(cb => cb.checked);
         document.querySelectorAll('#async_inputs_list input[type="checkbox"]').forEach(cb => cb.checked = !allChecked);
@@ -1304,7 +1302,6 @@ function renderAsyncLists() {
             </label>
         </div>`
     ).join('') || '<div class="info" style="padding:10px">暂无输入</div>';
-    
     asyncInputsCount.textContent = appState.asyncBatch.inputs.length;
     asyncInputsManagement.classList.toggle('visible', appState.asyncBatch.inputs.length > 0);
 
@@ -1336,16 +1333,10 @@ function deleteAsyncTemplate(templateId) {
 
 function deleteSelectedAsyncInputs() {
     const idsToDelete = Array.from(document.querySelectorAll('#async_inputs_list input[type="checkbox"]:checked')).map(cb => cb.value);
-    if (idsToDelete.length === 0) {
-        return alert("请先勾选需要删除的输入项。");
-    }
-    if (!confirm(`确定要删除选中的 ${idsToDelete.length} 项输入吗？相关的待提交请求也会被一并移除。`)) {
-        return;
-    }
-
+    if (idsToDelete.length === 0) return alert("请先勾选需要删除的输入项。");
+    if (!confirm(`确定要删除选中的 ${idsToDelete.length} 项输入吗？相关的待提交请求也会被一并移除。`)) return;
     appState.asyncBatch.inputs = appState.asyncBatch.inputs.filter(i => !idsToDelete.includes(i.id));
     appState.asyncBatch.requests = appState.asyncBatch.requests.filter(r => !idsToDelete.includes(r.inputId));
-    
     renderAsyncLists();
     renderRequestsPreview();
 }
@@ -1354,7 +1345,6 @@ function parseRangeString(rangeStr) {
     const indices = new Set();
     const maxIndex = appState.asyncBatch.inputs.length;
     if (maxIndex === 0) return [];
-    
     const parts = rangeStr.split(',');
     for (const part of parts) {
         const trimmedPart = part.trim();
@@ -1379,11 +1369,7 @@ function addAsyncTasksByRange(templateId) {
     const rangeInput = getEl(`range-input-${templateId}`);
     const rangeStr = rangeInput.value;
     const indices = parseRangeString(rangeStr);
-    
-    if (indices.length === 0) {
-        return alert("输入的范围无效或没有匹配到任何输入。请检查格式 (例: 1-5, 8) 和序号。");
-    }
-
+    if (indices.length === 0) return alert("输入的范围无效或没有匹配到任何输入。请检查格式 (例: 1-5, 8) 和序号。");
     let addedCount = 0;
     indices.forEach(index => {
         const inputId = appState.asyncBatch.inputs[index].id;
@@ -1393,7 +1379,6 @@ function addAsyncTasksByRange(templateId) {
             addedCount++;
         }
     });
-    
     renderRequestsPreview();
     rangeInput.value = '';
     if (addedCount > 0) {
@@ -1435,7 +1420,7 @@ function switchAsyncInput(event, type) {
     getEl(`async-input-${type}`).classList.add('active');
 }
 
-async function submitTaskWithRetry(request, retries = MAX_ASYNC_RETRIES) {
+async function submitTaskWithRetry(request) {
     const input = appState.asyncBatch.inputs.find(i => i.id === request.inputId);
     const template = appState.asyncBatch.templates.find(t => t.id === request.templateId);
     const userPrompt = template.userPromptTemplate.replace('{{INPUT}}', input.content);
@@ -1443,29 +1428,25 @@ async function submitTaskWithRetry(request, retries = MAX_ASYNC_RETRIES) {
     if (template.systemPrompt) messages.unshift({ role: 'system', content: template.systemPrompt });
     const body = { model: appState.asyncBatch.model, temperature: appState.asyncBatch.temperature, messages, request_id: request.localId };
     
-    for (let i = 0; i <= retries; i++) {
-        try {
-            updateAsyncTableRow(request.localId, i === 0 ? 'processing' : 'retrying', `提交中 (尝试 ${i + 1}/${retries + 1})...`);
-            const data = await apiCall("/async_submit", body);
-            appState.asyncBatch.tasks[request.localId] = { zhipuTaskId: data.task_id, status: 'processing', retryCount: 0 };
-            updateAsyncTableRow(request.localId, 'processing', '已提交，待处理...');
-            return; // Success
-        } catch (error) {
-            console.error(`Submission attempt ${i + 1} for ${request.localId} failed:`, error.message);
-            if (i === retries) {
-                appState.asyncBatch.tasks[request.localId] = { status: 'failed', retryCount: 0 };
-                updateAsyncTableRow(request.localId, 'failed', `提交失败: ${error.message}`);
-                return; // Final failure
-            }
-            await delay(2000 * (i + 1)); // Wait longer after each failure
-        }
+    let currentRetries = appState.asyncBatch.tasks[request.localId]?.retryCount || 0;
+    
+    try {
+        updateAsyncTableRow(request.localId, currentRetries === 0 ? 'processing' : 'retrying', `提交中 (尝试 ${currentRetries + 1}/${MAX_ASYNC_RETRIES})...`);
+        const data = await apiCall("/async_submit", body);
+        appState.asyncBatch.tasks[request.localId] = { ...appState.asyncBatch.tasks[request.localId], zhipuTaskId: data.task_id, status: 'processing' };
+        updateAsyncTableRow(request.localId, 'processing', '已提交，待处理...');
+        return true;
+    } catch (error) {
+        console.error(`Submission attempt for ${request.localId} failed:`, error.message);
+        appState.asyncBatch.tasks[request.localId] = { ...(appState.asyncBatch.tasks[request.localId] || {}), status: 'failed', result: `提交失败: ${error.message}` };
+        updateAsyncTableRow(request.localId, 'failed', `提交失败: ${error.message}`);
+        return false;
     }
 }
 
 async function handleAsyncBatchSubmit() {
     if (appState.asyncBatch.requests.length === 0) return alert("没有待提交的请求。");
     getEl('async_submit_batch_btn').disabled = true;
-    asyncExportExcelBtn.disabled = true;
     asyncRecoverBtn.disabled = true;
 
     getEl('async_results_tbody').innerHTML = '';
@@ -1477,6 +1458,7 @@ async function handleAsyncBatchSubmit() {
         const row = getEl('async_results_tbody').insertRow();
         row.id = `row-${request.localId}`;
         row.innerHTML = `<td>${request.localId}</td><td>${input.content.substring(0, 50)}...</td><td>${template.name} (${template.id})</td><td class="status-cell">排队中...</td><td class="token-cell">-</td><td class="result-cell">...</td>`;
+        appState.asyncBatch.tasks[request.localId] = { status: 'pending', retryCount: 0 };
     }
     
     const concurrency = 5;
@@ -1508,44 +1490,39 @@ function updateAsyncTableRow(localRequestId, status, content, tokens = '-') {
     statusCell.className = `status-cell status-${status}`;
     statusCell.textContent = statusText;
     tokenCell.textContent = tokens;
-    resultCell.innerHTML = `<pre>${content}</pre>`;
+    resultCell.innerHTML = `<pre>${content || ''}</pre>`;
 }
 
 async function retryFailedTask(localId) {
     const taskState = appState.asyncBatch.tasks[localId];
     if (!taskState || taskState.retryCount >= MAX_ASYNC_RETRIES) {
         taskState.status = 'failed';
-        updateAsyncTableRow(localId, 'failed', `重试次数已用尽`);
-        saveAsyncStateToLocalStorage();
+        taskState.result = (taskState.result || '') + ' 重试次数已用尽';
+        updateAsyncTableRow(localId, 'failed', taskState.result);
         return;
     }
     
     taskState.retryCount++;
-    updateAsyncTableRow(localId, 'retrying', `任务执行失败，尝试重试 (${taskState.retryCount}/${MAX_ASYNC_RETRIES})...`);
-    
-    const request = appState.asyncBatch.requests.find(r => r.localId === localId);
-    await submitTaskWithRetry(request, 0); // Attempt to resubmit once
+    await submitTaskWithRetry(appState.asyncBatch.requests.find(r => r.localId === localId));
 }
 
 function startAsyncPolling() {
     const progressInfo = getEl('async_progress_info');
-    if (appState.asyncBatch.pollingInterval) clearInterval(appState.asyncBatch.pollingInterval);
+    stopAsyncPolling(); // Ensure no multiple intervals are running
 
+    asyncStopPollingBtn.style.display = 'inline-block';
+    
     const poll = async () => {
-        const tasksToPoll = Object.entries(appState.asyncBatch.tasks).filter(([_, task]) => task.status === 'processing' || task.status === 'retrying');
+        const tasksToPoll = Object.entries(appState.asyncBatch.tasks).filter(([_, task]) => task.status === 'processing');
         const total = Object.keys(appState.asyncBatch.tasks).length;
-        const finishedCount = total - tasksToPoll.length;
-
-        progressInfo.innerHTML = `任务轮询中... 已完成 ${finishedCount} / ${total}`;
+        const successfulCount = Object.values(appState.asyncBatch.tasks).filter(t => t.status === 'completed').length;
+        
+        progressInfo.innerHTML = `轮询中... 成功 <strong>${successfulCount}</strong> / ${total}`;
         
         if (tasksToPoll.length === 0) {
-            clearInterval(appState.asyncBatch.pollingInterval);
-            appState.asyncBatch.pollingInterval = null;
-            progressInfo.innerHTML = `所有任务处理完成！共 ${total} 条。`;
-            getEl('async_submit_batch_btn').disabled = false;
-            asyncExportExcelBtn.disabled = appState.asyncBatch.requests.length === 0;
-            asyncRecoverBtn.disabled = !localStorage.getItem('lastAsyncBatchState');
-            saveAsyncStateToLocalStorage(); // Final save
+            const failedCount = Object.values(appState.asyncBatch.tasks).filter(t => t.status === 'failed').length;
+            stopAsyncPolling();
+            progressInfo.innerHTML = `所有任务处理完成！成功 ${successfulCount}, 失败 ${failedCount} (共 ${total} 条)`;
             return;
         }
 
@@ -1557,19 +1534,35 @@ function startAsyncPolling() {
                     task.status = 'completed';
                     task.result = data.choices[0].message.content;
                     task.usage = data.usage;
-                    updateAsyncTableRow(localId, 'completed', task.result, task.usage.total_tokens);
+                    updateAsyncTableRow(localId, 'completed', task.result, task.usage.total_l_tokens);
                 } else if (data.task_status === 'FAIL') {
-                    await retryFailedTask(localId);
+                    task.status = 'failed'; // Mark as failed first                   task.result = data.error?.message || '任务执行失败';
+                    updateAsyncTableRow(localId, 'failed', task.result);
+                    await retryFailedTask(localId); // Then attempt to retry
                 }
             } catch (error) {
-                 console.warn(`轮询任务 ${localId} (ID: ${task.zhipuTaskId}) 失败，将在下次轮询时重试。错误:`, error.message);
+                 console.warn(`轮询任务 ${localId} (ID: ${task.zhipuTaskId}) 失败:`, error.message);
+                 task.status = 'failed'; // Mark as failed on query error too
+                 task.result = `查询失败: ${error.message}`;
+                 updateAsyncTableRow(localId, 'failed', task.result);
             }
         }
-        saveAsyncStateToLocalStorage(); // Save state after each poll cycle
+        saveAsyncStateToLocalStorage();
     };
 
     appState.asyncBatch.pollingInterval = setInterval(poll, 5000);
     poll();
+}
+
+function stopAsyncPolling() {
+    if (appState.asyncBatch.pollingInterval) {
+        clearInterval(appState.asyncBatch.pollingInterval);
+        appState.asyncBatch.pollingInterval = null;
+        getEl('async_progress_info').textContent = "轮询已手动停止。";
+        asyncStopPollingBtn.style.display = 'none';
+        getEl('async_submit_batch_btn').disabled = false;
+        asyncRecoverBtn.disabled = !localStorage.getItem('lastAsyncBatchState');
+    }
 }
 
 function saveAsyncStateToLocalStorage() {
@@ -1583,76 +1576,58 @@ function saveAsyncStateToLocalStorage() {
         };
         localStorage.setItem('lastAsyncBatchState', JSON.stringify(stateToSave));
         asyncRecoverBtn.disabled = false;
+        asyncExportExcelBtn.disabled = false;
     }
 }
 
 function renderAsyncResultsTableFromState() {
-    const tbody = getEl('async_results_tbody');
+    const tbody = getElEl('async_results_tbody');
     tbody.innerHTML = '';
     if (!appState.asyncBatch.requests) return;
 
-    for (const request of appState.asyncBatch.requests) {
+    for (nst request of appState.asyncBatch.requests) {
         const input = appState.asyncBatch.inputs.find(i => i.id === request.inputId);
         const template = appState.asyncBatch.templates.find(t => t.id === request.templateId);
         const task = appState.asyncBatch.tasks[request.localId];
         
         const row = tbody.insertRow();
-        row.id = `row-${request.localId}`;
-        row.innerHTML = `
-            <td>${request.localId}</td>
-            <td>${input ? input.content.substring(0, 50) : 'N/A'}...</td>
-            <td>${template ? `${template.name} (${template.id})` : 'N/A'}</td>
-            <td class="status-cell">...</td>
-            <td class="token-cell">-</td>
-            <td class="result-cell">...</td>
-        `;
+        rowow.id = `row-${request.localId}`;
+        row.innerHTML = `<td>...</td><td>...</td><td>...</td><td class="statusell">...</td><td class="token-cell">-</td><td class="result-cell">...</td>`;
+        
+        row.cells[0].textContent = request.localId;
+        row.cells[1].textContent = input ? input.content.substring(0, 50) + '...' : 'N/A';
+        row.cells[2].textContent = template ? `${template.name} (${template.id})` : 'N/A';
         
         if (task) {
-            updateAsyncTableRow(request.localId, task.status, task.result || `状态: ${task.status}`, (task.usage && task.usage.total_tokens) || '-');
+            updateAsyncTableRow(request.localId, task.status, task.result, (task.usage && task.usage.total_tokens) || '-');
         } else {
             updateAsyncTableRow(request.localId, 'pending', '待处理');
         }
     }
 }
 
-
 function recoverAsyncBatchState() {
     const savedStateJSON = localStorage.getItem('lastAsyncBatchState');
-    if (!savedStateJSON) {
-        alert("未找到可恢复的任务。");
-        return;
-    }
-    if (!confirm("恢复上次任务将覆盖当前所有未提交的异步任务和输入，确定要继续吗？")) {
-        return;
-    }
+    if (!savedStateJSON) return alert("未找到可恢复的任务。");
+    if (!confirm("恢复上次任务将覆盖当前所有未提交的异步任务和输入，确定要继续吗？")) return;
     
     const savedState = JSON.parse(savedStateJSON);
-    
-    appState.asyncBatch.requests = savedState.requests || [];
-    appState.asyncBatch.tasks = savedState.tasks || {};
-    appState.asyncBatch.inputs = savedState.inputs || [];
-    appState.asyncBatch.templates = savedState.templates || [];
+    appState.asyncBatch = { ...appState.asyncBatch, ...savedState };
 
-    // 重新渲染UI
     renderAsyncLists();
     renderRequestsPreview();
     renderAsyncResultsTableFromState();
 
-    alert(`已成功恢复 ${new Date(savedState.timestamp).toLocaleString()} 的任务状态。将开始轮询未完成的任务。`);
+    alert(`已成功恢复 ${new Date(savedState.timestamp).toLocaleString()} 的任务状态。将。将开始轮询未完成的任务。`);
     
-    // 禁用操作按钮，开始轮询
     getEl('async_submit_batch_btn').disabled = true;
-    asyncRecoverBtn.disabled = true;
-
+    asyncRecoverBtn.isabled = true;
     startAsyncPolling();
 }
 
 function exportAsyncResultsToExcel() {
-    if (appState.asyncBatch.requests.length === 0) {
-        alert("没有数据可导出。");
-        return;
-    }
-    // 确保按原始输入顺序排序
+    if (appState.asyncBatch.requests.length=== 0) return alert("没有数据可导出。");
+
     const sortedRequests = [...appState.asyncBatch.requests].sort((a, b) => {
         const numA = parseInt(a.inputId.replace('I', ''));
         const numB = parseInt(b.inputId.replace('I', ''));
@@ -1661,27 +1636,24 @@ function exportAsyncResultsToExcel() {
 
     const dataToExport = sortedRequests.map(request => {
         const input = appState.asyncBatch.inputs.find(i => i.id === request.inputId);
-        const template = appState.asyncBatch.templates.find(t => t.id === request.templateId);
-        const task = appState.asyncBatch.tasks[request.localId];
+        const template = appStatee.asyncBatch.templates.find(t => t.id === request.templateId);
+        const task = appState.asyncBatch.tasksrequest.localId];
         
         return {
             '请求ID': request.localId,
             '输入内容': input ? input.content : 'N/A',
             '使用模板': template ? template.name : 'N/A',
-            '状态': task ? task.status : '未处理',
+            '状态': task ? task.status : '未提交',
             '消耗Tokens': (task && task.usage) ? task.usage.total_tokens : '-',
-            '结果': (task && task.result) ? task.result : (task ? '无结果或失败' : '')
+            '结果或错误信息': (task && task.result) ? task.result : (task ? '无结果或失败' : 'N/A')
         };
     });
 
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "小批量异步结果");
-
-    worksheet['!cols'] = [ { wch: 25 }, { wch: 60 }, { wch: 20 }, { wch: 10 }, { wch: 12 }, { wch: 80 } ];
-    
+    worksheet['!cols'] = [ { wch: 28 }, { wch: 60 }, { wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 80 } ];
     XLSX.writeFile(workbook, `小批量异步结果_${new Date().toISOString().slice(0, 10)}.xlsx`);
-    alert("Excel文件已开始下载。");
 }
 
 // =================================================================================
@@ -1695,9 +1667,9 @@ function initLargeBatch() {
 }
 
 function initGenerator() {
-    apiModelSelect.innerHTML = BATCH_MODELS.map(m => `<option value="${m}">${m}</option>`).join('');
+    apiModelSelect.innerHTML = BATCH_MODELS.map(m => `<option value="${m}">${m}</option>n>`).join('');
     genFileInput.addEventListener('change', handleGenFile);
-    genSheetSelector.addEventListener('change', e => loadGenSheet(e.target.value));
+    genSheetSelector.addEventListener('change', e => loadGenSheet(target.value));
     columnCountInput.addEventListener('input', () => { updateColumnSelectors(); updateContentInsertionPreview(); });
     genGenerateBtn.addEventListener('click', generateJsonl);
     genDownloadBtn.addEventListener('click', downloadJsonl);
@@ -1782,8 +1754,8 @@ function generateJsonl() {
     const selectedColumns = Array.from(document.querySelectorAll('.column-selector')).map(sel => sel.value);
     const requests = appState.generator.currentSheetData.map((row, index) => {
         let finalUserPrompt = userPromptTemplate;
-        selectedColumns.forEach(colName => { finalUserPrompt = finalUserPrompt.replace(new RegExp(`{${colName}}`, 'g'), row[colName] || ''); });
-        return { "custom_id": `request-${index + 1}`, "method": "POST", "url": "/v4/chat/completions", "body": { model: apiModelSelect.value, messages: [{ role: 'system', content: apiSystemInput.value }, { role: 'user', content: finalUserPrompt }], temperature: parseFloat(apiTempInput.value) } };
+        selectedColumns.forEach(colName => { finalUserPrompt = finalUserPrompt.replace(new RegExp(p(`{${colName}}`, 'g'), row[colName] || ''); });
+        return { "custom_id": `request-${index +}`, "method": "POST", "url": "/v4/chat/completions", "body": { model: apiModelSelect.value, messages: [{ role: 'system', content: apiSystemInput.value }, { role: 'user', content: finalUserPrompt }], temperature: parseFloat(apiTempInput.value) } };
     });
     appState.batch.jsonlContent = requests.map(JSON.stringify).join('\n');
     genPreviewOutput.style.display = 'block';
@@ -1813,12 +1785,12 @@ function downloadJsonl(){
     a.href=URL.createObjectURL(blob);
     a.download="batch_requests.jsonl";
     a.click();
-    URL.revokeObjectURL(a.href);
+    URL.revokeObjectURLRL(a.href);
 }
 
 function loadTemplateUI(template) {
     if (!template) return;
-    apiSystemInput.value = template.system || '';
+    apiSystemInput.value = template.system| '';
     if (typeof template.user === 'string') {
         promptRules.value = template.user;
         outputFieldsContainer.innerHTML = '';
@@ -1955,9 +1927,9 @@ async function runStep2_Create(){
     addLog("开始执行步骤2：创建Batch任务...");
     if(!appState.batch.fileId) return addLog("错误：File ID 缺失。","error");
     btnCreate.disabled = true;
-    try {
+    tryy {
         const data = await apiCall("/create_batch",{ fileId: appState.batch.fileId });
-        appState.batch.batchId = data.id;
+        appState.batch.atchId = data.id;
         addLog("成功: Batch任务创建成功！","success");
         addLog(`获取到 Batch ID: ${appState.batch.batchId}`);
         batchIdReminder.innerHTML=`<strong>任务已创建！请务必记录您的 Batch ID: <span style="user-select:all; background: #eee; padding: 2px 6px;">${appState.batch.batchId}</span></strong>`;
@@ -1989,15 +1961,14 @@ async function runStep3_Check(){
 
 async function runStep4_Download(){
     addLog("开始执行步骤4：获取结果内容...");
-    if(!appState.batch.outputFileId) return addLog("错误：Output File ID 缺失。","error");
+    if(!appState.batchtch.outputFileId) return addLog("错误：Output File ID 缺失。","error");
     btnDownload.disabled = true;
-    try {
-        const data = await apiCall(`/download_result`, { fileId: appState.batch.outputFileId });
+    try {      const data = await apiCall(`/download_result`, { fileId: appState.batch.outputFileId });
         appState.batch.resultContent = data.fileContent;
         addLog("成功: 已将结果文件内容加载到浏览器内存中！","success");
         addLog("请切换到【3. 解析报告】，您将看到直接解析的选项。");
-        switchSubTab('reporter', document.querySelector('.sub-tab-button[onclick*="reporter"]'));
-    } catch(e) { addLog(`错误: ${e.message}`, "error"); } finally { btnDownload.disabled = false; }
+        switchSubTab('reporter', document.querySelector('.sub-tabb-button[onclick*="reporter"]'));
+    } catch(e) { addLog(`错误: ${e.message}`, "error"); } finally { btnownload.disabled = false; }
 }
 
 function startAutoCheck(){
@@ -2073,74 +2044,89 @@ function parseJsonl(content){
 }
 
 function checkReporterReady(){
-    repGenerateBtn.disabled = !(appState.reporter.sheetData && appState.reporter.jsonlData && appState.reporter.jsonlData.length > 0);
+    repGenerateBtn.disabled = !(appState.reporter.sheetData && appState.reporter.jsonlData && appState.reporter.jsonlData..length > 0);
 }
 
 function parseAndGenerateReport() {
-    if (!appState.reporter.sheetData || !appState.reporter.jsonlData) return alert("请先上传原始Excel和结果JSONL文件。");
+    if (!appState.reporter.sheetData || !appState.reporterjsonlData) return alert("请先上传原始Excel和结果JSONL文件。");
     const resultMap = new Map(appState.reporter.jsonlData.map(item => [item.custom_id, item?.response?.body?.choices?.[0]?.message?.content?.trim()]));
     const allGeneratedHeaders = new Set();
     appState.reporter.finalOutputData = appState.reporter.sheetData.map((row, index) => {
         const newRow = { ...row };
-        const ai_content = resultMap.get(`request-${index + 1}`);
+        const ai_content = resultMap.get(`request-${index ++ 1}`);
         if (ai_content) {
             try {
-                const jsonMatch = ai_content.match(/```json\s*([\s\S]*?)\s*```|({[\s\S]*})/);
-                if (!jsonMatch) throw new Error("No JSON block found");
+                const jsonMatch = ai_content.match(/```json\s
+````\S]*?)\s*```|({[\s\S]*})/);
+                if (!jsonMatch) throw new Error("No
+```` block found");
                 const jsonString = jsonMatch[1] || jsonMatch[2];
-                const ai_json = JSON.parse(jsonString);
+                const ai_json = JSON.parse(
+````tring);
                 Object.keys(ai_json).forEach(key => {
-                    newRow[key] = (typeof ai_json[key] === 'object') ? JSON.stringify(ai_json[key]) : ai_json[key];
+                    newRow[key] = (typeof ai_json
+```` === 'object') ? JSON.stringify(ai_json[key]) : ai_json[key];
                     allGeneratedHeaders.add(key);
-                });
+````            });
             } catch (e) { newRow['AI原始返回'] = ai_content; allGeneratedHeaders.add('AI原始返回'); }
-        }
+````    }
         return newRow;
     });
     if (appState.reporter.finalOutputData.length > 0) {
-        appState.reporter.outputHeaders = [...Object.keys(appState.reporter.sheetData[0] || {}), ...Array.from(allGeneratedHeaders)];
+        app
+````.reporter.outputHeaders = [...Object.keys(appState.reporter.sheetData[0] || {}), ...Array.from(allGenerated
+````rs)];
         repPreview.style.display = 'block';
-        const previewText = JSON.stringify(appState.reporter.finalOutputData.slice(0, 5), null, 2).replace(/</g, '&lt;');
-        repPreview.innerHTML = `<p><strong>解析完成！预览前 5 条:</strong></p><pre>${previewText}</pre>`;
-        repDownloadBtn.style.display = 'inline-block';
+        const previewText = JSON.stringify(appState.reporter.finalOutputData
+````e(0, 5), null, 2).replace(/</g, '&lt;');
+        repPreview.innerHTML = `<p><strong>
+````预览前 5 条:</strong></p><pre>${previewText}</pre>`;
+        repDownloadBtn.style.display = 'inline
+````k';
     } else { alert("处理完成，但没有生成任何数据。"); }
 }
 
 function downloadFinalReport(){
-    if(appState.reporter.finalOutputData.length === 0) return;
-    const consistentData = appState.reporter.finalOutputData.map(row => { let newRow = {}; appState.reporter.outputHeaders.forEach(header => { newRow[header] = row[header] || ""; }); return newRow; });
-    const newSheet = XLSX.utils.json_to_sheet(consistentData, {header: appState.reporter.outputHeaders});
+    if(
+````ate.reporter.finalOutputData.length === 0) return;
+    const consistentData = appState.reporter.finalOutputData.map
+````w => { let newRow = {}; appState.reporter.outputHeaders.forEach(header => { newRow[header] = row[header]
+```` }); return newRow; });
+    const newSheet = XLSX.utils.json_to_sheet(consistentData, {header: appState
+````rter.outputHeaders});
     const newWorkbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(newWorkbook, newSheet, "分析结果");
+    XLSX.utils.book_append_
+````(newWorkbook, newSheet, "分析结果");
     XLSX.writeFile(newWorkbook, "专利分析报告_最终版.xlsx");
 }
-
-// =================================================================================
+````=================================================================================
 // 页面布局与导航
 // =================================================================================
 function switchTab(tabId, clickedButton) {
-    document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
-    document.querySelectorAll(".tab-button").forEach(el => el.classList.remove("active"));
+````document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
+    document.querySelectorAll(".tab-button").
+````ch(el => el.classList.remove("active"));
     getEl(`${tabId}-tab`).classList.add("active");
-    if (clickedButton) clickedButton.classList.add("active");
-    if (tabId !== 'async_batch' && appState.asyncBatch.pollingInterval) {
-        clearInterval(appState.asyncBatch.pollingInterval);
-        appState.asyncBatch.pollingInterval = null;
-        getEl('async_progress_info').textContent = "轮询已暂停。请使用“恢复上次任务”按钮继续。";
-    }
+    if (
+````edButton) clickedButton.classList.add("active");
 }
 
 function switchSubTab(subTabId, clickedButton) {
-    const parent = getEl('large_batch-tab');
+    const parent = getEl
+````ge_batch-tab');
     parent.querySelectorAll(".sub-tab-content").forEach(el => el.classList.remove("active"));
-    parent.querySelectorAll(".sub-tab-button").forEach(el => el.classList.remove("active"));
-    getEl(`sub-tab-${subTabId}`).classList.add("active");
+````parent.querySelectorAll(".sub-tab-button").forEach(el => el.classList.remove("active"));
+    getEl(`sub-tab-${
+````bId}`).classList.add("active");
     if(clickedButton) clickedButton.classList.add("active");
-    if (subTabId === 'reporter' && appState.batch.resultContent) {
+    if (subTab
+````= 'reporter' && appState.batch.resultContent) {
         repInfoBox.style.display = 'block';
-        appState.reporter.jsonlData = parseJsonl(appState.batch.resultContent);
+        appState
+````rter.jsonlData = parseJsonl(appState.batch.resultContent);
         checkReporterReady();
-    } else if(subTabId !== 'reporter') {
+    } else if(sub
+```` !== 'reporter') {
         repInfoBox.style.display = 'none';
     }
 }
