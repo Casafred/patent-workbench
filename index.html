@@ -646,7 +646,7 @@ function initApiKeyConfig() {
         const isPassword = globalApiKeyInput.type === 'password';
         globalApiKeyInput.type = isPassword ? 'text' : 'password';
         apiKeyToggleVisibilityBtn.textContent = isPassword ? '🙈' : '👁️';
-    }););
+    });
     apiKeyCopyBtn.addEventListener('click', () => {
         if (!globalApiKeyInput.value) return;
         navigator.clipboard.writext(globalApiKeyInput.value).then(() => {
