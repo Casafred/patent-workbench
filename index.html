@@ -97,7 +97,34 @@
     #chat_history_panel { border: 1px solid var(--border-color); border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; background: var(--bg-color); }
     #chat_history_header { padding: 15px; border-bottom: 1px solid var(--border-color); font-weight: bold; text-align: center; font-size: 1.1em; }
     #chat_history_list { flex-grow: 1; overflow-y: auto; padding: 10px; }
-    .chat-history-item { padding: 12px 15px; margin-bottom: 8px; border-radius: 8px; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; }
+    /* ▼▼▼ 修改②：增加删除按钮样式 ▼▼▼ */
+    .chat-history-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 15px;
+        margin-bottom: 8px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 1px solid transparent;
+    }
+    .chat-history-item .history-item-content {
+        flex-grow: 1;
+        min-width: 0; /* Important for text-overflow to work in flex containers */
+    }
+    .chat-history-item .history-delete-btn {
+        flex-shrink: 0;
+        visibility: hidden; /* Hide by default */
+        opacity: 0;
+        transition: all 0.2s;
+    }
+    .chat-history-item:hover .history-delete-btn {
+        visibility: visible; /* Show on hover */
+        opacity: 1;
+    }
+    /* ▲▲▲ 修改②：增加删除按钮样式 ▲▲▲ */
     .chat-history-item:hover { background-color: var(--primary-color-hover-bg); }
     .chat-history-item.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color-dark); }
     .history-item-title { font-weight: bold; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -107,12 +134,10 @@
     #chat_main_panel { display: flex; flex-direction: column; }
     #chat_container { display: flex; flex-direction: column; height: 65vh; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; flex-grow: 1; }
     #chat_window { flex-grow: 1; overflow-y: auto; padding: 20px; background-color: var(--chat-bg); display: flex; flex-direction: column;}
-    /* ▼▼▼ 修改：修复管理模式UI BUG ▼▼▼ */
     .chat-message { display: flex; gap: 15px; margin-bottom: 20px; max-width: 90%; align-items: flex-start; }
     .message-checkbox { display: none; margin: 15px 0 0 0; flex-shrink: 0; }
     .chat-window-management-mode .message-checkbox { display: block; }
     .chat-message.user-message.chat-window-management-mode { flex-direction: row-reverse; }
-    /* ▲▲▲ 修改结束 ▲▲▲ */
     .chat-message .avatar { width: 40px; height: 40px; border-radius: 50%; background-color: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; margin-top: 5px; }
     .message-body { flex-grow: 1; display: flex; flex-direction: column; min-width: 0;}
     .message-content { padding: 12px 18px; border-radius: 18px; word-break: break-word; position: relative; }
@@ -345,7 +370,6 @@
                 </div>
             </div>
 
-            <!-- ▼▼▼ 修改：步骤5 增加断点续查按钮 ▼▼▼ -->
             <details class="step" open>
                 <summary style="font-weight: bold; font-size: 1.2em; cursor: pointer; padding-bottom: 20px; list-style: none;">
                     步骤 5: 任务进度与结果 (点击折叠/展开)
@@ -365,7 +389,6 @@
                     </div>
                 </div>
             </details>
-            <!-- ▲▲▲ 修改结束 ▲▲▲ -->
         </div>
 
         <!-- 功能三：大批量处理 -->
@@ -774,14 +797,54 @@ function renderChatHistoryList() {
         if (convo.id === appState.chat.currentConversationId) {
             item.classList.add('active');
         }
+        // ▼▼▼ 修改②：渲染删除按钮 ▼▼▼
         item.innerHTML = `
-            <span class="history-item-title">${convo.title}</span>
-            <span class="history-item-details">${new Date(convo.lastUpdate).toLocaleString()}</span>
+            <div class="history-item-content" onclick="switchConversation('${convo.id}')">
+                <span class="history-item-title">${convo.title}</span>
+                <span class="history-item-details">${new Date(convo.lastUpdate).toLocaleString()}</span>
+            </div>
+            <button 
+                class="icon-button history-delete-btn" 
+                title="删除对话" 
+                onclick="deleteConversation(event, '${convo.id}')"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
+            </button>
         `;
-        item.addEventListener('click', () => switchConversation(convo.id));
+        // ▲▲▲ 修改②：渲染删除按钮 ▲▲▲
+        
+        // Original logic was to add listener to the whole item, now it's on the content part.
+        // item.addEventListener('click', () => switchConversation(convo.id));
         chatHistoryList.appendChild(item);
     });
 }
+
+// ▼▼▼ 修改②：新增删除对话函数 ▼▼▼
+function deleteConversation(event, convoId) {
+    event.stopPropagation(); // Prevent triggering the switchConversation click event on the parent
+    const convoToDelete = appState.chat.conversations.find(c => c.id === convoId);
+    if (!convoToDelete) return;
+
+    if (confirm(`您确定要永久删除对话 "${convoToDelete.title}" 吗？此操作无法撤销。`)) {
+        appState.chat.conversations = appState.chat.conversations.filter(c => c.id !== convoId);
+
+        // Edge case: If the deleted conversation was the current one
+        if (appState.chat.currentConversationId === convoId) {
+            // Find the most recent conversation to switch to
+            const mostRecentConvo = appState.chat.conversations.sort((a, b) => b.lastUpdate - a.lastUpdate)[0];
+            if (mostRecentConvo) {
+                switchConversation(mostRecentConvo.id);
+            } else {
+                // If no conversations are left, start a new one
+                startNewChat(false);
+            }
+        }
+        
+        saveConversations();
+        renderChatHistoryList(); // Re-render the list without the deleted item
+    }
+}
+// ▲▲▲ 修改②：新增删除对话函数 ▲▲▲
 
 function renderCurrentChat() {
     const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
@@ -812,7 +875,6 @@ function addMessageToDOM(role, content, index, isStreaming = false, usage = null
     
     const tokenUsageHtml = (usage && usage.total_tokens) ? `<div class="message-token-usage">Tokens: ${usage.total_tokens}</div>` : `<div class="message-token-usage"></div>`;
     
-    // ▼▼▼ 修改：为所有消息统一添加复制按钮 ▼▼▼
     messageDiv.innerHTML = `
         <input type="checkbox" class="message-checkbox">
         <div class="avatar">${role === 'user' ? 'U' : 'AI'}</div>
@@ -826,7 +888,6 @@ function addMessageToDOM(role, content, index, isStreaming = false, usage = null
             </div>
         </div>
     `;
-    // ▲▲▲ 修改结束 ▲▲▲
 
     const footer = messageDiv.querySelector('.message-footer');
     if (isStreaming) footer.style.opacity = '0';
@@ -1117,11 +1178,9 @@ function toggleManagementMode(forceState) {
     appState.chat.isManagementMode = forceState !== undefined ? forceState : !appState.chat.isManagementMode;
     chatWindow.classList.toggle('chat-window-management-mode', appState.chat.isManagementMode);
     
-    // ▼▼▼ 修改：应用class到每个消息，修复布局问题 ▼▼▼
     chatWindow.querySelectorAll('.chat-message').forEach(el => {
         el.classList.toggle('chat-window-management-mode', appState.chat.isManagementMode);
     });
-    // ▲▲▲ 修改结束 ▲▲▲
 
     chatManagementBar.style.display = appState.chat.isManagementMode ? 'flex' : 'none';
     chatManageBtn.textContent = appState.chat.isManagementMode ? '退出管理' : '管理消息';
@@ -2109,7 +2168,10 @@ function parseAndGenerateReport() {
 function downloadFinalReport(){
     if(appState.reporter.finalOutputData.length === 0) return;
     const consistentData = appState.reporter.finalOutputData.map(row => { let newRow = {}; appState.reporter.outputHeaders.forEach(header => { newRow[header] = row[header] || ""; }); return newRow; });
-    const newSheet = XLSX.utils.json_to_sheet(consistentData, {header: appState.reporter.outputHeaders});
+    // ▼▼▼ 修改①：修复下载功能 ▼▼▼
+    // 简化调用，让库从对象键自动推断表头，这更稳健
+    const newSheet = XLSX.utils.json_to_sheet(consistentData);
+    // ▲▲▲ 修改①：修复下载功能 ▲▲▲
     const newWorkbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(newWorkbook, newSheet, "分析结果");
     XLSX.writeFile(newWorkbook, "专利分析报告_最终版.xlsx");
