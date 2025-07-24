@@ -1,0 +1,584 @@
+// js/chat.js (完整最终版)
+
+function initChat() {
+    chatModelSelect.innerHTML = AVAILABLE_MODELS.map(m => `<option value="${m}">${m}</option>`).join('');
+    loadPersonas();
+    loadConversations();
+    
+    chatSendBtn.addEventListener('click', handleStreamChatRequest);
+    chatInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleStreamChatRequest(); }});
+    chatInput.addEventListener('input', () => {
+        chatCharCount.textContent = chatInput.value.length;
+        chatInput.style.height = 'auto';
+        chatInput.style.height = `${Math.min(chatInput.scrollHeight, 300)}px`;
+    });
+    chatPersonaSelect.addEventListener('change', updateCurrentConversationPersona);
+    chatNewBtn.addEventListener('click', () => startNewChat(true));
+    
+    chatExportTxtBtn.addEventListener('click', () => exportChatHistory('txt'));
+    chatExportPngBtn.addEventListener('click', () => exportChatHistory('png'));
+    chatExportPdfBtn.addEventListener('click', () => exportChatHistory('pdf'));
+
+    chatAddPersonaBtn.addEventListener('click', addPersona);
+    chatEditPersonaBtn.addEventListener('click', editPersona);
+    chatDeletePersonaBtn.addEventListener('click', deletePersona);
+
+    chatManageBtn.addEventListener('click', () => toggleManagementMode());
+    
+    chatSelectAllBtn.addEventListener('click', () => {
+        console.log("全选按钮点击");
+        toggleSelectAllMessages(true);
+    });
+    
+    chatDeselectAllBtn.addEventListener('click', () => {
+        console.log("取消全选按钮点击");
+        toggleSelectAllMessages(false);
+    });
+
+    chatDeleteSelectedBtn.addEventListener('click', deleteSelectedMessages);
+    
+    updatePersonaSelector();
+    renderChatHistoryList();
+    if (!appState.chat.currentConversationId) {
+        startNewChat(false);
+    } else {
+        switchConversation(appState.chat.currentConversationId);
+    }
+}
+
+async function generateConversationTitle(conversation) {
+    // 如果标题不是初始的"新对话"，说明它已经被AI生成过或被用户手动改过，则不再自动生成。
+    if (!conversation || conversation.title !== '新对话' || conversation.messages.length < 2) {
+        return;
+    }
+
+    const recentMessages = conversation.messages.slice(-2);
+    const contentToSummarize = recentMessages.map(m => `${m.role}: ${m.content}`).join('\n\n');
+
+    const titlePrompt = {
+        model: 'glm-4-flash',
+        messages: [
+            {
+                role: 'system',
+                content: '你是一个文本摘要专家。你的任务是根据提供的对话内容，用一句话（中文不超过15个字）总结出一个简洁、精炼的标题。直接返回标题文本，不要包含任何引导词、引号或说明。'
+            },
+            {
+                role: 'user',
+                content: `请为以下对话生成一个标题：\n\n${contentToSummarize}`
+            }
+        ],
+        temperature: 0.2,
+    };
+
+    try {
+        const responseData = await apiCall('/chat', titlePrompt, 'POST');
+        const newTitleRaw = responseData.choices[0]?.message?.content;
+
+        if (newTitleRaw) {
+            // 只有当当前标题仍然是 "新对话" 时才更新，防止覆盖用户刚刚手动修改的标题
+            if (conversation.title === '新对话') {
+                const newTitle = newTitleRaw.trim().replace(/["'“”。,]/g, '').replace(/\s/g, '');
+                conversation.title = newTitle;
+                saveConversations();
+                renderChatHistoryList(); // 重新渲染列表以显示新标题
+                console.log(`AI生成标题成功: "${newTitle}"`);
+            }
+        }
+    } catch (error) {
+        console.error("自动生成标题失败:", error.message);
+        // 即使生成失败，也不应影响用户体验，仅在控制台打印错误
+    }
+}
+
+function renderChatHistoryList() {
+    chatHistoryList.innerHTML = '';
+    const sortedConvos = [...appState.chat.conversations].sort((a, b) => b.lastUpdate - a.lastUpdate);
+    sortedConvos.forEach(convo => {
+        const item = document.createElement('div');
+        item.className = 'chat-history-item';
+        item.dataset.id = convo.id;
+        if (convo.id === appState.chat.currentConversationId) {
+            item.classList.add('active');
+        }
+
+        item.innerHTML = `
+            <div class="history-item-content" onclick="switchConversation('${convo.id}')">
+                <span class="history-item-title" 
+                      contenteditable="true" 
+                      title="点击编辑标题"
+                      data-convo-id="${convo.id}"
+                      onkeydown="handleTitleEditKeydown(event)"
+                      onblur="handleTitleEditBlur(event)">${convo.title}</span>
+                <span class="history-item-details">${new Date(convo.lastUpdate).toLocaleString()}</span>
+            </div>
+            <button 
+                class="icon-button history-delete-btn" 
+                title="删除对话" 
+                onclick="deleteConversation(event, '${convo.id}')"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
+            </button>
+        `;
+        
+        chatHistoryList.appendChild(item);
+    });
+}
+
+function handleTitleEditKeydown(event) {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        event.target.blur();
+    }
+    if (event.key === 'Escape') {
+        const convoId = event.target.dataset.convoId;
+        const conversation = appState.chat.conversations.find(c => c.id === convoId);
+        if (conversation) {
+            event.target.textContent = conversation.title;
+        }
+        event.target.blur();
+    }
+}
+
+function handleTitleEditBlur(event) {
+    const convoId = event.target.dataset.convoId;
+    const newTitle = event.target.textContent.trim();
+    const conversation = appState.chat.conversations.find(c => c.id === convoId);
+
+    if (conversation && newTitle && conversation.title !== newTitle) {
+        conversation.title = newTitle;
+        saveConversations();
+        console.log(`标题已更新为: "${newTitle}"`);
+    } else if (conversation) {
+        // 如果内容为空或者没变，恢复原来的标题
+        event.target.textContent = conversation.title;
+    }
+}
+
+async function handleStreamChatRequest() {
+    const userInput = chatInput.value.trim();
+    if (!userInput) return;
+    
+    const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
+    if (!convo) return;
+    
+    const messagesCountBefore = convo.messages.length;
+
+    chatSendBtn.disabled = true;
+    chatInput.disabled = true;
+
+    const persona = appState.chat.personas[convo.personaId];
+    let finalUserInput = userInput;
+    if (persona.userTemplate && persona.userTemplate.includes('{{INPUT}}')) {
+        finalUserInput = persona.userTemplate.replace('{{INPUT}}', userInput);
+    }
+    
+    convo.messages.push({ role: 'user', content: finalUserInput });
+    convo.lastUpdate = Date.now();
+    
+    renderCurrentChat();
+    renderChatHistoryList();
+    saveConversations();
+    
+    chatInput.value = '';
+    chatInput.style.height = '50px';
+    chatCharCount.textContent = '0';
+    
+    const assistantMessageId = addMessageToDOM('assistant', '<span class="blinking-cursor">|</span>', convo.messages.length, true);
+    const assistantMessageEl = getEl(assistantMessageId);
+    const assistantContentEl = assistantMessageEl.querySelector('.message-content');
+    const tokenUsageEl = assistantMessageEl.querySelector('.message-token-usage');
+    let fullResponse = "";
+    let usageInfo = null;
+    
+    try {
+        const contextCount = parseInt(chatContextCount.value, 10);
+        const messagesToSend = [convo.messages[0], ...convo.messages.slice(1).slice(-(contextCount * 2))];
+        
+        const reader = await apiCall('/stream_chat', { model: chatModelSelect.value, temperature: parseFloat(chatTempInput.value), messages: messagesToSend }, 'POST', true);
+        const decoder = new TextDecoder();
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n\n').filter(line => line.startsWith('data: '));
+            for (const line of lines) {
+                const data = line.substring(6);
+                if (data === '[DONE]') continue;
+                try {
+                    const parsed = JSON.parse(data);
+                    if (parsed.error) throw new Error(parsed.error.message || JSON.stringify(parsed.error));
+                    if (parsed.usage) usageInfo = parsed.usage;
+                    const delta = parsed.choices[0]?.delta?.content || "";
+                    if (delta) {
+                        fullResponse += delta;
+                        assistantContentEl.innerHTML = window.marked.parse(fullResponse + '<span class="blinking-cursor">|</span>', { gfm: true, breaks: true });
+                        chatWindow.scrollTop = chatWindow.scrollHeight;
+                    }
+                } catch(e) { /* ignore parsing errors in stream */ }
+            }
+        }
+        assistantContentEl.innerHTML = window.marked.parse(fullResponse, { gfm: true, breaks: true });
+        
+        const assistantMessageData = { role: 'assistant', content: fullResponse };
+        if (usageInfo) {
+            assistantMessageData.usage = usageInfo;
+            if (tokenUsageEl) tokenUsageEl.textContent = `Tokens: ${usageInfo.total_tokens}`;
+        }
+        convo.messages.push(assistantMessageData);
+        assistantMessageEl.dataset.index = convo.messages.length - 1;
+        assistantMessageEl.querySelector('.message-footer').style.opacity = '1';
+
+        saveConversations();
+
+        // 检查是否是第一次完整问答 (system + user + assistant)
+        if (messagesCountBefore === 1) {
+            setTimeout(() => generateConversationTitle(convo), 100);
+        }
+
+    } catch (error) {
+        assistantContentEl.innerHTML = `<div class="info error">请求失败: ${error.message}</div>`;
+        convo.messages.push({ role: 'assistant', content: `[ERROR] ${error.message}` });
+        assistantMessageEl.dataset.index = convo.messages.length - 1;
+        assistantMessageEl.querySelector('.message-footer').style.opacity = '1';
+        saveConversations();
+    } finally {
+        chatSendBtn.disabled = false;
+        chatInput.disabled = false;
+        chatInput.focus();
+    }
+}
+
+function savePersonas() { localStorage.setItem('chatPersonas', JSON.stringify(appState.chat.personas)); }
+
+function loadPersonas() {
+    const savedPersonas = JSON.parse(localStorage.getItem('chatPersonas'));
+    if (savedPersonas && Object.keys(savedPersonas).length > 0) {
+        appState.chat.personas = savedPersonas;
+    } else {
+        appState.chat.personas = {
+            "patent_analyzer": { name: "资深专利分析师", system: "你是一位顶级的专利分析师和信息架构师，极其擅长从复杂、冗长的专利文本中快速提炼核心技术原理、解决方案、技术问题和效果。你的回答应该专业、结构清晰、逻辑严谨。", userTemplate: "", isCustom: false },
+            "translator": { name: "专业技术翻译", system: "你是一个专业精通各技术领域术语的、精通多国语言的专利文本翻译引擎。你的任务是自动检测用户输入专利文本的语言并将其翻译成中文或英文。请直接返回翻译后的文本，不要添加任何额外的解释或说明。", userTemplate: "", isCustom: false },
+            "keyword_expander": { name: "专利检索词专家", system: "你是一名资深的专利检索专家。你的任务是根据用户提供的技术点，拓展出一系列用于专利数据库检索的中英文同义词、近义词、上下位概念和相关技术术语。输出应该清晰、格式化，便于复制使用。", userTemplate: "", isCustom: false },
+            "general_assistant": { name: "通用助手", system: "你是一个乐于助人的通用AI助手，可以回答各种问题。", userTemplate: "", isCustom: false }
+        };
+        savePersonas();
+    }
+}
+
+function saveConversations() { localStorage.setItem('chatConversations', JSON.stringify(appState.chat.conversations)); }
+
+function loadConversations() {
+    const savedConvos = JSON.parse(localStorage.getItem('chatConversations') || '[]');
+    appState.chat.conversations = savedConvos;
+    appState.chat.currentConversationId = localStorage.getItem('currentConversationId');
+    if (savedConvos.length > 0 && (!appState.chat.currentConversationId || !savedConvos.find(c => c.id === appState.chat.currentConversationId))) {
+        appState.chat.currentConversationId = savedConvos.sort((a,b) => b.lastUpdate - a.lastUpdate)[0].id;
+    }
+}
+
+function updatePersonaSelector() {
+    const currentVal = chatPersonaSelect.value;
+    chatPersonaSelect.innerHTML = Object.keys(appState.chat.personas).map(id => `<option value="${id}">${appState.chat.personas[id].name}</option>`).join('');
+    if (appState.chat.personas[currentVal]) chatPersonaSelect.value = currentVal;
+    else if (Object.keys(appState.chat.personas).length > 0) chatPersonaSelect.value = Object.keys(appState.chat.personas)[0];
+}
+
+function deleteConversation(event, convoId) {
+    event.stopPropagation();
+    const convoToDelete = appState.chat.conversations.find(c => c.id === convoId);
+    if (!convoToDelete) return;
+
+    if (confirm(`您确定要永久删除对话 "${convoToDelete.title}" 吗？此操作无法撤销。`)) {
+        appState.chat.conversations = appState.chat.conversations.filter(c => c.id !== convoId);
+        if (appState.chat.currentConversationId === convoId) {
+            const mostRecentConvo = appState.chat.conversations.sort((a, b) => b.lastUpdate - a.lastUpdate)[0];
+            if (mostRecentConvo) {
+                switchConversation(mostRecentConvo.id);
+            } else {
+                startNewChat(false);
+            }
+        }
+        saveConversations();
+        renderChatHistoryList();
+    }
+}
+
+function renderCurrentChat() {
+    const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
+    chatWindow.innerHTML = '';
+    if (!convo) return;
+    
+    if (appState.chat.personas[convo.personaId]) {
+        chatPersonaSelect.value = convo.personaId;
+    }
+    
+    convo.messages.forEach((msg, index) => {
+        if (msg.role !== 'system') {
+            addMessageToDOM(msg.role, msg.content, index, false, msg.usage);
+        }
+    });
+    
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
+function addMessageToDOM(role, content, index, isStreaming = false, usage = null) {
+    const messageId = `msg-${Date.now()}-${Math.random()}`;
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `chat-message ${role}-message`;
+    messageDiv.id = messageId;
+    if (index !== undefined) messageDiv.dataset.index = index;
+    
+    const renderedContent = isStreaming ? content : (window.marked ? window.marked.parse(content, { gfm: true, breaks: true }) : content.replace(/</g, "&lt;").replace(/>/g, "&gt;"));
+    
+    const tokenUsageHtml = (usage && usage.total_tokens) ? `<div class="message-token-usage">Tokens: ${usage.total_tokens}</div>` : `<div class="message-token-usage"></div>`;
+    
+    messageDiv.innerHTML = `
+        <input type="checkbox" class="message-checkbox" title="选择此消息">
+        <div class="message-main-content">
+            <div class="avatar">${role === 'user' ? 'U' : 'AI'}</div>
+            <div class="message-body">
+                <div class="message-content">${renderedContent}</div>
+                <div class="message-footer">
+                    ${role === 'assistant' ? tokenUsageHtml : ''}
+                    <button class="icon-button" title="复制" onclick="copyMessage(this)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2Zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6Z M2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1H2Z"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    const footer = messageDiv.querySelector('.message-footer');
+    if (isStreaming) footer.style.opacity = '0';
+    
+    chatWindow.appendChild(messageDiv);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+    return messageId;
+}
+
+function startNewChat(fromUserClick = false) {
+    const currentConvo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
+    if (fromUserClick && currentConvo && currentConvo.messages.length > 1) {
+        if (confirm("您想在开启新对话前，导出当前的聊天记录吗？")) {
+            exportChatHistory('txt');
+        }
+    }
+    
+    const newId = `convo-${Date.now()}`;
+    const personaId = chatPersonaSelect.value || Object.keys(appState.chat.personas)[0];
+    const persona = appState.chat.personas[personaId];
+    
+    const newConvo = {
+        id: newId,
+        title: `新对话`,
+        personaId: personaId,
+        messages: [{ role: 'system', content: persona.system }],
+        lastUpdate: Date.now()
+    };
+    
+    appState.chat.conversations.push(newConvo);
+    switchConversation(newId);
+    saveConversations();
+    renderChatHistoryList();
+}
+
+function switchConversation(id) {
+    appState.chat.currentConversationId = id;
+    localStorage.setItem('currentConversationId', id);
+    renderCurrentChat();
+    renderChatHistoryList();
+    toggleManagementMode(false);
+}
+
+function updateCurrentConversationPersona() {
+    const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
+    if (!convo) return;
+    
+    const newPersonaId = chatPersonaSelect.value;
+    const newPersona = appState.chat.personas[newPersonaId];
+    convo.personaId = newPersonaId;
+    convo.messages[0] = { role: 'system', content: newPersona.system };
+    convo.lastUpdate = Date.now();
+    
+    saveConversations();
+    renderChatHistoryList();
+    
+    const notification = document.createElement('div');
+    notification.className = 'info';
+    notification.style.alignSelf = 'center';
+    notification.style.margin = '10px 0';
+    notification.innerHTML = `对话角色已切换为：<strong>${newPersona.name}</strong>`;
+    chatWindow.appendChild(notification);
+}
+
+async function exportChatHistory(format = 'txt') {
+    const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
+    if (!convo || convo.messages.length <= 1) return alert("没有聊天记录可导出。");
+
+    const personaName = appState.chat.personas[convo.personaId].name;
+    const filename = `聊天记录_${personaName}_${new Date().toISOString().slice(0,10)}`;
+
+    if (format === 'txt') {
+        let content = `聊天记录 - ${personaName}\n========================\n\n`;
+        convo.messages.forEach(msg => { if (msg.role !== 'system') content += `[${msg.role.toUpperCase()}]\n${msg.content}\n\n------------------------\n\n`; });
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${filename}.txt`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+    } else {
+        alert("正在生成文件，请稍候... 对于很长的聊天记录，这可能需要一些时间。");
+        const originalStyles = {
+            height: chatWindow.style.height,
+            maxHeight: chatWindow.style.maxHeight,
+            overflowY: chatWindow.style.overflowY,
+        };
+        chatWindow.style.height = 'auto';
+        chatWindow.style.maxHeight = 'none';
+        chatWindow.style.overflowY = 'visible';
+        
+        try {
+            const canvas = await html2canvas(chatWindow, { 
+                scale: 1.5,
+                useCORS: true, 
+                backgroundColor: getComputedStyle(chatWindow).backgroundColor,
+                scrollX: 0,
+                scrollY: -window.scrollY
+            });
+
+            if (format === 'png') {
+                const a = document.createElement('a');
+                a.href = canvas.toDataURL('image/png');
+                a.download = `${filename}.png`;
+                a.click();
+            } else if (format === 'pdf') {
+                const { jsPDF } = window.jspdf;
+                const imgData = canvas.toDataURL('image/jpeg', 0.9);
+                const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: [canvas.width, canvas.height] });
+                pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
+                pdf.save(`${filename}.pdf`);
+            }
+        } catch (e) {
+            console.error("Export failed:", e);
+            alert("导出失败，请查看控制台获取错误信息。");
+        } finally {
+            chatWindow.style.height = originalStyles.height;
+            chatWindow.style.maxHeight = originalStyles.maxHeight;
+            chatWindow.style.overflowY = originalStyles.overflowY;
+        }
+    }
+}
+
+function copyMessage(buttonElement) {
+    const contentDiv = buttonElement.closest('.message-body').querySelector('.message-content');
+    const originalContent = buttonElement.innerHTML;
+    navigator.clipboard.writeText(contentDiv.innerText).then(() => {
+        buttonElement.innerHTML = '✓';
+        buttonElement.title = '已复制!';
+        setTimeout(() => {
+            buttonElement.innerHTML = originalContent;
+            buttonElement.title = '复制';
+        }, 1500);
+    }).catch(err => alert('复制失败!'));
+}
+
+function addPersona() {
+    const name = prompt("请输入新角色的名称：");
+    if (!name) return;
+    const system = prompt(`请输入角色 "${name}" 的系统提示 (System Prompt):`);
+    if (system === null) return;
+    const userTemplate = prompt(`(可选) 请输入用户输入模板，使用 {{INPUT}} 作为占位符。\n如果不需要，请留空直接确定。`, "");
+    if (userTemplate === null) return;
+
+    const id = `custom-${Date.now()}`;
+    appState.chat.personas[id] = { name, system, userTemplate, isCustom: true };
+    savePersonas();
+    updatePersonaSelector();
+    chatPersonaSelect.value = id;
+    updateCurrentConversationPersona();
+    alert("新角色已添加！");
+}
+
+function editPersona() {
+    const id = chatPersonaSelect.value;
+    const persona = appState.chat.personas[id];
+    if (!persona) return;
+    const newName = prompt("编辑角色名称：", persona.name);
+    if (!newName) return;
+    const newSystem = prompt(`正在编辑角色 "${newName}" 的系统提示:`, persona.system);
+    if (newSystem === null) return;
+    const newUserTemplate = prompt(`(可选) 编辑用户输入模板，使用 {{INPUT}} 作为占位符。`, persona.userTemplate || "");
+    if (newUserTemplate === null) return;
+
+    persona.name = newName;
+    persona.system = newSystem;
+    persona.userTemplate = newUserTemplate;
+
+    savePersonas();
+    updatePersonaSelector();
+    chatPersonaSelect.value = id;
+    updateCurrentConversationPersona();
+    alert("角色已更新！");
+}
+
+function deletePersona() {
+    const id = chatPersonaSelect.value;
+    const persona = appState.chat.personas[id];
+    if (!persona.isCustom) return alert("抱歉，不能删除预设角色。");
+    if (confirm(`确定要删除角色 "${persona.name}" 吗？使用此角色的对话将切换为通用助手。`)) {
+        delete appState.chat.personas[id];
+        appState.chat.conversations.forEach(c => {
+            if (c.personaId === id) c.personaId = 'general_assistant';
+        });
+        savePersonas();
+        saveConversations();
+        updatePersonaSelector();
+        switchConversation(appState.chat.currentConversationId);
+        alert("角色已删除。");
+    }
+}
+
+function toggleManagementMode(forceState) {
+    appState.chat.isManagementMode = forceState !== undefined ? forceState : !appState.chat.isManagementMode;
+    chatWindow.classList.toggle('chat-window-management-mode', appState.chat.isManagementMode);
+    chatManagementBar.style.display = appState.chat.isManagementMode ? 'flex' : 'none';
+    chatManageBtn.textContent = appState.chat.isManagementMode ? '退出管理' : '管理消息';
+    if (!appState.chat.isManagementMode) {
+        chatWindow.querySelectorAll('.message-checkbox').forEach(cb => cb.checked = false);
+    }
+}
+
+function toggleSelectAllMessages(select) {
+    const checkboxes = chatWindow.querySelectorAll('.message-checkbox');
+    checkboxes.forEach(cb => {
+        cb.checked = select;
+    });
+}
+
+function deleteSelectedMessages() {
+    const indicesToDelete = [];
+    chatWindow.querySelectorAll('.message-checkbox:checked').forEach(cb => {
+        const messageEl = cb.closest('.chat-message');
+        if (messageEl && messageEl.dataset.index) {
+            const index = parseInt(messageEl.dataset.index, 10);
+            if (!isNaN(index)) indicesToDelete.push(index);
+        }
+    });
+
+    if (indicesToDelete.length === 0) return alert("请先选择要删除的消息。");
+    if (!confirm(`确定要删除选中的 ${indicesToDelete.length} 条消息吗？此操作无法撤销。`)) return;
+
+    const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
+    if (!convo) return;
+    
+    indicesToDelete.sort((a, b) => b - a);
+    indicesToDelete.forEach(index => {
+        convo.messages.splice(index, 1);
+    });
+
+    convo.lastUpdate = Date.now();
+    saveConversations();
+    renderCurrentChat();
+    toggleManagementMode(false);
+}
