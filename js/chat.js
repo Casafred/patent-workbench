@@ -47,8 +47,9 @@ function initChat() {
 }
 
 async function generateConversationTitle(conversation) {
-    // 如果标题不是初始的"新对话"，说明它已经被AI生成过或被用户手动改过，则不再自动生成。
-    if (!conversation || conversation.title !== '新对话' || conversation.messages.length < 2) {
+    // 只有当标题为空且至少有2条非系统消息时才生成标题
+    const nonSystemMessages = conversation.messages.filter(m => m.role !== 'system');
+    if (!conversation || conversation.title !== '' || nonSystemMessages.length < 2) {
         return;
     }
 
@@ -75,8 +76,8 @@ async function generateConversationTitle(conversation) {
         const newTitleRaw = responseData.choices[0]?.message?.content;
 
         if (newTitleRaw) {
-            // 只有当当前标题仍然是 "新对话" 时才更新，防止覆盖用户刚刚手动修改的标题
-            if (conversation.title === '新对话') {
+            // 只有当当前标题仍为空时才更新，防止覆盖用户刚刚手动修改的标题
+            if (conversation.title === '') {
                 const newTitle = newTitleRaw.trim().replace(/["'“”。,]/g, '').replace(/\s/g, '');
                 conversation.title = newTitle;
                 saveConversations();
@@ -103,12 +104,16 @@ function renderChatHistoryList() {
 
         item.innerHTML = `
             <div class="history-item-content" onclick="switchConversation('${convo.id}')">
-                <span class="history-item-title" 
-                      contenteditable="true" 
-                      title="点击编辑标题"
-                      data-convo-id="${convo.id}"
-                      onkeydown="handleTitleEditKeydown(event)"
-                      onblur="handleTitleEditBlur(event)">${convo.title}</span>
+                <div class="title-container">
+                  <span class="history-item-title" 
+                        title="点击编辑标题"
+                        data-convo-id="${convo.id}"
+                        contenteditable="false"
+                        onkeydown="handleTitleEditKeydown(event)">${convo.title}</span>
+                  <button class="edit-title-btn" 
+                          title="编辑标题"
+                          onclick="enableTitleEdit(event, '${convo.id}')">✏️</button>
+                </div>
                 <span class="history-item-details">${new Date(convo.lastUpdate).toLocaleString()}</span>
             </div>
             <button 
@@ -122,6 +127,53 @@ function renderChatHistoryList() {
         
         chatHistoryList.appendChild(item);
     });
+    
+    // 同步更新当前聊天框上方的标题
+    const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
+    if (convo) {
+        const currentTitleEl = getEl('chat_current_title');
+        if (currentTitleEl) {
+            currentTitleEl.textContent = convo.title || '未命名对话';
+        }
+    }
+}
+
+function enableTitleEdit(event, convoId) { 
+  event.stopPropagation();
+  const titleElement = document.querySelector(`.history-item-title[data-convo-id='${convoId}']`);
+  if (titleElement) {
+    titleElement.contentEditable = 'true';
+    titleElement.focus();
+    // 选中所有文本
+    const range = document.createRange();
+    range.selectNodeContents(titleElement);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    
+    // 阻止点击标题本身时触发blur
+    titleElement.addEventListener('mousedown', function(e) {
+      e.stopPropagation();
+    });
+    
+    // 阻止点击标题时触发父元素的点击事件
+    titleElement.addEventListener('click', function(e) {
+      e.stopPropagation();
+    });
+    
+    // 添加document级别的点击事件监听器来检测外部点击
+    const handleExternalClick = function(e) {
+      if (!titleElement.contains(e.target)) {
+        handleTitleEditBlur({ target: titleElement });
+        document.removeEventListener('click', handleExternalClick);
+      }
+    };
+    
+    // 延迟添加监听器，避免当前点击事件立即触发
+    setTimeout(() => {
+      document.addEventListener('click', handleExternalClick);
+    }, 0);
+  }
 }
 
 function handleTitleEditKeydown(event) {
@@ -139,18 +191,23 @@ function handleTitleEditKeydown(event) {
     }
 }
 
-function handleTitleEditBlur(event) {
+function handleTitleEditBlur(event) { 
+    event.target.contentEditable = 'false';
     const convoId = event.target.dataset.convoId;
     const newTitle = event.target.textContent.trim();
     const conversation = appState.chat.conversations.find(c => c.id === convoId);
 
-    if (conversation && newTitle && conversation.title !== newTitle) {
-        conversation.title = newTitle;
-        saveConversations();
-        console.log(`标题已更新为: "${newTitle}"`);
-    } else if (conversation) {
-        // 如果内容为空或者没变，恢复原来的标题
-        event.target.textContent = conversation.title;
+    if (conversation) {
+        // 总是保存新标题，即使是空字符串
+        if (conversation.title !== newTitle) {
+            conversation.title = newTitle;
+            saveConversations();
+            renderChatHistoryList(); // 重新渲染确保同步
+            console.log(`标题已更新为: "${newTitle}"`);
+        } else {
+            // 如果没变化，恢复原状
+            event.target.textContent = conversation.title;
+        }
     }
 }
 
@@ -230,10 +287,8 @@ async function handleStreamChatRequest() {
 
         saveConversations();
 
-        // 检查是否是第一次完整问答 (system + user + assistant)
-        if (messagesCountBefore === 1) {
-            setTimeout(() => generateConversationTitle(convo), 100);
-        }
+        // 生成对话标题
+        setTimeout(() => generateConversationTitle(convo), 100);
 
     } catch (error) {
         assistantContentEl.innerHTML = `<div class="info error">请求失败: ${error.message}</div>`;
@@ -312,6 +367,12 @@ function renderCurrentChat() {
         chatPersonaSelect.value = convo.personaId;
     }
     
+    // 更新聊天框上方的标题
+    const currentTitleEl = getEl('chat_current_title');
+    if (currentTitleEl) {
+        currentTitleEl.textContent = convo.title || '未命名对话';
+    }
+    
     convo.messages.forEach((msg, index) => {
         if (msg.role !== 'system') {
             addMessageToDOM(msg.role, msg.content, index, false, msg.usage);
@@ -343,6 +404,9 @@ function addMessageToDOM(role, content, index, isStreaming = false, usage = null
                     <button class="icon-button" title="复制" onclick="copyMessage(this)">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2Zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6Z M2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1H2Z"></path></svg>
                     </button>
+                    ${role === 'user' ? `<button class="icon-button" title="重新发送" onclick="resendMessage(this)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 3a5 5 0 0 0-5 5h1a4 4 0 0 1 4-4V3z"/><path d="M8 13a5 5 0 0 0 5-5h-1a4 4 0 0 1-4 4v1z"/><path fill-rule="evenodd" d="M8 3a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 3z"/></svg>
+                    </button>` : ''}
                 </div>
             </div>
         </div>
@@ -370,7 +434,7 @@ function startNewChat(fromUserClick = false) {
     
     const newConvo = {
         id: newId,
-        title: `新对话`,
+        title: ``,
         personaId: personaId,
         messages: [{ role: 'system', content: persona.system }],
         lastUpdate: Date.now()
@@ -581,4 +645,21 @@ function deleteSelectedMessages() {
     saveConversations();
     renderCurrentChat();
     toggleManagementMode(false);
+}
+
+function resendMessage(buttonElement) {
+    const messageEl = buttonElement.closest('.chat-message');
+    const index = parseInt(messageEl.dataset.index, 10);
+    const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
+    
+    if (!convo || isNaN(index) || index < 0 || index >= convo.messages.length) return;
+    
+    const message = convo.messages[index];
+    if (message.role !== 'user') return;
+    
+    // 获取消息内容并重新发送
+    const content = message.content;
+    chatInput.value = content;
+    chatInput.focus();
+    chatInput.dispatchEvent(new Event('input', { bubbles: true }));
 }
