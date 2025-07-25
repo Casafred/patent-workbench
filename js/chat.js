@@ -344,6 +344,14 @@ function deleteConversation(event, convoId) {
     if (!convoToDelete) return;
 
     if (confirm(`您确定要永久删除对话 "${convoToDelete.title}" 吗？此操作无法撤销。`)) {
+        // 在删除前询问是否导出
+        if (convoToDelete.messages.length > 1 && confirm(`是否在删除前导出对话 "${convoToDelete.title}" 的聊天记录？`)) {
+            const originalConvoId = appState.chat.currentConversationId;
+            appState.chat.currentConversationId = convoId; // 临时切换到要删除的对话
+            exportChatHistory('txt');
+            appState.chat.currentConversationId = originalConvoId; // 恢复原来的对话
+        }
+        
         appState.chat.conversations = appState.chat.conversations.filter(c => c.id !== convoId);
         if (appState.chat.currentConversationId === convoId) {
             const mostRecentConvo = appState.chat.conversations.sort((a, b) => b.lastUpdate - a.lastUpdate)[0];
@@ -404,7 +412,13 @@ function addMessageToDOM(role, content, index, isStreaming = false, usage = null
                     <button class="icon-button" title="复制" onclick="copyMessage(this)">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2Zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6Z M2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1H2Z"></path></svg>
                     </button>
+                    <button class="icon-button" title="删除" onclick="deleteMessage(this)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
+                    </button>
                     ${role === 'user' ? `<button class="icon-button" title="重新发送" onclick="resendMessage(this)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 3a5 5 0 0 0-5 5h1a4 4 0 0 1 4-4V3z"/><path d="M8 13a5 5 0 0 0 5-5h-1a4 4 0 0 1-4 4v1z"/><path fill-rule="evenodd" d="M8 3a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 3z"/></svg>
+                    </button>` : ''}
+                    ${role === 'assistant' ? `<button class="icon-button" title="重新生成" onclick="regenerateMessage(this)">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 3a5 5 0 0 0-5 5h1a4 4 0 0 1 4-4V3z"/><path d="M8 13a5 5 0 0 0 5-5h-1a4 4 0 0 1-4 4v1z"/><path fill-rule="evenodd" d="M8 3a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 3z"/></svg>
                     </button>` : ''}
                 </div>
@@ -421,13 +435,6 @@ function addMessageToDOM(role, content, index, isStreaming = false, usage = null
 }
 
 function startNewChat(fromUserClick = false) {
-    const currentConvo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
-    if (fromUserClick && currentConvo && currentConvo.messages.length > 1) {
-        if (confirm("您想在开启新对话前，导出当前的聊天记录吗？")) {
-            exportChatHistory('txt');
-        }
-    }
-    
     const newId = `convo-${Date.now()}`;
     const personaId = chatPersonaSelect.value || Object.keys(appState.chat.personas)[0];
     const persona = appState.chat.personas[personaId];
@@ -493,22 +500,61 @@ async function exportChatHistory(format = 'txt') {
         URL.revokeObjectURL(a.href);
     } else {
         alert("正在生成文件，请稍候... 对于很长的聊天记录，这可能需要一些时间。");
-        const originalStyles = {
-            height: chatWindow.style.height,
-            maxHeight: chatWindow.style.maxHeight,
-            overflowY: chatWindow.style.overflowY,
-        };
-        chatWindow.style.height = 'auto';
-        chatWindow.style.maxHeight = 'none';
-        chatWindow.style.overflowY = 'visible';
+        
+        // 创建临时容器用于完整截图
+        const tempContainer = document.createElement('div');
+        tempContainer.style.position = 'absolute';
+        tempContainer.style.left = '-9999px';
+        tempContainer.style.top = '0';
+        tempContainer.style.width = '800px';
+        tempContainer.style.backgroundColor = getComputedStyle(chatWindow).backgroundColor;
+        tempContainer.style.padding = '20px';
+        tempContainer.style.fontFamily = getComputedStyle(chatWindow).fontFamily;
+        
+        // 复制聊天内容到临时容器
+        const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
+        if (convo) {
+            const titleDiv = document.createElement('div');
+            titleDiv.style.marginBottom = '20px';
+            titleDiv.style.fontSize = '18px';
+            titleDiv.style.fontWeight = 'bold';
+            titleDiv.textContent = `聊天记录 - ${personaName}`;
+            tempContainer.appendChild(titleDiv);
+            
+            convo.messages.forEach((msg, idx) => {
+                if (msg.role !== 'system') {
+                    const msgDiv = document.createElement('div');
+                    msgDiv.style.marginBottom = '15px';
+                    msgDiv.style.padding = '10px';
+                    msgDiv.style.borderRadius = '8px';
+                    msgDiv.style.backgroundColor = msg.role === 'user' ? '#f0f0f0' : '#e8f4f8';
+                    
+                    const roleSpan = document.createElement('div');
+                    roleSpan.style.fontWeight = 'bold';
+                    roleSpan.style.marginBottom = '5px';
+                    roleSpan.textContent = msg.role === 'user' ? '用户' : 'AI';
+                    
+                    const contentDiv = document.createElement('div');
+                    contentDiv.innerHTML = window.marked ? window.marked.parse(msg.content, { gfm: true, breaks: true }) : msg.content;
+                    
+                    msgDiv.appendChild(roleSpan);
+                    msgDiv.appendChild(contentDiv);
+                    tempContainer.appendChild(msgDiv);
+                }
+            });
+        }
+        
+        document.body.appendChild(tempContainer);
         
         try {
-            const canvas = await html2canvas(chatWindow, { 
+            const canvas = await html2canvas(tempContainer, { 
                 scale: 1.5,
                 useCORS: true, 
                 backgroundColor: getComputedStyle(chatWindow).backgroundColor,
                 scrollX: 0,
-                scrollY: -window.scrollY
+                scrollY: 0,
+                height: tempContainer.scrollHeight,
+                width: tempContainer.scrollWidth
             });
 
             if (format === 'png') {
@@ -519,17 +565,31 @@ async function exportChatHistory(format = 'txt') {
             } else if (format === 'pdf') {
                 const { jsPDF } = window.jspdf;
                 const imgData = canvas.toDataURL('image/jpeg', 0.9);
-                const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: [canvas.width, canvas.height] });
-                pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
+                const imgWidth = 210; // A4宽度mm
+                const pageHeight = 297; // A4高度mm
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                let heightLeft = imgHeight;
+                
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                let position = 0;
+                
+                pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+                
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+                
                 pdf.save(`${filename}.pdf`);
             }
         } catch (e) {
             console.error("Export failed:", e);
             alert("导出失败，请查看控制台获取错误信息。");
         } finally {
-            chatWindow.style.height = originalStyles.height;
-            chatWindow.style.maxHeight = originalStyles.maxHeight;
-            chatWindow.style.overflowY = originalStyles.overflowY;
+            document.body.removeChild(tempContainer);
         }
     }
 }
@@ -662,4 +722,64 @@ function resendMessage(buttonElement) {
     chatInput.value = content;
     chatInput.focus();
     chatInput.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function deleteMessage(buttonElement) {
+    const messageEl = buttonElement.closest('.chat-message');
+    const index = parseInt(messageEl.dataset.index, 10);
+    const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
+    
+    if (!convo || isNaN(index) || index < 0 || index >= convo.messages.length) return;
+    
+    const message = convo.messages[index];
+    if (message.role === 'system') {
+        alert('系统消息无法删除');
+        return;
+    }
+    
+    if (confirm('确定要删除这条消息吗？此操作无法撤销。')) {
+        convo.messages.splice(index, 1);
+        convo.lastUpdate = Date.now();
+        saveConversations();
+        renderCurrentChat();
+    }
+}
+
+function regenerateMessage(buttonElement) {
+    const messageEl = buttonElement.closest('.chat-message');
+    const index = parseInt(messageEl.dataset.index, 10);
+    const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
+    
+    if (!convo || isNaN(index) || index < 0 || index >= convo.messages.length) return;
+    
+    const message = convo.messages[index];
+    if (message.role !== 'assistant') return;
+    
+    // 找到对应的上一条用户消息
+    let userMessageIndex = -1;
+    for (let i = index - 1; i >= 0; i--) {
+        if (convo.messages[i].role === 'user') {
+            userMessageIndex = i;
+            break;
+        }
+    }
+    
+    if (userMessageIndex === -1) {
+        alert('无法找到对应的用户消息');
+        return;
+    }
+    
+    // 删除AI回复和后续消息
+    const messagesToDelete = convo.messages.length - index;
+    if (confirm('确定要重新生成这条AI回复吗？后续的AI回复也会被删除。')) {
+        convo.messages.splice(index, messagesToDelete);
+        convo.lastUpdate = Date.now();
+        saveConversations();
+        renderCurrentChat();
+        
+        // 重新发送用户消息
+        const userMessage = convo.messages[userMessageIndex];
+        chatInput.value = userMessage.content;
+        handleStreamChatRequest();
+    }
 }
