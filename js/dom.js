@@ -12,7 +12,7 @@ const apiConfigContainer = getEl('api_config_container');
 const chatModelSelect = getEl('chat_model_select'), chatContextCount = getEl('chat_context_count');
 const chatPersonaSelect = getEl('chat_persona_select'), chatTempInput = getEl('chat_temperature');
 const chatNewBtn = getEl('chat_new_btn');
-const chatExportTxtBtn = getEl('chat_export_txt_btn'), chatExportPngBtn = getEl('chat_export_png_btn'), chatExportPdfBtn = getEl('chat_export_pdf_btn');
+const chatInputNewBtn = getEl('chat_input_new_btn');
 const chatManageBtn = getEl('chat_manage_btn');
 const chatAddPersonaBtn = getEl('chat_add_persona_btn'), chatEditPersonaBtn = getEl('chat_edit_persona_btn'), chatDeletePersonaBtn = getEl('chat_delete_persona_btn');
 const chatWindow = getEl('chat_window'), chatInput = getEl('chat_input'), chatCharCount = getEl('chat_char_count'), chatSendBtn = getEl('chat_send_btn');

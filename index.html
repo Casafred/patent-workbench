@@ -69,11 +69,8 @@
                     <div class="config-item"><label for="chat_temperature">温度:</label><input type="number" id="chat_temperature" value="0.7" step="0.1" min="0" max="1"></div>
                 </div>
                  <div class="chat-actions" style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
-                    <button id="chat_new_btn" class="small-button">开启新对话</button>
-                    <button id="chat_export_txt_btn" class="small-button">导出为TXT</button>
-                    <button id="chat_export_png_btn" class="small-button">导出为图片</button>
-                    <button id="chat_export_pdf_btn" class="small-button">导出为PDF</button>
-                    <button id="chat_manage_btn" class="small-button">管理消息</button>
+
+
                     <div style="margin-left:auto; display:flex; gap:10px;">
                         <button id="chat_add_persona_btn" class="small-button">新增角色</button>
                         <button id="chat_edit_persona_btn" class="small-button">编辑当前角色</button>
@@ -84,13 +81,27 @@
             
             <div id="instant-chat-layout">
                 <div id="chat_history_panel">
-                    <div id="chat_history_header">历史对话</div>
+                    <div id="chat_history_header">
+                        <span>历史对话</span>
+                        <button id="chat_new_btn" class="new-chat-btn" title="开启新对话">+</button>
+                    </div>
                     <div id="chat_history_list"></div>
                 </div>
                 <div id="chat_main_panel">
                     <div id="chat_container">
                         <div id="chat_title_bar">
                             <h2 id="chat_current_title">未命名对话</h2>
+                            <div class="title-bar-actions">
+                                <button id="chat_manage_btn" class="small-button">管理消息</button>
+                                <div class="export-dropdown">
+                                    <button class="small-button export-toggle-btn">导出 ▼</button>
+                                    <div class="export-dropdown-content">
+                                        <a href="#" data-export="txt">导出为TXT</a>
+                                        <a href="#" data-export="png">导出为图片</a>
+                                        <a href="#" data-export="pdf">导出为PDF</a>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div id="chat_management_bar">
                             <button id="chat_select_all_btn" class="small-button">全选</button>
@@ -99,11 +110,12 @@
                         </div>
                         <div id="chat_window"></div>
                         <div id="chat_input_area">
-                            <div id="chat_input_wrapper">
-                                <textarea id="chat_input" placeholder="输入您的问题 (Shift+Enter 换行)..." rows="1"></textarea>
-                                <span id="chat_char_count">0</span>
-                            </div>
-                            <button id="chat_send_btn">发送</button>
+                            <button id="chat_input_new_btn" class="new-chat-btn" title="开启新对话">+</button>
+                        <div id="chat_input_wrapper">
+                            <textarea id="chat_input" placeholder="输入您的问题 (Shift+Enter 换行)..." rows="1"></textarea>
+                            <span id="chat_char_count">0</span>
+                        </div>
+                        <button id="chat_send_btn">发送</button>
                         </div>
                     </div>
                 </div>

@@ -14,10 +14,16 @@ function initChat() {
     });
     chatPersonaSelect.addEventListener('change', updateCurrentConversationPersona);
     chatNewBtn.addEventListener('click', () => startNewChat(true));
+    chatInputNewBtn.addEventListener('click', () => startNewChat(true));
     
-    chatExportTxtBtn.addEventListener('click', () => exportChatHistory('txt'));
-    chatExportPngBtn.addEventListener('click', () => exportChatHistory('png'));
-    chatExportPdfBtn.addEventListener('click', () => exportChatHistory('pdf'));
+    // 设置所有导出下拉菜单的事件监听
+    document.addEventListener('click', (e) => {
+        if (e.target.matches('[data-export]')) {
+            e.preventDefault();
+            const exportType = e.target.dataset.export;
+            exportChatHistory(exportType);
+        }
+    });
 
     chatAddPersonaBtn.addEventListener('click', addPersona);
     chatEditPersonaBtn.addEventListener('click', editPersona);
@@ -110,19 +116,26 @@ function renderChatHistoryList() {
                         data-convo-id="${convo.id}"
                         contenteditable="false"
                         onkeydown="handleTitleEditKeydown(event)">${convo.title}</span>
-                  <button class="edit-title-btn" 
-                          title="编辑标题"
-                          onclick="enableTitleEdit(event, '${convo.id}')">✏️</button>
                 </div>
                 <span class="history-item-details">${new Date(convo.lastUpdate).toLocaleString()}</span>
             </div>
-            <button 
-                class="icon-button history-delete-btn" 
-                title="删除对话" 
-                onclick="deleteConversation(event, '${convo.id}')"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
-            </button>
+            <div class="history-item-actions">
+                <button class="icon-button edit-title-btn" 
+                        title="编辑标题"
+                        onclick="enableTitleEdit(event, '${convo.id}')">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                </button>
+                <button 
+                    class="icon-button history-delete-btn" 
+                    title="删除对话" 
+                    onclick="deleteConversation(event, '${convo.id}')"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
+                </button>
+            </div>
         `;
         
         chatHistoryList.appendChild(item);
@@ -229,7 +242,7 @@ async function handleStreamChatRequest() {
         finalUserInput = persona.userTemplate.replace('{{INPUT}}', userInput);
     }
     
-    convo.messages.push({ role: 'user', content: finalUserInput });
+    convo.messages.push({ role: 'user', content: finalUserInput, timestamp: Date.now() });
     convo.lastUpdate = Date.now();
     
     renderCurrentChat();
@@ -276,7 +289,7 @@ async function handleStreamChatRequest() {
         }
         assistantContentEl.innerHTML = window.marked.parse(fullResponse, { gfm: true, breaks: true });
         
-        const assistantMessageData = { role: 'assistant', content: fullResponse };
+        const assistantMessageData = { role: 'assistant', content: fullResponse, timestamp: Date.now() };
         if (usageInfo) {
             assistantMessageData.usage = usageInfo;
             if (tokenUsageEl) tokenUsageEl.textContent = `Tokens: ${usageInfo.total_tokens}`;
@@ -383,14 +396,14 @@ function renderCurrentChat() {
     
     convo.messages.forEach((msg, index) => {
         if (msg.role !== 'system') {
-            addMessageToDOM(msg.role, msg.content, index, false, msg.usage);
+            addMessageToDOM(msg.role, msg.content, index, false, msg.usage, msg.timestamp);
         }
     });
     
     chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
-function addMessageToDOM(role, content, index, isStreaming = false, usage = null) {
+function addMessageToDOM(role, content, index, isStreaming = false, usage = null, timestamp = null) {
     const messageId = `msg-${Date.now()}-${Math.random()}`;
     const messageDiv = document.createElement('div');
     messageDiv.className = `chat-message ${role}-message`;
@@ -400,6 +413,8 @@ function addMessageToDOM(role, content, index, isStreaming = false, usage = null
     const renderedContent = isStreaming ? content : (window.marked ? window.marked.parse(content, { gfm: true, breaks: true }) : content.replace(/</g, "&lt;").replace(/>/g, "&gt;"));
     
     const tokenUsageHtml = (usage && usage.total_tokens) ? `<div class="message-token-usage">Tokens: ${usage.total_tokens}</div>` : `<div class="message-token-usage"></div>`;
+    const messageTime = timestamp ? new Date(timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
+    const timeHtml = `<div class="message-time">${messageTime}</div>`;
     
     messageDiv.innerHTML = `
         <input type="checkbox" class="message-checkbox" title="选择此消息">
@@ -408,6 +423,7 @@ function addMessageToDOM(role, content, index, isStreaming = false, usage = null
             <div class="message-body">
                 <div class="message-content">${renderedContent}</div>
                 <div class="message-footer">
+                    ${timeHtml}
                     ${role === 'assistant' ? tokenUsageHtml : ''}
                     <button class="icon-button" title="复制" onclick="copyMessage(this)">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2Zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6Z M2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1H2Z"></path></svg>
@@ -487,19 +503,153 @@ async function exportChatHistory(format = 'txt') {
     if (!convo || convo.messages.length <= 1) return alert("没有聊天记录可导出。");
 
     const personaName = appState.chat.personas[convo.personaId].name;
-    const filename = `聊天记录_${personaName}_${new Date().toISOString().slice(0,10)}`;
+    const conversationTitle = convo.title || '未命名对话';
+    const filename = `聊天记录_${conversationTitle}_${personaName}_${new Date().toISOString().slice(0,10)}`;
 
     if (format === 'txt') {
-        let content = `聊天记录 - ${personaName}\n========================\n\n`;
-        convo.messages.forEach(msg => { if (msg.role !== 'system') content += `[${msg.role.toUpperCase()}]\n${msg.content}\n\n------------------------\n\n`; });
+        let content = `聊天记录 - ${conversationTitle}\n角色: ${personaName}\n时间: ${new Date().toLocaleString()}\n========================\n\n`;
+        convo.messages.forEach(msg => { 
+            if (msg.role !== 'system') 
+                content += `[${msg.role.toUpperCase()}]\n${msg.content}\n\n------------------------\n\n`; 
+        });
         const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = `${filename}.txt`;
         a.click();
         URL.revokeObjectURL(a.href);
-    } else {
-        alert("正在生成文件，请稍候... 对于很长的聊天记录，这可能需要一些时间。");
+    } else if (format === 'pdf') {
+        alert("正在生成PDF，请稍候...");
+        
+        // 确保jsPDF和html2canvas库已加载
+        if (typeof window.jspdf === 'undefined' || typeof window.html2canvas === 'undefined') {
+            alert("PDF库未加载，请刷新页面后重试");
+            return;
+        }
+        
+        const { jsPDF } = window.jspdf;
+        
+        // 创建临时容器用于生成美观的聊天记录
+        const tempContainer = document.createElement('div');
+        tempContainer.style.position = 'absolute';
+        tempContainer.style.left = '-9999px';
+        tempContainer.style.top = '0';
+        tempContainer.style.width = '800px';
+        tempContainer.style.backgroundColor = '#ffffff';
+        tempContainer.style.padding = '30px';
+        tempContainer.style.fontFamily = 'Arial, sans-serif';
+        tempContainer.style.boxShadow = '0 0 10px rgba(0,0,0,0.1)';
+        
+        // 添加标题信息
+        const titleDiv = document.createElement('div');
+        titleDiv.style.marginBottom = '30px';
+        titleDiv.style.textAlign = 'center';
+        titleDiv.style.borderBottom = '2px solid #e0e0e0';
+        titleDiv.style.paddingBottom = '20px';
+        
+        const mainTitle = document.createElement('h1');
+        mainTitle.style.fontSize = '28px';
+        mainTitle.style.margin = '0 0 15px 0';
+        mainTitle.style.color = '#333';
+        mainTitle.textContent = conversationTitle;
+        
+        const subtitle = document.createElement('div');
+        subtitle.style.fontSize = '16px';
+        subtitle.style.color = '#666';
+        subtitle.innerHTML = `角色: ${personaName}<br>导出时间: ${new Date().toLocaleString()}`;
+        
+        titleDiv.appendChild(mainTitle);
+        titleDiv.appendChild(subtitle);
+        tempContainer.appendChild(titleDiv);
+        
+        // 添加消息内容
+        if (convo) {
+            convo.messages.forEach((msg, idx) => {
+                if (msg.role !== 'system') {
+                    const msgDiv = document.createElement('div');
+                    msgDiv.style.marginBottom = '20px';
+                    msgDiv.style.padding = '20px';
+                    msgDiv.style.borderRadius = '10px';
+                    msgDiv.style.backgroundColor = msg.role === 'user' ? '#f8f9fa' : '#e3f2fd';
+                    msgDiv.style.borderLeft = `4px solid ${msg.role === 'user' ? '#007bff' : '#2196f3'}`;
+                    msgDiv.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                    
+                    const roleSpan = document.createElement('div');
+                    roleSpan.style.fontWeight = 'bold';
+                    roleSpan.style.marginBottom = '10px';
+                    roleSpan.style.fontSize = '16px';
+                    roleSpan.style.color = msg.role === 'user' ? '#007bff' : '#2196f3';
+                    roleSpan.textContent = msg.role === 'user' ? '👤 用户消息' : '🤖 AI回复';
+                    
+                    const contentDiv = document.createElement('div');
+                    contentDiv.style.lineHeight = '1.6';
+                    contentDiv.style.fontSize = '14px';
+                    contentDiv.style.color = '#333';
+                    contentDiv.style.whiteSpace = 'pre-wrap';
+                    contentDiv.style.wordWrap = 'break-word';
+                    contentDiv.textContent = msg.content; // 使用textContent避免HTML标签
+                    
+                    msgDiv.appendChild(roleSpan);
+                    msgDiv.appendChild(contentDiv);
+                    tempContainer.appendChild(msgDiv);
+                }
+            });
+        }
+        
+        document.body.appendChild(tempContainer);
+        
+        try {
+            // 使用更高分辨率生成图片
+            const canvas = await html2canvas(tempContainer, { 
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#ffffff',
+                scrollX: 0,
+                scrollY: 0,
+                height: tempContainer.scrollHeight,
+                width: tempContainer.scrollWidth,
+                logging: false
+            });
+            
+            // 创建PDF
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+            
+            const imgWidth = 210; // A4宽度mm
+            const pageHeight = 297; // A4高度mm
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            let heightLeft = imgHeight;
+            
+            let position = 0;
+            const imgData = canvas.toDataURL('image/jpeg', 0.95);
+            
+            // 添加第一页
+            pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+            
+            // 处理多页
+            while (heightLeft >= 0) {
+                position = heightLeft - imgHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+            }
+            
+
+            
+            pdf.save(`${filename}.pdf`);
+            
+        } catch (e) {
+            console.error("PDF导出失败:", e);
+            alert("PDF导出失败，请查看控制台获取详细信息");
+        } finally {
+            document.body.removeChild(tempContainer);
+        }
+    } else if (format === 'png') {
+        alert("正在生成图片，请稍候... 对于很长的聊天记录，这可能需要一些时间。");
         
         // 创建临时容器用于完整截图
         const tempContainer = document.createElement('div');
@@ -511,30 +661,46 @@ async function exportChatHistory(format = 'txt') {
         tempContainer.style.padding = '20px';
         tempContainer.style.fontFamily = getComputedStyle(chatWindow).fontFamily;
         
+        // 添加标题信息
+        const titleDiv = document.createElement('div');
+        titleDiv.style.marginBottom = '20px';
+        titleDiv.style.textAlign = 'center';
+        titleDiv.style.borderBottom = '2px solid #ccc';
+        titleDiv.style.paddingBottom = '10px';
+        
+        const mainTitle = document.createElement('h1');
+        mainTitle.style.fontSize = '24px';
+        mainTitle.style.margin = '0 0 10px 0';
+        mainTitle.textContent = conversationTitle;
+        
+        const subtitle = document.createElement('div');
+        subtitle.style.fontSize = '14px';
+        subtitle.style.color = '#666';
+        subtitle.innerHTML = `角色: ${personaName}<br>时间: ${new Date().toLocaleString()}`;
+        
+        titleDiv.appendChild(mainTitle);
+        titleDiv.appendChild(subtitle);
+        tempContainer.appendChild(titleDiv);
+        
         // 复制聊天内容到临时容器
-        const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
         if (convo) {
-            const titleDiv = document.createElement('div');
-            titleDiv.style.marginBottom = '20px';
-            titleDiv.style.fontSize = '18px';
-            titleDiv.style.fontWeight = 'bold';
-            titleDiv.textContent = `聊天记录 - ${personaName}`;
-            tempContainer.appendChild(titleDiv);
-            
             convo.messages.forEach((msg, idx) => {
                 if (msg.role !== 'system') {
                     const msgDiv = document.createElement('div');
                     msgDiv.style.marginBottom = '15px';
-                    msgDiv.style.padding = '10px';
+                    msgDiv.style.padding = '15px';
                     msgDiv.style.borderRadius = '8px';
                     msgDiv.style.backgroundColor = msg.role === 'user' ? '#f0f0f0' : '#e8f4f8';
+                    msgDiv.style.borderLeft = `4px solid ${msg.role === 'user' ? '#007bff' : '#28a745'}`;
                     
                     const roleSpan = document.createElement('div');
                     roleSpan.style.fontWeight = 'bold';
-                    roleSpan.style.marginBottom = '5px';
-                    roleSpan.textContent = msg.role === 'user' ? '用户' : 'AI';
+                    roleSpan.style.marginBottom = '8px';
+                    roleSpan.style.color = msg.role === 'user' ? '#007bff' : '#28a745';
+                    roleSpan.textContent = msg.role === 'user' ? '用户消息' : 'AI回复';
                     
                     const contentDiv = document.createElement('div');
+                    contentDiv.style.lineHeight = '1.6';
                     contentDiv.innerHTML = window.marked ? window.marked.parse(msg.content, { gfm: true, breaks: true }) : msg.content;
                     
                     msgDiv.appendChild(roleSpan);
@@ -557,37 +723,13 @@ async function exportChatHistory(format = 'txt') {
                 width: tempContainer.scrollWidth
             });
 
-            if (format === 'png') {
-                const a = document.createElement('a');
-                a.href = canvas.toDataURL('image/png');
-                a.download = `${filename}.png`;
-                a.click();
-            } else if (format === 'pdf') {
-                const { jsPDF } = window.jspdf;
-                const imgData = canvas.toDataURL('image/jpeg', 0.9);
-                const imgWidth = 210; // A4宽度mm
-                const pageHeight = 297; // A4高度mm
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                let heightLeft = imgHeight;
-                
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                let position = 0;
-                
-                pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-                heightLeft -= pageHeight;
-                
-                while (heightLeft >= 0) {
-                    position = heightLeft - imgHeight;
-                    pdf.addPage();
-                    pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-                    heightLeft -= pageHeight;
-                }
-                
-                pdf.save(`${filename}.pdf`);
-            }
+            const a = document.createElement('a');
+            a.href = canvas.toDataURL('image/png');
+            a.download = `${filename}.png`;
+            a.click();
         } catch (e) {
-            console.error("Export failed:", e);
-            alert("导出失败，请查看控制台获取错误信息。");
+            console.error("图片导出失败:", e);
+            alert("图片导出失败，请查看控制台获取错误信息。");
         } finally {
             document.body.removeChild(tempContainer);
         }
