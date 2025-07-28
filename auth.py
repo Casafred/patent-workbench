@@ -218,7 +218,7 @@ auth_manager = UserAuth()
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        session_token = request.headers.get('Authorization')
+        session_token = request.headers.get('X-User-Auth')
         if not session_token:
             return jsonify({'error': '未授权访问', 'code': 401}), 401
         

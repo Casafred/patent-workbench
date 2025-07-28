@@ -67,6 +67,7 @@ def login_page():
     return send_from_directory('.', 'login.html')
 
 @app.route('/admin')
+@login_required
 @admin_required
 def admin_page():
     return send_from_directory('.', 'admin.html')

@@ -186,7 +186,7 @@
                 fetch('/api/auth/check', {
                     method: 'GET',
                     headers: {
-                        'Authorization': token
+                        'X-User-Auth': token
                     }
                 })
                 .then(response => response.json())

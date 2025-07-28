@@ -4,6 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>用户管理 - 管理员</title>
+    <script>
+        // 认证检查
+        function checkAdminAuth() {
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+            
+            // 验证用户权限
+            fetch('/api/auth/userinfo', {
+                method: 'GET',
+                headers: {
+                    'X-User-Auth': token
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success || !data.data.is_admin) {
+                    alert('需要管理员权限');
+                    window.location.href = '/login';
+                } else {
+                    // 认证通过，加载用户列表
+                    loadUsers();
+                }
+            })
+            .catch(() => {
+                localStorage.removeItem('auth_token');
+                window.location.href = '/login';
+            });
+        }
+    </script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -102,7 +134,7 @@
         }
     </style>
 </head>
-<body>
+<body onload="checkAdminAuth()">
     <div class="container">
         <h1>用户管理系统</h1>
         <button class="logout-btn" onclick="logout()">退出登录</button>
@@ -272,8 +304,7 @@ wangwu,pass456,false"></textarea>
             window.location.href = '/login';
         }
 
-        // 页面加载时获取用户列表
-        loadUsers();
+        // 页面加载时的用户列表加载由checkAdminAuth()触发
     </script>
 </body>
 </html>
