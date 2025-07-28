@@ -1,0 +1,12 @@
+# 用户列表示例文件
+# 格式：用户名,密码,是否为管理员(true/false)
+# 以 # 开头的行为注释
+
+# 普通用户
+zhangsan,user123,false
+lisi,pass456,false
+wangwu,secret789,false
+
+# 管理员用户
+admin2,adminpass,true
+manager,manager123,true

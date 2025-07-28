@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户管理 - 管理员</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .users-list {
+            margin-top: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+        .logout-btn {
+            background: #dc3545;
+            float: right;
+        }
+        .logout-btn:hover {
+            background: #c82333;
+        }
+        .instructions {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>用户管理系统</h1>
+        <button class="logout-btn" onclick="logout()">退出登录</button>
+        
+        <div class="instructions">
+            <h3>使用说明：</h3>
+            <p>1. 在下方文本框中输入要创建的用户信息，每行一个用户</p>
+            <p>2. 格式：用户名,密码,是否为管理员(true/false)</p>
+            <p>3. 示例：zhangsan,password123,false</p>
+            <p>4. 示例：lisi,admin123,true</p>
+        </div>
+
+        <div class="form-group">
+            <label for="usersData">批量创建用户：</label>
+            <textarea id="usersData" placeholder="zhangsan,password123,false
+lisi,admin123,true
+wangwu,pass456,false"></textarea>
+        </div>
+        
+        <button onclick="createUsers()">创建用户</button>
+        
+        <div id="result" class="result"></div>
+        
+        <div class="users-list">
+            <h2>现有用户列表</h2>
+            <table id="usersTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>用户名</th>
+                        <th>管理员</th>
+                        <th>创建时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // 检查是否已登录
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+            window.location.href = '/login';
+        }
+
+        // 创建用户
+        async function createUsers() {
+            const usersText = document.getElementById('usersData').value.trim();
+            if (!usersText) {
+                alert('请输入用户信息');
+                return;
+            }
+
+            const users = [];
+            const lines = usersText.split('\n');
+            
+            for (const line of lines) {
+                const parts = line.split(',');
+                if (parts.length >= 2) {
+                    users.push({
+                        username: parts[0].trim(),
+                        password: parts[1].trim(),
+                        is_admin: parts[2] ? parts[2].trim().toLowerCase() === 'true' : false
+                    });
+                }
+            }
+
+            try {
+                const response = await fetch('/api/admin/create-users', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-User-Auth': token
+                    },
+                    body: JSON.stringify({ users })
+                });
+
+                const result = await response.json();
+                const resultDiv = document.getElementById('result');
+                
+                if (result.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <strong>创建完成！</strong><br>
+                        成功创建：${result.data.created} 个用户<br>
+                        总计尝试：${result.data.total} 个用户<br>
+                        ${result.data.errors.length > 0 ? '错误：' + result.data.errors.join('<br>') : ''}
+                    `;
+                    resultDiv.style.display = 'block';
+                    document.getElementById('usersData').value = '';
+                    loadUsers();
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<strong>错误：</strong> ${result.message}`;
+                    resultDiv.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('创建失败，请重试');
+            }
+        }
+
+        // 加载用户列表
+        async function loadUsers() {
+            try {
+                const response = await fetch('/api/admin/users', {
+                    headers: { 'X-User-Auth': token }
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    const tbody = document.getElementById('usersTableBody');
+                    tbody.innerHTML = '';
+                    
+                    result.data.forEach(user => {
+                        const row = tbody.insertRow();
+                        row.innerHTML = `
+                            <td>${user.id}</td>
+                            <td>${user.username}</td>
+                            <td>${user.is_admin ? '是' : '否'}</td>
+                            <td>${new Date(user.created_at).toLocaleString()}</td>
+                            <td>
+                                <button onclick="deleteUser(${user.id}, '${user.username}')" 
+                                        ${user.username === 'admin' ? 'disabled' : ''}>
+                                    删除
+                                </button>
+                            </td>
+                        `;
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading users:', error);
+            }
+        }
+
+        // 删除用户
+        async function deleteUser(userId, username) {
+            if (!confirm(`确定要删除用户 "${username}" 吗？`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/users/${userId}`, {
+                    method: 'DELETE',
+                    headers: { 'X-User-Auth': token }
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    alert('删除成功');
+                    loadUsers();
+                } else {
+                    alert('删除失败：' + result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('删除失败，请重试');
+            }
+        }
+
+        // 退出登录
+        function logout() {
+            localStorage.removeItem('auth_token');
+            window.location.href = '/login';
+        }
+
+        // 页面加载时获取用户列表
+        loadUsers();
+    </script>
+</body>
+</html>
