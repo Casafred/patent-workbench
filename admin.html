@@ -5,34 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>用户管理 - 管理员</title>
     <script>
-        // 认证检查
-        function checkAdminAuth() {
+        // 万能密码登录检查
+        function checkAdminAccess() {
             const token = localStorage.getItem('auth_token');
-            if (!token) {
-                window.location.href = '/login';
+            const isMaster = localStorage.getItem('is_master');
+            
+            if (!token || !isMaster) {
+                window.location.href = '/master-login';
                 return;
             }
-            
-            // 验证用户权限
-            fetch('/api/auth/userinfo', {
-                method: 'GET',
+
+            // 验证令牌有效性
+            fetch('/api/auth/check', {
                 headers: {
                     'X-User-Auth': token
                 }
             })
             .then(response => response.json())
             .then(data => {
-                if (!data.success || !data.data.is_admin) {
-                    alert('需要管理员权限');
-                    window.location.href = '/login';
-                } else {
-                    // 认证通过，加载用户列表
-                    loadUsers();
+                if (!data.success) {
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('is_master');
+                    window.location.href = '/master-login';
+                    return;
                 }
+                
+                // 验证通过，加载用户列表
+                loadUsers();
             })
-            .catch(() => {
+            .catch(error => {
+                console.error('权限验证失败:', error);
                 localStorage.removeItem('auth_token');
-                window.location.href = '/login';
+                localStorage.removeItem('is_master');
+                window.location.href = '/master-login';
             });
         }
     </script>
@@ -134,7 +139,7 @@
         }
     </style>
 </head>
-<body onload="checkAdminAuth()">
+<body onload="checkAdminAccess()">
     <div class="container">
         <h1>用户管理系统</h1>
         <button class="logout-btn" onclick="logout()">退出登录</button>
