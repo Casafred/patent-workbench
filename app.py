@@ -9,6 +9,7 @@ from flask import Flask, request, jsonify, make_response, send_from_directory, R
 from flask_cors import CORS
 from zhipuai import ZhipuAI
 import time
+import bcrypt
 from auth import auth_manager, login_required, admin_required
 from config import config
 
@@ -257,6 +258,22 @@ def master_login():
     
     if password != MASTER_PASSWORD:
         return create_response(error="万能密码错误")
+    
+    # 确保管理员用户存在
+    try:
+        conn = sqlite3.connect(auth_manager.db_path)
+        cursor = conn.cursor()
+        cursor.execute('SELECT id FROM users WHERE id = 1')
+        if not cursor.fetchone():
+            # 创建默认管理员用户
+            import bcrypt
+            hashed = bcrypt.hashpw('admin123'.encode('utf-8'), bcrypt.gensalt())
+            cursor.execute('INSERT INTO users (id, username, password_hash, is_admin) VALUES (1, ?, ?, 1)', 
+                         ('admin', hashed))
+            conn.commit()
+        conn.close()
+    except Exception as e:
+        return create_response(error=f"初始化管理员失败: {str(e)}")
     
     # 创建管理员会话
     ip_address = request.remote_addr
