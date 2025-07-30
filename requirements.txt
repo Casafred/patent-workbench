@@ -1,8 +1,4 @@
 Flask
-flask-cors
-flask-login
-werkzeug
-bcrypt
-python-dotenv
 gunicorn
-zhipuai
+zhipuai>=2.1.0 
+flask-cors
