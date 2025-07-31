@@ -1,4 +1,4 @@
-# app.py (v11.2 - Robust Routing Fix)
+# app.py (v11.3 - Modern Login UI)
 import os
 import json
 import traceback
@@ -41,7 +41,7 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# --- 5. 登录页面模板 ---
+# --- 5. 登录页面模板 (全面升级) ---
 LOGIN_PAGE_HTML = """
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -49,32 +49,205 @@ LOGIN_PAGE_HTML = """
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>登录 - 专利分析智能工作台</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f0f2f5; margin: 0; }
-        .login-container { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 320px; text-align: center; }
-        h1 { margin-bottom: 20px; color: #333; }
-        .error { color: #e74c3c; margin-bottom: 15px; }
-        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background-color: #22C55E; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; }
-        button:hover { background-color: #16A34A; }
+        :root {
+            --primary-color: #22C55E;
+            --primary-color-dark: #16A34A;
+            --bg-color: #F0FDF4;
+            --surface-color: #FFFFFF;
+            --text-color: #14532D;
+        }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: var(--bg-color);
+            margin: 0;
+            color: var(--text-color);
+        }
+        .login-container {
+            background: var(--surface-color);
+            padding: 40px 50px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 360px;
+            text-align: center;
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+        .logo-container {
+            margin-bottom: 25px;
+        }
+        .logo-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            margin: 0;
+            background: linear-gradient(45deg, var(--primary-color-dark), var(--primary-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .error-box {
+            color: #D32F2F;
+            background-color: #FFEBEE;
+            border: 1px solid #FFCDD2;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 20px;
+            text-align: left;
+            font-size: 14px;
+            display: {% if error %}block{% else %}none{% endif %};
+        }
+        .input-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        input {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+        }
+        .password-toggle {
+            position: absolute;
+            top: 50%;
+            right: 15px;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #999;
+            user-select: none;
+        }
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(45deg, var(--primary-color-dark), var(--primary-color));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        .login-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(34, 197, 94, 0.2);
+        }
+        .login-btn:disabled {
+            background: #a5d6a7;
+            cursor: not-allowed;
+        }
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .links {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+        .links a {
+            color: var(--primary-color-dark);
+            text-decoration: none;
+        }
+        .links a:hover {
+            text-decoration: underline;
+        }
+        .footer {
+            position: absolute;
+            bottom: 20px;
+            font-size: 12px;
+            color: #aaa;
+        }
     </style>
 </head>
 <body>
     <div class="login-container">
-        <h1>请登录</h1>
-        {% if error %}
-            <p class="error">{{ error }}</p>
-        {% endif %}
-        <form method="post" action="{{ url_for('login') }}">
-            <input type="text" name="username" placeholder="用户名" required>
-            <input type="password" name="password" placeholder="密码" required>
-            <button type="submit">登 录</button>
+        <div class="logo-container">
+            <h1 class="logo-text">ALFRED X IP</h1>
+            <p style="margin: 5px 0 0; color: #777;">专利分析智能工作台</p>
+        </div>
+        
+        <div id="error-box" class="error-box">
+            <strong>登录失败</strong><br>
+            <span id="error-message">{{ error|default('', true) }}</span>
+        </div>
+
+        <form id="login-form" method="post">
+            <div class="input-group">
+                <input type="text" name="username" placeholder="用户名" required autocomplete="username">
+            </div>
+            <div class="input-group">
+                <input type="password" id="password" name="password" placeholder="密码" required autocomplete="current-password">
+                <span id="password-toggle" class="password-toggle">👁️</span>
+            </div>
+            <button id="login-btn" type="submit" class="login-btn">
+                <span id="btn-text">登 录</span>
+                <div id="spinner" class="spinner"></div>
+            </button>
         </form>
+
+        <div class="links">
+            忘记密码? <a href="mailto:freecasafred@outlook.com?subject=专利工作台密码重置请求">联系管理员</a>
+        </div>
     </div>
+
+    <div class="footer">
+        © 2024 ALFRED X IP. All Rights Reserved.
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const passwordInput = document.getElementById('password');
+            const passwordToggle = document.getElementById('password-toggle');
+            const loginForm = document.getElementById('login-form');
+            const loginBtn = document.getElementById('login-btn');
+            const btnText = document.getElementById('btn-text');
+            const spinner = document.getElementById('spinner');
+
+            // 密码可见性切换
+            passwordToggle.addEventListener('click', function() {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                this.textContent = type === 'password' ? '👁️' : '🙈';
+            });
+
+            // 表单提交时显示加载状态
+            loginForm.addEventListener('submit', function() {
+                loginBtn.disabled = true;
+                btnText.style.display = 'none';
+                spinner.style.display = 'block';
+            });
+        });
+    </script>
 </body>
 </html>
 """
-# --- 6. 访问控制路由 (已修改) ---
+
+# --- 6. 访问控制路由 ---
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -86,11 +259,12 @@ def login():
         if username in users and check_password_hash(users.get(username, ""), password):
             session['user'] = username
             session.permanent = True
-            # 登录成功后，重定向到受保护的 /app 路由
             return redirect(url_for('serve_app'))
         else:
-            return render_template_string(LOGIN_PAGE_HTML, error="用户名或密码错误")
+            # 返回带有错误信息的登录页面
+            return render_template_string(LOGIN_PAGE_HTML, error="用户名或密码不正确，请重试。")
     
+    # GET 请求时，正常显示登录页，不带错误信息
     return render_template_string(LOGIN_PAGE_HTML)
 
 @app.route('/logout')
@@ -98,11 +272,10 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-# --- 主应用路由 (已修改) ---
+# --- 主应用路由 ---
 
 @app.route('/')
 def index():
-    """根路径，只负责检查会话和重定向。"""
     if 'user' in session:
         return redirect(url_for('serve_app'))
     else:
@@ -111,18 +284,14 @@ def index():
 @app.route('/app')
 @login_required
 def serve_app():
-    """这个受保护的路由负责提供主应用 index.html。"""
-    # 读取 index.html 内容
     with open(os.path.join(static_folder_path, 'index.html'), 'r', encoding='utf-8') as f:
         html_content = f.read()
     
-    # 动态插入登出按钮
     logout_button_html = f"""
-    <div style="position: absolute; top: 20px; right: 80px; z-index: 101;">
-        <a href="{url_for('logout')}" style="text-decoration: none; padding: 8px 15px; background-color: #ef4444; color: white; border-radius: 5px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">登出</a>
+    <div style="position: fixed; top: 25px; right: 30px; z-index: 1001;">
+        <a href="{url_for('logout')}" style="text-decoration: none; padding: 8px 16px; background-color: #ef4444; color: white; border-radius: 8px; font-weight: bold; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: all 0.2s ease;">登出</a>
     </div>
     """
-    # 寻找 <body> 标签并插入按钮
     if '<body>' in html_content:
         html_content = html_content.replace('<body>', f'<body>{logout_button_html}', 1)
     
@@ -157,6 +326,7 @@ def get_client_from_header():
         return None, create_response(error=f"Failed to initialize ZhipuAI client: {str(e)}", status_code=400)
 
 # --- API 端点 (全部应用访问控制，保持不变) ---
+# ... [此处省略所有 /api/* 的路由代码，因为它们没有变化] ...
 @app.route('/api/stream_chat', methods=['POST'])
 @login_required
 def stream_chat():
@@ -290,7 +460,7 @@ def download_result_file():
         print(f"Error in download_result_file: {traceback.format_exc()}"); return create_response(error=f"获取文件内容时发生错误: {str(e)}", status_code=500)
 
 
-# --- 启动命令 (保持不变) ---
+# --- 启动命令 ---
 if __name__ == '__main__':
     try:
         from werkzeug.security import generate_password_hash
