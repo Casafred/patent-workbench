@@ -1,4 +1,4 @@
-# app.py (v11.1 - No-Disk Access Control)
+# app.py (v11.2 - Robust Routing Fix)
 import os
 import json
 import traceback
@@ -12,7 +12,6 @@ from werkzeug.security import check_password_hash
 from functools import wraps
 
 # --- 1. 配置 ---
-# 直接使用项目根目录下的 users.json
 USERS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'users.json')
 
 # --- 初始化 Flask 应用 ---
@@ -21,14 +20,11 @@ app = Flask(__name__, static_folder=static_folder_path, static_url_path='')
 CORS(app)
 
 # --- 2. 会话和安全配置 ---
-# 从环境变量获取 SECRET_KEY，对于会话管理至关重要
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-key-for-local-testing-only')
-# 设置会话有效期为6小时
 app.permanent_session_lifetime = timedelta(hours=6)
 
 # --- 3. 用户数据加载函数 ---
 def load_users():
-    """从项目内的 users.json 加载用户数据。"""
     try:
         with open(USERS_FILE, 'r') as f:
             return json.load(f)
@@ -38,7 +34,6 @@ def load_users():
 
 # --- 4. 访问控制装饰器 ---
 def login_required(f):
-    """检查用户是否登录的装饰器。"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user' not in session:
@@ -70,7 +65,7 @@ LOGIN_PAGE_HTML = """
         {% if error %}
             <p class="error">{{ error }}</p>
         {% endif %}
-        <form method="post">
+        <form method="post" action="{{ url_for('login') }}">
             <input type="text" name="username" placeholder="用户名" required>
             <input type="password" name="password" placeholder="密码" required>
             <button type="submit">登 录</button>
@@ -79,8 +74,8 @@ LOGIN_PAGE_HTML = """
 </body>
 </html>
 """
+# --- 6. 访问控制路由 (已修改) ---
 
-# --- 6. 访问控制路由 ---
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -88,11 +83,11 @@ def login():
         password = request.form['password']
         users = load_users()
         
-        # 检查用户名存在，并且哈希密码匹配
-        if username in users and check_password_hash(users[username], password):
+        if username in users and check_password_hash(users.get(username, ""), password):
             session['user'] = username
-            session.permanent = True  # 使用永久会话，其生命周期由 permanent_session_lifetime 控制
-            return redirect(url_for('index'))
+            session.permanent = True
+            # 登录成功后，重定向到受保护的 /app 路由
+            return redirect(url_for('serve_app'))
         else:
             return render_template_string(LOGIN_PAGE_HTML, error="用户名或密码错误")
     
@@ -103,7 +98,37 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-# --- 辅助函数 (原有代码) ---
+# --- 主应用路由 (已修改) ---
+
+@app.route('/')
+def index():
+    """根路径，只负责检查会话和重定向。"""
+    if 'user' in session:
+        return redirect(url_for('serve_app'))
+    else:
+        return redirect(url_for('login'))
+
+@app.route('/app')
+@login_required
+def serve_app():
+    """这个受保护的路由负责提供主应用 index.html。"""
+    # 读取 index.html 内容
+    with open(os.path.join(static_folder_path, 'index.html'), 'r', encoding='utf-8') as f:
+        html_content = f.read()
+    
+    # 动态插入登出按钮
+    logout_button_html = f"""
+    <div style="position: absolute; top: 20px; right: 80px; z-index: 101;">
+        <a href="{url_for('logout')}" style="text-decoration: none; padding: 8px 15px; background-color: #ef4444; color: white; border-radius: 5px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">登出</a>
+    </div>
+    """
+    # 寻找 <body> 标签并插入按钮
+    if '<body>' in html_content:
+        html_content = html_content.replace('<body>', f'<body>{logout_button_html}', 1)
+    
+    return Response(html_content, mimetype='text/html')
+
+# --- 辅助函数 (保持不变) ---
 def create_response(data=None, error=None, status_code=200):
     response_data = {}
     if data is not None:
@@ -131,28 +156,7 @@ def get_client_from_header():
     except Exception as e:
         return None, create_response(error=f"Failed to initialize ZhipuAI client: {str(e)}", status_code=400)
 
-# --- 主页路由 (应用访问控制) ---
-@app.route('/')
-@login_required
-def index():
-    # 新增登出按钮的逻辑 (可选但推荐)
-    # 读取 index.html 内容
-    with open(os.path.join(static_folder_path, 'index.html'), 'r', encoding='utf-8') as f:
-        html_content = f.read()
-    
-    # 动态插入登出按钮
-    logout_button_html = f"""
-    <div style="position: absolute; top: 20px; right: 80px; z-index: 101;">
-        <a href="{url_for('logout')}" style="text-decoration: none; padding: 8px 15px; background-color: #ef4444; color: white; border-radius: 5px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">登出</a>
-    </div>
-    """
-    # 寻找 <body> 标签并插入按钮
-    html_content = html_content.replace('<body>', f'<body>{logout_button_html}', 1)
-    
-    return Response(html_content, mimetype='text/html')
-
-
-# --- API 端点 (全部应用访问控制) ---
+# --- API 端点 (全部应用访问控制，保持不变) ---
 @app.route('/api/stream_chat', methods=['POST'])
 @login_required
 def stream_chat():
@@ -285,9 +289,9 @@ def download_result_file():
     except Exception as e:
         print(f"Error in download_result_file: {traceback.format_exc()}"); return create_response(error=f"获取文件内容时发生错误: {str(e)}", status_code=500)
 
-# --- 启动命令 ---
+
+# --- 启动命令 (保持不变) ---
 if __name__ == '__main__':
-    # 确保在本地运行时 werkzeug 已安装
     try:
         from werkzeug.security import generate_password_hash
     except ImportError:
