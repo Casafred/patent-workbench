@@ -281,19 +281,29 @@ def index():
     else:
         return redirect(url_for('login'))
 
+# 在 app.py 中，找到并替换 serve_app 函数
+
 @app.route('/app')
 @login_required
 def serve_app():
+    """这个受保护的路由负责提供主应用 index.html，并注入用户信息。"""
     with open(os.path.join(static_folder_path, 'index.html'), 'r', encoding='utf-8') as f:
         html_content = f.read()
-    
-    logout_button_html = f"""
-    <div style="position: fixed; top: 25px; right: 30px; z-index: 1001;">
-        <a href="{url_for('logout')}" style="text-decoration: none; padding: 8px 16px; background-color: #ef4444; color: white; border-radius: 8px; font-weight: bold; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: all 0.2s ease;">登出</a>
+
+    # 从 session 获取当前登录的用户名
+    username = session.get('user', '用户') # 如果获取失败，默认为 '用户'
+
+    # 创建包含用户名显示和登出按钮的 HTML 块
+    user_actions_html = f"""
+    <div class="user-actions">
+        <span class="user-display">当前用户: <strong>{username}</strong></span>
+        <a href="{url_for('logout')}" class="logout-btn">登出</a>
     </div>
     """
+    
+    # 注入到 <body> 标签后
     if '<body>' in html_content:
-        html_content = html_content.replace('<body>', f'<body>{logout_button_html}', 1)
+        html_content = html_content.replace('<body>', f'<body>{user_actions_html}', 1)
     
     return Response(html_content, mimetype='text/html')
 
@@ -326,7 +336,6 @@ def get_client_from_header():
         return None, create_response(error=f"Failed to initialize ZhipuAI client: {str(e)}", status_code=400)
 
 # --- API 端点 (全部应用访问控制，保持不变) ---
-# ... [此处省略所有 /api/* 的路由代码，因为它们没有变化] ...
 @app.route('/api/stream_chat', methods=['POST'])
 @login_required
 def stream_chat():
