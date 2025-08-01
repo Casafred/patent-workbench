@@ -1,9 +1,114 @@
 // js/chat.js (完整最终版)
 
 function initChat() {
+    // 标题编辑功能初始化
+    const chatCurrentTitle = document.getElementById('chat_current_title');
+    const chatSaveTitleBtn = document.getElementById('chat_save_title_btn');
+
+    // 点击标题进入编辑状态
+    chatCurrentTitle.addEventListener('click', () => {
+        chatCurrentTitle.focus();
+        chatSaveTitleBtn.classList.remove('hidden');
+    });
+
+    // 编辑时显示保存按钮
+    chatCurrentTitle.addEventListener('input', () => {
+        chatSaveTitleBtn.classList.remove('hidden');
+    });
+
+    // 保存标题更改
+    chatSaveTitleBtn.addEventListener('click', () => {
+        saveTitleChanges();
+    });
+
+    // 按Enter保存标题
+    chatCurrentTitle.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            saveTitleChanges();
+        } else if (e.key === 'Escape') {
+            // 按Escape取消编辑
+            const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
+            if (convo) {
+                chatCurrentTitle.textContent = convo.title || '未命名对话';
+            }
+            chatSaveTitleBtn.classList.add('hidden');
+        }
+    });
+
+    // 点击其他地方保存标题
+    document.addEventListener('click', (e) => {
+        if (!chatCurrentTitle.contains(e.target) && !chatSaveTitleBtn.contains(e.target)) {
+            if (!chatSaveTitleBtn.classList.contains('hidden')) {
+                saveTitleChanges();
+            }
+        }
+    });
+
+    function saveTitleChanges() {
+        const newTitle = chatCurrentTitle.textContent.trim();
+        const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
+
+        if (convo) {
+            if (convo.title !== newTitle) {
+                convo.title = newTitle;
+                saveConversations();
+                renderChatHistoryList();
+                console.log(`标题已更新为: "${newTitle}"`);
+            }
+        }
+        chatSaveTitleBtn.classList.add('hidden');
+    }
+
     chatModelSelect.innerHTML = AVAILABLE_MODELS.map(m => `<option value="${m}">${m}</option>`).join('');
     loadPersonas();
     loadConversations();
+
+    // 初始化对话参数模态框
+    const chatParamsModal = document.getElementById('chat_params_modal');
+    const chatParamsBtn = document.getElementById('chat_params_btn');
+    const closeModalBtn = document.querySelector('.close-modal');
+    const saveChatParamsBtn = document.getElementById('save_chat_params_btn');
+
+    // 打开模态框
+    chatParamsBtn.addEventListener('click', () => {
+        chatParamsModal.style.display = 'block';
+        // 延迟添加show类以确保过渡效果生效
+        setTimeout(() => {
+            chatParamsModal.classList.add('show');
+        }, 10);
+    });
+
+    // 关闭模态框 - 点击关闭按钮
+        closeModalBtn.addEventListener('click', () => {
+            chatParamsModal.classList.remove('show');
+            // 等待过渡效果完成后再隐藏
+            setTimeout(() => {
+                chatParamsModal.style.display = 'none';
+            }, 200);
+        });
+
+        // 关闭模态框 - 点击模态框外部
+        window.addEventListener('click', (event) => {
+            if (event.target === chatParamsModal) {
+                chatParamsModal.classList.remove('show');
+                // 等待过渡效果完成后再隐藏
+                setTimeout(() => {
+                    chatParamsModal.style.display = 'none';
+                }, 200);
+            }
+        });
+
+        // 保存设置按钮事件
+        saveChatParamsBtn.addEventListener('click', () => {
+            // 这里可以添加保存设置的逻辑，如果需要
+            chatParamsModal.classList.remove('show');
+            // 等待过渡效果完成后再隐藏
+            setTimeout(() => {
+                chatParamsModal.style.display = 'none';
+                alert('对话参数已保存');
+            }, 200);
+        });
     
     chatSendBtn.addEventListener('click', handleStreamChatRequest);
     chatInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleStreamChatRequest(); }});
@@ -26,10 +131,17 @@ function initChat() {
     });
 
     chatAddPersonaBtn.addEventListener('click', addPersona);
-    chatEditPersonaBtn.addEventListener('click', editPersona);
     chatDeletePersonaBtn.addEventListener('click', deletePersona);
+    chatSavePersonaBtn = document.getElementById('chat_save_persona_btn');
+    chatSavePersonaBtn.addEventListener('click', saveCurrentPersona);
+
+    // 监听角色选择变化
+    chatPersonaSelect.addEventListener('change', updatePersonaEditor);
 
     chatManageBtn.addEventListener('click', () => toggleManagementMode());
+
+    // 初始化角色编辑器
+    updatePersonaEditor();
     
     chatSelectAllBtn.addEventListener('click', () => {
         console.log("全选按钮点击");
@@ -750,42 +862,67 @@ function copyMessage(buttonElement) {
 }
 
 function addPersona() {
-    const name = prompt("请输入新角色的名称：");
-    if (!name) return;
-    const system = prompt(`请输入角色 "${name}" 的系统提示 (System Prompt):`);
-    if (system === null) return;
-    const userTemplate = prompt(`(可选) 请输入用户输入模板，使用 {{INPUT}} 作为占位符。\n如果不需要，请留空直接确定。`, "");
-    if (userTemplate === null) return;
-
+    // 创建一个新的临时角色ID
     const id = `custom-${Date.now()}`;
-    appState.chat.personas[id] = { name, system, userTemplate, isCustom: true };
+    // 添加一个新的空角色
+    appState.chat.personas[id] = { name: '新角色', system: '', userTemplate: '', isCustom: true };
     savePersonas();
     updatePersonaSelector();
+    // 选择新创建的角色
     chatPersonaSelect.value = id;
-    updateCurrentConversationPersona();
-    alert("新角色已添加！");
+    // 更新角色编辑器
+    updatePersonaEditor();
+    // 清空当前编辑区域
+    document.getElementById('persona_name_input').value = '新角色';
+    document.getElementById('persona_system_input').value = '';
+    document.getElementById('persona_template_input').value = '';
+    // 聚焦到角色名称输入框
+    document.getElementById('persona_name_input').focus();
 }
 
-function editPersona() {
+function updatePersonaEditor() {
     const id = chatPersonaSelect.value;
     const persona = appState.chat.personas[id];
     if (!persona) return;
-    const newName = prompt("编辑角色名称：", persona.name);
-    if (!newName) return;
-    const newSystem = prompt(`正在编辑角色 "${newName}" 的系统提示:`, persona.system);
-    if (newSystem === null) return;
-    const newUserTemplate = prompt(`(可选) 编辑用户输入模板，使用 {{INPUT}} 作为占位符。`, persona.userTemplate || "");
-    if (newUserTemplate === null) return;
 
-    persona.name = newName;
-    persona.system = newSystem;
-    persona.userTemplate = newUserTemplate;
+    document.getElementById('persona_name_input').value = persona.name || '';
+    document.getElementById('persona_system_input').value = persona.system || '';
+    document.getElementById('persona_template_input').value = persona.userTemplate || '';
+
+    // 如果是预设角色，禁用编辑
+    const isCustom = persona.isCustom !== undefined ? persona.isCustom : false;
+    document.getElementById('persona_name_input').disabled = !isCustom;
+    document.getElementById('persona_system_input').disabled = !isCustom;
+    document.getElementById('persona_template_input').disabled = !isCustom;
+    document.getElementById('chat_save_persona_btn').disabled = !isCustom;
+}
+
+// 保存当前角色
+function saveCurrentPersona() {
+    const id = chatPersonaSelect.value;
+    const persona = appState.chat.personas[id];
+    if (!persona || !persona.isCustom) {
+        alert('不能修改预设角色！');
+        return;
+    }
+
+    const name = document.getElementById('persona_name_input').value.trim();
+    const system = document.getElementById('persona_system_input').value.trim();
+    const userTemplate = document.getElementById('persona_template_input').value.trim();
+
+    if (!name || !system) {
+        alert('角色名称和系统提示不能为空！');
+        return;
+    }
+
+    persona.name = name;
+    persona.system = system;
+    persona.userTemplate = userTemplate;
 
     savePersonas();
     updatePersonaSelector();
-    chatPersonaSelect.value = id;
     updateCurrentConversationPersona();
-    alert("角色已更新！");
+    alert('角色已更新并保存到本地！');
 }
 
 function deletePersona() {
