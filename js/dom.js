@@ -24,13 +24,21 @@ const chatDeselectAllBtn = getEl('chat_deselect_all_btn');
 const chatDeleteSelectedBtn = getEl('chat_delete_selected_btn');
 
 
-// Async Batch
+// Async Batch (v2) - 新增和修改的元素
 const asyncInputsCount = getEl('async_inputs_count');
 const asyncInputsManagement = getEl('async_inputs_management');
 const asyncInputsSelectAllBtn = getEl('async_inputs_select_all_btn');
 const asyncInputsDeleteSelectedBtn = getEl('async_inputs_delete_selected_btn');
 const asyncExportExcelBtn = getEl('async_export_excel_btn');
 const asyncRecoverBtn = getEl('async_recover_btn');
+// 新增的UI元素
+const asyncExcelColumnCount = getEl('async_excel_column_count');
+const asyncColumnConfigContainer = getEl('async_column_config_container');
+const asyncExcelColumnConfigArea = getEl('async_excel_column_config_area');
+const asyncPreviewRequestBtn = getEl('async_preview_request_btn');
+const asyncRequestBodyPreview = getEl('async_request_body_preview');
+const asyncRequestsCount = getEl('async_requests_count');
+
 
 // Large Batch (Generator)
 const genFileInput = getEl('gen_file-input'), genSheetSelector = getEl('gen_sheet-selector');
