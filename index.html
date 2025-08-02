@@ -170,17 +170,10 @@
                     <div class="step">
                         <div class="step-header">步骤 1: 添加输入内容</div>
                         <div class="sub-tab-container" style="margin-bottom: 20px;">
-                            <button class="sub-tab-button active" onclick="switchAsyncInput(event, 'manual')">手动添加</button>
-                            <button class="sub-tab-button" onclick="switchAsyncInput(event, 'excel')">Excel导入</button>
+                            <button class="sub-tab-button active" onclick="switchAsyncInput(event, 'excel')">Excel导入</button>
+                            <button class="sub-tab-button" onclick="switchAsyncInput(event, 'manual')">手动添加</button>
                         </div>
-                        <div id="async-input-manual" class="sub-tab-content active">
-                            <div class="config-item">
-                                <label for="async_manual_input">新输入:</label>
-                                <textarea id="async_manual_input" rows="5" placeholder="请输入需要处理的内容..."></textarea>
-                            </div>
-                            <button id="async_add_input_btn" class="small-button">添加输入</button>
-                        </div>
-                        <div id="async-input-excel" class="sub-tab-content">
+                        <div id="async-input-excel" class="sub-tab-content active">
                             <div class="config-item">
                                 <label for="async_excel_file">上传Excel文件:</label>
                                 <input type="file" id="async_excel_file" accept=".xlsx, .xls">
@@ -190,10 +183,20 @@
                                 <select id="async_excel_sheet" disabled></select>
                             </div>
                              <div class="config-item">
-                                <label for="async_excel_column">选择列作为输入:</label>
-                                <select id="async_excel_column" disabled></select>
+                                <label>选择输入列:</label>
+                                <div id="async_column_config_area" style="margin-top: 10px;"></div>
+                                <div class="info" style="font-size: 0.85em; margin-top: 5px;">
+                                    选择多个列时，系统会自动在模板中插入对应列名的解释进行区分。
+                                </div>
                             </div>
                             <button id="async_load_excel_btn" class="small-button" disabled>从Excel加载输入</button>
+                        </div>
+                        <div id="async-input-manual" class="sub-tab-content">
+                            <div class="config-item">
+                                <label for="async_manual_input">新输入:</label>
+                                <textarea id="async_manual_input" rows="5" placeholder="请输入需要处理的内容..."></textarea>
+                            </div>
+                            <button id="async_add_input_btn" class="small-button">添加输入</button>
                         </div>
                         <hr style="margin: 20px 0; border-color: var(--border-color);">
                         <label><strong>已添加的输入 (<span id="async_inputs_count">0</span>):</strong></label>
