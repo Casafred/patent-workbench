@@ -6,7 +6,12 @@ document.addEventListener('DOMContentLoaded', () => {
     initChat();
     initAsyncBatch();
     initLargeBatch();
-    switchTab('instant', document.querySelector('.tab-button'));
+    // 默认激活第一个主页签
+    switchTab('instant', document.querySelector('.main-tab-container .tab-button'));
+    // 默认激活“小批量”的第一个子页签
+    switchAsyncSubTab('input', document.querySelector('#async_batch-tab .sub-tab-button'));
+    // 默认激活“大批量”的第一个子页签
+    switchSubTab('generator', document.querySelector('#large_batch-tab .sub-tab-button'));
 });
 
 // =================================================================================
@@ -46,18 +51,16 @@ function initApiKeyConfig() {
     });
 }
 
-// js/main.js (仅展示apiCall函数的修改)
-
 async function apiCall(endpoint, body, method = 'POST', isStream = false) {
     if (!appState.apiKey) {
         alert("请点击右上角 ⚙️ 设置并保存您的 API Key。");
         throw new Error("API Key 未配置。");
     }
     const headers = { 'Authorization': `Bearer ${appState.apiKey}` };
-    if (!(body instanceof FormData) && isStream === false) { // 修正：非流式也需要json头
+    if (!(body instanceof FormData) && isStream === false) {
         headers['Content-Type'] = 'application/json';
     }
-    const fullUrl = `${BACKEND_URL}/api${endpoint}`;
+    const fullUrl = `${window.location.origin}/api${endpoint}`; // Use relative path
     try {
         const fetchOptions = { method, headers };
         if (body) {
@@ -73,8 +76,6 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false) {
             return response.body.getReader();
         }
 
-        // ▼▼▼ 修改：为非流式调用增加更健壮的错误处理 ▼▼▼
-        // 对于非流式调用，先读取文本响应，再尝试解析为JSON
         const textResponse = await response.text();
         let result;
         try {
@@ -85,26 +86,20 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false) {
         }
 
         if (!response.ok || (result && result.success === false)) {
-            // 从标准响应或直接从ZhipuAI的错误结构中提取错误信息
             const errorMessage = result.error?.message || result.error || (result.data ? JSON.stringify(result.data) : `HTTP ${response.status}: ${response.statusText}`);
             const err = new Error(errorMessage);
             err.response = result;
             throw err;
         }
-        // 如果是ZhipuAI的非流式chat completion，结果在 result.choices[0].message.content
         if (result.choices && result.choices[0]) {
-            return result; // 返回完整的ZhipuAI响应体
+            return result; 
         }
-        // 如果是我们的标准后端响应
         return result.data;
-        // ▲▲▲ 修改结束 ▲▲▲
     } catch (error) {
-        console.error(`API Call Error to ${endpoint}:`, error); // 保留 .message
+        console.error(`API Call Error to ${endpoint}:`, error);
         throw error;
     }
 }
-
-
 
 
 // =================================================================================
@@ -115,12 +110,15 @@ function switchTab(tabId, clickedButton) {
     document.querySelectorAll(".tab-button").forEach(el => el.classList.remove("active"));
     getEl(`${tabId}-tab`).classList.add("active");
     if (clickedButton) clickedButton.classList.add("active");
-    
-    // ▼▼▼ 修改①：移除此处的轮询暂停逻辑 ▼▼▼
-    // The original logic to pause polling is removed from here.
-    // Polling will now continue in the background regardless of the active tab.
-    // The user can explicitly stop it using a dedicated button.
-    // ▲▲▲ 修改①：修改结束 ▲▲▲
+}
+
+// ▼▼▼ 需求①: 为“小批量异步”新增的页签切换函数 ▼▼▼
+function switchAsyncSubTab(subTabId, clickedButton) {
+    const parent = getEl('async_batch-tab');
+    parent.querySelectorAll(".sub-tab-content").forEach(el => el.classList.remove("active"));
+    parent.querySelectorAll(".sub-tab-button").forEach(el => el.classList.remove("active"));
+    getEl(`async-sub-tab-${subTabId}`).classList.add("active");
+    if(clickedButton) clickedButton.classList.add("active");
 }
 
 function switchSubTab(subTabId, clickedButton) {
