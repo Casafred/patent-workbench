@@ -65,7 +65,7 @@ function initAsyncBatch() {
     const addInputBtn = getEl('async_add_input_btn');
     const excelFile = getEl('async_excel_file');
     const excelSheet = getEl('async_excel_sheet');
-    const excelColumns = getEl('async_excel_columns');
+    const excelColumn = getEl('async_excel_column');
     const loadExcelBtn = getEl('async_load_excel_btn');
     const clearRequestsBtn = getEl('async_clear_requests_btn');
     const submitBtn = getEl('async_submit_batch_btn');
@@ -76,9 +76,6 @@ function initAsyncBatch() {
     if (localStorage.getItem('lastAsyncBatchState')) {
         asyncRecoverBtn.disabled = false;
     }
-
-    // 添加列选择事件监听器
-    excelColumns.addEventListener('change', () => { loadExcelBtn.disabled = excelColumns.selectedOptions.length === 0; });
 
     // ▼▼▼ 修正：将所有事件监听器绑定放在init函数内部 ▼▼▼
     // 移除全局模型和温度设置相关代码
@@ -158,7 +155,7 @@ function initAsyncBatch() {
                 appState.asyncBatch.excelWorkbook = XLSX.read(data, { type: 'array' });
                 excelSheet.innerHTML = appState.asyncBatch.excelWorkbook.SheetNames.map(name => `<option value="${name}">${name}</option>`).join('');
                 excelSheet.disabled = false;
-                excelColumns.disabled = true; 
+                excelColumn.disabled = true; 
                 loadExcelBtn.disabled = true;
                 handleAsyncSheetChange(); 
             } catch (err) { alert(`解析Excel失败: ${err.message}`); console.error(err); }
@@ -180,35 +177,20 @@ function initAsyncBatch() {
         appState.asyncBatch.nextInputId = 1;
 
         const sheetName = excelSheet.value;
+        const columnName = excelColumn.value;
         const worksheet = appState.asyncBatch.excelWorkbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
         
-        // 获取选中的列
-        const selectedColumns = Array.from(excelColumns.selectedOptions).map(option => option.value);
-        appState.asyncBatch.selectedColumns = selectedColumns;
-        
         let loadedCount = 0;
         jsonData.forEach(row => {
-            // 检查是否至少有一列有值
-            const hasValue = selectedColumns.some(col => row[col]);
-            if (hasValue) {
-                // 创建包含所有选中列的对象
-                const contentObj = {};
-                selectedColumns.forEach(col => {
-                    contentObj[col] = String(row[col] || '').trim();
-                });
-                appState.asyncBatch.inputs.push({
-                    id: `I${appState.asyncBatch.nextInputId++}`, 
-                    content: JSON.stringify(contentObj),
-                    isMultiColumn: true
-                });
+            if (row[columnName]) {
+                appState.asyncBatch.inputs.push({ id: `I${appState.asyncBatch.nextInputId++}`, content: String(row[columnName]).trim() });
                 loadedCount++;
             }
         });
         renderAsyncLists();
         renderRequestsPreview();
-        const columnNames = selectedColumns.join(', ');
-                alert(`已成功从列 ${columnNames} 加载 ${loadedCount} 条输入，并清空了原有数据。`);
+        alert(`已成功从列 "${columnName}" 加载 ${loadedCount} 条输入，并清空了原有数据。`);
     });
     
     clearRequestsBtn.addEventListener('click', () => {
@@ -236,12 +218,12 @@ function initAsyncBatch() {
         const sheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
         if (sheetData.length > 0) {
             const headers = sheetData[0];
-            excelColumns.innerHTML = headers.map(h => `<option value="${h}">${h}</option>`).join('');
-            excelColumns.disabled = false;
-            loadExcelBtn.disabled = excelColumns.selectedOptions.length === 0;
+            excelColumn.innerHTML = headers.map(h => `<option value="${h}">${h}</option>`).join('');
+            excelColumn.disabled = false;
+            loadExcelBtn.disabled = false;
         } else {
-            excelColumns.innerHTML = '';
-            excelColumns.disabled = true;
+            excelColumn.innerHTML = '';
+            excelColumn.disabled = true;
             loadExcelBtn.disabled = true;
         }
     }
@@ -253,29 +235,15 @@ function renderAsyncLists() {
     const templatesListDiv = getEl('async_templates_list');
     const taskCreationArea = getEl('async_task_creation_area');
 
-    inputsListDiv.innerHTML = appState.asyncBatch.inputs.map((i, index) => {
-        let displayContent;
-        if (i.isMultiColumn) {
-            try {
-                const contentObj = JSON.parse(i.content);
-                displayContent = Object.entries(contentObj)
-                    .map(([col, val]) => `${col}: ${val.substring(0, 30)}...`)
-                    .join(' | ');
-            } catch (e) {
-                displayContent = i.content.substring(0, 100) + '...';
-            }
-        } else {
-            displayContent = i.content.substring(0, 100) + '...';
-        }
-        return `
+    inputsListDiv.innerHTML = appState.asyncBatch.inputs.map((i, index) => `
         <div class="list-item">
             <input type="checkbox" value="${i.id}" id="async-input-${i.id}">
             <label for="async-input-${i.id}" class="item-content" style="cursor: pointer;">
                 <span class="item-index">${index + 1}.</span>
-                ${displayContent}
+                ${i.content.substring(0, 100)}...
             </label>
-        </div>`;
-    }).join('') || '<div class="info" style="padding:10px">暂无输入</div>';
+        </div>`
+    ).join('') || '<div class="info" style="padding:10px">暂无输入</div>';
     
     asyncInputsCount.textContent = appState.asyncBatch.inputs.length;
     asyncInputsManagement.classList.toggle('visible', appState.asyncBatch.inputs.length > 0);
@@ -416,34 +384,7 @@ function switchAsyncInput(event, type) {
 async function submitTaskWithRetry(request, retries = MAX_ASYNC_RETRIES) {
     const input = appState.asyncBatch.inputs.find(i => i.id === request.inputId);
     const template = appState.asyncBatch.templates.find(t => t.id === request.templateId);
-
-    // 处理多列输入的模板替换
-    let userPrompt = template.userPromptTemplate;
-    if (input.isMultiColumn) {
-        try {
-            const contentObj = JSON.parse(input.content);
-            const columns = Object.keys(contentObj);
-            
-            // 生成列名解释文本
-            const columnExplanations = columns.map((col, index) => {
-                return `以下是${col}{{input${index + 1}}}`;
-            }).join('，');
-            
-            // 替换模板中的{{INPUT}}占位符
-            userPrompt = userPrompt.replace('{{INPUT}}', columnExplanations);
-            
-            // 替换每个输入占位符
-            columns.forEach((col, index) => {
-                userPrompt = userPrompt.replace(`{{input${index + 1}}}`, contentObj[col]);
-            });
-        } catch (e) {
-            console.error('解析多列输入失败:', e);
-            // 回退到原始输入
-            userPrompt = template.userPromptTemplate.replace('{{INPUT}}', input.content);
-        }
-    } else {
-        userPrompt = template.userPromptTemplate.replace('{{INPUT}}', input.content);
-    }
+    const userPrompt = template.userPromptTemplate.replace('{{INPUT}}', input.content);
     const messages = [{ role: 'user', content: userPrompt }];
     if (template.systemPrompt) messages.unshift({ role: 'system', content: template.systemPrompt });
     const body = { model: template.model, temperature: template.temperature, messages, request_id: request.localId };
@@ -478,23 +419,10 @@ async function handleAsyncBatchSubmit() {
 
     for (const request of appState.asyncBatch.requests) {
         const input = appState.asyncBatch.inputs.find(i => i.id === request.inputId);
-            const template = appState.asyncBatch.templates.find(t => t.id === request.templateId);
-            let displayContent;
-            if (input.isMultiColumn) {
-                try {
-                    const contentObj = JSON.parse(input.content);
-                    displayContent = Object.entries(contentObj)
-                        .map(([col, val]) => `${col}: ${val.substring(0, 20)}...`)
-                        .join(' | ');
-                } catch (e) {
-                    displayContent = input.content.substring(0, 50) + '...';
-                }
-            } else {
-                displayContent = input.content.substring(0, 50) + '...';
-            }
-            const row = getEl('async_results_tbody').insertRow();
-            row.id = `row-${request.localId}`;
-            row.innerHTML = `<td>${request.localId}</td><td>${displayContent}</td><td>${template.name} (${template.id})</td><td class="status-cell">排队中...</td><td class="token-cell">-</td><td class="result-cell">...</td>`;
+        const template = appState.asyncBatch.templates.find(t => t.id === request.templateId);
+        const row = getEl('async_results_tbody').insertRow();
+        row.id = `row-${request.localId}`;
+        row.innerHTML = `<td>${request.localId}</td><td>${input.content.substring(0, 50)}...</td><td>${template.name} (${template.id})</td><td class="status-cell">排队中...</td><td class="token-cell">-</td><td class="result-cell">...</td>`;
         appState.asyncBatch.tasks[request.localId] = { status: 'pending', retryCount: 0 };
     }
     

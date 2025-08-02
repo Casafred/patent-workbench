@@ -54,7 +54,7 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false) {
         throw new Error("API Key 未配置。");
     }
     const headers = { 'Authorization': `Bearer ${appState.apiKey}` };
-    if (!(body instanceof FormData) || isStream === false) { // 修正：非流式也需要json头
+    if (!(body instanceof FormData) && isStream === false) { // 修正：非流式也需要json头
         headers['Content-Type'] = 'application/json';
     }
     const fullUrl = `${BACKEND_URL}/api${endpoint}`;
@@ -74,8 +74,16 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false) {
         }
 
         // ▼▼▼ 修改：为非流式调用增加更健壮的错误处理 ▼▼▼
-        // 对于非流式调用，我们总是期望返回JSON
-        const result = await response.json();
+        // 对于非流式调用，先读取文本响应，再尝试解析为JSON
+        const textResponse = await response.text();
+        let result;
+        try {
+            result = JSON.parse(textResponse);
+        } catch (jsonError) {
+            console.error(`API返回非JSON响应: ${textResponse.substring(0, 200)}...`);
+            throw new Error(`API返回非JSON响应: ${textResponse.substring(0, 200)}...`);
+        }
+
         if (!response.ok || (result && result.success === false)) {
             // 从标准响应或直接从ZhipuAI的错误结构中提取错误信息
             const errorMessage = result.error?.message || result.error || (result.data ? JSON.stringify(result.data) : `HTTP ${response.status}: ${response.statusText}`);
