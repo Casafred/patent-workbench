@@ -15,6 +15,19 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/main.css">
 
+        <style>
+            .preset-badge {
+                display: inline-block;
+                padding: 2px 6px;
+                background-color: #4a6cf7;
+                color: white;
+                border-radius: 4px;
+                font-size: 0.75em;
+                margin-left: 6px;
+                vertical-align: middle;
+            }
+        </style>
+
 </head>
 <body>
 
@@ -152,28 +165,15 @@
         
         <!-- 功能二：小批量异步 -->
         <div id="async_batch-tab" class="tab-content">
-            <div class="step">
-                <div class="step-header">步骤 1: 通用配置</div>
-                <div class="config-item row-flex"><label for="async_model_select">模型 (推荐 Flash):</label><select id="async_model_select"></select></div>
-                 <div class="config-item row-flex"><label for="async_temperature">温度:</label><input type="number" id="async_temperature" value="0.1" step="0.1" min="0" max="1" style="width: 120px;"></div>
-            </div>
-
             <div class="async-layout">
                 <div class="async-column">
                     <div class="step">
-                        <div class="step-header">步骤 2: 添加输入内容</div>
+                        <div class="step-header">步骤 1: 添加输入内容</div>
                         <div class="sub-tab-container" style="margin-bottom: 20px;">
-                            <button class="sub-tab-button active" onclick="switchAsyncInput(event, 'manual')">手动添加</button>
-                            <button class="sub-tab-button" onclick="switchAsyncInput(event, 'excel')">Excel导入</button>
+                            <button class="sub-tab-button active" onclick="switchAsyncInput(event, 'excel')">Excel导入</button>
+                            <button class="sub-tab-button" onclick="switchAsyncInput(event, 'manual')">手动添加</button>
                         </div>
-                        <div id="async-input-manual" class="sub-tab-content active">
-                            <div class="config-item">
-                                <label for="async_manual_input">新输入:</label>
-                                <textarea id="async_manual_input" rows="5" placeholder="请输入需要处理的内容..."></textarea>
-                            </div>
-                            <button id="async_add_input_btn" class="small-button">添加输入</button>
-                        </div>
-                        <div id="async-input-excel" class="sub-tab-content">
+                        <div id="async-input-excel" class="sub-tab-content active">
                             <div class="config-item">
                                 <label for="async_excel_file">上传Excel文件:</label>
                                 <input type="file" id="async_excel_file" accept=".xlsx, .xls">
@@ -183,10 +183,18 @@
                                 <select id="async_excel_sheet" disabled></select>
                             </div>
                              <div class="config-item">
-                                <label for="async_excel_column">选择列作为输入:</label>
-                                <select id="async_excel_column" disabled></select>
+                                <label for="async_excel_columns">选择输入列 (可多选):</label>
+                                <select id="async_excel_columns" disabled multiple size="5"></select>
+                                <div class="info" style="font-size: 0.85em; margin-top: 5px;">按住Ctrl键可选择多个列</div>
                             </div>
                             <button id="async_load_excel_btn" class="small-button" disabled>从Excel加载输入</button>
+                        </div>
+                        <div id="async-input-manual" class="sub-tab-content">
+                            <div class="config-item">
+                                <label for="async_manual_input">新输入:</label>
+                                <textarea id="async_manual_input" rows="5" placeholder="请输入需要处理的内容..."></textarea>
+                            </div>
+                            <button id="async_add_input_btn" class="small-button">添加输入</button>
                         </div>
                         <hr style="margin: 20px 0; border-color: var(--border-color);">
                         <label><strong>已添加的输入 (<span id="async_inputs_count">0</span>):</strong></label>
@@ -199,10 +207,23 @@
                 </div>
                 <div class="async-column">
                      <div class="step">
-                        <div class="step-header">步骤 3: 添加处理模板</div>
+                        <div class="step-header">步骤 2: 添加处理模板</div>
+                        <div class="config-item">
+                            <label for="async_preset_template_select">选择预置模板或新建:</label>
+                            <select id="async_preset_template_select"></select>
+                        </div>
+                        <div id="async_template_edit_area">
                         <div class="config-item">
                             <label for="async_template_name">模板名称:</label>
-                            <input type="text" id="async_template_name" placeholder="例如：技术方案总结">
+                            <input type="text" id="async_template_name" placeholder="例如：自定义技术总结">
+                        </div>
+                        <div class="config-item">
+                            <label for="async_template_model_select">选择模型:</label>
+                            <select id="async_template_model_select"></select>
+                        </div>
+                        <div class="config-item">
+                            <label for="async_template_temperature">温度参数 (0-1):</label>
+                            <input type="number" id="async_template_temperature" min="0" max="1" step="0.1" value="0.1">
                         </div>
                         <div class="config-item">
                             <label for="async_system_prompt">系统提示 (System Prompt):</label>
@@ -215,9 +236,10 @@
 {{INPUT}}</textarea>
                             <div class="info" style="font-size: 0.85em; padding: 8px; margin-top: 5px;">请务必使用 `{{INPUT}}`作为占位符，它将被替换为每条输入内容。</div>
                         </div>
-                        <button id="async_add_template_btn" class="small-button">保存为新模板</button>
+                        <button id="async_add_template_btn" class="small-button">保存模板</button>
+                        </div>
                         <hr style="margin: 20px 0; border-color: var(--border-color);">
-                        <label><strong>已保存的模板 (点击删除):</strong></label>
+                        <label><strong>已创建的模板 (点击删除):</strong></label>
                         <div id="async_templates_list" class="scrollable-list"></div>
                     </div>
                 </div>
