@@ -1,3 +1,5 @@
+// js/main.js (Final, Corrected, and Robust Version)
+
 // =================================================================================
 // 初始化
 // =================================================================================
@@ -6,16 +8,23 @@ document.addEventListener('DOMContentLoaded', () => {
     initChat();
     initAsyncBatch();
     initLargeBatch();
+    
     // 默认激活第一个主页签
     switchTab('instant', document.querySelector('.main-tab-container .tab-button'));
-    // 默认激活“小批量”的第一个子页签
-    switchAsyncSubTab('input', document.querySelector('#async_batch-tab .sub-tab-button'));
-    // 默认激活“大批量”的第一个子页签
-    switchSubTab('generator', document.querySelector('#large_batch-tab .sub-tab-button'));
+    
+    // 默认激活第一个步骤并更新步进器状态
+    const asyncFirstStep = document.querySelector('#async_batch-tab .step-item');
+    if (asyncFirstStep) switchAsyncSubTab('input', asyncFirstStep);
+    
+    const largeBatchFirstStep = document.querySelector('#large_batch-tab .step-item');
+    if (largeBatchFirstStep) switchSubTab('generator', largeBatchFirstStep);
+
+    // NOTE: The logic for initializing the inner tab has been moved into switchAsyncSubTab
+    // to ensure it runs every time the step is entered, not just on page load.
 });
 
 // =================================================================================
-// API Key配置 与 统一API调用函数
+// API Key配置 与 统一API调用函数 (无修改)
 // =================================================================================
 function initApiKeyConfig() {
     appState.apiKey = localStorage.getItem('globalApiKey') || '';
@@ -103,8 +112,49 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false) {
 
 
 // =================================================================================
-// 页面布局与导航
+// 页面布局与导航 (核心修改区域)
 // =================================================================================
+
+/**
+ * 更新进度步进器的UI状态
+ * @param {HTMLElement} stepper - 步进器容器元素
+ * @param {HTMLElement} activeStepElement - 当前被点击激活的步骤元素
+ */
+function updateStepperState(stepper, activeStepElement) {
+    if (!stepper || !activeStepElement) return;
+
+    const steps = Array.from(stepper.querySelectorAll('.step-item'));
+    const progressBar = stepper.querySelector('.progress-bar');
+    const activeIndex = steps.indexOf(activeStepElement);
+
+    if (activeIndex === -1) return;
+
+    steps.forEach((step, index) => {
+        step.classList.remove('active', 'completed');
+        if (index < activeIndex) {
+            step.classList.add('completed');
+        } else if (index === activeIndex) {
+            step.classList.add('active');
+        }
+    });
+
+    if (progressBar) {
+        const totalSteps = steps.length;
+        if (totalSteps > 1) {
+            const stepperStyle = window.getComputedStyle(stepper, '::before');
+            const marginValue = parseFloat(stepperStyle.getPropertyValue('left')) || 70;
+            
+            const progressBarContainerWidth = stepper.offsetWidth - (marginValue * 2);
+            const stepGap = progressBarContainerWidth / (totalSteps - 1);
+            const progressBarWidth = activeIndex * stepGap;
+            progressBar.style.width = `${progressBarWidth}px`;
+        } else {
+            progressBar.style.width = '0px';
+        }
+    }
+}
+
+
 function switchTab(tabId, clickedButton) {
     document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
     document.querySelectorAll(".tab-button").forEach(el => el.classList.remove("active"));
@@ -112,21 +162,47 @@ function switchTab(tabId, clickedButton) {
     if (clickedButton) clickedButton.classList.add("active");
 }
 
-// ▼▼▼ 需求①: 为“小批量异步”新增的页签切换函数 ▼▼▼
-function switchAsyncSubTab(subTabId, clickedButton) {
+// 为“小批量异步”修改的页签切换函数
+function switchAsyncSubTab(subTabId, clickedElement) {
     const parent = getEl('async_batch-tab');
     parent.querySelectorAll(".sub-tab-content").forEach(el => el.classList.remove("active"));
-    parent.querySelectorAll(".sub-tab-button").forEach(el => el.classList.remove("active"));
     getEl(`async-sub-tab-${subTabId}`).classList.add("active");
-    if(clickedButton) clickedButton.classList.add("active");
+    
+    if (clickedElement) {
+        const stepper = clickedElement.closest('.progress-stepper');
+        updateStepperState(stepper, clickedElement);
+    }
+
+    // ▼▼▼ DEFINITIVE FIX: This logic runs every time the 'input' step is entered. ▼▼▼
+    if (subTabId === 'input') {
+        // Find the inner tab button that is currently marked as active from the last session or default HTML.
+        const activeInnerTabButton = document.querySelector('#async-sub-tab-input .sub-tab-container .sub-tab-button.active');
+        
+        // If an active button is found, simulate a click to run its associated JS and correctly display its content.
+        if (activeInnerTabButton) {
+            activeInnerTabButton.click();
+        } else {
+            // As a fallback, if no button is active for some reason, click the very first one.
+            const firstInnerTabButton = document.querySelector('#async-sub-tab-input .sub-tab-container .sub-tab-button');
+            if (firstInnerTabButton) {
+                firstInnerTabButton.click();
+            }
+        }
+    }
 }
 
-function switchSubTab(subTabId, clickedButton) {
+// 为“大批量处理”修改的页签切换函数
+function switchSubTab(subTabId, clickedElement) {
     const parent = getEl('large_batch-tab');
     parent.querySelectorAll(".sub-tab-content").forEach(el => el.classList.remove("active"));
-    parent.querySelectorAll(".sub-tab-button").forEach(el => el.classList.remove("active"));
     getEl(`sub-tab-${subTabId}`).classList.add("active");
-    if(clickedButton) clickedButton.classList.add("active");
+    
+    if (clickedElement) {
+        const stepper = clickedElement.closest('.progress-stepper');
+        updateStepperState(stepper, clickedElement);
+    }
+
+    // 保持原有逻辑
     if (subTabId === 'reporter' && appState.batch.resultContent) {
         repInfoBox.style.display = 'block';
         appState.reporter.jsonlData = parseJsonl(appState.batch.resultContent);

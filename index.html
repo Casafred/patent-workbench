@@ -14,6 +14,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/main.css">
+    <!-- ▼▼▼ REFACTOR: 引入新的样式文件 ▼▼▼ -->
+    <link rel="stylesheet" href="css/refactor.css">
 
         <style>
             .preset-badge {
@@ -161,16 +163,30 @@
         </div>
         
         <!-- ====================================================================== -->
-        <!-- 功能二：小批量异步 (已重构为多页签UI) -->
+        <!-- 功能二：小批量异步 (UI重构) -->
         <!-- ====================================================================== -->
         <div id="async_batch-tab" class="tab-content">
-            <!-- ▼▼▼ 需求①: 新增的页签导航 ▼▼▼ -->
-            <div class="sub-tab-container">
-                <button class="sub-tab-button active" onclick="switchAsyncSubTab('input', this)">1. 输入内容</button>
-                <button class="sub-tab-button" onclick="switchAsyncSubTab('template', this)">2. 配置模板</button>
-                <button class="sub-tab-button" onclick="switchAsyncSubTab('task', this)">3. 创建任务</button>
-                <button class="sub-tab-button" onclick="switchAsyncSubTab('result', this)">4. 任务与结果</button>
+            <!-- ▼▼▼ REFACTOR: 将原来的页签按钮替换为进度步进器 ▼▼▼ -->
+            <div class="progress-stepper" id="async-stepper">
+                <div class="step-item active" onclick="switchAsyncSubTab('input', this)">
+                    <div class="step-number">1</div>
+                    <div class="step-title">输入内容</div>
+                </div>
+                <div class="step-item" onclick="switchAsyncSubTab('template', this)">
+                    <div class="step-number">2</div>
+                    <div class="step-title">配置模板</div>
+                </div>
+                <div class="step-item" onclick="switchAsyncSubTab('task', this)">
+                    <div class="step-number">3</div>
+                    <div class="step-title">创建任务</div>
+                </div>
+                <div class="step-item" onclick="switchAsyncSubTab('result', this)">
+                    <div class="step-number">4</div>
+                    <div class="step-title">任务与结果</div>
+                </div>
+                <div class="progress-bar"></div>
             </div>
+            <!-- ▲▲▲ REFACTOR END ▲▲▲ -->
 
             <!-- 页签 1: 输入内容 -->
             <div id="async-sub-tab-input" class="sub-tab-content active">
@@ -201,25 +217,89 @@
             </div>
 
             <!-- 页签 2: 配置模板 -->
-            <div id="async-sub-tab-template" class="sub-tab-content">
-                <div class="step">
-                    <div class="step-header">步骤 2: 配置处理模板</div>
-                    <div class="config-item"><label for="async_preset_template_select">选择预置模板或新建:</label><select id="async_preset_template_select"></select></div>
-                    <div id="async_template_edit_area">
-                        <div class="config-item"><label for="async_template_name">模板名称:</label><input type="text" id="async_template_name" placeholder="例如：自定义技术总结"></div>
-                        <div class="config-item"><label for="async_template_model_select">选择模型:</label><select id="async_template_model_select"></select></div>
-                        <div class="config-item"><label for="async_template_temperature">温度 (0-1):</label><input type="number" id="async_template_temperature" min="0" max="1" step="0.1" value="0.1"></div>
-                        <div class="config-item"><label for="async_system_prompt">系统提示 (System Prompt):</label><textarea id="async_system_prompt" rows="3">你是一个高效的专利文本分析助手。</textarea></div>
-                        <div class="config-item"><label for="async_user_prompt">用户提示模板 (User Prompt Template):</label><textarea id="async_user_prompt" rows="4">请根据以下文本，总结其核心技术点：
-
-{{INPUT}}</textarea><div class="info" style="font-size: 0.85em; padding: 8px; margin-top: 5px;">请务必使用 `{{INPUT}}`作为占位符。当从Excel导入多列时，系统会自动将多列内容及列名填充到此处。</div></div>
-                        <button id="async_add_template_btn" class="small-button">保存模板</button>
+<div id="async-sub-tab-template" class="sub-tab-content">
+    <div class="step">
+        <div class="step-header">步骤 2: 配置处理模板</div>
+        <div id="async_template_edit_area">
+            
+            <!-- ▼▼▼ REFACTOR: 使用新的网格布局 ▼▼▼ -->
+            <div class="template-config-grid">
+                
+                <!-- 左侧主要配置区 -->
+                <div class="template-config-main">
+                    <div class="config-item">
+                        <label for="async_preset_template_select">选择预置模板或新建:</label>
+                        <select id="async_preset_template_select"></select>
                     </div>
-                    <hr style="margin: 20px 0; border-color: var(--border-color);">
-                    <label><strong>已创建的模板 (点击删除):</strong></label>
-                    <div id="async_templates_list" class="scrollable-list"></div>
+                    <div class="config-item">
+                        <label for="async_template_name">模板名称:</label>
+                        <input type="text" id="async_template_name" placeholder="例如：自定义技术总结">
+                    </div>
+                    <!-- 模型和温度并排 -->
+                    <div class="model-temp-group">
+                        <div class="config-item">
+                            <label for="async_template_model_select">选择模型:</label>
+                            <select id="async_template_model_select"></select>
+                        </div>
+                        <div class="config-item">
+                            <label for="async_template_temperature">温度:</label>
+                            <input type="number" id="async_template_temperature" min="0" max="1" step="0.1" value="0.1">
+                        </div>
+                    </div>
                 </div>
+
+                <!-- 右侧提示词配置区 -->
+                <div class="template-config-prompts">
+                    <div class="config-item">
+                        <label for="async_system_prompt">系统提示 (System Prompt):</label>
+                        <textarea id="async_system_prompt" rows="3">你是一个高效的专利文本分析助手。</textarea>
+                    </div>
+                    <div class="config-item">
+                        <!-- ▼▼▼ REFACTOR: 使用帮助图标替换文本提示 ▼▼▼ -->
+                        <div class="help-tooltip-wrapper">
+                            <label for="async_user_prompt">用户提示模板:</label>
+                            <div class="help-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"></path></svg>
+                                <span class="tooltip-text">请务必使用 `{{INPUT}}` 作为占位符。当从Excel导入多列时，系统会自动将多列内容及列名填充到 `{{INPUT}}` 的位置。</span>
+                            </div>
+                        </div>
+                        <!-- ▲▲▲ REFACTOR END ▲▲▲ -->
+                        <textarea id="async_user_prompt" rows="4">请根据以下文本，总结其核心技术点：
+
+{{INPUT}}</textarea>
+                    </div>
+                </div>
+
             </div>
+            <!-- ▲▲▲ REFACTOR END ▲▲▲ -->
+
+            <hr style="margin: 25px 0 20px; border-color: var(--border-color);">
+            
+            <div class="config-item">
+                <!-- ▼▼▼ REFACTOR: 使用帮助图标替换文本提示 ▼▼▼ -->
+                <div class="help-tooltip-wrapper">
+                     <label>输出格式 (JSON):</label>
+                     <div class="help-icon">
+                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"></path></svg>
+                         <span class="tooltip-text">系统将自动把您在此处定义的字段包装成严格的JSON格式要求，并附加到用户提示的末尾，以指导模型输出。</span>
+                     </div>
+                </div>
+                <!-- ▲▲▲ REFACTOR END ▲▲▲ -->
+                <div id="async_output_fields_container"></div>
+                <button id="async_add_output_field_btn" class="small-button" type="button">添加输出字段</button>
+            </div>
+            
+            <div style="text-align: right; margin-top: 20px;">
+                <button id="async_add_template_btn" class="small-button">保存模板</button>
+            </div>
+        </div>
+
+        <hr style="margin: 20px 0; border-color: var(--border-color);">
+        <label><strong>已创建的模板 (点击删除):</strong></label>
+        <div id="async_templates_list" class="scrollable-list"></div>
+    </div>
+</div>
+
 
             <!-- 页签 3: 创建任务 -->
             <div id="async-sub-tab-task" class="sub-tab-content">
@@ -264,13 +344,25 @@
             </div>
         </div>
 
-        <!-- 功能三：大批量处理 -->
+        <!-- 功能三：大批量处理 (UI重构) -->
         <div id="large_batch-tab" class="tab-content">
-            <div class="sub-tab-container">
-                <button class="sub-tab-button" onclick="switchSubTab('generator', this)">1. 生成请求文件</button>
-                <button class="sub-tab-button" onclick="switchSubTab('batch', this)">2. 执行批处理</button>
-                <button class="sub-tab-button" onclick="switchSubTab('reporter', this)">3. 解析报告</button>
+            <!-- ▼▼▼ REFACTOR: 将原来的页签按钮替换为进度步进器 ▼▼▼ -->
+            <div class="progress-stepper" id="large-batch-stepper">
+                <div class="step-item active" onclick="switchSubTab('generator', this)">
+                    <div class="step-number">1</div>
+                    <div class="step-title">生成请求文件</div>
+                </div>
+                <div class="step-item" onclick="switchSubTab('batch', this)">
+                    <div class="step-number">2</div>
+                    <div class="step-title">执行批处理</div>
+                </div>
+                <div class="step-item" onclick="switchSubTab('reporter', this)">
+                    <div class="step-number">3</div>
+                    <div class="step-title">解析报告</div>
+                </div>
+                <div class="progress-bar"></div>
             </div>
+            <!-- ▲▲▲ REFACTOR END ▲▲▲ -->
             
             <div id="sub-tab-generator" class="sub-tab-content">
                  <div class="step">

@@ -1,0 +1,209 @@
+/* css/refactor.css */
+
+/* ==========================================================================
+   进度步进器 (Progress Stepper) 核心样式
+   ========================================================================== */
+
+.progress-stepper {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    position: relative;
+    margin-bottom: 40px;
+    padding: 0 20px;
+}
+
+/* 绘制步骤之间的连接线 */
+.progress-stepper::before {
+    content: '';
+    position: absolute;
+    top: 18px; /* (step-number height / 2) */
+    left: 40px;
+    right: 40px;
+    height: 4px;
+    background-color: var(--border-color);
+    z-index: 0;
+}
+
+.step-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+    width: 120px;
+    transition: transform 0.2s ease;
+}
+
+.step-item:hover {
+    transform: translateY(-3px);
+}
+
+.step-number {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: var(--surface-color);
+    border: 3px solid var(--border-color);
+    color: var(--text-color-secondary);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 1.1em;
+    transition: all 0.3s ease;
+    margin-bottom: 10px;
+}
+
+.step-title {
+    font-size: 0.95em;
+    font-weight: 500;
+    color: var(--text-color-secondary);
+    transition: color 0.3s ease;
+}
+
+/* --- 状态样式 --- */
+
+/* 已完成 (Completed) 状态 */
+.step-item.completed .step-number {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+.step-item.completed .step-number::before {
+    content: '✔'; /* 使用对勾 ✓ 符号 */
+    font-size: 1.1em;
+}
+.step-item.completed .step-title {
+    color: var(--text-color);
+}
+
+/* 当前活动 (Active) 状态 */
+.step-item.active .step-number {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    transform: scale(1.1);
+    box-shadow: 0 0 15px var(--primary-color-glow);
+}
+.step-item.active .step-title {
+    color: var(--primary-color);
+    font-weight: 700;
+}
+
+/* 进度条高亮 */
+.progress-stepper .progress-bar {
+    position: absolute;
+    top: 18px;
+    left: 40px;
+    height: 4px;
+    background-color: var(--primary-color);
+    z-index: 0;
+    width: 0; /* 初始宽度为0 */
+    transition: width 0.5s ease;
+}
+/* ==========================================================================
+   小批量异步 - 模板配置UI重构
+   ========================================================================== */
+
+/* 主要配置区域的Flex容器 */
+.template-config-grid {
+    display: flex;
+    flex-wrap: wrap; /* 在小屏幕上换行 */
+    gap: 20px;
+}
+
+/* 左侧区域（模板选择、名称、模型、温度） */
+.template-config-main {
+    flex: 1; /* 占据可用空间 */
+    min-width: 300px; /* 最小宽度，用于响应式 */
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* 内部元素间距 */
+}
+
+/* 右侧区域（系统和用户提示） */
+.template-config-prompts {
+    flex: 2; /* 占据两倍于左侧的空间 */
+    min-width: 400px; /* 最小宽度 */
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* 内部元素间距 */
+}
+
+/* 使模型和温度输入框并排显示 */
+.model-temp-group {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+.model-temp-group .config-item {
+    flex: 1; /* 平分空间 */
+    margin-bottom: 0; /* 移除原有的底部边距 */
+}
+
+/* ==========================================================================
+   帮助提示 (Help Tooltip) 样式
+   ========================================================================== */
+.help-tooltip-wrapper {
+    display: inline-flex; /* 使其与文本对齐 */
+    align-items: center;
+    gap: 8px; /* 标签和图标之间的间距 */
+}
+
+.help-icon {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+    color: var(--text-color-secondary);
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.help-icon:hover {
+    opacity: 1;
+}
+
+.help-icon svg {
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+}
+
+.tooltip-text {
+    visibility: hidden;
+    width: 300px;
+    background-color: #333;
+    color: #fff;
+    text-align: left;
+    border-radius: 6px;
+    padding: 10px 15px;
+    position: absolute;
+    z-index: 10;
+    bottom: 125%; /* 定位在图标上方 */
+    left: 50%;
+    margin-left: -150px; /* 居中 */
+    opacity: 0;
+    transition: opacity 0.3s, visibility 0.3s;
+    font-size: 0.9em;
+    line-height: 1.5;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.help-icon:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* 提示箭头 */
+.tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #333 transparent transparent transparent;
+}

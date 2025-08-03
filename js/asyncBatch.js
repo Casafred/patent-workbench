@@ -3,6 +3,36 @@
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
 function initAsyncBatch() {
+    // 初始化输出格式配置相关元素
+    const asyncAddOutputFieldBtn = getEl('async_add_output_field_btn');
+    const asyncOutputFieldsContainer = getEl('async_output_fields_container');
+
+    // 添加输出字段按钮点击事件
+    asyncAddOutputFieldBtn.addEventListener('click', () => {
+        addAsyncOutputField();
+    });
+
+    // 初始化预设输出字段
+    if (!appState.asyncBatch.currentOutputFields) {
+        appState.asyncBatch.currentOutputFields = [];
+    }
+
+    // 渲染输出字段
+    renderAsyncOutputFields();
+
+    // 监听模板选择变化，更新输出字段
+    getEl('async_preset_template_select').addEventListener('change', () => {
+        const selectedName = getEl('async_preset_template_select').value;
+        const template = appState.asyncBatch.presetTemplates.find(t => t.name === selectedName);
+        if (template && template.outputFields) {
+            appState.asyncBatch.currentOutputFields = [...template.outputFields];
+        } else {
+            appState.asyncBatch.currentOutputFields = [];
+        }
+        renderAsyncOutputFields();
+    });
+
+    
     const presetTemplateSelect = getEl('async_preset_template_select');
     const templateNameInput = getEl('async_template_name');
     const systemPromptInput = getEl('async_system_prompt');
@@ -20,7 +50,8 @@ function initAsyncBatch() {
     const submitBtn = getEl('async_submit_batch_btn');
 
     presetTemplateSelect.innerHTML = '<option value="">选择预置模板或新建</option>' + appState.asyncBatch.presetTemplates.map(t => `<option value="${t.name}">${t.name}</option>`).join('');
-    templateEditArea.style.display = 'none';
+    // ▼▼▼ FIX: Remove or comment out this line to make the area visible by default ▼▼▼
+    // templateEditArea.style.display = 'none'; 
     templateModelSelect.innerHTML = ASYNC_MODELS.map(m => `<option value="${m}">${m}</option>`).join('');
 
     presetTemplateSelect.addEventListener('change', () => {
@@ -33,13 +64,19 @@ function initAsyncBatch() {
             userPromptInput.value = template.userPromptTemplate;
             templateModelSelect.value = template.model;
             templateTempInput.value = template.temperature;
+            // Also need to load output fields for the selected template
+            appState.asyncBatch.currentOutputFields = template.outputFields ? [...template.outputFields] : [];
         } else {
             templateNameInput.value = '';
             systemPromptInput.value = '你是一个高效的专利文本分析助手。';
             userPromptInput.value = '请根据以下文本，总结其核心技术点：\n\n{{INPUT}}';
-            templateModelSelect.value = ASYNC_MODELS[0];
+            templateModelSelect.value = ASYG_MODELS[0];
             templateTempInput.value = 0.1;
+            // Clear output fields when creating a new template
+            appState.asyncBatch.currentOutputFields = [];
         }
+        // Re-render the output fields after selection change
+        renderAsyncOutputFields();
     });
 
     addTemplateBtn.addEventListener('click', () => {
@@ -48,14 +85,38 @@ function initAsyncBatch() {
         if (appState.asyncBatch.templates.some(t => t.name === name)) return alert('已存在同名模板！');
         if (!userPromptInput.value.includes('{{INPUT}}')) return alert('用户提示模板必须包含 {{INPUT}} 占位符！');
         
-        appState.asyncBatch.templates.push({
-            id: `T${appState.asyncBatch.nextTemplateId++}`,
-            name,
-            systemPrompt: systemPromptInput.value.trim(),
-            userPromptTemplate: userPromptInput.value.trim(),
-            model: templateModelSelect.value,
-            temperature: parseFloat(templateTempInput.value),
-        });
+        // 构建输出格式要求
+        let outputFormatPrompt = '';
+        if (appState.asyncBatch.currentOutputFields && appState.asyncBatch.currentOutputFields.length > 0) {
+            outputFormatPrompt = '\n\n请严格按照以下JSON格式输出结果，不要添加任何额外内容：\n';
+            const outputSchema = {
+                type: 'object',
+                properties: {}
+            };
+            appState.asyncBatch.currentOutputFields.forEach(field => {
+                outputSchema.properties[field.name] = {
+                    description: field.description || ''
+                }; 
+            });
+            outputFormatPrompt += JSON.stringify(outputSchema, null, 2);
+        }
+
+        // 移除outputFields中的type属性
+          const fieldsWithoutType = appState.asyncBatch.currentOutputFields ? 
+              appState.asyncBatch.currentOutputFields.map(field => {
+                  const { type, ...rest } = field; // 移除type属性
+                  return rest;
+              }) : [];
+
+          appState.asyncBatch.templates.push({
+              id: `T${appState.asyncBatch.nextTemplateId++}`,
+              name,
+              systemPrompt: systemPromptInput.value.trim(),
+              userPromptTemplate: userPromptInput.value.trim() + outputFormatPrompt,
+              model: templateModelSelect.value,
+              temperature: parseFloat(templateTempInput.value),
+              outputFields: fieldsWithoutType
+          });
         renderAsyncLists();
         templateEditArea.style.display = 'none';
         presetTemplateSelect.value = '';
@@ -172,6 +233,57 @@ function handleAsyncSheetChange() {
         appState.asyncBatch.columnHeaders = [];
         asyncColumnConfigContainer.style.display = 'none';
         getEl('async_load_excel_btn').disabled = true;
+    }
+}
+
+// 添加输出字段
+function addAsyncOutputField() {
+    if (!appState.asyncBatch.currentOutputFields) {
+        appState.asyncBatch.currentOutputFields = [];
+    }
+    appState.asyncBatch.currentOutputFields.push({
+        name: `字段${appState.asyncBatch.currentOutputFields.length + 1}`,
+        description: ''
+    });
+    renderAsyncOutputFields();
+}
+
+// 渲染输出字段列表
+function renderAsyncOutputFields() {
+    const container = getEl('async_output_fields_container');
+    if (!appState.asyncBatch.currentOutputFields || appState.asyncBatch.currentOutputFields.length === 0) {
+        container.innerHTML = '<div class="info" style="padding: 10px;">暂无输出字段，请点击"添加输出字段"按钮添加。</div>';
+        return;
+    }
+    container.innerHTML = '';
+    appState.asyncBatch.currentOutputFields.forEach((field, index) => {
+        const fieldDiv = document.createElement('div');
+        fieldDiv.className = 'output-field config-item row-flex';
+        fieldDiv.innerHTML = `
+            <div style="flex: 1;">
+                <input type="text" placeholder="字段名称" value="${field.name || ''}" oninput="updateAsyncOutputField(${index}, 'name', this.value)">
+            </div>
+            <div style="flex: 3;">
+                <input type="text" placeholder="字段描述" value="${field.description || ''}" oninput="updateAsyncOutputField(${index}, 'description', this.value)">
+            </div>
+            <button class="icon-button delete-button" onclick="deleteAsyncOutputField(${index})">&times;</button>
+        `;
+        container.appendChild(fieldDiv);
+    });
+}
+
+// 更新输出字段
+function updateAsyncOutputField(index, prop, value) {
+    if (appState.asyncBatch.currentOutputFields && appState.asyncBatch.currentOutputFields[index]) {
+        appState.asyncBatch.currentOutputFields[index][prop] = value;
+    }
+}
+
+// 删除输出字段
+function deleteAsyncOutputField(index) {
+    if (confirm('确定删除此字段吗？')) {
+        appState.asyncBatch.currentOutputFields.splice(index, 1);
+        renderAsyncOutputFields();
     }
 }
 

@@ -310,7 +310,8 @@ async function runStep4_Download(){
         appState.batch.resultContent = data.fileContent;
         addLog("成功: 已将结果文件内容加载到浏览器内存中！","success");
         addLog("请切换到【3. 解析报告】，您将看到直接解析的选项。");
-        switchSubTab('reporter', document.querySelector('.sub-tab-button[onclick*="reporter"]'));
+        // ▼▼▼ 修正后的代码行 ▼▼▼
+        switchSubTab('reporter', document.querySelector('#large-batch-stepper .step-item[onclick*="reporter"]'));
     } catch(e) { addLog(`错误: ${e.message}`, "error"); } finally { btnDownload.disabled = false; }
 }
 
