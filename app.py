@@ -120,6 +120,41 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def validate_api_request():
+    """
+    一个用于 API 路由的手动验证函数。
+    它会检查 session 和 IP。
+    如果验证成功，返回 (True, None)。
+    如果验证失败，返回 (False, Response)，其中 Response 是一个可以直接返回的错误响应对象。
+    """
+    # 1. 检查 Session
+    if 'user' not in session:
+        error_payload = {"success": False, "error": "Authentication required. Please log in."}
+        return False, make_response(jsonify(error_payload), 401)
+
+    # 2. 检查 IP (如果启用了数据库)
+    if db_pool:
+        conn = None
+        try:
+            conn = db_pool.getconn()
+            with conn.cursor() as cur:
+                username = session['user']
+                client_ip = get_client_ip()
+                cur.execute("SELECT 1 FROM user_ips WHERE username = %s AND ip_address = %s;", (username, client_ip))
+                if cur.fetchone() is None:
+                    session.clear()
+                    error_payload = {"success": False, "error": "Session expired or logged in from another location."}
+                    return False, make_response(jsonify(error_payload), 401)
+        except Exception as e:
+            print(f"API请求验证时发生数据库错误: {e}")
+            # 数据库出错时，为保可用性，暂时放行
+        finally:
+            if conn:
+                db_pool.putconn(conn)
+    
+    # 3. 所有验证通过
+    return True, None
+
 # --- 5. 登录页面模板 (全面升级) ---
 LOGIN_PAGE_HTML = """
 <!DOCTYPE html>
@@ -493,42 +528,14 @@ def get_client_from_header():
 
 # --- API 端点 (全部应用访问控制，保持不变) ---
 @app.route('/api/stream_chat', methods=['POST'])
-# @login_required  <-- 关键：移除此装饰器！
 def stream_chat():
-    # --- 手动执行身份验证 ---
-    # 检查 session 中是否存在用户
-    if 'user' not in session:
-        error_json = json.dumps({"error": {"message": "Authentication required. Please log in.", "type": "auth_error"}})
-        return Response(f"data: {error_json}\n\n", mimetype='text/event-stream', status=401)
-
-    # 如果启用了IP限制，手动执行IP检查
-    if db_pool:
-        conn = None
-        is_valid_ip = False
-        try:
-            conn = db_pool.getconn()
-            with conn.cursor() as cur:
-                username = session['user']
-                client_ip = get_client_ip()
-                cur.execute("SELECT 1 FROM user_ips WHERE username = %s AND ip_address = %s;", (username, client_ip))
-                if cur.fetchone() is not None:
-                    is_valid_ip = True
-        except Exception as e:
-            print(f"流式对话中IP验证数据库错误: {e}")
-            is_valid_ip = True # 数据库出错时，为保可用性，暂时放行
-        finally:
-            if conn:
-                db_pool.putconn(conn)
-        
-        if not is_valid_ip:
-            session.clear() # 清除无效会话
-            error_json = json.dumps({"error": {"message": "Session expired or logged in from another location.", "type": "auth_error"}})
-            return Response(f"data: {error_json}\n\n", mimetype='text/event-stream', status=401)
-    # --- 手动验证结束 ---
+    is_valid, error_response = validate_api_request()
+    if not is_valid:
+        # 对于流式API，我们需要将JSON错误包装成流式格式
+        error_json = json.dumps(error_response.get_json())
+        return Response(f"data: {error_json}\n\n", mimetype='text/event-stream', status=error_response.status_code)
 
 
-    # --- 原始的代理逻辑（现在可以安全执行） ---
-    # `request.get_json()` 现在是第一个读取请求体的代码，不会再有问题
     try:
         req_data = request.get_json(silent=True) # 使用 silent=True 防止因空body崩溃
         if req_data is None:
@@ -572,8 +579,10 @@ def stream_chat():
 # ▲▲▲ 修复结束 ▲▲▲
 
 @app.route('/api/chat', methods=['POST'])
-@login_required
 def simple_chat():
+    is_valid, error_response = validate_api_request()
+    if not is_valid:
+        return error_response
     client, error_response = get_client_from_header()
     if error_response: return error_response
     req_data = request.get_json()
@@ -592,8 +601,11 @@ def simple_chat():
         return jsonify(error_payload), 500
 
 @app.route('/api/async_submit', methods=['POST'])
-@login_required
 def async_submit():
+    is_valid, error_response = validate_api_request()
+    if not is_valid:
+        return error_response
+        
     client, error_response = get_client_from_header()
     if error_response: return error_response
     req_data = request.get_json()
@@ -607,9 +619,13 @@ def async_submit():
     except Exception as e:
         print(f"Error in async_submit: {traceback.format_exc()}"); return create_response(error=f"提交异步任务时发生错误: {str(e)}")
 
+
 @app.route('/api/async_retrieve', methods=['POST'])
-@login_required
 def async_retrieve():
+    is_valid, error_response = validate_api_request()
+    if not is_valid:
+        return error_response
+        
     client, error_response = get_client_from_header()
     if error_response: return error_response
     data = request.get_json()
@@ -622,9 +638,13 @@ def async_retrieve():
     except Exception as e:
         print(f"Error in async_retrieve: {traceback.format_exc()}"); return create_response(error=f"查询异步任务时发生错误: {str(e)}", status_code=500)
 
+
 @app.route('/api/upload', methods=['POST'])
-@login_required
 def upload_file():
+    is_valid, error_response = validate_api_request()
+    if not is_valid:
+        return error_response
+
     client, error_response = get_client_from_header()
     if error_response: return error_response
     req_data = request.get_json()
@@ -637,9 +657,13 @@ def upload_file():
         return create_response(data={'fileId': result.id, 'message': '文件上传成功！'})
     except Exception as e: return create_response(error=f"上传过程中发生错误: {str(e)}")
 
+
 @app.route('/api/create_batch', methods=['POST'])
-@login_required
 def create_batch_task():
+    is_valid, error_response = validate_api_request()
+    if not is_valid:
+        return error_response
+
     client, error_response = get_client_from_header()
     if error_response: return error_response
     req_data = request.get_json()
@@ -650,9 +674,13 @@ def create_batch_task():
         return create_response(data=json.loads(batch_job.model_dump_json()))
     except Exception as e: return create_response(error=f"创建Batch任务时发生错误: {str(e)}")
 
+
 @app.route('/api/check_status', methods=['POST'])
-@login_required
 def check_batch_status():
+    is_valid, error_response = validate_api_request()
+    if not is_valid:
+        return error_response
+        
     client, error_response = get_client_from_header()
     if error_response: return error_response
     req_data = request.get_json()
@@ -663,9 +691,13 @@ def check_batch_status():
         return create_response(data=json.loads(batch_job.model_dump_json()))
     except Exception as e: return create_response(error=f"检查Batch状态时发生错误: {str(e)}")
 
+
 @app.route('/api/download_result', methods=['POST'])
-@login_required
 def download_result_file():
+    is_valid, error_response = validate_api_request()
+    if not is_valid:
+        return error_response
+        
     client, error_response = get_client_from_header()
     if error_response: return error_response
     req_data = request.get_json()
@@ -677,7 +709,6 @@ def download_result_file():
         return Response(raw_bytes, mimetype='application/x-jsonlines', headers={'Content-Type': 'application/x-jsonlines; charset=utf-8'})
     except Exception as e:
         print(f"Error in download_result_file: {traceback.format_exc()}"); return create_response(error=f"获取文件内容时发生错误: {str(e)}", status_code=500)
-
 
 # --- 启动前初始化 ---
 # 将 init_db() 移到这里。当Render的Gunicorn服务器导入这个文件时，
