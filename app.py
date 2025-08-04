@@ -55,8 +55,6 @@ def init_db():
     try:
         conn = db_pool.getconn()
         with conn.cursor() as cur:
-            # 创建 user_ips 表，如果它不存在的话
-            # UNIQUE (username, ip_address) 确保了每个用户-IP对只被记录一次
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS user_ips (
                     id SERIAL PRIMARY KEY,
@@ -584,8 +582,15 @@ def download_result_file():
         print(f"Error in download_result_file: {traceback.format_exc()}"); return create_response(error=f"获取文件内容时发生错误: {str(e)}", status_code=500)
 
 
+# --- 启动前初始化 ---
+# 将 init_db() 移到这里。当Render的Gunicorn服务器导入这个文件时，
+# 这段代码会立即执行，确保在任何请求到来之前，数据库表就已经创建好了。
+init_db()
+
 # --- 启动命令 ---
 if __name__ == '__main__':
+    # 这个代码块只在你本地通过 `python app.py` 运行时才会执行。
+    # 在Render上，它会被忽略。
     try:
         from werkzeug.security import generate_password_hash
     except ImportError:
