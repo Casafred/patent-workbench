@@ -1,4 +1,4 @@
 Flask
 gunicorn
-zhipuai>=2.1.0 
+zhipuai
 flask-cors
