@@ -87,12 +87,40 @@ def get_client_ip():
         return request.headers['X-Forwarded-For'].split(',')[0].strip()
     return request.remote_addr
 
-# --- 4. 访问控制装饰器 ---
+# --- 4. 访问控制装饰器 (升级版，实现踢人逻辑) ---
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        # 基础检查：session中是否有用户？
         if 'user' not in session:
             return redirect(url_for('login'))
+
+        # 如果数据库连接可用，则进行IP有效性验证
+        if db_pool:
+            conn = None
+            try:
+                conn = db_pool.getconn()
+                with conn.cursor() as cur:
+                    username = session['user']
+                    client_ip = get_client_ip()
+                    
+                    # 检查当前用户的IP是否仍在数据库的有效列表中
+                    cur.execute("SELECT 1 FROM user_ips WHERE username = %s AND ip_address = %s;", (username, client_ip))
+                    
+                    # 如果查询结果为空 (fetchone() is None)，说明该IP已被踢出
+                    if cur.fetchone() is None:
+                        session.clear() # 清空session，实现登出
+                        # 重定向到登录页，并附带提示信息
+                        error_msg = "您的账号已在其他地方登录，您已被下线。"
+                        return redirect(url_for('login', error=error_msg))
+            except Exception as e:
+                print(f"会话IP验证时发生数据库错误: {e}")
+                # 数据库异常时，为保证可用性，暂时放行
+            finally:
+                if conn:
+                    db_pool.putconn(conn)
+        
+        # IP验证通过或数据库不可用，则正常访问
         return f(*args, **kwargs)
     return decorated_function
 
@@ -306,54 +334,73 @@ LOGIN_PAGE_HTML = """
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    # 接收GET请求时，从URL参数获取错误信息并传递给模板
+    error_from_redirect = request.args.get('error')
+    
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
         users = load_users()
 
         if username in users and check_password_hash(users.get(username, ""), password):
-            # 密码验证通过，进行IP检查 (仅当数据库连接成功时)
+            # 密码验证通过，进行IP处理
             if db_pool:
                 client_ip = get_client_ip()
                 conn = None
                 try:
                     conn = db_pool.getconn()
                     with conn.cursor() as cur:
-                        # 检查此IP是否已知
-                        cur.execute("SELECT COUNT(*) FROM user_ips WHERE username = %s AND ip_address = %s;", (username, client_ip))
-                        is_known_ip = cur.fetchone()[0] > 0
+                        # 检查此IP是否已经是该用户的有效IP
+                        cur.execute("SELECT 1 FROM user_ips WHERE username = %s AND ip_address = %s;", (username, client_ip))
+                        is_known_ip = cur.fetchone() is not None
 
                         if not is_known_ip:
                             # 如果是新IP，检查当前IP总数
                             cur.execute("SELECT COUNT(*) FROM user_ips WHERE username = %s;", (username,))
                             ip_count = cur.fetchone()[0]
                             
+                            # 如果IP数量达到或超过上限
                             if ip_count >= MAX_IPS_PER_USER:
-                                error_msg = f"登录失败：此账号已在 {ip_count} 个不同地点登录，已达到 {MAX_IPS_PER_USER} 个的上限。请联系管理员。"
-                                return render_template_string(LOGIN_PAGE_HTML, error=error_msg)
-                            
-                            # 添加新IP记录。ON CONFLICT DO NOTHING 保证并发安全。
+                                print(f"用户 '{username}' IP达到上限。准备踢出最旧的IP。")
+                                # 查找并删除最旧的一条IP记录 (基于first_seen时间戳)
+                                # 使用子查询来安全地识别并删除目标行
+                                cur.execute("""
+                                    DELETE FROM user_ips 
+                                    WHERE id = (
+                                        SELECT id FROM user_ips 
+                                        WHERE username = %s 
+                                        ORDER BY first_seen ASC 
+                                        LIMIT 1
+                                    );
+                                """, (username,))
+                                print(f"已为用户 '{username}' 删除了最旧的IP记录。")
+
+                            # 插入新的IP记录
+                            # ON CONFLICT 仍然有用，可以防止极端的并发竞争问题
                             cur.execute("""
                                 INSERT INTO user_ips (username, ip_address) VALUES (%s, %s)
                                 ON CONFLICT (username, ip_address) DO NOTHING;
                             """, (username, client_ip))
-                            conn.commit()
+                            print(f"为用户 '{username}' 添加了新的IP: {client_ip}")
+                        
+                        conn.commit()
                 except Exception as e:
-                    print(f"IP检查时数据库操作失败: {e}")
-                    # 如果数据库出错，可以选择放行或拒绝。这里选择放行，保证可用性。
-                    pass
+                    print(f"IP处理时数据库操作失败: {e}")
+                    # 数据库出错，依旧放行，保证可用性
                 finally:
                     if conn:
                         db_pool.putconn(conn)
             
-            # IP检查通过或数据库未连接，设置 session 并重定向
+            # IP处理完成，设置 session 并重定向
             session['user'] = username
             session.permanent = True
             return redirect(url_for('serve_app'))
         else:
+            # 密码错误
             return render_template_string(LOGIN_PAGE_HTML, error="用户名或密码不正确，请重试。")
     
-    return render_template_string(LOGIN_PAGE_HTML)
+    # 对于GET请求，显示登录页面，并传递可能存在的错误信息
+    return render_template_string(LOGIN_PAGE_HTML, error=error_from_redirect)
 
 @app.route('/logout')
 def logout():
