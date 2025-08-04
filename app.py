@@ -1,4 +1,4 @@
-# app.py (v11.3 - Modern Login UI)
+# app.py (v12.1 - IP Limit Feature with PostgreSQL)
 import os
 import json
 import traceback
@@ -10,6 +10,8 @@ import time
 from datetime import timedelta
 from werkzeug.security import check_password_hash
 from functools import wraps
+import psycopg2 # <-- 新增: 导入 psycopg2 库
+import psycopg2.pool # <-- 新增: 使用连接池提高效率
 
 # --- 1. 配置 ---
 USERS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'users.json')
@@ -23,6 +25,55 @@ CORS(app)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-key-for-local-testing-only')
 app.permanent_session_lifetime = timedelta(hours=6)
 
+# --- 新增: PostgreSQL 和 IP 限制配置 ---
+db_pool = None
+try:
+    database_url = os.environ.get('DATABASE_URL')
+    if not database_url:
+        print("警告: 未找到 DATABASE_URL 环境变量。IP限制功能将不会工作。")
+    else:
+        # 创建一个数据库连接池
+        db_pool = psycopg2.pool.SimpleConnectionPool(1, 5, dsn=database_url)
+        # 尝试获取一个连接以测试
+        conn = db_pool.getconn()
+        print("成功连接到 PostgreSQL 服务器。")
+        db_pool.putconn(conn)
+except Exception as e:
+    print(f"错误: 无法连接到 PostgreSQL 服务器: {e}")
+    db_pool = None
+
+# 从环境变量获取IP限制数，如果未设置则默认为 5
+MAX_IPS_PER_USER = int(os.environ.get('MAX_IPS_PER_USER', 5))
+
+
+# --- 新增: 数据库初始化函数 ---
+def init_db():
+    if not db_pool:
+        return
+    
+    conn = None
+    try:
+        conn = db_pool.getconn()
+        with conn.cursor() as cur:
+            # 创建 user_ips 表，如果它不存在的话
+            # UNIQUE (username, ip_address) 确保了每个用户-IP对只被记录一次
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS user_ips (
+                    id SERIAL PRIMARY KEY,
+                    username VARCHAR(255) NOT NULL,
+                    ip_address VARCHAR(45) NOT NULL,
+                    first_seen TIMESTAMPTZ DEFAULT NOW(),
+                    UNIQUE (username, ip_address)
+                );
+            """)
+            conn.commit()
+            print("数据库表 'user_ips' 已准备就绪。")
+    except Exception as e:
+        print(f"数据库初始化失败: {e}")
+    finally:
+        if conn:
+            db_pool.putconn(conn)
+
 # --- 3. 用户数据加载函数 ---
 def load_users():
     try:
@@ -31,6 +82,12 @@ def load_users():
     except (FileNotFoundError, json.JSONDecodeError):
         print("警告：'users.json' 文件未找到或格式错误。将无法登录。")
         return {}
+
+# --- 新增: 获取真实客户端 IP 的辅助函数 (保持不变) ---
+def get_client_ip():
+    if 'X-Forwarded-For' in request.headers:
+        return request.headers['X-Forwarded-For'].split(',')[0].strip()
+    return request.remote_addr
 
 # --- 4. 访问控制装饰器 ---
 def login_required(f):
@@ -247,7 +304,7 @@ LOGIN_PAGE_HTML = """
 </html>
 """
 
-# --- 6. 访问控制路由 ---
+# --- 6. 访问控制路由 (核心修改) ---
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -255,22 +312,80 @@ def login():
         username = request.form['username']
         password = request.form['password']
         users = load_users()
-        
+
         if username in users and check_password_hash(users.get(username, ""), password):
+            # 密码验证通过，进行IP检查 (仅当数据库连接成功时)
+            if db_pool:
+                client_ip = get_client_ip()
+                conn = None
+                try:
+                    conn = db_pool.getconn()
+                    with conn.cursor() as cur:
+                        # 检查此IP是否已知
+                        cur.execute("SELECT COUNT(*) FROM user_ips WHERE username = %s AND ip_address = %s;", (username, client_ip))
+                        is_known_ip = cur.fetchone()[0] > 0
+
+                        if not is_known_ip:
+                            # 如果是新IP，检查当前IP总数
+                            cur.execute("SELECT COUNT(*) FROM user_ips WHERE username = %s;", (username,))
+                            ip_count = cur.fetchone()[0]
+                            
+                            if ip_count >= MAX_IPS_PER_USER:
+                                error_msg = f"登录失败：此账号已在 {ip_count} 个不同地点登录，已达到 {MAX_IPS_PER_USER} 个的上限。请联系管理员。"
+                                return render_template_string(LOGIN_PAGE_HTML, error=error_msg)
+                            
+                            # 添加新IP记录。ON CONFLICT DO NOTHING 保证并发安全。
+                            cur.execute("""
+                                INSERT INTO user_ips (username, ip_address) VALUES (%s, %s)
+                                ON CONFLICT (username, ip_address) DO NOTHING;
+                            """, (username, client_ip))
+                            conn.commit()
+                except Exception as e:
+                    print(f"IP检查时数据库操作失败: {e}")
+                    # 如果数据库出错，可以选择放行或拒绝。这里选择放行，保证可用性。
+                    pass
+                finally:
+                    if conn:
+                        db_pool.putconn(conn)
+            
+            # IP检查通过或数据库未连接，设置 session 并重定向
             session['user'] = username
             session.permanent = True
             return redirect(url_for('serve_app'))
         else:
-            # 返回带有错误信息的登录页面
             return render_template_string(LOGIN_PAGE_HTML, error="用户名或密码不正确，请重试。")
     
-    # GET 请求时，正常显示登录页，不带错误信息
     return render_template_string(LOGIN_PAGE_HTML)
 
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('login'))
+
+# --- 管理员工具，用于清空某个用户的IP记录 ---
+@app.route('/admin/clear_ips/<username>', methods=['POST'])
+def clear_user_ips(username):
+    # !! 生产环境需要加管理员认证 !!
+    if not db_pool:
+        return "数据库未连接，无法执行操作。", 500
+
+    conn = None
+    try:
+        conn = db_pool.getconn()
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM user_ips WHERE username = %s;", (username,))
+            # rowcount 会返回被删除的行数
+            deleted_count = cur.rowcount
+            conn.commit()
+        if deleted_count > 0:
+            return f"成功清空用户 '{username}' 的 {deleted_count} 条IP记录。", 200
+        else:
+            return f"未找到用户 '{username}' 的IP记录。", 404
+    except Exception as e:
+        return f"清空IP记录时发生错误: {e}", 500
+    finally:
+        if conn:
+            db_pool.putconn(conn)
 
 # --- 主应用路由 ---
 

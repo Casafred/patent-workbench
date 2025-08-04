@@ -2,3 +2,5 @@ Flask
 gunicorn
 zhipuai
 flask-cors
+werkzeug
+psycopg2-binary  # <-- 新增，用于连接PostgreSQL
