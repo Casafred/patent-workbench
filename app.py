@@ -84,6 +84,7 @@ def load_users():
 # --- 新增: 获取真实客户端 IP 的辅助函数 (保持不变) ---
 def get_client_ip():
     if 'X-Forwarded-For' in request.headers:
+        # 在 Render 等环境中，这个头包含了真实的客户端IP
         return request.headers['X-Forwarded-For'].split(',')[0].strip()
     return request.remote_addr
 
@@ -91,11 +92,12 @@ def get_client_ip():
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # 基础检查：session中是否有用户？
         if 'user' not in session:
+            # 如果是API请求，返回JSON错误；如果是页面请求，重定向
+            if request.path.startswith('/api/'):
+                return jsonify({"success": False, "error": "Authentication required."}), 401
             return redirect(url_for('login'))
 
-        # 如果数据库连接可用，则进行IP有效性验证
         if db_pool:
             conn = None
             try:
@@ -103,24 +105,18 @@ def login_required(f):
                 with conn.cursor() as cur:
                     username = session['user']
                     client_ip = get_client_ip()
-                    
-                    # 检查当前用户的IP是否仍在数据库的有效列表中
                     cur.execute("SELECT 1 FROM user_ips WHERE username = %s AND ip_address = %s;", (username, client_ip))
-                    
-                    # 如果查询结果为空 (fetchone() is None)，说明该IP已被踢出
                     if cur.fetchone() is None:
-                        session.clear() # 清空session，实现登出
-                        # 重定向到登录页，并附带提示信息
-                        error_msg = "您的账号已在其他地方登录，您已被下线。"
-                        return redirect(url_for('login', error=error_msg))
+                        session.clear()
+                        if request.path.startswith('/api/'):
+                             return jsonify({"success": False, "error": "Session expired or logged in from another location."}), 401
+                        return redirect(url_for('login', error="您的账号已在其他地方登录，您已被下线。"))
             except Exception as e:
                 print(f"会话IP验证时发生数据库错误: {e}")
-                # 数据库异常时，为保证可用性，暂时放行
             finally:
                 if conn:
                     db_pool.putconn(conn)
         
-        # IP验证通过或数据库不可用，则正常访问
         return f(*args, **kwargs)
     return decorated_function
 

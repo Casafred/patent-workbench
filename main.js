@@ -65,30 +65,38 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false) {
         alert("请点击右上角 ⚙️ 设置并保存您的 API Key。");
         throw new Error("API Key 未配置。");
     }
-    const headers = { 'Authorization': `Bearer ${appState.apiKey}` };
-    
-    // ▼▼▼ 修正点 ▼▼▼
-    // 只要请求体不是 FormData，我们就认为它是一个 JSON 请求，
-    // 无论后端的响应是否为流式（isStream），都必须设置 'Content-Type'。
-    if (!(body instanceof FormData)) {
+
+    const headers = {
+        'Authorization': `Bearer ${appState.apiKey}`
+    };
+
+    // 关键修正：
+    // 只要请求体(body)存在且不是FormData，就必须设置 'Content-Type' 为 'application/json'。
+    // 这与响应是否为流(isStream)无关。
+    if (body && !(body instanceof FormData)) {
         headers['Content-Type'] = 'application/json';
     }
-    // ▲▲▲ 修正完毕 ▲▲▲
 
-    const fullUrl = `${window.location.origin}/api${endpoint}`;
+    const fullUrl = `${window.location.origin}/api${endpoint}`; // 使用相对路径是正确的
+
     try {
-        const fetchOptions = { method, headers };
+        const fetchOptions = {
+            method,
+            headers,
+        };
+        
+        // 只有在 body 存在时才添加它
         if (body) {
             fetchOptions.body = (body instanceof FormData) ? body : JSON.stringify(body);
         }
+
         const response = await fetch(fullUrl, fetchOptions);
 
         if (isStream) {
             if (!response.ok) {
-                // 对于流式错误，尝试读取文本内容以获取更详细的错误信息
                 const errorText = await response.text();
-                console.error("Stream API Response Error Text:", errorText);
-                throw new Error(`请求失败 (Stream): ${response.statusText} - ${errorText}`);
+                console.error("流式API响应错误:", errorText); // 打印完整的HTML错误页面
+                throw new Error(`请求失败 (Stream): ${response.status} ${response.statusText}`);
             }
             return response.body.getReader();
         }
@@ -97,32 +105,24 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false) {
         let result;
         try {
             result = JSON.parse(textResponse);
-        } catch (jsonError) {
-            console.error(`API返回非JSON响应: ${textResponse.substring(0, 500)}...`);
-            // 将原始文本作为错误信息抛出，方便调试HTML错误页面等情况
-            throw new Error(`API返回无效响应: ${textResponse.substring(0, 200)}...`);
+        } catch (e) {
+            console.error("API 返回非JSON响应:", textResponse);
+            throw new Error(`服务器返回了无效的响应格式。`);
         }
 
         if (!response.ok || (result && result.success === false)) {
-            const errorMessage = result.error?.message || result.error || (result.data ? JSON.stringify(result.data) : `HTTP ${response.status}: ${response.statusText}`);
-            const err = new Error(errorMessage);
-            err.response = result;
-            throw err;
+            const errorMessage = result.error?.message || result.error || JSON.stringify(result);
+            throw new Error(errorMessage);
         }
 
-        // 根据后端响应结构调整返回数据
-        // 如果后端直接返回 { choices: [...] } 结构
-        if (result.choices && result.choices[0]) {
-            return result; 
-        }
-        // 如果后端返回 { success: true, data: {...} } 结构
-        return result.data;
+        return result.choices ? result : result.data;
+
     } catch (error) {
-        console.error(`API Call Error to ${endpoint}:`, error);
+        console.error(`API调用失败 ${endpoint}:`, error);
+        // 向上抛出错误，让调用者可以处理
         throw error;
     }
 }
-
 
 // =================================================================================
 // 页面布局与导航 (核心修改区域)
