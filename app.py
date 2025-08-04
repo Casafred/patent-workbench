@@ -493,29 +493,83 @@ def get_client_from_header():
 
 # --- API 端点 (全部应用访问控制，保持不变) ---
 @app.route('/api/stream_chat', methods=['POST'])
-@login_required
+# @login_required  <-- 关键：移除此装饰器！
 def stream_chat():
+    # --- 手动执行身份验证 ---
+    # 检查 session 中是否存在用户
+    if 'user' not in session:
+        error_json = json.dumps({"error": {"message": "Authentication required. Please log in.", "type": "auth_error"}})
+        return Response(f"data: {error_json}\n\n", mimetype='text/event-stream', status=401)
+
+    # 如果启用了IP限制，手动执行IP检查
+    if db_pool:
+        conn = None
+        is_valid_ip = False
+        try:
+            conn = db_pool.getconn()
+            with conn.cursor() as cur:
+                username = session['user']
+                client_ip = get_client_ip()
+                cur.execute("SELECT 1 FROM user_ips WHERE username = %s AND ip_address = %s;", (username, client_ip))
+                if cur.fetchone() is not None:
+                    is_valid_ip = True
+        except Exception as e:
+            print(f"流式对话中IP验证数据库错误: {e}")
+            is_valid_ip = True # 数据库出错时，为保可用性，暂时放行
+        finally:
+            if conn:
+                db_pool.putconn(conn)
+        
+        if not is_valid_ip:
+            session.clear() # 清除无效会话
+            error_json = json.dumps({"error": {"message": "Session expired or logged in from another location.", "type": "auth_error"}})
+            return Response(f"data: {error_json}\n\n", mimetype='text/event-stream', status=401)
+    # --- 手动验证结束 ---
+
+
+    # --- 原始的代理逻辑（现在可以安全执行） ---
+    # `request.get_json()` 现在是第一个读取请求体的代码，不会再有问题
+    try:
+        req_data = request.get_json(silent=True) # 使用 silent=True 防止因空body崩溃
+        if req_data is None:
+             raise ValueError("Request body is not a valid JSON or is empty.")
+    except Exception as e:
+        error_json = json.dumps({"error": {"message": f"Invalid request format: {e}", "type": "request_error"}})
+        return Response(f"data: {error_json}\n\n", mimetype='text/event-stream', status=400)
+
+
     client, error_response = get_client_from_header()
     if error_response:
+        # get_client_from_header 已经返回一个 Response 对象，但我们需要流式格式
         error_json = json.dumps({"error": error_response.get_json()['error']})
         return Response(f"data: {error_json}\n\n", mimetype='text/event-stream', status=error_response.status_code)
-    req_data = request.get_json()
+        
     model = req_data.get('model')
     temperature = req_data.get('temperature')
     messages = req_data.get('messages')
+
     if not all([model, messages]):
-        error_json = json.dumps({"error": "model and messages are required."})
+        error_json = json.dumps({"error": {"message": "model and messages are required.", "type": "request_error"}})
         return Response(f"data: {error_json}\n\n", mimetype='text/event-stream', status=400)
+
     def generate():
         try:
-            response = client.chat.completions.create(model=model, messages=messages, stream=True, temperature=temperature)
+            response = client.chat.completions.create(
+                model=model,
+                messages=messages,
+                stream=True,
+                temperature=temperature,
+            )
             for chunk in response:
                 yield f"data: {chunk.model_dump_json()}\n\n"
         except Exception as e:
             print(f"Error during stream generation: {traceback.format_exc()}")
             error_message = json.dumps({"error": {"message": str(e), "type": "generation_error"}})
             yield f"data: {error_message}\n\n"
+
     return Response(generate(), mimetype='text/event-stream')
+
+# ▲▲▲ 修复结束 ▲▲▲
 
 @app.route('/api/chat', methods=['POST'])
 @login_required
