@@ -61,6 +61,11 @@ function initApiKeyConfig() {
 }
 
 async function apiCall(endpoint, body, method = 'POST', isStream = false) {
+    // --- 调试日志 Section 1: 初始参数检查 ---
+    console.log(`--- apiCall triggered for endpoint: ${endpoint} ---`);
+    console.log("isStream:", isStream);
+    console.log("Request body (initial):", JSON.stringify(body));
+
     if (!appState.apiKey) {
         alert("请点击右上角 ⚙️ 设置并保存您的 API Key。");
         throw new Error("API Key 未配置。");
@@ -70,32 +75,43 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false) {
         'Authorization': `Bearer ${appState.apiKey}`
     };
 
-    // 关键修正：
-    // 只要请求体(body)存在且不是FormData，就必须设置 'Content-Type' 为 'application/json'。
-    // 这与响应是否为流(isStream)无关。
+    // 关键修正点
     if (body && !(body instanceof FormData)) {
         headers['Content-Type'] = 'application/json';
     }
 
-    const fullUrl = `${window.location.origin}/api${endpoint}`; // 使用相对路径是正确的
+    const fullUrl = `${window.location.origin}/api${endpoint}`;
+
+    const fetchOptions = {
+        method,
+        headers,
+        // ▼▼▼ 关键修正：确保 body 存在时才被添加到 options 中 ▼▼▼
+    };
+
+    if (body) {
+        fetchOptions.body = (body instanceof FormData) ? body : JSON.stringify(body);
+    }
+    
+    // --- 调试日志 Section 2: 最终发送前确认 ---
+    console.log("Request URL:", fullUrl);
+    console.log("Request Method:", fetchOptions.method);
+    console.log("Request Headers:", JSON.stringify(fetchOptions.headers));
+    // 如果 fetchOptions.body 存在，才打印
+    if (fetchOptions.body) {
+        console.log("Request Body (final, stringified):", fetchOptions.body);
+    } else {
+        console.log("Request Body (final): IS EMPTY OR UNDEFINED");
+    }
+    console.log('----------------------------------------------------');
 
     try {
-        const fetchOptions = {
-            method,
-            headers,
-        };
-        
-        // 只有在 body 存在时才添加它
-        if (body) {
-            fetchOptions.body = (body instanceof FormData) ? body : JSON.stringify(body);
-        }
-
         const response = await fetch(fullUrl, fetchOptions);
 
+        // ... [剩余的 try-catch 逻辑保持不变] ...
         if (isStream) {
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error("流式API响应错误:", errorText); // 打印完整的HTML错误页面
+                console.error("流式API响应错误:", errorText);
                 throw new Error(`请求失败 (Stream): ${response.status} ${response.statusText}`);
             }
             return response.body.getReader();
@@ -119,7 +135,6 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false) {
 
     } catch (error) {
         console.error(`API调用失败 ${endpoint}:`, error);
-        // 向上抛出错误，让调用者可以处理
         throw error;
     }
 }
