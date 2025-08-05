@@ -521,20 +521,9 @@ function addMessageToDOM(role, content, index, isStreaming = false, usage = null
     messageDiv.className = `chat-message ${role}-message`;
     messageDiv.id = messageId;
     if (index !== undefined) messageDiv.dataset.index = index;
-    
-    const renderedContent = isStreaming ? content : (window.marked ? window.marked.parse(content, { gfm: true, breaks: true }) : content.replace(/</g, "&lt;").replace(/>/g, "&gt;"));
-    
-    const tokenUsageHtml = (usage && usage.total_tokens) ? `<div class="message-token-usage">Tokens: ${usage.total_tokens}</div>` : `<div class="message-token-usage"></div>`;
 
-function addMessageToDOM(role, content, index, isStreaming = false, usage = null, timestamp = null) {
-    const messageId = `msg-${Date.now()}-${Math.random()}`;
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `chat-message ${role}-message`;
-    messageDiv.id = messageId;
-    if (index !== undefined) messageDiv.dataset.index = index;
-    
     const renderedContent = isStreaming ? content : (window.marked ? window.marked.parse(content, { gfm: true, breaks: true }) : content.replace(/</g, "&lt;").replace(/>/g, "&gt;"));
-    
+
     const tokenUsageHtml = (usage && usage.total_tokens) ? `<div class="message-token-usage">Tokens: ${usage.total_tokens}</div>` : `<div class="message-token-usage"></div>`;
 
     // ▼▼▼ 【推荐优化】时间格式化逻辑 ▼▼▼
@@ -551,7 +540,7 @@ function addMessageToDOM(role, content, index, isStreaming = false, usage = null
     }
     const timeHtml = `<div class="message-time" title="${dateObj.toLocaleString()}">${formattedTime}</div>`;
     // ▲▲▲ 优化结束 ▲▲▲
-    
+
     messageDiv.innerHTML = `
         <input type="checkbox" class="message-checkbox" title="选择此消息">
         <div class="message-main-content">
