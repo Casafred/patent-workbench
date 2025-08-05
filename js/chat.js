@@ -500,7 +500,6 @@ function renderCurrentChat() {
         chatPersonaSelect.value = convo.personaId;
     }
     
-    // 更新聊天框上方的标题
     const currentTitleEl = getEl('chat_current_title');
     if (currentTitleEl) {
         currentTitleEl.textContent = convo.title || '未命名对话';
@@ -508,6 +507,7 @@ function renderCurrentChat() {
     
     convo.messages.forEach((msg, index) => {
         if (msg.role !== 'system') {
+            // ▼▼▼ 【核心修复】在这里加上 msg.timestamp 作为第6个参数 ▼▼▼
             addMessageToDOM(msg.role, msg.content, index, false, msg.usage, msg.timestamp);
         }
     });
@@ -525,8 +525,32 @@ function addMessageToDOM(role, content, index, isStreaming = false, usage = null
     const renderedContent = isStreaming ? content : (window.marked ? window.marked.parse(content, { gfm: true, breaks: true }) : content.replace(/</g, "&lt;").replace(/>/g, "&gt;"));
     
     const tokenUsageHtml = (usage && usage.total_tokens) ? `<div class="message-token-usage">Tokens: ${usage.total_tokens}</div>` : `<div class="message-token-usage"></div>`;
-    const messageTime = timestamp ? new Date(timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
-    const timeHtml = `<div class="message-time">${messageTime}</div>`;
+
+function addMessageToDOM(role, content, index, isStreaming = false, usage = null, timestamp = null) {
+    const messageId = `msg-${Date.now()}-${Math.random()}`;
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `chat-message ${role}-message`;
+    messageDiv.id = messageId;
+    if (index !== undefined) messageDiv.dataset.index = index;
+    
+    const renderedContent = isStreaming ? content : (window.marked ? window.marked.parse(content, { gfm: true, breaks: true }) : content.replace(/</g, "&lt;").replace(/>/g, "&gt;"));
+    
+    const tokenUsageHtml = (usage && usage.total_tokens) ? `<div class="message-token-usage">Tokens: ${usage.total_tokens}</div>` : `<div class="message-token-usage"></div>`;
+
+    // ▼▼▼ 【推荐优化】时间格式化逻辑 ▼▼▼
+    let formattedTime = '';
+    const dateObj = timestamp ? new Date(timestamp) : new Date(); // 如果有时间戳用它，没有就用当前时间
+    if (!isNaN(dateObj.getTime())) { // 确保时间对象有效
+        const today = new Date();
+        // 如果是今天，只显示时间；如果是以前，显示日期和时间
+        if (dateObj.toDateString() === today.toDateString()) {
+            formattedTime = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } else {
+            formattedTime = dateObj.toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+    }
+    const timeHtml = `<div class="message-time" title="${dateObj.toLocaleString()}">${formattedTime}</div>`;
+    // ▲▲▲ 优化结束 ▲▲▲
     
     messageDiv.innerHTML = `
         <input type="checkbox" class="message-checkbox" title="选择此消息">
