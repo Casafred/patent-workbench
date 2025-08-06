@@ -207,3 +207,218 @@
     border-style: solid;
     border-color: #333 transparent transparent transparent;
 }
+
+/* ================================================= */
+/*  模板配置网格布局 (小批量 & 大批量共用)          */
+/* ================================================= */
+.template-config-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr; /* 左侧占1份，右侧占1.5份 */
+    gap: 30px; /* 两列之间的间距 */
+    align-items: start; /* 顶部对齐 */
+}
+
+/* 左侧主要配置区 */
+.template-config-main {
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* 内部元素垂直间距 */
+}
+
+/* 右侧提示词配置区 */
+.template-config-prompts {
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* 内部元素垂直间距 */
+}
+
+/* 模型和温度并排显示的容器 (小批量异步专用) */
+.model-temp-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: end; /* 底部对齐，让label和input对齐 */
+}
+
+/* 响应式设计：当屏幕宽度小于900px时，变为单列布局 */
+@media (max-width: 900px) {
+    .template-config-grid {
+        grid-template-columns: 1fr; /* 变为单列 */
+        gap: 20px;
+    }
+}
+
+/* 帮助提示图标样式 (小批量异步专用，但可以共用) */
+.help-tooltip-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.help-icon {
+    position: relative;
+    cursor: pointer;
+    color: var(--text-color-secondary);
+    width: 20px;
+    height: 20px;
+}
+
+.help-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.help-icon .tooltip-text {
+    visibility: hidden;
+    width: 280px;
+    background-color: #333;
+    color: #fff;
+    text-align: left;
+    border-radius: 6px;
+    padding: 10px;
+    position: absolute;
+    z-index: 1;
+    bottom: 150%;
+    left: 50%;
+    margin-left: -140px; /* Use half of the width to center the tooltip */
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 0.9em;
+    font-weight: normal;
+    line-height: 1.5;
+}
+
+.help-icon .tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #333 transparent transparent transparent;
+}
+
+.help-icon:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* 在 css/refactor.css 或 main.css 中添加 */
+
+/* ================================================= */
+/*  用户提示 A/B/C 区域布局                        */
+/* ================================================= */
+
+.user-prompt-container {
+    display: flex;
+    flex-direction: column; /* 整体垂直排列 */
+    gap: 20px; /* A/B组合与C之间的间距 */
+}
+
+.prompt-ab-grid {
+    display: grid;
+    /* 创建两列，第一列的最小宽度为300px，最大为1fr (占据剩余空间的一份) */
+    /* 第二列类似，这样可以灵活适应内容 */
+    grid-template-columns: minmax(300px, 1fr) minmax(300px, 1fr);
+    gap: 20px; /* A区和B区之间的间距 */
+    align-items: start; /* 顶部对齐 */
+}
+
+/* A区和B区内的 prompt-section 不需要外边距 */
+.prompt-ab-grid .prompt-section {
+    margin-bottom: 0;
+}
+
+/* 确保 B 区的预览输出框能撑满高度 */
+#content-insertion-preview {
+    height: 100%; /* 高度撑满父容器 */
+    min-height: 80px; /* 保持一个最小高度，避免太扁 */
+    display: flex; /* 使用 flex 布局让文本垂直居中 */
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+/* 响应式设计：当屏幕宽度小于800px时，A和B也变为单列布局 */
+@media (max-width: 800px) {
+    .prompt-ab-grid {
+        grid-template-columns: 1fr; /* 变为单列 */
+    }
+}
+
+/* --- 本地专利库管理模块 专属样式 --- */
+#lpl_delimiter {
+    width: 100px;
+}
+
+#lpl_result_preview_table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+    table-layout: fixed;
+}
+
+#lpl_result_preview_table th,
+#lpl_result_preview_table td {
+    border: 1px solid var(--border-color);
+    padding: 8px 12px;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#lpl_result_preview_table th {
+    background-color: var(--primary-color-hover-bg);
+    font-weight: 600;
+}
+
+/* --- 本地专利库管理模块 - 预览表格优化样式 --- */
+
+/* 新增的横向滚动容器 */
+.table-container-horizontal-scroll {
+    overflow-x: auto; /* 关键：只处理横向滚动 */
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
+/* 内部的预览输出容器，现在不再需要边框和边距 */
+#lpl_result_preview_table.preview-output {
+    border: none;
+    margin-top: 0;
+    border-radius: 0;
+    padding: 0; /* 清除内边距，让表格紧贴容器 */
+    max-height: 400px; /* 保持垂直滚动能力 */
+    overflow-y: auto; /* 保持垂直滚动 */
+}
+
+/* 预览表格本身的样式 */
+#lpl_result_preview_table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+    /* table-layout: fixed; 保持这个以获得更好的性能和可预测的布局 */
+}
+
+#lpl_result_preview_table th,
+#lpl_result_preview_table td {
+    border: 1px solid var(--border-color);
+    padding: 10px 15px; /* 增加内边距，让单元格更宽敞 */
+    text-align: left;
+    white-space: nowrap; /* 禁止文本换行是触发横向滚动的关键 */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    
+    /* ▼▼▼ 核心修改：设置一个合理的最小宽度 ▼▼▼ */
+    min-width: 180px; 
+}
+
+#lpl_result_preview_table th {
+    background-color: var(--primary-color-hover-bg);
+    font-weight: 600;
+    position: sticky; /* 让表头在垂直滚动时固定在顶部 */
+    top: 0;
+    z-index: 1;
+}

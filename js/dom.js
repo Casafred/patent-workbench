@@ -55,3 +55,38 @@ const recoverIdInput = getEl('recover_batch_id_input'), btnRecover = getEl('reco
 // Large Batch (Reporter)
 const repExcelInput = getEl('rep_excel-input'), repSheetSelector = getEl('rep_sheet-selector'), repJsonlInput = getEl('rep_jsonl-input');
 const repGenerateBtn = getEl('rep_generate-report-btn'), repPreview = getEl('rep_output_preview'), repDownloadBtn = getEl('rep_download-report-btn'), repInfoBox = getEl('reporter-info-box');
+
+// ▼▼▼ 添加功能四的DOM元素声明 ▼▼▼
+const lplOriginalFileInput = getEl('lpl_original_file_input');
+const lplOriginalSheetSelect = getEl('lpl_original_sheet_select'); // 新增
+const lplOriginalIgnoreHeader = getEl('lpl_original_ignore_header'); // 新增
+const lplFamilyColNameInput = getEl('lpl_family_col_name');
+const lplDelimiterInput = getEl('lpl_delimiter');
+const lplExpandBtn = getEl('lpl_expand_btn');
+const lplExpandStatus = getEl('lpl_expand_status');
+const lplExpandResultArea = getEl('lpl_expand_result_area');
+const lplUniqueCountSpan = getEl('lpl_unique_count');
+const lplExpandedListOutput = getEl('lpl_expanded_list_output');
+const lplCopyBtn = getEl('lpl_copy_btn');
+const lplDownloadTxtBtn = getEl('lpl_download_txt_btn');
+
+const lplOriginalFileConfirm = getEl('lpl_original_file_confirm');
+const lplOriginalReuploadInput = getEl('lpl_original_reupload_input'); // 新增
+const lplOriginalMergeSheetSelect = getEl('lpl_original_merge_sheet_select'); // 新增
+const lplOriginalMergeIgnoreHeader = getEl('lpl_original_merge_ignore_header'); // 新增
+const lplNewFileInput = getEl('lpl_new_file_input');
+const lplNewSheetSelect = getEl('lpl_new_sheet_select'); // 新增
+const lplNewIgnoreHeader = getEl('lpl_new_ignore_header'); // 新增
+const lplOriginalKeySelect = getEl('lpl_original_key_select');
+const lplNewKeySelect = getEl('lpl_new_key_select');
+const lplMergeBtn = getEl('lpl_merge_btn');
+const lplMergeStatus = getEl('lpl_merge_status');
+
+const lplResultSummary = getEl('lpl_result_summary');
+const lplResultPreviewArea = getEl('lpl_result_preview_area');
+const lplResultPreviewTable = getEl('lpl_result_preview_table');
+const lplDownloadFinalBtn = getEl('lpl_download_final_btn');
+const lplOldColsSelectionArea = getEl('lpl_old_cols_selection_area');
+const lplSelectAllColsBtn = getEl('lpl_select_all_cols_btn');
+const lplDeselectAllColsBtn = getEl('lpl_deselect_all_cols_btn');
+const lplOldColsCheckboxes = getEl('lpl_old_cols_checkboxes');

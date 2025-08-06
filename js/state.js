@@ -67,7 +67,31 @@ const appState = {
         jsonlData: null,
         finalOutputData: [],
         outputHeaders: [],
-    }
+    },
+    // ▼▼▼ 在这里添加新功能的状态对象 ▼▼▼
+lpl: { // Local Patent Library
+    originalFile: {
+        name: null,
+        workbook: null,
+        sheets: [], // 新增
+        selectedSheet: null, // 新增
+        ignoreHeader: false, // 新增
+        jsonData: null,
+        headers: []
+    },
+    newFile: {
+        name: null,
+        workbook: null,
+        sheets: [], // 新增
+        selectedSheet: null, // 新增
+        ignoreHeader: false, // 新增
+        jsonData: null,
+        headers: []
+    },
+    expandedPatents: [],
+    mergedData: null,
+}
+    // ▲▲▲ 添加结束 ▲▲▲
 };
 
 const BACKEND_URL = 'https://patent-workbench-backend.onrender.com';

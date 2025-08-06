@@ -8,8 +8,11 @@ document.addEventListener('DOMContentLoaded', () => {
     initChat();
     initAsyncBatch();
     initLargeBatch();
-    
+    // ▼▼▼ 添加初始化调用 ▼▼▼
+    initLocalPatentLib();
+    // ▲▲▲ 添加结束 ▲▲▲
     // 默认激活第一个主页签
+
     switchTab('instant', document.querySelector('.main-tab-container .tab-button'));
     
     // 默认激活第一个步骤并更新步进器状态
@@ -261,3 +264,16 @@ function switchSubTab(subTabId, clickedElement) {
         repInfoBox.style.display = 'none';
     }
 }
+
+// ▼▼▼ 添加新函数 ▼▼▼
+function switchLPLSubTab(subTabId, clickedElement) {
+    const parent = getEl('local_patent_lib-tab');
+    parent.querySelectorAll(".sub-tab-content").forEach(el => el.classList.remove("active"));
+    getEl(`lpl-sub-tab-${subTabId}`).classList.add("active");
+    
+    if (clickedElement) {
+        const stepper = clickedElement.closest('.progress-stepper');
+        updateStepperState(stepper, clickedElement);
+    }
+}
+// ▲▲▲ 添加结束 ▲▲▲
