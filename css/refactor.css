@@ -160,7 +160,7 @@
     opacity: 0.7;
     transition: opacity 0.2s;
     /* ▼▼▼ 需求 3: 向上微调提示图标 ▼▼▼ */
-    transform: translateY(-2px);
+    transform: translateY(-7px);
     /* ▲▲▲ 需求 3: 修改完成 ▲▲▲ */
 }
 

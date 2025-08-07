@@ -572,3 +572,141 @@ summary::-webkit-details-marker { display: none; }
     --chat-user-bubble: #DCF8C6;
     --chat-assistant-bubble: #FFFFFF;
 }
+
+/* ▼▼▼ 新增：文件上传相关UI样式 ▼▼▼ */
+#chat_upload_file_btn {
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-color-secondary);
+    box-shadow: none;
+    flex-shrink: 0;
+}
+
+#chat_upload_file_btn:hover {
+    background-color: var(--primary-color-hover-bg);
+    color: var(--primary-color);
+    transform: none; /* 移除按钮的悬浮效果 */
+}
+
+#chat_file_status_area {
+    padding: 10px 20px;
+    background-color: var(--primary-color-hover-bg);
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.9em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
+
+.file-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-color-secondary);
+    min-width: 0; /* 允许 flex item 收缩 */
+}
+
+.file-info .filename {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-remove-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2em;
+    color: var(--error-color);
+    padding: 0 5px;
+    line-height: 1;
+}
+
+.file-processing-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--primary-color-glow);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+/* ▲▲▲ 新增样式结束 ▲▲▲ */
+
+/* ▼▼▼ 新增：文件上传相关UI样式 ▼▼▼ */
+#chat_upload_file_btn {
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-color-secondary);
+    box-shadow: none;
+    flex-shrink: 0;
+}
+
+#chat_upload_file_btn:hover {
+    background-color: var(--primary-color-hover-bg);
+    color: var(--primary-color);
+    transform: none; /* 移除按钮的悬浮效果 */
+}
+
+#chat_file_status_area {
+    padding: 10px 20px;
+    background-color: var(--primary-color-hover-bg);
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.9em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
+
+.file-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-color-secondary);
+    min-width: 0; /* 允许 flex item 收缩 */
+}
+
+.file-info .filename {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-remove-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2em;
+    color: var(--error-color);
+    padding: 0 5px;
+    line-height: 1;
+}
+
+.file-processing-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--primary-color-glow);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+/* ▲▲▲ 新增样式结束 ▲▲▲ */

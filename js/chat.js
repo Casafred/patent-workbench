@@ -1,5 +1,92 @@
 // js/chat.js (完整最终版)
 
+// ▼▼▼ 新增：处理文件上传的函数 ▼▼▼
+async function handleChatFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // UI反馈：开始处理
+    chatFileStatusArea.style.display = 'flex';
+    chatFileStatusArea.innerHTML = `
+        <div class="file-info">
+            <div class="file-processing-spinner"></div>
+            <span>正在上传并解析文件: ${file.name}...</span>
+        </div>`;
+    chatInput.disabled = true;
+    chatSendBtn.disabled = true;
+    chatUploadFileBtn.disabled = true;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        // 调用后端API (注意：apiCall需要正确处理FormData)
+        const result = await apiCall('/extract_file_content', formData, 'POST');
+        
+        // 存储文件状态
+        appState.chat.activeFile = {
+            fileId: result.fileId,
+            filename: result.filename,
+            content: result.content
+        };
+
+        // UI反馈：处理成功
+        chatFileStatusArea.innerHTML = `
+            <div class="file-info">
+                <span>已附加文件:</span>
+                <span class="filename" title="${result.filename}">${result.filename}</span>
+            </div>
+            <button class="file-remove-btn" onclick="removeActiveFile()" title="移除文件">&times;</button>`;
+        
+        // 将文件内容格式化并插入到输入框
+        const fileContext = `\n\n[--- 文件内容开始 ---\n${result.content}\n--- 文件内容结束 ---]\n\n`;
+        // 将文件内容放在最前面，用户输入的问题跟在后面
+        chatInput.value = fileContext + chatInput.value;
+        updateCharCount();
+        chatInput.focus();
+
+    } catch (error) {
+        // UI反馈：处理失败
+        alert(`文件处理失败: ${error.message}`);
+        removeActiveFile(); // 清理UI和状态
+    } finally {
+        // 恢复UI
+        chatInput.disabled = false;
+        chatSendBtn.disabled = false;
+        chatUploadFileBtn.disabled = false;
+        // 重置文件输入，以便可以再次上传同一个文件
+        event.target.value = ''; 
+    }
+}
+
+// ▼▼▼ 新增：移除已附加文件的函数 ▼▼▼
+function removeActiveFile() {
+    if (appState.chat.activeFile) {
+        // 从输入框中移除文件内容
+        const fileContentRegex = new RegExp(`\\n\\n\\[--- 文件内容开始 ---\\n${escapeRegex(appState.chat.activeFile.content)}\\n--- 文件内容结束 ---\\]\\n\\n`, 'g');
+        chatInput.value = chatInput.value.replace(fileContentRegex, '');
+        // 清理状态
+        appState.chat.activeFile = null;
+    }
+    
+    // 清理UI
+    chatFileStatusArea.style.display = 'none';
+    chatFileStatusArea.innerHTML = '';
+    updateCharCount();
+}
+
+// 辅助函数，用于转义正则表达式中的特殊字符
+function escapeRegex(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// 更新字数统计和输入框高度
+function updateCharCount() {
+    chatCharCount.textContent = chatInput.value.length;
+    chatInput.style.height = 'auto';
+    chatInput.style.height = `${Math.min(chatInput.scrollHeight, 300)}px`;
+}
+
 function initChat() {
     // 标题编辑功能初始化
     const chatCurrentTitle = document.getElementById('chat_current_title');
@@ -120,6 +207,11 @@ function initChat() {
     chatPersonaSelect.addEventListener('change', updateCurrentConversationPersona);
     chatNewBtn.addEventListener('click', () => startNewChat(true));
     chatInputNewBtn.addEventListener('click', () => startNewChat(true));
+
+    // ▼▼▼ 新增：为文件上传按钮绑定事件 ▼▼▼
+    chatUploadFileBtn.addEventListener('click', () => chatFileInput.click());
+    chatFileInput.addEventListener('change', handleChatFileUpload);
+    // ▲▲▲ 新增结束 ▲▲▲
     
     // 设置所有导出下拉菜单的事件监听
     document.addEventListener('click', (e) => {
@@ -179,14 +271,14 @@ async function generateConversationTitle(conversation) {
         messages: [
             {
                 role: 'system',
-                content: '你是一个文本摘要专家。你的任务是根据提供的对话内容，用一句话（中文不超过15个字）总结出一个简洁、精炼的标题。直接返回标题文本，不要包含任何引导词、引号或说明。'
+                content: '你是一个对话主题提炼专家。你的任务是根据提供的对话内容，用一句话（中文不超过20个字）总结出一个简洁、精炼的标题。直接返回标题文本，不要包含任何引导词、引号或说明。'
             },
             {
                 role: 'user',
                 content: `请为以下对话生成一个标题：\n\n${contentToSummarize}`
             }
         ],
-        temperature: 0.2,
+        temperature: 0.4,
     };
 
     try {
@@ -338,13 +430,18 @@ function handleTitleEditBlur(event) {
 
 async function handleStreamChatRequest() {
     const userInput = chatInput.value.trim();
-    if (!userInput) return;
-    
+    // 即使输入框为空，如果附加了文件，也允许发送
+    if (!userInput && !appState.chat.activeFile) return;
+
+    // 如果只有文件内容没有用户问题，提示用户输入问题
+    if (appState.chat.activeFile && !userInput.replace(new RegExp(`\\n\\n\\[--- 文件内容开始 ---\\n${escapeRegex(appState.chat.activeFile.content)}\\n--- 文件内容结束 ---\\]\\n\\n`, 'g'), '').trim()) {
+        alert("请在输入框中提出您关于文件内容的问题。");
+        return;
+    }
+
     const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
     if (!convo) return;
     
-    const messagesCountBefore = convo.messages.length;
-
     chatSendBtn.disabled = true;
     chatInput.disabled = true;
 
@@ -361,9 +458,10 @@ async function handleStreamChatRequest() {
     renderChatHistoryList();
     saveConversations();
     
+    // 清理输入框和文件状态
     chatInput.value = '';
-    chatInput.style.height = '50px';
-    chatCharCount.textContent = '0';
+    updateCharCount();
+    removeActiveFile(); // [重要] 发送后清除文件状态
     
     const assistantMessageId = addMessageToDOM('assistant', '<span class="blinking-cursor">|</span>', convo.messages.length, true);
     const assistantMessageEl = getEl(assistantMessageId);
@@ -374,7 +472,12 @@ async function handleStreamChatRequest() {
     
     try {
         const contextCount = parseInt(chatContextCount.value, 10);
-        const messagesToSend = [convo.messages[0], ...convo.messages.slice(1).slice(-(contextCount * 2))];
+        // 确保系统消息总是第一条
+        const nonSystemMessages = convo.messages.filter(m => m.role !== 'system');
+        const messagesToSend = [
+            convo.messages.find(m => m.role === 'system'), 
+            ...nonSystemMessages.slice(-contextCount)
+        ].filter(Boolean); // filter(Boolean) 移除可能的 undefined
         
         const reader = await apiCall('/stream_chat', { model: chatModelSelect.value, temperature: parseFloat(chatTempInput.value), messages: messagesToSend }, 'POST', true);
         const decoder = new TextDecoder();
@@ -411,8 +514,6 @@ async function handleStreamChatRequest() {
         assistantMessageEl.querySelector('.message-footer').style.opacity = '1';
 
         saveConversations();
-
-        // 生成对话标题
         setTimeout(() => generateConversationTitle(convo), 100);
 
     } catch (error) {
@@ -576,6 +677,9 @@ function addMessageToDOM(role, content, index, isStreaming = false, usage = null
 }
 
 function startNewChat(fromUserClick = false) {
+    // ▼▼▼ BUG修复：新建对话时，清除已附加的文件状态 ▼▼▼
+    removeActiveFile(); 
+    // ▲▲▲ BUG修复结束 ▲▲▲
     const newId = `convo-${Date.now()}`;
     const personaId = chatPersonaSelect.value || Object.keys(appState.chat.personas)[0];
     const persona = appState.chat.personas[personaId];
@@ -595,6 +699,9 @@ function startNewChat(fromUserClick = false) {
 }
 
 function switchConversation(id) {
+    // ▼▼▼ BUG修复：切换对话时，清除已附加的文件状态 ▼▼▼
+    removeActiveFile();
+    // ▲▲▲ BUG修复结束 ▲▲▲
     appState.chat.currentConversationId = id;
     localStorage.setItem('currentConversationId', id);
     renderCurrentChat();

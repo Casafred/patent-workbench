@@ -713,6 +713,57 @@ def download_result_file():
     except Exception as e:
         print(f"Error in download_result_file: {traceback.format_exc()}"); return create_response(error=f"获取文件内容时发生错误: {str(e)}", status_code=500)
 
+# ▼▼▼ 新增：文件内容提取 API 端点 ▼▼▼
+@app.route('/api/extract_file_content', methods=['POST'])
+def extract_file_content():
+    # 1. 身份验证
+    is_valid, error_response = validate_api_request()
+    if not is_valid:
+        return error_response
+
+    # 2. 获取 ZhipuAI 客户端
+    client, error_response = get_client_from_header()
+    if error_response:
+        return error_response
+
+    # 3. 检查文件是否存在
+    if 'file' not in request.files:
+        return create_response(error="请求中未找到文件部分", status_code=400)
+
+    file = request.files['file']
+    if file.filename == '':
+        return create_response(error="未选择任何文件", status_code=400)
+
+    try:
+        # 4. 上传文件到 ZhipuAI，用于内容提取
+        print(f"正在上传文件 '{file.filename}' 以进行内容提取...")
+        file_object = client.files.create(
+            file=(file.filename, file.stream),
+            purpose="file-extract"
+        )
+        print(f"文件上传成功，File ID: {file_object.id}")
+
+        # 5. 同步获取文件内容
+        print(f"正在提取 File ID: {file_object.id} 的内容...")
+        # 注意: .content() 返回的是一个包含 content 属性的对象
+        file_content_response = client.files.content(file_id=file_object.id)
+        
+        # 官方SDK返回的 content 是 bytes 类型，需要解码
+        extracted_text = file_content_response.content.decode('utf-8')
+        print("文件内容提取成功。")
+        
+        # 6. 将结果返回给前端
+        return create_response(data={
+            "fileId": file_object.id,
+            "filename": file.filename,
+            "content": extracted_text
+        })
+
+    except Exception as e:
+        print(f"文件内容提取过程中发生错误: {traceback.format_exc()}")
+        return create_response(error=f"文件处理失败: {str(e)}", status_code=500)
+# ▲▲▲ 新增代码结束 ▲▲▲
+
 # --- 启动前初始化 ---
 # 将 init_db() 移到这里。当Render的Gunicorn服务器导入这个文件时，
 # 这段代码会立即执行，确保在任何请求到来之前，数据库表就已经创建好了。

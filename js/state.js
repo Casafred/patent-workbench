@@ -7,7 +7,10 @@ const appState = {
         personas: {},
         conversations: [], // { id, title, personaId, messages, lastUpdate }
         currentConversationId: null,
-        isManagementMode: false
+        isManagementMode: false,
+        // ▼▼▼ 新增：存储当前对话附加的文件信息 ▼▼▼
+        activeFile: null // { fileId, filename, content }
+        // ▲▲▲ 新增结束 ▲▲▲
     },
     asyncBatch: {
         inputs: [], // { id, content }
