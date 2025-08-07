@@ -600,6 +600,9 @@ function switchConversation(id) {
     renderCurrentChat();
     renderChatHistoryList();
     toggleManagementMode(false);
+    // ▼▼▼ BUG 2 修复: 在切换对话后，立即更新参数设置模态框中的编辑器内容 ▼▼▼
+    updatePersonaEditor(); 
+    // ▲▲▲ BUG 2 修复结束 ▲▲▲
 }
 
 function updateCurrentConversationPersona() {

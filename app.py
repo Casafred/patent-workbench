@@ -325,12 +325,15 @@ LOGIN_PAGE_HTML = """
         </form>
 
         <div class="links">
-            忘记密码? <a href="mailto:freecasafred@outlook.com?subject=专利工作台密码重置请求">联系管理员</a>
+            忘记密码? 
+            <!-- ▼▼▼ 需求 4: 修改 mailto 链接为弹窗 ▼▼▼ -->
+            <a href="javascript:void(0);" onclick="alert('请联系管理员邮箱：freecasafred@outlook.com'); return false;">联系管理员</a>
+            <!-- ▲▲▲ 需求 4: 修改完成 ▲▲▲ -->
         </div>
     </div>
 
     <div class="footer">
-        © 2024 ALFRED X IP. All Rights Reserved.
+        © 2025 ALFRED X IP. All Rights Reserved.
     </div>
 
     <script>

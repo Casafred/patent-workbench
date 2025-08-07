@@ -70,7 +70,6 @@
                 <button class="tab-button" onclick="switchTab('instant', this)">功能一：即时对话</button>
                 <button class="tab-button" onclick="switchTab('async_batch', this)">功能二：小批量异步</button>
                 <button class="tab-button" onclick="switchTab('large_batch', this)">功能三：大批量处理</button>
-                <!-- ▼▼▼ 1. 在这里添加新的功能四按钮 ▼▼▼ -->
                 <button class="tab-button" onclick="switchTab('local_patent_lib', this)">功能四：本地专利库管理</button>
             </div>
         </div>
@@ -168,7 +167,6 @@
         <!-- 功能二：小批量异步 (UI重构) -->
         <!-- ====================================================================== -->
         <div id="async_batch-tab" class="tab-content">
-            <!-- ▼▼▼ REFACTOR: 将原来的页签按钮替换为进度步进器 ▼▼▼ -->
             <div class="progress-stepper" id="async-stepper">
                 <div class="step-item active" onclick="switchAsyncSubTab('input', this)">
                     <div class="step-number">1</div>
@@ -188,7 +186,6 @@
                 </div>
                 <div class="progress-bar"></div>
             </div>
-            <!-- ▲▲▲ REFACTOR END ▲▲▲ -->
 
             <!-- 页签 1: 输入内容 -->
             <div id="async-sub-tab-input" class="sub-tab-content active">
@@ -219,89 +216,71 @@
             </div>
 
             <!-- 页签 2: 配置模板 -->
-<div id="async-sub-tab-template" class="sub-tab-content">
-    <div class="step">
-        <div class="step-header">步骤 2: 配置处理模板</div>
-        <div id="async_template_edit_area">
-            
-            <!-- ▼▼▼ REFACTOR: 使用新的网格布局 ▼▼▼ -->
-            <div class="template-config-grid">
-                
-                <!-- 左侧主要配置区 -->
-                <div class="template-config-main">
-                    <div class="config-item">
-                        <label for="async_preset_template_select">选择预置模板或新建:</label>
-                        <select id="async_preset_template_select"></select>
-                    </div>
-                    <div class="config-item">
-                        <label for="async_template_name">模板名称:</label>
-                        <input type="text" id="async_template_name" placeholder="例如：自定义技术总结">
-                    </div>
-                    <!-- 模型和温度并排 -->
-                    <div class="model-temp-group">
-                        <div class="config-item">
-                            <label for="async_template_model_select">选择模型:</label>
-                            <select id="async_template_model_select"></select>
-                        </div>
-                        <div class="config-item">
-                            <label for="async_template_temperature">温度:</label>
-                            <input type="number" id="async_template_temperature" min="0" max="1" step="0.1" value="0.1">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 右侧提示词配置区 -->
-                <div class="template-config-prompts">
-                    <div class="config-item">
-                        <label for="async_system_prompt">系统提示 (System Prompt):</label>
-                        <textarea id="async_system_prompt" rows="3">你是一个高效的专利文本分析助手。</textarea>
-                    </div>
-                    <div class="config-item">
-                        <!-- ▼▼▼ REFACTOR: 使用帮助图标替换文本提示 ▼▼▼ -->
-                        <div class="help-tooltip-wrapper">
-                            <label for="async_user_prompt">用户提示模板:</label>
-                            <div class="help-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"></path></svg>
-                                <span class="tooltip-text">请务必使用 `{{INPUT}}` 作为占位符。当从Excel导入多列时，系统会自动将多列内容及列名填充到 `{{INPUT}}` 的位置。</span>
+            <div id="async-sub-tab-template" class="sub-tab-content">
+                <div class="step">
+                    <div class="step-header">步骤 2: 配置处理模板</div>
+                    <div id="async_template_edit_area">
+                        <div class="template-config-grid">
+                            <div class="template-config-main">
+                                <div class="config-item">
+                                    <label for="async_preset_template_select">选择预置模板或新建:</label>
+                                    <select id="async_preset_template_select"></select>
+                                </div>
+                                <div class="config-item">
+                                    <label for="async_template_name">模板名称:</label>
+                                    <input type="text" id="async_template_name" placeholder="例如：自定义技术总结">
+                                </div>
+                                <div class="model-temp-group">
+                                    <div class="config-item">
+                                        <label for="async_template_model_select">选择模型:</label>
+                                        <select id="async_template_model_select"></select>
+                                    </div>
+                                    <div class="config-item">
+                                        <label for="async_template_temperature">温度:</label>
+                                        <input type="number" id="async_template_temperature" min="0" max="1" step="0.1" value="0.1">
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <!-- ▲▲▲ REFACTOR END ▲▲▲ -->
-                        <textarea id="async_user_prompt" rows="4">请根据以下文本，总结其核心技术点：
+                            <div class="template-config-prompts">
+                                <div class="config-item">
+                                    <label for="async_system_prompt">系统提示 (System Prompt):</label>
+                                    <textarea id="async_system_prompt" rows="3">你是一个高效的专利文本分析助手。</textarea>
+                                </div>
+                                <div class="config-item">
+                                    <div class="help-tooltip-wrapper">
+                                        <label for="async_user_prompt">用户提示模板:</label>
+                                        <div class="help-icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"></path></svg>
+                                            <span class="tooltip-text">请务必使用 `{{INPUT}}` 作为占位符。当从Excel导入多列时，系统会自动将多列内容及列名填充到 `{{INPUT}}` 的位置。</span>
+                                        </div>
+                                    </div>
+                                    <textarea id="async_user_prompt" rows="4">请根据以下文本，总结其核心技术点：
 
 {{INPUT}}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <hr style="margin: 25px 0 20px; border-color: var(--border-color);">
+                        <div class="config-item">
+                            <div class="help-tooltip-wrapper">
+                                 <label>输出格式 (JSON):</label>
+                                 <div class="help-icon">
+                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"></path></svg>
+                                     <span class="tooltip-text">系统将自动把您在此处定义的字段包装成严格的JSON格式要求，并附加到用户提示的末尾，以指导模型输出。</span>
+                                 </div>
+                            </div>
+                            <div id="async_output_fields_container"></div>
+                            <button id="async_add_output_field_btn" class="small-button" type="button">添加输出字段</button>
+                        </div>
+                        <div style="text-align: right; margin-top: 20px;">
+                            <button id="async_add_template_btn" class="small-button">保存模板</button>
+                        </div>
                     </div>
+                    <hr style="margin: 20px 0; border-color: var(--border-color);">
+                    <label><strong>已创建的模板 (点击删除):</strong></label>
+                    <div id="async_templates_list" class="scrollable-list"></div>
                 </div>
-
             </div>
-            <!-- ▲▲▲ REFACTOR END ▲▲▲ -->
-
-            <hr style="margin: 25px 0 20px; border-color: var(--border-color);">
-            
-            <div class="config-item">
-                <!-- ▼▼▼ REFACTOR: 使用帮助图标替换文本提示 ▼▼▼ -->
-                <div class="help-tooltip-wrapper">
-                     <label>输出格式 (JSON):</label>
-                     <div class="help-icon">
-                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"></path></svg>
-                         <span class="tooltip-text">系统将自动把您在此处定义的字段包装成严格的JSON格式要求，并附加到用户提示的末尾，以指导模型输出。</span>
-                     </div>
-                </div>
-                <!-- ▲▲▲ REFACTOR END ▲▲▲ -->
-                <div id="async_output_fields_container"></div>
-                <button id="async_add_output_field_btn" class="small-button" type="button">添加输出字段</button>
-            </div>
-            
-            <div style="text-align: right; margin-top: 20px;">
-                <button id="async_add_template_btn" class="small-button">保存模板</button>
-            </div>
-        </div>
-
-        <hr style="margin: 20px 0; border-color: var(--border-color);">
-        <label><strong>已创建的模板 (点击删除):</strong></label>
-        <div id="async_templates_list" class="scrollable-list"></div>
-    </div>
-</div>
-
 
             <!-- 页签 3: 创建任务 -->
             <div id="async-sub-tab-task" class="sub-tab-content">
@@ -348,7 +327,6 @@
 
         <!-- 功能三：大批量处理 (UI重构) -->
         <div id="large_batch-tab" class="tab-content">
-            <!-- ▼▼▼ REFACTOR: 将原来的页签按钮替换为进度步进器 ▼▼▼ -->
             <div class="progress-stepper" id="large-batch-stepper">
                 <div class="step-item active" onclick="switchSubTab('generator', this)">
                     <div class="step-number">1</div>
@@ -364,7 +342,6 @@
                 </div>
                 <div class="progress-bar"></div>
             </div>
-            <!-- ▲▲▲ REFACTOR END ▲▲▲ -->
             
             <div id="sub-tab-generator" class="sub-tab-content">
                  <div class="step">
@@ -380,80 +357,57 @@
                     </div>
                 </div>
                 
-<div class="step">
-    <div class="step-header">步骤 2: 配置 API 请求模板</div>
-    
-    <!-- ▼▼▼ 新的模板管理区域 ▼▼▼ -->
-    <div class="template-actions" style="margin-bottom: 20px; display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
-        <select id="template_selector" style="flex-grow: 1;"></select>
-        <button id="save_template_btn" class="small-button">保存</button>
-        <button id="import_template_btn" class="small-button">导入</button>
-        <input type="file" id="template_file_input" accept=".json" style="display:none;">
-        <button id="export_template_btn" class="small-button">导出</button>
-        <button id="delete_template_btn" class="small-button delete-button">删除</button>
-    </div>
-    <!-- ▲▲▲ 模板管理区域结束 ▲▲▲ -->
-
-    <!-- ▼▼▼ 【核心修改】使用新的网格布局容器 ▼▼▼ -->
-    <div class="template-config-grid">
-        
-        <!-- 左侧主要配置区 -->
-        <div class="template-config-main">
-            <div class="config-item">
-                <label for="api-model">选择模型:</label>
-                <select id="api-model"></select>
-            </div>
-            <div class="config-item">
-                <label for="api-temperature">温度:</label>
-                <input type="number" id="api-temperature" value="0.1" step="0.1" min="0" max="1">
-            </div>
-        </div>
-
-        <!-- 右侧系统提示配置区 -->
-        <div class="template-config-prompts">
-            <div class="config-item">
-                <label for="api-system-prompt">系统提示 (System Prompt):</label>
-                <textarea id="api-system-prompt" rows="4"></textarea> <!-- 增加行数以匹配右侧高度 -->
-            </div>
-        </div>
-
-    </div>
-    <!-- ▲▲▲ 网格布局结束 ▲▲▲ -->
-    
-<hr style="margin: 25px 0 20px; border-color: var(--border-color);">
-
-<!-- ▼▼▼ 【核心修改】用户提示部分 ▼▼▼ -->
-<div class="config-item">
-    <label>用户提示 (User Prompt):</label>
-    
-    <!-- 创建一个新的包裹容器 -->
-    <div class="user-prompt-container">
-        
-        <!-- A区和B区的并排容器 -->
-        <div class="prompt-ab-grid">
-            <div class="prompt-section">
-                <div class="prompt-section-title">A. 规则要求</div>
-                <!-- 减少默认行数，使其更紧凑 -->
-                <textarea id="prompt-rules" rows="3" placeholder="请在此处输入任务的核心指令、要求和背景信息。"></textarea>
-            </div>
-            
-            <div class="prompt-section">
-                <div class="prompt-section-title">B. 内容插入 (自动生成)</div>
-                <!-- 移除了min-height，让其自适应内容 -->
-                <div id="content-insertion-preview" class="preview-output">待上传Excel并配置分析列后自动显示...</div>
-            </div>
-        </div>
-
-        <!-- C区保持独立 -->
-        <div class="prompt-section">
-            <div class="prompt-section-title">C. 输出格式 (JSON)</div>
-            <div id="output-fields-container"></div>
-            <button id="add-output-field-btn" class="small-button" type="button">添加输出字段</button>
-            <div class="info" style="margin-top: 10px;">系统将自动把此处的字段包装成JSON格式要求。</div>
-        </div>
-
-    </div>
-</div>
+                <div class="step">
+                    <div class="step-header">步骤 2: 配置 API 请求模板</div>
+                    <div class="template-actions" style="margin-bottom: 20px; display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <select id="template_selector" style="flex-grow: 1;"></select>
+                        <button id="save_template_btn" class="small-button">保存</button>
+                        <button id="import_template_btn" class="small-button">导入</button>
+                        <input type="file" id="template_file_input" accept=".json" style="display:none;">
+                        <button id="export_template_btn" class="small-button">导出</button>
+                        <button id="delete_template_btn" class="small-button delete-button">删除</button>
+                    </div>
+                    <div class="template-config-grid">
+                        <div class="template-config-main">
+                            <div class="config-item">
+                                <label for="api-model">选择模型:</label>
+                                <select id="api-model"></select>
+                            </div>
+                            <div class="config-item">
+                                <label for="api-temperature">温度:</label>
+                                <input type="number" id="api-temperature" value="0.1" step="0.1" min="0" max="1">
+                            </div>
+                        </div>
+                        <div class="template-config-prompts">
+                            <div class="config-item">
+                                <label for="api-system-prompt">系统提示 (System Prompt):</label>
+                                <textarea id="api-system-prompt" rows="4"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <hr style="margin: 25px 0 20px; border-color: var(--border-color);">
+                    <div class="config-item">
+                        <label>用户提示 (User Prompt):</label>
+                        <div class="user-prompt-container">
+                            <div class="prompt-ab-grid">
+                                <div class="prompt-section">
+                                    <div class="prompt-section-title">A. 规则要求</div>
+                                    <textarea id="prompt-rules" rows="3" placeholder="请在此处输入任务的核心指令、要求和背景信息。"></textarea>
+                                </div>
+                                <div class="prompt-section">
+                                    <div class="prompt-section-title">B. 内容插入 (自动生成)</div>
+                                    <div id="content-insertion-preview" class="preview-output">待上传Excel并配置分析列后自动显示...</div>
+                                </div>
+                            </div>
+                            <div class="prompt-section">
+                                <div class="prompt-section-title">C. 输出格式 (JSON)</div>
+                                <div id="output-fields-container"></div>
+                                <button id="add-output-field-btn" class="small-button" type="button">添加输出字段</button>
+                                <div class="info" style="margin-top: 10px;">系统将自动把此处的字段包装成JSON格式要求。</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="step">
                     <div class="step-header">步骤 3: 生成并预览 JSONL 请求文件</div>
                     <button id="gen_generate-btn" disabled>生成 JSONL 文件</button>
@@ -463,6 +417,7 @@
                 </div>
             </div>
 
+            <!-- ▼▼▼ BUG 4 修复确认: 以下内容必须存在，否则页面会为空 ▼▼▼ -->
             <div id="sub-tab-batch" class="sub-tab-content">
                  <div class="step">
                     <div class="step-header">批量任务工作流</div>
@@ -525,176 +480,177 @@
                     <button id="rep_download-report-btn" style="display:none; margin-top: 15px;">下载最终报告 (Excel)</button>
                 </div>
             </div>
+            <!-- ▲▲▲ BUG 4 修复确认: 内容结束 ▲▲▲ -->
         </div>
-    </div>
-</div>
 
-        <!-- ▼▼▼ 2. 在这里粘贴全新的功能四模块 ▼▼▼ -->
+        <!-- 功能四：本地专利库管理 -->
         <div id="local_patent_lib-tab" class="tab-content">
+            <!-- ▼▼▼ BUG 1 修复: 将原有的页签按钮替换为进度步进器 ▼▼▼ -->
             <div class="progress-stepper" id="lpl-stepper">
-        <div class="step-item active" onclick="switchLPLSubTab('expand', this)">
-            <div class="step-number">1</div>
-            <div class="step-title">上传与展开</div>
-        </div>
-        <div class="step-item" onclick="switchLPLSubTab('merge', this)">
-            <div class="step-number">2</div>
-            <div class="step-title">合并新旧库</div>
-        </div>
-        <div class="step-item" onclick="switchLPLSubTab('result', this)">
-            <div class="step-number">3</div>
-            <div class="step-title">下载最终结果</div>
-        </div>
-        <div class="progress-bar"></div>
-    </div>
+                <div class="step-item active" onclick="switchLPLSubTab('expand', this)">
+                    <div class="step-number">1</div>
+                    <div class="step-title">上传与展开</div>
+                </div>
+                <div class="step-item" onclick="switchLPLSubTab('merge', this)">
+                    <div class="step-number">2</div>
+                    <div class="step-title">合并新旧库</div>
+                </div>
+                <div class="step-item" onclick="switchLPLSubTab('result', this)">
+                    <div class="step-number">3</div>
+                    <div class="step-title">下载最终结果</div>
+                </div>
+                <div class="progress-bar"></div>
+            </div>
+            <!-- ▲▲▲ BUG 1 修复结束 ▲▲▲ -->
 
-    <!-- 步骤 1: 上传与展开 -->
-    <div id="lpl-sub-tab-expand" class="sub-tab-content active">
-        <div class="step">
-            <div class="step-header">步骤 1: 上传原始专利库并展开同族专利号</div>
-            <div class="config-item">
-                <label for="lpl_original_file_input">A. 上传或重新上传您的原始专利 Excel 文件:</label>
-                <input type="file" id="lpl_original_file_input" accept=".xlsx, .xls">
-            </div>
-            <!-- 新增：Sheet选择和忽略首行 -->
-            <div class="template-config-grid" style="grid-template-columns: 1fr auto; align-items: end; margin-top: 15px;">
-                <div class="config-item">
-                    <label for="lpl_original_sheet_select">选择工作表 (Sheet):</label>
-                    <select id="lpl_original_sheet_select" disabled><option>请先上传文件</option></select>
-                </div>
-                <div class="config-item" style="justify-self: start;">
-                    <label style="display: flex; align-items: center; cursor: pointer;">
-                        <input type="checkbox" id="lpl_original_ignore_header" style="width: auto; margin-right: 8px;">
-                        忽略首行 (当首行为无效信息时勾选)
-                    </label>
-                </div>
-            </div>
-            <hr style="margin: 20px 0; border-color: var(--border-color);">
-            <div class="template-config-grid" style="grid-template-columns: 1fr auto; align-items: end;">
-                <div class="config-item">
-                     <label for="lpl_family_col_name">B. 包含同族专利号的列名:</label>
-                     <input type="text" id="lpl_family_col_name" value="INPADOC 同族专利成员" placeholder="例如: INPADOC 同族专利成员">
-                </div>
-                <div class="config-item">
-                    <label for="lpl_delimiter">分隔符:</label>
-                    <input type="text" id="lpl_delimiter" value="|">
-                </div>
-            </div>
-            <div style="text-align: center; margin: 20px 0;">
-                <button id="lpl_expand_btn" disabled>① 展开同族专利号</button>
-            </div>
-            <div class="info" id="lpl_expand_status" style="display:none;"></div>
-            <div id="lpl_expand_result_area" style="display:none;">
-                <label>D. 展开且去重后的专利号列表 (共 <span id="lpl_unique_count">0</span> 个):</label>
-                <textarea id="lpl_expanded_list_output" rows="10" readonly style="margin-top: 10px; font-family: monospace; white-space: pre;"></textarea>
-                <div style="margin-top: 15px; display: flex; gap: 15px;">
-                    <button id="lpl_copy_btn" class="small-button">一键复制</button>
-                    <button id="lpl_download_txt_btn" class="small-button">下载为.txt文件</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 步骤 2: 合并新旧库 -->
-    <div id="lpl-sub-tab-merge" class="sub-tab-content">
-        <div class="step">
-            <div class="step-header">步骤 2: 上传新数据并配置合并规则</div>
-            <p class="info warning">注意：此工具专注于数据处理，Excel中的图片、图表等对象将不会被保留在最终导出的文件中。</p>
-            
-            <div class="config-item">
-                <label>E. 原始文件:</label>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <input type="text" id="lpl_original_file_confirm" readonly placeholder="已从上一步加载，或在此直接上传">
-                    <label for="lpl_original_reupload_input" class="small-button" style="flex-shrink: 0; cursor: pointer;">重新上传</label>
-                    <input type="file" id="lpl_original_reupload_input" accept=".xlsx, .xls" style="display:none;">
-                </div>
-                 <div class="template-config-grid" style="grid-template-columns: 1fr auto; align-items: end; margin-top: 15px;">
+            <!-- 步骤 1: 上传与展开 -->
+            <div id="lpl-sub-tab-expand" class="sub-tab-content active">
+                <div class="step">
+                    <div class="step-header">步骤 1: 上传原始专利库并展开同族专利号</div>
                     <div class="config-item">
-                        <label for="lpl_original_merge_sheet_select">选择工作表 (Sheet):</label>
-                        <select id="lpl_original_merge_sheet_select" disabled><option>请先加载或上传文件</option></select>
+                        <label for="lpl_original_file_input">A. 上传或重新上传您的原始专利 Excel 文件:</label>
+                        <input type="file" id="lpl_original_file_input" accept=".xlsx, .xls">
                     </div>
-                    <div class="config-item" style="justify-self: start;">
-                        <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" id="lpl_original_merge_ignore_header" style="width: auto; margin-right: 8px;">
-                            忽略首行
-                        </label>
+                    <div class="template-config-grid" style="grid-template-columns: 1fr auto; align-items: end; margin-top: 15px;">
+                        <div class="config-item">
+                            <label for="lpl_original_sheet_select">选择工作表 (Sheet):</label>
+                            <select id="lpl_original_sheet_select" disabled><option>请先上传文件</option></select>
+                        </div>
+                        <div class="config-item" style="justify-self: start;">
+                            <label style="display: flex; align-items: center; cursor: pointer;">
+                                <input type="checkbox" id="lpl_original_ignore_header" style="width: auto; margin-right: 8px;">
+                                忽略首行 (当首行为无效信息时勾选)
+                            </label>
+                        </div>
+                    </div>
+                    <hr style="margin: 20px 0; border-color: var(--border-color);">
+                    <div class="template-config-grid" style="grid-template-columns: 1fr auto; align-items: end;">
+                        <div class="config-item">
+                             <label for="lpl_family_col_name">B. 包含同族专利号的列名:</label>
+                             <input type="text" id="lpl_family_col_name" value="INPADOC 同族专利成员" placeholder="例如: INPADOC 同族专利成员">
+                        </div>
+                        <div class="config-item">
+                            <label for="lpl_delimiter">分隔符:</label>
+                            <input type="text" id="lpl_delimiter" value="|">
+                        </div>
+                    </div>
+                    <div style="text-align: center; margin: 20px 0;">
+                        <button id="lpl_expand_btn" disabled>① 展开同族专利号</button>
+                    </div>
+                    <div class="info" id="lpl_expand_status" style="display:none;"></div>
+                    <div id="lpl_expand_result_area" style="display:none;">
+                        <label>D. 展开且去重后的专利号列表 (共 <span id="lpl_unique_count">0</span> 个):</label>
+                        <textarea id="lpl_expanded_list_output" rows="10" readonly style="margin-top: 10px; font-family: monospace; white-space: pre;"></textarea>
+                        <div style="margin-top: 15px; display: flex; gap: 15px;">
+                            <button id="lpl_copy_btn" class="small-button">一键复制</button>
+                            <button id="lpl_download_txt_btn" class="small-button">下载为.txt文件</button>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- ▼▼▼ 新增：旧表列选择区域 ▼▼▼ -->
-            <div id="lpl_old_cols_selection_area" class="config-item" style="display:none; margin-top: 20px;">
-                <label>选择需要从旧表补充到新表的列:</label>
-                <div style="margin-bottom: 10px;">
-                    <button id="lpl_select_all_cols_btn" class="small-button">全选</button>
-                    <button id="lpl_deselect_all_cols_btn" class="small-button">全不选</button>
-                </div>
-                <div id="lpl_old_cols_checkboxes" class="scrollable-list" style="max-height: 150px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">
-                    <!-- Checkboxes will be dynamically inserted here -->
-                </div>
-            </div>
-            <!-- ▲▲▲ 新增结束 ▲▲▲ -->
+            <!-- 步骤 2: 合并新旧库 -->
+            <div id="lpl-sub-tab-merge" class="sub-tab-content">
+                <div class="step">
+                    <div class="step-header">步骤 2: 上传新数据并配置合并规则</div>
+                    <p class="info warning">注意：此工具专注于数据处理，Excel中的图片、图表等对象将不会被保留在最终导出的文件中。</p>
+                    
+                    <!-- ▼▼▼ 需求 2: 重构E,F,G区域的布局 ▼▼▼ -->
+                    <div class="lpl-merge-grid">
+                        <!-- Left Column -->
+                        <div>
+                             <div class="config-item">
+                                <label>E. 原始文件:</label>
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <input type="text" id="lpl_original_file_confirm" readonly placeholder="已从上一步加载，或在此直接上传">
+                                    <label for="lpl_original_reupload_input" class="small-button" style="flex-shrink: 0; cursor: pointer;">重新上传</label>
+                                    <input type="file" id="lpl_original_reupload_input" accept=".xlsx, .xls" style="display:none;">
+                                </div>
+                                 <div class="template-config-grid" style="grid-template-columns: 1fr auto; align-items: end; margin-top: 15px;">
+                                    <div class="config-item">
+                                        <label for="lpl_original_merge_sheet_select">选择工作表 (Sheet):</label>
+                                        <select id="lpl_original_merge_sheet_select" disabled><option>请先加载或上传文件</option></select>
+                                    </div>
+                                    <div class="config-item" style="justify-self: start;">
+                                        <label style="display: flex; align-items: center; cursor: pointer;">
+                                            <input type="checkbox" id="lpl_original_merge_ignore_header" style="width: auto; margin-right: 8px;">
+                                            忽略首行
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="lpl_old_cols_selection_area" class="config-item" style="display:none; margin-top: 20px;">
+                                <label>选择需要从旧表补充到新表的列:</label>
+                                <div style="margin-bottom: 10px;">
+                                    <button id="lpl_select_all_cols_btn" class="small-button">全选</button>
+                                    <button id="lpl_deselect_all_cols_btn" class="small-button">全不选</button>
+                                </div>
+                                <div id="lpl_old_cols_checkboxes" class="scrollable-list" style="max-height: 150px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Right Column -->
+                        <div>
+                             <div class="config-item">
+                                <label for="lpl_new_file_input">F. 上传或重新上传从商业数据库下载的最新Excel文件:</label>
+                                <input type="file" id="lpl_new_file_input" accept=".xlsx, .xls">
+                                 <div class="template-config-grid" style="grid-template-columns: 1fr auto; align-items: end; margin-top: 15px;">
+                                    <div class="config-item">
+                                        <label for="lpl_new_sheet_select">选择工作表 (Sheet):</label>
+                                        <select id="lpl_new_sheet_select" disabled><option>请先上传新库文件</option></select>
+                                    </div>
+                                    <div class="config-item" style="justify-self: start;">
+                                        <label style="display: flex; align-items: center; cursor: pointer;">
+                                            <input type="checkbox" id="lpl_new_ignore_header" style="width: auto; margin-right: 8px;">
+                                            忽略首行
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr style="margin: 25px 0; border-color: var(--border-color);">
 
-            <hr style="margin: 25px 0; border-color: var(--border-color);">
-            
-            <div class="config-item">
-                <label for="lpl_new_file_input">F. 上传或重新上传从商业数据库下载的最新Excel文件:</label>
-                <input type="file" id="lpl_new_file_input" accept=".xlsx, .xls">
-                 <div class="template-config-grid" style="grid-template-columns: 1fr auto; align-items: end; margin-top: 15px;">
                     <div class="config-item">
-                        <label for="lpl_new_sheet_select">选择工作表 (Sheet):</label>
-                        <select id="lpl_new_sheet_select" disabled><option>请先上传新库文件</option></select>
+                        <label>G. 配置用于匹配的列 (通常是公开号):</label>
+                        <div class="template-config-grid" style="grid-template-columns: 1fr 1fr;">
+                            <div>
+                                <label for="lpl_original_key_select">原始库匹配列:</label>
+                                <select id="lpl_original_key_select" disabled><option>请先加载或上传原始库</option></select>
+                            </div>
+                            <div>
+                                <label for="lpl_new_key_select">新库匹配列:</label>
+                                <select id="lpl_new_key_select" disabled><option>请先上传新库</option></select>
+                            </div>
+                        </div>
                     </div>
-                    <div class="config-item" style="justify-self: start;">
-                        <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" id="lpl_new_ignore_header" style="width: auto; margin-right: 8px;">
-                            忽略首行
-                        </label>
-                    </div>
-                </div>
-            </div>
-            <div class="config-item">
-                <label>G. 配置用于匹配的列 (通常是公开号):</label>
-                <div class="template-config-grid" style="grid-template-columns: 1fr 1fr;">
-                    <div>
-                        <label for="lpl_original_key_select">原始库匹配列:</label>
-                        <select id="lpl_original_key_select" disabled><option>请先加载或上传原始库</option></select>
-                    </div>
-                    <div>
-                        <label for="lpl_new_key_select">新库匹配列:</label>
-                        <select id="lpl_new_key_select" disabled><option>请先上传新库</option></select>
-                    </div>
-                </div>
-            </div>
-             <div style="text-align: center; margin-top: 30px;">
-                <button id="lpl_merge_btn" disabled>② 开始合并与更新</button>
-            </div>
-            <div class="info" id="lpl_merge_status" style="display:none; margin-top: 20px;"></div>
-        </div>
-    </div>
+                    <!-- ▲▲▲ 需求 2: 布局修改完成 ▲▲▲ -->
 
-    <!-- 步骤 3: 下载最终结果 -->
-<div id="lpl-sub-tab-result" class="sub-tab-content">
-     <div class="step">
-        <div class="step-header">步骤 3: 预览并下载最终结果</div>
-        <div class="info success" id="lpl_result_summary" style="display:none;"></div>
-        <div id="lpl_result_preview_area" style="display:none;">
-            <label style="margin-top: 20px;">J. 最终合并数据预览 (前10行):</label>
-            
-            <!-- ▼▼▼ 核心修改：添加一个外层div用于横向滚动 ▼▼▼ -->
-            <div class="table-container-horizontal-scroll">
-                <div id="lpl_result_preview_table" class="preview-output">
-                    <!-- 表格将由JS动态生成在这里 -->
+                     <div style="text-align: center; margin-top: 30px;">
+                        <button id="lpl_merge_btn" disabled>② 开始合并与更新</button>
+                    </div>
+                    <div class="info" id="lpl_merge_status" style="display:none; margin-top: 20px;"></div>
                 </div>
             </div>
-            <!-- ▲▲▲ 修改结束 ▲▲▲ -->
 
+            <!-- 步骤 3: 下载最终结果 -->
+            <div id="lpl-sub-tab-result" class="sub-tab-content">
+                 <div class="step">
+                    <div class="step-header">步骤 3: 预览并下载最终结果</div>
+                    <div class="info success" id="lpl_result_summary" style="display:none;"></div>
+                    <div id="lpl_result_preview_area" style="display:none;">
+                        <!-- ▼▼▼ 需求 1: 修改这里的标题文本 ▼▼▼ -->
+                        <label style="margin-top: 20px;">最终合并数据预览 (前10行，列宽可拖动):</label>
+                        <!-- ▼▼▼ 需求 1: 容器 div 保持不变，JS 将在其中生成新结构的表格 ▼▼▼ -->
+                        <div id="lpl_result_preview_table" class="preview-output" style="max-height: 400px; overflow: auto; padding:0; background:transparent;"></div>
+                    </div>
+                     <div style="text-align: center; margin-top: 30px;">
+                        <button id="lpl_download_final_btn" disabled>③ 下载最终合并的Excel文件</button>
+                    </div>
+                </div>
+            </div>
         </div>
-         <div style="text-align: center; margin-top: 30px;">
-            <button id="lpl_download_final_btn" disabled>③ 下载最终合并的Excel文件</button>
-        </div>
-    </div>
-</div>
-<!-- ▲▲▲ 替换结束 ▲▲▲ -->
     </div>
 </div>
 

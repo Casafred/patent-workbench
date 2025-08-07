@@ -159,6 +159,9 @@
     color: var(--text-color-secondary);
     opacity: 0.7;
     transition: opacity 0.2s;
+    /* ▼▼▼ 需求 3: 向上微调提示图标 ▼▼▼ */
+    transform: translateY(-2px);
+    /* ▲▲▲ 需求 3: 修改完成 ▲▲▲ */
 }
 
 .help-icon:hover {
@@ -352,73 +355,95 @@
     width: 100px;
 }
 
+/* ▼▼▼ 需求 2: 为功能四步骤二添加网格布局样式 ▼▼▼ */
+.lpl-merge-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    align-items: start;
+}
+@media (max-width: 992px) {
+    .lpl-merge-grid {
+        grid-template-columns: 1fr;
+    }
+}
+/* ▲▲▲ 需求 2: 修改完成 ▲▲▲ */
+
+
+/* ▼▼▼ 需求 1: 全新的、可拖动、可换行、自适应高度的表格样式 ▼▼▼ */
+
+/* 1. 预览容器样式 */
+#lpl_result_preview_table {
+    overflow: auto; /* 容器必须可以滚动 */
+    max-height: 450px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px; /* 添加圆角以匹配整体风格 */
+}
+
+/* 2. 表格布局与宽度 */
 #lpl_result_preview_table table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.9em;
+    /* CRITICAL: 使用固定布局算法，让浏览器尊重我们设置的列宽 */
     table-layout: fixed;
-}
-
-#lpl_result_preview_table th,
-#lpl_result_preview_table td {
-    border: 1px solid var(--border-color);
-    padding: 8px 12px;
-    text-align: left;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-#lpl_result_preview_table th {
-    background-color: var(--primary-color-hover-bg);
-    font-weight: 600;
-}
-
-/* --- 本地专利库管理模块 - 预览表格优化样式 --- */
-
-/* 新增的横向滚动容器 */
-.table-container-horizontal-scroll {
-    overflow-x: auto; /* 关键：只处理横向滚动 */
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    margin-top: 10px;
-}
-
-/* 内部的预览输出容器，现在不再需要边框和边距 */
-#lpl_result_preview_table.preview-output {
-    border: none;
-    margin-top: 0;
-    border-radius: 0;
-    padding: 0; /* 清除内边距，让表格紧贴容器 */
-    max-height: 400px; /* 保持垂直滚动能力 */
-    overflow-y: auto; /* 保持垂直滚动 */
-}
-
-/* 预览表格本身的样式 */
-#lpl_result_preview_table table {
+    /* CRITICAL: 初始宽度为100%，当列宽被JS改变超出时，会触发父容器的滚动条 */
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.9em;
-    /* table-layout: fixed; 保持这个以获得更好的性能和可预测的布局 */
 }
 
+/* 3. 初始列宽设置 (通过 colgroup 实现) */
+/* JS将动态设置<col>的宽度，此处无需CSS设置 */
+
+/* 4. 单元格 (th, td) 样式 */
 #lpl_result_preview_table th,
 #lpl_result_preview_table td {
     border: 1px solid var(--border-color);
-    padding: 10px 15px; /* 增加内边距，让单元格更宽敞 */
+    padding: 10px 12px;
     text-align: left;
-    white-space: nowrap; /* 禁止文本换行是触发横向滚动的关键 */
-    overflow: hidden;
-    text-overflow: ellipsis;
+    vertical-align: top;
+    position: relative; /* 为拖动器定位 */
     
-    /* ▼▼▼ 核心修改：设置一个合理的最小宽度 ▼▼▼ */
-    min-width: 180px; 
+    /* CRITICAL: 允许内容正常换行 */
+    white-space: normal;
+    word-wrap: break-word; /* 兼容旧浏览器 */
+    overflow-wrap: break-word; /* 标准属性 */
 }
 
-#lpl_result_preview_table th {
-    background-color: var(--primary-color-hover-bg);
-    font-weight: 600;
-    position: sticky; /* 让表头在垂直滚动时固定在顶部 */
-    top: 0;
-    z-index: 1;
+/* 5. 单元格内div，解决内容溢出问题 */
+#lpl_result_preview_table td div {
+    /* 防止内容撑破单元格，尤其是在快速拖动时 */
+    max-height: 300px; /* 限制单元格最大显示高度，可按需调整 */
+    overflow-y: auto;
+    /* 为滚动条留出空间，防止内容跳动 */
+    padding-right: 5px;
 }
+
+
+/* 6. 表头固定样式 */
+#lpl_result_preview_table th {
+    background-color: var(--bg-color); /* 使用浅色背景以区分 */
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    /* 添加底部边框以在滚动时更清晰 */
+    border-bottom: 2px solid var(--primary-color-dark);
+}
+
+/* 7. 列宽拖动器 (Resizer) 样式 */
+.resizer {
+    position: absolute;
+    top: 0;
+    right: -4px; /* 稍微突出，更容易点击 */
+    width: 8px;
+    height: 100%;
+    cursor: col-resize;
+    user-select: none;
+    z-index: 10;
+    transition: background-color 0.2s; /* 添加悬浮效果 */
+}
+
+.resizer:hover,
+.resizer.resizing {
+    background-color: var(--primary-color);
+    opacity: 0.5;
+}
+/* ▲▲▲ 需求 1: 修改完成 ▲▲▲ */
