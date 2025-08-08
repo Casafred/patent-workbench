@@ -19,7 +19,10 @@ USERS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'users.jso
 # --- 初始化 Flask 应用 ---
 static_folder_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.')
 app = Flask(__name__, static_folder=static_folder_path, static_url_path='')
-CORS(app)
+# ▼▼▼ 关键修复：替换简单的 CORS(app) ▼▼▼
+# 这将允许所有源(在开发中)访问/api/路径，并支持凭据和 Authorization 头
+CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
+# ▲▲▲ 修复结束 ▲▲▲
 
 # --- 2. 会话和安全配置 ---
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-key-for-local-testing-only')
