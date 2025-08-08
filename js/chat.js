@@ -1,6 +1,6 @@
 // js/chat.js (完整最终版)
 
-// ▼▼▼ 新增：文件处理核心函数 ▼▼▼
+// ▼▼▼ 用这个新版本替换旧的 handleChatFileUpload 函数 ▼▼▼
 async function handleChatFileUpload(event, fileFromReuse = null) {
     const file = fileFromReuse || (event.target ? event.target.files[0] : null);
     if (!file) return;
@@ -18,14 +18,16 @@ async function handleChatFileUpload(event, fileFromReuse = null) {
 
     try {
         let result;
+        // 注意：这里的 /files/{id}/content 逻辑可能需要调整为调用新的后端端点，
+        // 或者在后端/get_file_content_by_id中也实现轮询。
+        // 为简单起见，我们假设复用时内容已存在。
         if (fileFromReuse && fileFromReuse.id) {
-            // 复用旧文件，直接从后端获取内容
-            result = await apiCall(`/files/${fileFromReuse.id}/content`, null, 'GET');
+            // 复用旧文件
+             result = await apiCall(`/files/${fileFromReuse.id}/content`, null, 'GET');
         } else {
             // 新上传文件
             const formData = new FormData();
             formData.append('file', file);
-            // 注意：apiCall需要正确处理FormData
             result = await apiCall('/extract_file_content', formData, 'POST');
         }
         
@@ -39,50 +41,48 @@ async function handleChatFileUpload(event, fileFromReuse = null) {
         // UI反馈：处理成功
         chatFileStatusArea.innerHTML = `
             <div class="file-info">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 8px; color: var(--primary-color);"><path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z"/></svg>
                 <span>已附加文件:</span>
                 <span class="filename" title="${result.filename}">${result.filename}</span>
             </div>
             <button class="file-remove-btn" onclick="removeActiveFile()" title="移除文件">&times;</button>`;
         
-        // 将文件内容格式化并插入到输入框
-        const fileContext = `\n\n[--- 文件内容开始 ---\n${result.content}\n--- 文件内容结束 ---]\n\n`;
-        // 将文件内容放在最前面，用户输入的问题跟在后面
-        chatInput.value = fileContext + chatInput.value;
-        updateCharCount();
+        // 【核心修改】不再将文件内容插入输入框
+        // const fileContext = ... (删除这部分代码)
+        // chatInput.value = ... (删除这部分代码)
+        
         chatInput.focus();
 
     } catch (error) {
-        // UI反馈：处理失败
         alert(`文件处理失败: ${error.message}`);
-        removeActiveFile(); // 清理UI和状态
+        removeActiveFile(); 
     } finally {
-        // 恢复UI
         chatInput.disabled = false;
         chatSendBtn.disabled = false;
         chatUploadFileBtn.disabled = false;
-        // 重置文件输入，以便可以再次上传同一个文件
         if (event && event.target) {
             event.target.value = ''; 
         }
     }
 }
+// ▲▲▲ 替换结束 ▲▲▲
 
-// 移除已附加文件的函数
+// ▼▼▼ 用这个新版本替换旧的 removeActiveFile 函数 ▼▼▼
 function removeActiveFile() {
-    if (appState.chat.activeFile && appState.chat.activeFile.content) {
-        // 从输入框中移除文件内容
-        const fileContentRegex = new RegExp(`\\n\\n\\[--- 文件内容开始 ---\\n${escapeRegex(appState.chat.activeFile.content)}\\n--- 文件内容结束 ---\\]\\n\\n`, 'g');
-        chatInput.value = chatInput.value.replace(fileContentRegex, '');
-    }
+    // 【核心修改】不再需要从输入框移除文件内容
+    // if (appState.chat.activeFile && appState.chat.activeFile.content) { ... } (删除这部分)
+
     // 清理状态
     appState.chat.activeFile = null;
     
     // 清理UI
     chatFileStatusArea.style.display = 'none';
     chatFileStatusArea.innerHTML = '';
+    
+    // 确保字数统计是正确的
     updateCharCount();
 }
-// ▲▲▲ 新增文件处理核心函数结束 ▲▲▲
+// ▲▲▲ 替换结束 ▲▲▲
 
 // 辅助函数，用于转义正则表达式中的特殊字符
 function escapeRegex(string) {
@@ -545,14 +545,13 @@ function handleTitleEditBlur(event) {
     }
 }
 
+// ▼▼▼ 用这个新版本替换旧的 handleStreamChatRequest 函数 ▼▼▼
 async function handleStreamChatRequest() {
     const userInput = chatInput.value.trim();
-    // 即使输入框为空，如果附加了文件，也允许发送
     if (!userInput && !appState.chat.activeFile) return;
 
-    // 如果只有文件内容没有用户问题，提示用户输入问题
-    if (appState.chat.activeFile && !userInput.replace(new RegExp(`\\n\\n\\[--- 文件内容开始 ---\\n${escapeRegex(appState.chat.activeFile.content)}\\n--- 文件内容结束 ---\\]\\n\\n`, 'g'), '').trim()) {
-        alert("请在输入框中提出您关于文件内容的问题。");
+    if (appState.chat.activeFile && !userInput) {
+        alert("文件已附加，请输入您的问题。");
         return;
     }
 
@@ -562,24 +561,38 @@ async function handleStreamChatRequest() {
     chatSendBtn.disabled = true;
     chatInput.disabled = true;
 
-    const persona = appState.chat.personas[convo.personaId];
-    let finalUserInput = userInput;
-    if (persona.userTemplate && persona.userTemplate.includes('{{INPUT}}')) {
-        finalUserInput = persona.userTemplate.replace('{{INPUT}}', userInput);
+    // --- 【核心修改】在这里组合最终的 Prompt ---
+    let promptForApi = userInput;
+    let userMessageForHistory = {
+        role: 'user',
+        content: userInput,
+        timestamp: Date.now()
+    };
+
+    if (appState.chat.activeFile && appState.chat.activeFile.content) {
+        promptForApi = `基于以下文档（文件名: ${appState.chat.activeFile.filename}）的内容，请回答我的问题。
+---
+文档内容:
+${appState.chat.activeFile.content}
+---
+我的问题是: ${userInput}`;
+        
+        // 在历史记录中也标记一下，方便回溯
+        userMessageForHistory.attachedFile = appState.chat.activeFile.filename;
     }
-    
-    convo.messages.push({ role: 'user', content: finalUserInput, timestamp: Date.now() });
+    // --- 修改结束 ---
+
+    // 使用带有附加文件标记的对象保存到历史记录
+    convo.messages.push(userMessageForHistory);
     convo.lastUpdate = Date.now();
     
-    renderCurrentChat();
+    renderCurrentChat(); // renderCurrentChat 需要被更新以显示附件标记
     renderChatHistoryList();
     saveConversations();
     
-    // ▼▼▼ 修改：清理输入框和文件状态 ▼▼▼
     chatInput.value = '';
     updateCharCount();
-    removeActiveFile(); // [重要] 发送后清除文件状态
-    // ▲▲▲ 修改结束 ▲▲▲
+    removeActiveFile(); // 发送后清除文件状态和UI
     
     const assistantMessageId = addMessageToDOM('assistant', '<span class="blinking-cursor">|</span>', convo.messages.length, true);
     const assistantMessageEl = getEl(assistantMessageId);
@@ -590,14 +603,20 @@ async function handleStreamChatRequest() {
     
     try {
         const contextCount = parseInt(chatContextCount.value, 10);
-        // 确保系统消息总是第一条
         const nonSystemMessages = convo.messages.filter(m => m.role !== 'system');
         const messagesToSend = [
             convo.messages.find(m => m.role === 'system'), 
             ...nonSystemMessages.slice(-contextCount)
-        ].filter(Boolean); // filter(Boolean) 移除可能的 undefined
-        
+        ].filter(Boolean);
+
+        // **关键**：确保最后一条用户消息的内容是组合后的完整 Prompt
+        if (messagesToSend.length > 0 && messagesToSend[messagesToSend.length - 1].role === 'user') {
+            messagesToSend[messagesToSend.length - 1].content = promptForApi;
+        }
+
         const reader = await apiCall('/stream_chat', { model: chatModelSelect.value, temperature: parseFloat(chatTempInput.value), messages: messagesToSend }, 'POST', true);
+        
+        // ... (后续的流式处理代码保持不变) ...
         const decoder = new TextDecoder();
         while (true) {
             const { value, done } = await reader.read();
@@ -646,6 +665,7 @@ async function handleStreamChatRequest() {
         chatInput.focus();
     }
 }
+// ▲▲▲ 替换结束 ▲▲▲
 
 function savePersonas() { localStorage.setItem('chatPersonas', JSON.stringify(appState.chat.personas)); }
 
@@ -726,8 +746,8 @@ function renderCurrentChat() {
     
     convo.messages.forEach((msg, index) => {
         if (msg.role !== 'system') {
-            // ▼▼▼ 【核心修复】在这里加上 msg.timestamp 作为第6个参数 ▼▼▼
-            addMessageToDOM(msg.role, msg.content, index, false, msg.usage, msg.timestamp);
+            // 传递第7个参数 msg
+            addMessageToDOM(msg.role, msg.content, index, false, msg.usage, msg.timestamp, msg);
         }
     });
     
@@ -740,6 +760,18 @@ function addMessageToDOM(role, content, index, isStreaming = false, usage = null
     messageDiv.className = `chat-message ${role}-message`;
     messageDiv.id = messageId;
     if (index !== undefined) messageDiv.dataset.index = index;
+
+    // 【新增】附件标记的HTML
+    let attachmentHtml = '';
+    const attachedFile = msg ? msg.attachedFile : null; // 从完整的消息对象中获取文件名
+    if (role === 'user' && attachedFile) {
+        attachmentHtml = `
+            <div class="message-attachment-indicator">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M4.5 3a2.5 2.5 0 0 1 5 0v9a1.5 1.5 0 0 1-3 0V5a.5.5 0 0 1 1 0v7a.5.5 0 0 0 1 0V3a1.5 1.5 0 1 0-3 0v9a2.5 2.5 0 0 0 5 0V5a.5.5 0 0 1 1 0v7a3.5 3.5 0 1 1-7 0V3z"/></svg>
+                <span>${attachedFile}</span>
+            </div>
+        `;
+    }
 
     const renderedContent = isStreaming ? content : (window.marked ? window.marked.parse(content, { gfm: true, breaks: true }) : content.replace(/</g, "&lt;").replace(/>/g, "&gt;"));
 

@@ -709,4 +709,18 @@ summary::-webkit-details-marker { display: none; }
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
-/* ▲▲▲ 新增样式结束 ▲▲▲ */
+
+.message-attachment-indicator {
+    display: flex;
+    align-items: center;
+    font-size: 0.8em;
+    color: #555;
+    background-color: #f0f0f0;
+    padding: 4px 8px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    max-width: fit-content;
+}
+.message-attachment-indicator svg {
+    margin-right: 6px;
+}

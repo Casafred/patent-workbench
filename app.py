@@ -808,24 +808,20 @@ def get_file_content_by_id(file_id):
 
 # ▲▲▲ 新增代码结束 ▲▲▲
 
-# ▼▼▼ 新增：文件上传并立即提取内容的端点 ▼▼▼
+# ▼▼▼ 用这个新版本替换旧的 extract_file_content 函数 ▼▼▼
 @app.route('/api/extract_file_content', methods=['POST'])
 def extract_file_content():
     """
-    接收前端上传的文件，上传到ZhipuAI，然后立即获取文件内容并返回。
-    这是一个将 Zhipu "上传" 和 "获取内容" 两步合一的便利端点。
+    [增强版] 接收前端上传的文件，上传到ZhipuAI，然后通过轮询机制等待并获取文件内容。
     """
-    # 1. 验证用户会话和IP
     is_valid, error_response = validate_api_request()
     if not is_valid:
         return error_response
 
-    # 2. 获取 ZhipuAI 客户端实例
     client, error_response = get_client_from_header()
     if error_response:
         return error_response
 
-    # 3. 检查文件是否存在于请求中
     if 'file' not in request.files:
         return create_response(error="请求中未找到 'file' 部分", status_code=400)
 
@@ -834,36 +830,58 @@ def extract_file_content():
         return create_response(error="未选择任何文件", status_code=400)
 
     try:
-        # --- 步骤一：上传文件到 ZhipuAI ---
-        # 使用 BytesIO 在内存中处理文件，避免存储到本地
+        # --- 步骤一：上传文件 ---
         file_bytes = file.read()
         bytes_io = BytesIO(file_bytes)
-        
         print(f"开始上传文件 '{file.filename}' 到 ZhipuAI...")
         upload_result = client.files.create(
             file=(file.filename, bytes_io),
-            purpose="file-extract"  # 根据文档，用于内容抽取
+            purpose="file-extract"
         )
         file_id = upload_result.id
         filename = upload_result.filename
         print(f"文件上传成功，File ID: {file_id}")
 
-        # --- 步骤二：使用 File ID 获取解析后的内容 ---
-        # 智谱AI在后台需要一些时间来解析文件，这里可以加一个短暂的延时或者轮询
-        # 但通常对于小文件，直接请求即可。如果遇到问题，可以考虑增加延时。
-        # time.sleep(2) # 如果直接获取失败，可以取消此行注释进行短暂等待
-        print(f"开始获取 File ID: {file_id} 的内容...")
-        content_response = client.files.content(file_id=file_id)
-        
-        # content_response.content 是 bytes 类型，需要解码
-        try:
-            extracted_text = content_response.content.decode('utf-8')
-        except UnicodeDecodeError:
-            extracted_text = "[错误：文件内容无法以UTF-8格式解码，可能是二进制文件或编码不兼容]"
-        
-        print(f"成功获取文件内容，长度: {len(extracted_text)} 字节。")
+        # --- 步骤二：轮询获取文件内容 ---
+        MAX_RETRIES = 5  # 最多重试5次
+        RETRY_DELAY = 2  # 每次重试间隔2秒
+        extracted_text = None
 
-        # 4. 构造成功响应，将前端需要的所有信息返回
+        print(f"开始轮询获取文件内容 (最多等待 {MAX_RETRIES * RETRY_DELAY} 秒)...")
+        for attempt in range(MAX_RETRIES):
+            try:
+                # 延时后再次请求
+                time.sleep(RETRY_DELAY)
+                print(f"第 {attempt + 1} 次尝试获取内容...")
+                content_response = client.files.content(file_id=file_id)
+                
+                # 尝试解码
+                decoded_content = content_response.content.decode('utf-8')
+
+                # **关键检查**: 如果解码后的内容是JSON，说明解析可能还未完成，继续轮询。
+                # 如果它不是JSON（会抛出JSONDecodeError），那它就是我们想要的纯文本。
+                try:
+                    json.loads(decoded_content)
+                    print("获取到的内容是JSON，可能仍在处理中，继续等待...")
+                    # 如果是最后一次尝试，就认为失败了
+                    if attempt == MAX_RETRIES - 1:
+                         raise Exception("文件解析超时，未能获取到纯文本内容。")
+                except json.JSONDecodeError:
+                    # 这正是我们想要的结果！它不是JSON，是纯文本
+                    extracted_text = decoded_content
+                    print("成功获取到纯文本内容！")
+                    break # 成功获取，跳出循环
+
+            except Exception as e:
+                print(f"尝试获取内容时出错: {e}")
+                if attempt == MAX_RETRIES - 1:
+                    raise # 如果是最后一次尝试，则抛出异常
+
+        if extracted_text is None:
+            # 如果循环结束了还没拿到内容
+            raise Exception("在所有重试后仍未能获取到文件内容。")
+
+        # --- 步骤三：返回成功响应 ---
         response_data = {
             "fileId": file_id,
             "filename": filename,
@@ -872,11 +890,10 @@ def extract_file_content():
         return create_response(data=response_data)
 
     except Exception as e:
-        # 捕获所有可能的异常，并返回详细错误信息
         print(f"文件处理过程中发生严重错误: {traceback.format_exc()}")
         return create_response(error=f"文件处理失败: {str(e)}", status_code=500)
 
-# ▲▲▲ 新增代码结束 ▲▲▲
+# ▲▲▲ 替换结束 ▲▲▲
 
 # --- 启动前初始化 ---
 # 将 init_db() 移到这里。当Render的Gunicorn服务器导入这个文件时，
