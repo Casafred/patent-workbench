@@ -21,7 +21,12 @@ static_folder_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.
 app = Flask(__name__, static_folder=static_folder_path, static_url_path='')
 # ▼▼▼ 关键修复：替换简单的 CORS(app) ▼▼▼
 # 这将允许所有源(在开发中)访问/api/路径，并支持凭据和 Authorization 头
-CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
+# 找到你的CORS配置行
+CORS(app, 
+     resources={r"/api/*": {"origins": "*"}}, 
+     supports_credentials=True, 
+     allow_headers=["Content-Type", "Authorization"] # <-- 明确添加这一行
+)
 # ▲▲▲ 修复结束 ▲▲▲
 
 # --- 2. 会话和安全配置 ---
@@ -800,6 +805,76 @@ def get_file_content_by_id(file_id):
     except Exception as e:
         print(f"获取文件 {file_id} 内容时发生错误: {traceback.format_exc()}")
         return create_response(error=f"获取文件内容失败: {str(e)}", status_code=500)
+
+# ▲▲▲ 新增代码结束 ▲▲▲
+
+# ▼▼▼ 新增：文件上传并立即提取内容的端点 ▼▼▼
+@app.route('/api/extract_file_content', methods=['POST'])
+def extract_file_content():
+    """
+    接收前端上传的文件，上传到ZhipuAI，然后立即获取文件内容并返回。
+    这是一个将 Zhipu "上传" 和 "获取内容" 两步合一的便利端点。
+    """
+    # 1. 验证用户会话和IP
+    is_valid, error_response = validate_api_request()
+    if not is_valid:
+        return error_response
+
+    # 2. 获取 ZhipuAI 客户端实例
+    client, error_response = get_client_from_header()
+    if error_response:
+        return error_response
+
+    # 3. 检查文件是否存在于请求中
+    if 'file' not in request.files:
+        return create_response(error="请求中未找到 'file' 部分", status_code=400)
+
+    file = request.files['file']
+    if file.filename == '':
+        return create_response(error="未选择任何文件", status_code=400)
+
+    try:
+        # --- 步骤一：上传文件到 ZhipuAI ---
+        # 使用 BytesIO 在内存中处理文件，避免存储到本地
+        file_bytes = file.read()
+        bytes_io = BytesIO(file_bytes)
+        
+        print(f"开始上传文件 '{file.filename}' 到 ZhipuAI...")
+        upload_result = client.files.create(
+            file=(file.filename, bytes_io),
+            purpose="file-extract"  # 根据文档，用于内容抽取
+        )
+        file_id = upload_result.id
+        filename = upload_result.filename
+        print(f"文件上传成功，File ID: {file_id}")
+
+        # --- 步骤二：使用 File ID 获取解析后的内容 ---
+        # 智谱AI在后台需要一些时间来解析文件，这里可以加一个短暂的延时或者轮询
+        # 但通常对于小文件，直接请求即可。如果遇到问题，可以考虑增加延时。
+        # time.sleep(2) # 如果直接获取失败，可以取消此行注释进行短暂等待
+        print(f"开始获取 File ID: {file_id} 的内容...")
+        content_response = client.files.content(file_id=file_id)
+        
+        # content_response.content 是 bytes 类型，需要解码
+        try:
+            extracted_text = content_response.content.decode('utf-8')
+        except UnicodeDecodeError:
+            extracted_text = "[错误：文件内容无法以UTF-8格式解码，可能是二进制文件或编码不兼容]"
+        
+        print(f"成功获取文件内容，长度: {len(extracted_text)} 字节。")
+
+        # 4. 构造成功响应，将前端需要的所有信息返回
+        response_data = {
+            "fileId": file_id,
+            "filename": filename,
+            "content": extracted_text
+        }
+        return create_response(data=response_data)
+
+    except Exception as e:
+        # 捕获所有可能的异常，并返回详细错误信息
+        print(f"文件处理过程中发生严重错误: {traceback.format_exc()}")
+        return create_response(error=f"文件处理失败: {str(e)}", status_code=500)
 
 # ▲▲▲ 新增代码结束 ▲▲▲
 
