@@ -23,10 +23,15 @@ const chatSelectAllBtn = getEl('chat_select_all_btn');
 const chatDeselectAllBtn = getEl('chat_deselect_all_btn');
 const chatDeleteSelectedBtn = getEl('chat_delete_selected_btn');
 
-// ▼▼▼ 新增：文件上传相关 DOM 元素 ▼▼▼
+// ▼▼▼ 新增：文件上传和管理相关 DOM 元素 ▼▼▼
 const chatUploadFileBtn = getEl('chat_upload_file_btn');
 const chatFileInput = getEl('chat_file_input');
 const chatFileStatusArea = getEl('chat_file_status_area');
+const chatFileManageBtn = getEl('chat_file_manage_btn');
+const fileManagerModal = getEl('file_manager_modal');
+const closeFileManagerBtn = getEl('close_file_manager_btn');
+const fileManagerList = getEl('file_manager_list');
+const fileManagerStatus = getEl('file_manager_status');
 // ▲▲▲ 新增结束 ▲▲▲
 
 // Async Batch (v2) - 新增和修改的元素

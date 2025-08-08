@@ -1,8 +1,8 @@
 // js/chat.js (完整最终版)
 
-// ▼▼▼ 新增：处理文件上传的函数 ▼▼▼
-async function handleChatFileUpload(event) {
-    const file = event.target.files[0];
+// ▼▼▼ 新增：文件处理核心函数 ▼▼▼
+async function handleChatFileUpload(event, fileFromReuse = null) {
+    const file = fileFromReuse || (event.target ? event.target.files[0] : null);
     if (!file) return;
 
     // UI反馈：开始处理
@@ -16,12 +16,18 @@ async function handleChatFileUpload(event) {
     chatSendBtn.disabled = true;
     chatUploadFileBtn.disabled = true;
 
-    const formData = new FormData();
-    formData.append('file', file);
-
     try {
-        // 调用后端API (注意：apiCall需要正确处理FormData)
-        const result = await apiCall('/extract_file_content', formData, 'POST');
+        let result;
+        if (fileFromReuse && fileFromReuse.id) {
+            // 复用旧文件，直接从后端获取内容
+            result = await apiCall(`/files/${fileFromReuse.id}/content`, null, 'GET');
+        } else {
+            // 新上传文件
+            const formData = new FormData();
+            formData.append('file', file);
+            // 注意：apiCall需要正确处理FormData
+            result = await apiCall('/extract_file_content', formData, 'POST');
+        }
         
         // 存储文件状态
         appState.chat.activeFile = {
@@ -55,30 +61,129 @@ async function handleChatFileUpload(event) {
         chatSendBtn.disabled = false;
         chatUploadFileBtn.disabled = false;
         // 重置文件输入，以便可以再次上传同一个文件
-        event.target.value = ''; 
+        if (event && event.target) {
+            event.target.value = ''; 
+        }
     }
 }
 
-// ▼▼▼ 新增：移除已附加文件的函数 ▼▼▼
+// 移除已附加文件的函数
 function removeActiveFile() {
-    if (appState.chat.activeFile) {
+    if (appState.chat.activeFile && appState.chat.activeFile.content) {
         // 从输入框中移除文件内容
         const fileContentRegex = new RegExp(`\\n\\n\\[--- 文件内容开始 ---\\n${escapeRegex(appState.chat.activeFile.content)}\\n--- 文件内容结束 ---\\]\\n\\n`, 'g');
         chatInput.value = chatInput.value.replace(fileContentRegex, '');
-        // 清理状态
-        appState.chat.activeFile = null;
     }
+    // 清理状态
+    appState.chat.activeFile = null;
     
     // 清理UI
     chatFileStatusArea.style.display = 'none';
     chatFileStatusArea.innerHTML = '';
     updateCharCount();
 }
+// ▲▲▲ 新增文件处理核心函数结束 ▲▲▲
 
 // 辅助函数，用于转义正则表达式中的特殊字符
 function escapeRegex(string) {
+    if (typeof string !== 'string') return '';
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
+
+// ▼▼▼ 新增：文件管理界面相关函数 ▼▼▼
+function openFileManager() {
+    const modal = document.getElementById('file_manager_modal');
+    modal.style.display = 'block';
+    fetchAndRenderFiles();
+}
+
+function closeFileManager() {
+    const modal = document.getElementById('file_manager_modal');
+    modal.style.display = 'none';
+}
+
+async function fetchAndRenderFiles() {
+    const listEl = document.getElementById('file_manager_list');
+    const statusEl = document.getElementById('file_manager_status');
+    listEl.innerHTML = '';
+    statusEl.innerHTML = '<div class="file-processing-spinner"></div> 正在加载文件列表...';
+
+    try {
+        // 我们假设聊天上传的文件 purpose 为 'agent' 或 'file-extract'
+        const result1 = await apiCall('/files?purpose=agent', null, 'GET');
+        const result2 = await apiCall('/files?purpose=file-extract', null, 'GET');
+        
+        const allFiles = [...result1.data, ...result2.data];
+        // 去重
+        const uniqueFiles = Array.from(new Map(allFiles.map(file => [file.id, file])).values());
+        // 按创建时间降序排序
+        uniqueFiles.sort((a, b) => b.created_at - a.created_at);
+
+        if (uniqueFiles.length === 0) {
+            statusEl.innerHTML = '您还没有上传过任何文件。';
+            return;
+        }
+
+        statusEl.innerHTML = '';
+        uniqueFiles.forEach(file => {
+            const tr = document.createElement('tr');
+            const fileSize = file.bytes > 1024 * 1024 
+                ? `${(file.bytes / (1024 * 1024)).toFixed(2)} MB` 
+                : `${(file.bytes / 1024).toFixed(1)} KB`;
+            
+            tr.innerHTML = `
+                <td class="file-name-cell" title="${file.filename}">${file.filename}</td>
+                <td>${file.purpose}</td>
+                <td>${fileSize}</td>
+                <td>${new Date(file.created_at * 1000).toLocaleString()}</td>
+                <td class="file-actions-cell">
+                    <button class="small-button" onclick="reuseFile('${file.id}', '${file.filename}')">复用</button>
+                    <button class="small-button delete-button" onclick="deleteManagedFile('${file.id}', '${file.filename}')">删除</button>
+                </td>
+            `;
+            listEl.appendChild(tr);
+        });
+
+    } catch (error) {
+        statusEl.innerHTML = `<div class="info error">加载文件列表失败: ${error.message}</div>`;
+    }
+}
+
+async function deleteManagedFile(fileId, filename) {
+    if (!confirm(`您确定要永久删除文件 "${filename}" 吗？此操作不可撤销。`)) {
+        return;
+    }
+    try {
+        await apiCall(`/files/${fileId}`, null, 'DELETE');
+        alert(`文件 "${filename}" 已成功删除。`);
+        fetchAndRenderFiles(); // 刷新列表
+    } catch (error) {
+        alert(`删除文件失败: ${error.message}`);
+    }
+}
+
+async function reuseFile(fileId, filename) {
+    if (appState.chat.activeFile) {
+        if (!confirm("当前已有附加文件，复用新文件将替换它。要继续吗？")) {
+            return;
+        }
+    }
+    
+    closeFileManager();
+    // 切换到即时对话 Tab
+    switchTab('instant', document.querySelector('.main-tab-container .tab-button'));
+
+    // 开始一个新的对话
+    startNewChat(true);
+
+    // 模拟一个文件对象进行处理
+    const fileToReuse = {
+        id: fileId,
+        name: filename
+    };
+    await handleChatFileUpload(null, fileToReuse);
+}
+// ▲▲▲ 新增文件管理界面函数结束 ▲▲▲
 
 // 更新字数统计和输入框高度
 function updateCharCount() {
@@ -208,11 +313,23 @@ function initChat() {
     chatNewBtn.addEventListener('click', () => startNewChat(true));
     chatInputNewBtn.addEventListener('click', () => startNewChat(true));
 
-    // ▼▼▼ 新增：为文件上传按钮绑定事件 ▼▼▼
+    // ▼▼▼ 新增/修改：事件监听 ▼▼▼
     chatUploadFileBtn.addEventListener('click', () => chatFileInput.click());
     chatFileInput.addEventListener('change', handleChatFileUpload);
-    // ▲▲▲ 新增结束 ▲▲▲
     
+    // 文件管理按钮
+    const fileManagerBtn = document.getElementById('chat_file_manage_btn');
+    if (fileManagerBtn) fileManagerBtn.addEventListener('click', openFileManager);
+    const closeFileManagerBtn = document.getElementById('close_file_manager_btn');
+    if(closeFileManagerBtn) closeFileManagerBtn.addEventListener('click', closeFileManager);
+    window.addEventListener('click', (event) => {
+        const modal = document.getElementById('file_manager_modal');
+        if (event.target == modal) {
+            closeFileManager();
+        }
+    });
+    // ▲▲▲ 新增/修改结束 ▲▲▲
+
     // 设置所有导出下拉菜单的事件监听
     document.addEventListener('click', (e) => {
         if (e.target.matches('[data-export]')) {
@@ -458,10 +575,11 @@ async function handleStreamChatRequest() {
     renderChatHistoryList();
     saveConversations();
     
-    // 清理输入框和文件状态
+    // ▼▼▼ 修改：清理输入框和文件状态 ▼▼▼
     chatInput.value = '';
     updateCharCount();
     removeActiveFile(); // [重要] 发送后清除文件状态
+    // ▲▲▲ 修改结束 ▲▲▲
     
     const assistantMessageId = addMessageToDOM('assistant', '<span class="blinking-cursor">|</span>', convo.messages.length, true);
     const assistantMessageEl = getEl(assistantMessageId);

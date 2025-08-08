@@ -28,6 +28,46 @@
                 margin-left: 6px;
                 vertical-align: middle;
             }
+        /* 其他样式 */
+        .file-manager-modal {
+            display: none; position: fixed; z-index: 1001; left: 0; top: 0;
+            width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);
+            -webkit-animation-name: fadeIn; animation-name: fadeIn;
+            -webkit-animation-duration: 0.4s; animation-duration: 0.4s;
+        }
+        .file-manager-content {
+            position: relative; background-color: var(--surface-color); margin: 5% auto;
+            padding: 0; border: 1px solid var(--border-color); border-radius: 12px;
+            width: 80%; max-width: 900px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            -webkit-animation-name: slideIn; animation-name: slideIn;
+            -webkit-animation-duration: 0.4s; animation-duration: 0.4s
+        }
+        .file-manager-header {
+            padding: 15px 25px; background: linear-gradient(90deg, var(--primary-color-dark), var(--primary-color));
+            color: white; border-radius: 12px 12px 0 0; display: flex;
+            justify-content: space-between; align-items: center;
+        }
+        .file-manager-header h2 { margin: 0; font-size: 1.2em; }
+        .close-file-manager {
+            color: white; float: right; font-size: 28px; font-weight: bold;
+            background: none; border: none; cursor: pointer; opacity: 0.8;
+        }
+        .close-file-manager:hover, .close-file-manager:focus { opacity: 1; text-decoration: none; }
+        .file-manager-body { padding: 20px; max-height: 65vh; overflow-y: auto; }
+        .file-manager-table { width: 100%; border-collapse: collapse; }
+        .file-manager-table th, .file-manager-table td {
+            border-bottom: 1px solid var(--border-color); padding: 12px 15px;
+            text-align: left; vertical-align: middle;
+        }
+        .file-manager-table th { font-weight: 600; color: var(--text-color-secondary); }
+        .file-manager-table tr:hover { background-color: var(--primary-color-hover-bg); }
+        .file-name-cell { max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .file-actions-cell { text-align: right; white-space: nowrap; }
+        #file_manager_status { margin-top: 15px; text-align: center; }
+        @-webkit-keyframes slideIn { from {top: -300px; opacity: 0} to {top: 0; opacity: 1} }
+        @keyframes slideIn { from {margin-top: -5%; opacity: 0} to {margin-top: 5%; opacity: 1} }
+        @-webkit-keyframes fadeIn { from {opacity: 0} to {opacity: 1} }
+        @keyframes fadeIn { from {opacity: 0} to {opacity: 1} }
         </style>
 
 </head>
@@ -116,6 +156,38 @@
                 </div>
             </div>
 
+            <!-- ▼▼▼ 新增：文件管理模态框 ▼▼▼ -->
+            <div id="file_manager_modal" class="file-manager-modal">
+                <div class="file-manager-content">
+                    <div class="file-manager-header">
+                        <h2>文件管理中心</h2>
+                        <button id="close_file_manager_btn" class="close-file-manager">&times;</button>
+                    </div>
+                    <div class="file-manager-body">
+                        <p class="info">在这里，您可以查看、删除已上传的文件，或选择一个文件开始新的对话。</p>
+                        <div id="file_manager_status"></div>
+                        <div style="overflow-x:auto;">
+                            <table class="file-manager-table">
+                                <thead>
+                                    <tr>
+                                        <th>文件名</th>
+                                        <th>用途</th>
+                                        <th>大小</th>
+                                        <th>上传时间</th>
+                                        <th class="file-actions-cell">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="file_manager_list">
+                                    <!-- 文件列表将由JS动态填充 -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- ▲▲▲ 新增模态框结束 ▲▲▲ -->
+
+
             <div id="instant-chat-layout">
                 <div id="chat_history_panel">
                     <div id="chat_history_header">
@@ -132,6 +204,9 @@
                             <button id="chat_save_title_btn" class="small-button hidden">保存</button>
                         </div>
                         <div class="title-bar-actions">
+                                <!-- ▼▼▼ 新增：文件管理按钮 ▼▼▼ -->
+                                <button id="chat_file_manage_btn" class="small-button">文件管理</button>
+                                <!-- ▲▲▲ 新增结束 ▲▲▲ -->
                             <button id="chat_params_btn" class="small-button">对话参数设置</button>
                             <button id="chat_manage_btn" class="small-button">管理消息</button>
                                 <div class="export-dropdown">
@@ -151,15 +226,16 @@
                         </div>
                         <div id="chat_window"></div>
                         <!-- ▼▼▼ 新增：文件状态显示区域 ▼▼▼ -->
-                        <div id="chat_file_status_area" style="display:none;"></div>
+                        <div id="chat_file_status_area" style="display:none;">
+                        </div>
                         <!-- ▲▲▲ 新增结束 ▲▲▲ -->
                         <div id="chat_input_area">
                             <button id="chat_input_new_btn" class="new-chat-btn" title="开启新对话">+</button>
                             <!-- ▼▼▼ 新增：文件上传按钮和隐藏的input ▼▼▼ -->
-                            <button id="chat_upload_file_btn" class="icon-button" title="上传文件 (PDF, Word, Excel, PPT, 图片, CSV)">
+                            <button id="chat_upload_file_btn" class="icon-button" title="上传文件 (PDF, Word, Excel, 图片, CSV等)">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
                             </button>
-                            <input type="file" id="chat_file_input" style="display:none;" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg,.csv">
+                            <input type="file" id="chat_file_input" style="display:none;" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg,.csv,.txt">
                             <!-- ▲▲▲ 新增结束 ▲▲▲ -->
                         <div id="chat_input_wrapper">
                             <textarea id="chat_input" placeholder="输入您的问题 (Shift+Enter 换行)..." rows="1"></textarea>

@@ -713,55 +713,91 @@ def download_result_file():
     except Exception as e:
         print(f"Error in download_result_file: {traceback.format_exc()}"); return create_response(error=f"获取文件内容时发生错误: {str(e)}", status_code=500)
 
-# ▼▼▼ 新增：文件内容提取 API 端点 ▼▼▼
-@app.route('/api/extract_file_content', methods=['POST'])
-def extract_file_content():
-    # 1. 身份验证
+# ▼▼▼ 新增：文件管理 API 端点 ▼▼▼
+
+@app.route('/api/files', methods=['GET'])
+def list_files():
+    """获取用户上传的文件列表"""
     is_valid, error_response = validate_api_request()
     if not is_valid:
         return error_response
 
-    # 2. 获取 ZhipuAI 客户端
     client, error_response = get_client_from_header()
     if error_response:
         return error_response
 
-    # 3. 检查文件是否存在
-    if 'file' not in request.files:
-        return create_response(error="请求中未找到文件部分", status_code=400)
+    try:
+        # 我们主要关心用于对话的文件，所以按 purpose 过滤
+        # Zhipu API 要求 purpose 字段
+        purpose = request.args.get('purpose', 'agent') # 默认为 agent, 也可支持 file-extract 等
+        
+        file_list = client.files.list(purpose=purpose)
+        
+        # 将返回的对象转换为JSON兼容的格式
+        return create_response(data=json.loads(file_list.model_dump_json()))
 
-    file = request.files['file']
-    if file.filename == '':
-        return create_response(error="未选择任何文件", status_code=400)
+    except Exception as e:
+        print(f"查询文件列表时发生错误: {traceback.format_exc()}")
+        return create_response(error=f"查询文件列表失败: {str(e)}", status_code=500)
+
+
+@app.route('/api/files/<string:file_id>', methods=['DELETE'])
+def delete_file(file_id):
+    """删除指定的文件"""
+    is_valid, error_response = validate_api_request()
+    if not is_valid:
+        return error_response
+
+    client, error_response = get_client_from_header()
+    if error_response:
+        return error_response
 
     try:
-        # 4. 上传文件到 ZhipuAI，用于内容提取
-        print(f"正在上传文件 '{file.filename}' 以进行内容提取...")
-        file_object = client.files.create(
-            file=(file.filename, file.stream),
-            purpose="file-extract"
-        )
-        print(f"文件上传成功，File ID: {file_object.id}")
+        delete_status = client.files.delete(file_id=file_id)
+        return create_response(data=json.loads(delete_status.model_dump_json()))
 
-        # 5. 同步获取文件内容
-        print(f"正在提取 File ID: {file_object.id} 的内容...")
-        # 注意: .content() 返回的是一个包含 content 属性的对象
-        file_content_response = client.files.content(file_id=file_object.id)
+    except Exception as e:
+        print(f"删除文件 {file_id} 时发生错误: {traceback.format_exc()}")
+        return create_response(error=f"删除文件失败: {str(e)}", status_code=500)
+
+
+@app.route('/api/files/<string:file_id>/content', methods=['GET'])
+def get_file_content_by_id(file_id):
+    """获取指定文件的内容，用于复用"""
+    is_valid, error_response = validate_api_request()
+    if not is_valid:
+        return error_response
+
+    client, error_response = get_client_from_header()
+    if error_response:
+        return error_response
+
+    try:
+        # 注意: .content() 返回的是一个包含 content 属性(bytes)的对象
+        file_content_response = client.files.content(file_id=file_id)
         
         # 官方SDK返回的 content 是 bytes 类型，需要解码
-        extracted_text = file_content_response.content.decode('utf-8')
-        print("文件内容提取成功。")
+        # 我们假设内容主要是文本，使用 utf-8 解码
+        # 对于二进制文件，这里可能需要不同的处理，但对于聊天场景，文本是主要的
+        try:
+            extracted_text = file_content_response.content.decode('utf-8')
+        except UnicodeDecodeError:
+            # 如果解码失败，可能不是纯文本，返回一个提示
+            extracted_text = "[无法预览的二进制文件内容]"
+            
+        # 查询文件元数据以获取文件名
+        file_meta = client.files.retrieve(file_id=file_id)
         
-        # 6. 将结果返回给前端
         return create_response(data={
-            "fileId": file_object.id,
-            "filename": file.filename,
+            "fileId": file_id,
+            "filename": file_meta.filename,
             "content": extracted_text
         })
 
     except Exception as e:
-        print(f"文件内容提取过程中发生错误: {traceback.format_exc()}")
-        return create_response(error=f"文件处理失败: {str(e)}", status_code=500)
+        print(f"获取文件 {file_id} 内容时发生错误: {traceback.format_exc()}")
+        return create_response(error=f"获取文件内容失败: {str(e)}", status_code=500)
+
 # ▲▲▲ 新增代码结束 ▲▲▲
 
 # --- 启动前初始化 ---
