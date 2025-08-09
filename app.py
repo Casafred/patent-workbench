@@ -769,11 +769,12 @@ def delete_file(file_id):
         return create_response(error=f"删除文件失败: {str(e)}", status_code=500)
 
 
+# ▼▼▼ 用这个【最终正确版本】替换 get_file_content_by_id 函数 ▼▼▼
 @app.route('/api/files/<string:file_id>/content', methods=['GET'])
 def get_file_content_by_id(file_id):
     """
-    [修正版] 获取指定文件的内容，用于复用。
-    增加了轮询机制，并修复了SDK方法调用错误。
+    [最终正确版] 获取指定文件的内容，用于复用。
+    修正了SDK方法调用为 .retrieve()，并集成了轮询机制。
     """
     is_valid, error_response = validate_api_request()
     if not is_valid:
@@ -784,39 +785,37 @@ def get_file_content_by_id(file_id):
         return error_response
 
     try:
-        # --- 步骤一：使用正确的方法获取文件名 ---
-        # 修正: client.files.retrieve -> client.files.retrieve_file_info
+        # --- 步骤一：使用正确的 .retrieve() 方法获取文件名 ---
         print(f"开始获取文件元数据, File ID: {file_id}")
-        file_meta = client.files.retrieve_file_info(file_id=file_id)
+        file_meta = client.files.retrieve(file_id=file_id) # 修正: 使用 .retrieve()
         filename = file_meta.filename
         print(f"成功获取文件名: {filename}")
 
-        # --- 步骤二：轮询获取文件内容 (与上传逻辑保持一致) ---
-        MAX_RETRIES = 5
-        RETRY_DELAY = 2
+        # --- 步骤二：轮询获取文件内容 ---
+        MAX_RETRIES = 10
+        RETRY_DELAY = 3
         extracted_text = None
 
         print(f"开始轮询获取文件内容 (最多等待 {MAX_RETRIES * RETRY_DELAY} 秒)...")
         for attempt in range(MAX_RETRIES):
-            time.sleep(RETRY_DELAY)
+            if attempt > 0:
+                time.sleep(RETRY_DELAY)
+            
             print(f"第 {attempt + 1} 次尝试获取内容...")
             content_response = client.files.content(file_id=file_id)
             
+            decoded_content = content_response.content.decode('utf-8')
+
             try:
-                decoded_content = content_response.content.decode('utf-8')
-                try:
-                    json.loads(decoded_content)
-                    print("获取到的内容是JSON，可能仍在处理中，继续等待...")
-                    if attempt == MAX_RETRIES - 1:
-                         raise Exception("文件解析超时，未能获取到纯文本内容。")
-                except json.JSONDecodeError:
-                    extracted_text = decoded_content
-                    print("成功获取到纯文本内容！")
-                    break
-            except Exception as e:
-                print(f"尝试获取内容时出错: {e}")
+                json.loads(decoded_content)
+                print("获取到的内容是JSON，仍在处理中...")
                 if attempt == MAX_RETRIES - 1:
-                    raise
+                    extracted_text = f"[文件解析超时] 智谱AI返回的原始信息: {decoded_content}"
+                    break
+            except json.JSONDecodeError:
+                extracted_text = decoded_content
+                print("成功获取到纯文本内容！")
+                break
 
         if extracted_text is None:
             raise Exception("在所有重试后仍未能获取到文件内容。")
