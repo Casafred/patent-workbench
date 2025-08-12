@@ -13,7 +13,6 @@
     padding: 0 20px;
 }
 
-/* 绘制步骤之间的连接线 */
 .progress-stepper::before {
     content: '';
     position: absolute;
@@ -64,23 +63,19 @@
     transition: color 0.3s ease;
 }
 
-/* --- 状态样式 --- */
-
-/* 已完成 (Completed) 状态 */
 .step-item.completed .step-number {
     background-color: var(--primary-color);
     border-color: var(--primary-color);
     color: white;
 }
 .step-item.completed .step-number::before {
-    content: '✔'; /* 使用对勾 ✓ 符号 */
+    content: '✔';
     font-size: 1.1em;
 }
 .step-item.completed .step-title {
     color: var(--text-color);
 }
 
-/* 当前活动 (Active) 状态 */
 .step-item.active .step-number {
     border-color: var(--primary-color);
     color: var(--primary-color);
@@ -92,7 +87,6 @@
     font-weight: 700;
 }
 
-/* 进度条高亮 */
 .progress-stepper .progress-bar {
     position: absolute;
     top: 18px;
@@ -100,158 +94,47 @@
     height: 4px;
     background-color: var(--primary-color);
     z-index: 0;
-    width: 0; /* 初始宽度为0 */
+    width: 0;
     transition: width 0.5s ease;
 }
-/* ==========================================================================
-   小批量异步 - 模板配置UI重构
-   ========================================================================== */
-
-/* 主要配置区域的Flex容器 */
-.template-config-grid {
-    display: flex;
-    flex-wrap: wrap; /* 在小屏幕上换行 */
-    gap: 20px;
-}
-
-/* 左侧区域（模板选择、名称、模型、温度） */
-.template-config-main {
-    flex: 1; /* 占据可用空间 */
-    min-width: 300px; /* 最小宽度，用于响应式 */
-    display: flex;
-    flex-direction: column;
-    gap: 15px; /* 内部元素间距 */
-}
-
-/* 右侧区域（系统和用户提示） */
-.template-config-prompts {
-    flex: 2; /* 占据两倍于左侧的空间 */
-    min-width: 400px; /* 最小宽度 */
-    display: flex;
-    flex-direction: column;
-    gap: 15px; /* 内部元素间距 */
-}
-
-/* 使模型和温度输入框并排显示 */
-.model-temp-group {
-    display: flex;
-    gap: 15px;
-    align-items: center;
-}
-.model-temp-group .config-item {
-    flex: 1; /* 平分空间 */
-    margin-bottom: 0; /* 移除原有的底部边距 */
-}
 
 /* ==========================================================================
-   帮助提示 (Help Tooltip) 样式
+   模板配置UI重构
    ========================================================================== */
-.help-tooltip-wrapper {
-    display: inline-flex; /* 使其与文本对齐 */
-    align-items: center;
-    gap: 8px; /* 标签和图标之间的间距 */
-}
 
-.help-icon {
-    position: relative;
-    display: inline-block;
-    cursor: pointer;
-    color: var(--text-color-secondary);
-    opacity: 0.7;
-    transition: opacity 0.2s;
-    /* ▼▼▼ 需求 3: 向上微调提示图标 ▼▼▼ */
-    transform: translateY(-7px);
-    /* ▲▲▲ 需求 3: 修改完成 ▲▲▲ */
-}
-
-.help-icon:hover {
-    opacity: 1;
-}
-
-.help-icon svg {
-    width: 18px;
-    height: 18px;
-    vertical-align: middle;
-}
-
-.tooltip-text {
-    visibility: hidden;
-    width: 300px;
-    background-color: #333;
-    color: #fff;
-    text-align: left;
-    border-radius: 6px;
-    padding: 10px 15px;
-    position: absolute;
-    z-index: 10;
-    bottom: 125%; /* 定位在图标上方 */
-    left: 50%;
-    margin-left: -150px; /* 居中 */
-    opacity: 0;
-    transition: opacity 0.3s, visibility 0.3s;
-    font-size: 0.9em;
-    line-height: 1.5;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-}
-
-.help-icon:hover .tooltip-text {
-    visibility: visible;
-    opacity: 1;
-}
-
-/* 提示箭头 */
-.tooltip-text::after {
-    content: "";
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    margin-left: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: #333 transparent transparent transparent;
-}
-
-/* ================================================= */
-/*  模板配置网格布局 (小批量 & 大批量共用)          */
-/* ================================================= */
 .template-config-grid {
     display: grid;
-    grid-template-columns: 1fr 1.5fr; /* 左侧占1份，右侧占1.5份 */
-    gap: 30px; /* 两列之间的间距 */
-    align-items: start; /* 顶部对齐 */
+    grid-template-columns: 1fr 1.5fr;
+    gap: 30px;
+    align-items: start;
 }
 
-/* 左侧主要配置区 */
 .template-config-main {
     display: flex;
     flex-direction: column;
-    gap: 15px; /* 内部元素垂直间距 */
+    gap: 15px;
 }
 
-/* 右侧提示词配置区 */
 .template-config-prompts {
     display: flex;
     flex-direction: column;
-    gap: 15px; /* 内部元素垂直间距 */
+    gap: 15px;
 }
 
-/* 模型和温度并排显示的容器 (小批量异步专用) */
 .model-temp-group {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 20px;
-    align-items: end; /* 底部对齐，让label和input对齐 */
+    align-items: end;
 }
 
-/* 响应式设计：当屏幕宽度小于900px时，变为单列布局 */
 @media (max-width: 900px) {
     .template-config-grid {
-        grid-template-columns: 1fr; /* 变为单列 */
+        grid-template-columns: 1fr;
         gap: 20px;
     }
 }
 
-/* 帮助提示图标样式 (小批量异步专用，但可以共用) */
 .help-tooltip-wrapper {
     display: flex;
     align-items: center;
@@ -283,7 +166,7 @@
     z-index: 1;
     bottom: 150%;
     left: 50%;
-    margin-left: -140px; /* Use half of the width to center the tooltip */
+    margin-left: -140px;
     opacity: 0;
     transition: opacity 0.3s;
     font-size: 0.9em;
@@ -307,55 +190,42 @@
     opacity: 1;
 }
 
-/* 在 css/refactor.css 或 main.css 中添加 */
-
-/* ================================================= */
-/*  用户提示 A/B/C 区域布局                        */
-/* ================================================= */
-
 .user-prompt-container {
     display: flex;
-    flex-direction: column; /* 整体垂直排列 */
-    gap: 20px; /* A/B组合与C之间的间距 */
+    flex-direction: column;
+    gap: 20px;
 }
 
 .prompt-ab-grid {
     display: grid;
-    /* 创建两列，第一列的最小宽度为300px，最大为1fr (占据剩余空间的一份) */
-    /* 第二列类似，这样可以灵活适应内容 */
     grid-template-columns: minmax(300px, 1fr) minmax(300px, 1fr);
-    gap: 20px; /* A区和B区之间的间距 */
-    align-items: start; /* 顶部对齐 */
+    gap: 20px;
+    align-items: start;
 }
 
-/* A区和B区内的 prompt-section 不需要外边距 */
 .prompt-ab-grid .prompt-section {
     margin-bottom: 0;
 }
 
-/* 确保 B 区的预览输出框能撑满高度 */
 #content-insertion-preview {
-    height: 100%; /* 高度撑满父容器 */
-    min-height: 80px; /* 保持一个最小高度，避免太扁 */
-    display: flex; /* 使用 flex 布局让文本垂直居中 */
+    height: 100%;
+    min-height: 80px;
+    display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
 }
 
-/* 响应式设计：当屏幕宽度小于800px时，A和B也变为单列布局 */
 @media (max-width: 800px) {
     .prompt-ab-grid {
-        grid-template-columns: 1fr; /* 变为单列 */
+        grid-template-columns: 1fr;
     }
 }
 
-/* --- 本地专利库管理模块 专属样式 --- */
 #lpl_delimiter {
     width: 100px;
 }
 
-/* ▼▼▼ 需求 2: 为功能四步骤二添加网格布局样式 ▼▼▼ */
 .lpl-merge-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -367,78 +237,57 @@
         grid-template-columns: 1fr;
     }
 }
-/* ▲▲▲ 需求 2: 修改完成 ▲▲▲ */
 
-
-/* ▼▼▼ 需求 1: 全新的、可拖动、可换行、自适应高度的表格样式 ▼▼▼ */
-
-/* 1. 预览容器样式 */
 #lpl_result_preview_table {
-    overflow: auto; /* 容器必须可以滚动 */
+    overflow: auto;
     max-height: 450px;
     border: 1px solid var(--border-color);
-    border-radius: 8px; /* 添加圆角以匹配整体风格 */
+    border-radius: 8px;
 }
 
-/* 2. 表格布局与宽度 */
 #lpl_result_preview_table table {
-    /* CRITICAL: 使用固定布局算法，让浏览器尊重我们设置的列宽 */
     table-layout: fixed;
-    /* CRITICAL: 初始宽度为100%，当列宽被JS改变超出时，会触发父容器的滚动条 */
     width: 100%;
     border-collapse: collapse;
 }
 
-/* 3. 初始列宽设置 (通过 colgroup 实现) */
-/* JS将动态设置<col>的宽度，此处无需CSS设置 */
-
-/* 4. 单元格 (th, td) 样式 */
 #lpl_result_preview_table th,
 #lpl_result_preview_table td {
     border: 1px solid var(--border-color);
     padding: 10px 12px;
     text-align: left;
     vertical-align: top;
-    position: relative; /* 为拖动器定位 */
-    
-    /* CRITICAL: 允许内容正常换行 */
+    position: relative;
     white-space: normal;
-    word-wrap: break-word; /* 兼容旧浏览器 */
-    overflow-wrap: break-word; /* 标准属性 */
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
-/* 5. 单元格内div，解决内容溢出问题 */
 #lpl_result_preview_table td div {
-    /* 防止内容撑破单元格，尤其是在快速拖动时 */
-    max-height: 300px; /* 限制单元格最大显示高度，可按需调整 */
+    max-height: 300px;
     overflow-y: auto;
-    /* 为滚动条留出空间，防止内容跳动 */
     padding-right: 5px;
 }
 
-
-/* 6. 表头固定样式 */
 #lpl_result_preview_table th {
-    background-color: var(--bg-color); /* 使用浅色背景以区分 */
+    background-color: var(--bg-color);
     font-weight: 600;
     position: sticky;
     top: 0;
     z-index: 2;
-    /* 添加底部边框以在滚动时更清晰 */
     border-bottom: 2px solid var(--primary-color-dark);
 }
 
-/* 7. 列宽拖动器 (Resizer) 样式 */
 .resizer {
     position: absolute;
     top: 0;
-    right: -4px; /* 稍微突出，更容易点击 */
+    right: -4px;
     width: 8px;
     height: 100%;
     cursor: col-resize;
     user-select: none;
     z-index: 10;
-    transition: background-color 0.2s; /* 添加悬浮效果 */
+    transition: background-color 0.2s;
 }
 
 .resizer:hover,
@@ -446,4 +295,3 @@
     background-color: var(--primary-color);
     opacity: 0.5;
 }
-/* ▲▲▲ 需求 1: 修改完成 ▲▲▲ */

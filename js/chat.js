@@ -2,6 +2,7 @@
 
 // 处理文件上传和复用
 async function handleChatFileUpload(event, fileFromReuse = null) {
+    // 【核心修改】优先使用复用的文件对象，否则从事件中获取
     const file = fileFromReuse || (event.target ? event.target.files[0] : null);
     if (!file) return;
 
@@ -12,29 +13,35 @@ async function handleChatFileUpload(event, fileFromReuse = null) {
     chatUploadFileBtn.disabled = true;
 
     try {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('purpose', 'file-extract'); // 在即时对话中，用途总是'file-extract'
+        let content;
+        let fileId;
+        let filename;
 
-        // 注意：这里假设你有一个 /api/files/upload 端点可以处理 FormData
-        // 并且返回一个包含 fileId, filename, 和 content 的对象
-        // 如果后端端点不同，需要调整这里的 API 调用
-        // 上传文件，apiCall 现在正确处理 FormData
-        const uploadResult = await apiCall('/files/upload', formData, 'POST');
-        
-        // 获取文件内容，新的 apiCall 会返回原始 Response 对象
-        const contentResponse = await apiCall(`/files/${uploadResult.id}/content`, undefined, 'GET');
-        
-        // 检查响应是否成功，并从中提取文本
-        if (!contentResponse.ok) {
-            const errorText = await contentResponse.text();
-            throw new Error(`获取文件内容失败: ${errorText}`);
+        if (fileFromReuse) {
+            // 如果是复用，我们已经有 fileId 和 filename，只需要获取内容
+            fileId = fileFromReuse.id;
+            filename = fileFromReuse.name;
+            const contentResponse = await apiCall(`/files/${fileId}/content`, undefined, 'GET');
+            if (!contentResponse.ok) throw new Error(await contentResponse.text());
+            content = await contentResponse.text();
+        } else {
+            // 如果是新上传，走完整的上传->获取内容流程
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('purpose', 'file-extract');
+            
+            const uploadResult = await apiCall('/files/upload', formData, 'POST');
+            fileId = uploadResult.id;
+            filename = uploadResult.filename;
+
+            const contentResponse = await apiCall(`/files/${fileId}/content`, undefined, 'GET');
+            if (!contentResponse.ok) throw new Error(await contentResponse.text());
+            content = await contentResponse.text();
         }
-        const content = await contentResponse.text();
 
         appState.chat.activeFile = {
-            fileId: uploadResult.id,
-            filename: uploadResult.filename,
+            fileId: fileId,
+            filename: filename,
             content: content,
         };
 
@@ -93,61 +100,72 @@ function updateCharCount() {
 function initChat() {
     // 标题编辑功能初始化
     const chatCurrentTitle = document.getElementById('chat_current_title');
-    const chatSaveTitleBtn = document.getElementById('chat_save_title_btn');
 
-    // 点击标题进入编辑状态
-    chatCurrentTitle.addEventListener('click', () => {
-        chatCurrentTitle.focus();
-        chatSaveTitleBtn.classList.remove('hidden');
+    // 1. 点击标题，进入编辑模式
+    chatCurrentTitle.addEventListener('click', (e) => {
+        // 确保只有在非编辑模式下点击才触发
+        if (chatCurrentTitle.contentEditable !== 'true') {
+            chatCurrentTitle.contentEditable = 'true';
+            chatCurrentTitle.focus();
+            // 选中所有文本，方便用户修改
+            document.execCommand('selectAll', false, null);
+        }
     });
 
-    // 编辑时显示保存按钮
-    chatCurrentTitle.addEventListener('input', () => {
-        chatSaveTitleBtn.classList.remove('hidden');
-    });
-
-    // 保存标题更改
-    chatSaveTitleBtn.addEventListener('click', () => {
-        saveTitleChanges();
-    });
-
-    // 按Enter保存标题
+    // 2. 键盘事件：Enter确认, Escape取消
     chatCurrentTitle.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
-            e.preventDefault();
-            saveTitleChanges();
+            e.preventDefault(); // 阻止在 contenteditable 中换行
+            chatCurrentTitle.blur(); // 触发 blur 事件来保存和退出
         } else if (e.key === 'Escape') {
-            // 按Escape取消编辑
+            // 恢复到修改前的标题，然后触发 blur 退出
             const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
             if (convo) {
                 chatCurrentTitle.textContent = convo.title || '未命名对话';
             }
-            chatSaveTitleBtn.classList.add('hidden');
+            chatCurrentTitle.blur();
         }
     });
 
-    // 点击其他地方保存标题
+    // 点击其他地方保存标题 (这段保留，但需要修改)
     document.addEventListener('click', (e) => {
-        if (!chatCurrentTitle.contains(e.target) && !chatSaveTitleBtn.contains(e.target)) {
-            if (!chatSaveTitleBtn.classList.contains('hidden')) {
+        // ▼▼▼ 核心修改：不再检查按钮，只检查标题元素本身 ▼▼▼
+        if (!chatCurrentTitle.contains(e.target)) {
+            // 如果点击了标题外部，并且标题当前处于可编辑状态
+            if (document.activeElement === chatCurrentTitle) {
                 saveTitleChanges();
             }
         }
     });
 
+    // 3. 失焦事件：保存并退出编辑模式
+    chatCurrentTitle.addEventListener('blur', () => {
+        chatCurrentTitle.contentEditable = 'false'; // 退出编辑模式
+        saveTitleChanges(); // 调用保存函数
+    });
+
+    // saveTitleChanges 函数需要修改，不再需要处理按钮的显示/隐藏
     function saveTitleChanges() {
+        // 1. 从UI获取新标题
         const newTitle = chatCurrentTitle.textContent.trim();
         const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
 
-        if (convo) {
-            if (convo.title !== newTitle) {
-                convo.title = newTitle;
-                saveConversations();
-                renderChatHistoryList();
-                console.log(`标题已更新为: "${newTitle}"`);
-            }
+        if (!convo) return;
+        
+        // 只有当标题实际发生改变时才执行保存和渲染
+        if (convo.title !== newTitle) {
+            // 2. 更新应用状态 (appState)
+            convo.title = newTitle || '未命名对话'; // 如果用户清空标题，则恢复默认
+            convo.lastUpdate = Date.now(); // 更新时间戳，让其排序到最前
+            
+            // 3. 将更新后的状态持久化
+            saveConversations();
+            
+            // 4. 【核心修复】根据更新后的状态，重新渲染所有相关的UI
+            renderChatHistoryList(); 
+            
+            console.log(`标题已更新为: "${convo.title}"`);
         }
-        chatSaveTitleBtn.classList.add('hidden');
     }
 
     chatModelSelect.innerHTML = AVAILABLE_MODELS.map(m => `<option value="${m}">${m}</option>`).join('');
@@ -322,8 +340,36 @@ function enableTitleEdit(event, convoId) {
     }
 }
 
+function buildMessagesForApi(conversation, contextCount, currentUserPrompt) {
+    // 复制一份消息历史，避免修改原始数据
+    const messages = JSON.parse(JSON.stringify(conversation.messages));
+    
+    // 移除最后一条（我们刚刚添加的、不完整的）用户消息
+    messages.pop(); 
+
+    // 添加包含完整上下文（用户输入+文件内容）的新用户消息
+    messages.push({ role: 'user', content: currentUserPrompt });
+
+    // 筛选出用于发送的上下文消息
+    const nonSystemMessages = messages.filter(m => m.role !== 'system');
+    const systemMessage = messages.find(m => m.role === 'system');
+    
+    // 取最后 N*2 条消息作为上下文
+    const contextMessages = nonSystemMessages.slice(-(contextCount * 2));
+
+    // 最终要发送的消息数组
+    const messagesToSend = [];
+    if (systemMessage) {
+        messagesToSend.push(systemMessage);
+    }
+    messagesToSend.push(...contextMessages);
+
+    return messagesToSend;
+}
+
 async function handleStreamChatRequest() {
     const userInput = chatInput.value.trim();
+    // 【核心逻辑修改】只有当用户有输入，或者有附加文件时，才继续
     if (!userInput && !appState.chat.activeFile) return;
     
     const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
@@ -333,20 +379,29 @@ async function handleStreamChatRequest() {
     chatInput.disabled = true;
 
     const persona = appState.chat.personas[convo.personaId];
-    let finalUserInput = userInput;
+    
+    // 1. 构建最终发送给模型的完整用户内容 (finalPromptForModel)
+    let finalPromptForModel = userInput;
     if (persona.userTemplate && persona.userTemplate.includes('{{INPUT}}') && userInput) {
-        finalUserInput = persona.userTemplate.replace('{{INPUT}}', userInput);
+        finalPromptForModel = persona.userTemplate.replace('{{INPUT}}', userInput);
     }
     
     if (appState.chat.activeFile) {
-        finalUserInput += `\n\n--- 附加文件: ${appState.chat.activeFile.filename} ---\n${appState.chat.activeFile.content}`;
+        // 文件内容附加在最后，作为发送给模型的上下文
+        finalPromptForModel += `\n\n--- 参考附加文件: ${appState.chat.activeFile.filename} ---\n${appState.chat.activeFile.content}`;
     }
     
+    // 2. 构建显示在UI上的用户消息 (messageForUI)
+    // 【核心逻辑修改】这里不再包含文件内容，只显示用户的原始输入
     convo.messages.push({ 
         role: 'user', 
-        content: finalUserInput, 
+        content: userInput, // 只保存和显示用户的原始输入
         timestamp: Date.now(),
-        attachedFile: appState.chat.activeFile ? appState.chat.activeFile.filename : null
+        // 在消息对象中记录附加的文件信息，以便UI可以显示它
+        attachedFile: appState.chat.activeFile ? {
+            filename: appState.chat.activeFile.filename,
+            fileId: appState.chat.activeFile.fileId
+        } : null
     });
     convo.lastUpdate = Date.now();
     
@@ -356,8 +411,9 @@ async function handleStreamChatRequest() {
     
     chatInput.value = '';
     updateCharCount();
+    // 清理 activeFile，一次发送只用一次
     if (appState.chat.activeFile) {
-        removeActiveFile();
+        removeActiveFile(); 
     }
     
     const assistantMessageId = addMessageToDOM('assistant', '<span class="blinking-cursor">|</span>', convo.messages.length, true);
@@ -369,13 +425,12 @@ async function handleStreamChatRequest() {
 
     try {
         const contextCount = parseInt(chatContextCount.value, 10);
-        const nonSystemMessages = convo.messages.filter(m => m.role !== 'system');
-        const messagesToSend = [convo.messages[0], ...nonSystemMessages.slice(-(contextCount * 2))];
+        const messagesToSend = buildMessagesForApi(convo, contextCount, finalPromptForModel);
         
         const reader = await apiCall('/stream_chat', { 
             model: chatModelSelect.value, 
             temperature: parseFloat(chatTempInput.value), 
-            messages: messagesToSend 
+            messages: messagesToSend // 发送构建好的消息
         }, 'POST', true);
         const decoder = new TextDecoder();
         while (true) {
@@ -525,18 +580,18 @@ function addMessageToDOM(role, content, index, isStreaming = false, usage = null
     messageDiv.id = messageId;
     if (index !== undefined) messageDiv.dataset.index = index;
 
-    // 附件标记的HTML
+    // ▼▼▼ FIX START: 正确显示附件标记 ▼▼▼
     let attachmentHtml = '';
-    // ▼▼▼ 报错行：现在因为 `msg` 参数被正确定义，这里将不再报错 ▼▼▼
-    const attachedFile = msg ? msg.attachedFile : null; 
-    if (role === 'user' && attachedFile) {
+    const attachedFile = msg ? msg.attachedFile : null; // 从消息对象获取
+    if (role === 'user' && attachedFile && attachedFile.filename) {
         attachmentHtml = `
-            <div class="message-attachment-indicator">
+            <div class="message-attachment-indicator" title="文件ID: ${attachedFile.fileId || 'N/A'}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M4.5 3a2.5 2.5 0 0 1 5 0v9a1.5 1.5 0 0 1-3 0V5a.5.5 0 0 1 1 0v7a.5.5 0 0 0 1 0V3a1.5 1.5 0 1 0-3 0v9a2.5 2.5 0 0 0 5 0V5a.5.5 0 0 1 1 0v7a3.5 3.5 0 1 1-7 0V3z"/></svg>
-                <span>${attachedFile}</span>
+                <span>${attachedFile.filename}</span>
             </div>
         `;
     }
+    // ▲▲▲ FIX END ▲▲▲
 
     const renderedContent = isStreaming ? content : (window.marked ? window.marked.parse(content, { gfm: true, breaks: true }) : content.replace(/</g, "&lt;").replace(/>/g, "&gt;"));
 

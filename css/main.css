@@ -111,9 +111,37 @@ summary::-webkit-details-marker { display: none; }
 
 /* 已取消点击修改标题的提示 */
 
-#chat_current_title { margin: 0; font-size: 18px; font-weight: 600; color: var(--text-color); word-wrap: break-word; line-height: 1.4; padding: 5px 0; outline: none !important; }
+/* 保持这个样式不变，它处理标题的常规状态 */
+#chat_current_title { 
+    margin: 0; 
+    font-size: 18px; 
+    font-weight: 600; 
+    color: var(--text-color); 
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    outline: none !important; 
+    /* ▼▼▼ 可选：给普通状态也加上过渡，让切换更流畅 ▼▼▼ */
+    transition: all 0.3s ease;
+}
 
-#chat_current_title:hover, #chat_current_title[contenteditable="true"] { outline: none !important; border-radius: 4px; padding: 5px 10px; min-width: 150px; }
+/* 步骤1: 修改原始规则，移除永久边框，但保留其他样式 */
+#chat_current_title[contenteditable="true"] {
+    white-space: normal;
+    border-radius: 4px;
+    padding: 5px 10px;
+    background-color: #fff;
+    /* ▼▼▼ 核心修改：让边框默认透明 ▼▼▼ */
+    border: 1px solid transparent; 
+    /* 添加一个过渡效果，让边框出现更平滑 */
+    transition: border-color 0.3s ease; 
+}
+
+/* 步骤2: 新增hover规则，当鼠标悬停在整个标题栏上时，显示边框 */
+#chat_title_bar:hover #chat_current_title[contenteditable="true"] {
+    /* ▼▼▼ 核心修改：在悬停时设置边框颜色 ▼▼▼ */
+    border-color: var(--primary-color); 
+}
 
 #chat_save_title_btn { background: linear-gradient(45deg, var(--primary-color-dark), var(--primary-color)); color: white; border: none; border-radius: 8px; padding: 6px 12px; font-size: 0.85em; cursor: pointer; white-space: nowrap; }
 
@@ -571,156 +599,4 @@ summary::-webkit-details-marker { display: none; }
     --chat-bg: var(--bg-color);
     --chat-user-bubble: #DCF8C6;
     --chat-assistant-bubble: #FFFFFF;
-}
-
-/* ▼▼▼ 新增：文件上传相关UI样式 ▼▼▼ */
-#chat_upload_file_btn {
-    padding: 0;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: transparent;
-    border: 1px solid var(--border-color);
-    color: var(--text-color-secondary);
-    box-shadow: none;
-    flex-shrink: 0;
-}
-
-#chat_upload_file_btn:hover {
-    background-color: var(--primary-color-hover-bg);
-    color: var(--primary-color);
-    transform: none; /* 移除按钮的悬浮效果 */
-}
-
-#chat_file_status_area {
-    padding: 10px 20px;
-    background-color: var(--primary-color-hover-bg);
-    border-bottom: 1px solid var(--border-color);
-    font-size: 0.9em;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 15px;
-}
-
-.file-info {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--text-color-secondary);
-    min-width: 0; /* 允许 flex item 收缩 */
-}
-
-.file-info .filename {
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.file-remove-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1.2em;
-    color: var(--error-color);
-    padding: 0 5px;
-    line-height: 1;
-}
-
-.file-processing-spinner {
-    width: 16px;
-    height: 16px;
-    border: 2px solid var(--primary-color-glow);
-    border-top-color: var(--primary-color);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-/* ▲▲▲ 新增样式结束 ▲▲▲ */
-
-/* ▼▼▼ 新增：文件上传相关UI样式 ▼▼▼ */
-#chat_upload_file_btn {
-    padding: 0;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: transparent;
-    border: 1px solid var(--border-color);
-    color: var(--text-color-secondary);
-    box-shadow: none;
-    flex-shrink: 0;
-}
-
-#chat_upload_file_btn:hover {
-    background-color: var(--primary-color-hover-bg);
-    color: var(--primary-color);
-    transform: none; /* 移除按钮的悬浮效果 */
-}
-
-#chat_file_status_area {
-    padding: 10px 20px;
-    background-color: var(--primary-color-hover-bg);
-    border-bottom: 1px solid var(--border-color);
-    font-size: 0.9em;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 15px;
-}
-
-.file-info {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--text-color-secondary);
-    min-width: 0; /* 允许 flex item 收缩 */
-}
-
-.file-info .filename {
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.file-remove-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1.2em;
-    color: var(--error-color);
-    padding: 0 5px;
-    line-height: 1;
-}
-
-.file-processing-spinner {
-    width: 16px;
-    height: 16px;
-    border: 2px solid var(--primary-color-glow);
-    border-top-color: var(--primary-color);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-.message-attachment-indicator {
-    display: flex;
-    align-items: center;
-    font-size: 0.8em;
-    color: #555;
-    background-color: #f0f0f0;
-    padding: 4px 8px;
-    border-radius: 12px;
-    margin-bottom: 8px;
-    max-width: fit-content;
-}
-.message-attachment-indicator svg {
-    margin-right: 6px;
 }

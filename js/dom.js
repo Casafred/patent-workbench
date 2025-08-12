@@ -123,7 +123,6 @@ const lplDeselectAllColsBtn = getEl('lpl_deselect_all_cols_btn');
 const lplOldColsCheckboxes = getEl('lpl_old_cols_checkboxes');
 
 // Files Manager (新增)
-const chatAttachFileBtn = getEl('chat_attach_file_btn');
 const chatManageFilesBtn = getEl('chat_manage_files_btn');
 const fileManagerModal = getEl('file_manager_modal');
 const fileManagerCloseBtn = getEl('file_manager_close_btn');
