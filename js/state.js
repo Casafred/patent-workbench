@@ -93,8 +93,13 @@ lpl: { // Local Patent Library
     },
     expandedPatents: [],
     mergedData: null,
-}
+},
     // ▲▲▲ 添加结束 ▲▲▲
+    // --- 新增：文件管理状态 ---
+    files: {
+        purposeFilter: 'file-extract',
+        items: [] // {id, filename, bytes, created_at, purpose}
+    }
 };
 
 const BACKEND_URL = 'https://patent-workbench-backend.onrender.com';

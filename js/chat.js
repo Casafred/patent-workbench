@@ -1,58 +1,46 @@
 // js/chat.js (完整最终版)
 
-// ▼▼▼ 用这个新版本替换旧的 handleChatFileUpload 函数 ▼▼▼
+// 处理文件上传和复用
 async function handleChatFileUpload(event, fileFromReuse = null) {
     const file = fileFromReuse || (event.target ? event.target.files[0] : null);
     if (!file) return;
 
-    // UI反馈：开始处理
     chatFileStatusArea.style.display = 'flex';
-    chatFileStatusArea.innerHTML = `
-        <div class="file-info">
-            <div class="file-processing-spinner"></div>
-            <span>正在上传并解析文件: ${file.name}...</span>
-        </div>`;
+    chatFileStatusArea.innerHTML = `<div class="file-info"><div class="file-processing-spinner"></div><span>正在处理文件: ${file.name}...</span></div>`;
     chatInput.disabled = true;
     chatSendBtn.disabled = true;
     chatUploadFileBtn.disabled = true;
 
     try {
-        let result;
-        // 注意：这里的 /files/{id}/content 逻辑可能需要调整为调用新的后端端点，
-        // 或者在后端/get_file_content_by_id中也实现轮询。
-        // 为简单起见，我们假设复用时内容已存在。
-        if (fileFromReuse && fileFromReuse.id) {
-            // 复用旧文件
-             result = await apiCall(`/files/${fileFromReuse.id}/content`, null, 'GET');
-        } else {
-            // 新上传文件
-            const formData = new FormData();
-            formData.append('file', file);
-            result = await apiCall('/extract_file_content', formData, 'POST');
-        }
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('purpose', 'file-extract'); // 在即时对话中，用途总是'file-extract'
+
+        // 注意：这里假设你有一个 /api/files/upload 端点可以处理 FormData
+        // 并且返回一个包含 fileId, filename, 和 content 的对象
+        // 如果后端端点不同，需要调整这里的 API 调用
+        const uploadResult = await apiCall('/files/upload', formData, 'POST');
         
-        // 存储文件状态
+        // 假设上传后需要再获取内容
+        const contentResponse = await apiCall(`/files/${uploadResult.id}/content`, undefined, 'GET');
+        
+        // 假设 contentResponse 是 Blob 或可以直接 .text()
+        const content = await (contentResponse.text ? contentResponse.text() : new Response(contentResponse).text());
+
         appState.chat.activeFile = {
-            fileId: result.fileId,
-            filename: result.filename,
-            content: result.content
+            fileId: uploadResult.id,
+            filename: uploadResult.filename,
+            content: content,
         };
 
-        // UI反馈：处理成功
         chatFileStatusArea.innerHTML = `
             <div class="file-info">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 8px; color: var(--primary-color);"><path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z"/></svg>
                 <span>已附加文件:</span>
-                <span class="filename" title="${result.filename}">${result.filename}</span>
+                <span class="filename" title="${appState.chat.activeFile.filename}">${appState.chat.activeFile.filename}</span>
             </div>
             <button class="file-remove-btn" onclick="removeActiveFile()" title="移除文件">&times;</button>`;
-        
-        // 【核心修改】不再将文件内容插入输入框
-        // const fileContext = ... (删除这部分代码)
-        // chatInput.value = ... (删除这部分代码)
-        
         chatInput.focus();
-
     } catch (error) {
         alert(`文件处理失败: ${error.message}`);
         removeActiveFile(); 
@@ -65,7 +53,6 @@ async function handleChatFileUpload(event, fileFromReuse = null) {
         }
     }
 }
-// ▲▲▲ 替换结束 ▲▲▲
 
 // ▼▼▼ 用这个新版本替换旧的 removeActiveFile 函数 ▼▼▼
 function removeActiveFile() {
@@ -103,28 +90,47 @@ function closeFileManager() {
 }
 
 async function fetchAndRenderFiles() {
-    const listEl = document.getElementById('file_manager_list');
+    const listEl = document.getElementById('fm_list');
     const statusEl = document.getElementById('file_manager_status');
     listEl.innerHTML = '';
-    statusEl.innerHTML = '<div class="file-processing-spinner"></div> 正在加载文件列表...';
+    // statusEl.innerHTML = '<div class="file-processing-spinner"></div> 正在加载文件列表...'; // This element does not exist in the provided HTML
 
     try {
         // 我们假设聊天上传的文件 purpose 为 'agent' 或 'file-extract'
-        const result1 = await apiCall('/files?purpose=agent', null, 'GET');
-        const result2 = await apiCall('/files?purpose=file-extract', null, 'GET');
+        const result1 = await apiCall('/api/files?purpose=agent', null, 'GET');
+        const result2 = await apiCall('/api/files?purpose=file-extract', null, 'GET');
         
-        const allFiles = [...result1.data, ...result2.data];
+        let allFiles = [];
+        if (result1 && result1.data) allFiles = allFiles.concat(result1.data);
+        if (result2 && result2.data) allFiles = allFiles.concat(result2.data);
+
         // 去重
         const uniqueFiles = Array.from(new Map(allFiles.map(file => [file.id, file])).values());
         // 按创建时间降序排序
         uniqueFiles.sort((a, b) => b.created_at - a.created_at);
 
         if (uniqueFiles.length === 0) {
-            statusEl.innerHTML = '您还没有上传过任何文件。';
+            listEl.innerHTML = '<div class="info">您还没有上传过任何文件。</div>';
             return;
         }
 
-        statusEl.innerHTML = '';
+        // statusEl.innerHTML = ''; // This element does not exist
+        const table = document.createElement('table');
+        table.className = 'file-manager-table';
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th>文件名</th>
+                    <th>用途</th>
+                    <th>大小</th>
+                    <th>创建时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        `;
+        const tbody = table.querySelector('tbody');
+
         uniqueFiles.forEach(file => {
             const tr = document.createElement('tr');
             const fileSize = file.bytes > 1024 * 1024 
@@ -141,11 +147,12 @@ async function fetchAndRenderFiles() {
                     <button class="small-button delete-button" onclick="deleteManagedFile('${file.id}', '${file.filename}')">删除</button>
                 </td>
             `;
-            listEl.appendChild(tr);
+            tbody.appendChild(tr);
         });
+        listEl.appendChild(table);
 
     } catch (error) {
-        statusEl.innerHTML = `<div class="info error">加载文件列表失败: ${error.message}</div>`;
+        listEl.innerHTML = `<div class="info error">加载文件列表失败: ${error.message}</div>`;
     }
 }
 
@@ -154,7 +161,7 @@ async function deleteManagedFile(fileId, filename) {
         return;
     }
     try {
-        await apiCall(`/files/${fileId}`, null, 'DELETE');
+        await apiCall(`/api/files/${fileId}`, null, 'DELETE');
         alert(`文件 "${filename}" 已成功删除。`);
         fetchAndRenderFiles(); // 刷新列表
     } catch (error) {
@@ -259,114 +266,73 @@ function initChat() {
     // 初始化对话参数模态框
     const chatParamsModal = document.getElementById('chat_params_modal');
     const chatParamsBtn = document.getElementById('chat_params_btn');
-    const closeModalBtn = document.querySelector('.close-modal');
+    const closeModalBtn = chatParamsModal.querySelector('.close-modal');
     const saveChatParamsBtn = document.getElementById('save_chat_params_btn');
 
     // 打开模态框
     chatParamsBtn.addEventListener('click', () => {
         chatParamsModal.style.display = 'block';
-        // 延迟添加show类以确保过渡效果生效
         setTimeout(() => {
             chatParamsModal.classList.add('show');
         }, 10);
     });
 
     // 关闭模态框 - 点击关闭按钮
-        closeModalBtn.addEventListener('click', () => {
-            chatParamsModal.classList.remove('show');
-            // 等待过渡效果完成后再隐藏
-            setTimeout(() => {
-                chatParamsModal.style.display = 'none';
-            }, 200);
-        });
+    closeModalBtn.addEventListener('click', () => {
+        chatParamsModal.classList.remove('show');
+        setTimeout(() => {
+            chatParamsModal.style.display = 'none';
+        }, 300);
+    });
 
-        // 关闭模态框 - 点击模态框外部
-        window.addEventListener('click', (event) => {
-            if (event.target === chatParamsModal) {
-                chatParamsModal.classList.remove('show');
-                // 等待过渡效果完成后再隐藏
-                setTimeout(() => {
-                    chatParamsModal.style.display = 'none';
-                }, 200);
-            }
-        });
+    // 关闭模态框 - 点击模态框外部
+    window.addEventListener('click', (event) => {
+        if (event.target === chatParamsModal) {
+            closeModalBtn.click();
+        }
+    });
 
-        // 保存设置按钮事件
-        saveChatParamsBtn.addEventListener('click', () => {
-            // 这里可以添加保存设置的逻辑，如果需要
-            chatParamsModal.classList.remove('show');
-            // 等待过渡效果完成后再隐藏
-            setTimeout(() => {
-                chatParamsModal.style.display = 'none';
-                alert('对话参数已保存');
-            }, 200);
-        });
+    // 保存设置按钮事件
+    saveChatParamsBtn.addEventListener('click', () => {
+        closeModalBtn.click();
+        alert('对话参数已保存');
+    });
     
+    // ▼▼▼ 新增：为回形针按钮和隐藏的文件输入框绑定事件 ▼▼▼
+    chatUploadFileBtn.addEventListener('click', () => chatFileInput.click());
+    chatFileInput.addEventListener('change', handleChatFileUpload);
+    // ▲▲▲ 新增结束 ▲▲▲
+
+    // 聊天核心功能事件监听
     chatSendBtn.addEventListener('click', handleStreamChatRequest);
     chatInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleStreamChatRequest(); }});
-    chatInput.addEventListener('input', () => {
-        chatCharCount.textContent = chatInput.value.length;
-        chatInput.style.height = 'auto';
-        chatInput.style.height = `${Math.min(chatInput.scrollHeight, 300)}px`;
-    });
+    chatInput.addEventListener('input', updateCharCount);
     chatPersonaSelect.addEventListener('change', updateCurrentConversationPersona);
     chatNewBtn.addEventListener('click', () => startNewChat(true));
     chatInputNewBtn.addEventListener('click', () => startNewChat(true));
-
-    // ▼▼▼ 新增/修改：事件监听 ▼▼▼
-    chatUploadFileBtn.addEventListener('click', () => chatFileInput.click());
-    chatFileInput.addEventListener('change', handleChatFileUpload);
     
-    // 文件管理按钮
-    const fileManagerBtn = document.getElementById('chat_file_manage_btn');
-    if (fileManagerBtn) fileManagerBtn.addEventListener('click', openFileManager);
-    const closeFileManagerBtn = document.getElementById('close_file_manager_btn');
-    if(closeFileManagerBtn) closeFileManagerBtn.addEventListener('click', closeFileManager);
-    window.addEventListener('click', (event) => {
-        const modal = document.getElementById('file_manager_modal');
-        if (event.target == modal) {
-            closeFileManager();
-        }
-    });
-    // ▲▲▲ 新增/修改结束 ▲▲▲
-
-    // 设置所有导出下拉菜单的事件监听
     document.addEventListener('click', (e) => {
         if (e.target.matches('[data-export]')) {
             e.preventDefault();
-            const exportType = e.target.dataset.export;
-            exportChatHistory(exportType);
+            exportChatHistory(e.target.dataset.export);
         }
     });
 
     chatAddPersonaBtn.addEventListener('click', addPersona);
     chatDeletePersonaBtn.addEventListener('click', deletePersona);
-    chatSavePersonaBtn = document.getElementById('chat_save_persona_btn');
-    chatSavePersonaBtn.addEventListener('click', saveCurrentPersona);
-
-    // 监听角色选择变化
+    document.getElementById('chat_save_persona_btn').addEventListener('click', saveCurrentPersona);
     chatPersonaSelect.addEventListener('change', updatePersonaEditor);
 
     chatManageBtn.addEventListener('click', () => toggleManagementMode());
-
-    // 初始化角色编辑器
-    updatePersonaEditor();
-    
-    chatSelectAllBtn.addEventListener('click', () => {
-        console.log("全选按钮点击");
-        toggleSelectAllMessages(true);
-    });
-    
-    chatDeselectAllBtn.addEventListener('click', () => {
-        console.log("取消全选按钮点击");
-        toggleSelectAllMessages(false);
-    });
-
+    chatSelectAllBtn.addEventListener('click', () => toggleSelectAllMessages(true));
+    chatDeselectAllBtn.addEventListener('click', () => toggleSelectAllMessages(false));
     chatDeleteSelectedBtn.addEventListener('click', deleteSelectedMessages);
     
+    // 初始化UI
+    updatePersonaEditor();
     updatePersonaSelector();
     renderChatHistoryList();
-    if (!appState.chat.currentConversationId) {
+    if (!appState.chat.currentConversationId || !appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId)) {
         startNewChat(false);
     } else {
         switchConversation(appState.chat.currentConversationId);
@@ -374,7 +340,6 @@ function initChat() {
 }
 
 async function generateConversationTitle(conversation) {
-    // 只有当标题为空且至少有2条非系统消息时才生成标题
     const nonSystemMessages = conversation.messages.filter(m => m.role !== 'system');
     if (!conversation || conversation.title !== '' || nonSystemMessages.length < 2) {
         return;
@@ -386,14 +351,8 @@ async function generateConversationTitle(conversation) {
     const titlePrompt = {
         model: 'glm-4-flash',
         messages: [
-            {
-                role: 'system',
-                content: '你是一个对话主题提炼专家。你的任务是根据提供的对话内容，用一句话（中文不超过20个字）总结出一个简洁、精炼的标题。直接返回标题文本，不要包含任何引导词、引号或说明。'
-            },
-            {
-                role: 'user',
-                content: `请为以下对话生成一个标题：\n\n${contentToSummarize}`
-            }
+            { role: 'system', content: '你是一个对话主题提炼专家。你的任务是根据提供的对话内容，用一句话（中文不超过20个字）总结出一个简洁、精炼的标题。直接返回标题文本，不要包含任何引导词、引号或说明。' },
+            { role: 'user', content: `请为以下对话生成一个标题：\n\n${contentToSummarize}` }
         ],
         temperature: 0.4,
     };
@@ -403,18 +362,16 @@ async function generateConversationTitle(conversation) {
         const newTitleRaw = responseData.choices[0]?.message?.content;
 
         if (newTitleRaw) {
-            // 只有当当前标题仍为空时才更新，防止覆盖用户刚刚手动修改的标题
             if (conversation.title === '') {
                 const newTitle = newTitleRaw.trim().replace(/["'“”。,]/g, '').replace(/\s/g, '');
                 conversation.title = newTitle;
                 saveConversations();
-                renderChatHistoryList(); // 重新渲染列表以显示新标题
+                renderChatHistoryList();
                 console.log(`AI生成标题成功: "${newTitle}"`);
             }
         }
     } catch (error) {
         console.error("自动生成标题失败:", error.message);
-        // 即使生成失败，也不应影响用户体验，仅在控制台打印错误
     }
 }
 
@@ -433,27 +390,16 @@ function renderChatHistoryList() {
             <div class="history-item-content" onclick="switchConversation('${convo.id}')">
                 <div class="title-container">
                   <span class="history-item-title" 
-                        title="点击编辑标题"
-                        data-convo-id="${convo.id}"
-                        contenteditable="false"
-                        onkeydown="handleTitleEditKeydown(event)">${convo.title}</span>
+                        title="${convo.title || '未命名对话'}"
+                        data-convo-id="${convo.id}">${convo.title || '未命名对话'}</span>
                 </div>
                 <span class="history-item-details">${new Date(convo.lastUpdate).toLocaleString()}</span>
             </div>
             <div class="history-item-actions">
-                <button class="icon-button edit-title-btn" 
-                        title="编辑标题"
-                        onclick="enableTitleEdit(event, '${convo.id}')">
-                    <svg viewBox="0 0 24 24">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                    </svg>
+                <button class="icon-button edit-title-btn" title="编辑标题" onclick="enableTitleEdit(event, '${convo.id}')">
+                    <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
-                <button 
-                    class="icon-button history-delete-btn" 
-                    title="删除对话" 
-                    onclick="deleteConversation(event, '${convo.id}')"
-                >
+                <button class="icon-button history-delete-btn" title="删除对话" onclick="deleteConversation(event, '${convo.id}')">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
                 </button>
             </div>
@@ -462,7 +408,6 @@ function renderChatHistoryList() {
         chatHistoryList.appendChild(item);
     });
     
-    // 同步更新当前聊天框上方的标题
     const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
     if (convo) {
         const currentTitleEl = getEl('chat_current_title');
@@ -473,126 +418,56 @@ function renderChatHistoryList() {
 }
 
 function enableTitleEdit(event, convoId) { 
-  event.stopPropagation();
-  const titleElement = document.querySelector(`.history-item-title[data-convo-id='${convoId}']`);
-  if (titleElement) {
-    titleElement.contentEditable = 'true';
-    titleElement.focus();
-    // 选中所有文本
-    const range = document.createRange();
-    range.selectNodeContents(titleElement);
-    const selection = window.getSelection();
-    selection.removeAllRanges();
-    selection.addRange(range);
-    
-    // 阻止点击标题本身时触发blur
-    titleElement.addEventListener('mousedown', function(e) {
-      e.stopPropagation();
-    });
-    
-    // 阻止点击标题时触发父元素的点击事件
-    titleElement.addEventListener('click', function(e) {
-      e.stopPropagation();
-    });
-    
-    // 添加document级别的点击事件监听器来检测外部点击
-    const handleExternalClick = function(e) {
-      if (!titleElement.contains(e.target)) {
-        handleTitleEditBlur({ target: titleElement });
-        document.removeEventListener('click', handleExternalClick);
-      }
-    };
-    
-    // 延迟添加监听器，避免当前点击事件立即触发
-    setTimeout(() => {
-      document.addEventListener('click', handleExternalClick);
-    }, 0);
-  }
-}
-
-function handleTitleEditKeydown(event) {
-    if (event.key === 'Enter') {
-        event.preventDefault();
-        event.target.blur();
-    }
-    if (event.key === 'Escape') {
-        const convoId = event.target.dataset.convoId;
-        const conversation = appState.chat.conversations.find(c => c.id === convoId);
-        if (conversation) {
-            event.target.textContent = conversation.title;
-        }
-        event.target.blur();
+    event.stopPropagation();
+    const mainTitleElement = document.getElementById('chat_current_title');
+    if (mainTitleElement) {
+        mainTitleElement.contentEditable = 'true';
+        mainTitleElement.focus();
+        const range = document.createRange();
+        range.selectNodeContents(mainTitleElement);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
     }
 }
 
-function handleTitleEditBlur(event) { 
-    event.target.contentEditable = 'false';
-    const convoId = event.target.dataset.convoId;
-    const newTitle = event.target.textContent.trim();
-    const conversation = appState.chat.conversations.find(c => c.id === convoId);
-
-    if (conversation) {
-        // 总是保存新标题，即使是空字符串
-        if (conversation.title !== newTitle) {
-            conversation.title = newTitle;
-            saveConversations();
-            renderChatHistoryList(); // 重新渲染确保同步
-            console.log(`标题已更新为: "${newTitle}"`);
-        } else {
-            // 如果没变化，恢复原状
-            event.target.textContent = conversation.title;
-        }
-    }
-}
-
-// ▼▼▼ 用这个新版本替换旧的 handleStreamChatRequest 函数 ▼▼▼
 async function handleStreamChatRequest() {
     const userInput = chatInput.value.trim();
     if (!userInput && !appState.chat.activeFile) return;
-
-    if (appState.chat.activeFile && !userInput) {
-        alert("文件已附加，请输入您的问题。");
-        return;
-    }
-
+    
     const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
     if (!convo) return;
     
     chatSendBtn.disabled = true;
     chatInput.disabled = true;
 
-    // --- 【核心修改】在这里组合最终的 Prompt ---
-    let promptForApi = userInput;
-    let userMessageForHistory = {
-        role: 'user',
-        content: userInput,
-        timestamp: Date.now()
-    };
-
-    if (appState.chat.activeFile && appState.chat.activeFile.content) {
-        promptForApi = `基于以下文档（文件名: ${appState.chat.activeFile.filename}）的内容，请回答我的问题。
----
-文档内容:
-${appState.chat.activeFile.content}
----
-我的问题是: ${userInput}`;
-        
-        // 在历史记录中也标记一下，方便回溯
-        userMessageForHistory.attachedFile = appState.chat.activeFile.filename;
+    const persona = appState.chat.personas[convo.personaId];
+    let finalUserInput = userInput;
+    if (persona.userTemplate && persona.userTemplate.includes('{{INPUT}}') && userInput) {
+        finalUserInput = persona.userTemplate.replace('{{INPUT}}', userInput);
     }
-    // --- 修改结束 ---
-
-    // 使用带有附加文件标记的对象保存到历史记录
-    convo.messages.push(userMessageForHistory);
+    
+    if (appState.chat.activeFile) {
+        finalUserInput += `\n\n--- 附加文件: ${appState.chat.activeFile.filename} ---\n${appState.chat.activeFile.content}`;
+    }
+    
+    convo.messages.push({ 
+        role: 'user', 
+        content: finalUserInput, 
+        timestamp: Date.now(),
+        attachedFile: appState.chat.activeFile ? appState.chat.activeFile.filename : null
+    });
     convo.lastUpdate = Date.now();
     
-    renderCurrentChat(); // renderCurrentChat 需要被更新以显示附件标记
+    renderCurrentChat();
     renderChatHistoryList();
     saveConversations();
     
     chatInput.value = '';
     updateCharCount();
-    removeActiveFile(); // 发送后清除文件状态和UI
+    if (appState.chat.activeFile) {
+        removeActiveFile();
+    }
     
     const assistantMessageId = addMessageToDOM('assistant', '<span class="blinking-cursor">|</span>', convo.messages.length, true);
     const assistantMessageEl = getEl(assistantMessageId);
@@ -600,23 +475,17 @@ ${appState.chat.activeFile.content}
     const tokenUsageEl = assistantMessageEl.querySelector('.message-token-usage');
     let fullResponse = "";
     let usageInfo = null;
-    
+
     try {
         const contextCount = parseInt(chatContextCount.value, 10);
         const nonSystemMessages = convo.messages.filter(m => m.role !== 'system');
-        const messagesToSend = [
-            convo.messages.find(m => m.role === 'system'), 
-            ...nonSystemMessages.slice(-contextCount)
-        ].filter(Boolean);
-
-        // **关键**：确保最后一条用户消息的内容是组合后的完整 Prompt
-        if (messagesToSend.length > 0 && messagesToSend[messagesToSend.length - 1].role === 'user') {
-            messagesToSend[messagesToSend.length - 1].content = promptForApi;
-        }
-
-        const reader = await apiCall('/stream_chat', { model: chatModelSelect.value, temperature: parseFloat(chatTempInput.value), messages: messagesToSend }, 'POST', true);
+        const messagesToSend = [convo.messages[0], ...nonSystemMessages.slice(-(contextCount * 2))];
         
-        // ... (后续的流式处理代码保持不变) ...
+        const reader = await apiCall('/stream_chat', { 
+            model: chatModelSelect.value, 
+            temperature: parseFloat(chatTempInput.value), 
+            messages: messagesToSend 
+        }, 'POST', true);
         const decoder = new TextDecoder();
         while (true) {
             const { value, done } = await reader.read();
@@ -636,12 +505,17 @@ ${appState.chat.activeFile.content}
                         assistantContentEl.innerHTML = window.marked.parse(fullResponse + '<span class="blinking-cursor">|</span>', { gfm: true, breaks: true });
                         chatWindow.scrollTop = chatWindow.scrollHeight;
                     }
-                } catch(e) { /* ignore parsing errors in stream */ }
+                } catch(e) { /* 忽略流解析错误 */ }
             }
         }
+
         assistantContentEl.innerHTML = window.marked.parse(fullResponse, { gfm: true, breaks: true });
         
-        const assistantMessageData = { role: 'assistant', content: fullResponse, timestamp: Date.now() };
+        const assistantMessageData = { 
+            role: 'assistant', 
+            content: fullResponse, 
+            timestamp: Date.now() 
+        };
         if (usageInfo) {
             assistantMessageData.usage = usageInfo;
             if (tokenUsageEl) tokenUsageEl.textContent = `Tokens: ${usageInfo.total_tokens}`;
@@ -649,7 +523,6 @@ ${appState.chat.activeFile.content}
         convo.messages.push(assistantMessageData);
         assistantMessageEl.dataset.index = convo.messages.length - 1;
         assistantMessageEl.querySelector('.message-footer').style.opacity = '1';
-
         saveConversations();
         setTimeout(() => generateConversationTitle(convo), 100);
 
@@ -665,7 +538,6 @@ ${appState.chat.activeFile.content}
         chatInput.focus();
     }
 }
-// ▲▲▲ 替换结束 ▲▲▲
 
 function savePersonas() { localStorage.setItem('chatPersonas', JSON.stringify(appState.chat.personas)); }
 
@@ -707,13 +579,12 @@ function deleteConversation(event, convoId) {
     const convoToDelete = appState.chat.conversations.find(c => c.id === convoId);
     if (!convoToDelete) return;
 
-    if (confirm(`您确定要永久删除对话 "${convoToDelete.title}" 吗？此操作无法撤销。`)) {
-        // 在删除前询问是否导出
-        if (convoToDelete.messages.length > 1 && confirm(`是否在删除前导出对话 "${convoToDelete.title}" 的聊天记录？`)) {
+    if (confirm(`您确定要永久删除对话 "${convoToDelete.title || '未命名对话'}" 吗？此操作无法撤销。`)) {
+        if (convoToDelete.messages.length > 1 && confirm(`是否在删除前导出对话 "${convoToDelete.title || '未命名对话'}" 的聊天记录？`)) {
             const originalConvoId = appState.chat.currentConversationId;
-            appState.chat.currentConversationId = convoId; // 临时切换到要删除的对话
+            appState.chat.currentConversationId = convoId;
             exportChatHistory('txt');
-            appState.chat.currentConversationId = originalConvoId; // 恢复原来的对话
+            appState.chat.currentConversationId = originalConvoId;
         }
         
         appState.chat.conversations = appState.chat.conversations.filter(c => c.id !== convoId);
@@ -746,7 +617,7 @@ function renderCurrentChat() {
     
     convo.messages.forEach((msg, index) => {
         if (msg.role !== 'system') {
-            // 传递第7个参数 msg
+            // ▼▼▼ 核心修正：确保总是传递第7个参数 msg ▼▼▼
             addMessageToDOM(msg.role, msg.content, index, false, msg.usage, msg.timestamp, msg);
         }
     });
@@ -754,16 +625,19 @@ function renderCurrentChat() {
     chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
-function addMessageToDOM(role, content, index, isStreaming = false, usage = null, timestamp = null) {
+// ▼▼▼ 核心修正：确保函数签名包含第7个参数 `msg = null` ▼▼▼
+// 这使得函数能够健壮地处理来自不同地方的调用
+function addMessageToDOM(role, content, index, isStreaming = false, usage = null, timestamp = null, msg = null) {
     const messageId = `msg-${Date.now()}-${Math.random()}`;
     const messageDiv = document.createElement('div');
     messageDiv.className = `chat-message ${role}-message`;
     messageDiv.id = messageId;
     if (index !== undefined) messageDiv.dataset.index = index;
 
-    // 【新增】附件标记的HTML
+    // 附件标记的HTML
     let attachmentHtml = '';
-    const attachedFile = msg ? msg.attachedFile : null; // 从完整的消息对象中获取文件名
+    // ▼▼▼ 报错行：现在因为 `msg` 参数被正确定义，这里将不再报错 ▼▼▼
+    const attachedFile = msg ? msg.attachedFile : null; 
     if (role === 'user' && attachedFile) {
         attachmentHtml = `
             <div class="message-attachment-indicator">
@@ -777,12 +651,10 @@ function addMessageToDOM(role, content, index, isStreaming = false, usage = null
 
     const tokenUsageHtml = (usage && usage.total_tokens) ? `<div class="message-token-usage">Tokens: ${usage.total_tokens}</div>` : `<div class="message-token-usage"></div>`;
 
-    // ▼▼▼ 【推荐优化】时间格式化逻辑 ▼▼▼
     let formattedTime = '';
-    const dateObj = timestamp ? new Date(timestamp) : new Date(); // 如果有时间戳用它，没有就用当前时间
-    if (!isNaN(dateObj.getTime())) { // 确保时间对象有效
+    const dateObj = timestamp ? new Date(timestamp) : new Date();
+    if (!isNaN(dateObj.getTime())) {
         const today = new Date();
-        // 如果是今天，只显示时间；如果是以前，显示日期和时间
         if (dateObj.toDateString() === today.toDateString()) {
             formattedTime = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         } else {
@@ -790,29 +662,21 @@ function addMessageToDOM(role, content, index, isStreaming = false, usage = null
         }
     }
     const timeHtml = `<div class="message-time" title="${dateObj.toLocaleString()}">${formattedTime}</div>`;
-    // ▲▲▲ 优化结束 ▲▲▲
 
     messageDiv.innerHTML = `
         <input type="checkbox" class="message-checkbox" title="选择此消息">
         <div class="message-main-content">
             <div class="avatar">${role === 'user' ? 'U' : 'AI'}</div>
             <div class="message-body">
+                ${attachmentHtml}
                 <div class="message-content">${renderedContent}</div>
                 <div class="message-footer">
                     ${timeHtml}
                     ${role === 'assistant' ? tokenUsageHtml : ''}
-                    <button class="icon-button" title="复制" onclick="copyMessage(this)">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2Zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6Z M2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1H2Z"></path></svg>
-                    </button>
-                    <button class="icon-button" title="删除" onclick="deleteMessage(this)">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
-                    </button>
-                    ${role === 'user' ? `<button class="icon-button" title="重新发送" onclick="resendMessage(this)">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 3a5 5 0 0 0-5 5h1a4 4 0 0 1 4-4V3z"/><path d="M8 13a5 5 0 0 0 5-5h-1a4 4 0 0 1-4 4v1z"/><path fill-rule="evenodd" d="M8 3a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 3z"/></svg>
-                    </button>` : ''}
-                    ${role === 'assistant' ? `<button class="icon-button" title="重新生成" onclick="regenerateMessage(this)">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 3a5 5 0 0 0-5 5h1a4 4 0 0 1 4-4V3z"/><path d="M8 13a5 5 0 0 0 5-5h-1a4 4 0 0 1-4 4v1z"/><path fill-rule="evenodd" d="M8 3a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 3z"/></svg>
-                    </button>` : ''}
+                    <button class="icon-button" title="复制" onclick="copyMessage(this)"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2Zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6Z M2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1H2Z"></path></svg></button>
+                    <button class="icon-button" title="删除" onclick="deleteMessage(this)"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg></button>
+                    ${role === 'user' ? `<button class="icon-button" title="重新发送" onclick="resendMessage(this)"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 3a5 5 0 0 0-5 5h1a4 4 0 0 1 4-4V3z"/><path d="M8 13a5 5 0 0 0 5-5h-1a4 4 0 0 1-4 4v1z"/><path fill-rule="evenodd" d="M8 3a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 3z"/></svg></button>` : ''}
+                    ${role === 'assistant' ? `<button class="icon-button" title="重新生成" onclick="regenerateMessage(this)"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 3a5 5 0 0 0-5 5h1a4 4 0 0 1 4-4V3z"/><path d="M8 13a5 5 0 0 0 5-5h-1a4 4 0 0 1-4 4v1z"/><path fill-rule="evenodd" d="M8 3a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 3z"/></svg></button>` : ''}
                 </div>
             </div>
         </div>
@@ -827,9 +691,7 @@ function addMessageToDOM(role, content, index, isStreaming = false, usage = null
 }
 
 function startNewChat(fromUserClick = false) {
-    // ▼▼▼ BUG修复：新建对话时，清除已附加的文件状态 ▼▼▼
     removeActiveFile(); 
-    // ▲▲▲ BUG修复结束 ▲▲▲
     const newId = `convo-${Date.now()}`;
     const personaId = chatPersonaSelect.value || Object.keys(appState.chat.personas)[0];
     const persona = appState.chat.personas[personaId];
@@ -849,17 +711,13 @@ function startNewChat(fromUserClick = false) {
 }
 
 function switchConversation(id) {
-    // ▼▼▼ BUG修复：切换对话时，清除已附加的文件状态 ▼▼▼
     removeActiveFile();
-    // ▲▲▲ BUG修复结束 ▲▲▲
     appState.chat.currentConversationId = id;
     localStorage.setItem('currentConversationId', id);
     renderCurrentChat();
     renderChatHistoryList();
     toggleManagementMode(false);
-    // ▼▼▼ BUG 2 修复: 在切换对话后，立即更新参数设置模态框中的编辑器内容 ▼▼▼
     updatePersonaEditor(); 
-    // ▲▲▲ BUG 2 修复结束 ▲▲▲
 }
 
 function updateCurrentConversationPersona() {

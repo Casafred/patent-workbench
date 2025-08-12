@@ -1,4 +1,4 @@
-// js/main.js
+// js/main.js (Final, Corrected, and Robust Version)
 
 // =================================================================================
 // 初始化
@@ -9,16 +9,22 @@ document.addEventListener('DOMContentLoaded', () => {
     initAsyncBatch();
     initLargeBatch();
     initLocalPatentLib();
+    // ▼▼▼ 初始化文件管理器功能 ▼▼▼
+    initFilesManager();
+    // ▲▲▲ 初始化结束 ▲▲▲
 
     // 默认激活第一个主页签
     switchTab('instant', document.querySelector('.main-tab-container .tab-button'));
     
-    // 默认激活第一个步骤并更新步进器状态
+    // 默认激活各个功能内部的第一个步骤
     const asyncFirstStep = document.querySelector('#async_batch-tab .step-item');
     if (asyncFirstStep) switchAsyncSubTab('input', asyncFirstStep);
     
     const largeBatchFirstStep = document.querySelector('#large_batch-tab .step-item');
     if (largeBatchFirstStep) switchSubTab('generator', largeBatchFirstStep);
+    
+    const lplFirstStep = document.querySelector('#local_patent_lib-tab .step-item');
+    if (lplFirstStep) switchLPLSubTab('expand', lplFirstStep);
 });
 
 // =================================================================================
@@ -58,14 +64,6 @@ function initApiKeyConfig() {
     });
 }
 
-/**
- * 统一API调用函数 (已修复文件上传BUG)
- * @param {string} endpoint - API端点, e.g., '/stream_chat'
- * @param {object|FormData} body - 请求体
- * @param {string} method - HTTP方法
- * @param {boolean} isStream - 是否为流式响应
- * @returns {Promise<any>}
- */
 async function apiCall(endpoint, body, method = 'POST', isStream = false) {
     if (!appState.apiKey) {
         const errorMsg = "API Key 未配置。请点击右上角 ⚙️ 设置并保存您的 API Key。";
@@ -77,40 +75,35 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false) {
         'Authorization': `Bearer ${appState.apiKey}`
     };
     
-    // 只有在需要发送 body 且 body 不是 FormData 的情况下才设置 Content-Type
-    if (body && !(body instanceof FormData)) {
+    if ((method === 'POST' || method === 'PUT') && !(body instanceof FormData)) {
          headers['Content-Type'] = 'application/json';
     }
 
-    const fullUrl = `/api${endpoint}`;
+    const fullUrl = `${window.location.origin}/api${endpoint}`;
 
     const fetchOptions = {
         method,
         headers,
     };
     
-    // [核心修复] 正确处理不同类型的请求体
-    if (body) {
+    if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
         if (body instanceof FormData) {
-            // 对于 FormData, fetch 会自动处理 Content-Type (multipart/form-data)
             fetchOptions.body = body;
         } else {
-            // 对于其他情况，序列化为 JSON
-            fetchOptions.body = JSON.stringify(body);
+            fetchOptions.body = JSON.stringify(body || {});
         }
     }
 
     try {
         const response = await fetch(fullUrl, fetchOptions);
 
-        // 处理流式响应
         if (isStream) {
             if (!response.ok) {
                 const errorText = await response.text();
                 let errorMessage = `请求失败 (Stream): ${response.statusText}`;
                 try {
-                    const errorJson = JSON.parse(errorText.substring(errorText.indexOf('{')));
-                    errorMessage = errorJson.error?.message || JSON.stringify(errorJson.error);
+                    const parsedError = JSON.parse(errorText.substring(errorText.indexOf('{')));
+                    errorMessage = parsedError.error?.message || JSON.stringify(parsedError.error);
                 } catch(e) {
                     errorMessage = errorText;
                 }
@@ -119,30 +112,18 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false) {
             return response.body.getReader();
         }
 
-        // 处理非流式响应
         const textResponse = await response.text();
-        // 某些成功响应（如204 No Content）可能没有响应体
         if (!textResponse) {
-             if (!response.ok) throw new Error(`请求失败: ${response.statusText}`);
-             return { success: true, data: null };
+            return response.ok ? { success: true, data: null } : { success: false, error: `HTTP ${response.status}` };
         }
         
-        let result;
-        try {
-            result = JSON.parse(textResponse);
-        } catch (e) {
-            console.error("API 返回了非法的JSON响应:", textResponse);
-            throw new Error(`服务器返回了无效的响应格式。`);
-        }
+        const result = JSON.parse(textResponse);
 
         if (!response.ok || (result && result.success === false)) {
             const errorMessage = result.error?.message || result.error || JSON.stringify(result);
             throw new Error(errorMessage);
         }
-        
-        // 兼容两种返回格式：
-        // 1. Zhipu SDK 直接返回的格式 (有 choices 字段)
-        // 2. 我们后端包装的格式 (有 success 和 data 字段)
+
         return result.choices ? result : result.data;
 
     } catch (error) {
@@ -150,7 +131,6 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false) {
         throw error;
     }
 }
-
 
 // =================================================================================
 // 页面布局与导航
@@ -176,20 +156,12 @@ function updateStepperState(stepper, activeStepElement) {
     if (progressBar) {
         const totalSteps = steps.length;
         if (totalSteps > 1) {
-            const stepperStyle = window.getComputedStyle(stepper);
-            const paddingLeft = parseFloat(stepperStyle.paddingLeft);
-            const paddingRight = parseFloat(stepperStyle.paddingRight);
-            
-            const progressBarContainerWidth = stepper.offsetWidth - paddingLeft - paddingRight;
-            const stepGap = progressBarContainerWidth / (totalSteps - 1);
-            const progressBarWidth = activeIndex * stepGap;
-            progressBar.style.width = `${progressBarWidth}px`;
+            progressBar.style.width = `${(activeIndex / (totalSteps - 1)) * 100}%`;
         } else {
             progressBar.style.width = '0px';
         }
     }
 }
-
 
 function switchTab(tabId, clickedButton) {
     document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
@@ -207,7 +179,7 @@ function switchAsyncSubTab(subTabId, clickedElement) {
         const stepper = clickedElement.closest('.progress-stepper');
         updateStepperState(stepper, clickedElement);
     }
-    
+
     if (subTabId === 'input') {
         const activeInnerTabButton = document.querySelector('#async-sub-tab-input .sub-tab-container .sub-tab-button.active');
         if (activeInnerTabButton) {
