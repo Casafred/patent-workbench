@@ -358,10 +358,12 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-# --- 主应用路由 ---
 @app.route('/')
 def index():
-    return redirect(url_for('login_required', _endpoint='serve_app'))
+    # 我们要生成 'serve_app' 这个视图函数对应的 URL (即 /app)
+    # 当浏览器被重定向到 /app 时，Flask 会自动执行 @login_required 装饰器
+    return redirect(url_for('serve_app'))
+
 
 @app.route('/app')
 @login_required
