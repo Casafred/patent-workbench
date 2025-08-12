@@ -19,13 +19,18 @@ async function handleChatFileUpload(event, fileFromReuse = null) {
         // 注意：这里假设你有一个 /api/files/upload 端点可以处理 FormData
         // 并且返回一个包含 fileId, filename, 和 content 的对象
         // 如果后端端点不同，需要调整这里的 API 调用
+        // 上传文件，apiCall 现在正确处理 FormData
         const uploadResult = await apiCall('/files/upload', formData, 'POST');
         
-        // 假设上传后需要再获取内容
+        // 获取文件内容，新的 apiCall 会返回原始 Response 对象
         const contentResponse = await apiCall(`/files/${uploadResult.id}/content`, undefined, 'GET');
         
-        // 假设 contentResponse 是 Blob 或可以直接 .text()
-        const content = await (contentResponse.text ? contentResponse.text() : new Response(contentResponse).text());
+        // 检查响应是否成功，并从中提取文本
+        if (!contentResponse.ok) {
+            const errorText = await contentResponse.text();
+            throw new Error(`获取文件内容失败: ${errorText}`);
+        }
+        const content = await contentResponse.text();
 
         appState.chat.activeFile = {
             fileId: uploadResult.id,
@@ -77,120 +82,6 @@ function escapeRegex(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-// ▼▼▼ 新增：文件管理界面相关函数 ▼▼▼
-function openFileManager() {
-    const modal = document.getElementById('file_manager_modal');
-    modal.style.display = 'block';
-    fetchAndRenderFiles();
-}
-
-function closeFileManager() {
-    const modal = document.getElementById('file_manager_modal');
-    modal.style.display = 'none';
-}
-
-async function fetchAndRenderFiles() {
-    const listEl = document.getElementById('fm_list');
-    const statusEl = document.getElementById('file_manager_status');
-    listEl.innerHTML = '';
-    // statusEl.innerHTML = '<div class="file-processing-spinner"></div> 正在加载文件列表...'; // This element does not exist in the provided HTML
-
-    try {
-        // 我们假设聊天上传的文件 purpose 为 'agent' 或 'file-extract'
-        const result1 = await apiCall('/api/files?purpose=agent', null, 'GET');
-        const result2 = await apiCall('/api/files?purpose=file-extract', null, 'GET');
-        
-        let allFiles = [];
-        if (result1 && result1.data) allFiles = allFiles.concat(result1.data);
-        if (result2 && result2.data) allFiles = allFiles.concat(result2.data);
-
-        // 去重
-        const uniqueFiles = Array.from(new Map(allFiles.map(file => [file.id, file])).values());
-        // 按创建时间降序排序
-        uniqueFiles.sort((a, b) => b.created_at - a.created_at);
-
-        if (uniqueFiles.length === 0) {
-            listEl.innerHTML = '<div class="info">您还没有上传过任何文件。</div>';
-            return;
-        }
-
-        // statusEl.innerHTML = ''; // This element does not exist
-        const table = document.createElement('table');
-        table.className = 'file-manager-table';
-        table.innerHTML = `
-            <thead>
-                <tr>
-                    <th>文件名</th>
-                    <th>用途</th>
-                    <th>大小</th>
-                    <th>创建时间</th>
-                    <th>操作</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        `;
-        const tbody = table.querySelector('tbody');
-
-        uniqueFiles.forEach(file => {
-            const tr = document.createElement('tr');
-            const fileSize = file.bytes > 1024 * 1024 
-                ? `${(file.bytes / (1024 * 1024)).toFixed(2)} MB` 
-                : `${(file.bytes / 1024).toFixed(1)} KB`;
-            
-            tr.innerHTML = `
-                <td class="file-name-cell" title="${file.filename}">${file.filename}</td>
-                <td>${file.purpose}</td>
-                <td>${fileSize}</td>
-                <td>${new Date(file.created_at * 1000).toLocaleString()}</td>
-                <td class="file-actions-cell">
-                    <button class="small-button" onclick="reuseFile('${file.id}', '${file.filename}')">复用</button>
-                    <button class="small-button delete-button" onclick="deleteManagedFile('${file.id}', '${file.filename}')">删除</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
-        listEl.appendChild(table);
-
-    } catch (error) {
-        listEl.innerHTML = `<div class="info error">加载文件列表失败: ${error.message}</div>`;
-    }
-}
-
-async function deleteManagedFile(fileId, filename) {
-    if (!confirm(`您确定要永久删除文件 "${filename}" 吗？此操作不可撤销。`)) {
-        return;
-    }
-    try {
-        await apiCall(`/api/files/${fileId}`, null, 'DELETE');
-        alert(`文件 "${filename}" 已成功删除。`);
-        fetchAndRenderFiles(); // 刷新列表
-    } catch (error) {
-        alert(`删除文件失败: ${error.message}`);
-    }
-}
-
-async function reuseFile(fileId, filename) {
-    if (appState.chat.activeFile) {
-        if (!confirm("当前已有附加文件，复用新文件将替换它。要继续吗？")) {
-            return;
-        }
-    }
-    
-    closeFileManager();
-    // 切换到即时对话 Tab
-    switchTab('instant', document.querySelector('.main-tab-container .tab-button'));
-
-    // 开始一个新的对话
-    startNewChat(true);
-
-    // 模拟一个文件对象进行处理
-    const fileToReuse = {
-        id: fileId,
-        name: filename
-    };
-    await handleChatFileUpload(null, fileToReuse);
-}
-// ▲▲▲ 新增文件管理界面函数结束 ▲▲▲
 
 // 更新字数统计和输入框高度
 function updateCharCount() {

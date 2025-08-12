@@ -71,13 +71,16 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false) {
         throw new Error(errorMsg);
     }
 
+    // ▼▼▼ FIX START: 智能处理 Headers ▼▼▼
     const headers = {
         'Authorization': `Bearer ${appState.apiKey}`
     };
-    
-    if ((method === 'POST' || method === 'PUT') && !(body instanceof FormData)) {
-         headers['Content-Type'] = 'application/json';
+
+    // 只有当 body 不是 FormData 时，才设置 Content-Type 为 JSON
+    if (body && !(body instanceof FormData)) {
+        headers['Content-Type'] = 'application/json';
     }
+    // ▲▲▲ FIX END ▲▲▲
 
     const fullUrl = `${window.location.origin}/api${endpoint}`;
 
@@ -86,12 +89,14 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false) {
         headers,
     };
     
-    if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
+    if (method !== 'GET' && method !== 'HEAD') {
+        // ▼▼▼ FIX START: 智能处理 Body ▼▼▼
         if (body instanceof FormData) {
-            fetchOptions.body = body;
-        } else {
-            fetchOptions.body = JSON.stringify(body || {});
+            fetchOptions.body = body; // 直接使用 FormData
+        } else if (body) {
+            fetchOptions.body = JSON.stringify(body); // 序列化其他类型的 body
         }
+        // ▲▲▲ FIX END ▲▲▲
     }
 
     try {
@@ -99,6 +104,7 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false) {
 
         if (isStream) {
             if (!response.ok) {
+                // ... (stream 错误处理保持不变)
                 const errorText = await response.text();
                 let errorMessage = `请求失败 (Stream): ${response.statusText}`;
                 try {
@@ -112,19 +118,30 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false) {
             return response.body.getReader();
         }
 
-        const textResponse = await response.text();
-        if (!textResponse) {
-            return response.ok ? { success: true, data: null } : { success: false, error: `HTTP ${response.status}` };
-        }
-        
-        const result = JSON.parse(textResponse);
-
-        if (!response.ok || (result && result.success === false)) {
-            const errorMessage = result.error?.message || result.error || JSON.stringify(result);
+        // ▼▼▼ FIX START: 优雅处理非JSON响应 ▼▼▼
+        const contentType = response.headers.get("content-type");
+        if (!response.ok) {
+            // 对于失败的响应，尝试解析为JSON，如果失败则返回文本
+            let errorData;
+            try {
+                errorData = await response.json();
+            } catch (e) {
+                errorData = await response.text();
+            }
+            const errorMessage = errorData.error?.message || errorData.error || (typeof errorData === 'string' ? errorData : JSON.stringify(errorData));
             throw new Error(errorMessage);
         }
 
-        return result.choices ? result : result.data;
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+            const result = await response.json();
+            // 你的后端包装了响应，所以要解包
+            return result.choices ? result : result.data;
+        } else {
+            // 对于非JSON的成功响应（如文件流），直接返回原始 response 对象
+            // 让调用者决定如何处理 (e.g., response.blob(), response.text())
+            return response;
+        }
+        // ▲▲▲ FIX END ▲▲▲
 
     } catch (error) {
         console.error(`API调用 ${endpoint} 失败:`, error);
