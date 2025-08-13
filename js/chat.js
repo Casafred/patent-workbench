@@ -401,9 +401,9 @@ async function handleStreamChatRequest() {
     const persona = appState.chat.personas[convo.personaId];
     
     // 1. 构建最终发送给模型的完整用户内容 (finalPromptForModel)
-    let finalPromptForModel = userInput;
-    if (persona.userTemplate && persona.userTemplate.includes('{{INPUT}}') && userInput) {
-        finalPromptForModel = persona.userTemplate.replace('{{INPUT}}', userInput);
+    let finalPromptForModel = message;
+    if (persona.userTemplate && persona.userTemplate.includes('{{INPUT}}') && message) {
+        finalPromptForModel = persona.userTemplate.replace('{{INPUT}}', message);
     }
     
     if (appState.chat.activeFile) {
@@ -415,7 +415,7 @@ async function handleStreamChatRequest() {
     // 【核心逻辑修改】这里不再包含文件内容，只显示用户的原始输入
     convo.messages.push({ 
         role: 'user', 
-        content: userInput, // 只保存和显示用户的原始输入
+        content: message, // 只保存和显示用户的原始输入
         timestamp: Date.now(),
         // 在消息对象中记录附加的文件信息，以便UI可以显示它
         attachedFile: appState.chat.activeFile ? {
