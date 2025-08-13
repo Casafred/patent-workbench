@@ -386,8 +386,12 @@ async function handleStreamChatRequest() {
         return;
     }
 
+    // 【修复】添加缺失的convo变量定义
+    const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
+    if (!convo) return;
+
     // 准备消息数据
-    const messagesToSend = [...currentConversation.messages];
+    const messagesToSend = [...convo.messages];
     messagesToSend.push({ role: 'user', content: message });
 
     // 如果有活动文件，将文件ID和内容添加到用户消息中
