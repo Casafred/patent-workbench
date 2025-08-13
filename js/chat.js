@@ -8,9 +8,13 @@ async function handleChatFileUpload(event, fileFromReuse = null) {
 
     chatFileStatusArea.style.display = 'flex';
     chatFileStatusArea.innerHTML = `<div class="file-info"><div class="file-processing-spinner"></div><span>正在处理文件: ${file.name}...</span></div>`;
-    chatInput.disabled = true;
-    chatSendBtn.disabled = true;
+    // 【修改1】不再禁用输入框和发送按钮
+    // chatInput.disabled = true;
+    // chatSendBtn.disabled = true;
     chatUploadFileBtn.disabled = true;
+
+    // 【新增】添加文件处理状态标志
+    appState.chat.fileProcessing = true;
 
     try {
         let content;
@@ -57,8 +61,10 @@ async function handleChatFileUpload(event, fileFromReuse = null) {
         alert(`文件处理失败: ${error.message}`);
         removeActiveFile(); 
     } finally {
-        chatInput.disabled = false;
-        chatSendBtn.disabled = false;
+        // 【修改2】无论成功失败，都更新文件处理状态
+        appState.chat.fileProcessing = false;
+        // chatInput.disabled = false;
+        // chatSendBtn.disabled = false;
         chatUploadFileBtn.disabled = false;
         if (event && event.target) {
             event.target.value = ''; 
@@ -368,16 +374,26 @@ function buildMessagesForApi(conversation, contextCount, currentUserPrompt) {
 }
 
 async function handleStreamChatRequest() {
-    const userInput = chatInput.value.trim();
-    // 【核心逻辑修改】只有当用户有输入，或者有附加文件时，才继续
-    if (!userInput && !appState.chat.activeFile) return;
-    
-    const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
-    if (!convo) return;
-    
-    chatSendBtn.disabled = true;
-    chatInput.disabled = true;
+    const message = chatInput.value.trim();
+    if (!message) {
+        alert('请输入消息内容');
+        return;
+    }
 
+    // 【新增】检查文件是否正在处理中
+    if (appState.chat.fileProcessing) {
+        alert('文件正在解析中，请稍候再发送消息');
+        return;
+    }
+
+    // 准备消息数据
+    const messagesToSend = [...currentConversation.messages];
+    messagesToSend.push({ role: 'user', content: message });
+
+    // 如果有活动文件，将文件ID和内容添加到用户消息中
+    if (appState.chat.activeFile) {
+        messagesToSend[messagesToSend.length - 1].content = `文件ID: ${appState.chat.activeFile.fileId}\n文件名: ${appState.chat.activeFile.filename}\n文件内容:\n${appState.chat.activeFile.content}\n\n用户问题: ${message}`;
+    }
     const persona = appState.chat.personas[convo.personaId];
     
     // 1. 构建最终发送给模型的完整用户内容 (finalPromptForModel)

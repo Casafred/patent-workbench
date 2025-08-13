@@ -28,12 +28,20 @@ function initFilesManager() {
 /**
  * 打开文件管理器模态框。
  */
+// 新增：添加文件列表是否已加载的标志
+let isFileListLoaded = false;
+
 function openFilesModal() {
     fileManagerModal.style.display = 'block';
     setTimeout(() => {
         fileManagerModal.classList.add('show');
-        // 每次打开模态框时，都刷新文件列表以获取最新数据
-        refreshFilesList();
+        // 只在首次打开或需要刷新时才加载文件列表
+        if (!isFileListLoaded) {
+            refreshFilesList();
+        } else {
+            // 否则使用已加载的数据重新渲染
+            renderFilesList();
+        }
     }, 10);
 }
 
@@ -67,11 +75,18 @@ async function handleUploadFileInManager() {
         formData.append('file', file);
         formData.append('purpose', purpose);
 
+        // 记录本地上传时间
+        const uploadTime = new Date();
+
         // 调用后端API进行上传
         const result = await apiCall('/files/upload', formData, 'POST');
+        // 将本地上传时间添加到结果中
+        result.local_upload_time = uploadTime;
         alert(`文件 "${result.filename}" 上传成功！`);
         fmFileInput.value = ''; // 清空文件输入框
         await refreshFilesList(); // 刷新列表以显示新文件
+        // 上传成功后标记为需要刷新
+        isFileListLoaded = false;
     } catch (error) {
         console.error('Upload failed:', error);
         alert(`上传失败: ${error.message}`);
@@ -93,9 +108,13 @@ async function refreshFilesList() {
         const listData = await apiCall(`/files?purpose=${purpose}&limit=100`, undefined, 'GET');
         appState.files.items = listData.data || [];
         renderFilesList();
+        // 加载完成后更新标志
+        isFileListLoaded = true;
     } catch (error) {
         console.error('Failed to refresh files list:', error);
         fmList.innerHTML = `<div class="info error">加载文件列表失败: ${error.message}</div>`;
+        // 加载失败时不更新标志，以便下次打开时重新尝试
+        isFileListLoaded = false;
     }
 }
 
@@ -117,16 +136,24 @@ function renderFilesList() {
         
         const sizeKB = file.bytes ? (file.bytes / 1024).toFixed(1) : '-';
         
-        // --- FIX: 增加时间戳的健壮性处理 ---
-        let createdAt = 'N/A'; // 默认值
-        const timestamp = parseInt(file.created_at, 10); // 确保是数字
-        if (!isNaN(timestamp) && timestamp > 0) {
-            const date = new Date(timestamp * 1000); // 转换为毫秒
-            if (!isNaN(date.getTime())) { // 再次检查日期是否有效
+        // 使用本地上传时间或创建时间
+        let createdAt = 'N/A';
+        if (file.local_upload_time) {
+            // 如果有本地上传时间，则使用它
+            const date = new Date(file.local_upload_time);
+            if (!isNaN(date.getTime())) {
                 createdAt = date.toLocaleString();
             }
+        } else {
+            // 否则尝试使用服务器返回的时间
+            const timestamp = parseInt(file.created_at, 10);
+            if (!isNaN(timestamp) && timestamp > 0) {
+                const date = new Date(timestamp * 1000);
+                if (!isNaN(date.getTime())) {
+                    createdAt = date.toLocaleString();
+                }
+            }
         }
-        // --- FIX END ---
 
         // 构建每个文件条目的HTML结构
         // 将 '插入内容' 按钮的文本改为 '复用文件'
@@ -174,20 +201,22 @@ function renderFilesList() {
                 break;
 
             case 'delete':
-                if (confirm(`确定要永久删除文件 "${filename}" 吗？此操作无法撤销。`)) {
-                    target.disabled = true;
-                    target.textContent = '删除中...';
-                    try {
-                        await apiCall(`/files/${fileId}`, undefined, 'DELETE');
-                        alert(`文件 "${filename}" 已删除。`);
-                        refreshFilesList(); // 成功后刷新列表
-                    } catch (error) {
-                        alert(`删除失败: ${error.message}`);
-                        target.disabled = false;
-                        target.textContent = '删除';
-                    }
-                }
-                break;
+    if (confirm(`确定要永久删除文件 "${filename}" 吗？此操作无法撤销。`)) {
+        target.disabled = true;
+        target.textContent = '删除中...';
+        try {
+            await apiCall(`/files/${fileId}`, undefined, 'DELETE');
+            alert(`文件 "${filename}" 已删除。`);
+            refreshFilesList(); // 成功后刷新列表
+            // 删除成功后标记为需要刷新
+            isFileListLoaded = false;
+        } catch (error) {
+            alert(`删除失败: ${error.message}`);
+            target.disabled = false;
+            target.textContent = '删除';
+        }
+    }
+    break;
 
             case 'reuse-file':
                 if (appState.chat.activeFile) {
