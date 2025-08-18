@@ -8,6 +8,48 @@ function initLargeBatch() {
     switchSubTab('generator', document.querySelector('#large_batch-tab .sub-tab-button'));
 }
 
+// 全局变量定义
+const genFileInput = document.getElementById('gen_file-input');
+const genSheetSelector = document.getElementById('gen_sheet-selector');
+const columnConfigContainer = document.getElementById('column-config-container');
+const columnCountInput = document.getElementById('column-count');
+const columnConfigArea = document.getElementById('column-config-area');
+const templateSelector = document.getElementById('template_selector');
+const saveTemplateBtn = document.getElementById('save_template_btn');
+const importTemplateBtn = document.getElementById('import_template_btn');
+const templateFileInput = document.getElementById('template_file_input');
+const exportTemplateBtn = document.getElementById('export_template_btn');
+const deleteTemplateBtn = document.getElementById('delete_template_btn');
+const apiModelSelect = document.getElementById('api-model');
+const apiTemperatureInput = document.getElementById('api-temperature');
+const apiSystemPrompt = document.getElementById('api-system-prompt');
+const promptRules = document.getElementById('prompt-rules');
+const contentInsertionPreview = document.getElementById('content-insertion-preview');
+const outputFieldsContainer = document.getElementById('output-fields-container');
+const addOutputFieldBtn = document.getElementById('add-output-field-btn');
+const genGenerateBtn = document.getElementById('gen_generate-btn');
+const genPreviewOutput = document.getElementById('gen_preview_output');
+const genDownloadBtn = document.getElementById('gen_download-btn');
+const genReadyInfo = document.getElementById('gen_ready_info');
+const btnUpload = document.getElementById('batch_step1_upload');
+const btnCreate = document.getElementById('batch_step2_create');
+const btnDownload = document.getElementById('batch_step3_download');
+const batchIdReminder = document.getElementById('batch_id_reminder');
+const autoCheckContainer = document.getElementById('auto-check-container');
+const autoCheckStatus = document.getElementById('auto_check_status');
+const batchStopCheckBtn = document.getElementById('batch_stop_check_btn');
+const recoverBatchIdInput = document.getElementById('recover_batch_id_input');
+const recoverStateBtn = document.getElementById('recover_state_btn');
+const batchStep3Check = document.getElementById('batch_step3_check');
+const batchLog = document.getElementById('batch_log');
+const repExcelInput = document.getElementById('rep_excel-input');
+const repSheetSelector = document.getElementById('rep_sheet-selector');
+const repJsonlInput = document.getElementById('rep_jsonl-input');
+const repInfoBox = document.getElementById('reporter-info-box');
+const repGenerateBtn = document.getElementById('rep_generate-report-btn');
+const repPreview = document.getElementById('rep_output_preview');
+const repDownloadBtn = document.getElementById('rep_download-report-btn');
+
 function initGenerator() {
     apiModelSelect.innerHTML = BATCH_MODELS.map(m => `<option value="${m}">${m}</option>`).join('');
     genFileInput.addEventListener('change', handleGenFile);
@@ -298,6 +340,7 @@ async function runStep2_Create(){
     } catch(e) { addLog(`错误: ${e.message}`, "error"); } finally { btnCreate.disabled = false; }
 }
 
+// 修复runStep3_Check函数中的按钮状态设置
 async function runStep3_Check(){
     addLog("正在检查任务状态...");
     if(!appState.batch.batchId) { addLog("错误：Batch ID 缺失，无法检查状态。","error"); stopAutoCheck(); return; }
@@ -309,7 +352,7 @@ async function runStep3_Check(){
             appState.batch.outputFileId = data.output_file_id;
             addLog(`任务完成! Output File ID: ${data.output_file_id}`,"success");
             btnDownload.disabled = false;
-        document.getElementById('batch_step3_download').disabled = false;
+            document.getElementById('batch_step3_download').disabled = false;
             stopAutoCheck();
         } else if(["failed","expired","cancelling","cancelled"].includes(data.status)){
             addLog(`任务终止。状态: ${data.status.toUpperCase()}`,"error");
@@ -318,6 +361,7 @@ async function runStep3_Check(){
     } catch(e) { addLog(`检查状态时发生错误: ${e.message}`, "error"); } finally { btnCheck.disabled = false; }
 }
 
+// 增强runStep3_Download函数，确保结果加载后能正确切换到reporter标签
 async function runStep3_Download(){
     addLog("开始执行步骤3：获取结果内容...");
     if(!appState.batch.outputFileId) return addLog("错误：Output File ID 缺失。","error");
@@ -327,8 +371,17 @@ async function runStep3_Download(){
         appState.batch.resultContent = data.fileContent;
         addLog("成功: 已将结果文件内容加载到浏览器内存中！","success");
         addLog("请切换到【3. 解析报告】，您将看到直接解析的选项。");
-        // ▼▼▼ 修正后的代码行 ▼▼▼
-        switchSubTab('reporter', document.querySelector('#large-batch-stepper .step-item[onclick*="reporter"]'));
+        // 确保获取到reporter标签元素
+        const reporterStepItem = document.querySelector('#large-batch-stepper .step-item[onclick*="reporter"]');
+        if (reporterStepItem) {
+            switchSubTab('reporter', reporterStepItem);
+            // 强制刷新reporter状态，确保结果可见
+            if (appState.batch.resultContent && repInfoBox) {
+                repInfoBox.style.display = 'block';
+                appState.reporter.jsonlData = parseJsonl(appState.batch.resultContent);
+                checkReporterReady();
+            }
+        }
     } catch(e) { addLog(`错误: ${e.message}`, "error"); } finally { btnDownload.disabled = false; }
 }
 
