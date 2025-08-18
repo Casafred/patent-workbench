@@ -28,6 +28,18 @@ function initGenerator() {
 function handleGenFile(event) {
     const file = event.target.files[0];
     if (!file) return;
+    // 清除之前的数据
+    appState.generator.workbook = null;
+    appState.generator.currentSheetData = null;
+    appState.generator.columnHeaders = [];
+    genSheetSelector.innerHTML = '';
+    genSheetSelector.style.display = 'none';
+    columnConfigContainer.style.display = 'none';
+    genGenerateBtn.disabled = true;
+    genPreviewOutput.style.display = 'none';
+    genDownloadBtn.style.display = 'none';
+    genReadyInfo.style.display = 'none';
+    
     const reader = new FileReader();
     reader.onload = e => {
         try {
@@ -235,7 +247,7 @@ function initBatchWorkflow() {
     btnUpload.addEventListener('click', runStep1_Upload);
     btnCreate.addEventListener('click', runStep2_Create);
     btnCheck.addEventListener('click', runStep3_Check);
-    btnDownload.addEventListener('click', runStep4_Download);
+    btnDownload.addEventListener('click', runStep3_Download);
     btnStopCheck.addEventListener('click', stopAutoCheck);
     btnRecover.addEventListener('click', recoverBatchState);
 }
@@ -262,6 +274,10 @@ async function runStep1_Upload(){
         btnCreate.disabled = false; btnCheck.disabled = true; btnDownload.disabled = true;
         batchIdReminder.style.display = "none";
         stopAutoCheck();
+        
+        // 自动发起batch请求
+        addLog("自动发起批处理任务...");
+        setTimeout(() => runStep2_Create(), 500);
     } catch(e) { addLog(`错误: ${e.message}`, "error"); } finally { btnUpload.disabled = false; }
 }
 
@@ -293,6 +309,7 @@ async function runStep3_Check(){
             appState.batch.outputFileId = data.output_file_id;
             addLog(`任务完成! Output File ID: ${data.output_file_id}`,"success");
             btnDownload.disabled = false;
+        document.getElementById('batch_step3_download').disabled = false;
             stopAutoCheck();
         } else if(["failed","expired","cancelling","cancelled"].includes(data.status)){
             addLog(`任务终止。状态: ${data.status.toUpperCase()}`,"error");
@@ -301,8 +318,8 @@ async function runStep3_Check(){
     } catch(e) { addLog(`检查状态时发生错误: ${e.message}`, "error"); } finally { btnCheck.disabled = false; }
 }
 
-async function runStep4_Download(){
-    addLog("开始执行步骤4：获取结果内容...");
+async function runStep3_Download(){
+    addLog("开始执行步骤3：获取结果内容...");
     if(!appState.batch.outputFileId) return addLog("错误：Output File ID 缺失。","error");
     btnDownload.disabled = true;
     try {
@@ -342,7 +359,13 @@ async function recoverBatchState(){
     btnCheck.disabled = false;
     await runStep3_Check();
     const lastLogEntry = batchLog.lastChild?.textContent || "";
-    if(!/completed|failed|expired|cancelled|cancelling/i.test(lastLogEntry)) startAutoCheck();
+    // 检查是否已完成，如果是则自动下载结果
+    if(/completed/i.test(lastLogEntry) && appState.batch.outputFileId) {
+        addLog("检测到任务已完成，自动获取结果...");
+        await runStep3_Download();
+    } else if(!/failed|expired|cancelled|cancelling/i.test(lastLogEntry)) {
+        startAutoCheck();
+    }
 }
 
 function initReporter() {

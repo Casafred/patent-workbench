@@ -533,8 +533,7 @@
                     <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px; justify-content: center;">
                         <button id="batch_step1_upload" class="action-button">1. 上传请求文件</button>
                         <button id="batch_step2_create" class="action-button" disabled>2. 创建Batch任务</button>
-                        <button id="batch_step3_check" class="action-button" disabled>3. 手动检查状态</button>
-                        <button id="batch_step4_download" class="action-button" disabled>4. 获取结果内容</button>
+                        <button id="batch_step3_download" class="action-button" disabled>3. 获取结果内容</button>
                     </div>
                     <div id="batch_id_reminder" class="info" style="display: none; margin-top: 20px; text-align: center;"></div>
 
@@ -558,6 +557,9 @@
 
                 <div class="step">
                     <div class="step-header">执行日志</div>
+                    <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+                        <button id="batch_step3_check" class="small-button">手动检查状态</button>
+                    </div>
                     <div id="batch_log" class="preview-output">等待操作...</div>
                 </div>
             </div>
