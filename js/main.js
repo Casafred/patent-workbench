@@ -218,13 +218,21 @@ function switchSubTab(subTabId, clickedElement) {
         updateStepperState(stepper, clickedElement);
     }
 
+    // ▼▼▼ 新增的核心逻辑 ▼▼▼
+    // 当切换到“解析报告”页签时，主动检查内存中是否有待处理的结果
     if (subTabId === 'reporter' && appState.batch.resultContent) {
+        // 显示提示信息
         repInfoBox.style.display = 'block';
+        // 解析内存中的JSONL数据并存入报告模块的状态
         appState.reporter.jsonlData = parseJsonl(appState.batch.resultContent);
+        // 检查是否可以启用“生成报告”按钮
         checkReporterReady();
     } else if(subTabId !== 'reporter') {
+        // 确保离开报告页再回来时，如果内存数据已清除，提示框会隐藏
+        // (虽然当前逻辑不会清除，但这是个好的防御性编程习惯)
         repInfoBox.style.display = 'none';
     }
+    // ▲▲▲ 新增逻辑结束 ▲▲▲
 }
 
 function switchLPLSubTab(subTabId, clickedElement) {

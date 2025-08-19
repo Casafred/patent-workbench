@@ -1,54 +1,13 @@
 // =================================================================================
 // 功能三: 大批量处理 (无修改，保持原样)
 // =================================================================================
-function initLargeBatch() {
+// 初始化函数 - 全局暴露以确保在main.js中可被调用
+globalThis.initLargeBatch = function() {
     initGenerator();
     initBatchWorkflow();
     initReporter();
     switchSubTab('generator', document.querySelector('#large_batch-tab .sub-tab-button'));
 }
-
-// 全局变量定义
-const genFileInput = document.getElementById('gen_file-input');
-const genSheetSelector = document.getElementById('gen_sheet-selector');
-const columnConfigContainer = document.getElementById('column-config-container');
-const columnCountInput = document.getElementById('column-count');
-const columnConfigArea = document.getElementById('column-config-area');
-const templateSelector = document.getElementById('template_selector');
-const saveTemplateBtn = document.getElementById('save_template_btn');
-const importTemplateBtn = document.getElementById('import_template_btn');
-const templateFileInput = document.getElementById('template_file_input');
-const exportTemplateBtn = document.getElementById('export_template_btn');
-const deleteTemplateBtn = document.getElementById('delete_template_btn');
-const apiModelSelect = document.getElementById('api-model');
-const apiTemperatureInput = document.getElementById('api-temperature');
-const apiSystemPrompt = document.getElementById('api-system-prompt');
-const promptRules = document.getElementById('prompt-rules');
-const contentInsertionPreview = document.getElementById('content-insertion-preview');
-const outputFieldsContainer = document.getElementById('output-fields-container');
-const addOutputFieldBtn = document.getElementById('add-output-field-btn');
-const genGenerateBtn = document.getElementById('gen_generate-btn');
-const genPreviewOutput = document.getElementById('gen_preview_output');
-const genDownloadBtn = document.getElementById('gen_download-btn');
-const genReadyInfo = document.getElementById('gen_ready_info');
-const btnUpload = document.getElementById('batch_step1_upload');
-const btnCreate = document.getElementById('batch_step2_create');
-const btnDownload = document.getElementById('batch_step3_download');
-const batchIdReminder = document.getElementById('batch_id_reminder');
-const autoCheckContainer = document.getElementById('auto-check-container');
-const autoCheckStatus = document.getElementById('auto_check_status');
-const batchStopCheckBtn = document.getElementById('batch_stop_check_btn');
-const recoverBatchIdInput = document.getElementById('recover_batch_id_input');
-const recoverStateBtn = document.getElementById('recover_state_btn');
-const batchStep3Check = document.getElementById('batch_step3_check');
-const batchLog = document.getElementById('batch_log');
-const repExcelInput = document.getElementById('rep_excel-input');
-const repSheetSelector = document.getElementById('rep_sheet-selector');
-const repJsonlInput = document.getElementById('rep_jsonl-input');
-const repInfoBox = document.getElementById('reporter-info-box');
-const repGenerateBtn = document.getElementById('rep_generate-report-btn');
-const repPreview = document.getElementById('rep_output_preview');
-const repDownloadBtn = document.getElementById('rep_download-report-btn');
 
 function initGenerator() {
     apiModelSelect.innerHTML = BATCH_MODELS.map(m => `<option value="${m}">${m}</option>`).join('');
@@ -142,6 +101,19 @@ function buildUserPrompt() {
         outputFormat = `请严格按照以下JSON格式输出，不要添加任何其他说明或markdown标记：\n{\n${jsonFields}\n}`;
     }
     return [rules, contentInsertionTemplate.trim(), outputFormat].filter(Boolean).join('\n\n');
+}
+
+function loadTemplateUI(template) {
+    if (!template) return;
+    apiSystemInput.value = template.system || '';
+    if (typeof template.user === 'string') {
+        promptRules.value = template.user;
+        outputFieldsContainer.innerHTML = '';
+    } else if (template.user && typeof template.user === 'object') {
+        promptRules.value = template.user.rules || '';
+        outputFieldsContainer.innerHTML = '';
+        if(template.user.outputFields) template.user.outputFields.forEach(f => addOutputField(f.name, f.desc));
+    }
 }
 
 function generateJsonl() {
@@ -346,13 +318,34 @@ async function runStep3_Check(){
     btnCheck.disabled = true;
     try {
         const data = await apiCall(`/check_status`, { batchId: appState.batch.batchId });
-        addLog(`任务状态: <strong style="color: var(--primary-color-dark)">${data.status.toUpperCase()}</strong>`);
+
+        // ▼▼▼ 核心修改：解析并格式化进度信息 ▼▼▼
+        let progressInfo = '';
+        if (data.request_counts) {
+            const { total, completed, failed } = data.request_counts;
+            // 只有在total > 0时显示进度，避免初始状态下显示 "0/0"
+            if (total > 0) {
+                 progressInfo = ` | 进度: ${completed} / ${total} (成功: ${completed}, 失败: ${failed})`;
+            }
+        }
+        
+        // 更新日志
+        addLog(`任务状态: <strong style="color: var(--primary-color-dark)">${data.status.toUpperCase()}</strong>${progressInfo}`);
+        
+        // 更新自动检查状态栏的显示
+        if (appState.batch.autoCheckTimer) {
+             autoCheckStatusEl.textContent = `检查中... [${data.status}]${progressInfo}`;
+        }
+        // ▲▲▲ 修改结束 ▲▲▲
+
         if(data.status === "completed"){
             appState.batch.outputFileId = data.output_file_id;
             addLog(`任务完成! Output File ID: ${data.output_file_id}`,"success");
             btnDownload.disabled = false;
-        document.getElementById('batch_step3_download').disabled = false;
             stopAutoCheck();
+            // (可选) 任务完成后自动触发下载
+            addLog("检测到任务已完成，将在2秒后自动获取结果...");
+            setTimeout(() => runStep3_Download(), 2000);
         } else if(["failed","expired","cancelling","cancelled"].includes(data.status)){
             addLog(`任务终止。状态: ${data.status.toUpperCase()}`,"error");
             stopAutoCheck();
@@ -368,9 +361,11 @@ async function runStep3_Download(){
         const data = await apiCall(`/download_result`, { fileId: appState.batch.outputFileId });
         appState.batch.resultContent = data.fileContent;
         addLog("成功: 已将结果文件内容加载到浏览器内存中！","success");
-        addLog("请切换到【3. 解析报告】，您将看到直接解析的选项。");
-        // ▼▼▼ 修正后的代码行 ▼▼▼
-        switchSubTab('reporter', document.querySelector('#large-batch-stepper .step-item[onclick*="reporter"]'));
+        addLog("正在自动切换到【3. 解析报告】...");
+        
+        const reporterStepElement = document.querySelector('#large-batch-stepper .step-item[onclick*="reporter"]');
+        switchSubTab('reporter', reporterStepElement);
+
     } catch(e) { addLog(`错误: ${e.message}`, "error"); } finally { btnDownload.disabled = false; }
 }
 
@@ -378,7 +373,7 @@ function startAutoCheck(){
     stopAutoCheck();
     addLog("已启动自动状态检查（每分钟一次）。");
     autoCheckContainer.style.display = "block";
-    autoCheckStatusEl.textContent = "自动检查已激活...";
+    autoCheckStatusEl.textContent = "自动检查已激活，等待首次查询...";
     runStep3_Check();
     appState.batch.autoCheckTimer = setInterval(runStep3_Check, 60000);
 }
