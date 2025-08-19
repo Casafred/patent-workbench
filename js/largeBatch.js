@@ -361,10 +361,20 @@ async function runStep3_Download(){
         const data = await apiCall(`/download_result`, { fileId: appState.batch.outputFileId });
         appState.batch.resultContent = data.fileContent;
         addLog("成功: 已将结果文件内容加载到浏览器内存中！","success");
+        
+        // 自动将结果内容转换为JSONL数据并设置到解析器中
+        if(appState.batch.resultContent) {
+            appState.reporter.jsonlData = parseJsonl(appState.batch.resultContent);
+            addLog("已自动将结果内容加载到解析器中！","success");
+        }
+        
         addLog("正在自动切换到【3. 解析报告】...");
         
         const reporterStepElement = document.querySelector('#large-batch-stepper .step-item[onclick*="reporter"]');
         switchSubTab('reporter', reporterStepElement);
+        
+        // 检查是否可以启用解析按钮
+        checkReporterReady();
 
     } catch(e) { addLog(`错误: ${e.message}`, "error"); } finally { btnDownload.disabled = false; }
 }
@@ -394,13 +404,29 @@ async function recoverBatchState(){
     addLog(`正在尝试恢复 Batch ID: ${recoverId}...`);
     appState.batch.batchId = recoverId;
     btnCheck.disabled = false;
-    await runStep3_Check();
-    const lastLogEntry = batchLog.lastChild?.textContent || "";
-    // 检查是否已完成，如果是则自动下载结果
-    if(/completed/i.test(lastLogEntry) && appState.batch.outputFileId) {
-        addLog("检测到任务已完成，自动获取结果...");
-        await runStep3_Download();
-    } else if(!/failed|expired|cancelled|cancelling/i.test(lastLogEntry)) {
+    
+    // 直接检查状态并获取outputFileId，而不是依赖日志文本
+    let taskCompleted = false;
+    try {
+        const data = await apiCall(`/check_status`, { batchId: recoverId });
+        addLog(`任务状态: <strong style="color: var(--primary-color-dark)">${data.status.toUpperCase()}</strong>`);
+        
+        if(data.status === "completed"){
+            appState.batch.outputFileId = data.output_file_id;
+            addLog(`任务已完成! Output File ID: ${data.output_file_id}`,"success");
+            taskCompleted = true;
+        }
+    } catch(e) {
+        addLog(`检查状态时发生错误: ${e.message}`, "error");
+    }
+    
+    // 如果任务已完成，自动下载结果文件
+    if(taskCompleted && appState.batch.outputFileId) {
+        addLog("检测到任务已完成，将在2秒后自动获取结果...");
+        setTimeout(() => runStep3_Download(), 2000);
+    } else {
+        // 否则启动自动检查或只启用手动检查按钮
+        btnCheck.disabled = false;
         startAutoCheck();
     }
 }
