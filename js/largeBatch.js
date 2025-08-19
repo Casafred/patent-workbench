@@ -358,14 +358,22 @@ async function runStep3_Download(){
     if(!appState.batch.outputFileId) return addLog("错误：Output File ID 缺失。","error");
     btnDownload.disabled = true;
     try {
-        const data = await apiCall(`/download_result`, { fileId: appState.batch.outputFileId });
-        appState.batch.resultContent = data.fileContent;
+        // 【修改1】为了清晰，将变量名从 data 改为 response
+        const response = await apiCall(`/download_result`, { fileId: appState.batch.outputFileId });
+        
+        // 【修改2-核心修复】使用 await response.text() 来正确获取文件内容
+        appState.batch.resultContent = await response.text(); 
+        
+        // 现在 appState.batch.resultContent 中已经有了正确的JSONL字符串
         addLog("成功: 已将结果文件内容加载到浏览器内存中！","success");
         
-        // 自动将结果内容转换为JSONL数据并设置到解析器中
         if(appState.batch.resultContent) {
+            // 这部分代码现在可以正常执行了
             appState.reporter.jsonlData = parseJsonl(appState.batch.resultContent);
             addLog("已自动将结果内容加载到解析器中！","success");
+            
+            // 【优化】在切换前就显示提示框，体验更好
+            repInfoBox.style.display = 'block';
         }
         
         addLog("正在自动切换到【3. 解析报告】...");
@@ -373,10 +381,14 @@ async function runStep3_Download(){
         const reporterStepElement = document.querySelector('#large-batch-stepper .step-item[onclick*="reporter"]');
         switchSubTab('reporter', reporterStepElement);
         
-        // 检查是否可以启用解析按钮
+        // 因为 appState.reporter.jsonlData 已被正确赋值，这个检查现在会通过
         checkReporterReady();
 
-    } catch(e) { addLog(`错误: ${e.message}`, "error"); } finally { btnDownload.disabled = false; }
+    } catch(e) { 
+        addLog(`错误: 获取结果文件失败: ${e.message}`, "error"); 
+    } finally { 
+        btnDownload.disabled = false; 
+    }
 }
 
 function startAutoCheck(){
