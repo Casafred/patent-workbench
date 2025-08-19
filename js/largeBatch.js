@@ -340,7 +340,6 @@ async function runStep2_Create(){
     } catch(e) { addLog(`错误: ${e.message}`, "error"); } finally { btnCreate.disabled = false; }
 }
 
-// 修复runStep3_Check函数中的按钮状态设置
 async function runStep3_Check(){
     addLog("正在检查任务状态...");
     if(!appState.batch.batchId) { addLog("错误：Batch ID 缺失，无法检查状态。","error"); stopAutoCheck(); return; }
@@ -352,7 +351,7 @@ async function runStep3_Check(){
             appState.batch.outputFileId = data.output_file_id;
             addLog(`任务完成! Output File ID: ${data.output_file_id}`,"success");
             btnDownload.disabled = false;
-            document.getElementById('batch_step3_download').disabled = false;
+        document.getElementById('batch_step3_download').disabled = false;
             stopAutoCheck();
         } else if(["failed","expired","cancelling","cancelled"].includes(data.status)){
             addLog(`任务终止。状态: ${data.status.toUpperCase()}`,"error");
@@ -361,7 +360,6 @@ async function runStep3_Check(){
     } catch(e) { addLog(`检查状态时发生错误: ${e.message}`, "error"); } finally { btnCheck.disabled = false; }
 }
 
-// 增强runStep3_Download函数，确保结果加载后能正确切换到reporter标签
 async function runStep3_Download(){
     addLog("开始执行步骤3：获取结果内容...");
     if(!appState.batch.outputFileId) return addLog("错误：Output File ID 缺失。","error");
@@ -371,17 +369,8 @@ async function runStep3_Download(){
         appState.batch.resultContent = data.fileContent;
         addLog("成功: 已将结果文件内容加载到浏览器内存中！","success");
         addLog("请切换到【3. 解析报告】，您将看到直接解析的选项。");
-        // 确保获取到reporter标签元素
-        const reporterStepItem = document.querySelector('#large-batch-stepper .step-item[onclick*="reporter"]');
-        if (reporterStepItem) {
-            switchSubTab('reporter', reporterStepItem);
-            // 强制刷新reporter状态，确保结果可见
-            if (appState.batch.resultContent && repInfoBox) {
-                repInfoBox.style.display = 'block';
-                appState.reporter.jsonlData = parseJsonl(appState.batch.resultContent);
-                checkReporterReady();
-            }
-        }
+        // ▼▼▼ 修正后的代码行 ▼▼▼
+        switchSubTab('reporter', document.querySelector('#large-batch-stepper .step-item[onclick*="reporter"]'));
     } catch(e) { addLog(`错误: ${e.message}`, "error"); } finally { btnDownload.disabled = false; }
 }
 
