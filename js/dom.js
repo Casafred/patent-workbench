@@ -121,7 +121,12 @@ const lplOldColsSelectionArea = getEl('lpl_old_cols_selection_area');
 const lplSelectAllColsBtn = getEl('lpl_select_all_cols_btn');
 const lplDeselectAllColsBtn = getEl('lpl_deselect_all_cols_btn');
 const lplOldColsCheckboxes = getEl('lpl_old_cols_checkboxes');
-
+// ▼▼▼ 新增：权利要求对比功能 (功能五) ▼▼▼
+const claimTextA = getEl('claim_text_a');
+const claimTextB = getEl('claim_text_b');
+const claimsCompareBtn = getEl('claims_compare_btn');
+const comparisonResultContainer = getEl('comparison_result_container');
+// ▲▲▲ 新增结束 ▲▲▲
 // Files Manager (新增)
 const chatManageFilesBtn = getEl('chat_manage_files_btn');
 const fileManagerModal = getEl('file_manager_modal');

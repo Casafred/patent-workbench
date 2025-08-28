@@ -112,6 +112,7 @@
                 <button class="tab-button" onclick="switchTab('async_batch', this)">功能二：小批量异步</button>
                 <button class="tab-button" onclick="switchTab('large_batch', this)">功能三：大批量处理</button>
                 <button class="tab-button" onclick="switchTab('local_patent_lib', this)">功能四：本地专利库管理</button>
+                <button class="tab-button" onclick="switchTab('claims_comparison', this)">功能五：权利要求对比</button>
             </div>
         </div>
 
@@ -761,6 +762,39 @@
                 </div>
             </div>
         </div>
+
+<!-- ====================================================================== -->
+<!-- 功能五：权利要求对比 (新增) -->
+<!-- ====================================================================== -->
+<div id="claims_comparison-tab" class="tab-content">
+    <div class="step">
+        <div class="step-header">权利要求对比分析</div>
+        <p class="info">请在下方两个文本框中分别粘贴不同版本的权利要求文本（例如，CN公开文本和US授权文本），然后点击“开始对比”。模型将分析并高亮显示二者之间的范围差异。</p>
+
+        <div id="claims_comparison_input_area">
+            <div class="comparison-input-group">
+                <label for="claim_text_a">权利要求文本 A</label>
+                <textarea id="claim_text_a" rows="15" placeholder="在此处粘贴第一份权利要求文本..."></textarea>
+            </div>
+            <div class="comparison-input-group">
+                <label for="claim_text_b">权利要求文本 B</label>
+                <textarea id="claim_text_b" rows="15" placeholder="在此处粘贴第二份权利要求文本..."></textarea>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin: 25px 0;">
+            <button id="claims_compare_btn">开始对比</button>
+        </div>
+
+        <div class="step" style="margin-top: 20px;">
+            <div class="step-header">对比分析结果</div>
+            <div id="comparison_result_container" class="preview-output">
+                <div class="info">等待输入并开始对比...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
     </div>
 </div>
 
@@ -772,5 +806,6 @@
 <script src="js/localPatentLib.js"></script>
 <!-- 新增：引入文件管理脚本 -->
 <script src="js/files.js"></script>
+<script src="js/claimsComparison.js"></script>
 <script src="js/main.js"></script> </body>
 </html>

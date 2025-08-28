@@ -72,28 +72,37 @@ const appState = {
         outputHeaders: [],
     },
     // ▼▼▼ 在这里添加新功能的状态对象 ▼▼▼
-lpl: { // Local Patent Library
-    originalFile: {
-        name: null,
-        workbook: null,
-        sheets: [], // 新增
-        selectedSheet: null, // 新增
-        ignoreHeader: false, // 新增
-        jsonData: null,
-        headers: []
+    // ▼▼▼ 新增权利要求对比功能的状态 ▼▼▼
+    claimsComparison: {
+        isLoading: false,
+        result: null, // to store the parsed JSON from the API
+        error: null
     },
-    newFile: {
-        name: null,
-        workbook: null,
-        sheets: [], // 新增
-        selectedSheet: null, // 新增
-        ignoreHeader: false, // 新增
-        jsonData: null,
-        headers: []
+    // ▲▲▲ 新增结束 ▲▲▲
+    
+    lpl: { // Local Patent Library
+        originalFile: {
+            name: null,
+            workbook: null,
+            sheets: [], // 新增
+            selectedSheet: null, // 新增
+            ignoreHeader: false, // 新增
+            jsonData: null,
+            headers: []
+        },
+        
+        newFile: {
+            name: null,
+            workbook: null,
+            sheets: [], // 新增
+            selectedSheet: null, // 新增
+            ignoreHeader: false, // 新增
+            jsonData: null,
+            headers: []
+        },
+        expandedPatents: [],
+        mergedData: null,
     },
-    expandedPatents: [],
-    mergedData: null,
-},
     // ▲▲▲ 添加结束 ▲▲▲
     // --- 新增：文件管理状态 ---
     files: {

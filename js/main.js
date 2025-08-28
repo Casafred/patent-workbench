@@ -9,9 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initAsyncBatch();
     initLargeBatch();
     initLocalPatentLib();
-    // ▼▼▼ 初始化文件管理器功能 ▼▼▼
+    initClaimsComparison();
     initFilesManager();
-    // ▲▲▲ 初始化结束 ▲▲▲
+
 
     // 默认激活第一个主页签
     switchTab('instant', document.querySelector('.main-tab-container .tab-button'));
