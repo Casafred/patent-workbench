@@ -1,4 +1,4 @@
-// js/claimsComparison.js
+// js/claimsComparison.js (v1.1 - Switched to glm-4-long)
 
 function initClaimsComparison() {
     claimsCompareBtn.addEventListener('click', handleCompareClick);
@@ -16,7 +16,7 @@ async function handleCompareClick() {
     appState.claimsComparison.isLoading = true;
     claimsCompareBtn.disabled = true;
     claimsCompareBtn.textContent = '正在分析中...';
-    comparisonResultContainer.innerHTML = '<div class="info"><div class="loading-spinner"></div> 正在调用大模型进行深度对比，请稍候...</div>';
+    comparisonResultContainer.innerHTML = '<div class="info"><div class="loading-spinner"></div> 正在调用长文本模型进行深度对比，请稍候...</div>';
 
     // 基于我们设计的稳定提示词
     const promptTemplate = `
@@ -83,7 +83,9 @@ ${textB}
     let fullResponse = "";
     try {
         const reader = await apiCall('/stream_chat', {
-            model: 'glm-4', // 使用能力更强的模型以保证JSON格式和分析质量
+            // ▼▼▼ 核心修改 ▼▼▼
+            model: 'glm-4-long', // 切换到超长上下文模型，专门处理长篇文档对比
+            // ▲▲▲ 修改结束 ▲▲▲
             messages: [{ role: 'user', content: promptTemplate }],
             temperature: 0.1,
         }, 'POST', true);
@@ -174,7 +176,7 @@ function renderComparisonResults(data) {
     });
 
     // 渲染从属权利要求
-    if (data.dependent_claims_A.length > 0 || data.dependent_claims_B.length > 0) {
+    if (data.dependent_claims_A && (data.dependent_claims_A.length > 0 || (data.dependent_claims_B && data.dependent_claims_B.length > 0))) {
         html += `
             <div class="dependent-claims-section">
                 <div class="dependent-claims-list">
@@ -187,7 +189,7 @@ function renderComparisonResults(data) {
                     <div>
                         <h5>文本 B 的从属权利要求</h5>
                         <ul>
-                            ${data.dependent_claims_B.map(claim => `<li>${claim}</li>`).join('')}
+                            ${(data.dependent_claims_B || []).map(claim => `<li>${claim}</li>`).join('')}
                         </ul>
                     </div>
                 </div>
