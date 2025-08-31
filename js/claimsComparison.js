@@ -194,15 +194,50 @@ ${text}`;
  * API调用：执行核心对比
  */
 async function performComparison(baselineClaim, comparisonClaim) {
-    const prompt = `...`; // Prompt保持不变
+    // 将“角色扮演”和“任务指令”分离，是更规范的做法
+    const system_prompt = `You are a highly specialized AI assistant for patent analysis. Your sole function is to compare two patent claims and output the analysis in a structured JSON format. You must not engage in conversation or add any explanatory text outside of the requested JSON structure.`;
+
+    // 使用XML标签来提供强结构化指令，极大提高模型遵循指令的概率
+    const user_prompt = `
+<TASK_DESCRIPTION>
+Your task is to conduct a detailed semantic comparison of two independent patent claims: a baseline version and a comparison version. Identify and group all technical features into two categories: 'similar_features' and 'different_features'.
+</TASK_DESCRIPTION>
+
+<INPUT_DATA>
+  <BASELINE_CLAIM>
+    <![CDATA[
+${baselineClaim}
+    ]]>
+  </BASELINE_CLAIM>
+  <COMPARISON_CLAIM>
+    <![CDATA[
+${comparisonClaim}
+    ]]>
+  </COMPARISON_CLAIM>
+</INPUT_DATA>
+
+<OUTPUT_INSTRUCTIONS>
+You must generate a single JSON object as your response. The JSON object must contain exactly two keys: \`similar_features\` and \`different_features\`.
+
+1.  **similar_features**: This must be an array of strings. Each string should represent a technical feature that is semantically identical or has only minor, non-substantive wording differences between the two claims.
+2.  **different_features**: This must be an array of objects. Each object represents a significant difference and must contain three string keys:
+    - \`baseline_feature\`: The feature text from the baseline claim.
+    - \`comparison_feature\`: The corresponding, but different, feature text from the comparison claim.
+    - \`analysis\`: A concise explanation of the difference and its impact on the patent's scope (e.g., "narrows the scope by adding a specific material," "broadens the scope by removing a process step").
+
+Do not include any text, greetings, or markdown formatting before or after the JSON object.
+</OUTPUT_INSTRUCTIONS>
+`;
 
     const response = await apiCall('/chat', {
-        model: 'glm-4-long', 
-        messages: [{ role: 'user', content: prompt }],
+        model: 'glm-4-long',
+        messages: [
+            { role: 'system', content: system_prompt },
+            { role: 'user', content: user_prompt }
+        ],
         temperature: 0.1,
     });
 
-    // ▼▼▼ 应用同样的健壮性修复 ▼▼▼
     const rawContent = response.choices[0].message.content;
     const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
@@ -217,7 +252,6 @@ async function performComparison(baselineClaim, comparisonClaim) {
         console.error("Original matched string:", jsonMatch[0]);
         throw new Error(`核心对比失败，模型返回的JSON格式无效: ${e.message}`);
     }
-    // ▲▲▲ 修复结束 ▲▲▲
 }
 
 /**
