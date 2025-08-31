@@ -2,6 +2,15 @@
 
 // 初始化权利要求对比功能
 function initClaimsComparison() {
+    // 确保DOM元素存在
+    if (!claimsCompareBtn || !detectBaseLanguageBtn || !detectComparisonLanguageBtn || 
+        !displayModeToggle || !claimTextA || !claimTextB || !comparisonResultContainer ||
+        !baseIndependentClaimsInput || !comparisonIndependentClaimsInput ||
+        !baseLanguageDisplay || !comparisonLanguageDisplay) {
+        console.error('权利要求对比功能的DOM元素未找到，请检查HTML结构和ID是否正确');
+        return;
+    }
+    
     // 绑定按钮点击事件
     claimsCompareBtn.addEventListener('click', handleCompareClick);
     
@@ -97,6 +106,13 @@ function extractIndependentClaims(text, claimNumbers) {
 
 // 语言检测功能
 async function detectLanguage(textArea, displayElement, versionType) {
+    // 确保传入的参数有效
+    if (!textArea || !displayElement) {
+        console.error('detectLanguage函数参数无效');
+        alert('检测失败：内部错误');
+        return;
+    }
+    
     const text = textArea.value.trim().substring(0, 1000); // 取前1000个字符进行检测
     if (!text) {
         alert('请先输入文本内容');
@@ -109,7 +125,7 @@ async function detectLanguage(textArea, displayElement, versionType) {
         
         const result = await apiCall('/detect-language', { text: text });
         
-        // 修复：更健壮地处理返回结果
+        // 更健壮地处理返回结果
         let language = 'unknown';
         if (!result) {
             throw new Error('语言检测接口返回空结果');

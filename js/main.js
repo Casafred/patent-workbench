@@ -66,7 +66,13 @@ function initApiKeyConfig() {
 
 // 修改apiCall函数，确保Response对象的body没有被提前消费
 async function apiCall(endpoint, data = null, stream = false) {
-    const apiKey = document.getElementById('apiKey').value;
+    // 确保API Key输入框存在
+    const apiKeyInput = document.getElementById('global_api_key_input');
+    if (!apiKeyInput) {
+        throw new Error('API Key输入框未找到');
+    }
+    
+    const apiKey = apiKeyInput.value;
     if (!apiKey) {
         throw new Error('请先配置API Key');
     }
@@ -87,7 +93,7 @@ async function apiCall(endpoint, data = null, stream = false) {
         const response = await fetch(endpoint, config);
 
         if (!response.ok) {
-            // 修复：在读取错误信息前创建Response对象的克隆
+            // 在读取错误信息前创建Response对象的克隆
             const errorResponse = response.clone();
             let errorText = '';
             try {
