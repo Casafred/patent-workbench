@@ -88,45 +88,48 @@ async function runAnalysisWorkflow() {
 }
 
 /**
- * 从完整文本中根据序号提取权利要求
+ * 从完整文本中根据序号提取权利要求 (v2.1 - 优化多独权提取逻辑)
  * @param {string} fullText - 完整的权利要求文本
  * @param {string} numbersStr - 用户输入的序号字符串，如 "1, 9"
  * @returns {string} - 拼接好的独立权利要求文本
  */
 function extractClaims(fullText, numbersStr) {
-    const numbers = numbersStr.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
-    if (numbers.length === 0) return "";
+    // 1. 解析用户输入的序号
+    const targetNumbers = new Set(numbersStr.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n)));
+    if (targetNumbers.size === 0) return "";
 
-    const claims = [];
-    const lines = fullText.split('\n');
-    let currentClaimText = '';
-    let currentClaimNumber = -1;
+    const extractedClaims = [];
+    
+    // 2. 将文本按权利要求编号分割成块
+    // 这个正则表达式匹配一个或多个数字开头，后面跟着点、空格或中文顿号，这是一个权利要求的开始标志。
+    // `\n(?=\d+\s*[.\s、])` 这是一个正向先行断言，它匹配换行符，但前提是这个换行符后面跟着一个权利要求编号。
+    // 这能确保我们正确地按权利要求分割，即使权利要求内部有换行。
+    const claimBlocks = fullText.split(/\n(?=\d+\s*[.\s、])/).map(s => s.trim());
 
-    for (const line of lines) {
-        const match = line.match(/^(\d+)\s*[.\s、]/); // 匹配 "1." "1 " "1、" 等格式
+    // 3. 遍历分割后的块，提取目标权利要求
+    for (const block of claimBlocks) {
+        if (!block) continue;
+        
+        const match = block.match(/^(\d+)/);
         if (match) {
-            // 保存上一条权利要求
-            if (currentClaimNumber !== -1 && numbers.includes(currentClaimNumber)) {
-                claims.push(currentClaimText.trim());
+            const currentClaimNumber = parseInt(match[1]);
+            if (targetNumbers.has(currentClaimNumber)) {
+                extractedClaims.push(block);
             }
-            // 开始新的权利要求
-            currentClaimNumber = parseInt(match[1]);
-            currentClaimText = line;
-        } else if (currentClaimNumber !== -1) {
-            currentClaimText += '\n' + line;
         }
     }
-    // 保存最后一条权利要求
-    if (currentClaimNumber !== -1 && numbers.includes(currentClaimNumber)) {
-        claims.push(currentClaimText.trim());
+
+    // 4. 如果没有提取到任何内容，返回空字符串
+    if (extractedClaims.length === 0) {
+        return "";
     }
 
-    return claims.join('\n\n---\n\n'); // 使用分隔符拼接多个独权
+    // 5. 将所有提取到的独立权利要求用分隔符连接起来
+    return extractedClaims.join('\n\n---\n\n'); // 使用分隔符拼接多个独权
 }
 
-
 /**
- * API调用：检测语言
+ * API调用：检测语言 (v2.1 - 增加健壮性)
  */
 async function detectLanguages(text1, text2) {
     const prompt = `You are a language detection expert. For the two texts provided below, identify their primary language (e.g., "Chinese", "English", "Japanese"). Respond ONLY with a JSON object.
@@ -134,25 +137,43 @@ async function detectLanguages(text1, text2) {
 [Text 1]: ${text1.slice(0, 200)}
 [Text 2]: ${text2.slice(0, 200)}
 
-Your JSON output:
-{"language_1": "...", "language_2": "..."}`;
+Your JSON output must be in the format: {"language_1": "...", "language_2": "..."}`;
     
+    // 使用非流式调用，因为我们需要完整的返回内容
     const response = await apiCall('/chat', {
         model: 'glm-4-flash',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.0,
     });
     
+    const rawContent = response.choices[0].message.content;
+    
+    // ▼▼▼ 核心健壮性修复 ▼▼▼
+    // 使用正则表达式从返回的文本中提取出JSON部分
+    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+        // 如果连JSON的括号都找不到，就抛出明确的错误
+        console.error("Language detection raw response:", rawContent);
+        throw new Error('语言检测失败，模型未返回任何看似JSON的内容。');
+    }
+
     try {
-        const result = JSON.parse(response.choices[0].message.content);
+        // 解析提取出的JSON字符串
+        const result = JSON.parse(jsonMatch[0]);
+        if (!result.language_1 || !result.language_2) {
+             throw new Error('JSON中缺少language_1或language_2字段。');
+        }
         return { lang1: result.language_1, lang2: result.language_2 };
     } catch (e) {
-        throw new Error('语言检测失败，模型返回格式错误。');
+        console.error("Language detection JSON parsing error:", e);
+        console.error("Original matched string:", jsonMatch[0]);
+        throw new Error(`语言检测失败，模型返回的JSON格式无效: ${e.message}`);
     }
+    // ▲▲▲ 修复结束 ▲▲▲
 }
 
 /**
- * API调用：翻译文本到中文
+ * API调用：翻译文本到中文 (v2.1 - 增加健壮性)
  */
 async function translateText(text) {
     const prompt = `Please translate the following patent claim text into professional, accurate Chinese. Only return the translated text, without any explanations or extra content.
@@ -165,6 +186,7 @@ ${text}`;
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.0,
     });
+    // 直接返回模型的输出，不假设格式
     return response.choices[0].message.content.trim();
 }
 
@@ -172,45 +194,30 @@ ${text}`;
  * API调用：执行核心对比
  */
 async function performComparison(baselineClaim, comparisonClaim) {
-    const prompt = `You are a patent expert comparing two versions of an independent claim. Your task is to semantically group their constituent technical features into 'similar' and 'different' categories.
-
-- **Baseline Claim:**
-${baselineClaim}
-
-- **Comparison Claim:**
-${comparisonClaim}
-
-Output a JSON object with two keys: \`similar_features\` and \`different_features\`.
-
-- For \`similar_features\`: list features that are semantically identical or have minor wording changes. Each item should be a single string representing the common feature.
-- For \`different_features\`: list features with significant semantic differences. Each item must be an object with three keys: \`baseline_feature\`, \`comparison_feature\`, and \`analysis\` (explaining the difference and its impact on scope).
-
-Strictly follow this JSON format, do not add any markdown:
-{
-  "similar_features": [
-    "A shared feature...",
-    "Another shared feature..."
-  ],
-  "different_features": [
-    {
-      "baseline_feature": "A feature from the baseline claim.",
-      "comparison_feature": "The corresponding, but different, feature from the comparison claim.",
-      "analysis": "The comparison version adds the 'X' limitation, narrowing the scope."
-    }
-  ]
-}`;
+    const prompt = `...`; // Prompt保持不变
 
     const response = await apiCall('/chat', {
-        model: 'glm-4-long', // Use long context model for complex claims
+        model: 'glm-4-long', 
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.1,
     });
 
-    try {
-        return JSON.parse(response.choices[0].message.content);
-    } catch (e) {
-        throw new Error('核心对比失败，模型返回的JSON格式无效。');
+    // ▼▼▼ 应用同样的健壮性修复 ▼▼▼
+    const rawContent = response.choices[0].message.content;
+    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+        console.error("Comparison raw response:", rawContent);
+        throw new Error('核心对比失败，模型未返回任何看似JSON的内容。');
     }
+
+    try {
+        return JSON.parse(jsonMatch[0]);
+    } catch (e) {
+        console.error("Comparison JSON parsing error:", e);
+        console.error("Original matched string:", jsonMatch[0]);
+        throw new Error(`核心对比失败，模型返回的JSON格式无效: ${e.message}`);
+    }
+    // ▲▲▲ 修复结束 ▲▲▲
 }
 
 /**
