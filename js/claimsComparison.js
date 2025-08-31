@@ -191,41 +191,58 @@ ${text}`;
 }
 
 /**
- * API调用：执行核心对比
+ * API调用：执行核心对比 (v2.3 - 分别对比每条独权，并优化输出结构)
  */
-async function performComparison(baselineClaim, comparisonClaim) {
-    // 将“角色扮演”和“任务指令”分离，是更规范的做法
-    const system_prompt = `You are a highly specialized AI assistant for patent analysis. Your sole function is to compare two patent claims and output the analysis in a structured JSON format. You must not engage in conversation or add any explanatory text outside of the requested JSON structure.`;
+async function performComparison(baselineClaimText, comparisonClaimText) {
+    const system_prompt = `You are a world-class patent comparison AI. Your task is to meticulously compare pairs of independent claims and generate a structured JSON analysis. You must not add any text outside the JSON structure. The analysis part must be in Chinese.`;
 
-    // 使用XML标签来提供强结构化指令，极大提高模型遵循指令的概率
+    // 使用XML标签提供强结构化指令
     const user_prompt = `
 <TASK_DESCRIPTION>
-Your task is to conduct a detailed semantic comparison of two independent patent claims: a baseline version and a comparison version. Identify and group all technical features into two categories: 'similar_features' and 'different_features'.
+You will receive two sets of independent claims, a baseline and a comparison version. Each set may contain one or more claims, separated by '---'. Your task is to:
+1.  Pair up the claims sequentially (1st baseline claim with 1st comparison claim, 2nd with 2nd, etc.).
+2.  For each pair, conduct a detailed semantic comparison.
+3.  Group all technical features into 'similar_features' and 'different_features'.
+4.  For BOTH similar and different features, you must provide the exact text from both the baseline and comparison versions.
+5.  The 'analysis' for different features MUST be in Chinese.
 </TASK_DESCRIPTION>
 
 <INPUT_DATA>
-  <BASELINE_CLAIM>
+  <BASELINE_CLAIMS>
     <![CDATA[
-${baselineClaim}
+${baselineClaimText}
     ]]>
-  </BASELINE_CLAIM>
-  <COMPARISON_CLAIM>
+  </BASELINE_CLAIMS>
+  <COMPARISON_CLAIMS>
     <![CDATA[
-${comparisonClaim}
+${comparisonClaimText}
     ]]>
-  </COMPARISON_CLAIM>
+  </COMPARISON_CLAIMS>
 </INPUT_DATA>
 
 <OUTPUT_INSTRUCTIONS>
-You must generate a single JSON object as your response. The JSON object must contain exactly two keys: \`similar_features\` and \`different_features\`.
+Your response must be a single JSON object with one key: "claim_pairs". This key should contain an array of objects, where each object represents the analysis of one pair of claims.
 
-1.  **similar_features**: This must be an array of strings. Each string should represent a technical feature that is semantically identical or has only minor, non-substantive wording differences between the two claims.
-2.  **different_features**: This must be an array of objects. Each object represents a significant difference and must contain three string keys:
-    - \`baseline_feature\`: The feature text from the baseline claim.
-    - \`comparison_feature\`: The corresponding, but different, feature text from the comparison claim.
-    - \`analysis\`: A concise explanation of the difference and its impact on the patent's scope (e.g., "narrows the scope by adding a specific material," "broadens the scope by removing a process step").
+The structure for each object in the "claim_pairs" array is as follows:
+{
+  "baseline_claim_number": "The number of the baseline claim (e.g., Claim 1)",
+  "comparison_claim_number": "The number of the comparison claim (e.g., Claim 1)",
+  "similar_features": [
+    {
+      "baseline_feature": "The text of a similar feature from the baseline claim.",
+      "comparison_feature": "The corresponding text from the comparison claim."
+    }
+  ],
+  "different_features": [
+    {
+      "baseline_feature": "A feature from the baseline claim.",
+      "comparison_feature": "The corresponding, but different, feature from the comparison claim.",
+      "analysis": "【此处必须为中文分析】解释差异及其对保护范围的影响。"
+    }
+  ]
+}
 
-Do not include any text, greetings, or markdown formatting before or after the JSON object.
+Strictly adhere to this JSON structure.
 </OUTPUT_INSTRUCTIONS>
 `;
 
@@ -257,39 +274,80 @@ Do not include any text, greetings, or markdown formatting before or after the J
 /**
  * 渲染结果到UI
  */
+/**
+ * 渲染结果到UI (v2.3 - 采用卡片式设计，UI全面革新)
+ */
 function renderComparisonResults() {
     const data = appState.claimsComparison.analysisResult;
-    if (!data) return;
+    if (!data || !data.claim_pairs || data.claim_pairs.length === 0) {
+        comparisonResultContainerRefactored.innerHTML = '<div class="info error">分析完成，但未能从模型返回中解析出有效的对比对。</div>';
+        return;
+    }
 
-    let html = `
-        <div class="comparison-section">
-            <h4>相同或基本相同的技术特征</h4>
-            <ul class="similar-features-list">
-                ${data.similar_features.map(feature => `<li>${feature}</li>`).join('') || '<li>无完全相同的特征。</li>'}
-            </ul>
-        </div>
-        <div class="comparison-section">
-            <h4>存在显著差异的技术特征</h4>
-            <table class="different-features-table">
-                <thead>
-                    <tr>
-                        <th>基准版本 (Baseline)</th>
-                        <th>对比版本 (Comparison)</th>
-                        <th>差异分析 (Analysis)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${data.different_features.map(item => `
-                        <tr>
-                            <td>${item.baseline_feature}</td>
-                            <td>${item.comparison_feature}</td>
-                            <td>${item.analysis}</td>
-                        </tr>
-                    `).join('') || '<tr><td colspan="3" style="text-align:center;">未发现显著差异的特征。</td></tr>'}
-                </tbody>
-            </table>
-        </div>
-    `;
+    let html = '';
+
+    data.claim_pairs.forEach((pair, index) => {
+        // 为每一对独权创建一个卡片
+        html += `
+            <div class="comparison-card">
+                <div class="comparison-card-header">
+                    <h3>${pair.baseline_claim_number} vs ${pair.comparison_claim_number}</h3>
+                </div>
+                <div class="comparison-card-body">
+                    <!-- 相同特征部分 -->
+                    <div class="comparison-section-v2">
+                        <h4><span class="icon-match">✅</span> 相同 / 基本相同的技术特征</h4>
+                        <table class="features-table">
+                            <thead>
+                                <tr>
+                                    <th>基准版本 (Baseline)</th>
+                                    <th>对比版本 (Comparison)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${pair.similar_features.length > 0 ? 
+                                  pair.similar_features.map(item => `
+                                    <tr class="similar-row">
+                                        <td>${item.baseline_feature}</td>
+                                        <td>${item.comparison_feature}</td>
+                                    </tr>
+                                  `).join('') :
+                                  '<tr><td colspan="2" class="no-data">无完全相同的技术特征。</td></tr>'
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 差异特征部分 -->
+                    <div class="comparison-section-v2">
+                        <h4><span class="icon-diff">⚠️</span> 存在显著差异的技术特征</h4>
+                        <table class="features-table diff-table">
+                            <thead>
+                                <tr>
+                                    <th>基准版本 (Baseline)</th>
+                                    <th>对比版本 (Comparison)</th>
+                                    <th>差异分析 (中文)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${pair.different_features.length > 0 ?
+                                  pair.different_features.map(item => `
+                                    <tr class="different-row">
+                                        <td>${item.baseline_feature}</td>
+                                        <td>${item.comparison_feature}</td>
+                                        <td class="analysis-cell">${item.analysis}</td>
+                                    </tr>
+                                  `).join('') :
+                                  '<tr><td colspan="3" class="no-data">未发现显著差异的技术特征。</td></tr>'
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
     comparisonResultContainerRefactored.innerHTML = html;
 }
 

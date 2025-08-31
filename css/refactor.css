@@ -296,143 +296,208 @@
     opacity: 0.5;
 }
 
-/* --- 权利要求对比功能样式 --- */
-#claims_comparison_input_area {
+/* --- 权利要求对比功能样式 (v2.0) --- */
+#claims_comparison_input_area_refactored {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 25px;
     margin-top: 20px;
 }
 
-.comparison-input-group {
+.claim-number-input {
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+.claim-number-input label {
+    font-size: 14px;
+    white-space: nowrap;
+}
+.claim-number-input input {
+    width: 120px;
+    padding: 6px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
 }
 
-.comparison-input-group label {
-    margin-bottom: 8px;
-    font-weight: 500;
+/* 新的结果展示区样式 */
+.comparison-section {
+    margin-bottom: 25px;
+}
+.comparison-section h4 {
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--primary-color-hover-bg);
     color: var(--text-color);
 }
 
-.comparison-input-group textarea {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    font-family: 'Noto Sans SC', sans-serif;
+/* 相似特征列表 */
+.similar-features-list {
+    list-style-type: none;
+    padding-left: 0;
+}
+.similar-features-list li {
+    background-color: #f0fdf4; /* 绿色背景 */
+    border-left: 4px solid #22c55e;
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    border-radius: 0 6px 6px 0;
     font-size: 14px;
     line-height: 1.6;
-    background-color: var(--surface-color);
-    transition: all 0.3s ease;
 }
 
-.comparison-input-group textarea:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
-}
-
-#comparison_result_container .comparison-pair {
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    margin-bottom: 25px;
-    background-color: var(--surface-color);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-
-.comparison-pair-header {
-    padding: 15px 20px;
-    background-color: var(--primary-color-hover-bg);
-    border-bottom: 1px solid var(--border-color);
-    border-radius: 8px 8px 0 0;
-}
-
-.comparison-pair-header h4 {
-    margin: 0;
-    font-size: 1.1em;
-    color: var(--text-color);
-}
-
-.comparison-pair-header .summary {
-    margin: 8px 0 0 0;
-    font-size: 0.9em;
-    color: var(--text-color-secondary);
-}
-
-.sentence-analysis-table {
+/* 差异特征表格 */
+.different-features-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 15px;
+    border: 1px solid var(--border-color-soft);
 }
-
-.sentence-analysis-table th, 
-.sentence-analysis-table td {
+.different-features-table th, 
+.different-features-table td {
     padding: 12px 15px;
     text-align: left;
     vertical-align: top;
-    border-bottom: 1px solid var(--border-color-soft);
+    border: 1px solid var(--border-color-soft);
     font-size: 14px;
     line-height: 1.6;
 }
+.different-features-table thead {
+    background-color: #fffbeb;
+}
+.different-features-table th {
+    font-weight: 600;
+}
+.different-features-table td:first-child,
+.different-features-table td:nth-child(2) {
+    background-color: #fef2f2; /* 红色背景 */
+}
+.different-features-table td:last-child {
+    background-color: #f1f5f9;
+}
+/* in css/refactor.css */
 
-.sentence-analysis-table th {
-    background-color: #f9fafb;
-    font-weight: 500;
-    color: var(--text-color-secondary);
+/* --- 权利要求对比功能样式 (v2.3 - 卡片式设计) --- */
+#comparison_result_container_refactored {
+    background-color: transparent;
+    padding: 0;
+    border: none;
+    box-shadow: none;
 }
 
-.sentence-analysis-table tr:last-child td {
+.comparison-card {
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.07);
+    overflow: hidden; /* 保证子元素的圆角生效 */
+    transition: box-shadow 0.3s ease-in-out;
+}
+
+.comparison-card:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+}
+
+.comparison-card-header {
+    background: linear-gradient(135deg, #f9fafb, #f3f4f6);
+    padding: 16px 24px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.comparison-card-header h3 {
+    margin: 0;
+    font-size: 1.25em;
+    font-weight: 600;
+    color: #111827;
+}
+
+.comparison-card-body {
+    padding: 24px;
+}
+
+.comparison-section-v2 {
+    margin-bottom: 24px;
+}
+
+.comparison-section-v2:last-child {
+    margin-bottom: 0;
+}
+
+.comparison-section-v2 h4 {
+    display: flex;
+    align-items: center;
+    font-size: 1.1em;
+    color: #374151;
+    margin: 0 0 16px 0;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #f3f4f6;
+}
+
+.comparison-section-v2 h4 .icon-match,
+.comparison-section-v2 h4 .icon-diff {
+    margin-right: 10px;
+    font-size: 1.2em;
+}
+.icon-match { color: #22c55e; }
+.icon-diff { color: #f97316; }
+
+
+.features-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden; /* for border-radius to work on tables */
+}
+
+.features-table th,
+.features-table td {
+    padding: 12px 16px;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.features-table thead {
+    background-color: #f9fafb;
+}
+
+.features-table th {
+    font-weight: 500;
+    color: #4b5563;
+}
+
+.features-table tr:last-child td {
     border-bottom: none;
 }
 
-.sentence-analysis-table td:nth-child(1),
-.sentence-analysis-table td:nth-child(2) {
-    width: 40%;
-}
-.sentence-analysis-table td:nth-child(3) {
-    width: 20%;
+.features-table .no-data {
+    text-align: center;
+    color: #6b7280;
+    padding: 20px;
+    font-style: italic;
 }
 
-.diff-similar {
-    color: #166534; /* 深绿色 */
+/* 相似特征行样式 */
+.similar-row td {
     background-color: #f0fdf4;
 }
 
-.diff-different {
-    color: #991b1b; /* 深红色 */
-    background-color: #fef2f2;
+/* 差异特征行样式 */
+.diff-table {
+    border-color: #fde68a; /* 黄色边框以示警示 */
 }
-
-.diff-different strong {
-    font-weight: 700;
-    text-decoration: underline;
-    text-decoration-color: #ef4444;
+.diff-table thead {
+    background-color: #fefce8;
 }
-
-.dependent-claims-section {
-    padding: 15px 20px;
-    background-color: #fafafa;
+.different-row td {
+    background-color: #fff7ed;
 }
-
-.dependent-claims-section h5 {
-    margin-top: 0;
-    margin-bottom: 10px;
-}
-
-.dependent-claims-list {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    padding-left: 0;
-    list-style-type: none;
-}
-
-.dependent-claims-list li {
-    font-size: 0.85em;
-    color: #555;
-    background-color: #fff;
-    padding: 8px;
-    border-radius: 4px;
-    border: 1px solid var(--border-color-soft);
+.different-row .analysis-cell {
+    background-color: #f0f9ff;
+    color: #0c4a6e;
+    font-weight: 500;
 }
