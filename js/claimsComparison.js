@@ -94,8 +94,13 @@ async function runAnalysisWorkflow() {
  * @returns {string} - 拼接好的独立权利要求文本
  */
 function extractClaims(fullText, numbersStr) {
-    // 1. 解析用户输入的序号
-    const targetNumbers = new Set(numbersStr.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n)));
+    // 1. 预处理用户输入，将多种分隔符统一替换为半角逗号
+    const standardizedStr = numbersStr.replace(/[\s，；;、]/g, ',');
+    
+    const targetNumbers = new Set(standardizedStr.split(',')
+        .map(n => parseInt(n.trim()))
+        .filter(n => !isNaN(n) && n > 0) // 确保是有效的正整数
+    );
     if (targetNumbers.size === 0) return "";
 
     const extractedClaims = [];
@@ -194,17 +199,12 @@ ${text}`;
  * API调用：执行核心对比 (v2.3 - 分别对比每条独权，并优化输出结构)
  */
 async function performComparison(baselineClaimText, comparisonClaimText) {
-    const system_prompt = `You are a world-class patent comparison AI. Your task is to meticulously compare pairs of independent claims and generate a structured JSON analysis. You must not add any text outside the JSON structure. The analysis part must be in Chinese.`;
+    const system_prompt = `You are a world-class patent comparison AI. Your task is to meticulously compare pairs of independent claims and generate a structured JSON analysis. You must not add any text outside the JSON structure. All analytical text you generate must be in Chinese.`;
 
-    // 使用XML标签提供强结构化指令
     const user_prompt = `
 <TASK_DESCRIPTION>
-You will receive two sets of independent claims, a baseline and a comparison version. Each set may contain one or more claims, separated by '---'. Your task is to:
-1.  Pair up the claims sequentially (1st baseline claim with 1st comparison claim, 2nd with 2nd, etc.).
-2.  For each pair, conduct a detailed semantic comparison.
-3.  Group all technical features into 'similar_features' and 'different_features'.
-4.  For BOTH similar and different features, you must provide the exact text from both the baseline and comparison versions.
-5.  The 'analysis' for different features MUST be in Chinese.
+You will receive two sets of independent claims, a baseline and a comparison version, separated by '---'.
+Your task is to sequentially pair and compare them, then output a JSON object.
 </TASK_DESCRIPTION>
 
 <INPUT_DATA>
@@ -220,28 +220,63 @@ ${comparisonClaimText}
   </COMPARISON_CLAIMS>
 </INPUT_DATA>
 
-<OUTPUT_INSTRUCTIONS>
-Your response must be a single JSON object with one key: "claim_pairs". This key should contain an array of objects, where each object represents the analysis of one pair of claims.
-
-The structure for each object in the "claim_pairs" array is as follows:
+<JSON_OUTPUT_SCHEMA>
 {
-  "baseline_claim_number": "The number of the baseline claim (e.g., Claim 1)",
-  "comparison_claim_number": "The number of the comparison claim (e.g., Claim 1)",
-  "similar_features": [
+  "claim_pairs": [
     {
-      "baseline_feature": "The text of a similar feature from the baseline claim.",
-      "comparison_feature": "The corresponding text from the comparison claim."
-    }
-  ],
-  "different_features": [
-    {
-      "baseline_feature": "A feature from the baseline claim.",
-      "comparison_feature": "The corresponding, but different, feature from the comparison claim.",
-      "analysis": "【此处必须为中文分析】解释差异及其对保护范围的影响。"
+      "baseline_claim_number": "string",
+      "comparison_claim_number": "string",
+      "similar_features": [
+        {
+          "baseline_feature": "string",
+          "comparison_feature": "string"
+        }
+      ],
+      "different_features": [
+        {
+          "baseline_feature": "string",
+          "comparison_feature": "string",
+          "analysis": "string"
+        }
+      ]
     }
   ]
 }
+</JSON_OUTPUT_SCHEMA>
 
+<FINAL_INSTRUCTIONS>
+1.  Follow the JSON_OUTPUT_SCHEMA exactly.
+2.  Populate the schema by comparing the claims from the INPUT_DATA.
+3.  The value for the "analysis" key MUST be your analytical summary, written in Chinese, explaining the difference and its impact on scope.
+4.  Do not include any example text or placeholders like '【...】' in your final JSON output.
+5.  Your entire response must be only the populated JSON object.
+</FINAL_INSTRUCTIONS>
+`;
+
+    const response = await apiCall('/chat', {
+        model: 'glm-4-long',
+        messages: [
+            { role: 'system', content: system_prompt },
+            { role: 'user', content: user_prompt }
+        ],
+        temperature: 0.1,
+    });
+
+    const rawContent = response.choices[0].message.content;
+    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+        console.error("Comparison raw response:", rawContent);
+        throw new Error('核心对比失败，模型未返回任何看似JSON的内容。');
+    }
+
+    try {
+        return JSON.parse(jsonMatch[0]);
+    } catch (e) {
+        console.error("Comparison JSON parsing error:", e);
+        console.error("Original matched string:", jsonMatch[0]);
+        throw new Error(`核心对比失败，模型返回的JSON格式无效: ${e.message}`);
+    }
+}
 Strictly adhere to this JSON structure.
 </OUTPUT_INSTRUCTIONS>
 `;
