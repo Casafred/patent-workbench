@@ -112,7 +112,17 @@ async function detectLanguage(textArea, displayElement, versionType) {
             text: text
         });
         
-        const language = result.language || 'unknown';
+        // 修复：检查结果是否为Response对象
+        let language = 'unknown';
+        if (result instanceof Response) {
+            // 如果是Response对象，尝试解析JSON
+            const jsonResult = await result.json();
+            language = jsonResult.language || 'unknown';
+        } else {
+            // 如果是已经解析好的对象
+            language = result.language || 'unknown';
+        }
+        
         displayElement.textContent = language;
         displayElement.className = language === 'unknown' ? 'language-unknown' : 'language-detected';
         
@@ -158,7 +168,15 @@ async function translateText(textArea, versionType) {
             target_language: 'zh'
         });
         
-        const translatedText = result.translated_text || '';
+        let translatedText = '';
+        if (result instanceof Response) {
+            // 如果是Response对象，尝试解析JSON
+            const jsonResult = await result.json();
+            translatedText = jsonResult.translated_text || '';
+        } else {
+            // 如果是已经解析好的对象
+            translatedText = result.translated_text || '';
+        }
         
         // 更新状态
         if (versionType === 'base') {
