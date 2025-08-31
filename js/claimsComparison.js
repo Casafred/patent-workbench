@@ -123,7 +123,8 @@ async function detectLanguage(textArea, displayElement, versionType) {
         displayElement.textContent = '检测中...';
         displayElement.className = 'language-detecting';
         
-        const result = await apiCall('/detect-language', { text: text });
+        // 修复：明确指定使用GET方法
+        const result = await apiCall('/detect-language', { text: text }, false, 'GET');
         
         // 更健壮地处理返回结果
         let language = 'unknown';
@@ -203,25 +204,35 @@ async function translateText(textArea, versionType) {
     
     try {
         // 显示翻译中状态
+        let translateStatusElement;
         if (versionType === 'base') {
-            baseLanguageDisplay.textContent = '翻译中...';
+            translateStatusElement = document.createElement('div');
+            translateStatusElement.className = 'translation-status';
+            translateStatusElement.textContent = '翻译中...';
+            textArea.parentNode.appendChild(translateStatusElement);
         } else {
-            comparisonLanguageDisplay.textContent = '翻译中...';
+            translateStatusElement = document.createElement('div');
+            translateStatusElement.className = 'translation-status';
+            translateStatusElement.textContent = '翻译中...';
+            textArea.parentNode.appendChild(translateStatusElement);
         }
         
-        const result = await apiCall('/translate', {
-            text: text,
-            target_language: 'zh'
-        });
+        // 修复：明确指定使用GET方法
+        const result = await apiCall('/translate-text', { text: text, target_lang: 'zh' }, false, 'GET');
         
+        // 处理翻译结果
         let translatedText = '';
         if (result instanceof Response) {
-            // 如果是Response对象，尝试解析JSON
-            const jsonResult = await result.json();
-            translatedText = jsonResult.translated_text || '';
-        } else {
-            // 如果是已经解析好的对象
+            try {
+                const jsonResult = await result.json();
+                translatedText = jsonResult.translated_text || '';
+            } catch (e) {
+                translatedText = await result.text();
+            }
+        } else if (typeof result === 'object') {
             translatedText = result.translated_text || '';
+        } else {
+            translatedText = String(result);
         }
         
         // 更新状态
@@ -231,27 +242,28 @@ async function translateText(textArea, versionType) {
             appState.claimsComparison.comparisonVersion.translatedText = translatedText;
         }
         
-        // 更新显示
-        if (versionType === 'base') {
-            baseLanguageDisplay.textContent = 'en -> zh';
-        } else {
-            comparisonLanguageDisplay.textContent = 'en -> zh';
+        // 移除翻译状态元素
+        if (translateStatusElement && translateStatusElement.parentNode) {
+            translateStatusElement.parentNode.removeChild(translateStatusElement);
         }
         
-        // 如果当前是翻译显示模式，立即更新对比结果
-        if (appState.claimsComparison.displayMode === 'translated' && appState.claimsComparison.result) {
-            renderComparisonResults(appState.claimsComparison.result);
+        // 如果当前是显示翻译模式，更新显示
+        if (appState.claimsComparison.displayMode === 'translated') {
+            switchDisplayMode();
         }
         
+        alert('翻译完成');
     } catch (error) {
         console.error('翻译失败:', error);
         alert(`翻译失败: ${error.message}`);
-        // 恢复语言显示
-        if (versionType === 'base') {
-            baseLanguageDisplay.textContent = appState.claimsComparison.baseVersion.language || 'unknown';
-        } else {
-            comparisonLanguageDisplay.textContent = appState.claimsComparison.comparisonVersion.language || 'unknown';
-        }
+        
+        // 确保移除翻译状态元素
+        const statusElements = document.querySelectorAll('.translation-status');
+        statusElements.forEach(el => {
+            if (el.parentNode) {
+                el.parentNode.removeChild(el);
+            }
+        });
     }
 }
 

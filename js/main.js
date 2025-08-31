@@ -65,7 +65,8 @@ function initApiKeyConfig() {
 }
 
 // 修改apiCall函数，确保Response对象的body没有被提前消费
-async function apiCall(endpoint, data = null, stream = false) {
+// 修改apiCall函数，添加方法参数
+async function apiCall(endpoint, data = null, stream = false, method = null) {
     // 确保API Key输入框存在
     const apiKeyInput = document.getElementById('global_api_key_input');
     if (!apiKeyInput) {
@@ -77,16 +78,26 @@ async function apiCall(endpoint, data = null, stream = false) {
         throw new Error('请先配置API Key');
     }
 
+    // 确定请求方法
+    const requestMethod = method || (data ? 'POST' : 'GET');
+    
     const config = {
-        method: data ? 'POST' : 'GET',
+        method: requestMethod,
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey}`
         }
     };
 
-    if (data) {
+    // 对于GET请求，不应该有body
+    if (data && requestMethod !== 'GET') {
         config.body = JSON.stringify(data);
+    }
+
+    // 对于GET请求，将数据作为查询参数添加
+    if (data && requestMethod === 'GET') {
+        const params = new URLSearchParams(data);
+        endpoint = `${endpoint}?${params.toString()}`;
     }
 
     try {
