@@ -277,38 +277,7 @@ ${comparisonClaimText}
         throw new Error(`核心对比失败，模型返回的JSON格式无效: ${e.message}`);
     }
 }
-Strictly adhere to this JSON structure.
-</OUTPUT_INSTRUCTIONS>
-`;
 
-    const response = await apiCall('/chat', {
-        model: 'glm-4-long',
-        messages: [
-            { role: 'system', content: system_prompt },
-            { role: 'user', content: user_prompt }
-        ],
-        temperature: 0.1,
-    });
-
-    const rawContent = response.choices[0].message.content;
-    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-        console.error("Comparison raw response:", rawContent);
-        throw new Error('核心对比失败，模型未返回任何看似JSON的内容。');
-    }
-
-    try {
-        return JSON.parse(jsonMatch[0]);
-    } catch (e) {
-        console.error("Comparison JSON parsing error:", e);
-        console.error("Original matched string:", jsonMatch[0]);
-        throw new Error(`核心对比失败，模型返回的JSON格式无效: ${e.message}`);
-    }
-}
-
-/**
- * 渲染结果到UI
- */
 /**
  * 渲染结果到UI (v2.3 - 采用卡片式设计，UI全面革新)
  */
