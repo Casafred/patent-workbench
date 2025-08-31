@@ -75,8 +75,27 @@ const appState = {
     // ▼▼▼ 新增权利要求对比功能的状态 ▼▼▼
     claimsComparison: {
         isLoading: false,
-        result: null, // to store the parsed JSON from the API
-        error: null
+        result: null, // 存储API返回的分析结果
+        error: null,
+        // 基准版本和对比版本的文本内容
+        baseVersion: {
+            text: '',
+            independentClaimNumbers: [], // 存储独权序号
+            language: '', // 存储语言类型
+            translatedText: '' // 存储翻译后的文本
+        },
+        comparisonVersion: {
+            text: '',
+            independentClaimNumbers: [],
+            language: '',
+            translatedText: ''
+        },
+        displayMode: 'original', // 显示模式：'original' 或 'translated'
+        // 存储最终用于对比的文本（可能是原文或翻译后的文本）
+        comparisonData: {
+            baseText: '',
+            comparisonText: ''
+        }
     },
     // ▲▲▲ 新增结束 ▲▲▲
     
