@@ -196,10 +196,10 @@ ${text}`;
 }
 
 /**
- * API调用：执行核心对比 (v2.3 - 分别对比每条独权，并优化输出结构 - 移除详细分析)
+ * API调用：执行核心对比 (v2.3 - 分别对比每条独权，并优化输出结构)
  */
 async function performComparison(baselineClaimText, comparisonClaimText) {
-    const system_prompt = `You are a world-class patent comparison AI. Your task is to meticulously compare pairs of independent claims and generate a structured JSON analysis. You must not add any text outside the JSON structure.`;
+    const system_prompt = `You are a world-class patent comparison AI. Your task is to meticulously compare pairs of independent claims and generate a structured JSON analysis. You must not add any text outside the JSON structure. All analytical text you generate must be in Chinese.`;
 
     const user_prompt = `
 <TASK_DESCRIPTION>
@@ -235,7 +235,8 @@ ${comparisonClaimText}
       "different_features": [
         {
           "baseline_feature": "string",
-          "comparison_feature": "string"
+          "comparison_feature": "string",
+          "analysis": "string"
         }
       ]
     }
@@ -246,8 +247,9 @@ ${comparisonClaimText}
 <FINAL_INSTRUCTIONS>
 1.  Follow the JSON_OUTPUT_SCHEMA exactly.
 2.  Populate the schema by comparing the claims from the INPUT_DATA.
-3.  Do not include any example text or placeholders like '【...】' in your final JSON output.
-4.  Your entire response must be only the populated JSON object.
+3.  The value for the "analysis" key MUST be your analytical summary, written in Chinese, explaining the difference and its impact on scope.
+4.  Do not include any example text or placeholders like '【...】' in your final JSON output.
+5.  Your entire response must be only the populated JSON object.
 </FINAL_INSTRUCTIONS>
 `;
 
@@ -277,7 +279,7 @@ ${comparisonClaimText}
 }
 
 /**
- * 渲染结果到UI (v2.3 - 采用卡片式设计，UI全面革新 - 移除差异分析列)
+ * 渲染结果到UI (v2.3 - 采用卡片式设计，UI全面革新)
  */
 function renderComparisonResults() {
     const data = appState.claimsComparison.analysisResult;
@@ -328,6 +330,7 @@ function renderComparisonResults() {
                                 <tr>
                                     <th>基准版本 (Baseline)</th>
                                     <th>对比版本 (Comparison)</th>
+                                    <th>差异分析 (中文)</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -336,9 +339,10 @@ function renderComparisonResults() {
                                     <tr class="different-row">
                                         <td>${item.baseline_feature}</td>
                                         <td>${item.comparison_feature}</td>
+                                        <td class="analysis-cell">${item.analysis}</td>
                                     </tr>
                                   `).join('') :
-                                  '<tr><td colspan="2" class="no-data">未发现显著差异的技术特征。</td></tr>'
+                                  '<tr><td colspan="3" class="no-data">未发现显著差异的技术特征。</td></tr>'
                                 }
                             </tbody>
                         </table>

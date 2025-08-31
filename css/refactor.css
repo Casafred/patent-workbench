@@ -375,115 +375,132 @@
 .different-features-table td:last-child {
     background-color: #f1f5f9;
 }
-/* in css/refactor.css */
+/* --- 权利要求对比功能样式 (v2.3 - 超紧凑版) --- */
 
-/* --- 权利要求对比功能样式 (v2.3 - 卡片式设计) --- */
+/* 确保容器没有额外内边距 */
 #comparison_result_container_refactored {
     background-color: transparent;
-    padding: 0;
+    padding: 0 !important; /* 确保没有内边距 */
     border: none;
     box-shadow: none;
-    /* 移除 max-height 和 overflow，让内容自然撑开 */
-    max-height: none; 
-    overflow: visible;
+    margin: 0 !important; /* 确保没有外边距 */
 }
 
+/* 卡片样式 - 超级紧凑版 */
 .comparison-card {
     background-color: #ffffff;
     border: 1px solid #e5e7eb;
-    border-radius: 8px; /* 减小圆角 */
-    margin-bottom: 10px; /* 减小卡片间距，从20px改为10px */
-    box-shadow: none; /* 移除阴影效果 */
-    overflow: hidden; 
+    border-radius: 6px; /* 更小的圆角 */
+    margin-bottom: 8px !important; /* 极小的卡片间距 */
+    box-shadow: none; /* 移除阴影 */
+    overflow: hidden;
+    line-height: 1.4; /* 减小行高 */
 }
 
-/* 移除悬浮效果 */
-.comparison-card:hover {
-    box-shadow: none; /* 移除悬浮时的阴影 */
-}
-
+/* 卡片头部样式 */
 .comparison-card-header {
-    background: #f9fafb; /* 简化为单色背景，移除渐变 */
-    padding: 12px 16px; /* 减小内边距 */
+    background: #f9fafb;
+    padding: 8px 12px !important; /* 极大减小内边距 */
     border-bottom: 1px solid #e5e7eb;
+    margin: 0 !important; /* 确保没有外边距 */
 }
 
 .comparison-card-header h3 {
-    margin: 0;
-    font-size: 1.1em; /* 减小字体大小 */
+    margin: 0 !important; /* 移除标题外边距 */
+    font-size: 1em; /* 更小的字体 */
     font-weight: 600;
     color: #111827;
+    line-height: 1.4; /* 减小行高 */
 }
 
+/* 卡片内容区域 */
 .comparison-card-body {
-    padding: 12px; /* 减小内边距 */
+    padding: 8px !important; /* 极大减小内边距 */
+    margin: 0 !important; /* 确保没有外边距 */
 }
 
+/* 内容区块 - 完全移除间距 */
 .comparison-section-v2 {
-    margin-bottom: 12px; /* 减小区块间距 */
+    margin-bottom: 4px !important; /* 几乎移除间距 */
+    padding: 0 !important; /* 移除内边距 */
 }
 
 .comparison-section-v2:last-child {
-    margin-bottom: 0;
+    margin-bottom: 0 !important;
 }
 
+/* 区块标题 */
 .comparison-section-v2 h4 {
     display: flex;
     align-items: center;
-    font-size: 1em; /* 减小字体大小 */
+    font-size: 0.9em; /* 更小的字体 */
     color: #374151;
-    margin: 0 0 12px 0;
-    padding-bottom: 6px;
-    border-bottom: 1px solid #f3f4f6; /* 减小边框厚度 */
+    margin: 0 0 6px 0 !important; /* 极小的标题下边距 */
+    padding-bottom: 3px !important; /* 极小的标题下划线内边距 */
+    border-bottom: 1px solid #f3f4f6;
+    line-height: 1.3; /* 减小行高 */
 }
 
 .comparison-section-v2 h4 .icon-match,
 .comparison-section-v2 h4 .icon-diff {
-    margin-right: 8px; /* 减小图标与文字间距 */
-    font-size: 1.1em; /* 减小图标大小 */
+    margin-right: 6px; /* 减小图标间距 */
+    font-size: 1em; /* 更小的图标 */
 }
 
+/* 表格样式 */
 .features-table {
     width: 100%;
     border-collapse: collapse;
     border: 1px solid #e5e7eb;
-    border-radius: 6px; /* 减小圆角 */
+    border-radius: 4px; /* 更小的圆角 */
     overflow: hidden;
+    font-size: 0.95em; /* 更小的表格字体 */
 }
 
 .features-table th,
 .features-table td {
-    padding: 8px 12px; /* 减小单元格内边距 */
+    padding: 4px 8px !important; /* 极大减小单元格内边距 */
     text-align: left;
     vertical-align: top;
     border-bottom: 1px solid #e5e7eb;
-    font-size: 14px;
-    line-height: 1.6;
+    line-height: 1.3 !important; /* 减小行高 */
 }
 
-/* 简化表格背景色 */
 .features-table thead {
     background-color: #f9fafb;
 }
 
-.similar-row td {
-    background-color: #ffffff; /* 简化为白色背景 */
+.features-table th {
+    font-weight: 500;
+    font-size: 0.9em; /* 表头字体更小 */
 }
 
-.diff-table {
-    border-color: #e5e7eb; /* 简化为普通边框 */
+.features-table tr:last-child td {
+    border-bottom: none;
 }
 
-.diff-table thead {
-    background-color: #f9fafb; /* 简化为与普通表格一致 */
+.features-table .no-data {
+    padding: 8px !important; /* 无数据时的内边距 */
+    font-size: 0.9em;
 }
 
-.different-row td {
-    background-color: #ffffff; /* 简化为白色背景 */
-}
-
+/* 移除所有特殊背景色，统一为白色 */
+.similar-row td,
+.different-row td,
 .different-row .analysis-cell {
-    background-color: #f9fafb; /* 简化为浅色背景 */
-    color: #374151; /* 简化文字颜色 */
-    font-weight: normal; /* 移除加粗 */
+    background-color: #ffffff !important;
+    color: #111827 !important;
+    font-weight: normal !important;
+}
+
+/* 确保整个比较功能区域没有额外的间距 */
+#claims_comparison_tab {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* 覆盖可能来自其他CSS文件的样式 */
+#claims_comparison_tab .step {
+    padding: 10px !important;
+    margin: 0 !important;
 }
