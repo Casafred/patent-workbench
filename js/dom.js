@@ -121,21 +121,14 @@ const lplOldColsSelectionArea = getEl('lpl_old_cols_selection_area');
 const lplSelectAllColsBtn = getEl('lpl_select_all_cols_btn');
 const lplDeselectAllColsBtn = getEl('lpl_deselect_all_cols_btn');
 const lplOldColsCheckboxes = getEl('lpl_old_cols_checkboxes');
-// ▼▼▼ 新增：权利要求对比功能 (功能五) ▼▼▼
-const claimTextA = getEl('claim_text_a');
-const claimTextB = getEl('claim_text_b');
-const claimsCompareBtn = getEl('claims_compare_btn');
-const comparisonResultContainer = getEl('comparison_result_container');
-// 新增独立权利要求相关元素
-const baseIndependentClaimsInput = getEl('base_independent_claims');
-const comparisonIndependentClaimsInput = getEl('comparison_independent_claims');
-// 新增语言检测与翻译相关元素
-const detectBaseLanguageBtn = getEl('detect_base_language_btn');
-const detectComparisonLanguageBtn = getEl('detect_comparison_language_btn');
-const baseLanguageDisplay = getEl('base_language_display');
-const comparisonLanguageDisplay = getEl('comparison_language_display');
-// 新增原文/翻译切换按钮
-const displayModeToggle = getEl('display_mode_toggle');
+// ▼▼▼ 替换旧的权利要求对比元素 ▼▼▼
+const baselineClaimText = getEl('baseline_claim_text');
+const baselineClaimNumbers = getEl('baseline_claim_numbers');
+const comparisonClaimText = getEl('comparison_claim_text');
+const comparisonClaimNumbers = getEl('comparison_claim_numbers');
+const claimsAnalyzeBtn = getEl('claims_analyze_btn');
+const comparisonResultContainerRefactored = getEl('comparison_result_container_refactored');
+const toggleLanguageBtn = getEl('toggle_language_btn');
 // ▲▲▲ 新增结束 ▲▲▲
 // Files Manager (新增)
 const chatManageFilesBtn = getEl('chat_manage_files_btn');

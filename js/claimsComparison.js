@@ -1,510 +1,292 @@
-// js/claimsComparison.js (v2.0 - 支持独立权利要求提取、语言检测与翻译、原文/翻译切换)
+// js/claimsComparison.js (v2.0 - Major Refactor)
 
-// 初始化权利要求对比功能
 function initClaimsComparison() {
-    // 确保DOM元素存在
-    if (!claimsCompareBtn || !detectBaseLanguageBtn || !detectComparisonLanguageBtn || 
-        !displayModeToggle || !claimTextA || !claimTextB || !comparisonResultContainer ||
-        !baseIndependentClaimsInput || !comparisonIndependentClaimsInput ||
-        !baseLanguageDisplay || !comparisonLanguageDisplay) {
-        console.error('权利要求对比功能的DOM元素未找到，请检查HTML结构和ID是否正确');
-        return;
-    }
-    
-    // 绑定按钮点击事件
-    claimsCompareBtn.addEventListener('click', handleCompareClick);
-    
-    // 绑定语言检测按钮事件
-    detectBaseLanguageBtn.addEventListener('click', () => detectLanguage(claimTextA, baseLanguageDisplay, 'base'));
-    detectComparisonLanguageBtn.addEventListener('click', () => detectLanguage(claimTextB, comparisonLanguageDisplay, 'comparison'));
-    
-    // 绑定原文/翻译切换按钮事件
-    displayModeToggle.addEventListener('click', switchDisplayMode);
-    
-    // 监听文本输入变化，更新状态
-    claimTextA.addEventListener('input', () => {
-        appState.claimsComparison.baseVersion.text = claimTextA.value;
-    });
-    
-    claimTextB.addEventListener('input', () => {
-        appState.claimsComparison.comparisonVersion.text = claimTextB.value;
-    });
-    
-    // 监听独立权利要求输入变化
-    baseIndependentClaimsInput.addEventListener('input', () => {
-        const input = baseIndependentClaimsInput.value.trim();
-        appState.claimsComparison.baseVersion.independentClaimNumbers = parseClaimNumbers(input);
-    });
-    
-    comparisonIndependentClaimsInput.addEventListener('input', () => {
-        const input = comparisonIndependentClaimsInput.value.trim();
-        appState.claimsComparison.comparisonVersion.independentClaimNumbers = parseClaimNumbers(input);
-    });
+    claimsAnalyzeBtn.addEventListener('click', runAnalysisWorkflow);
+    toggleLanguageBtn.addEventListener('click', toggleDisplayLanguage);
 }
 
-// 解析权利要求序号输入
-function parseClaimNumbers(input) {
-    if (!input) return [];
-    
-    // 支持多种格式：1,3,5 或 1-5 或混合
-    const ranges = input.split(',');
-    const numbers = [];
-    
-    ranges.forEach(range => {
-        range = range.trim();
-        if (range.includes('-')) {
-            // 处理范围格式，如 1-5
-            const [start, end] = range.split('-').map(Number);
-            if (!isNaN(start) && !isNaN(end)) {
-                for (let i = Math.min(start, end); i <= Math.max(start, end); i++) {
-                    numbers.push(i);
-                }
-            }
-        } else {
-            // 处理单个数字
-            const num = Number(range);
-            if (!isNaN(num)) {
-                numbers.push(num);
-            }
-        }
-    });
-    
-    return [...new Set(numbers)].sort((a, b) => a - b); // 去重并排序
-}
-
-// 从文本中提取独立权利要求
-function extractIndependentClaims(text, claimNumbers) {
-    if (!text) return '';
-    
-    const lines = text.split('\n');
-    const extractedClaims = [];
-    
-    if (claimNumbers && claimNumbers.length > 0) {
-        // 如果指定了独权序号，只提取这些序号的权利要求
-        lines.forEach(line => {
-            for (const num of claimNumbers) {
-                const pattern = new RegExp(`^权利要求${num}[\s\.:，,]+`, 'i');
-                if (pattern.test(line)) {
-                    extractedClaims.push(line);
-                    break;
-                }
-            }
-        });
-    } else {
-        // 如果没有指定，尝试自动识别独立权利要求
-        lines.forEach(line => {
-            // 简单的规则：寻找以"权利要求1"或类似格式开头的行，通常这是独立权利要求
-            const pattern = /^权利要求\s*1[\s\.:，,]+/i;
-            if (pattern.test(line)) {
-                extractedClaims.push(line);
-            }
-        });
-    }
-    
-    return extractedClaims.join('\n');
-}
-
-// 语言检测功能
-async function detectLanguage(textArea, displayElement, versionType) {
-    // 确保传入的参数有效
-    if (!textArea || !displayElement) {
-        console.error('detectLanguage函数参数无效');
-        alert('检测失败：内部错误');
-        return;
-    }
-    
-    const text = textArea.value.trim().substring(0, 1000); // 取前1000个字符进行检测
-    if (!text) {
-        alert('请先输入文本内容');
-        return;
-    }
+/**
+ * 主工作流函数，协调所有分析步骤
+ */
+async function runAnalysisWorkflow() {
+    // 1. UI反馈和状态初始化
+    setLoadingState(true, '开始分析，准备提取文本...');
     
     try {
-        displayElement.textContent = '检测中...';
-        displayElement.className = 'language-detecting';
-        
-        // 修复：明确指定使用GET方法
-        const result = await apiCall('/detect-language', { text: text }, false, 'GET');
-        
-        // 更健壮地处理返回结果
-        let language = 'unknown';
-        if (!result) {
-            throw new Error('语言检测接口返回空结果');
-        }
-        
-        // 如果是Response对象，尝试解析它
-        if (result instanceof Response) {
-            try {
-                // 确保Response对象是可读的
-                if (result.bodyUsed) {
-                    throw new Error('Response body has already been consumed');
-                }
-                const jsonResult = await result.json();
-                language = jsonResult.language || 'unknown';
-            } catch (e) {
-                // 如果解析失败，尝试读取文本并显示
-                if (!result.bodyUsed) {
-                    const textResult = await result.text();
-                    console.warn('语言检测返回非JSON结果:', textResult);
-                    // 尝试从文本中提取语言信息
-                    try {
-                        const parsedResult = JSON.parse(textResult);
-                        language = parsedResult.language || 'unknown';
-                    } catch (jsonError) {
-                        language = 'unknown';
-                    }
-                } else {
-                    throw e;
-                }
-            }
-        } else if (typeof result === 'object') {
-            // 如果是已经解析好的对象
-            language = result.language || 'unknown';
-        } else if (typeof result === 'string') {
-            // 如果是字符串，尝试解析为JSON
-            try {
-                const parsedResult = JSON.parse(result);
-                language = parsedResult.language || 'unknown';
-            } catch (jsonError) {
-                language = 'unknown';
-            }
-        }
-        
-        displayElement.textContent = language;
-        displayElement.className = language === 'unknown' ? 'language-unknown' : 'language-detected';
-        
-        // 更新状态
-        if (versionType === 'base') {
-            appState.claimsComparison.baseVersion.language = language;
-        } else {
-            appState.claimsComparison.comparisonVersion.language = language;
-        }
-        
-        // 如果检测到是英文，可以询问用户是否需要翻译
-        if (language === 'en') {
-            if (confirm('检测到英文文本，是否需要翻译成中文？')) {
-                await translateText(textArea, versionType);
-            }
-        }
-    } catch (error) {
-        console.error('语言检测失败:', error);
-        displayElement.textContent = '检测失败';
-        displayElement.className = 'language-error';
-        alert(`语言检测失败: ${error.message}`);
-    }
-}
+        // 2. 从UI提取用户输入和独权序号
+        const baselineFullText = baselineClaimText.value;
+        const comparisonFullText = comparisonClaimText.value;
+        const baselineNumbers = baselineClaimNumbers.value;
+        const comparisonNumbers = comparisonClaimNumbers.value;
 
-// 文本翻译功能
-async function translateText(textArea, versionType) {
-    const text = textArea.value.trim();
-    if (!text) {
-        alert('没有可翻译的内容');
-        return;
-    }
-    
-    try {
-        // 显示翻译中状态
-        let translateStatusElement;
-        if (versionType === 'base') {
-            translateStatusElement = document.createElement('div');
-            translateStatusElement.className = 'translation-status';
-            translateStatusElement.textContent = '翻译中...';
-            textArea.parentNode.appendChild(translateStatusElement);
-        } else {
-            translateStatusElement = document.createElement('div');
-            translateStatusElement.className = 'translation-status';
-            translateStatusElement.textContent = '翻译中...';
-            textArea.parentNode.appendChild(translateStatusElement);
+        if (!baselineFullText || !comparisonFullText || !baselineNumbers || !comparisonNumbers) {
+            throw new Error('请确保所有文本框和序号框都已填写。');
         }
-        
-        // 修复：明确指定使用GET方法
-        const result = await apiCall('/translate-text', { text: text, target_lang: 'zh' }, false, 'GET');
-        
-        // 处理翻译结果
-        let translatedText = '';
-        if (result instanceof Response) {
-            try {
-                const jsonResult = await result.json();
-                translatedText = jsonResult.translated_text || '';
-            } catch (e) {
-                translatedText = await result.text();
-            }
-        } else if (typeof result === 'object') {
-            translatedText = result.translated_text || '';
-        } else {
-            translatedText = String(result);
-        }
-        
-        // 更新状态
-        if (versionType === 'base') {
-            appState.claimsComparison.baseVersion.translatedText = translatedText;
-        } else {
-            appState.claimsComparison.comparisonVersion.translatedText = translatedText;
-        }
-        
-        // 移除翻译状态元素
-        if (translateStatusElement && translateStatusElement.parentNode) {
-            translateStatusElement.parentNode.removeChild(translateStatusElement);
-        }
-        
-        // 如果当前是显示翻译模式，更新显示
-        if (appState.claimsComparison.displayMode === 'translated') {
-            switchDisplayMode();
-        }
-        
-        alert('翻译完成');
-    } catch (error) {
-        console.error('翻译失败:', error);
-        alert(`翻译失败: ${error.message}`);
-        
-        // 确保移除翻译状态元素
-        const statusElements = document.querySelectorAll('.translation-status');
-        statusElements.forEach(el => {
-            if (el.parentNode) {
-                el.parentNode.removeChild(el);
-            }
-        });
-    }
-}
 
-// 切换原文/翻译显示模式
-function switchDisplayMode() {
-    const currentMode = appState.claimsComparison.displayMode;
-    const newMode = currentMode === 'original' ? 'translated' : 'original';
-    
-    appState.claimsComparison.displayMode = newMode;
-    displayModeToggle.textContent = newMode === 'original' ? '显示原文' : '显示翻译';
-    
-    // 如果已有对比结果，重新渲染
-    if (appState.claimsComparison.result) {
-        renderComparisonResults(appState.claimsComparison.result);
-    }
-}
+        const baselineExtracted = extractClaims(baselineFullText, baselineNumbers);
+        const comparisonExtracted = extractClaims(comparisonFullText, comparisonNumbers);
 
-// 处理对比按钮点击
-async function handleCompareClick() {
-    // 重置状态
-    appState.claimsComparison.isLoading = true;
-    appState.claimsComparison.error = null;
-    
-    // 更新UI状态
-    claimsCompareBtn.disabled = true;
-    claimsCompareBtn.textContent = '对比中...';
-    comparisonResultContainer.innerHTML = '<div class="loading">正在进行权利要求对比，请稍候...</div>';
-    
-    try {
-        // 1. 提取独立权利要求
-        const baseExtractedClaims = extractIndependentClaims(
-            appState.claimsComparison.baseVersion.text,
-            appState.claimsComparison.baseVersion.independentClaimNumbers
-        );
-        
-        const comparisonExtractedClaims = extractIndependentClaims(
-            appState.claimsComparison.comparisonVersion.text,
-            appState.claimsComparison.comparisonVersion.independentClaimNumbers
-        );
-        
-        if (!baseExtractedClaims) {
-            throw new Error('无法从基准版本中提取独立权利要求，请检查输入或指定权利要求序号');
+        if (!baselineExtracted || !comparisonExtracted) {
+            throw new Error('根据提供的序号未能提取到有效的独立权利要求，请检查序号是否正确。');
         }
         
-        if (!comparisonExtractedClaims) {
-            throw new Error('无法从对比版本中提取独立权利要求，请检查输入或指定权利要求序号');
+        // 保存原文
+        appState.claimsComparison.baseline.original = baselineExtracted;
+        appState.claimsComparison.comparison.original = comparisonExtracted;
+
+        // 3. 语言检测
+        setLoadingState(true, '提取成功，正在检测语言...');
+        const langs = await detectLanguages(baselineExtracted, comparisonExtracted);
+        appState.claimsComparison.baseline.lang = langs.lang1;
+        appState.claimsComparison.comparison.lang = langs.lang2;
+
+        // 4. 智能翻译 (目标语言：中文)
+        let textForComparisonA = baselineExtracted;
+        let textForComparisonB = comparisonExtracted;
+
+        if (langs.lang1 !== 'Chinese' && langs.lang2 === 'Chinese') {
+            // 基准版本需要翻译
+            setLoadingState(true, `语言为(${langs.lang1}/${langs.lang2})，正在翻译基准版本...`);
+            textForComparisonA = await translateText(baselineExtracted);
+            appState.claimsComparison.baseline.translated = textForComparisonA;
+        } else if (langs.lang1 === 'Chinese' && langs.lang2 !== 'Chinese') {
+            // 对比版本需要翻译
+            setLoadingState(true, `语言为(${langs.lang1}/${langs.lang2})，正在翻译对比版本...`);
+            textForComparisonB = await translateText(comparisonExtracted);
+            appState.claimsComparison.comparison.translated = textForComparisonB;
+        } else if (langs.lang1 !== 'Chinese' && langs.lang2 !== 'Chinese') {
+            // 两者都需要翻译，以基准版本为准，翻译对比版本
+             setLoadingState(true, `语言为(${langs.lang1}/${langs.lang2})，正在翻译对比版本...`);
+             textForComparisonB = await translateText(comparisonExtracted);
+             appState.claimsComparison.comparison.translated = textForComparisonB;
         }
+        // 如果都是中文，则无需翻译
+
+        // 5. 核心对比
+        setLoadingState(true, '翻译完成，正在进行核心对比分析...');
+        const analysisResult = await performComparison(textForComparisonA, textForComparisonB);
+        appState.claimsComparison.analysisResult = analysisResult;
         
-        // 2. 根据显示模式确定要使用的文本
-        let baseText, comparisonText;
-        if (appState.claimsComparison.displayMode === 'translated') {
-            baseText = appState.claimsComparison.baseVersion.translatedText || baseExtractedClaims;
-            comparisonText = appState.claimsComparison.comparisonVersion.translatedText || comparisonExtractedClaims;
+        // 6. 渲染结果
+        renderComparisonResults();
+        
+        // 7. 如果有翻译发生，则显示切换按钮
+        if(appState.claimsComparison.baseline.translated || appState.claimsComparison.comparison.translated) {
+            toggleLanguageBtn.style.display = 'inline-block';
+            appState.claimsComparison.displayLang = 'translated'; // 默认显示翻译后的对比结果
+            toggleDisplayLanguage(true); // 调用一次以确保初始状态正确
         } else {
-            baseText = baseExtractedClaims;
-            comparisonText = comparisonExtractedClaims;
+            toggleLanguageBtn.style.display = 'none';
         }
-        
-        // 保存用于对比的文本
-        appState.claimsComparison.comparisonData.baseText = baseText;
-        appState.claimsComparison.comparisonData.comparisonText = comparisonText;
-        
-        // 3. 调用模型进行对比
-        const result = await callComparisonModel(baseText, comparisonText);
-        
-        // 4. 保存结果并渲染
-        appState.claimsComparison.result = result;
-        renderComparisonResults(result);
-        
+
     } catch (error) {
-        console.error('对比失败:', error);
-        appState.claimsComparison.error = error.message;
-        comparisonResultContainer.innerHTML = `<div class="error">对比失败: ${error.message}</div>`;
+        console.error("分析工作流失败:", error);
+        setLoadingState(false, '', `分析失败: ${error.message}`);
     } finally {
-        // 恢复UI状态
-        appState.claimsComparison.isLoading = false;
-        claimsCompareBtn.disabled = false;
-        claimsCompareBtn.textContent = '开始对比';
+        setLoadingState(false);
     }
 }
 
-// 调用对比模型
-async function callComparisonModel(textA, textB) {
-    try {
-        // 准备提示词
-        const prompt = `你是一位专业的专利审查员，需要对比两份专利权利要求的内容，特别是独立权利要求。请分析它们的相似性和差异，并按照指定的JSON格式输出结果。
+/**
+ * 从完整文本中根据序号提取权利要求
+ * @param {string} fullText - 完整的权利要求文本
+ * @param {string} numbersStr - 用户输入的序号字符串，如 "1, 9"
+ * @returns {string} - 拼接好的独立权利要求文本
+ */
+function extractClaims(fullText, numbersStr) {
+    const numbers = numbersStr.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
+    if (numbers.length === 0) return "";
 
-基准版本权利要求：
-${textA}
+    const claims = [];
+    const lines = fullText.split('\n');
+    let currentClaimText = '';
+    let currentClaimNumber = -1;
 
-对比版本权利要求：
-${textB}
-
-请按照以下JSON格式输出对比结果，不要添加任何额外的说明文字：
-{
-  "similarities": [
-    {
-      "baseSentence": "基准版本中的相似句子",
-      "comparisonSentence": "对比版本中的相似句子",
-      "reason": "相似的理由"
-    }
-  ],
-  "differences": [
-    {
-      "baseSentence": "基准版本中的不同句子",
-      "comparisonSentence": "对比版本中的不同句子或'无对应内容'",
-      "reason": "不同的理由"
-    }
-  ],
-  "summary": "简要总结两份权利要求的整体相似性和差异"
-}`;
-        
-        // 调用API
-        const response = await apiCall('/chat', {
-            model: 'glm-4-long',
-            messages: [
-                { role: 'system', content: '你是一位专业的专利审查员，需要对比两份专利权利要求的内容并分析相似性和差异。' },
-                { role: 'user', content: prompt }
-            ],
-            temperature: 0.1,
-            max_tokens: 4096
-        });
-        
-        // 处理响应
-        const content = response.choices[0].message.content;
-        
-        // 尝试解析JSON
-        try {
-            return JSON.parse(content);
-        } catch (e) {
-            // 如果JSON解析失败，尝试提取JSON部分
-            const jsonMatch = content.match(/```json\n([\s\S]*)\n```/);
-            if (jsonMatch && jsonMatch[1]) {
-                return JSON.parse(jsonMatch[1]);
+    for (const line of lines) {
+        const match = line.match(/^(\d+)\s*[.\s、]/); // 匹配 "1." "1 " "1、" 等格式
+        if (match) {
+            // 保存上一条权利要求
+            if (currentClaimNumber !== -1 && numbers.includes(currentClaimNumber)) {
+                claims.push(currentClaimText.trim());
             }
-            
-            // 如果都失败，返回一个包含原始内容的对象
-            return {
-                similarities: [],
-                differences: [],
-                summary: content
-            };
+            // 开始新的权利要求
+            currentClaimNumber = parseInt(match[1]);
+            currentClaimText = line;
+        } else if (currentClaimNumber !== -1) {
+            currentClaimText += '\n' + line;
         }
-    } catch (error) {
-        console.error('模型调用失败:', error);
-        throw error;
+    }
+    // 保存最后一条权利要求
+    if (currentClaimNumber !== -1 && numbers.includes(currentClaimNumber)) {
+        claims.push(currentClaimText.trim());
+    }
+
+    return claims.join('\n\n---\n\n'); // 使用分隔符拼接多个独权
+}
+
+
+/**
+ * API调用：检测语言
+ */
+async function detectLanguages(text1, text2) {
+    const prompt = `You are a language detection expert. For the two texts provided below, identify their primary language (e.g., "Chinese", "English", "Japanese"). Respond ONLY with a JSON object.
+
+[Text 1]: ${text1.slice(0, 200)}
+[Text 2]: ${text2.slice(0, 200)}
+
+Your JSON output:
+{"language_1": "...", "language_2": "..."}`;
+    
+    const response = await apiCall('/chat', {
+        model: 'glm-4-flash',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.0,
+    });
+    
+    try {
+        const result = JSON.parse(response.choices[0].message.content);
+        return { lang1: result.language_1, lang2: result.language_2 };
+    } catch (e) {
+        throw new Error('语言检测失败，模型返回格式错误。');
     }
 }
 
-// 渲染对比结果
-function renderComparisonResults(result) {
-    if (!result) {
-        comparisonResultContainer.innerHTML = '<div class="error">没有找到对比结果</div>';
-        return;
+/**
+ * API调用：翻译文本到中文
+ */
+async function translateText(text) {
+    const prompt = `Please translate the following patent claim text into professional, accurate Chinese. Only return the translated text, without any explanations or extra content.
+
+Text to translate:
+${text}`;
+
+    const response = await apiCall('/chat', {
+        model: 'glm-4-flash',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.0,
+    });
+    return response.choices[0].message.content.trim();
+}
+
+/**
+ * API调用：执行核心对比
+ */
+async function performComparison(baselineClaim, comparisonClaim) {
+    const prompt = `You are a patent expert comparing two versions of an independent claim. Your task is to semantically group their constituent technical features into 'similar' and 'different' categories.
+
+- **Baseline Claim:**
+${baselineClaim}
+
+- **Comparison Claim:**
+${comparisonClaim}
+
+Output a JSON object with two keys: \`similar_features\` and \`different_features\`.
+
+- For \`similar_features\`: list features that are semantically identical or have minor wording changes. Each item should be a single string representing the common feature.
+- For \`different_features\`: list features with significant semantic differences. Each item must be an object with three keys: \`baseline_feature\`, \`comparison_feature\`, and \`analysis\` (explaining the difference and its impact on scope).
+
+Strictly follow this JSON format, do not add any markdown:
+{
+  "similar_features": [
+    "A shared feature...",
+    "Another shared feature..."
+  ],
+  "different_features": [
+    {
+      "baseline_feature": "A feature from the baseline claim.",
+      "comparison_feature": "The corresponding, but different, feature from the comparison claim.",
+      "analysis": "The comparison version adds the 'X' limitation, narrowing the scope."
     }
-    
-    // 创建结果容器
-    const container = document.createElement('div');
-    container.className = 'comparison-result';
-    
-    // 添加总结部分
-    if (result.summary) {
-        const summarySection = document.createElement('div');
-        summarySection.className = 'summary-section';
-        summarySection.innerHTML = `<h3>对比总结</h3><p>${result.summary}</p>`;
-        container.appendChild(summarySection);
+  ]
+}`;
+
+    const response = await apiCall('/chat', {
+        model: 'glm-4-long', // Use long context model for complex claims
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.1,
+    });
+
+    try {
+        return JSON.parse(response.choices[0].message.content);
+    } catch (e) {
+        throw new Error('核心对比失败，模型返回的JSON格式无效。');
     }
-    
-    // 添加相似部分
-    if (result.similarities && result.similarities.length > 0) {
-        const similaritiesSection = document.createElement('div');
-        similaritiesSection.className = 'similarities-section';
-        similaritiesSection.innerHTML = '<h3>相似之处</h3>';
-        
-        const similarityList = document.createElement('div');
-        similarityList.className = 'similarity-list';
-        
-        result.similarities.forEach((item, index) => {
-            const similarityItem = document.createElement('div');
-            similarityItem.className = 'similarity-item';
-            similarityItem.innerHTML = `
-                <div class="similarity-header">相似点 ${index + 1}</div>
-                <div class="similarity-content">
-                    <div class="sentence-pair">
-                        <div class="sentence-label">基准版本：</div>
-                        <div class="sentence-text">${item.baseSentence || '无内容'}</div>
-                    </div>
-                    <div class="sentence-pair">
-                        <div class="sentence-label">对比版本：</div>
-                        <div class="sentence-text">${item.comparisonSentence || '无内容'}</div>
-                    </div>
-                    ${item.reason ? `<div class="similarity-reason">原因：${item.reason}</div>` : ''}
-                </div>
-            `;
-            similarityList.appendChild(similarityItem);
-        });
-        
-        similaritiesSection.appendChild(similarityList);
-        container.appendChild(similaritiesSection);
+}
+
+/**
+ * 渲染结果到UI
+ */
+function renderComparisonResults() {
+    const data = appState.claimsComparison.analysisResult;
+    if (!data) return;
+
+    let html = `
+        <div class="comparison-section">
+            <h4>相同或基本相同的技术特征</h4>
+            <ul class="similar-features-list">
+                ${data.similar_features.map(feature => `<li>${feature}</li>`).join('') || '<li>无完全相同的特征。</li>'}
+            </ul>
+        </div>
+        <div class="comparison-section">
+            <h4>存在显著差异的技术特征</h4>
+            <table class="different-features-table">
+                <thead>
+                    <tr>
+                        <th>基准版本 (Baseline)</th>
+                        <th>对比版本 (Comparison)</th>
+                        <th>差异分析 (Analysis)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.different_features.map(item => `
+                        <tr>
+                            <td>${item.baseline_feature}</td>
+                            <td>${item.comparison_feature}</td>
+                            <td>${item.analysis}</td>
+                        </tr>
+                    `).join('') || '<tr><td colspan="3" style="text-align:center;">未发现显著差异的特征。</td></tr>'}
+                </tbody>
+            </table>
+        </div>
+    `;
+    comparisonResultContainerRefactored.innerHTML = html;
+}
+
+/**
+ * 控制UI的加载状态
+ */
+function setLoadingState(isLoading, message = '', error = '') {
+    appState.claimsComparison.isLoading = isLoading;
+    claimsAnalyzeBtn.disabled = isLoading;
+
+    if (isLoading) {
+        claimsAnalyzeBtn.textContent = '分析中...';
+        comparisonResultContainerRefactored.innerHTML = `<div class="info"><div class="loading-spinner"></div> ${message}</div>`;
+    } else {
+        claimsAnalyzeBtn.textContent = '开始分析';
+        if (error) {
+            comparisonResultContainerRefactored.innerHTML = `<div class="info error">${error}</div>`;
+        }
     }
-    
-    // 添加差异部分
-    if (result.differences && result.differences.length > 0) {
-        const differencesSection = document.createElement('div');
-        differencesSection.className = 'differences-section';
-        differencesSection.innerHTML = '<h3>主要差异</h3>';
-        
-        const differenceList = document.createElement('div');
-        differenceList.className = 'difference-list';
-        
-        result.differences.forEach((item, index) => {
-            const differenceItem = document.createElement('div');
-            differenceItem.className = 'difference-item';
-            differenceItem.innerHTML = `
-                <div class="difference-header">差异点 ${index + 1}</div>
-                <div class="difference-content">
-                    <div class="sentence-pair">
-                        <div class="sentence-label">基准版本：</div>
-                        <div class="sentence-text">${item.baseSentence || '无内容'}</div>
-                    </div>
-                    <div class="sentence-pair">
-                        <div class="sentence-label">对比版本：</div>
-                        <div class="sentence-text">${item.comparisonSentence || '无内容'}</div>
-                    </div>
-                    ${item.reason ? `<div class="difference-reason">原因：${item.reason}</div>` : ''}
-                </div>
-            `;
-            differenceList.appendChild(differenceItem);
-        });
-        
-        differencesSection.appendChild(differenceList);
-        container.appendChild(differencesSection);
+}
+
+/**
+ * 切换显示语言（暂未实现，作为后续功能）
+ */
+function toggleDisplayLanguage(forceUpdate = false) {
+    // This is a placeholder for the more complex implementation
+    // that would require storing original/translated text for each feature.
+    // For now, it just toggles the button text.
+    if (!forceUpdate) {
+        appState.claimsComparison.displayLang = appState.claimsComparison.displayLang === 'original' ? 'translated' : 'original';
     }
-    
-    // 如果没有相似和差异结果，显示提示
-    if (!result.similarities || result.similarities.length === 0 && 
-        (!result.differences || result.differences.length === 0)) {
-        container.innerHTML += '<div class="no-results">未找到明显的相似或差异内容</div>';
+
+    if (appState.claimsComparison.displayLang === 'original') {
+        toggleLanguageBtn.textContent = '切换为译文';
+        alert("显示原文的功能将在下一版本实现！当前默认显示翻译后的对比结果。");
+    } else {
+        toggleLanguageBtn.textContent = '切换为原文';
     }
-    
-    // 更新结果容器
-    comparisonResultContainer.innerHTML = '';
-    comparisonResultContainer.appendChild(container);
+    // In a full implementation, you would iterate over the rendered elements
+    // and swap their innerHTML with content from data attributes.
 }

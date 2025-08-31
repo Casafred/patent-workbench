@@ -766,59 +766,49 @@
 <!-- ====================================================================== -->
 <!-- 功能五：权利要求对比 (新增) -->
 <!-- ====================================================================== -->
-<!-- 功能五：权利要求对比 -->
 <div id="claims_comparison-tab" class="tab-content">
-    <div class="tab-header">
-        <h2>功能五：权利要求对比</h2>
-        <p>对比两份专利的权利要求内容，特别是独立权利要求，分析相似性和差异。</p>
-    </div>
-    
-    <div class="comparison-container">
-        <!-- 基准版本输入区域 -->
-        <div class="comparison-input-section">
-            <div class="input-header">
-                <h3>基准版本</h3>
-                <div class="language-detection">
-                    <button id="detect_base_language_btn" class="small-btn">检测语言</button>
-                    <span id="base_language_display" class="language-display">未检测</span>
+    <div class="step">
+        <div class="step-header">权利要求对比分析 (v2.0)</div>
+        <p class="info">
+            新版工作流：1. 粘贴文本并指定独立权利要求序号 &rarr; 2. 系统自动识别语言、按需翻译 &rarr; 3. 模型深度对比 &rarr; 4. 交互式查看结果。
+        </p>
+
+        <div id="claims_comparison_input_area_refactored">
+            <!-- 基准版本输入区 -->
+            <div class="comparison-input-group">
+                <label for="baseline_claim_text">基准版本 (Baseline Version)</label>
+                <textarea id="baseline_claim_text" rows="12" placeholder="在此处粘贴基准版本的权利要求全文..."></textarea>
+                <div class="claim-number-input">
+                    <label for="baseline_claim_numbers">独立权利要求序号:</label>
+                    <input type="text" id="baseline_claim_numbers" placeholder="例如: 1, 9">
                 </div>
             </div>
-            <textarea id="claim_text_a" class="claim-text-input" placeholder="请输入基准版本的权利要求内容..."></textarea>
-            <div class="independent-claims-input">
-                <label for="base_independent_claims">独立权利要求序号 (如：1,3,5 或 1-5)：</label>
-                <input type="text" id="base_independent_claims" placeholder="留空则自动识别">
+            <!-- 对比版本输入区 -->
+            <div class="comparison-input-group">
+                <label for="comparison_claim_text">对比版本 (Comparison Version)</label>
+                <textarea id="comparison_claim_text" rows="12" placeholder="在此处粘贴需要对比的权利要求全文..."></textarea>
+                <div class="claim-number-input">
+                    <label for="comparison_claim_numbers">独立权利要求序号:</label>
+                    <input type="text" id="comparison_claim_numbers" placeholder="例如: 1, 10">
+                </div>
             </div>
         </div>
         
-        <!-- 对比版本输入区域 -->
-        <div class="comparison-input-section">
-            <div class="input-header">
-                <h3>对比版本</h3>
-                <div class="language-detection">
-                    <button id="detect_comparison_language_btn" class="small-btn">检测语言</button>
-                    <span id="comparison_language_display" class="language-display">未检测</span>
-                </div>
+        <div style="text-align: center; margin: 25px 0;">
+            <button id="claims_analyze_btn">开始分析</button>
+        </div>
+
+        <div class="step" style="margin-top: 20px;">
+            <div class="step-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>对比分析结果</span>
+                <button id="toggle_language_btn" class="small-button" style="display: none;">切换为译文</button>
             </div>
-            <textarea id="claim_text_b" class="claim-text-input" placeholder="请输入对比版本的权利要求内容..."></textarea>
-            <div class="independent-claims-input">
-                <label for="comparison_independent_claims">独立权利要求序号 (如：1,3,5 或 1-5)：</label>
-                <input type="text" id="comparison_independent_claims" placeholder="留空则自动识别">
+            <div id="comparison_result_container_refactored" class="preview-output">
+                <div class="info">等待输入并开始分析...</div>
             </div>
         </div>
     </div>
-    
-    <!-- 控制按钮区域 -->
-    <div class="comparison-controls">
-        <button id="claims_compare_btn" class="primary-btn">开始对比</button>
-        <button id="display_mode_toggle" class="secondary-btn">显示翻译</button>
-    </div>
-    
-    <!-- 对比结果区域 -->
-    <div id="comparison_result_container" class="comparison-result-container">
-        <!-- 对比结果将在这里显示 -->
-    </div>
 </div>
-
     </div>
 </div>
 
