@@ -64,75 +64,50 @@ function initApiKeyConfig() {
     });
 }
 
-async function apiCall(endpoint, body, method = 'POST', isStream = false) {
-    if (!appState.apiKey) {
-        const errorMsg = "API Key 未配置。请点击右上角 ⚙️ 设置并保存您的 API Key。";
-        alert(errorMsg);
-        throw new Error(errorMsg);
+// 修改apiCall函数，确保Response对象的body没有被提前消费
+async function apiCall(endpoint, data = null, stream = false) {
+    const apiKey = document.getElementById('apiKey').value;
+    if (!apiKey) {
+        throw new Error('请先配置API Key');
     }
 
-    // ▼▼▼ FIX START: 智能处理 Headers ▼▼▼
-    const headers = {
-        'Authorization': `Bearer ${appState.apiKey}`
-    };
-
-    // 只有当 body 不是 FormData 时，才设置 Content-Type 为 JSON
-    if (body && !(body instanceof FormData)) {
-        headers['Content-Type'] = 'application/json';
-    }
-    // ▲▲▲ FIX END ▲▲▲
-
-    const fullUrl = `${window.location.origin}/api${endpoint}`;
-
-    const fetchOptions = {
-        method,
-        headers,
-    };
-    
-    if (method !== 'GET' && method !== 'HEAD') {
-        // ▼▼▼ FIX START: 智能处理 Body ▼▼▼
-        if (body instanceof FormData) {
-            fetchOptions.body = body; // 直接使用 FormData
-        } else if (body) {
-            fetchOptions.body = JSON.stringify(body); // 序列化其他类型的 body
+    const config = {
+        method: data ? 'POST' : 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
         }
-        // ▲▲▲ FIX END ▲▲▲
+    };
+
+    if (data) {
+        config.body = JSON.stringify(data);
     }
 
     try {
-        const response = await fetch(fullUrl, fetchOptions);
+        const response = await fetch(endpoint, config);
 
-        if (isStream) {
-            if (!response.ok) {
-                // ... (stream 错误处理保持不变)
-                const errorText = await response.text();
-                let errorMessage = `请求失败 (Stream): ${response.statusText}`;
-                try {
-                    const parsedError = JSON.parse(errorText.substring(errorText.indexOf('{')));
-                    errorMessage = parsedError.error?.message || JSON.stringify(parsedError.error);
-                } catch(e) {
-                    errorMessage = errorText;
-                }
+        if (!response.ok) {
+            // 修复：在读取错误信息前创建Response对象的克隆
+            const errorResponse = response.clone();
+            let errorText = '';
+            try {
+                errorText = await response.text();
+                const errorData = JSON.parse(errorText);
+                const errorMessage = errorData.error?.message || errorData.error || (typeof errorData === 'string' ? errorData : JSON.stringify(errorData));
                 throw new Error(errorMessage);
+            } catch (jsonError) {
+                // 如果JSON解析失败，使用原始文本
+                throw new Error(errorText || `API请求失败: HTTP ${response.status}`);
             }
+        }
+
+        if (stream) {
             return response.body.getReader();
         }
 
-        // ▼▼▼ FIX START: 优雅处理非JSON响应 ▼▼▼
-        const contentType = response.headers.get("content-type");
-        if (!response.ok) {
-            // 对于失败的响应，尝试解析为JSON，如果失败则返回文本
-            let errorData;
-            try {
-                errorData = await response.json();
-            } catch (e) {
-                errorData = await response.text();
-            }
-            const errorMessage = errorData.error?.message || errorData.error || (typeof errorData === 'string' ? errorData : JSON.stringify(errorData));
-            throw new Error(errorMessage);
-        }
+        const contentType = response.headers.get('content-type');
 
-        if (contentType && contentType.indexOf("application/json") !== -1) {
+        if (contentType && contentType.indexOf('application/json') !== -1) {
             const result = await response.json();
             // 你的后端包装了响应，所以要解包
             return result.choices ? result : result.data;
@@ -141,8 +116,6 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false) {
             // 让调用者决定如何处理 (e.g., response.blob(), response.text())
             return response;
         }
-        // ▲▲▲ FIX END ▲▲▲
-
     } catch (error) {
         console.error(`API调用 ${endpoint} 失败:`, error);
         throw error;

@@ -97,30 +97,60 @@ function extractIndependentClaims(text, claimNumbers) {
 
 // 语言检测功能
 async function detectLanguage(textArea, displayElement, versionType) {
-    if (!textArea.value.trim()) {
+    const text = textArea.value.trim().substring(0, 1000); // 取前1000个字符进行检测
+    if (!text) {
         alert('请先输入文本内容');
         return;
     }
-    
-    const text = textArea.value.trim().substring(0, 1000); // 取前1000个字符进行检测
     
     try {
         displayElement.textContent = '检测中...';
         displayElement.className = 'language-detecting';
         
-        const result = await apiCall('/detect-language', {
-            text: text
-        });
+        const result = await apiCall('/detect-language', { text: text });
         
-        // 修复：检查结果是否为Response对象
+        // 修复：更健壮地处理返回结果
         let language = 'unknown';
+        if (!result) {
+            throw new Error('语言检测接口返回空结果');
+        }
+        
+        // 如果是Response对象，尝试解析它
         if (result instanceof Response) {
-            // 如果是Response对象，尝试解析JSON
-            const jsonResult = await result.json();
-            language = jsonResult.language || 'unknown';
-        } else {
+            try {
+                // 确保Response对象是可读的
+                if (result.bodyUsed) {
+                    throw new Error('Response body has already been consumed');
+                }
+                const jsonResult = await result.json();
+                language = jsonResult.language || 'unknown';
+            } catch (e) {
+                // 如果解析失败，尝试读取文本并显示
+                if (!result.bodyUsed) {
+                    const textResult = await result.text();
+                    console.warn('语言检测返回非JSON结果:', textResult);
+                    // 尝试从文本中提取语言信息
+                    try {
+                        const parsedResult = JSON.parse(textResult);
+                        language = parsedResult.language || 'unknown';
+                    } catch (jsonError) {
+                        language = 'unknown';
+                    }
+                } else {
+                    throw e;
+                }
+            }
+        } else if (typeof result === 'object') {
             // 如果是已经解析好的对象
             language = result.language || 'unknown';
+        } else if (typeof result === 'string') {
+            // 如果是字符串，尝试解析为JSON
+            try {
+                const parsedResult = JSON.parse(result);
+                language = parsedResult.language || 'unknown';
+            } catch (jsonError) {
+                language = 'unknown';
+            }
         }
         
         displayElement.textContent = language;
