@@ -391,36 +391,36 @@
 .comparison-card {
     background-color: #ffffff;
     border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.07);
-    overflow: hidden; /* 保证子元素的圆角生效 */
-    transition: box-shadow 0.3s ease-in-out;
+    border-radius: 8px; /* 减小圆角 */
+    margin-bottom: 10px; /* 减小卡片间距，从20px改为10px */
+    box-shadow: none; /* 移除阴影效果 */
+    overflow: hidden; 
 }
 
+/* 移除悬浮效果 */
 .comparison-card:hover {
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    box-shadow: none; /* 移除悬浮时的阴影 */
 }
 
 .comparison-card-header {
-    background: linear-gradient(135deg, #f9fafb, #f3f4f6);
-    padding: 16px 24px;
+    background: #f9fafb; /* 简化为单色背景，移除渐变 */
+    padding: 12px 16px; /* 减小内边距 */
     border-bottom: 1px solid #e5e7eb;
 }
 
 .comparison-card-header h3 {
     margin: 0;
-    font-size: 1.25em;
+    font-size: 1.1em; /* 减小字体大小 */
     font-weight: 600;
     color: #111827;
 }
 
 .comparison-card-body {
-    padding: 16px;
+    padding: 12px; /* 减小内边距 */
 }
 
 .comparison-section-v2 {
-    margin-bottom: 16px;
+    margin-bottom: 12px; /* 减小区块间距 */
 }
 
 .comparison-section-v2:last-child {
@@ -430,77 +430,60 @@
 .comparison-section-v2 h4 {
     display: flex;
     align-items: center;
-    font-size: 1.1em;
+    font-size: 1em; /* 减小字体大小 */
     color: #374151;
-    margin: 0 0 16px 0;
-    padding-bottom: 8px;
-    border-bottom: 2px solid #f3f4f6;
+    margin: 0 0 12px 0;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #f3f4f6; /* 减小边框厚度 */
 }
 
 .comparison-section-v2 h4 .icon-match,
 .comparison-section-v2 h4 .icon-diff {
-    margin-right: 10px;
-    font-size: 1.2em;
+    margin-right: 8px; /* 减小图标与文字间距 */
+    font-size: 1.1em; /* 减小图标大小 */
 }
-.icon-match { color: #22c55e; }
-.icon-diff { color: #f97316; }
-
 
 .features-table {
     width: 100%;
     border-collapse: collapse;
     border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    overflow: hidden; /* for border-radius to work on tables */
+    border-radius: 6px; /* 减小圆角 */
+    overflow: hidden;
 }
 
 .features-table th,
 .features-table td {
-    padding: 10px 14px;
+    padding: 8px 12px; /* 减小单元格内边距 */
     text-align: left;
     vertical-align: top;
     border-bottom: 1px solid #e5e7eb;
     font-size: 14px;
-    line-height: 1.7;
+    line-height: 1.6;
 }
 
+/* 简化表格背景色 */
 .features-table thead {
     background-color: #f9fafb;
 }
 
-.features-table th {
-    font-weight: 500;
-    color: #4b5563;
-}
-
-.features-table tr:last-child td {
-    border-bottom: none;
-}
-
-.features-table .no-data {
-    text-align: center;
-    color: #6b7280;
-    padding: 20px;
-    font-style: italic;
-}
-
-/* 相似特征行样式 */
 .similar-row td {
-    background-color: #f0fdf4;
+    background-color: #ffffff; /* 简化为白色背景 */
 }
 
-/* 差异特征行样式 */
 .diff-table {
-    border-color: #fde68a; /* 黄色边框以示警示 */
+    border-color: #e5e7eb; /* 简化为普通边框 */
 }
+
 .diff-table thead {
-    background-color: #fefce8;
+    background-color: #f9fafb; /* 简化为与普通表格一致 */
 }
+
 .different-row td {
-    background-color: #fff7ed;
+    background-color: #ffffff; /* 简化为白色背景 */
 }
+
 .different-row .analysis-cell {
-    background-color: #f0f9ff;
-    color: #0c4a6e;
-    font-weight: 500;
+    background-color: #f9fafb; /* 简化为浅色背景 */
+    color: #374151; /* 简化文字颜色 */
+    font-weight: normal; /* 移除加粗 */
 }
