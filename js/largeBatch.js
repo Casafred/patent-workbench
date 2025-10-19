@@ -55,6 +55,9 @@ function handleGenFile(event) {
         } catch (err) { alert('无法解析文件，请确保是有效的Excel文件。'); console.error(err); }
     };
     reader.readAsArrayBuffer(file);
+    
+    // 关键修改：重置文件输入值，允许重复上传同名文件
+    event.target.value = '';
 }
 
 function loadGenSheet(sheetName) {
@@ -520,13 +523,55 @@ function parseAndGenerateReport() {
 }
 
 function downloadFinalReport(){
-    if(appState.reporter.finalOutputData.length === 0) return;
-    const consistentData = appState.reporter.finalOutputData.map(row => { let newRow = {}; appState.reporter.outputHeaders.forEach(header => { newRow[header] = row[header] || ""; }); return newRow; });
-    // ▼▼▼ 修改①：修复下载功能 ▼▼▼
-    // 简化调用，让库从对象键自动推断表头，这更稳健
-    const newSheet = XLSX.utils.json_to_sheet(consistentData);
-    // ▲▲▲ 修改①：修复下载功能 ▲▲▲
-    const newWorkbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(newWorkbook, newSheet, "分析结果");
-    XLSX.writeFile(newWorkbook, "专利分析报告_最终版.xlsx");
+    if (appState.reporter.finalOutputData.length === 0) return;
+
+    const MAX_CELL_LEN = 32767;
+    const overflowRecords = [];
+
+    // 保持列顺序一致，并在写入前对所有值做长度与类型归一化
+    const consistentData = appState.reporter.finalOutputData.map((row, rowIndex) => {
+        const newRow = {};
+        appState.reporter.outputHeaders.forEach(header => {
+            let val = row[header];
+
+            // 统一转为字符串（保留空串）
+            if (val === undefined || val === null) {
+                val = "";
+            } else if (typeof val === "object") {
+                try {
+                    val = JSON.stringify(val);
+                } catch {
+                    val = String(val);
+                }
+            } else {
+                val = String(val);
+            }
+
+            // 超长处理：主表截断，副表保留原文
+            if (val.length > MAX_CELL_LEN) {
+                overflowRecords.push({
+                    行号: rowIndex + 1,
+                    字段: header,
+                    原文: val
+                });
+                val = val.slice(0, MAX_CELL_LEN);
+            }
+            newRow[header] = val;
+        });
+        return newRow;
+    });
+
+    const workbook = XLSX.utils.book_new();
+
+    // 主表：分析结果
+    const mainSheet = XLSX.utils.json_to_sheet(consistentData);
+    XLSX.utils.book_append_sheet(workbook, mainSheet, "分析结果");
+
+    // 如有原文溢出，附加副表
+    if (overflowRecords.length > 0) {
+        const overflowSheet = XLSX.utils.json_to_sheet(overflowRecords);
+        XLSX.utils.book_append_sheet(workbook, overflowSheet, "超长内容原文");
+    }
+
+    XLSX.writeFile(workbook, "专利分析报告_最终版.xlsx");
 }
