@@ -1,6 +1,11 @@
 /**
  * 专利权利要求处理器前端脚本
+ * 版本: 2.0.0 - BytesIO修复版本
+ * 更新时间: 2026-01-16 23:10
  */
+
+// 版本检查
+console.log('Claims Processor v2.0.0 - BytesIO Export Fix Loaded');
 
 // 全局状态
 let currentFileId = null;
@@ -388,6 +393,7 @@ async function exportResults(format) {
     }
     
     try {
+        console.log(`[Export v2.0] Starting ${format} export for task: ${currentTaskId}`);
         showInfo(`正在导出${format.toUpperCase()}文件...`);
         
         const response = await fetch(`/api/claims/export/${currentTaskId}`, {
@@ -396,6 +402,13 @@ async function exportResults(format) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ format: format })
+        });
+        
+        console.log(`[Export v2.0] Response status: ${response.status}`);
+        console.log(`[Export v2.0] Response headers:`, {
+            contentType: response.headers.get('Content-Type'),
+            contentLength: response.headers.get('Content-Length'),
+            contentDisposition: response.headers.get('Content-Disposition')
         });
         
         if (response.ok) {
@@ -410,17 +423,28 @@ async function exportResults(format) {
                 }
             }
             
+            console.log(`[Export v2.0] Filename: ${filename}`);
+            
             // 下载文件
             const blob = await response.blob();
             
             // 验证blob大小
-            console.log(`Blob size: ${blob.size} bytes`);
-            console.log(`Blob type: ${blob.type}`);
+            console.log(`[Export v2.0] Blob size: ${blob.size} bytes`);
+            console.log(`[Export v2.0] Blob type: ${blob.type}`);
             
             if (blob.size === 0) {
+                console.error('[Export v2.0] Blob is empty!');
                 showError('导出的文件为空，请重试');
                 return;
             }
+            
+            // 检查blob内容（前100字节）
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const arr = new Uint8Array(e.target.result).subarray(0, 100);
+                console.log('[Export v2.0] Blob first 100 bytes:', arr);
+            };
+            reader.readAsArrayBuffer(blob.slice(0, 100));
             
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -429,24 +453,30 @@ async function exportResults(format) {
             document.body.appendChild(a);
             a.click();
             
+            console.log(`[Export v2.0] Download triggered for: ${filename}`);
+            
             // 延迟清理，确保下载完成
             setTimeout(() => {
                 window.URL.revokeObjectURL(url);
                 document.body.removeChild(a);
+                console.log('[Export v2.0] Cleanup complete');
             }, 100);
             
             showSuccess(`${format.toUpperCase()}文件已下载`);
         } else {
+            console.error(`[Export v2.0] Request failed with status: ${response.status}`);
             // 尝试解析错误信息
             try {
                 const result = await response.json();
+                console.error('[Export v2.0] Error response:', result);
                 showError(result.error || '导出失败');
             } catch (e) {
+                console.error('[Export v2.0] Could not parse error response');
                 showError(`导出失败: HTTP ${response.status}`);
             }
         }
     } catch (error) {
-        console.error('Export error:', error);
+        console.error('[Export v2.0] Export error:', error);
         showError('导出失败: ' + error.message);
     }
 }
