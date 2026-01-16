@@ -10,7 +10,8 @@ import json
 import traceback
 import threading
 from datetime import datetime
-from flask import Blueprint, request, Response
+from io import BytesIO
+from flask import Blueprint, request, Response, send_file
 from werkzeug.utils import secure_filename
 
 from backend.middleware import login_required
@@ -510,9 +511,11 @@ def export_claims_result(task_id):
         if export_format == 'json':
             output_path = export_service.export_to_json(result)
             mimetype = 'application/json'
+            download_name = os.path.basename(output_path)
         elif export_format == 'excel':
             output_path = export_service.export_to_excel(result)
             mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            download_name = os.path.basename(output_path)
         else:
             return create_response(
                 error="不支持的导出格式，请使用 'excel' 或 'json'",
@@ -523,19 +526,23 @@ def export_claims_result(task_id):
         with open(output_path, 'rb') as f:
             file_content = f.read()
         
-        # Get filename
-        filename = os.path.basename(output_path)
-        
         # Clean up temporary file
         try:
             os.remove(output_path)
-        except:
-            pass
+        except Exception as cleanup_error:
+            print(f"Warning: Failed to cleanup temp file: {cleanup_error}")
         
-        # Return file
-        response = Response(file_content, mimetype=mimetype)
-        response.headers['Content-Disposition'] = f'attachment; filename={filename}'
-        return response
+        # Use BytesIO to create a file-like object
+        file_stream = BytesIO(file_content)
+        file_stream.seek(0)
+        
+        # Return file using send_file
+        return send_file(
+            file_stream,
+            mimetype=mimetype,
+            as_attachment=True,
+            download_name=download_name
+        )
         
     except Exception as e:
         print(f"Error in export_claims_result: {traceback.format_exc()}")
