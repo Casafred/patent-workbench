@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>专利分析智能工作台 v20</title>
+    <!-- 引入的库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="marked.min.js"></script>
+    <!-- 字体 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- 模块化CSS文件 -->
+    <link rel="stylesheet" href="frontend/css/main.css">
+
+        <style>
+            .preset-badge {
+                display: inline-block;
+                padding: 2px 6px;
+                background-color: #4a6cf7;
+                color: white;
+                border-radius: 4px;
+                font-size: 0.75em;
+                margin-left: 6px;
+                vertical-align: middle;
+            }
+        /* 其他样式 */
+        .file-manager-modal {
+            display: none; position: fixed; z-index: 1001; left: 0; top: 0;
+            width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);
+            -webkit-animation-name: fadeIn; animation-name: fadeIn;
+            -webkit-animation-duration: 0.4s; animation-duration: 0.4s;
+        }
+        .file-manager-content {
+            position: relative; background-color: var(--surface-color); margin: 5% auto;
+            padding: 0; border: 1px solid var(--border-color); border-radius: 12px;
+            width: 80%; max-width: 900px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            -webkit-animation-name: slideIn; animation-name: slideIn;
+            -webkit-animation-duration: 0.4s; animation-duration: 0.4s
+        }
+        .file-manager-header {
+            padding: 15px 25px; background: linear-gradient(90deg, var(--primary-color-dark), var(--primary-color));
+            color: white; border-radius: 12px 12px 0 0; display: flex;
+            justify-content: space-between; align-items: center;
+        }
+        .file-manager-header h2 { margin: 0; font-size: 1.2em; }
+        .close-file-manager {
+            color: white; float: right; font-size: 28px; font-weight: bold;
+            background: none; border: none; cursor: pointer; opacity: 0.8;
+        }
+        .close-file-manager:hover, .close-file-manager:focus { opacity: 1; text-decoration: none; }
+        .file-manager-body { padding: 20px; max-height: 65vh; overflow-y: auto; }
+        .file-manager-table { width: 100%; border-collapse: collapse; }
+        .file-manager-table th, .file-manager-table td {
+            border-bottom: 1px solid var(--border-color); padding: 12px 15px;
+            text-align: left; vertical-align: middle;
+        }
+        .file-manager-table th { font-weight: 600; color: var(--text-color-secondary); }
+        .file-manager-table tr:hover { background-color: var(--primary-color-hover-bg); }
+        .file-name-cell { max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .file-actions-cell { text-align: right; white-space: nowrap; }
+        #file_manager_status { margin-top: 15px; text-align: center; }
+        @-webkit-keyframes slideIn { from {top: -300px; opacity: 0} to {top: 0; opacity: 1} }
+        @keyframes slideIn { from {margin-top: -5%; opacity: 0} to {margin-top: 5%; opacity: 1} }
+        @-webkit-keyframes fadeIn { from {opacity: 0} to {opacity: 1} }
+        @keyframes fadeIn { from {opacity: 0} to {opacity: 1} }
+        </style>
+
+</head>
+<body>
+
+<div class="container">
+    <header class="app-header">
+        <div class="app-branding">
+            <div class="logo-container">
+                <h1 class="banner-text-logo">ALFRED X IP</h1>
+                <img src="ALFRED X IP LOGO.webp" alt="Alfred X IP Logo" class="image-logo">
+            </div>
+    <a href="help.html" target="_blank" class="help-button" title="打开用户手册">?</a>
+            <div class="version-number">版本号: v20.1</div>
+        </div>
+        <div class="api-config-section">
+            <button id="api_config_toggle_btn" class="api-config-toggle" title="API Key 设置">⚙️</button>
+            <div id="api_config_container" class="api-config-container">
+                <div class="config-item">
+                    <label for="global_api_key_input">您的智谱AI API Key:</label>
+                    <div class="api-key-wrapper">
+                        <input type="password" id="global_api_key_input" placeholder="在此处粘贴以启用所有功能">
+                        <div class="api-key-actions">
+                            <button type="button" id="api_key_copy_btn" class="api-key-action-btn" title="复制">📋</button>
+                            <button type="button" id="api_key_delete_btn" class="api-key-action-btn" title="删除">🗑️</button>
+                            <button type="button" id="api_key_toggle_visibility_btn" class="password-toggle-btn" title="显示/隐藏">👁️</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="api-config-footer">
+                    <span id="api_key_save_status"></span>
+                    <button id="api_key_save_btn" class="small-button">保存</button>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <div class="main-content">
+        <div class="tab-navigation">
+            <div class="main-tab-container">
+                <button class="tab-button" onclick="switchTab('instant', this)">功能一：即时对话</button>
+                <button class="tab-button" onclick="switchTab('async_batch', this)">功能二：小批量异步</button>
+                <button class="tab-button" onclick="switchTab('large_batch', this)">功能三：大批量处理</button>
+                <button class="tab-button" onclick="switchTab('local_patent_lib', this)">功能四：本地专利库管理</button>
+                <button class="tab-button" onclick="switchTab('claims_comparison', this)">功能五：权利要求对比</button>
+                <button class="tab-button" onclick="switchTab('patent_batch', this)">功能六：批量专利解读</button>
+                <button class="tab-button" onclick="switchTab('claims_processor', this)">功能七：权利要求处理</button>
+            </div>
+        </div>
+
+        <!-- 功能一：即时对话 -->
+        <div id="instant-tab" class="tab-content">
+            <!-- 对话参数配置悬浮窗 -->
+            <div id="chat_params_modal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>对话参数设置</h3>
+                        <button class="close-modal">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="config-section">
+                            <h4>模型参数</h4>
+                            <div class="config-item"><label for="chat_model_select">模型:</label><select id="chat_model_select"></select></div>
+                            <div class="config-item"><label for="chat_temperature">温度:</label><input type="number" id="chat_temperature" value="0.7" step="0.1" min="0" max="1"></div>
+                        </div>
+                        <div class="config-section">
+                            <h4>上下文设置</h4>
+                            <div class="config-item"><label for="chat_context_count">上下文条数 (最近N条):</label><input type="number" id="chat_context_count" value="10" min="0" max="50"></div>
+                        </div>
+                        <div class="config-section">
+                            <h4>对话角色设置</h4>
+                            <div class="config-item"><label for="chat_persona_select">选择角色:</label><select id="chat_persona_select"></select></div>
+                            <div class="persona-actions" style="display: flex; gap: 10px; margin-top: 10px;">
+                                <button id="chat_add_persona_btn" class="small-button">新增角色</button>
+                                <button id="chat_delete_persona_btn" class="small-button delete-button">删除当前角色</button>
+                            </div>
+
+                            <div id="persona_editor" class="persona-editor">
+                                <h4>角色编辑</h4>
+                                <div class="config-item"><label for="persona_name_input">角色名称:</label><input type="text" id="persona_name_input" placeholder="输入角色名称"></div>
+                                <div class="config-item"><label for="persona_system_input">系统提示:</label><textarea id="persona_system_input" rows="4" placeholder="输入系统提示"></textarea></div>
+                                <div class="config-item"><label for="persona_template_input">用户模板 (使用 {{INPUT}} 作为占位符):</label><textarea id="persona_template_input" rows="2" placeholder="输入用户模板"></textarea></div>
+                                <button id="chat_save_persona_btn" class="small-button">保存当前角色</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button id="save_chat_params_btn" class="small-button">保存设置</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 新增：文件管理模态框 -->
+            <div id="file_manager_modal" class="modal">
+              <div class="modal-content" style="max-width: 800px;">
+                <div class="modal-header">
+                  <h3>文件管理</h3>
+                  <button class="close-modal" id="file_manager_close_btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                  <div class="config-section">
+                    <h4>上传新文件</h4>
+                    <div class="template-config-grid" style="grid-template-columns: 1fr 1fr;">
+                      <div class="config-item">
+                        <label for="fm_file_input">选择文件:</label>
+                        <input type="file" id="fm_file_input" />
+                      </div>
+                      <div class="config-item">
+                        <label for="fm_purpose_select">用途 (purpose):</label>
+                        <select id="fm_purpose_select">
+                          <option value="file-extract" selected>file-extract (内容抽取)</option>
+                          <option value="agent">agent</option>
+                          <option value="code-interpreter">code-interpreter</option>
+                          <option value="batch">batch (jsonl/xlsx)</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div style="text-align:right; margin-top: 15px;">
+                      <button id="fm_upload_btn" class="small-button">上传</button>
+                    </div>
+                  </div>
+            
+                  <hr style="margin: 20px 0; border-color: var(--border-color);">
+            
+                  <div class="config-section">
+                    <h4>已上传文件列表</h4>
+                    <div class="template-config-grid" style="grid-template-columns: 1fr auto; align-items: end;">
+                      <div class="config-item">
+                        <label for="fm_filter_purpose">按用途筛选:</label>
+                        <select id="fm_filter_purpose">
+                          <option value="file-extract" selected>file-extract</option>
+                          <option value="batch">batch</option>
+                          <option value="agent">agent</option>
+                          <option value="code-interpreter">code-interpreter</option>
+                        </select>
+                      </div>
+                      <div class="config-item">
+                        <button id="fm_refresh_btn" class="small-button">刷新列表</button>
+                      </div>
+                    </div>
+                    <div id="fm_list" class="scrollable-list" style="max-height:300px; margin-top:15px;">
+                        <div class="info">正在加载...</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div id="instant-chat-layout">
+                <div id="chat_history_panel">
+                    <div id="chat_history_header">
+                        <span>历史对话</span>
+                        <button id="chat_new_btn" class="new-chat-btn" title="开启新对话">+</button>
+                    </div>
+                    <div id="chat_history_list"></div>
+                </div>
+                <div id="chat_main_panel">
+                    <div id="chat_container">
+                        <div id="chat_title_bar">
+                        <div class="title-editing-container">
+                            <h2 id="chat_current_title" contenteditable="true">未命名对话</h2>
+                        </div>
+                        <div class="title-bar-actions">
+                           <!-- 新增的文件管理按钮 -->
+                                <button id="chat_manage_files_btn" class="small-button">文件管理</button>
+                            <button id="chat_params_btn" class="small-button">对话参数设置</button>
+                            <button id="chat_manage_btn" class="small-button">管理消息</button>
+                                <div class="export-dropdown">
+                                    <button class="small-button export-toggle-btn">导出 ▼</button>
+                                    <div class="export-dropdown-content">
+                                        <a href="#" data-export="txt">导出为TXT</a>
+                                        <a href="#" data-export="png">导出为图片</a>
+                                        <a href="#" data-export="pdf">导出为PDF</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="chat_management_bar" style="display: none;">
+                            <button id="chat_select_all_btn" class="small-button">全选</button>
+                            <button id="chat_deselect_all_btn" class="small-button">取消全选</button>
+                            <button id="chat_delete_selected_btn" class="small-button delete-button">删除选中</button>
+                        </div>
+                        <div id="chat_window"></div>
+                        <!-- ▼▼▼ 新增：文件状态显示区域 ▼▼▼ -->
+                        <div id="chat_file_status_area" style="display:none;">
+                        </div>
+                        <!-- ▲▲▲ 新增结束 ▲▲▲ -->
+                        <div id="chat_input_area">
+                            <button id="chat_input_new_btn" class="new-chat-btn" title="开启新对话">+</button>
+                            <!-- ▼▼▼ 新增：文件上传按钮和隐藏的input ▼▼▼ -->
+                            <button id="chat_upload_file_btn" class="icon-button" title="上传文件 (PDF, Word, Excel, 图片, CSV等)">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                            </button>
+                            <input type="file" id="chat_file_input" style="display:none;" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg,.csv,.txt">
+                            <!-- ▲▲▲ 新增结束 ▲▲▲ -->
+                        <div id="chat_input_wrapper">
+                            <textarea id="chat_input" placeholder="输入您的问题 (Shift+Enter 换行)..." rows="1"></textarea>
+                            <span id="chat_char_count">0</span>
+                        </div>
+                        <button id="chat_send_btn">发送</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ====================================================================== -->
+        <!-- 功能二：小批量异步 (UI重构) -->
+        <!-- ====================================================================== -->
+        <div id="async_batch-tab" class="tab-content">
+            <div class="progress-stepper" id="async-stepper">
+                <div class="step-item active" onclick="switchAsyncSubTab('input', this)">
+                    <div class="step-number">1</div>
+                    <div class="step-title">输入内容</div>
+                </div>
+                <div class="step-item" onclick="switchAsyncSubTab('template', this)">
+                    <div class="step-number">2</div>
+                    <div class="step-title">配置模板</div>
+                </div>
+                <div class="step-item" onclick="switchAsyncSubTab('task', this)">
+                    <div class="step-number">3</div>
+                    <div class="step-title">创建任务</div>
+                </div>
+                <div class="step-item" onclick="switchAsyncSubTab('result', this)">
+                    <div class="step-number">4</div>
+                    <div class="step-title">任务与结果</div>
+                </div>
+                <div class="progress-bar"></div>
+            </div>
+
+            <!-- 页签 1: 输入内容 -->
+            <div id="async-sub-tab-input" class="sub-tab-content active">
+                <div class="step">
+                    <div class="step-header">步骤 1: 添加输入内容</div>
+                    <div class="sub-tab-container" style="border-bottom:none; margin-bottom: 20px;">
+                        <button class="sub-tab-button active" onclick="switchAsyncInput(event, 'excel')">Excel导入</button>
+                        <button class="sub-tab-button" onclick="switchAsyncInput(event, 'manual')">手动添加</button>
+                    </div>
+                    
+                    <div id="async-input-excel" class="sub-tab-content active">
+                        <div class="config-item"><label for="async_excel_file">上传Excel文件:</label><input type="file" id="async_excel_file" accept=".xlsx, .xls"></div>
+                        <div class="config-item"><label for="async_excel_sheet">选择Sheet:</label><select id="async_excel_sheet" disabled></select></div>
+                        <div id="async_column_config_container" style="display:none;"><div class="config-item row-flex"><label for="async_excel_column_count">选择输入列数量:</label><input type="number" id="async_excel_column_count" value="1" min="1" max="10" style="width: 100px;"></div><div id="async_excel_column_config_area"></div></div>
+                        <button id="async_load_excel_btn" class="small-button" disabled>从Excel加载输入</button>
+                    </div>
+
+                    <div id="async-input-manual" class="sub-tab-content">
+                        <div class="config-item"><label for="async_manual_input">新输入 (每行一条):</label><textarea id="async_manual_input" rows="5" placeholder="请输入需要处理的内容..."></textarea></div>
+                        <button id="async_add_input_btn" class="small-button">添加输入</button>
+                    </div>
+
+                    <hr style="margin: 20px 0; border-color: var(--border-color);">
+                    <label><strong>已添加的输入 (<span id="async_inputs_count">0</span>):</strong></label>
+                    <div id="async_inputs_management"><button id="async_inputs_select_all_btn" class="small-button">全选</button><button id="async_inputs_delete_selected_btn" class="small-button delete-button">删除选中</button></div>
+                    <div id="async_inputs_list" class="scrollable-list"></div>
+                </div>
+            </div>
+
+            <!-- 页签 2: 配置模板 -->
+            <div id="async-sub-tab-template" class="sub-tab-content">
+                <div class="step">
+                    <div class="step-header">步骤 2: 配置处理模板</div>
+                    <div id="async_template_edit_area">
+                        <div class="template-config-grid">
+                            <div class="template-config-main">
+                                <div class="config-item">
+                                    <label for="async_preset_template_select">选择预置模板或新建:</label>
+                                    <select id="async_preset_template_select"></select>
+                                </div>
+                                <div class="config-item">
+                                    <label for="async_template_name">模板名称:</label>
+                                    <input type="text" id="async_template_name" placeholder="例如：自定义技术总结">
+                                </div>
+                                <div class="model-temp-group">
+                                    <div class="config-item">
+                                        <label for="async_template_model_select">选择模型:</label>
+                                        <select id="async_template_model_select"></select>
+                                    </div>
+                                    <div class="config-item">
+                                        <label for="async_template_temperature">温度:</label>
+                                        <input type="number" id="async_template_temperature" min="0" max="1" step="0.1" value="0.1">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="template-config-prompts">
+                                <div class="config-item">
+                                    <label for="async_system_prompt">系统提示 (System Prompt):</label>
+                                    <textarea id="async_system_prompt" rows="3">你是一个高效的专利文本分析助手。</textarea>
+                                </div>
+                                <div class="config-item">
+                                    <div class="help-tooltip-wrapper">
+                                        <label for="async_user_prompt">用户提示模板:</label>
+                                        <div class="help-icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"></path></svg>
+                                            <span class="tooltip-text">请务必使用 `{{INPUT}}` 作为占位符。当从Excel导入多列时，系统会自动将多列内容及列名填充到 `{{INPUT}}` 的位置。</span>
+                                        </div>
+                                    </div>
+                                    <textarea id="async_user_prompt" rows="4">请根据以下文本，总结其核心技术点：
+
+{{INPUT}}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <hr style="margin: 25px 0 20px; border-color: var(--border-color);">
+                        <div class="config-item">
+                            <div class="help-tooltip-wrapper">
+                                 <label>输出格式 (JSON):</label>
+                                 <div class="help-icon">
+                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"></path></svg>
+                                     <span class="tooltip-text">系统将自动把您在此处定义的字段包装成严格的JSON格式要求，并附加到用户提示的末尾，以指导模型输出。</span>
+                                 </div>
+                            </div>
+                            <div id="async_output_fields_container"></div>
+                            <button id="async_add_output_field_btn" class="small-button" type="button">添加输出字段</button>
+                        </div>
+                        <div style="text-align: right; margin-top: 20px;">
+                            <button id="async_add_template_btn" class="small-button">保存模板</button>
+                        </div>
+                    </div>
+                    <hr style="margin: 20px 0; border-color: var(--border-color);">
+                    <label><strong>已创建的模板 (点击删除):</strong></label>
+                    <div id="async_templates_list" class="scrollable-list"></div>
+                </div>
+            </div>
+
+            <!-- 页签 3: 创建任务 -->
+            <div id="async-sub-tab-task" class="sub-tab-content">
+                <div class="step">
+                    <div class="step-header">步骤 3: 创建请求任务并预览</div>
+                    <p class="info">为每个模板指定要处理的输入数据序号范围，然后添加到任务列表。不填范围则默认全部。</p>
+                    <div id="async_task_creation_area"><div class="info">请先在步骤1添加输入，并在步骤2中添加模板。</div></div>
+                    <hr style="margin: 25px 0; border-color: var(--border-color);">
+                    <h4>待提交的请求列表 (<span id="async_requests_count">0</span>)</h4>
+                    <div id="async_requests_preview_list" class="scrollable-list" style="max-height: 200px;"><div class="info">请通过上方的模板任务创建器来添加请求。</div></div>
+                    <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center;">
+                        <button id="async_clear_requests_btn" class="small-button delete-button">全部清空</button>
+                        <button id="async_preview_request_btn" class="small-button" style="background: var(--warning-color); color: #fff;">预览前2条请求体</button>
+                    </div>
+                    <div id="async_request_body_preview" class="preview-output" style="display:none; margin-top: 15px;"></div>
+                </div>
+            </div>
+
+            <!-- 页签 4: 任务与结果 -->
+            <div id="async-sub-tab-result" class="sub-tab-content">
+                <div class="step">
+                    <div class="step-header">步骤 4: 提交任务与查看结果</div>
+                    <div style="text-align: center; margin-bottom: 25px;">
+                        <button id="async_submit_batch_btn" disabled>提交全部请求</button>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-bottom: 15px; flex-wrap: wrap;">
+                        <div id="async_progress_info" class="info" style="text-align:center; flex-grow: 1;">等待提交任务...</div>
+                        <div style="display:flex; gap:10px;">
+                            <button id="async_recover_btn" class="small-button" style="background: var(--warning-color); color: #fff;" disabled>恢复上次任务</button>
+                            <button id="async_export_excel_btn" class="small-button" disabled>导出为Excel</button>
+                        </div>
+                    </div>
+                    <div style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px;">
+                        <div style="overflow-x:auto;">
+                            <table id="async_results_table">
+                                <thead><tr><th>请求ID</th><th>输入预览</th><th>使用模板</th><th>状态</th><th>消耗Tokens</th><th>结果 / 错误</th></tr></thead>
+                                <tbody id="async_results_tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 功能三：大批量处理 (UI重构) -->
+        <div id="large_batch-tab" class="tab-content">
+            <div class="progress-stepper" id="large-batch-stepper">
+                <div class="step-item active" onclick="switchSubTab('generator', this)">
+                    <div class="step-number">1</div>
+                    <div class="step-title">生成请求文件</div>
+                </div>
+                <div class="step-item" onclick="switchSubTab('batch', this)">
+                    <div class="step-number">2</div>
+                    <div class="step-title">执行批处理</div>
+                </div>
+                <div class="step-item" onclick="switchSubTab('reporter', this)">
+                    <div class="step-number">3</div>
+                    <div class="step-title">解析报告</div>
+                </div>
+                <div class="progress-bar"></div>
+            </div>
+            
+            <div id="sub-tab-generator" class="sub-tab-content">
+                 <div class="step">
+                    <div class="step-header">步骤 1: 上传专利数据 Excel 并配置分析列</div>
+                    <input type="file" id="gen_file-input" accept=".xlsx, .xls">
+                    <select id="gen_sheet-selector" style="display:none; margin-left: 10px;"></select>
+                    <div id="column-config-container" style="display:none; margin-top: 20px;">
+                        <div class="config-item row-flex">
+                            <label for="column-count">分析列数量:</label>
+                            <input type="number" id="column-count" value="2" min="1" max="10" style="width: 100px;">
+                        </div>
+                        <div id="column-config-area"></div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-header">步骤 2: 配置 API 请求模板</div>
+                    <div class="template-actions" style="margin-bottom: 20px; display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <select id="template_selector" style="flex-grow: 1;"></select>
+                        <button id="save_template_btn" class="small-button">保存</button>
+                        <button id="import_template_btn" class="small-button">导入</button>
+                        <input type="file" id="template_file_input" accept=".json" style="display:none;">
+                        <button id="export_template_btn" class="small-button">导出</button>
+                        <button id="delete_template_btn" class="small-button delete-button">删除</button>
+                    </div>
+                    <div class="template-config-grid">
+                        <div class="template-config-main">
+                            <div class="config-item">
+                                <label for="api-model">选择模型:</label>
+                                <select id="api-model"></select>
+                            </div>
+                            <div class="config-item">
+                                <label for="api-temperature">温度:</label>
+                                <input type="number" id="api-temperature" value="0.1" step="0.1" min="0" max="1">
+                            </div>
+                        </div>
+                        <div class="template-config-prompts">
+                            <div class="config-item">
+                                <label for="api-system-prompt">系统提示 (System Prompt):</label>
+                                <textarea id="api-system-prompt" rows="4"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <hr style="margin: 25px 0 20px; border-color: var(--border-color);">
+                    <div class="config-item">
+                        <label>用户提示 (User Prompt):</label>
+                        <div class="user-prompt-container">
+                            <div class="prompt-ab-grid">
+                                <div class="prompt-section">
+                                    <div class="prompt-section-title">A. 规则要求</div>
+                                    <textarea id="prompt-rules" rows="3" placeholder="请在此处输入任务的核心指令、要求和背景信息。"></textarea>
+                                </div>
+                                <div class="prompt-section">
+                                    <div class="prompt-section-title">B. 内容插入 (自动生成)</div>
+                                    <div id="content-insertion-preview" class="preview-output">待上传Excel并配置分析列后自动显示...</div>
+                                </div>
+                            </div>
+                            <div class="prompt-section">
+                                <div class="prompt-section-title">C. 输出格式 (JSON)</div>
+                                <div id="output-fields-container"></div>
+                                <button id="add-output-field-btn" class="small-button" type="button">添加输出字段</button>
+                                <div class="info" style="margin-top: 10px;">系统将自动把此处的字段包装成JSON格式要求。</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-header">步骤 3: 生成并预览 JSONL 请求文件</div>
+                    <button id="gen_generate-btn" disabled>生成 JSONL 文件</button>
+                    <div class="preview-output" id="gen_preview_output" style="display:none;"></div>
+                    <button id="gen_download-btn" style="display:none; margin-top: 15px;">下载 JSONL 文件</button>
+                    <div class="info success" id="gen_ready_info" style="display:none;">文件已在内存中准备就绪，请切换到【2. 执行批处理】进行上传。</div>
+                </div>
+            </div>
+
+            <!-- ▼▼▼ BUG 4 修复确认: 以下内容必须存在，否则页面会为空 ▼▼▼ -->
+            <div id="sub-tab-batch" class="sub-tab-content">
+                 <div class="step">
+                    <div class="step-header">批量任务工作流</div>
+                    <p>请按照1-4的顺序执行。点击步骤2后将启动自动状态检查。</p>
+                    <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px; justify-content: center;">
+                        <button id="batch_step1_upload" class="action-button">1. 上传请求文件</button>
+                        <button id="batch_step2_create" class="action-button" disabled>2. 创建Batch任务</button>
+                        <button id="batch_step3_download" class="action-button" disabled>3. 获取结果内容</button>
+                    </div>
+                    <div id="batch_id_reminder" class="info" style="display: none; margin-top: 20px; text-align: center;"></div>
+
+                    <div id="auto-check-container" style="display:none; margin-top: 20px; text-align: center;">
+                        <span id="auto_check_status" style="margin-right: 15px; color: var(--primary-color-dark); font-weight: bold;"></span>
+                        <button id="batch_stop_check_btn" class="small-button" style="background: var(--warning-color); color: #fff;">停止自动检查</button>
+                    </div>
+                </div>
+                
+                <details open>
+                    <summary>断点续查 / 任务恢复</summary>
+                    <div class="step" style="border-top: none; margin-top: 0;">
+                        <p class="info warning">如果您因关闭浏览器等原因中断了流程，但已记录下 Batch ID，可在此恢复任务状态。</p>
+                        <div class="config-item row-flex">
+                            <label for="recover_batch_id_input">Batch ID:</label>
+                            <input type="text" id="recover_batch_id_input" placeholder="粘贴您记录的 Batch ID">
+                        </div>
+                        <button id="recover_state_btn">恢复查询状态</button>
+                    </div>
+                </details>
+
+                <div class="step">
+                    <div class="step-header">执行日志</div>
+                    <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+                        <button id="batch_step3_check" class="small-button">手动检查状态</button>
+                    </div>
+                    <div id="batch_log" class="preview-output">等待操作...</div>
+                </div>
+            </div>
+
+            <div id="sub-tab-reporter" class="sub-tab-content">
+                <div class="step">
+                    <div class="step-header">步骤 1: 准备数据源</div>
+                    <div class="reporter-uploads">
+                        <div>
+                            <p><strong>A. 上传原始 Excel 文件</strong> (用于数据匹配)</p>
+                            <input type="file" id="rep_excel-input" accept=".xlsx, .xls">
+                            <select id="rep_sheet-selector" style="display:none; margin-top: 10px;"></select>
+                        </div>
+                        <div style="margin-top:20px;">
+                            <p><strong>B. 加载 Batch 任务结果文件</strong></p>
+                            <input type="file" id="rep_jsonl-input" accept=".jsonl">
+                            <div class="info success" id="reporter-info-box" style="display:none;">
+                                检测到来自【2. 执行批处理】的结果文件已在内存中，将优先使用此数据。
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-header">步骤 2: 解析并生成最终报告</div>
+                    <button id="rep_generate-report-btn" disabled>解析并生成最终报告</button>
+                    <div class="preview-output" id="rep_output_preview" style="display:none;"></div>
+                    <button id="rep_download-report-btn" style="display:none; margin-top: 15px;">下载最终报告 (Excel)</button>
+                </div>
+            </div>
+            <!-- ▲▲▲ BUG 4 修复确认: 内容结束 ▲▲▲ -->
+        </div>
+
+        <!-- 功能四：本地专利库管理 -->
+        <div id="local_patent_lib-tab" class="tab-content">
+            <!-- ▼▼▼ BUG 1 修复: 将原有的页签按钮替换为进度步进器 ▼▼▼ -->
+            <div class="progress-stepper" id="lpl-stepper">
+                <div class="step-item active" onclick="switchLPLSubTab('expand', this)">
+                    <div class="step-number">1</div>
+                    <div class="step-title">上传与展开</div>
+                </div>
+                <div class="step-item" onclick="switchLPLSubTab('merge', this)">
+                    <div class="step-number">2</div>
+                    <div class="step-title">合并新旧库</div>
+                </div>
+                <div class="step-item" onclick="switchLPLSubTab('result', this)">
+                    <div class="step-number">3</div>
+                    <div class="step-title">下载最终结果</div>
+                </div>
+                <div class="progress-bar"></div>
+            </div>
+            <!-- ▲▲▲ BUG 1 修复结束 ▲▲▲ -->
+
+            <!-- 步骤 1: 上传与展开 -->
+            <div id="lpl-sub-tab-expand" class="sub-tab-content active">
+                <div class="step">
+                    <div class="step-header">步骤 1: 上传原始专利库并展开同族专利号</div>
+                    <div class="config-item">
+                        <label for="lpl_original_file_input">A. 上传或重新上传您的原始专利 Excel 文件:</label>
+                        <input type="file" id="lpl_original_file_input" accept=".xlsx, .xls">
+                    </div>
+                    <div class="template-config-grid" style="grid-template-columns: 1fr auto; align-items: end; margin-top: 15px;">
+                        <div class="config-item">
+                            <label for="lpl_original_sheet_select">选择工作表 (Sheet):</label>
+                            <select id="lpl_original_sheet_select" disabled><option>请先上传文件</option></select>
+                        </div>
+                        <div class="config-item" style="justify-self: start;">
+                            <label style="display: flex; align-items: center; cursor: pointer;">
+                                <input type="checkbox" id="lpl_original_ignore_header" style="width: auto; margin-right: 8px;">
+                                忽略首行 (当首行为无效信息时勾选)
+                            </label>
+                        </div>
+                    </div>
+                    <hr style="margin: 20px 0; border-color: var(--border-color);">
+                    <div class="template-config-grid" style="grid-template-columns: 1fr auto; align-items: end;">
+                        <div class="config-item">
+                             <label for="lpl_family_col_name">B. 包含同族专利号的列名:</label>
+                             <input type="text" id="lpl_family_col_name" value="INPADOC 同族专利成员" placeholder="例如: INPADOC 同族专利成员">
+                        </div>
+                        <div class="config-item">
+                            <label for="lpl_delimiter">分隔符:</label>
+                            <input type="text" id="lpl_delimiter" value="|">
+                        </div>
+                    </div>
+                    <div style="text-align: center; margin: 20px 0;">
+                        <button id="lpl_expand_btn" disabled>① 展开同族专利号</button>
+                    </div>
+                    <div class="info" id="lpl_expand_status" style="display:none;"></div>
+                    <div id="lpl_expand_result_area" style="display:none;">
+                        <label>D. 展开且去重后的专利号列表 (共 <span id="lpl_unique_count">0</span> 个):</label>
+                        <textarea id="lpl_expanded_list_output" rows="10" readonly style="margin-top: 10px; font-family: monospace; white-space: pre;"></textarea>
+                        <div style="margin-top: 15px; display: flex; gap: 15px;">
+                            <button id="lpl_copy_btn" class="small-button">一键复制</button>
+                            <button id="lpl_download_txt_btn" class="small-button">下载为.txt文件</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 步骤 2: 合并新旧库 -->
+            <div id="lpl-sub-tab-merge" class="sub-tab-content">
+                <div class="step">
+                    <div class="step-header">步骤 2: 上传新数据并配置合并规则</div>
+                    <p class="info warning">注意：此工具专注于数据处理，Excel中的图片、图表等对象将不会被保留在最终导出的文件中。</p>
+                    
+                    <!-- ▼▼▼ 需求 2: 重构E,F,G区域的布局 ▼▼▼ -->
+                    <div class="lpl-merge-grid">
+                        <!-- Left Column -->
+                        <div>
+                             <div class="config-item">
+                                <label>E. 原始文件:</label>
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <input type="text" id="lpl_original_file_confirm" readonly placeholder="已从上一步加载，或在此直接上传">
+                                    <label for="lpl_original_reupload_input" class="small-button" style="flex-shrink: 0; cursor: pointer;">重新上传</label>
+                                    <input type="file" id="lpl_original_reupload_input" accept=".xlsx, .xls" style="display:none;">
+                                </div>
+                                 <div class="template-config-grid" style="grid-template-columns: 1fr auto; align-items: end; margin-top: 15px;">
+                                    <div class="config-item">
+                                        <label for="lpl_original_merge_sheet_select">选择工作表 (Sheet):</label>
+                                        <select id="lpl_original_merge_sheet_select" disabled><option>请先加载或上传文件</option></select>
+                                    </div>
+                                    <div class="config-item" style="justify-self: start;">
+                                        <label style="display: flex; align-items: center; cursor: pointer;">
+                                            <input type="checkbox" id="lpl_original_merge_ignore_header" style="width: auto; margin-right: 8px;">
+                                            忽略首行
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="lpl_old_cols_selection_area" class="config-item" style="display:none; margin-top: 20px;">
+                                <label>选择需要从旧表补充到新表的列:</label>
+                                <div style="margin-bottom: 10px;">
+                                    <button id="lpl_select_all_cols_btn" class="small-button">全选</button>
+                                    <button id="lpl_deselect_all_cols_btn" class="small-button">全不选</button>
+                                </div>
+                                <div id="lpl_old_cols_checkboxes" class="scrollable-list" style="max-height: 150px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Right Column -->
+                        <div>
+                             <div class="config-item">
+                                <label for="lpl_new_file_input">F. 上传或重新上传从商业数据库下载的最新Excel文件:</label>
+                                <input type="file" id="lpl_new_file_input" accept=".xlsx, .xls">
+                                 <div class="template-config-grid" style="grid-template-columns: 1fr auto; align-items: end; margin-top: 15px;">
+                                    <div class="config-item">
+                                        <label for="lpl_new_sheet_select">选择工作表 (Sheet):</label>
+                                        <select id="lpl_new_sheet_select" disabled><option>请先上传新库文件</option></select>
+                                    </div>
+                                    <div class="config-item" style="justify-self: start;">
+                                        <label style="display: flex; align-items: center; cursor: pointer;">
+                                            <input type="checkbox" id="lpl_new_ignore_header" style="width: auto; margin-right: 8px;">
+                                            忽略首行
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr style="margin: 25px 0; border-color: var(--border-color);">
+
+                    <div class="config-item">
+                        <label>G. 配置用于匹配的列 (通常是公开号):</label>
+                        <div class="template-config-grid" style="grid-template-columns: 1fr 1fr;">
+                            <div>
+                                <label for="lpl_original_key_select">原始库匹配列:</label>
+                                <select id="lpl_original_key_select" disabled><option>请先加载或上传原始库</option></select>
+                            </div>
+                            <div>
+                                <label for="lpl_new_key_select">新库匹配列:</label>
+                                <select id="lpl_new_key_select" disabled><option>请先上传新库</option></select>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- ▲▲▲ 需求 2: 布局修改完成 ▲▲▲ -->
+
+                     <div style="text-align: center; margin-top: 30px;">
+                        <button id="lpl_merge_btn" disabled>② 开始合并与更新</button>
+                    </div>
+                    <div class="info" id="lpl_merge_status" style="display:none; margin-top: 20px;"></div>
+                </div>
+            </div>
+
+            <!-- 步骤 3: 下载最终结果 -->
+            <div id="lpl-sub-tab-result" class="sub-tab-content">
+                 <div class="step">
+                    <div class="step-header">步骤 3: 预览并下载最终结果</div>
+                    <div class="info success" id="lpl_result_summary" style="display:none;"></div>
+                    <div id="lpl_result_preview_area" style="display:none;">
+                        <!-- ▼▼▼ 需求 1: 修改这里的标题文本 ▼▼▼ -->
+                        <label style="margin-top: 20px;">最终合并数据预览 (前10行，列宽可拖动):</label>
+                        <!-- ▼▼▼ 需求 1: 容器 div 保持不变，JS 将在其中生成新结构的表格 ▼▼▼ -->
+                        <div id="lpl_result_preview_table" class="preview-output" style="max-height: 400px; overflow: auto; padding:0; background:transparent;"></div>
+                    </div>
+                     <div style="text-align: center; margin-top: 30px;">
+                        <button id="lpl_download_final_btn" disabled>③ 下载最终合并的Excel文件</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+<!-- ====================================================================== -->
+<!-- 功能五：权利要求对比 (新增) -->
+<!-- ====================================================================== -->
+<div id="claims_comparison-tab" class="tab-content">
+    <div class="step">
+        <div class="step-header">权利要求对比分析 (v2.0)</div>
+        <p class="info">
+            新版工作流：1. 粘贴文本并指定独立权利要求序号 &rarr; 2. 系统自动识别语言、按需翻译 &rarr; 3. 模型深度对比 &rarr; 4. 交互式查看结果。
+        </p>
+
+        <div id="claims_comparison_input_area_refactored">
+            <!-- 基准版本输入区 -->
+            <div class="comparison-input-group">
+                <label for="baseline_claim_text">基准版本 (Baseline Version)</label>
+                <textarea id="baseline_claim_text" rows="12" placeholder="在此处粘贴基准版本的权利要求全文..."></textarea>
+                <div class="claim-number-input">
+                    <label for="baseline_claim_numbers">独立权利要求序号:</label>
+                    <input type="text" id="baseline_claim_numbers" placeholder="用英文逗号,分隔,如: 1,9">
+
+                </div>
+            </div>
+            <!-- 对比版本输入区 -->
+            <div class="comparison-input-group">
+                <label for="comparison_claim_text">对比版本 (Comparison Version)</label>
+                <textarea id="comparison_claim_text" rows="12" placeholder="在此处粘贴需要对比的权利要求全文..."></textarea>
+                <div class="claim-number-input">
+                    <label for="comparison_claim_numbers">独立权利要求序号:</label>
+                    <input type="text" id="comparison_claim_numbers" placeholder="用英文逗号,分隔,如: 1,10">
+                </div>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin: 25px 0;">
+            <button id="claims_analyze_btn">开始分析</button>
+        </div>
+
+        <div class="step" style="margin-top: 20px;">
+            <div class="step-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>对比分析结果</span>
+                <button id="toggle_language_btn" class="small-button" style="display: none;">切换为译文</button>
+            </div>
+            <div id="comparison_result_container_refactored" class="preview-output">
+                <div class="info">等待输入并开始分析...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ====================================================================== -->
+<!-- 功能六：批量专利解读 -->
+<!-- ====================================================================== -->
+<div id="patent_batch-tab" class="tab-content">
+    <div class="step">
+        <div class="step-header">批量专利查询与解读</div>
+        <p class="info">输入专利号列表（支持换行符或空格分隔），系统将批量查询专利详情并提供AI解读功能。最多支持50个专利号。</p>
+        
+        <!-- 专利号输入区域 -->
+        <div class="config-item">
+            <label for="patent_numbers_input">专利号列表：</label>
+            <textarea id="patent_numbers_input" rows="8" placeholder="请输入专利号，用换行符或空格分隔（最多50个）"></textarea>
+            <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+                <span id="patent_count_display">专利号数量：0/50</span>
+                <button id="clear_patent_input_btn" class="small-button delete-button">清空输入</button>
+            </div>
+        </div>
+        
+        <!-- 查询按钮 -->
+        <div style="margin-top: 20px; display: flex; gap: 15px;">
+            <button id="search_patents_btn" class="small-button" style="background: var(--primary-color); color: white;">批量查询专利</button>
+            <button id="analyze_all_btn" class="small-button" style="background: var(--secondary-color); color: white;" disabled>一键解读全部</button>
+        </div>
+        
+        <!-- 查询结果状态 -->
+        <div id="search_status" class="info" style="margin-top: 15px; display: none;"></div>
+        
+        <!-- 查询结果列表 -->
+        <div id="patent_results_list" class="scrollable-list" style="margin-top: 20px; max-height: 300px;"></div>
+        
+        <!-- 解读结果区域 -->
+        <div id="analysis_results" style="margin-top: 30px;">
+            <h4>专利解读结果</h4>
+            <div id="analysis_results_list" class="scrollable-list"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ====================================================================== -->
+<!-- 功能七：权利要求处理 -->
+<!-- ====================================================================== -->
+<div id="claims_processor-tab" class="tab-content">
+    <div class="step">
+        <div class="step-header">专利权利要求处理器</div>
+        <p class="info">上传包含专利权利要求的Excel文件，系统将自动解析、分类并提取权利要求信息。支持中英文混合文本。</p>
+        
+        <div class="config-item">
+            <label for="claims_excel_file">上传Excel文件:</label>
+            <input type="file" id="claims_excel_file" accept=".xlsx, .xls">
+        </div>
+        
+        <div id="claims_sheet_selector_container" style="display:none; margin-top: 15px;">
+            <div class="config-item">
+                <label for="claims_sheet_selector">选择工作表:</label>
+                <select id="claims_sheet_selector"></select>
+            </div>
+        </div>
+        
+        <div id="claims_column_selector_container" style="display:none; margin-top: 15px;">
+            <div class="config-item">
+                <label for="claims_column_selector">选择权利要求列:</label>
+                <select id="claims_column_selector"></select>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 25px;">
+            <button id="claims_process_btn" class="small-button" disabled>开始处理</button>
+        </div>
+        
+        <div id="claims_progress_container" style="display:none; margin-top: 25px;">
+            <div class="config-item">
+                <label>处理进度:</label>
+                <div style="background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; margin-top: 10px;">
+                    <div id="claims_progress_bar" style="width: 0%; height: 20px; background: linear-gradient(90deg, var(--primary-color), var(--primary-color-dark)); border-radius: 4px; transition: width 0.3s;"></div>
+                    <div id="claims_progress_text" style="text-align: center; margin-top: 10px; font-weight: 500;">0%</div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="claims_results_container" style="display:none; margin-top: 25px;">
+            <h4>处理结果</h4>
+            <div id="claims_stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                <div class="stat-card">
+                    <div class="stat-label">处理单元格数</div>
+                    <div class="stat-value" id="claims_stat_cells">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">提取权利要求数</div>
+                    <div class="stat-value" id="claims_stat_total">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">独立权利要求</div>
+                    <div class="stat-value" id="claims_stat_independent">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">从属权利要求</div>
+                    <div class="stat-value" id="claims_stat_dependent">0</div>
+                </div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h4 style="margin: 0;">权利要求详情</h4>
+                <div style="display: flex; gap: 10px;">
+                    <button id="claims_export_excel_btn" class="small-button">导出Excel</button>
+                    <button id="claims_export_json_btn" class="small-button">导出JSON</button>
+                    <button id="claims_view_report_btn" class="small-button">查看报告</button>
+                </div>
+            </div>
+            
+            <div style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px;">
+                <table id="claims_results_table">
+                    <thead>
+                        <tr>
+                            <th>序号</th>
+                            <th>类型</th>
+                            <th>语言</th>
+                            <th>引用</th>
+                            <th>权利要求内容</th>
+                            <th>置信度</th>
+                        </tr>
+                    </thead>
+                    <tbody id="claims_results_tbody"></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div id="claims_report_modal" class="modal" style="display:none;">
+            <div class="modal-content" style="max-width: 800px;">
+                <div class="modal-header">
+                    <h3>处理报告</h3>
+                    <button class="close-modal" onclick="document.getElementById('claims_report_modal').style.display='none'">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <pre id="claims_report_content" style="white-space: pre-wrap; max-height: 500px; overflow-y: auto;"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    </div>
+</div>
+
+<script src="js/state.js"></script>
+<script src="js/dom.js"></script>
+<script src="js/chat.js"></script>
+<script src="js/asyncBatch.js"></script>
+<script src="js/largeBatch.js"></script>
+<script src="js/localPatentLib.js"></script>
+<!-- 新增：引入文件管理脚本 -->
+<script src="js/files.js"></script>
+<script src="js/claimsComparison.js"></script>
+<script src="js/claimsProcessorIntegrated.js"></script>
+<script src="js/main.js"></script> </body>
+</html>

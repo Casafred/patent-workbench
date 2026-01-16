@@ -1,0 +1,131 @@
+/* Table Styles */
+
+.file-manager-table { 
+    width: 100%; 
+    border-collapse: collapse; 
+}
+
+.file-manager-table th, .file-manager-table td {
+    border-bottom: 1px solid var(--border-color); 
+    padding: 12px 15px;
+    text-align: left; 
+    vertical-align: middle;
+}
+
+.file-manager-table th { 
+    font-weight: 600; 
+    color: var(--text-color-secondary); 
+}
+
+.file-manager-table tr:hover { 
+    background-color: var(--primary-color-hover-bg); 
+}
+
+.file-name-cell { 
+    max-width: 300px; 
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+}
+
+.file-actions-cell { 
+    text-align: right; 
+    white-space: nowrap; 
+}
+
+/* 异步批处理结果表格 */
+#async_results_table { 
+    width: 100%; 
+    margin-top: 20px; 
+    border-collapse: collapse; 
+}
+
+#async_results_table th, #async_results_table td { 
+    border: 1px solid var(--border-color); 
+    padding: 12px; 
+    text-align: left; 
+    vertical-align: top;
+}
+
+.status-processing { 
+    color: var(--warning-color); 
+    font-weight: bold; 
+}
+
+.status-completed { 
+    color: var(--success-color); 
+    font-weight: bold; 
+}
+
+.status-failed { 
+    color: var(--error-color); 
+    font-weight: bold; 
+}
+
+.status-retrying { 
+    color: #EAB308; 
+    font-weight: bold; 
+}
+
+.result-cell pre { 
+    white-space: pre-wrap; 
+    word-break: break-all; 
+    margin: 0; 
+    font-size: 0.9em; 
+}
+
+/* 权利要求处理器表格 */
+#claims_results_table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#claims_results_table th,
+#claims_results_table td {
+    border-bottom: 1px solid var(--border-color);
+    padding: 12px 15px;
+    text-align: left;
+}
+
+#claims_results_table th {
+    background: var(--surface-color);
+    font-weight: 600;
+    color: var(--text-color-secondary);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+#claims_results_table tr:hover {
+    background-color: var(--primary-color-hover-bg);
+}
+
+#claims_results_table td:nth-child(5) {
+    max-width: 400px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Markdown表格样式 */
+.message-content table { 
+    border-collapse: collapse; 
+    width: 100%; 
+    margin: 1em 0; 
+    border: 1px solid var(--border-color); 
+}
+
+.message-content th, .message-content td { 
+    border: 1px solid var(--border-color); 
+    padding: 8px 12px; 
+    text-align: left; 
+}
+
+.message-content th { 
+    background-color: var(--primary-color-hover-bg); 
+    font-weight: bold; 
+}
+
+.message-content tr:nth-child(even) { 
+    background-color: rgba(0,0,0,0.02); 
+}

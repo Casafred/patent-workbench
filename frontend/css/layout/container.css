@@ -1,0 +1,19 @@
+/* Container and Layout */
+
+.container { 
+    max-width: 1200px; 
+    margin: 0 auto; 
+    background-color: var(--surface-color); 
+    border-radius: 12px; 
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05); 
+    overflow: hidden; 
+    border: 1px solid var(--border-color); 
+}
+
+.main-content { 
+    padding: 0 30px 30px 30px; 
+}
+
+.hidden { 
+    display: none; 
+}

@@ -1,0 +1,62 @@
+/* Animations */
+
+@keyframes fade-in { 
+    from { 
+        opacity: 0; 
+        transform: translateY(10px); 
+    } 
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    } 
+}
+
+@keyframes blink { 
+    50% { 
+        opacity: 0; 
+    } 
+}
+
+@keyframes slideIn { 
+    from {
+        margin-top: -5%; 
+        opacity: 0
+    } 
+    to {
+        margin-top: 5%; 
+        opacity: 1
+    } 
+}
+
+@keyframes fadeIn { 
+    from {
+        opacity: 0
+    } 
+    to {
+        opacity: 1
+    } 
+}
+
+@-webkit-keyframes slideIn { 
+    from {
+        top: -300px; 
+        opacity: 0
+    } 
+    to {
+        top: 0; 
+        opacity: 1
+    } 
+}
+
+@-webkit-keyframes fadeIn { 
+    from {
+        opacity: 0
+    } 
+    to {
+        opacity: 1
+    } 
+}
+
+.blinking-cursor { 
+    animation: blink 1s step-end infinite; 
+}

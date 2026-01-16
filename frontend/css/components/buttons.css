@@ -1,0 +1,302 @@
+/* Button Styles */
+
+/* 主按钮样式 */
+button { 
+    background: linear-gradient(45deg, var(--primary-color-dark), var(--primary-color)); 
+    color: #FFFFFF; 
+    font-weight: bold; 
+    border: none; 
+    padding: 12px 24px; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    font-size: 1em; 
+    transition: all 0.3s ease; 
+    box-shadow: 0 4px 12px var(--primary-color-glow); 
+}
+
+button:hover { 
+    transform: translateY(-2px); 
+    box-shadow: 0 7px 20px var(--primary-color-glow); 
+    filter: brightness(1.05); 
+}
+
+button:disabled { 
+    background: rgba(34, 197, 94, 0.4); 
+    color: rgba(255, 255, 255, 0.7); 
+    cursor: not-allowed; 
+    transform: none; 
+    box-shadow: none; 
+}
+
+/* 操作按钮 */
+.action-button { 
+    min-width: 200px; 
+    margin: 5px; 
+}
+
+/* 小按钮 */
+.small-button { 
+    padding: 8px 16px; 
+    font-size: 0.9em; 
+}
+
+/* 图标按钮 */
+.icon-button { 
+    background: transparent; 
+    border: none; 
+    cursor: pointer; 
+    color: var(--text-color-secondary); 
+    padding: 4px; 
+    border-radius: 50%; 
+    width: 28px; 
+    height: 28px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    transition: all .2s; 
+    box-shadow: none; 
+}
+
+.icon-button:hover { 
+    background: var(--primary-color-hover-bg); 
+    color: var(--primary-color); 
+}
+
+.icon-button + .icon-button { 
+    margin-left: 4px; 
+}
+
+/* 删除按钮 */
+.delete-button { 
+    background: linear-gradient(45deg, #FF7171, var(--error-color)); 
+}
+
+.delete-button:hover { 
+    box-shadow: 0 7px 20px rgba(239, 68, 68, 0.3); 
+}
+
+/* 文件移除按钮 */
+.file-remove-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-color-secondary);
+    font-size: 16px;
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    padding: 0;
+    box-shadow: none;
+}
+
+.file-remove-btn:hover {
+    background-color: var(--primary-color-hover-bg);
+    color: var(--error-color);
+    transform: none;
+}
+
+/* 新建聊天按钮 */
+.new-chat-btn {
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    color: var(--primary-color);
+    flex-shrink: 0;
+}
+
+.new-chat-btn:hover {
+    border: 2px solid var(--primary-color);
+}
+
+/* 帮助按钮 */
+.help-button {
+    background: transparent;
+    border: 2px solid var(--primary-color);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    color: var(--text-color-secondary);
+    text-decoration: none;
+    flex-shrink: 0;
+}
+
+.help-button:hover {
+    background-color: var(--primary-color-hover-bg);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    transform: scale(1.05);
+}
+
+/* API配置切换按钮 */
+.api-config-toggle { 
+    background: transparent; 
+    border: 1px solid var(--border-color); 
+    border-radius: 50%; 
+    width: 40px; 
+    height: 40px; 
+    font-size: 20px; 
+    cursor: pointer; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    transition: all 0.2s ease; 
+    color: var(--text-color-secondary); 
+}
+
+.api-config-toggle:hover { 
+    background-color: var(--primary-color-hover-bg); 
+    border-color: var(--primary-color); 
+    color: var(--primary-color); 
+}
+
+/* API密钥操作按钮 */
+.api-key-action-btn, .password-toggle-btn { 
+    background: transparent; 
+    border: 1px solid var(--border-color); 
+    border-radius: 50%; 
+    width: 32px; 
+    height: 32px; 
+    font-size: 16px; 
+    cursor: pointer; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    transition: all 0.2s ease; 
+    color: var(--text-color-secondary); 
+    flex-shrink: 0; 
+}
+
+.api-key-action-btn:hover, .password-toggle-btn:hover { 
+    background-color: var(--primary-color-hover-bg); 
+    color: var(--primary-color); 
+}
+
+/* 导出切换按钮 */
+.export-toggle-btn {
+    background: linear-gradient(45deg, var(--primary-color-dark), var(--primary-color));
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px var(--primary-color-glow);
+}
+
+.export-toggle-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 7px 20px var(--primary-color-glow);
+}
+
+/* 编辑标题按钮 */
+.edit-title-btn { 
+    background: none; 
+    border: none; 
+    cursor: pointer; 
+    font-size: 0.8em; 
+    padding: 2px; 
+    margin: 0; 
+    width: 20px; 
+    height: 20px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+}
+
+.edit-title-btn svg, .history-delete-btn svg { 
+    width: 16px; 
+    height: 16px; 
+}
+
+.edit-title-btn svg { 
+    width: 16px; 
+    height: 16px; 
+    fill: none; 
+    stroke: currentColor; 
+    stroke-width: 2; 
+    stroke-linecap: round; 
+    stroke-linejoin: round; 
+}
+
+/* 保存标题按钮 */
+#chat_save_title_btn { 
+    background: linear-gradient(45deg, var(--primary-color-dark), var(--primary-color)); 
+    color: white; 
+    border: none; 
+    border-radius: 8px; 
+    padding: 6px 12px; 
+    font-size: 0.85em; 
+    cursor: pointer; 
+    white-space: nowrap; 
+}
+
+#chat_save_title_btn:hover { 
+    filter: brightness(1.05); 
+}
+
+/* 保存角色按钮 */
+#chat_save_persona_btn {
+    background: linear-gradient(45deg, var(--primary-color-dark), var(--primary-color));
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px var(--primary-color-glow);
+}
+
+#chat_save_persona_btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 7px 20px var(--primary-color-glow);
+}
+
+#chat_save_persona_btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 4px 12px var(--primary-color-glow);
+}
+
+/* 关闭模态框按钮 */
+.close-modal {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: var(--text-color-secondary);
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.close-modal:hover {
+    background-color: var(--primary-color-hover-bg);
+    color: var(--primary-color);
+}

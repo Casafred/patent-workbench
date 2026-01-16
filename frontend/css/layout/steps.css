@@ -1,0 +1,61 @@
+/* Step Layout */
+
+.step { 
+    margin-bottom: 30px; 
+    padding: 25px; 
+    border: 1px solid var(--border-color); 
+    border-radius: 8px; 
+    background-color: var(--surface-color); 
+}
+
+.step-header { 
+    font-size: 1.1em; 
+    font-weight: 700; 
+    color: #FFFFFF; 
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25); 
+    background: linear-gradient(90deg, var(--primary-color-dark), var(--primary-color)); 
+    margin: -25px -25px 20px -25px; 
+    padding: 12px 25px; 
+    border-radius: 8px 8px 0 0; 
+}
+
+/* 异步批处理布局 */
+.async-layout { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    gap: 30px; 
+}
+
+@media (max-width: 992px) { 
+    .async-layout { 
+        grid-template-columns: 1fr; 
+    } 
+}
+
+.async-column .step-header { 
+    margin-top: 0; 
+}
+
+/* 模板任务创建器 */
+.template-task-creator { 
+    padding: 15px; 
+    border: 1px dashed var(--primary-color); 
+    border-radius: 8px; 
+    margin-top: 15px; 
+}
+
+.template-task-creator h5 { 
+    margin-top: 0; 
+}
+
+/* 输入管理 */
+#async_inputs_management { 
+    display: none; 
+    padding: 10px 0; 
+    gap: 10px; 
+    align-items: center; 
+}
+
+#async_inputs_management.visible { 
+    display: flex; 
+}

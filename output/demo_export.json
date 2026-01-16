@@ -1,0 +1,70 @@
+{
+  "metadata": {
+    "export_time": "2026-01-14T21:18:02.583781",
+    "version": "1.0",
+    "description": "专利权利要求处理结果"
+  },
+  "summary": {
+    "total_cells_processed": 10,
+    "total_claims_extracted": 4,
+    "independent_claims_count": 2,
+    "dependent_claims_count": 2,
+    "language_distribution": {
+      "zh": 2,
+      "en": 2
+    },
+    "error_count": 1,
+    "success_rate": 1.0
+  },
+  "claims": [
+    {
+      "claim_number": 1,
+      "claim_type": "independent",
+      "claim_text": "一种计算机系统，其特征在于包括处理器和存储器。",
+      "language": "zh",
+      "referenced_claims": [],
+      "original_text": "1. 一种计算机系统，其特征在于包括处理器和存储器。",
+      "confidence_score": 0.95
+    },
+    {
+      "claim_number": 2,
+      "claim_type": "dependent",
+      "claim_text": "根据权利要求1所述的计算机系统，其特征在于所述处理器为多核处理器。",
+      "language": "zh",
+      "referenced_claims": [
+        1
+      ],
+      "original_text": "2. 根据权利要求1所述的计算机系统，其特征在于所述处理器为多核处理器。",
+      "confidence_score": 0.9
+    },
+    {
+      "claim_number": 3,
+      "claim_type": "independent",
+      "claim_text": "A computer system comprising a processor and memory.",
+      "language": "en",
+      "referenced_claims": [],
+      "original_text": "3. A computer system comprising a processor and memory.",
+      "confidence_score": 0.92
+    },
+    {
+      "claim_number": 4,
+      "claim_type": "dependent",
+      "claim_text": "The computer system of claim 3, wherein the processor is a multi-core processor.",
+      "language": "en",
+      "referenced_claims": [
+        3
+      ],
+      "original_text": "4. The computer system of claim 3, wherein the processor is a multi-core processor.",
+      "confidence_score": 0.88
+    }
+  ],
+  "errors": [
+    {
+      "error_type": "cell_parsing_warning",
+      "cell_index": 5,
+      "error_message": "单元格包含文本但未能识别权利要求格式",
+      "suggested_action": "请检查文本格式是否符合权利要求标准",
+      "severity": "warning"
+    }
+  ]
+}

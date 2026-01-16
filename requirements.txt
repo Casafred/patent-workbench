@@ -2,3 +2,14 @@ Flask
 gunicorn
 zhipuai
 flask-cors
+werkzeug
+psycopg2-binary  # <-- 新增，用于连接PostgreSQL
+google-patent-scraper
+
+# Patent Claims Processor Dependencies
+pandas>=1.5.0
+openpyxl>=3.0.0
+xlrd>=2.0.0
+langdetect>=1.0.9
+pytest>=7.0.0
+hypothesis>=6.0.0

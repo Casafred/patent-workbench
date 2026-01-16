@@ -1,0 +1,14 @@
+/* Reset and Base Styles */
+
+*, *::before, *::after { 
+    box-sizing: border-box; 
+}
+
+body { 
+    font-family: 'Noto Sans SC', sans-serif; 
+    line-height: 1.7; 
+    color: var(--text-color); 
+    background-color: var(--bg-color); 
+    margin: 0; 
+    padding: 20px; 
+}

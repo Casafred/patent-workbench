@@ -1,0 +1,29 @@
+/* CSS Variables - 颜色和主题配置 */
+:root {
+    /* 背景颜色 */
+    --bg-color: #F0FDF4; 
+    --surface-color: #FFFFFF;
+    --chat-bg: #F0FDF4;
+    
+    /* 边框颜色 */
+    --border-color: rgba(34, 197, 94, 0.3);
+    
+    /* 文字颜色 */
+    --text-color: #14532D; 
+    --text-color-secondary: #166534;
+    
+    /* 主题色 */
+    --primary-color: #22C55E;
+    --primary-color-dark: #16A34A;
+    --primary-color-glow: rgba(34, 197, 94, 0.2);
+    --primary-color-hover-bg: rgba(34, 197, 94, 0.08);
+    
+    /* 状态颜色 */
+    --error-color: #EF4444;
+    --success-color: var(--primary-color);
+    --warning-color: #F59E0B;
+    
+    /* 聊天气泡颜色 */
+    --chat-user-bubble: #DCF8C6;
+    --chat-assistant-bubble: #FFFFFF;
+}

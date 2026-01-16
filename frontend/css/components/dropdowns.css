@@ -1,0 +1,69 @@
+/* Dropdown Styles */
+
+/* 导出下拉菜单样式 */
+.export-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.export-dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: var(--surface-color);
+    min-width: 120px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    z-index: 1000;
+    right: 0;
+    top: 100%;
+    margin-top: 5px;
+    opacity: 0;
+    transform: translateY(-5px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.export-dropdown-content a {
+    color: var(--text-color);
+    padding: 10px 15px;
+    text-decoration: none;
+    display: block;
+    transition: background-color 0.2s;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.9em;
+}
+
+.export-dropdown-content a:last-child {
+    border-bottom: none;
+}
+
+.export-dropdown-content a:hover {
+    background-color: var(--primary-color-hover-bg);
+    color: var(--primary-color);
+}
+
+.export-dropdown:hover .export-dropdown-content,
+.export-dropdown-content:hover {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* API配置容器 */
+.api-config-container { 
+    display: none; 
+    position: absolute; 
+    top: calc(100% + 10px); 
+    right: 0; 
+    width: 400px; 
+    background-color: var(--surface-color); 
+    border: 1px solid var(--border-color); 
+    border-radius: 8px; 
+    padding: 20px; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+    z-index: 100; 
+}
+
+.api-config-container.visible { 
+    display: block; 
+}

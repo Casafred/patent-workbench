@@ -1,0 +1,10 @@
+{
+  "total_claims": 1,
+  "claims": [
+    {
+      "claim_number": 1,
+      "claim_type": "independent",
+      "language": "en"
+    }
+  ]
+}

@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>专利权利要求处理器 - ALFRED X IP</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- 权利要求处理器使用内联样式，无需修改 -->
+    <style>
+        :root {
+            --primary-color: #22C55E;
+            --primary-color-dark: #16A34A;
+            --bg-color: #F0FDF4;
+            --surface-color: #FFFFFF;
+            --text-color: #14532D;
+            --border-color: #D1FAE5;
+            --error-color: #DC2626;
+            --success-color: #22C55E;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 30px;
+        }
+        
+        .logo-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            background: linear-gradient(45deg, var(--primary-color-dark), var(--primary-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+        }
+        
+        .card {
+            background: var(--surface-color);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid var(--border-color);
+        }
+        
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--primary-color-dark);
+        }
+        
+        .upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .upload-area:hover {
+            border-color: var(--primary-color);
+            background-color: rgba(34, 197, 94, 0.05);
+        }
+        
+        .upload-area.dragover {
+            border-color: var(--primary-color);
+            background-color: rgba(34, 197, 94, 0.1);
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, var(--primary-color-dark), var(--primary-color));
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #E5E7EB;
+            color: #374151;
+        }
+        
+        .btn-secondary:hover {
+            background: #D1D5DB;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+        
+        .form-select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1rem;
+            background-color: white;
+        }
+        
+        .progress-container {
+            display: none;
+            margin-top: 20px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background-color: #E5E7EB;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color-dark), var(--primary-color));
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .status-message {
+            margin-top: 10px;
+            padding: 12px;
+            border-radius: 6px;
+            display: none;
+        }
+        
+        .status-success {
+            background-color: #D1FAE5;
+            color: #065F46;
+            border: 1px solid var(--success-color);
+        }
+        
+        .status-error {
+            background-color: #FEE2E2;
+            color: #991B1B;
+            border: 1px solid var(--error-color);
+        }
+        
+        .status-info {
+            background-color: #DBEAFE;
+            color: #1E40AF;
+            border: 1px solid #3B82F6;
+        }
+        
+        .results-section {
+            display: none;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .summary-item {
+            background: var(--bg-color);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .summary-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color-dark);
+        }
+        
+        .summary-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .claims-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .claims-table th,
+        .claims-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .claims-table th {
+            background-color: var(--bg-color);
+            font-weight: 600;
+            color: var(--primary-color-dark);
+        }
+        
+        .claims-table tr:hover {
+            background-color: rgba(34, 197, 94, 0.05);
+        }
+        
+        .claim-type-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .badge-independent {
+            background-color: #DBEAFE;
+            color: #1E40AF;
+        }
+        
+        .badge-dependent {
+            background-color: #FEF3C7;
+            color: #92400E;
+        }
+        
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .file-info {
+            background: var(--bg-color);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .file-info-item {
+            margin-bottom: 8px;
+        }
+        
+        .file-info-label {
+            font-weight: 600;
+            color: var(--primary-color-dark);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="logo-text">ALFRED X IP</h1>
+            <p class="subtitle">专利权利要求处理器</p>
+        </div>
+        
+        <!-- 上传区域 -->
+        <div class="card">
+            <h2 class="card-title">📁 上传Excel文件</h2>
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📄</div>
+                <p>点击或拖拽Excel文件到此处</p>
+                <p style="font-size: 0.9rem; color: #666; margin-top: 10px;">支持 .xlsx 和 .xls 格式</p>
+                <input type="file" id="fileInput" accept=".xlsx,.xls" style="display: none;">
+            </div>
+            
+            <div class="file-info" id="fileInfo">
+                <div class="file-info-item">
+                    <span class="file-info-label">文件名:</span>
+                    <span id="fileName"></span>
+                </div>
+                <div class="file-info-item">
+                    <span class="file-info-label">工作表:</span>
+                    <span id="sheetNames"></span>
+                </div>
+                <div class="file-info-item">
+                    <span class="file-info-label">列:</span>
+                    <span id="columnNames"></span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 配置区域 -->
+        <div class="card" id="configSection" style="display: none;">
+            <h2 class="card-title">⚙️ 处理配置</h2>
+            
+            <div class="form-group">
+                <label class="form-label" for="sheetSelect">选择工作表:</label>
+                <select class="form-select" id="sheetSelect">
+                    <option value="">请选择...</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="columnSelect">选择包含权利要求的列:</label>
+                <select class="form-select" id="columnSelect">
+                    <option value="">请选择...</option>
+                </select>
+            </div>
+            
+            <button class="btn btn-primary" id="processBtn" disabled>
+                <span>🚀 开始处理</span>
+            </button>
+            
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill">0%</div>
+                </div>
+                <div class="status-message status-info" id="statusMessage" style="display: block; margin-top: 10px;">
+                    正在处理中...
+                </div>
+            </div>
+        </div>
+        
+        <!-- 结果区域 -->
+        <div class="card results-section" id="resultsSection">
+            <h2 class="card-title">📊 处理结果</h2>
+            
+            <div class="summary-grid" id="summaryGrid">
+                <!-- 动态生成 -->
+            </div>
+            
+            <div class="export-buttons">
+                <button class="btn btn-primary" id="exportExcelBtn">
+                    <span>📥 导出Excel</span>
+                </button>
+                <button class="btn btn-primary" id="exportJsonBtn">
+                    <span>📥 导出JSON</span>
+                </button>
+                <button class="btn btn-secondary" id="viewReportBtn">
+                    <span>📄 查看报告</span>
+                </button>
+            </div>
+            
+            <div id="claimsTableContainer">
+                <!-- 动态生成权利要求表格 -->
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/claimsProcessor.js"></script>
+</body>
+</html>
