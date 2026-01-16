@@ -3,8 +3,12 @@ gunicorn
 zhipuai
 flask-cors
 werkzeug
-psycopg2-binary  # <-- 新增，用于连接PostgreSQL
+psycopg2-binary
 google-patent-scraper
+requests
+sniffio
+httpx
+pydantic
 
 # Patent Claims Processor Dependencies
 pandas>=1.5.0
