@@ -151,12 +151,26 @@ function displayFileInfo(data) {
 }
 
 function updateColumnSelect() {
+    // Reset task when sheet changes
+    if (currentTaskId) {
+        currentTaskId = null;
+        resultsSection.style.display = 'none';
+        progressContainer.style.display = 'none';
+    }
     validateProcessButton();
 }
 
 function validateProcessButton() {
     const sheetSelected = sheetSelect.value !== '';
     const columnSelected = columnSelect.value !== '';
+    
+    // Reset task when column changes
+    if (columnSelected && currentTaskId) {
+        currentTaskId = null;
+        resultsSection.style.display = 'none';
+        progressContainer.style.display = 'none';
+    }
+    
     processBtn.disabled = !(sheetSelected && columnSelected);
 }
 
@@ -172,13 +186,16 @@ async function startProcessing() {
     // 禁用处理按钮
     processBtn.disabled = true;
     
+    // 隐藏旧结果
+    resultsSection.style.display = 'none';
+    
     // 显示进度条
     progressContainer.style.display = 'block';
     progressFill.style.width = '0%';
     progressFill.textContent = '0%';
     statusMessage.style.display = 'block';
     statusMessage.className = 'status-message status-info';
-    statusMessage.textContent = '正在启动处理任务...';
+    statusMessage.textContent = '正在验证权利要求文本...';
     
     try {
         // 启动处理任务

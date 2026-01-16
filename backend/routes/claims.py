@@ -205,8 +205,83 @@ def process_claims():
                 status_code=404
             )
         
-        # Create task ID
-        task_id = f"task_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{os.urandom(4).hex()}"
+        # Validate claims content before processing
+        try:
+            excel_processor = ExcelProcessor()
+            df = excel_processor.read_excel_file(file_path, sheet_name=sheet_name)
+            
+            if column_name not in df.columns:
+                return create_response(
+                    error=f"列'{column_name}'不存在",
+                    status_code=400
+                )
+            
+            column_data = excel_processor.get_column_data(df, column_name)
+            
+            # Check if content contains "权利要求" keywords in multiple languages
+            claims_keywords = [
+                # 中文
+                '权利要求', '請求項', '請求项',
+                # 英文
+                'claim', 'claims', 'Claim', 'Claims', 'CLAIM', 'CLAIMS',
+                # 日文
+                '請求項', 'クレーム',
+                # 韩文
+                '청구항', '請求項',
+                # 德文
+                'Anspruch', 'Ansprüche', 'anspruch', 'ansprüche',
+                # 法文
+                'revendication', 'revendications', 'Revendication', 'Revendications',
+                # 西班牙文
+                'reivindicación', 'reivindicaciones', 'Reivindicación', 'Reivindicaciones',
+                # 葡萄牙文
+                'reivindicação', 'reivindicações', 'Reivindicação', 'Reivindicações',
+                # 俄文
+                'пункт формулы', 'формула изобретения',
+                # 意大利文
+                'rivendicazione', 'rivendicazioni', 'Rivendicazione', 'Rivendicazioni',
+                # 荷兰文
+                'conclusie', 'conclusies', 'Conclusie', 'Conclusies',
+                # 阿拉伯文
+                'مطالبة', 'مطالبات'
+            ]
+            cells_with_keywords = 0
+            total_non_empty_cells = 0
+            
+            for cell_text in column_data:
+                if cell_text and cell_text.strip() and cell_text != 'nan':
+                    total_non_empty_cells += 1
+                    if any(keyword in cell_text for keyword in claims_keywords):
+                        cells_with_keywords += 1
+            
+            # If less than 50% of cells contain claims keywords, warn user
+            if total_non_empty_cells > 0:
+                keyword_ratio = cells_with_keywords / total_non_empty_cells
+                if keyword_ratio < 0.5:
+                    return create_response(
+                        error=f"警告：所选列中仅有 {int(keyword_ratio * 100)}% 的单元格包含"权利要求"相关字样。请核对是否选择了正确的权利要求文本列。",
+                        status_code=400
+                    )
+        except Exception as e:
+            print(f"Error validating claims content: {traceback.format_exc()}")
+            return create_response(
+                error=f"验证权利要求内容失败: {str(e)}",
+                status_code=400
+            )
+        
+        # Create task ID based on file_id to allow overwriting
+        task_id = f"task_{file_id}_{sheet_name or 'default'}"
+        
+        # Clean up old task if exists (allow overwriting)
+        if task_id in processing_tasks:
+            old_task = processing_tasks[task_id]
+            if old_task['status'] == 'processing':
+                return create_response(
+                    error="该文件和工作表的处理任务正在进行中，请等待完成",
+                    status_code=400
+                )
+            # Remove old completed/failed task
+            del processing_tasks[task_id]
         
         # Initialize task status
         processing_tasks[task_id] = {
@@ -214,7 +289,9 @@ def process_claims():
             'progress': 0,
             'message': '正在处理...',
             'result': None,
-            'error': None
+            'error': None,
+            'file_id': file_id,
+            'sheet_name': sheet_name
         }
         
         # Process file in background thread
