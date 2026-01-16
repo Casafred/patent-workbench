@@ -388,6 +388,8 @@ async function exportResults(format) {
     }
     
     try {
+        showInfo(`正在导出${format.toUpperCase()}文件...`);
+        
         const response = await fetch(`/api/claims/export/${currentTaskId}`, {
             method: 'POST',
             headers: {
@@ -397,21 +399,51 @@ async function exportResults(format) {
         });
         
         if (response.ok) {
+            // 获取文件名
+            const contentDisposition = response.headers.get('Content-Disposition');
+            let filename = `patent_claims_${new Date().getTime()}.${format === 'excel' ? 'xlsx' : 'json'}`;
+            
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                if (filenameMatch && filenameMatch[1]) {
+                    filename = filenameMatch[1].replace(/['"]/g, '');
+                }
+            }
+            
             // 下载文件
             const blob = await response.blob();
+            
+            // 验证blob大小
+            console.log(`Blob size: ${blob.size} bytes`);
+            console.log(`Blob type: ${blob.type}`);
+            
+            if (blob.size === 0) {
+                showError('导出的文件为空，请重试');
+                return;
+            }
+            
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `patent_claims_${new Date().getTime()}.${format === 'excel' ? 'xlsx' : 'json'}`;
+            a.download = filename;
             document.body.appendChild(a);
             a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
+            
+            // 延迟清理，确保下载完成
+            setTimeout(() => {
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            }, 100);
             
             showSuccess(`${format.toUpperCase()}文件已下载`);
         } else {
-            const result = await response.json();
-            showError(result.error || '导出失败');
+            // 尝试解析错误信息
+            try {
+                const result = await response.json();
+                showError(result.error || '导出失败');
+            } catch (e) {
+                showError(`导出失败: HTTP ${response.status}`);
+            }
         }
     } catch (error) {
         console.error('Export error:', error);
