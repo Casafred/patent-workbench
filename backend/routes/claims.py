@@ -259,7 +259,7 @@ def process_claims():
                 keyword_ratio = cells_with_keywords / total_non_empty_cells
                 if keyword_ratio < 0.5:
                     return create_response(
-                        error=f"警告：所选列中仅有 {int(keyword_ratio * 100)}% 的单元格包含"权利要求"相关字样。请核对是否选择了正确的权利要求文本列。",
+                        error=f"警告：所选列中仅有 {int(keyword_ratio * 100)}% 的单元格包含权利要求相关字样。请核对是否选择了正确的权利要求文本列。",
                         status_code=400
                     )
         except Exception as e:
