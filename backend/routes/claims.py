@@ -577,12 +577,12 @@ def get_processing_result(task_id):
 def export_claims_result(task_id):
     """
     Export processing results.
-    
+
     Requirement 6.3: Support exporting results to Excel or JSON format.
-    
+
     Args:
         task_id: Task identifier
-    
+
     Returns:
         File download response
     """
@@ -598,23 +598,23 @@ def export_claims_result(task_id):
                     error="任务不存在",
                     status_code=404
                 )
-        
+
         task = processing_tasks[task_id]
-        
+
         if task['status'] != 'completed':
             return create_response(
                 error=f"任务尚未完成，当前状态: {task['status']}",
                 status_code=400
             )
-        
+
         req_data = request.get_json()
         export_format = req_data.get('format', 'excel')  # 'excel' or 'json'
-        
+
         result = task['result']
-        
+
         # Create export service
         export_service = ExportService()
-        
+
         # Export based on format
         if export_format == 'json':
             output_path = export_service.export_to_json(result)
@@ -629,20 +629,47 @@ def export_claims_result(task_id):
                 error="不支持的导出格式，请使用 'excel' 或 'json'",
                 status_code=400
             )
-        
+
+        # Validate file exists
+        if not os.path.exists(output_path):
+            return create_response(
+                error=f"导出文件生成失败: {output_path}",
+                status_code=500
+            )
+
+        # Validate file size
+        file_size = os.path.getsize(output_path)
+        if file_size == 0:
+            os.remove(output_path)
+            return create_response(
+                error="导出文件为空",
+                status_code=500
+            )
+
         # Read file content
-        with open(output_path, 'rb') as f:
-            file_content = f.read()
-        
+        try:
+            with open(output_path, 'rb') as f:
+                file_content = f.read()
+        except Exception as read_error:
+            print(f"Error reading export file: {traceback.format_exc()}")
+            return create_response(
+                error=f"读取导出文件失败: {str(read_error)}",
+                status_code=500
+            )
+
+        # Validate file content length
+        if len(file_content) != file_size:
+            print(f"File content length mismatch: expected {file_size}, got {len(file_content)}")
+
         # Get filename
         filename = os.path.basename(output_path)
-        
+
         # Clean up temporary file
         try:
             os.remove(output_path)
         except Exception as cleanup_error:
             print(f"Warning: Failed to cleanup temp file: {cleanup_error}")
-        
+
         # Create response with proper headers
         response = Response(
             file_content,
@@ -650,12 +677,15 @@ def export_claims_result(task_id):
             headers={
                 'Content-Disposition': f'attachment; filename="{filename}"',
                 'Content-Type': mimetype,
-                'Content-Length': str(len(file_content))
+                'Content-Length': str(len(file_content)),
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
             }
         )
-        
+
+        print(f"Export successful: {filename}, size: {len(file_content)} bytes, format: {export_format}")
         return response
-        
+
     except Exception as e:
         print(f"Error in export_claims_result: {traceback.format_exc()}")
         return create_response(

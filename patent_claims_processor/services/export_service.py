@@ -68,42 +68,62 @@ class ExportService:
                        filename: str = None) -> str:
         """
         导出处理结果为Excel格式
-        
+
         需求 6.3: 支持将结果导出为Excel格式，并标明处理的语言版本
-        
+
         Args:
             processed_claims: 处理结果
             filename: 输出文件名，如果为None则自动生成
-            
+
         Returns:
             输出文件的完整路径
         """
         if filename is None:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"patent_claims_{timestamp}.xlsx"
-        
+
         # 确保文件名以.xlsx结尾
         if not filename.endswith('.xlsx'):
             filename += '.xlsx'
-        
+
         output_path = os.path.join(self.output_dir, filename)
-        
-        # 创建Excel写入器
-        with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
-            # 工作表1: 权利要求详细信息
-            claims_df = self._create_claims_dataframe(processed_claims)
-            claims_df.to_excel(writer, sheet_name='权利要求详情', index=False)
-            
-            # 工作表2: 处理统计信息
-            stats_df = self._create_statistics_dataframe(processed_claims)
-            stats_df.to_excel(writer, sheet_name='处理统计', index=False)
-            
-            # 工作表3: 错误报告（如果有错误）
-            if processed_claims.processing_errors:
-                errors_df = self._create_errors_dataframe(processed_claims)
-                errors_df.to_excel(writer, sheet_name='错误报告', index=False)
-        
-        return output_path
+
+        try:
+            # 创建Excel写入器
+            with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
+                # 工作表1: 权利要求详细信息
+                claims_df = self._create_claims_dataframe(processed_claims)
+                claims_df.to_excel(writer, sheet_name='权利要求详情', index=False)
+
+                # 工作表2: 处理统计信息
+                stats_df = self._create_statistics_dataframe(processed_claims)
+                stats_df.to_excel(writer, sheet_name='处理统计', index=False)
+
+                # 工作表3: 错误报告（如果有错误）
+                if processed_claims.processing_errors:
+                    errors_df = self._create_errors_dataframe(processed_claims)
+                    errors_df.to_excel(writer, sheet_name='错误报告', index=False)
+
+            # 验证文件是否生成成功
+            if not os.path.exists(output_path):
+                raise Exception(f"Excel文件生成失败: {output_path}")
+
+            # 验证文件大小
+            file_size = os.path.getsize(output_path)
+            if file_size == 0:
+                raise Exception(f"Excel文件为空: {output_path}")
+
+            print(f"Excel文件生成成功: {output_path}, 大小: {file_size} bytes")
+            return output_path
+        except Exception as e:
+            print(f"Excel文件生成错误: {str(e)}")
+            # 清理失败的文件
+            if os.path.exists(output_path):
+                try:
+                    os.remove(output_path)
+                except:
+                    pass
+            raise
     
     def _build_structured_output(self, processed_claims: ProcessedClaims) -> Dict[str, Any]:
         """
