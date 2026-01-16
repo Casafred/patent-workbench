@@ -1,6 +1,10 @@
 /**
  * 专利权利要求处理器 - 主页面集成版本
+ * 版本: 2.0.0 - BytesIO修复版本
+ * 更新时间: 2026-01-16 23:50
  */
+
+console.log('Claims Processor Integrated v2.0.0 - BytesIO Export Fix Loaded');
 
 // 全局状态
 let claimsCurrentFile = null;
@@ -342,22 +346,71 @@ async function exportClaimsResults(format) {
     }
     
     try {
-        const response = await fetch(`/api/claims/export/${claimsCurrentTaskId}?format=${format}`);
+        console.log(`[Export v2.0] Starting ${format} export for task: ${claimsCurrentTaskId}`);
+        showClaimsMessage(`正在导出${format.toUpperCase()}文件...`, 'info');
+        
+        const response = await fetch(`/api/claims/export/${claimsCurrentTaskId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ format: format })
+        });
+        
+        console.log(`[Export v2.0] Response status: ${response.status}`);
+        console.log(`[Export v2.0] Response headers:`, {
+            contentType: response.headers.get('Content-Type'),
+            contentLength: response.headers.get('Content-Length'),
+            contentDisposition: response.headers.get('Content-Disposition')
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || '导出失败');
+        }
+        
         const blob = await response.blob();
+        
+        console.log(`[Export v2.0] Blob size: ${blob.size} bytes`);
+        console.log(`[Export v2.0] Blob type: ${blob.type}`);
+        
+        if (blob.size === 0) {
+            throw new Error('导出的文件为空');
+        }
+        
+        // 获取文件名
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = `claims_result_${Date.now()}.${format === 'excel' ? 'xlsx' : 'json'}`;
+        
+        if (contentDisposition) {
+            const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+            if (filenameMatch && filenameMatch[1]) {
+                filename = filenameMatch[1].replace(/['"]/g, '');
+            }
+        }
+        
+        console.log(`[Export v2.0] Filename: ${filename}`);
         
         // 创建下载链接
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `claims_result_${Date.now()}.${format === 'excel' ? 'xlsx' : 'json'}`;
+        a.download = filename;
         document.body.appendChild(a);
         a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
+        
+        console.log(`[Export v2.0] Download triggered`);
+        
+        // 延迟清理
+        setTimeout(() => {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            console.log(`[Export v2.0] Cleanup complete`);
+        }, 100);
         
         showClaimsMessage('导出成功！', 'success');
     } catch (error) {
-        console.error('Export error:', error);
+        console.error('[Export v2.0] Export error:', error);
         showClaimsMessage('导出失败：' + error.message, 'error');
     }
 }
@@ -370,12 +423,18 @@ async function viewClaimsReport() {
     }
     
     try {
+        console.log('[Report v2.0] Fetching report for task:', claimsCurrentTaskId);
+        
         const response = await fetch(`/api/claims/report/${claimsCurrentTaskId}`);
         const data = await response.json();
+        
+        console.log('[Report v2.0] Response:', data);
         
         if (data.success) {
             const responseData = data.data || {};
             const report = responseData.report || data.report;
+            
+            console.log('[Report v2.0] Report length:', report ? report.length : 0);
             
             const modal = document.getElementById('claims_report_modal');
             const content = document.getElementById('claims_report_content');
@@ -383,12 +442,17 @@ async function viewClaimsReport() {
             if (modal && content) {
                 content.textContent = report;
                 modal.style.display = 'block';
+                console.log('[Report v2.0] Modal displayed');
+            } else {
+                console.error('[Report v2.0] Modal elements not found');
+                showClaimsMessage('报告显示失败：找不到模态框元素', 'error');
             }
         } else {
+            console.error('[Report v2.0] API error:', data.error);
             showClaimsMessage('获取报告失败：' + data.error, 'error');
         }
     } catch (error) {
-        console.error('View report error:', error);
+        console.error('[Report v2.0] View report error:', error);
         showClaimsMessage('获取报告失败：' + error.message, 'error');
     }
 }
