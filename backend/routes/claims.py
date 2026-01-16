@@ -615,76 +615,73 @@ def export_claims_result(task_id):
         # Create export service
         export_service = ExportService()
 
-        # Export based on format
+        # Export based on format using BytesIO
         if export_format == 'json':
-            output_path = export_service.export_to_json(result)
-            mimetype = 'application/json'
-            file_extension = 'json'
+            try:
+                output_buffer, filename = export_service.generate_json_bytesio(result)
+                mimetype = 'application/json; charset=utf-8'
+                
+                # Validate buffer
+                file_size = len(output_buffer.getvalue())
+                if file_size == 0:
+                    return create_response(
+                        error="生成的JSON文件为空",
+                        status_code=500
+                    )
+                
+                print(f"JSON导出成功: {filename}, 大小: {file_size} bytes")
+                
+                # Return file using send_file with BytesIO
+                from flask import send_file
+                return send_file(
+                    output_buffer,
+                    mimetype=mimetype,
+                    as_attachment=True,
+                    download_name=filename
+                )
+                
+            except Exception as json_error:
+                print(f"JSON导出错误: {traceback.format_exc()}")
+                return create_response(
+                    error=f"JSON导出失败: {str(json_error)}",
+                    status_code=500
+                )
+                
         elif export_format == 'excel':
-            output_path = export_service.export_to_excel(result)
-            mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-            file_extension = 'xlsx'
+            try:
+                output_buffer, filename = export_service.generate_excel_bytesio(result)
+                mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                
+                # Validate buffer
+                file_size = len(output_buffer.getvalue())
+                if file_size == 0:
+                    return create_response(
+                        error="生成的Excel文件为空",
+                        status_code=500
+                    )
+                
+                print(f"Excel导出成功: {filename}, 大小: {file_size} bytes")
+                
+                # Return file using send_file with BytesIO
+                from flask import send_file
+                return send_file(
+                    output_buffer,
+                    mimetype=mimetype,
+                    as_attachment=True,
+                    download_name=filename
+                )
+                
+            except Exception as excel_error:
+                print(f"Excel导出错误: {traceback.format_exc()}")
+                return create_response(
+                    error=f"Excel导出失败: {str(excel_error)}",
+                    status_code=500
+                )
         else:
             return create_response(
                 error="不支持的导出格式，请使用 'excel' 或 'json'",
                 status_code=400
             )
-
-        # Validate file exists
-        if not os.path.exists(output_path):
-            return create_response(
-                error=f"导出文件生成失败: {output_path}",
-                status_code=500
-            )
-
-        # Validate file size
-        file_size = os.path.getsize(output_path)
-        if file_size == 0:
-            os.remove(output_path)
-            return create_response(
-                error="导出文件为空",
-                status_code=500
-            )
-
-        # Read file content
-        try:
-            with open(output_path, 'rb') as f:
-                file_content = f.read()
-        except Exception as read_error:
-            print(f"Error reading export file: {traceback.format_exc()}")
-            return create_response(
-                error=f"读取导出文件失败: {str(read_error)}",
-                status_code=500
-            )
-
-        # Validate file content length
-        if len(file_content) != file_size:
-            print(f"File content length mismatch: expected {file_size}, got {len(file_content)}")
-
-        # Get filename
-        filename = os.path.basename(output_path)
-
-        # Clean up temporary file
-        try:
-            os.remove(output_path)
-        except Exception as cleanup_error:
-            print(f"Warning: Failed to cleanup temp file: {cleanup_error}")
-
-        # Create response with proper headers
-        response = Response(
-            file_content,
-            mimetype=mimetype,
-            headers={
-                'Content-Disposition': f'attachment; filename="{filename}"',
-                'Content-Type': mimetype,
-                'Content-Length': str(len(file_content)),
-                'Cache-Control': 'no-cache',
-                'Pragma': 'no-cache'
-            }
-        )
-
-        print(f"Export successful: {filename}, size: {len(file_content)} bytes, format: {export_format}")
-        return response
 
     except Exception as e:
         print(f"Error in export_claims_result: {traceback.format_exc()}")

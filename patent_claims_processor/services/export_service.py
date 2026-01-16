@@ -64,10 +64,51 @@ class ExportService:
         
         return output_path
     
+    def generate_json_bytesio(self, processed_claims: ProcessedClaims) -> tuple:
+        """
+        生成JSON文件到BytesIO对象（用于HTTP响应）
+        
+        Args:
+            processed_claims: 处理结果
+            
+        Returns:
+            (BytesIO对象, 文件名) 元组
+        """
+        from io import BytesIO
+        
+        try:
+            # 构建结构化输出数据
+            output_data = self._build_structured_output(processed_claims)
+            
+            # 转换为JSON字符串
+            json_str = json.dumps(output_data, ensure_ascii=False, indent=2)
+            
+            # 创建BytesIO对象
+            output = BytesIO(json_str.encode('utf-8'))
+            output.seek(0)
+            
+            # 生成文件名
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"patent_claims_{timestamp}.json"
+            
+            # 验证文件大小
+            file_size = len(output.getvalue())
+            if file_size == 0:
+                raise Exception("生成的JSON文件为空")
+            
+            print(f"JSON BytesIO生成成功, 大小: {file_size} bytes")
+            return output, filename
+            
+        except Exception as e:
+            print(f"JSON BytesIO生成错误: {str(e)}")
+            import traceback
+            print(traceback.format_exc())
+            raise
+    
     def export_to_excel(self, processed_claims: ProcessedClaims, 
                        filename: str = None) -> str:
         """
-        导出处理结果为Excel格式
+        导出处理结果为Excel格式（返回BytesIO对象）
 
         需求 6.3: 支持将结果导出为Excel格式，并标明处理的语言版本
 
@@ -123,6 +164,58 @@ class ExportService:
                     os.remove(output_path)
                 except:
                     pass
+            raise
+    
+    def generate_excel_bytesio(self, processed_claims: ProcessedClaims) -> tuple:
+        """
+        生成Excel文件到BytesIO对象（用于HTTP响应）
+        
+        Args:
+            processed_claims: 处理结果
+            
+        Returns:
+            (BytesIO对象, 文件名) 元组
+        """
+        from io import BytesIO
+        
+        try:
+            # 创建BytesIO对象
+            output = BytesIO()
+            
+            # 创建Excel写入器
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                # 工作表1: 权利要求详细信息
+                claims_df = self._create_claims_dataframe(processed_claims)
+                claims_df.to_excel(writer, sheet_name='权利要求详情', index=False)
+
+                # 工作表2: 处理统计信息
+                stats_df = self._create_statistics_dataframe(processed_claims)
+                stats_df.to_excel(writer, sheet_name='处理统计', index=False)
+
+                # 工作表3: 错误报告（如果有错误）
+                if processed_claims.processing_errors:
+                    errors_df = self._create_errors_dataframe(processed_claims)
+                    errors_df.to_excel(writer, sheet_name='错误报告', index=False)
+            
+            # 重置指针到开始位置
+            output.seek(0)
+            
+            # 生成文件名
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"patent_claims_{timestamp}.xlsx"
+            
+            # 验证文件大小
+            file_size = len(output.getvalue())
+            if file_size == 0:
+                raise Exception("生成的Excel文件为空")
+            
+            print(f"Excel BytesIO生成成功, 大小: {file_size} bytes")
+            return output, filename
+            
+        except Exception as e:
+            print(f"Excel BytesIO生成错误: {str(e)}")
+            import traceback
+            print(traceback.format_exc())
             raise
     
     def _build_structured_output(self, processed_claims: ProcessedClaims) -> Dict[str, Any]:

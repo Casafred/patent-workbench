@@ -458,44 +458,163 @@ async function viewReport() {
     }
     
     try {
+        showInfo('正在加载报告...');
+        
         const response = await fetch(`/api/claims/report/${currentTaskId}`);
         const result = await response.json();
         
         if (result.success) {
-            // 在新窗口中显示报告
-            const reportWindow = window.open('', '_blank');
-            reportWindow.document.write(`
-                <html>
-                <head>
-                    <title>处理报告</title>
-                    <style>
-                        body {
-                            font-family: 'Courier New', monospace;
-                            padding: 20px;
-                            background-color: #f5f5f5;
-                        }
-                        pre {
-                            background-color: white;
-                            padding: 20px;
-                            border-radius: 8px;
-                            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                            white-space: pre-wrap;
-                            word-wrap: break-word;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <pre>${escapeHtml(result.data.report)}</pre>
-                </body>
-                </html>
-            `);
-            reportWindow.document.close();
+            // 创建模态框显示报告
+            showReportModal(result.data.report);
+            statusMessage.style.display = 'none';
         } else {
             showError(result.error || '获取报告失败');
         }
     } catch (error) {
         console.error('Report error:', error);
         showError('获取报告失败: ' + error.message);
+    }
+}
+
+function showReportModal(reportText) {
+    // 创建模态框遮罩层
+    const modalOverlay = document.createElement('div');
+    modalOverlay.id = 'reportModalOverlay';
+    modalOverlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    `;
+    
+    // 创建模态框内容
+    const modalContent = document.createElement('div');
+    modalContent.style.cssText = `
+        background-color: white;
+        border-radius: 12px;
+        max-width: 900px;
+        width: 100%;
+        max-height: 90vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    `;
+    
+    // 创建模态框头部
+    const modalHeader = document.createElement('div');
+    modalHeader.style.cssText = `
+        padding: 20px;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #f9fafb;
+    `;
+    
+    const modalTitle = document.createElement('h2');
+    modalTitle.textContent = '处理报告';
+    modalTitle.style.cssText = `
+        margin: 0;
+        font-size: 1.5rem;
+        color: #16A34A;
+    `;
+    
+    const closeButton = document.createElement('button');
+    closeButton.innerHTML = '✕';
+    closeButton.style.cssText = `
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #666;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    `;
+    closeButton.onmouseover = () => closeButton.style.backgroundColor = '#e5e7eb';
+    closeButton.onmouseout = () => closeButton.style.backgroundColor = 'transparent';
+    closeButton.onclick = closeReportModal;
+    
+    modalHeader.appendChild(modalTitle);
+    modalHeader.appendChild(closeButton);
+    
+    // 创建模态框主体
+    const modalBody = document.createElement('div');
+    modalBody.style.cssText = `
+        padding: 20px;
+        overflow-y: auto;
+        flex: 1;
+    `;
+    
+    const reportPre = document.createElement('pre');
+    reportPre.textContent = reportText;
+    reportPre.style.cssText = `
+        font-family: 'Courier New', monospace;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        margin: 0;
+        line-height: 1.6;
+        color: #333;
+    `;
+    
+    modalBody.appendChild(reportPre);
+    
+    // 组装模态框
+    modalContent.appendChild(modalHeader);
+    modalContent.appendChild(modalBody);
+    modalOverlay.appendChild(modalContent);
+    
+    // 添加到页面
+    document.body.appendChild(modalOverlay);
+    
+    // 阻止body滚动
+    document.body.style.overflow = 'hidden';
+    
+    // ESC键关闭
+    const escHandler = (e) => {
+        if (e.key === 'Escape') {
+            closeReportModal();
+        }
+    };
+    document.addEventListener('keydown', escHandler);
+    
+    // 点击遮罩层关闭
+    modalOverlay.onclick = (e) => {
+        if (e.target === modalOverlay) {
+            closeReportModal();
+        }
+    };
+    
+    // 保存事件处理器引用以便清理
+    modalOverlay._escHandler = escHandler;
+}
+
+function closeReportModal() {
+    const modalOverlay = document.getElementById('reportModalOverlay');
+    if (modalOverlay) {
+        // 移除ESC键监听
+        if (modalOverlay._escHandler) {
+            document.removeEventListener('keydown', modalOverlay._escHandler);
+        }
+        
+        // 恢复body滚动
+        document.body.style.overflow = '';
+        
+        // 移除模态框
+        modalOverlay.remove();
     }
 }
 
