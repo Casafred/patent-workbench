@@ -9,6 +9,8 @@ requests
 sniffio
 httpx
 pydantic
+beautifulsoup4
+lxml
 
 # Patent Claims Processor Dependencies
 pandas>=1.5.0
