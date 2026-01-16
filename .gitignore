@@ -58,6 +58,12 @@ uploads/*.xls
 # Keep uploads folder structure
 !uploads/.gitkeep
 
+# Tasks (don't commit task data)
+tasks/*.json
+
+# Keep tasks folder structure
+!tasks/.gitkeep
+
 # Logs
 *.log
 

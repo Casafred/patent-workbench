@@ -23,14 +23,99 @@ claims_bp = Blueprint('claims', __name__)
 
 # Configuration
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'uploads')
+TASKS_FOLDER = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'tasks')
 ALLOWED_EXTENSIONS = {'xlsx', 'xls'}
 
-# Ensure upload folder exists
+# Ensure folders exist
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
+if not os.path.exists(TASKS_FOLDER):
+    os.makedirs(TASKS_FOLDER)
 
 # Store processing task status (in-memory, consider using Redis for production)
 processing_tasks = {}
+
+
+def save_task_to_disk(task_id: str, task_data: dict) -> None:
+    """Save task data to disk for persistence"""
+    try:
+        task_file = os.path.join(TASKS_FOLDER, f"{task_id}.json")
+        
+        # Convert result object to dict if present
+        if task_data.get('result'):
+            result = task_data['result']
+            task_data_copy = task_data.copy()
+            task_data_copy['result'] = {
+                'total_cells_processed': result.total_cells_processed,
+                'total_claims_extracted': result.total_claims_extracted,
+                'language_distribution': result.language_distribution,
+                'independent_claims_count': result.independent_claims_count,
+                'dependent_claims_count': result.dependent_claims_count,
+                'claims_data': [
+                    {
+                        'claim_number': c.claim_number,
+                        'claim_type': c.claim_type,
+                        'claim_text': c.claim_text,
+                        'language': c.language,
+                        'referenced_claims': c.referenced_claims,
+                        'original_text': c.original_text,
+                        'confidence_score': c.confidence_score
+                    } for c in result.claims_data
+                ],
+                'processing_errors': [
+                    {
+                        'error_type': e.error_type,
+                        'cell_index': e.cell_index,
+                        'error_message': e.error_message,
+                        'suggested_action': e.suggested_action,
+                        'severity': e.severity
+                    } for e in result.processing_errors
+                ]
+            }
+        else:
+            task_data_copy = task_data.copy()
+        
+        with open(task_file, 'w', encoding='utf-8') as f:
+            json.dump(task_data_copy, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"Warning: Failed to save task to disk: {e}")
+
+
+def load_task_from_disk(task_id: str) -> dict:
+    """Load task data from disk"""
+    try:
+        task_file = os.path.join(TASKS_FOLDER, f"{task_id}.json")
+        if os.path.exists(task_file):
+            with open(task_file, 'r', encoding='utf-8') as f:
+                task_data = json.load(f)
+            
+            # Convert dict back to result object if present
+            if task_data.get('result') and isinstance(task_data['result'], dict):
+                from patent_claims_processor.models import ProcessedClaims, ClaimInfo, ProcessingError
+                
+                result_dict = task_data['result']
+                claims_data = [
+                    ClaimInfo(**c) for c in result_dict.get('claims_data', [])
+                ]
+                processing_errors = [
+                    ProcessingError(**e) for e in result_dict.get('processing_errors', [])
+                ]
+                
+                task_data['result'] = ProcessedClaims(
+                    total_cells_processed=result_dict['total_cells_processed'],
+                    total_claims_extracted=result_dict['total_claims_extracted'],
+                    language_distribution=result_dict['language_distribution'],
+                    independent_claims_count=result_dict['independent_claims_count'],
+                    dependent_claims_count=result_dict['dependent_claims_count'],
+                    processing_errors=processing_errors,
+                    claims_data=claims_data
+                )
+            
+            return task_data
+    except Exception as e:
+        print(f"Warning: Failed to load task from disk: {e}")
+    
+    return None
 
 
 def allowed_file(filename: str) -> bool:
@@ -313,11 +398,17 @@ def process_claims():
                 processing_tasks[task_id]['message'] = '处理完成'
                 processing_tasks[task_id]['result'] = result
                 
+                # Save task to disk for persistence
+                save_task_to_disk(task_id, processing_tasks[task_id])
+                
             except Exception as e:
                 print(f"Error in background processing: {traceback.format_exc()}")
                 processing_tasks[task_id]['status'] = 'failed'
                 processing_tasks[task_id]['error'] = str(e)
                 processing_tasks[task_id]['message'] = f'处理失败: {str(e)}'
+                
+                # Save failed task to disk as well
+                save_task_to_disk(task_id, processing_tasks[task_id])
         
         thread = threading.Thread(target=process_in_background)
         thread.daemon = True
@@ -351,11 +442,17 @@ def get_processing_status(task_id):
         JSON response with task status and progress
     """
     try:
+        # Try to get from memory first
         if task_id not in processing_tasks:
-            return create_response(
-                error="任务不存在",
-                status_code=404
-            )
+            # Try to load from disk
+            task_data = load_task_from_disk(task_id)
+            if task_data:
+                processing_tasks[task_id] = task_data
+            else:
+                return create_response(
+                    error="任务不存在",
+                    status_code=404
+                )
         
         task = processing_tasks[task_id]
         
@@ -407,11 +504,17 @@ def get_processing_result(task_id):
         JSON response with detailed results
     """
     try:
+        # Try to get from memory first
         if task_id not in processing_tasks:
-            return create_response(
-                error="任务不存在",
-                status_code=404
-            )
+            # Try to load from disk
+            task_data = load_task_from_disk(task_id)
+            if task_data:
+                processing_tasks[task_id] = task_data
+            else:
+                return create_response(
+                    error="任务不存在",
+                    status_code=404
+                )
         
         task = processing_tasks[task_id]
         
@@ -484,11 +587,17 @@ def export_claims_result(task_id):
         File download response
     """
     try:
+        # Try to get from memory first
         if task_id not in processing_tasks:
-            return create_response(
-                error="任务不存在",
-                status_code=404
-            )
+            # Try to load from disk
+            task_data = load_task_from_disk(task_id)
+            if task_data:
+                processing_tasks[task_id] = task_data
+            else:
+                return create_response(
+                    error="任务不存在",
+                    status_code=404
+                )
         
         task = processing_tasks[task_id]
         
@@ -570,11 +679,17 @@ def get_processing_report(task_id):
         JSON response with report text
     """
     try:
+        # Try to get from memory first
         if task_id not in processing_tasks:
-            return create_response(
-                error="任务不存在",
-                status_code=404
-            )
+            # Try to load from disk
+            task_data = load_task_from_disk(task_id)
+            if task_data:
+                processing_tasks[task_id] = task_data
+            else:
+                return create_response(
+                    error="任务不存在",
+                    status_code=404
+                )
         
         task = processing_tasks[task_id]
         
