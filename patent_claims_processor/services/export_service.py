@@ -307,38 +307,44 @@ class ExportService:
         summary_data = []
         
         try:
-            # 按原始文本分组权利要求（同一单元格的权利要求会有相同或相似的original_text）
-            # 我们需要按照处理顺序来组织数据
+            # 按原始文本分组权利要求（同一单元格的权利要求会有相同的original_text）
+            # 使用original_text的前200个字符作为分组键，确保同一单元格的权利要求被分到一组
             claims_by_original = {}
-            row_counter = 2  # Excel数据从第2行开始（第1行是标题）
             
             for claim in processed_claims.claims_data:
                 try:
-                    original_key = claim.original_text[:100] if claim.original_text else f"claim_{claim.claim_number}"
+                    # 使用original_text的前200个字符作为唯一标识
+                    original_key = claim.original_text[:200] if claim.original_text else f"claim_{claim.claim_number}"
                     
                     if original_key not in claims_by_original:
                         claims_by_original[original_key] = {
-                            'row_number': row_counter,
                             'claims': [],
                             'original_text': claim.original_text
                         }
-                        row_counter += 1
                     
                     claims_by_original[original_key]['claims'].append(claim)
                 except Exception as e:
                     print(f"Warning: Error processing claim {claim.claim_number}: {e}")
                     continue
             
+            # 按权利要求序号排序分组，确保行号按Excel中的顺序分配
+            sorted_groups = sorted(claims_by_original.items(), 
+                                 key=lambda x: min(c.claim_number for c in x[1]['claims']))
+            
             # 为每个原始数据行生成汇总记录
-            for original_key, data in claims_by_original.items():
+            excel_row_number = 2  # Excel数据从第2行开始（第1行是标题）
+            
+            for original_key, data in sorted_groups:
                 try:
                     claims_list = data['claims']
                     
                     # 提取独立权利要求
                     independent_claims = self._extract_independent_claims(claims_list)
                     
-                    # 如果没有独立权利要求，跳过此行
+                    # 如果没有独立权利要求，跳过此行但仍然递增行号
+                    # 因为这代表Excel中的一行数据
                     if not independent_claims:
+                        excel_row_number += 1
                         continue
                     
                     # 提取引用关系 - 包含该行中所有从属权利要求的引用关系
@@ -359,13 +365,18 @@ class ExportService:
                     
                     # 添加汇总行
                     summary_data.append({
-                        '原数据行号': data['row_number'],
+                        '原数据行号': excel_row_number,
                         '独立权利要求序号': claim_numbers,
                         '独立权利要求文本': claim_texts,
                         '从属权利要求引用关系': reference_json
                     })
+                    
+                    # 递增Excel行号
+                    excel_row_number += 1
+                    
                 except Exception as e:
                     print(f"Warning: Error creating summary row for {original_key}: {e}")
+                    excel_row_number += 1  # 即使出错也要递增行号
                     continue
         
         except Exception as e:
