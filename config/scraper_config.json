@@ -1,0 +1,28 @@
+{
+  "browser": {
+    "headless": true,
+    "browser_type": "chromium",
+    "javascript_enabled": true,
+    "page_timeout": 30000,
+    "navigation_timeout": 30000
+  },
+  "anti_detection": {
+    "user_agent_rotation": true,
+    "viewport_randomization": true,
+    "behavioral_simulation": true
+  },
+  "rate_limiting": {
+    "min_delay": 2.0,
+    "max_delay": 5.0,
+    "max_concurrent_requests": 3
+  },
+  "retry": {
+    "max_retries": 3,
+    "retry_delays": [1.0, 2.0, 4.0]
+  },
+  "logging": {
+    "log_level": "INFO",
+    "log_file": "patent_scraper.log",
+    "enable_performance_logging": true
+  }
+}

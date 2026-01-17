@@ -210,12 +210,12 @@ def upload_claims_file():
 @login_required
 def get_claims_columns():
     """
-    Get column information for specified worksheet.
+    Get column information for specified worksheet with intelligent column detection.
     
     Requirement 1.3: Allow users to select columns.
     
     Returns:
-        JSON response with column names
+        JSON response with column names and column analysis
     """
     try:
         req_data = request.get_json()
@@ -240,9 +240,15 @@ def get_claims_columns():
         df = excel_processor.read_excel_file(file_path, sheet_name=sheet_name)
         columns = list(df.columns)
         
+        # 新增：智能列识别
+        from backend.utils.column_detector import ColumnDetector
+        detector = ColumnDetector()
+        column_analysis = detector.analyze_all_columns(df)
+        
         return create_response(data={
             'columns': columns,
             'sheet_name': sheet_name,
+            'column_analysis': column_analysis,  # 新增：列分析结果
             'message': '列信息获取成功'
         })
         

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>专利号搜索修复测试</title>
+    <link rel="stylesheet" href="frontend/css/main.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+        }
+        .test-title {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .demo-data {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>专利号搜索修复功能测试</h1>
+        <p>这个页面用于测试修复后的专利号列识别和搜索功能。</p>
+        
+        <!-- 测试1: 自动识别结果展示 -->
+        <div class="test-section">
+            <div class="test-title">测试1: 自动识别结果展示</div>
+            <div class="demo-data">
+                模拟识别到专利号列: "专利号"<br>
+                置信度: 95%<br>
+                样本数据: CN202310123456A, US20240107869A1, EP1234567A1
+            </div>
+            
+            <div class="config-section">
+                <h4>专利号列配置</h4>
+                <div id="auto_detection_result" class="detection-result">
+                    <div class="result-header">
+                        <span class="icon success">✓</span>
+                        <span>自动识别到专利号列</span>
+                    </div>
+                    <div class="result-content">
+                        <strong>专利号</strong>
+                        <span class="confidence">置信度: <span>95%</span></span>
+                        <button class="btn-small" onclick="alert('确认使用专利号列')">确认使用</button>
+                        <button class="btn-small secondary" onclick="showManualSelection()">手动选择</button>
+                    </div>
+                </div>
+                
+                <div id="manual_patent_selection" class="manual-selection" style="display: none;">
+                    <label for="patent_column_selector">请选择专利号列：</label>
+                    <select id="patent_column_selector" class="form-control">
+                        <option value="">-- 请选择 --</option>
+                        <option value="专利号">专利号</option>
+                        <option value="公开号">公开号</option>
+                        <option value="申请号">申请号</option>
+                    </select>
+                    <button class="btn-primary" onclick="alert('已设置专利号列')">确认选择</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 测试2: 搜索结果展示 -->
+        <div class="test-section">
+            <div class="test-title">测试2: 搜索结果展示</div>
+            <div class="demo-data">
+                搜索关键词: "2023"<br>
+                找到匹配项: 5个
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <input type="text" placeholder="输入专利号片段搜索..." 
+                       style="padding: 8px; width: 300px; border: 1px solid #ccc; border-radius: 4px;">
+                <button class="btn-primary" onclick="performTestSearch()">搜索</button>
+            </div>
+            
+            <div id="search_results_container">
+                <div class="search-stats">找到 5 个匹配的专利号</div>
+                <div class="search-result-item">
+                    <div class="search-result-patent">CN202310123456A</div>
+                    <div class="search-result-row">行号: 1</div>
+                </div>
+                <div class="search-result-item selected">
+                    <div class="search-result-patent">US20230107869A1</div>
+                    <div class="search-result-row">行号: 3</div>
+                </div>
+                <div class="search-result-item">
+                    <div class="search-result-patent">ZL202310123456.7</div>
+                    <div class="search-result-row">行号: 5</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 测试3: 警告消息展示 -->
+        <div class="test-section">
+            <div class="test-title">测试3: 无专利号列警告</div>
+            <div class="warning-message">
+                <span class="icon warning">⚠</span>
+                <span>未检测到专利号列，专利搜索功能将不可用</span>
+                <button class="btn-small" onclick="showManualSelection()">手动选择</button>
+            </div>
+        </div>
+        
+        <!-- 测试4: 搜索建议 -->
+        <div class="test-section">
+            <div class="test-title">测试4: 搜索建议</div>
+            <div class="search-suggestions">
+                <strong>搜索建议：</strong>
+                <ul>
+                    <li>尝试输入更少的字符进行模糊匹配</li>
+                    <li>检查专利号格式是否正确</li>
+                    <li>确认Excel文件中包含专利号数据</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function showManualSelection() {
+            const autoResult = document.getElementById('auto_detection_result');
+            const manualSelection = document.getElementById('manual_patent_selection');
+            
+            if (autoResult) autoResult.style.display = 'none';
+            if (manualSelection) manualSelection.style.display = 'block';
+        }
+        
+        function performTestSearch() {
+            alert('执行搜索功能（演示）');
+        }
+        
+        // 添加搜索结果点击效果
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchItems = document.querySelectorAll('.search-result-item');
+            searchItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    // 移除其他选中状态
+                    searchItems.forEach(i => i.classList.remove('selected'));
+                    // 添加当前选中状态
+                    this.classList.add('selected');
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -137,10 +137,24 @@ async function handleClaimsFileSelect(event) {
             const sheets = responseData.sheet_names || [];
             const filePath = responseData.file_path || '';
             const fileId = responseData.file_id || '';
+            const columnAnalysis = responseData.column_analysis || {};
             
             // 存储文件信息供后续使用
             claimsCurrentFilePath = filePath;
             claimsCurrentFileId = fileId;
+            
+            // 新增：处理专利号列识别结果
+            if (columnAnalysis.patent_number_column) {
+                claimsCurrentPatentColumn = columnAnalysis.patent_number_column.column_name;
+                console.log('自动识别到专利号列:', claimsCurrentPatentColumn);
+                console.log('识别置信度:', columnAnalysis.patent_number_column.confidence);
+                
+                // 显示识别结果
+                showPatentColumnDetectionResult(columnAnalysis.patent_number_column);
+            } else {
+                console.log('未自动识别到专利号列，将提供手动选择');
+                claimsCurrentPatentColumn = null;
+            }
             
             if (sheets.length === 0) {
                 showClaimsMessage('文件中没有找到工作表', 'error');
@@ -221,12 +235,92 @@ async function loadClaimsColumns(filePath, sheetName) {
                     processBtn.disabled = false;
                 }
             }
+            
+            // 新增：尝试自动识别专利号列
+            claimsAutoDetectPatentColumn(columns, responseData);
         } else {
             showClaimsMessage('加载列信息失败：' + (data.error || '未知错误'), 'error');
         }
     } catch (error) {
         console.error('Load columns error:', error);
         showClaimsMessage('加载列信息失败：' + error.message, 'error');
+    }
+}
+
+// 新增：自动检测专利号列
+async function claimsAutoDetectPatentColumn(columns, responseData) {
+    try {
+        // 使用后端返回的列分析结果
+        const columnAnalysis = responseData.column_analysis;
+        
+        if (columnAnalysis && columnAnalysis.patent_number_column) {
+            const patentCol = columnAnalysis.patent_number_column;
+            claimsCurrentPatentColumn = patentCol.column_name;
+            console.log('自动检测到专利号列:', patentCol.column_name, '置信度:', patentCol.confidence);
+            showClaimsMessage(`✨ 自动检测到专利号列: ${patentCol.column_name} (置信度: ${(patentCol.confidence * 100).toFixed(0)}%)`, 'success');
+        } else {
+            console.log('未能自动检测到专利号列，显示手动选择器');
+            showClaimsMessage('⚠️ 未能自动识别专利号列，请手动选择', 'info');
+        }
+        
+        // 无论是否自动检测成功，都显示专利号列选择器供用户确认或手动选择
+        claimsShowPatentColumnSelector(columns, claimsCurrentPatentColumn);
+        
+    } catch (error) {
+        console.error('Auto detect patent column error:', error);
+        // 如果自动检测失败，显示手动选择器
+        claimsShowPatentColumnSelector(columns);
+    }
+}
+
+// 新增：显示专利号列选择器
+function claimsShowPatentColumnSelector(columns, selectedColumn = null) {
+    // 创建专利号列选择器（如果不存在）
+    let patentColumnContainer = document.getElementById('claims_patent_column_selector_container');
+    
+    if (!patentColumnContainer) {
+        patentColumnContainer = document.createElement('div');
+        patentColumnContainer.id = 'claims_patent_column_selector_container';
+        patentColumnContainer.className = 'form-group';
+        patentColumnContainer.innerHTML = `
+            <label for="claims_patent_column_selector">专利号列（用于专利搜索功能）:</label>
+            <select id="claims_patent_column_selector" class="form-control">
+                <option value="">请选择专利号列...</option>
+            </select>
+            <small class="form-text text-muted">选择包含专利号的列，如：公开号、专利号、申请号等。格式如：US202402107869A1</small>
+        `;
+        
+        // 插入到列选择器后面
+        const columnContainer = document.getElementById('claims_column_selector_container');
+        if (columnContainer && columnContainer.parentNode) {
+            columnContainer.parentNode.insertBefore(patentColumnContainer, columnContainer.nextSibling);
+        }
+    }
+    
+    const patentColumnSelect = document.getElementById('claims_patent_column_selector');
+    if (patentColumnSelect) {
+        // 清空并填充选项
+        patentColumnSelect.innerHTML = '<option value="">请选择专利号列...</option>';
+        columns.forEach(column => {
+            const option = document.createElement('option');
+            option.value = column;
+            option.textContent = column;
+            if (column === selectedColumn) {
+                option.selected = true;
+            }
+            patentColumnSelect.appendChild(option);
+        });
+        
+        // 添加事件监听器
+        patentColumnSelect.addEventListener('change', (e) => {
+            claimsCurrentPatentColumn = e.target.value;
+            console.log('选择专利号列:', claimsCurrentPatentColumn);
+            if (claimsCurrentPatentColumn) {
+                showClaimsMessage(`✓ 已选择专利号列: ${claimsCurrentPatentColumn}`, 'success');
+            }
+        });
+        
+        patentColumnContainer.style.display = 'block';
     }
 }
 
@@ -505,11 +599,158 @@ function showClaimsMessage(message, type) {
     }
 }
 
-// 在页面加载时初始化
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initClaimsProcessor);
-} else {
-    initClaimsProcessor();
+// 显示专利号列识别结果
+function showPatentColumnDetectionResult(detectionResult) {
+    console.log('显示专利号列识别结果:', detectionResult);
+    
+    // 创建或更新专利号列配置区域
+    let configSection = document.getElementById('claims_patent_column_config');
+    if (!configSection) {
+        // 在文件上传区域后添加配置区域
+        const uploadContainer = document.getElementById('claims_sheet_selector_container');
+        if (uploadContainer && uploadContainer.parentNode) {
+            configSection = document.createElement('div');
+            configSection.id = 'claims_patent_column_config';
+            configSection.className = 'config-section';
+            configSection.innerHTML = `
+                <h4>专利号列配置</h4>
+                <div id="auto_detection_result" class="detection-result">
+                    <div class="result-header">
+                        <span class="icon success">✓</span>
+                        <span>自动识别到专利号列</span>
+                    </div>
+                    <div class="result-content">
+                        <strong id="detected_column_name"></strong>
+                        <span class="confidence">置信度: <span id="confidence_score"></span></span>
+                        <button class="btn-small" onclick="confirmPatentColumn()">确认使用</button>
+                        <button class="btn-small secondary" onclick="showManualPatentColumnSelection()">手动选择</button>
+                    </div>
+                </div>
+                <div id="manual_patent_selection" class="manual-selection" style="display: none;">
+                    <label for="patent_column_selector">请选择专利号列：</label>
+                    <select id="patent_column_selector" class="form-control">
+                        <option value="">-- 请选择 --</option>
+                    </select>
+                    <button class="btn-primary" onclick="setManualPatentColumn()">确认选择</button>
+                </div>
+                <div id="no_patent_column" class="warning-message" style="display: none;">
+                    <span class="icon warning">⚠</span>
+                    <span>未检测到专利号列，专利搜索功能将不可用</span>
+                </div>
+            `;
+            
+            // 插入到上传容器后面
+            uploadContainer.parentNode.insertBefore(configSection, uploadContainer.nextSibling);
+        }
+    }
+    
+    // 更新识别结果显示
+    const detectedColumnName = document.getElementById('detected_column_name');
+    const confidenceScore = document.getElementById('confidence_score');
+    const autoDetectionResult = document.getElementById('auto_detection_result');
+    
+    if (detectedColumnName) {
+        detectedColumnName.textContent = detectionResult.column_name;
+    }
+    if (confidenceScore) {
+        confidenceScore.textContent = Math.round(detectionResult.confidence * 100) + '%';
+    }
+    if (autoDetectionResult) {
+        autoDetectionResult.style.display = 'block';
+    }
+    
+    // 隐藏其他区域
+    const manualSelection = document.getElementById('manual_patent_selection');
+    const noPatentColumn = document.getElementById('no_patent_column');
+    if (manualSelection) manualSelection.style.display = 'none';
+    if (noPatentColumn) noPatentColumn.style.display = 'none';
+}
+
+// 确认使用自动识别的专利号列
+function confirmPatentColumn() {
+    console.log('用户确认使用专利号列:', claimsCurrentPatentColumn);
+    showClaimsMessage('已确认专利号列: ' + claimsCurrentPatentColumn, 'success');
+    
+    // 隐藏配置区域
+    const configSection = document.getElementById('claims_patent_column_config');
+    if (configSection) {
+        configSection.style.display = 'none';
+    }
+}
+
+// 显示手动选择专利号列界面
+function showManualPatentColumnSelection() {
+    console.log('显示手动选择专利号列界面');
+    
+    const autoDetectionResult = document.getElementById('auto_detection_result');
+    const manualSelection = document.getElementById('manual_patent_selection');
+    const patentColumnSelector = document.getElementById('patent_column_selector');
+    
+    // 隐藏自动识别结果
+    if (autoDetectionResult) {
+        autoDetectionResult.style.display = 'none';
+    }
+    
+    // 显示手动选择界面
+    if (manualSelection) {
+        manualSelection.style.display = 'block';
+    }
+    
+    // 填充列选项
+    if (patentColumnSelector) {
+        const columnSelect = document.getElementById('claims_column_selector');
+        if (columnSelect) {
+            // 复制权利要求列选择器的选项
+            patentColumnSelector.innerHTML = columnSelect.innerHTML;
+        }
+    }
+}
+
+// 设置手动选择的专利号列
+function setManualPatentColumn() {
+    const patentColumnSelector = document.getElementById('patent_column_selector');
+    if (patentColumnSelector && patentColumnSelector.value) {
+        claimsCurrentPatentColumn = patentColumnSelector.value;
+        console.log('手动设置专利号列:', claimsCurrentPatentColumn);
+        showClaimsMessage('已设置专利号列: ' + claimsCurrentPatentColumn, 'success');
+        
+        // 隐藏配置区域
+        const configSection = document.getElementById('claims_patent_column_config');
+        if (configSection) {
+            configSection.style.display = 'none';
+        }
+    } else {
+        showClaimsMessage('请选择一个专利号列', 'error');
+    }
+}
+
+// 显示无专利号列提示
+function showNoPatentColumnWarning() {
+    console.log('显示无专利号列警告');
+    
+    let configSection = document.getElementById('claims_patent_column_config');
+    if (!configSection) {
+        // 创建配置区域（如果不存在）
+        const uploadContainer = document.getElementById('claims_sheet_selector_container');
+        if (uploadContainer && uploadContainer.parentNode) {
+            configSection = document.createElement('div');
+            configSection.id = 'claims_patent_column_config';
+            configSection.className = 'config-section';
+            configSection.innerHTML = `
+                <div id="no_patent_column" class="warning-message">
+                    <span class="icon warning">⚠</span>
+                    <span>未检测到专利号列，专利搜索功能将不可用</span>
+                    <button class="btn-small" onclick="showManualPatentColumnSelection()">手动选择</button>
+                </div>
+            `;
+            uploadContainer.parentNode.insertBefore(configSection, uploadContainer.nextSibling);
+        }
+    }
+    
+    const noPatentColumn = document.getElementById('no_patent_column');
+    if (noPatentColumn) {
+        noPatentColumn.style.display = 'block';
+    }
 }
 
 // ==================== 专利号查询和可视化功能 ====================
@@ -538,7 +779,7 @@ function showClaimsPatentQuerySection() {
     }
 }
 
-// 搜索专利号
+// 搜索专利号 - 增强版本
 async function claimsSearchPatentNumbers() {
     const patentSearchInput = document.getElementById('claims_patent_search_input');
     const query = patentSearchInput ? patentSearchInput.value.trim() : '';
@@ -556,46 +797,135 @@ async function claimsSearchPatentNumbers() {
     try {
         showClaimsMessage('正在搜索专利号...', 'info');
         
-        // 尝试从处理结果中搜索
+        let results = [];
+        
+        // 策略1: 从处理结果中搜索
         if (claimsProcessedData && claimsProcessedData.claims) {
-            const results = claimsProcessedData.claims.filter(claim => 
-                claim.patent_number && claim.patent_number.includes(query)
-            );
+            console.log('策略1: 从处理结果中搜索');
+            results = claimsProcessedData.claims.filter(claim => {
+                if (claim.patent_number) {
+                    return claim.patent_number.toLowerCase().includes(query.toLowerCase());
+                }
+                return false;
+            });
             
             if (results.length > 0) {
+                console.log('在处理结果中找到', results.length, '个匹配项');
                 displayClaimsSearchResults(results, query);
                 return;
             }
         }
         
-        // 如果没有找到，尝试API搜索（需要专利号列）
+        // 策略2: 从Excel原始数据搜索（如果有专利号列）
         if (claimsCurrentPatentColumn) {
-            const response = await fetch(`/api/excel/${claimsCurrentFileId}/search`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    column_name: claimsCurrentPatentColumn,
-                    query: query,
-                    limit: 20
-                })
+            console.log('策略2: 从Excel数据搜索，专利号列:', claimsCurrentPatentColumn);
+            try {
+                const response = await fetch(`/api/excel/${claimsCurrentFileId}/search`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        column_name: claimsCurrentPatentColumn,
+                        query: query,
+                        limit: 20
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success && result.data.results.length > 0) {
+                    console.log('在Excel数据中找到', result.data.results.length, '个匹配项');
+                    displayClaimsSearchResults(result.data.results, query);
+                    return;
+                }
+            } catch (error) {
+                console.error('Excel搜索失败:', error);
+            }
+        }
+        
+        // 策略3: 模糊搜索所有列
+        console.log('策略3: 模糊搜索所有列');
+        try {
+            const response = await fetch(`/api/excel/${claimsCurrentFileId}/data?page=1&page_size=100`, {
+                method: 'GET'
             });
             
             const result = await response.json();
             
             if (result.success) {
-                displayClaimsSearchResults(result.data.results, query);
-            } else {
-                showClaimsMessage(result.error || '搜索失败', 'error');
+                const fuzzyResults = performFuzzySearch(result.data.data, query);
+                if (fuzzyResults.length > 0) {
+                    console.log('模糊搜索找到', fuzzyResults.length, '个匹配项');
+                    displayClaimsSearchResults(fuzzyResults, query);
+                    return;
+                }
             }
-        } else {
-            showClaimsMessage('未找到包含 "' + query + '" 的专利号', 'error');
+        } catch (error) {
+            console.error('模糊搜索失败:', error);
         }
+        
+        // 如果所有策略都没有找到结果
+        showClaimsMessage('未找到包含 "' + query + '" 的专利号。建议：1) 检查输入是否正确 2) 尝试输入更少的字符 3) 确认Excel中包含专利号数据', 'error');
+        displayClaimsSearchResults([], query);
+        
     } catch (error) {
         console.error('Search error:', error);
         showClaimsMessage('搜索失败: ' + error.message, 'error');
     }
+}
+
+// 执行模糊搜索
+function performFuzzySearch(data, query) {
+    const results = [];
+    const queryLower = query.toLowerCase();
+    
+    data.forEach((row, index) => {
+        // 搜索所有列
+        for (const [columnName, value] of Object.entries(row.data)) {
+            if (value && typeof value === 'string') {
+                const valueLower = value.toLowerCase();
+                if (valueLower.includes(queryLower)) {
+                    // 检查是否看起来像专利号
+                    if (looksLikePatentNumber(value)) {
+                        results.push({
+                            patent_number: value,
+                            row_index: row.row_index,
+                            source_column: columnName,
+                            match_type: 'fuzzy',
+                            data: row.data
+                        });
+                        break; // 每行只添加一次
+                    }
+                }
+            }
+        }
+    });
+    
+    return results.slice(0, 20); // 限制结果数量
+}
+
+// 检查字符串是否看起来像专利号
+function looksLikePatentNumber(value) {
+    if (!value || typeof value !== 'string') return false;
+    
+    const cleanValue = value.trim();
+    
+    // 基本长度检查
+    if (cleanValue.length < 6 || cleanValue.length > 25) return false;
+    
+    // 检查是否包含数字
+    if (!/\d/.test(cleanValue)) return false;
+    
+    // 检查常见专利号模式
+    const patentPatterns = [
+        /^[A-Z]{2,4}\d+[A-Z]?\d?$/i,  // 字母+数字+可选字母数字
+        /^\d{6,20}$/,                  // 纯数字
+        /^[A-Z]{2}\d{4}-?\d+[A-Z]?$/i, // 字母+年份-数字+字母
+        /^ZL\d+\.?\d?$/i,              // ZL开头
+    ];
+    
+    return patentPatterns.some(pattern => pattern.test(cleanValue));
 }
 
 // 显示搜索结果
@@ -1319,3 +1649,10 @@ document.addEventListener('keydown', function(event) {
         closeClaimsClaimModal();
     }
 });
+
+// 在页面加载时初始化
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initClaimsProcessor);
+} else {
+    initClaimsProcessor();
+}

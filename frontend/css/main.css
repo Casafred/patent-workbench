@@ -22,6 +22,7 @@
 @import url('components/tabs.css');
 @import url('components/tables.css');
 @import url('components/lists.css');
+@import url('components/patent-config.css');
 
 /* 页面特定样式 */
 @import url('pages/chat.css');

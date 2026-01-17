@@ -1,0 +1,251 @@
+/* 专利号列配置组件样式 */
+
+.config-section {
+    margin: 20px 0;
+    padding: 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+
+.config-section h4 {
+    margin: 0 0 15px 0;
+    color: #333;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* 自动识别结果样式 */
+.detection-result {
+    background: white;
+    border: 1px solid #d4edda;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 10px;
+}
+
+.result-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #155724;
+}
+
+.result-header .icon {
+    margin-right: 8px;
+    font-size: 16px;
+}
+
+.result-header .icon.success {
+    color: #28a745;
+}
+
+.result-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.result-content strong {
+    color: #333;
+    font-size: 14px;
+}
+
+.confidence {
+    color: #666;
+    font-size: 12px;
+    background: #e9ecef;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+/* 手动选择样式 */
+.manual-selection {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 10px;
+}
+
+.manual-selection label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #333;
+}
+
+.manual-selection .form-control {
+    width: 100%;
+    max-width: 300px;
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+.manual-selection .form-control:focus {
+    outline: none;
+    border-color: #80bdff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* 警告消息样式 */
+.warning-message {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 6px;
+    padding: 12px;
+    color: #856404;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.warning-message .icon.warning {
+    color: #f39c12;
+    font-size: 16px;
+}
+
+/* 按钮样式 */
+.btn-small {
+    padding: 4px 12px;
+    font-size: 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-small:hover {
+    opacity: 0.9;
+}
+
+.btn-small:not(.secondary) {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-small.secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+.btn-primary:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .result-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .manual-selection .form-control {
+        max-width: 100%;
+    }
+    
+    .config-section {
+        margin: 15px 0;
+        padding: 12px;
+    }
+}
+
+/* 动画效果 */
+.config-section {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 搜索结果增强样式 */
+.search-result-item {
+    padding: 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: white;
+}
+
+.search-result-item:hover {
+    background-color: #f8f9fa;
+    border-color: #007bff;
+}
+
+.search-result-item.selected {
+    background-color: #e3f2fd;
+    border-color: #2196f3;
+}
+
+.search-result-patent {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.search-result-row {
+    font-size: 12px;
+    color: #666;
+}
+
+/* 搜索统计信息 */
+.search-stats {
+    padding: 8px 12px;
+    background: #e9ecef;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: #495057;
+}
+
+/* 搜索建议 */
+.search-suggestions {
+    background: #d1ecf1;
+    border: 1px solid #bee5eb;
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 10px;
+    font-size: 13px;
+    color: #0c5460;
+}
+
+.search-suggestions ul {
+    margin: 5px 0 0 0;
+    padding-left: 20px;
+}
+
+.search-suggestions li {
+    margin-bottom: 3px;
+}
