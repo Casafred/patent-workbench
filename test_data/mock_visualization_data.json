@@ -1,0 +1,112 @@
+{
+  "patent_number": "CN202310123456A",
+  "nodes": [
+    {
+      "id": "claim_1",
+      "claim_number": 1,
+      "claim_text": "一种智能手机，包括：处理器，用于执行应用程序；存储器，与所述处理器连接，用于存储数据；显示屏，与所述处理器连接，用于显示信息。",
+      "claim_type": "independent",
+      "level": 0,
+      "dependencies": [],
+      "children": [
+        "claim_2",
+        "claim_3",
+        "claim_4"
+      ]
+    },
+    {
+      "id": "claim_2",
+      "claim_number": 2,
+      "claim_text": "根据权利要求1所述的智能手机，其特征在于，还包括摄像头，与所述处理器连接，用于拍摄照片和视频。",
+      "claim_type": "dependent",
+      "level": 1,
+      "dependencies": [
+        1
+      ],
+      "children": [
+        "claim_5"
+      ]
+    },
+    {
+      "id": "claim_3",
+      "claim_number": 3,
+      "claim_text": "根据权利要求1所述的智能手机，其特征在于，还包括传感器模块，用于检测设备的运动状态。",
+      "claim_type": "dependent",
+      "level": 1,
+      "dependencies": [
+        1
+      ],
+      "children": [
+        "claim_6"
+      ]
+    },
+    {
+      "id": "claim_4",
+      "claim_number": 4,
+      "claim_text": "根据权利要求1所述的智能手机，其特征在于，所述显示屏为触摸屏，支持多点触控操作。",
+      "claim_type": "dependent",
+      "level": 1,
+      "dependencies": [
+        1
+      ],
+      "children": []
+    },
+    {
+      "id": "claim_5",
+      "claim_number": 5,
+      "claim_text": "根据权利要求2所述的智能手机，其特征在于，所述摄像头包括前置摄像头和后置摄像头。",
+      "claim_type": "dependent",
+      "level": 2,
+      "dependencies": [
+        2
+      ],
+      "children": []
+    },
+    {
+      "id": "claim_6",
+      "claim_number": 6,
+      "claim_text": "根据权利要求3所述的智能手机，其特征在于，所述传感器模块包括加速度传感器和陀螺仪传感器。",
+      "claim_type": "dependent",
+      "level": 2,
+      "dependencies": [
+        3
+      ],
+      "children": []
+    }
+  ],
+  "links": [
+    {
+      "source": "claim_1",
+      "target": "claim_2",
+      "type": "dependency",
+      "strength": 1.0
+    },
+    {
+      "source": "claim_1",
+      "target": "claim_3",
+      "type": "dependency",
+      "strength": 1.0
+    },
+    {
+      "source": "claim_1",
+      "target": "claim_4",
+      "type": "dependency",
+      "strength": 1.0
+    },
+    {
+      "source": "claim_2",
+      "target": "claim_5",
+      "type": "dependency",
+      "strength": 1.0
+    },
+    {
+      "source": "claim_3",
+      "target": "claim_6",
+      "type": "dependency",
+      "strength": 1.0
+    }
+  ],
+  "root_nodes": [
+    "claim_1"
+  ]
+}

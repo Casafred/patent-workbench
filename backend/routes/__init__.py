@@ -20,6 +20,8 @@ def register_blueprints(app: Flask):
     from .files import files_bp
     from .patent import patent_bp
     from .claims import claims_bp
+    from .patent_query import patent_query_bp
+    from .excel_upload import excel_upload_bp
     
     # Register blueprints with appropriate URL prefixes
     app.register_blueprint(auth_bp)
@@ -28,6 +30,8 @@ def register_blueprints(app: Flask):
     app.register_blueprint(files_bp, url_prefix='/api')
     app.register_blueprint(patent_bp, url_prefix='/api')
     app.register_blueprint(claims_bp, url_prefix='/api')
+    app.register_blueprint(patent_query_bp)
+    app.register_blueprint(excel_upload_bp)
     
     print("✓ All blueprints registered successfully")
     

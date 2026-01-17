@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel文件上传 - 专利查询系统</title>
+    <link rel="stylesheet" href="css/main.css">
+    <style>
+        .upload-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            background: #fafafa;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .upload-area:hover {
+            border-color: #007bff;
+            background: #f0f8ff;
+        }
+        
+        .upload-area.dragover {
+            border-color: #007bff;
+            background: #e3f2fd;
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        .upload-text {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .upload-hint {
+            font-size: 14px;
+            color: #999;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .upload-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 15px;
+        }
+        
+        .upload-btn:hover {
+            background: #0056b3;
+        }
+        
+        .file-info {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .file-info h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+        }
+        
+        .file-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .file-detail {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .file-detail:last-child {
+            border-bottom: none;
+        }
+        
+        .config-section {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+        
+        .columns-preview {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        
+        .column-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .column-item:last-child {
+            border-bottom: none;
+        }
+        
+        .column-name {
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .column-type {
+            font-size: 12px;
+            color: #666;
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        
+        .search-section {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .search-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: end;
+        }
+        
+        .search-input {
+            flex: 1;
+        }
+        
+        .search-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .search-btn:hover {
+            background: #218838;
+        }
+        
+        .search-results {
+            margin-top: 20px;
+        }
+        
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        
+        .results-table th,
+        .results-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .results-table th {
+            background: #f8f9fa;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .results-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .patent-number {
+            font-family: monospace;
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        .match-score {
+            background: #28a745;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+        
+        .visualize-btn {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .visualize-btn:hover {
+            background: #138496;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .alert {
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .alert-error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .alert-info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            padding: 0 20px;
+        }
+        
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            position: relative;
+        }
+        
+        .step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 60%;
+            right: -40%;
+            height: 2px;
+            background: #ddd;
+            z-index: 1;
+        }
+        
+        .step.active:not(:last-child)::after {
+            background: #007bff;
+        }
+        
+        .step-number {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #ddd;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .step.active .step-number {
+            background: #007bff;
+        }
+        
+        .step.completed .step-number {
+            background: #28a745;
+        }
+        
+        .step-title {
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+        }
+        
+        .step.active .step-title {
+            color: #007bff;
+            font-weight: 500;
+        }
+        
+        @media (max-width: 768px) {
+            .search-controls {
+                flex-direction: column;
+            }
+            
+            .progress-steps {
+                padding: 0 10px;
+            }
+            
+            .step-title {
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <h1>Excel文件上传 - 专利查询系统</h1>
+                <nav class="nav">
+                    <a href="patent_query_config.html">配置管理</a>
+                    <a href="patent_query_upload.html" class="active">Excel上传</a>
+                    <a href="patent_query_search.html">专利搜索</a>
+                    <a href="patent_query_visualization.html">可视化</a>
+                </nav>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="upload-container">
+                <!-- 进度步骤 -->
+                <div class="progress-steps">
+                    <div class="step active" id="step1">
+                        <div class="step-number">1</div>
+                        <div class="step-title">上传Excel</div>
+                    </div>
+                    <div class="step" id="step2">
+                        <div class="step-number">2</div>
+                        <div class="step-title">配置列</div>
+                    </div>
+                    <div class="step" id="step3">
+                        <div class="step-number">3</div>
+                        <div class="step-title">搜索专利</div>
+                    </div>
+                    <div class="step" id="step4">
+                        <div class="step-number">4</div>
+                        <div class="step-title">可视化</div>
+                    </div>
+                </div>
+
+                <!-- 消息提示 -->
+                <div id="messageContainer"></div>
+
+                <!-- 文件上传区域 -->
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📁</div>
+                    <div class="upload-text">点击选择Excel文件或拖拽文件到此处</div>
+                    <div class="upload-hint">支持 .xlsx, .xls, .csv 格式，最大 16MB</div>
+                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                        选择文件
+                    </button>
+                    <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls,.csv">
+                </div>
+
+                <!-- 文件信息 -->
+                <div class="file-info" id="fileInfo">
+                    <h3>文件信息</h3>
+                    <div class="file-details" id="fileDetails"></div>
+                    <div class="loading" id="uploadLoading" style="display: none;">
+                        <div class="spinner"></div>
+                        <div>正在上传和解析文件...</div>
+                    </div>
+                </div>
+
+                <!-- 列配置 -->
+                <div class="config-section" id="configSection">
+                    <h3>配置专利号列</h3>
+                    <div class="form-group">
+                        <label for="headerRow">标题行 (从0开始):</label>
+                        <input type="number" id="headerRow" class="form-control" value="0" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="patentColumn">专利号列:</label>
+                        <select id="patentColumn" class="form-control">
+                            <option value="">请选择专利号所在的列</option>
+                        </select>
+                    </div>
+                    <div class="columns-preview" id="columnsPreview"></div>
+                    <button class="upload-btn" onclick="confirmConfiguration()">确认配置</button>
+                </div>
+
+                <!-- 搜索区域 -->
+                <div class="search-section" id="searchSection">
+                    <h3>搜索专利号</h3>
+                    <div class="search-controls">
+                        <div class="search-input">
+                            <label for="searchQuery">输入专利号片段:</label>
+                            <input type="text" id="searchQuery" class="form-control" 
+                                   placeholder="例如: CN202310, US2023, 123456" 
+                                   onkeypress="handleSearchKeyPress(event)">
+                        </div>
+                        <button class="search-btn" onclick="searchPatents()">搜索</button>
+                    </div>
+                    
+                    <div class="search-results" id="searchResults" style="display: none;">
+                        <h4>搜索结果</h4>
+                        <div class="loading" id="searchLoading" style="display: none;">
+                            <div class="spinner"></div>
+                            <div>正在搜索...</div>
+                        </div>
+                        <table class="results-table" id="resultsTable" style="display: none;">
+                            <thead>
+                                <tr>
+                                    <th>行号</th>
+                                    <th>专利号</th>
+                                    <th>匹配度</th>
+                                    <th>其他信息</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsBody"></tbody>
+                        </table>
+                        <div id="noResults" style="display: none; text-align: center; padding: 20px; color: #666;">
+                            未找到匹配的专利号
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 全局变量
+        let currentFileId = null;
+        let currentColumns = [];
+        let selectedPatentColumn = null;
+        let currentHeaderRow = 0;
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            setupFileUpload();
+        });
+
+        // 设置文件上传
+        function setupFileUpload() {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+
+            // 点击上传区域
+            uploadArea.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            // 文件选择
+            fileInput.addEventListener('change', handleFileSelect);
+
+            // 拖拽上传
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFile(files[0]);
+                }
+            });
+        }
+
+        // 处理文件选择
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+
+        // 处理文件
+        async function handleFile(file) {
+            // 验证文件类型
+            const allowedTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 
+                                'application/vnd.ms-excel', 'text/csv'];
+            const allowedExtensions = ['.xlsx', '.xls', '.csv'];
+            
+            const isValidType = allowedTypes.includes(file.type) || 
+                              allowedExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+            
+            if (!isValidType) {
+                showMessage('error', '不支持的文件类型。请选择 .xlsx, .xls 或 .csv 文件。');
+                return;
+            }
+
+            // 验证文件大小 (16MB)
+            if (file.size > 16 * 1024 * 1024) {
+                showMessage('error', '文件大小超过 16MB 限制。');
+                return;
+            }
+
+            // 显示文件信息
+            showFileInfo(file);
+            
+            // 上传文件
+            await uploadFile(file);
+        }
+
+        // 显示文件信息
+        function showFileInfo(file) {
+            const fileInfo = document.getElementById('fileInfo');
+            const fileDetails = document.getElementById('fileDetails');
+            
+            fileDetails.innerHTML = `
+                <div class="file-detail">
+                    <span>文件名:</span>
+                    <span>${file.name}</span>
+                </div>
+                <div class="file-detail">
+                    <span>文件大小:</span>
+                    <span>${formatFileSize(file.size)}</span>
+                </div>
+                <div class="file-detail">
+                    <span>文件类型:</span>
+                    <span>${file.type || '未知'}</span>
+                </div>
+                <div class="file-detail">
+                    <span>最后修改:</span>
+                    <span>${new Date(file.lastModified).toLocaleString()}</span>
+                </div>
+            `;
+            
+            fileInfo.style.display = 'block';
+        }
+
+        // 上传文件
+        async function uploadFile(file) {
+            const uploadLoading = document.getElementById('uploadLoading');
+            uploadLoading.style.display = 'block';
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('header_row', currentHeaderRow);
+
+                const response = await fetch('/api/excel/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    currentFileId = result.data.file_id;
+                    currentColumns = result.data.columns;
+                    
+                    showMessage('success', '文件上传成功！');
+                    updateStep(1, 'completed');
+                    updateStep(2, 'active');
+                    
+                    showColumnConfiguration();
+                } else {
+                    showMessage('error', result.error || '文件上传失败');
+                }
+            } catch (error) {
+                console.error('上传文件失败:', error);
+                showMessage('error', '文件上传失败，请检查网络连接');
+            } finally {
+                uploadLoading.style.display = 'none';
+            }
+        }
+
+        // 显示列配置
+        function showColumnConfiguration() {
+            const configSection = document.getElementById('configSection');
+            const patentColumn = document.getElementById('patentColumn');
+            const columnsPreview = document.getElementById('columnsPreview');
+
+            // 清空并填充列选项
+            patentColumn.innerHTML = '<option value="">请选择专利号所在的列</option>';
+            
+            currentColumns.forEach(column => {
+                const option = document.createElement('option');
+                option.value = column.name;
+                option.textContent = `${column.name} (${column.type})`;
+                patentColumn.appendChild(option);
+            });
+
+            // 显示列预览
+            columnsPreview.innerHTML = currentColumns.map(column => `
+                <div class="column-item">
+                    <span class="column-name">${column.name}</span>
+                    <span class="column-type">${column.type}</span>
+                </div>
+            `).join('');
+
+            configSection.style.display = 'block';
+
+            // 绑定标题行变化事件
+            document.getElementById('headerRow').addEventListener('change', async function() {
+                currentHeaderRow = parseInt(this.value);
+                await reloadColumns();
+            });
+        }
+
+        // 重新加载列信息
+        async function reloadColumns() {
+            if (!currentFileId) return;
+
+            try {
+                const response = await fetch(`/api/excel/${currentFileId}/columns?header_row=${currentHeaderRow}`);
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    currentColumns = result.data.columns;
+                    showColumnConfiguration();
+                } else {
+                    showMessage('error', result.error || '获取列信息失败');
+                }
+            } catch (error) {
+                console.error('获取列信息失败:', error);
+                showMessage('error', '获取列信息失败，请检查网络连接');
+            }
+        }
+
+        // 确认配置
+        function confirmConfiguration() {
+            const patentColumn = document.getElementById('patentColumn').value;
+            
+            if (!patentColumn) {
+                showMessage('error', '请选择专利号所在的列');
+                return;
+            }
+
+            selectedPatentColumn = patentColumn;
+            
+            showMessage('success', `已配置专利号列: ${patentColumn}`);
+            updateStep(2, 'completed');
+            updateStep(3, 'active');
+            
+            showSearchSection();
+        }
+
+        // 显示搜索区域
+        function showSearchSection() {
+            const searchSection = document.getElementById('searchSection');
+            searchSection.style.display = 'block';
+            
+            // 自动聚焦到搜索框
+            document.getElementById('searchQuery').focus();
+        }
+
+        // 搜索专利
+        async function searchPatents() {
+            const query = document.getElementById('searchQuery').value.trim();
+            
+            if (!currentFileId || !selectedPatentColumn) {
+                showMessage('error', '请先上传文件并配置专利号列');
+                return;
+            }
+
+            const searchLoading = document.getElementById('searchLoading');
+            const resultsTable = document.getElementById('resultsTable');
+            const noResults = document.getElementById('noResults');
+            const searchResults = document.getElementById('searchResults');
+
+            searchResults.style.display = 'block';
+            searchLoading.style.display = 'block';
+            resultsTable.style.display = 'none';
+            noResults.style.display = 'none';
+
+            try {
+                const response = await fetch(`/api/excel/${currentFileId}/search`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        column_name: selectedPatentColumn,
+                        query: query,
+                        limit: 50,
+                        header_row: currentHeaderRow
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    displaySearchResults(result.data.results);
+                } else {
+                    showMessage('error', result.error || '搜索失败');
+                }
+            } catch (error) {
+                console.error('搜索失败:', error);
+                showMessage('error', '搜索失败，请检查网络连接');
+            } finally {
+                searchLoading.style.display = 'none';
+            }
+        }
+
+        // 显示搜索结果
+        function displaySearchResults(results) {
+            const resultsTable = document.getElementById('resultsTable');
+            const resultsBody = document.getElementById('resultsBody');
+            const noResults = document.getElementById('noResults');
+
+            if (results.length === 0) {
+                noResults.style.display = 'block';
+                return;
+            }
+
+            // 构建表格行
+            resultsBody.innerHTML = results.map(result => {
+                const matchPercent = Math.round(result.match_score * 100);
+                const otherData = Object.entries(result.data)
+                    .filter(([key, value]) => key !== selectedPatentColumn && value)
+                    .slice(0, 2)  // 只显示前2个其他字段
+                    .map(([key, value]) => `${key}: ${value}`)
+                    .join(', ');
+
+                return `
+                    <tr>
+                        <td>${result.row_index}</td>
+                        <td class="patent-number">${result.patent_number}</td>
+                        <td><span class="match-score">${matchPercent}%</span></td>
+                        <td>${otherData || '无'}</td>
+                        <td>
+                            <button class="visualize-btn" onclick="visualizePatent('${result.patent_number}')">
+                                可视化
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            resultsTable.style.display = 'table';
+        }
+
+        // 可视化专利
+        function visualizePatent(patentNumber) {
+            updateStep(4, 'active');
+            showMessage('info', `正在为专利 ${patentNumber} 生成可视化...`);
+            
+            // 跳转到可视化页面
+            window.open(`patent_query_visualization.html?patent=${encodeURIComponent(patentNumber)}`, '_blank');
+        }
+
+        // 搜索框回车事件
+        function handleSearchKeyPress(event) {
+            if (event.key === 'Enter') {
+                searchPatents();
+            }
+        }
+
+        // 更新步骤状态
+        function updateStep(stepNumber, status) {
+            const step = document.getElementById(`step${stepNumber}`);
+            step.className = `step ${status}`;
+        }
+
+        // 显示消息
+        function showMessage(type, message) {
+            const container = document.getElementById('messageContainer');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            
+            container.innerHTML = '';
+            container.appendChild(alertDiv);
+            
+            // 3秒后自动隐藏成功消息
+            if (type === 'success') {
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 3000);
+            }
+        }
+
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html>

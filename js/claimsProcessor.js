@@ -1,16 +1,20 @@
 /**
  * 专利权利要求处理器前端脚本
- * 版本: 2.0.0 - BytesIO修复版本
- * 更新时间: 2026-01-16 23:10
+ * 版本: 2.1.0 - 集成专利号查询和可视化功能
+ * 更新时间: 2026-01-17 18:30
  */
 
 // 版本检查
-console.log('Claims Processor v2.0.0 - BytesIO Export Fix Loaded');
+console.log('Claims Processor v2.1.0 - Patent Query & Visualization Loaded');
 
 // 全局状态
 let currentFileId = null;
 let currentTaskId = null;
 let processingInterval = null;
+let currentPatentColumn = null;
+let selectedPatentNumber = null;
+let selectedPatentRow = null;
+let visualizationRenderer = null;
 
 // DOM元素
 const uploadArea = document.getElementById('uploadArea');
@@ -31,6 +35,27 @@ const summaryGrid = document.getElementById('summaryGrid');
 const claimsTableContainer = document.getElementById('claimsTableContainer');
 const exportExcelBtn = document.getElementById('exportExcelBtn');
 const exportJsonBtn = document.getElementById('exportJsonBtn');
+
+// 新增：专利查询和可视化相关元素
+const patentQuerySection = document.getElementById('patentQuerySection');
+const patentSearchInput = document.getElementById('patentSearchInput');
+const searchPatentBtn = document.getElementById('searchPatentBtn');
+const searchResultsContainer = document.getElementById('searchResultsContainer');
+const searchResults = document.getElementById('searchResults');
+const selectedPatentInfo = document.getElementById('selectedPatentInfo');
+const selectedPatentNumber = document.getElementById('selectedPatentNumber');
+const selectedPatentRow = document.getElementById('selectedPatentRow');
+const visualizePatentBtn = document.getElementById('visualizePatentBtn');
+const visualizationSection = document.getElementById('visualizationSection');
+const styleSelector = document.getElementById('styleSelector');
+const zoomIn = document.getElementById('zoomIn');
+const zoomOut = document.getElementById('zoomOut');
+const zoomReset = document.getElementById('zoomReset');
+const centerView = document.getElementById('centerView');
+const visualizationContainer = document.getElementById('visualizationContainer');
+const vizLoadingIndicator = document.getElementById('vizLoadingIndicator');
+const vizErrorMessage = document.getElementById('vizErrorMessage');
+const vizErrorText = document.getElementById('vizErrorText');
 
 // 初始化
 document.addEventListener('DOMContentLoaded', () => {
@@ -483,4 +508,677 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// ==================== 专利号查询和可视化功能 ====================
+
+// 更新事件监听器初始化
+const originalInitializeEventListeners = initializeEventListeners;
+initializeEventListeners = function() {
+    // 调用原有的事件监听器
+    originalInitializeEventListeners();
+    
+    // 新增：专利查询相关事件监听器
+    if (searchPatentBtn) {
+        searchPatentBtn.addEventListener('click', searchPatentNumbers);
+    }
+    
+    if (patentSearchInput) {
+        patentSearchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                searchPatentNumbers();
+            }
+        });
+    }
+    
+    if (visualizePatentBtn) {
+        visualizePatentBtn.addEventListener('click', generateVisualization);
+    }
+    
+    // 可视化控制事件
+    if (styleSelector) {
+        styleSelector.addEventListener('change', () => {
+            if (visualizationRenderer && visualizationRenderer.currentData) {
+                visualizationRenderer.render(visualizationRenderer.currentData, styleSelector.value);
+            }
+        });
+    }
+    
+    if (zoomIn) {
+        zoomIn.addEventListener('click', () => {
+            if (visualizationRenderer) visualizationRenderer.zoomIn();
+        });
+    }
+    
+    if (zoomOut) {
+        zoomOut.addEventListener('click', () => {
+            if (visualizationRenderer) visualizationRenderer.zoomOut();
+        });
+    }
+    
+    if (zoomReset) {
+        zoomReset.addEventListener('click', () => {
+            if (visualizationRenderer) visualizationRenderer.zoomReset();
+        });
+    }
+    
+    if (centerView) {
+        centerView.addEventListener('click', () => {
+            if (visualizationRenderer) visualizationRenderer.centerView();
+        });
+    }
+};
+
+// 显示专利查询区域
+function showPatentQuerySection() {
+    if (currentFileId && columnSelect.value) {
+        currentPatentColumn = columnSelect.value;
+        patentQuerySection.style.display = 'block';
+        
+        // 滚动到专利查询区域
+        patentQuerySection.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+// 搜索专利号
+async function searchPatentNumbers() {
+    const query = patentSearchInput.value.trim();
+    
+    if (!query) {
+        showError('请输入专利号片段');
+        return;
+    }
+    
+    if (!currentFileId || !currentPatentColumn) {
+        showError('请先上传文件并选择专利号列');
+        return;
+    }
+    
+    try {
+        showInfo('正在搜索专利号...');
+        
+        const response = await fetch(`/api/excel/${currentFileId}/search`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                column_name: currentPatentColumn,
+                query: query,
+                limit: 20
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            displaySearchResults(result.data.results, query);
+        } else {
+            showError(result.error || '搜索失败');
+        }
+    } catch (error) {
+        console.error('Search error:', error);
+        showError('搜索失败: ' + error.message);
+    }
+}
+
+// 显示搜索结果
+function displaySearchResults(results, query) {
+    if (results.length === 0) {
+        searchResults.innerHTML = `
+            <div style="padding: 20px; text-align: center; color: #666;">
+                未找到包含 "${query}" 的专利号
+            </div>
+        `;
+    } else {
+        let html = '';
+        results.forEach((result, index) => {
+            html += `
+                <div class="search-result-item" onclick="selectPatent('${result.patent_number}', ${result.row_index})">
+                    <div class="search-result-patent">${result.patent_number}</div>
+                    <div class="search-result-row">Excel行号: ${result.row_index}</div>
+                </div>
+            `;
+        });
+        searchResults.innerHTML = html;
+        
+        showSuccess(`找到 ${results.length} 个匹配的专利号`);
+    }
+    
+    searchResultsContainer.style.display = 'block';
+    selectedPatentInfo.style.display = 'none';
+    visualizationSection.style.display = 'none';
+}
+
+// 选择专利
+function selectPatent(patentNumber, rowIndex) {
+    selectedPatentNumber = patentNumber;
+    selectedPatentRow = rowIndex;
+    
+    // 更新选中状态
+    document.querySelectorAll('.search-result-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    event.currentTarget.classList.add('selected');
+    
+    // 显示选中的专利信息
+    document.getElementById('selectedPatentNumber').textContent = patentNumber;
+    document.getElementById('selectedPatentRow').textContent = rowIndex;
+    selectedPatentInfo.style.display = 'block';
+    
+    // 隐藏之前的可视化
+    visualizationSection.style.display = 'none';
+}
+
+// 生成可视化
+async function generateVisualization() {
+    if (!selectedPatentNumber) {
+        showError('请先选择一个专利号');
+        return;
+    }
+    
+    try {
+        // 显示可视化区域和加载状态
+        visualizationSection.style.display = 'block';
+        vizLoadingIndicator.style.display = 'block';
+        vizErrorMessage.style.display = 'none';
+        
+        // 滚动到可视化区域
+        visualizationSection.scrollIntoView({ behavior: 'smooth' });
+        
+        showInfo('正在分析权利要求关系...');
+        
+        // 这里需要调用权利要求分析API
+        // 由于我们还没有实际的专利数据，先创建模拟数据
+        const mockData = createMockVisualizationData(selectedPatentNumber);
+        
+        // 初始化可视化渲染器
+        if (!visualizationRenderer) {
+            visualizationRenderer = new D3TreeRenderer('visualizationContainer');
+        }
+        
+        // 渲染可视化
+        vizLoadingIndicator.style.display = 'none';
+        visualizationRenderer.render(mockData, styleSelector.value);
+        
+        showSuccess('权利要求关系图生成完成！');
+        
+    } catch (error) {
+        console.error('Visualization error:', error);
+        vizLoadingIndicator.style.display = 'none';
+        vizErrorMessage.style.display = 'block';
+        vizErrorText.textContent = error.message;
+        showError('生成可视化失败: ' + error.message);
+    }
+}
+
+// 创建模拟可视化数据
+function createMockVisualizationData(patentNumber) {
+    return {
+        patent_number: patentNumber,
+        nodes: [
+            {
+                id: "claim_1",
+                claim_number: 1,
+                claim_text: `一种智能设备，包括：处理器，用于执行应用程序；存储器，与所述处理器连接，用于存储数据。（专利号：${patentNumber}）`,
+                claim_type: "independent",
+                level: 0,
+                dependencies: [],
+                children: ["claim_2", "claim_3"]
+            },
+            {
+                id: "claim_2",
+                claim_number: 2,
+                claim_text: `根据权利要求1所述的智能设备，其特征在于，还包括显示屏，与所述处理器连接。`,
+                claim_type: "dependent",
+                level: 1,
+                dependencies: [1],
+                children: ["claim_4"]
+            },
+            {
+                id: "claim_3",
+                claim_number: 3,
+                claim_text: `根据权利要求1所述的智能设备，其特征在于，还包括传感器模块。`,
+                claim_type: "dependent",
+                level: 1,
+                dependencies: [1],
+                children: []
+            },
+            {
+                id: "claim_4",
+                claim_number: 4,
+                claim_text: `根据权利要求2所述的智能设备，其特征在于，所述显示屏为触摸屏。`,
+                claim_type: "dependent",
+                level: 2,
+                dependencies: [2],
+                children: []
+            }
+        ],
+        links: [
+            { source: "claim_1", target: "claim_2", type: "dependency", strength: 1.0 },
+            { source: "claim_1", target: "claim_3", type: "dependency", strength: 1.0 },
+            { source: "claim_2", target: "claim_4", type: "dependency", strength: 1.0 }
+        ],
+        root_nodes: ["claim_1"]
+    };
+}
+
+// 重试可视化
+function retryVisualization() {
+    generateVisualization();
+}
+
+// 更新显示结果函数，添加专利查询按钮
+const originalDisplayResults = displayResults;
+displayResults = function(data) {
+    // 调用原有的显示逻辑
+    originalDisplayResults(data);
+    
+    // 显示专利查询区域
+    showPatentQuerySection();
+};
+
+// ==================== D3.js可视化渲染器 ====================
+
+// D3TreeRenderer类 - 基础D3.js渲染器
+class D3TreeRenderer {
+    constructor(containerId) {
+        this.container = d3.select(`#${containerId}`);
+        this.svg = this.container.select('#visualizationSvg');
+        
+        // 创建工具提示
+        this.tooltip = d3.select('body').append('div')
+            .attr('class', 'tooltip')
+            .style('opacity', 0);
+        
+        // 获取容器尺寸
+        this.updateDimensions();
+        
+        // 创建主要的SVG组
+        this.mainGroup = this.svg.append('g').attr('class', 'main-group');
+        
+        // 设置缩放行为
+        this.zoom = d3.zoom()
+            .scaleExtent([0.1, 3])
+            .on('zoom', (event) => {
+                this.mainGroup.attr('transform', event.transform);
+            });
+        
+        this.svg.call(this.zoom);
+        
+        // 当前数据和样式
+        this.currentData = null;
+        this.currentStyle = 'tree';
+        
+        // 绑定窗口大小变化事件
+        window.addEventListener('resize', () => {
+            this.updateDimensions();
+            if (this.currentData) {
+                this.render(this.currentData, this.currentStyle);
+            }
+        });
+    }
+    
+    updateDimensions() {
+        const containerRect = this.container.node().getBoundingClientRect();
+        this.width = containerRect.width;
+        this.height = containerRect.height;
+        
+        this.svg
+            .attr('width', this.width)
+            .attr('height', this.height);
+    }
+    
+    // 渲染可视化
+    render(data, style = 'tree') {
+        this.currentData = data;
+        this.currentStyle = style;
+        
+        // 清除现有内容
+        this.mainGroup.selectAll('*').remove();
+        
+        switch (style) {
+            case 'tree':
+                this.renderTree(data);
+                break;
+            case 'network':
+                this.renderNetwork(data);
+                break;
+            case 'radial':
+                this.renderRadial(data);
+                break;
+            default:
+                console.error('Unknown visualization style:', style);
+        }
+    }
+    
+    // 渲染树状图
+    renderTree(data) {
+        const treeLayout = d3.tree()
+            .size([this.width - 100, this.height - 100]);
+        
+        // 构建层次结构
+        const root = this.buildHierarchy(data);
+        const treeData = treeLayout(root);
+        
+        // 渲染连线
+        this.mainGroup.selectAll('.link')
+            .data(treeData.links())
+            .enter()
+            .append('path')
+            .attr('class', 'link')
+            .attr('d', d3.linkHorizontal()
+                .x(d => d.y + 50)
+                .y(d => d.x + 50)
+            );
+        
+        // 渲染节点
+        const nodes = this.mainGroup.selectAll('.node')
+            .data(treeData.descendants())
+            .enter()
+            .append('g')
+            .attr('class', 'node-group')
+            .attr('transform', d => `translate(${d.y + 50}, ${d.x + 50})`);
+        
+        // 添加节点圆圈
+        nodes.append('circle')
+            .attr('class', d => `node ${d.data.claim_type}`)
+            .attr('r', d => d.data.claim_type === 'independent' ? 20 : 15)
+            .on('mouseover', (event, d) => this.showTooltip(event, d.data))
+            .on('mouseout', () => this.hideTooltip())
+            .on('click', (event, d) => this.onNodeClick(d.data));
+        
+        // 添加节点标签
+        nodes.append('text')
+            .attr('class', 'node-label')
+            .attr('dy', '0.35em')
+            .text(d => d.data.claim_number);
+    }
+    
+    // 渲染网络图
+    renderNetwork(data) {
+        const simulation = d3.forceSimulation(data.nodes)
+            .force('link', d3.forceLink(data.links).id(d => d.id).distance(100))
+            .force('charge', d3.forceManyBody().strength(-300))
+            .force('center', d3.forceCenter(this.width / 2, this.height / 2));
+        
+        // 渲染连线
+        const links = this.mainGroup.selectAll('.link')
+            .data(data.links)
+            .enter()
+            .append('line')
+            .attr('class', 'link');
+        
+        // 渲染节点
+        const nodes = this.mainGroup.selectAll('.node-group')
+            .data(data.nodes)
+            .enter()
+            .append('g')
+            .attr('class', 'node-group')
+            .call(d3.drag()
+                .on('start', (event, d) => {
+                    if (!event.active) simulation.alphaTarget(0.3).restart();
+                    d.fx = d.x;
+                    d.fy = d.y;
+                })
+                .on('drag', (event, d) => {
+                    d.fx = event.x;
+                    d.fy = event.y;
+                })
+                .on('end', (event, d) => {
+                    if (!event.active) simulation.alphaTarget(0);
+                    d.fx = null;
+                    d.fy = null;
+                })
+            );
+        
+        // 添加节点圆圈
+        nodes.append('circle')
+            .attr('class', d => `node ${d.claim_type}`)
+            .attr('r', d => d.claim_type === 'independent' ? 20 : 15)
+            .on('mouseover', (event, d) => this.showTooltip(event, d))
+            .on('mouseout', () => this.hideTooltip())
+            .on('click', (event, d) => this.onNodeClick(d));
+        
+        // 添加节点标签
+        nodes.append('text')
+            .attr('class', 'node-label')
+            .attr('dy', '0.35em')
+            .text(d => d.claim_number);
+        
+        // 更新位置
+        simulation.on('tick', () => {
+            links
+                .attr('x1', d => d.source.x)
+                .attr('y1', d => d.source.y)
+                .attr('x2', d => d.target.x)
+                .attr('y2', d => d.target.y);
+            
+            nodes.attr('transform', d => `translate(${d.x}, ${d.y})`);
+        });
+    }
+    
+    // 渲染径向图
+    renderRadial(data) {
+        const radius = Math.min(this.width, this.height) / 2 - 50;
+        const tree = d3.cluster().size([2 * Math.PI, radius]);
+        
+        // 构建层次结构
+        const root = this.buildHierarchy(data);
+        const treeData = tree(root);
+        
+        // 移动到中心
+        this.mainGroup.attr('transform', `translate(${this.width / 2}, ${this.height / 2})`);
+        
+        // 渲染连线
+        this.mainGroup.selectAll('.link')
+            .data(treeData.links())
+            .enter()
+            .append('path')
+            .attr('class', 'link')
+            .attr('d', d3.linkRadial()
+                .angle(d => d.x)
+                .radius(d => d.y)
+            );
+        
+        // 渲染节点
+        const nodes = this.mainGroup.selectAll('.node-group')
+            .data(treeData.descendants())
+            .enter()
+            .append('g')
+            .attr('class', 'node-group')
+            .attr('transform', d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y}, 0)`);
+        
+        // 添加节点圆圈
+        nodes.append('circle')
+            .attr('class', d => `node ${d.data.claim_type}`)
+            .attr('r', d => d.data.claim_type === 'independent' ? 20 : 15)
+            .on('mouseover', (event, d) => this.showTooltip(event, d.data))
+            .on('mouseout', () => this.hideTooltip())
+            .on('click', (event, d) => this.onNodeClick(d.data));
+        
+        // 添加节点标签
+        nodes.append('text')
+            .attr('class', 'node-label')
+            .attr('dy', '0.35em')
+            .attr('x', d => d.x < Math.PI === !d.children ? 6 : -6)
+            .attr('text-anchor', d => d.x < Math.PI === !d.children ? 'start' : 'end')
+            .attr('transform', d => d.x >= Math.PI ? 'rotate(180)' : null)
+            .text(d => d.data.claim_number);
+    }
+    
+    // 构建D3层次结构
+    buildHierarchy(data) {
+        // 找到根节点
+        const rootNodes = data.nodes.filter(node => 
+            !data.links.some(link => link.target === node.id)
+        );
+        
+        if (rootNodes.length === 0) {
+            // 如果没有明确的根节点，使用第一个独立权利要求
+            const independentClaim = data.nodes.find(node => node.claim_type === 'independent');
+            if (independentClaim) {
+                rootNodes.push(independentClaim);
+            } else {
+                rootNodes.push(data.nodes[0]);
+            }
+        }
+        
+        // 构建层次结构
+        const buildChildren = (nodeId) => {
+            const children = data.links
+                .filter(link => link.source === nodeId)
+                .map(link => {
+                    const childNode = data.nodes.find(node => node.id === link.target);
+                    return {
+                        ...childNode,
+                        children: buildChildren(childNode.id)
+                    };
+                });
+            
+            return children.length > 0 ? children : null;
+        };
+        
+        // 如果有多个根节点，创建虚拟根节点
+        if (rootNodes.length > 1) {
+            return d3.hierarchy({
+                id: 'virtual_root',
+                claim_number: 'Root',
+                claim_type: 'independent',
+                children: rootNodes.map(root => ({
+                    ...root,
+                    children: buildChildren(root.id)
+                }))
+            });
+        } else {
+            return d3.hierarchy({
+                ...rootNodes[0],
+                children: buildChildren(rootNodes[0].id)
+            });
+        }
+    }
+    
+    // 显示工具提示
+    showTooltip(event, data) {
+        this.tooltip.html(`
+            <strong>权利要求 ${data.claim_number}</strong><br>
+            类型: ${data.claim_type === 'independent' ? '独立权利要求' : '从属权利要求'}<br>
+            ${data.dependencies && data.dependencies.length > 0 ? 
+                `依赖: ${data.dependencies.join(', ')}<br>` : ''}
+            层级: ${data.level || 0}<br>
+            <em>点击查看详细内容</em>
+        `)
+        .style('left', (event.pageX + 10) + 'px')
+        .style('top', (event.pageY - 10) + 'px')
+        .style('opacity', 1);
+    }
+    
+    // 隐藏工具提示
+    hideTooltip() {
+        this.tooltip.style('opacity', 0);
+    }
+    
+    // 节点点击事件
+    onNodeClick(data) {
+        showClaimModal(data);
+    }
+    
+    // 缩放控制
+    zoomIn() {
+        this.svg.transition().call(
+            this.zoom.scaleBy, 1.5
+        );
+    }
+    
+    zoomOut() {
+        this.svg.transition().call(
+            this.zoom.scaleBy, 1 / 1.5
+        );
+    }
+    
+    zoomReset() {
+        this.svg.transition().call(
+            this.zoom.transform,
+            d3.zoomIdentity
+        );
+    }
+    
+    centerView() {
+        const bounds = this.mainGroup.node().getBBox();
+        const fullWidth = this.width;
+        const fullHeight = this.height;
+        const width = bounds.width;
+        const height = bounds.height;
+        const midX = bounds.x + width / 2;
+        const midY = bounds.y + height / 2;
+        
+        const scale = 0.8 / Math.max(width / fullWidth, height / fullHeight);
+        const translate = [fullWidth / 2 - scale * midX, fullHeight / 2 - scale * midY];
+        
+        this.svg.transition().call(
+            this.zoom.transform,
+            d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale)
+        );
+    }
+}
+
+// ==================== 模态框功能 ====================
+
+// 显示权利要求详情模态框
+function showClaimModal(claimData) {
+    // 设置模态框内容
+    document.getElementById('claimModalTitle').textContent = `权利要求 ${claimData.claim_number} 详情`;
+    document.getElementById('claimNumberBadge').textContent = `权利要求 ${claimData.claim_number}`;
+    
+    const typeBadge = document.getElementById('claimTypeBadge');
+    typeBadge.textContent = claimData.claim_type === 'independent' ? '独立权利要求' : '从属权利要求';
+    typeBadge.className = `claim-type-badge ${claimData.claim_type}`;
+    
+    document.getElementById('claimLevelBadge').textContent = `层级 ${claimData.level || 0}`;
+    
+    // 显示依赖关系
+    const dependenciesDiv = document.getElementById('claimDependencies');
+    if (claimData.dependencies && claimData.dependencies.length > 0) {
+        document.getElementById('claimDependenciesList').textContent = claimData.dependencies.join(', ');
+        dependenciesDiv.style.display = 'block';
+    } else {
+        dependenciesDiv.style.display = 'none';
+    }
+    
+    // 显示权利要求文本
+    document.getElementById('claimText').textContent = claimData.claim_text || '暂无详细内容';
+    
+    // 显示模态框
+    document.getElementById('claimModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+// 关闭权利要求详情模态框
+function closeClaimModal() {
+    document.getElementById('claimModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+// ESC键关闭模态框
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeClaimModal();
+    }
+});
+
+// ==================== 消息显示函数 ====================
+
+function showSuccess(message) {
+    console.log('Success:', message);
+    // 可以在这里添加成功消息的UI显示
+}
+
+function showError(message) {
+    console.error('Error:', message);
+    // 可以在这里添加错误消息的UI显示
+}
+
+function showInfo(message) {
+    console.log('Info:', message);
+    // 可以在这里添加信息消息的UI显示
 }

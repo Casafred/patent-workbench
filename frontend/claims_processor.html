@@ -319,6 +319,315 @@
             font-weight: 600;
             color: var(--primary-color-dark);
         }
+        
+        /* 专利查询和可视化样式 */
+        .search-results {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+        
+        .search-result-item {
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .search-result-item:hover {
+            background-color: rgba(34, 197, 94, 0.05);
+        }
+        
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+        
+        .search-result-item.selected {
+            background-color: rgba(34, 197, 94, 0.1);
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .search-result-patent {
+            font-weight: 600;
+            color: var(--primary-color-dark);
+            margin-bottom: 5px;
+        }
+        
+        .search-result-row {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .selected-patent-card {
+            background: var(--bg-color);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .patent-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        
+        .patent-info-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .patent-info-label {
+            font-weight: 600;
+            color: var(--primary-color-dark);
+        }
+        
+        /* 可视化样式 */
+        .visualization-controls {
+            padding: 15px;
+            background: var(--bg-color);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .zoom-controls {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .visualization-container {
+            width: 100%;
+            height: 600px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .loading-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #666;
+        }
+        
+        .error-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: var(--error-color);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--error-color);
+        }
+        
+        /* D3.js 可视化样式 */
+        .node {
+            cursor: pointer;
+            stroke-width: 2px;
+        }
+        
+        .node.independent {
+            fill: var(--primary-color);
+            stroke: var(--primary-color-dark);
+        }
+        
+        .node.dependent {
+            fill: #3B82F6;
+            stroke: #1E40AF;
+        }
+        
+        .node:hover {
+            stroke-width: 3px;
+            filter: brightness(1.1);
+        }
+        
+        .link {
+            fill: none;
+            stroke: #999;
+            stroke-width: 2px;
+        }
+        
+        .node-label {
+            font-family: 'Noto Sans SC', sans-serif;
+            font-size: 12px;
+            text-anchor: middle;
+            pointer-events: none;
+            fill: white;
+            font-weight: bold;
+        }
+        
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            max-width: 300px;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        /* 模态框样式 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2001;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow: hidden;
+            z-index: 2002;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-color);
+        }
+        
+        .modal-header h3 {
+            margin: 0;
+            color: var(--primary-color-dark);
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-close:hover {
+            color: var(--primary-color-dark);
+        }
+        
+        .modal-body {
+            padding: 20px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        
+        .modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            background: var(--bg-color);
+        }
+        
+        .claim-info {
+            margin-bottom: 20px;
+        }
+        
+        .claim-meta {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .claim-number-badge {
+            background: var(--primary-color);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .claim-type-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .claim-type-badge.independent {
+            background: var(--success-color);
+            color: white;
+        }
+        
+        .claim-type-badge.dependent {
+            background: #3B82F6;
+            color: white;
+        }
+        
+        .claim-level-badge {
+            background: #6B7280;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        
+        .claim-dependencies {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .claim-text {
+            line-height: 1.6;
+            font-size: 14px;
+            color: var(--text-color);
+            background: var(--bg-color);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
+        }
     </style>
 </head>
 <body>
@@ -407,8 +716,128 @@
                 <!-- 动态生成权利要求表格 -->
             </div>
         </div>
+        
+        <!-- 专利号查询和可视化区域 -->
+        <div class="card" id="patentQuerySection" style="display: none;">
+            <h2 class="card-title">🔍 专利号查询和可视化</h2>
+            
+            <div class="form-group">
+                <label class="form-label" for="patentSearchInput">输入专利号片段进行搜索:</label>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input type="text" id="patentSearchInput" class="form-select" 
+                           placeholder="例如: CN202310123456 或 123456" 
+                           style="flex: 1;">
+                    <button class="btn btn-primary" id="searchPatentBtn">
+                        <span>🔍 搜索</span>
+                    </button>
+                </div>
+                <p style="font-size: 0.9rem; color: #666; margin-top: 5px;">
+                    支持部分匹配，在已上传的Excel文件中搜索包含该片段的专利号
+                </p>
+            </div>
+            
+            <div id="searchResultsContainer" style="display: none;">
+                <h3 style="margin: 20px 0 10px 0;">搜索结果</h3>
+                <div id="searchResults" class="search-results">
+                    <!-- 动态生成搜索结果 -->
+                </div>
+            </div>
+            
+            <div id="selectedPatentInfo" style="display: none;">
+                <h3 style="margin: 20px 0 10px 0;">选中的专利</h3>
+                <div class="selected-patent-card">
+                    <div class="patent-info-grid">
+                        <div class="patent-info-item">
+                            <span class="patent-info-label">专利号:</span>
+                            <span id="selectedPatentNumber"></span>
+                        </div>
+                        <div class="patent-info-item">
+                            <span class="patent-info-label">Excel行号:</span>
+                            <span id="selectedPatentRow"></span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <button class="btn btn-primary" id="visualizePatentBtn">
+                            <span>📊 生成权利要求关系图</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 可视化区域 -->
+        <div class="card" id="visualizationSection" style="display: none;">
+            <h2 class="card-title">📈 权利要求引用关系可视化</h2>
+            
+            <!-- 可视化控制面板 -->
+            <div class="visualization-controls">
+                <div class="control-group">
+                    <label for="styleSelector">可视化样式:</label>
+                    <select id="styleSelector" class="form-select" style="width: auto;">
+                        <option value="tree">树状图</option>
+                        <option value="network">网络图</option>
+                        <option value="radial">径向图</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label>缩放控制:</label>
+                    <div class="zoom-controls">
+                        <button class="btn btn-secondary" id="zoomIn">放大</button>
+                        <button class="btn btn-secondary" id="zoomOut">缩小</button>
+                        <button class="btn btn-secondary" id="zoomReset">重置</button>
+                        <button class="btn btn-secondary" id="centerView">居中</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 可视化容器 -->
+            <div class="visualization-container" id="visualizationContainer">
+                <div class="loading-indicator" id="vizLoadingIndicator">
+                    <div class="spinner"></div>
+                    <div>正在分析权利要求关系...</div>
+                </div>
+                
+                <div class="error-message" id="vizErrorMessage" style="display: none;">
+                    <h3>分析失败</h3>
+                    <p id="vizErrorText"></p>
+                    <button class="btn btn-secondary" onclick="retryVisualization()">重新分析</button>
+                </div>
+                
+                <svg id="visualizationSvg"></svg>
+            </div>
+        </div>
     </div>
     
-    <script src="js/claimsProcessor.js?v=2.0.0"></script>
+    <!-- 权利要求详情模态框 -->
+    <div class="modal" id="claimModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="claimModalTitle">权利要求详情</h3>
+                <button class="modal-close" onclick="closeClaimModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="claim-info">
+                    <div class="claim-meta">
+                        <span class="claim-number-badge" id="claimNumberBadge"></span>
+                        <span class="claim-type-badge" id="claimTypeBadge"></span>
+                        <span class="claim-level-badge" id="claimLevelBadge"></span>
+                    </div>
+                    <div class="claim-dependencies" id="claimDependencies" style="display: none;">
+                        <strong>依赖关系:</strong>
+                        <span id="claimDependenciesList"></span>
+                    </div>
+                </div>
+                <div class="claim-text" id="claimText"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeClaimModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="modalOverlay" onclick="closeClaimModal()"></div>
+    
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="js/claimsProcessor.js?v=2.1.0"></script>
 </body>
 </html>
