@@ -255,7 +255,6 @@ def get_claims_columns():
 
 
 @claims_bp.route('/claims/process', methods=['POST'])
-@login_required
 def process_claims():
     """
     Process patent claims file.
@@ -274,6 +273,7 @@ def process_claims():
         file_id = req_data.get('file_id')
         column_name = req_data.get('column_name')
         sheet_name = req_data.get('sheet_name')
+        patent_column_name = req_data.get('patent_column_name')
         
         if not file_id or not column_name:
             return create_response(
@@ -389,7 +389,8 @@ def process_claims():
                 result = processing_service.process_excel_file(
                     file_path=file_path,
                     column_name=column_name,
-                    sheet_name=sheet_name
+                    sheet_name=sheet_name,
+                    patent_column_name=patent_column_name
                 )
                 
                 # Update task status

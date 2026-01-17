@@ -46,7 +46,7 @@ class ProcessingService(ProcessingServiceInterface):
         }
     
     def process_excel_file(self, file_path: str, column_name: str, 
-                          sheet_name: str = None, resume: bool = False) -> ProcessedClaims:
+                          sheet_name: str = None, patent_column_name: str = None, resume: bool = False) -> ProcessedClaims:
         """
         处理Excel文件
         
@@ -54,6 +54,7 @@ class ProcessingService(ProcessingServiceInterface):
             file_path: Excel文件路径
             column_name: 包含权利要求的列名
             sheet_name: 工作表名称
+            patent_column_name: 包含专利公开号的列名
             resume: 是否从中断点恢复处理
             
         Returns:
@@ -74,7 +75,8 @@ class ProcessingService(ProcessingServiceInterface):
             'start_time': start_time,
             'file_path': file_path,
             'column_name': column_name,
-            'sheet_name': sheet_name
+            'sheet_name': sheet_name,
+            'patent_column_name': patent_column_name
         })
         
         try:
@@ -117,19 +119,38 @@ class ProcessingService(ProcessingServiceInterface):
             # 获取列数据
             column_data = self.excel_processor.get_column_data(df, column_name)
             
+            # 获取专利公开号列数据（如果提供）
+            patent_data = []
+            if patent_column_name and patent_column_name in df.columns:
+                patent_data = self.excel_processor.get_column_data(df, patent_column_name)
+            
             # 处理每个单元格
             all_claims = []
             processing_errors = []
             language_distribution = {}
+            patent_numbers = []
             
             for i, cell_text in enumerate(column_data):
                 self.processing_state['current_cell_index'] = i
                 
                 try:
+                    # 获取当前行的专利公开号（如果有）
+                    patent_number = None
+                    if patent_data and i < len(patent_data):
+                        patent_value = patent_data[i]
+                        if patent_value and patent_value.strip():
+                            patent_number = patent_value.strip()
+                            if patent_number not in patent_numbers:
+                                patent_numbers.append(patent_number)
+                    
                     # 处理单元格 - 增强容错处理
                     cell_claims = self._process_single_cell_with_recovery(cell_text, i)
                     
                     if cell_claims:
+                        # 关联专利公开号到权利要求
+                        for claim in cell_claims:
+                            claim.patent_number = patent_number
+                        
                         all_claims.extend(cell_claims)
                         
                         # 统计语言分布
@@ -180,7 +201,8 @@ class ProcessingService(ProcessingServiceInterface):
                 independent_claims_count=independent_count,
                 dependent_claims_count=dependent_count,
                 processing_errors=processing_errors,
-                claims_data=all_claims
+                claims_data=all_claims,
+                patent_numbers=patent_numbers if patent_numbers else None
             )
             
             # 清理恢复文件
@@ -528,7 +550,7 @@ class ProcessingService(ProcessingServiceInterface):
             pass
     
     def _try_resume_processing(self, file_path: str, column_name: str, 
-                             sheet_name: str) -> Optional[ProcessedClaims]:
+                             sheet_name: str, patent_column_name: str = None) -> Optional[ProcessedClaims]:
         """
         尝试从中断点恢复处理
         
@@ -536,6 +558,7 @@ class ProcessingService(ProcessingServiceInterface):
             file_path: Excel文件路径
             column_name: 列名
             sheet_name: 工作表名称
+            patent_column_name: 专利公开号列名
             
         Returns:
             恢复的处理结果，如果无法恢复则返回None
@@ -551,7 +574,8 @@ class ProcessingService(ProcessingServiceInterface):
             saved_state = state.get('processing_state', {})
             if (saved_state.get('file_path') != file_path or 
                 saved_state.get('column_name') != column_name or
-                saved_state.get('sheet_name') != sheet_name):
+                saved_state.get('sheet_name') != sheet_name or
+                saved_state.get('patent_column_name') != patent_column_name):
                 return None
             
             # 恢复处理结果
@@ -566,6 +590,12 @@ class ProcessingService(ProcessingServiceInterface):
             # 清理恢复文件
             self._cleanup_recovery_file()
             
+            # 提取专利公开号列表
+            recovered_patent_numbers = []
+            for claim in claims:
+                if claim.patent_number and claim.patent_number not in recovered_patent_numbers:
+                    recovered_patent_numbers.append(claim.patent_number)
+            
             return ProcessedClaims(
                 total_cells_processed=saved_state.get('current_cell_index', 0) + 1,
                 total_claims_extracted=len(claims),
@@ -573,7 +603,8 @@ class ProcessingService(ProcessingServiceInterface):
                 independent_claims_count=independent_count,
                 dependent_claims_count=dependent_count,
                 processing_errors=errors,
-                claims_data=claims
+                claims_data=claims,
+                patent_numbers=recovered_patent_numbers if recovered_patent_numbers else None
             )
             
         except Exception as e:
@@ -597,7 +628,8 @@ class ProcessingService(ProcessingServiceInterface):
             'language': claim.language,
             'referenced_claims': claim.referenced_claims,
             'original_text': claim.original_text,
-            'confidence_score': claim.confidence_score
+            'confidence_score': claim.confidence_score,
+            'patent_number': claim.patent_number
         }
     
     def _dict_to_claim(self, claim_dict: Dict[str, Any]) -> ClaimInfo:
@@ -609,7 +641,8 @@ class ProcessingService(ProcessingServiceInterface):
             language=claim_dict['language'],
             referenced_claims=claim_dict['referenced_claims'],
             original_text=claim_dict['original_text'],
-            confidence_score=claim_dict['confidence_score']
+            confidence_score=claim_dict['confidence_score'],
+            patent_number=claim_dict.get('patent_number')
         )
     
     def _error_to_dict(self, error: ProcessingError) -> Dict[str, Any]:

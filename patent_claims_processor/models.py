@@ -19,6 +19,7 @@ class ClaimInfo:
     referenced_claims: List[int]
     original_text: str
     confidence_score: float
+    patent_number: Optional[str] = None  # 专利公开号
 
 
 @dataclass
@@ -61,6 +62,7 @@ class ProcessedClaims:
     dependent_claims_count: int
     processing_errors: List[ProcessingError]
     claims_data: List[ClaimInfo]
+    patent_numbers: Optional[List[str]] = None  # 关联的专利公开号列表
 
 
 # 抽象接口定义

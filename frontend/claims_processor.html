@@ -764,10 +764,10 @@
         
         <!-- 专利号查询和可视化区域 -->
         <div class="card" id="patentQuerySection" style="display: none;">
-            <h2 class="card-title">🔍 专利号查询和可视化</h2>
+            <h2 class="card-title">🔍 专利公开号查询和可视化</h2>
             
             <div class="form-group">
-                <label class="form-label" for="patentSearchInput">输入专利号片段进行搜索:</label>
+                <label class="form-label" for="patentSearchInput">输入专利公开号片段进行搜索:</label>
                 <div style="display: flex; gap: 10px; align-items: center;">
                     <input type="text" id="patentSearchInput" class="form-select" 
                            placeholder="例如: CN202310123456 或 123456" 
@@ -777,32 +777,40 @@
                     </button>
                 </div>
                 <p style="font-size: 0.9rem; color: #666; margin-top: 5px;">
-                    支持部分匹配，在已上传的Excel文件中搜索包含该片段的专利号
+                    支持部分匹配，在已上传的Excel文件中搜索包含该片段的专利公开号
                 </p>
             </div>
             
             <div id="searchResultsContainer" style="display: none;">
-                <h3 style="margin: 20px 0 10px 0;">搜索结果</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin: 20px 0 10px 0;">
+                    <h3>搜索结果</h3>
+                    <span id="searchResultsCount" style="color: #666; font-size: 0.9rem;"></span>
+                </div>
                 <div id="searchResults" class="search-results">
                     <!-- 动态生成搜索结果 -->
                 </div>
             </div>
             
             <div id="selectedPatentInfo" style="display: none;">
-                <h3 style="margin: 20px 0 10px 0;">选中的专利</h3>
-                <div class="selected-patent-card">
-                    <div class="patent-info-grid">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin: 20px 0 10px 0;">
+                    <h3>选中的专利</h3>
+                    <span class="badge" style="background-color: var(--primary-color); color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem;">
+                        已选择
+                    </span>
+                </div>
+                <div class="selected-patent-card" style="padding: 20px; border-radius: 10px; background-color: var(--bg-color); border: 1px solid var(--border-color);">
+                    <div class="patent-info-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
                         <div class="patent-info-item">
-                            <span class="patent-info-label">专利号:</span>
-                            <span id="selectedPatentNumber"></span>
+                            <span class="patent-info-label">专利公开号:</span>
+                            <span id="selectedPatentNumber" style="font-weight: 600; color: var(--primary-color-dark);"></span>
                         </div>
                         <div class="patent-info-item">
                             <span class="patent-info-label">Excel行号:</span>
                             <span id="selectedPatentRow"></span>
                         </div>
                     </div>
-                    <div style="margin-top: 15px;">
-                        <button class="btn btn-primary" id="visualizePatentBtn">
+                    <div style="margin-top: 20px; text-align: center;">
+                        <button class="btn btn-primary" id="visualizePatentBtn" style="padding: 12px 30px; font-size: 1.1rem;">
                             <span>📊 生成权利要求关系图</span>
                         </button>
                     </div>

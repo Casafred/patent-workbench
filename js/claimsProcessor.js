@@ -326,7 +326,8 @@ async function startProcessing() {
             body: JSON.stringify({
                 file_id: currentFileId,
                 column_name: columnName,
-                sheet_name: sheetName || null
+                sheet_name: sheetName || null,
+                patent_column_name: currentPatentColumn || null
             })
         });
         
@@ -719,23 +720,35 @@ async function searchPatentNumbers() {
 function displaySearchResults(results, query) {
     if (results.length === 0) {
         searchResults.innerHTML = `
-            <div style="padding: 20px; text-align: center; color: #666;">
-                未找到包含 "${query}" 的专利号
+            <div style="padding: 30px; text-align: center; color: #666; background-color: #f9fafb; border-radius: 8px;">
+                <div style="font-size: 2rem; margin-bottom: 10px;">🔍</div>
+                <h4 style="margin-bottom: 5px;">未找到匹配结果</h4>
+                <p>未找到包含 "${query}" 的专利公开号</p>
+                <p style="font-size: 0.8rem; margin-top: 10px; color: #9ca3af;">
+                    提示: 尝试使用更短的专利号片段或检查输入是否正确
+                </p>
             </div>
         `;
+        document.getElementById('searchResultsCount').textContent = `找到 0 个结果`;
     } else {
         let html = '';
         results.forEach((result, index) => {
             html += `
-                <div class="search-result-item" onclick="selectPatent('${result.patent_number}', ${result.row_index})">
-                    <div class="search-result-patent">${result.patent_number}</div>
-                    <div class="search-result-row">Excel行号: ${result.row_index}</div>
+                <div class="search-result-item" onclick="selectPatent('${result.patent_number}', ${result.row_index})" style="padding: 15px; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s; border-radius: 6px; margin-bottom: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div class="search-result-patent" style="font-weight: 600; color: var(--primary-color-dark); font-size: 1.1rem;">${result.patent_number}</div>
+                        <span class="badge" style="background-color: #E0F2FE; color: #0369A1; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem;">
+                            第 ${result.row_index} 行
+                        </span>
+                    </div>
+                    <div class="search-result-row" style="color: #666; font-size: 0.9rem; margin-top: 5px;">Excel行号: ${result.row_index}</div>
                 </div>
             `;
         });
         searchResults.innerHTML = html;
+        document.getElementById('searchResultsCount').textContent = `找到 ${results.length} 个结果`;
         
-        showSuccess(`找到 ${results.length} 个匹配的专利号`);
+        showSuccess(`找到 ${results.length} 个匹配的专利公开号`);
     }
     
     searchResultsContainer.style.display = 'block';
@@ -766,7 +779,7 @@ function selectPatent(patentNumber, rowIndex) {
 // 生成可视化
 async function generateVisualization() {
     if (!selectedPatentNumber) {
-        showError('请先选择一个专利号');
+        showError('请先选择一个专利公开号');
         return;
     }
     
@@ -781,20 +794,52 @@ async function generateVisualization() {
         
         showInfo('正在分析权利要求关系...');
         
-        // 这里需要调用权利要求分析API
-        // 由于我们还没有实际的专利数据，先创建模拟数据
-        const mockData = createMockVisualizationData(selectedPatentNumber);
-        
-        // 初始化可视化渲染器
-        if (!visualizationRenderer) {
-            visualizationRenderer = new D3TreeRenderer('visualizationContainer');
+        // 检查是否有处理结果
+        if (!currentTaskId) {
+            showError('请先处理权利要求文件，然后再生成可视化');
+            vizLoadingIndicator.style.display = 'none';
+            return;
         }
         
-        // 渲染可视化
-        vizLoadingIndicator.style.display = 'none';
-        visualizationRenderer.render(mockData, styleSelector.value);
-        
-        showSuccess('权利要求关系图生成完成！');
+        // 尝试获取与所选专利号关联的权利要求数据
+        try {
+            // 获取处理结果
+            const response = await fetch(`/api/claims/result/${currentTaskId}`);
+            const result = await response.json();
+            
+            if (result.success) {
+                // 构建基于实际权利要求数据的可视化数据
+                const visualizationData = buildVisualizationDataFromClaims(result.data.claims, selectedPatentNumber);
+                
+                // 初始化可视化渲染器
+                if (!visualizationRenderer) {
+                    visualizationRenderer = new D3TreeRenderer('visualizationContainer');
+                }
+                
+                // 渲染可视化
+                vizLoadingIndicator.style.display = 'none';
+                visualizationRenderer.render(visualizationData, styleSelector.value);
+                
+                showSuccess('权利要求关系图生成完成！');
+            } else {
+                throw new Error('获取权利要求数据失败');
+            }
+        } catch (apiError) {
+            console.warn('API调用失败，使用模拟数据:', apiError);
+            // 如果API调用失败，使用模拟数据
+            const mockData = createMockVisualizationData(selectedPatentNumber);
+            
+            // 初始化可视化渲染器
+            if (!visualizationRenderer) {
+                visualizationRenderer = new D3TreeRenderer('visualizationContainer');
+            }
+            
+            // 渲染可视化
+            vizLoadingIndicator.style.display = 'none';
+            visualizationRenderer.render(mockData, styleSelector.value);
+            
+            showSuccess('使用模拟数据生成权利要求关系图完成！');
+        }
         
     } catch (error) {
         console.error('Visualization error:', error);
@@ -803,6 +848,55 @@ async function generateVisualization() {
         vizErrorText.textContent = error.message;
         showError('生成可视化失败: ' + error.message);
     }
+}
+
+// 从权利要求数据构建可视化数据
+function buildVisualizationDataFromClaims(claims, patentNumber) {
+    const nodes = [];
+    const links = [];
+    const root_nodes = [];
+    
+    // 首先创建所有节点
+    claims.forEach((claim, index) => {
+        const node = {
+            id: `claim_${claim.claim_number}`,
+            claim_number: claim.claim_number,
+            claim_text: claim.claim_text,
+            claim_type: claim.claim_type,
+            level: claim.referenced_claims.length,
+            dependencies: claim.referenced_claims,
+            children: []
+        };
+        nodes.push(node);
+        
+        // 如果是独立权利要求，添加到根节点
+        if (claim.claim_type === 'independent') {
+            root_nodes.push(node.id);
+        }
+    });
+    
+    // 然后创建链接
+    nodes.forEach(node => {
+        node.dependencies.forEach(dependedClaimNumber => {
+            const dependedNode = nodes.find(n => n.claim_number === dependedClaimNumber);
+            if (dependedNode) {
+                links.push({
+                    source: dependedNode.id,
+                    target: node.id,
+                    type: 'dependency',
+                    strength: 1.0
+                });
+                dependedNode.children.push(node.id);
+            }
+        });
+    });
+    
+    return {
+        patent_number: patentNumber,
+        nodes: nodes,
+        links: links,
+        root_nodes: root_nodes
+    };
 }
 
 // 创建模拟可视化数据
