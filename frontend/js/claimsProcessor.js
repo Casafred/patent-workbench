@@ -107,6 +107,56 @@ function initializeEventListeners() {
     // 导出按钮
     exportExcelBtn.addEventListener('click', () => exportResults('excel'));
     exportJsonBtn.addEventListener('click', () => exportResults('json'));
+    
+    // 专利查询相关事件监听器
+    if (searchPatentBtn) {
+        searchPatentBtn.addEventListener('click', searchPatentNumbers);
+    }
+    
+    if (patentSearchInput) {
+        patentSearchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                searchPatentNumbers();
+            }
+        });
+    }
+    
+    if (visualizePatentBtn) {
+        visualizePatentBtn.addEventListener('click', generateVisualization);
+    }
+    
+    // 可视化控制事件
+    if (styleSelector) {
+        styleSelector.addEventListener('change', () => {
+            if (visualizationRenderer && visualizationRenderer.currentData) {
+                visualizationRenderer.render(visualizationRenderer.currentData, styleSelector.value);
+            }
+        });
+    }
+    
+    if (zoomIn) {
+        zoomIn.addEventListener('click', () => {
+            if (visualizationRenderer) visualizationRenderer.zoomIn();
+        });
+    }
+    
+    if (zoomOut) {
+        zoomOut.addEventListener('click', () => {
+            if (visualizationRenderer) visualizationRenderer.zoomOut();
+        });
+    }
+    
+    if (zoomReset) {
+        zoomReset.addEventListener('click', () => {
+            if (visualizationRenderer) visualizationRenderer.zoomReset();
+        });
+    }
+    
+    if (centerView) {
+        centerView.addEventListener('click', () => {
+            if (visualizationRenderer) visualizationRenderer.centerView();
+        });
+    }
 }
 
 function handleFileSelect(event) {
@@ -496,6 +546,9 @@ function displayResults(data) {
     // 显示结果区域
     resultsSection.style.display = 'block';
     
+    // 显示专利查询区域
+    showPatentQuerySection();
+    
     // 滚动到结果区域
     resultsSection.scrollIntoView({ behavior: 'smooth' });
 }
@@ -603,73 +656,28 @@ function escapeHtml(text) {
 
 // ==================== 专利号查询和可视化功能 ====================
 
-// 更新事件监听器初始化
-const originalInitializeEventListeners = initializeEventListeners;
-initializeEventListeners = function() {
-    // 调用原有的事件监听器
-    originalInitializeEventListeners();
-    
-    // 新增：专利查询相关事件监听器
-    if (searchPatentBtn) {
-        searchPatentBtn.addEventListener('click', searchPatentNumbers);
-    }
-    
-    if (patentSearchInput) {
-        patentSearchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                searchPatentNumbers();
-            }
-        });
-    }
-    
-    if (visualizePatentBtn) {
-        visualizePatentBtn.addEventListener('click', generateVisualization);
-    }
-    
-    // 可视化控制事件
-    if (styleSelector) {
-        styleSelector.addEventListener('change', () => {
-            if (visualizationRenderer && visualizationRenderer.currentData) {
-                visualizationRenderer.render(visualizationRenderer.currentData, styleSelector.value);
-            }
-        });
-    }
-    
-    if (zoomIn) {
-        zoomIn.addEventListener('click', () => {
-            if (visualizationRenderer) visualizationRenderer.zoomIn();
-        });
-    }
-    
-    if (zoomOut) {
-        zoomOut.addEventListener('click', () => {
-            if (visualizationRenderer) visualizationRenderer.zoomOut();
-        });
-    }
-    
-    if (zoomReset) {
-        zoomReset.addEventListener('click', () => {
-            if (visualizationRenderer) visualizationRenderer.zoomReset();
-        });
-    }
-    
-    if (centerView) {
-        centerView.addEventListener('click', () => {
-            if (visualizationRenderer) visualizationRenderer.centerView();
-        });
-    }
-};
-
 // 显示专利查询区域
 function showPatentQuerySection() {
-    if (currentFileId && currentPatentColumn) {
-        patentQuerySection.style.display = 'block';
-        
-        // 滚动到专利查询区域
-        patentQuerySection.scrollIntoView({ behavior: 'smooth' });
-    } else if (currentFileId && !currentPatentColumn) {
-        // 如果没有选择专利号列，显示提示
-        showError('请先选择专利号列才能使用专利查询功能');
+    console.log('showPatentQuerySection called');
+    console.log('currentFileId:', currentFileId);
+    console.log('currentPatentColumn:', currentPatentColumn);
+    console.log('patentQuerySection:', patentQuerySection);
+    
+    if (currentFileId) {
+        if (currentPatentColumn) {
+            console.log('Showing patent query section with patent column');
+            patentQuerySection.style.display = 'block';
+            
+            // 滚动到专利查询区域
+            patentQuerySection.scrollIntoView({ behavior: 'smooth' });
+        } else {
+            console.log('Showing patent query section but no patent column selected');
+            // 即使没有选择专利号列，也显示查询区域，但显示提示
+            patentQuerySection.style.display = 'block';
+            showInfo('提示：如果需要使用专利号搜索功能，请先在配置区域选择专利号列');
+        }
+    } else {
+        console.log('No file uploaded yet');
     }
 }
 
@@ -885,16 +893,6 @@ function buildVisualizationData(claims, patentNumber) {
         }
     };
 }
-
-// 更新显示结果函数，添加专利查询按钮
-const originalDisplayResults = displayResults;
-displayResults = function(data) {
-    // 调用原有的显示逻辑
-    originalDisplayResults(data);
-    
-    // 显示专利查询区域
-    showPatentQuerySection();
-};
 
 // ==================== D3.js可视化渲染器 ====================
 
