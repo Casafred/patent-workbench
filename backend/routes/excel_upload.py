@@ -13,6 +13,7 @@ from werkzeug.utils import secure_filename
 import pandas as pd
 from backend.middleware import validate_api_request
 from backend.utils import create_response
+from backend.utils.column_detector import ColumnDetector
 
 # 创建蓝图
 excel_upload_bp = Blueprint('excel_upload', __name__)
@@ -66,6 +67,10 @@ def parse_excel_file(file_path, header_row=0):
             for i, col in enumerate(df.columns)
         ]
         
+        # 智能列识别
+        detector = ColumnDetector()
+        column_analysis = detector.analyze_all_columns(df)
+        
         # 转换数据为字典列表
         data = []
         for index, row in df.iterrows():
@@ -87,6 +92,7 @@ def parse_excel_file(file_path, header_row=0):
         return {
             'success': True,
             'columns': columns,
+            'column_analysis': column_analysis,  # 新增：智能列识别结果
             'data': data,
             'total_rows': len(data),
             'sheet_names': sheet_names,
@@ -223,6 +229,7 @@ def upload_excel_file():
             'file_id': safe_filename,
             'file_path': file_path,
             'columns': parse_result['columns'],
+            'column_analysis': parse_result['column_analysis'],  # 新增：智能列识别结果
             'total_rows': parse_result['total_rows'],
             'sheet_names': parse_result['sheet_names'],
             'original_filename': parse_result['original_filename'],

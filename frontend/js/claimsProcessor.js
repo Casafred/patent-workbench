@@ -12,9 +12,11 @@ let currentFileId = null;
 let currentTaskId = null;
 let processingInterval = null;
 let currentPatentColumn = null;
+let currentClaimsColumn = null;  // 新增：权利要求列
 let selectedPatentNumber = null;
 let selectedPatentRow = null;
 let visualizationRenderer = null;
+let columnAnalysis = null;  // 新增：存储列分析结果
 
 // DOM元素
 const uploadArea = document.getElementById('uploadArea');
@@ -26,6 +28,9 @@ const columnNames = document.getElementById('columnNames');
 const configSection = document.getElementById('configSection');
 const sheetSelect = document.getElementById('sheetSelect');
 const columnSelect = document.getElementById('columnSelect');
+const patentColumnSelect = document.getElementById('patentColumnSelect');  // 新增
+const claimsColumnHint = document.getElementById('claimsColumnHint');      // 新增
+const patentColumnHint = document.getElementById('patentColumnHint');      // 新增
 const processBtn = document.getElementById('processBtn');
 const progressContainer = document.getElementById('progressContainer');
 const progressFill = document.getElementById('progressFill');
@@ -94,6 +99,7 @@ function initializeEventListeners() {
     // 工作表和列选择
     sheetSelect.addEventListener('change', updateColumnSelect);
     columnSelect.addEventListener('change', validateProcessButton);
+    patentColumnSelect.addEventListener('change', validateProcessButton);  // 新增
     
     // 处理按钮
     processBtn.addEventListener('click', startProcessing);
@@ -156,6 +162,9 @@ function displayFileInfo(data) {
     columnNames.textContent = data.columns.map(col => col.name).join(', ');
     fileInfo.style.display = 'block';
     
+    // 存储列分析结果
+    columnAnalysis = data.column_analysis;
+    
     // 填充工作表选择器
     sheetSelect.innerHTML = '<option value="">请选择...</option>';
     data.sheet_names.forEach(sheet => {
@@ -166,16 +175,75 @@ function displayFileInfo(data) {
     });
     
     // 填充列选择器
-    columnSelect.innerHTML = '<option value="">请选择...</option>';
-    data.columns.forEach(col => {
-        const option = document.createElement('option');
-        option.value = col.name;
-        option.textContent = col.name;
-        columnSelect.appendChild(option);
-    });
+    populateColumnSelectors(data.columns);
+    
+    // 应用智能列识别结果
+    applyColumnAnalysis();
     
     // 显示配置区域
     configSection.style.display = 'block';
+}
+
+function populateColumnSelectors(columns) {
+    // 清空选择器
+    columnSelect.innerHTML = '<option value="">请选择...</option>';
+    patentColumnSelect.innerHTML = '<option value="">请选择...</option>';
+    
+    // 填充两个选择器
+    columns.forEach(col => {
+        // 权利要求列选择器
+        const claimsOption = document.createElement('option');
+        claimsOption.value = col.name;
+        claimsOption.textContent = col.name;
+        columnSelect.appendChild(claimsOption);
+        
+        // 专利号列选择器
+        const patentOption = document.createElement('option');
+        patentOption.value = col.name;
+        patentOption.textContent = col.name;
+        patentColumnSelect.appendChild(patentOption);
+    });
+}
+
+function applyColumnAnalysis() {
+    if (!columnAnalysis) return;
+    
+    // 应用权利要求列识别结果
+    if (columnAnalysis.claims_column) {
+        const claimsCol = columnAnalysis.claims_column;
+        columnSelect.value = claimsCol.column_name;
+        currentClaimsColumn = claimsCol.column_name;
+        
+        // 显示提示信息
+        showColumnHint(claimsColumnHint, 'auto-detected', 
+            `✨ 自动识别为权利要求列 (置信度: ${(claimsCol.confidence * 100).toFixed(0)}%)`);
+    } else {
+        showColumnHint(claimsColumnHint, 'manual-required', 
+            '⚠️ 未能自动识别权利要求列，请手动选择');
+    }
+    
+    // 应用专利号列识别结果
+    if (columnAnalysis.patent_number_column) {
+        const patentCol = columnAnalysis.patent_number_column;
+        patentColumnSelect.value = patentCol.column_name;
+        currentPatentColumn = patentCol.column_name;
+        
+        // 显示提示信息
+        showColumnHint(patentColumnHint, 'auto-detected', 
+            `✨ 自动识别为专利号列 (置信度: ${(patentCol.confidence * 100).toFixed(0)}%)`);
+    } else {
+        showColumnHint(patentColumnHint, 'manual-required', 
+            '⚠️ 未能自动识别专利号列，请手动选择');
+    }
+    
+    // 验证处理按钮状态
+    validateProcessButton();
+}
+
+function showColumnHint(hintElement, type, text) {
+    hintElement.className = `column-hint ${type}`;
+    hintElement.querySelector('.hint-text').textContent = text;
+    hintElement.style.display = 'flex';
 }
 
 function updateColumnSelect() {
@@ -185,29 +253,52 @@ function updateColumnSelect() {
         resultsSection.style.display = 'none';
         progressContainer.style.display = 'none';
     }
+    
+    // 重新应用列分析（如果有的话）
+    if (columnAnalysis) {
+        applyColumnAnalysis();
+    }
+    
     validateProcessButton();
 }
 
 function validateProcessButton() {
     const sheetSelected = sheetSelect.value !== '';
-    const columnSelected = columnSelect.value !== '';
+    const claimsColumnSelected = columnSelect.value !== '';
+    const patentColumnSelected = patentColumnSelect.value !== '';
+    
+    // 更新当前选择的列
+    currentClaimsColumn = columnSelect.value;
+    currentPatentColumn = patentColumnSelect.value;
     
     // Reset task when column changes
-    if (columnSelected && currentTaskId) {
+    if ((claimsColumnSelected || patentColumnSelected) && currentTaskId) {
         currentTaskId = null;
         resultsSection.style.display = 'none';
         progressContainer.style.display = 'none';
     }
     
-    processBtn.disabled = !(sheetSelected && columnSelected);
+    // 只有权利要求列是必须的，专利号列是可选的
+    processBtn.disabled = !(sheetSelected && claimsColumnSelected);
+    
+    // 更新提示信息
+    if (claimsColumnSelected && !columnAnalysis?.claims_column) {
+        showColumnHint(claimsColumnHint, 'manual-required', 
+            '✓ 已手动选择权利要求列');
+    }
+    
+    if (patentColumnSelected && !columnAnalysis?.patent_number_column) {
+        showColumnHint(patentColumnHint, 'manual-required', 
+            '✓ 已手动选择专利号列');
+    }
 }
 
 async function startProcessing() {
     const sheetName = sheetSelect.value;
-    const columnName = columnSelect.value;
+    const columnName = columnSelect.value;  // 权利要求列
     
     if (!currentFileId || !columnName) {
-        showError('请先上传文件并选择列');
+        showError('请先上传文件并选择权利要求列');
         return;
     }
     
@@ -571,12 +662,14 @@ initializeEventListeners = function() {
 
 // 显示专利查询区域
 function showPatentQuerySection() {
-    if (currentFileId && columnSelect.value) {
-        currentPatentColumn = columnSelect.value;
+    if (currentFileId && currentPatentColumn) {
         patentQuerySection.style.display = 'block';
         
         // 滚动到专利查询区域
         patentQuerySection.scrollIntoView({ behavior: 'smooth' });
+    } else if (currentFileId && !currentPatentColumn) {
+        // 如果没有选择专利号列，显示提示
+        showError('请先选择专利号列才能使用专利查询功能');
     }
 }
 

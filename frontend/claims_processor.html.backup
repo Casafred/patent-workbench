@@ -158,36 +158,6 @@
             background-color: white;
         }
         
-        .column-hint {
-            margin-top: 8px;
-            padding: 8px 12px;
-            background-color: #E0F2FE;
-            border: 1px solid #0891B2;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .column-hint.auto-detected {
-            background-color: #DCFCE7;
-            border-color: var(--success-color);
-        }
-        
-        .column-hint.manual-required {
-            background-color: #FEF3C7;
-            border-color: #F59E0B;
-        }
-        
-        .hint-icon {
-            font-size: 1rem;
-        }
-        
-        .hint-text {
-            flex: 1;
-        }
-        
         .progress-container {
             display: none;
             margin-top: 20px;
@@ -709,21 +679,6 @@
                 <select class="form-select" id="columnSelect">
                     <option value="">请选择...</option>
                 </select>
-                <div id="claimsColumnHint" class="column-hint" style="display: none;">
-                    <span class="hint-icon">💡</span>
-                    <span class="hint-text"></span>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="patentColumnSelect">选择包含专利号的列:</label>
-                <select class="form-select" id="patentColumnSelect">
-                    <option value="">请选择...</option>
-                </select>
-                <div id="patentColumnHint" class="column-hint" style="display: none;">
-                    <span class="hint-icon">💡</span>
-                    <span class="hint-text"></span>
-                </div>
             </div>
             
             <button class="btn btn-primary" id="processBtn" disabled>
