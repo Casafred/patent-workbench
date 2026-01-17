@@ -129,7 +129,7 @@ async function handleFile(file) {
         formData.append('file', file);
         
         // 上传文件
-        const response = await fetch('/api/claims/upload', {
+        const response = await fetch('/api/excel/upload', {
             method: 'POST',
             body: formData
         });
@@ -153,7 +153,7 @@ function displayFileInfo(data) {
     // 显示文件信息
     fileName.textContent = data.original_filename;
     sheetNames.textContent = data.sheet_names.join(', ');
-    columnNames.textContent = data.columns.join(', ');
+    columnNames.textContent = data.columns.map(col => col.name).join(', ');
     fileInfo.style.display = 'block';
     
     // 填充工作表选择器
@@ -169,8 +169,8 @@ function displayFileInfo(data) {
     columnSelect.innerHTML = '<option value="">请选择...</option>';
     data.columns.forEach(col => {
         const option = document.createElement('option');
-        option.value = col;
-        option.textContent = col;
+        option.value = col.name;
+        option.textContent = col.name;
         columnSelect.appendChild(option);
     });
     

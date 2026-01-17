@@ -47,8 +47,13 @@ def parse_excel_file(file_path, header_row=0):
         # 读取Excel文件
         if file_path.endswith('.csv'):
             df = pd.read_csv(file_path, header=header_row)
+            sheet_names = ['Sheet1']  # CSV只有一个工作表
         else:
-            df = pd.read_excel(file_path, header=header_row)
+            # 先获取所有工作表名称
+            excel_file = pd.ExcelFile(file_path)
+            sheet_names = excel_file.sheet_names
+            # 读取第一个工作表
+            df = pd.read_excel(file_path, sheet_name=sheet_names[0], header=header_row)
         
         # 获取列信息
         columns = [
@@ -84,6 +89,8 @@ def parse_excel_file(file_path, header_row=0):
             'columns': columns,
             'data': data,
             'total_rows': len(data),
+            'sheet_names': sheet_names,
+            'original_filename': os.path.basename(file_path),
             'file_info': {
                 'name': os.path.basename(file_path),
                 'size': os.path.getsize(file_path),
@@ -217,6 +224,8 @@ def upload_excel_file():
             'file_path': file_path,
             'columns': parse_result['columns'],
             'total_rows': parse_result['total_rows'],
+            'sheet_names': parse_result['sheet_names'],
+            'original_filename': parse_result['original_filename'],
             'file_info': parse_result['file_info'],
             'preview_data': parse_result['data'][:10]  # 返回前10行作为预览
         })
