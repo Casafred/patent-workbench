@@ -184,15 +184,19 @@ class ExportService:
             
             # 创建Excel写入器
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                # 工作表1: 权利要求详细信息
+                # 工作表1: 独立权利要求汇总（新增）
+                summary_df = self._create_summary_dataframe(processed_claims)
+                summary_df.to_excel(writer, sheet_name='独立权利要求汇总', index=False)
+                
+                # 工作表2: 权利要求详细信息
                 claims_df = self._create_claims_dataframe(processed_claims)
                 claims_df.to_excel(writer, sheet_name='权利要求详情', index=False)
 
-                # 工作表2: 处理统计信息
+                # 工作表3: 处理统计信息
                 stats_df = self._create_statistics_dataframe(processed_claims)
                 stats_df.to_excel(writer, sheet_name='处理统计', index=False)
 
-                # 工作表3: 错误报告（如果有错误）
+                # 工作表4: 错误报告（如果有错误）
                 if processed_claims.processing_errors:
                     errors_df = self._create_errors_dataframe(processed_claims)
                     errors_df.to_excel(writer, sheet_name='错误报告', index=False)
@@ -293,6 +297,87 @@ class ExportService:
             })
         
         return pd.DataFrame(claims_data)
+    
+    def _create_summary_dataframe(self, processed_claims: ProcessedClaims) -> pd.DataFrame:
+        """
+        创建独立权利要求汇总数据框
+        
+        按原数据顺序，仅包含独立权利要求及其引用关系
+        """
+        summary_data = []
+        
+        try:
+            # 按原始文本分组权利要求（同一单元格的权利要求会有相同或相似的original_text）
+            # 我们需要按照处理顺序来组织数据
+            claims_by_original = {}
+            row_counter = 2  # Excel数据从第2行开始（第1行是标题）
+            
+            for claim in processed_claims.claims_data:
+                try:
+                    original_key = claim.original_text[:100] if claim.original_text else f"claim_{claim.claim_number}"
+                    
+                    if original_key not in claims_by_original:
+                        claims_by_original[original_key] = {
+                            'row_number': row_counter,
+                            'claims': [],
+                            'original_text': claim.original_text
+                        }
+                        row_counter += 1
+                    
+                    claims_by_original[original_key]['claims'].append(claim)
+                except Exception as e:
+                    print(f"Warning: Error processing claim {claim.claim_number}: {e}")
+                    continue
+            
+            # 为每个原始数据行生成汇总记录
+            for original_key, data in claims_by_original.items():
+                try:
+                    claims_list = data['claims']
+                    
+                    # 提取独立权利要求
+                    independent_claims = self._extract_independent_claims(claims_list)
+                    
+                    # 如果没有独立权利要求，跳过此行
+                    if not independent_claims:
+                        continue
+                    
+                    # 提取引用关系 - 包含该行中所有从属权利要求的引用关系
+                    reference_map = self._build_reference_map(claims_list)
+                    
+                    # 合并独立权利要求序号
+                    claim_numbers = ", ".join([str(c['number']) for c in independent_claims])
+                    
+                    # 合并独立权利要求文本
+                    claim_texts = "\n\n".join([c['text'] for c in independent_claims])
+                    
+                    # 转换引用关系为JSON
+                    try:
+                        reference_json = json.dumps(reference_map, ensure_ascii=False) if reference_map else "{}"
+                    except Exception as json_error:
+                        print(f"Warning: Error serializing reference map to JSON: {json_error}")
+                        reference_json = "{}"
+                    
+                    # 添加汇总行
+                    summary_data.append({
+                        '原数据行号': data['row_number'],
+                        '独立权利要求序号': claim_numbers,
+                        '独立权利要求文本': claim_texts,
+                        '从属权利要求引用关系': reference_json
+                    })
+                except Exception as e:
+                    print(f"Warning: Error creating summary row for {original_key}: {e}")
+                    continue
+        
+        except Exception as e:
+            print(f"Error creating summary dataframe: {e}")
+            import traceback
+            print(traceback.format_exc())
+        
+        # 如果没有数据，返回空的DataFrame但保留列结构
+        if not summary_data:
+            return pd.DataFrame(columns=['原数据行号', '独立权利要求序号', '独立权利要求文本', '从属权利要求引用关系'])
+        
+        return pd.DataFrame(summary_data)
     
     def _create_statistics_dataframe(self, processed_claims: ProcessedClaims) -> pd.DataFrame:
         """创建统计信息数据框"""
@@ -434,3 +519,50 @@ class ExportService:
             'success_rate': self._calculate_success_rate(processed_claims),
             'has_errors': len(processed_claims.processing_errors) > 0
         }
+    
+    def _extract_independent_claims(self, claims_list: List[ClaimInfo]) -> List[Dict[str, Any]]:
+        """
+        从权利要求列表中提取所有独立权利要求
+        
+        Args:
+            claims_list: 权利要求信息列表
+            
+        Returns:
+            独立权利要求列表，每项包含 {'number': int, 'text': str}
+        """
+        independent_claims = []
+        
+        try:
+            for claim in claims_list:
+                if claim.claim_type == 'independent':
+                    independent_claims.append({
+                        'number': claim.claim_number,
+                        'text': claim.claim_text
+                    })
+        except Exception as e:
+            print(f"Warning: Error extracting independent claims: {e}")
+            # 继续处理，返回已提取的权利要求
+        
+        return independent_claims
+    
+    def _build_reference_map(self, claims_list: List[ClaimInfo]) -> Dict[str, List[int]]:
+        """
+        构建从属权利要求的引用关系映射
+        
+        Args:
+            claims_list: 权利要求信息列表
+            
+        Returns:
+            引用关系映射 {从属序号: [被引用序号列表]}
+        """
+        reference_map = {}
+        
+        try:
+            for claim in claims_list:
+                if claim.claim_type == 'dependent' and claim.referenced_claims:
+                    reference_map[str(claim.claim_number)] = claim.referenced_claims
+        except Exception as e:
+            print(f"Warning: Error building reference map: {e}")
+            # 返回空映射或部分映射
+        
+        return reference_map

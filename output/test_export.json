@@ -1,0 +1,59 @@
+{
+  "metadata": {
+    "export_time": "2026-01-17T11:42:12.456470",
+    "version": "1.0",
+    "description": "专利权利要求处理结果"
+  },
+  "summary": {
+    "total_cells_processed": 10,
+    "total_claims_extracted": 3,
+    "independent_claims_count": 2,
+    "dependent_claims_count": 1,
+    "language_distribution": {
+      "zh": 2,
+      "en": 1
+    },
+    "error_count": 1,
+    "success_rate": 1.0
+  },
+  "claims": [
+    {
+      "claim_number": 1,
+      "claim_type": "independent",
+      "claim_text": "一种智能手机，其特征在于包括处理器和存储器。",
+      "language": "zh",
+      "referenced_claims": [],
+      "original_text": "1. 一种智能手机，其特征在于包括处理器和存储器。",
+      "confidence_score": 0.95
+    },
+    {
+      "claim_number": 2,
+      "claim_type": "dependent",
+      "claim_text": "根据权利要求1所述的智能手机，其特征在于还包括显示屏。",
+      "language": "zh",
+      "referenced_claims": [
+        1
+      ],
+      "original_text": "2. 根据权利要求1所述的智能手机，其特征在于还包括显示屏。",
+      "confidence_score": 0.92
+    },
+    {
+      "claim_number": 3,
+      "claim_type": "independent",
+      "claim_text": "A smartphone comprising a processor and memory.",
+      "language": "en",
+      "referenced_claims": [],
+      "original_text": "3. A smartphone comprising a processor and memory.",
+      "confidence_score": 0.93
+    }
+  ],
+  "errors": [
+    {
+      "error_type": "parsing_warning",
+      "cell_index": 5,
+      "error_message": "单元格格式不规范",
+      "suggested_action": "检查文本格式",
+      "severity": "warning"
+    }
+  ]
+}
