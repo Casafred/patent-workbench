@@ -770,6 +770,11 @@ async function generateVisualization() {
         return;
     }
     
+    if (!currentTaskId) {
+        showError('请先完成权利要求处理');
+        return;
+    }
+    
     try {
         // 显示可视化区域和加载状态
         visualizationSection.style.display = 'block';
@@ -781,9 +786,23 @@ async function generateVisualization() {
         
         showInfo('正在分析权利要求关系...');
         
-        // 这里需要调用权利要求分析API
-        // 由于我们还没有实际的专利数据，先创建模拟数据
-        const mockData = createMockVisualizationData(selectedPatentNumber);
+        // 获取权利要求处理结果
+        const response = await fetch(`/api/claims/result/${currentTaskId}`);
+        const result = await response.json();
+        
+        if (!result.success) {
+            throw new Error(result.error || '获取权利要求数据失败');
+        }
+        
+        // 从处理结果中找到对应专利的权利要求
+        const patentClaims = findPatentClaims(result.data, selectedPatentNumber, selectedPatentRow);
+        
+        if (!patentClaims || patentClaims.length === 0) {
+            throw new Error('未找到该专利的权利要求数据');
+        }
+        
+        // 构建可视化数据
+        const visualizationData = buildVisualizationData(patentClaims, selectedPatentNumber);
         
         // 初始化可视化渲染器
         if (!visualizationRenderer) {
@@ -792,7 +811,7 @@ async function generateVisualization() {
         
         // 渲染可视化
         vizLoadingIndicator.style.display = 'none';
-        visualizationRenderer.render(mockData, styleSelector.value);
+        visualizationRenderer.render(visualizationData, styleSelector.value);
         
         showSuccess('权利要求关系图生成完成！');
         
@@ -805,60 +824,66 @@ async function generateVisualization() {
     }
 }
 
-// 创建模拟可视化数据
-function createMockVisualizationData(patentNumber) {
-    return {
-        patent_number: patentNumber,
-        nodes: [
-            {
-                id: "claim_1",
-                claim_number: 1,
-                claim_text: `一种智能设备，包括：处理器，用于执行应用程序；存储器，与所述处理器连接，用于存储数据。（专利号：${patentNumber}）`,
-                claim_type: "independent",
-                level: 0,
-                dependencies: [],
-                children: ["claim_2", "claim_3"]
-            },
-            {
-                id: "claim_2",
-                claim_number: 2,
-                claim_text: `根据权利要求1所述的智能设备，其特征在于，还包括显示屏，与所述处理器连接。`,
-                claim_type: "dependent",
-                level: 1,
-                dependencies: [1],
-                children: ["claim_4"]
-            },
-            {
-                id: "claim_3",
-                claim_number: 3,
-                claim_text: `根据权利要求1所述的智能设备，其特征在于，还包括传感器模块。`,
-                claim_type: "dependent",
-                level: 1,
-                dependencies: [1],
-                children: []
-            },
-            {
-                id: "claim_4",
-                claim_number: 4,
-                claim_text: `根据权利要求2所述的智能设备，其特征在于，所述显示屏为触摸屏。`,
-                claim_type: "dependent",
-                level: 2,
-                dependencies: [2],
-                children: []
-            }
-        ],
-        links: [
-            { source: "claim_1", target: "claim_2", type: "dependency", strength: 1.0 },
-            { source: "claim_1", target: "claim_3", type: "dependency", strength: 1.0 },
-            { source: "claim_2", target: "claim_4", type: "dependency", strength: 1.0 }
-        ],
-        root_nodes: ["claim_1"]
-    };
+// 从权利要求处理结果中找到特定专利的权利要求
+function findPatentClaims(processedData, patentNumber, rowIndex) {
+    // 处理结果通常按行组织，找到对应行的权利要求
+    if (processedData.claims_by_row && processedData.claims_by_row[rowIndex]) {
+        return processedData.claims_by_row[rowIndex];
+    }
+    
+    // 如果没有按行组织，尝试在所有权利要求中查找
+    if (processedData.claims) {
+        return processedData.claims.filter(claim => 
+            claim.patent_number === patentNumber || 
+            claim.row_index === rowIndex
+        );
+    }
+    
+    return null;
 }
 
-// 重试可视化
-function retryVisualization() {
-    generateVisualization();
+// 构建可视化数据
+function buildVisualizationData(claims, patentNumber) {
+    const nodes = [];
+    const links = [];
+    
+    // 创建节点
+    claims.forEach(claim => {
+        nodes.push({
+            id: `claim_${claim.claim_number}`,
+            claim_number: claim.claim_number,
+            claim_text: claim.claim_text,
+            claim_type: claim.claim_type,
+            level: claim.level || 0,
+            dependencies: claim.dependencies || [],
+            x: 0,
+            y: 0
+        });
+    });
+    
+    // 创建连接
+    claims.forEach(claim => {
+        if (claim.dependencies && claim.dependencies.length > 0) {
+            claim.dependencies.forEach(dep => {
+                links.push({
+                    source: `claim_${dep}`,
+                    target: `claim_${claim.claim_number}`,
+                    type: 'dependency'
+                });
+            });
+        }
+    });
+    
+    return {
+        patent_number: patentNumber,
+        nodes: nodes,
+        links: links,
+        metadata: {
+            total_claims: claims.length,
+            independent_claims: claims.filter(c => c.claim_type === 'independent').length,
+            dependent_claims: claims.filter(c => c.claim_type === 'dependent').length
+        }
+    };
 }
 
 // 更新显示结果函数，添加专利查询按钮
