@@ -26,3 +26,196 @@
 /* 页面特定样式 */
 @import url('pages/chat.css');
 @import url('pages/claims.css');
+/* 专利查询和可视化样式 */
+.search-result-item {
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--surface-color);
+}
+
+.search-result-item:hover {
+    background: var(--primary-color-hover-bg);
+    border-color: var(--primary-color);
+}
+
+.search-result-item.selected {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color-dark);
+}
+
+.search-result-patent {
+    font-weight: 600;
+    font-size: 1.1em;
+    margin-bottom: 4px;
+}
+
+.search-result-row {
+    font-size: 0.9em;
+    color: var(--text-color-secondary);
+}
+
+.search-result-item.selected .search-result-row {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* 可视化容器样式 */
+#claims_visualization_container {
+    position: relative;
+    overflow: hidden;
+}
+
+#claims_visualization_container svg {
+    display: block;
+    margin: 0 auto;
+}
+
+/* 工具提示样式 */
+.claims-tooltip {
+    font-size: 12px;
+    line-height: 1.4;
+    max-width: 200px;
+    word-wrap: break-word;
+}
+
+/* 加载动画 */
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--border-color);
+    border-top: 4px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 模态框样式 */
+.modal-overlay {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal-content {
+    background: var(--surface-color);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    max-width: 600px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    padding: 20px 20px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 20px;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: var(--primary-color-dark);
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--text-color-secondary);
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+    background: var(--error-color);
+    color: white;
+}
+
+.modal-body {
+    padding: 0 20px 20px;
+}
+
+.claim-info {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.claim-info .badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    font-weight: 500;
+}
+
+.claim-info .badge.independent {
+    background: #4CAF50;
+    color: white;
+}
+
+.claim-info .badge.dependent {
+    background: #2196F3;
+    color: white;
+}
+
+.claim-dependencies {
+    margin-bottom: 15px;
+    padding: 10px;
+    background: var(--bg-color);
+    border-radius: 6px;
+}
+
+.claim-text {
+    margin-top: 15px;
+}
+
+.claim-text p {
+    background: var(--bg-color);
+    padding: 15px;
+    border-radius: 6px;
+    line-height: 1.6;
+    margin: 10px 0 0;
+}
+
+/* 可视化节点和连线样式 */
+.node.independent {
+    fill: #4CAF50;
+}
+
+.node.dependent {
+    fill: #2196F3;
+}
+
+.link {
+    stroke: #999;
+    stroke-width: 2;
+    fill: none;
+}
+
+.node-label {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-weight: bold;
+    text-anchor: middle;
+    pointer-events: none;
+}
