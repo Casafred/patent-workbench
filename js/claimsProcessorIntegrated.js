@@ -20,7 +20,6 @@ function initClaimsProcessor() {
     const processBtn = document.getElementById('claims_process_btn');
     const exportExcelBtn = document.getElementById('claims_export_excel_btn');
     const exportJsonBtn = document.getElementById('claims_export_json_btn');
-    const viewReportBtn = document.getElementById('claims_view_report_btn');
     
     if (!fileInput) return; // 如果元素不存在，直接返回
     
@@ -39,10 +38,6 @@ function initClaimsProcessor() {
     
     if (exportJsonBtn) {
         exportJsonBtn.addEventListener('click', () => exportClaimsResults('json'));
-    }
-    
-    if (viewReportBtn) {
-        viewReportBtn.addEventListener('click', viewClaimsReport);
     }
 }
 
@@ -412,48 +407,6 @@ async function exportClaimsResults(format) {
     } catch (error) {
         console.error('[Export v2.0] Export error:', error);
         showClaimsMessage('导出失败：' + error.message, 'error');
-    }
-}
-
-// 查看报告
-async function viewClaimsReport() {
-    if (!claimsCurrentTaskId) {
-        showClaimsMessage('没有可查看的报告', 'error');
-        return;
-    }
-    
-    try {
-        console.log('[Report v2.0] Fetching report for task:', claimsCurrentTaskId);
-        
-        const response = await fetch(`/api/claims/report/${claimsCurrentTaskId}`);
-        const data = await response.json();
-        
-        console.log('[Report v2.0] Response:', data);
-        
-        if (data.success) {
-            const responseData = data.data || {};
-            const report = responseData.report || data.report;
-            
-            console.log('[Report v2.0] Report length:', report ? report.length : 0);
-            
-            const modal = document.getElementById('claims_report_modal');
-            const content = document.getElementById('claims_report_content');
-            
-            if (modal && content) {
-                content.textContent = report;
-                modal.style.display = 'block';
-                console.log('[Report v2.0] Modal displayed');
-            } else {
-                console.error('[Report v2.0] Modal elements not found');
-                showClaimsMessage('报告显示失败：找不到模态框元素', 'error');
-            }
-        } else {
-            console.error('[Report v2.0] API error:', data.error);
-            showClaimsMessage('获取报告失败：' + data.error, 'error');
-        }
-    } catch (error) {
-        console.error('[Report v2.0] View report error:', error);
-        showClaimsMessage('获取报告失败：' + error.message, 'error');
     }
 }
 
