@@ -234,48 +234,37 @@ class ProcessingService(ProcessingServiceInterface):
             # 1. 预处理文本 - 清理常见的格式问题
             cleaned_text = self._preprocess_text(cell_text)
             
-            # 2. 识别语言边界和选择优先语言版本
+            # 2. 直接解析权利要求 - 让解析器处理多语言版本
             try:
-                language_segments = self.language_detector.extract_language_segments(cleaned_text)
-                if not language_segments:
-                    # 如果无法分割语言段，使用整个文本
-                    language_segments = [cleaned_text]
-                
-                selected_text = self.language_detector.select_preferred_version(language_segments)
-                selected_language = self.language_detector.detect_language(selected_text)
-            except Exception as e:
-                # 语言检测失败时的容错处理
-                selected_text = cleaned_text
-                selected_language = 'other'
-            
-            # 3. 解析权利要求 - 使用容错解析
-            try:
-                claims_dict = self.claims_parser.split_claims_by_numbers(selected_text)
+                claims_dict = self.claims_parser.split_claims_by_numbers(cleaned_text)
                 
                 # 如果标准解析失败，尝试更宽松的解析
                 if not claims_dict:
-                    claims_dict = self._fallback_claim_parsing(selected_text)
+                    claims_dict = self._fallback_claim_parsing(cleaned_text)
                     
             except Exception as e:
                 # 解析失败时尝试备用方法
-                claims_dict = self._fallback_claim_parsing(selected_text)
+                claims_dict = self._fallback_claim_parsing(cleaned_text)
             
-            # 4. 分类权利要求
+            # 3. 分类权利要求
             claims_info = []
             for claim_number, claim_text in claims_dict.items():
                 try:
                     # 标准化文本
                     normalized_text = self.claims_parser.normalize_claim_text(claim_text)
                     
+                    # 检测当前权利要求的语言
+                    claim_language = self.language_detector.detect_language(normalized_text)
+                    
                     # 分类权利要求类型
-                    claim_type = self.claims_classifier.classify_claim_type(normalized_text, selected_language)
+                    claim_type = self.claims_classifier.classify_claim_type(normalized_text, claim_language)
                     
                     # 提取引用关系
                     referenced_claims = []
                     if claim_type == 'dependent':
                         try:
                             referenced_claims = self.claims_classifier.extract_referenced_claims(
-                                normalized_text, selected_language
+                                normalized_text, claim_language
                             )
                         except Exception:
                             # 引用提取失败时，仍然标记为从属权利要求但引用为空
@@ -290,9 +279,9 @@ class ProcessingService(ProcessingServiceInterface):
                         claim_number=claim_number,
                         claim_type=claim_type,
                         claim_text=normalized_text,
-                        language=selected_language,
+                        language=claim_language,
                         referenced_claims=referenced_claims,
-                        original_text=claim_text,
+                        original_text=cleaned_text,  # 保存完整的原始文本
                         confidence_score=confidence_score
                     )
                     

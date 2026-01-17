@@ -103,18 +103,16 @@ class ClaimsParser(ClaimsParserInterface):
     
     def split_claims_by_numbers(self, text: str) -> Dict[int, str]:
         """
-        按序号分割权利要求文本
+        按序号分割权利要求文本，支持多语言版本（序号重启检测）
         
         Args:
             text: 完整的权利要求文本
             
         Returns:
-            序号到文本的映射字典
+            序号到文本的映射字典，对于重复序号，保留最完整的版本
         """
         if not text or not text.strip():
             return {}
-        
-        claims_dict = {}
         
         # 找到所有序号位置，包含匹配的模式信息
         number_positions = []
@@ -154,15 +152,172 @@ class ClaimsParser(ClaimsParserInterface):
             unique_positions.append(best_match)
             i = j
         
-        # 分割文本
-        for i, pos_info in enumerate(unique_positions):
+        if not unique_positions:
+            return {}
+        
+        # 检测语言版本边界（序号重启点）
+        language_boundaries = self._detect_language_boundaries(unique_positions)
+        
+        # 按语言版本分组处理
+        all_claims = {}
+        
+        for version_start, version_end in language_boundaries:
+            version_positions = unique_positions[version_start:version_end]
+            version_claims = self._extract_claims_from_positions(text, version_positions)
+            
+            # 合并到总的权利要求字典中
+            # 对于重复的序号，选择来自更完整语言版本的权利要求
+            for number, claim_text in version_claims.items():
+                if number not in all_claims:
+                    all_claims[number] = claim_text
+                else:
+                    # 如果序号已存在，比较两个版本的完整性
+                    # 选择来自权利要求数量更多的语言版本
+                    current_version_size = len(version_claims)
+                    existing_version_size = self._estimate_version_size(all_claims, number)
+                    
+                    if current_version_size > existing_version_size:
+                        all_claims[number] = claim_text
+                    elif current_version_size == existing_version_size:
+                        # 如果版本大小相同，选择文本更长的
+                        if len(claim_text) > len(all_claims[number]):
+                            all_claims[number] = claim_text
+        
+        return all_claims
+    
+    def _estimate_version_size(self, claims_dict: Dict[int, str], reference_number: int) -> int:
+        """
+        估算包含指定权利要求序号的语言版本的大小
+        
+        Args:
+            claims_dict: 当前权利要求字典
+            reference_number: 参考序号
+            
+        Returns:
+            估算的版本大小
+        """
+        # 简单估算：假设每个语言版本都是连续的序号
+        # 找到与reference_number相邻的序号数量
+        adjacent_count = 1  # 至少包含reference_number本身
+        
+        # 向前查找连续序号
+        current = reference_number - 1
+        while current > 0 and current in claims_dict:
+            adjacent_count += 1
+            current -= 1
+        
+        # 向后查找连续序号
+        current = reference_number + 1
+        while current in claims_dict:
+            adjacent_count += 1
+            current += 1
+        
+        return adjacent_count
+    
+    def _detect_language_boundaries(self, positions: List[Dict]) -> List[Tuple[int, int]]:
+        """
+        检测语言版本边界
+        
+        Args:
+            positions: 序号位置信息列表
+            
+        Returns:
+            边界列表，每个元素为(开始索引, 结束索引)
+        """
+        if not positions:
+            return []
+        
+        boundaries = []
+        current_start = 0
+        
+        # 提取序号序列
+        numbers = [pos['number'] for pos in positions]
+        
+        # 检测重启点
+        for i in range(1, len(numbers)):
+            current_num = numbers[i]
+            previous_num = numbers[i - 1]
+            
+            # 检测序号重启的条件
+            is_restart = False
+            
+            # 条件1: 当前序号为1，且前一个序号大于1
+            if current_num == 1 and previous_num > 1:
+                is_restart = True
+            
+            # 条件2: 序号大幅回退（差值>=5）
+            elif current_num < previous_num and (previous_num - current_num) >= 5:
+                is_restart = True
+            
+            # 条件3: 序号回退且前面有相对完整的序列
+            elif current_num <= previous_num:
+                # 检查前面是否有相对完整的序列
+                prev_sequence = numbers[current_start:i]
+                if self._is_complete_sequence(prev_sequence):
+                    is_restart = True
+            
+            if is_restart:
+                # 记录当前语言版本的边界
+                boundaries.append((current_start, i))
+                current_start = i
+        
+        # 添加最后一个语言版本
+        boundaries.append((current_start, len(positions)))
+        
+        return boundaries
+    
+    def _is_complete_sequence(self, numbers: List[int]) -> bool:
+        """
+        判断序号序列是否相对完整
+        
+        Args:
+            numbers: 序号列表
+            
+        Returns:
+            是否为完整序列
+        """
+        if len(numbers) < 3:  # 至少需要3个序号
+            return False
+        
+        unique_numbers = sorted(set(numbers))
+        if not unique_numbers:
+            return False
+        
+        # 检查是否从1开始
+        if unique_numbers[0] != 1:
+            return False
+        
+        # 计算连续性比例
+        min_num = unique_numbers[0]
+        max_num = unique_numbers[-1]
+        expected_count = max_num - min_num + 1
+        actual_count = len(unique_numbers)
+        
+        # 连续性超过70%且至少有3个序号，认为是完整序列
+        continuity_ratio = actual_count / expected_count if expected_count > 0 else 0
+        return continuity_ratio >= 0.7 and len(unique_numbers) >= 3
+    
+    def _extract_claims_from_positions(self, text: str, positions: List[Dict]) -> Dict[int, str]:
+        """
+        从位置信息中提取权利要求文本
+        
+        Args:
+            text: 完整文本
+            positions: 位置信息列表
+            
+        Returns:
+            序号到文本的映射
+        """
+        claims = {}
+        
+        for i, pos_info in enumerate(positions):
             start_pos = pos_info['start']
             end_pos = pos_info['end']
             number = pos_info['number']
             
             # 确定当前权利要求的结束位置
-            if i < len(unique_positions) - 1:
-                next_start = unique_positions[i + 1]['start']
+            if i < len(positions) - 1:
+                next_start = positions[i + 1]['start']
                 claim_text = text[end_pos:next_start].strip()
             else:
                 claim_text = text[end_pos:].strip()
@@ -172,9 +327,9 @@ class ClaimsParser(ClaimsParserInterface):
                 # 移除可能的重复序号标记
                 cleaned_text = self._clean_claim_text(claim_text)
                 if cleaned_text:  # 确保清理后仍有内容
-                    claims_dict[number] = cleaned_text
+                    claims[number] = cleaned_text
         
-        return claims_dict
+        return claims
     
     def _clean_claim_text(self, text: str) -> str:
         """
