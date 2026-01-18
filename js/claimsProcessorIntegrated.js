@@ -1464,32 +1464,38 @@ class ClaimsD3TreeRenderer {
     
     // 构建D3层次结构
     buildHierarchy(data) {
-        // 找到根节点
+        // 找到根节点（独立权利要求，没有作为target的节点）
         const rootNodes = data.nodes.filter(node => 
+            node.claim_type === 'independent' && 
             !data.links.some(link => link.target === node.id)
         );
         
+        // 如果没有找到明确的根节点，使用所有独立权利要求
         if (rootNodes.length === 0) {
-            // 如果没有明确的根节点，使用第一个独立权利要求
-            const independentClaim = data.nodes.find(node => node.claim_type === 'independent');
-            if (independentClaim) {
-                rootNodes.push(independentClaim);
+            const independentClaims = data.nodes.filter(node => node.claim_type === 'independent');
+            if (independentClaims.length > 0) {
+                rootNodes.push(...independentClaims);
             } else {
+                // 如果没有独立权利要求，使用第一个节点
                 rootNodes.push(data.nodes[0]);
             }
         }
         
-        // 构建层次结构
+        // 构建子节点（从属权利要求）
         const buildChildren = (nodeId) => {
             const children = data.links
-                .filter(link => link.source === nodeId)
+                .filter(link => link.source === nodeId) // source是被引用的（父节点）
                 .map(link => {
                     const childNode = data.nodes.find(node => node.id === link.target);
-                    return {
-                        ...childNode,
-                        children: buildChildren(childNode.id)
-                    };
-                });
+                    if (childNode) {
+                        return {
+                            ...childNode,
+                            children: buildChildren(childNode.id)
+                        };
+                    }
+                    return null;
+                })
+                .filter(child => child !== null);
             
             return children.length > 0 ? children : null;
         };
@@ -1499,16 +1505,26 @@ class ClaimsD3TreeRenderer {
             return d3.hierarchy({
                 id: 'virtual_root',
                 claim_number: 'Root',
-                claim_type: 'independent',
+                claim_type: 'virtual',
+                claim_text: '权利要求根节点',
                 children: rootNodes.map(root => ({
                     ...root,
                     children: buildChildren(root.id)
                 }))
             });
-        } else {
+        } else if (rootNodes.length === 1) {
             return d3.hierarchy({
                 ...rootNodes[0],
                 children: buildChildren(rootNodes[0].id)
+            });
+        } else {
+            // 如果没有根节点，创建一个默认的
+            return d3.hierarchy({
+                id: 'default_root',
+                claim_number: '1',
+                claim_type: 'independent',
+                claim_text: '默认根节点',
+                children: null
             });
         }
     }
@@ -1581,14 +1597,16 @@ class ClaimsD3TreeRenderer {
 
 // 显示权利要求详情模态框
 function showClaimsClaimModal(claimData) {
+    console.log('显示权利要求详情:', claimData);
+    
     // 创建模态框HTML（如果不存在）
     let modal = document.getElementById('claims_claim_modal');
     if (!modal) {
         modal = document.createElement('div');
         modal.id = 'claims_claim_modal';
         modal.innerHTML = `
-            <div class="modal-overlay" onclick="closeClaimsClaimModal()">
-                <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-overlay">
+                <div class="modal-content">
                     <div class="modal-header">
                         <h3 id="claims_claim_modal_title">权利要求详情</h3>
                         <button class="close-btn" onclick="closeClaimsClaimModal()">&times;</button>
@@ -1611,17 +1629,143 @@ function showClaimsClaimModal(claimData) {
                 </div>
             </div>
         `;
-        modal.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: none;
-            z-index: 1000;
+        
+        // 添加样式
+        const style = document.createElement('style');
+        style.textContent = `
+            #claims_claim_modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                display: none;
+                z-index: 1000;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            #claims_claim_modal .modal-overlay {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+            }
+            
+            #claims_claim_modal .modal-content {
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+                max-width: 600px;
+                width: 100%;
+                max-height: 80vh;
+                overflow-y: auto;
+                position: relative;
+            }
+            
+            #claims_claim_modal .modal-header {
+                padding: 20px;
+                border-bottom: 1px solid #eee;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background: #f8f9fa;
+                border-radius: 8px 8px 0 0;
+            }
+            
+            #claims_claim_modal .modal-header h3 {
+                margin: 0;
+                color: #333;
+                font-size: 18px;
+            }
+            
+            #claims_claim_modal .close-btn {
+                background: none;
+                border: none;
+                font-size: 24px;
+                cursor: pointer;
+                color: #666;
+                padding: 0;
+                width: 30px;
+                height: 30px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                transition: background-color 0.2s;
+            }
+            
+            #claims_claim_modal .close-btn:hover {
+                background-color: #f0f0f0;
+                color: #333;
+            }
+            
+            #claims_claim_modal .modal-body {
+                padding: 20px;
+            }
+            
+            #claims_claim_modal .claim-info {
+                margin-bottom: 15px;
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+            
+            #claims_claim_modal .badge {
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 12px;
+                font-weight: bold;
+                color: white;
+            }
+            
+            #claims_claim_modal .badge.independent {
+                background-color: #4CAF50;
+            }
+            
+            #claims_claim_modal .badge.dependent {
+                background-color: #2196F3;
+            }
+            
+            #claims_claim_modal .badge:not(.independent):not(.dependent) {
+                background-color: #666;
+            }
+            
+            #claims_claim_modal .claim-dependencies {
+                margin-bottom: 15px;
+                padding: 10px;
+                background-color: #f8f9fa;
+                border-radius: 4px;
+                border-left: 4px solid #2196F3;
+            }
+            
+            #claims_claim_modal .claim-text {
+                margin-bottom: 15px;
+            }
+            
+            #claims_claim_modal .claim-text p {
+                margin: 10px 0 0 0;
+                line-height: 1.6;
+                color: #333;
+                background-color: #f8f9fa;
+                padding: 15px;
+                border-radius: 4px;
+                border: 1px solid #e9ecef;
+            }
         `;
+        document.head.appendChild(style);
+        
         document.body.appendChild(modal);
+        
+        // 点击遮罩层关闭模态框
+        modal.querySelector('.modal-overlay').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) {
+                closeClaimsClaimModal();
+            }
+        });
     }
     
     // 设置模态框内容
@@ -1636,15 +1780,17 @@ function showClaimsClaimModal(claimData) {
     
     // 显示依赖关系
     const dependenciesDiv = document.getElementById('claims_claim_dependencies');
-    if (claimData.dependencies && claimData.dependencies.length > 0) {
-        document.getElementById('claims_claim_dependencies_list').textContent = claimData.dependencies.join(', ');
+    const dependencies = claimData.dependencies || claimData.referenced_claims || [];
+    if (dependencies && dependencies.length > 0) {
+        document.getElementById('claims_claim_dependencies_list').textContent = dependencies.join(', ');
         dependenciesDiv.style.display = 'block';
     } else {
         dependenciesDiv.style.display = 'none';
     }
     
     // 显示权利要求文本
-    document.getElementById('claims_claim_text').textContent = claimData.claim_text || '暂无详细内容';
+    const claimText = claimData.claim_text || claimData.text || '暂无详细内容';
+    document.getElementById('claims_claim_text').textContent = claimText;
     
     // 显示模态框
     modal.style.display = 'flex';
