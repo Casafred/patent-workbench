@@ -150,6 +150,7 @@ class ProcessingService(ProcessingServiceInterface):
                         # 关联专利公开号到权利要求
                         for claim in cell_claims:
                             claim.patent_number = patent_number
+                            claim.row_index = i
                         
                         all_claims.extend(cell_claims)
                         
@@ -160,8 +161,21 @@ class ProcessingService(ProcessingServiceInterface):
                     else:
                         # 记录空单元格或无效内容
                         if not cell_text or not cell_text.strip():
-                            # 空单元格 - 跳过但记录状态 (需求 3.4)
-                            pass  # 不记录为错误，这是正常情况
+                            # 空单元格 - 保留空值行信息，以保持与元数据表格的一致
+                            # 创建一个空的权利要求信息，仅包含行索引和专利号
+                            from ..models import ClaimInfo
+                            empty_claim = ClaimInfo(
+                                claim_number=0,
+                                claim_type="independent",
+                                claim_text="",
+                                language="other",
+                                referenced_claims=[],
+                                original_text="",
+                                confidence_score=0.0,
+                                patent_number=patent_number,
+                                row_index=i
+                            )
+                            all_claims.append(empty_claim)
                         else:
                             # 有内容但无法解析 - 记录警告
                             error = ProcessingError(

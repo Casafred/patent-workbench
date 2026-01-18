@@ -2,63 +2,33 @@
 Patent search and analysis routes.
 
 This module handles patent search from Google Patents and AI-powered analysis.
+Uses improved scraper for better reliability.
 """
 
 import json
 import time
 import traceback
-import requests
 from flask import Blueprint, request, jsonify
-from bs4 import BeautifulSoup
 from backend.middleware import validate_api_request
 from backend.services import get_zhipu_client
 from backend.utils import create_response
+from backend.scraper.simple_scraper import SimplePatentScraper
 
 # Create blueprint
 patent_bp = Blueprint('patent', __name__)
 
+# Global scraper instance
+_scraper_instance = None
 
-def get_patent_data_reliable(patent_id):
-    """
-    Fetch patent data from Google Patents JSON API.
-    
-    Args:
-        patent_id: Patent identifier
-    
-    Returns:
-        dict: Patent data or None if failed
-    """
-    patent_id = patent_id.strip()
-    url = f"https://patents.google.com/xhr/result?id={patent_id}/en"
-    
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "application/json",
-    }
 
-    try:
-        response = requests.get(url, headers=headers, timeout=15)
-        if response.status_code != 200:
-            return None
-        
-        raw_data = response.json()
-        recap = raw_data.get('recap', {})
-        
-        extracted_data = {
-            "patent_number": patent_id,
-            "title": recap.get('title', "无标题"),
-            "abstract": recap.get('abstract', "无摘要"),
-            "inventors": [i.get('name') for i in recap.get('inventors', []) if i.get('name')],
-            "application_date": recap.get('application_date', "无信息"),
-            "publication_date": recap.get('publication_date', "无信息"),
-            "claims": raw_data.get('claims', "无权利要求信息"),
-            "description": raw_data.get('description', "无说明书信息")
-        }
-        return extracted_data
-        
-    except Exception as e:
-        print(f"爬取专利 {patent_id} 失败: {str(e)}")
-        return None
+def get_scraper_instance() -> SimplePatentScraper:
+    """Get or create the global scraper instance."""
+    global _scraper_instance
+    
+    if _scraper_instance is None:
+        _scraper_instance = SimplePatentScraper(delay=2.0)
+    
+    return _scraper_instance
 
 
 @patent_bp.route('/patent/search', methods=['POST'])
@@ -97,128 +67,33 @@ def search_patents():
                 status_code=400
             )
         
-        # Remove duplicates
+        # Remove duplicates and empty strings
+        patent_numbers = [p.strip() for p in patent_numbers if p.strip()]
         patent_numbers = list(set(patent_numbers))
         
-        results = []
+        if not patent_numbers:
+            return create_response(
+                error="No valid patent numbers provided",
+                status_code=400
+            )
         
-        for patent_number in patent_numbers:
-            try:
-                url = f'https://patents.google.com/patent/{patent_number}'
-                headers = {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                    'Accept-Language': 'en-US,en;q=0.5',
-                    'Accept-Encoding': 'gzip, deflate, br',
-                    'Connection': 'keep-alive',
-                    'Upgrade-Insecure-Requests': '1',
-                    'Sec-Fetch-Dest': 'document',
-                    'Sec-Fetch-Mode': 'navigate',
-                    'Sec-Fetch-Site': 'none',
-                    'Sec-Fetch-User': '?1'
-                }
-                
-                response = requests.get(url, headers=headers, timeout=10)
-                response.raise_for_status()
-                
-                soup = BeautifulSoup(response.text, 'lxml')
-                patent_data = {}
-                
-                # Try to parse JSON-LD data
-                try:
-                    json_ld = soup.find('script', type='application/ld+json')
-                    if json_ld:
-                        ld_data = json.loads(json_ld.string)
-                        
-                        if '@graph' in ld_data:
-                            for item in ld_data['@graph']:
-                                if item.get('@type') == 'Patent':
-                                    patent_data['title'] = item.get('name', '')
-                                    patent_data['abstract'] = item.get('abstract', '')
-                                    patent_data['inventors'] = [inv.get('name', '') for inv in item.get('inventor', [])]
-                                    patent_data['application_date'] = item.get('filingDate', '')
-                                    patent_data['publication_date'] = item.get('publicationDate', '')
-                                    patent_data['assignees'] = [ass.get('name', '') for ass in item.get('assignee', [])]
-                                    break
-                except Exception as e:
-                    print(f"Error parsing JSON-LD for {patent_number}: {e}")
-                
-                # Fallback to HTML parsing if JSON-LD failed
-                if not patent_data.get('title'):
-                    title = soup.find('h1')
-                    patent_data['title'] = title.get_text().strip() if title else ''
-                
-                if not patent_data.get('abstract'):
-                    abstract = soup.find('div', id='abstract') or soup.find('div', class_='abstract')
-                    patent_data['abstract'] = abstract.get_text().strip() if abstract else ''
-                
-                if not patent_data.get('inventors'):
-                    inventors = []
-                    inventor_section = soup.find('div', id='inventor')
-                    if inventor_section:
-                        inventor_elements = inventor_section.find_all('span')
-                        for inv in inventor_elements:
-                            inventor_name = inv.get_text().strip()
-                            if inventor_name and inventor_name != 'Inventors':
-                                inventors.append(inventor_name)
-                    patent_data['inventors'] = inventors
-                
-                # Get claims
-                try:
-                    claims = []
-                    claims_section = soup.find('div', id='claims')
-                    if claims_section:
-                        claim_elements = claims_section.find_all('div', class_='claim')
-                        if not claim_elements:
-                            claim_elements = claims_section.find_all('p')
-                        for claim in claim_elements:
-                            claim_text = claim.get_text().strip()
-                            if claim_text and len(claim_text) > 10:
-                                claims.append(claim_text)
-                    patent_data['claims'] = claims
-                except Exception as e:
-                    patent_data['claims'] = []
-                
-                # Get description
-                try:
-                    description = ''
-                    description_section = soup.find('div', id='description')
-                    if description_section:
-                        para_elements = description_section.find_all('p')
-                        if para_elements:
-                            description = ' '.join([para.get_text().strip() for para in para_elements[:10]])
-                    patent_data['description'] = description
-                except Exception as e:
-                    patent_data['description'] = ''
-                
-                patent_data['patent_number'] = patent_number
-                patent_data['url'] = url
-                
-                results.append({
-                    'patent_number': patent_number,
-                    'success': True,
-                    'data': patent_data,
-                    'url': url
-                })
-                
-                # Add delay to avoid rate limiting
-                time.sleep(2)
-                
-            except requests.exceptions.RequestException as e:
-                results.append({
-                    'patent_number': patent_number,
-                    'success': False,
-                    'error': f"Request error: {str(e)}"
-                })
-            except Exception as e:
-                print(f"Error processing {patent_number}: {traceback.format_exc()}")
-                results.append({
-                    'patent_number': patent_number,
-                    'success': False,
-                    'error': str(e)
-                })
-        
-        return create_response(data=results)
+        # Use simple scraper
+        try:
+            scraper = get_scraper_instance()
+            results = scraper.scrape_patents_batch(patent_numbers)
+            
+            # Convert results to API format
+            api_results = [result.to_dict() for result in results]
+            
+            return create_response(data=api_results)
+            
+        except Exception as e:
+            print(f"Scraper error: {traceback.format_exc()}")
+            return create_response(
+                error=f"Failed to scrape patents: {str(e)}",
+                status_code=500
+            )
+    
     except Exception as e:
         print(f"Error in search_patents: {traceback.format_exc()}")
         return create_response(

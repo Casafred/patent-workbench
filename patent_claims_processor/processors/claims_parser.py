@@ -117,6 +117,9 @@ class ClaimsParser(ClaimsParserInterface):
         if not text or not text.strip():
             return {}
         
+        # 处理三个大写字母分割标记，如CNA、WOA等
+        text = self._process_language_separators(text)
+        
         # 找到所有序号位置，包含匹配的模式信息
         number_positions = []
         
@@ -130,7 +133,8 @@ class ClaimsParser(ClaimsParserInterface):
                             'start': match.start(),
                             'end': match.end(),
                             'number': number,
-                            'matched_text': match.group(0)
+                            'matched_text': match.group(0),
+                            'pattern': pattern.pattern
                         })
                 except (ValueError, IndexError):
                     continue
@@ -163,20 +167,34 @@ class ClaimsParser(ClaimsParserInterface):
         
         # 按语言版本分组处理
         all_claims = {}
+        language_versions = []
         
         for version_start, version_end in language_boundaries:
             version_positions = unique_positions[version_start:version_end]
             version_claims = self._extract_claims_from_positions(text, version_positions)
             
-            # 合并到总的权利要求字典中
-            # 对于重复的序号，选择来自更完整语言版本的权利要求
+            # 检测当前语言版本的语言类型
+            language_type = self._detect_version_language(version_positions, version_claims)
+            
+            language_versions.append({
+                'claims': version_claims,
+                'size': len(version_claims),
+                'positions': version_positions,
+                'language': language_type
+            })
+        
+        # 按语言优先级排序：中-英-德-日-其他
+        language_versions.sort(key=lambda x: self._get_language_priority(x['language']), reverse=True)
+        
+        # 合并到总的权利要求字典中
+        for version in language_versions:
+            version_claims = version['claims']
             for number, claim_text in version_claims.items():
                 if number not in all_claims:
                     all_claims[number] = claim_text
                 else:
                     # 如果序号已存在，比较两个版本的完整性
-                    # 选择来自权利要求数量更多的语言版本
-                    current_version_size = len(version_claims)
+                    current_version_size = version['size']
                     existing_version_size = self._estimate_version_size(all_claims, number)
                     
                     if current_version_size > existing_version_size:
@@ -187,6 +205,107 @@ class ClaimsParser(ClaimsParserInterface):
                             all_claims[number] = claim_text
         
         return all_claims
+    
+    def _process_language_separators(self, text: str) -> str:
+        """
+        处理三个大写字母分割标记，如CNA、WOA等
+        
+        Args:
+            text: 原始文本
+            
+        Returns:
+            处理后的文本
+        """
+        import re
+        
+        # 匹配三个大写字母的分割标记
+        separator_pattern = r'\b([A-Z]{3})\b'
+        
+        # 在分割标记后添加换行符，以便后续的语言版本检测
+        processed_text = re.sub(separator_pattern, r'\1\n\n', text)
+        
+        return processed_text
+    
+    def _detect_version_language(self, positions, claims) -> str:
+        """
+        检测语言版本的语言类型
+        
+        Args:
+            positions: 序号位置列表
+            claims: 权利要求字典
+            
+        Returns:
+            语言类型 ('zh', 'en', 'de', 'ja', 'other')
+        """
+        import re
+        
+        # 中文字符检测
+        chinese_pattern = re.compile(r'[\u4e00-\u9fff]')
+        
+        # 德语关键词检测
+        german_keywords = ['anspruch', 'ansprüche', 'anspruchs']
+        german_pattern = re.compile('|'.join(german_keywords), re.IGNORECASE)
+        
+        # 日语关键词检测
+        japanese_keywords = ['特許請求の範囲', '請求項']
+        
+        # 英文关键词检测
+        english_keywords = ['claim']
+        english_pattern = re.compile('|'.join(english_keywords), re.IGNORECASE)
+        
+        # 检查匹配的模式和权利要求文本
+        for pos in positions:
+            matched_text = pos.get('matched_text', '')
+            pattern = pos.get('pattern', '')
+            
+            # 检查中文模式
+            if any(pattern in p for p in self.number_patterns[:7]):  # 前7个是中文模式
+                return 'zh'
+            
+            # 检查英文模式
+            elif any(pattern in p for p in self.number_patterns[7:10]):  # 接下来3个是英文模式
+                return 'en'
+            
+            # 检查德语模式
+            elif any(pattern in p for p in self.number_patterns[10:13]):  # 接下来3个是德语模式
+                return 'de'
+            
+            # 检查日语模式
+            elif any(pattern in p for p in self.number_patterns[13:15]):  # 接下来2个是日语模式
+                return 'ja'
+        
+        # 检查权利要求文本
+        for claim_text in claims.values():
+            if chinese_pattern.search(claim_text):
+                return 'zh'
+            elif german_pattern.search(claim_text):
+                return 'de'
+            elif any(keyword in claim_text for keyword in japanese_keywords):
+                return 'ja'
+            elif english_pattern.search(claim_text):
+                return 'en'
+        
+        return 'other'
+    
+    def _get_language_priority(self, language) -> int:
+        """
+        获取语言优先级
+        
+        Args:
+            language: 语言类型
+            
+        Returns:
+            优先级数值（越高越优先）
+        """
+        priority_map = {
+            'zh': 5,  # 中文最高
+            'en': 4,  # 英文次之
+            'de': 3,  # 德语
+            'ja': 2,  # 日语
+            'other': 1  # 其他语言
+        }
+        
+        return priority_map.get(language, 1)
     
     def _estimate_version_size(self, claims_dict: Dict[int, str], reference_number: int) -> int:
         """

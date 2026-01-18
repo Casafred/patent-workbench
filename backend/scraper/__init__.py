@@ -9,10 +9,43 @@ and modern anti-detection techniques for Google Patents.
 from .config import ScrapingConfig
 from .models import PatentData, PatentResult, ScrapingStats, BatchRequest
 
-# Import browser manager separately to avoid circular imports
-def get_browser_manager():
+# Import core components - use try/except to handle import issues
+try:
     from .browser_manager import PlaywrightBrowserManager
-    return PlaywrightBrowserManager
+except ImportError as e:
+    print(f"Warning: Could not import PlaywrightBrowserManager: {e}")
+    PlaywrightBrowserManager = None
+
+try:
+    from .anti_detection import AntiDetectionManager
+except ImportError as e:
+    print(f"Warning: Could not import AntiDetectionManager: {e}")
+    AntiDetectionManager = None
+
+try:
+    from .rate_limiter import RateLimitingManager
+except ImportError as e:
+    print(f"Warning: Could not import RateLimitingManager: {e}")
+    RateLimitingManager = None
+
+try:
+    from .extractors import DataExtractionEngine
+except ImportError as e:
+    print(f"Warning: Could not import DataExtractionEngine: {e}")
+    DataExtractionEngine = None
+
+try:
+    from .error_handler import ErrorHandlingManager
+except ImportError as e:
+    print(f"Warning: Could not import ErrorHandlingManager: {e}")
+    ErrorHandlingManager = None
+
+# Import main scraper class
+try:
+    from .enhanced_scraper import EnhancedPatentScraper
+except ImportError as e:
+    print(f"Warning: Could not import EnhancedPatentScraper: {e}")
+    EnhancedPatentScraper = None
 
 __all__ = [
     'ScrapingConfig', 
@@ -20,5 +53,10 @@ __all__ = [
     'PatentResult',
     'ScrapingStats',
     'BatchRequest',
-    'get_browser_manager'
+    'PlaywrightBrowserManager',
+    'AntiDetectionManager',
+    'RateLimitingManager',
+    'DataExtractionEngine',
+    'ErrorHandlingManager',
+    'EnhancedPatentScraper'
 ]
