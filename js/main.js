@@ -400,6 +400,8 @@ function initPatentBatch() {
         results.forEach(result => {
             const resultItem = document.createElement('div');
             resultItem.className = 'result-item';
+            resultItem.style.fontFamily = '"Noto Sans SC", Arial, sans-serif';
+            resultItem.style.lineHeight = '1.6';
             
             if (result.success) {
                 const data = result.data;
@@ -407,7 +409,7 @@ function initPatentBatch() {
                 // 构建完整的专利信息显示
                 let htmlContent = `
                     <div style="border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; margin-bottom: 15px;">
-                        <h5 style="color: var(--primary-color); margin-bottom: 5px;">
+                        <h5 style="color: var(--primary-color); margin-bottom: 5px; font-family: 'Noto Sans SC', Arial, sans-serif;">
                             ${result.patent_number} - ${data.title || '无标题'}
                         </h5>
                         <div style="font-size: 0.9em; color: #666;">
@@ -419,57 +421,36 @@ function initPatentBatch() {
                 // 基本信息
                 htmlContent += `<div style="margin-bottom: 15px;">`;
                 
-                if (data.abstract) {
-                    htmlContent += `
-                        <p style="margin-bottom: 10px;">
-                            <strong style="color: var(--primary-color);">📄 摘要:</strong><br/>
-                            <span style="line-height: 1.6;">${data.abstract}</span>
-                        </p>
-                    `;
-                }
+                // 所有可用字段的完整显示
+                const fields = [
+                    { label: '📄 摘要', value: data.abstract, type: 'text' },
+                    { label: '👤 发明人', value: data.inventors && data.inventors.length > 0 ? data.inventors.join(', ') : null, type: 'text' },
+                    { label: '🏢 受让人', value: data.assignees && data.assignees.length > 0 ? data.assignees.join(', ') : null, type: 'text' },
+                    { label: '📅 申请日期', value: data.application_date, type: 'text' },
+                    { label: '📅 公开日期', value: data.publication_date, type: 'text' },
+                    { label: '🔗 专利链接', value: result.url, type: 'url' }
+                ];
                 
-                // 发明人信息
-                if (data.inventors && data.inventors.length > 0) {
-                    htmlContent += `
-                        <p style="margin-bottom: 8px;">
-                            <strong style="color: var(--primary-color);">👤 发明人:</strong> 
-                            ${data.inventors.join(', ')}
-                        </p>
-                    `;
-                }
-                
-                // 受让人信息
-                if (data.assignees && data.assignees.length > 0) {
-                    htmlContent += `
-                        <p style="margin-bottom: 8px;">
-                            <strong style="color: var(--primary-color);">🏢 受让人:</strong> 
-                            ${data.assignees.join(', ')}
-                        </p>
-                    `;
-                }
-                
-                // 日期信息
-                htmlContent += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">`;
-                
-                if (data.application_date) {
-                    htmlContent += `
-                        <p style="margin: 0;">
-                            <strong style="color: var(--primary-color);">📅 申请日期:</strong><br/>
-                            ${data.application_date}
-                        </p>
-                    `;
-                }
-                
-                if (data.publication_date) {
-                    htmlContent += `
-                        <p style="margin: 0;">
-                            <strong style="color: var(--primary-color);">📅 公开日期:</strong><br/>
-                            ${data.publication_date}
-                        </p>
-                    `;
-                }
-                
-                htmlContent += `</div>`;
+                // 显示所有基本字段
+                fields.forEach(field => {
+                    if (field.value) {
+                        if (field.type === 'url') {
+                            htmlContent += `
+                                <p style="margin-bottom: 10px; font-family: 'Noto Sans SC', Arial, sans-serif;">
+                                    <strong style="color: var(--primary-color);">${field.label}:</strong><br/>
+                                    <a href="${field.value}" target="_blank" style="color: var(--primary-color); text-decoration: underline;">${field.value}</a>
+                                </p>
+                            `;
+                        } else {
+                            htmlContent += `
+                                <p style="margin-bottom: 10px; font-family: 'Noto Sans SC', Arial, sans-serif;">
+                                    <strong style="color: var(--primary-color);">${field.label}:</strong><br/>
+                                    <span style="line-height: 1.6;">${field.value}</span>
+                                </p>
+                            `;
+                        }
+                    }
+                });
                 
                 // 权利要求
                 if (data.claims && data.claims.length > 0) {
@@ -478,13 +459,13 @@ function initPatentBatch() {
                     
                     htmlContent += `
                         <div style="margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 5px;">
-                            <strong style="color: var(--primary-color);">⚖️ 权利要求 (共${data.claims.length}条):</strong>
+                            <strong style="color: var(--primary-color); font-family: 'Noto Sans SC', Arial, sans-serif;">⚖️ 权利要求 (共${data.claims.length}条):</strong>
                             <div style="margin-top: 8px; max-height: 200px; overflow-y: auto;">
                     `;
                     
                     claimsPreview.forEach((claim, index) => {
                         htmlContent += `
-                            <div style="margin-bottom: 8px; padding: 8px; background-color: white; border-radius: 3px; font-size: 0.9em;">
+                            <div style="margin-bottom: 8px; padding: 8px; background-color: white; border-radius: 3px; font-size: 0.9em; font-family: 'Noto Sans SC', Arial, sans-serif;">
                                 <strong>权利要求 ${index + 1}:</strong><br/>
                                 ${claim.substring(0, 200)}${claim.length > 200 ? '...' : ''}
                             </div>
@@ -507,8 +488,8 @@ function initPatentBatch() {
                     const descPreview = data.description.substring(0, 300);
                     htmlContent += `
                         <div style="margin-top: 15px; padding: 10px; background-color: #f0f8ff; border-radius: 5px;">
-                            <strong style="color: var(--primary-color);">📝 说明书摘录:</strong>
-                            <div style="margin-top: 8px; font-size: 0.9em; line-height: 1.6;">
+                            <strong style="color: var(--primary-color); font-family: 'Noto Sans SC', Arial, sans-serif;">📝 说明书摘录:</strong>
+                            <div style="margin-top: 8px; font-size: 0.9em; line-height: 1.6; font-family: 'Noto Sans SC', Arial, sans-serif;">
                                 ${descPreview}${data.description.length > 300 ? '...' : ''}
                             </div>
                         </div>
@@ -532,8 +513,8 @@ function initPatentBatch() {
                 resultItem.innerHTML = htmlContent;
             } else {
                 resultItem.innerHTML = `
-                    <h5 style="color: red;">❌ ${result.patent_number} - 查询失败</h5>
-                    <p style="padding: 10px; background-color: #fff3cd; border-radius: 5px; border-left: 4px solid #ffc107;">
+                    <h5 style="color: red; font-family: 'Noto Sans SC', Arial, sans-serif;">❌ ${result.patent_number} - 查询失败</h5>
+                    <p style="padding: 10px; background-color: #fff3cd; border-radius: 5px; border-left: 4px solid #ffc107; font-family: 'Noto Sans SC', Arial, sans-serif;">
                         <strong>错误信息:</strong> ${result.error}
                     </p>
                 `;

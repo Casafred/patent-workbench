@@ -117,8 +117,70 @@ class ClaimsParser(ClaimsParserInterface):
         if not text or not text.strip():
             return {}
         
-        # 处理三个大写字母分割标记，如CNA、WOA等
-        text = self._process_language_separators(text)
+        # 首先检查是否包含三个大写字母的边界标记
+        import re
+        boundary_pattern = r'\b([A-Z]{3})\b'
+        boundary_matches = list(re.finditer(boundary_pattern, text))
+        
+        # 如果存在边界标记，分割文本并分别处理每个部分
+        if boundary_matches:
+            # 分割文本为多个部分
+            text_parts = []
+            start_pos = 0
+            
+            for match in boundary_matches:
+                # 提取边界标记前的文本
+                text_parts.append(text[start_pos:match.start()].strip())
+                start_pos = match.end()
+            
+            # 提取最后一个边界标记后的文本
+            text_parts.append(text[start_pos:].strip())
+            
+            # 处理每个文本部分
+            all_claims = {}
+            language_versions = []
+            
+            for part in text_parts:
+                if part:
+                    # 对每个部分单独解析权利要求
+                    part_claims = self._parse_single_language_claims(part)
+                    if part_claims:
+                        # 检测当前部分的语言类型
+                        language_type = self._detect_text_language(part)
+                        language_versions.append({
+                            'claims': part_claims,
+                            'size': len(part_claims),
+                            'language': language_type
+                        })
+            
+            # 按语言优先级排序：中-英-德-日-其他
+            language_versions.sort(key=lambda x: self._get_language_priority(x['language']), reverse=True)
+            
+            # 合并到总的权利要求字典中
+            # 按照优先级顺序，高优先级的版本先添加，这样低优先级的版本不会覆盖高优先级的
+            for version in language_versions:
+                version_claims = version['claims']
+                for number, claim_text in version_claims.items():
+                    if number not in all_claims:
+                        all_claims[number] = claim_text
+            
+            return all_claims
+        else:
+            # 没有边界标记，使用原有的处理逻辑
+            return self._parse_single_language_claims(text)
+    
+    def _parse_single_language_claims(self, text: str) -> Dict[int, str]:
+        """
+        解析单一语言的权利要求
+        
+        Args:
+            text: 权利要求文本
+            
+        Returns:
+            序号到文本的映射字典
+        """
+        if not text or not text.strip():
+            return {}
         
         # 找到所有序号位置，包含匹配的模式信息
         number_positions = []
@@ -162,49 +224,46 @@ class ClaimsParser(ClaimsParserInterface):
         if not unique_positions:
             return {}
         
-        # 检测语言版本边界（序号重启点）
-        language_boundaries = self._detect_language_boundaries(unique_positions)
+        # 提取权利要求文本
+        claims = self._extract_claims_from_positions(text, unique_positions)
+        return claims
+    
+    def _detect_text_language(self, text: str) -> str:
+        """
+        检测文本的语言类型
         
-        # 按语言版本分组处理
-        all_claims = {}
-        language_versions = []
-        
-        for version_start, version_end in language_boundaries:
-            version_positions = unique_positions[version_start:version_end]
-            version_claims = self._extract_claims_from_positions(text, version_positions)
+        Args:
+            text: 待检测的文本
             
-            # 检测当前语言版本的语言类型
-            language_type = self._detect_version_language(version_positions, version_claims)
-            
-            language_versions.append({
-                'claims': version_claims,
-                'size': len(version_claims),
-                'positions': version_positions,
-                'language': language_type
-            })
+        Returns:
+            语言类型 ('zh', 'en', 'de', 'ja', 'other')
+        """
+        import re
         
-        # 按语言优先级排序：中-英-德-日-其他
-        language_versions.sort(key=lambda x: self._get_language_priority(x['language']), reverse=True)
+        # 中文字符检测
+        chinese_pattern = re.compile(r'[\u4e00-\u9fff]')
+        if chinese_pattern.search(text):
+            return 'zh'
         
-        # 合并到总的权利要求字典中
-        for version in language_versions:
-            version_claims = version['claims']
-            for number, claim_text in version_claims.items():
-                if number not in all_claims:
-                    all_claims[number] = claim_text
-                else:
-                    # 如果序号已存在，比较两个版本的完整性
-                    current_version_size = version['size']
-                    existing_version_size = self._estimate_version_size(all_claims, number)
-                    
-                    if current_version_size > existing_version_size:
-                        all_claims[number] = claim_text
-                    elif current_version_size == existing_version_size:
-                        # 如果版本大小相同，选择文本更长的
-                        if len(claim_text) > len(all_claims[number]):
-                            all_claims[number] = claim_text
+        # 德语关键词检测
+        german_keywords = ['anspruch', 'ansprüche', 'anspruchs']
+        german_pattern = re.compile('|'.join(german_keywords), re.IGNORECASE)
+        if german_pattern.search(text):
+            return 'de'
         
-        return all_claims
+        # 日语关键词检测
+        japanese_keywords = ['特許請求の範囲', '請求項']
+        for keyword in japanese_keywords:
+            if keyword in text:
+                return 'ja'
+        
+        # 英文关键词检测
+        english_keywords = ['claim', 'claims']
+        english_pattern = re.compile('|'.join(english_keywords), re.IGNORECASE)
+        if english_pattern.search(text):
+            return 'en'
+        
+        return 'other'
     
     def _process_language_separators(self, text: str) -> str:
         """
@@ -221,8 +280,8 @@ class ClaimsParser(ClaimsParserInterface):
         # 匹配三个大写字母的分割标记
         separator_pattern = r'\b([A-Z]{3})\b'
         
-        # 在分割标记后添加换行符，以便后续的语言版本检测
-        processed_text = re.sub(separator_pattern, r'\1\n\n', text)
+        # 在分割标记前后都添加换行符，确保正确分割语言版本
+        processed_text = re.sub(separator_pattern, r'\n\n\1\n\n', text)
         
         return processed_text
     
@@ -431,6 +490,7 @@ class ClaimsParser(ClaimsParserInterface):
             序号到文本的映射
         """
         claims = {}
+        import re
         
         for i, pos_info in enumerate(positions):
             start_pos = pos_info['start']
@@ -440,14 +500,24 @@ class ClaimsParser(ClaimsParserInterface):
             # 确定当前权利要求的结束位置
             if i < len(positions) - 1:
                 next_start = positions[i + 1]['start']
+                # 提取文本
                 claim_text = text[end_pos:next_start].strip()
             else:
+                # 对于最后一个权利要求，提取到文本末尾
                 claim_text = text[end_pos:].strip()
+            
+            # 检查文本中是否包含三个大写字母的边界标记
+            # 如果包含，只保留边界标记之前的内容
+            boundary_match = re.search(r'\b[A-Z]{3}\b', claim_text)
+            if boundary_match:
+                claim_text = claim_text[:boundary_match.start()].strip()
             
             # 清理和验证文本
             if claim_text:
                 # 移除可能的重复序号标记
                 cleaned_text = self._clean_claim_text(claim_text)
+                # 移除开头可能的多余冒号
+                cleaned_text = re.sub(r'^\s*[:：]\s*', '', cleaned_text)
                 if cleaned_text:  # 确保清理后仍有内容
                     claims[number] = cleaned_text
         

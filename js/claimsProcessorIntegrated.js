@@ -221,10 +221,24 @@ async function loadClaimsColumns(filePath, sheetName) {
             
             if (columnContainer && columnSelect) {
                 columnSelect.innerHTML = '';
+                
+                // 智能识别权利要求列
+                let claimsColumnFound = false;
+                let detectedClaimsColumn = null;
+                
                 columns.forEach(column => {
                     const option = document.createElement('option');
                     option.value = column;
                     option.textContent = column;
+                    
+                    // 检查列名是否包含权利要求相关关键词
+                    const columnLower = column.toLowerCase();
+                    if (!claimsColumnFound && (columnLower.includes('权利要求') || columnLower.includes('claim'))) {
+                        option.selected = true;
+                        claimsColumnFound = true;
+                        detectedClaimsColumn = column;
+                    }
+                    
                     columnSelect.appendChild(option);
                 });
                 
@@ -233,6 +247,11 @@ async function loadClaimsColumns(filePath, sheetName) {
                 // 启用处理按钮
                 if (processBtn) {
                     processBtn.disabled = false;
+                }
+                
+                // 显示自动识别结果
+                if (claimsColumnFound && detectedClaimsColumn) {
+                    showClaimsMessage(`✨ 自动识别到权利要求列: ${detectedClaimsColumn}`, 'success');
                 }
             }
             
@@ -959,9 +978,9 @@ function displayClaimsSearchResults(results, query) {
             const patentNumber = result.patent_number || result.claim_number || 'Unknown';
             const rowIndex = result.row_index;
             
-            // 只有当rowIndex有效且不为0时才显示行号
+            // 只有当rowIndex有效且不为0时才显示行号，显示为原表格行号-1
             const rowInfo = rowIndex && rowIndex !== 0 ? 
-                `<div class="search-result-row">行号: ${rowIndex}</div>` : 
+                `<div class="search-result-row">行号: ${rowIndex - 1}</div>` : 
                 '';
             
             html += `

@@ -41,8 +41,8 @@ class ClaimsClassifier(ClaimsClassifierInterface):
         for language, keywords in self.reference_keywords.items():
             patterns = []
             for keyword in keywords:
-                # 匹配"权利要求1"、"claim 1"等格式
-                pattern = rf'{re.escape(keyword)}\s*(\d+(?:\s*[-~至到]\s*\d+)?(?:\s*[,，]\s*\d+)*)'
+                # 匹配"权利要求1"、"claim 1"、"claims 1 to 10"等格式
+                pattern = rf'{re.escape(keyword)}\s*((?:\d+\s*[-~至到to]\s*\d+)|\d+)(?:\s*[,，]\s*(?:\d+\s*[-~至到to]\s*\d+|\d+))*'
                 patterns.append(re.compile(pattern, re.IGNORECASE))
             self.reference_patterns[language] = patterns
     
@@ -127,14 +127,27 @@ class ClaimsClassifier(ClaimsClassifierInterface):
         # 获取对应语言的模式，如果没有则使用通用模式
         patterns = self.reference_patterns.get(language, self.reference_patterns.get('other', []))
         
+        # 首先使用正则表达式模式匹配
         for pattern in patterns:
             matches = pattern.findall(cleaned_text)
             if matches:
                 has_reference_keywords = True
                 for match in matches:
+                    # 预处理：将"to"替换为"-"以便_parse_claim_numbers能正确处理
+                    processed_match = re.sub(r'\s*to\s*', '-', match, flags=re.IGNORECASE)
                     # 解析序号字符串，支持范围和列表格式
-                    numbers = self._parse_claim_numbers(match)
+                    numbers = self._parse_claim_numbers(processed_match)
                     referenced_claims.update(numbers)
+        
+        # 专门处理"claims 1 to 10"格式 - 无论是否已经找到引用
+        if language in ['en', 'other']:
+            # 匹配"claims 1 to 10"、"claim 1 to 3"等格式
+            to_pattern = re.search(r'claim[s]?\s+(\d+)\s+to\s+(\d+)', cleaned_text, re.IGNORECASE)
+            if to_pattern:
+                start = int(to_pattern.group(1))
+                end = int(to_pattern.group(2))
+                referenced_claims.update(range(start, end + 1))
+                has_reference_keywords = True
         
         # 检查是否包含引用关键词但没有找到数字
         if has_reference_keywords and not referenced_claims:
@@ -205,7 +218,7 @@ class ClaimsClassifier(ClaimsClassifierInterface):
         解析权利要求序号字符串
         
         Args:
-            number_string: 序号字符串，如"1-3,5"
+            number_string: 序号字符串，如"1-3,5"、"1 to 10"
             
         Returns:
             序号列表
@@ -218,8 +231,9 @@ class ClaimsClassifier(ClaimsClassifierInterface):
         for part in parts:
             part = part.strip()
             
-            # 检查是否为范围格式（如"1-3"、"1至3"）
-            range_match = re.search(r'(\d+)\s*[-~至到]\s*(\d+)', part)
+            # 检查是否为范围格式（如"1-3"、"1至3"、"1 to 10"）
+            # 匹配包含"to"作为单词的范围格式
+            range_match = re.search(r'(\d+)\s*(?:[-~至到]|to)\s*(\d+)', part, re.IGNORECASE)
             if range_match:
                 start = int(range_match.group(1))
                 end = int(range_match.group(2))
