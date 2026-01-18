@@ -806,16 +806,17 @@ async function claimsSearchPatentNumbers() {
             const patentMap = new Map();
             claimsProcessedData.claims.forEach(claim => {
                 if (claim.patent_number && claim.patent_number.toLowerCase().includes(query.toLowerCase())) {
-                    if (!patentMap.has(claim.patent_number)) {
-                        patentMap.set(claim.patent_number, claim.row_index);
-                    }
+                    // 保存专利号，但不保存行号，因为行号可能与专利号所在行不一致
+                    // 后续查找时优先按专利号查找，忽略行号
+                    patentMap.set(claim.patent_number, null);
                 }
             });
             
             // 转换为搜索结果格式
-            results = Array.from(patentMap.entries()).map(([patent_number, row_index]) => ({
+            results = Array.from(patentMap.entries()).map(([patent_number, _]) => ({
                 patent_number,
-                row_index
+                // 不显示行号，避免混淆
+                row_index: 0
             }));
             
             if (results.length > 0) {
@@ -956,12 +957,17 @@ function displayClaimsSearchResults(results, query) {
         let html = '';
         results.forEach((result, index) => {
             const patentNumber = result.patent_number || result.claim_number || 'Unknown';
-            const rowIndex = result.row_index || index + 1;
+            const rowIndex = result.row_index;
+            
+            // 只有当rowIndex有效且不为0时才显示行号
+            const rowInfo = rowIndex && rowIndex !== 0 ? 
+                `<div class="search-result-row">行号: ${rowIndex}</div>` : 
+                '';
             
             html += `
-                <div class="search-result-item" onclick="claimsSelectPatent('${patentNumber}', ${rowIndex})">
+                <div class="search-result-item" onclick="claimsSelectPatent('${patentNumber}', ${rowIndex || 0})">
                     <div class="search-result-patent">${patentNumber}</div>
-                    <div class="search-result-row">行号: ${rowIndex}</div>
+                    ${rowInfo}
                 </div>
             `;
         });
@@ -1010,7 +1016,8 @@ function claimsSelectPatent(patentNumber, rowIndex) {
     }
     
     if (selectedPatentRow) {
-        selectedPatentRow.textContent = rowIndex;
+        // 只有当rowIndex有效且不为0时才显示行号
+        selectedPatentRow.textContent = rowIndex && rowIndex !== 0 ? rowIndex : 'N/A';
     }
     
     if (selectedPatentInfo) {

@@ -403,21 +403,183 @@ function initPatentBatch() {
             
             if (result.success) {
                 const data = result.data;
-                resultItem.innerHTML = `
-                    <h5>${result.patent_number} - ${data.title || '无标题'}</h5>
-                    <p><strong>摘要:</strong> ${data.abstract || '无摘要'}</p>
-                    <p><strong>发明人:</strong> ${data.inventors?.join(', ') || '无信息'}</p>
-                    <p><strong>申请日期:</strong> ${data.application_date || '无信息'}</p>
-                    <a href="${result.url}" target="_blank" class="small-button">查看原始专利</a>
+                
+                // 构建完整的专利信息显示
+                let htmlContent = `
+                    <div style="border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; margin-bottom: 15px;">
+                        <h5 style="color: var(--primary-color); margin-bottom: 5px;">
+                            ${result.patent_number} - ${data.title || '无标题'}
+                        </h5>
+                        <div style="font-size: 0.9em; color: #666;">
+                            查询耗时: ${result.processing_time?.toFixed(2) || 'N/A'}秒
+                        </div>
+                    </div>
                 `;
+                
+                // 基本信息
+                htmlContent += `<div style="margin-bottom: 15px;">`;
+                
+                if (data.abstract) {
+                    htmlContent += `
+                        <p style="margin-bottom: 10px;">
+                            <strong style="color: var(--primary-color);">📄 摘要:</strong><br/>
+                            <span style="line-height: 1.6;">${data.abstract}</span>
+                        </p>
+                    `;
+                }
+                
+                // 发明人信息
+                if (data.inventors && data.inventors.length > 0) {
+                    htmlContent += `
+                        <p style="margin-bottom: 8px;">
+                            <strong style="color: var(--primary-color);">👤 发明人:</strong> 
+                            ${data.inventors.join(', ')}
+                        </p>
+                    `;
+                }
+                
+                // 受让人信息
+                if (data.assignees && data.assignees.length > 0) {
+                    htmlContent += `
+                        <p style="margin-bottom: 8px;">
+                            <strong style="color: var(--primary-color);">🏢 受让人:</strong> 
+                            ${data.assignees.join(', ')}
+                        </p>
+                    `;
+                }
+                
+                // 日期信息
+                htmlContent += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">`;
+                
+                if (data.application_date) {
+                    htmlContent += `
+                        <p style="margin: 0;">
+                            <strong style="color: var(--primary-color);">📅 申请日期:</strong><br/>
+                            ${data.application_date}
+                        </p>
+                    `;
+                }
+                
+                if (data.publication_date) {
+                    htmlContent += `
+                        <p style="margin: 0;">
+                            <strong style="color: var(--primary-color);">📅 公开日期:</strong><br/>
+                            ${data.publication_date}
+                        </p>
+                    `;
+                }
+                
+                htmlContent += `</div>`;
+                
+                // 权利要求
+                if (data.claims && data.claims.length > 0) {
+                    const claimsPreview = data.claims.slice(0, 3); // 只显示前3条
+                    const hasMore = data.claims.length > 3;
+                    
+                    htmlContent += `
+                        <div style="margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 5px;">
+                            <strong style="color: var(--primary-color);">⚖️ 权利要求 (共${data.claims.length}条):</strong>
+                            <div style="margin-top: 8px; max-height: 200px; overflow-y: auto;">
+                    `;
+                    
+                    claimsPreview.forEach((claim, index) => {
+                        htmlContent += `
+                            <div style="margin-bottom: 8px; padding: 8px; background-color: white; border-radius: 3px; font-size: 0.9em;">
+                                <strong>权利要求 ${index + 1}:</strong><br/>
+                                ${claim.substring(0, 200)}${claim.length > 200 ? '...' : ''}
+                            </div>
+                        `;
+                    });
+                    
+                    if (hasMore) {
+                        htmlContent += `
+                            <div style="text-align: center; margin-top: 8px; color: #666; font-size: 0.9em;">
+                                还有 ${data.claims.length - 3} 条权利要求未显示
+                            </div>
+                        `;
+                    }
+                    
+                    htmlContent += `</div></div>`;
+                }
+                
+                // 说明书描述
+                if (data.description) {
+                    const descPreview = data.description.substring(0, 300);
+                    htmlContent += `
+                        <div style="margin-top: 15px; padding: 10px; background-color: #f0f8ff; border-radius: 5px;">
+                            <strong style="color: var(--primary-color);">📝 说明书摘录:</strong>
+                            <div style="margin-top: 8px; font-size: 0.9em; line-height: 1.6;">
+                                ${descPreview}${data.description.length > 300 ? '...' : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                htmlContent += `</div>`;
+                
+                // 操作按钮
+                htmlContent += `
+                    <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                        <a href="${result.url}" target="_blank" class="small-button" style="text-decoration: none;">
+                            🔗 查看原始专利
+                        </a>
+                        <button class="small-button" onclick="copyPatentInfo('${result.patent_number}')" style="background-color: #28a745;">
+                            📋 复制信息
+                        </button>
+                    </div>
+                `;
+                
+                resultItem.innerHTML = htmlContent;
             } else {
                 resultItem.innerHTML = `
-                    <h5 style="color: red;">${result.patent_number} - 查询失败</h5>
-                    <p>错误信息: ${result.error}</p>
+                    <h5 style="color: red;">❌ ${result.patent_number} - 查询失败</h5>
+                    <p style="padding: 10px; background-color: #fff3cd; border-radius: 5px; border-left: 4px solid #ffc107;">
+                        <strong>错误信息:</strong> ${result.error}
+                    </p>
                 `;
             }
             
             patentResultsList.appendChild(resultItem);
         });
+    }
+    
+    // 复制专利信息到剪贴板
+    window.copyPatentInfo = function(patentNumber) {
+        const result = patentResults.find(r => r.patent_number === patentNumber);
+        if (!result || !result.success) return;
+        
+        const data = result.data;
+        let text = `专利号: ${patentNumber}\n`;
+        text += `标题: ${data.title || '无'}\n`;
+        text += `\n摘要:\n${data.abstract || '无'}\n`;
+        
+        if (data.inventors && data.inventors.length > 0) {
+            text += `\n发明人: ${data.inventors.join(', ')}\n`;
+        }
+        
+        if (data.assignees && data.assignees.length > 0) {
+            text += `受让人: ${data.assignees.join(', ')}\n`;
+        }
+        
+        if (data.application_date) {
+            text += `申请日期: ${data.application_date}\n`;
+        }
+        
+        if (data.publication_date) {
+            text += `公开日期: ${data.publication_date}\n`;
+        }
+        
+        if (data.claims && data.claims.length > 0) {
+            text += `\n权利要求 (共${data.claims.length}条):\n`;
+            data.claims.forEach((claim, index) => {
+                text += `\n${index + 1}. ${claim}\n`;
+            });
+        }
+        
+        text += `\n原始链接: ${result.url}\n`;
+        
+        navigator.clipboard.writeText(text)
+            .then(() => alert('✅ 专利信息已复制到剪贴板！'))
+            .catch(() => alert('❌ 复制失败，请手动复制。'));
     }
 }

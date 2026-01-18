@@ -36,4 +36,6 @@ def create_response(data=None, error=None, status_code=200):
         if status_code == 200:
             status_code = 400
     
-    return make_response(jsonify(response_data), status_code)
+    response = make_response(jsonify(response_data), status_code)
+    response.headers['Content-Type'] = 'application/json; charset=utf-8'
+    return response

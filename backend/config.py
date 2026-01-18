@@ -54,6 +54,10 @@ class Config:
     PERMANENT_SESSION_LIFETIME = PERMANENT_SESSION_LIFETIME
     MAX_CONTENT_LENGTH = MAX_CONTENT_LENGTH
     
+    # JSON配置 - 确保中文字符正确显示
+    JSON_AS_ASCII = False
+    JSONIFY_MIMETYPE = 'application/json; charset=utf-8'
+    
     # Database
     DATABASE_URL = DATABASE_URL
     DB_POOL_MIN_CONN = DB_POOL_MIN_CONN

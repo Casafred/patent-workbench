@@ -115,6 +115,9 @@ class SimplePatentScraper:
             response = self.session.get(url, timeout=15)
             response.raise_for_status()
             
+            # Fix encoding issue - ensure UTF-8 encoding
+            response.encoding = 'utf-8'
+            
             # Parse HTML
             soup = BeautifulSoup(response.text, 'lxml')
             
