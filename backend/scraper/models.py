@@ -6,7 +6,6 @@ from dataclasses import dataclass, field, asdict
 from typing import List, Optional, Dict, Any, Union
 import re
 from datetime import datetime
-import json
 
 
 @dataclass
@@ -39,12 +38,12 @@ class PatentData:
         self.abstract = self._clean_text(self.abstract) if self.abstract else "无摘要"
         
         # Normalize inventors and assignees
-        self.inventors = [self._clean_text(inv) for inv in self.inventors if self._clean_text(inv)]
-        self.assignees = [self._clean_text(ass) for ass in self.assignees if self._clean_text(ass)]
+        self.inventors = [self._clean_text(inv) for inv in self.inventors if inv and self._clean_text(inv)]
+        self.assignees = [self._clean_text(ass) for ass in self.assignees if ass and self._clean_text(ass)]
         
         # Normalize claims
         if isinstance(self.claims, list):
-            self.claims = [self._clean_text(claim) for claim in self.claims if self._clean_text(claim)]
+            self.claims = [self._clean_text(claim) for claim in self.claims if claim and self._clean_text(claim)]
         elif isinstance(self.claims, str):
             cleaned_claims = self._clean_text(self.claims)
             self.claims = [cleaned_claims] if cleaned_claims else []
@@ -54,13 +53,14 @@ class PatentData:
         # Normalize description
         self.description = self._clean_text(self.description) if self.description else ""
         
-        # Normalize dates
-        self.application_date = self._normalize_date(self.application_date)
-        self.publication_date = self._normalize_date(self.publication_date)
+        # Set default values for missing dates
+        if not self.application_date:
+            self.application_date = "无信息"
+        if not self.publication_date:
+            self.publication_date = "无信息"
         
-        # Ensure URL is set
-        if not self.url and self.patent_number:
-            self.url = f"https://patents.google.com/patent/{self.patent_number}"
+        # Normalize patent number
+        self.patent_number = self._normalize_patent_number(self.patent_number)
             
         return self
     
@@ -81,65 +81,45 @@ class PatentData:
         
         return text
     
-    def _normalize_date(self, date_str: str) -> str:
-        """Normalize date string to consistent format."""
-        if not date_str or date_str in ["无信息", "N/A", ""]:
-            return "无信息"
+    def _normalize_patent_number(self, patent_number: str) -> str:
+        """Normalize patent number format."""
+        if not patent_number:
+            return ""
         
-        # Try to parse and reformat common date formats
-        date_patterns = [
-            r'(\d{4})-(\d{1,2})-(\d{1,2})',  # YYYY-MM-DD
-            r'(\d{1,2})/(\d{1,2})/(\d{4})',  # MM/DD/YYYY
-            r'(\d{4})年(\d{1,2})月(\d{1,2})日',  # Chinese format
-        ]
+        # Remove extra whitespace
+        patent_number = patent_number.strip()
         
-        for pattern in date_patterns:
-            match = re.search(pattern, date_str)
-            if match:
-                try:
-                    if '年' in pattern:  # Chinese format
-                        year, month, day = match.groups()
-                    elif '-' in pattern:  # ISO format
-                        year, month, day = match.groups()
-                    else:  # US format
-                        month, day, year = match.groups()
-                    
-                    # Validate date
-                    datetime(int(year), int(month), int(day))
-                    return f"{year}-{month.zfill(2)}-{day.zfill(2)}"
-                except ValueError:
-                    continue
+        # Convert to uppercase for consistency
+        patent_number = patent_number.upper()
         
-        # Return original if no pattern matches or date is invalid
-        return date_str
+        return patent_number
     
     def get_summary(self) -> Dict[str, Any]:
         """Get a summary of the patent data."""
         return {
             'patent_number': self.patent_number,
             'title': self.title[:100] + '...' if len(self.title) > 100 else self.title,
-            'has_abstract': bool(self.abstract and self.abstract != "无摘要"),
-            'inventor_count': len(self.inventors),
-            'assignee_count': len(self.assignees),
+            'abstract_length': len(self.abstract),
+            'inventors_count': len(self.inventors),
+            'assignees_count': len(self.assignees),
             'claims_count': len(self.claims),
             'has_description': bool(self.description),
             'application_date': self.application_date,
             'publication_date': self.publication_date
         }
     
-    def to_legacy_format(self) -> Dict[str, Any]:
-        """Convert to legacy API format for backward compatibility."""
+    def validate_completeness(self) -> Dict[str, bool]:
+        """Validate completeness of patent data fields."""
         return {
-            'patent_number': self.patent_number,
-            'title': self.title,
-            'abstract': self.abstract,
-            'inventors': self.inventors,
-            'assignees': self.assignees,
-            'application_date': self.application_date,
-            'publication_date': self.publication_date,
-            'claims': self.claims,
-            'description': self.description,
-            'url': self.url
+            'has_patent_number': bool(self.patent_number),
+            'has_title': bool(self.title and self.title != "无标题"),
+            'has_abstract': bool(self.abstract and self.abstract != "无摘要"),
+            'has_inventors': bool(self.inventors),
+            'has_assignees': bool(self.assignees),
+            'has_application_date': bool(self.application_date and self.application_date != "无信息"),
+            'has_publication_date': bool(self.publication_date and self.publication_date != "无信息"),
+            'has_claims': bool(self.claims),
+            'has_description': bool(self.description)
         }
 
 
@@ -153,12 +133,12 @@ class PatentResult:
     error: Optional[str] = None
     processing_time: float = 0.0
     retry_count: int = 0
-    timestamp: Optional[str] = None
+    timestamp: Optional[datetime] = None
     
     def __post_init__(self):
         """Set timestamp if not provided."""
         if self.timestamp is None:
-            self.timestamp = datetime.now().isoformat()
+            self.timestamp = datetime.now()
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary format, compatible with existing API response."""
@@ -167,7 +147,7 @@ class PatentResult:
             'success': self.success,
             'processing_time': self.processing_time,
             'retry_count': self.retry_count,
-            'timestamp': self.timestamp
+            'timestamp': self.timestamp.isoformat() if self.timestamp else None
         }
         
         if self.success and self.data:
@@ -178,20 +158,12 @@ class PatentResult:
             
         return result
     
-    def to_legacy_format(self) -> Dict[str, Any]:
-        """Convert to legacy API format for backward compatibility."""
-        result = {
-            'patent_number': self.patent_number,
-            'success': self.success
-        }
-        
-        if self.success and self.data:
-            result['data'] = self.data.to_legacy_format()
-            result['url'] = f"https://patents.google.com/patent/{self.patent_number}"
+    def get_status_summary(self) -> str:
+        """Get a human-readable status summary."""
+        if self.success:
+            return f"✅ {self.patent_number}: Success ({self.processing_time:.2f}s)"
         else:
-            result['error'] = self.error or "Unknown error"
-            
-        return result
+            return f"❌ {self.patent_number}: Failed - {self.error}"
 
 
 @dataclass
@@ -203,27 +175,13 @@ class ScrapingStats:
     failed_patents: int = 0
     total_processing_time: float = 0.0
     average_processing_time: float = 0.0
-    start_time: Optional[str] = None
-    end_time: Optional[str] = None
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
     
     def __post_init__(self):
-        """Set start time if not provided."""
+        """Initialize start time if not provided."""
         if self.start_time is None:
-            self.start_time = datetime.now().isoformat()
-    
-    def start_batch(self) -> None:
-        """Mark the start of a batch operation."""
-        self.start_time = datetime.now().isoformat()
-        self.total_patents = 0
-        self.successful_patents = 0
-        self.failed_patents = 0
-        self.total_processing_time = 0.0
-        self.average_processing_time = 0.0
-        self.end_time = None
-    
-    def finish_batch(self) -> None:
-        """Mark the end of a batch operation."""
-        self.end_time = datetime.now().isoformat()
+            self.start_time = datetime.now()
     
     def update(self, result: PatentResult) -> None:
         """Update statistics with a new result."""
@@ -237,23 +195,21 @@ class ScrapingStats:
             
         self.average_processing_time = self.total_processing_time / self.total_patents
     
+    def finish(self) -> None:
+        """Mark the scraping session as finished."""
+        self.end_time = datetime.now()
+    
     def get_success_rate(self) -> float:
-        """Get success rate as percentage."""
+        """Get success rate as a percentage."""
         if self.total_patents == 0:
             return 0.0
         return (self.successful_patents / self.total_patents) * 100
     
-    def get_duration(self) -> Optional[float]:
+    def get_total_duration(self) -> Optional[float]:
         """Get total duration in seconds."""
-        if not self.start_time or not self.end_time:
-            return None
-        
-        try:
-            start = datetime.fromisoformat(self.start_time)
-            end = datetime.fromisoformat(self.end_time)
-            return (end - start).total_seconds()
-        except ValueError:
-            return None
+        if self.start_time and self.end_time:
+            return (self.end_time - self.start_time).total_seconds()
+        return None
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert statistics to dictionary."""
@@ -264,10 +220,26 @@ class ScrapingStats:
             'success_rate': self.get_success_rate(),
             'total_processing_time': self.total_processing_time,
             'average_processing_time': self.average_processing_time,
-            'start_time': self.start_time,
-            'end_time': self.end_time,
-            'duration_seconds': self.get_duration()
+            'total_duration': self.get_total_duration(),
+            'start_time': self.start_time.isoformat() if self.start_time else None,
+            'end_time': self.end_time.isoformat() if self.end_time else None
         }
+    
+    def get_summary_report(self) -> str:
+        """Get a formatted summary report."""
+        duration = self.get_total_duration()
+        duration_str = f"{duration:.2f}s" if duration else "N/A"
+        
+        return f"""
+Scraping Statistics Summary:
+===========================
+Total Patents: {self.total_patents}
+Successful: {self.successful_patents}
+Failed: {self.failed_patents}
+Success Rate: {self.get_success_rate():.1f}%
+Average Processing Time: {self.average_processing_time:.2f}s
+Total Duration: {duration_str}
+        """.strip()
 
 
 @dataclass
@@ -276,63 +248,52 @@ class BatchRequest:
     
     patent_numbers: List[str]
     config: Optional[Dict[str, Any]] = None
-    callback_url: Optional[str] = None
     request_id: Optional[str] = None
+    timestamp: Optional[datetime] = None
     
     def __post_init__(self):
-        """Generate request ID if not provided."""
+        """Initialize timestamp and request_id if not provided."""
+        if self.timestamp is None:
+            self.timestamp = datetime.now()
+        
         if self.request_id is None:
-            import uuid
-            self.request_id = str(uuid.uuid4())
+            self.request_id = f"batch_{self.timestamp.strftime('%Y%m%d_%H%M%S')}"
     
     def validate(self) -> List[str]:
-        """Validate the batch request."""
-        errors = []
+        """Validate batch request and return list of issues."""
+        issues = []
         
         if not self.patent_numbers:
-            errors.append("patent_numbers cannot be empty")
+            issues.append("patent_numbers cannot be empty")
         
         if len(self.patent_numbers) > 50:
-            errors.append("Maximum 50 patent numbers allowed per batch")
+            issues.append("patent_numbers cannot exceed 50 items")
         
-        # Validate patent number formats (basic validation)
+        # Check for duplicates
+        if len(self.patent_numbers) != len(set(self.patent_numbers)):
+            issues.append("patent_numbers contains duplicates")
+        
+        # Validate patent number formats (basic check)
         invalid_patents = []
         for patent_num in self.patent_numbers:
-            if not self._is_valid_patent_number(patent_num):
+            if not patent_num or not isinstance(patent_num, str) or len(patent_num.strip()) < 3:
                 invalid_patents.append(patent_num)
         
         if invalid_patents:
-            errors.append(f"Invalid patent numbers: {invalid_patents[:5]}")  # Show first 5
+            issues.append(f"Invalid patent numbers: {invalid_patents}")
         
-        return errors
+        return issues
     
-    def _is_valid_patent_number(self, patent_num: str) -> bool:
-        """Basic validation for patent number format."""
-        if not patent_num or not isinstance(patent_num, str):
-            return False
-        
-        # Remove whitespace
-        patent_num = patent_num.strip()
-        
-        # Basic length check
-        if len(patent_num) < 3 or len(patent_num) > 20:
-            return False
-        
-        # Should contain at least some alphanumeric characters
-        if not re.search(r'[A-Za-z0-9]', patent_num):
-            return False
-        
-        return True
+    def is_valid(self) -> bool:
+        """Check if batch request is valid."""
+        return len(self.validate()) == 0
     
-    def get_unique_patents(self) -> List[str]:
-        """Get unique patent numbers, preserving order."""
-        seen = set()
-        unique_patents = []
-        
-        for patent_num in self.patent_numbers:
-            cleaned = patent_num.strip().upper()
-            if cleaned not in seen:
-                seen.add(cleaned)
-                unique_patents.append(patent_num.strip())
-        
-        return unique_patents
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary format."""
+        return {
+            'patent_numbers': self.patent_numbers,
+            'config': self.config,
+            'request_id': self.request_id,
+            'timestamp': self.timestamp.isoformat() if self.timestamp else None,
+            'patent_count': len(self.patent_numbers)
+        }
