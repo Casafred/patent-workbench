@@ -15,12 +15,12 @@ class LanguageDetector(LanguageDetectorInterface):
     
     def __init__(self):
         """初始化语言检测器"""
-        # 语言优先级：英文 > 中文 > 其他语言
+        # 语言优先级：中文 > 英文 > 其他语言
         self.language_priority = {
-            'en': 3,
-            'zh': 2,
-            'zh-cn': 2,
-            'zh-tw': 2,
+            'zh': 3,
+            'zh-cn': 3,
+            'zh-tw': 3,
+            'en': 2,
             'other': 1
         }
         

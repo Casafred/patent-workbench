@@ -33,6 +33,9 @@ class ClaimsParser(ClaimsParserInterface):
             # 其他语言格式
             r'^\s*revendication\s+(\d+)\s*',    # 法语 "revendication 1"
             r'^\s*anspruch\s+(\d+)\s*',         # 德语 "anspruch 1"
+            r'^\s*ansprüche\s+(\d+)\s*',        # 德语复数 "ansprüche 1"
+            r'^\s*特許請求の範囲\s+(\d+)\s*',       # 日语 "特許請求の範囲 1"
+            r'^\s*請求項\s+(\d+)\s*',           # 日语 "請求項 1"
             r'^\s*reivindicación\s+(\d+)\s*',   # 西班牙语 "reivindicación 1"
             r'^\s*rivendicazione\s+(\d+)\s*',   # 意大利语 "rivendicazione 1"
         ]

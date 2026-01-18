@@ -332,7 +332,7 @@ class ExportService:
                                  key=lambda x: min(c.claim_number for c in x[1]['claims']))
             
             # 为每个原始数据行生成汇总记录
-            excel_row_number = 2  # Excel数据从第2行开始（第1行是标题）
+            excel_row_number = 1  # 原表行数减去表头，从1开始计数
             
             for original_key, data in sorted_groups:
                 try:

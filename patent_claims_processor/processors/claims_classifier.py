@@ -79,16 +79,29 @@ class ClaimsClassifier(ClaimsClassifierInterface):
             return []
         
         referenced_claims = set()
+        has_reference_keywords = False
         
         # 获取对应语言的模式，如果没有则使用通用模式
         patterns = self.reference_patterns.get(language, self.reference_patterns.get('other', []))
         
         for pattern in patterns:
             matches = pattern.findall(claim_text)
-            for match in matches:
-                # 解析序号字符串，支持范围和列表格式
-                numbers = self._parse_claim_numbers(match)
-                referenced_claims.update(numbers)
+            if matches:
+                has_reference_keywords = True
+                for match in matches:
+                    # 解析序号字符串，支持范围和列表格式
+                    numbers = self._parse_claim_numbers(match)
+                    referenced_claims.update(numbers)
+        
+        # 检查是否包含引用关键词但没有找到数字
+        if has_reference_keywords and not referenced_claims:
+            # 检查是否有单独的引用关键词出现（如"权利要求"、"claims"）
+            keywords = self.reference_keywords.get(language, self.reference_keywords.get('other', []))
+            for keyword in keywords:
+                if re.search(rf'{re.escape(keyword)}', claim_text, re.IGNORECASE):
+                    # 当权利要求字样附近没有数字时，默认引用所有权利要求
+                    # 这里返回一个特殊标记，调用方需要处理
+                    return ['all']
         
         return sorted(list(referenced_claims))
     

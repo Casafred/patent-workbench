@@ -1149,24 +1149,32 @@ function claimsBuildVisualizationData(claims, patentNumber) {
     console.log('构建可视化数据，专利号:', patentNumber);
     console.log('权利要求数据:', claims);
     
-    const nodes = [];
+    const nodesMap = {};
     const links = [];
     
-    // 创建节点
+    // 创建节点，确保每个权利要求号只创建一个节点
     claims.forEach(claim => {
-        const node = {
-            id: `claim_${claim.claim_number}`,
-            claim_number: claim.claim_number,
-            claim_text: claim.claim_text,
-            claim_type: claim.claim_type,
-            level: claim.level || 0,
-            dependencies: claim.dependencies || claim.referenced_claims || [],
-            x: 0,
-            y: 0
-        };
-        nodes.push(node);
-        console.log('创建节点:', node);
+        const nodeId = `claim_${claim.claim_number}`;
+        if (!nodesMap[nodeId]) {
+            const node = {
+                id: nodeId,
+                claim_number: claim.claim_number,
+                claim_text: claim.claim_text,
+                claim_type: claim.claim_type,
+                level: claim.level || 0,
+                dependencies: claim.dependencies || claim.referenced_claims || [],
+                x: 0,
+                y: 0
+            };
+            nodesMap[nodeId] = node;
+            console.log('创建节点:', node);
+        } else {
+            console.log('节点已存在，跳过创建:', nodeId);
+        }
     });
+    
+    // 将节点对象转换为数组
+    const nodes = Object.values(nodesMap);
     
     // 创建连接
     claims.forEach(claim => {
@@ -1175,13 +1183,28 @@ function claimsBuildVisualizationData(claims, patentNumber) {
         
         if (dependencies && dependencies.length > 0) {
             dependencies.forEach(dep => {
-                const link = {
-                    source: `claim_${dep}`,
-                    target: `claim_${claim.claim_number}`,
-                    type: 'dependency'
-                };
-                links.push(link);
-                console.log('创建连接:', link);
+                if (dep === 'all') {
+                    // 如果是'all'，则连接到所有其他权利要求
+                    claims.forEach(otherClaim => {
+                        if (otherClaim.claim_number !== claim.claim_number) {
+                            const link = {
+                                source: `claim_${otherClaim.claim_number}`,
+                                target: `claim_${claim.claim_number}`,
+                                type: 'dependency'
+                            };
+                            links.push(link);
+                            console.log('创建连接（全部引用）:', link);
+                        }
+                    });
+                } else {
+                    const link = {
+                        source: `claim_${dep}`,
+                        target: `claim_${claim.claim_number}`,
+                        type: 'dependency'
+                    };
+                    links.push(link);
+                    console.log('创建连接:', link);
+                }
             });
         }
     });
@@ -1679,8 +1702,8 @@ function showClaimsClaimModal(claimData) {
                 background: white;
                 border-radius: 8px;
                 box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-                max-width: 600px;
-                width: 100%;
+                max-width: 850px;
+        width: 100%;
                 max-height: 80vh;
                 overflow-y: auto;
                 position: relative;
