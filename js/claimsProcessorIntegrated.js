@@ -802,15 +802,24 @@ async function claimsSearchPatentNumbers() {
         // 策略1: 从处理结果中搜索
         if (claimsProcessedData && claimsProcessedData.claims) {
             console.log('策略1: 从处理结果中搜索');
-            results = claimsProcessedData.claims.filter(claim => {
-                if (claim.patent_number) {
-                    return claim.patent_number.toLowerCase().includes(query.toLowerCase());
+            // 按专利号分组，避免重复
+            const patentMap = new Map();
+            claimsProcessedData.claims.forEach(claim => {
+                if (claim.patent_number && claim.patent_number.toLowerCase().includes(query.toLowerCase())) {
+                    if (!patentMap.has(claim.patent_number)) {
+                        patentMap.set(claim.patent_number, claim.row_index);
+                    }
                 }
-                return false;
             });
             
+            // 转换为搜索结果格式
+            results = Array.from(patentMap.entries()).map(([patent_number, row_index]) => ({
+                patent_number,
+                row_index
+            }));
+            
             if (results.length > 0) {
-                console.log('在处理结果中找到', results.length, '个匹配项');
+                console.log('在处理结果中找到', results.length, '个匹配的专利号');
                 displayClaimsSearchResults(results, query);
                 return;
             }
@@ -1523,9 +1532,15 @@ class ClaimsD3TreeRenderer {
         // 构建子节点（从属权利要求）
         const buildChildren = (nodeId) => {
             const children = data.links
-                .filter(link => link.source === nodeId) // source是被引用的（父节点）
+                .filter(link => {
+                    // 处理source可能是字符串ID或对象引用的情况
+                    const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
+                    return sourceId === nodeId;
+                })
                 .map(link => {
-                    const childNode = data.nodes.find(node => node.id === link.target);
+                    // 处理target可能是字符串ID或对象引用的情况
+                    const targetId = typeof link.target === 'object' ? link.target.id : link.target;
+                    const childNode = data.nodes.find(node => node.id === targetId);
                     if (childNode) {
                         return {
                             ...childNode,
@@ -1923,7 +1938,7 @@ function showSimpleClaimModal(claimData) {
         background: white;
         border-radius: 8px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-        max-width: 600px;
+        max-width: 850px;
         width: 100%;
         max-height: 80vh;
         overflow-y: auto;
