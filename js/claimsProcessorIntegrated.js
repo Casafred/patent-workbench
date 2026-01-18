@@ -1146,12 +1146,15 @@ function claimsFindPatentClaims(processedData, patentNumber, rowIndex) {
 
 // 构建可视化数据
 function claimsBuildVisualizationData(claims, patentNumber) {
+    console.log('构建可视化数据，专利号:', patentNumber);
+    console.log('权利要求数据:', claims);
+    
     const nodes = [];
     const links = [];
     
     // 创建节点
     claims.forEach(claim => {
-        nodes.push({
+        const node = {
             id: `claim_${claim.claim_number}`,
             claim_number: claim.claim_number,
             claim_text: claim.claim_text,
@@ -1160,22 +1163,31 @@ function claimsBuildVisualizationData(claims, patentNumber) {
             dependencies: claim.dependencies || claim.referenced_claims || [],
             x: 0,
             y: 0
-        });
+        };
+        nodes.push(node);
+        console.log('创建节点:', node);
     });
     
     // 创建连接
     claims.forEach(claim => {
         const dependencies = claim.dependencies || claim.referenced_claims || [];
+        console.log('权利要求', claim.claim_number, '的依赖关系:', dependencies);
+        
         if (dependencies && dependencies.length > 0) {
             dependencies.forEach(dep => {
-                links.push({
+                const link = {
                     source: `claim_${dep}`,
                     target: `claim_${claim.claim_number}`,
                     type: 'dependency'
-                });
+                };
+                links.push(link);
+                console.log('创建连接:', link);
             });
         }
     });
+    
+    console.log('最终节点:', nodes);
+    console.log('最终连接:', links);
     
     return {
         patent_number: patentNumber,
@@ -1382,6 +1394,17 @@ class ClaimsD3TreeRenderer {
             .on('mouseout', () => this.hideTooltip())
             .on('click', (event, d) => this.onNodeClick(d));
         
+        // 更新位置
+        simulation.on('tick', () => {
+            links
+                .attr('x1', d => d.source.x)
+                .attr('y1', d => d.source.y)
+                .attr('x2', d => d.target.x)
+                .attr('y2', d => d.target.y);
+            
+            nodes.attr('transform', d => `translate(${d.x}, ${d.y})`);
+        });
+        
         // 添加节点标签
         nodes.append('text')
             .attr('class', 'node-label')
@@ -1464,22 +1487,15 @@ class ClaimsD3TreeRenderer {
     
     // 构建D3层次结构
     buildHierarchy(data) {
-        // 找到根节点（独立权利要求，没有作为target的节点）
-        const rootNodes = data.nodes.filter(node => 
-            node.claim_type === 'independent' && 
-            !data.links.some(link => link.target === node.id)
-        );
+        console.log('构建层次结构数据:', data);
         
-        // 如果没有找到明确的根节点，使用所有独立权利要求
-        if (rootNodes.length === 0) {
-            const independentClaims = data.nodes.filter(node => node.claim_type === 'independent');
-            if (independentClaims.length > 0) {
-                rootNodes.push(...independentClaims);
-            } else {
-                // 如果没有独立权利要求，使用第一个节点
-                rootNodes.push(data.nodes[0]);
-            }
-        }
+        // 找到所有独立权利要求作为根节点
+        const independentClaims = data.nodes.filter(node => node.claim_type === 'independent');
+        console.log('独立权利要求:', independentClaims);
+        
+        // 如果没有独立权利要求，使用所有节点
+        const rootNodes = independentClaims.length > 0 ? independentClaims : data.nodes;
+        console.log('根节点:', rootNodes);
         
         // 构建子节点（从属权利要求）
         const buildChildren = (nodeId) => {
@@ -1500,23 +1516,25 @@ class ClaimsD3TreeRenderer {
             return children.length > 0 ? children : null;
         };
         
+        // 为每个独立权利要求构建完整的层次结构
+        const hierarchyNodes = rootNodes.map(root => ({
+            ...root,
+            children: buildChildren(root.id)
+        }));
+        
+        console.log('层次结构节点:', hierarchyNodes);
+        
         // 如果有多个根节点，创建虚拟根节点
-        if (rootNodes.length > 1) {
+        if (hierarchyNodes.length > 1) {
             return d3.hierarchy({
                 id: 'virtual_root',
                 claim_number: 'Root',
                 claim_type: 'virtual',
                 claim_text: '权利要求根节点',
-                children: rootNodes.map(root => ({
-                    ...root,
-                    children: buildChildren(root.id)
-                }))
+                children: hierarchyNodes
             });
-        } else if (rootNodes.length === 1) {
-            return d3.hierarchy({
-                ...rootNodes[0],
-                children: buildChildren(rootNodes[0].id)
-            });
+        } else if (hierarchyNodes.length === 1) {
+            return d3.hierarchy(hierarchyNodes[0]);
         } else {
             // 如果没有根节点，创建一个默认的
             return d3.hierarchy({
@@ -1551,6 +1569,7 @@ class ClaimsD3TreeRenderer {
     
     // 节点点击事件
     onNodeClick(data) {
+        console.log('节点点击事件数据:', data);
         showClaimsClaimModal(data);
     }
     
@@ -1769,28 +1788,47 @@ function showClaimsClaimModal(claimData) {
     }
     
     // 设置模态框内容
-    document.getElementById('claims_claim_modal_title').textContent = `权利要求 ${claimData.claim_number} 详情`;
-    document.getElementById('claims_claim_number_badge').textContent = `权利要求 ${claimData.claim_number}`;
-    
+    const titleElement = document.getElementById('claims_claim_modal_title');
+    const numberBadge = document.getElementById('claims_claim_number_badge');
     const typeBadge = document.getElementById('claims_claim_type_badge');
-    typeBadge.textContent = claimData.claim_type === 'independent' ? '独立权利要求' : '从属权利要求';
-    typeBadge.className = `badge ${claimData.claim_type}`;
+    const levelBadge = document.getElementById('claims_claim_level_badge');
+    const dependenciesDiv = document.getElementById('claims_claim_dependencies');
+    const dependenciesList = document.getElementById('claims_claim_dependencies_list');
+    const claimTextElement = document.getElementById('claims_claim_text');
     
-    document.getElementById('claims_claim_level_badge').textContent = `层级 ${claimData.level || 0}`;
+    if (titleElement) {
+        titleElement.textContent = `权利要求 ${claimData.claim_number || '未知'} 详情`;
+    }
+    
+    if (numberBadge) {
+        numberBadge.textContent = `权利要求 ${claimData.claim_number || '未知'}`;
+    }
+    
+    if (typeBadge) {
+        typeBadge.textContent = claimData.claim_type === 'independent' ? '独立权利要求' : '从属权利要求';
+        typeBadge.className = `badge ${claimData.claim_type}`;
+    }
+    
+    if (levelBadge) {
+        levelBadge.textContent = `层级 ${claimData.level || 0}`;
+    }
     
     // 显示依赖关系
-    const dependenciesDiv = document.getElementById('claims_claim_dependencies');
-    const dependencies = claimData.dependencies || claimData.referenced_claims || [];
-    if (dependencies && dependencies.length > 0) {
-        document.getElementById('claims_claim_dependencies_list').textContent = dependencies.join(', ');
-        dependenciesDiv.style.display = 'block';
-    } else {
-        dependenciesDiv.style.display = 'none';
+    if (dependenciesDiv && dependenciesList) {
+        const dependencies = claimData.dependencies || claimData.referenced_claims || [];
+        if (dependencies && dependencies.length > 0) {
+            dependenciesList.textContent = dependencies.join(', ');
+            dependenciesDiv.style.display = 'block';
+        } else {
+            dependenciesDiv.style.display = 'none';
+        }
     }
     
     // 显示权利要求文本
-    const claimText = claimData.claim_text || claimData.text || '暂无详细内容';
-    document.getElementById('claims_claim_text').textContent = claimText;
+    if (claimTextElement) {
+        const claimText = claimData.claim_text || claimData.text || '暂无详细内容';
+        claimTextElement.textContent = claimText;
+    }
     
     // 显示模态框
     modal.style.display = 'flex';
