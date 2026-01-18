@@ -1196,7 +1196,8 @@ function claimsBuildVisualizationData(claims, patentNumber) {
     // 将节点对象转换为数组
     const nodes = Object.values(nodesMap);
     
-    // 创建连接
+    // 创建连接，避免重复连接
+    const linksMap = new Map();
     claims.forEach(claim => {
         const dependencies = claim.dependencies || claim.referenced_claims || [];
         console.log('权利要求', claim.claim_number, '的依赖关系:', dependencies);
@@ -1207,23 +1208,31 @@ function claimsBuildVisualizationData(claims, patentNumber) {
                     // 如果是'all'，则连接到所有其他权利要求
                     claims.forEach(otherClaim => {
                         if (otherClaim.claim_number !== claim.claim_number) {
-                            const link = {
-                                source: `claim_${otherClaim.claim_number}`,
-                                target: `claim_${claim.claim_number}`,
-                                type: 'dependency'
-                            };
-                            links.push(link);
-                            console.log('创建连接（全部引用）:', link);
+                            const linkKey = `claim_${otherClaim.claim_number}_to_claim_${claim.claim_number}`;
+                            if (!linksMap.has(linkKey)) {
+                                const link = {
+                                    source: `claim_${otherClaim.claim_number}`,
+                                    target: `claim_${claim.claim_number}`,
+                                    type: 'dependency'
+                                };
+                                links.push(link);
+                                linksMap.set(linkKey, true);
+                                console.log('创建连接（全部引用）:', link);
+                            }
                         }
                     });
                 } else {
-                    const link = {
-                        source: `claim_${dep}`,
-                        target: `claim_${claim.claim_number}`,
-                        type: 'dependency'
-                    };
-                    links.push(link);
-                    console.log('创建连接:', link);
+                    const linkKey = `claim_${dep}_to_claim_${claim.claim_number}`;
+                    if (!linksMap.has(linkKey)) {
+                        const link = {
+                            source: `claim_${dep}`,
+                            target: `claim_${claim.claim_number}`,
+                            type: 'dependency'
+                        };
+                        links.push(link);
+                        linksMap.set(linkKey, true);
+                        console.log('创建连接:', link);
+                    }
                 }
             });
         }
@@ -1334,56 +1343,140 @@ class ClaimsD3TreeRenderer {
     
     // 渲染树状图
     renderTree(data) {
-        const treeLayout = d3.tree()
-            .size([this.width - 100, this.height - 100]);
+        // 找到所有独立权利要求作为根节点
+        const independentClaims = data.nodes.filter(node => node.claim_type === 'independent');
         
-        // 构建层次结构
-        const root = this.buildHierarchy(data);
-        const treeData = treeLayout(root);
+        // 计算每个独立权利要求树的垂直空间
+        const treesCount = Math.max(1, independentClaims.length);
+        const treeHeight = (this.height - 100) / treesCount;
         
-        // 渲染连线
-        this.mainGroup.selectAll('.link')
-            .data(treeData.links())
-            .enter()
-            .append('path')
-            .attr('class', 'link')
-            .attr('stroke', '#999')
-            .attr('stroke-width', 2)
-            .attr('fill', 'none')
-            .attr('d', d3.linkHorizontal()
-                .x(d => d.y + 50)
-                .y(d => d.x + 50)
-            );
+        // 为每个独立权利要求渲染单独的树
+        independentClaims.forEach((rootClaim, treeIndex) => {
+            // 构建当前独立权利要求的层次结构
+            const buildSubTree = (nodeId) => {
+                const node = data.nodes.find(n => n.id === nodeId);
+                if (!node) return null;
+                
+                const children = data.links
+                    .filter(link => {
+                        const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
+                        return sourceId === nodeId;
+                    })
+                    .map(link => {
+                        const targetId = typeof link.target === 'object' ? link.target.id : link.target;
+                        return buildSubTree(targetId);
+                    })
+                    .filter(child => child !== null);
+                
+                return {
+                    ...node,
+                    children: children.length > 0 ? children : null
+                };
+            };
+            
+            // 构建当前树的根节点
+            const treeRoot = buildSubTree(rootClaim.id);
+            if (!treeRoot) return;
+            
+            // 创建层次结构
+            const root = d3.hierarchy(treeRoot);
+            
+            // 计算树布局
+            const treeLayout = d3.tree()
+                .size([treeHeight, (this.width - 200) / 2]);
+            
+            const treeData = treeLayout(root);
+            
+            // 计算垂直偏移
+            const yOffset = 50 + treeIndex * treeHeight;
+            
+            // 渲染连线
+            this.mainGroup.selectAll(`.link-tree-${treeIndex}`)
+                .data(treeData.links())
+                .enter()
+                .append('path')
+                .attr('class', `link link-tree-${treeIndex}`)
+                .attr('stroke', '#999')
+                .attr('stroke-width', 2)
+                .attr('fill', 'none')
+                .attr('d', d3.linkHorizontal()
+                    .x(d => d.y + 100)
+                    .y(d => d.x + yOffset)
+                );
+            
+            // 渲染节点
+            const nodes = this.mainGroup.selectAll(`.node-tree-${treeIndex}`)
+                .data(treeData.descendants())
+                .enter()
+                .append('g')
+                .attr('class', `node-group node-tree-${treeIndex}`)
+                .attr('transform', d => `translate(${d.y + 100}, ${d.x + yOffset})`);
+            
+            // 添加节点圆圈
+            nodes.append('circle')
+                .attr('class', d => `node ${d.data.claim_type}`)
+                .attr('r', d => d.data.claim_type === 'independent' ? 20 : 15)
+                .attr('fill', d => d.data.claim_type === 'independent' ? '#4CAF50' : '#2196F3')
+                .attr('stroke', '#fff')
+                .attr('stroke-width', 2)
+                .style('cursor', 'pointer')
+                .on('mouseover', (event, d) => this.showTooltip(event, d.data))
+                .on('mouseout', () => this.hideTooltip())
+                .on('click', (event, d) => this.onNodeClick(d.data));
+            
+            // 添加节点标签
+            nodes.append('text')
+                .attr('class', 'node-label')
+                .attr('dy', '0.35em')
+                .attr('text-anchor', 'middle')
+                .attr('fill', 'white')
+                .attr('font-size', '12px')
+                .attr('font-weight', 'bold')
+                .text(d => d.data.claim_number);
+        });
         
-        // 渲染节点
-        const nodes = this.mainGroup.selectAll('.node')
-            .data(treeData.descendants())
-            .enter()
-            .append('g')
-            .attr('class', 'node-group')
-            .attr('transform', d => `translate(${d.y + 50}, ${d.x + 50})`);
-        
-        // 添加节点圆圈
-        nodes.append('circle')
-            .attr('class', d => `node ${d.data.claim_type}`)
-            .attr('r', d => d.data.claim_type === 'independent' ? 20 : 15)
-            .attr('fill', d => d.data.claim_type === 'independent' ? '#4CAF50' : '#2196F3')
-            .attr('stroke', '#fff')
-            .attr('stroke-width', 2)
-            .style('cursor', 'pointer')
-            .on('mouseover', (event, d) => this.showTooltip(event, d.data))
-            .on('mouseout', () => this.hideTooltip())
-            .on('click', (event, d) => this.onNodeClick(d.data));
-        
-        // 添加节点标签
-        nodes.append('text')
-            .attr('class', 'node-label')
-            .attr('dy', '0.35em')
-            .attr('text-anchor', 'middle')
-            .attr('fill', 'white')
-            .attr('font-size', '12px')
-            .attr('font-weight', 'bold')
-            .text(d => d.data.claim_number);
+        // 如果没有独立权利要求，渲染默认树
+        if (independentClaims.length === 0 && data.nodes.length > 0) {
+            const treeLayout = d3.tree()
+                .size([this.height - 100, this.width - 200]);
+            
+            const root = d3.hierarchy({
+                ...data.nodes[0],
+                children: null
+            });
+            
+            const treeData = treeLayout(root);
+            
+            // 渲染节点
+            const nodes = this.mainGroup.selectAll('.node-default')
+                .data(treeData.descendants())
+                .enter()
+                .append('g')
+                .attr('class', 'node-group node-default')
+                .attr('transform', d => `translate(${d.y + 100}, ${d.x + 50})`);
+            
+            // 添加节点圆圈
+            nodes.append('circle')
+                .attr('class', d => `node ${d.data.claim_type || 'independent'}`)
+                .attr('r', 20)
+                .attr('fill', '#4CAF50')
+                .attr('stroke', '#fff')
+                .attr('stroke-width', 2)
+                .style('cursor', 'pointer')
+                .on('mouseover', (event, d) => this.showTooltip(event, d.data))
+                .on('mouseout', () => this.hideTooltip())
+                .on('click', (event, d) => this.onNodeClick(d.data));
+            
+            // 添加节点标签
+            nodes.append('text')
+                .attr('class', 'node-label')
+                .attr('dy', '0.35em')
+                .attr('text-anchor', 'middle')
+                .attr('fill', 'white')
+                .attr('font-size', '12px')
+                .attr('font-weight', 'bold')
+                .text(d => d.data.claim_number);
+        }
     }
     
     // 渲染网络图
