@@ -1129,7 +1129,19 @@ function claimsFindPatentClaims(processedData, patentNumber, rowIndex) {
         claimsCount: processedData.claims ? processedData.claims.length : 0
     });
     
-    // 处理结果通常按行组织，找到对应行的权利要求
+    // 优先按专利号查找 - 这是关键修复！
+    // 当提供了专利号时，查找该专利的所有权利要求，忽略行号
+    if (patentNumber && processedData.claims) {
+        const patentClaims = processedData.claims.filter(claim => 
+            claim.patent_number === patentNumber
+        );
+        if (patentClaims.length > 0) {
+            console.log(`按专利号找到 ${patentClaims.length} 个权利要求`);
+            return patentClaims;
+        }
+    }
+    
+    // 如果没有专利号或按专利号未找到，再按行号查找
     if (processedData.claims_by_row) {
         // 尝试数字键和字符串键
         const claims = processedData.claims_by_row[rowIndex] || processedData.claims_by_row[String(rowIndex)];
@@ -1139,10 +1151,9 @@ function claimsFindPatentClaims(processedData, patentNumber, rowIndex) {
         }
     }
     
-    // 如果没有按行组织，尝试在所有权利要求中查找
+    // 最后尝试在行索引中查找
     if (processedData.claims) {
         const filteredClaims = processedData.claims.filter(claim => 
-            claim.patent_number === patentNumber || 
             claim.row_index === rowIndex
         );
         console.log(`在claims数组中找到 ${filteredClaims.length} 个权利要求`);
