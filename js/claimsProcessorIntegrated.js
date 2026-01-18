@@ -1570,7 +1570,8 @@ class ClaimsD3TreeRenderer {
     // 节点点击事件
     onNodeClick(data) {
         console.log('节点点击事件数据:', data);
-        showClaimsClaimModal(data);
+        // 使用新的模态框显示函数
+        showSimpleClaimModal(data);
     }
     
     // 缩放控制
@@ -1832,7 +1833,22 @@ function showClaimsClaimModal(claimData) {
     
     // 显示模态框
     modal.style.display = 'flex';
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.width = '100%';
+    modal.style.height = '100%';
+    modal.style.background = 'rgba(0, 0, 0, 0.5)';
+    modal.style.zIndex = '1000';
+    modal.style.alignItems = 'center';
+    modal.style.justifyContent = 'center';
     document.body.style.overflow = 'hidden';
+    console.log('模态框已显示');
+    
+    // 强制重绘
+    setTimeout(() => {
+        modal.offsetHeight; // 触发重绘
+    }, 0);
 }
 
 // 关闭权利要求详情模态框
@@ -1848,8 +1864,224 @@ function closeClaimsClaimModal() {
 document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
         closeClaimsClaimModal();
+        closeSimpleClaimModal();
     }
 });
+
+// 简单的权利要求详情模态框
+function showSimpleClaimModal(claimData) {
+    console.log('显示简单权利要求详情模态框:', claimData);
+    
+    // 首先移除旧的模态框（如果存在）
+    const oldModal = document.getElementById('simple_claim_modal');
+    if (oldModal) {
+        oldModal.remove();
+    }
+    
+    // 创建新的模态框
+    const modal = document.createElement('div');
+    modal.id = 'simple_claim_modal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    `;
+    
+    // 创建模态框内容
+    const modalContent = document.createElement('div');
+    modalContent.style.cssText = `
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        max-width: 600px;
+        width: 100%;
+        max-height: 80vh;
+        overflow-y: auto;
+        position: relative;
+        z-index: 1001;
+    `;
+    
+    // 创建模态框头部
+    const modalHeader = document.createElement('div');
+    modalHeader.style.cssText = `
+        padding: 20px;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #f8f9fa;
+        border-radius: 8px 8px 0 0;
+    `;
+    
+    const modalTitle = document.createElement('h3');
+    modalTitle.textContent = `权利要求 ${claimData.claim_number || '未知'} 详情`;
+    modalTitle.style.cssText = `
+        margin: 0;
+        color: #333;
+        font-size: 18px;
+    `;
+    
+    const closeBtn = document.createElement('button');
+    closeBtn.innerHTML = '&times;';
+    closeBtn.style.cssText = `
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #666;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: background-color 0.2s;
+    `;
+    closeBtn.onclick = closeSimpleClaimModal;
+    
+    modalHeader.appendChild(modalTitle);
+    modalHeader.appendChild(closeBtn);
+    
+    // 创建模态框主体
+    const modalBody = document.createElement('div');
+    modalBody.style.cssText = `
+        padding: 20px;
+    `;
+    
+    // 创建权利要求信息
+    const claimInfo = document.createElement('div');
+    claimInfo.style.cssText = `
+        margin-bottom: 15px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    `;
+    
+    const numberBadge = document.createElement('span');
+    numberBadge.textContent = `权利要求 ${claimData.claim_number || '未知'}`;
+    numberBadge.style.cssText = `
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: bold;
+        color: white;
+        background-color: #666;
+    `;
+    
+    const typeBadge = document.createElement('span');
+    typeBadge.textContent = claimData.claim_type === 'independent' ? '独立权利要求' : '从属权利要求';
+    typeBadge.style.cssText = `
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: bold;
+        color: white;
+        background-color: ${claimData.claim_type === 'independent' ? '#4CAF50' : '#2196F3'};
+    `;
+    
+    const levelBadge = document.createElement('span');
+    levelBadge.textContent = `层级 ${claimData.level || 0}`;
+    levelBadge.style.cssText = `
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: bold;
+        color: white;
+        background-color: #666;
+    `;
+    
+    claimInfo.appendChild(numberBadge);
+    claimInfo.appendChild(typeBadge);
+    claimInfo.appendChild(levelBadge);
+    
+    // 创建依赖关系
+    const dependenciesDiv = document.createElement('div');
+    dependenciesDiv.style.cssText = `
+        margin-bottom: 15px;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        border-left: 4px solid #2196F3;
+    `;
+    
+    const dependenciesLabel = document.createElement('strong');
+    dependenciesLabel.textContent = '依赖关系：';
+    
+    const dependenciesList = document.createElement('span');
+    const dependencies = claimData.dependencies || claimData.referenced_claims || [];
+    dependenciesList.textContent = dependencies && dependencies.length > 0 ? dependencies.join(', ') : '无';
+    
+    dependenciesDiv.appendChild(dependenciesLabel);
+    dependenciesDiv.appendChild(dependenciesList);
+    
+    // 创建权利要求内容
+    const contentDiv = document.createElement('div');
+    contentDiv.style.cssText = `
+        margin-bottom: 15px;
+    `;
+    
+    const contentLabel = document.createElement('strong');
+    contentLabel.textContent = '权利要求内容：';
+    
+    const claimText = document.createElement('p');
+    claimText.textContent = claimData.claim_text || claimData.text || '暂无详细内容';
+    claimText.style.cssText = `
+        margin: 10px 0 0 0;
+        line-height: 1.6;
+        color: #333;
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 4px;
+        border: 1px solid #e9ecef;
+    `;
+    
+    contentDiv.appendChild(contentLabel);
+    contentDiv.appendChild(claimText);
+    
+    // 组装模态框主体
+    modalBody.appendChild(claimInfo);
+    modalBody.appendChild(dependenciesDiv);
+    modalBody.appendChild(contentDiv);
+    
+    // 组装模态框内容
+    modalContent.appendChild(modalHeader);
+    modalContent.appendChild(modalBody);
+    
+    // 组装模态框
+    modal.appendChild(modalContent);
+    
+    // 添加到页面
+    document.body.appendChild(modal);
+    
+    // 点击遮罩层关闭模态框
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeSimpleClaimModal();
+        }
+    });
+    
+    // 禁止页面滚动
+    document.body.style.overflow = 'hidden';
+    console.log('简单模态框已显示');
+}
+
+// 关闭简单权利要求详情模态框
+function closeSimpleClaimModal() {
+    const modal = document.getElementById('simple_claim_modal');
+    if (modal) {
+        modal.remove();
+    }
+    document.body.style.overflow = 'auto';
+    console.log('简单模态框已关闭');
+}
 
 // 在页面加载时初始化
 if (document.readyState === 'loading') {
