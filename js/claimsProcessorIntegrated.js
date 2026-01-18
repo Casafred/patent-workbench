@@ -1111,20 +1111,37 @@ async function claimsGenerateVisualization() {
 
 // 从权利要求处理结果中找到特定专利的权利要求
 function claimsFindPatentClaims(processedData, patentNumber, rowIndex) {
+    console.log('查找权利要求数据:', {
+        patentNumber: patentNumber,
+        rowIndex: rowIndex,
+        hasClaimsByRow: !!processedData.claims_by_row,
+        claimsByRowKeys: processedData.claims_by_row ? Object.keys(processedData.claims_by_row) : [],
+        hasClaims: !!processedData.claims,
+        claimsCount: processedData.claims ? processedData.claims.length : 0
+    });
+    
     // 处理结果通常按行组织，找到对应行的权利要求
-    if (processedData.claims_by_row && processedData.claims_by_row[rowIndex]) {
-        return processedData.claims_by_row[rowIndex];
+    if (processedData.claims_by_row) {
+        // 尝试数字键和字符串键
+        const claims = processedData.claims_by_row[rowIndex] || processedData.claims_by_row[String(rowIndex)];
+        if (claims && claims.length > 0) {
+            console.log(`在claims_by_row中找到 ${claims.length} 个权利要求`);
+            return claims;
+        }
     }
     
     // 如果没有按行组织，尝试在所有权利要求中查找
     if (processedData.claims) {
-        return processedData.claims.filter(claim => 
+        const filteredClaims = processedData.claims.filter(claim => 
             claim.patent_number === patentNumber || 
             claim.row_index === rowIndex
         );
+        console.log(`在claims数组中找到 ${filteredClaims.length} 个权利要求`);
+        return filteredClaims;
     }
     
-    return processedData.claims || [];
+    console.log('未找到任何权利要求数据');
+    return [];
 }
 
 // 构建可视化数据

@@ -304,7 +304,9 @@ class ProcessingService(ProcessingServiceInterface):
                         language=claim_language,
                         referenced_claims=referenced_claims,
                         original_text=cleaned_text,  # 保存完整的原始文本
-                        confidence_score=confidence_score
+                        confidence_score=confidence_score,
+                        patent_number=None,  # 在单元格处理阶段暂时为None，后续会在上层设置
+                        row_index=cell_index  # 保存Excel行索引
                     )
                     
                     claims_info.append(claim_info)
@@ -629,7 +631,8 @@ class ProcessingService(ProcessingServiceInterface):
             'referenced_claims': claim.referenced_claims,
             'original_text': claim.original_text,
             'confidence_score': claim.confidence_score,
-            'patent_number': claim.patent_number
+            'patent_number': claim.patent_number,
+            'row_index': claim.row_index
         }
     
     def _dict_to_claim(self, claim_dict: Dict[str, Any]) -> ClaimInfo:
@@ -642,7 +645,8 @@ class ProcessingService(ProcessingServiceInterface):
             referenced_claims=claim_dict['referenced_claims'],
             original_text=claim_dict['original_text'],
             confidence_score=claim_dict['confidence_score'],
-            patent_number=claim_dict.get('patent_number')
+            patent_number=claim_dict.get('patent_number'),
+            row_index=claim_dict.get('row_index')
         )
     
     def _error_to_dict(self, error: ProcessingError) -> Dict[str, Any]:

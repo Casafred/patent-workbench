@@ -20,6 +20,7 @@ class ClaimInfo:
     original_text: str
     confidence_score: float
     patent_number: Optional[str] = None  # 专利公开号
+    row_index: Optional[int] = None  # Excel行索引
 
 
 @dataclass

@@ -59,7 +59,9 @@ def save_task_to_disk(task_id: str, task_data: dict) -> None:
                         'language': c.language,
                         'referenced_claims': c.referenced_claims,
                         'original_text': c.original_text,
-                        'confidence_score': c.confidence_score
+                        'confidence_score': c.confidence_score,
+                        'patent_number': getattr(c, 'patent_number', None),
+                        'row_index': getattr(c, 'row_index', None)
                     } for c in result.claims_data
                 ],
                 'processing_errors': [
@@ -535,16 +537,30 @@ def get_processing_result(task_id):
         
         # Build detailed results
         claims_list = []
+        claims_by_row = {}  # 按行索引组织权利要求数据
+        
         for claim in result.claims_data:
-            claims_list.append({
+            claim_dict = {
                 'claim_number': claim.claim_number,
                 'claim_type': claim.claim_type,
                 'claim_text': claim.claim_text,
                 'language': claim.language,
                 'referenced_claims': claim.referenced_claims,
                 'original_text': claim.original_text,
-                'confidence_score': claim.confidence_score
-            })
+                'confidence_score': claim.confidence_score,
+                'patent_number': getattr(claim, 'patent_number', None),
+                'row_index': getattr(claim, 'row_index', None)
+            }
+            claims_list.append(claim_dict)
+            
+            # 按行索引组织数据 - 从原始文本或其他方式获取行索引
+            # 这里我们需要从处理过程中获取行索引信息
+            # 暂时使用一个简单的映射方法
+            row_index = getattr(claim, 'row_index', None)
+            if row_index is not None:
+                if row_index not in claims_by_row:
+                    claims_by_row[row_index] = []
+                claims_by_row[row_index].append(claim_dict)
         
         errors_list = []
         for error in result.processing_errors:
@@ -566,6 +582,7 @@ def get_processing_result(task_id):
                 'error_count': len(result.processing_errors)
             },
             'claims': claims_list,
+            'claims_by_row': claims_by_row,  # 添加按行组织的数据
             'errors': errors_list
         }
         
