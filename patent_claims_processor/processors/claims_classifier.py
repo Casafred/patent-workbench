@@ -149,6 +149,30 @@ class ClaimsClassifier(ClaimsClassifierInterface):
                 referenced_claims.update(range(start, end + 1))
                 has_reference_keywords = True
         
+        # 专门处理"claim 1 or 2"、"claim 1 und 2"等格式
+        if language in ['en', 'de', 'other']:
+            # 英文和通用情况：匹配"claim 1 or 2"、"claim 1 or 2 or 3"等格式
+            or_und_pattern = re.search(r'claim[s]?\s+(\d+(?:\s*(?:or|und)\s*\d+)+)', cleaned_text, re.IGNORECASE)
+            if or_und_pattern:
+                numbers_str = or_und_pattern.group(1)
+                # 分割并提取所有数字
+                numbers = re.findall(r'\d+', numbers_str)
+                for num_str in numbers:
+                    referenced_claims.add(int(num_str))
+                has_reference_keywords = True
+        
+        # 专门处理德语"Anspruch 1 und 2"等格式
+        if language in ['de', 'other']:
+            # 德语情况：匹配"Anspruch 1 und 2"、"Anspruch 1 und 2 und 3"等格式
+            anspruch_pattern = re.search(r'anspruch[s]?\s+(\d+(?:\s*(?:und)\s*\d+)+)', cleaned_text, re.IGNORECASE)
+            if anspruch_pattern:
+                numbers_str = anspruch_pattern.group(1)
+                # 分割并提取所有数字
+                numbers = re.findall(r'\d+', numbers_str)
+                for num_str in numbers:
+                    referenced_claims.add(int(num_str))
+                has_reference_keywords = True
+        
         # 检查是否包含引用关键词但没有找到数字
         if has_reference_keywords and not referenced_claims:
             # 检查是否有单独的引用关键词出现（如"权利要求"、"claims"）
@@ -211,6 +235,10 @@ class ClaimsClassifier(ClaimsClassifierInterface):
                         if not has_number_nearby:
                             return ['all']
         
+        # 特殊检查：如果文本中包含"claims"，即使没有找到具体序号，也应识别为从权
+        if not has_reference_keywords and re.search(r'\bclaims\b', cleaned_text, re.IGNORECASE):
+            return ['all']
+        
         return sorted(list(referenced_claims))
     
     def _parse_claim_numbers(self, number_string: str) -> List[int]:
@@ -218,15 +246,19 @@ class ClaimsClassifier(ClaimsClassifierInterface):
         解析权利要求序号字符串
         
         Args:
-            number_string: 序号字符串，如"1-3,5"、"1 to 10"
+            number_string: 序号字符串，如"1-3,5"、"1 to 10"、"1 or 2"、"1 und 2"
             
         Returns:
             序号列表
         """
         numbers = []
         
+        # 处理英文"or"和德语"und"连接的情况
+        # 首先将"or"和"und"替换为逗号，以便后续处理
+        processed_string = re.sub(r'\s*(?:or|und)\s*', ',', number_string, flags=re.IGNORECASE)
+        
         # 分割逗号分隔的部分
-        parts = re.split(r'[,，]', number_string)
+        parts = re.split(r'[,，]', processed_string)
         
         for part in parts:
             part = part.strip()

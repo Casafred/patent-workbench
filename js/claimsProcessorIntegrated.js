@@ -511,8 +511,95 @@ function displayClaimsResults(result) {
         });
     }
     
+    // 新增：显示公开号与独权合并视窗
+    showClaimsPatentSummarySection(claims);
+    
     // 新增：显示专利查询区域
     showClaimsPatentQuerySection();
+}
+
+// 显示公开号与独权合并视窗
+function showClaimsPatentSummarySection(claims) {
+    const summarySection = document.getElementById('claims_patent_summary_section');
+    const summaryTbody = document.getElementById('claims_patent_summary_tbody');
+    
+    if (summarySection && summaryTbody) {
+        // 按专利号分组
+        const patentGroups = {};
+        
+        claims.forEach(claim => {
+            const patentNumber = claim.patent_number || 'Unknown';
+            if (!patentGroups[patentNumber]) {
+                patentGroups[patentNumber] = [];
+            }
+            patentGroups[patentNumber].push(claim);
+        });
+        
+        // 填充表格
+        summaryTbody.innerHTML = '';
+        
+        Object.keys(patentGroups).forEach(patentNumber => {
+            const patentClaims = patentGroups[patentNumber];
+            // 只获取独立权利要求
+            const independentClaims = patentClaims.filter(claim => claim.claim_type === 'independent');
+            
+            // 合并独立权利要求内容
+            let mergedIndependentClaims = '';
+            independentClaims.forEach((claim, index) => {
+                if (index > 0) mergedIndependentClaims += ' ';
+                mergedIndependentClaims += claim.claim_text;
+            });
+            
+            if (mergedIndependentClaims) {
+                const row = summaryTbody.insertRow();
+                row.innerHTML = `
+                    <td>${patentNumber}</td>
+                    <td title="${mergedIndependentClaims}">${mergedIndependentClaims.substring(0, 150)}${mergedIndependentClaims.length > 150 ? '...' : ''}</td>
+                    <td>
+                        <button class="small-button" onclick="claimsJumpToVisualization('${patentNumber}')">查看引用图</button>
+                    </td>
+                `;
+            }
+        });
+        
+        // 显示视窗
+        if (Object.keys(patentGroups).length > 0) {
+            summarySection.style.display = 'block';
+        }
+    }
+}
+
+// 跳转到权利要求引用图
+function claimsJumpToVisualization(patentNumber) {
+    // 设置选中的专利号
+    claimsSelectedPatentNumber = patentNumber;
+    claimsSelectedPatentRow = 0; // 不使用行号，直接按专利号查找
+    
+    // 更新选中专利信息
+    const selectedPatentNumberEl = document.getElementById('claims_selected_patent_number');
+    const selectedPatentRowEl = document.getElementById('claims_selected_patent_row');
+    const selectedPatentInfo = document.getElementById('claims_selected_patent_info');
+    
+    if (selectedPatentNumberEl) {
+        selectedPatentNumberEl.textContent = patentNumber;
+    }
+    
+    if (selectedPatentRowEl) {
+        selectedPatentRowEl.textContent = 'N/A';
+    }
+    
+    if (selectedPatentInfo) {
+        selectedPatentInfo.style.display = 'block';
+    }
+    
+    // 生成可视化
+    claimsGenerateVisualization();
+    
+    // 滚动到可视化区域
+    const visualizationSection = document.getElementById('claims_visualization_section');
+    if (visualizationSection) {
+        visualizationSection.scrollIntoView({ behavior: 'smooth' });
+    }
 }
 
 // 导出结果

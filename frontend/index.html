@@ -939,6 +939,25 @@
             </div>
         </div>
         
+        <!-- 新增：公开号与独权合并视窗 -->
+        <div id="claims_patent_summary_section" style="display:none; margin-top: 30px;">
+            <h4>公开号与独权合并内容</h4>
+            <p class="info">显示每个公开号及其对应的独立权利要求合并内容，点击按钮可跳转到权利要求引用图</p>
+            
+            <div style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px;">
+                <table id="claims_patent_summary_table">
+                    <thead>
+                        <tr>
+                            <th>公开号</th>
+                            <th>独权合并内容</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="claims_patent_summary_tbody"></tbody>
+                </table>
+            </div>
+        </div>
+        
         <!-- 新增：专利查询和可视化区域 -->
         <div id="claims_patent_query_section" style="display:none; margin-top: 30px;">
             <h4>专利号查询与可视化</h4>
