@@ -1139,9 +1139,18 @@ function claimsFindPatentClaims(processedData, patentNumber, rowIndex) {
     // 优先按专利号查找 - 这是关键修复！
     // 当提供了专利号时，查找该专利的所有权利要求，忽略行号
     if (patentNumber && processedData.claims) {
-        const patentClaims = processedData.claims.filter(claim => 
+        // 先尝试精确匹配
+        let patentClaims = processedData.claims.filter(claim => 
             claim.patent_number === patentNumber
         );
+        
+        // 如果精确匹配失败，尝试模糊匹配
+        if (patentClaims.length === 0) {
+            patentClaims = processedData.claims.filter(claim => 
+                claim.patent_number && claim.patent_number.includes(patentNumber)
+            );
+        }
+        
         if (patentClaims.length > 0) {
             console.log(`按专利号找到 ${patentClaims.length} 个权利要求`);
             return patentClaims;
@@ -1149,7 +1158,7 @@ function claimsFindPatentClaims(processedData, patentNumber, rowIndex) {
     }
     
     // 如果没有专利号或按专利号未找到，再按行号查找
-    if (processedData.claims_by_row) {
+    if (processedData.claims_by_row && rowIndex > 0) {
         // 尝试数字键和字符串键
         const claims = processedData.claims_by_row[rowIndex] || processedData.claims_by_row[String(rowIndex)];
         if (claims && claims.length > 0) {
@@ -1159,12 +1168,20 @@ function claimsFindPatentClaims(processedData, patentNumber, rowIndex) {
     }
     
     // 最后尝试在行索引中查找
-    if (processedData.claims) {
+    if (processedData.claims && rowIndex > 0) {
         const filteredClaims = processedData.claims.filter(claim => 
             claim.row_index === rowIndex
         );
-        console.log(`在claims数组中找到 ${filteredClaims.length} 个权利要求`);
-        return filteredClaims;
+        if (filteredClaims.length > 0) {
+            console.log(`在claims数组中找到 ${filteredClaims.length} 个权利要求`);
+            return filteredClaims;
+        }
+    }
+    
+    // 如果以上方法都失败，且有权利要求数据，尝试返回所有权利要求
+    if (processedData.claims && processedData.claims.length > 0) {
+        console.log(`未找到特定专利的权利要求，返回所有 ${processedData.claims.length} 个权利要求`);
+        return processedData.claims;
     }
     
     console.log('未找到任何权利要求数据');

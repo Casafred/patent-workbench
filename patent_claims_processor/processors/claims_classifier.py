@@ -24,6 +24,10 @@ class ClaimsClassifier(ClaimsClassifierInterface):
                 'claim', 'claims', 'according to claim', 'as claimed in',
                 'as defined in claim', 'of claim', 'in claim'
             ],
+            'de': [
+                'anspruch', 'ansprüche', 'anspruchs', 'gemäß anspruch',
+                'wie in anspruch', 'definiert in anspruch', 'von anspruch', 'in anspruch'
+            ],
             'other': ['claim', 'claims']
         }
         
@@ -59,7 +63,25 @@ class ClaimsClassifier(ClaimsClassifierInterface):
         # 检查是否包含引用关键词
         referenced_claims = self.extract_referenced_claims(claim_text, language)
         
-        if referenced_claims:
+        # 特殊处理：如果引用列表只包含'all'，且文本开头是权利要求序号格式
+        # 则可能是独立权利要求被错误分类
+        if referenced_claims == ['all']:
+            # 检查文本开头是否是权利要求序号格式
+            import re
+            # 匹配各种权利要求序号格式
+            number_patterns = [
+                r'^\s*\d+\s*[\.、\)\:]\s*',  # 数字+标点
+                r'^\s*claim\s+\d+\s*[\.\:]\s*',  # claim 1:
+                r'^\s*anspruch\s+\d+\s*[\.\:]\s*',  # Anspruch 1:
+                r'^\s*权利要求\s*\d+\s*[\.\:]\s*',  # 权利要求1:
+            ]
+            
+            for pattern in number_patterns:
+                if re.search(pattern, claim_text, re.IGNORECASE):
+                    # 这可能是独立权利要求
+                    return 'independent'
+        
+        if referenced_claims and referenced_claims != ['all']:
             return 'dependent'
         else:
             return 'independent'
@@ -78,6 +100,27 @@ class ClaimsClassifier(ClaimsClassifierInterface):
         if not claim_text or not claim_text.strip():
             return []
         
+        # 首先跳过权利要求序号部分
+        import re
+        
+        # 匹配各种权利要求序号格式
+        number_patterns = [
+            r'^\s*\d+\s*[\.、\)\:]*',  # 数字+标点
+            r'^\s*claim\s+\d+\s*[\.\:]\s*',  # claim 1:
+            r'^\s*claims\s+\d+\s*[\.\:]\s*',  # claims 1:
+            r'^\s*anspruch\s+\d+\s*[\.\:]\s*',  # Anspruch 1:
+            r'^\s*ansprüche\s+\d+\s*[\.\:]\s*',  # Ansprüche 1:
+            r'^\s*权利要求\s*\d+\s*[\.\:]\s*',  # 权利要求1:
+        ]
+        
+        # 移除开头的权利要求序号
+        cleaned_text = claim_text
+        for pattern in number_patterns:
+            match = re.search(pattern, cleaned_text, re.IGNORECASE)
+            if match:
+                cleaned_text = cleaned_text[match.end():]
+                break
+        
         referenced_claims = set()
         has_reference_keywords = False
         
@@ -85,7 +128,7 @@ class ClaimsClassifier(ClaimsClassifierInterface):
         patterns = self.reference_patterns.get(language, self.reference_patterns.get('other', []))
         
         for pattern in patterns:
-            matches = pattern.findall(claim_text)
+            matches = pattern.findall(cleaned_text)
             if matches:
                 has_reference_keywords = True
                 for match in matches:
@@ -98,10 +141,62 @@ class ClaimsClassifier(ClaimsClassifierInterface):
             # 检查是否有单独的引用关键词出现（如"权利要求"、"claims"）
             keywords = self.reference_keywords.get(language, self.reference_keywords.get('other', []))
             for keyword in keywords:
-                if re.search(rf'{re.escape(keyword)}', claim_text, re.IGNORECASE):
-                    # 当权利要求字样附近没有数字时，默认引用所有权利要求
-                    # 这里返回一个特殊标记，调用方需要处理
-                    return ['all']
+                # 找到关键词在文本中的位置
+                keyword_matches = list(re.finditer(rf'{re.escape(keyword)}', cleaned_text, re.IGNORECASE))
+                for match in keyword_matches:
+                    # 提取关键词前后的文本（各三个单词）
+                    keyword_start = match.start()
+                    keyword_end = match.end()
+                    
+                    # 提取关键词前后的文本
+                    text_before = cleaned_text[:keyword_start]
+                    text_after = cleaned_text[keyword_end:]
+                    
+                    # 分词并检查是否有数字
+                    words_before = text_before.split()[-3:]  # 前三个单词
+                    words_after = text_after.split()[:3]   # 后三个单词
+                    
+                    # 检查周边单词是否包含数字
+                    has_number_nearby = False
+                    all_surrounding_words = words_before + words_after
+                    
+                    for word in all_surrounding_words:
+                        if any(char.isdigit() for char in word):
+                            has_number_nearby = True
+                            break
+                    
+                    # 如果周边三个单词以内没有数字，则默认引用全部
+                    if not has_number_nearby:
+                        return ['all']
+        
+        # 额外检查：直接检查文本中是否包含引用关键词，即使正则表达式没有匹配
+        # 这是为了处理只有关键词而没有数字的情况
+        if not has_reference_keywords:
+            keywords = self.reference_keywords.get(language, self.reference_keywords.get('other', []))
+            for keyword in keywords:
+                if re.search(rf'{re.escape(keyword)}', cleaned_text, re.IGNORECASE):
+                    # 检查关键词周边是否有数字
+                    keyword_matches = list(re.finditer(rf'{re.escape(keyword)}', cleaned_text, re.IGNORECASE))
+                    for match in keyword_matches:
+                        keyword_start = match.start()
+                        keyword_end = match.end()
+                        
+                        text_before = cleaned_text[:keyword_start]
+                        text_after = cleaned_text[keyword_end:]
+                        
+                        words_before = text_before.split()[-3:]
+                        words_after = text_after.split()[:3]
+                        
+                        has_number_nearby = False
+                        all_surrounding_words = words_before + words_after
+                        
+                        for word in all_surrounding_words:
+                            if any(char.isdigit() for char in word):
+                                has_number_nearby = True
+                                break
+                        
+                        if not has_number_nearby:
+                            return ['all']
         
         return sorted(list(referenced_claims))
     

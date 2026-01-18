@@ -57,6 +57,8 @@ class LanguageDetector(LanguageDetectorInterface):
                     return 'en'
                 elif detected_lang in ['zh-cn', 'zh-tw', 'zh']:
                     return 'zh'
+                elif detected_lang in ['de']:
+                    return 'de'
                 else:
                     # 对于其他语言，继续使用字符统计方法验证
                     pass
@@ -80,11 +82,18 @@ class LanguageDetector(LanguageDetectorInterface):
         chinese_ratio = chinese_chars / total_chars if total_chars > 0 else 0
         english_ratio = english_chars / total_chars if total_chars > 0 else 0
         
+        # 德语关键词检测
+        german_keywords = ['anspruch', 'ansprüche', 'anspruchs', 'gemäß', 'dadurch', 'dadurch gekennzeichnet']
+        german_pattern = re.compile('|'.join(german_keywords), re.IGNORECASE)
+        has_german_keywords = bool(german_pattern.search(text))
+        
         # 判断语言类型
         if chinese_ratio > 0.1:  # 中文字符占比超过10%
             return 'zh'
         elif english_ratio > 0.3:  # 英文字符占比超过30%
             return 'en'
+        elif has_german_keywords and english_ratio > 0.1:  # 包含德语关键词且有一定英文字符
+            return 'de'
         else:
             return 'other'
     
