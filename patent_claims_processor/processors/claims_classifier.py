@@ -148,7 +148,17 @@ class ClaimsClassifier(ClaimsClassifierInterface):
                 end = int(to_pattern.group(2))
                 referenced_claims.update(range(start, end + 1))
                 has_reference_keywords = True
-        
+
+        # 专门处理德语"Anspruch 1 bis 3"格式
+        if language in ['de', 'other']:
+            # 匹配"Anspruch 1 bis 3"、"Ansprüche 1 bis 10"等格式
+            bis_pattern = re.search(r'anspruch[s]?\s+(\d+)\s+bis\s+(\d+)', cleaned_text, re.IGNORECASE)
+            if bis_pattern:
+                start = int(bis_pattern.group(1))
+                end = int(bis_pattern.group(2))
+                referenced_claims.update(range(start, end + 1))
+                has_reference_keywords = True
+
         # 专门处理"claim 1 or 2"、"claim 1 und 2"等格式
         if language in ['en', 'de', 'other']:
             # 英文和通用情况：匹配"claim 1 or 2"、"claim 1 or 2 or 3"等格式
@@ -160,17 +170,95 @@ class ClaimsClassifier(ClaimsClassifierInterface):
                 for num_str in numbers:
                     referenced_claims.add(int(num_str))
                 has_reference_keywords = True
-        
+
         # 专门处理德语"Anspruch 1 und 2"等格式
         if language in ['de', 'other']:
             # 德语情况：匹配"Anspruch 1 und 2"、"Anspruch 1 und 2 und 3"等格式
-            anspruch_pattern = re.search(r'anspruch[s]?\s+(\d+(?:\s*(?:und)\s*\d+)+)', cleaned_text, re.IGNORECASE)
+            anspruch_pattern = re.search(r'anspruch[s]?\s+(\d+(?:\s*(?:und|oder)\s*\d+)+)', cleaned_text, re.IGNORECASE)
             if anspruch_pattern:
                 numbers_str = anspruch_pattern.group(1)
                 # 分割并提取所有数字
                 numbers = re.findall(r'\d+', numbers_str)
                 for num_str in numbers:
                     referenced_claims.add(int(num_str))
+                has_reference_keywords = True
+
+        # 专门处理中文"权利要求1或2"格式
+        if language in ['zh', 'other']:
+            # 匹配"权利要求1或2"、"权利要求1或2或3"等格式
+            chinese_or_pattern = re.search(r'权利要求\s*(\d+(?:\s*或\s*\d+)+)', cleaned_text, re.IGNORECASE)
+            if chinese_or_pattern:
+                numbers_str = chinese_or_pattern.group(1)
+                # 分割并提取所有数字
+                numbers = re.findall(r'\d+', numbers_str)
+                for num_str in numbers:
+                    referenced_claims.add(int(num_str))
+                has_reference_keywords = True
+        
+        # 专门处理多个范围的情况，如"claims 1 to 3 and 5 to 7"
+        if language in ['en', 'other']:
+            # 匹配多个范围格式："claims 1 to 3 and 5 to 7"
+            multiple_range_pattern = re.search(r'claim[s]?\s+((?:\d+\s*to\s*\d+)(?:\s*and\s*(?:\d+\s*to\s*\d+|\d+))*)', cleaned_text, re.IGNORECASE)
+            if multiple_range_pattern:
+                ranges_str = multiple_range_pattern.group(1)
+                # 处理多个范围
+                range_parts = re.split(r'\s*and\s*', ranges_str)
+                for part in range_parts:
+                    # 检查是否为范围
+                    range_match = re.search(r'(\d+)\s*to\s*(\d+)', part, re.IGNORECASE)
+                    if range_match:
+                        start = int(range_match.group(1))
+                        end = int(range_match.group(2))
+                        referenced_claims.update(range(start, end + 1))
+                    else:
+                        # 单个数字
+                        digit_match = re.search(r'\d+', part)
+                        if digit_match:
+                            referenced_claims.add(int(digit_match.group()))
+                has_reference_keywords = True
+        
+        # 专门处理德语多个范围的情况，如"Anspruch 1 bis 3 und 5 bis 7"
+        if language in ['de', 'other']:
+            # 匹配多个范围格式："Anspruch 1 bis 3 und 5 bis 7"
+            multiple_range_pattern = re.search(r'anspruch[s]?\s+((?:\d+\s*bis\s*\d+)(?:\s*und\s*(?:\d+\s*bis\s*\d+|\d+))*)', cleaned_text, re.IGNORECASE)
+            if multiple_range_pattern:
+                ranges_str = multiple_range_pattern.group(1)
+                # 处理多个范围
+                range_parts = re.split(r'\s*und\s*', ranges_str)
+                for part in range_parts:
+                    # 检查是否为范围
+                    range_match = re.search(r'(\d+)\s*bis\s*(\d+)', part, re.IGNORECASE)
+                    if range_match:
+                        start = int(range_match.group(1))
+                        end = int(range_match.group(2))
+                        referenced_claims.update(range(start, end + 1))
+                    else:
+                        # 单个数字
+                        digit_match = re.search(r'\d+', part)
+                        if digit_match:
+                            referenced_claims.add(int(digit_match.group()))
+                has_reference_keywords = True
+        
+        # 专门处理中文多个范围的情况，如"权利要求1至3和5至7"
+        if language in ['zh', 'other']:
+            # 匹配多个范围格式："权利要求1至3和5至7"
+            multiple_range_pattern = re.search(r'权利要求\s*((?:\d+\s*(?:至|到)\s*\d+)(?:\s*和\s*(?:\d+\s*(?:至|到)\s*\d+|\d+))*)', cleaned_text, re.IGNORECASE)
+            if multiple_range_pattern:
+                ranges_str = multiple_range_pattern.group(1)
+                # 处理多个范围
+                range_parts = re.split(r'\s*和\s*', ranges_str)
+                for part in range_parts:
+                    # 检查是否为范围
+                    range_match = re.search(r'(\d+)\s*(?:至|到)\s*(\d+)', part, re.IGNORECASE)
+                    if range_match:
+                        start = int(range_match.group(1))
+                        end = int(range_match.group(2))
+                        referenced_claims.update(range(start, end + 1))
+                    else:
+                        # 单个数字
+                        digit_match = re.search(r'\d+', part)
+                        if digit_match:
+                            referenced_claims.add(int(digit_match.group()))
                 has_reference_keywords = True
         
         # 检查是否包含引用关键词但没有找到数字
@@ -249,28 +337,27 @@ class ClaimsClassifier(ClaimsClassifierInterface):
     def _parse_claim_numbers(self, number_string: str) -> List[int]:
         """
         解析权利要求序号字符串
-        
+
         Args:
-            number_string: 序号字符串，如"1-3,5"、"1 to 10"、"1 or 2"、"1 und 2"
-            
+            number_string: 序号字符串，如"1-3,5"、"1 to 10"、"1 or 2"、"1 und 2"、"1 to 3 and 5"
+
         Returns:
             序号列表
         """
         numbers = []
-        
-        # 处理英文"or"和德语"und"连接的情况
-        # 首先将"or"和"und"替换为逗号，以便后续处理
-        processed_string = re.sub(r'\s*(?:or|und)\s*', ',', number_string, flags=re.IGNORECASE)
-        
+
+        # 处理连接词：将"or"、"und"、"and"、"bis"、"或"替换为逗号，以便后续处理
+        processed_string = re.sub(r'\s*(?:or|und|and|bis|或)\s*', ',', number_string, flags=re.IGNORECASE)
+
         # 分割逗号分隔的部分
         parts = re.split(r'[,，]', processed_string)
-        
+
         for part in parts:
             part = part.strip()
-            
-            # 检查是否为范围格式（如"1-3"、"1至3"、"1 to 10"）
-            # 匹配包含"to"作为单词的范围格式
-            range_match = re.search(r'(\d+)\s*(?:[-~至到]|to)\s*(\d+)', part, re.IGNORECASE)
+
+            # 检查是否为范围格式（如"1-3"、"1至3"、"1 to 10"、"1 bis 3"）
+            # 匹配包含"to"、"至"、"到"、"bis"作为单词的范围格式
+            range_match = re.search(r'(\d+)\s*(?:[-~至到]|to|bis)\s*(\d+)', part, re.IGNORECASE)
             if range_match:
                 start = int(range_match.group(1))
                 end = int(range_match.group(2))
@@ -280,7 +367,7 @@ class ClaimsClassifier(ClaimsClassifierInterface):
                 digit_match = re.search(r'\d+', part)
                 if digit_match:
                     numbers.append(int(digit_match.group()))
-        
+
         return numbers
     
     def get_reference_keywords(self, language: str) -> List[str]:
