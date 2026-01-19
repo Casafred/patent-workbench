@@ -81,7 +81,7 @@ class ClaimsClassifier(ClaimsClassifierInterface):
                     # 这可能是独立权利要求
                     return 'independent'
         
-        if referenced_claims and referenced_claims != ['all']:
+        if referenced_claims:
             return 'dependent'
         else:
             return 'independent'
@@ -235,9 +235,14 @@ class ClaimsClassifier(ClaimsClassifierInterface):
                         if not has_number_nearby:
                             return ['all']
         
-        # 特殊检查：如果文本中包含"claims"，即使没有找到具体序号，也应识别为从权
-        if not has_reference_keywords and re.search(r'\bclaims\b', cleaned_text, re.IGNORECASE):
-            return ['all']
+        # 特殊检查：如果文本中包含"claims"相关短语，即使没有找到具体序号，也应识别为从权
+        if not has_reference_keywords:
+            # 检查是否包含"claims"、"preceding claims"等相关短语
+            if re.search(r'claims', cleaned_text, re.IGNORECASE):
+                return ['all']
+            # 检查是否包含"anspruch"等德语相关短语
+            elif re.search(r'anspruch', cleaned_text, re.IGNORECASE):
+                return ['all']
         
         return sorted(list(referenced_claims))
     
