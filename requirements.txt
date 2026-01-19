@@ -8,6 +8,9 @@ zhipuai
 flask-cors
 requests
 python-dotenv>=1.0.0
+sniffio
+anyio
+httpx
 
 # Database
 psycopg2-binary
