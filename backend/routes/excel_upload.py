@@ -35,7 +35,7 @@ def allowed_file(filename):
 
 def parse_excel_file(file_path, header_row=0):
     """
-    解析Excel文件
+    解析Excel文件（增强版，包含详细错误处理）
     
     Args:
         file_path: Excel文件路径
@@ -45,31 +45,123 @@ def parse_excel_file(file_path, header_row=0):
         dict: 包含列信息和数据的字典
     """
     try:
+        # 验证文件存在
+        if not os.path.exists(file_path):
+            return {
+                'success': False,
+                'error': f"文件不存在: {file_path}"
+            }
+        
+        # 获取文件信息
+        file_size = os.path.getsize(file_path)
+        file_ext = os.path.splitext(file_path)[1].lower()
+        
+        print(f"[Excel解析] 开始解析文件: {os.path.basename(file_path)}")
+        print(f"[Excel解析] 文件大小: {file_size:,} 字节")
+        print(f"[Excel解析] 文件扩展名: {file_ext}")
+        print(f"[Excel解析] 标题行: {header_row}")
+        
         # 读取Excel文件
-        if file_path.endswith('.csv'):
-            df = pd.read_csv(file_path, header=header_row)
-            sheet_names = ['Sheet1']  # CSV只有一个工作表
+        if file_ext == '.csv':
+            try:
+                df = pd.read_csv(file_path, header=header_row, encoding='utf-8')
+                sheet_names = ['Sheet1']  # CSV只有一个工作表
+            except UnicodeDecodeError:
+                # 尝试其他编码
+                print(f"[Excel解析] UTF-8编码失败，尝试GBK编码")
+                df = pd.read_csv(file_path, header=header_row, encoding='gbk')
+                sheet_names = ['Sheet1']
         else:
             # 先获取所有工作表名称
-            excel_file = pd.ExcelFile(file_path)
-            sheet_names = excel_file.sheet_names
-            # 读取第一个工作表
-            df = pd.read_excel(file_path, sheet_name=sheet_names[0], header=header_row)
+            try:
+                # 尝试使用openpyxl引擎（适用于.xlsx）
+                excel_file = pd.ExcelFile(file_path, engine='openpyxl')
+                sheet_names = excel_file.sheet_names
+                print(f"[Excel解析] 工作表数量: {len(sheet_names)}")
+                print(f"[Excel解析] 工作表名称: {sheet_names}")
+                
+                # 读取第一个工作表
+                df = pd.read_excel(file_path, sheet_name=sheet_names[0], header=header_row, engine='openpyxl')
+            except Exception as e1:
+                # 如果openpyxl失败，尝试xlrd引擎（适用于.xls）
+                print(f"[Excel解析] openpyxl引擎失败: {str(e1)}")
+                print(f"[Excel解析] 尝试使用xlrd引擎")
+                try:
+                    excel_file = pd.ExcelFile(file_path, engine='xlrd')
+                    sheet_names = excel_file.sheet_names
+                    df = pd.read_excel(file_path, sheet_name=sheet_names[0], header=header_row, engine='xlrd')
+                except Exception as e2:
+                    print(f"[Excel解析] xlrd引擎也失败: {str(e2)}")
+                    # 最后尝试不指定引擎，让pandas自动选择
+                    print(f"[Excel解析] 尝试自动选择引擎")
+                    excel_file = pd.ExcelFile(file_path)
+                    sheet_names = excel_file.sheet_names
+                    df = pd.read_excel(file_path, sheet_name=sheet_names[0], header=header_row)
+        
+        # 验证数据框
+        if df is None:
+            return {
+                'success': False,
+                'error': "读取Excel文件后数据为空"
+            }
+        
+        print(f"[Excel解析] 成功读取数据")
+        print(f"[Excel解析] 行数: {len(df)}")
+        print(f"[Excel解析] 列数: {len(df.columns)}")
+        print(f"[Excel解析] 列名: {list(df.columns)}")
+        
+        # 检查是否有重复列名
+        if len(df.columns) != len(set(df.columns)):
+            print(f"[Excel解析] 警告: 检测到重复列名")
+            # pandas会自动处理重复列名，添加.1, .2等后缀
+        
+        # 检查空值情况
+        null_counts = df.isnull().sum()
+        total_nulls = null_counts.sum()
+        if total_nulls > 0:
+            print(f"[Excel解析] 空值统计: 总计 {total_nulls} 个空值")
+            for col in df.columns:
+                if null_counts[col] > 0:
+                    print(f"[Excel解析]   - {col}: {null_counts[col]} 个空值")
         
         # 获取列信息
-        columns = [
-            {
-                'index': i,
-                'name': col,
-                'type': str(df[col].dtype),
-                'sample_values': df[col].dropna().head(3).tolist()
-            }
-            for i, col in enumerate(df.columns)
-        ]
+        columns = []
+        for i, col in enumerate(df.columns):
+            try:
+                # 安全地获取样本值
+                sample_values = []
+                col_data = df[col].dropna()
+                if len(col_data) > 0:
+                    sample_values = col_data.head(3).tolist()
+                
+                columns.append({
+                    'index': i,
+                    'name': col,
+                    'type': str(df[col].dtype),
+                    'sample_values': sample_values
+                })
+            except Exception as col_error:
+                print(f"[Excel解析] 警告: 处理列 '{col}' 时出错: {str(col_error)}")
+                columns.append({
+                    'index': i,
+                    'name': col,
+                    'type': 'unknown',
+                    'sample_values': []
+                })
         
         # 智能列识别
-        detector = ColumnDetector()
-        column_analysis = detector.analyze_all_columns(df)
+        try:
+            detector = ColumnDetector()
+            column_analysis = detector.analyze_all_columns(df)
+            print(f"[Excel解析] 智能列识别完成")
+        except Exception as detect_error:
+            print(f"[Excel解析] 警告: 智能列识别失败: {str(detect_error)}")
+            column_analysis = {
+                'patent_number_column': None,
+                'claims_column': None,
+                'total_columns': len(df.columns),
+                'column_names': list(df.columns)
+            }
         
         # 转换数据为字典列表
         data = []
@@ -80,14 +172,21 @@ def parse_excel_file(file_path, header_row=0):
             }
             
             for col in df.columns:
-                value = row[col]
-                # 处理NaN值
-                if pd.isna(value):
+                try:
+                    value = row[col]
+                    # 处理各种类型的空值
+                    if pd.isna(value) or value is None or (isinstance(value, str) and value.strip() == ''):
+                        row_data['data'][col] = None
+                    else:
+                        # 安全地转换为字符串
+                        row_data['data'][col] = str(value).strip()
+                except Exception as cell_error:
+                    print(f"[Excel解析] 警告: 处理单元格 [{index}, {col}] 时出错: {str(cell_error)}")
                     row_data['data'][col] = None
-                else:
-                    row_data['data'][col] = str(value).strip()
             
             data.append(row_data)
+        
+        print(f"[Excel解析] 数据转换完成，共 {len(data)} 行")
         
         return {
             'success': True,
@@ -105,9 +204,16 @@ def parse_excel_file(file_path, header_row=0):
         }
         
     except Exception as e:
+        # 详细的错误日志
+        error_msg = f"解析Excel文件失败: {str(e)}"
+        print(f"[Excel解析] 错误: {error_msg}")
+        print(f"[Excel解析] 错误详情:\n{traceback.format_exc()}")
+        
         return {
             'success': False,
-            'error': f"解析Excel文件失败: {str(e)}"
+            'error': error_msg,
+            'error_type': type(e).__name__,
+            'file_path': file_path
         }
 
 
