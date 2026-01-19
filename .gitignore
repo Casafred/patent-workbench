@@ -74,6 +74,11 @@ tasks/*.json
 
 # User data
 users.json
+backend/user_management/users.json
+
+# User management documentation (private)
+docs/USER_MANAGEMENT_GUIDE.md
+docs/USER_MANAGEMENT_QUICK_REFERENCE.md
 
 # Temporary files
 *.tmp
