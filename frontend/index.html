@@ -832,10 +832,18 @@
             </div>
         </div>
         
+        <!-- 选项设置 -->
+        <div style="margin-top: 15px; display: flex; align-items: center;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+                <input type="checkbox" id="crawl_specification_checkbox" style="width: auto; margin-right: 8px;">
+                获取说明书字段（打开后会爬取说明书内容，否则仅爬取基本信息）
+            </label>
+        </div>
+        
         <!-- 查询按钮 -->
         <div style="margin-top: 20px; display: flex; gap: 15px;">
             <button id="search_patents_btn" class="small-button" style="background: var(--primary-color); color: white;">批量查询专利</button>
-            <button id="analyze_all_btn" class="small-button" style="background: var(--secondary-color); color: white;" disabled>一键解读全部</button>
+            <button id="analyze_all_btn" class="small-button" style="background: var(--primary-color); color: white;" disabled>一键解读全部</button>
         </div>
         
         <!-- 查询结果状态 -->
@@ -846,7 +854,10 @@
         
         <!-- 解读结果区域 -->
         <div id="analysis_results" style="margin-top: 30px;">
-            <h4>专利解读结果</h4>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h4>专利解读结果</h4>
+                <button id="export_analysis_excel_btn" class="small-button" disabled>导出为Excel</button>
+            </div>
             <div id="analysis_results_list" class="scrollable-list"></div>
         </div>
     </div>

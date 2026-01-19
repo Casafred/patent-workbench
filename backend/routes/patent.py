@@ -49,6 +49,7 @@ def search_patents():
     try:
         req_data = request.get_json()
         patent_numbers = req_data.get('patent_numbers', [])
+        crawl_specification = req_data.get('crawl_specification', False)
         
         # Handle string input
         if not isinstance(patent_numbers, list):
@@ -80,7 +81,7 @@ def search_patents():
         # Use simple scraper
         try:
             scraper = get_scraper_instance()
-            results = scraper.scrape_patents_batch(patent_numbers)
+            results = scraper.scrape_patents_batch(patent_numbers, crawl_specification=crawl_specification)
             
             # Convert results to API format
             api_results = [result.to_dict() for result in results]

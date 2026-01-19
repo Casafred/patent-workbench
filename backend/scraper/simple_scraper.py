@@ -96,12 +96,13 @@ class SimplePatentScraper:
             'Sec-Fetch-User': '?1'
         })
     
-    def scrape_patent(self, patent_number: str) -> SimplePatentResult:
+    def scrape_patent(self, patent_number: str, crawl_specification: bool = False) -> SimplePatentResult:
         """
         Scrape a single patent.
         
         Args:
             patent_number: Patent number to scrape
+            crawl_specification: Whether to crawl specification fields (claims and description)
             
         Returns:
             SimplePatentResult with scraped data
@@ -122,7 +123,7 @@ class SimplePatentScraper:
             soup = BeautifulSoup(response.text, 'lxml')
             
             # Extract data
-            patent_data = self._extract_patent_data(soup, patent_number, url)
+            patent_data = self._extract_patent_data(soup, patent_number, url, crawl_specification=crawl_specification)
             
             processing_time = time.time() - start_time
             
@@ -159,7 +160,7 @@ class SimplePatentScraper:
                 processing_time=processing_time
             )
     
-    def _extract_patent_data(self, soup: BeautifulSoup, patent_number: str, url: str) -> Optional[SimplePatentData]:
+    def _extract_patent_data(self, soup: BeautifulSoup, patent_number: str, url: str, crawl_specification: bool = False) -> Optional[SimplePatentData]:
         """Extract patent data from HTML."""
         patent_data = SimplePatentData(patent_number=patent_number, url=url)
         
@@ -262,56 +263,63 @@ class SimplePatentScraper:
                 patent_data.publication_date = pub_date.get_text().strip()
         
         # Extract claims
-        try:
-            claims = []
-            claims_section = soup.find('section', {'itemprop': 'claims'})
-            if not claims_section:
-                claims_section = soup.find('div', {'class': 'claims'})
-            
-            if claims_section:
-                claim_elements = claims_section.find_all('div', {'class': 'claim'})
-                if not claim_elements:
-                    claim_elements = claims_section.find_all('claim')
-                if not claim_elements:
-                    # Try to get all divs with claim text
-                    claim_elements = claims_section.find_all('div', {'itemprop': 'claims'})
+        if crawl_specification:
+            try:
+                claims = []
+                claims_section = soup.find('section', {'itemprop': 'claims'})
+                if not claims_section:
+                    claims_section = soup.find('div', {'class': 'claims'})
                 
-                for claim in claim_elements:
-                    claim_text = claim.get_text().strip()
-                    if claim_text and len(claim_text) > 10:
-                        claims.append(claim_text)
-            
-            patent_data.claims = claims
-        except Exception as e:
-            logger.warning(f"Error extracting claims for {patent_number}: {e}")
+                if claims_section:
+                    claim_elements = claims_section.find_all('div', {'class': 'claim'})
+                    if not claim_elements:
+                        claim_elements = claims_section.find_all('claim')
+                    if not claim_elements:
+                        # Try to get all divs with claim text
+                        claim_elements = claims_section.find_all('div', {'itemprop': 'claims'})
+                    
+                    for claim in claim_elements:
+                        claim_text = claim.get_text().strip()
+                        if claim_text and len(claim_text) > 10:
+                            claims.append(claim_text)
+                
+                patent_data.claims = claims
+            except Exception as e:
+                logger.warning(f"Error extracting claims for {patent_number}: {e}")
+                patent_data.claims = []
+        else:
             patent_data.claims = []
         
         # Extract description
-        try:
-            description = ''
-            description_section = soup.find('section', {'itemprop': 'description'})
-            if not description_section:
-                description_section = soup.find('div', {'class': 'description'})
-            
-            if description_section:
-                para_elements = description_section.find_all('p')
-                if para_elements:
-                    # Get first 10 paragraphs
-                    description = ' '.join([para.get_text().strip() for para in para_elements[:10]])
-            
-            patent_data.description = description
-        except Exception as e:
-            logger.warning(f"Error extracting description for {patent_number}: {e}")
+        if crawl_specification:
+            try:
+                description = ''
+                description_section = soup.find('section', {'itemprop': 'description'})
+                if not description_section:
+                    description_section = soup.find('div', {'class': 'description'})
+                
+                if description_section:
+                    para_elements = description_section.find_all('p')
+                    if para_elements:
+                        # Get first 10 paragraphs
+                        description = ' '.join([para.get_text().strip() for para in para_elements[:10]])
+                
+                patent_data.description = description
+            except Exception as e:
+                logger.warning(f"Error extracting description for {patent_number}: {e}")
+                patent_data.description = ''
+        else:
             patent_data.description = ''
         
         return patent_data
     
-    def scrape_patents_batch(self, patent_numbers: List[str]) -> List[SimplePatentResult]:
+    def scrape_patents_batch(self, patent_numbers: List[str], crawl_specification: bool = False) -> List[SimplePatentResult]:
         """
         Scrape multiple patents.
         
         Args:
             patent_numbers: List of patent numbers to scrape
+            crawl_specification: Whether to crawl specification fields (claims and description)
             
         Returns:
             List of SimplePatentResult objects
@@ -321,7 +329,7 @@ class SimplePatentScraper:
         for i, patent_number in enumerate(patent_numbers):
             logger.info(f"Scraping patent {i+1}/{len(patent_numbers)}: {patent_number}")
             
-            result = self.scrape_patent(patent_number)
+            result = self.scrape_patent(patent_number, crawl_specification=crawl_specification)
             results.append(result)
             
             # Add delay between requests (except for last one)

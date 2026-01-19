@@ -257,12 +257,16 @@ function initPatentBatch() {
     const clearPatentInputBtn = getEl('clear_patent_input_btn');
     const searchPatentsBtn = getEl('search_patents_btn');
     const analyzeAllBtn = getEl('analyze_all_btn');
+    const exportAnalysisExcelBtn = getEl('export_analysis_excel_btn');
     const searchStatus = getEl('search_status');
     const patentResultsList = getEl('patent_results_list');
     const analysisResultsList = getEl('analysis_results_list');
     
     // 存储专利查询结果
     let patentResults = [];
+    
+    // 存储解读结果
+    let analysisResults = [];
     
     // 实时更新专利号数量
     patentNumbersInput.addEventListener('input', () => {
@@ -289,10 +293,64 @@ function initPatentBatch() {
         patentCountDisplay.style.color = '';
         searchPatentsBtn.disabled = false;
         analyzeAllBtn.disabled = true;
+        if (exportAnalysisExcelBtn) {
+            exportAnalysisExcelBtn.disabled = true;
+        }
         patentResultsList.innerHTML = '';
         analysisResultsList.innerHTML = '';
         searchStatus.style.display = 'none';
+        patentResults = [];
+        analysisResults = [];
     });
+    
+    // 导出Excel按钮
+    if (exportAnalysisExcelBtn) {
+        exportAnalysisExcelBtn.addEventListener('click', async () => {
+            if (analysisResults.length === 0) {
+                alert('没有可导出的解读结果');
+                return;
+            }
+            
+            try {
+                // 显示导出状态
+                searchStatus.textContent = '正在导出Excel文件...';
+                searchStatus.style.display = 'block';
+                
+                // 准备导出数据
+                const exportData = analysisResults.map(result => {
+                    const patentData = result.patent_data || {};
+                    return {
+                        '专利号': result.patent_number,
+                        '标题': patentData.title || '',
+                        '摘要': patentData.abstract || '',
+                        '发明人': patentData.inventors ? patentData.inventors.join(', ') : '',
+                        '受让人': patentData.assignees ? patentData.assignees.join(', ') : '',
+                        '申请日期': patentData.application_date || '',
+                        '公开日期': patentData.publication_date || '',
+                        '权利要求': patentData.claims ? patentData.claims.join('\n') : '',
+                        '说明书': patentData.description || '',
+                        '解读结果': result.analysis_content || ''
+                    };
+                });
+                
+                // 使用XLSX库生成Excel文件
+                const ws = XLSX.utils.json_to_sheet(exportData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, '专利解读结果');
+                
+                // 导出文件
+                const filename = `专利解读结果_${new Date().toISOString().slice(0, 10)}.xlsx`;
+                XLSX.writeFile(wb, filename);
+                
+                // 更新状态
+                searchStatus.textContent = `导出成功，共导出 ${analysisResults.length} 个专利解读结果`;
+            } catch (error) {
+                console.error('导出Excel失败:', error);
+                searchStatus.textContent = `导出失败: ${error.message}`;
+                searchStatus.style.color = 'red';
+            }
+        });
+    }
     
     // 批量查询专利
     searchPatentsBtn.addEventListener('click', async () => {
@@ -311,6 +369,9 @@ function initPatentBatch() {
             return;
         }
         
+        // 获取是否需要爬取说明书的选项
+        const crawlSpecification = document.getElementById('crawl_specification_checkbox')?.checked || false;
+        
         // 清空之前的结果
         patentResultsList.innerHTML = '';
         analysisResultsList.innerHTML = '';
@@ -323,7 +384,8 @@ function initPatentBatch() {
         try {
             // 调用API查询专利
             const results = await apiCall('/patent/search', {
-                patent_numbers: uniquePatents
+                patent_numbers: uniquePatents,
+                crawl_specification: crawlSpecification
             });
             
             patentResults = results;
@@ -355,6 +417,7 @@ function initPatentBatch() {
         
         // 清空之前的解读结果
         analysisResultsList.innerHTML = '';
+        analysisResults = [];
         
         // 显示解读状态
         searchStatus.textContent = `正在解读 ${successfulResults.length} 个专利...`;
@@ -382,10 +445,22 @@ function initPatentBatch() {
                     <h5>专利 ${patent.patent_number} 解读结果</h5>
                     <div class="analysis-content">${marked.parse(analysisContent)}</div>
                 `;
+                
+                // 存储解读结果
+                analysisResults.push({
+                    patent_number: patent.patent_number,
+                    patent_data: patent.data,
+                    analysis_content: analysisContent
+                });
             }
             
             // 更新状态
             searchStatus.textContent = `解读完成，共解读 ${successfulResults.length} 个专利`;
+            
+            // 启用导出按钮
+            if (exportAnalysisExcelBtn) {
+                exportAnalysisExcelBtn.disabled = false;
+            }
         } catch (error) {
             console.error('专利解读失败:', error);
             searchStatus.textContent = `解读失败: ${error.message}`;
