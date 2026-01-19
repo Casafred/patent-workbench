@@ -137,7 +137,7 @@ def analyze_patent():
             )
         
         # Build prompt for AI analysis
-        prompt = f"请详细解读以下专利信息：\n\n"
+        prompt = f"请详细解读以下专利信息，并以JSON格式返回结构化的解读结果：\n\n"
         prompt += f"专利号: {patent_data.get('patent_number', 'N/A')}\n"
         prompt += f"标题: {patent_data.get('title', 'N/A')}\n"
         prompt += f"摘要: {patent_data.get('abstract', 'N/A')}\n"
@@ -154,10 +154,23 @@ def analyze_patent():
         else:
             prompt += "权利要求: N/A\n"
         
+        # 添加JSON格式要求
+        prompt += "\n请按照以下JSON格式返回解读结果：\n"
+        prompt += "{\n"
+        prompt += '  "technical_field": "技术领域",\n'
+        prompt += '  "innovation_points": "创新点",\n'
+        prompt += '  "technical_solution": "技术方案",\n'
+        prompt += '  "application_scenarios": "应用场景",\n'
+        prompt += '  "market_value": "市场价值",\n'
+        prompt += '  "advantages": "技术优势",\n'
+        prompt += '  "limitations": "局限性",\n'
+        prompt += '  "summary": "总结"\n'
+        prompt += "}\n"
+        
         messages = [
             {
                 "role": "system",
-                "content": "你是一位专业的专利分析师，请详细解读专利的技术内容、创新点和应用价值。"
+                "content": "你是一位专业的专利分析师，请详细解读专利的技术内容、创新点和应用价值，并严格按照要求的JSON格式返回结果。"
             },
             {
                 "role": "user",

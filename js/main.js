@@ -319,6 +319,18 @@ function initPatentBatch() {
                 // 准备导出数据
                 const exportData = analysisResults.map(result => {
                     const patentData = result.patent_data || {};
+                    
+                    // 尝试解析JSON格式的解读结果
+                    let analysisJson = {};
+                    try {
+                        analysisJson = JSON.parse(result.analysis_content || '{}');
+                    } catch (e) {
+                        // 如果不是JSON格式，保持原格式
+                        analysisJson = {
+                            summary: result.analysis_content || ''
+                        };
+                    }
+                    
                     return {
                         '专利号': result.patent_number,
                         '标题': patentData.title || '',
@@ -329,7 +341,14 @@ function initPatentBatch() {
                         '公开日期': patentData.publication_date || '',
                         '权利要求': patentData.claims ? patentData.claims.join('\n') : '',
                         '说明书': patentData.description || '',
-                        '解读结果': result.analysis_content || ''
+                        '技术领域': analysisJson.technical_field || '',
+                        '创新点': analysisJson.innovation_points || '',
+                        '技术方案': analysisJson.technical_solution || '',
+                        '应用场景': analysisJson.application_scenarios || '',
+                        '市场价值': analysisJson.market_value || '',
+                        '技术优势': analysisJson.advantages || '',
+                        '局限性': analysisJson.limitations || '',
+                        '解读总结': analysisJson.summary || result.analysis_content || ''
                     };
                 });
                 
@@ -529,31 +548,26 @@ function initPatentBatch() {
                 
                 // 权利要求
                 if (data.claims && data.claims.length > 0) {
-                    const claimsPreview = data.claims.slice(0, 3); // 只显示前3条
                     const hasMore = data.claims.length > 3;
                     
                     htmlContent += `
                         <div style="margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 5px;">
-                            <strong style="color: var(--primary-color); font-family: 'Noto Sans SC', Arial, sans-serif;">⚖️ 权利要求 (共${data.claims.length}条):</strong>
-                            <div style="margin-top: 8px; max-height: 200px; overflow-y: auto;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <strong style="color: var(--primary-color); font-family: 'Noto Sans SC', Arial, sans-serif;">⚖️ 权利要求 (共${data.claims.length}条):</strong>
+                                ${hasMore ? `<button class="small-button" onclick="toggleClaims('${result.patent_number}')" style="padding: 2px 8px; font-size: 0.8em;">展开全部</button>` : ''}
+                            </div>
+                            <div id="claims_${result.patent_number}" class="claims-container" style="max-height: ${hasMore ? '200px' : 'none'}; overflow-y: ${hasMore ? 'auto' : 'visible'};">
                     `;
                     
-                    claimsPreview.forEach((claim, index) => {
+                    data.claims.forEach((claim, index) => {
+                        const isVisible = index < 3;
                         htmlContent += `
-                            <div style="margin-bottom: 8px; padding: 8px; background-color: white; border-radius: 3px; font-size: 0.9em; font-family: 'Noto Sans SC', Arial, sans-serif;">
+                            <div class="claim-item" id="claim_${result.patent_number}_${index}" style="margin-bottom: 8px; padding: 8px; background-color: white; border-radius: 3px; font-size: 0.9em; font-family: 'Noto Sans SC', Arial, sans-serif; ${!isVisible ? 'display: none;' : ''}">
                                 <strong>权利要求 ${index + 1}:</strong><br/>
-                                ${claim.substring(0, 200)}${claim.length > 200 ? '...' : ''}
+                                ${claim}
                             </div>
                         `;
                     });
-                    
-                    if (hasMore) {
-                        htmlContent += `
-                            <div style="text-align: center; margin-top: 8px; color: #666; font-size: 0.9em;">
-                                还有 ${data.claims.length - 3} 条权利要求未显示
-                            </div>
-                        `;
-                    }
                     
                     htmlContent += `</div></div>`;
                 }
@@ -637,5 +651,45 @@ function initPatentBatch() {
         navigator.clipboard.writeText(text)
             .then(() => alert('✅ 专利信息已复制到剪贴板！'))
             .catch(() => alert('❌ 复制失败，请手动复制。'));
+    }
+}
+
+// 切换权利要求显示/隐藏
+function toggleClaims(patentNumber) {
+    const container = document.getElementById(`claims_${patentNumber}`);
+    const claimItems = document.querySelectorAll(`.claim-item[id^="claim_${patentNumber}"]`);
+    const toggleBtn = container?.parentElement?.querySelector('button');
+    
+    if (!container || !claimItems.length) return;
+    
+    let allVisible = true;
+    claimItems.forEach((item, index) => {
+        if (index >= 3 && item.style.display === 'none') {
+            allVisible = false;
+        }
+    });
+    
+    if (allVisible) {
+        // 隐藏超出部分
+        claimItems.forEach((item, index) => {
+            if (index >= 3) {
+                item.style.display = 'none';
+            }
+        });
+        container.style.maxHeight = '200px';
+        container.style.overflowY = 'auto';
+        if (toggleBtn) {
+            toggleBtn.textContent = '展开全部';
+        }
+    } else {
+        // 显示全部
+        claimItems.forEach((item) => {
+            item.style.display = 'block';
+        });
+        container.style.maxHeight = 'none';
+        container.style.overflowY = 'visible';
+        if (toggleBtn) {
+            toggleBtn.textContent = '收起';
+        }
     }
 }

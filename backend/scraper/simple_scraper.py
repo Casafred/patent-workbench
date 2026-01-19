@@ -189,6 +189,13 @@ class SimplePatentScraper:
             if title:
                 patent_data.title = title.get_text().strip()
         
+        # Clean up title - remove Google Patents suffix and patent number prefix
+        if patent_data.title:
+            patent_data.title = patent_data.title.replace(' - Google Patents', '').strip()
+            # Remove patent number prefix if present
+            patent_data.title = patent_data.title.replace(f'{patent_number} - ', '').strip()
+            patent_data.title = patent_data.title.replace(f'{patent_number}B2 - ', '').strip()
+        
         if not patent_data.abstract:
             # Try multiple selectors for abstract
             abstract = soup.find('section', {'itemprop': 'abstract'})
@@ -297,12 +304,20 @@ class SimplePatentScraper:
                 description_section = soup.find('section', {'itemprop': 'description'})
                 if not description_section:
                     description_section = soup.find('div', {'class': 'description'})
+                if not description_section:
+                    description_section = soup.find('description')
+                if not description_section:
+                    # Try to find all sections after abstract
+                    abstract_section = soup.find('section', {'itemprop': 'abstract'})
+                    if abstract_section:
+                        description_section = abstract_section.find_next_sibling()
                 
                 if description_section:
-                    para_elements = description_section.find_all('p')
-                    if para_elements:
-                        # Get first 10 paragraphs
-                        description = ' '.join([para.get_text().strip() for para in para_elements[:10]])
+                    # Get all text content from description section
+                    description = description_section.get_text(separator=' ', strip=True)
+                    # Limit description length to avoid excessive data
+                    if len(description) > 2000:
+                        description = description[:2000] + '...'
                 
                 patent_data.description = description
             except Exception as e:
