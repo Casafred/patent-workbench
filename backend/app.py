@@ -47,14 +47,6 @@ def create_app(config_class=Config):
     AuthService.init_database()
     print("✓ Database initialized")
     
-    # Initialize patent query visualization module
-    try:
-        from patent_query_visualization import initialize_module
-        initialize_module()
-        print("✓ Patent query visualization module initialized")
-    except Exception as e:
-        print(f"⚠ Patent query visualization module initialization failed: {e}")
-    
     print("\n" + "="*50)
     print("🚀 Application created successfully!")
     print("="*50 + "\n")

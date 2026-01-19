@@ -1,0 +1,14 @@
+# Development and Testing Dependencies
+# Install with: pip install -r requirements-dev.txt
+
+# Include production dependencies
+-r requirements.txt
+
+# Testing
+pytest>=7.0.0
+hypothesis>=6.0.0
+
+# Development tools (optional)
+# black
+# flake8
+# mypy
