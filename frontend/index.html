@@ -833,11 +833,14 @@
         </div>
         
         <!-- 选项设置 -->
-        <div style="margin-top: 15px; display: flex; align-items: center;">
+        <div style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;">
             <label style="display: flex; align-items: center; cursor: pointer;">
                 <input type="checkbox" id="crawl_specification_checkbox" style="width: auto; margin-right: 8px;">
                 获取说明书字段（打开后会爬取说明书内容，否则仅爬取基本信息）
             </label>
+            <div class="info" style="margin-left: 28px; font-size: 0.9em; color: #666;">
+                💡 提示：勾选此选项后，解读时会将说明书内容纳入AI分析，可获得更全面的解读结果，但会增加处理时间和token消耗。
+            </div>
         </div>
         
         <!-- 查询按钮 -->

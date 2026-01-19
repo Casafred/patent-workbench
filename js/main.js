@@ -316,21 +316,22 @@ function initPatentBatch() {
                 searchStatus.textContent = '正在导出Excel文件...';
                 searchStatus.style.display = 'block';
                 
-                // 准备导出数据
+                // 准备导出数据 - 将JSON字段拆分到各列
                 const exportData = analysisResults.map(result => {
                     const patentData = result.patent_data || {};
                     
-                    // 尝试解析JSON格式的解读结果
+                    // 解析JSON格式的解读结果
                     let analysisJson = {};
                     try {
                         analysisJson = JSON.parse(result.analysis_content || '{}');
                     } catch (e) {
-                        // 如果不是JSON格式，保持原格式
+                        // 如果不是JSON格式，将整个内容放到总结字段
                         analysisJson = {
                             summary: result.analysis_content || ''
                         };
                     }
                     
+                    // 返回扁平化的数据结构，每个字段一列
                     return {
                         '专利号': result.patent_number,
                         '标题': patentData.title || '',
@@ -339,7 +340,7 @@ function initPatentBatch() {
                         '受让人': patentData.assignees ? patentData.assignees.join(', ') : '',
                         '申请日期': patentData.application_date || '',
                         '公开日期': patentData.publication_date || '',
-                        '权利要求': patentData.claims ? patentData.claims.join('\n') : '',
+                        '权利要求': patentData.claims ? (Array.isArray(patentData.claims) ? patentData.claims.join('\n') : patentData.claims) : '',
                         '说明书': patentData.description || '',
                         '技术领域': analysisJson.technical_field || '',
                         '创新点': analysisJson.innovation_points || '',
@@ -348,12 +349,35 @@ function initPatentBatch() {
                         '市场价值': analysisJson.market_value || '',
                         '技术优势': analysisJson.advantages || '',
                         '局限性': analysisJson.limitations || '',
-                        '解读总结': analysisJson.summary || result.analysis_content || ''
+                        '解读总结': analysisJson.summary || ''
                     };
                 });
                 
                 // 使用XLSX库生成Excel文件
                 const ws = XLSX.utils.json_to_sheet(exportData);
+                
+                // 设置列宽以便更好地显示内容
+                const colWidths = [
+                    { wch: 15 },  // 专利号
+                    { wch: 30 },  // 标题
+                    { wch: 40 },  // 摘要
+                    { wch: 20 },  // 发明人
+                    { wch: 20 },  // 受让人
+                    { wch: 12 },  // 申请日期
+                    { wch: 12 },  // 公开日期
+                    { wch: 50 },  // 权利要求
+                    { wch: 50 },  // 说明书
+                    { wch: 20 },  // 技术领域
+                    { wch: 50 },  // 创新点
+                    { wch: 50 },  // 技术方案
+                    { wch: 40 },  // 应用场景
+                    { wch: 40 },  // 市场价值
+                    { wch: 40 },  // 技术优势
+                    { wch: 40 },  // 局限性
+                    { wch: 50 }   // 解读总结
+                ];
+                ws['!cols'] = colWidths;
+                
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, '专利解读结果');
                 
@@ -434,6 +458,9 @@ function initPatentBatch() {
             return;
         }
         
+        // 获取是否包含说明书的选项
+        const includeSpecification = document.getElementById('crawl_specification_checkbox')?.checked || false;
+        
         // 清空之前的解读结果
         analysisResultsList.innerHTML = '';
         analysisResults = [];
@@ -455,7 +482,8 @@ function initPatentBatch() {
                 
                 // 调用API解读专利
                 const analysisResult = await apiCall('/patent/analyze', {
-                    patent_data: patent.data
+                    patent_data: patent.data,
+                    include_specification: includeSpecification
                 });
                 
                 // 更新解读结果

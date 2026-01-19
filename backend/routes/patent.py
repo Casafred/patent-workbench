@@ -110,6 +110,7 @@ def analyze_patent():
     
     Request body:
         - patent_data: Patent data to analyze
+        - include_specification: Whether to include specification in analysis (default: False)
         - model: AI model to use (default: 'glm-4-flash')
         - temperature: Temperature parameter (default: 0.4)
     
@@ -127,6 +128,7 @@ def analyze_patent():
     try:
         req_data = request.get_json()
         patent_data = req_data.get('patent_data')
+        include_specification = req_data.get('include_specification', False)
         model = req_data.get('model', 'glm-4-flash')
         temperature = req_data.get('temperature', 0.4)
         
@@ -153,6 +155,14 @@ def analyze_patent():
             prompt += f"权利要求: {claims_text[:500]}...\n"
         else:
             prompt += "权利要求: N/A\n"
+        
+        # 如果选择包含说明书，则添加说明书内容
+        if include_specification and patent_data.get('description'):
+            description_text = patent_data.get('description', '')
+            # 限制说明书长度，避免超出token限制
+            if len(description_text) > 3000:
+                description_text = description_text[:3000] + "..."
+            prompt += f"说明书: {description_text}\n"
         
         # 添加JSON格式要求
         prompt += "\n请按照以下JSON格式返回解读结果：\n"
