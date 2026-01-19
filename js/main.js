@@ -323,8 +323,18 @@ function initPatentBatch() {
                     // 解析JSON格式的解读结果
                     let analysisJson = {};
                     try {
-                        analysisJson = JSON.parse(result.analysis_content || '{}');
+                        // 尝试清理可能的markdown代码块标记
+                        let cleanContent = (result.analysis_content || '').trim();
+                        if (cleanContent.startsWith('```json')) {
+                            cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+                        } else if (cleanContent.startsWith('```')) {
+                            cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
+                        }
+                        
+                        analysisJson = JSON.parse(cleanContent);
+                        console.log('Excel导出 - 成功解析JSON:', result.patent_number);
                     } catch (e) {
+                        console.error('Excel导出 - JSON解析失败:', result.patent_number, e);
                         // 如果不是JSON格式，将整个内容放到总结字段
                         analysisJson = {
                             summary: result.analysis_content || ''
@@ -489,31 +499,51 @@ function initPatentBatch() {
                 // 更新解读结果
                 const analysisContent = analysisResult.choices[0]?.message?.content || '解读失败';
                 
+                console.log('原始解读内容:', analysisContent); // 调试日志
+                
                 // 尝试解析JSON格式的解读结果
                 let analysisJson = {};
                 let displayContent = '';
                 try {
-                    analysisJson = JSON.parse(analysisContent);
+                    // 尝试清理可能的markdown代码块标记
+                    let cleanContent = analysisContent.trim();
+                    if (cleanContent.startsWith('```json')) {
+                        cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+                    } else if (cleanContent.startsWith('```')) {
+                        cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
+                    }
+                    
+                    analysisJson = JSON.parse(cleanContent);
+                    console.log('解析后的JSON:', analysisJson); // 调试日志
+                    
                     // 以表格形式显示JSON内容
                     displayContent = `
                         <div class="analysis-content">
                             <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
                                 <tr><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">字段</th><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">内容</th></tr>
                                 <tr><td style="border: 1px solid #ddd; padding: 8px;">技术领域</td><td style="border: 1px solid #ddd; padding: 8px;">${analysisJson.technical_field || '-'}</td></tr>
-                                <tr><td style="border: 1px solid #ddd; padding: 8px;">创新点</td><td style="border: 1px solid #ddd; padding: 8px;">${analysisJson.innovation_points || '-'}</td></tr>
-                                <tr><td style="border: 1px solid #ddd; padding: 8px;">技术方案</td><td style="border: 1px solid #ddd; padding: 8px;">${analysisJson.technical_solution || '-'}</td></tr>
-                                <tr><td style="border: 1px solid #ddd; padding: 8px;">应用场景</td><td style="border: 1px solid #ddd; padding: 8px;">${analysisJson.application_scenarios || '-'}</td></tr>
-                                <tr><td style="border: 1px solid #ddd; padding: 8px;">市场价值</td><td style="border: 1px solid #ddd; padding: 8px;">${analysisJson.market_value || '-'}</td></tr>
-                                <tr><td style="border: 1px solid #ddd; padding: 8px;">技术优势</td><td style="border: 1px solid #ddd; padding: 8px;">${analysisJson.advantages || '-'}</td></tr>
-                                <tr><td style="border: 1px solid #ddd; padding: 8px;">局限性</td><td style="border: 1px solid #ddd; padding: 8px;">${analysisJson.limitations || '-'}</td></tr>
-                                <tr><td style="border: 1px solid #ddd; padding: 8px;">总结</td><td style="border: 1px solid #ddd; padding: 8px;">${analysisJson.summary || '-'}</td></tr>
+                                <tr><td style="border: 1px solid #ddd; padding: 8px;">创新点</td><td style="border: 1px solid #ddd; padding: 8px;">${(analysisJson.innovation_points || '-').replace(/\n/g, '<br>')}</td></tr>
+                                <tr><td style="border: 1px solid #ddd; padding: 8px;">技术方案</td><td style="border: 1px solid #ddd; padding: 8px;">${(analysisJson.technical_solution || '-').replace(/\n/g, '<br>')}</td></tr>
+                                <tr><td style="border: 1px solid #ddd; padding: 8px;">应用场景</td><td style="border: 1px solid #ddd; padding: 8px;">${(analysisJson.application_scenarios || '-').replace(/\n/g, '<br>')}</td></tr>
+                                <tr><td style="border: 1px solid #ddd; padding: 8px;">市场价值</td><td style="border: 1px solid #ddd; padding: 8px;">${(analysisJson.market_value || '-').replace(/\n/g, '<br>')}</td></tr>
+                                <tr><td style="border: 1px solid #ddd; padding: 8px;">技术优势</td><td style="border: 1px solid #ddd; padding: 8px;">${(analysisJson.advantages || '-').replace(/\n/g, '<br>')}</td></tr>
+                                <tr><td style="border: 1px solid #ddd; padding: 8px;">局限性</td><td style="border: 1px solid #ddd; padding: 8px;">${(analysisJson.limitations || '-').replace(/\n/g, '<br>')}</td></tr>
+                                <tr><td style="border: 1px solid #ddd; padding: 8px;">总结</td><td style="border: 1px solid #ddd; padding: 8px;">${(analysisJson.summary || '-').replace(/\n/g, '<br>')}</td></tr>
                             </table>
                         </div>
                     `;
                 } catch (e) {
-                    // 如果不是JSON格式，保持原格式
+                    console.error('JSON解析失败:', e, '原始内容:', analysisContent); // 调试日志
+                    // 如果不是JSON格式，显示原始内容
                     displayContent = `
-                        <div class="analysis-content">${marked.parse(analysisContent)}</div>
+                        <div class="analysis-content">
+                            <div style="padding: 10px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; margin-bottom: 10px;">
+                                ⚠️ 解读结果未能解析为结构化格式，显示原始内容：
+                            </div>
+                            <div style="white-space: pre-wrap; font-family: monospace; background-color: #f5f5f5; padding: 10px; border-radius: 4px;">
+                                ${analysisContent}
+                            </div>
+                        </div>
                     `;
                 }
                 

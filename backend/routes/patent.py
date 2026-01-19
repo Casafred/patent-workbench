@@ -165,7 +165,7 @@ def analyze_patent():
             prompt += f"说明书: {description_text}\n"
         
         # 添加JSON格式要求
-        prompt += "\n请按照以下JSON格式返回解读结果：\n"
+        prompt += "\n请严格按照以下JSON格式返回解读结果（只返回JSON对象，不要添加markdown代码块标记）：\n"
         prompt += "{\n"
         prompt += '  "technical_field": "技术领域",\n'
         prompt += '  "innovation_points": "创新点",\n'
@@ -176,11 +176,12 @@ def analyze_patent():
         prompt += '  "limitations": "局限性",\n'
         prompt += '  "summary": "总结"\n'
         prompt += "}\n"
+        prompt += "\n注意：直接返回JSON对象，不要使用```json```标记包裹。\n"
         
         messages = [
             {
                 "role": "system",
-                "content": "你是一位专业的专利分析师，请详细解读专利的技术内容、创新点和应用价值，并严格按照要求的JSON格式返回结果。"
+                "content": "你是一位专业的专利分析师。你必须严格按照要求的JSON格式返回结果，不要添加任何markdown标记（如```json），只返回纯JSON对象。"
             },
             {
                 "role": "user",
