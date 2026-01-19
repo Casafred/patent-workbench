@@ -460,9 +460,38 @@ function initPatentBatch() {
                 
                 // 更新解读结果
                 const analysisContent = analysisResult.choices[0]?.message?.content || '解读失败';
+                
+                // 尝试解析JSON格式的解读结果
+                let analysisJson = {};
+                let displayContent = '';
+                try {
+                    analysisJson = JSON.parse(analysisContent);
+                    // 以表格形式显示JSON内容
+                    displayContent = `
+                        <div class="analysis-content">
+                            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                                <tr><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">字段</th><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">内容</th></tr>
+                                <tr><td style="border: 1px solid #ddd; padding: 8px;">技术领域</td><td style="border: 1px solid #ddd; padding: 8px;">${analysisJson.technical_field || '-'}</td></tr>
+                                <tr><td style="border: 1px solid #ddd; padding: 8px;">创新点</td><td style="border: 1px solid #ddd; padding: 8px;">${analysisJson.innovation_points || '-'}</td></tr>
+                                <tr><td style="border: 1px solid #ddd; padding: 8px;">技术方案</td><td style="border: 1px solid #ddd; padding: 8px;">${analysisJson.technical_solution || '-'}</td></tr>
+                                <tr><td style="border: 1px solid #ddd; padding: 8px;">应用场景</td><td style="border: 1px solid #ddd; padding: 8px;">${analysisJson.application_scenarios || '-'}</td></tr>
+                                <tr><td style="border: 1px solid #ddd; padding: 8px;">市场价值</td><td style="border: 1px solid #ddd; padding: 8px;">${analysisJson.market_value || '-'}</td></tr>
+                                <tr><td style="border: 1px solid #ddd; padding: 8px;">技术优势</td><td style="border: 1px solid #ddd; padding: 8px;">${analysisJson.advantages || '-'}</td></tr>
+                                <tr><td style="border: 1px solid #ddd; padding: 8px;">局限性</td><td style="border: 1px solid #ddd; padding: 8px;">${analysisJson.limitations || '-'}</td></tr>
+                                <tr><td style="border: 1px solid #ddd; padding: 8px;">总结</td><td style="border: 1px solid #ddd; padding: 8px;">${analysisJson.summary || '-'}</td></tr>
+                            </table>
+                        </div>
+                    `;
+                } catch (e) {
+                    // 如果不是JSON格式，保持原格式
+                    displayContent = `
+                        <div class="analysis-content">${marked.parse(analysisContent)}</div>
+                    `;
+                }
+                
                 resultItem.innerHTML = `
                     <h5>专利 ${patent.patent_number} 解读结果</h5>
-                    <div class="analysis-content">${marked.parse(analysisContent)}</div>
+                    ${displayContent}
                 `;
                 
                 // 存储解读结果
@@ -574,12 +603,11 @@ function initPatentBatch() {
                 
                 // 说明书描述
                 if (data.description) {
-                    const descPreview = data.description.substring(0, 300);
                     htmlContent += `
                         <div style="margin-top: 15px; padding: 10px; background-color: #f0f8ff; border-radius: 5px;">
-                            <strong style="color: var(--primary-color); font-family: 'Noto Sans SC', Arial, sans-serif;">📝 说明书摘录:</strong>
-                            <div style="margin-top: 8px; font-size: 0.9em; line-height: 1.6; font-family: 'Noto Sans SC', Arial, sans-serif;">
-                                ${descPreview}${data.description.length > 300 ? '...' : ''}
+                            <strong style="color: var(--primary-color); font-family: 'Noto Sans SC', Arial, sans-serif;">📝 说明书:</strong>
+                            <div style="margin-top: 8px; font-size: 0.9em; line-height: 1.6; font-family: 'Noto Sans SC', Arial, sans-serif; max-height: 300px; overflow-y: auto;">
+                                ${data.description}
                             </div>
                         </div>
                     `;

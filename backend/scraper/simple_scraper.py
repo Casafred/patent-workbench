@@ -285,10 +285,24 @@ class SimplePatentScraper:
                         # Try to get all divs with claim text
                         claim_elements = claims_section.find_all('div', {'itemprop': 'claims'})
                     
+                    # 去重处理，避免权利要求重复
+                    seen_claims = set()
                     for claim in claim_elements:
                         claim_text = claim.get_text().strip()
                         if claim_text and len(claim_text) > 10:
-                            claims.append(claim_text)
+                            # 提取权利要求编号，用于去重
+                            claim_number = None
+                            claim_lines = claim_text.split('\n')
+                            for line in claim_lines:
+                                if line.strip().startswith('权利要求'):
+                                    claim_number = line.strip()
+                                    break
+                            if not claim_number:
+                                # 如果没有权利要求编号，使用前20个字符作为标识
+                                claim_number = claim_text[:20]
+                            if claim_number not in seen_claims:
+                                seen_claims.add(claim_number)
+                                claims.append(claim_text)
                 
                 patent_data.claims = claims
             except Exception as e:
@@ -315,9 +329,9 @@ class SimplePatentScraper:
                 if description_section:
                     # Get all text content from description section
                     description = description_section.get_text(separator=' ', strip=True)
-                    # Limit description length to avoid excessive data
-                    if len(description) > 2000:
-                        description = description[:2000] + '...'
+                    # 不限制说明书长度，提取完整内容
+                    # if len(description) > 2000:
+                    #     description = description[:2000] + '...'
                 
                 patent_data.description = description
             except Exception as e:
