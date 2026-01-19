@@ -34,5 +34,3 @@ def register_blueprints(app: Flask):
     print("✓ All blueprints registered successfully")
     
     return app
-    
-    return app

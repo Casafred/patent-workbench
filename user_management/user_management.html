@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户管理系统</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #22C55E;
+            --primary-color-dark: #16A34A;
+            --bg-color: #F8FAFC;
+            --surface-color: #FFFFFF;
+            --text-color: #1E293B;
+            --text-color-secondary: #64748B;
+            --border-color: #E2E8F0;
+            --error-color: #EF4444;
+            --success-color: #22C55E;
+            --warning-color: #F59E0B;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        h1 {
+            color: var(--primary-color-dark);
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            color: var(--text-color-secondary);
+            font-size: 1.1rem;
+        }
+        
+        .card {
+            background-color: var(--surface-color);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+        
+        h2 {
+            color: var(--text-color);
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .user-list {
+            margin-top: 1rem;
+        }
+        
+        .user-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            background-color: #F1F5F9;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .user-name {
+            font-weight: 500;
+            margin-right: 1rem;
+        }
+        
+        .user-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-color-dark);
+            transform: translateY(-1px);
+        }
+        
+        .btn-danger {
+            background-color: var(--error-color);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #DC2626;
+            transform: translateY(-1px);
+        }
+        
+        .btn-outline {
+            background-color: transparent;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+        
+        .btn-outline:hover {
+            background-color: #F1F5F9;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+        
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+        }
+        
+        .form-actions {
+            margin-top: 1.5rem;
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .message {
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+        
+        .message-success {
+            background-color: #DCFCE7;
+            color: #166534;
+            border: 1px solid #BBF7D0;
+        }
+        
+        .message-error {
+            background-color: #FEF2F2;
+            color: #991B1B;
+            border: 1px solid #FECACA;
+        }
+        
+        .message-info {
+            background-color: #EFF6FF;
+            color: #1E40AF;
+            border: 1px solid #DBEAFE;
+        }
+        
+        .message-warning {
+            background-color: #FEF3C7;
+            color: #92400E;
+            border: 1px solid #FDE68A;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-color-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .btn.loading {
+            position: relative;
+            pointer-events: none;
+        }
+        
+        .btn.loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            margin-top: -10px;
+            margin-left: -10px;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        .btn.loading span {
+            visibility: hidden;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .user-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            
+            .user-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+            
+            .form-actions {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>用户管理系统</h1>
+            <p class="subtitle">实时可视化管理系统用户</p>
+        </header>
+        
+        <div class="card">
+            <h2>用户列表</h2>
+            <div id="user-list" class="user-list">
+                <!-- 用户列表将通过JavaScript动态生成 -->
+                <div class="message message-info">
+                    加载用户列表中...
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>添加新用户</h2>
+            <form id="add-user-form">
+                <div class="form-group">
+                    <label for="new-username">用户名</label>
+                    <input type="text" id="new-username" name="username" required placeholder="请输入用户名">
+                </div>
+                <div class="form-group">
+                    <label for="new-password">密码</label>
+                    <input type="password" id="new-password" name="password" required placeholder="请输入密码">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <span>添加用户</span>
+                    </button>
+                    <button type="reset" class="btn btn-outline">重置</button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="card">
+            <h2>使用说明</h2>
+            <ol>
+                <li>本界面用于实时可视化管理系统用户</li>
+                <li>添加/删除用户操作会实时更新用户配置</li>
+                <li>无需复制粘贴命令到终端执行</li>
+                <li>操作完成后，用户列表会自动刷新</li>
+                <li>用户信息存储在 <code>users.json</code> 文件中</li>
+            </ol>
+        </div>
+        
+        <footer class="footer">
+            <p>© 2026 用户管理系统 | 专利分析智能工作台</p>
+        </footer>
+    </div>
+    
+    <script>
+        // 显示消息
+        function showMessage(message, type = 'info') {
+            const container = document.createElement('div');
+            container.className = `message message-${type}`;
+            container.textContent = message;
+            
+            // 添加到页面顶部
+            const containerElement = document.querySelector('.container');
+            containerElement.insertBefore(container, containerElement.firstChild);
+            
+            // 3秒后自动移除
+            setTimeout(() => {
+                container.remove();
+            }, 3000);
+        }
+        
+        // 加载用户列表
+        function loadUsers() {
+            fetch('/api/users')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('无法加载用户列表');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        displayUsers(data.data.users);
+                    } else {
+                        throw new Error(data.error || '加载用户列表失败');
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('user-list').innerHTML = `
+                        <div class="message message-error">
+                            错误：无法加载用户列表。请确保后端服务正在运行。
+                        </div>
+                    `;
+                    console.error('加载用户列表失败:', error);
+                });
+        }
+        
+        // 显示用户列表
+        function displayUsers(users) {
+            const userList = document.getElementById('user-list');
+            
+            if (users.length === 0) {
+                userList.innerHTML = `
+                    <div class="message message-info">
+                        当前没有用户。请添加新用户。
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            users.forEach(user => {
+                html += `
+                    <div class="user-item">
+                        <div class="user-info">
+                            <span class="user-name">${user.username}</span>
+                            <span class="user-hash">密码哈希：${user.password_hash}</span>
+                        </div>
+                        <div class="user-actions">
+                            <button class="btn btn-danger" onclick="deleteUser('${user.username}')">删除</button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            userList.innerHTML = html;
+        }
+        
+        // 添加用户
+        function addUser(username, password) {
+            const addButton = document.querySelector('#add-user-form button[type="submit"]');
+            addButton.disabled = true;
+            addButton.classList.add('loading');
+            
+            fetch('/api/users', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage(data.data.message, 'success');
+                    document.getElementById('add-user-form').reset();
+                    loadUsers(); // 刷新用户列表
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            })
+            .catch(error => {
+                showMessage('添加用户失败：' + error.message, 'error');
+                console.error('添加用户失败:', error);
+            })
+            .finally(() => {
+                addButton.disabled = false;
+                addButton.classList.remove('loading');
+            });
+        }
+        
+        // 删除用户
+        function deleteUser(username) {
+            if (!confirm(`确定要删除用户 ${username} 吗？`)) {
+                return;
+            }
+            
+            fetch(`/api/users/${username}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage(data.data.message, 'success');
+                    loadUsers(); // 刷新用户列表
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            })
+            .catch(error => {
+                showMessage('删除用户失败：' + error.message, 'error');
+                console.error('删除用户失败:', error);
+            });
+        }
+        
+        // 表单提交事件处理
+        document.getElementById('add-user-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('new-username').value;
+            const password = document.getElementById('new-password').value;
+            addUser(username, password);
+        });
+        
+        // 页面加载完成后加载用户列表
+        window.onload = function() {
+            loadUsers();
+        };
+    </script>
+</body>
+</html>

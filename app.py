@@ -1257,6 +1257,68 @@ def get_processing_status(task_id):
         )
 
 @app.route('/api/claims/result/<task_id>', methods=['GET'])
+
+# --- 新增：用户管理 API ---  
+@app.route('/api/users', methods=['GET'])
+def get_users():
+    """
+    Get all users.
+    """
+    try:
+        users = load_users()
+        users_list = [{'username': username, 'password_hash': password_hash[:30] + '...'} for username, password_hash in users.items()]
+        return create_response(data={'users': users_list})
+    except Exception as e:
+        print(f"Error in get_users: {traceback.format_exc()}")
+        return create_response(error=f"获取用户列表失败: {str(e)}", status_code=500)
+
+@app.route('/api/users', methods=['POST'])
+def add_user():
+    """
+    Add a new user.
+    """
+    try:
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+        
+        if not username or not password:
+            return create_response(error="用户名和密码不能为空", status_code=400)
+        
+        users = load_users()
+        from werkzeug.security import generate_password_hash
+        users[username] = generate_password_hash(password)
+        
+        with open(USERS_FILE, 'w') as f:
+            json.dump(users, f, indent=4)
+        
+        return create_response(data={'message': f'用户 {username} 添加成功'})
+    except Exception as e:
+        print(f"Error in add_user: {traceback.format_exc()}")
+        return create_response(error=f"添加用户失败: {str(e)}", status_code=500)
+
+@app.route('/api/users/<username>', methods=['DELETE'])
+def delete_user(username):
+    """
+    Delete a user.
+    """
+    try:
+        users = load_users()
+        
+        if username not in users:
+            return create_response(error=f'用户 {username} 不存在', status_code=404)
+        
+        del users[username]
+        
+        with open(USERS_FILE, 'w') as f:
+            json.dump(users, f, indent=4)
+        
+        return create_response(data={'message': f'用户 {username} 删除成功'})
+    except Exception as e:
+        print(f"Error in delete_user: {traceback.format_exc()}")
+        return create_response(error=f"删除用户失败: {str(e)}", status_code=500)
+
+@app.route('/api/claims/result/<task_id>', methods=['GET'])
 @login_required
 def get_processing_result(task_id):
     """
