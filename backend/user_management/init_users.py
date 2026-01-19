@@ -6,9 +6,12 @@
 """
 import json
 import os
+from pathlib import Path
 from werkzeug.security import generate_password_hash
 
-USERS_FILE = 'users.json'
+# 获取脚本所在目录的绝对路径
+SCRIPT_DIR = Path(__file__).parent.absolute()
+USERS_FILE = SCRIPT_DIR / 'users.json'
 
 # 默认用户配置
 DEFAULT_USERS = {
@@ -30,7 +33,7 @@ def get_users_from_env():
 def init_users():
     """初始化用户文件"""
     # 如果文件已存在，不覆盖
-    if os.path.exists(USERS_FILE):
+    if USERS_FILE.exists():
         print(f"✅ {USERS_FILE} 已存在，跳过初始化")
         return
     

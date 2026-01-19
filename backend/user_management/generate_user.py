@@ -1,9 +1,12 @@
 # generate_user.py
 import json
 import argparse
+from pathlib import Path
 from werkzeug.security import generate_password_hash
 
-USERS_FILE = 'users.json'
+# 获取脚本所在目录的绝对路径
+SCRIPT_DIR = Path(__file__).parent.absolute()
+USERS_FILE = SCRIPT_DIR / 'users.json'
 
 def load_users():
     """加载用户数据"""
