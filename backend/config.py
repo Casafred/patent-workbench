@@ -15,7 +15,14 @@ from datetime import timedelta
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # --- 用户配置 ---
-USERS_FILE = os.path.join(BASE_DIR, 'backend', 'user_management', 'users.json')
+# Render Secret Files 会将文件放在 /etc/secrets/ 或根目录
+# 优先使用 Render 的 Secret File，否则使用本地路径
+if os.path.exists('/etc/secrets/users.json'):
+    USERS_FILE = '/etc/secrets/users.json'
+elif os.path.exists(os.path.join(BASE_DIR, 'users.json')):
+    USERS_FILE = os.path.join(BASE_DIR, 'users.json')
+else:
+    USERS_FILE = os.path.join(BASE_DIR, 'backend', 'user_management', 'users.json')
 
 # --- Flask配置 ---
 SECRET_KEY = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-key-for-local-testing-only')
