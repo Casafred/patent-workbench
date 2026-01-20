@@ -367,16 +367,25 @@ async function handleClaimsProcess() {
     }
     
     try {
+        // 构建请求体，包含专利号列参数
+        const requestBody = {
+            file_id: claimsCurrentFileId,
+            sheet_name: sheetName,
+            column_name: columnName
+        };
+        
+        // 如果选择了专利号列，添加到请求中
+        if (claimsCurrentPatentColumn) {
+            requestBody.patent_column_name = claimsCurrentPatentColumn;
+            console.log('发送专利号列参数:', claimsCurrentPatentColumn);
+        }
+        
         const response = await fetch('/api/claims/process', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                file_id: claimsCurrentFileId,
-                sheet_name: sheetName,
-                column_name: columnName
-            })
+            body: JSON.stringify(requestBody)
         });
         
         const data = await response.json();
@@ -523,49 +532,75 @@ function showClaimsPatentSummarySection(claims) {
     const summarySection = document.getElementById('claims_patent_summary_section');
     const summaryTbody = document.getElementById('claims_patent_summary_tbody');
     
-    if (summarySection && summaryTbody) {
-        // 按专利号分组
-        const patentGroups = {};
-        
-        claims.forEach(claim => {
-            const patentNumber = claim.patent_number || 'Unknown';
-            if (!patentGroups[patentNumber]) {
-                patentGroups[patentNumber] = [];
-            }
-            patentGroups[patentNumber].push(claim);
-        });
-        
-        // 填充表格
-        summaryTbody.innerHTML = '';
-        
-        Object.keys(patentGroups).forEach(patentNumber => {
-            const patentClaims = patentGroups[patentNumber];
-            // 只获取独立权利要求
-            const independentClaims = patentClaims.filter(claim => claim.claim_type === 'independent');
-            
-            // 合并独立权利要求内容
-            let mergedIndependentClaims = '';
-            independentClaims.forEach((claim, index) => {
-                if (index > 0) mergedIndependentClaims += ' ';
-                mergedIndependentClaims += claim.claim_text;
-            });
-            
-            if (mergedIndependentClaims) {
-                const row = summaryTbody.insertRow();
-                row.innerHTML = `
-                    <td>${patentNumber}</td>
-                    <td title="${mergedIndependentClaims}">${mergedIndependentClaims.substring(0, 150)}${mergedIndependentClaims.length > 150 ? '...' : ''}</td>
-                    <td>
-                        <button class="small-button" onclick="claimsJumpToVisualization('${patentNumber}')">查看引用图</button>
-                    </td>
-                `;
-            }
-        });
-        
-        // 显示视窗
-        if (Object.keys(patentGroups).length > 0) {
-            summarySection.style.display = 'block';
+    if (!summarySection || !summaryTbody) {
+        console.warn('公开号与独权合并视窗元素未找到');
+        return;
+    }
+    
+    console.log('开始构建公开号与独权合并视窗，权利要求数量:', claims.length);
+    
+    // 按专利号分组 - 使用Map确保顺序和唯一性
+    const patentGroups = new Map();
+    
+    claims.forEach((claim, index) => {
+        // 优先使用patent_number，如果没有则使用行索引作为备用标识符
+        let patentNumber = claim.patent_number;
+        if (!patentNumber || patentNumber === 'Unknown' || patentNumber.trim() === '') {
+            patentNumber = `Row_${claim.row_index !== undefined && claim.row_index !== null ? claim.row_index : index}`;
         }
+        
+        if (!patentGroups.has(patentNumber)) {
+            patentGroups.set(patentNumber, []);
+        }
+        patentGroups.get(patentNumber).push(claim);
+    });
+    
+    console.log('专利分组完成，分组数量:', patentGroups.size);
+    console.log('专利号列表:', Array.from(patentGroups.keys()));
+    
+    // 清空表格
+    summaryTbody.innerHTML = '';
+    
+    // 为每个专利创建一行
+    let rowCount = 0;
+    patentGroups.forEach((patentClaims, patentNumber) => {
+        // 只获取独立权利要求
+        const independentClaims = patentClaims.filter(claim => claim.claim_type === 'independent');
+        
+        console.log(`专利 ${patentNumber}: 总权利要求 ${patentClaims.length}, 独立权利要求 ${independentClaims.length}`);
+        
+        // 完整合并独立权利要求内容（不截断）
+        let mergedText = '';
+        if (independentClaims.length > 0) {
+            mergedText = independentClaims
+                .map(claim => claim.claim_text)
+                .join(' ');
+        } else {
+            mergedText = '无独立权利要求';
+        }
+        
+        // 创建表格行
+        const row = summaryTbody.insertRow();
+        row.innerHTML = `
+            <td class="patent-number-cell">${patentNumber}</td>
+            <td class="merged-claims-cell" title="${mergedText}">
+                <div class="merged-claims-content">${mergedText}</div>
+            </td>
+            <td class="action-cell">
+                <button class="small-button" onclick="claimsJumpToVisualization('${patentNumber}')">查看引用图</button>
+            </td>
+        `;
+        rowCount++;
+    });
+    
+    console.log('表格行创建完成，总行数:', rowCount);
+    
+    // 显示视窗
+    if (patentGroups.size > 0) {
+        summarySection.style.display = 'block';
+        console.log('公开号与独权合并视窗已显示');
+    } else {
+        console.warn('没有专利数据可显示');
     }
 }
 
@@ -1483,9 +1518,26 @@ class ClaimsD3TreeRenderer {
         // 为每个独立权利要求渲染单独的树
         independentClaims.forEach((rootClaim, treeIndex) => {
             // 构建当前独立权利要求的层次结构
-            const buildSubTree = (nodeId) => {
+            // 添加visited和depth参数防止无限递归
+            const buildSubTree = (nodeId, visited = new Set(), depth = 0) => {
+                // 防止无限递归：检查深度限制
+                if (depth > 50) {
+                    console.warn(`renderTree递归深度超过50层，终止递归: ${nodeId}`);
+                    return null;
+                }
+                
+                // 防止循环引用：检查节点是否已访问
+                if (visited.has(nodeId)) {
+                    console.warn(`renderTree检测到循环引用: ${nodeId}`);
+                    return null;
+                }
+                
                 const node = data.nodes.find(n => n.id === nodeId);
                 if (!node) return null;
+                
+                // 创建新的visited集合，包含当前节点
+                const newVisited = new Set(visited);
+                newVisited.add(nodeId);
                 
                 const children = data.links
                     .filter(link => {
@@ -1494,7 +1546,7 @@ class ClaimsD3TreeRenderer {
                     })
                     .map(link => {
                         const targetId = typeof link.target === 'object' ? link.target.id : link.target;
-                        return buildSubTree(targetId);
+                        return buildSubTree(targetId, newVisited, depth + 1);
                     })
                     .filter(child => child !== null);
                 
@@ -1505,7 +1557,7 @@ class ClaimsD3TreeRenderer {
             };
             
             // 构建当前树的根节点
-            const treeRoot = buildSubTree(rootClaim.id);
+            const treeRoot = buildSubTree(rootClaim.id, new Set(), 0);
             if (!treeRoot) return;
             
             // 创建层次结构
@@ -1755,6 +1807,24 @@ class ClaimsD3TreeRenderer {
     buildHierarchy(data) {
         console.log('构建层次结构数据:', data);
         
+        // 验证引用有效性
+        const nodeIds = new Set(data.nodes.map(node => node.id));
+        const invalidLinks = data.links.filter(link => {
+            const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
+            const targetId = typeof link.target === 'object' ? link.target.id : link.target;
+            return !nodeIds.has(sourceId) || !nodeIds.has(targetId);
+        });
+        
+        if (invalidLinks.length > 0) {
+            console.warn('检测到无效引用:', invalidLinks);
+            // 过滤掉无效的连接
+            data.links = data.links.filter(link => {
+                const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
+                const targetId = typeof link.target === 'object' ? link.target.id : link.target;
+                return nodeIds.has(sourceId) && nodeIds.has(targetId);
+            });
+        }
+        
         // 找到所有独立权利要求作为根节点
         const independentClaims = data.nodes.filter(node => node.claim_type === 'independent');
         console.log('独立权利要求:', independentClaims);
@@ -1764,7 +1834,24 @@ class ClaimsD3TreeRenderer {
         console.log('根节点:', rootNodes);
         
         // 构建子节点（从属权利要求）
-        const buildChildren = (nodeId) => {
+        // 添加visited和depth参数防止无限递归
+        const buildChildren = (nodeId, visited = new Set(), depth = 0) => {
+            // 防止无限递归：检查深度限制
+            if (depth > 50) {
+                console.warn(`递归深度超过50层，终止递归: ${nodeId}`);
+                return null;
+            }
+            
+            // 防止循环引用：检查节点是否已访问
+            if (visited.has(nodeId)) {
+                console.warn(`检测到循环引用: ${nodeId}`);
+                return null;
+            }
+            
+            // 创建新的visited集合，包含当前节点
+            const newVisited = new Set(visited);
+            newVisited.add(nodeId);
+            
             const children = data.links
                 .filter(link => {
                     // 处理source可能是字符串ID或对象引用的情况
@@ -1778,7 +1865,7 @@ class ClaimsD3TreeRenderer {
                     if (childNode) {
                         return {
                             ...childNode,
-                            children: buildChildren(childNode.id)
+                            children: buildChildren(childNode.id, newVisited, depth + 1)
                         };
                     }
                     return null;
@@ -1791,7 +1878,7 @@ class ClaimsD3TreeRenderer {
         // 为每个独立权利要求构建完整的层次结构
         const hierarchyNodes = rootNodes.map(root => ({
             ...root,
-            children: buildChildren(root.id)
+            children: buildChildren(root.id, new Set(), 0)
         }));
         
         console.log('层次结构节点:', hierarchyNodes);
