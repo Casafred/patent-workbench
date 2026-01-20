@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>用户管理系统 - 增强版</title>
+    <title>用户管理系统 - 增强版 v3.0（支持备注和时间）</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
@@ -124,12 +124,11 @@
         
         .user-item {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem;
+            flex-direction: column;
+            padding: 1.5rem;
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            margin-bottom: 0.75rem;
+            margin-bottom: 1rem;
             background: linear-gradient(to right, #F8FAFC 0%, #FFFFFF 100%);
             transition: all 0.3s ease;
         }
@@ -139,21 +138,67 @@
             transform: translateY(-2px);
         }
         
+        .user-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+        
         .user-info {
             flex: 1;
         }
         
         .user-name {
             font-weight: 600;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        .user-meta {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 0.75rem;
+            flex-wrap: wrap;
+        }
+        
+        .user-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-color-secondary);
+        }
+        
+        .user-meta-icon {
+            font-size: 1rem;
+        }
+        
+        .user-note {
+            background-color: #FEF3C7;
+            padding: 0.75rem;
+            border-radius: 6px;
+            border-left: 3px solid var(--warning-color);
+            margin-top: 0.75rem;
+            font-size: 0.9rem;
+            color: #78350F;
+        }
+        
+        .user-note-label {
+            font-weight: 600;
             margin-bottom: 0.25rem;
         }
         
         .user-hash {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: var(--text-color-secondary);
             font-family: 'Courier New', monospace;
+            background-color: #F1F5F9;
+            padding: 0.5rem;
+            border-radius: 4px;
+            margin-top: 0.5rem;
+            word-break: break-all;
         }
         
         .user-actions {
@@ -442,7 +487,7 @@
     <div class="container">
         <header>
             <h1>🔐 用户管理系统</h1>
-            <p class="subtitle">增强版 - 直接读写 users.json 文件</p>
+            <p class="subtitle">增强版 v3.0 - 支持备注和注册时间</p>
         </header>
         
         <div class="card">
@@ -488,12 +533,16 @@
             <h2>➕ 添加新用户</h2>
             <form id="add-user-form">
                 <div class="form-group">
-                    <label for="new-username">用户名</label>
+                    <label for="new-username">用户名 *</label>
                     <input type="text" id="new-username" name="username" required placeholder="请输入用户名（例如：admin）">
                 </div>
                 <div class="form-group">
-                    <label for="new-password">密码</label>
+                    <label for="new-password">密码 *</label>
                     <input type="password" id="new-password" name="password" required placeholder="请输入密码">
+                </div>
+                <div class="form-group">
+                    <label for="new-note">个人信息备注</label>
+                    <input type="text" id="new-note" name="note" placeholder="例如：张三 - 研发部门 - 高级工程师">
                 </div>
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">✓ 添加用户</button>
@@ -505,41 +554,75 @@
         <div class="card">
             <h2>💾 保存更改</h2>
             <p style="margin-bottom: 1rem; color: var(--text-color-secondary);">
-                将当前用户数据保存为 users.json 文件，然后替换到项目目录
+                根据用途选择不同的导出格式
             </p>
-            <div class="form-actions">
-                <button type="button" class="btn btn-primary" onclick="saveToFile()">💾 下载 users.json</button>
-                <button type="button" class="btn btn-secondary" onclick="copyToClipboard()">📋 复制JSON到剪贴板</button>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <h3 style="font-size: 1.1rem; margin-bottom: 0.75rem; color: var(--text-color);">📦 本地管理版（含备注和时间）</h3>
+                <p style="font-size: 0.9rem; color: var(--text-color-secondary); margin-bottom: 1rem;">
+                    包含完整信息，用于本地可视化管理和备份
+                </p>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-primary" onclick="saveToFileWithMetadata()">💾 下载完整版 users_full.json</button>
+                    <button type="button" class="btn btn-secondary" onclick="copyToClipboardWithMetadata()">📋 复制完整版JSON</button>
+                </div>
             </div>
+            
+            <div style="border-top: 2px solid var(--border-color); padding-top: 1.5rem;">
+                <h3 style="font-size: 1.1rem; margin-bottom: 0.75rem; color: var(--text-color);">🚀 部署版（纯净格式）</h3>
+                <p style="font-size: 0.9rem; color: var(--text-color-secondary); margin-bottom: 1rem;">
+                    仅包含用户名和密码哈希，用于 Render Secret Files 上传
+                </p>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-primary" onclick="saveToFile()">💾 下载部署版 users.json</button>
+                    <button type="button" class="btn btn-secondary" onclick="copyToClipboard()">📋 复制部署版JSON</button>
+                </div>
+            </div>
+            
             <div class="help-text">
-                💡 提示：下载后，将文件替换到 <code>backend/user_management/users.json</code>
+                💡 提示：
+                <ul style="margin: 0.5rem 0 0 1.5rem;">
+                    <li><strong>本地管理</strong>：使用完整版，保留所有备注和时间信息</li>
+                    <li><strong>Render 部署</strong>：使用部署版，上传到 Secret Files</li>
+                </ul>
             </div>
         </div>
         
         <div class="card">
             <h2>📖 使用说明</h2>
             <ol>
-                <li><strong>导入文件</strong>：点击或拖拽 <code>backend/user_management/users.json</code> 到导入区域</li>
-                <li><strong>查看用户</strong>：导入后自动显示所有现有用户</li>
-                <li><strong>添加用户</strong>：在"添加新用户"区域输入用户名和密码</li>
+                <li><strong>导入文件</strong>：点击或拖拽 <code>users.json</code> 或 <code>users_full.json</code> 到导入区域</li>
+                <li><strong>查看用户</strong>：导入后自动显示所有现有用户、注册时间和备注</li>
+                <li><strong>添加用户</strong>：在"添加新用户"区域输入用户名、密码和备注（可选）</li>
                 <li><strong>删除用户</strong>：在用户列表中点击"删除"按钮</li>
-                <li><strong>保存更改</strong>：点击"下载 users.json"保存修改</li>
-                <li><strong>应用更改</strong>：将下载的文件替换回 <code>backend/user_management/users.json</code></li>
+                <li><strong>保存更改</strong>：
+                    <ul style="margin-top: 0.5rem;">
+                        <li><strong>本地管理</strong>：下载 <code>users_full.json</code>（含备注和时间）</li>
+                        <li><strong>Render 部署</strong>：下载 <code>users.json</code>（纯净格式）</li>
+                    </ul>
+                </li>
             </ol>
             <div class="help-text">
-                ⚠️ 注意：密码使用 PBKDF2-SHA256 算法加密，与后端完全兼容
+                ⚠️ 注意：
+                <ul style="margin: 0.5rem 0 0 1.5rem;">
+                    <li>密码使用 PBKDF2-SHA256 算法加密</li>
+                    <li><strong>部署版</strong>仅包含 <code>{"username": "hash"}</code> 格式</li>
+                    <li><strong>完整版</strong>包含备注和时间，用于本地管理</li>
+                    <li>两个版本都可以被系统正确识别和使用</li>
+                </ul>
             </div>
         </div>
         
         <footer class="footer">
             <p>© 2026 用户管理系统 | 专利分析智能工作台</p>
-            <p style="margin-top: 0.5rem; font-size: 0.85rem;">增强版 v2.0 - 支持直接读写 users.json</p>
+            <p style="margin-top: 0.5rem; font-size: 0.85rem;">增强版 v3.0 - 支持备注和注册时间</p>
         </footer>
     </div>
     
     <script>
         // 全局变量
         let users = {};
+        let userMetadata = {}; // 存储用户元数据（备注、注册时间等）
         let currentFile = null;
         let currentFileName = '';
         
@@ -619,15 +702,33 @@
             
             let html = '';
             for (const [username, passwordHash] of Object.entries(users)) {
+                const metadata = userMetadata[username] || {};
+                const note = metadata.note || '';
+                const createdAt = metadata.createdAt || '未知';
                 const shortHash = passwordHash.substring(0, 50) + '...';
+                
                 html += `
                     <div class="user-item">
-                        <div class="user-info">
-                            <div class="user-name">👤 ${username}</div>
-                            <div class="user-hash">${shortHash}</div>
-                        </div>
-                        <div class="user-actions">
-                            <button class="btn btn-danger" onclick="deleteUser('${username}')">🗑️ 删除</button>
+                        <div class="user-header">
+                            <div class="user-info">
+                                <div class="user-name">👤 ${username}</div>
+                                <div class="user-meta">
+                                    <div class="user-meta-item">
+                                        <span class="user-meta-icon">📅</span>
+                                        <span>注册时间: ${createdAt}</span>
+                                    </div>
+                                </div>
+                                ${note ? `
+                                <div class="user-note">
+                                    <div class="user-note-label">📝 个人信息备注：</div>
+                                    <div>${note}</div>
+                                </div>
+                                ` : ''}
+                                <div class="user-hash">密码哈希: ${shortHash}</div>
+                            </div>
+                            <div class="user-actions">
+                                <button class="btn btn-danger" onclick="deleteUser('${username}')">🗑️ 删除</button>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -678,7 +779,26 @@
             reader.onload = (e) => {
                 try {
                     const data = JSON.parse(e.target.result);
-                    users = data;
+                    
+                    // 检查是否是新格式（包含metadata）
+                    if (data.users && data.metadata) {
+                        users = data.users;
+                        userMetadata = data.metadata;
+                    } else {
+                        // 旧格式，只有用户名和密码哈希
+                        users = data;
+                        userMetadata = {};
+                        // 为旧用户创建默认元数据
+                        for (const username of Object.keys(users)) {
+                            if (!userMetadata[username]) {
+                                userMetadata[username] = {
+                                    createdAt: '导入时未记录',
+                                    note: ''
+                                };
+                            }
+                        }
+                    }
+                    
                     currentFile = file;
                     currentFileName = file.name;
                     
@@ -697,7 +817,7 @@
         }
         
         // 添加用户
-        async function addUser(username, password) {
+        async function addUser(username, password, note = '') {
             if (!username || !password) {
                 showMessage('用户名和密码不能为空', 'error');
                 return;
@@ -712,6 +832,20 @@
             try {
                 const passwordHash = await generatePasswordHash(password);
                 users[username] = passwordHash;
+                
+                // 添加元数据
+                userMetadata[username] = {
+                    createdAt: new Date().toLocaleString('zh-CN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    }),
+                    note: note || ''
+                };
+                
                 displayUsers();
                 showMessage(`用户 ${username} 添加成功！请记得保存文件。`, 'success');
                 document.getElementById('add-user-form').reset();
@@ -728,17 +862,19 @@
             }
             
             delete users[username];
+            delete userMetadata[username];
             displayUsers();
             showMessage(`用户 ${username} 删除成功！请记得保存文件。`, 'success');
         }
         
-        // 保存到文件
+        // 保存到文件（部署版 - 纯净格式）
         function saveToFile() {
             if (Object.keys(users).length === 0) {
                 showMessage('没有用户数据可保存', 'warning');
                 return;
             }
             
+            // 仅包含用户名和密码哈希
             const jsonStr = JSON.stringify(users, null, 4);
             const blob = new Blob([jsonStr], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
@@ -750,19 +886,72 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
             
-            showMessage('users.json 已下载！请替换到 backend/user_management/users.json', 'success');
+            showMessage('部署版 users.json 已下载！可直接上传到 Render Secret Files', 'success');
         }
         
-        // 复制到剪贴板
+        // 保存到文件（完整版 - 含元数据）
+        function saveToFileWithMetadata() {
+            if (Object.keys(users).length === 0) {
+                showMessage('没有用户数据可保存', 'warning');
+                return;
+            }
+            
+            // 创建包含元数据的完整数据结构
+            const fullData = {
+                users: users,
+                metadata: userMetadata,
+                version: '3.0',
+                exportedAt: new Date().toISOString()
+            };
+            
+            const jsonStr = JSON.stringify(fullData, null, 4);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'users_full.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showMessage('完整版 users_full.json 已下载！用于本地管理和备份', 'success');
+        }
+        
+        // 复制到剪贴板（部署版 - 纯净格式）
         function copyToClipboard() {
             if (Object.keys(users).length === 0) {
                 showMessage('没有用户数据可复制', 'warning');
                 return;
             }
             
+            // 仅包含用户名和密码哈希
             const jsonStr = JSON.stringify(users, null, 4);
             navigator.clipboard.writeText(jsonStr).then(() => {
-                showMessage('JSON 数据已复制到剪贴板！', 'success');
+                showMessage('部署版 JSON 已复制到剪贴板！可直接粘贴到 Render Secret Files', 'success');
+            }).catch(err => {
+                showMessage('复制失败：' + err.message, 'error');
+            });
+        }
+        
+        // 复制到剪贴板（完整版 - 含元数据）
+        function copyToClipboardWithMetadata() {
+            if (Object.keys(users).length === 0) {
+                showMessage('没有用户数据可复制', 'warning');
+                return;
+            }
+            
+            // 创建包含元数据的完整数据结构
+            const fullData = {
+                users: users,
+                metadata: userMetadata,
+                version: '3.0',
+                exportedAt: new Date().toISOString()
+            };
+            
+            const jsonStr = JSON.stringify(fullData, null, 4);
+            navigator.clipboard.writeText(jsonStr).then(() => {
+                showMessage('完整版 JSON 已复制到剪贴板！', 'success');
             }).catch(err => {
                 showMessage('复制失败：' + err.message, 'error');
             });
@@ -773,7 +962,8 @@
             e.preventDefault();
             const username = document.getElementById('new-username').value.trim();
             const password = document.getElementById('new-password').value;
-            await addUser(username, password);
+            const note = document.getElementById('new-note').value.trim();
+            await addUser(username, password, note);
         });
         
         // 页面加载

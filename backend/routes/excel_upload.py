@@ -306,10 +306,22 @@ def upload_excel_file():
             )
         
         # 生成安全的文件名
+        # 处理中文文件名：先提取扩展名，再生成安全文件名
+        original_filename = file.filename
+        file_ext = os.path.splitext(original_filename)[1].lower()  # 获取扩展名（如 .xlsx）
+        
+        # 使用secure_filename处理文件名
+        safe_name = secure_filename(original_filename)
+        
+        # 如果secure_filename删除了所有字符（纯中文文件名），使用时间戳作为文件名
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = secure_filename(file.filename)
-        name, ext = os.path.splitext(filename)
-        safe_filename = f"{timestamp}_{name}{ext}"
+        if not safe_name or safe_name == file_ext.lstrip('.'):
+            safe_filename = f"{timestamp}{file_ext}"
+        else:
+            # 确保文件名有正确的扩展名
+            if not safe_name.endswith(file_ext):
+                safe_name = os.path.splitext(safe_name)[0] + file_ext
+            safe_filename = f"{timestamp}_{safe_name}"
         
         # 保存文件
         file_path = os.path.join(UPLOAD_FOLDER, safe_filename)

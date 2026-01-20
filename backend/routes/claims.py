@@ -163,9 +163,24 @@ def upload_claims_file():
             )
         
         # Save file with timestamp
-        filename = secure_filename(file.filename)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        unique_filename = f"{timestamp}_{filename}"
+        # 处理中文文件名：先提取扩展名，再生成安全文件名
+        original_filename = file.filename
+        file_ext = os.path.splitext(original_filename)[1].lower()  # 获取扩展名（如 .xlsx）
+        
+        # 使用secure_filename处理文件名
+        safe_name = secure_filename(original_filename)
+        
+        # 如果secure_filename删除了所有字符（纯中文文件名），使用时间戳作为文件名
+        if not safe_name or safe_name == file_ext.lstrip('.'):
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            unique_filename = f"{timestamp}{file_ext}"
+        else:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            # 确保文件名有正确的扩展名
+            if not safe_name.endswith(file_ext):
+                safe_name = os.path.splitext(safe_name)[0] + file_ext
+            unique_filename = f"{timestamp}_{safe_name}"
+        
         file_path = os.path.join(UPLOAD_FOLDER, unique_filename)
         file.save(file_path)
         
@@ -188,7 +203,7 @@ def upload_claims_file():
             return create_response(data={
                 'file_id': unique_filename,
                 'file_path': file_path,
-                'original_filename': filename,
+                'original_filename': original_filename,  # 使用原始文件名
                 'sheet_names': sheet_names,
                 'columns': columns,
                 'message': '文件上传成功'

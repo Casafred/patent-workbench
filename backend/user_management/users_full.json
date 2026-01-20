@@ -1,0 +1,13 @@
+{
+    "users": {
+        "sdh": "pbkdf2:sha256:260000$c8173da6e7a033ddc0f001588f800392$54c81a1f31ccdf7df23a146fafbbad2d775ae3f5a01fa91419e6627367ac5920"
+    },
+    "metadata": {
+        "sdh": {
+            "createdAt": "2026/01/20 21:30:51",
+            "note": "开发者"
+        }
+    },
+    "version": "3.0",
+    "exportedAt": "2026-01-20T13:39:07.673Z"
+}

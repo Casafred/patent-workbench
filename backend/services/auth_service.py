@@ -19,14 +19,25 @@ class AuthService:
         """
         Load users from JSON file.
         
+        Supports both formats:
+        - Deploy format: {"username": "password_hash"}
+        - Full format: {"users": {...}, "metadata": {...}}
+        
         Returns:
             dict: Dictionary of username -> password_hash
         """
         try:
-            with open(USERS_FILE, 'r') as f:
-                return json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            print("警告：'users.json' 文件未找到或格式错误。将无法登录。")
+            with open(USERS_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                
+                # Check if it's the full format with metadata
+                if isinstance(data, dict) and 'users' in data:
+                    return data['users']
+                else:
+                    # Deploy format, return as is
+                    return data
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            print(f"警告：'users.json' 文件未找到或格式错误。将无法登录。错误: {e}")
             return {}
     
     @staticmethod
