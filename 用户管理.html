@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户管理系统 - 增强版</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #22C55E;
+            --primary-color-dark: #16A34A;
+            --bg-color: #F8FAFC;
+            --surface-color: #FFFFFF;
+            --text-color: #1E293B;
+            --text-color-secondary: #64748B;
+            --border-color: #E2E8F0;
+            --error-color: #EF4444;
+            --success-color: #22C55E;
+            --warning-color: #F59E0B;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color-dark) 100%);
+            border-radius: 12px;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+        
+        .card {
+            background-color: var(--surface-color);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+        
+        h2 {
+            color: var(--text-color);
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        h2::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background-color: var(--primary-color);
+            border-radius: 2px;
+        }
+        
+        .file-upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            background-color: #F8FAFC;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .file-upload-area:hover {
+            border-color: var(--primary-color);
+            background-color: #F0FDF4;
+        }
+        
+        .file-upload-area.dragover {
+            border-color: var(--primary-color);
+            background-color: #DCFCE7;
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .user-list {
+            margin-top: 1rem;
+        }
+        
+        .user-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            background: linear-gradient(to right, #F8FAFC 0%, #FFFFFF 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .user-item:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .user-info {
+            flex: 1;
+        }
+        
+        .user-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--text-color);
+            margin-bottom: 0.25rem;
+        }
+        
+        .user-hash {
+            font-size: 0.85rem;
+            color: var(--text-color-secondary);
+            font-family: 'Courier New', monospace;
+        }
+        
+        .user-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-color-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(34, 197, 94, 0.3);
+        }
+        
+        .btn-danger {
+            background-color: var(--error-color);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #DC2626;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+        }
+        
+        .btn-outline {
+            background-color: transparent;
+            color: var(--text-color);
+            border: 2px solid var(--border-color);
+        }
+        
+        .btn-outline:hover {
+            background-color: #F1F5F9;
+            border-color: var(--primary-color);
+        }
+        
+        .btn-secondary {
+            background-color: #64748B;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #475569;
+            transform: translateY(-2px);
+        }
+        
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-color);
+            font-size: 0.95rem;
+        }
+        
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+        
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+        }
+        
+        .form-actions {
+            margin-top: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .message {
+            padding: 1rem 1.25rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .message::before {
+            content: '';
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        
+        .message-success {
+            background-color: #DCFCE7;
+            color: #166534;
+            border: 1px solid #BBF7D0;
+        }
+        
+        .message-success::before {
+            background-color: #22C55E;
+        }
+        
+        .message-error {
+            background-color: #FEF2F2;
+            color: #991B1B;
+            border: 1px solid #FECACA;
+        }
+        
+        .message-error::before {
+            background-color: #EF4444;
+        }
+        
+        .message-info {
+            background-color: #EFF6FF;
+            color: #1E40AF;
+            border: 1px solid #DBEAFE;
+        }
+        
+        .message-info::before {
+            background-color: #3B82F6;
+        }
+        
+        .message-warning {
+            background-color: #FEF3C7;
+            color: #92400E;
+            border: 1px solid #FDE68A;
+        }
+        
+        .message-warning::before {
+            background-color: #F59E0B;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .stat-card {
+            flex: 1;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%);
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-color-secondary);
+            margin-top: 0.25rem;
+        }
+        
+        .help-text {
+            background-color: #F8FAFC;
+            padding: 1rem;
+            border-radius: 6px;
+            border-left: 4px solid var(--primary-color);
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: var(--text-color-secondary);
+        }
+        
+        code {
+            background-color: #F1F5F9;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: var(--primary-color-dark);
+        }
+        
+        ol, ul {
+            margin-left: 1.5rem;
+            line-height: 1.8;
+        }
+        
+        li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding-top: 1.5rem;
+            border-top: 2px solid var(--border-color);
+            color: var(--text-color-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .file-path {
+            background-color: #F1F5F9;
+            padding: 0.75rem;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: var(--primary-color-dark);
+            margin-top: 0.5rem;
+            word-break: break-all;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .card {
+                padding: 1.25rem;
+            }
+            
+            .user-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+            
+            .user-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+            
+            .form-actions {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+            
+            .stats {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔐 用户管理系统</h1>
+            <p class="subtitle">增强版 - 直接读写 users.json 文件</p>
+        </header>
+        
+        <div class="card">
+            <h2>📂 导入 users.json 文件</h2>
+            <div class="file-upload-area" id="file-upload-area">
+                <div class="upload-icon">📁</div>
+                <p style="font-size: 1.1rem; margin-bottom: 0.5rem;">点击或拖拽 users.json 文件到这里</p>
+                <p style="color: var(--text-color-secondary); font-size: 0.9rem;">支持从 backend/user_management/users.json 导入</p>
+                <input type="file" id="file-input" accept=".json">
+            </div>
+            <div id="file-info" style="display: none; margin-top: 1rem;">
+                <div class="message message-success">
+                    <span>✓ 已加载文件：<strong id="file-name"></strong></span>
+                </div>
+                <div class="file-path" id="file-path"></div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>📊 用户统计</h2>
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="user-count">0</div>
+                    <div class="stat-label">总用户数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="file-status">未加载</div>
+                    <div class="stat-label">文件状态</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>👥 用户列表</h2>
+            <div id="user-list" class="user-list">
+                <div class="message message-info">
+                    请先导入 users.json 文件...
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>➕ 添加新用户</h2>
+            <form id="add-user-form">
+                <div class="form-group">
+                    <label for="new-username">用户名</label>
+                    <input type="text" id="new-username" name="username" required placeholder="请输入用户名（例如：admin）">
+                </div>
+                <div class="form-group">
+                    <label for="new-password">密码</label>
+                    <input type="password" id="new-password" name="password" required placeholder="请输入密码">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">✓ 添加用户</button>
+                    <button type="reset" class="btn btn-outline">↻ 重置</button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="card">
+            <h2>💾 保存更改</h2>
+            <p style="margin-bottom: 1rem; color: var(--text-color-secondary);">
+                将当前用户数据保存为 users.json 文件，然后替换到项目目录
+            </p>
+            <div class="form-actions">
+                <button type="button" class="btn btn-primary" onclick="saveToFile()">💾 下载 users.json</button>
+                <button type="button" class="btn btn-secondary" onclick="copyToClipboard()">📋 复制JSON到剪贴板</button>
+            </div>
+            <div class="help-text">
+                💡 提示：下载后，将文件替换到 <code>backend/user_management/users.json</code>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>📖 使用说明</h2>
+            <ol>
+                <li><strong>导入文件</strong>：点击或拖拽 <code>backend/user_management/users.json</code> 到导入区域</li>
+                <li><strong>查看用户</strong>：导入后自动显示所有现有用户</li>
+                <li><strong>添加用户</strong>：在"添加新用户"区域输入用户名和密码</li>
+                <li><strong>删除用户</strong>：在用户列表中点击"删除"按钮</li>
+                <li><strong>保存更改</strong>：点击"下载 users.json"保存修改</li>
+                <li><strong>应用更改</strong>：将下载的文件替换回 <code>backend/user_management/users.json</code></li>
+            </ol>
+            <div class="help-text">
+                ⚠️ 注意：密码使用 PBKDF2-SHA256 算法加密，与后端完全兼容
+            </div>
+        </div>
+        
+        <footer class="footer">
+            <p>© 2026 用户管理系统 | 专利分析智能工作台</p>
+            <p style="margin-top: 0.5rem; font-size: 0.85rem;">增强版 v2.0 - 支持直接读写 users.json</p>
+        </footer>
+    </div>
+    
+    <script>
+        // 全局变量
+        let users = {};
+        let currentFile = null;
+        let currentFileName = '';
+        
+        // PBKDF2-SHA256 密码哈希函数
+        async function generatePasswordHash(password) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            
+            const salt = crypto.getRandomValues(new Uint8Array(16));
+            const saltHex = Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join('');
+            
+            const keyMaterial = await crypto.subtle.importKey(
+                'raw',
+                data,
+                'PBKDF2',
+                false,
+                ['deriveBits']
+            );
+            
+            const hashBuffer = await crypto.subtle.deriveBits(
+                {
+                    name: 'PBKDF2',
+                    salt: salt,
+                    iterations: 260000,
+                    hash: 'SHA-256'
+                },
+                keyMaterial,
+                256
+            );
+            
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            
+            return `pbkdf2:sha256:260000$${saltHex}$${hashHex}`;
+        }
+        
+        // 显示消息
+        function showMessage(message, type = 'info') {
+            const existingMessages = document.querySelectorAll('.message');
+            existingMessages.forEach(msg => {
+                if (msg.parentElement.className === 'container') {
+                    msg.remove();
+                }
+            });
+            
+            const container = document.createElement('div');
+            container.className = `message message-${type}`;
+            container.textContent = message;
+            
+            const containerElement = document.querySelector('.container');
+            containerElement.insertBefore(container, containerElement.firstChild);
+            
+            setTimeout(() => {
+                container.remove();
+            }, 5000);
+        }
+        
+        // 更新统计
+        function updateStats() {
+            document.getElementById('user-count').textContent = Object.keys(users).length;
+            document.getElementById('file-status').textContent = currentFileName ? '已加载' : '未加载';
+        }
+        
+        // 显示用户列表
+        function displayUsers() {
+            const userList = document.getElementById('user-list');
+            
+            if (Object.keys(users).length === 0) {
+                userList.innerHTML = `
+                    <div class="message message-info">
+                        ${currentFileName ? '当前文件中没有用户。请添加新用户。' : '请先导入 users.json 文件...'}
+                    </div>
+                `;
+                updateStats();
+                return;
+            }
+            
+            let html = '';
+            for (const [username, passwordHash] of Object.entries(users)) {
+                const shortHash = passwordHash.substring(0, 50) + '...';
+                html += `
+                    <div class="user-item">
+                        <div class="user-info">
+                            <div class="user-name">👤 ${username}</div>
+                            <div class="user-hash">${shortHash}</div>
+                        </div>
+                        <div class="user-actions">
+                            <button class="btn btn-danger" onclick="deleteUser('${username}')">🗑️ 删除</button>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            userList.innerHTML = html;
+            updateStats();
+        }
+        
+        // 文件上传处理
+        const fileInput = document.getElementById('file-input');
+        const fileUploadArea = document.getElementById('file-upload-area');
+        
+        fileUploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            handleFile(e.target.files[0]);
+        });
+        
+        // 拖拽上传
+        fileUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUploadArea.classList.add('dragover');
+        });
+        
+        fileUploadArea.addEventListener('dragleave', () => {
+            fileUploadArea.classList.remove('dragover');
+        });
+        
+        fileUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUploadArea.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0]);
+        });
+        
+        // 处理文件
+        function handleFile(file) {
+            if (!file) return;
+            
+            if (!file.name.endsWith('.json')) {
+                showMessage('请选择 JSON 文件', 'error');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    users = data;
+                    currentFile = file;
+                    currentFileName = file.name;
+                    
+                    document.getElementById('file-info').style.display = 'block';
+                    document.getElementById('file-name').textContent = file.name;
+                    document.getElementById('file-path').textContent = file.webkitRelativePath || file.name;
+                    
+                    displayUsers();
+                    showMessage(`成功加载 ${file.name}，共 ${Object.keys(users).length} 个用户`, 'success');
+                } catch (error) {
+                    showMessage('JSON 文件格式错误：' + error.message, 'error');
+                    console.error('JSON 解析失败:', error);
+                }
+            };
+            reader.readAsText(file);
+        }
+        
+        // 添加用户
+        async function addUser(username, password) {
+            if (!username || !password) {
+                showMessage('用户名和密码不能为空', 'error');
+                return;
+            }
+            
+            if (users[username]) {
+                if (!confirm(`用户 ${username} 已存在，是否覆盖？`)) {
+                    return;
+                }
+            }
+            
+            try {
+                const passwordHash = await generatePasswordHash(password);
+                users[username] = passwordHash;
+                displayUsers();
+                showMessage(`用户 ${username} 添加成功！请记得保存文件。`, 'success');
+                document.getElementById('add-user-form').reset();
+            } catch (error) {
+                showMessage('添加用户失败：' + error.message, 'error');
+                console.error('添加用户失败:', error);
+            }
+        }
+        
+        // 删除用户
+        function deleteUser(username) {
+            if (!confirm(`确定要删除用户 ${username} 吗？`)) {
+                return;
+            }
+            
+            delete users[username];
+            displayUsers();
+            showMessage(`用户 ${username} 删除成功！请记得保存文件。`, 'success');
+        }
+        
+        // 保存到文件
+        function saveToFile() {
+            if (Object.keys(users).length === 0) {
+                showMessage('没有用户数据可保存', 'warning');
+                return;
+            }
+            
+            const jsonStr = JSON.stringify(users, null, 4);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'users.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showMessage('users.json 已下载！请替换到 backend/user_management/users.json', 'success');
+        }
+        
+        // 复制到剪贴板
+        function copyToClipboard() {
+            if (Object.keys(users).length === 0) {
+                showMessage('没有用户数据可复制', 'warning');
+                return;
+            }
+            
+            const jsonStr = JSON.stringify(users, null, 4);
+            navigator.clipboard.writeText(jsonStr).then(() => {
+                showMessage('JSON 数据已复制到剪贴板！', 'success');
+            }).catch(err => {
+                showMessage('复制失败：' + err.message, 'error');
+            });
+        }
+        
+        // 表单提交
+        document.getElementById('add-user-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const username = document.getElementById('new-username').value.trim();
+            const password = document.getElementById('new-password').value;
+            await addUser(username, password);
+        });
+        
+        // 页面加载
+        window.onload = function() {
+            displayUsers();
+            showMessage('欢迎使用用户管理系统！请先导入 users.json 文件。', 'info');
+        };
+    </script>
+</body>
+</html>

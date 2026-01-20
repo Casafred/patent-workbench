@@ -5,7 +5,8 @@ This module handles user management operations including listing users, adding u
 """
 
 import json
-from flask import Blueprint, jsonify, request
+import os
+from flask import Blueprint, jsonify, request, send_file
 from werkzeug.security import generate_password_hash
 from backend.config import USERS_FILE
 
@@ -35,6 +36,19 @@ def save_users(users):
     with open(USERS_FILE, 'w') as f:
         json.dump(users, f, indent=4)
 
+@user_management_bp.route('/user-management')
+def user_management_page():
+    """
+    Serve the user management HTML page.
+    
+    Returns:
+        HTML page for user management
+    """
+    html_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'user_management.html')
+    print(f"Serving user management page from: {html_path}")
+    print(f"File exists: {os.path.exists(html_path)}")
+    return send_file(html_path)
+
 @user_management_bp.route('/api/users', methods=['GET'])
 def get_users():
     """
@@ -46,7 +60,9 @@ def get_users():
     users = load_users()
     return jsonify({
         'success': True,
-        'users': [{'username': username, 'password_hash': password_hash[:30] + '...'} for username, password_hash in users.items()]
+        'data': {
+            'users': [{'username': username, 'password_hash': password_hash[:30] + '...'} for username, password_hash in users.items()]
+        }
     })
 
 @user_management_bp.route('/api/users', methods=['POST'])
@@ -65,7 +81,7 @@ def add_user():
         if not username or not password:
             return jsonify({
                 'success': False,
-                'message': '用户名和密码不能为空'
+                'error': '用户名和密码不能为空'
             }), 400
         
         users = load_users()
@@ -74,12 +90,14 @@ def add_user():
         
         return jsonify({
             'success': True,
-            'message': f'用户 {username} 添加成功'
+            'data': {
+                'message': f'用户 {username} 添加成功'
+            }
         })
     except Exception as e:
         return jsonify({
             'success': False,
-            'message': f'添加用户失败: {str(e)}'
+            'error': f'添加用户失败: {str(e)}'
         }), 500
 
 @user_management_bp.route('/api/users/<username>', methods=['DELETE'])
@@ -99,7 +117,7 @@ def delete_user(username):
         if username not in users:
             return jsonify({
                 'success': False,
-                'message': f'用户 {username} 不存在'
+                'error': f'用户 {username} 不存在'
             }), 404
         
         del users[username]
@@ -107,10 +125,12 @@ def delete_user(username):
         
         return jsonify({
             'success': True,
-            'message': f'用户 {username} 删除成功'
+            'data': {
+                'message': f'用户 {username} 删除成功'
+            }
         })
     except Exception as e:
         return jsonify({
             'success': False,
-            'message': f'删除用户失败: {str(e)}'
+            'error': f'删除用户失败: {str(e)}'
         }), 500
