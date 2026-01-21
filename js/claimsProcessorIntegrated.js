@@ -463,8 +463,39 @@ function updateClaimsProgress(progress) {
 // 加载结果
 async function loadClaimsResults() {
     try {
+        console.log(`[loadClaimsResults] Fetching result for task: ${claimsCurrentTaskId}`);
         const response = await fetch(`/api/claims/result/${claimsCurrentTaskId}`);
-        const data = await response.json();
+        
+        console.log(`[loadClaimsResults] Response status: ${response.status}`);
+        console.log(`[loadClaimsResults] Response headers:`, {
+            contentType: response.headers.get('Content-Type'),
+            contentLength: response.headers.get('Content-Length')
+        });
+        
+        // 检查响应状态
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`[loadClaimsResults] Error response:`, errorText);
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
+        // 获取响应文本
+        const responseText = await response.text();
+        console.log(`[loadClaimsResults] Response text length: ${responseText.length}`);
+        
+        if (!responseText || responseText.trim() === '') {
+            throw new Error('服务器返回空响应');
+        }
+        
+        // 尝试解析JSON
+        let data;
+        try {
+            data = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error(`[loadClaimsResults] JSON parse error:`, parseError);
+            console.error(`[loadClaimsResults] Response text:`, responseText.substring(0, 500));
+            throw new Error('服务器返回的数据格式错误');
+        }
         
         if (data.success) {
             const responseData = data.data || {};

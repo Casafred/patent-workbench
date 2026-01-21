@@ -427,6 +427,12 @@ def process_claims():
         # Process file in background thread
         def process_in_background():
             try:
+                print(f"[process_in_background] Starting processing for task: {task_id}")
+                print(f"[process_in_background] File: {file_path}")
+                print(f"[process_in_background] Column: {column_name}")
+                print(f"[process_in_background] Sheet: {sheet_name}")
+                print(f"[process_in_background] Patent column: {patent_column_name}")
+                
                 # Create processing service
                 processing_service = ProcessingService()
                 
@@ -438,23 +444,30 @@ def process_claims():
                     patent_column_name=patent_column_name
                 )
                 
+                print(f"[process_in_background] Processing completed successfully")
+                print(f"[process_in_background] Claims extracted: {result.total_claims_extracted}")
+                
                 # Update task status
                 processing_tasks[task_id]['status'] = 'completed'
                 processing_tasks[task_id]['progress'] = 100
                 processing_tasks[task_id]['message'] = '处理完成'
                 processing_tasks[task_id]['result'] = result
                 
+                print(f"[process_in_background] Task status updated to completed")
+                
                 # Save task to disk for persistence
                 save_task_to_disk(task_id, processing_tasks[task_id])
+                print(f"[process_in_background] Task saved to disk")
                 
             except Exception as e:
-                print(f"Error in background processing: {traceback.format_exc()}")
+                print(f"[process_in_background] Error in background processing: {traceback.format_exc()}")
                 processing_tasks[task_id]['status'] = 'failed'
                 processing_tasks[task_id]['error'] = str(e)
                 processing_tasks[task_id]['message'] = f'处理失败: {str(e)}'
                 
                 # Save failed task to disk as well
                 save_task_to_disk(task_id, processing_tasks[task_id])
+                print(f"[process_in_background] Failed task saved to disk")
         
         thread = threading.Thread(target=process_in_background)
         thread.daemon = True
@@ -556,27 +569,38 @@ def get_processing_result(task_id):
         JSON response with detailed results
     """
     try:
+        print(f"[get_processing_result] Fetching result for task: {task_id}")
+        
         # Try to get from memory first
         if task_id not in processing_tasks:
+            print(f"[get_processing_result] Task not in memory, trying disk...")
             # Try to load from disk
             task_data = load_task_from_disk(task_id)
             if task_data:
                 processing_tasks[task_id] = task_data
+                print(f"[get_processing_result] Task loaded from disk")
             else:
+                print(f"[get_processing_result] Task not found")
+                print(f"[get_processing_result] Available tasks: {list(processing_tasks.keys())}")
                 return create_response(
                     error="任务不存在",
                     status_code=404
                 )
         
         task = processing_tasks[task_id]
+        print(f"[get_processing_result] Task status: {task['status']}")
         
         if task['status'] != 'completed':
+            print(f"[get_processing_result] Task not completed, status: {task['status']}")
+            if task['status'] == 'failed':
+                print(f"[get_processing_result] Task error: {task.get('error', 'Unknown error')}")
             return create_response(
                 error=f"任务尚未完成，当前状态: {task['status']}",
                 status_code=400
             )
         
         result = task['result']
+        print(f"[get_processing_result] Processing result, claims count: {len(result.claims_data)}")
         
         # Build detailed results
         claims_list = []
@@ -629,6 +653,7 @@ def get_processing_result(task_id):
             'errors': errors_list
         }
         
+        print(f"[get_processing_result] Returning {len(claims_list)} claims")
         return create_response(data=response_data)
         
     except Exception as e:
