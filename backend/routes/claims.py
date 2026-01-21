@@ -424,6 +424,10 @@ def process_claims():
             'sheet_name': sheet_name
         }
         
+        # 立即保存任务状态到磁盘，防止worker重启导致任务丢失
+        save_task_to_disk(task_id, processing_tasks[task_id])
+        print(f"[process_claims] Task {task_id} created and saved to disk")
+        
         # Process file in background thread
         def process_in_background():
             try:
@@ -437,6 +441,8 @@ def process_claims():
                 def update_progress(current, total):
                     progress = int((current / total) * 100)
                     processing_tasks[task_id]['progress'] = progress
+                    # 每次更新进度时也保存到磁盘，防止worker重启
+                    save_task_to_disk(task_id, processing_tasks[task_id])
                     print(f"[process_in_background] Progress: {progress}% ({current}/{total})")
                 
                 # Create processing service
