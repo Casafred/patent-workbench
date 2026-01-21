@@ -490,6 +490,8 @@ function startClaimsPolling() {
     
     let pollCount = 0;
     const startTime = Date.now();
+    let consecutiveErrors = 0;
+    const MAX_CONSECUTIVE_ERRORS = 3;
     
     const poll = async () => {
         try {
@@ -497,6 +499,9 @@ function startClaimsPolling() {
             
             const response = await fetch(`/api/claims/status/${claimsCurrentTaskId}`);
             const data = await response.json();
+            
+            // 重置错误计数
+            consecutiveErrors = 0;
             
             if (data.success) {
                 const responseData = data.data || {};
@@ -508,16 +513,19 @@ function startClaimsPolling() {
                 
                 if (status === 'completed') {
                     clearInterval(claimsProcessingInterval);
-                    // 添加小延迟确保状态已完全保存到磁盘
+                    // 增加延迟确保状态已完全保存到磁盘
                     setTimeout(() => {
                         loadClaimsResults();
-                    }, 500);  // 500ms延迟
+                    }, 1500);  // 1.5秒延迟
                     return;
                 } else if (status === 'failed') {
                     clearInterval(claimsProcessingInterval);
                     showClaimsMessage('处理失败：' + error, 'error');
                     resetClaimsProcessButton();
                     return;
+                } else if (status === 'processing') {
+                    // 继续轮询
+                    console.log(`[Polling] 任务处理中... 进度: ${progress}%, 已用时: ${elapsedSeconds.toFixed(1)}秒`);
                 }
             }
             
@@ -525,15 +533,15 @@ function startClaimsPolling() {
             
             // 渐进式轮询：根据时间调整轮询间隔
             // 前30秒：每2秒轮询
-            // 30秒-2分钟：每5秒轮询
-            // 2分钟后：每10秒轮询
+            // 30秒-2分钟：每3秒轮询
+            // 2分钟后：每5秒轮询
             let nextInterval;
             if (elapsedSeconds < 30) {
                 nextInterval = 2000;  // 2秒
             } else if (elapsedSeconds < 120) {
-                nextInterval = 5000;  // 5秒
+                nextInterval = 3000;  // 3秒
             } else {
-                nextInterval = 10000; // 10秒
+                nextInterval = 5000;  // 5秒
             }
             
             // 清除旧的interval，设置新的interval
@@ -542,6 +550,14 @@ function startClaimsPolling() {
             
         } catch (error) {
             console.error('Polling error:', error);
+            consecutiveErrors++;
+            
+            // 如果连续错误次数过多，停止轮询
+            if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+                clearInterval(claimsProcessingInterval);
+                showClaimsMessage('轮询失败次数过多，请刷新页面后重试', 'error');
+                resetClaimsProcessButton();
+            }
         }
     };
     
@@ -563,10 +579,12 @@ function updateClaimsProgress(progress) {
     }
 }
 
-// 加载结果
-async function loadClaimsResults() {
+// 加载结果 - 增加重试机制
+async function loadClaimsResults(retryCount = 0) {
+    const MAX_RETRIES = 3;
+    
     try {
-        console.log(`[loadClaimsResults] Fetching result for task: ${claimsCurrentTaskId}`);
+        console.log(`[loadClaimsResults] Fetching result for task: ${claimsCurrentTaskId} (尝试 ${retryCount + 1}/${MAX_RETRIES + 1})`);
         const response = await fetch(`/api/claims/result/${claimsCurrentTaskId}`);
         
         console.log(`[loadClaimsResults] Response status: ${response.status}`);
@@ -579,6 +597,16 @@ async function loadClaimsResults() {
         if (!response.ok) {
             const errorText = await response.text();
             console.error(`[loadClaimsResults] Error response:`, errorText);
+            
+            // 如果是400错误且提示任务尚未完成，进行重试
+            if (response.status === 400 && errorText.includes('尚未完成') && retryCount < MAX_RETRIES) {
+                console.log(`[loadClaimsResults] 任务尚未完成，${2}秒后重试...`);
+                setTimeout(() => {
+                    loadClaimsResults(retryCount + 1);
+                }, 2000);  // 2秒后重试
+                return;
+            }
+            
             throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
         
@@ -719,9 +747,9 @@ function showClaimsPatentSummarySection(claims) {
         
         console.log(`专利 ${patentNumber}: 总权利要求 ${patentClaims.length}, 独立权利要求 ${independentClaims.length}`);
         
-        // 获取Excel原表行号（如果有）
+        // 获取Excel原表行号（如果有），显示时+1
         const rowIndex = patentClaims[0]?.row_index;
-        const rowDisplay = rowIndex && rowIndex > 0 ? `Excel行号: ${rowIndex}` : '';
+        const rowDisplay = rowIndex && rowIndex > 0 ? `Excel行号: ${rowIndex + 1}` : '';
         
         // 完整合并独立权利要求内容，带序号并换行显示
         let mergedText = '';
@@ -744,7 +772,7 @@ function showClaimsPatentSummarySection(claims) {
                 <div class="merged-claims-content">${mergedText}</div>
             </td>
             <td class="action-cell">
-                <button class="small-button" onclick="claimsJumpToVisualization('${patentNumber}')">查看引用图</button>
+                <button class="small-button" onclick="claimsJumpToVisualization('${patentNumber}', ${rowIndex || 0})">查看引用图</button>
             </td>
         `;
         rowCount++;
@@ -762,10 +790,10 @@ function showClaimsPatentSummarySection(claims) {
 }
 
 // 跳转到权利要求引用图
-function claimsJumpToVisualization(patentNumber) {
-    // 设置选中的专利号
+function claimsJumpToVisualization(patentNumber, rowIndex) {
+    // 设置选中的专利号和行号
     claimsSelectedPatentNumber = patentNumber;
-    claimsSelectedPatentRow = 0; // 不使用行号，直接按专利号查找
+    claimsSelectedPatentRow = rowIndex || 0;
     
     // 更新选中专利信息
     const selectedPatentNumberEl = document.getElementById('claims_selected_patent_number');
@@ -777,7 +805,8 @@ function claimsJumpToVisualization(patentNumber) {
     }
     
     if (selectedPatentRowEl) {
-        selectedPatentRowEl.textContent = 'N/A';
+        // 显示时+1，如果rowIndex有效
+        selectedPatentRowEl.textContent = rowIndex && rowIndex > 0 ? (rowIndex + 1) : 'N/A';
     }
     
     if (selectedPatentInfo) {
@@ -1257,9 +1286,9 @@ function displayClaimsSearchResults(results, query) {
             const patentNumber = result.patent_number || result.claim_number || 'Unknown';
             const rowIndex = result.row_index;
             
-            // 只有当rowIndex有效且不为0时才显示行号，显示为原表格行号-1
-            const rowInfo = rowIndex && rowIndex !== 0 ? 
-                `<div class="search-result-row">行号: ${rowIndex - 1}</div>` : 
+            // 只有当rowIndex有效且不为0时才显示行号，显示时+1
+            const rowInfo = rowIndex && rowIndex > 0 ? 
+                `<div class="search-result-row">行号: ${rowIndex + 1}</div>` : 
                 '';
             
             html += `
@@ -1314,8 +1343,8 @@ function claimsSelectPatent(patentNumber, rowIndex) {
     }
     
     if (selectedPatentRow) {
-        // 只有当rowIndex有效且不为0时才显示行号
-        selectedPatentRow.textContent = rowIndex && rowIndex !== 0 ? rowIndex : 'N/A';
+        // 只有当rowIndex有效且不为0时才显示行号，显示时+1
+        selectedPatentRow.textContent = rowIndex && rowIndex > 0 ? (rowIndex + 1) : 'N/A';
     }
     
     if (selectedPatentInfo) {
