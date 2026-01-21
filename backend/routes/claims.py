@@ -390,7 +390,17 @@ def process_claims():
             )
         
         # Create task ID based on file_id to allow overwriting
-        task_id = f"task_{file_id}_{sheet_name or 'default'}"
+        # Sanitize sheet_name to create a clean task ID
+        import re
+        safe_sheet_name = re.sub(r'[^a-zA-Z0-9_-]', '_', sheet_name or 'default')
+        # Limit sheet name length to avoid overly long task IDs
+        safe_sheet_name = safe_sheet_name[:50]
+        task_id = f"task_{file_id}_{safe_sheet_name}"
+        
+        print(f"Creating task with ID: {task_id}")
+        print(f"  File ID: {file_id}")
+        print(f"  Sheet name: {sheet_name}")
+        print(f"  Safe sheet name: {safe_sheet_name}")
         
         # Clean up old task if exists (allow overwriting)
         if task_id in processing_tasks:
@@ -478,13 +488,19 @@ def get_processing_status(task_id):
         JSON response with task status and progress
     """
     try:
+        print(f"Checking status for task: {task_id}")
+        
         # Try to get from memory first
         if task_id not in processing_tasks:
+            print(f"Task {task_id} not in memory, trying disk...")
             # Try to load from disk
             task_data = load_task_from_disk(task_id)
             if task_data:
                 processing_tasks[task_id] = task_data
+                print(f"Task {task_id} loaded from disk")
             else:
+                print(f"Task {task_id} not found on disk either")
+                print(f"Available tasks in memory: {list(processing_tasks.keys())}")
                 return create_response(
                     error="任务不存在",
                     status_code=404
