@@ -17,13 +17,14 @@ class ExcelProcessor(ExcelProcessorInterface):
         """初始化Excel处理器"""
         self.supported_extensions = ['.xlsx', '.xls', '.xlsm']
     
-    def read_excel_file(self, file_path: str, sheet_name: str = None) -> pd.DataFrame:
+    def read_excel_file(self, file_path: str, sheet_name: str = None, nrows: int = None) -> pd.DataFrame:
         """
         读取Excel文件
         
         Args:
             file_path: Excel文件路径
             sheet_name: 工作表名称，None表示读取第一个工作表
+            nrows: 读取的行数限制，None表示读取所有行
             
         Returns:
             pandas DataFrame对象
@@ -38,9 +39,9 @@ class ExcelProcessor(ExcelProcessorInterface):
         try:
             # 如果没有指定工作表名称，读取第一个工作表
             if sheet_name is None:
-                df = pd.read_excel(file_path, sheet_name=0)
+                df = pd.read_excel(file_path, sheet_name=0, nrows=nrows)
             else:
-                df = pd.read_excel(file_path, sheet_name=sheet_name)
+                df = pd.read_excel(file_path, sheet_name=sheet_name, nrows=nrows)
             return df
         except Exception as e:
             raise ValueError(f"读取Excel文件失败: {str(e)}")

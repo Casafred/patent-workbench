@@ -197,11 +197,20 @@ def upload_claims_file():
         # Get sheet names and columns
         try:
             sheet_names = excel_processor.get_sheet_names(file_path)
-            df = excel_processor.read_excel_file(file_path)
-            columns = list(df.columns)
             
-            # 验证行数限制（1000行）
-            row_count = len(df)
+            # 优化：只读取前几行来获取列名，不读取全部数据
+            # 使用nrows参数限制读取行数
+            df_preview = excel_processor.read_excel_file(file_path, nrows=5)
+            columns = list(df_preview.columns)
+            
+            # 获取实际行数（不读取数据，只计数）
+            # 使用openpyxl直接读取行数，避免加载所有数据
+            import openpyxl
+            wb = openpyxl.load_workbook(file_path, read_only=True, data_only=True)
+            ws = wb.active
+            row_count = ws.max_row - 1  # 减1是因为第一行是表头
+            wb.close()
+            
             MAX_ROWS = 1000
             
             if row_count > MAX_ROWS:
