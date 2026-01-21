@@ -39,7 +39,7 @@ MAX_IPS_PER_USER = int(os.environ.get('MAX_IPS_PER_USER', 5))
 # --- 文件上传配置 ---
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
 ALLOWED_EXTENSIONS = {'xlsx', 'xls'}
-MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB
+MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50MB - 支持大型Excel文件
 
 # --- 静态文件配置 ---
 STATIC_FOLDER = BASE_DIR
