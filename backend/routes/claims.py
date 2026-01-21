@@ -200,13 +200,25 @@ def upload_claims_file():
             df = excel_processor.read_excel_file(file_path)
             columns = list(df.columns)
             
+            # 验证行数限制（1000行）
+            row_count = len(df)
+            MAX_ROWS = 1000
+            
+            if row_count > MAX_ROWS:
+                os.remove(file_path)
+                return create_response(
+                    error=f"数据行数超出限制：文件包含 {row_count} 行数据，系统最多支持 {MAX_ROWS} 行。请减少数据量后重新上传。",
+                    status_code=400
+                )
+            
             return create_response(data={
                 'file_id': unique_filename,
                 'file_path': file_path,
                 'original_filename': original_filename,  # 使用原始文件名
                 'sheet_names': sheet_names,
                 'columns': columns,
-                'message': '文件上传成功'
+                'row_count': row_count,  # 返回行数信息
+                'message': f'文件上传成功（{row_count} 行数据）'
             })
         except Exception as e:
             os.remove(file_path)

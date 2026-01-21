@@ -21,7 +21,7 @@ excel_upload_bp = Blueprint('excel_upload', __name__)
 # 配置
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'xlsx', 'xls', 'csv'}
-MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB - 支持大型Excel文件
+MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB - 主要通过行数限制（1000行）控制
 
 # 确保上传目录存在
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
