@@ -46,7 +46,8 @@ class ProcessingService(ProcessingServiceInterface):
         }
     
     def process_excel_file(self, file_path: str, column_name: str, 
-                          sheet_name: str = None, patent_column_name: str = None, resume: bool = False) -> ProcessedClaims:
+                          sheet_name: str = None, patent_column_name: str = None, 
+                          resume: bool = False, progress_callback=None) -> ProcessedClaims:
         """
         处理Excel文件
         
@@ -56,6 +57,7 @@ class ProcessingService(ProcessingServiceInterface):
             sheet_name: 工作表名称
             patent_column_name: 包含专利公开号的列名
             resume: 是否从中断点恢复处理
+            progress_callback: 进度回调函数，接收(current, total)参数
             
         Returns:
             处理结果
@@ -129,9 +131,16 @@ class ProcessingService(ProcessingServiceInterface):
             processing_errors = []
             language_distribution = {}
             patent_numbers = []
+            total_cells = len(column_data)
             
             for i, cell_text in enumerate(column_data):
                 self.processing_state['current_cell_index'] = i
+                
+                # 调用进度回调（每10行或每5%更新一次）
+                if progress_callback:
+                    update_interval = max(10, total_cells // 20)  # 至少每10行，或每5%
+                    if i % update_interval == 0 or i == total_cells - 1:
+                        progress_callback(i + 1, total_cells)
                 
                 try:
                     # 获取当前行的专利公开号（如果有）
@@ -199,8 +208,11 @@ class ProcessingService(ProcessingServiceInterface):
                     processing_errors.append(error)
                 
                 # 保存处理状态 (需求 7.4)
-                if self.enable_recovery and i % 10 == 0:  # 每10个单元格保存一次状态
-                    self._save_processing_state(all_claims, processing_errors, language_distribution)
+                # 优化：减少保存频率，每100行或每10%保存一次
+                if self.enable_recovery:
+                    save_interval = max(100, total_cells // 10)  # 至少每100行，或每10%
+                    if i % save_interval == 0:
+                        self._save_processing_state(all_claims, processing_errors, language_distribution)
             
             # 统计结果
             independent_count = sum(1 for claim in all_claims if claim.claim_type == 'independent')

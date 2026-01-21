@@ -412,14 +412,19 @@ async function handleClaimsProcess() {
     }
 }
 
-// 轮询处理状态
+// 轮询处理状态 - 使用渐进式轮询策略
 function startClaimsPolling() {
     if (claimsProcessingInterval) {
         clearInterval(claimsProcessingInterval);
     }
     
-    claimsProcessingInterval = setInterval(async () => {
+    let pollCount = 0;
+    const startTime = Date.now();
+    
+    const poll = async () => {
         try {
+            const elapsedSeconds = (Date.now() - startTime) / 1000;
+            
             const response = await fetch(`/api/claims/status/${claimsCurrentTaskId}`);
             const data = await response.json();
             
@@ -434,16 +439,41 @@ function startClaimsPolling() {
                 if (status === 'completed') {
                     clearInterval(claimsProcessingInterval);
                     loadClaimsResults();
+                    return;
                 } else if (status === 'failed') {
                     clearInterval(claimsProcessingInterval);
                     showClaimsMessage('处理失败：' + error, 'error');
                     resetClaimsProcessButton();
+                    return;
                 }
             }
+            
+            pollCount++;
+            
+            // 渐进式轮询：根据时间调整轮询间隔
+            // 前30秒：每2秒轮询
+            // 30秒-2分钟：每5秒轮询
+            // 2分钟后：每10秒轮询
+            let nextInterval;
+            if (elapsedSeconds < 30) {
+                nextInterval = 2000;  // 2秒
+            } else if (elapsedSeconds < 120) {
+                nextInterval = 5000;  // 5秒
+            } else {
+                nextInterval = 10000; // 10秒
+            }
+            
+            // 清除旧的interval，设置新的interval
+            clearInterval(claimsProcessingInterval);
+            claimsProcessingInterval = setInterval(poll, nextInterval);
+            
         } catch (error) {
             console.error('Polling error:', error);
         }
-    }, 1000);
+    };
+    
+    // 立即执行第一次轮询
+    poll();
 }
 
 // 更新进度

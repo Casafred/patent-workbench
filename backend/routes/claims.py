@@ -433,15 +433,22 @@ def process_claims():
                 print(f"[process_in_background] Sheet: {sheet_name}")
                 print(f"[process_in_background] Patent column: {patent_column_name}")
                 
+                # 定义进度回调函数
+                def update_progress(current, total):
+                    progress = int((current / total) * 100)
+                    processing_tasks[task_id]['progress'] = progress
+                    print(f"[process_in_background] Progress: {progress}% ({current}/{total})")
+                
                 # Create processing service
                 processing_service = ProcessingService()
                 
-                # Process Excel file
+                # Process Excel file with progress callback
                 result = processing_service.process_excel_file(
                     file_path=file_path,
                     column_name=column_name,
                     sheet_name=sheet_name,
-                    patent_column_name=patent_column_name
+                    patent_column_name=patent_column_name,
+                    progress_callback=update_progress
                 )
                 
                 print(f"[process_in_background] Processing completed successfully")
