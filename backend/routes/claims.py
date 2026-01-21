@@ -41,10 +41,19 @@ def save_task_to_disk(task_id: str, task_data: dict) -> None:
     try:
         task_file = os.path.join(TASKS_FOLDER, f"{task_id}.json")
         
+        # 深拷贝任务数据，确保所有字段都被保存
+        task_data_copy = {
+            'status': task_data.get('status'),
+            'progress': task_data.get('progress'),
+            'message': task_data.get('message'),
+            'error': task_data.get('error'),
+            'file_id': task_data.get('file_id'),
+            'sheet_name': task_data.get('sheet_name')
+        }
+        
         # Convert result object to dict if present
         if task_data.get('result'):
             result = task_data['result']
-            task_data_copy = task_data.copy()
             task_data_copy['result'] = {
                 'total_cells_processed': result.total_cells_processed,
                 'total_claims_extracted': result.total_claims_extracted,
@@ -75,12 +84,17 @@ def save_task_to_disk(task_id: str, task_data: dict) -> None:
                 ]
             }
         else:
-            task_data_copy = task_data.copy()
+            task_data_copy['result'] = None
+        
+        print(f"[save_task_to_disk] Saving task {task_id} with status: {task_data_copy['status']}")
         
         with open(task_file, 'w', encoding='utf-8') as f:
             json.dump(task_data_copy, f, ensure_ascii=False, indent=2)
+            
+        print(f"[save_task_to_disk] Task {task_id} saved successfully")
     except Exception as e:
-        print(f"Warning: Failed to save task to disk: {e}")
+        print(f"[save_task_to_disk] Error: Failed to save task to disk: {e}")
+        print(f"[save_task_to_disk] Traceback: {traceback.format_exc()}")
 
 
 def load_task_from_disk(task_id: str) -> dict:
