@@ -105,6 +105,49 @@ function initClaimsProcessor() {
             if (claimsVisualizationRenderer) claimsVisualizationRenderer.centerView();
         });
     }
+    
+    // 树状图散开程度控制
+    const treeSpreadSlider = document.getElementById('claims_tree_spread_slider');
+    const treeSpreadValue = document.getElementById('claims_tree_spread_value');
+    const treeSpreadControl = document.getElementById('claims_tree_spread_control');
+    
+    if (treeSpreadSlider && treeSpreadValue) {
+        treeSpreadSlider.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            treeSpreadValue.textContent = value.toFixed(1) + 'x';
+            if (claimsVisualizationRenderer) {
+                claimsVisualizationRenderer.setTreeSpreadFactor(value);
+            }
+        });
+    }
+    
+    // 样式选择器变化时，显示/隐藏树状图散开控制
+    if (styleSelector && treeSpreadControl) {
+        styleSelector.addEventListener('change', () => {
+            if (styleSelector.value === 'tree') {
+                treeSpreadControl.style.display = 'flex';
+            } else {
+                treeSpreadControl.style.display = 'none';
+            }
+        });
+        // 初始化显示状态
+        treeSpreadControl.style.display = styleSelector.value === 'tree' ? 'flex' : 'none';
+    }
+    
+    // 截图按钮
+    const screenshotBtn = document.getElementById('claims_screenshot_btn');
+    if (screenshotBtn) {
+        screenshotBtn.addEventListener('click', () => {
+            if (claimsVisualizationRenderer) {
+                const success = claimsVisualizationRenderer.captureHighResScreenshot();
+                if (success) {
+                    showClaimsMessage('高清截图已保存！', 'success');
+                }
+            } else {
+                showClaimsMessage('请先生成可视化图表', 'error');
+            }
+        });
+    }
 }
 
 // 处理文件选择
@@ -676,12 +719,16 @@ function showClaimsPatentSummarySection(claims) {
         
         console.log(`专利 ${patentNumber}: 总权利要求 ${patentClaims.length}, 独立权利要求 ${independentClaims.length}`);
         
-        // 完整合并独立权利要求内容（不截断）
+        // 获取Excel原表行号（如果有）
+        const rowIndex = patentClaims[0]?.row_index;
+        const rowDisplay = rowIndex && rowIndex > 0 ? `Excel行号: ${rowIndex}` : '';
+        
+        // 完整合并独立权利要求内容，带序号并换行显示
         let mergedText = '';
         if (independentClaims.length > 0) {
             mergedText = independentClaims
-                .map(claim => claim.claim_text)
-                .join(' ');
+                .map((claim, idx) => `${idx + 1}. ${claim.claim_text}`)
+                .join('\n\n');
         } else {
             mergedText = '无独立权利要求';
         }
@@ -689,7 +736,10 @@ function showClaimsPatentSummarySection(claims) {
         // 创建表格行
         const row = summaryTbody.insertRow();
         row.innerHTML = `
-            <td class="patent-number-cell">${patentNumber}</td>
+            <td class="patent-number-cell">
+                <div>${patentNumber}</div>
+                ${rowDisplay ? `<div class="row-index-badge">${rowDisplay}</div>` : ''}
+            </td>
             <td class="merged-claims-cell" title="${mergedText}">
                 <div class="merged-claims-content">${mergedText}</div>
             </td>
@@ -1618,9 +1668,12 @@ class ClaimsD3TreeRenderer {
         // 找到所有独立权利要求作为根节点
         const independentClaims = data.nodes.filter(node => node.claim_type === 'independent');
         
-        // 计算每个独立权利要求树的垂直空间
+        // 获取树状图散开程度设置（默认为1.0）
+        const spreadFactor = this.treeSpreadFactor || 1.0;
+        
+        // 计算每个独立权利要求树的垂直空间（应用散开因子）
         const treesCount = Math.max(1, independentClaims.length);
-        const treeHeight = (this.height - 100) / treesCount;
+        const treeHeight = ((this.height - 100) / treesCount) * spreadFactor;
         
         // 为每个独立权利要求渲染单独的树
         independentClaims.forEach((rootClaim, treeIndex) => {
@@ -1670,9 +1723,9 @@ class ClaimsD3TreeRenderer {
             // 创建层次结构
             const root = d3.hierarchy(treeRoot);
             
-            // 计算树布局
+            // 计算树布局（应用散开因子）
             const treeLayout = d3.tree()
-                .size([treeHeight, (this.width - 200) / 2]);
+                .size([treeHeight, ((this.width - 200) / 2) * spreadFactor]);
             
             const treeData = treeLayout(root);
             
@@ -1775,14 +1828,30 @@ class ClaimsD3TreeRenderer {
             .force('charge', d3.forceManyBody().strength(-300))
             .force('center', d3.forceCenter(this.width / 2, this.height / 2));
         
-        // 渲染连线
+        // 定义箭头标记
+        this.svg.append('defs').append('marker')
+            .attr('id', 'arrowhead')
+            .attr('viewBox', '-0 -5 10 10')
+            .attr('refX', 25)
+            .attr('refY', 0)
+            .attr('orient', 'auto')
+            .attr('markerWidth', 8)
+            .attr('markerHeight', 8)
+            .attr('xoverflow', 'visible')
+            .append('svg:path')
+            .attr('d', 'M 0,-5 L 10 ,0 L 0,5')
+            .attr('fill', '#999')
+            .style('stroke', 'none');
+        
+        // 渲染连线（带箭头）
         const links = this.mainGroup.selectAll('.link')
             .data(data.links)
             .enter()
             .append('line')
             .attr('class', 'link')
             .attr('stroke', '#999')
-            .attr('stroke-width', 2);
+            .attr('stroke-width', 2)
+            .attr('marker-end', 'url(#arrowhead)');
         
         // 渲染节点
         const nodes = this.mainGroup.selectAll('.node-group')
@@ -1818,17 +1887,6 @@ class ClaimsD3TreeRenderer {
             .on('mouseover', (event, d) => this.showTooltip(event, d))
             .on('mouseout', () => this.hideTooltip())
             .on('click', (event, d) => this.onNodeClick(d));
-        
-        // 更新位置
-        simulation.on('tick', () => {
-            links
-                .attr('x1', d => d.source.x)
-                .attr('y1', d => d.source.y)
-                .attr('x2', d => d.target.x)
-                .attr('y2', d => d.target.y);
-            
-            nodes.attr('transform', d => `translate(${d.x}, ${d.y})`);
-        });
         
         // 添加节点标签
         nodes.append('text')
@@ -2076,6 +2134,54 @@ class ClaimsD3TreeRenderer {
             this.zoom.transform,
             d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale)
         );
+    }
+    
+    // 设置树状图散开程度
+    setTreeSpreadFactor(factor) {
+        this.treeSpreadFactor = Math.max(0.5, Math.min(3.0, factor));
+        if (this.currentData && this.currentStyle === 'tree') {
+            this.render(this.currentData, 'tree');
+        }
+    }
+    
+    // 截图功能
+    captureHighResScreenshot() {
+        try {
+            // 获取SVG元素
+            const svgElement = this.svg.node();
+            const serializer = new XMLSerializer();
+            let svgString = serializer.serializeToString(svgElement);
+            
+            // 添加命名空间
+            if (!svgString.match(/^<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)) {
+                svgString = svgString.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+            }
+            if (!svgString.match(/^<svg[^>]+"http:\/\/www\.w3\.org\/1999\/xlink"/)) {
+                svgString = svgString.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+            }
+            
+            // 创建Blob
+            const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            
+            // 创建下载链接
+            const downloadLink = document.createElement('a');
+            downloadLink.href = url;
+            downloadLink.download = `claims_visualization_${Date.now()}.svg`;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            
+            // 清理URL
+            setTimeout(() => URL.revokeObjectURL(url), 100);
+            
+            console.log('高清截图已保存为SVG格式');
+            return true;
+        } catch (error) {
+            console.error('截图失败:', error);
+            alert('截图失败: ' + error.message);
+            return false;
+        }
     }
 }
 
