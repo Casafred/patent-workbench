@@ -465,7 +465,10 @@ function startClaimsPolling() {
                 
                 if (status === 'completed') {
                     clearInterval(claimsProcessingInterval);
-                    loadClaimsResults();
+                    // 添加小延迟确保状态已完全保存到磁盘
+                    setTimeout(() => {
+                        loadClaimsResults();
+                    }, 500);  // 500ms延迟
                     return;
                 } else if (status === 'failed') {
                     clearInterval(claimsProcessingInterval);

@@ -465,8 +465,8 @@ def process_claims():
                 def update_progress(current, total):
                     progress = int((current / total) * 100)
                     processing_tasks[task_id]['progress'] = progress
-                    # 每次更新进度时也保存到磁盘，防止worker重启
-                    save_task_to_disk(task_id, processing_tasks[task_id])
+                    # 不在这里保存到磁盘，避免竞态条件
+                    # 只在任务完成时保存最终状态
                     print(f"[process_in_background] Progress: {progress}% ({current}/{total})")
                 
                 # Create processing service
