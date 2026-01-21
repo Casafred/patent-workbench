@@ -502,12 +502,16 @@ function displayClaimsResults(result) {
         resultsContainer.style.display = 'block';
     }
     
-    // 填充表格
+    // 填充表格 - 添加数据量限制和分页支持
     const tbody = document.getElementById('claims_results_tbody');
     if (tbody && claims.length > 0) {
         tbody.innerHTML = '';
         
-        claims.forEach(claim => {
+        // 限制显示前500条，避免浏览器性能问题
+        const MAX_DISPLAY_CLAIMS = 500;
+        const displayClaims = claims.slice(0, MAX_DISPLAY_CLAIMS);
+        
+        displayClaims.forEach(claim => {
             const row = tbody.insertRow();
             row.innerHTML = `
                 <td>${claim.claim_number}</td>
@@ -518,6 +522,18 @@ function displayClaimsResults(result) {
                 <td>${(claim.confidence_score * 100).toFixed(0)}%</td>
             `;
         });
+        
+        // 如果数据量超过限制，显示提示信息
+        if (claims.length > MAX_DISPLAY_CLAIMS) {
+            const messageRow = tbody.insertRow();
+            messageRow.innerHTML = `
+                <td colspan="6" style="text-align: center; padding: 15px; background-color: #fff3cd; color: #856404;">
+                    <strong>⚠️ 数据量较大</strong><br>
+                    共有 ${claims.length} 条权利要求，当前仅显示前 ${MAX_DISPLAY_CLAIMS} 条以优化性能。<br>
+                    完整数据可通过导出功能获取。
+                </td>
+            `;
+        }
     }
     
     // 新增：显示公开号与独权合并视窗
