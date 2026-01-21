@@ -198,6 +198,8 @@ async function handleClaimsFileSelect(event) {
 // 加载列信息
 async function loadClaimsColumns(filePath, sheetName) {
     try {
+        console.log(`[loadClaimsColumns] Loading columns for sheet: ${sheetName}`);
+        
         const response = await fetch('/api/claims/columns', {
             method: 'POST',
             headers: {
@@ -209,7 +211,32 @@ async function loadClaimsColumns(filePath, sheetName) {
             })
         });
         
-        const data = await response.json();
+        console.log(`[loadClaimsColumns] Response status: ${response.status}`);
+        
+        // 检查响应状态
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`[loadClaimsColumns] Error response:`, errorText);
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
+        // 获取响应文本
+        const responseText = await response.text();
+        console.log(`[loadClaimsColumns] Response text length: ${responseText.length}`);
+        
+        if (!responseText || responseText.trim() === '') {
+            throw new Error('服务器返回空响应');
+        }
+        
+        // 尝试解析JSON
+        let data;
+        try {
+            data = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error(`[loadClaimsColumns] JSON parse error:`, parseError);
+            console.error(`[loadClaimsColumns] Response text:`, responseText.substring(0, 500));
+            throw new Error('服务器返回的数据格式错误');
+        }
         
         if (data.success) {
             const responseData = data.data || {};

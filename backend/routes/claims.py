@@ -288,8 +288,9 @@ def get_claims_columns():
             )
         
         # Read columns from specified worksheet
+        # 优化：只读取前100行进行列分析，提升速度
         excel_processor = ExcelProcessor()
-        df = excel_processor.read_excel_file(file_path, sheet_name=sheet_name)
+        df = excel_processor.read_excel_file(file_path, sheet_name=sheet_name, nrows=100)
         columns = list(df.columns)
         
         # 新增：智能列识别
