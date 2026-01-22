@@ -515,7 +515,20 @@ function updateAsyncTableRow(localRequestId, status, content, tokens = '-') {
     statusCell.className = `status-cell status-${status}`;
     statusCell.textContent = statusText;
     tokenCell.textContent = tokens;
-    resultCell.innerHTML = `<pre>${content || ''}</pre>`;
+    
+    // 为成功的AI结果添加声明
+    if (status === 'completed' && content) {
+        const resultContainer = document.createElement('div');
+        const disclaimer = createAIDisclaimer('compact', '<strong>AI生成：</strong>以下内容由AI生成，仅供参考');
+        const contentPre = document.createElement('pre');
+        contentPre.textContent = content || '';
+        resultContainer.appendChild(disclaimer);
+        resultContainer.appendChild(contentPre);
+        resultCell.innerHTML = '';
+        resultCell.appendChild(resultContainer);
+    } else {
+        resultCell.innerHTML = `<pre>${content || ''}</pre>`;
+    }
 }
 
 function startAsyncPolling() {

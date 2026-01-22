@@ -383,6 +383,11 @@ function renderCardView() {
         return;
     }
     
+    // 添加AI生成声明
+    const disclaimer = createAIDisclaimer('default', '<strong>AI生成内容：</strong>以下对比分析由AI生成，仅供参考，请结合实际情况判断使用。');
+    comparisonResultContainerRefactored.innerHTML = '';
+    comparisonResultContainerRefactored.appendChild(disclaimer);
+    
     let html = '';
     
     data.comparison_matrix.forEach(pair => {
@@ -451,7 +456,9 @@ function renderCardView() {
         `;
     }
     
-    comparisonResultContainerRefactored.innerHTML = html;
+    const contentDiv = document.createElement('div');
+    contentDiv.innerHTML = html;
+    comparisonResultContainerRefactored.appendChild(contentDiv);
 }
 
 /**

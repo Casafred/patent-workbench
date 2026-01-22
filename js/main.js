@@ -549,6 +549,10 @@ function initPatentBatch() {
                 
                 resultItem.innerHTML = `
                     <h5>专利 ${patent.patent_number} 解读结果</h5>
+                    <div class="ai-disclaimer compact">
+                        <div class="ai-disclaimer-icon">AI</div>
+                        <div class="ai-disclaimer-text"><strong>AI生成：</strong>以下解读由AI生成，仅供参考</div>
+                    </div>
                     ${displayContent}
                 `;
                 

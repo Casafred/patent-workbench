@@ -477,6 +477,10 @@ async function handleStreamChatRequest() {
 
         assistantContentEl.innerHTML = window.marked.parse(fullResponse, { gfm: true, breaks: true });
         
+        // 在AI回复内容后添加AI生成声明
+        const disclaimer = createAIDisclaimer('inline');
+        assistantContentEl.appendChild(disclaimer);
+        
         const assistantMessageData = { 
             role: 'assistant', 
             content: fullResponse, 

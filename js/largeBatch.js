@@ -516,8 +516,20 @@ function parseAndGenerateReport() {
     if (appState.reporter.finalOutputData.length > 0) {
         appState.reporter.outputHeaders = [...Object.keys(appState.reporter.sheetData[0] || {}), ...Array.from(allGeneratedHeaders)];
         repPreview.style.display = 'block';
-        const previewText = JSON.stringify(appState.reporter.finalOutputData.slice(0, 5), null, 2).replace(/</g, '&lt;');
-        repPreview.innerHTML = `<p><strong>解析完成！预览前 5 条:</strong></p><pre>${previewText}</pre>`;
+        
+        // 添加AI生成声明
+        const disclaimer = createAIDisclaimer('default', '<strong>AI生成内容：</strong>以下数据包含AI生成的分析结果，仅供参考，请结合实际情况判断使用。');
+        repPreview.innerHTML = '';
+        repPreview.appendChild(disclaimer);
+        
+        const previewTitle = document.createElement('p');
+        previewTitle.innerHTML = '<strong>解析完成！预览前 5 条:</strong>';
+        repPreview.appendChild(previewTitle);
+        
+        const previewPre = document.createElement('pre');
+        previewPre.textContent = JSON.stringify(appState.reporter.finalOutputData.slice(0, 5), null, 2);
+        repPreview.appendChild(previewPre);
+        
         repDownloadBtn.style.display = 'inline-block';
     } else { alert("处理完成，但没有生成任何数据。"); }
 }

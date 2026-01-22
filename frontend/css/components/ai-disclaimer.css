@@ -1,0 +1,87 @@
+/* AI生成内容提示声明样式 */
+
+.ai-disclaimer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+    border-left: 3px solid var(--primary-color);
+    border-radius: 6px;
+    font-size: 0.85em;
+    color: #4a5568;
+    margin: 12px 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.ai-disclaimer:hover {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+.ai-disclaimer-icon {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 50%;
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
+.ai-disclaimer-text {
+    flex: 1;
+    line-height: 1.4;
+}
+
+.ai-disclaimer-text strong {
+    color: var(--primary-color-dark);
+    font-weight: 600;
+}
+
+/* 紧凑版本 - 用于空间有限的地方 */
+.ai-disclaimer.compact {
+    padding: 6px 10px;
+    font-size: 0.8em;
+    margin: 8px 0;
+}
+
+.ai-disclaimer.compact .ai-disclaimer-icon {
+    width: 16px;
+    height: 16px;
+    font-size: 0.8em;
+}
+
+/* 内联版本 - 用于结果卡片内部 */
+.ai-disclaimer.inline {
+    display: inline-flex;
+    padding: 4px 8px;
+    margin: 0;
+    font-size: 0.75em;
+    background: rgba(74, 108, 247, 0.08);
+    border-left-width: 2px;
+}
+
+.ai-disclaimer.inline .ai-disclaimer-icon {
+    width: 14px;
+    height: 14px;
+    font-size: 0.7em;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .ai-disclaimer {
+        font-size: 0.8em;
+        padding: 6px 10px;
+    }
+    
+    .ai-disclaimer-icon {
+        width: 18px;
+        height: 18px;
+    }
+}
