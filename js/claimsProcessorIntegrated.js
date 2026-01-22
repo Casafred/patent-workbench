@@ -1408,6 +1408,12 @@ async function claimsGenerateVisualization() {
         
         showClaimsMessage('正在生成权利要求引证图...', 'info');
         
+        console.log('[claimsGenerateVisualization] 请求参数:', {
+            taskId: claimsCurrentTaskId,
+            patentNumber: claimsSelectedPatentNumber,
+            rowIndex: claimsSelectedPatentRow
+        });
+        
         // 【优化关键】：按需从后端获取引证图数据，而不是在前端处理所有数据
         const response = await fetch(`/api/claims/visualization/${claimsCurrentTaskId}`, {
             method: 'POST',
@@ -1420,7 +1426,16 @@ async function claimsGenerateVisualization() {
             })
         });
         
+        console.log('[claimsGenerateVisualization] 响应状态:', response.status);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('[claimsGenerateVisualization] HTTP错误:', errorText);
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
         const result = await response.json();
+        console.log('[claimsGenerateVisualization] 响应数据:', result);
         
         if (!result.success) {
             throw new Error(result.error || '获取可视化数据失败');
@@ -1429,10 +1444,11 @@ async function claimsGenerateVisualization() {
         const visualizationData = result.data.visualization;
         
         if (!visualizationData || !visualizationData.nodes || visualizationData.nodes.length === 0) {
+            console.error('[claimsGenerateVisualization] 可视化数据为空或无效:', visualizationData);
             throw new Error('未找到该专利的权利要求数据');
         }
         
-        console.log('获取到可视化数据:', {
+        console.log('[claimsGenerateVisualization] 获取到可视化数据:', {
             nodes: visualizationData.nodes.length,
             links: visualizationData.links.length
         });
@@ -1455,16 +1471,19 @@ async function claimsGenerateVisualization() {
         showClaimsMessage('权利要求引证图生成完成！', 'success');
         
     } catch (error) {
-        console.error('Visualization error:', error);
+        console.error('[claimsGenerateVisualization] 错误:', error);
+        console.error('[claimsGenerateVisualization] 错误堆栈:', error.stack);
         
         const vizLoadingIndicator = document.getElementById('claims_viz_loading_indicator');
         const vizErrorMessage = document.getElementById('claims_viz_error_message');
         const vizErrorText = document.getElementById('claims_viz_error_text');
         
+        // 确保隐藏加载指示器
         if (vizLoadingIndicator) {
             vizLoadingIndicator.style.display = 'none';
         }
         
+        // 显示错误信息
         if (vizErrorMessage) {
             vizErrorMessage.style.display = 'block';
         }

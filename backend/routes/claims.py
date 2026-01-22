@@ -925,16 +925,20 @@ def get_visualization_data(task_id):
         
         # 获取任务数据
         if task_id not in processing_tasks:
+            print(f"[get_visualization_data] Task not in memory, loading from disk...")
             task_data = load_task_from_disk(task_id)
             if task_data:
                 processing_tasks[task_id] = task_data
+                print(f"[get_visualization_data] Task loaded from disk")
             else:
+                print(f"[get_visualization_data] Task not found on disk")
                 return create_response(
                     error="任务不存在",
                     status_code=404
                 )
         
         task = processing_tasks[task_id]
+        print(f"[get_visualization_data] Task status: {task['status']}")
         
         if task['status'] != 'completed':
             return create_response(
@@ -943,27 +947,46 @@ def get_visualization_data(task_id):
             )
         
         result = task['result']
+        print(f"[get_visualization_data] Total claims in result: {len(result.claims_data)}")
         
         # 筛选出指定专利的权利要求
         patent_claims = []
         
         if patent_number:
             # 按专利号筛选
+            print(f"[get_visualization_data] Filtering by patent_number: {patent_number}")
             for claim in result.claims_data:
                 if claim.patent_number == patent_number:
                     patent_claims.append(claim)
+                    print(f"[get_visualization_data] Found claim {claim.claim_number} for patent {patent_number}")
         elif row_index is not None:
             # 按行索引筛选
+            print(f"[get_visualization_data] Filtering by row_index: {row_index}")
             for claim in result.claims_data:
-                if getattr(claim, 'row_index', None) == row_index:
+                claim_row = getattr(claim, 'row_index', None)
+                if claim_row == row_index:
                     patent_claims.append(claim)
+                    print(f"[get_visualization_data] Found claim {claim.claim_number} at row {row_index}")
         else:
+            print(f"[get_visualization_data] Error: No patent_number or row_index provided")
             return create_response(
                 error="必须提供 patent_number 或 row_index",
                 status_code=400
             )
         
         if not patent_claims:
+            print(f"[get_visualization_data] No claims found for patent_number={patent_number}, row_index={row_index}")
+            # 打印所有可用的专利号和行索引，帮助调试
+            available_patents = set()
+            available_rows = set()
+            for claim in result.claims_data:
+                if claim.patent_number:
+                    available_patents.add(claim.patent_number)
+                if hasattr(claim, 'row_index') and claim.row_index is not None:
+                    available_rows.add(claim.row_index)
+            print(f"[get_visualization_data] Available patents: {list(available_patents)[:10]}")
+            print(f"[get_visualization_data] Available rows: {list(available_rows)[:10]}")
+            
             return create_response(
                 error="未找到该专利的权利要求数据",
                 status_code=404
@@ -973,6 +996,7 @@ def get_visualization_data(task_id):
         
         # 构建可视化数据
         visualization_data = _build_visualization_data(patent_claims)
+        print(f"[get_visualization_data] Built visualization with {len(visualization_data['nodes'])} nodes and {len(visualization_data['links'])} links")
         
         return create_response(data={
             'patent_number': patent_number,
