@@ -6,26 +6,26 @@
  * 提供多种可视化展示方式
  */
 
-// DOM元素引用
+// DOM元素引用（注意：部分元素已在dom.js中声明）
 let comparisonModelSelect, comparisonCountBtns, claimsInputContainer;
-let claimsAnalyzeBtn, viewModeBtns, toggleLanguageBtn, exportComparisonBtn;
-let comparisonStatsPanel, comparisonResultContainer;
+let viewModeBtns, exportComparisonBtn;
+let comparisonStatsPanel;
 let statSimilar, statDifferent, statSimilarity;
 
 /**
  * 初始化功能五
  */
 function initClaimsComparison() {
-    // 获取DOM元素
+    // 获取DOM元素（使用dom.js中已声明的全局变量）
     comparisonModelSelect = document.getElementById('comparison_model_select');
     comparisonCountBtns = document.querySelectorAll('.count-btn');
     claimsInputContainer = document.getElementById('claims_input_container');
-    claimsAnalyzeBtn = document.getElementById('claims_analyze_btn');
+    // claimsAnalyzeBtn 已在 dom.js 中声明
     viewModeBtns = document.querySelectorAll('.view-btn');
-    toggleLanguageBtn = document.getElementById('toggle_language_btn');
+    // toggleLanguageBtn 已在 dom.js 中声明
     exportComparisonBtn = document.getElementById('export_comparison_btn');
     comparisonStatsPanel = document.getElementById('comparison_stats_panel');
-    comparisonResultContainer = document.getElementById('comparison_result_container_refactored');
+    // comparisonResultContainer 使用 dom.js 中的 comparisonResultContainerRefactored
     statSimilar = document.getElementById('stat_similar');
     statDifferent = document.getElementById('stat_different');
     statSimilarity = document.getElementById('stat_similarity');
@@ -379,7 +379,7 @@ function renderResults() {
 function renderCardView() {
     const data = appState.claimsComparison.analysisResult;
     if (!data || !data.comparison_matrix) {
-        comparisonResultContainer.innerHTML = '<div class="info error">无对比数据</div>';
+        comparisonResultContainerRefactored.innerHTML = '<div class="info error">无对比数据</div>';
         return;
     }
     
@@ -451,7 +451,7 @@ function renderCardView() {
         `;
     }
     
-    comparisonResultContainer.innerHTML = html;
+    comparisonResultContainerRefactored.innerHTML = html;
 }
 
 /**
@@ -474,7 +474,7 @@ function renderSideBySideView() {
     html += '</div>';
     html += '</div>';
     
-    comparisonResultContainer.innerHTML = html;
+    comparisonResultContainerRefactored.innerHTML = html;
 }
 
 /**
@@ -485,7 +485,7 @@ function renderMatrixView() {
     const claims = appState.claimsComparison.claims;
     
     if (!data || !data.comparison_matrix) {
-        comparisonResultContainer.innerHTML = '<div class="info error">无对比数据</div>';
+        comparisonResultContainerRefactored.innerHTML = '<div class="info error">无对比数据</div>';
         return;
     }
     
@@ -522,7 +522,7 @@ function renderMatrixView() {
     });
     
     html += '</tbody></table></div>';
-    comparisonResultContainer.innerHTML = html;
+    comparisonResultContainerRefactored.innerHTML = html;
 }
 
 /**
@@ -587,11 +587,11 @@ function setLoadingState(isLoading, message = '', error = '') {
     
     if (isLoading) {
         claimsAnalyzeBtn.textContent = '分析中...';
-        comparisonResultContainer.innerHTML = `<div class="info"><div class="loading-spinner"></div> ${message}</div>`;
+        comparisonResultContainerRefactored.innerHTML = `<div class="info"><div class="loading-spinner"></div> ${message}</div>`;
     } else {
         claimsAnalyzeBtn.textContent = '开始分析';
         if (error) {
-            comparisonResultContainer.innerHTML = `<div class="info error">${error}</div>`;
+            comparisonResultContainerRefactored.innerHTML = `<div class="info error">${error}</div>`;
         }
     }
 }
