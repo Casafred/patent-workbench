@@ -29,6 +29,76 @@
                 margin-left: 6px;
                 vertical-align: middle;
             }
+        
+        /* 功能七子标签页样式 */
+        .claims-sub-tab {
+            display: none;
+        }
+        .claims-sub-tab.active {
+            display: block;
+        }
+        
+        /* 权利要求项样式 */
+        .claim-item {
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--border-color);
+            transition: all 0.3s;
+        }
+        
+        .claim-item.independent {
+            background: linear-gradient(90deg, rgba(74, 108, 247, 0.1), rgba(74, 108, 247, 0.05));
+            border-left-color: var(--primary-color);
+        }
+        
+        .claim-item.dependent {
+            background: rgba(128, 128, 128, 0.05);
+            border-left-color: #999;
+            color: #666;
+        }
+        
+        .claim-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .claim-number {
+            font-weight: 700;
+            font-size: 1.1em;
+        }
+        
+        .claim-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+        
+        .claim-badge.independent {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .claim-badge.dependent {
+            background: #999;
+            color: white;
+        }
+        
+        .claim-text {
+            line-height: 1.6;
+        }
+        
+        .claim-references {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.9em;
+            color: var(--text-color-secondary);
+        }
+        
         /* 其他样式 */
         .file-manager-modal {
             display: none; position: fixed; z-index: 1001; left: 0; top: 0;
@@ -903,9 +973,17 @@
 <!-- 功能七：权利要求处理 -->
 <!-- ====================================================================== -->
 <div id="claims_processor-tab" class="tab-content">
-    <div class="step">
-        <div class="step-header">专利权利要求处理器</div>
-        <p class="info">上传包含专利权利要求的Excel文件，系统将自动解析、分类并提取权利要求信息。支持中英文混合文本。</p>
+    <!-- 子标签页导航 -->
+    <div class="sub-tab-container" style="margin-bottom: 25px;">
+        <button class="sub-tab-button active" onclick="switchClaimsSubTab('excel')">Excel批量分析</button>
+        <button class="sub-tab-button" onclick="switchClaimsSubTab('text')">文本输入分析</button>
+    </div>
+    
+    <!-- Excel批量分析页面 -->
+    <div id="claims-excel-tab" class="claims-sub-tab active">
+        <div class="step">
+            <div class="step-header">Excel批量权利要求分析</div>
+            <p class="info">上传包含专利权利要求的Excel文件，系统将自动解析、分类并提取权利要求信息。支持中英文混合文本。</p>
         
         <div class="config-item">
             <label for="claims_excel_file">上传Excel文件:</label>
@@ -1077,6 +1155,90 @@
         </div>
         
     </div>
+    <!-- Excel批量分析页面结束 -->
+    
+    <!-- 文本输入分析页面 -->
+    <div id="claims-text-tab" class="claims-sub-tab" style="display:none;">
+        <div class="step">
+            <div class="step-header">文本输入权利要求分析</div>
+            <p class="info">直接输入权利要求文本，系统将自动识别独立权利要求（蓝色高亮）和从属权利要求（灰色显示），并生成可视化引证关系图。</p>
+            
+            <div class="config-item">
+                <label for="claims_text_input">输入权利要求文本:</label>
+                <textarea id="claims_text_input" rows="15" placeholder="示例：
+1. 一种智能手机，其特征在于，包括：
+   处理器，用于执行指令；
+   存储器，与所述处理器连接，用于存储数据；
+   显示屏，与所述处理器连接，用于显示信息。
+
+2. 根据权利要求1所述的智能手机，其特征在于，所述处理器为八核处理器。
+
+3. 根据权利要求1或2所述的智能手机，其特征在于，所述存储器容量为8GB以上。" style="width: 100%; padding: 15px; border: 1px solid var(--border-color); border-radius: 8px; font-family: 'Noto Sans SC', sans-serif; font-size: 14px; line-height: 1.6;"></textarea>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px; display: flex; gap: 15px; justify-content: center;">
+                <button id="claims_text_analyze_btn" class="small-button">🔍 开始分析</button>
+                <button id="claims_text_clear_btn" class="small-button" style="background: #6c757d;">🗑️ 清空</button>
+                <button id="claims_text_example_btn" class="small-button" style="background: #17a2b8;">📄 加载示例</button>
+            </div>
+            
+            <div id="claims_text_message" style="display:none; margin-top: 20px; padding: 15px; border-radius: 8px;"></div>
+            
+            <!-- 分析结果区域 -->
+            <div id="claims_text_results" style="display:none; margin-top: 30px;">
+                <!-- 统计信息 -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                    <div class="stat-card">
+                        <div class="stat-label">总权利要求数</div>
+                        <div class="stat-value" id="claims_text_stat_total">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">独立权利要求</div>
+                        <div class="stat-value" id="claims_text_stat_independent">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">从属权利要求</div>
+                        <div class="stat-value" id="claims_text_stat_dependent">0</div>
+                    </div>
+                </div>
+                
+                <!-- 权利要求列表 -->
+                <div style="background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 12px; padding: 25px; margin-bottom: 25px;">
+                    <h4>📋 权利要求列表</h4>
+                    <div id="claims_text_list"></div>
+                </div>
+                
+                <!-- 可视化区域 -->
+                <div style="background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 12px; padding: 25px;">
+                    <h4>📊 权利要求引证关系图</h4>
+                    <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 20px; flex-wrap: wrap;">
+                        <label for="claims_text_viz_style">可视化样式:</label>
+                        <select id="claims_text_viz_style">
+                            <option value="tree">树状图</option>
+                            <option value="network">网络图</option>
+                            <option value="radial">径向图</option>
+                        </select>
+                        
+                        <div id="claims_text_tree_spread" style="display: flex; gap: 10px; align-items: center;">
+                            <label for="claims_text_spread_slider">散开程度:</label>
+                            <input type="range" id="claims_text_spread_slider" min="0.5" max="2.5" step="0.1" value="1.0" style="width: 120px;">
+                            <span id="claims_text_spread_value">1.0x</span>
+                        </div>
+                        
+                        <button id="claims_text_zoom_in" class="small-button" title="放大">🔍+</button>
+                        <button id="claims_text_zoom_out" class="small-button" title="缩小">🔍-</button>
+                        <button id="claims_text_zoom_reset" class="small-button" title="重置">⚪</button>
+                        <button id="claims_text_center" class="small-button" title="居中">🎯</button>
+                        <button id="claims_text_screenshot" class="small-button" title="截图">📷</button>
+                    </div>
+                    
+                    <div id="claims_text_visualization" style="width: 100%; height: 600px; border: 1px solid var(--border-color); border-radius: 8px; background: white;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- 文本输入分析页面结束 -->
+    
 </div>
 
     </div>

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>权利要求分析器 - ALFRED X IP</title>
+    <!-- 引入的库 -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <!-- 字体 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- 模块化CSS文件 -->
+    <link rel="stylesheet" href="css/main.css?v=20260122">
+    <link rel="stylesheet" href="css/pages/claims.css?v=20260122">
+    
+    <style>
+        .analyzer-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .analyzer-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(90deg, var(--primary-color-dark), var(--primary-color));
+            color: white;
+            border-radius: 12px;
+        }
+        
+        .analyzer-header h1 {
+            margin: 0 0 10px 0;
+            font-size: 2em;
+        }
+        
+        .analyzer-header p {
+            margin: 0;
+            opacity: 0.9;
+        }
+        
+        .input-section {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+        
+        .input-section h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+        
+        #claims_text_input {
+            width: 100%;
+            min-height: 300px;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-family: 'Noto Sans SC', sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: vertical;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        .results-section {
+            display: none;
+            margin-top: 30px;
+        }
+        
+        .claims-list {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+        
+        .claim-item {
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--border-color);
+            transition: all 0.3s;
+        }
+        
+        .claim-item.independent {
+            background: linear-gradient(90deg, rgba(74, 108, 247, 0.1), rgba(74, 108, 247, 0.05));
+            border-left-color: var(--primary-color);
+        }
+        
+        .claim-item.dependent {
+            background: rgba(128, 128, 128, 0.05);
+            border-left-color: #999;
+            color: #666;
+        }
+        
+        .claim-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .claim-number {
+            font-weight: 700;
+            font-size: 1.1em;
+        }
+        
+        .claim-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+        
+        .claim-badge.independent {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .claim-badge.dependent {
+            background: #999;
+            color: white;
+        }
+        
+        .claim-text {
+            line-height: 1.6;
+        }
+        
+        .claim-references {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.9em;
+            color: var(--text-color-secondary);
+        }
+        
+        .visualization-section {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+        }
+        
+        .viz-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .viz-controls label {
+            font-weight: 500;
+        }
+        
+        .viz-controls select {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: white;
+        }
+        
+        #visualization_container {
+            width: 100%;
+            height: 600px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: white;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .stat-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: var(--text-color-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        .loading-spinner {
+            border: 4px solid rgba(74, 108, 247, 0.1);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="analyzer-container">
+        <div class="analyzer-header">
+            <h1>🔍 权利要求分析器</h1>
+            <p>直接输入权利要求文本，智能识别独权和从权关系，生成可视化引证图</p>
+        </div>
+        
+        <div id="message_container" class="message"></div>
+        
+        <div class="input-section">
+            <h3>📝 输入权利要求文本</h3>
+            <p class="info">请在下方文本框中输入权利要求内容，支持中英文混合。每条权利要求应包含序号（如：1. 或 权利要求1）</p>
+            
+            <textarea id="claims_text_input" placeholder="示例：
+1. 一种智能手机，其特征在于，包括：
+   处理器；
+   存储器；
+   显示屏。
+
+2. 根据权利要求1所述的智能手机，其特征在于，所述处理器为八核处理器。
+
+3. 根据权利要求1或2所述的智能手机，其特征在于，所述存储器容量为8GB以上。"></textarea>
+            
+            <div class="action-buttons">
+                <button id="analyze_btn" class="small-button">🔍 开始分析</button>
+                <button id="clear_btn" class="small-button" style="background: #6c757d;">🗑️ 清空</button>
+                <button id="example_btn" class="small-button" style="background: #17a2b8;">📄 加载示例</button>
+            </div>
+        </div>
+        
+        <div id="results_section" class="results-section">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">总权利要求数</div>
+                    <div class="stat-value" id="stat_total">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">独立权利要求</div>
+                    <div class="stat-value" id="stat_independent">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">从属权利要求</div>
+                    <div class="stat-value" id="stat_dependent">0</div>
+                </div>
+            </div>
+            
+            <div class="claims-list">
+                <h3>📋 权利要求列表</h3>
+                <div id="claims_list_container"></div>
+            </div>
+            
+            <div class="visualization-section">
+                <h3>📊 权利要求引证关系图</h3>
+                <div class="viz-controls">
+                    <label for="viz_style">可视化样式:</label>
+                    <select id="viz_style">
+                        <option value="tree">树状图</option>
+                        <option value="network">网络图</option>
+                        <option value="radial">径向图</option>
+                    </select>
+                    
+                    <div id="tree_spread_control" style="display: flex; gap: 10px; align-items: center;">
+                        <label for="tree_spread_slider">散开程度:</label>
+                        <input type="range" id="tree_spread_slider" min="0.5" max="2.5" step="0.1" value="1.0" style="width: 120px;">
+                        <span id="tree_spread_value">1.0x</span>
+                    </div>
+                    
+                    <button id="zoom_in_btn" class="small-button" title="放大">🔍+</button>
+                    <button id="zoom_out_btn" class="small-button" title="缩小">🔍-</button>
+                    <button id="zoom_reset_btn" class="small-button" title="重置">⚪</button>
+                    <button id="center_view_btn" class="small-button" title="居中">🎯</button>
+                    <button id="screenshot_btn" class="small-button" title="截图">📷</button>
+                </div>
+                
+                <div id="visualization_container"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="../js/claimsAnalyzer.js?v=20260122"></script>
+</body>
+</html>

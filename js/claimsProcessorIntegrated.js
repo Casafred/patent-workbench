@@ -20,6 +20,34 @@ let claimsSelectedPatentNumber = null;
 let claimsSelectedPatentRow = null;
 let claimsVisualizationRenderer = null;
 
+// 新增：文本分析相关状态
+let claimsTextAnalyzedData = [];
+let claimsTextVisualizationRenderer = null;
+
+// 子标签页切换函数
+function switchClaimsSubTab(tabName) {
+    // 隐藏所有子标签页
+    document.querySelectorAll('.claims-sub-tab').forEach(tab => {
+        tab.classList.remove('active');
+        tab.style.display = 'none';
+    });
+    
+    // 移除所有按钮的active类
+    document.querySelectorAll('#claims_processor-tab .sub-tab-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // 显示选中的标签页
+    const targetTab = document.getElementById(`claims-${tabName}-tab`);
+    if (targetTab) {
+        targetTab.classList.add('active');
+        targetTab.style.display = 'block';
+    }
+    
+    // 激活对应的按钮
+    event.target.classList.add('active');
+}
+
 // 初始化函数
 function initClaimsProcessor() {
     const fileInput = document.getElementById('claims_excel_file');
@@ -148,6 +176,77 @@ function initClaimsProcessor() {
             }
         });
     }
+    
+    // 初始化文本分析功能
+    initClaimsTextAnalyzer();
+}
+
+// 初始化文本分析功能
+function initClaimsTextAnalyzer() {
+    const analyzeBtn = document.getElementById('claims_text_analyze_btn');
+    const clearBtn = document.getElementById('claims_text_clear_btn');
+    const exampleBtn = document.getElementById('claims_text_example_btn');
+    const vizStyleSelect = document.getElementById('claims_text_viz_style');
+    const spreadSlider = document.getElementById('claims_text_spread_slider');
+    const spreadValue = document.getElementById('claims_text_spread_value');
+    
+    if (analyzeBtn) {
+        analyzeBtn.addEventListener('click', analyzeClaimsText);
+    }
+    
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            document.getElementById('claims_text_input').value = '';
+            document.getElementById('claims_text_results').style.display = 'none';
+            claimsTextAnalyzedData = [];
+        });
+    }
+    
+    if (exampleBtn) {
+        exampleBtn.addEventListener('click', loadClaimsTextExample);
+    }
+    
+    if (vizStyleSelect) {
+        vizStyleSelect.addEventListener('change', () => {
+            if (claimsTextVisualizationRenderer && claimsTextAnalyzedData.length > 0) {
+                renderClaimsTextVisualization();
+            }
+        });
+    }
+    
+    if (spreadSlider) {
+        spreadSlider.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            spreadValue.textContent = value.toFixed(1) + 'x';
+            if (claimsTextVisualizationRenderer) {
+                claimsTextVisualizationRenderer.setTreeSpreadFactor(value);
+            }
+        });
+    }
+    
+    // 缩放控制
+    document.getElementById('claims_text_zoom_in')?.addEventListener('click', () => {
+        if (claimsTextVisualizationRenderer) claimsTextVisualizationRenderer.zoomIn();
+    });
+    
+    document.getElementById('claims_text_zoom_out')?.addEventListener('click', () => {
+        if (claimsTextVisualizationRenderer) claimsTextVisualizationRenderer.zoomOut();
+    });
+    
+    document.getElementById('claims_text_zoom_reset')?.addEventListener('click', () => {
+        if (claimsTextVisualizationRenderer) claimsTextVisualizationRenderer.zoomReset();
+    });
+    
+    document.getElementById('claims_text_center')?.addEventListener('click', () => {
+        if (claimsTextVisualizationRenderer) claimsTextVisualizationRenderer.centerView();
+    });
+    
+    document.getElementById('claims_text_screenshot')?.addEventListener('click', () => {
+        if (claimsTextVisualizationRenderer) {
+            claimsTextVisualizationRenderer.captureHighResScreenshot();
+            showClaimsTextMessage('截图已保存！', 'success');
+        }
+    });
 }
 
 // 处理文件选择
@@ -2777,4 +2876,287 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initClaimsProcessor);
 } else {
     initClaimsProcessor();
+}
+
+
+// ============================================================================
+// 文本分析功能
+// ============================================================================
+
+// 分析权利要求文本
+function analyzeClaimsText() {
+    const input = document.getElementById('claims_text_input');
+    const text = input.value.trim();
+    
+    if (!text) {
+        showClaimsTextMessage('请输入权利要求文本', 'error');
+        return;
+    }
+    
+    try {
+        // 解析权利要求文本
+        claimsTextAnalyzedData = parseClaimsText(text);
+        
+        if (claimsTextAnalyzedData.length === 0) {
+            showClaimsTextMessage('未能识别到有效的权利要求，请检查格式', 'error');
+            return;
+        }
+        
+        // 显示结果
+        displayClaimsTextResults();
+        showClaimsTextMessage(`成功识别 ${claimsTextAnalyzedData.length} 条权利要求`, 'success');
+        
+    } catch (error) {
+        console.error('Analysis error:', error);
+        showClaimsTextMessage('分析失败：' + error.message, 'error');
+    }
+}
+
+// 解析权利要求文本
+function parseClaimsText(text) {
+    const claims = [];
+    const lines = text.split('\n');
+    let currentClaim = null;
+    
+    for (let line of lines) {
+        line = line.trim();
+        if (!line) continue;
+        
+        // 匹配权利要求编号
+        const claimMatch = line.match(/^(?:权利要求|请求项|請求項|claim|claims?)\s*(\d+)|^(\d+)[.、．]/i);
+        
+        if (claimMatch) {
+            // 保存上一条权利要求
+            if (currentClaim) {
+                claims.push(currentClaim);
+            }
+            
+            // 开始新的权利要求
+            const claimNumber = parseInt(claimMatch[1] || claimMatch[2]);
+            const claimText = line.replace(/^(?:权利要求|请求项|請求項|claim|claims?)\s*\d+[.、．]?\s*/i, '');
+            
+            currentClaim = {
+                claim_number: claimNumber,
+                claim_text: claimText,
+                full_text: claimText
+            };
+        } else if (currentClaim) {
+            // 继续当前权利要求的文本
+            currentClaim.full_text += ' ' + line;
+            currentClaim.claim_text += ' ' + line;
+        }
+    }
+    
+    // 保存最后一条
+    if (currentClaim) {
+        claims.push(currentClaim);
+    }
+    
+    // 分析引用关系
+    claims.forEach(claim => {
+        const refs = extractClaimReferences(claim.full_text);
+        claim.referenced_claims = refs;
+        claim.claim_type = refs.length > 0 ? 'dependent' : 'independent';
+        claim.language = 'zh'; // 简化处理
+        claim.confidence_score = 0.95;
+    });
+    
+    return claims;
+}
+
+// 提取引用的权利要求编号
+function extractClaimReferences(text) {
+    const references = [];
+    
+    // 匹配各种引用格式
+    const patterns = [
+        /根据权利要求\s*(\d+(?:\s*[-至或、和,]\s*\d+)*)/g,
+        /according\s+to\s+claim\s*(\d+(?:\s*[-or,and\s]+\d+)*)/gi,
+        /of\s+claim\s*(\d+(?:\s*[-or,and\s]+\d+)*)/gi,
+        /請求項\s*(\d+(?:\s*[-または、及び,]\s*\d+)*)/g,
+        /claim\s*(\d+(?:\s*[-or,and\s]+\d+)*)/gi
+    ];
+    
+    patterns.forEach(pattern => {
+        let match;
+        while ((match = pattern.exec(text)) !== null) {
+            const refText = match[1];
+            const numbers = refText.match(/\d+/g);
+            if (numbers) {
+                numbers.forEach(num => {
+                    const n = parseInt(num);
+                    if (!references.includes(n)) {
+                        references.push(n);
+                    }
+                });
+            }
+        }
+    });
+    
+    return references.sort((a, b) => a - b);
+}
+
+// 显示文本分析结果
+function displayClaimsTextResults() {
+    // 更新统计
+    const totalClaims = claimsTextAnalyzedData.length;
+    const independentClaims = claimsTextAnalyzedData.filter(c => c.claim_type === 'independent').length;
+    const dependentClaims = totalClaims - independentClaims;
+    
+    document.getElementById('claims_text_stat_total').textContent = totalClaims;
+    document.getElementById('claims_text_stat_independent').textContent = independentClaims;
+    document.getElementById('claims_text_stat_dependent').textContent = dependentClaims;
+    
+    // 显示权利要求列表
+    displayClaimsTextList();
+    
+    // 生成可视化
+    renderClaimsTextVisualization();
+    
+    // 显示结果区域
+    document.getElementById('claims_text_results').style.display = 'block';
+    
+    // 滚动到结果
+    document.getElementById('claims_text_results').scrollIntoView({ behavior: 'smooth' });
+}
+
+// 显示权利要求列表
+function displayClaimsTextList() {
+    const container = document.getElementById('claims_text_list');
+    container.innerHTML = '';
+    
+    claimsTextAnalyzedData.forEach(claim => {
+        const claimDiv = document.createElement('div');
+        claimDiv.className = `claim-item ${claim.claim_type}`;
+        
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'claim-header';
+        
+        const numberSpan = document.createElement('span');
+        numberSpan.className = 'claim-number';
+        numberSpan.textContent = `权利要求 ${claim.claim_number}`;
+        
+        const badgeSpan = document.createElement('span');
+        badgeSpan.className = `claim-badge ${claim.claim_type}`;
+        badgeSpan.textContent = claim.claim_type === 'independent' ? '独立权利要求' : '从属权利要求';
+        
+        headerDiv.appendChild(numberSpan);
+        headerDiv.appendChild(badgeSpan);
+        
+        const textDiv = document.createElement('div');
+        textDiv.className = 'claim-text';
+        textDiv.textContent = claim.full_text;
+        
+        claimDiv.appendChild(headerDiv);
+        claimDiv.appendChild(textDiv);
+        
+        if (claim.referenced_claims.length > 0) {
+            const refsDiv = document.createElement('div');
+            refsDiv.className = 'claim-references';
+            refsDiv.innerHTML = `<strong>引用:</strong> 权利要求 ${claim.referenced_claims.join(', ')}`;
+            claimDiv.appendChild(refsDiv);
+        }
+        
+        container.appendChild(claimDiv);
+    });
+}
+
+// 渲染可视化
+function renderClaimsTextVisualization() {
+    const container = document.getElementById('claims_text_visualization');
+    const style = document.getElementById('claims_text_viz_style').value;
+    
+    // 清空容器
+    container.innerHTML = '';
+    
+    // 创建可视化数据
+    const vizData = createClaimsTextVizData();
+    
+    // 初始化渲染器（复用Excel分析的渲染器类）
+    if (!claimsTextVisualizationRenderer) {
+        claimsTextVisualizationRenderer = new ClaimsVisualizationRenderer(container);
+    }
+    
+    // 渲染
+    claimsTextVisualizationRenderer.render(vizData, style);
+}
+
+// 创建可视化数据
+function createClaimsTextVizData() {
+    const nodes = [];
+    const links = [];
+    
+    claimsTextAnalyzedData.forEach(claim => {
+        nodes.push({
+            id: claim.claim_number.toString(),
+            label: `权利要求${claim.claim_number}`,
+            type: claim.claim_type,
+            text: claim.full_text.substring(0, 100) + '...'
+        });
+        
+        claim.referenced_claims.forEach(ref => {
+            links.push({
+                source: claim.claim_number.toString(),
+                target: ref.toString()
+            });
+        });
+    });
+    
+    return { nodes, links };
+}
+
+// 加载示例
+function loadClaimsTextExample() {
+    const example = `1. 一种智能手机，其特征在于，包括：
+   处理器，用于执行指令；
+   存储器，与所述处理器连接，用于存储数据；
+   显示屏，与所述处理器连接，用于显示信息；
+   通信模块，与所述处理器连接，用于无线通信。
+
+2. 根据权利要求1所述的智能手机，其特征在于，所述处理器为八核处理器。
+
+3. 根据权利要求1或2所述的智能手机，其特征在于，所述存储器容量为8GB以上。
+
+4. 根据权利要求1至3任一项所述的智能手机，其特征在于，所述显示屏为OLED显示屏。
+
+5. 根据权利要求1所述的智能手机，其特征在于，还包括指纹识别模块。
+
+6. 根据权利要求5所述的智能手机，其特征在于，所述指纹识别模块集成在所述显示屏下方。
+
+7. 一种移动终端，其特征在于，包括：
+   主控芯片；
+   电源管理模块；
+   天线模块。
+
+8. 根据权利要求7所述的移动终端，其特征在于，所述天线模块支持5G通信。`;
+    
+    document.getElementById('claims_text_input').value = example;
+    showClaimsTextMessage('示例已加载，点击"开始分析"按钮进行分析', 'info');
+}
+
+// 显示消息
+function showClaimsTextMessage(message, type = 'info') {
+    const container = document.getElementById('claims_text_message');
+    container.textContent = message;
+    container.className = '';
+    container.style.display = 'block';
+    
+    // 设置样式
+    if (type === 'success') {
+        container.style.background = '#d4edda';
+        container.style.color = '#155724';
+        container.style.border = '1px solid #c3e6cb';
+    } else if (type === 'error') {
+        container.style.background = '#f8d7da';
+        container.style.color = '#721c24';
+        container.style.border = '1px solid #f5c6cb';
+    } else {
+        container.style.background = '#d1ecf1';
+        container.style.color = '#0c5460';
+        container.style.border = '1px solid #bee5eb';
+    }
+    
+    setTimeout(() => {
+        container.style.display = 'none';
+    }, 5000);
 }
