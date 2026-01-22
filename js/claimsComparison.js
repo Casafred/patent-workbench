@@ -474,14 +474,88 @@ function renderSideBySideView() {
     });
     html += '</div>';
     
-    html += '<div class="side-by-side-body">';
-    claims.forEach(claim => {
-        html += `<div class="claim-text-column">${claim.translated}</div>`;
+    html += '<div class="side-by-side-body" id="side-by-side-container">';
+    claims.forEach((claim, index) => {
+        // 格式化文本：确保每个权利要求以序号开头并换行
+        const formattedText = formatClaimTextForDisplay(claim.translated);
+        html += `<div class="claim-text-column" data-column="${index}">${formattedText}</div>`;
     });
     html += '</div>';
     html += '</div>';
     
     comparisonResultContainerRefactored.innerHTML = html;
+    
+    // 添加同步滚动功能
+    setupSyncScroll();
+}
+
+/**
+ * 设置同步滚动
+ */
+function setupSyncScroll() {
+    const container = document.getElementById('side-by-side-container');
+    if (!container) return;
+    
+    const columns = container.querySelectorAll('.claim-text-column');
+    if (columns.length === 0) return;
+    
+    let isScrolling = false;
+    
+    columns.forEach(column => {
+        column.addEventListener('scroll', function() {
+            if (isScrolling) return;
+            
+            isScrolling = true;
+            const scrollPercentage = this.scrollTop / (this.scrollHeight - this.clientHeight);
+            
+            columns.forEach(otherColumn => {
+                if (otherColumn !== this) {
+                    const targetScroll = scrollPercentage * (otherColumn.scrollHeight - otherColumn.clientHeight);
+                    otherColumn.scrollTop = targetScroll;
+                }
+            });
+            
+            setTimeout(() => {
+                isScrolling = false;
+            }, 50);
+        });
+    });
+}
+
+/**
+ * 格式化权利要求文本以便于对照阅读
+ * 将文本按权利要求序号分段，每段以序号开头并换行
+ */
+function formatClaimTextForDisplay(text) {
+    if (!text) return '';
+    
+    // 按权利要求分隔符分割（支持多种格式）
+    // 匹配模式：数字 + 点/句号/顿号 + 可选空格
+    const claimPattern = /(\d+\s*[.、．]\s*)/g;
+    
+    // 先按分隔符 --- 分割（如果有多个独立权利要求）
+    const sections = text.split(/\n*---\n*/);
+    
+    let formattedSections = sections.map(section => {
+        // 为每个section添加序号和换行
+        let formatted = section.trim();
+        
+        // 如果文本不是以序号开头，尝试添加
+        if (!/^\d+\s*[.、．]/.test(formatted)) {
+            return formatted;
+        }
+        
+        // 将长段落按句子分割，便于阅读
+        // 在中文句号、分号、冒号后添加换行
+        formatted = formatted.replace(/([；;：:])/g, '$1\n');
+        
+        // 在"其特征在于"、"包括"等关键词后换行
+        formatted = formatted.replace(/(其特征在于[，,]?|包括[：:]?|comprising[：:]?|characterized in that[，,]?)/gi, '$1\n');
+        
+        return formatted;
+    }).join('\n\n---\n\n');
+    
+    return formattedSections;
 }
 
 /**

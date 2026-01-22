@@ -451,7 +451,6 @@
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 10px;
     max-height: 600px;
-    overflow-y: auto;
 }
 
 .claim-text-column {
@@ -461,7 +460,30 @@
     border-radius: 6px;
     font-family: 'Courier New', monospace;
     font-size: 0.85em;
-    line-height: 1.6;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    overflow-y: auto;
+    max-height: 600px;
+}
+
+.claim-text-column::-webkit-scrollbar {
+    width: 8px;
+}
+
+.claim-text-column::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.claim-text-column::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 4px;
+}
+
+.claim-text-column::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-color-dark);
 }
 
 /* 文本高亮样式 */
