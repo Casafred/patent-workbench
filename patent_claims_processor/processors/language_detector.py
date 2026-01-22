@@ -15,17 +15,22 @@ class LanguageDetector(LanguageDetectorInterface):
     
     def __init__(self):
         """初始化语言检测器"""
-        # 语言优先级：中文 > 英文 > 其他语言
+        # 语言优先级：中文 > 英文 > 日语 > 其他语言
         self.language_priority = {
-            'zh': 3,
-            'zh-cn': 3,
-            'zh-tw': 3,
+            'zh': 4,
+            'zh-cn': 4,
+            'zh-tw': 4,
+            'ja': 3,  # 日语
             'en': 2,
             'other': 1
         }
         
-        # 中文字符正则表达式
+        # 中文字符正则表达式（CJK统一汉字）
         self.chinese_pattern = re.compile(r'[\u4e00-\u9fff]+')
+        
+        # 日语特有字符正则表达式
+        self.hiragana_pattern = re.compile(r'[\u3040-\u309f]+')  # 平假名
+        self.katakana_pattern = re.compile(r'[\u30a0-\u30ff]+')  # 片假名
         
         # 英文字符正则表达式
         self.english_pattern = re.compile(r'[a-zA-Z]+')
@@ -38,38 +43,26 @@ class LanguageDetector(LanguageDetectorInterface):
             text: 待检测的文本
             
         Returns:
-            语言代码 ('en', 'zh', 'other')
+            语言代码 ('en', 'zh', 'ja', 'de', 'other')
         """
         if not text or not text.strip():
             return 'other'
         
-        # 首先尝试使用langdetect库进行检测
-        try:
-            # 清理文本，移除数字和特殊字符以提高检测准确性
-            clean_text = re.sub(r'[0-9\.\,\;\:\(\)\[\]\{\}]', ' ', text)
-            clean_text = re.sub(r'\s+', ' ', clean_text).strip()
-            
-            if len(clean_text) > 10:  # 只有足够长的文本才使用langdetect
-                detected_lang = detect(clean_text)
-                
-                # 将langdetect的结果映射到我们的语言代码
-                if detected_lang in ['en']:
-                    return 'en'
-                elif detected_lang in ['zh-cn', 'zh-tw', 'zh']:
-                    return 'zh'
-                elif detected_lang in ['de']:
-                    return 'de'
-                else:
-                    # 对于其他语言，继续使用字符统计方法验证
-                    pass
-        except (LangDetectException, Exception):
-            # langdetect失败时，使用备用的字符统计方法
-            pass
+        # 【关键修复】先检测日语特有字符（平假名和片假名）
+        # 这是区分日语和中文的关键！
+        hiragana_matches = self.hiragana_pattern.findall(text)
+        hiragana_chars = sum(len(match) for match in hiragana_matches)
         
-        # 备用方法：统计中文和英文字符
+        katakana_matches = self.katakana_pattern.findall(text)
+        katakana_chars = sum(len(match) for match in katakana_matches)
+        
+        japanese_kana_chars = hiragana_chars + katakana_chars
+        
+        # 统计汉字（中日共享）
         chinese_matches = self.chinese_pattern.findall(text)
         chinese_chars = sum(len(match) for match in chinese_matches)
         
+        # 统计英文字符
         english_matches = self.english_pattern.findall(text)
         english_chars = sum(len(match) for match in english_matches)
         
@@ -78,21 +71,60 @@ class LanguageDetector(LanguageDetectorInterface):
         if total_chars == 0:
             return 'other'
         
-        # 计算中文和英文字符比例
-        chinese_ratio = chinese_chars / total_chars if total_chars > 0 else 0
+        # 计算各类字符比例
+        kana_ratio = japanese_kana_chars / total_chars if total_chars > 0 else 0
+        kanji_ratio = chinese_chars / total_chars if total_chars > 0 else 0
         english_ratio = english_chars / total_chars if total_chars > 0 else 0
+        
+        # 【关键判断】如果包含假名（平假名或片假名），很可能是日语
+        if kana_ratio > 0.05:  # 假名占比超过5%，判定为日语
+            return 'ja'
+        
+        # 使用langdetect进行辅助检测
+        try:
+            clean_text = re.sub(r'[0-9\.\,\;\:\(\)\[\]\{\}]', ' ', text)
+            clean_text = re.sub(r'\s+', ' ', clean_text).strip()
+            
+            if len(clean_text) > 10:
+                detected_lang = detect(clean_text)
+                
+                # 如果langdetect检测为日语，直接返回
+                if detected_lang == 'ja':
+                    return 'ja'
+                elif detected_lang in ['en']:
+                    return 'en'
+                elif detected_lang in ['zh-cn', 'zh-tw', 'zh']:
+                    # 即使langdetect说是中文，也要验证是否有假名
+                    if kana_ratio > 0.01:  # 有少量假名也判定为日语
+                        return 'ja'
+                    return 'zh'
+                elif detected_lang in ['de']:
+                    return 'de'
+        except (LangDetectException, Exception):
+            pass
         
         # 德语关键词检测
         german_keywords = ['anspruch', 'ansprüche', 'anspruchs', 'gemäß', 'dadurch', 'dadurch gekennzeichnet']
         german_pattern = re.compile('|'.join(german_keywords), re.IGNORECASE)
         has_german_keywords = bool(german_pattern.search(text))
         
-        # 判断语言类型
-        if chinese_ratio > 0.1:  # 中文字符占比超过10%
+        # 日语关键词检测（作为辅助判断）
+        japanese_keywords = ['請求項', 'に記載', 'において', 'であって', 'することを特徴とする']
+        japanese_pattern = re.compile('|'.join(japanese_keywords))
+        has_japanese_keywords = bool(japanese_pattern.search(text))
+        
+        # 最终判断逻辑
+        if has_japanese_keywords or (kana_ratio > 0.01 and kanji_ratio > 0.1):
+            # 包含日语关键词，或有假名+汉字组合
+            return 'ja'
+        elif kanji_ratio > 0.1 and kana_ratio == 0:
+            # 只有汉字没有假名，判定为中文
             return 'zh'
-        elif english_ratio > 0.3:  # 英文字符占比超过30%
+        elif english_ratio > 0.3:
+            # 英文字符占比超过30%
             return 'en'
-        elif has_german_keywords and english_ratio > 0.1:  # 包含德语关键词且有一定英文字符
+        elif has_german_keywords and english_ratio > 0.1:
+            # 包含德语关键词且有一定英文字符
             return 'de'
         else:
             return 'other'
