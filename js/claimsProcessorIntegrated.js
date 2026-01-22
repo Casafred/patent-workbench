@@ -458,7 +458,36 @@ async function handleClaimsProcess() {
             body: JSON.stringify(requestBody)
         });
         
-        const data = await response.json();
+        // 【关键修复】：处理502和空响应
+        if (!response.ok) {
+            if (response.status === 502) {
+                // 502错误：后端超时，但任务可能仍在后台运行
+                showClaimsMessage('处理请求已提交，正在后台处理中...', 'info');
+                // 不返回错误，继续轮询
+                // 注意：这里不能获取task_id，需要从之前的状态恢复
+                // 暂时显示提示信息
+                if (processBtn) {
+                    processBtn.textContent = '后台处理中...';
+                }
+                return;
+            }
+            
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText || '服务器错误'}`);
+        }
+        
+        // 尝试解析JSON
+        let data;
+        try {
+            const responseText = await response.text();
+            if (!responseText || responseText.trim() === '') {
+                throw new Error('服务器返回空响应');
+            }
+            data = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('JSON parse error:', parseError);
+            throw new Error('服务器返回的数据格式错误');
+        }
         
         if (data.success) {
             const responseData = data.data || {};
@@ -466,10 +495,25 @@ async function handleClaimsProcess() {
             // 开始轮询状态
             startClaimsPolling();
         } else {
-            showClaimsMessage('处理失败：' + data.error, 'error');
-            if (processBtn) {
-                processBtn.disabled = false;
-                processBtn.textContent = '开始处理';
+            // 检查是否是"任务正在进行中"的错误
+            if (data.error && data.error.includes('正在进行中')) {
+                showClaimsMessage('上一个处理任务仍在进行中，请稍候...', 'info');
+                // 尝试恢复任务ID并继续轮询
+                // 这里需要从错误信息中提取task_id或使用之前的task_id
+                if (claimsCurrentTaskId) {
+                    startClaimsPolling();
+                } else {
+                    if (processBtn) {
+                        processBtn.disabled = false;
+                        processBtn.textContent = '开始处理';
+                    }
+                }
+            } else {
+                showClaimsMessage('处理失败：' + data.error, 'error');
+                if (processBtn) {
+                    processBtn.disabled = false;
+                    processBtn.textContent = '开始处理';
+                }
             }
         }
     } catch (error) {

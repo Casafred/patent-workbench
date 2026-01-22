@@ -488,6 +488,21 @@ def process_claims():
                 # Create processing service
                 processing_service = ProcessingService()
                 
+                # 【关键修复】：设置超时保护，避免长时间运行
+                import signal
+                
+                def timeout_handler(signum, frame):
+                    raise TimeoutError("处理超时")
+                
+                # 设置30秒超时（Render限制）
+                # 注意：Windows不支持signal.alarm，只在Linux上有效
+                try:
+                    if hasattr(signal, 'SIGALRM'):
+                        signal.signal(signal.SIGALRM, timeout_handler)
+                        signal.alarm(25)  # 25秒超时，留5秒缓冲
+                except Exception:
+                    pass  # Windows环境忽略
+                
                 # Process Excel file with progress callback
                 result = processing_service.process_excel_file(
                     file_path=file_path,
@@ -496,6 +511,13 @@ def process_claims():
                     patent_column_name=patent_column_name,
                     progress_callback=update_progress
                 )
+                
+                # 取消超时
+                try:
+                    if hasattr(signal, 'SIGALRM'):
+                        signal.alarm(0)
+                except Exception:
+                    pass
                 
                 print(f"[process_in_background] Processing completed successfully")
                 print(f"[process_in_background] Claims extracted: {result.total_claims_extracted}")
@@ -511,6 +533,13 @@ def process_claims():
                 # Save task to disk for persistence
                 save_task_to_disk(task_id, processing_tasks[task_id])
                 print(f"[process_in_background] Task saved to disk")
+                
+            except TimeoutError as e:
+                print(f"[process_in_background] Timeout error: {str(e)}")
+                processing_tasks[task_id]['status'] = 'timeout'
+                processing_tasks[task_id]['error'] = '处理超时，请尝试减少数据量或分批处理'
+                processing_tasks[task_id]['message'] = '处理超时'
+                save_task_to_disk(task_id, processing_tasks[task_id])
                 
             except Exception as e:
                 print(f"[process_in_background] Error in background processing: {traceback.format_exc()}")
