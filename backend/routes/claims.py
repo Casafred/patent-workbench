@@ -48,7 +48,8 @@ def save_task_to_disk(task_id: str, task_data: dict) -> None:
             'message': task_data.get('message'),
             'error': task_data.get('error'),
             'file_id': task_data.get('file_id'),
-            'sheet_name': task_data.get('sheet_name')
+            'sheet_name': task_data.get('sheet_name'),
+            'start_time': task_data.get('start_time')  # 添加开始时间
         }
         
         # Convert result object to dict if present
@@ -430,14 +431,25 @@ def process_claims():
         if task_id in processing_tasks:
             old_task = processing_tasks[task_id]
             if old_task['status'] == 'processing':
-                return create_response(
-                    error="该文件和工作表的处理任务正在进行中，请等待完成",
-                    status_code=400
-                )
-            # Remove old completed/failed task
+                # 检查任务是否真的在处理中（通过检查最后更新时间）
+                # 如果任务超过5分钟没有更新，认为已经失败，允许重新处理
+                import time
+                current_time = time.time()
+                task_start_time = old_task.get('start_time', current_time)
+                elapsed_time = current_time - task_start_time
+                
+                if elapsed_time < 300:  # 5分钟内
+                    return create_response(
+                        error="该文件和工作表的处理任务正在进行中，请等待完成",
+                        status_code=400
+                    )
+                else:
+                    print(f"[process_claims] Old task timed out ({elapsed_time:.1f}s), allowing restart")
+            # Remove old completed/failed/timed-out task
             del processing_tasks[task_id]
         
         # Initialize task status
+        import time
         processing_tasks[task_id] = {
             'status': 'processing',
             'progress': 0,
@@ -445,7 +457,8 @@ def process_claims():
             'result': None,
             'error': None,
             'file_id': file_id,
-            'sheet_name': sheet_name
+            'sheet_name': sheet_name,
+            'start_time': time.time()  # 添加开始时间
         }
         
         # 立即保存任务状态到磁盘，防止worker重启导致任务丢失
@@ -465,8 +478,10 @@ def process_claims():
                 def update_progress(current, total):
                     progress = int((current / total) * 100)
                     processing_tasks[task_id]['progress'] = progress
-                    # 不在这里保存到磁盘，避免竞态条件
-                    # 只在任务完成时保存最终状态
+                    processing_tasks[task_id]['message'] = f'正在处理... ({current}/{total})'
+                    # 每次更新进度时也保存到磁盘，确保进度可见
+                    # 虽然会增加I/O，但对于大文件很重要
+                    save_task_to_disk(task_id, processing_tasks[task_id])
                     print(f"[process_in_background] Progress: {progress}% ({current}/{total})")
                 
                 # Create processing service

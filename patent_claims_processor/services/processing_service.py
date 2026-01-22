@@ -136,9 +136,9 @@ class ProcessingService(ProcessingServiceInterface):
             for i, cell_text in enumerate(column_data):
                 self.processing_state['current_cell_index'] = i
                 
-                # 调用进度回调（每10行或每5%更新一次）
+                # 调用进度回调（更频繁地更新，每5行或每2%更新一次）
                 if progress_callback:
-                    update_interval = max(10, total_cells // 20)  # 至少每10行，或每5%
+                    update_interval = max(5, total_cells // 50)  # 至少每5行，或每2%
                     if i % update_interval == 0 or i == total_cells - 1:
                         progress_callback(i + 1, total_cells)
                 
