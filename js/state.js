@@ -72,23 +72,19 @@ const appState = {
         outputHeaders: [],
     },
     // ▼▼▼ 在这里添加新功能的状态对象 ▼▼▼
-    // ▼▼▼ 新增权利要求对比功能的状态 ▼▼▼
+    // ▼▼▼ 权利要求对比功能的状态 (v3.0) ▼▼▼
     claimsComparison: {
+        model: 'GLM-4.7-Flash', // 可选模型
+        comparisonCount: 2, // 2-4个权利要求
+        claims: [
+            { id: 1, label: '版本A', fullText: '', numbers: '', original: '', translated: '', lang: '' },
+            { id: 2, label: '版本B', fullText: '', numbers: '', original: '', translated: '', lang: '' }
+        ],
+        analysisResult: null, // 存储对比矩阵结果
+        viewMode: 'card', // card, sideBySide, matrix
+        displayLang: 'translated', // 'original' 或 'translated'
         isLoading: false,
-        error: null,
-        // 新增：用于存储原始和翻译后的数据
-        baseline: {
-            original: '', // 提取出的独权原文
-            translated: '', // 翻译后的文本
-            lang: ''
-        },
-        comparison: {
-            original: '',
-            translated: '',
-            lang: ''
-        },
-        analysisResult: null, // 存储最终对比的JSON结果
-        displayLang: 'original' // 'original' 或 'translated'
+        error: null
     },
     // ▲▲▲ 新增结束 ▲▲▲
     

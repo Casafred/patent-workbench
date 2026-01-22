@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>功能五测试 - 权利要求对比 v3.0</title>
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #4a6cf7;
+            border-bottom: 3px solid #4a6cf7;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #333;
+            margin-top: 0;
+        }
+        .test-case {
+            background: #f9f9f9;
+            border-left: 4px solid #4a6cf7;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .test-case h3 {
+            margin-top: 0;
+            color: #4a6cf7;
+        }
+        .test-data {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+        }
+        .label {
+            font-weight: bold;
+            color: #666;
+            margin-top: 10px;
+            display: block;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .warning {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        .info {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+        .checklist li {
+            padding: 8px;
+            margin: 5px 0;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+        .checklist li:before {
+            content: "☐ ";
+            color: #4a6cf7;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>功能五测试指南 - 权利要求对比 v3.0</h1>
+
+    <div class="test-section">
+        <h2>📋 测试前准备</h2>
+        <ul class="checklist">
+            <li>确保已配置智谱AI API Key</li>
+            <li>确保网络连接正常</li>
+            <li>使用Chrome或Firefox浏览器</li>
+            <li>清除浏览器缓存</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 测试用例</h2>
+
+        <div class="test-case">
+            <h3>测试用例1：基础对比（2个权利要求）</h3>
+            <p><strong>目标</strong>：测试基本的2个权利要求对比功能</p>
+            <p><strong>模型</strong>：GLM-4.7-Flash（快速）</p>
+            <p><strong>对比数量</strong>：2个</p>
+            
+            <span class="label">版本A - 权利要求全文：</span>
+            <div class="test-data">1. 一种智能手机，其特征在于，包括：
+处理器，用于执行应用程序；
+显示屏，用于显示应用程序的界面；
+存储器，用于存储应用程序和数据；
+通信模块，用于与外部设备进行无线通信。
+
+2. 根据权利要求1所述的智能手机，其特征在于，所述处理器为八核处理器。
+
+3. 根据权利要求1所述的智能手机，其特征在于，所述显示屏为OLED显示屏。</div>
+            
+            <span class="label">版本A - 独立权利要求序号：</span>
+            <div class="test-data">1</div>
+
+            <span class="label">版本B - 权利要求全文：</span>
+            <div class="test-data">1. 一种智能手机，其特征在于，包括：
+处理器，用于执行应用程序；
+显示屏，用于显示应用程序的界面；
+存储器，用于存储应用程序和数据；
+通信模块，用于与外部设备进行无线通信；
+摄像头模块，用于拍摄照片和视频。
+
+2. 根据权利要求1所述的智能手机，其特征在于，所述处理器为十核处理器。</div>
+            
+            <span class="label">版本B - 独立权利要求序号：</span>
+            <div class="test-data">1</div>
+
+            <div class="info">
+                <strong>预期结果：</strong>
+                <ul>
+                    <li>相同特征：处理器、显示屏、存储器、通信模块</li>
+                    <li>差异特征：版本B多了摄像头模块</li>
+                    <li>相似度：约75-85%</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-case">
+            <h3>测试用例2：多权利要求对比（3个）</h3>
+            <p><strong>目标</strong>：测试3个权利要求的对比功能</p>
+            <p><strong>模型</strong>：glm-4-flash（标准）</p>
+            <p><strong>对比数量</strong>：3个</p>
+            
+            <span class="label">版本A：</span>
+            <div class="test-data">1. 一种电动汽车，包括：
+电池组，用于提供电能；
+电机，用于驱动车辆；
+控制器，用于控制电机的运行。</div>
+            
+            <span class="label">版本B：</span>
+            <div class="test-data">1. 一种电动汽车，包括：
+电池组，用于提供电能；
+电机，用于驱动车辆；
+控制器，用于控制电机的运行；
+充电接口，用于连接充电设备。</div>
+            
+            <span class="label">版本C：</span>
+            <div class="test-data">1. 一种电动汽车，包括：
+电池组，用于提供电能；
+双电机，用于驱动车辆；
+智能控制器，用于控制电机的运行；
+快速充电接口，用于连接充电设备。</div>
+
+            <span class="label">所有版本的序号：</span>
+            <div class="test-data">1</div>
+
+            <div class="info">
+                <strong>预期结果：</strong>
+                <ul>
+                    <li>生成3对对比：A-B, A-C, B-C</li>
+                    <li>矩阵视图清晰显示相似度关系</li>
+                    <li>A-B相似度最高，A-C相似度最低</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-case">
+            <h3>测试用例3：最大对比（4个权利要求）</h3>
+            <p><strong>目标</strong>：测试4个权利要求的对比功能</p>
+            <p><strong>模型</strong>：glm-4-long（深度）</p>
+            <p><strong>对比数量</strong>：4个</p>
+            
+            <p class="warning">⚠️ 注意：4个权利要求会生成6对对比，处理时间较长</p>
+            
+            <span class="label">建议使用简短的权利要求文本进行测试</span>
+            
+            <div class="info">
+                <strong>预期结果：</strong>
+                <ul>
+                    <li>生成6对对比：A-B, A-C, A-D, B-C, B-D, C-D</li>
+                    <li>矩阵视图显示完整的4x4矩阵</li>
+                    <li>统计面板显示所有对比的汇总数据</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-case">
+            <h3>测试用例4：多语言支持</h3>
+            <p><strong>目标</strong>：测试多语言权利要求的对比</p>
+            <p><strong>模型</strong>：GLM-4.7-Flash</p>
+            <p><strong>对比数量</strong>：2个</p>
+            
+            <span class="label">版本A（中文）：</span>
+            <div class="test-data">1. 一种数据处理方法，包括：
+获取数据；
+处理数据；
+输出结果。</div>
+            
+            <span class="label">版本B（英文）：</span>
+            <div class="test-data">1. A data processing method, comprising:
+acquiring data;
+processing the data;
+outputting results;
+storing the results.</div>
+
+            <div class="info">
+                <strong>预期结果：</strong>
+                <ul>
+                    <li>系统自动检测语言</li>
+                    <li>自动将英文翻译为中文</li>
+                    <li>对比基于翻译后的中文文本</li>
+                    <li>识别出版本B多了"storing the results"</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>✅ 功能测试清单</h2>
+        <ul class="checklist">
+            <li>模型选择器工作正常</li>
+            <li>对比数量切换（2/3/4）工作正常</li>
+            <li>输入区动态渲染正确</li>
+            <li>文本输入和序号输入保存正确</li>
+            <li>开始分析按钮响应正常</li>
+            <li>加载状态显示正确</li>
+            <li>卡片视图渲染正确</li>
+            <li>并排视图渲染正确</li>
+            <li>矩阵视图渲染正确</li>
+            <li>视图切换流畅</li>
+            <li>统计面板数据正确</li>
+            <li>相似度计算合理</li>
+            <li>差异识别准确</li>
+            <li>多语言支持正常</li>
+            <li>错误处理友好</li>
+            <li>响应式布局正常</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🐛 已知问题和限制</h2>
+        <ul>
+            <li><strong>导出功能</strong>：暂未实现，将在Phase 2完成</li>
+            <li><strong>原文/译文切换</strong>：暂未实现，将在Phase 2完成</li>
+            <li><strong>文本差异高亮</strong>：暂未实现，将在Phase 2完成</li>
+            <li><strong>历史记录</strong>：暂未实现，将在Phase 3完成</li>
+            <li><strong>图表可视化</strong>：暂未实现，将在Phase 3完成</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>📝 测试报告模板</h2>
+        <div class="test-data">测试日期：____________________
+测试人员：____________________
+浏览器：____________________
+测试结果：
+
+1. 基础对比（2个）：□ 通过 □ 失败
+   问题描述：
+
+2. 多权利要求对比（3个）：□ 通过 □ 失败
+   问题描述：
+
+3. 最大对比（4个）：□ 通过 □ 失败
+   问题描述：
+
+4. 多语言支持：□ 通过 □ 失败
+   问题描述：
+
+5. 视图切换：□ 通过 □ 失败
+   问题描述：
+
+6. 响应式布局：□ 通过 □ 失败
+   问题描述：
+
+总体评价：
+
+建议改进：
+</div>
+    </div>
+
+    <div class="test-section">
+        <h2>🚀 快速开始</h2>
+        <ol>
+            <li>打开应用主页面</li>
+            <li>点击"功能五：权利要求对比"标签</li>
+            <li>选择模型（建议先用GLM-4.7-Flash）</li>
+            <li>选择对比数量（建议先用2个）</li>
+            <li>复制测试用例1的数据到输入框</li>
+            <li>点击"开始分析"</li>
+            <li>等待结果（约10-30秒）</li>
+            <li>查看卡片视图的对比结果</li>
+            <li>尝试切换到并排视图和矩阵视图</li>
+            <li>查看统计面板的数据</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>💡 测试技巧</h2>
+        <ul>
+            <li><strong>从简单开始</strong>：先测试2个权利要求，再测试3个和4个</li>
+            <li><strong>使用短文本</strong>：测试时使用较短的权利要求文本，可以加快响应速度</li>
+            <li><strong>检查控制台</strong>：打开浏览器开发者工具，查看控制台是否有错误</li>
+            <li><strong>清除缓存</strong>：如果遇到问题，尝试清除浏览器缓存后重试</li>
+            <li><strong>记录问题</strong>：发现问题时，记录详细的操作步骤和错误信息</li>
+        </ul>
+    </div>
+
+    <div class="test-section" style="background: #e7f3ff; border-left: 4px solid #2196F3;">
+        <h2>📞 反馈渠道</h2>
+        <p>如果在测试过程中发现任何问题或有改进建议，请通过以下方式反馈：</p>
+        <ul>
+            <li>在项目仓库提交Issue</li>
+            <li>联系开发团队</li>
+            <li>填写测试报告并发送给项目负责人</li>
+        </ul>
+        <p class="success">感谢您的测试和反馈！</p>
+    </div>
+</body>
+</html>

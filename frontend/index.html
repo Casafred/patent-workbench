@@ -767,46 +767,79 @@
         </div>
 
 <!-- ====================================================================== -->
-<!-- 功能五：权利要求对比 (新增) -->
+<!-- 功能五：权利要求对比 (v3.0 - 全面优化) -->
 <!-- ====================================================================== -->
 <div id="claims_comparison-tab" class="tab-content">
     <div class="step">
-        <div class="step-header">权利要求对比分析 (v2.0)</div>
+        <div class="step-header">权利要求对比分析 (v3.0)</div>
         <p class="info">
-            新版工作流：1. 粘贴文本并指定独立权利要求序号 &rarr; 2. 系统自动识别语言、按需翻译 &rarr; 3. 模型深度对比 &rarr; 4. 交互式查看结果。
+            支持2-4个权利要求的智能对比，自动识别语言、按需翻译，提供多种可视化展示方式。
         </p>
 
-        <div id="claims_comparison_input_area_refactored">
-            <!-- 基准版本输入区 -->
-            <div class="comparison-input-group">
-                <label for="baseline_claim_text">基准版本 (Baseline Version)</label>
-                <textarea id="baseline_claim_text" rows="12" placeholder="在此处粘贴基准版本的权利要求全文..."></textarea>
-                <div class="claim-number-input">
-                    <label for="baseline_claim_numbers">独立权利要求序号:</label>
-                    <input type="text" id="baseline_claim_numbers" placeholder="用英文逗号,分隔,如: 1,9">
+        <!-- 配置区 -->
+        <div class="comparison-config-area">
+            <div class="config-row">
+                <div class="config-item">
+                    <label for="comparison_model_select">对比模型：</label>
+                    <select id="comparison_model_select">
+                        <option value="GLM-4.7-Flash" selected>GLM-4.7-Flash（快速）</option>
+                        <option value="glm-4-flash">glm-4-flash（标准）</option>
+                        <option value="glm-4-long">glm-4-long（深度）</option>
+                    </select>
+                    <span class="model-description" id="model_description">快速模型，适合简单对比</span>
+                </div>
+                <div class="config-item">
+                    <label>对比数量：</label>
+                    <div class="comparison-count-selector">
+                        <button class="count-btn active" data-count="2">2个</button>
+                        <button class="count-btn" data-count="3">3个</button>
+                        <button class="count-btn" data-count="4">4个</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                </div>
-            </div>
-            <!-- 对比版本输入区 -->
-            <div class="comparison-input-group">
-                <label for="comparison_claim_text">对比版本 (Comparison Version)</label>
-                <textarea id="comparison_claim_text" rows="12" placeholder="在此处粘贴需要对比的权利要求全文..."></textarea>
-                <div class="claim-number-input">
-                    <label for="comparison_claim_numbers">独立权利要求序号:</label>
-                    <input type="text" id="comparison_claim_numbers" placeholder="用英文逗号,分隔,如: 1,10">
-                </div>
-            </div>
+        <!-- 动态输入区 -->
+        <div id="claims_input_container" class="claims-input-grid">
+            <!-- 动态生成2-4个输入组 -->
         </div>
         
         <div style="text-align: center; margin: 25px 0;">
             <button id="claims_analyze_btn">开始分析</button>
         </div>
 
+        <!-- 结果展示区 -->
         <div class="step" style="margin-top: 20px;">
-            <div class="step-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="step-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <span>对比分析结果</span>
-                <button id="toggle_language_btn" class="small-button" style="display: none;">切换为译文</button>
+                <div class="result-controls">
+                    <div class="view-mode-selector">
+                        <button class="view-btn active" data-view="card" title="卡片视图">📊</button>
+                        <button class="view-btn" data-view="sideBySide" title="并排对比">⚖️</button>
+                        <button class="view-btn" data-view="matrix" title="矩阵视图">🔢</button>
+                    </div>
+                    <button id="toggle_language_btn" class="small-button" style="display: none;">切换为译文</button>
+                    <button id="export_comparison_btn" class="small-button" style="display: none;">导出报告</button>
+                </div>
             </div>
+            
+            <!-- 差异统计面板 -->
+            <div id="comparison_stats_panel" class="stats-panel" style="display: none;">
+                <div class="stat-item">
+                    <span class="stat-label">相同特征</span>
+                    <span class="stat-value" id="stat_similar">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">差异特征</span>
+                    <span class="stat-value" id="stat_different">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">平均相似度</span>
+                    <span class="stat-value" id="stat_similarity">0%</span>
+                </div>
+            </div>
+
+            <!-- 结果容器 -->
             <div id="comparison_result_container_refactored" class="preview-output">
                 <div class="info">等待输入并开始分析...</div>
             </div>
