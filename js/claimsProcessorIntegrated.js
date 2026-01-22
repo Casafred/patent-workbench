@@ -1371,7 +1371,7 @@ function claimsSelectPatent(patentNumber, rowIndex) {
     }
 }
 
-// 生成可视化
+// 生成可视化 - 优化版本：按需从后端获取引证图数据
 async function claimsGenerateVisualization() {
     if (!claimsSelectedPatentNumber) {
         showClaimsMessage('请先选择一个专利号', 'error');
@@ -1406,25 +1406,36 @@ async function claimsGenerateVisualization() {
             visualizationSection.scrollIntoView({ behavior: 'smooth' });
         }
         
-        showClaimsMessage('正在分析权利要求关系...', 'info');
+        showClaimsMessage('正在生成权利要求引证图...', 'info');
         
-        // 获取权利要求处理结果
-        const response = await fetch(`/api/claims/result/${claimsCurrentTaskId}`);
+        // 【优化关键】：按需从后端获取引证图数据，而不是在前端处理所有数据
+        const response = await fetch(`/api/claims/visualization/${claimsCurrentTaskId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                patent_number: claimsSelectedPatentNumber,
+                row_index: claimsSelectedPatentRow
+            })
+        });
+        
         const result = await response.json();
         
         if (!result.success) {
-            throw new Error(result.error || '获取权利要求数据失败');
+            throw new Error(result.error || '获取可视化数据失败');
         }
         
-        // 从处理结果中找到对应专利的权利要求
-        const patentClaims = claimsFindPatentClaims(result.data, claimsSelectedPatentNumber, claimsSelectedPatentRow);
+        const visualizationData = result.data.visualization;
         
-        if (!patentClaims || patentClaims.length === 0) {
+        if (!visualizationData || !visualizationData.nodes || visualizationData.nodes.length === 0) {
             throw new Error('未找到该专利的权利要求数据');
         }
         
-        // 构建可视化数据
-        const visualizationData = claimsBuildVisualizationData(patentClaims, claimsSelectedPatentNumber);
+        console.log('获取到可视化数据:', {
+            nodes: visualizationData.nodes.length,
+            links: visualizationData.links.length
+        });
         
         // 初始化可视化渲染器
         if (!claimsVisualizationRenderer) {
@@ -1441,7 +1452,7 @@ async function claimsGenerateVisualization() {
         
         claimsVisualizationRenderer.render(visualizationData, style);
         
-        showClaimsMessage('权利要求关系图生成完成！', 'success');
+        showClaimsMessage('权利要求引证图生成完成！', 'success');
         
     } catch (error) {
         console.error('Visualization error:', error);
