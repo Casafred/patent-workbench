@@ -86,6 +86,12 @@ class Config:
     PORT = PORT
     DEBUG = DEBUG
     
+    # Request timeout - 增加请求超时时间
+    SEND_FILE_MAX_AGE_DEFAULT = 0
+    
+    # Worker timeout for long-running tasks
+    WORKER_TIMEOUT = 600  # 10分钟
+    
     @staticmethod
     def init_app(app):
         """Initialize application with configuration."""

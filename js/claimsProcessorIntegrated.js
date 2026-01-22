@@ -491,11 +491,20 @@ function startClaimsPolling() {
     let pollCount = 0;
     const startTime = Date.now();
     let consecutiveErrors = 0;
-    const MAX_CONSECUTIVE_ERRORS = 3;
+    const MAX_CONSECUTIVE_ERRORS = 10;  // 增加到10次，提高容错性
+    const MAX_POLLING_TIME = 600000;  // 最大轮询时间10分钟（600秒）
     
     const poll = async () => {
         try {
             const elapsedSeconds = (Date.now() - startTime) / 1000;
+            
+            // 检查是否超过最大轮询时间
+            if (elapsedSeconds > MAX_POLLING_TIME / 1000) {
+                clearInterval(claimsProcessingInterval);
+                showClaimsMessage('处理超时（超过10分钟），请检查文件大小或联系技术支持', 'error');
+                resetClaimsProcessButton();
+                return;
+            }
             
             const response = await fetch(`/api/claims/status/${claimsCurrentTaskId}`);
             const data = await response.json();
@@ -532,16 +541,16 @@ function startClaimsPolling() {
             pollCount++;
             
             // 渐进式轮询：根据时间调整轮询间隔
-            // 前30秒：每2秒轮询
-            // 30秒-2分钟：每3秒轮询
-            // 2分钟后：每5秒轮询
+            // 前30秒：每3秒轮询（减少频率）
+            // 30秒-2分钟：每5秒轮询
+            // 2分钟后：每8秒轮询
             let nextInterval;
             if (elapsedSeconds < 30) {
-                nextInterval = 2000;  // 2秒
-            } else if (elapsedSeconds < 120) {
                 nextInterval = 3000;  // 3秒
-            } else {
+            } else if (elapsedSeconds < 120) {
                 nextInterval = 5000;  // 5秒
+            } else {
+                nextInterval = 8000;  // 8秒
             }
             
             // 清除旧的interval，设置新的interval
@@ -552,10 +561,15 @@ function startClaimsPolling() {
             console.error('Polling error:', error);
             consecutiveErrors++;
             
+            // 如果是JSON解析错误，可能是后端还在处理中，继续等待
+            if (error instanceof SyntaxError && error.message.includes('JSON')) {
+                console.log(`[Polling] JSON解析错误（可能后端繁忙），继续等待... (错误次数: ${consecutiveErrors}/${MAX_CONSECUTIVE_ERRORS})`);
+            }
+            
             // 如果连续错误次数过多，停止轮询
             if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
                 clearInterval(claimsProcessingInterval);
-                showClaimsMessage('轮询失败次数过多，请刷新页面后重试', 'error');
+                showClaimsMessage('处理超时或服务器繁忙，请稍后刷新页面查看结果', 'error');
                 resetClaimsProcessButton();
             }
         }

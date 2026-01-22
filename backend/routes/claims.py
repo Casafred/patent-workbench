@@ -288,9 +288,9 @@ def get_claims_columns():
             )
         
         # Read columns from specified worksheet
-        # 优化：只读取前100行进行列分析，提升速度
+        # 优化：只读取前10行进行列分析，大幅提升速度
         excel_processor = ExcelProcessor()
-        df = excel_processor.read_excel_file(file_path, sheet_name=sheet_name, nrows=100)
+        df = excel_processor.read_excel_file(file_path, sheet_name=sheet_name, nrows=10)
         columns = list(df.columns)
         
         # 新增：智能列识别
@@ -551,10 +551,13 @@ def get_processing_status(task_id):
             else:
                 print(f"Task {task_id} not found on disk either")
                 print(f"Available tasks in memory: {list(processing_tasks.keys())}")
-                return create_response(
-                    error="任务不存在",
-                    status_code=404
-                )
+                # 返回一个更友好的响应，而不是404
+                return create_response(data={
+                    'task_id': task_id,
+                    'status': 'not_found',
+                    'progress': 0,
+                    'message': '任务不存在或已过期'
+                })
         
         task = processing_tasks[task_id]
         
@@ -585,10 +588,13 @@ def get_processing_status(task_id):
         
     except Exception as e:
         print(f"Error in get_processing_status: {traceback.format_exc()}")
-        return create_response(
-            error=f"获取任务状态失败: {str(e)}",
-            status_code=500
-        )
+        # 返回一个有效的JSON响应，而不是500错误
+        return create_response(data={
+            'task_id': task_id,
+            'status': 'error',
+            'progress': 0,
+            'message': f'获取任务状态时出错: {str(e)}'
+        })
 
 
 @claims_bp.route('/claims/result/<task_id>', methods=['GET'])

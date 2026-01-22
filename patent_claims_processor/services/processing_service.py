@@ -208,9 +208,9 @@ class ProcessingService(ProcessingServiceInterface):
                     processing_errors.append(error)
                 
                 # 保存处理状态 (需求 7.4)
-                # 优化：减少保存频率，每100行或每10%保存一次
+                # 优化：大幅减少保存频率，每500行或每20%保存一次，避免I/O阻塞
                 if self.enable_recovery:
-                    save_interval = max(100, total_cells // 10)  # 至少每100行，或每10%
+                    save_interval = max(500, total_cells // 5)  # 至少每500行，或每20%
                     if i % save_interval == 0:
                         self._save_processing_state(all_claims, processing_errors, language_distribution)
             
