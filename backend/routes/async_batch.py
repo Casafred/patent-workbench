@@ -41,7 +41,7 @@ def async_submit():
         return error_response
     
     req_data = request.get_json()
-    model = req_data.get('model', 'glm-4-flash')
+    model = req_data.get('model', 'GLM-4.7-Flash')
     temperature = req_data.get('temperature', 0.1)
     messages = req_data.get('messages')
     

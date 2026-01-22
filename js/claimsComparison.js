@@ -146,7 +146,7 @@ Your JSON output must be in the format: {"language_1": "...", "language_2": "...
     
     // 使用非流式调用，因为我们需要完整的返回内容
     const response = await apiCall('/chat', {
-        model: 'glm-4-flash',
+        model: 'GLM-4.7-Flash',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.0,
     });
@@ -187,7 +187,7 @@ Text to translate:
 ${text}`;
 
     const response = await apiCall('/chat', {
-        model: 'glm-4-flash',
+        model: 'GLM-4.7-Flash',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.0,
     });

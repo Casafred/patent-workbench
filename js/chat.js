@@ -264,7 +264,7 @@ async function generateConversationTitle(conversation) {
     const contentToSummarize = recentMessages.map(m => `${m.role}: ${m.content}`).join('\n\n');
 
     const titlePrompt = {
-        model: 'glm-4-flash',
+        model: 'GLM-4.7-Flash',
         messages: [
             { role: 'system', content: '你是一个对话主题提炼专家。你的任务是根据提供的对话内容，用一句话（中文不超过20个字）总结出一个简洁、精炼的标题。直接返回标题文本，不要包含任何引导词、引号或说明。' },
             { role: 'user', content: `请为以下对话生成一个标题：\n\n${contentToSummarize}` }

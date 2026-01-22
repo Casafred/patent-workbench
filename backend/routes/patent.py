@@ -129,7 +129,7 @@ def analyze_patent():
         req_data = request.get_json()
         patent_data = req_data.get('patent_data')
         include_specification = req_data.get('include_specification', False)
-        model = req_data.get('model', 'glm-4-flash')
+        model = req_data.get('model', 'GLM-4.7-Flash')
         temperature = req_data.get('temperature', 0.4)
         
         if not patent_data:
