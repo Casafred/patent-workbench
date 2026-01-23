@@ -3207,16 +3207,18 @@ function renderClaimsTextVisualization() {
     const container = document.getElementById('claims_text_visualization');
     const style = document.getElementById('claims_text_viz_style').value;
     
-    // 清空容器
-    container.innerHTML = '';
+    if (!container) {
+        console.error('找不到可视化容器');
+        return;
+    }
     
     // 创建可视化数据
     const vizData = createClaimsTextVizData();
     
-    // 初始化渲染器（使用与 Excel 分析相同的渲染器类）
-    if (!claimsTextVisualizationRenderer) {
-        claimsTextVisualizationRenderer = new ClaimsD3TreeRenderer('claims_text_visualization');
-    }
+    console.log('准备渲染文本分析可视化，样式:', style, '数据:', vizData);
+    
+    // 每次都重新创建渲染器实例，确保容器正确
+    claimsTextVisualizationRenderer = new ClaimsVisualizationRenderer(container);
     
     // 渲染
     claimsTextVisualizationRenderer.render(vizData, style);
