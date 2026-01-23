@@ -2109,9 +2109,12 @@ class ClaimsD3TreeRenderer {
             }
         });
         
+        // 使用动态引力强度（根据散开程度设置调整）
+        const chargeStrength = this.chargeStrength || -300;
+        
         const simulation = d3.forceSimulation(data.nodes)
             .force('link', d3.forceLink(data.links).id(d => d.id).distance(100))
-            .force('charge', d3.forceManyBody().strength(-300))
+            .force('charge', d3.forceManyBody().strength(chargeStrength))
             .force('center', d3.forceCenter(this.width / 2, this.height / 2));
         
         // 定义箭头标记
@@ -2201,8 +2204,10 @@ class ClaimsD3TreeRenderer {
     
     // 渲染径向图
     renderRadial(data) {
-        // 增大半径以适应更多节点
-        const radius = Math.min(this.width, this.height) / 2 - 80;
+        // 根据散开程度调整半径，实现引力可调节效果
+        const baseRadius = Math.min(this.width, this.height) / 2 - 80;
+        // 根据散开程度调整半径：散开程度越大，半径越大
+        const radius = baseRadius * this.treeSpreadFactor;
         const tree = d3.cluster().size([2 * Math.PI, radius]);
         
         // 清除之前的箭头定义
@@ -2493,11 +2498,16 @@ class ClaimsD3TreeRenderer {
         }
     }
     
-    // 设置树状图散开程度
+    // 设置可视化散开程度（引力强度）
     setTreeSpreadFactor(factor) {
         this.treeSpreadFactor = Math.max(0.5, Math.min(3.0, factor));
-        if (this.currentData && this.currentStyle === 'tree') {
-            this.render(this.currentData, 'tree');
+        
+        // 保存引力强度，用于网络图
+        this.chargeStrength = -300 * this.treeSpreadFactor; // 根据散开程度调整引力强度
+        
+        // 重新渲染当前样式，无论是什么样式
+        if (this.currentData) {
+            this.render(this.currentData, this.currentStyle);
         }
     }
     
