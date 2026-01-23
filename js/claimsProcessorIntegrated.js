@@ -3111,9 +3111,9 @@ function renderClaimsTextVisualization() {
     // 创建可视化数据
     const vizData = createClaimsTextVizData();
     
-    // 初始化渲染器（复用Excel分析的渲染器类）
+    // 初始化渲染器（使用与 Excel 分析相同的渲染器类）
     if (!claimsTextVisualizationRenderer) {
-        claimsTextVisualizationRenderer = new ClaimsVisualizationRenderer(container);
+        claimsTextVisualizationRenderer = new ClaimsD3TreeRenderer('claims_text_visualization');
     }
     
     // 渲染
@@ -3124,21 +3124,44 @@ function renderClaimsTextVisualization() {
 function createClaimsTextVizData() {
     const nodes = [];
     const links = [];
+    const nodes_map = {};
     
+    // 创建节点
     claimsTextAnalyzedData.forEach(claim => {
-        nodes.push({
-            id: claim.claim_number.toString(),
-            label: `权利要求${claim.claim_number}`,
-            type: claim.claim_type,
-            text: claim.full_text.substring(0, 100) + '...'
-        });
-        
-        claim.referenced_claims.forEach(ref => {
-            links.push({
-                source: claim.claim_number.toString(),
-                target: ref.toString()
+        const node_id = `claim_${claim.claim_number}`;
+        if (!nodes_map[node_id]) {
+            const node = {
+                id: node_id,
+                claim_number: claim.claim_number,
+                claim_text: claim.full_text.length > 100 ? claim.full_text.substring(0, 100) + '...' : claim.full_text,
+                claim_type: claim.claim_type,
+                language: claim.language || 'zh',
+                full_text: claim.full_text  // 完整文本用于tooltip
+            };
+            nodes.push(node);
+            nodes_map[node_id] = node;
+        }
+    });
+    
+    // 创建连接（从被引用权利要求指向当前权利要求）
+    const links_set = new Set();
+    claimsTextAnalyzedData.forEach(claim => {
+        if (claim.referenced_claims && claim.referenced_claims.length > 0) {
+            claim.referenced_claims.forEach(ref => {
+                const source_id = `claim_${ref}`;
+                const target_id = `claim_${claim.claim_number}`;
+                const link_key = `${source_id}_${target_id}`;
+                
+                if (!links_set.has(link_key) && nodes_map[source_id]) {
+                    links.push({
+                        source: source_id,
+                        target: target_id,
+                        type: 'dependency'
+                    });
+                    links_set.add(link_key);
+                }
             });
-        });
+        }
     });
     
     return { nodes, links };
