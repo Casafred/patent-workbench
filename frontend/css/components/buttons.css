@@ -164,7 +164,8 @@ button:disabled {
 }
 
 .api-config-toggle svg {
-    stroke: var(--primary-color);
+    stroke: var(--primary-color) !important;
+    fill: none !important;
 }
 
 .api-config-toggle:hover { 
@@ -175,7 +176,7 @@ button:disabled {
 }
 
 .api-config-toggle:hover svg {
-    stroke: var(--primary-color);
+    stroke: var(--primary-color) !important;
 }
 
 /* API密钥操作按钮 */
@@ -196,7 +197,8 @@ button:disabled {
 }
 
 .api-key-action-btn svg, .password-toggle-btn svg {
-    stroke: var(--text-color-secondary);
+    stroke: var(--text-color-secondary) !important;
+    fill: none !important;
     transition: stroke 0.2s ease;
 }
 
@@ -207,7 +209,7 @@ button:disabled {
 }
 
 .api-key-action-btn:hover svg, .password-toggle-btn:hover svg {
-    stroke: var(--primary-color);
+    stroke: var(--primary-color) !important;
 }
 
 /* 导出切换按钮 */

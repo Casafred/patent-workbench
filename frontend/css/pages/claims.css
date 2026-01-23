@@ -273,7 +273,8 @@
 }
 
 .view-btn svg {
-    stroke: var(--text-color-secondary);
+    stroke: var(--text-color-secondary) !important;
+    fill: none !important;
     transition: stroke 0.3s ease;
 }
 
@@ -283,7 +284,7 @@
 }
 
 .view-btn:hover svg {
-    stroke: var(--primary-color);
+    stroke: var(--primary-color) !important;
 }
 
 .view-btn.active {
@@ -292,7 +293,7 @@
 }
 
 .view-btn.active svg {
-    stroke: white;
+    stroke: white !important;
 }
 
 /* 差异统计面板 */
