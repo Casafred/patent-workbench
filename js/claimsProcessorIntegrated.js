@@ -2078,6 +2078,9 @@ class ClaimsD3TreeRenderer {
     
     // 渲染网络图
     renderNetwork(data) {
+        // 清除之前的箭头定义
+        this.svg.selectAll('defs').remove();
+        
         const simulation = d3.forceSimulation(data.nodes)
             .force('link', d3.forceLink(data.links).id(d => d.id).distance(100))
             .force('charge', d3.forceManyBody().strength(-300))
@@ -2085,7 +2088,7 @@ class ClaimsD3TreeRenderer {
         
         // 定义箭头标记
         this.svg.append('defs').append('marker')
-            .attr('id', 'arrowhead')
+            .attr('id', 'arrowhead-network')
             .attr('viewBox', '-0 -5 10 10')
             .attr('refX', 25)
             .attr('refY', 0)
@@ -2095,7 +2098,7 @@ class ClaimsD3TreeRenderer {
             .attr('xoverflow', 'visible')
             .append('svg:path')
             .attr('d', 'M 0,-5 L 10 ,0 L 0,5')
-            .attr('fill', '#999')
+            .attr('fill', '#10b981')
             .style('stroke', 'none');
         
         // 渲染连线（带箭头）
@@ -2104,9 +2107,9 @@ class ClaimsD3TreeRenderer {
             .enter()
             .append('line')
             .attr('class', 'link')
-            .attr('stroke', '#999')
+            .attr('stroke', '#10b981')
             .attr('stroke-width', 2)
-            .attr('marker-end', 'url(#arrowhead)');
+            .attr('marker-end', 'url(#arrowhead-network)');
         
         // 渲染节点
         const nodes = this.mainGroup.selectAll('.node-group')
@@ -2135,13 +2138,16 @@ class ClaimsD3TreeRenderer {
         // 添加节点圆圈
         nodes.append('circle')
             .attr('class', d => `node ${d.claim_type}`)
-            .attr('r', d => d.claim_type === 'independent' ? 20 : 15)
-            .attr('fill', d => d.claim_type === 'independent' ? '#4CAF50' : '#2196F3')
+            .attr('r', d => d.claim_type === 'independent' ? 25 : 20)
+            .attr('fill', d => d.claim_type === 'independent' ? '#10b981' : '#6ee7b7')
             .attr('stroke', '#fff')
-            .attr('stroke-width', 2)
+            .attr('stroke-width', 3)
             .on('mouseover', (event, d) => this.showTooltip(event, d))
             .on('mouseout', () => this.hideTooltip())
-            .on('click', (event, d) => this.onNodeClick(d));
+            .on('click', (event, d) => {
+                event.stopPropagation();
+                this.onNodeClick(d);
+            });
         
         // 添加节点标签
         nodes.append('text')
@@ -2149,7 +2155,7 @@ class ClaimsD3TreeRenderer {
             .attr('dy', '0.35em')
             .attr('text-anchor', 'middle')
             .attr('fill', 'white')
-            .attr('font-size', '12px')
+            .attr('font-size', '14px')
             .attr('font-weight', 'bold')
             .text(d => d.claim_number);
         
@@ -2167,7 +2173,7 @@ class ClaimsD3TreeRenderer {
     
     // 渲染径向图
     renderRadial(data) {
-        const radius = Math.min(this.width, this.height) / 2 - 50;
+        const radius = Math.min(this.width, this.height) / 2 - 100;
         const tree = d3.cluster().size([2 * Math.PI, radius]);
         
         // 构建层次结构
@@ -2183,7 +2189,7 @@ class ClaimsD3TreeRenderer {
             .enter()
             .append('path')
             .attr('class', 'link')
-            .attr('stroke', '#999')
+            .attr('stroke', '#10b981')
             .attr('stroke-width', 2)
             .attr('fill', 'none')
             .attr('d', d3.linkRadial()
@@ -2202,24 +2208,28 @@ class ClaimsD3TreeRenderer {
         // 添加节点圆圈
         nodes.append('circle')
             .attr('class', d => `node ${d.data.claim_type}`)
-            .attr('r', d => d.data.claim_type === 'independent' ? 20 : 15)
-            .attr('fill', d => d.data.claim_type === 'independent' ? '#4CAF50' : '#2196F3')
+            .attr('r', d => d.data.claim_type === 'independent' ? 25 : 20)
+            .attr('fill', d => d.data.claim_type === 'independent' ? '#10b981' : '#6ee7b7')
             .attr('stroke', '#fff')
-            .attr('stroke-width', 2)
+            .attr('stroke-width', 3)
             .style('cursor', 'pointer')
             .on('mouseover', (event, d) => this.showTooltip(event, d.data))
             .on('mouseout', () => this.hideTooltip())
-            .on('click', (event, d) => this.onNodeClick(d.data));
+            .on('click', (event, d) => {
+                event.stopPropagation();
+                this.onNodeClick(d.data);
+            });
         
         // 添加节点标签
         nodes.append('text')
             .attr('class', 'node-label')
             .attr('dy', '0.35em')
-            .attr('x', d => d.x < Math.PI === !d.children ? 6 : -6)
+            .attr('x', d => d.x < Math.PI === !d.children ? 8 : -8)
             .attr('text-anchor', d => d.x < Math.PI === !d.children ? 'start' : 'end')
             .attr('transform', d => d.x >= Math.PI ? 'rotate(180)' : null)
-            .attr('fill', 'black')
-            .attr('font-size', '12px')
+            .attr('fill', '#333')
+            .attr('font-size', '14px')
+            .attr('font-weight', 'bold')
             .text(d => d.data.claim_number);
     }
     
