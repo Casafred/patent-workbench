@@ -231,17 +231,17 @@ function displayClaimsList() {
     
     analyzedClaims.forEach(claim => {
         const claimDiv = document.createElement('div');
-        claimDiv.className = claim-item ;
+        claimDiv.className = `claim-item ${claim.claim_type}`;
         
         const headerDiv = document.createElement('div');
         headerDiv.className = 'claim-header';
         
         const numberSpan = document.createElement('span');
         numberSpan.className = 'claim-number';
-        numberSpan.textContent = 权利要求 ;
+        numberSpan.textContent = `权利要求${claim.claim_number}`;
         
         const badgeSpan = document.createElement('span');
-        badgeSpan.className = claim-badge ;
+        badgeSpan.className = `claim-badge ${claim.claim_type}`;
         badgeSpan.textContent = claim.claim_type === 'independent' ? '独立权利要求' : '从属权利要求';
         
         headerDiv.appendChild(numberSpan);
@@ -257,7 +257,7 @@ function displayClaimsList() {
         if (claim.referenced_claims.length > 0) {
             const refsDiv = document.createElement('div');
             refsDiv.className = 'claim-references';
-            refsDiv.innerHTML = <strong>引用:</strong> 权利要求 ;
+            refsDiv.innerHTML = `<strong>引用:</strong> 权利要求${claim.referenced_claims.join(', ')}`;
             claimDiv.appendChild(refsDiv);
         }
         
@@ -293,7 +293,7 @@ function createVisualizationData() {
     analyzedClaims.forEach(claim => {
         nodes.push({
             id: claim.claim_number.toString(),
-            label: 权利要求,
+            label: `权利要求${claim.claim_number}`,
             type: claim.claim_type,
             text: claim.full_text.substring(0, 100) + '...'
         });
@@ -318,7 +318,7 @@ function clearInput() {
 
 // 加载示例
 function loadExample() {
-    const example = 1. 一种智能手机，其特征在于，包括：
+    const example = `1. 一种智能手机，其特征在于，包括：
    处理器，用于执行指令；
    存储器，与所述处理器连接，用于存储数据；
    显示屏，与所述处理器连接，用于显示信息；
@@ -339,7 +339,7 @@ function loadExample() {
    电源管理模块；
    天线模块。
 
-8. 根据权利要求7所述的移动终端，其特征在于，所述天线模块支持5G通信。;
+8. 根据权利要求7所述的移动终端，其特征在于，所述天线模块支持5G通信。`;
     
     document.getElementById('claims_text_input').value = example;
     showMessage('示例已加载，点击"开始分析"按钮进行分析', 'info');
@@ -349,7 +349,7 @@ function loadExample() {
 function showMessage(message, type = 'info') {
     const container = document.getElementById('message_container');
     container.textContent = message;
-    container.className = message ;
+    container.className = `message ${type}`;
     container.style.display = 'block';
     
     setTimeout(() => {
@@ -357,8 +357,8 @@ function showMessage(message, type = 'info') {
     }, 5000);
 }
 
-// 可视化渲染器类
-class ClaimsVisualizationRenderer {
+// 可视化渲染器类 - 导出到全局作用域供其他模块使用
+window.ClaimsVisualizationRenderer = class ClaimsVisualizationRenderer {
     constructor(container) {
         this.container = container;
         this.svg = null;
@@ -658,7 +658,7 @@ class ClaimsVisualizationRenderer {
         
         const link = document.createElement('a');
         link.href = url;
-        link.download = claims_visualization_.svg;
+        link.download = `claims_visualization_${Date.now()}.svg`;
         link.click();
         
         URL.revokeObjectURL(url);
