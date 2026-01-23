@@ -147,6 +147,15 @@ button:disabled {
     transform: scale(1.05);
 }
 
+/* 摆动旋转动画 */
+@keyframes swing {
+    0% { transform: rotate(0deg); }
+    25% { transform: rotate(10deg); }
+    50% { transform: rotate(-10deg); }
+    75% { transform: rotate(5deg); }
+    100% { transform: rotate(0deg); }
+}
+
 /* API配置切换按钮 - 重构样式 */
 #api_config_toggle_btn.api-config-toggle {
     /* 重置所有样式 */
@@ -167,8 +176,8 @@ button:disabled {
 }
 
 #api_config_toggle_btn.api-config-toggle svg {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     stroke: var(--primary-color);
     fill: none;
     transition: stroke 0.2s ease;
@@ -176,7 +185,7 @@ button:disabled {
 
 #api_config_toggle_btn.api-config-toggle:hover {
     background-color: var(--primary-color-hover-bg);
-    transform: scale(1.05);
+    animation: swing 0.6s ease-in-out;
 }
 
 #api_config_toggle_btn.api-config-toggle:hover svg {
