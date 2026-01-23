@@ -149,7 +149,7 @@ button:disabled {
 
 /* API配置切换按钮 */
 .api-config-toggle { 
-    background: transparent; 
+    background: transparent !important; 
     border: 2px solid var(--primary-color); 
     border-radius: 50%; 
     width: 40px; 
@@ -161,18 +161,22 @@ button:disabled {
     justify-content: center; 
     transition: all 0.2s ease; 
     color: var(--primary-color); 
+    box-shadow: none !important;
 }
 
 .api-config-toggle svg {
     stroke: var(--primary-color) !important;
     fill: none !important;
+    width: 20px;
+    height: 20px;
 }
 
 .api-config-toggle:hover { 
-    background-color: var(--primary-color-hover-bg); 
+    background-color: var(--primary-color-hover-bg) !important; 
     border-color: var(--primary-color); 
     color: var(--primary-color); 
     transform: scale(1.05);
+    box-shadow: none !important;
 }
 
 .api-config-toggle:hover svg {
@@ -181,7 +185,7 @@ button:disabled {
 
 /* API密钥操作按钮 */
 .api-key-action-btn, .password-toggle-btn { 
-    background: transparent; 
+    background: transparent !important; 
     border: 1px solid var(--border-color); 
     border-radius: 50%; 
     width: 32px; 
@@ -194,18 +198,22 @@ button:disabled {
     transition: all 0.2s ease; 
     color: var(--text-color-secondary); 
     flex-shrink: 0; 
+    box-shadow: none !important;
 }
 
 .api-key-action-btn svg, .password-toggle-btn svg {
     stroke: var(--text-color-secondary) !important;
     fill: none !important;
     transition: stroke 0.2s ease;
+    width: 16px;
+    height: 16px;
 }
 
 .api-key-action-btn:hover, .password-toggle-btn:hover { 
-    background-color: var(--primary-color-hover-bg); 
+    background-color: var(--primary-color-hover-bg) !important; 
     color: var(--primary-color); 
     border-color: var(--primary-color);
+    box-shadow: none !important;
 }
 
 .api-key-action-btn:hover svg, .password-toggle-btn:hover svg {
