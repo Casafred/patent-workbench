@@ -54,7 +54,21 @@ window.switchClaimsSubTab = function(tabName) {
     if (targetTab) {
         targetTab.classList.add('active');
         targetTab.style.display = 'block';
+        // 强制设置可见性
+        targetTab.style.visibility = 'visible';
+        targetTab.style.opacity = '1';
+        targetTab.style.height = 'auto';
+        
         console.log('Tab displayed successfully');
+        console.log('Tab computed style:', window.getComputedStyle(targetTab).display);
+        console.log('Tab offsetHeight:', targetTab.offsetHeight);
+        console.log('Tab children count:', targetTab.children.length);
+        
+        // 检查子元素
+        if (targetTab.children.length > 0) {
+            console.log('First child:', targetTab.children[0]);
+            console.log('First child display:', window.getComputedStyle(targetTab.children[0]).display);
+        }
     } else {
         console.error('Target tab not found:', targetTabId);
         // 列出所有可用的标签页ID
