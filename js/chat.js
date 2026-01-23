@@ -226,6 +226,9 @@ function initChat() {
     chatNewBtn.addEventListener('click', () => startNewChat(true));
     chatInputNewBtn.addEventListener('click', () => startNewChat(true));
     
+    // 搜索功能事件监听
+    chatSearchBtn.addEventListener('click', handleSearch);
+    
     document.addEventListener('click', (e) => {
         if (e.target.matches('[data-export]')) {
             e.preventDefault();
@@ -1102,6 +1105,438 @@ function resendMessage(buttonElement) {
     chatInput.value = content;
     chatInput.focus();
     chatInput.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+// 搜索功能实现
+async function handleSearch() {
+    const message = chatInput.value.trim();
+    if (!message) {
+        alert('请先输入搜索关键词');
+        return;
+    }
+    
+    // 显示搜索选项弹窗
+    showSearchOptions(message);
+}
+
+// 显示搜索选项弹窗
+function showSearchOptions(originalQuery) {
+    // 创建搜索选项弹窗
+    const optionsModal = document.createElement('div');
+    optionsModal.className = 'modal';
+    optionsModal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    `;
+    
+    // 创建弹窗内容
+    const modalContent = document.createElement('div');
+    modalContent.className = 'modal-content';
+    modalContent.style.cssText = `
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        width: 80%;
+        max-width: 500px;
+    `;
+    
+    // 创建标题
+    const modalHeader = document.createElement('div');
+    modalHeader.style.cssText = `
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e0e0e0;
+    `;
+    
+    const modalTitle = document.createElement('h3');
+    modalTitle.textContent = '搜索选项';
+    modalTitle.style.margin = '0';
+    
+    const closeBtn = document.createElement('button');
+    closeBtn.innerHTML = '&times;';
+    closeBtn.style.cssText = `
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #999;
+    `;
+    closeBtn.addEventListener('click', () => {
+        document.body.removeChild(optionsModal);
+    });
+    
+    modalHeader.appendChild(modalTitle);
+    modalHeader.appendChild(closeBtn);
+    modalContent.appendChild(modalHeader);
+    
+    // 创建选项表单
+    const optionsForm = document.createElement('form');
+    optionsForm.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    `;
+    
+    // 搜索引擎类型选项
+    const engineGroup = document.createElement('div');
+    engineGroup.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    `;
+    
+    const engineLabel = document.createElement('label');
+    engineLabel.textContent = '搜索引擎类型:';
+    engineLabel.style.fontWeight = '500';
+    
+    const engineSelect = document.createElement('select');
+    engineSelect.id = 'search_engine_select';
+    engineSelect.style.cssText = `
+        padding: 8px;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        font-size: 14px;
+    `;
+    
+    // 添加搜索引擎选项
+    const engineOptions = [
+        { value: 'search_std', text: '智谱基础版搜索引擎' },
+        { value: 'search_pro', text: '智谱高阶版搜索引擎' },
+        { value: 'search_pro_sogou', text: '搜狗' },
+        { value: 'search_pro_quark', text: '夸克搜索' }
+    ];
+    
+    engineOptions.forEach(option => {
+        const optionEl = document.createElement('option');
+        optionEl.value = option.value;
+        optionEl.textContent = option.text;
+        if (option.value === 'search_std') {
+            optionEl.selected = true;
+        }
+        engineSelect.appendChild(optionEl);
+    });
+    
+    engineGroup.appendChild(engineLabel);
+    engineGroup.appendChild(engineSelect);
+    optionsForm.appendChild(engineGroup);
+    
+    // 结果数量选项
+    const countGroup = document.createElement('div');
+    countGroup.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    `;
+    
+    const countLabel = document.createElement('label');
+    countLabel.textContent = '返回结果条数:';
+    countLabel.style.fontWeight = '500';
+    
+    const countSelect = document.createElement('select');
+    countSelect.id = 'search_count_select';
+    countSelect.style.cssText = `
+        padding: 8px;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        font-size: 14px;
+    `;
+    
+    // 添加结果数量选项
+    const countOptions = [1, 5, 10, 20, 30, 40, 50];
+    countOptions.forEach(option => {
+        const optionEl = document.createElement('option');
+        optionEl.value = option;
+        optionEl.textContent = option;
+        if (option === 5) {
+            optionEl.selected = true;
+        }
+        countSelect.appendChild(optionEl);
+    });
+    
+    countGroup.appendChild(countLabel);
+    countGroup.appendChild(countSelect);
+    optionsForm.appendChild(countGroup);
+    
+    // 内容长度选项
+    const contentGroup = document.createElement('div');
+    contentGroup.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    `;
+    
+    const contentLabel = document.createElement('label');
+    contentLabel.textContent = '返回内容长度:';
+    contentLabel.style.fontWeight = '500';
+    
+    const contentSelect = document.createElement('select');
+    contentSelect.id = 'search_content_select';
+    contentSelect.style.cssText = `
+        padding: 8px;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        font-size: 14px;
+    `;
+    
+    // 添加内容长度选项
+    const contentOptions = [
+        { value: 'medium', text: '中等（摘要信息）' },
+        { value: 'high', text: '详细（完整内容）' }
+    ];
+    
+    contentOptions.forEach(option => {
+        const optionEl = document.createElement('option');
+        optionEl.value = option.value;
+        optionEl.textContent = option.text;
+        if (option.value === 'medium') {
+            optionEl.selected = true;
+        }
+        contentSelect.appendChild(optionEl);
+    });
+    
+    contentGroup.appendChild(contentLabel);
+    contentGroup.appendChild(contentSelect);
+    optionsForm.appendChild(contentGroup);
+    
+    modalContent.appendChild(optionsForm);
+    
+    // 创建操作按钮
+    const modalFooter = document.createElement('div');
+    modalFooter.style.cssText = `
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+        padding-top: 10px;
+        border-top: 1px solid #e0e0e0;
+    `;
+    
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'small-button';
+    cancelBtn.textContent = '取消';
+    cancelBtn.addEventListener('click', () => {
+        document.body.removeChild(optionsModal);
+    });
+    
+    const searchBtn = document.createElement('button');
+    searchBtn.type = 'button';
+    searchBtn.className = 'small-button';
+    searchBtn.style.backgroundColor = 'var(--primary-color)';
+    searchBtn.style.color = 'white';
+    searchBtn.textContent = '开始搜索';
+    searchBtn.addEventListener('click', async () => {
+        // 隐藏选项弹窗
+        document.body.removeChild(optionsModal);
+        
+        // 显示搜索中状态
+        chatSearchBtn.innerHTML = '<div class="file-processing-spinner"></div>';
+        chatSearchBtn.disabled = true;
+        
+        try {
+            // 获取选中的选项
+            const searchEngine = engineSelect.value;
+            const count = parseInt(countSelect.value);
+            const contentSize = contentSelect.value;
+            
+            // 调用搜索API
+            const searchResults = await apiCall('/search', {
+                search_query: originalQuery,
+                search_engine: searchEngine,
+                count: count,
+                content_size: contentSize
+            });
+            
+            // 显示搜索结果
+            displaySearchResults(searchResults, originalQuery);
+        } catch (error) {
+            alert(`搜索失败: ${error.message}`);
+            console.error('搜索失败:', error);
+        } finally {
+            // 恢复搜索按钮状态
+            chatSearchBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>';
+            chatSearchBtn.disabled = false;
+        }
+    });
+    
+    modalFooter.appendChild(cancelBtn);
+    modalFooter.appendChild(searchBtn);
+    modalContent.appendChild(modalFooter);
+    
+    optionsModal.appendChild(modalContent);
+    document.body.appendChild(optionsModal);
+}
+
+// 显示搜索结果
+function displaySearchResults(searchResults, originalQuery) {
+    // 创建搜索结果弹窗
+    const searchModal = document.createElement('div');
+    searchModal.className = 'modal';
+    searchModal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    `;
+    
+    // 创建弹窗内容
+    const modalContent = document.createElement('div');
+    modalContent.className = 'modal-content';
+    modalContent.style.cssText = `
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        width: 80%;
+        max-width: 800px;
+        max-height: 80vh;
+        overflow-y: auto;
+    `;
+    
+    // 创建标题
+    const modalHeader = document.createElement('div');
+    modalHeader.style.cssText = `
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e0e0e0;
+    `;
+    
+    const modalTitle = document.createElement('h3');
+    modalTitle.textContent = `搜索结果: ${originalQuery}`;
+    modalTitle.style.margin = '0';
+    
+    const closeBtn = document.createElement('button');
+    closeBtn.innerHTML = '&times;';
+    closeBtn.style.cssText = `
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #999;
+    `;
+    closeBtn.addEventListener('click', () => {
+        document.body.removeChild(searchModal);
+    });
+    
+    modalHeader.appendChild(modalTitle);
+    modalHeader.appendChild(closeBtn);
+    modalContent.appendChild(modalHeader);
+    
+    // 创建结果列表
+    const resultsContainer = document.createElement('div');
+    resultsContainer.style.marginBottom = '20px';
+    
+    if (searchResults.search_result && searchResults.search_result.length > 0) {
+        searchResults.search_result.forEach((result, index) => {
+            const resultItem = document.createElement('div');
+            resultItem.style.cssText = `
+                margin-bottom: 15px;
+                padding: 15px;
+                border: 1px solid #e0e0e0;
+                border-radius: 6px;
+                background-color: #f9f9f9;
+            `;
+            
+            const resultTitle = document.createElement('h4');
+            resultTitle.innerHTML = `<a href="${result.link}" target="_blank" style="color: #4a6cf7; text-decoration: none;">${result.title}</a>`;
+            resultTitle.style.margin = '0 0 10px 0';
+            
+            const resultContent = document.createElement('p');
+            resultContent.textContent = result.content;
+            resultContent.style.margin = '0 0 10px 0';
+            resultContent.style.fontSize = '14px';
+            resultContent.style.color = '#666';
+            
+            const resultInfo = document.createElement('div');
+            resultInfo.style.fontSize = '12px';
+            resultInfo.style.color = '#999';
+            resultInfo.innerHTML = `<span>${result.media}</span> • <span>${result.publish_date || ''}</span>`;
+            
+            resultItem.appendChild(resultTitle);
+            resultItem.appendChild(resultContent);
+            resultItem.appendChild(resultInfo);
+            resultsContainer.appendChild(resultItem);
+        });
+    } else {
+        resultsContainer.innerHTML = '<div class="info">未找到搜索结果</div>';
+    }
+    
+    modalContent.appendChild(resultsContainer);
+    
+    // 创建操作按钮
+    const modalFooter = document.createElement('div');
+    modalFooter.style.cssText = `
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        padding-top: 10px;
+        border-top: 1px solid #e0e0e0;
+    `;
+    
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'small-button';
+    cancelBtn.textContent = '取消';
+    cancelBtn.addEventListener('click', () => {
+        document.body.removeChild(searchModal);
+    });
+    
+    const useResultsBtn = document.createElement('button');
+    useResultsBtn.className = 'small-button';
+    useResultsBtn.style.backgroundColor = 'var(--primary-color)';
+    useResultsBtn.style.color = 'white';
+    useResultsBtn.textContent = '使用搜索结果作为上下文';
+    useResultsBtn.addEventListener('click', () => {
+        // 将搜索结果整合到消息中
+        integrateSearchResults(searchResults, originalQuery);
+        document.body.removeChild(searchModal);
+    });
+    
+    modalFooter.appendChild(cancelBtn);
+    modalFooter.appendChild(useResultsBtn);
+    modalContent.appendChild(modalFooter);
+    
+    searchModal.appendChild(modalContent);
+    document.body.appendChild(searchModal);
+}
+
+// 将搜索结果整合到消息中
+function integrateSearchResults(searchResults, originalQuery) {
+    if (!searchResults.search_result || searchResults.search_result.length === 0) {
+        return;
+    }
+    
+    // 格式化搜索结果
+    let searchContext = `网络搜索结果：\n`;
+    searchContext += `搜索关键词：${originalQuery}\n\n`;
+    
+    searchResults.search_result.forEach((result, index) => {
+        searchContext += `${index + 1}. [${result.title}](${result.link})\n`;
+        searchContext += `${result.content}\n\n`;
+    });
+    
+    // 将搜索结果添加到输入框
+    chatInput.value = `${originalQuery}\n\n${searchContext}`;
+    updateCharCount();
+    chatInput.focus();
 }
 
 function deleteMessage(buttonElement) {
