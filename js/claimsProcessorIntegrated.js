@@ -1920,6 +1920,9 @@ class ClaimsD3TreeRenderer {
     
     // 渲染树状图
     renderTree(data) {
+        // 重置mainGroup的transform（清除径向图的居中变换）
+        this.mainGroup.attr('transform', null);
+        
         // 找到所有独立权利要求作为根节点
         const independentClaims = data.nodes.filter(node => node.claim_type === 'independent');
         
@@ -2078,6 +2081,9 @@ class ClaimsD3TreeRenderer {
     
     // 渲染网络图
     renderNetwork(data) {
+        // 重置mainGroup的transform（清除径向图的居中变换）
+        this.mainGroup.attr('transform', null);
+        
         // 清除之前的箭头定义
         this.svg.selectAll('defs').remove();
         
@@ -2173,8 +2179,27 @@ class ClaimsD3TreeRenderer {
     
     // 渲染径向图
     renderRadial(data) {
-        const radius = Math.min(this.width, this.height) / 2 - 100;
+        // 增大半径以适应更多节点
+        const radius = Math.min(this.width, this.height) / 2 - 80;
         const tree = d3.cluster().size([2 * Math.PI, radius]);
+        
+        // 清除之前的箭头定义
+        this.svg.selectAll('defs').remove();
+        
+        // 定义箭头标记（径向图专用）
+        this.svg.append('defs').append('marker')
+            .attr('id', 'arrowhead-radial')
+            .attr('viewBox', '-0 -5 10 10')
+            .attr('refX', 25)
+            .attr('refY', 0)
+            .attr('orient', 'auto')
+            .attr('markerWidth', 8)
+            .attr('markerHeight', 8)
+            .attr('xoverflow', 'visible')
+            .append('svg:path')
+            .attr('d', 'M 0,-5 L 10 ,0 L 0,5')
+            .attr('fill', '#10b981')
+            .style('stroke', 'none');
         
         // 构建层次结构
         const root = this.buildHierarchy(data);
@@ -2183,7 +2208,7 @@ class ClaimsD3TreeRenderer {
         // 移动到中心
         this.mainGroup.attr('transform', `translate(${this.width / 2}, ${this.height / 2})`);
         
-        // 渲染连线
+        // 渲染连线（带箭头）
         this.mainGroup.selectAll('.link')
             .data(treeData.links())
             .enter()
@@ -2192,6 +2217,7 @@ class ClaimsD3TreeRenderer {
             .attr('stroke', '#10b981')
             .attr('stroke-width', 2)
             .attr('fill', 'none')
+            .attr('marker-end', 'url(#arrowhead-radial)')
             .attr('d', d3.linkRadial()
                 .angle(d => d.x)
                 .radius(d => d.y)
