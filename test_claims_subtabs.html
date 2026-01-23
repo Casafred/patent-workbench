@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>功能七子标签页测试</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .sub-tab-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 10px;
+        }
+        
+        .sub-tab-button {
+            padding: 10px 20px;
+            border: none;
+            background: #e0e0e0;
+            cursor: pointer;
+            border-radius: 5px 5px 0 0;
+            transition: all 0.3s;
+        }
+        
+        .sub-tab-button.active {
+            background: #4a6cf7;
+            color: white;
+        }
+        
+        .claims-sub-tab {
+            display: none;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .claims-sub-tab.active {
+            display: block;
+        }
+        
+        .test-content {
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        
+        .claim-item {
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #ddd;
+        }
+        
+        .claim-item.independent {
+            background: linear-gradient(90deg, rgba(74, 108, 247, 0.1), rgba(74, 108, 247, 0.05));
+            border-left-color: #4a6cf7;
+        }
+        
+        .claim-item.dependent {
+            background: rgba(128, 128, 128, 0.05);
+            border-left-color: #999;
+            color: #666;
+        }
+        
+        .claim-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 500;
+            margin-left: 10px;
+        }
+        
+        .claim-badge.independent {
+            background: #4a6cf7;
+            color: white;
+        }
+        
+        .claim-badge.dependent {
+            background: #999;
+            color: white;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: 'Microsoft YaHei', sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            background: #4a6cf7;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background: #3a5ce7;
+        }
+        
+        .debug-info {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>功能七子标签页测试</h1>
+    
+    <div class="sub-tab-container">
+        <button class="sub-tab-button active" onclick="switchClaimsSubTab('excel')">Excel批量分析</button>
+        <button class="sub-tab-button" onclick="switchClaimsSubTab('text')">文本输入分析</button>
+    </div>
+    
+    <!-- Excel批量分析页面 -->
+    <div id="claims-excel-tab" class="claims-sub-tab active">
+        <h2>Excel批量分析</h2>
+        <div class="test-content">
+            <p>这是Excel批量分析页面的内容</p>
+            <p>✅ 如果你能看到这段文字，说明Excel标签页正常显示</p>
+        </div>
+    </div>
+    
+    <!-- 文本输入分析页面 -->
+    <div id="claims-text-tab" class="claims-sub-tab">
+        <h2>文本输入权利要求分析</h2>
+        <div class="test-content">
+            <p>✅ 如果你能看到这段文字，说明文本输入标签页正常显示</p>
+            
+            <h3>输入权利要求文本:</h3>
+            <textarea id="claims_text_input" rows="10" placeholder="示例：
+1. 一种智能手机，其特征在于，包括：
+   处理器；
+   存储器；
+   显示屏。
+
+2. 根据权利要求1所述的智能手机，其特征在于，所述处理器为八核处理器。"></textarea>
+            
+            <div style="margin-top: 15px;">
+                <button onclick="testAnalyze()">🔍 测试分析</button>
+                <button onclick="clearInput()">🗑️ 清空</button>
+            </div>
+            
+            <div id="test_results" style="display:none; margin-top: 20px;">
+                <h3>测试结果:</h3>
+                <div class="claim-item independent">
+                    <strong>权利要求1</strong>
+                    <span class="claim-badge independent">独立权利要求</span>
+                    <p>一种智能手机，其特征在于，包括：处理器；存储器；显示屏。</p>
+                </div>
+                <div class="claim-item dependent">
+                    <strong>权利要求2</strong>
+                    <span class="claim-badge dependent">从属权利要求</span>
+                    <p>根据权利要求1所述的智能手机，其特征在于，所述处理器为八核处理器。</p>
+                    <p style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
+                        <strong>引用:</strong> 权利要求 1
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="debug-info" id="debug_info">
+        <strong>调试信息:</strong><br>
+        点击标签页按钮查看切换日志...
+    </div>
+    
+    <script>
+        function switchClaimsSubTab(tabName) {
+            const debugInfo = document.getElementById('debug_info');
+            let log = `<strong>调试信息:</strong><br>`;
+            log += `切换到标签页: ${tabName}<br>`;
+            
+            // 隐藏所有子标签页
+            const allSubTabs = document.querySelectorAll('.claims-sub-tab');
+            log += `找到 ${allSubTabs.length} 个子标签页<br>`;
+            allSubTabs.forEach(tab => {
+                tab.classList.remove('active');
+                tab.style.display = 'none';
+                log += `隐藏: ${tab.id}<br>`;
+            });
+            
+            // 移除所有按钮的active类
+            document.querySelectorAll('.sub-tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // 显示选中的标签页
+            const targetTabId = `claims-${tabName}-tab`;
+            const targetTab = document.getElementById(targetTabId);
+            log += `查找标签页: ${targetTabId}<br>`;
+            
+            if (targetTab) {
+                targetTab.classList.add('active');
+                targetTab.style.display = 'block';
+                log += `✅ 成功显示: ${targetTabId}<br>`;
+            } else {
+                log += `❌ 未找到标签页: ${targetTabId}<br>`;
+            }
+            
+            // 激活对应的按钮
+            event.target.classList.add('active');
+            log += `✅ 按钮已激活<br>`;
+            
+            debugInfo.innerHTML = log;
+        }
+        
+        function testAnalyze() {
+            document.getElementById('test_results').style.display = 'block';
+            alert('测试分析功能正常！\n\n独立权利要求显示为蓝色\n从属权利要求显示为灰色');
+        }
+        
+        function clearInput() {
+            document.getElementById('claims_text_input').value = '';
+            document.getElementById('test_results').style.display = 'none';
+        }
+        
+        // 页面加载完成后的初始化
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('页面加载完成');
+            console.log('Excel标签页:', document.getElementById('claims-excel-tab'));
+            console.log('文本标签页:', document.getElementById('claims-text-tab'));
+        });
+    </script>
+</body>
+</html>

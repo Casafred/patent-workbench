@@ -25,28 +25,53 @@ let claimsTextAnalyzedData = [];
 let claimsTextVisualizationRenderer = null;
 
 // 子标签页切换函数
-function switchClaimsSubTab(tabName) {
+window.switchClaimsSubTab = function(tabName) {
+    console.log('=== switchClaimsSubTab called ===');
+    console.log('Tab name:', tabName);
+    
     // 隐藏所有子标签页
-    document.querySelectorAll('.claims-sub-tab').forEach(tab => {
+    const allSubTabs = document.querySelectorAll('.claims-sub-tab');
+    console.log('Found sub-tabs:', allSubTabs.length);
+    allSubTabs.forEach(tab => {
+        console.log('Hiding tab:', tab.id);
         tab.classList.remove('active');
         tab.style.display = 'none';
     });
     
     // 移除所有按钮的active类
-    document.querySelectorAll('#claims_processor-tab .sub-tab-button').forEach(btn => {
+    const allButtons = document.querySelectorAll('#claims_processor-tab .sub-tab-button');
+    console.log('Found buttons:', allButtons.length);
+    allButtons.forEach(btn => {
         btn.classList.remove('active');
     });
     
     // 显示选中的标签页
-    const targetTab = document.getElementById(`claims-${tabName}-tab`);
+    const targetTabId = `claims-${tabName}-tab`;
+    const targetTab = document.getElementById(targetTabId);
+    console.log('Looking for tab:', targetTabId);
+    console.log('Target tab found:', !!targetTab);
+    
     if (targetTab) {
         targetTab.classList.add('active');
         targetTab.style.display = 'block';
+        console.log('Tab displayed successfully');
+    } else {
+        console.error('Target tab not found:', targetTabId);
+        // 列出所有可用的标签页ID
+        const allTabs = document.querySelectorAll('[id*="claims"]');
+        console.log('Available tabs with "claims" in ID:');
+        allTabs.forEach(tab => console.log('  -', tab.id));
     }
     
     // 激活对应的按钮
-    event.target.classList.add('active');
-}
+    const clickedButton = window.event ? window.event.target : event.target;
+    if (clickedButton) {
+        clickedButton.classList.add('active');
+        console.log('Button activated');
+    }
+    
+    console.log('=== switchClaimsSubTab completed ===');
+};
 
 // 初始化函数
 function initClaimsProcessor() {
