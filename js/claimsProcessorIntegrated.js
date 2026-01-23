@@ -3204,7 +3204,8 @@ function displayClaimsTextList() {
 
 // 渲染可视化
 function renderClaimsTextVisualization() {
-    const container = document.getElementById('claims_text_visualization');
+    const containerId = 'claims_text_visualization';
+    const container = document.getElementById(containerId);
     const style = document.getElementById('claims_text_viz_style').value;
     
     if (!container) {
@@ -3217,8 +3218,10 @@ function renderClaimsTextVisualization() {
     
     console.log('准备渲染文本分析可视化，样式:', style, '数据:', vizData);
     
-    // 每次都重新创建渲染器实例，确保容器正确
-    claimsTextVisualizationRenderer = new ClaimsVisualizationRenderer(container);
+    // 初始化或复用渲染器实例，与Excel分析部分保持一致
+    if (!claimsTextVisualizationRenderer) {
+        claimsTextVisualizationRenderer = new ClaimsD3TreeRenderer(containerId);
+    }
     
     // 渲染
     claimsTextVisualizationRenderer.render(vizData, style);
@@ -3237,10 +3240,12 @@ function createClaimsTextVizData() {
             const node = {
                 id: node_id,
                 claim_number: claim.claim_number,
-                claim_text: claim.full_text.length > 100 ? claim.full_text.substring(0, 100) + '...' : claim.full_text,
+                claim_text: claim.full_text, // 完整文本，与Excel分析一致
                 claim_type: claim.claim_type,
-                language: claim.language || 'zh',
-                full_text: claim.full_text  // 完整文本用于tooltip
+                level: claim.level || 0,
+                dependencies: claim.referenced_claims || [], // 添加依赖关系字段
+                x: 0,
+                y: 0
             };
             nodes.push(node);
             nodes_map[node_id] = node;
@@ -3268,7 +3273,17 @@ function createClaimsTextVizData() {
         }
     });
     
-    return { nodes, links };
+    // 与Excel分析部分数据格式保持一致
+    return {
+        patent_number: 'text_analysis', // 文本分析的专利号标识
+        nodes: nodes,
+        links: links,
+        metadata: {
+            total_claims: claimsTextAnalyzedData.length,
+            independent_claims: claimsTextAnalyzedData.filter(c => c.claim_type === 'independent').length,
+            dependent_claims: claimsTextAnalyzedData.filter(c => c.claim_type === 'dependent').length
+        }
+    };
 }
 
 // 加载示例
