@@ -147,77 +147,84 @@ button:disabled {
     transform: scale(1.05);
 }
 
-/* API配置切换按钮 */
-.api-config-toggle { 
-    background: transparent !important; 
-    border: 2px solid var(--primary-color); 
-    border-radius: 50%; 
-    width: 40px; 
-    height: 40px; 
-    font-size: 20px; 
-    cursor: pointer; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    transition: all 0.2s ease; 
-    color: var(--primary-color); 
-    box-shadow: none !important;
+/* API配置切换按钮 - 重构样式 */
+#api_config_toggle_btn.api-config-toggle {
+    /* 重置所有样式 */
+    all: unset;
+    /* 重新定义样式 */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 2px solid var(--primary-color);
+    border-radius: 50%;
+    background-color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    z-index: 10;
 }
 
-.api-config-toggle svg {
-    stroke: var(--primary-color) !important;
-    fill: none !important;
+#api_config_toggle_btn.api-config-toggle svg {
     width: 20px;
     height: 20px;
-}
-
-.api-config-toggle:hover { 
-    background-color: var(--primary-color-hover-bg) !important; 
-    border-color: var(--primary-color); 
-    color: var(--primary-color); 
-    transform: scale(1.05);
-    box-shadow: none !important;
-}
-
-.api-config-toggle:hover svg {
-    stroke: var(--primary-color) !important;
-}
-
-/* API密钥操作按钮 */
-.api-key-action-btn, .password-toggle-btn { 
-    background: transparent !important; 
-    border: 1px solid var(--primary-color); 
-    border-radius: 50%; 
-    width: 32px; 
-    height: 32px; 
-    font-size: 16px; 
-    cursor: pointer; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    transition: all 0.2s ease; 
-    color: var(--primary-color); 
-    flex-shrink: 0; 
-    box-shadow: none !important;
-}
-
-.api-key-action-btn svg, .password-toggle-btn svg {
-    stroke: var(--primary-color) !important;
-    fill: none !important;
+    stroke: var(--primary-color);
+    fill: none;
     transition: stroke 0.2s ease;
+}
+
+#api_config_toggle_btn.api-config-toggle:hover {
+    background-color: var(--primary-color-hover-bg);
+    transform: scale(1.05);
+}
+
+#api_config_toggle_btn.api-config-toggle:hover svg {
+    stroke: var(--primary-color-dark);
+}
+
+/* API密钥操作按钮 - 重构样式 */
+#api_key_copy_btn, #api_key_delete_btn, #api_key_toggle_visibility_btn {
+    /* 重置所有样式 */
+    all: unset;
+    /* 重新定义样式 */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--primary-color);
+    border-radius: 50%;
+    background-color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin: 0 2px;
+}
+
+#api_key_copy_btn svg, #api_key_delete_btn svg, #api_key_toggle_visibility_btn svg {
     width: 16px;
     height: 16px;
+    stroke: var(--primary-color);
+    fill: none;
+    transition: stroke 0.2s ease;
 }
 
-.api-key-action-btn:hover, .password-toggle-btn:hover { 
-    background-color: var(--primary-color-hover-bg) !important; 
-    color: var(--primary-color); 
-    border-color: var(--primary-color);
-    box-shadow: none !important;
+#api_key_copy_btn:hover, #api_key_delete_btn:hover, #api_key_toggle_visibility_btn:hover {
+    background-color: var(--primary-color-hover-bg);
+    transform: scale(1.05);
 }
 
-.api-key-action-btn:hover svg, .password-toggle-btn:hover svg {
-    stroke: var(--primary-color) !important;
+#api_key_copy_btn:hover svg, #api_key_delete_btn:hover svg, #api_key_toggle_visibility_btn:hover svg {
+    stroke: var(--primary-color-dark);
+}
+
+/* 确保按钮不继承其他样式 */
+.api-key-action-btn, .password-toggle-btn {
+    all: unset;
+    /* 重新应用基本按钮样式 */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* 导出切换按钮 */
