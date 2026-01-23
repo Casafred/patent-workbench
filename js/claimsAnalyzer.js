@@ -101,7 +101,7 @@ function analyzeClaims() {
         
         // 显示结果
         displayResults();
-        showMessage(成功识别  条权利要求, 'success');
+        showMessage(`成功识别 ${analyzedClaims.length} 条权利要求`, 'success');
         
     } catch (error) {
         console.error('Analysis error:', error);
@@ -437,7 +437,7 @@ class ClaimsVisualizationRenderer {
             .enter()
             .append('g')
             .attr('class', 'node')
-            .attr('transform', d => 	ranslate(,));
+            .attr('transform', d => `translate(${d.y + 100},${d.x + 50})`);
         
         nodes.append('circle')
             .attr('r', 25)
@@ -503,7 +503,7 @@ class ClaimsVisualizationRenderer {
                 .attr('x2', d => d.target.x)
                 .attr('y2', d => d.target.y);
             
-            node.attr('transform', d => 	ranslate(,));
+            node.attr('transform', d => `translate(${d.x},${d.y})`);
         });
         
         function dragstarted(event, d) {
@@ -535,7 +535,7 @@ class ClaimsVisualizationRenderer {
         
         const treeData = tree(root);
         
-        this.g.attr('transform', 	ranslate(,));
+        this.g.attr('transform', `translate(${width / 2},${height / 2})`);
         
         this.g.selectAll('.link')
             .data(treeData.links())
@@ -554,7 +554,7 @@ class ClaimsVisualizationRenderer {
             .enter()
             .append('g')
             .attr('class', 'node')
-            .attr('transform', d => otate() translate(,0));
+            .attr('transform', d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0)`);
         
         nodes.append('circle')
             .attr('r', 25)
