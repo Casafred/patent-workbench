@@ -1900,21 +1900,33 @@ class ClaimsD3TreeRenderer {
         this.currentData = data;
         this.currentStyle = style;
         
+        // 验证数据
+        if (!data || !data.nodes || data.nodes.length === 0) {
+            console.error('无效的可视化数据:', data);
+            return;
+        }
+        
+        console.log(`渲染 ${style} 布局，节点数: ${data.nodes.length}, 连接数: ${data.links.length}`);
+        
         // 清除现有内容
         this.mainGroup.selectAll('*').remove();
         
-        switch (style) {
-            case 'tree':
-                this.renderTree(data);
-                break;
-            case 'network':
-                this.renderNetwork(data);
-                break;
-            case 'radial':
-                this.renderRadial(data);
-                break;
-            default:
-                console.error('Unknown visualization style:', style);
+        try {
+            switch (style) {
+                case 'tree':
+                    this.renderTree(data);
+                    break;
+                case 'network':
+                    this.renderNetwork(data);
+                    break;
+                case 'radial':
+                    this.renderRadial(data);
+                    break;
+                default:
+                    console.error('Unknown visualization style:', style);
+            }
+        } catch (error) {
+            console.error(`渲染 ${style} 布局时出错:`, error);
         }
     }
     
@@ -2086,6 +2098,16 @@ class ClaimsD3TreeRenderer {
         
         // 清除之前的箭头定义
         this.svg.selectAll('defs').remove();
+        
+        // 为节点添加初始位置（避免 NaN）
+        data.nodes.forEach((node, i) => {
+            if (!node.x || isNaN(node.x)) {
+                node.x = this.width / 2 + (Math.random() - 0.5) * 100;
+            }
+            if (!node.y || isNaN(node.y)) {
+                node.y = this.height / 2 + (Math.random() - 0.5) * 100;
+            }
+        });
         
         const simulation = d3.forceSimulation(data.nodes)
             .force('link', d3.forceLink(data.links).id(d => d.id).distance(100))
@@ -2263,6 +2285,18 @@ class ClaimsD3TreeRenderer {
     buildHierarchy(data) {
         console.log('构建层次结构数据:', data);
         
+        // 验证数据
+        if (!data || !data.nodes || data.nodes.length === 0) {
+            console.error('buildHierarchy: 无效的数据');
+            return d3.hierarchy({
+                id: 'error_root',
+                claim_number: '错误',
+                claim_type: 'independent',
+                claim_text: '数据无效',
+                children: null
+            });
+        }
+        
         // 验证引用有效性
         const nodeIds = new Set(data.nodes.map(node => node.id));
         const invalidLinks = data.links.filter(link => {
@@ -2319,9 +2353,10 @@ class ClaimsD3TreeRenderer {
                     const targetId = typeof link.target === 'object' ? link.target.id : link.target;
                     const childNode = data.nodes.find(node => node.id === targetId);
                     if (childNode) {
+                        const childrenOfChild = buildChildren(childNode.id, newVisited, depth + 1);
                         return {
                             ...childNode,
-                            children: buildChildren(childNode.id, newVisited, depth + 1)
+                            children: childrenOfChild
                         };
                     }
                     return null;
@@ -2352,6 +2387,7 @@ class ClaimsD3TreeRenderer {
             return d3.hierarchy(hierarchyNodes[0]);
         } else {
             // 如果没有根节点，创建一个默认的
+            console.warn('没有找到根节点，创建默认根节点');
             return d3.hierarchy({
                 id: 'default_root',
                 claim_number: '1',
@@ -2410,21 +2446,51 @@ class ClaimsD3TreeRenderer {
     }
     
     centerView() {
-        const bounds = this.mainGroup.node().getBBox();
-        const fullWidth = this.width;
-        const fullHeight = this.height;
-        const width = bounds.width;
-        const height = bounds.height;
-        const midX = bounds.x + width / 2;
-        const midY = bounds.y + height / 2;
-        
-        const scale = 0.8 / Math.max(width / fullWidth, height / fullHeight);
-        const translate = [fullWidth / 2 - scale * midX, fullHeight / 2 - scale * midY];
-        
-        this.svg.transition().call(
-            this.zoom.transform,
-            d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale)
-        );
+        try {
+            const bounds = this.mainGroup.node().getBBox();
+            
+            // 检查边界框是否有效
+            if (!bounds || bounds.width === 0 || bounds.height === 0 || 
+                isNaN(bounds.width) || isNaN(bounds.height)) {
+                console.warn('无效的边界框，使用默认居中');
+                this.svg.transition().call(
+                    this.zoom.transform,
+                    d3.zoomIdentity
+                );
+                return;
+            }
+            
+            const fullWidth = this.width;
+            const fullHeight = this.height;
+            const width = bounds.width;
+            const height = bounds.height;
+            const midX = bounds.x + width / 2;
+            const midY = bounds.y + height / 2;
+            
+            const scale = 0.8 / Math.max(width / fullWidth, height / fullHeight);
+            const translate = [fullWidth / 2 - scale * midX, fullHeight / 2 - scale * midY];
+            
+            // 检查计算结果是否有效
+            if (isNaN(scale) || isNaN(translate[0]) || isNaN(translate[1])) {
+                console.warn('计算出的变换值无效，使用默认居中');
+                this.svg.transition().call(
+                    this.zoom.transform,
+                    d3.zoomIdentity
+                );
+                return;
+            }
+            
+            this.svg.transition().call(
+                this.zoom.transform,
+                d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale)
+            );
+        } catch (error) {
+            console.error('centerView 错误:', error);
+            this.svg.transition().call(
+                this.zoom.transform,
+                d3.zoomIdentity
+            );
+        }
     }
     
     // 设置树状图散开程度
