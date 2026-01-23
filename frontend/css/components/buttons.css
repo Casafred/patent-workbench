@@ -150,7 +150,7 @@ button:disabled {
 /* API配置切换按钮 */
 .api-config-toggle { 
     background: transparent; 
-    border: 1px solid var(--border-color); 
+    border: 2px solid var(--primary-color); 
     border-radius: 50%; 
     width: 40px; 
     height: 40px; 
@@ -160,13 +160,22 @@ button:disabled {
     align-items: center; 
     justify-content: center; 
     transition: all 0.2s ease; 
-    color: var(--text-color-secondary); 
+    color: var(--primary-color); 
+}
+
+.api-config-toggle svg {
+    stroke: var(--primary-color);
 }
 
 .api-config-toggle:hover { 
     background-color: var(--primary-color-hover-bg); 
     border-color: var(--primary-color); 
     color: var(--primary-color); 
+    transform: scale(1.05);
+}
+
+.api-config-toggle:hover svg {
+    stroke: var(--primary-color);
 }
 
 /* API密钥操作按钮 */
@@ -186,9 +195,19 @@ button:disabled {
     flex-shrink: 0; 
 }
 
+.api-key-action-btn svg, .password-toggle-btn svg {
+    stroke: var(--text-color-secondary);
+    transition: stroke 0.2s ease;
+}
+
 .api-key-action-btn:hover, .password-toggle-btn:hover { 
     background-color: var(--primary-color-hover-bg); 
     color: var(--primary-color); 
+    border-color: var(--primary-color);
+}
+
+.api-key-action-btn:hover svg, .password-toggle-btn:hover svg {
+    stroke: var(--primary-color);
 }
 
 /* 导出切换按钮 */

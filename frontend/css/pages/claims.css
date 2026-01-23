@@ -269,14 +269,30 @@
     border-radius: 4px;
     font-size: 1.2em;
     transition: all 0.3s ease;
+    color: var(--text-color-secondary);
+}
+
+.view-btn svg {
+    stroke: var(--text-color-secondary);
+    transition: stroke 0.3s ease;
 }
 
 .view-btn:hover {
     background: var(--primary-color-hover-bg);
+    color: var(--primary-color);
+}
+
+.view-btn:hover svg {
+    stroke: var(--primary-color);
 }
 
 .view-btn.active {
     background: var(--primary-color);
+    color: white;
+}
+
+.view-btn.active svg {
+    stroke: white;
 }
 
 /* 差异统计面板 */
