@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>功能六增强测试</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1a73e8;
+            border-bottom: 3px solid #1a73e8;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #333;
+            margin-top: 20px;
+        }
+        .info {
+            background-color: #e8f0fe;
+            border-left: 4px solid #1a73e8;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .success {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .test-button {
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .test-button:hover {
+            background-color: #1557b0;
+        }
+        ol, ul {
+            line-height: 1.8;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .checklist {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .checklist li {
+            padding: 8px;
+            margin: 5px 0;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .checklist li:before {
+            content: "☐ ";
+            font-size: 20px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-card">
+        <h1>🧪 功能六增强功能测试指南</h1>
+        
+        <div class="warning">
+            <strong>⚠️ 重要提示：</strong>
+            <p>这些新功能是在<strong>你的应用</strong>中实现的，不是在Google Patents网站上！</p>
+            <p>请确保访问：<code>http://43.99.101.195</code></p>
+        </div>
+
+        <h2>📋 测试前准备</h2>
+        <div class="info">
+            <ol>
+                <li>确认服务器已更新（执行 <code>update_aliyun_now.bat</code>）</li>
+                <li>访问 <code>http://43.99.101.195</code></li>
+                <li>使用你的账号登录</li>
+                <li>点击"功能六：批量专利解读"标签</li>
+            </ol>
+        </div>
+
+        <h2>🎯 测试项目清单</h2>
+        
+        <h3>测试1：基本查询（不勾选说明书）</h3>
+        <ul class="checklist">
+            <li>输入专利号：<code>US10000000B2</code></li>
+            <li>不勾选"获取说明书字段"</li>
+            <li>点击"批量查询专利"</li>
+            <li>等待查询完成（约5-10秒）</li>
+            <li>检查是否显示基本信息</li>
+            <li>检查每个字段旁边是否有📋按钮</li>
+            <li>点击摘要旁的📋按钮，测试复制功能</li>
+            <li>检查是否显示权利要求</li>
+            <li>检查权利要求旁是否有📋按钮</li>
+            <li>检查是否显示附图（如果有）</li>
+        </ul>
+
+        <h3>测试2：完整查询（勾选说明书）</h3>
+        <ul class="checklist">
+            <li>输入专利号：<code>US10000000B2</code></li>
+            <li>勾选"获取说明书字段"</li>
+            <li>点击"批量查询专利"</li>
+            <li>等待查询完成（约10-20秒，因为要获取更多信息）</li>
+            <li>向下滚动，检查是否显示说明书</li>
+            <li>继续向下滚动，检查是否显示<strong>绿色区域</strong>的"引用专利"表格</li>
+            <li>检查是否显示<strong>橙色区域</strong>的"被引用专利"表格</li>
+            <li>检查是否显示<strong>紫色区域</strong>的"法律事件"表格</li>
+            <li>测试每个进阶信息的📋复制按钮</li>
+        </ul>
+
+        <h3>测试3：字段复制功能</h3>
+        <ul class="checklist">
+            <li>点击任意字段的📋按钮</li>
+            <li>按钮应该变成✓</li>
+            <li>打开记事本，按Ctrl+V粘贴</li>
+            <li>验证内容是否正确</li>
+            <li>测试至少3个不同字段的复制</li>
+        </ul>
+
+        <h3>测试4：附图显示</h3>
+        <ul class="checklist">
+            <li>查看是否有"🖼️ 专利附图"区域</li>
+            <li>检查附图是否正常显示</li>
+            <li>点击附图，应该在新窗口打开大图</li>
+            <li>如果图片加载失败，应该显示"图片加载失败"</li>
+        </ul>
+
+        <button class="test-button" onclick="window.open('http://43.99.101.195', '_blank')">
+            🚀 打开应用开始测试
+        </button>
+    </div>
+
+    <div class="test-card">
+        <h2>🔍 故障排查</h2>
+        
+        <h3>问题1：没有看到新功能</h3>
+        <div class="info">
+            <strong>可能原因：</strong>
+            <ul>
+                <li>服务器代码未更新</li>
+                <li>浏览器缓存未清除</li>
+                <li>访问了错误的URL</li>
+            </ul>
+            <strong>解决方案：</strong>
+            <ol>
+                <li>按 <code>Ctrl+Shift+R</code> 强制刷新页面</li>
+                <li>清除浏览器缓存</li>
+                <li>确认访问的是 <code>http://43.99.101.195</code></li>
+                <li>检查服务器是否已更新（SSH登录查看）</li>
+            </ol>
+        </div>
+
+        <h3>问题2：附图不显示</h3>
+        <div class="info">
+            <strong>可能原因：</strong>
+            <ul>
+                <li>该专利本身没有附图</li>
+                <li>Google Patents页面结构变化</li>
+                <li>网络问题</li>
+            </ul>
+            <strong>解决方案：</strong>
+            <ol>
+                <li>尝试其他专利号（如 <code>CN104154208B</code>）</li>
+                <li>打开浏览器开发者工具（F12）查看Network标签</li>
+                <li>查看服务器日志</li>
+            </ol>
+        </div>
+
+        <h3>问题3：进阶信息不显示</h3>
+        <div class="warning">
+            <strong>⚠️ 重要：</strong>
+            <p>进阶信息（引用专利、被引用专利、法律事件）<strong>只有勾选"获取说明书字段"时才会提取</strong>！</p>
+            <p>如果不勾选，这些信息不会显示。</p>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>📞 需要帮助？</h2>
+        <div class="info">
+            <p>如果测试过程中遇到问题，请提供以下信息：</p>
+            <ol>
+                <li>访问的URL</li>
+                <li>使用的专利号</li>
+                <li>是否勾选了"获取说明书字段"</li>
+                <li>浏览器控制台的错误信息（F12打开）</li>
+                <li>查询结果的截图</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        console.log('功能六增强测试页面已加载');
+        console.log('请访问 http://43.99.101.195 进行测试');
+    </script>
+</body>
+</html>

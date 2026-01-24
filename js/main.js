@@ -422,8 +422,18 @@ function initPatentBatch() {
             return;
         }
         
+        // 首先检查后端版本
+        try {
+            const versionResponse = await apiCall('/patent/version');
+            console.log('✅ 后端版本信息:', versionResponse);
+            console.log('✅ 支持的功能:', versionResponse.features);
+        } catch (error) {
+            console.warn('⚠️ 无法获取版本信息，可能是旧版本后端');
+        }
+        
         // 获取是否需要爬取说明书的选项
         const crawlSpecification = document.getElementById('crawl_specification_checkbox')?.checked || false;
+        console.log('📋 crawl_specification:', crawlSpecification);
         
         // 清空之前的结果
         patentResultsList.innerHTML = '';
@@ -436,10 +446,13 @@ function initPatentBatch() {
         
         try {
             // 调用API查询专利
+            console.log('🚀 开始查询专利，参数:', { patent_numbers: uniquePatents, crawl_specification: crawlSpecification });
             const results = await apiCall('/patent/search', {
                 patent_numbers: uniquePatents,
                 crawl_specification: crawlSpecification
             });
+            
+            console.log('📦 查询结果:', results);
             
             patentResults = results;
             
@@ -454,7 +467,7 @@ function initPatentBatch() {
                 analyzeAllBtn.disabled = false;
             }
         } catch (error) {
-            console.error('专利查询失败:', error);
+            console.error('❌ 专利查询失败:', error);
             searchStatus.textContent = `查询失败: ${error.message}`;
             searchStatus.style.color = 'red';
         }

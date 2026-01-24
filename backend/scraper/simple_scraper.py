@@ -122,6 +122,7 @@ class SimplePatentScraper:
             SimplePatentResult with scraped data
         """
         start_time = time.time()
+        logger.info(f"开始爬取专利: {patent_number}, crawl_specification={crawl_specification}, crawl_full_drawings={crawl_full_drawings}")
         
         try:
             url = f'https://patents.google.com/patent/{patent_number}'
@@ -138,6 +139,15 @@ class SimplePatentScraper:
             
             # Extract data
             patent_data = self._extract_patent_data(soup, patent_number, url, crawl_specification=crawl_specification, crawl_full_drawings=crawl_full_drawings)
+            
+            # 添加调试日志
+            logger.info(f"专利 {patent_number} 提取结果:")
+            logger.info(f"  - 标题: {patent_data.title[:50] if patent_data.title else 'None'}...")
+            logger.info(f"  - 权利要求数量: {len(patent_data.claims)}")
+            logger.info(f"  - 附图数量: {len(patent_data.drawings)}")
+            logger.info(f"  - 引用专利数量: {len(patent_data.patent_citations)}")
+            logger.info(f"  - 被引用专利数量: {len(patent_data.cited_by)}")
+            logger.info(f"  - 法律事件数量: {len(patent_data.legal_events)}")
             
             processing_time = time.time() - start_time
             

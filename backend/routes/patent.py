@@ -31,6 +31,22 @@ def get_scraper_instance() -> SimplePatentScraper:
     return _scraper_instance
 
 
+@patent_bp.route('/patent/version', methods=['GET'])
+def get_version():
+    """Get scraper version info for debugging."""
+    return create_response(data={
+        'version': '2.0-enhanced',
+        'features': [
+            'claims_always_extracted',
+            'drawings_three_strategies',
+            'patent_citations',
+            'cited_by',
+            'legal_events'
+        ],
+        'timestamp': '2026-01-24'
+    })
+
+
 @patent_bp.route('/patent/search', methods=['POST'])
 def search_patents():
     """
