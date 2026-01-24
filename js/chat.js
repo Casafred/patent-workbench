@@ -1,5 +1,12 @@
 // js/chat.js (完整最终版)
 
+// 标题生成状态管理 - 防止并发冲突
+const titleGenerationState = {
+    pending: new Set(),  // 正在生成标题的对话ID
+    failed: new Set(),   // 生成失败的对话ID（并发限制）
+    lastAttempt: {}      // 最后尝试时间戳
+};
+
 // 处理文件上传和复用
 async function handleChatFileUpload(event, fileFromReuse = null) {
     // 【核心修改】优先使用复用的文件对象，否则从事件中获取
@@ -259,15 +266,40 @@ function initChat() {
 
 async function generateConversationTitle(conversation) {
     const nonSystemMessages = conversation.messages.filter(m => m.role !== 'system');
+    
+    // 检查是否需要生成标题
     if (!conversation || conversation.title !== '' || nonSystemMessages.length < 2) {
         return;
     }
+    
+    // 防止重复生成
+    if (titleGenerationState.pending.has(conversation.id)) {
+        console.log('标题生成中，跳过重复请求');
+        return;
+    }
+    
+    // 检查是否之前失败过（并发限制）
+    if (titleGenerationState.failed.has(conversation.id)) {
+        console.log('标题生成已失败（并发限制），跳过');
+        return;
+    }
+    
+    // 检查最后尝试时间，避免频繁请求（至少间隔5秒）
+    const lastAttempt = titleGenerationState.lastAttempt[conversation.id];
+    if (lastAttempt && (Date.now() - lastAttempt) < 5000) {
+        console.log('标题生成请求过于频繁，跳过');
+        return;
+    }
+
+    // 标记为正在生成
+    titleGenerationState.pending.add(conversation.id);
+    titleGenerationState.lastAttempt[conversation.id] = Date.now();
 
     const recentMessages = conversation.messages.slice(-2);
     const contentToSummarize = recentMessages.map(m => `${m.role}: ${m.content}`).join('\n\n');
 
     const titlePrompt = {
-        model: 'GLM-4.7-Flash',
+        model: 'GLM-4-Flash',  // 使用更快的模型
         messages: [
             { role: 'system', content: '你是一个对话主题提炼专家。你的任务是根据提供的对话内容，用一句话（中文不超过20个字）总结出一个简洁、精炼的标题。直接返回标题文本，不要包含任何引导词、引号或说明。' },
             { role: 'user', content: `请为以下对话生成一个标题：\n\n${contentToSummarize}` }
@@ -290,6 +322,15 @@ async function generateConversationTitle(conversation) {
         }
     } catch (error) {
         console.error("自动生成标题失败:", error.message);
+        
+        // 如果是并发限制错误（1302或429），标记为失败，不再重试
+        if (error.message && (error.message.includes('1302') || error.message.includes('429'))) {
+            titleGenerationState.failed.add(conversation.id);
+            console.log('检测到并发限制错误，该对话不再自动生成标题');
+        }
+    } finally {
+        // 移除正在生成标记
+        titleGenerationState.pending.delete(conversation.id);
     }
 }
 
@@ -521,7 +562,9 @@ async function handleStreamChatRequest() {
         assistantMessageEl.dataset.index = convo.messages.length - 1;
         assistantMessageEl.querySelector('.message-footer').style.opacity = '1';
         saveConversations();
-        setTimeout(() => generateConversationTitle(convo), 100);
+        // 延迟3秒后生成标题，避免并发冲突
+        setTimeout(() => generateConversationTitle(convo), 3000);
+
 
     } catch (error) {
         assistantContentEl.innerHTML = `<div class="info error">请求失败: ${error.message}</div>`;
