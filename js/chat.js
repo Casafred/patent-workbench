@@ -401,6 +401,13 @@ async function handleStreamChatRequest() {
     if (appState.chat.activeFile) {
         messagesToSend[messagesToSend.length - 1].content = `文件ID: ${appState.chat.activeFile.fileId}\n文件名: ${appState.chat.activeFile.filename}\n文件内容:\n${appState.chat.activeFile.content}\n\n用户问题: ${message}`;
     }
+    
+    // 如果启用了搜索模式，将搜索配置添加到消息中
+    if (appState.chat.searchMode.enabled) {
+        const searchConfig = appState.chat.searchMode;
+        messagesToSend[messagesToSend.length - 1].content += `\n\n--- 搜索配置 ---\n搜索引擎: ${searchConfig.searchEngine}\n结果数量: ${searchConfig.count}\n内容长度: ${searchConfig.contentSize}`;
+    }
+    
     const persona = appState.chat.personas[convo.personaId];
     
     // 1. 构建最终发送给模型的完整用户内容 (finalPromptForModel)
@@ -412,6 +419,12 @@ async function handleStreamChatRequest() {
     if (appState.chat.activeFile) {
         // 文件内容附加在最后，作为发送给模型的上下文
         finalPromptForModel += `\n\n--- 参考附加文件: ${appState.chat.activeFile.filename} ---\n${appState.chat.activeFile.content}`;
+    }
+    
+    // 如果启用了搜索模式，将搜索配置添加到模型提示中
+    if (appState.chat.searchMode.enabled) {
+        const searchConfig = appState.chat.searchMode;
+        finalPromptForModel += `\n\n--- 搜索配置 ---\n您可以根据需要调用网络搜索API获取最新信息。搜索配置如下：\n搜索引擎: ${searchConfig.searchEngine}\n结果数量: ${searchConfig.count}\n内容长度: ${searchConfig.contentSize}`;
     }
     
     // 2. 构建显示在UI上的用户消息 (messageForUI)
@@ -1107,20 +1120,49 @@ function resendMessage(buttonElement) {
     chatInput.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
-// 搜索功能实现
-async function handleSearch() {
-    const message = chatInput.value.trim();
-    if (!message) {
-        alert('请先输入搜索关键词');
-        return;
-    }
+// 初始化搜索状态
+appState.chat.searchMode = {
+    enabled: false,
+    searchEngine: 'search_std',
+    count: 5,
+    contentSize: 'medium'
+};
+
+// 切换搜索模式
+function toggleSearchMode() {
+    // 切换搜索启用状态
+    appState.chat.searchMode.enabled = !appState.chat.searchMode.enabled;
     
-    // 显示搜索选项弹窗
-    showSearchOptions(message);
+    // 更新搜索按钮视觉状态
+    updateSearchButtonState();
+    
+    // 如果启用了搜索，显示配置弹窗
+    if (appState.chat.searchMode.enabled) {
+        showSearchConfig();
+    }
 }
 
-// 显示搜索选项弹窗
-function showSearchOptions(originalQuery) {
+// 更新搜索按钮状态
+function updateSearchButtonState() {
+    if (appState.chat.searchMode.enabled) {
+        chatSearchBtn.style.backgroundColor = 'var(--primary-color)';
+        chatSearchBtn.style.color = 'white';
+        chatSearchBtn.title = '关闭联网搜索';
+    } else {
+        chatSearchBtn.style.backgroundColor = '';
+        chatSearchBtn.style.color = '';
+        chatSearchBtn.title = '开启联网搜索 (使用智谱网络搜索API)';
+    }
+}
+
+// 搜索功能实现
+function handleSearch() {
+    // 切换搜索开关状态
+    toggleSearchMode();
+}
+
+// 显示搜索配置弹窗
+function showSearchConfig() {
     // 创建搜索选项弹窗
     const optionsModal = document.createElement('div');
     optionsModal.className = 'modal';
@@ -1160,7 +1202,7 @@ function showSearchOptions(originalQuery) {
     `;
     
     const modalTitle = document.createElement('h3');
-    modalTitle.textContent = '搜索选项';
+    modalTitle.textContent = '联网搜索配置';
     modalTitle.style.margin = '0';
     
     const closeBtn = document.createElement('button');
@@ -1221,7 +1263,7 @@ function showSearchOptions(originalQuery) {
         const optionEl = document.createElement('option');
         optionEl.value = option.value;
         optionEl.textContent = option.text;
-        if (option.value === 'search_std') {
+        if (option.value === appState.chat.searchMode.searchEngine) {
             optionEl.selected = true;
         }
         engineSelect.appendChild(optionEl);
@@ -1258,7 +1300,7 @@ function showSearchOptions(originalQuery) {
         const optionEl = document.createElement('option');
         optionEl.value = option;
         optionEl.textContent = option;
-        if (option === 5) {
+        if (option === appState.chat.searchMode.count) {
             optionEl.selected = true;
         }
         countSelect.appendChild(optionEl);
@@ -1299,7 +1341,7 @@ function showSearchOptions(originalQuery) {
         const optionEl = document.createElement('option');
         optionEl.value = option.value;
         optionEl.textContent = option.text;
-        if (option.value === 'medium') {
+        if (option.value === appState.chat.searchMode.contentSize) {
             optionEl.selected = true;
         }
         contentSelect.appendChild(optionEl);
@@ -1322,56 +1364,26 @@ function showSearchOptions(originalQuery) {
         border-top: 1px solid #e0e0e0;
     `;
     
-    const cancelBtn = document.createElement('button');
-    cancelBtn.type = 'button';
-    cancelBtn.className = 'small-button';
-    cancelBtn.textContent = '取消';
-    cancelBtn.addEventListener('click', () => {
-        document.body.removeChild(optionsModal);
-    });
-    
-    const searchBtn = document.createElement('button');
-    searchBtn.type = 'button';
-    searchBtn.className = 'small-button';
-    searchBtn.style.backgroundColor = 'var(--primary-color)';
-    searchBtn.style.color = 'white';
-    searchBtn.textContent = '开始搜索';
-    searchBtn.addEventListener('click', async () => {
-        // 隐藏选项弹窗
+    const saveBtn = document.createElement('button');
+    saveBtn.type = 'button';
+    saveBtn.className = 'small-button';
+    saveBtn.style.backgroundColor = 'var(--primary-color)';
+    saveBtn.style.color = 'white';
+    saveBtn.textContent = '保存配置';
+    saveBtn.addEventListener('click', () => {
+        // 保存配置
+        appState.chat.searchMode.searchEngine = engineSelect.value;
+        appState.chat.searchMode.count = parseInt(countSelect.value);
+        appState.chat.searchMode.contentSize = contentSelect.value;
+        
+        // 关闭弹窗
         document.body.removeChild(optionsModal);
         
-        // 显示搜索中状态
-        chatSearchBtn.innerHTML = '<div class="file-processing-spinner"></div>';
-        chatSearchBtn.disabled = true;
-        
-        try {
-            // 获取选中的选项
-            const searchEngine = engineSelect.value;
-            const count = parseInt(countSelect.value);
-            const contentSize = contentSelect.value;
-            
-            // 调用搜索API
-            const searchResults = await apiCall('/search', {
-                search_query: originalQuery,
-                search_engine: searchEngine,
-                count: count,
-                content_size: contentSize
-            });
-            
-            // 显示搜索结果
-            displaySearchResults(searchResults, originalQuery);
-        } catch (error) {
-            alert(`搜索失败: ${error.message}`);
-            console.error('搜索失败:', error);
-        } finally {
-            // 恢复搜索按钮状态
-            chatSearchBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>';
-            chatSearchBtn.disabled = false;
-        }
+        // 显示保存成功提示
+        alert('联网搜索配置已保存');
     });
     
-    modalFooter.appendChild(cancelBtn);
-    modalFooter.appendChild(searchBtn);
+    modalFooter.appendChild(saveBtn);
     modalContent.appendChild(modalFooter);
     
     optionsModal.appendChild(modalContent);
