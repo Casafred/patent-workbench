@@ -46,13 +46,20 @@ function initApiKeyConfig() {
     apiKeyToggleVisibilityBtn.addEventListener('click', () => {
         const isPassword = globalApiKeyInput.type === 'password';
         globalApiKeyInput.type = isPassword ? 'text' : 'password';
-        apiKeyToggleVisibilityBtn.textContent = isPassword ? '🙈' : '👁️';
+        // 保持SVG图标，不要替换为emoji
+        const svg = apiKeyToggleVisibilityBtn.querySelector('svg');
+        if (svg) {
+            // 切换眼睛图标的显示状态（可以通过修改SVG路径或添加斜线来表示隐藏状态）
+            // 这里我们保持SVG不变，只是改变输入框类型
+        }
     });
     apiKeyCopyBtn.addEventListener('click', () => {
         if (!globalApiKeyInput.value) return;
         navigator.clipboard.writeText(globalApiKeyInput.value).then(() => {
-            apiKeyCopyBtn.textContent = '✅';
-            setTimeout(() => { apiKeyCopyBtn.textContent = '📋'; }, 1500);
+            // 保存原始SVG
+            const originalHTML = apiKeyCopyBtn.innerHTML;
+            apiKeyCopyBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+            setTimeout(() => { apiKeyCopyBtn.innerHTML = originalHTML; }, 1500);
         });
     });
     apiKeyDeleteBtn.addEventListener('click', () => {
