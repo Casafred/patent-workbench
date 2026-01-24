@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>移动端测试 - 专利分析智能工作台</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="frontend/css/main.css?v=mobile">
+    <style>
+        /* 测试辅助样式 */
+        .test-info {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            z-index: 9999;
+        }
+        
+        .test-info div {
+            margin: 3px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header class="app-header">
+        <div class="app-branding">
+            <div class="logo-container">
+                <h1 class="banner-text-logo">ALFRED X IP</h1>
+                <img src="frontend/images/ALFRED X IP LOGO.webp" alt="Alfred X IP Logo" class="image-logo">
+            </div>
+            <div class="version-number">版本号: v20.1 (移动端测试)</div>
+        </div>
+        <div class="api-config-section">
+            <button id="api_config_toggle_btn" class="api-config-toggle" title="API Key 设置">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+            </button>
+        </div>
+    </header>
+    
+    <div class="main-content">
+        <div class="tab-navigation">
+            <div class="main-tab-container">
+                <button class="tab-button active">功能一：即时对话</button>
+                <button class="tab-button">功能二：小批量异步</button>
+                <button class="tab-button">功能三：大批量处理</button>
+                <button class="tab-button">功能四：本地专利库管理</button>
+                <button class="tab-button">功能五：权利要求对比</button>
+                <button class="tab-button">功能六：批量专利解读</button>
+                <button class="tab-button">功能七：权利要求处理</button>
+            </div>
+        </div>
+
+        <div class="tab-content active">
+            <h3>移动端布局测试</h3>
+            <p class="info">这是一个移动端响应式布局测试页面。请在手机或平板上查看效果。</p>
+            
+            <div class="step">
+                <div class="step-header">测试区域</div>
+                
+                <div class="progress-stepper">
+                    <div class="step-item active">
+                        <div class="step-number">1</div>
+                        <div class="step-title">输入内容</div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">2</div>
+                        <div class="step-title">配置模板</div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">3</div>
+                        <div class="step-title">创建任务</div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">4</div>
+                        <div class="step-title">查看结果</div>
+                    </div>
+                </div>
+
+                <div class="sub-tab-container">
+                    <button class="sub-tab-button active">选项一</button>
+                    <button class="sub-tab-button">选项二</button>
+                    <button class="sub-tab-button">选项三</button>
+                </div>
+
+                <div class="config-item">
+                    <label for="test-input">测试输入框:</label>
+                    <input type="text" id="test-input" placeholder="请输入内容">
+                </div>
+
+                <div class="config-item">
+                    <label for="test-select">测试下拉框:</label>
+                    <select id="test-select">
+                        <option>选项1</option>
+                        <option>选项2</option>
+                        <option>选项3</option>
+                    </select>
+                </div>
+
+                <div class="config-item">
+                    <label for="test-textarea">测试文本域:</label>
+                    <textarea id="test-textarea" rows="4" placeholder="请输入多行文本"></textarea>
+                </div>
+
+                <div class="button-group">
+                    <button class="small-button">按钮1</button>
+                    <button class="small-button">按钮2</button>
+                    <button class="small-button">按钮3</button>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <h4>横向滚动测试</h4>
+                    <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                        <table style="min-width: 800px; width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr>
+                                    <th style="border: 1px solid var(--border-color); padding: 10px;">列1</th>
+                                    <th style="border: 1px solid var(--border-color); padding: 10px;">列2</th>
+                                    <th style="border: 1px solid var(--border-color); padding: 10px;">列3</th>
+                                    <th style="border: 1px solid var(--border-color); padding: 10px;">列4</th>
+                                    <th style="border: 1px solid var(--border-color); padding: 10px;">列5</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="border: 1px solid var(--border-color); padding: 10px;">数据1</td>
+                                    <td style="border: 1px solid var(--border-color); padding: 10px;">数据2</td>
+                                    <td style="border: 1px solid var(--border-color); padding: 10px;">数据3</td>
+                                    <td style="border: 1px solid var(--border-color); padding: 10px;">数据4</td>
+                                    <td style="border: 1px solid var(--border-color); padding: 10px;">数据5</td>
+                                </tr>
+                                <tr>
+                                    <td style="border: 1px solid var(--border-color); padding: 10px;">数据A</td>
+                                    <td style="border: 1px solid var(--border-color); padding: 10px;">数据B</td>
+                                    <td style="border: 1px solid var(--border-color); padding: 10px;">数据C</td>
+                                    <td style="border: 1px solid var(--border-color); padding: 10px;">数据D</td>
+                                    <td style="border: 1px solid var(--border-color); padding: 10px;">数据E</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="info" style="margin-top: 10px;">👆 这个表格可以横向滑动查看</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 屏幕信息显示 -->
+<div class="test-info">
+    <div>屏幕宽度: <span id="screen-width"></span>px</div>
+    <div>屏幕高度: <span id="screen-height"></span>px</div>
+    <div>方向: <span id="orientation"></span></div>
+</div>
+
+<script>
+    function updateScreenInfo() {
+        document.getElementById('screen-width').textContent = window.innerWidth;
+        document.getElementById('screen-height').textContent = window.innerHeight;
+        document.getElementById('orientation').textContent = window.innerWidth > window.innerHeight ? '横屏' : '竖屏';
+    }
+    
+    updateScreenInfo();
+    window.addEventListener('resize', updateScreenInfo);
+    window.addEventListener('orientationchange', updateScreenInfo);
+</script>
+
+</body>
+</html>

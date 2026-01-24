@@ -7,6 +7,7 @@
 @import url('base/variables.css');
 @import url('base/reset.css');
 @import url('base/animations.css');
+@import url('base/responsive.css');
 
 /* 布局样式 */
 @import url('layout/container.css');
