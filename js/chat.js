@@ -501,6 +501,7 @@ async function handleStreamChatRequest() {
     let usageInfo = null;
     let searchResults = null;  // 存储搜索结果
     let isSearching = false;   // 搜索状态标志
+    let contentStarted = false; // 标记是否已经开始接收内容
 
     try {
         const contextCount = parseInt(chatContextCount.value, 10);
@@ -556,9 +557,8 @@ async function handleStreamChatRequest() {
                             // 提取搜索结果
                             if (webSearchTool.web_search.outputs) {
                                 searchResults = webSearchTool.web_search.outputs;
-                                isSearching = false;
                                 
-                                // 显示搜索完成提示
+                                // 显示搜索完成提示（但不改变isSearching状态，让delta处理）
                                 assistantContentEl.innerHTML = `
                                     <div class="search-complete">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -574,10 +574,12 @@ async function handleStreamChatRequest() {
                     
                     const delta = parsed.choices[0]?.delta?.content || "";
                     if (delta) {
-                        // 如果还在搜索中，先清除搜索提示
-                        if (isSearching) {
+                        // 第一次收到内容时，清除所有提示
+                        if (!contentStarted) {
+                            contentStarted = true;
                             isSearching = false;
                             assistantContentEl.innerHTML = '';
+                            fullResponse = '';  // 确保从空开始
                         }
                         
                         fullResponse += delta;
