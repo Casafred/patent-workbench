@@ -28,6 +28,10 @@ class SimplePatentData:
     description: str = ""
     url: str = ""
     drawings: List[str] = None
+    # 进阶字段
+    patent_citations: List[Dict[str, str]] = None  # 引用的专利
+    cited_by: List[Dict[str, str]] = None  # 被引用的专利
+    legal_events: List[Dict[str, str]] = None  # 法律事件
     
     def __post_init__(self):
         if self.inventors is None:
@@ -38,6 +42,12 @@ class SimplePatentData:
             self.claims = []
         if self.drawings is None:
             self.drawings = []
+        if self.patent_citations is None:
+            self.patent_citations = []
+        if self.cited_by is None:
+            self.cited_by = []
+        if self.legal_events is None:
+            self.legal_events = []
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
@@ -364,39 +374,47 @@ class SimplePatentScraper:
         else:
             patent_data.description = ''
         
-        # Extract drawings using HTML selectors (fallback if JSON-LD extraction failed)
+        # Extract drawings using multiple strategies
         # 始终尝试提取附图，不受crawl_specification限制
         if not patent_data.drawings:
             try:
-                # Try multiple selectors to find drawing containers
-                drawing_containers = []
-                
-                # Try section with itemprop='description' (often contains drawings)
-                desc_section = soup.find('section', {'itemprop': 'description'})
-                if desc_section:
-                    drawing_containers.append(desc_section)
-                
-                # Try div with class='description' (alternative structure)
-                desc_div = soup.find('div', {'class': 'description'})
-                if desc_div:
-                    drawing_containers.append(desc_div)
-                
-                # Try main content area
-                main_content = soup.find('main')
-                if main_content:
-                    drawing_containers.append(main_content)
-                
-                # Try body as last resort
-                drawing_containers.append(soup.body)
-                
-                # Collect all images
                 seen_images = set()
-                found_first = False
                 
-                for container in drawing_containers:
-                    if container:
-                        # Find all img tags
-                        img_tags = container.find_all('img')
+                # Strategy 1: Find figure elements (most reliable)
+                figures = soup.find_all('figure')
+                for figure in figures:
+                    img = figure.find('img')
+                    if img and img.get('src'):
+                        img_src = img.get('src')
+                        # Handle relative URLs
+                        if img_src.startswith('//'):
+                            img_src = f'https:{img_src}'
+                        elif img_src.startswith('/'):
+                            img_src = f'https://patents.google.com{img_src}'
+                        
+                        if img_src.startswith('http') and img_src not in seen_images:
+                            # Filter out small icons (usually < 100px)
+                            width = img.get('width', '0')
+                            height = img.get('height', '0')
+                            try:
+                                if width and int(width) < 100:
+                                    continue
+                                if height and int(height) < 100:
+                                    continue
+                            except:
+                                pass
+                            
+                            seen_images.add(img_src)
+                            patent_data.drawings.append(img_src)
+                            
+                            if not crawl_full_drawings:
+                                break
+                
+                # Strategy 2: Find images in description section
+                if not patent_data.drawings:
+                    desc_section = soup.find('section', {'itemprop': 'description'})
+                    if desc_section:
+                        img_tags = desc_section.find_all('img')
                         for img in img_tags:
                             img_src = img.get('src', '')
                             if img_src:
@@ -407,26 +425,151 @@ class SimplePatentScraper:
                                     img_src = f'https://patents.google.com{img_src}'
                                 elif not img_src.startswith('http'):
                                     continue
-                                    
-                                # Check if this is a patent drawing (filter out icons and logos)
-                                if 'patentimages' in img_src or 'google.com/patents' in img_src or len(img_src) > 50:
+                                
+                                # Check if this is a patent drawing
+                                if ('patentimages' in img_src or 
+                                    'patents.google.com' in img_src or 
+                                    len(img_src) > 80):
                                     if img_src not in seen_images:
                                         seen_images.add(img_src)
                                         patent_data.drawings.append(img_src)
                                         
-                                        # If not crawling full drawings, stop after first image
                                         if not crawl_full_drawings:
-                                            found_first = True
                                             break
+                
+                # Strategy 3: Find all images with patent-related URLs
+                if not patent_data.drawings:
+                    all_imgs = soup.find_all('img')
+                    for img in all_imgs:
+                        img_src = img.get('src', '')
+                        if not img_src:
+                            continue
                         
-                        if found_first:
-                            break
+                        # Handle relative URLs
+                        if img_src.startswith('//'):
+                            img_src = f'https:{img_src}'
+                        elif img_src.startswith('/'):
+                            img_src = f'https://patents.google.com{img_src}'
+                        
+                        # Look for patent image patterns
+                        if ('patentimages' in img_src or 
+                            '/patents/US' in img_src or
+                            '/patents/CN' in img_src or
+                            '/patents/EP' in img_src or
+                            '/patents/WO' in img_src):
+                            if img_src not in seen_images:
+                                seen_images.add(img_src)
+                                patent_data.drawings.append(img_src)
+                                
+                                if not crawl_full_drawings:
+                                    break
+                
             except Exception as e:
                 logger.warning(f"Error extracting drawings from HTML for {patent_number}: {e}")
         
-        # 如果仍然没有附图，记录日志以便调试
+        # 如果仍然没有附图，记录详细日志
         if not patent_data.drawings:
-            logger.info(f"No drawings found for {patent_number}")
+            logger.info(f"No drawings found for {patent_number}. Tried JSON-LD, figure tags, description section, and all images.")
+        
+        # Extract Patent Citations (引用的专利)
+        if crawl_specification:
+            try:
+                citations = []
+                # Look for citations section
+                citations_section = soup.find('section', {'itemprop': 'citations'})
+                if not citations_section:
+                    # Try alternative selectors
+                    citations_section = soup.find('div', {'id': 'citations'})
+                
+                if citations_section:
+                    # Find all citation items
+                    citation_items = citations_section.find_all('tr')
+                    for item in citation_items:
+                        try:
+                            # Extract patent number and title
+                            patent_link = item.find('a')
+                            if patent_link:
+                                cited_patent_number = patent_link.get_text().strip()
+                                cited_title = item.find('td', {'class': 'title'})
+                                cited_title_text = cited_title.get_text().strip() if cited_title else ''
+                                
+                                citations.append({
+                                    'patent_number': cited_patent_number,
+                                    'title': cited_title_text
+                                })
+                        except Exception as e:
+                            logger.warning(f"Error parsing citation item: {e}")
+                            continue
+                
+                patent_data.patent_citations = citations[:20]  # 限制前20条
+            except Exception as e:
+                logger.warning(f"Error extracting patent citations for {patent_number}: {e}")
+                patent_data.patent_citations = []
+        
+        # Extract Cited By (被引用的专利)
+        if crawl_specification:
+            try:
+                cited_by = []
+                # Look for cited by section
+                cited_by_section = soup.find('section', {'id': 'citedBy'})
+                if not cited_by_section:
+                    cited_by_section = soup.find('div', {'id': 'citedBy'})
+                
+                if cited_by_section:
+                    # Find all cited by items
+                    cited_items = cited_by_section.find_all('tr')
+                    for item in cited_items:
+                        try:
+                            patent_link = item.find('a')
+                            if patent_link:
+                                citing_patent_number = patent_link.get_text().strip()
+                                citing_title = item.find('td', {'class': 'title'})
+                                citing_title_text = citing_title.get_text().strip() if citing_title else ''
+                                
+                                cited_by.append({
+                                    'patent_number': citing_patent_number,
+                                    'title': citing_title_text
+                                })
+                        except Exception as e:
+                            logger.warning(f"Error parsing cited by item: {e}")
+                            continue
+                
+                patent_data.cited_by = cited_by[:20]  # 限制前20条
+            except Exception as e:
+                logger.warning(f"Error extracting cited by for {patent_number}: {e}")
+                patent_data.cited_by = []
+        
+        # Extract Legal Events (法律事件)
+        if crawl_specification:
+            try:
+                legal_events = []
+                # Look for legal events section
+                events_section = soup.find('section', {'id': 'legalEvents'})
+                if not events_section:
+                    events_section = soup.find('div', {'id': 'legalEvents'})
+                
+                if events_section:
+                    # Find all event items
+                    event_items = events_section.find_all('tr')
+                    for item in event_items:
+                        try:
+                            tds = item.find_all('td')
+                            if len(tds) >= 2:
+                                event_date = tds[0].get_text().strip()
+                                event_description = tds[1].get_text().strip()
+                                
+                                legal_events.append({
+                                    'date': event_date,
+                                    'description': event_description
+                                })
+                        except Exception as e:
+                            logger.warning(f"Error parsing legal event item: {e}")
+                            continue
+                
+                patent_data.legal_events = legal_events[:20]  # 限制前20条
+            except Exception as e:
+                logger.warning(f"Error extracting legal events for {patent_number}: {e}")
+                patent_data.legal_events = []
         
         return patent_data
     
