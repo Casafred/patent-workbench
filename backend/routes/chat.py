@@ -74,13 +74,24 @@ def stream_chat():
                 web_search_config = {
                     "type": "web_search",
                     "web_search": {
-                        "enable": True,
+                        "enable": "True",  # 注意：必须是字符串 "True"
                         "search_engine": req_data.get('search_engine', 'search_pro'),
-                        "search_result": True,
-                        "count": req_data.get('search_count', 5),
+                        "search_result": "True",  # 注意：必须是字符串 "True"
+                        "count": str(req_data.get('search_count', 5)),  # 转换为字符串
                         "content_size": req_data.get('content_size', 'medium')
                     }
                 }
+                
+                # 添加可选参数
+                if req_data.get('search_prompt'):
+                    web_search_config['web_search']['search_prompt'] = req_data.get('search_prompt')
+                
+                if req_data.get('search_domain_filter'):
+                    web_search_config['web_search']['search_domain_filter'] = req_data.get('search_domain_filter')
+                
+                if req_data.get('search_recency_filter'):
+                    web_search_config['web_search']['search_recency_filter'] = req_data.get('search_recency_filter')
+                
                 request_params['tools'] = [web_search_config]
                 request_params['tool_choice'] = 'auto'
             
@@ -137,13 +148,24 @@ def simple_chat():
             web_search_config = {
                 "type": "web_search",
                 "web_search": {
-                    "enable": True,
+                    "enable": "True",  # 注意：必须是字符串 "True"
                     "search_engine": req_data.get('search_engine', 'search_pro'),
-                    "search_result": True,
-                    "count": req_data.get('search_count', 5),
+                    "search_result": "True",  # 注意：必须是字符串 "True"
+                    "count": str(req_data.get('search_count', 5)),  # 转换为字符串
                     "content_size": req_data.get('content_size', 'medium')
                 }
             }
+            
+            # 添加可选参数
+            if req_data.get('search_prompt'):
+                web_search_config['web_search']['search_prompt'] = req_data.get('search_prompt')
+            
+            if req_data.get('search_domain_filter'):
+                web_search_config['web_search']['search_domain_filter'] = req_data.get('search_domain_filter')
+            
+            if req_data.get('search_recency_filter'):
+                web_search_config['web_search']['search_recency_filter'] = req_data.get('search_recency_filter')
+            
             request_params['tools'] = [web_search_config]
             request_params['tool_choice'] = 'auto'
         
