@@ -619,18 +619,78 @@
     }
 }
 
-/* 统一的step-header样式，确保所有绿色banner都有斜纹效果 */
+/* 统一的step-header样式，确保所有绿色banner都有右侧倾斜渐变白线条效果 */
 .step-header {
+    position: relative;
+    background: linear-gradient(90deg, var(--primary-color-dark), var(--primary-color));
+    overflow: hidden;
+}
+
+/* 右侧倾斜渐变白线条装饰效果 */
+.step-header::before {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 200px;
+    height: 100%;
     background: 
-        linear-gradient(90deg, var(--primary-color-dark), var(--primary-color)),
-        repeating-linear-gradient(135deg, 
+        /* 第一条线 - 最亮 */
+        linear-gradient(120deg, 
             transparent 0%, 
-            transparent 20px, 
-            rgba(255, 255, 255, 0.25) 20px, 
-            rgba(255, 255, 255, 0.25) 40px, 
-            transparent 40px, 
-            transparent 60px);
-    background-size: 100% 100%, 200px 100%;
-    background-position: 0 0, 100% 0;
-    background-repeat: no-repeat;
+            transparent 45%, 
+            rgba(255, 255, 255, 0.6) 48%, 
+            rgba(255, 255, 255, 0.8) 50%, 
+            rgba(255, 255, 255, 0.6) 52%, 
+            transparent 55%, 
+            transparent 100%
+        ),
+        /* 第二条线 - 重影1 */
+        linear-gradient(120deg, 
+            transparent 0%, 
+            transparent 55%, 
+            rgba(255, 255, 255, 0.4) 58%, 
+            rgba(255, 255, 255, 0.6) 60%, 
+            rgba(255, 255, 255, 0.4) 62%, 
+            transparent 65%, 
+            transparent 100%
+        ),
+        /* 第三条线 - 重影2 */
+        linear-gradient(120deg, 
+            transparent 0%, 
+            transparent 65%, 
+            rgba(255, 255, 255, 0.3) 68%, 
+            rgba(255, 255, 255, 0.5) 70%, 
+            rgba(255, 255, 255, 0.3) 72%, 
+            transparent 75%, 
+            transparent 100%
+        ),
+        /* 第四条线 - 重影3 */
+        linear-gradient(120deg, 
+            transparent 0%, 
+            transparent 75%, 
+            rgba(255, 255, 255, 0.2) 78%, 
+            rgba(255, 255, 255, 0.4) 80%, 
+            rgba(255, 255, 255, 0.2) 82%, 
+            transparent 85%, 
+            transparent 100%
+        );
+    background-size: 100% 100%;
+    pointer-events: none;
+}
+
+/* 添加微妙的光晕效果 */
+.step-header::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 150px;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent 0%, 
+        rgba(255, 255, 255, 0.05) 50%, 
+        rgba(255, 255, 255, 0.1) 100%
+    );
+    pointer-events: none;
 }
