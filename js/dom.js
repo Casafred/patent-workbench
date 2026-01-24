@@ -36,6 +36,7 @@ const chatDeleteSelectedBtn = getEl('chat_delete_selected_btn');
 const chatFileStatusArea = getEl('chat_file_status_area');
 const chatUploadFileBtn = getEl('chat_upload_file_btn');
 const chatFileInput = getEl('chat_file_input');
+const chatSearchBtn = getEl('chat_search_btn');
 // ▲▲▲ 新增结束 ▲▲▲
 
 // Async Batch (功能二)
