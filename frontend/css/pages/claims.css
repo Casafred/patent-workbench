@@ -343,7 +343,12 @@
 }
 
 .comparison-card-header {
-    background: linear-gradient(90deg, var(--primary-color-dark), var(--primary-color));
+    background: 
+        linear-gradient(90deg, var(--primary-color-dark), var(--primary-color)),
+        linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.15) 50%, transparent 100%);
+    background-size: 100% 100%, 150px 100%;
+    background-position: 0 0, 100% 0;
+    background-repeat: no-repeat;
     color: white;
     padding: 15px 20px;
     display: flex;
