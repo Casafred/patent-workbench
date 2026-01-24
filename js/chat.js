@@ -463,11 +463,22 @@ async function handleStreamChatRequest() {
         const contextCount = parseInt(chatContextCount.value, 10);
         const messagesToSend = buildMessagesForApi(convo, contextCount, finalPromptForModel);
         
-        const reader = await apiCall('/stream_chat', { 
+        // Build request payload
+        const requestPayload = { 
             model: chatModelSelect.value, 
             temperature: parseFloat(chatTempInput.value), 
-            messages: messagesToSend // 发送构建好的消息
-        }, 'POST', true);
+            messages: messagesToSend
+        };
+        
+        // Add web search parameters if enabled
+        if (appState.chat.searchMode.enabled) {
+            requestPayload.enable_web_search = true;
+            requestPayload.search_engine = appState.chat.searchMode.searchEngine;
+            requestPayload.search_count = appState.chat.searchMode.count;
+            requestPayload.content_size = appState.chat.searchMode.contentSize;
+        }
+        
+        const reader = await apiCall('/stream_chat', requestPayload, 'POST', true);
         const decoder = new TextDecoder();
         while (true) {
             const { value, done } = await reader.read();
@@ -1123,7 +1134,7 @@ function resendMessage(buttonElement) {
 // 初始化搜索状态
 appState.chat.searchMode = {
     enabled: false,
-    searchEngine: 'search_std',
+    searchEngine: 'search_pro',  // 使用推荐的高级版
     count: 5,
     contentSize: 'medium'
 };
@@ -1147,11 +1158,48 @@ function updateSearchButtonState() {
     if (appState.chat.searchMode.enabled) {
         chatSearchBtn.style.backgroundColor = 'var(--primary-color)';
         chatSearchBtn.style.color = 'white';
-        chatSearchBtn.title = '关闭联网搜索';
+        chatSearchBtn.title = '联网搜索已启用 - 点击关闭';
+        
+        // 添加视觉指示器到输入区域
+        if (!document.getElementById('search_indicator')) {
+            const indicator = document.createElement('div');
+            indicator.id = 'search_indicator';
+            indicator.style.cssText = `
+                position: absolute;
+                top: -25px;
+                left: 0;
+                background-color: var(--primary-color);
+                color: white;
+                padding: 4px 12px;
+                border-radius: 4px;
+                font-size: 12px;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            `;
+            indicator.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                </svg>
+                <span>联网搜索已启用 (${appState.chat.searchMode.searchEngine})</span>
+            `;
+            const inputArea = document.querySelector('.chat-input-area');
+            if (inputArea) {
+                inputArea.style.position = 'relative';
+                inputArea.insertBefore(indicator, inputArea.firstChild);
+            }
+        }
     } else {
         chatSearchBtn.style.backgroundColor = '';
         chatSearchBtn.style.color = '';
         chatSearchBtn.title = '开启联网搜索 (使用智谱网络搜索API)';
+        
+        // 移除视觉指示器
+        const indicator = document.getElementById('search_indicator');
+        if (indicator) {
+            indicator.remove();
+        }
     }
 }
 
@@ -1213,6 +1261,24 @@ function showSearchConfig() {
     modalHeader.appendChild(closeBtn);
     optionsModal.appendChild(modalHeader);
     
+    // 添加说明文本
+    const infoText = document.createElement('div');
+    infoText.style.cssText = `
+        background-color: #f0f7ff;
+        border-left: 4px solid var(--primary-color);
+        padding: 12px;
+        margin-bottom: 20px;
+        font-size: 13px;
+        color: #333;
+        line-height: 1.5;
+    `;
+    infoText.innerHTML = `
+        <strong>💡 功能说明：</strong><br>
+        启用后，AI将自动调用智谱网络搜索API获取最新信息，并结合搜索结果生成回答。
+        搜索结果会自动标注来源链接。
+    `;
+    optionsModal.appendChild(infoText);
+    
     // 创建选项表单
     const optionsForm = document.createElement('form');
     optionsForm.style.cssText = `
@@ -1244,24 +1310,40 @@ function showSearchConfig() {
     
     // 添加搜索引擎选项
     const engineOptions = [
-        { value: 'search_std', text: '智谱基础版搜索引擎' },
-        { value: 'search_pro', text: '智谱高阶版搜索引擎' },
-        { value: 'search_pro_sogou', text: '搜狗' },
-        { value: 'search_pro_quark', text: '夸克搜索' }
+        { value: 'search_std', text: '智谱基础版 (0.01元/次)', description: '满足日常查询需求，性价比极高' },
+        { value: 'search_pro', text: '智谱高级版 (0.03元/次) 推荐', description: '多引擎协作，召回率和准确率大幅提升' },
+        { value: 'search_pro_sogou', text: '搜狗 (0.05元/次)', description: '覆盖腾讯生态和知乎内容' },
+        { value: 'search_pro_quark', text: '夸克 (0.05元/次)', description: '精准触达垂直内容' }
     ];
     
     engineOptions.forEach(option => {
         const optionEl = document.createElement('option');
         optionEl.value = option.value;
         optionEl.textContent = option.text;
+        optionEl.title = option.description;
         if (option.value === appState.chat.searchMode.searchEngine) {
             optionEl.selected = true;
         }
         engineSelect.appendChild(optionEl);
     });
     
+    // 添加引擎说明
+    const engineDesc = document.createElement('div');
+    engineDesc.style.cssText = `
+        font-size: 12px;
+        color: #666;
+        margin-top: 4px;
+    `;
+    engineDesc.textContent = engineOptions.find(o => o.value === appState.chat.searchMode.searchEngine)?.description || '';
+    
+    engineSelect.addEventListener('change', () => {
+        const selectedOption = engineOptions.find(o => o.value === engineSelect.value);
+        engineDesc.textContent = selectedOption?.description || '';
+    });
+    
     engineGroup.appendChild(engineLabel);
     engineGroup.appendChild(engineSelect);
+    engineGroup.appendChild(engineDesc);
     optionsForm.appendChild(engineGroup);
     
     // 结果数量选项
@@ -1297,8 +1379,17 @@ function showSearchConfig() {
         countSelect.appendChild(optionEl);
     });
     
+    const countDesc = document.createElement('div');
+    countDesc.style.cssText = `
+        font-size: 12px;
+        color: #666;
+        margin-top: 4px;
+    `;
+    countDesc.textContent = '建议5-10条，过多会增加响应时间';
+    
     countGroup.appendChild(countLabel);
     countGroup.appendChild(countSelect);
+    countGroup.appendChild(countDesc);
     optionsForm.appendChild(countGroup);
     
     // 内容长度选项
@@ -1324,8 +1415,8 @@ function showSearchConfig() {
     
     // 添加内容长度选项
     const contentOptions = [
-        { value: 'medium', text: '中等（摘要信息）' },
-        { value: 'high', text: '详细（完整内容）' }
+        { value: 'medium', text: '中等（摘要信息）', description: '适合快速获取关键信息' },
+        { value: 'high', text: '详细（完整内容）', description: '适合深度分析和详细解答' }
     ];
     
     contentOptions.forEach(option => {
@@ -1338,8 +1429,22 @@ function showSearchConfig() {
         contentSelect.appendChild(optionEl);
     });
     
+    const contentDesc = document.createElement('div');
+    contentDesc.style.cssText = `
+        font-size: 12px;
+        color: #666;
+        margin-top: 4px;
+    `;
+    contentDesc.textContent = contentOptions.find(o => o.value === appState.chat.searchMode.contentSize)?.description || '';
+    
+    contentSelect.addEventListener('change', () => {
+        const selectedOption = contentOptions.find(o => o.value === contentSelect.value);
+        contentDesc.textContent = selectedOption?.description || '';
+    });
+    
     contentGroup.appendChild(contentLabel);
     contentGroup.appendChild(contentSelect);
+    contentGroup.appendChild(contentDesc);
     optionsForm.appendChild(contentGroup);
     
     optionsModal.appendChild(optionsForm);
@@ -1358,20 +1463,48 @@ function showSearchConfig() {
     const saveBtn = document.createElement('button');
     saveBtn.type = 'button';
     saveBtn.className = 'small-button';
-    saveBtn.style.backgroundColor = 'var(--primary-color)';
-    saveBtn.style.color = 'white';
-    saveBtn.textContent = '保存配置';
+    saveBtn.style.cssText = `
+        background-color: var(--primary-color);
+        color: white;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+    `;
+    saveBtn.textContent = '保存并启用';
     saveBtn.addEventListener('click', () => {
         // 保存配置
         appState.chat.searchMode.searchEngine = engineSelect.value;
         appState.chat.searchMode.count = parseInt(countSelect.value);
         appState.chat.searchMode.contentSize = contentSelect.value;
         
+        // 更新按钮状态
+        updateSearchButtonState();
+        
         // 关闭弹窗
         document.body.removeChild(optionsModal);
         
         // 显示保存成功提示
-        alert('联网搜索配置已保存');
+        const toast = document.createElement('div');
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #4caf50;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 10000;
+            animation: slideIn 0.3s ease-out;
+        `;
+        toast.textContent = '✓ 联网搜索配置已保存并启用';
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            toast.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => document.body.removeChild(toast), 300);
+        }, 2000);
     });
     
     modalFooter.appendChild(saveBtn);

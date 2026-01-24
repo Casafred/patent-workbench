@@ -21,6 +21,7 @@ def stream_chat():
     Handle streaming chat requests.
     
     This endpoint supports Server-Sent Events (SSE) for real-time streaming responses.
+    Supports web search integration via tools parameter.
     """
     is_valid, error_response = validate_api_request()
     if not is_valid:
@@ -60,12 +61,30 @@ def stream_chat():
     def generate():
         """Generator function for streaming responses."""
         try:
-            response = client.chat.completions.create(
-                model=req_data.get('model'),
-                messages=req_data.get('messages'),
-                stream=True,
-                temperature=req_data.get('temperature'),
-            )
+            # Build request parameters
+            request_params = {
+                'model': req_data.get('model'),
+                'messages': req_data.get('messages'),
+                'stream': True,
+                'temperature': req_data.get('temperature'),
+            }
+            
+            # Add web search tools if enabled
+            if req_data.get('enable_web_search'):
+                web_search_config = {
+                    "type": "web_search",
+                    "web_search": {
+                        "enable": True,
+                        "search_engine": req_data.get('search_engine', 'search_pro'),
+                        "search_result": True,
+                        "count": req_data.get('search_count', 5),
+                        "content_size": req_data.get('content_size', 'medium')
+                    }
+                }
+                request_params['tools'] = [web_search_config]
+                request_params['tool_choice'] = 'auto'
+            
+            response = client.chat.completions.create(**request_params)
             for chunk in response:
                 yield f"data: {chunk.model_dump_json()}\n\n"
         except Exception as e:
@@ -86,6 +105,7 @@ def simple_chat():
     Handle synchronous chat requests.
     
     This endpoint returns a complete response in a single request.
+    Supports web search integration via tools parameter.
     """
     is_valid, error_response = validate_api_request()
     if not is_valid:
@@ -104,12 +124,30 @@ def simple_chat():
         return jsonify({"error": "model and messages are required."}), 400
     
     try:
-        response_from_sdk = client.chat.completions.create(
-            model=model,
-            messages=messages,
-            stream=False,
-            temperature=temperature
-        )
+        # Build request parameters
+        request_params = {
+            'model': model,
+            'messages': messages,
+            'stream': False,
+            'temperature': temperature
+        }
+        
+        # Add web search tools if enabled
+        if req_data.get('enable_web_search'):
+            web_search_config = {
+                "type": "web_search",
+                "web_search": {
+                    "enable": True,
+                    "search_engine": req_data.get('search_engine', 'search_pro'),
+                    "search_result": True,
+                    "count": req_data.get('search_count', 5),
+                    "content_size": req_data.get('content_size', 'medium')
+                }
+            }
+            request_params['tools'] = [web_search_config]
+            request_params['tool_choice'] = 'auto'
+        
+        response_from_sdk = client.chat.completions.create(**request_params)
         json_string = response_from_sdk.model_dump_json()
         clean_dict = json.loads(json_string)
         return jsonify(clean_dict)
@@ -124,12 +162,13 @@ def simple_chat():
         return jsonify(error_payload), 500
 
 
-@chat_bp.route('/search', methods=['POST'])
-def handle_search():
+@chat_bp.route('/web_search', methods=['POST'])
+def web_search():
     """
-    Handle search requests.
+    Direct Web Search API endpoint.
     
-    This endpoint calls the Zhipu network search API and returns formatted results.
+    This endpoint directly calls the Zhipu Web Search API and returns formatted results.
+    Endpoint: POST /paas/v4/web_search
     """
     is_valid, error_response = validate_api_request()
     if not is_valid:
@@ -140,14 +179,19 @@ def handle_search():
         if req_data is None:
             raise ValueError("Request body is not a valid JSON or is empty.")
         
-        # Get search parameters
+        # Get search parameters according to official API spec
         search_query = req_data.get('search_query', '')
-        search_engine = req_data.get('search_engine', 'search_std')
-        count = req_data.get('count', 5)
+        search_engine = req_data.get('search_engine', 'search_pro')
+        search_intent = req_data.get('search_intent', False)  # 是否进行搜索意图识别
+        count = req_data.get('count', 10)
         content_size = req_data.get('content_size', 'medium')
         
         if not search_query:
             return jsonify({"error": "search_query is required."}), 400
+        
+        # Validate search_query length (max 70 characters)
+        if len(search_query) > 70:
+            return jsonify({"error": "search_query must not exceed 70 characters."}), 400
         
         # Get API key from Authorization header
         auth_header = request.headers.get('Authorization')
@@ -156,19 +200,34 @@ def handle_search():
         if not api_key:
             return jsonify({"error": "Authorization header with Bearer token is required."}), 401
         
-        # Call Zhipu network search API
-        search_url = "https://open.bigmodel.cn/api/paas/v4/tools/retrieval"
+        # Call Zhipu Web Search API (correct endpoint)
+        search_url = "https://open.bigmodel.cn/api/paas/v4/web_search"
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json"
         }
         
+        # Build request payload according to official API spec
         search_payload = {
             "search_query": search_query,
             "search_engine": search_engine,
+            "search_intent": search_intent,
             "count": count,
             "content_size": content_size
         }
+        
+        # Add optional parameters if provided
+        if req_data.get('search_domain_filter'):
+            search_payload['search_domain_filter'] = req_data.get('search_domain_filter')
+        
+        if req_data.get('search_recency_filter'):
+            search_payload['search_recency_filter'] = req_data.get('search_recency_filter')
+        
+        if req_data.get('request_id'):
+            search_payload['request_id'] = req_data.get('request_id')
+        
+        if req_data.get('user_id'):
+            search_payload['user_id'] = req_data.get('user_id')
         
         response = requests.post(search_url, json=search_payload, headers=headers)
         response.raise_for_status()
@@ -188,15 +247,15 @@ def handle_search():
         
         return jsonify({
             "error": {
-                "message": f"Search API call failed: {error_message}",
-                "type": "search_api_error"
+                "message": f"Web Search API call failed: {error_message}",
+                "type": "web_search_api_error"
             }
         }), 500
     except Exception as e:
-        print(f"Error in handle_search: {traceback.format_exc()}")
+        print(f"Error in web_search: {traceback.format_exc()}")
         return jsonify({
             "error": {
-                "message": f"Search processing failed: {str(e)}",
+                "message": f"Web search processing failed: {str(e)}",
                 "type": "backend_exception"
             }
         }), 500

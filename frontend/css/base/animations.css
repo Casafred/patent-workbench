@@ -19,12 +19,23 @@
 
 @keyframes slideIn { 
     from {
-        margin-top: -5%; 
-        opacity: 0
+        transform: translateX(100%);
+        opacity: 0;
     } 
     to {
-        margin-top: 5%; 
-        opacity: 1
+        transform: translateX(0);
+        opacity: 1;
+    } 
+}
+
+@keyframes slideOut { 
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    } 
+    to {
+        transform: translateX(100%);
+        opacity: 0;
     } 
 }
 
