@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API直接测试</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .test-section {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #1557b0;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>🔍 API直接测试工具</h1>
+    
+    <div class="test-section">
+        <h2>1. 检查后端版本</h2>
+        <button onclick="checkVersion()">检查版本</button>
+        <div id="version-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. 测试专利查询（不含说明书）</h2>
+        <input type="text" id="patent1" value="CN104154208B" style="width: 200px; padding: 5px;">
+        <button onclick="testPatent(false)">查询（不含说明书）</button>
+        <div id="result1"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. 测试专利查询（包含说明书）</h2>
+        <input type="text" id="patent2" value="CN104154208B" style="width: 200px; padding: 5px;">
+        <button onclick="testPatent(true)">查询（含说明书）</button>
+        <div id="result2"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://43.99.101.195/api';
+
+        async function checkVersion() {
+            const resultDiv = document.getElementById('version-result');
+            resultDiv.innerHTML = '<p class="info">正在检查...</p>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/patent/version`);
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <p class="success">✅ 版本检查成功</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ 版本检查失败: ${error.message}</p>
+                    <p class="info">这可能意味着服务器还是旧版本</p>
+                `;
+            }
+        }
+
+        async function testPatent(withSpec) {
+            const patentInput = withSpec ? document.getElementById('patent2') : document.getElementById('patent1');
+            const resultDiv = withSpec ? document.getElementById('result2') : document.getElementById('result1');
+            const patentNumber = patentInput.value.trim();
+            
+            if (!patentNumber) {
+                alert('请输入专利号');
+                return;
+            }
+            
+            resultDiv.innerHTML = '<p class="info">正在查询...</p>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/patent/search`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        patent_numbers: [patentNumber],
+                        crawl_specification: withSpec
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // 检查关键字段
+                const result = data.data && data.data[0];
+                if (result && result.success) {
+                    const patentData = result.data;
+                    const checks = {
+                        '标题': patentData.title ? '✅' : '❌',
+                        '权利要求': patentData.claims && patentData.claims.length > 0 ? `✅ (${patentData.claims.length}条)` : '❌',
+                        '附图': patentData.drawings && patentData.drawings.length > 0 ? `✅ (${patentData.drawings.length}张)` : '❌',
+                        '说明书': patentData.description ? '✅' : '❌',
+                        '引用专利': patentData.patent_citations && patentData.patent_citations.length > 0 ? `✅ (${patentData.patent_citations.length}条)` : '❌',
+                        '被引用专利': patentData.cited_by && patentData.cited_by.length > 0 ? `✅ (${patentData.cited_by.length}条)` : '❌',
+                        '法律事件': patentData.legal_events && patentData.legal_events.length > 0 ? `✅ (${patentData.legal_events.length}条)` : '❌'
+                    };
+                    
+                    let checkHtml = '<h3>字段检查：</h3><ul>';
+                    for (const [field, status] of Object.entries(checks)) {
+                        checkHtml += `<li><strong>${field}:</strong> ${status}</li>`;
+                    }
+                    checkHtml += '</ul>';
+                    
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ 查询成功</p>
+                        ${checkHtml}
+                        <h3>完整响应数据：</h3>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <p class="error">❌ 查询失败</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">❌ 请求失败: ${error.message}</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
