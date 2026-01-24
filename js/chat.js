@@ -234,7 +234,9 @@ function initChat() {
     chatInputNewBtn.addEventListener('click', () => startNewChat(true));
     
     // 搜索功能事件监听
-    chatSearchBtn.addEventListener('click', handleSearch);
+    if (chatSearchBtn) {
+        chatSearchBtn.addEventListener('click', handleSearch);
+    }
     
     document.addEventListener('click', (e) => {
         if (e.target.matches('[data-export]')) {
@@ -1302,6 +1304,8 @@ function toggleSearchMode() {
 
 // 更新搜索按钮状态
 function updateSearchButtonState() {
+    if (!chatSearchBtn) return; // 安全检查
+    
     if (appState.chat.searchMode.enabled) {
         chatSearchBtn.style.backgroundColor = 'var(--primary-color)';
         chatSearchBtn.style.color = 'white';
