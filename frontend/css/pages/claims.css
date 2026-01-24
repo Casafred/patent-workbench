@@ -618,3 +618,19 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* 统一的step-header样式，确保所有绿色banner都有斜纹效果 */
+.step-header {
+    background: 
+        linear-gradient(90deg, var(--primary-color-dark), var(--primary-color)),
+        repeating-linear-gradient(135deg, 
+            transparent 0%, 
+            transparent 20px, 
+            rgba(255, 255, 255, 0.25) 20px, 
+            rgba(255, 255, 255, 0.25) 40px, 
+            transparent 40px, 
+            transparent 60px);
+    background-size: 100% 100%, 200px 100%;
+    background-position: 0 0, 100% 0;
+    background-repeat: no-repeat;
+}
