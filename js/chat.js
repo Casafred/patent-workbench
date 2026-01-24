@@ -499,6 +499,8 @@ async function handleStreamChatRequest() {
     const tokenUsageEl = assistantMessageEl.querySelector('.message-token-usage');
     let fullResponse = "";
     let usageInfo = null;
+    let searchResults = null;  // 存储搜索结果
+    let isSearching = false;   // 搜索状态标志
 
     try {
         const contextCount = parseInt(chatContextCount.value, 10);
@@ -515,8 +517,20 @@ async function handleStreamChatRequest() {
         if (appState.chat.searchMode.enabled) {
             requestPayload.enable_web_search = true;
             requestPayload.search_engine = appState.chat.searchMode.searchEngine;
-            requestPayload.search_count = appState.chat.searchMode.count;
+            requestPayload.count = appState.chat.searchMode.count;
             requestPayload.content_size = appState.chat.searchMode.contentSize;
+            
+            // 添加搜索提示词，指导AI如何使用搜索结果
+            requestPayload.search_prompt = "你是一个专业的AI助手。请基于网络搜索结果{search_result}回答用户问题，并在回答中引用来源链接。确保信息准确、及时，并标注信息来源。";
+            
+            // 显示搜索进度提示
+            isSearching = true;
+            assistantContentEl.innerHTML = `
+                <div class="search-progress">
+                    <div class="search-spinner"></div>
+                    <span>正在联网搜索相关信息...</span>
+                </div>
+            `;
         }
         
         const reader = await apiCall('/stream_chat', requestPayload, 'POST', true);
@@ -533,8 +547,39 @@ async function handleStreamChatRequest() {
                     const parsed = JSON.parse(data);
                     if (parsed.error) throw new Error(parsed.error.message || JSON.stringify(parsed.error));
                     if (parsed.usage) usageInfo = parsed.usage;
+                    
+                    // 检查是否有工具调用（搜索结果）
+                    const toolCalls = parsed.choices[0]?.delta?.tool_calls;
+                    if (toolCalls && toolCalls.length > 0) {
+                        const webSearchTool = toolCalls.find(t => t.type === 'web_search');
+                        if (webSearchTool && webSearchTool.web_search) {
+                            // 提取搜索结果
+                            if (webSearchTool.web_search.outputs) {
+                                searchResults = webSearchTool.web_search.outputs;
+                                isSearching = false;
+                                
+                                // 显示搜索完成提示
+                                assistantContentEl.innerHTML = `
+                                    <div class="search-complete">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                                        </svg>
+                                        <span>已找到 ${searchResults.length} 条相关信息，正在生成回答...</span>
+                                    </div>
+                                    <span class="blinking-cursor">|</span>
+                                `;
+                            }
+                        }
+                    }
+                    
                     const delta = parsed.choices[0]?.delta?.content || "";
                     if (delta) {
+                        // 如果还在搜索中，先清除搜索提示
+                        if (isSearching) {
+                            isSearching = false;
+                            assistantContentEl.innerHTML = '';
+                        }
+                        
                         fullResponse += delta;
                         assistantContentEl.innerHTML = window.marked.parse(fullResponse + '<span class="blinking-cursor">|</span>', { gfm: true, breaks: true });
                         chatWindow.scrollTop = chatWindow.scrollHeight;
@@ -545,6 +590,33 @@ async function handleStreamChatRequest() {
 
         assistantContentEl.innerHTML = window.marked.parse(fullResponse, { gfm: true, breaks: true });
         
+        // 如果有搜索结果，添加引用来源
+        if (searchResults && searchResults.length > 0) {
+            const sourcesDiv = document.createElement('div');
+            sourcesDiv.className = 'search-sources';
+            sourcesDiv.innerHTML = `
+                <div class="sources-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                    </svg>
+                    <span>搜索来源 (${searchResults.length})</span>
+                </div>
+                <div class="sources-list">
+                    ${searchResults.map((result, index) => `
+                        <div class="source-item">
+                            <span class="source-number">[${index + 1}]</span>
+                            <a href="${result.link}" target="_blank" rel="noopener noreferrer" class="source-link">
+                                ${result.title}
+                            </a>
+                            ${result.media ? `<span class="source-media">${result.media}</span>` : ''}
+                            ${result.publish_date ? `<span class="source-date">${result.publish_date}</span>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            assistantContentEl.appendChild(sourcesDiv);
+        }
+        
         // 在AI回复内容后添加AI生成声明
         const disclaimer = createAIDisclaimer('inline');
         assistantContentEl.appendChild(disclaimer);
@@ -552,7 +624,8 @@ async function handleStreamChatRequest() {
         const assistantMessageData = { 
             role: 'assistant', 
             content: fullResponse, 
-            timestamp: Date.now() 
+            timestamp: Date.now(),
+            searchResults: searchResults  // 保存搜索结果
         };
         if (usageInfo) {
             assistantMessageData.usage = usageInfo;
@@ -658,16 +731,16 @@ function renderCurrentChat() {
     convo.messages.forEach((msg, index) => {
         if (msg.role !== 'system') {
             // ▼▼▼ 核心修正：确保总是传递第7个参数 msg ▼▼▼
-            addMessageToDOM(msg.role, msg.content, index, false, msg.usage, msg.timestamp, msg);
+            addMessageToDOM(msg.role, msg.content, index, false, msg.usage, msg.timestamp, msg, msg.searchResults);
         }
     });
     
     chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
-// ▼▼▼ 核心修正：确保函数签名包含第7个参数 `msg = null` ▼▼▼
+// ▼▼▼ 核心修正：确保函数签名包含第8个参数 `searchResults = null` ▼▼▼
 // 这使得函数能够健壮地处理来自不同地方的调用
-function addMessageToDOM(role, content, index, isStreaming = false, usage = null, timestamp = null, msg = null) {
+function addMessageToDOM(role, content, index, isStreaming = false, usage = null, timestamp = null, msg = null, searchResults = null) {
     const messageId = `msg-${Date.now()}-${Math.random()}`;
     const messageDiv = document.createElement('div');
     messageDiv.className = `chat-message ${role}-message`;
@@ -726,6 +799,35 @@ function addMessageToDOM(role, content, index, isStreaming = false, usage = null
     if (isStreaming) footer.style.opacity = '0';
     
     chatWindow.appendChild(messageDiv);
+    
+    // 如果是助手消息且有搜索结果，添加搜索来源显示
+    if (role === 'assistant' && !isStreaming && searchResults && searchResults.length > 0) {
+        const contentEl = messageDiv.querySelector('.message-content');
+        const sourcesDiv = document.createElement('div');
+        sourcesDiv.className = 'search-sources';
+        sourcesDiv.innerHTML = `
+            <div class="sources-header">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                </svg>
+                <span>搜索来源 (${searchResults.length})</span>
+            </div>
+            <div class="sources-list">
+                ${searchResults.map((result, index) => `
+                    <div class="source-item">
+                        <span class="source-number">[${index + 1}]</span>
+                        <a href="${result.link}" target="_blank" rel="noopener noreferrer" class="source-link" title="${result.content || ''}">
+                            ${result.title}
+                        </a>
+                        ${result.media ? `<span class="source-media">${result.media}</span>` : ''}
+                        ${result.publish_date ? `<span class="source-date">${result.publish_date}</span>` : ''}
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        contentEl.appendChild(sourcesDiv);
+    }
+    
     chatWindow.scrollTop = chatWindow.scrollHeight;
     return messageId;
 }

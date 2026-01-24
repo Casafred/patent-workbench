@@ -74,10 +74,10 @@ def stream_chat():
                 web_search_config = {
                     "type": "web_search",
                     "web_search": {
-                        "enable": "True",  # 注意：必须是字符串 "True"
+                        "enable": True,  # 布尔值，不是字符串
                         "search_engine": req_data.get('search_engine', 'search_pro'),
-                        "search_result": "True",  # 注意：必须是字符串 "True"
-                        "count": str(req_data.get('search_count', 5)),  # 转换为字符串
+                        "search_result": True,  # 布尔值，不是字符串
+                        "count": int(req_data.get('count', 5)),  # 整数，不是字符串
                         "content_size": req_data.get('content_size', 'medium')
                     }
                 }
@@ -148,10 +148,10 @@ def simple_chat():
             web_search_config = {
                 "type": "web_search",
                 "web_search": {
-                    "enable": "True",  # 注意：必须是字符串 "True"
+                    "enable": True,  # 布尔值，不是字符串
                     "search_engine": req_data.get('search_engine', 'search_pro'),
-                    "search_result": "True",  # 注意：必须是字符串 "True"
-                    "count": str(req_data.get('search_count', 5)),  # 转换为字符串
+                    "search_result": True,  # 布尔值，不是字符串
+                    "count": int(req_data.get('count', 5)),  # 整数，不是字符串
                     "content_size": req_data.get('content_size', 'medium')
                 }
             }
