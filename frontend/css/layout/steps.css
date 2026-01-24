@@ -21,7 +21,7 @@
     overflow: hidden;
 }
 
-/* 右侧倾斜渐变白线条装饰效果 */
+/* 右侧倾斜渐变白线条装饰效果 - 清晰版本 */
 .step-header::before {
     content: '';
     position: absolute;
@@ -30,44 +30,52 @@
     width: 200px;
     height: 100%;
     background: 
-        /* 第一条线 - 最亮 */
+        /* 第一条线 - 最亮最清晰 */
         linear-gradient(120deg, 
             transparent 0%, 
-            transparent 45%, 
-            rgba(255, 255, 255, 0.6) 48%, 
-            rgba(255, 255, 255, 0.8) 50%, 
-            rgba(255, 255, 255, 0.6) 52%, 
-            transparent 55%, 
+            transparent 46%, 
+            rgba(255, 255, 255, 0.3) 47%, 
+            rgba(255, 255, 255, 0.85) 49%, 
+            rgba(255, 255, 255, 0.95) 50%, 
+            rgba(255, 255, 255, 0.85) 51%, 
+            rgba(255, 255, 255, 0.3) 53%, 
+            transparent 54%, 
             transparent 100%
         ),
         /* 第二条线 - 重影1 */
         linear-gradient(120deg, 
             transparent 0%, 
-            transparent 55%, 
-            rgba(255, 255, 255, 0.4) 58%, 
-            rgba(255, 255, 255, 0.6) 60%, 
-            rgba(255, 255, 255, 0.4) 62%, 
-            transparent 65%, 
+            transparent 56%, 
+            rgba(255, 255, 255, 0.25) 57%, 
+            rgba(255, 255, 255, 0.7) 59%, 
+            rgba(255, 255, 255, 0.8) 60%, 
+            rgba(255, 255, 255, 0.7) 61%, 
+            rgba(255, 255, 255, 0.25) 63%, 
+            transparent 64%, 
             transparent 100%
         ),
         /* 第三条线 - 重影2 */
         linear-gradient(120deg, 
             transparent 0%, 
-            transparent 65%, 
-            rgba(255, 255, 255, 0.3) 68%, 
-            rgba(255, 255, 255, 0.5) 70%, 
-            rgba(255, 255, 255, 0.3) 72%, 
-            transparent 75%, 
+            transparent 66%, 
+            rgba(255, 255, 255, 0.2) 67%, 
+            rgba(255, 255, 255, 0.55) 69%, 
+            rgba(255, 255, 255, 0.65) 70%, 
+            rgba(255, 255, 255, 0.55) 71%, 
+            rgba(255, 255, 255, 0.2) 73%, 
+            transparent 74%, 
             transparent 100%
         ),
         /* 第四条线 - 重影3 */
         linear-gradient(120deg, 
             transparent 0%, 
-            transparent 75%, 
-            rgba(255, 255, 255, 0.2) 78%, 
-            rgba(255, 255, 255, 0.4) 80%, 
-            rgba(255, 255, 255, 0.2) 82%, 
-            transparent 85%, 
+            transparent 76%, 
+            rgba(255, 255, 255, 0.15) 77%, 
+            rgba(255, 255, 255, 0.4) 79%, 
+            rgba(255, 255, 255, 0.5) 80%, 
+            rgba(255, 255, 255, 0.4) 81%, 
+            rgba(255, 255, 255, 0.15) 83%, 
+            transparent 84%, 
             transparent 100%
         );
     background-size: 100% 100%;

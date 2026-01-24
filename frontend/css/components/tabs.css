@@ -10,9 +10,12 @@
 .main-tab-container, .sub-tab-container { 
     display: flex; 
     justify-content: flex-start; 
-    gap: 8px; 
-    border-bottom: 1px solid var(--border-color); 
+    gap: 4px; 
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2); 
     margin-bottom: 30px; 
+    background-color: rgba(34, 197, 94, 0.15);
+    padding: 0 15px;
+    border-radius: 8px 8px 0 0;
 }
 
 .sub-tab-container { 
@@ -20,37 +23,31 @@
 }
 
 .tab-button, .sub-tab-button { 
-    background-color: rgba(34, 197, 94, 0.12); 
-    border: 1px solid rgba(34, 197, 94, 0.25); 
-    border-bottom: none; 
+    background-color: transparent; 
+    border: none; 
+    border-bottom: 3px solid transparent; 
     padding: 12px 20px; 
     cursor: pointer; 
     font-size: 1.05em; 
-    font-weight: 600; 
-    color: #15803D; 
+    font-weight: 500; 
+    color: rgba(255, 255, 255, 0.65); 
     transition: all 0.3s ease; 
-    border-radius: 8px 8px 0 0; 
+    border-radius: 0; 
     position: relative; 
-    bottom: -1px; 
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .tab-button:hover, .sub-tab-button:hover { 
-    color: #166534; 
-    background-color: rgba(34, 197, 94, 0.2); 
-    border-color: rgba(34, 197, 94, 0.4);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    color: rgba(255, 255, 255, 0.9); 
+    background-color: rgba(255, 255, 255, 0.05);
+    border-bottom-color: rgba(255, 255, 255, 0.3);
 }
 
 .tab-button.active, .sub-tab-button.active { 
-    background: linear-gradient(135deg, var(--primary-color-dark), var(--primary-color)); 
-    color: white; 
+    color: #FFFFFF; 
     font-weight: 700; 
-    border: 1px solid var(--primary-color-dark); 
-    border-bottom-color: var(--primary-color); 
-    box-shadow: 0 3px 8px rgba(34, 197, 94, 0.3), 0 1px 3px rgba(0, 0, 0, 0.1);
-    transform: translateY(-2px);
+    background-color: rgba(255, 255, 255, 0.1);
+    border-bottom-color: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .tab-content, .sub-tab-content { 
@@ -60,9 +57,7 @@
 .tab-content.active, .sub-tab-content.active { 
     display: block; 
     animation: fade-in 0.5s ease; 
-    border-top: 1px solid var(--border-color); 
     padding-top: 30px; 
-    margin-top: -31px; 
 }
 
 /* 进度步骤导航 */
