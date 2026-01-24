@@ -49,9 +49,6 @@ def get_users_from_env():
     return users
 
 
-if __name__ == '__main__':
-    init_users()
-
 def init_users():
     """初始化用户文件"""
     # 如果文件已存在，不覆盖
