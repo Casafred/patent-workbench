@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试附图显示</title>
+    <style>
+        body {
+            font-family: 'Noto Sans SC', Arial, sans-serif;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .drawing-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .drawing-item {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 5px;
+            background-color: white;
+        }
+        .drawing-item img {
+            max-width: 200px;
+            max-height: 200px;
+            cursor: pointer;
+        }
+        .error {
+            color: red;
+            padding: 10px;
+            background-color: #fee;
+            border-radius: 3px;
+        }
+        .success {
+            color: green;
+            padding: 10px;
+            background-color: #efe;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>附图显示测试</h1>
+    
+    <div class="test-section">
+        <h2>测试1: 直接显示图片URL</h2>
+        <div id="test1-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>测试2: 模拟API响应</h2>
+        <button onclick="testAPIResponse()">测试API响应</button>
+        <div id="test2-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>测试3: 检查图片可访问性</h2>
+        <button onclick="testImageAccess()">测试图片访问</button>
+        <div id="test3-result"></div>
+    </div>
+
+    <script>
+        // 测试图片URL
+        const testDrawings = [
+            "https://patentimages.storage.googleapis.com/c6/87/f6/62f66c32ba2f4e/CN104154208B-0001.png",
+            "https://patentimages.storage.googleapis.com/c6/87/f6/62f66c32ba2f4e/CN104154208B-0002.png",
+            "https://patentimages.storage.googleapis.com/c6/87/f6/62f66c32ba2f4e/CN104154208B-0003.png"
+        ];
+
+        // 测试1: 直接显示
+        function test1() {
+            const container = document.getElementById('test1-result');
+            let html = '<div class="drawing-container">';
+            
+            testDrawings.forEach((url, index) => {
+                html += `
+                    <div class="drawing-item">
+                        <img src="${url}" alt="附图 ${index + 1}" 
+                             onerror="this.parentElement.innerHTML='<div class=\\'error\\'>图片加载失败</div>'"
+                             onload="console.log('图片${index + 1}加载成功')">
+                        <div style="text-align: center; font-size: 0.8em; margin-top: 5px;">附图 ${index + 1}</div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // 测试2: 模拟API响应
+        function testAPIResponse() {
+            const mockResponse = {
+                "data": [{
+                    "data": {
+                        "patent_number": "CN104154208B",
+                        "title": "滚珠偏转倒角",
+                        "drawings": testDrawings
+                    },
+                    "success": true
+                }],
+                "success": true
+            };
+
+            const container = document.getElementById('test2-result');
+            
+            console.log('模拟API响应:', mockResponse);
+            
+            const result = mockResponse.data[0];
+            const data = result.data;
+            
+            if (data.drawings && data.drawings.length > 0) {
+                let html = `
+                    <div class="success">
+                        找到 ${data.drawings.length} 张附图
+                    </div>
+                    <div class="drawing-container">
+                `;
+                
+                data.drawings.forEach((drawing, index) => {
+                    console.log(`附图 ${index + 1}:`, drawing);
+                    html += `
+                        <div class="drawing-item">
+                            <img src="${drawing}" alt="附图 ${index + 1}" 
+                                 onclick="window.open('${drawing}', '_blank')"
+                                 onerror="this.parentElement.innerHTML='<div class=\\'error\\'>图片加载失败</div>'"
+                                 onload="console.log('附图${index + 1}加载成功')">
+                            <div style="text-align: center; font-size: 0.8em; margin-top: 5px;">附图 ${index + 1}</div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = '<div class="error">没有找到附图数据</div>';
+            }
+        }
+
+        // 测试3: 检查图片可访问性
+        async function testImageAccess() {
+            const container = document.getElementById('test3-result');
+            container.innerHTML = '<div>正在测试图片访问...</div>';
+            
+            let html = '<div>';
+            
+            for (let i = 0; i < testDrawings.length; i++) {
+                const url = testDrawings[i];
+                try {
+                    const response = await fetch(url, { method: 'HEAD' });
+                    if (response.ok) {
+                        html += `<div class="success">✓ 附图 ${i + 1} 可访问 (${response.status})</div>`;
+                    } else {
+                        html += `<div class="error">✗ 附图 ${i + 1} 不可访问 (${response.status})</div>`;
+                    }
+                } catch (error) {
+                    html += `<div class="error">✗ 附图 ${i + 1} 访问失败: ${error.message}</div>`;
+                }
+            }
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // 页面加载时自动运行测试1
+        window.onload = function() {
+            test1();
+        };
+    </script>
+</body>
+</html>

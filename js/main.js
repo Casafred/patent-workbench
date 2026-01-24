@@ -684,7 +684,9 @@ function initPatentBatch() {
                 }
                 
                 // 附图显示
+                console.log('🖼️ 检查附图数据:', data.drawings);
                 if (data.drawings && data.drawings.length > 0) {
+                    console.log(`✓ 找到 ${data.drawings.length} 张附图`);
                     htmlContent += `
                         <div style="margin-top: 15px; padding: 10px; background-color: #fff8e1; border-radius: 5px;">
                             <div style="margin-bottom: 10px;">
@@ -695,6 +697,7 @@ function initPatentBatch() {
                     `;
                     
                     data.drawings.forEach((drawing, index) => {
+                        console.log(`  附图 ${index + 1}:`, drawing);
                         htmlContent += `
                             <div style="border: 1px solid #ddd; border-radius: 5px; padding: 5px; background-color: white;">
                                 <img src="${drawing}" alt="附图 ${index + 1}" style="max-width: 200px; max-height: 200px; cursor: pointer;" onclick="window.open('${drawing}', '_blank')" onerror="this.parentElement.innerHTML='<div style=\\'padding:20px;color:#999;\\'>图片加载失败</div>'">
@@ -704,6 +707,8 @@ function initPatentBatch() {
                     });
                     
                     htmlContent += `</div></div>`;
+                } else {
+                    console.log('⚠️ 没有附图数据或附图数组为空');
                 }
                 
                 // 说明书描述
