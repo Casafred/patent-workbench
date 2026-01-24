@@ -164,11 +164,11 @@ function updateStepperState(stepper, activeStepElement) {
     if (!stepper || !activeStepElement) return;
 
     const steps = Array.from(stepper.querySelectorAll('.step-item'));
-    const progressBar = stepper.querySelector('.progress-bar');
     const activeIndex = steps.indexOf(activeStepElement);
 
     if (activeIndex === -1) return;
 
+    // 更新步骤状态：之前的步骤标记为completed，当前步骤标记为active
     steps.forEach((step, index) => {
         step.classList.remove('active', 'completed');
         if (index < activeIndex) {
@@ -177,15 +177,6 @@ function updateStepperState(stepper, activeStepElement) {
             step.classList.add('active');
         }
     });
-
-    if (progressBar) {
-        const totalSteps = steps.length;
-        if (totalSteps > 1) {
-            progressBar.style.width = `${(activeIndex / (totalSteps - 1)) * 100}%`;
-        } else {
-            progressBar.style.width = '0px';
-        }
-    }
 }
 
 function switchTab(tabId, clickedButton) {

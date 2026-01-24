@@ -83,14 +83,15 @@
     padding-top: 30px; 
 }
 
-/* 进度步骤导航 */
+/* 进度步骤导航 - 优化版 */
 .progress-stepper {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     position: relative;
-    margin-bottom: 30px;
-    padding: 20px 0;
+    margin-bottom: 20px;
+    padding: 15px 0;
+    gap: 40px;
 }
 
 .step-item {
@@ -100,31 +101,58 @@
     cursor: pointer;
     z-index: 2;
     transition: all 0.3s ease;
+    position: relative;
+}
+
+.step-item:hover .step-number {
+    transform: scale(1.1);
 }
 
 .step-number {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
-    background-color: #E5E7EB;
-    color: #6B7280;
+    background-color: rgba(229, 231, 235, 0.8);
+    color: #9CA3AF;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 700;
-    margin-bottom: 8px;
+    font-size: 0.95em;
+    margin-bottom: 6px;
     transition: all 0.3s ease;
+    border: 2px solid #E5E7EB;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-.step-item.active .step-number {
-    background-color: var(--primary-color);
+/* 已完成的步骤 */
+.step-item.completed .step-number {
+    background: linear-gradient(135deg, var(--primary-color-dark), var(--primary-color));
     color: white;
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+}
+
+/* 当前激活的步骤 */
+.step-item.active .step-number {
+    background: linear-gradient(135deg, var(--primary-color-dark), var(--primary-color));
+    color: white;
+    border-color: var(--primary-color);
+    box-shadow: 0 3px 12px rgba(34, 197, 94, 0.4), 0 0 0 4px rgba(34, 197, 94, 0.1);
+    transform: scale(1.05);
 }
 
 .step-title {
-    font-size: 0.9em;
-    color: #6B7280;
+    font-size: 0.85em;
+    color: #9CA3AF;
     font-weight: 500;
+    text-align: center;
+    max-width: 100px;
+}
+
+.step-item.completed .step-title {
+    color: var(--primary-color);
+    font-weight: 600;
 }
 
 .step-item.active .step-title {
@@ -132,12 +160,36 @@
     font-weight: 700;
 }
 
-.progress-bar {
+/* 步骤之间的连接线 */
+.step-item::before {
+    content: '';
     position: absolute;
-    top: 40px;
-    left: 0;
-    right: 0;
-    height: 2px;
+    top: 18px;
+    left: -40px;
+    width: 40px;
+    height: 3px;
     background-color: #E5E7EB;
-    z-index: 1;
+    z-index: -1;
+    transition: all 0.3s ease;
+}
+
+.step-item:first-child::before {
+    display: none;
+}
+
+/* 已完成步骤的连接线 */
+.step-item.completed::before {
+    background: linear-gradient(90deg, var(--primary-color-dark), var(--primary-color));
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.3);
+}
+
+/* 当前激活步骤的连接线也高亮 */
+.step-item.active::before {
+    background: linear-gradient(90deg, var(--primary-color-dark), var(--primary-color));
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.3);
+}
+
+/* 移除旧的progress-bar */
+.progress-bar {
+    display: none;
 }
