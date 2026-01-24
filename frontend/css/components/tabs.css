@@ -50,6 +50,27 @@
     border: 1px solid var(--primary-color-dark); 
     box-shadow: 0 3px 8px rgba(34, 197, 94, 0.3), 0 1px 3px rgba(0, 0, 0, 0.1);
     transform: translateY(-2px);
+    position: relative;
+}
+
+/* 选中标签页的底部高亮横条 */
+.tab-button.active::after, .sub-tab-button.active::after {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    height: 3px;
+    background: linear-gradient(90deg, 
+        transparent 0%, 
+        rgba(255, 255, 255, 0.8) 20%, 
+        white 50%, 
+        rgba(255, 255, 255, 0.8) 80%, 
+        transparent 100%
+    );
+    border-radius: 2px;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
 }
 
 .tab-content, .sub-tab-content { 
