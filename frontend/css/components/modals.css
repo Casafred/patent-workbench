@@ -102,8 +102,14 @@
     padding: 15px 25px; 
     background: 
         linear-gradient(90deg, var(--primary-color-dark), var(--primary-color)),
-        linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.15) 50%, transparent 100%);
-    background-size: 100% 100%, 150px 100%;
+        repeating-linear-gradient(135deg, 
+            transparent 0%, 
+            transparent 20px, 
+            rgba(255, 255, 255, 0.25) 20px, 
+            rgba(255, 255, 255, 0.25) 40px, 
+            transparent 40px, 
+            transparent 60px);
+    background-size: 100% 100%, 200px 100%;
     background-position: 0 0, 100% 0;
     background-repeat: no-repeat;
     color: white; 
