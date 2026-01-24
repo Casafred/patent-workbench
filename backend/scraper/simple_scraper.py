@@ -296,46 +296,43 @@ class SimplePatentScraper:
             if pub_date:
                 patent_data.publication_date = pub_date.get_text().strip()
         
-        # Extract claims
-        if crawl_specification:
-            try:
-                claims = []
-                claims_section = soup.find('section', {'itemprop': 'claims'})
-                if not claims_section:
-                    claims_section = soup.find('div', {'class': 'claims'})
+        # Extract claims - 始终提取权利要求，不受crawl_specification限制
+        try:
+            claims = []
+            claims_section = soup.find('section', {'itemprop': 'claims'})
+            if not claims_section:
+                claims_section = soup.find('div', {'class': 'claims'})
+            
+            if claims_section:
+                claim_elements = claims_section.find_all('div', {'class': 'claim'})
+                if not claim_elements:
+                    claim_elements = claims_section.find_all('claim')
+                if not claim_elements:
+                    # Try to get all divs with claim text
+                    claim_elements = claims_section.find_all('div', {'itemprop': 'claims'})
                 
-                if claims_section:
-                    claim_elements = claims_section.find_all('div', {'class': 'claim'})
-                    if not claim_elements:
-                        claim_elements = claims_section.find_all('claim')
-                    if not claim_elements:
-                        # Try to get all divs with claim text
-                        claim_elements = claims_section.find_all('div', {'itemprop': 'claims'})
-                    
-                    # 去重处理，避免权利要求重复
-                    seen_claims = set()
-                    for claim in claim_elements:
-                        claim_text = claim.get_text().strip()
-                        if claim_text and len(claim_text) > 10:
-                            # 提取权利要求编号，用于去重
-                            claim_number = None
-                            claim_lines = claim_text.split('\n')
-                            for line in claim_lines:
-                                if line.strip().startswith('权利要求'):
-                                    claim_number = line.strip()
-                                    break
-                            if not claim_number:
-                                # 如果没有权利要求编号，使用前20个字符作为标识
-                                claim_number = claim_text[:20]
-                            if claim_number not in seen_claims:
-                                seen_claims.add(claim_number)
-                                claims.append(claim_text)
-                
-                patent_data.claims = claims
-            except Exception as e:
-                logger.warning(f"Error extracting claims for {patent_number}: {e}")
-                patent_data.claims = []
-        else:
+                # 去重处理，避免权利要求重复
+                seen_claims = set()
+                for claim in claim_elements:
+                    claim_text = claim.get_text().strip()
+                    if claim_text and len(claim_text) > 10:
+                        # 提取权利要求编号，用于去重
+                        claim_number = None
+                        claim_lines = claim_text.split('\n')
+                        for line in claim_lines:
+                            if line.strip().startswith('权利要求'):
+                                claim_number = line.strip()
+                                break
+                        if not claim_number:
+                            # 如果没有权利要求编号，使用前20个字符作为标识
+                            claim_number = claim_text[:20]
+                        if claim_number not in seen_claims:
+                            seen_claims.add(claim_number)
+                            claims.append(claim_text)
+            
+            patent_data.claims = claims
+        except Exception as e:
+            logger.warning(f"Error extracting claims for {patent_number}: {e}")
             patent_data.claims = []
         
         # Extract description
@@ -368,6 +365,7 @@ class SimplePatentScraper:
             patent_data.description = ''
         
         # Extract drawings using HTML selectors (fallback if JSON-LD extraction failed)
+        # 始终尝试提取附图，不受crawl_specification限制
         if not patent_data.drawings:
             try:
                 # Try multiple selectors to find drawing containers
@@ -425,6 +423,10 @@ class SimplePatentScraper:
                             break
             except Exception as e:
                 logger.warning(f"Error extracting drawings from HTML for {patent_number}: {e}")
+        
+        # 如果仍然没有附图，记录日志以便调试
+        if not patent_data.drawings:
+            logger.info(f"No drawings found for {patent_number}")
         
         return patent_data
     

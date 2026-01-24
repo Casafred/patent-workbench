@@ -349,6 +349,7 @@ function initPatentBatch() {
                         '申请日期': patentData.application_date || '',
                         '公开日期': patentData.publication_date || '',
                         '权利要求': patentData.claims ? (Array.isArray(patentData.claims) ? patentData.claims.join('\n') : patentData.claims) : '',
+                        '附图链接': patentData.drawings ? (Array.isArray(patentData.drawings) ? patentData.drawings.join('\n') : patentData.drawings) : '',
                         '说明书': patentData.description || '',
                         '技术领域': analysisJson.technical_field || '',
                         '创新点': analysisJson.innovation_points || '',
@@ -374,6 +375,7 @@ function initPatentBatch() {
                     { wch: 12 },  // 申请日期
                     { wch: 12 },  // 公开日期
                     { wch: 50 },  // 权利要求
+                    { wch: 60 },  // 附图链接
                     { wch: 50 },  // 说明书
                     { wch: 20 },  // 技术领域
                     { wch: 50 },  // 创新点
@@ -661,6 +663,26 @@ function initPatentBatch() {
                     htmlContent += `</div></div>`;
                 }
                 
+                // 附图显示
+                if (data.drawings && data.drawings.length > 0) {
+                    htmlContent += `
+                        <div style="margin-top: 15px; padding: 10px; background-color: #fff8e1; border-radius: 5px;">
+                            <strong style="color: var(--primary-color); font-family: 'Noto Sans SC', Arial, sans-serif;">🖼️ 专利附图 (共${data.drawings.length}张):</strong>
+                            <div style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 10px;">
+                    `;
+                    
+                    data.drawings.forEach((drawing, index) => {
+                        htmlContent += `
+                            <div style="border: 1px solid #ddd; border-radius: 5px; padding: 5px; background-color: white;">
+                                <img src="${drawing}" alt="附图 ${index + 1}" style="max-width: 200px; max-height: 200px; cursor: pointer;" onclick="window.open('${drawing}', '_blank')">
+                                <div style="text-align: center; font-size: 0.8em; margin-top: 5px; color: #666;">附图 ${index + 1}</div>
+                            </div>
+                        `;
+                    });
+                    
+                    htmlContent += `</div></div>`;
+                }
+                
                 // 说明书描述
                 if (data.description) {
                     htmlContent += `
@@ -731,6 +753,13 @@ function initPatentBatch() {
             text += `\n权利要求 (共${data.claims.length}条):\n`;
             data.claims.forEach((claim, index) => {
                 text += `\n${index + 1}. ${claim}\n`;
+            });
+        }
+        
+        if (data.drawings && data.drawings.length > 0) {
+            text += `\n附图 (共${data.drawings.length}张):\n`;
+            data.drawings.forEach((drawing, index) => {
+                text += `${index + 1}. ${drawing}\n`;
             });
         }
         
