@@ -1163,31 +1163,22 @@ function handleSearch() {
 
 // 显示搜索配置弹窗
 function showSearchConfig() {
-    // 创建搜索选项弹窗
+    // 创建弹窗容器
     const optionsModal = document.createElement('div');
-    optionsModal.className = 'modal';
+    optionsModal.className = 'search-config-popup';
     optionsModal.style.cssText = `
         position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-    `;
-    
-    // 创建弹窗内容
-    const modalContent = document.createElement('div');
-    modalContent.className = 'modal-content';
-    modalContent.style.cssText = `
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
         background-color: white;
         padding: 20px;
         border-radius: 8px;
         width: 80%;
         max-width: 500px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        z-index: 9999;
+        animation: fadeIn 0.3s ease-out;
     `;
     
     // 创建标题
@@ -1220,7 +1211,7 @@ function showSearchConfig() {
     
     modalHeader.appendChild(modalTitle);
     modalHeader.appendChild(closeBtn);
-    modalContent.appendChild(modalHeader);
+    optionsModal.appendChild(modalHeader);
     
     // 创建选项表单
     const optionsForm = document.createElement('form');
@@ -1351,7 +1342,7 @@ function showSearchConfig() {
     contentGroup.appendChild(contentSelect);
     optionsForm.appendChild(contentGroup);
     
-    modalContent.appendChild(optionsForm);
+    optionsModal.appendChild(optionsForm);
     
     // 创建操作按钮
     const modalFooter = document.createElement('div');
@@ -1384,9 +1375,8 @@ function showSearchConfig() {
     });
     
     modalFooter.appendChild(saveBtn);
-    modalContent.appendChild(modalFooter);
+    optionsModal.appendChild(modalFooter);
     
-    optionsModal.appendChild(modalContent);
     document.body.appendChild(optionsModal);
 }
 
@@ -1394,24 +1384,12 @@ function showSearchConfig() {
 function displaySearchResults(searchResults, originalQuery) {
     // 创建搜索结果弹窗
     const searchModal = document.createElement('div');
-    searchModal.className = 'modal';
+    searchModal.className = 'search-results-popup';
     searchModal.style.cssText = `
         position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-    `;
-    
-    // 创建弹窗内容
-    const modalContent = document.createElement('div');
-    modalContent.className = 'modal-content';
-    modalContent.style.cssText = `
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
         background-color: white;
         padding: 20px;
         border-radius: 8px;
@@ -1419,6 +1397,9 @@ function displaySearchResults(searchResults, originalQuery) {
         max-width: 800px;
         max-height: 80vh;
         overflow-y: auto;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        z-index: 9999;
+        animation: fadeIn 0.3s ease-out;
     `;
     
     // 创建标题
@@ -1444,14 +1425,21 @@ function displaySearchResults(searchResults, originalQuery) {
         font-size: 24px;
         cursor: pointer;
         color: #999;
+        transition: color 0.2s;
     `;
+    closeBtn.addEventListener('mouseover', () => {
+        closeBtn.style.color = '#333';
+    });
+    closeBtn.addEventListener('mouseout', () => {
+        closeBtn.style.color = '#999';
+    });
     closeBtn.addEventListener('click', () => {
         document.body.removeChild(searchModal);
     });
     
     modalHeader.appendChild(modalTitle);
     modalHeader.appendChild(closeBtn);
-    modalContent.appendChild(modalHeader);
+    searchModal.appendChild(modalHeader);
     
     // 创建结果列表
     const resultsContainer = document.createElement('div');
@@ -1492,7 +1480,7 @@ function displaySearchResults(searchResults, originalQuery) {
         resultsContainer.innerHTML = '<div class="info">未找到搜索结果</div>';
     }
     
-    modalContent.appendChild(resultsContainer);
+    searchModal.appendChild(resultsContainer);
     
     // 创建操作按钮
     const modalFooter = document.createElement('div');
@@ -1524,9 +1512,8 @@ function displaySearchResults(searchResults, originalQuery) {
     
     modalFooter.appendChild(cancelBtn);
     modalFooter.appendChild(useResultsBtn);
-    modalContent.appendChild(modalFooter);
+    searchModal.appendChild(modalFooter);
     
-    searchModal.appendChild(modalContent);
     document.body.appendChild(searchModal);
 }
 
