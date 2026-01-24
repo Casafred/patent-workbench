@@ -69,6 +69,9 @@ def stream_chat():
                 'temperature': req_data.get('temperature'),
             }
             
+            # 【调试信息】输出接收到的请求参数
+            print(f"🔍 [后端-联网搜索] 收到请求，enable_web_search={req_data.get('enable_web_search')}")
+            
             # Add web search tools if enabled
             if req_data.get('enable_web_search'):
                 web_search_config = {
@@ -94,10 +97,22 @@ def stream_chat():
                 
                 request_params['tools'] = [web_search_config]
                 request_params['tool_choice'] = 'auto'
+                
+                # 【调试信息】输出完整的搜索配置
+                print(f"🔍 [后端-联网搜索] 已启用！配置: {web_search_config}")
+            else:
+                print("🔍 [后端-联网搜索] 未启用，使用普通对话模式")
+            
+            # 【调试信息】输出最终发送给API的参数
+            print(f"🔍 [后端-联网搜索] 发送给智谱API的参数: model={request_params.get('model')}, tools={request_params.get('tools', 'None')}")
             
             response = client.chat.completions.create(**request_params)
             for chunk in response:
-                yield f"data: {chunk.model_dump_json()}\n\n"
+                chunk_json = chunk.model_dump_json()
+                # 【调试信息】如果包含工具调用，输出日志
+                if 'tool_calls' in chunk_json:
+                    print(f"🔍 [后端-联网搜索] 收到工具调用: {chunk_json}")
+                yield f"data: {chunk_json}\n\n"
         except Exception as e:
             error_message = json.dumps({
                 "error": {

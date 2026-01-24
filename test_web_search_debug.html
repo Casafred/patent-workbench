@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>联网搜索功能调试测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f9f9f9;
+            border-left: 4px solid #2196F3;
+            border-radius: 4px;
+        }
+        .section h2 {
+            margin-top: 0;
+            color: #2196F3;
+        }
+        .test-button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        .test-button:hover {
+            background: #45a049;
+        }
+        .test-button.secondary {
+            background: #2196F3;
+        }
+        .test-button.secondary:hover {
+            background: #0b7dda;
+        }
+        .console-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid transparent;
+        }
+        .log-entry.info {
+            border-left-color: #2196F3;
+            color: #4FC3F7;
+        }
+        .log-entry.success {
+            border-left-color: #4CAF50;
+            color: #81C784;
+        }
+        .log-entry.warning {
+            border-left-color: #FF9800;
+            color: #FFB74D;
+        }
+        .log-entry.error {
+            border-left-color: #f44336;
+            color: #E57373;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-indicator.active {
+            background: #4CAF50;
+            box-shadow: 0 0 8px #4CAF50;
+        }
+        .status-indicator.inactive {
+            background: #9E9E9E;
+        }
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+        .checklist li {
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 4px;
+            border-left: 4px solid #9E9E9E;
+        }
+        .checklist li.checked {
+            border-left-color: #4CAF50;
+        }
+        .checklist li::before {
+            content: '☐ ';
+            font-size: 18px;
+            margin-right: 10px;
+        }
+        .checklist li.checked::before {
+            content: '☑ ';
+            color: #4CAF50;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 联网搜索功能调试测试</h1>
+        
+        <div class="section">
+            <h2>📊 当前状态</h2>
+            <p>
+                <span class="status-indicator inactive" id="statusIndicator"></span>
+                <strong>搜索模式：</strong>
+                <span id="searchStatus">未知</span>
+            </p>
+            <p><strong>搜索引擎：</strong> <span id="searchEngine">-</span></p>
+            <p><strong>结果数量：</strong> <span id="searchCount">-</span></p>
+            <p><strong>内容长度：</strong> <span id="contentSize">-</span></p>
+        </div>
+
+        <div class="section">
+            <h2>🧪 测试步骤</h2>
+            <ol class="checklist" id="checklist">
+                <li id="step1">打开浏览器控制台（F12）</li>
+                <li id="step2">点击"检查搜索状态"按钮</li>
+                <li id="step3">点击"模拟启用搜索"按钮</li>
+                <li id="step4">观察控制台输出</li>
+                <li id="step5">返回主应用测试实际搜索</li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <h2>🎮 测试控制</h2>
+            <button class="test-button" onclick="checkSearchState()">检查搜索状态</button>
+            <button class="test-button secondary" onclick="simulateEnableSearch()">模拟启用搜索</button>
+            <button class="test-button secondary" onclick="simulateDisableSearch()">模拟关闭搜索</button>
+            <button class="test-button" onclick="testRequestPayload()">测试请求参数</button>
+            <button class="test-button" onclick="clearConsole()">清空日志</button>
+        </div>
+
+        <div class="section">
+            <h2>📝 控制台输出</h2>
+            <div class="console-output" id="consoleOutput">
+                <div class="log-entry info">等待测试...</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>💡 诊断建议</h2>
+            <div id="diagnostics">
+                <p>点击"检查搜索状态"开始诊断...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟 appState
+        const appState = {
+            chat: {
+                searchMode: {
+                    enabled: false,
+                    searchEngine: 'search_pro',
+                    count: 5,
+                    contentSize: 'medium'
+                }
+            }
+        };
+
+        function log(message, type = 'info') {
+            const output = document.getElementById('consoleOutput');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            output.appendChild(entry);
+            output.scrollTop = output.scrollHeight;
+            
+            // 同时输出到浏览器控制台
+            console.log(`🔍 [测试] ${message}`);
+        }
+
+        function updateStatus() {
+            const indicator = document.getElementById('statusIndicator');
+            const status = document.getElementById('searchStatus');
+            const engine = document.getElementById('searchEngine');
+            const count = document.getElementById('searchCount');
+            const size = document.getElementById('contentSize');
+
+            if (appState.chat.searchMode.enabled) {
+                indicator.className = 'status-indicator active';
+                status.textContent = '已启用';
+                status.style.color = '#4CAF50';
+                status.style.fontWeight = 'bold';
+            } else {
+                indicator.className = 'status-indicator inactive';
+                status.textContent = '未启用';
+                status.style.color = '#9E9E9E';
+                status.style.fontWeight = 'normal';
+            }
+
+            engine.textContent = appState.chat.searchMode.searchEngine;
+            count.textContent = appState.chat.searchMode.count;
+            size.textContent = appState.chat.searchMode.contentSize;
+        }
+
+        function checkStep(stepId) {
+            const step = document.getElementById(stepId);
+            if (step) {
+                step.classList.add('checked');
+            }
+        }
+
+        function checkSearchState() {
+            log('开始检查搜索状态...', 'info');
+            checkStep('step2');
+            
+            log(`搜索模式状态: ${JSON.stringify(appState.chat.searchMode, null, 2)}`, 'info');
+            
+            if (appState.chat.searchMode.enabled) {
+                log('✓ 搜索模式已启用', 'success');
+            } else {
+                log('✗ 搜索模式未启用', 'warning');
+            }
+            
+            updateStatus();
+            updateDiagnostics();
+        }
+
+        function simulateEnableSearch() {
+            log('模拟启用搜索...', 'info');
+            checkStep('step3');
+            
+            appState.chat.searchMode.enabled = true;
+            
+            log('🔍 [联网搜索] 搜索模式切换: ' + JSON.stringify(appState.chat.searchMode, null, 2), 'success');
+            log('✓ 搜索已启用', 'success');
+            
+            updateStatus();
+            updateDiagnostics();
+        }
+
+        function simulateDisableSearch() {
+            log('模拟关闭搜索...', 'info');
+            
+            appState.chat.searchMode.enabled = false;
+            
+            log('🔍 [联网搜索] 搜索模式切换: ' + JSON.stringify(appState.chat.searchMode, null, 2), 'warning');
+            log('✓ 搜索已关闭', 'warning');
+            
+            updateStatus();
+            updateDiagnostics();
+        }
+
+        function testRequestPayload() {
+            log('测试请求参数构建...', 'info');
+            checkStep('step4');
+            
+            const requestPayload = {
+                model: 'GLM-4-Flash',
+                temperature: 0.7,
+                messages: [
+                    { role: 'user', content: '测试消息' }
+                ]
+            };
+            
+            log('基础请求参数: ' + JSON.stringify(requestPayload, null, 2), 'info');
+            
+            if (appState.chat.searchMode.enabled) {
+                requestPayload.enable_web_search = true;
+                requestPayload.search_engine = appState.chat.searchMode.searchEngine;
+                requestPayload.count = appState.chat.searchMode.count;
+                requestPayload.content_size = appState.chat.searchMode.contentSize;
+                requestPayload.search_prompt = "测试搜索提示词";
+                
+                log('🔍 [联网搜索] 已启用！请求参数: ' + JSON.stringify({
+                    enable_web_search: requestPayload.enable_web_search,
+                    search_engine: requestPayload.search_engine,
+                    count: requestPayload.count,
+                    content_size: requestPayload.content_size
+                }, null, 2), 'success');
+                
+                log('✓ 请求参数包含搜索配置', 'success');
+            } else {
+                log('🔍 [联网搜索] 未启用，使用普通对话模式', 'warning');
+                log('✗ 请求参数不包含搜索配置', 'warning');
+            }
+            
+            log('完整请求参数: ' + JSON.stringify(requestPayload, null, 2), 'info');
+        }
+
+        function clearConsole() {
+            document.getElementById('consoleOutput').innerHTML = '<div class="log-entry info">日志已清空</div>';
+        }
+
+        function updateDiagnostics() {
+            const diagnostics = document.getElementById('diagnostics');
+            let html = '';
+            
+            if (!appState.chat.searchMode.enabled) {
+                html += '<p><strong>⚠️ 搜索未启用</strong></p>';
+                html += '<ul>';
+                html += '<li>请点击"模拟启用搜索"按钮</li>';
+                html += '<li>或在主应用中点击搜索按钮（🔍图标）</li>';
+                html += '</ul>';
+            } else {
+                html += '<p><strong>✅ 搜索已启用</strong></p>';
+                html += '<ul>';
+                html += '<li>搜索引擎: <code>' + appState.chat.searchMode.searchEngine + '</code></li>';
+                html += '<li>结果数量: <code>' + appState.chat.searchMode.count + '</code></li>';
+                html += '<li>内容长度: <code>' + appState.chat.searchMode.contentSize + '</code></li>';
+                html += '</ul>';
+                html += '<p><strong>下一步：</strong></p>';
+                html += '<ul>';
+                html += '<li>点击"测试请求参数"查看完整配置</li>';
+                html += '<li>返回主应用发送测试消息</li>';
+                html += '<li>观察浏览器控制台和后端日志</li>';
+                html += '</ul>';
+            }
+            
+            diagnostics.innerHTML = html;
+        }
+
+        // 初始化
+        window.onload = function() {
+            log('测试页面已加载', 'success');
+            log('请按照测试步骤进行操作', 'info');
+            checkStep('step1');
+            updateStatus();
+            updateDiagnostics();
+        };
+
+        // 监听控制台
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            // 可以在这里捕获控制台输出
+        };
+    </script>
+</body>
+</html>

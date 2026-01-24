@@ -516,6 +516,14 @@ async function handleStreamChatRequest() {
             messages: messagesToSend
         };
         
+        // 【调试信息】输出当前搜索模式状态
+        console.log('🔍 [联网搜索] 准备发送请求，当前搜索模式状态:', {
+            enabled: appState.chat.searchMode.enabled,
+            searchEngine: appState.chat.searchMode.searchEngine,
+            count: appState.chat.searchMode.count,
+            contentSize: appState.chat.searchMode.contentSize
+        });
+        
         // Add web search parameters if enabled
         if (appState.chat.searchMode.enabled) {
             requestPayload.enable_web_search = true;
@@ -526,6 +534,15 @@ async function handleStreamChatRequest() {
             // 添加搜索提示词，指导AI如何使用搜索结果
             requestPayload.search_prompt = "你是一个专业的AI助手。请基于网络搜索结果{search_result}回答用户问题，并在回答中引用来源链接。确保信息准确、及时，并标注信息来源。";
             
+            // 【调试信息】输出完整的请求参数
+            console.log('🔍 [联网搜索] 已启用！请求参数:', {
+                enable_web_search: requestPayload.enable_web_search,
+                search_engine: requestPayload.search_engine,
+                count: requestPayload.count,
+                content_size: requestPayload.content_size,
+                search_prompt: requestPayload.search_prompt
+            });
+            
             // 显示搜索进度提示
             isSearching = true;
             assistantContentEl.innerHTML = `
@@ -534,6 +551,8 @@ async function handleStreamChatRequest() {
                     <span>正在联网搜索相关信息...</span>
                 </div>
             `;
+        } else {
+            console.log('🔍 [联网搜索] 未启用，使用普通对话模式');
         }
         
         const reader = await apiCall('/stream_chat', requestPayload, 'POST', true);
@@ -554,11 +573,14 @@ async function handleStreamChatRequest() {
                     // 检查是否有工具调用（搜索结果）
                     const toolCalls = parsed.choices[0]?.delta?.tool_calls;
                     if (toolCalls && toolCalls.length > 0) {
+                        console.log('🔍 [联网搜索] 收到工具调用:', toolCalls);
                         const webSearchTool = toolCalls.find(t => t.type === 'web_search');
                         if (webSearchTool && webSearchTool.web_search) {
+                            console.log('🔍 [联网搜索] 检测到网络搜索工具调用:', webSearchTool.web_search);
                             // 提取搜索结果
                             if (webSearchTool.web_search.outputs) {
                                 searchResults = webSearchTool.web_search.outputs;
+                                console.log('🔍 [联网搜索] 成功获取搜索结果，共', searchResults.length, '条:', searchResults);
                                 
                                 // 显示搜索完成提示（但不改变isSearching状态，让delta处理）
                                 assistantContentEl.innerHTML = `
@@ -596,6 +618,7 @@ async function handleStreamChatRequest() {
         
         // 如果有搜索结果，添加引用来源
         if (searchResults && searchResults.length > 0) {
+            console.log('🔍 [联网搜索] 添加搜索来源到UI，共', searchResults.length, '条');
             const sourcesDiv = document.createElement('div');
             sourcesDiv.className = 'search-sources';
             sourcesDiv.innerHTML = `
@@ -619,6 +642,8 @@ async function handleStreamChatRequest() {
                 </div>
             `;
             assistantContentEl.appendChild(sourcesDiv);
+        } else {
+            console.log('🔍 [联网搜索] 没有搜索结果可显示');
         }
         
         // 在AI回复内容后添加AI生成声明
@@ -1293,12 +1318,23 @@ function toggleSearchMode() {
     // 切换搜索启用状态
     appState.chat.searchMode.enabled = !appState.chat.searchMode.enabled;
     
+    // 【调试信息】输出搜索模式状态
+    console.log('🔍 [联网搜索] 搜索模式切换:', {
+        enabled: appState.chat.searchMode.enabled,
+        searchEngine: appState.chat.searchMode.searchEngine,
+        count: appState.chat.searchMode.count,
+        contentSize: appState.chat.searchMode.contentSize
+    });
+    
     // 更新搜索按钮视觉状态
     updateSearchButtonState();
     
     // 如果启用了搜索，显示配置弹窗
     if (appState.chat.searchMode.enabled) {
+        console.log('🔍 [联网搜索] 显示配置弹窗');
         showSearchConfig();
+    } else {
+        console.log('🔍 [联网搜索] 已关闭');
     }
 }
 
