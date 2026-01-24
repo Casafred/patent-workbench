@@ -898,6 +898,60 @@ def search_patents():
                 except Exception as e:
                     patent_data['description'] = ''
                 
+                # 尝试获取附图（默认只获取首张）
+                try:
+                    drawings = []
+                    
+                    # 从JSON-LD中获取附图（如果有）
+                    if 'drawings' not in patent_data and json_ld:
+                        if '@graph' in ld_data:
+                            for item in ld_data['@graph']:
+                                if item.get('@type') == 'Patent' and 'image' in item:
+                                    images = item.get('image', [])
+                                    image_list = []
+                                    
+                                    if isinstance(images, list):
+                                        for img in images:
+                                            if isinstance(img, str) and img:
+                                                image_list.append(img)
+                                            elif isinstance(img, dict) and img.get('url'):
+                                                image_list.append(img.get('url'))
+                                    elif isinstance(images, str):
+                                        image_list.append(images)
+                                    elif isinstance(images, dict) and images.get('url'):
+                                        image_list.append(images.get('url'))
+                                    
+                                    if image_list:
+                                        drawings.append(image_list[0])  # 只获取首张
+                    
+                    # 如果JSON-LD中没有，从HTML中获取
+                    if not drawings:
+                        img_tags = soup.find_all('img')
+                        seen_images = set()
+                        
+                        for img in img_tags:
+                            img_src = img.get('src', '')
+                            if img_src:
+                                # 处理相对URL
+                                if img_src.startswith('//'):
+                                    img_src = f'https:{img_src}'
+                                elif img_src.startswith('/'):
+                                    img_src = f'https://patents.google.com{img_src}'
+                                elif not img_src.startswith('http'):
+                                    continue
+                                
+                                # 检查是否是专利附图（过滤掉图标和Logo）
+                                if 'patentimages' in img_src or 'google.com/patents' in img_src or len(img_src) > 50:
+                                    if img_src not in seen_images:
+                                        seen_images.add(img_src)
+                                        drawings.append(img_src)  # 只获取首张
+                                        break  # 找到首张就停止
+                    
+                    patent_data['drawings'] = drawings
+                except Exception as e:
+                    print(f"Error extracting drawings for {patent_number}: {e}")
+                    patent_data['drawings'] = []
+                
                 # 添加专利号和URL
                 patent_data['patent_number'] = patent_number
                 patent_data['url'] = url
@@ -930,6 +984,40 @@ def search_patents():
     except Exception as e:
         print(f"Error in search_patents: {traceback.format_exc()}")
         return create_response(error=f"Failed to search patents: {str(e)}", status_code=500)
+
+# --- 新增：获取专利完整附图 API ---  
+@app.route('/api/patent/drawings', methods=['POST'])
+def get_patent_drawings():
+    is_valid, error_response = validate_api_request()
+    if not is_valid:
+        return error_response
+    
+    try:
+        req_data = request.get_json()
+        patent_number = req_data.get('patent_number')
+        
+        if not patent_number:
+            return create_response(error="patent_number is required", status_code=400)
+        
+        # 使用爬虫获取完整附图
+        from backend.scraper.simple_scraper import SimplePatentScraper
+        scraper = SimplePatentScraper()
+        result = scraper.scrape_patent(patent_number, crawl_full_drawings=True)
+        scraper.close()
+        
+        if result.success and result.data:
+            return create_response(data={
+                'patent_number': patent_number,
+                'drawings': result.data.drawings,
+                'total_drawings': len(result.data.drawings)
+            })
+        else:
+            return create_response(error=f"Failed to get drawings: {result.error}", status_code=500)
+    
+    except Exception as e:
+        import traceback
+        print(f"Error in get_patent_drawings: {traceback.format_exc()}")
+        return create_response(error=f"Failed to get drawings: {str(e)}", status_code=500)
 
 # --- 新增：专利解读 API ---  
 @app.route('/api/patent/analyze', methods=['POST'])

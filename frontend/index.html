@@ -1318,6 +1318,202 @@
 <script src="js/claimsComparison.js?v=20260119"></script>
 <script src="js/claimsProcessorIntegrated.js?v=20260119"></script>
 <script src="js/main.js?v=20260119"></script>
+
+<!-- 新增：专利附图弹窗组件 -->
+<div id="drawings_modal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 90vw; max-height: 90vh; overflow: auto;">
+        <div class="modal-header">
+            <h3 id="drawings_modal_title">专利附图</h3>
+            <button class="close-modal" onclick="closeDrawingsModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="drawings_loading" style="text-align: center; padding: 20px;">加载中...</div>
+            <div id="drawings_container" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div>
+                        <span id="drawings_count"></span>
+                    </div>
+                    <div>
+                        <button id="prev_drawing" class="small-button" onclick="showPrevDrawing()" disabled>上一张</button>
+                        <button id="next_drawing" class="small-button" onclick="showNextDrawing()">下一张</button>
+                    </div>
+                </div>
+                <div style="text-align: center;">
+                    <img id="current_drawing" style="max-width: 100%; max-height: 70vh; object-fit: contain;" alt="专利附图">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 新增：专利附图展示和按需爬取功能 -->
+<script>
+// 专利附图数据存储
+let currentPatentDrawings = [];
+let currentDrawingIndex = 0;
+let currentPatentNumber = '';
+
+// 初始化专利附图功能
+function initPatentDrawings() {
+    // 监听专利搜索结果的展示，添加附图预览
+    document.addEventListener('DOMContentLoaded', function() {
+        // 等待专利搜索结果加载完成后，添加附图预览
+        const patentResultsList = document.getElementById('patent_results_list');
+        if (patentResultsList) {
+            // 添加MutationObserver，监听专利结果列表的变化
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'childList') {
+                        // 为每个专利结果添加附图预览
+                        const patentItems = document.querySelectorAll('.patent-result-item');
+                        patentItems.forEach(function(item) {
+                            if (!item.querySelector('.patent-drawings-preview')) {
+                                addDrawingsPreview(item);
+                            }
+                        });
+                    }
+                });
+            });
+            
+            observer.observe(patentResultsList, { childList: true, subtree: true });
+        }
+    });
+}
+
+// 为专利结果项添加附图预览
+function addDrawingsPreview(patentItem) {
+    const patentNumber = patentItem.dataset.patentNumber;
+    const patentData = JSON.parse(patentItem.dataset.patentData);
+    
+    if (patentData.drawings && patentData.drawings.length > 0) {
+        // 创建附图预览区域
+        const drawingsPreview = document.createElement('div');
+        drawingsPreview.className = 'patent-drawings-preview';
+        drawingsPreview.style.marginTop = '15px';
+        drawingsPreview.style.borderTop = '1px solid var(--border-color)';
+        drawingsPreview.style.paddingTop = '15px';
+        
+        // 添加首张附图预览
+        const firstDrawing = patentData.drawings[0];
+        drawingsPreview.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="flex: 1;">
+                    <h5>附图预览</h5>
+                    <img src="${firstDrawing}" style="max-width: 150px; max-height: 100px; border-radius: 4px; cursor: pointer; border: 1px solid var(--border-color);" onclick="showDrawingsModal('${patentNumber}', [])">
+                </div>
+                <button class="small-button" onclick="viewFullDrawings('${patentNumber}')">查看完整附图</button>
+            </div>
+        `;
+        
+        // 将附图预览添加到专利结果项
+        patentItem.appendChild(drawingsPreview);
+    }
+}
+
+// 打开附图弹窗
+function showDrawingsModal(patentNumber, drawings = []) {
+    currentPatentNumber = patentNumber;
+    currentPatentDrawings = drawings;
+    currentDrawingIndex = 0;
+    
+    const modal = document.getElementById('drawings_modal');
+    const title = document.getElementById('drawings_modal_title');
+    const loading = document.getElementById('drawings_loading');
+    const container = document.getElementById('drawings_container');
+    
+    title.textContent = `专利 ${patentNumber} 附图`;
+    modal.style.display = 'block';
+    loading.style.display = 'block';
+    container.style.display = 'none';
+    
+    // 如果没有提供附图数据，从服务器获取
+    if (drawings.length === 0) {
+        fetchFullDrawings(patentNumber);
+    } else {
+        displayDrawings();
+    }
+}
+
+// 关闭附图弹窗
+function closeDrawingsModal() {
+    const modal = document.getElementById('drawings_modal');
+    modal.style.display = 'none';
+    currentPatentDrawings = [];
+    currentDrawingIndex = 0;
+    currentPatentNumber = '';
+}
+
+// 从服务器获取完整附图
+function fetchFullDrawings(patentNumber) {
+    const loading = document.getElementById('drawings_loading');
+    loading.innerHTML = '正在获取完整附图...';
+    
+    fetch('/api/patent/drawings', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ patent_number: patentNumber })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.data) {
+            currentPatentDrawings = data.data.drawings;
+            displayDrawings();
+        } else {
+            loading.innerHTML = `获取附图失败: ${data.error || '未知错误'}`;
+        }
+    })
+    .catch(error => {
+        console.error('获取附图失败:', error);
+        loading.innerHTML = '获取附图失败，请重试';
+    });
+}
+
+// 显示附图
+function displayDrawings() {
+    const loading = document.getElementById('drawings_loading');
+    const container = document.getElementById('drawings_container');
+    const drawingsCount = document.getElementById('drawings_count');
+    const currentDrawing = document.getElementById('current_drawing');
+    const prevBtn = document.getElementById('prev_drawing');
+    const nextBtn = document.getElementById('next_drawing');
+    
+    loading.style.display = 'none';
+    container.style.display = 'block';
+    
+    drawingsCount.textContent = `第 ${currentDrawingIndex + 1} 张 / 共 ${currentPatentDrawings.length} 张`;
+    currentDrawing.src = currentPatentDrawings[currentDrawingIndex];
+    
+    // 更新导航按钮状态
+    prevBtn.disabled = currentDrawingIndex === 0;
+    nextBtn.disabled = currentDrawingIndex === currentPatentDrawings.length - 1;
+}
+
+// 显示上一张附图
+function showPrevDrawing() {
+    if (currentDrawingIndex > 0) {
+        currentDrawingIndex--;
+        displayDrawings();
+    }
+}
+
+// 显示下一张附图
+function showNextDrawing() {
+    if (currentDrawingIndex < currentPatentDrawings.length - 1) {
+        currentDrawingIndex++;
+        displayDrawings();
+    }
+}
+
+// 查看完整附图
+function viewFullDrawings(patentNumber) {
+    showDrawingsModal(patentNumber);
+}
+
+// 初始化专利附图功能
+initPatentDrawings();
+</script>
     <!-- 全局悬浮球帮助按钮 -->
     <a href="frontend/help.html" target="_blank" class="floating-help-button" title="打开用户手册">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

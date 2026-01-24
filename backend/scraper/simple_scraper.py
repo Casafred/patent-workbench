@@ -27,6 +27,7 @@ class SimplePatentData:
     claims: List[str] = None
     description: str = ""
     url: str = ""
+    drawings: List[str] = None
     
     def __post_init__(self):
         if self.inventors is None:
@@ -35,6 +36,8 @@ class SimplePatentData:
             self.assignees = []
         if self.claims is None:
             self.claims = []
+        if self.drawings is None:
+            self.drawings = []
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
@@ -96,13 +99,14 @@ class SimplePatentScraper:
             'Sec-Fetch-User': '?1'
         })
     
-    def scrape_patent(self, patent_number: str, crawl_specification: bool = False) -> SimplePatentResult:
+    def scrape_patent(self, patent_number: str, crawl_specification: bool = False, crawl_full_drawings: bool = False) -> SimplePatentResult:
         """
         Scrape a single patent.
         
         Args:
             patent_number: Patent number to scrape
             crawl_specification: Whether to crawl specification fields (claims and description)
+            crawl_full_drawings: Whether to crawl all drawings or just the first one
             
         Returns:
             SimplePatentResult with scraped data
@@ -123,7 +127,7 @@ class SimplePatentScraper:
             soup = BeautifulSoup(response.text, 'lxml')
             
             # Extract data
-            patent_data = self._extract_patent_data(soup, patent_number, url, crawl_specification=crawl_specification)
+            patent_data = self._extract_patent_data(soup, patent_number, url, crawl_specification=crawl_specification, crawl_full_drawings=crawl_full_drawings)
             
             processing_time = time.time() - start_time
             
@@ -160,7 +164,7 @@ class SimplePatentScraper:
                 processing_time=processing_time
             )
     
-    def _extract_patent_data(self, soup: BeautifulSoup, patent_number: str, url: str, crawl_specification: bool = False) -> Optional[SimplePatentData]:
+    def _extract_patent_data(self, soup: BeautifulSoup, patent_number: str, url: str, crawl_specification: bool = False, crawl_full_drawings: bool = False) -> Optional[SimplePatentData]:
         """Extract patent data from HTML."""
         patent_data = SimplePatentData(patent_number=patent_number, url=url)
         
@@ -179,6 +183,29 @@ class SimplePatentScraper:
                             patent_data.application_date = item.get('filingDate', '')
                             patent_data.publication_date = item.get('publicationDate', '')
                             patent_data.assignees = [ass.get('name', '') for ass in item.get('assignee', [])]
+                            
+                            # Extract images from JSON-LD if available
+                            if 'image' in item:
+                                images = item.get('image', [])
+                                image_list = []
+                                
+                                if isinstance(images, list):
+                                    for img in images:
+                                        if isinstance(img, str) and img:
+                                            image_list.append(img)
+                                        elif isinstance(img, dict) and img.get('url'):
+                                            image_list.append(img.get('url'))
+                                elif isinstance(images, str):
+                                    image_list.append(images)
+                                elif isinstance(images, dict) and images.get('url'):
+                                    image_list.append(images.get('url'))
+                                
+                                # Only keep first image if not crawling full drawings
+                                if image_list:
+                                    if crawl_full_drawings:
+                                        patent_data.drawings.extend(image_list)
+                                    else:
+                                        patent_data.drawings.append(image_list[0])
                             break
         except Exception as e:
             logger.warning(f"Error parsing JSON-LD for {patent_number}: {e}")
@@ -340,15 +367,75 @@ class SimplePatentScraper:
         else:
             patent_data.description = ''
         
+        # Extract drawings using HTML selectors (fallback if JSON-LD extraction failed)
+        if not patent_data.drawings:
+            try:
+                # Try multiple selectors to find drawing containers
+                drawing_containers = []
+                
+                # Try section with itemprop='description' (often contains drawings)
+                desc_section = soup.find('section', {'itemprop': 'description'})
+                if desc_section:
+                    drawing_containers.append(desc_section)
+                
+                # Try div with class='description' (alternative structure)
+                desc_div = soup.find('div', {'class': 'description'})
+                if desc_div:
+                    drawing_containers.append(desc_div)
+                
+                # Try main content area
+                main_content = soup.find('main')
+                if main_content:
+                    drawing_containers.append(main_content)
+                
+                # Try body as last resort
+                drawing_containers.append(soup.body)
+                
+                # Collect all images
+                seen_images = set()
+                found_first = False
+                
+                for container in drawing_containers:
+                    if container:
+                        # Find all img tags
+                        img_tags = container.find_all('img')
+                        for img in img_tags:
+                            img_src = img.get('src', '')
+                            if img_src:
+                                # Handle relative URLs
+                                if img_src.startswith('//'):
+                                    img_src = f'https:{img_src}'
+                                elif img_src.startswith('/'):
+                                    img_src = f'https://patents.google.com{img_src}'
+                                elif not img_src.startswith('http'):
+                                    continue
+                                    
+                                # Check if this is a patent drawing (filter out icons and logos)
+                                if 'patentimages' in img_src or 'google.com/patents' in img_src or len(img_src) > 50:
+                                    if img_src not in seen_images:
+                                        seen_images.add(img_src)
+                                        patent_data.drawings.append(img_src)
+                                        
+                                        # If not crawling full drawings, stop after first image
+                                        if not crawl_full_drawings:
+                                            found_first = True
+                                            break
+                        
+                        if found_first:
+                            break
+            except Exception as e:
+                logger.warning(f"Error extracting drawings from HTML for {patent_number}: {e}")
+        
         return patent_data
     
-    def scrape_patents_batch(self, patent_numbers: List[str], crawl_specification: bool = False) -> List[SimplePatentResult]:
+    def scrape_patents_batch(self, patent_numbers: List[str], crawl_specification: bool = False, crawl_full_drawings: bool = False) -> List[SimplePatentResult]:
         """
         Scrape multiple patents.
         
         Args:
             patent_numbers: List of patent numbers to scrape
             crawl_specification: Whether to crawl specification fields (claims and description)
+            crawl_full_drawings: Whether to crawl all drawings or just the first one for each patent
             
         Returns:
             List of SimplePatentResult objects
@@ -358,7 +445,7 @@ class SimplePatentScraper:
         for i, patent_number in enumerate(patent_numbers):
             logger.info(f"Scraping patent {i+1}/{len(patent_numbers)}: {patent_number}")
             
-            result = self.scrape_patent(patent_number, crawl_specification=crawl_specification)
+            result = self.scrape_patent(patent_number, crawl_specification=crawl_specification, crawl_full_drawings=crawl_full_drawings)
             results.append(result)
             
             # Add delay between requests (except for last one)
