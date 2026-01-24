@@ -73,7 +73,10 @@ LOGIN_PAGE_HTML = """
             margin-bottom: 20px;
             text-align: left;
             font-size: 14px;
-            display: {% if error %}block{% else %}none{% endif %};
+            display: none;
+        }
+        .error-box.show {
+            display: block;
         }
         .input-group {
             position: relative;
@@ -101,6 +104,19 @@ LOGIN_PAGE_HTML = """
             cursor: pointer;
             color: #999;
             user-select: none;
+            background: none;
+            border: none;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .password-toggle:hover {
+            color: var(--primary-color);
+        }
+        .password-toggle svg {
+            width: 20px;
+            height: 20px;
         }
         .login-btn {
             width: 100%;
@@ -163,7 +179,7 @@ LOGIN_PAGE_HTML = """
             <p style="margin: 5px 0 0; color: #777;">专利分析智能工作台</p>
         </div>
         
-        <div id="error-box" class="error-box">
+        <div id="error-box" class="error-box{% if error %} show{% endif %}">
             <strong>登录失败</strong><br>
             <span id="error-message">{{ error|default('', true) }}</span>
         </div>
@@ -174,7 +190,16 @@ LOGIN_PAGE_HTML = """
             </div>
             <div class="input-group">
                 <input type="password" id="password" name="password" placeholder="密码" required autocomplete="current-password">
-                <span id="password-toggle" class="password-toggle">👁️</span>
+                <button type="button" id="password-toggle" class="password-toggle" title="显示/隐藏密码">
+                    <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <svg id="eye-off-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                </button>
             </div>
             <button id="login-btn" type="submit" class="login-btn">
                 <span id="btn-text">登 录</span>
@@ -196,17 +221,30 @@ LOGIN_PAGE_HTML = """
         document.addEventListener('DOMContentLoaded', function() {
             const passwordInput = document.getElementById('password');
             const passwordToggle = document.getElementById('password-toggle');
+            const eyeIcon = document.getElementById('eye-icon');
+            const eyeOffIcon = document.getElementById('eye-off-icon');
             const loginForm = document.getElementById('login-form');
             const loginBtn = document.getElementById('login-btn');
             const btnText = document.getElementById('btn-text');
             const spinner = document.getElementById('spinner');
 
-            passwordToggle.addEventListener('click', function() {
+            // 密码显示/隐藏切换
+            passwordToggle.addEventListener('click', function(e) {
+                e.preventDefault();
                 const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
                 passwordInput.setAttribute('type', type);
-                this.textContent = type === 'password' ? '👁️' : '🙈';
+                
+                // 切换图标显示
+                if (type === 'password') {
+                    eyeIcon.style.display = 'block';
+                    eyeOffIcon.style.display = 'none';
+                } else {
+                    eyeIcon.style.display = 'none';
+                    eyeOffIcon.style.display = 'block';
+                }
             });
 
+            // 表单提交时显示加载状态
             loginForm.addEventListener('submit', function() {
                 loginBtn.disabled = true;
                 btnText.style.display = 'none';
