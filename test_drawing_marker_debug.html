@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>功能八OCR诊断工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title .step {
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-size: 14px;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px dashed #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .result.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        
+        .result.warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        
+        .result-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        
+        .result-list {
+            margin-left: 20px;
+            margin-top: 8px;
+        }
+        
+        .result-list li {
+            margin-bottom: 4px;
+        }
+        
+        .image-preview {
+            max-width: 100%;
+            max-height: 400px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+        
+        .debug-info {
+            background: #f1f3f5;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .progress {
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .progress-text {
+            margin-top: 8px;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 功能八OCR诊断工具</h1>
+        <p class="subtitle">逐步检查每个环节，找出识别率为0%的原因</p>
+        
+        <!-- 步骤1: 上传图片 -->
+        <div class="section">
+            <div class="section-title">
+                <span class="step">1</span>
+                上传专利附图
+            </div>
+            <div class="input-group">
+                <label for="imageInput">选择图片文件:</label>
+                <input type="file" id="imageInput" accept="image/*">
+            </div>
+            <div id="imagePreview"></div>
+            <div id="imageResult"></div>
+        </div>
+        
+        <!-- 步骤2: 输入说明书 -->
+        <div class="section">
+            <div class="section-title">
+                <span class="step">2</span>
+                输入说明书内容
+            </div>
+            <div class="input-group">
+                <label for="specInput">说明书内容:</label>
+                <textarea id="specInput" rows="6" placeholder="例如: 1电动工具、2外壳、2L左侧外壳、2R右侧外壳、3后盖"></textarea>
+            </div>
+            <button onclick="testSpecification()">测试说明书解析</button>
+            <div id="specResult"></div>
+        </div>
+        
+        <!-- 步骤3: 调用API测试 -->
+        <div class="section">
+            <div class="section-title">
+                <span class="step">3</span>
+                完整流程测试
+            </div>
+            <p style="color: #666; margin-bottom: 15px;">
+                点击下方按钮，将图片和说明书发送到后端API进行完整测试
+            </p>
+            <button onclick="testFullProcess()" id="testBtn">开始完整测试</button>
+            <div class="progress" id="progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">处理中...</div>
+            </div>
+            <div id="apiResult"></div>
+        </div>
+        
+        <!-- 诊断建议 -->
+        <div class="section">
+            <div class="section-title">
+                <span class="step">💡</span>
+                诊断建议
+            </div>
+            <div class="result info">
+                <div class="result-title">如果识别率为0%，请检查:</div>
+                <ul class="result-list">
+                    <li><strong>说明书格式:</strong> 确保使用支持的格式（顿号、省略号、点号分隔）</li>
+                    <li><strong>图片质量:</strong> 图片要清晰，数字要清晰可见</li>
+                    <li><strong>数字对比度:</strong> 数字与背景要有足够的对比度</li>
+                    <li><strong>Tesseract安装:</strong> 确保服务器上已安装Tesseract OCR</li>
+                    <li><strong>编号匹配:</strong> 图片上的数字要与说明书中的编号一致</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let uploadedImage = null;
+        let referenceMap = {};
+        
+        // 图片上传处理
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                uploadedImage = {
+                    name: file.name,
+                    type: file.type,
+                    size: file.size,
+                    data: event.target.result.split(',')[1]
+                };
+                
+                // 显示预览
+                const preview = document.getElementById('imagePreview');
+                preview.innerHTML = `<img src="${event.target.result}" class="image-preview" alt="预览">`;
+                
+                // 显示结果
+                const result = document.getElementById('imageResult');
+                result.innerHTML = `
+                    <div class="result success">
+                        <div class="result-title">✅ 图片加载成功</div>
+                        <ul class="result-list">
+                            <li>文件名: ${file.name}</li>
+                            <li>文件大小: ${(file.size / 1024).toFixed(2)} KB</li>
+                            <li>文件类型: ${file.type}</li>
+                        </ul>
+                    </div>
+                `;
+            };
+            reader.readAsDataURL(file);
+        });
+        
+        // 测试说明书解析
+        function testSpecification() {
+            const specText = document.getElementById('specInput').value.trim();
+            const resultDiv = document.getElementById('specResult');
+            
+            if (!specText) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <div class="result-title">❌ 请输入说明书内容</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            // 解析说明书
+            referenceMap = extractReferenceMarkers(specText);
+            
+            if (Object.keys(referenceMap).length > 0) {
+                let html = `
+                    <div class="result success">
+                        <div class="result-title">✅ 成功提取到 ${Object.keys(referenceMap).length} 个附图标记</div>
+                        <div class="debug-info">
+`;
+                
+                const entries = Object.entries(referenceMap);
+                entries.slice(0, 20).forEach(([num, name]) => {
+                    html += `${num}: ${name}\n`;
+                });
+                
+                if (entries.length > 20) {
+                    html += `... (还有 ${entries.length - 20} 个)\n`;
+                }
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+                resultDiv.innerHTML = html;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <div class="result-title">❌ 未能提取到任何附图标记</div>
+                        <p>请检查说明书格式，支持的格式:</p>
+                        <ul class="result-list">
+                            <li>1电动工具、2外壳、3后盖</li>
+                            <li>1…电动工具、2…外壳、3…后盖</li>
+                            <li>1. 电动工具<br>2. 外壳<br>3. 后盖</li>
+                        </ul>
+                    </div>
+                `;
+            }
+        }
+        
+        // 提取附图标记
+        function extractReferenceMarkers(specText) {
+            const referenceMap = {};
+            
+            // 模式1: 数字 + 分隔符(. 、 …) + 名称
+            const pattern1 = /([0-9]+[A-Z]*)\s*[.、…]\s*([^。；，,;\n、…]+)/g;
+            let match;
+            while ((match = pattern1.exec(specText)) !== null) {
+                const number = match[1];
+                const name = match[2].trim();
+                if (name) {
+                    referenceMap[number] = name;
+                }
+            }
+            
+            // 模式2: 数字(可能带字母) + 中文字符，用顿号分隔
+            const parts = specText.split('、');
+            parts.forEach(part => {
+                part = part.trim();
+                const match = part.match(/^([0-9]+[A-Z]*)(.+)$/);
+                if (match) {
+                    const number = match[1];
+                    let name = match[2].trim();
+                    // 移除开头的省略号、空格等分隔符
+                    name = name.replace(/^[…\s.、]+/, '');
+                    if (name && !referenceMap[number]) {
+                        referenceMap[number] = name;
+                    }
+                }
+            });
+            
+            return referenceMap;
+        }
+        
+        // 完整流程测试
+        async function testFullProcess() {
+            const resultDiv = document.getElementById('apiResult');
+            const progressDiv = document.getElementById('progress');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const testBtn = document.getElementById('testBtn');
+            
+            // 验证输入
+            if (!uploadedImage) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <div class="result-title">❌ 请先上传图片</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            const specText = document.getElementById('specInput').value.trim();
+            if (!specText) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <div class="result-title">❌ 请先输入说明书内容</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            // 显示进度
+            testBtn.disabled = true;
+            progressDiv.style.display = 'block';
+            progressFill.style.width = '30%';
+            progressText.textContent = '正在发送请求...';
+            
+            try {
+                // 调用API
+                const response = await fetch('/api/drawing-marker/process', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        drawings: [uploadedImage],
+                        specification: specText
+                    })
+                });
+                
+                progressFill.style.width = '70%';
+                progressText.textContent = '正在处理结果...';
+                
+                const data = await response.json();
+                
+                progressFill.style.width = '100%';
+                progressText.textContent = '处理完成！';
+                
+                setTimeout(() => {
+                    progressDiv.style.display = 'none';
+                    testBtn.disabled = false;
+                }, 1000);
+                
+                // 显示结果
+                if (data.success && data.data) {
+                    displayResults(data.data);
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result error">
+                            <div class="result-title">❌ 处理失败</div>
+                            <p>${data.error || '未知错误'}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                progressDiv.style.display = 'none';
+                testBtn.disabled = false;
+                
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <div class="result-title">❌ 网络错误</div>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // 显示结果
+        function displayResults(data) {
+            const resultDiv = document.getElementById('apiResult');
+            
+            let html = '';
+            
+            // 总体结果
+            if (data.total_numbers > 0) {
+                html += `
+                    <div class="result success">
+                        <div class="result-title">✅ 处理成功</div>
+                        <ul class="result-list">
+                            <li>识别到的数字序号: <strong>${data.total_numbers}</strong> 个</li>
+                            <li>说明书中的标记: <strong>${Object.keys(data.reference_map).length}</strong> 个</li>
+                            <li>匹配率: <strong>${data.match_rate}%</strong></li>
+                        </ul>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="result error">
+                        <div class="result-title">❌ 识别率为 0%</div>
+                        <p>OCR未能识别到任何数字序号</p>
+                    </div>
+                `;
+            }
+            
+            // 说明书标记
+            html += `
+                <div class="result info" style="margin-top: 15px;">
+                    <div class="result-title">📋 说明书中的附图标记 (${Object.keys(data.reference_map).length}个)</div>
+                    <div class="debug-info">
+`;
+            
+            const entries = Object.entries(data.reference_map);
+            entries.slice(0, 20).forEach(([num, name]) => {
+                html += `${num}: ${name}\n`;
+            });
+            
+            if (entries.length > 20) {
+                html += `... (还有 ${entries.length - 20} 个)\n`;
+            }
+            
+            html += `
+                    </div>
+                </div>
+            `;
+            
+            // 识别结果详情
+            if (data.drawings && data.drawings.length > 0) {
+                data.drawings.forEach((drawing, index) => {
+                    const detected = drawing.detected_numbers || [];
+                    
+                    if (detected.length > 0) {
+                        html += `
+                            <div class="result success" style="margin-top: 15px;">
+                                <div class="result-title">🔍 图片 ${index + 1}: ${drawing.name} - 识别到 ${detected.length} 个标记</div>
+                                <div class="debug-info">
+`;
+                        
+                        detected.forEach(item => {
+                            const status = item.unmatched ? '❌ 未匹配' : '✅ 已匹配';
+                            html += `${status} ${item.number}: ${item.name} (置信度: ${item.confidence}%)\n`;
+                        });
+                        
+                        html += `
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        html += `
+                            <div class="result warning" style="margin-top: 15px;">
+                                <div class="result-title">⚠️ 图片 ${index + 1}: ${drawing.name}</div>
+                                <p>OCR未能识别到任何数字序号</p>
+                                <p style="margin-top: 10px;"><strong>可能的原因:</strong></p>
+                                <ul class="result-list">
+                                    <li>图片质量太差或模糊</li>
+                                    <li>数字太小或不清晰</li>
+                                    <li>数字与背景对比度不足</li>
+                                    <li>Tesseract OCR未正确安装或配置</li>
+                                </ul>
+                            </div>
+                        `;
+                    }
+                });
+            }
+            
+            resultDiv.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
