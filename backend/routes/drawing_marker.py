@@ -96,6 +96,25 @@ def process_drawing_marker():
         import re
         import base64
         
+        # Windows系统上配置Tesseract路径
+        import os
+        import platform
+        if platform.system() == 'Windows':
+            # 尝试常见的Tesseract安装路径
+            possible_paths = [
+                r'C:\Program Files\Tesseract-OCR\tesseract.exe',
+                r'C:\Program Files (x86)\Tesseract-OCR\tesseract.exe',
+                r'C:\Tesseract-OCR\tesseract.exe',
+            ]
+            for path in possible_paths:
+                if os.path.exists(path):
+                    pytesseract.pytesseract.tesseract_cmd = path
+                    print(f"[DEBUG] Found Tesseract at: {path}")
+                    break
+            else:
+                print("[WARNING] Tesseract not found in common locations. OCR may fail.")
+                print("[WARNING] Please install Tesseract or set pytesseract.pytesseract.tesseract_cmd manually.")
+        
         # 处理结果数据
         processed_results = []
         total_numbers = 0
@@ -178,17 +197,31 @@ def process_drawing_marker():
                     method_name = ['grayscale', 'adaptive_thresh', 'otsu_thresh', 'simple_thresh'][idx]
                     try:
                         print(f"[DEBUG] Running OCR with method: {method_name}")
-                        ocr_result = pytesseract.image_to_data(
-                            processed_img, 
-                            output_type=pytesseract.Output.DICT, 
-                            config=custom_config
-                        )
+                        
+                        # 测试Tesseract是否可用
+                        try:
+                            ocr_result = pytesseract.image_to_data(
+                                processed_img, 
+                                output_type=pytesseract.Output.DICT, 
+                                config=custom_config
+                            )
+                        except pytesseract.TesseractNotFoundError as e:
+                            print(f"[ERROR] Tesseract not found: {str(e)}")
+                            print(f"[ERROR] Please install Tesseract OCR: https://github.com/UB-Mannheim/tesseract/wiki")
+                            continue
+                        except Exception as e:
+                            print(f"[ERROR] OCR failed with {method_name}: {str(e)}")
+                            continue
                         
                         method_detections = 0
                         # 提取识别结果
                         for i in range(len(ocr_result['text'])):
                             text = ocr_result['text'][i].strip()
                             conf = int(ocr_result['conf'][i])
+                            
+                            # 调试：打印所有识别到的文本
+                            if text:
+                                print(f"[DEBUG] OCR detected: '{text}' (confidence: {conf})")
                             
                             # 只保留置信度大于50的结果，且文本不为空
                             if text and conf > 50:
@@ -229,10 +262,14 @@ def process_drawing_marker():
                                             'height': h,
                                             'confidence': conf
                                         })
+                                else:
+                                    print(f"[DEBUG] Skipped '{text}' - doesn't match number pattern")
                         
                         print(f"[DEBUG] Method {method_name} detected {method_detections} numbers")
                     except Exception as e:
                         print(f"[ERROR] OCR processing error with {method_name}: {str(e)}")
+                        import traceback
+                        traceback.print_exc()
                         continue
                 
                 print(f"[DEBUG] Total unique detections after deduplication: {len(all_detected_numbers)}")
