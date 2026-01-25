@@ -17,7 +17,6 @@ from backend.utils.response import create_response
 from backend.utils.ocr_utils import (
     deduplicate_results,
     filter_by_confidence,
-    resize_image_for_ocr,
     match_with_reference_map,
     calculate_statistics
 )
@@ -89,9 +88,7 @@ def process_drawing_marker():
             return create_response(error="specification is required and must be a non-empty string", status_code=400)
         
         # 导入OCR和图像处理模块
-        import cv2
-        import numpy as np
-        from PIL import Image
+        from PIL import Image, ImageEnhance, ImageFilter
         import pytesseract
         import re
         import base64
@@ -164,27 +161,40 @@ def process_drawing_marker():
                 image = Image.open(BytesIO(image_data))
                 print(f"[DEBUG] Image size: {image.size}")
                 
-                # 转换为OpenCV格式
-                img_cv = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+                # 转换为灰度图
+                if image.mode != 'L':
+                    image = image.convert('L')
                 
-                # 调整图像尺寸到最佳识别范围
-                img_cv = resize_image_for_ocr(img_cv)
-                print(f"[DEBUG] Resized image shape: {img_cv.shape}")
+                # 调整图像尺寸到最佳识别范围 (1500-3000px)
+                width, height = image.size
+                max_dim = max(width, height)
+                if max_dim < 1500:
+                    scale = 1500 / max_dim
+                    new_width = int(width * scale)
+                    new_height = int(height * scale)
+                    image = image.resize((new_width, new_height), Image.LANCZOS)
+                    print(f"[DEBUG] Resized image to: {image.size}")
+                elif max_dim > 3000:
+                    scale = 3000 / max_dim
+                    new_width = int(width * scale)
+                    new_height = int(height * scale)
+                    image = image.resize((new_width, new_height), Image.LANCZOS)
+                    print(f"[DEBUG] Resized image to: {image.size}")
                 
                 # 图像预处理 - 尝试多种预处理方式以提高识别率
-                gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
+                # 方法1: 原始灰度图
+                gray = image
                 
-                # 方法1: 自适应阈值（适合光照不均匀的图像）
-                adaptive_thresh = cv2.adaptiveThreshold(
-                    gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
-                    cv2.THRESH_BINARY, 11, 2
-                )
+                # 方法2: 增强对比度
+                enhancer = ImageEnhance.Contrast(image)
+                contrast_enhanced = enhancer.enhance(2.0)
                 
-                # 方法2: Otsu二值化（不反转）
-                _, otsu_thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+                # 方法3: 锐化
+                sharpened = image.filter(ImageFilter.SHARPEN)
                 
-                # 方法3: 简单阈值
-                _, simple_thresh = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
+                # 方法4: 二值化（简单阈值）
+                threshold = 127
+                binary = image.point(lambda x: 255 if x > threshold else 0, mode='1')
                 
                 # 收集所有方法的OCR结果
                 all_detected_numbers = []
@@ -193,8 +203,8 @@ def process_drawing_marker():
                 custom_config = r'--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                 
                 # 对每种预处理方法进行OCR
-                for idx, processed_img in enumerate([gray, adaptive_thresh, otsu_thresh, simple_thresh]):
-                    method_name = ['grayscale', 'adaptive_thresh', 'otsu_thresh', 'simple_thresh'][idx]
+                for idx, processed_img in enumerate([gray, contrast_enhanced, sharpened, binary]):
+                    method_name = ['grayscale', 'contrast_enhanced', 'sharpened', 'binary'][idx]
                     try:
                         print(f"[DEBUG] Running OCR with method: {method_name}")
                         

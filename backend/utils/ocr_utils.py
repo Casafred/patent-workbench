@@ -4,12 +4,11 @@ OCR utility functions for patent drawing marker recognition.
 This module provides helper functions for OCR processing, including:
 - Result deduplication based on position and confidence
 - Confidence filtering
-- Image preprocessing and resizing
+- Matching with reference maps
+- Statistics calculation
 """
 
 from typing import List, Dict, Tuple
-import cv2
-import numpy as np
 
 
 def deduplicate_results(results: List[Dict], position_threshold: int = 20) -> List[Dict]:
@@ -67,44 +66,6 @@ def filter_by_confidence(results: List[Dict], min_confidence: int = 60) -> List[
         List[Dict]: 过滤后的结果列表
     """
     return [r for r in results if r.get('confidence', 0) >= min_confidence]
-
-
-def resize_image_for_ocr(image: np.ndarray, 
-                         min_size: int = 800, 
-                         max_size: int = 2000) -> np.ndarray:
-    """
-    将图像调整到最佳OCR识别尺寸范围。
-    
-    Args:
-        image: OpenCV格式的图像
-        min_size: 最小尺寸（宽度或高度）
-        max_size: 最大尺寸（宽度或高度）
-        
-    Returns:
-        np.ndarray: 调整后的图像
-    """
-    height, width = image.shape[:2]
-    
-    # 计算当前最大边
-    max_dim = max(height, width)
-    min_dim = min(height, width)
-    
-    # 如果图像太小，放大到min_size
-    if max_dim < min_size:
-        scale = min_size / max_dim
-        new_width = int(width * scale)
-        new_height = int(height * scale)
-        return cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_CUBIC)
-    
-    # 如果图像太大，缩小到max_size
-    if max_dim > max_size:
-        scale = max_size / max_dim
-        new_width = int(width * scale)
-        new_height = int(height * scale)
-        return cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_AREA)
-    
-    # 尺寸合适，不需要调整
-    return image
 
 
 def match_with_reference_map(
