@@ -18,6 +18,13 @@ def validate_api_request():
                If valid, error_response is None
                If invalid, is_valid is False and error_response contains error
     """
+    # 诊断工具路由绕过认证（仅本地开发环境）
+    if request.path == '/api/drawing-marker/process':
+        # 检查是否是本地请求
+        client_ip = request.remote_addr
+        if client_ip in ['127.0.0.1', 'localhost', '::1']:
+            return True, None
+    
     if 'user' not in session:
         return False, make_response(
             jsonify({

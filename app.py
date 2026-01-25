@@ -386,7 +386,7 @@ def serve_app():
 # --- 诊断工具路由 ---
 @app.route('/test_drawing_marker_debug.html')
 def serve_drawing_marker_debug():
-    """提供功能八OCR诊断工具"""
+    """提供功能八OCR诊断工具（无需登录）"""
     return send_from_directory('frontend', 'test_drawing_marker_debug.html')
 
 # --- 辅助函数 ---
