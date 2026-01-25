@@ -573,27 +573,70 @@ async function handleStreamChatRequest() {
                     // 检查是否有工具调用（搜索结果）
                     const toolCalls = parsed.choices[0]?.delta?.tool_calls;
                     if (toolCalls && toolCalls.length > 0) {
-                        console.log('🔍 [联网搜索] 收到工具调用:', toolCalls);
-                        const webSearchTool = toolCalls.find(t => t.type === 'web_search');
-                        if (webSearchTool && webSearchTool.web_search) {
-                            console.log('🔍 [联网搜索] 检测到网络搜索工具调用:', webSearchTool.web_search);
-                            // 提取搜索结果
-                            if (webSearchTool.web_search.outputs) {
-                                searchResults = webSearchTool.web_search.outputs;
-                                console.log('🔍 [联网搜索] 成功获取搜索结果，共', searchResults.length, '条:', searchResults);
-                                
-                                // 显示搜索完成提示（但不改变isSearching状态，让delta处理）
-                                assistantContentEl.innerHTML = `
-                                    <div class="search-complete">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
-                                        </svg>
-                                        <span>已找到 ${searchResults.length} 条相关信息，正在生成回答...</span>
-                                    </div>
-                                    <span class="blinking-cursor">|</span>
-                                `;
+                        console.log('🔍 [联网搜索] 收到工具调用:', JSON.stringify(toolCalls, null, 2));
+                        
+                        // 遍历所有工具调用，查看详细结构
+                        toolCalls.forEach((toolCall, index) => {
+                            console.log(`🔍 [联网搜索] 工具调用 ${index} 类型:`, toolCall.type);
+                            console.log(`🔍 [联网搜索] 工具调用 ${index} 完整结构:`, JSON.stringify(toolCall, null, 2));
+                            
+                            // 检查不同的工具调用结构
+                            if (toolCall.type === 'web_search') {
+                                console.log('🔍 [联网搜索] 检测到web_search类型工具调用');
+                                if (toolCall.web_search) {
+                                    console.log('🔍 [联网搜索] web_search字段存在:', JSON.stringify(toolCall.web_search, null, 2));
+                                    if (toolCall.web_search.outputs) {
+                                        searchResults = toolCall.web_search.outputs;
+                                        console.log('🔍 [联网搜索] 成功获取搜索结果，共', searchResults.length, '条:', searchResults);
+                                        
+                                        // 显示搜索完成提示（但不改变isSearching状态，让delta处理）
+                                        assistantContentEl.innerHTML = `
+                                            <div class="search-complete">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                                                </svg>
+                                                <span>已找到 ${searchResults.length} 条相关信息，正在生成回答...</span>
+                                            </div>
+                                            <span class="blinking-cursor">|</span>
+                                        `;
+                                    }
+                                }
+                            } else if (toolCall.function) {
+                                console.log('🔍 [联网搜索] 检测到function类型工具调用');
+                                console.log('🔍 [联网搜索] function.name:', toolCall.function.name);
+                                if (toolCall.function.name === 'web_search') {
+                                    console.log('🔍 [联网搜索] 检测到web_search函数调用');
+                                    console.log('🔍 [联网搜索] function.arguments:', toolCall.function.arguments);
+                                }
+                            } else {
+                                console.log('🔍 [联网搜索] 检测到未知类型工具调用:', toolCall.type);
                             }
-                        }
+                        });
+                    }
+                    
+                    // 检查是否有完整的工具调用结果
+                    const toolCallResult = parsed.choices[0]?.delta?.tool_call;
+                    if (toolCallResult) {
+                        console.log('🔍 [联网搜索] 收到tool_call结果:', JSON.stringify(toolCallResult, null, 2));
+                    }
+                    
+                    // 检查是否有工具调用结果在message中
+                    const message = parsed.choices[0]?.message;
+                    if (message?.tool_calls) {
+                        console.log('🔍 [联网搜索] 收到message.tool_calls:', JSON.stringify(message.tool_calls, null, 2));
+                        message.tool_calls.forEach((toolCall, index) => {
+                            if (toolCall.function?.name === 'web_search') {
+                                console.log('🔍 [联网搜索] 检测到message中的web_search函数调用');
+                                if (toolCall.function.arguments) {
+                                    try {
+                                        const args = JSON.parse(toolCall.function.arguments);
+                                        console.log('🔍 [联网搜索] 解析后的arguments:', args);
+                                    } catch (e) {
+                                        console.log('🔍 [联网搜索] 解析arguments失败:', e);
+                                    }
+                                }
+                            }
+                        });
                     }
                     
                     const delta = parsed.choices[0]?.delta?.content || "";
