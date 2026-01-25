@@ -683,7 +683,8 @@ function initPatentBatch() {
                     htmlContent += `</div></div>`;
                 }
                 
-                // 附图显示
+                // 附图显示 - 暂时注释掉
+                /*
                 console.log('🖼️ 检查附图数据:', data.drawings);
                 if (data.drawings && data.drawings.length > 0) {
                     console.log(`✓ 找到 ${data.drawings.length} 张附图`);
@@ -712,6 +713,7 @@ function initPatentBatch() {
                 } else {
                     console.log('⚠️ 没有附图数据或附图数组为空');
                 }
+                */
                 
                 // 说明书描述
                 if (data.description) {
@@ -897,12 +899,15 @@ function initPatentBatch() {
             });
         }
         
+        // 附图部分 - 暂时注释掉
+        /*
         if (data.drawings && data.drawings.length > 0) {
             text += `\n附图 (共${data.drawings.length}张):\n`;
             data.drawings.forEach((drawing, index) => {
                 text += `${index + 1}. ${drawing}\n`;
             });
         }
+        */
         
         text += `\n原始链接: ${result.url}\n`;
         
@@ -940,14 +945,20 @@ function initPatentBatch() {
                 break;
             case 'claims':
                 if (data.claims && data.claims.length > 0) {
-                    text = data.claims.map((claim, index) => `${index + 1}. ${claim}`).join('\n\n');
+                    text = data.claims.map((claim, index) => {
+                        // 检查权利要求文本是否已经以序号开头
+                        if (/^\s*\d+\.\s*/.test(claim)) {
+                            return claim; // 已经有序号，直接使用
+                        }
+                        return `${index + 1}. ${claim}`; // 没有序号，添加序号
+                    }).join('\n\n');
                 }
                 break;
-            case 'drawings':
-                if (data.drawings && data.drawings.length > 0) {
-                    text = data.drawings.map((drawing, index) => `${index + 1}. ${drawing}`).join('\n');
-                }
-                break;
+            // case 'drawings':
+            //     if (data.drawings && data.drawings.length > 0) {
+            //         text = data.drawings.map((drawing, index) => `${index + 1}. ${drawing}`).join('\n');
+            //     }
+            //     break;
             case 'description':
                 text = data.description || '';
                 break;
