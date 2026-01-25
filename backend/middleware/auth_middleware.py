@@ -18,11 +18,6 @@ def validate_api_request():
                If valid, error_response is None
                If invalid, is_valid is False and error_response contains error
     """
-    # 诊断工具路由完全绕过认证
-    if request.path == '/api/drawing-marker/process':
-        print(f"[DEBUG] 诊断工具请求，完全绕过认证")
-        return True, None
-    
     if 'user' not in session:
         return False, make_response(
             jsonify({

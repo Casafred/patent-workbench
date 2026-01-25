@@ -382,13 +382,6 @@ def serve_app():
         html_content = html_content.replace('<body>', f'<body>{user_actions_html}', 1)
     return Response(html_content, mimetype='text/html')
 
-
-# --- 诊断工具路由 ---
-@app.route('/test_drawing_marker_debug.html')
-def serve_drawing_marker_debug():
-    """提供功能八OCR诊断工具（无需登录）"""
-    return send_from_directory('frontend', 'test_drawing_marker_debug.html')
-
 # --- 辅助函数 ---
 def create_response(data=None, error=None, status_code=200):
     response_data = {'success': error is None}

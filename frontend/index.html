@@ -1652,8 +1652,7 @@ function startProcessing() {
     });
 }
 
-// 模拟处理结果（实际项目中替换为真实API调用）
-// 显示处理结果
+// 显示处理结果 - 使用真实API返回的数据
 function displayProcessingResult(data) {
     // 更新处理状态
     const processingStatus = document.getElementById('processing_status');
@@ -1661,45 +1660,153 @@ function displayProcessingResult(data) {
         processingStatus.textContent = '处理完成';
     }
     
-    // 更新处理结果
+    // 更新处理结果 - 使用真实API返回的数据
     const processingResult = document.getElementById('processing_result');
     if (processingResult) {
-        processingResult.innerHTML = `
-            <div style="padding: 15px; background-color: rgba(40, 167, 69, 0.1); border-radius: 8px; border: 1px solid rgba(40, 167, 69, 0.3);">
-                <h4 style="color: var(--success-color); margin-bottom: 10px;">✅ 处理成功</h4>
-                <p>已识别 ${uploadedDrawings.length} 张附图中的数字序号，并与说明书中的附图标记对应。</p>
-                <p>共识别出 <strong>23</strong> 个数字序号，匹配率 <strong>95%</strong>。</p>
-            </div>
+        const hasResults = data.total_numbers > 0;
+        const statusColor = hasResults ? 'rgba(40, 167, 69, 0.1)' : 'rgba(255, 193, 7, 0.1)';
+        const borderColor = hasResults ? 'rgba(40, 167, 69, 0.3)' : 'rgba(255, 193, 7, 0.3)';
+        const iconColor = hasResults ? 'var(--success-color)' : '#ff9800';
+        const icon = hasResults ? '✅' : '⚠️';
+        
+        let html = `
+            <div style="padding: 15px; background-color: ${statusColor}; border-radius: 8px; border: 1px solid ${borderColor};">
+                <h4 style="color: ${iconColor}; margin-bottom: 10px;">${icon} ${data.message || '处理完成'}</h4>
+                <p>已识别 ${data.drawings.length} 张附图中的数字序号，并与说明书中的附图标记对应。</p>
+                <p>共识别出 <strong>${data.total_numbers}</strong> 个数字序号，匹配率 <strong>${data.match_rate}%</strong>。</p>
         `;
+        
+        // 显示统计信息
+        if (data.avg_confidence !== undefined) {
+            html += `<p>平均识别置信度: <strong>${data.avg_confidence}%</strong></p>`;
+        }
+        
+        // 显示缺失和未知标记
+        if (data.missing_markers && data.missing_markers.length > 0) {
+            html += `<p style="color: #ff9800;">缺失标记: ${data.missing_markers.join(', ')}</p>`;
+        }
+        
+        if (data.unknown_markers && data.unknown_markers.length > 0) {
+            html += `<p style="color: #2196f3;">未知标记: ${data.unknown_markers.join(', ')}</p>`;
+        }
+        
+        // 显示建议
+        if (data.suggestions && data.suggestions.length > 0) {
+            html += `<div style="margin-top: 10px; padding: 10px; background-color: rgba(33, 150, 243, 0.1); border-radius: 4px;">`;
+            html += `<strong>💡 建议:</strong><ul style="margin: 5px 0; padding-left: 20px;">`;
+            data.suggestions.forEach(suggestion => {
+                html += `<li>${suggestion}</li>`;
+            });
+            html += `</ul></div>`;
+        }
+        
+        html += `</div>`;
+        processingResult.innerHTML = html;
     }
     
-    // 更新标注后的附图
+    // 更新标注后的附图 - 使用真实的识别结果
     const annotatedDrawingsContainer = document.getElementById('annotated_drawings_container');
     if (annotatedDrawingsContainer) {
+        if (data.total_numbers === 0) {
+            annotatedDrawingsContainer.innerHTML = `
+                <div class="info">
+                    未识别到任何数字序号。请检查：<br>
+                    1. 图片是否清晰<br>
+                    2. 图片中是否包含数字序号<br>
+                    3. 说明书格式是否正确
+                </div>
+            `;
+            return;
+        }
+        
         let html = '<div style="display: flex; flex-wrap: wrap; gap: 15px;">';
-        uploadedDrawings.forEach((drawing, index) => {
+        
+        // 遍历处理后的结果
+        data.drawings.forEach((processedDrawing, index) => {
+            // 查找原始图片数据
+            const originalDrawing = uploadedDrawings.find(d => d.name === processedDrawing.name);
+            if (!originalDrawing) return;
+            
+            const detectedCount = processedDrawing.detected_numbers ? processedDrawing.detected_numbers.length : 0;
+            
             html += `
-                <div style="position: relative; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; width: 300px; background-color: white;">
+                <div style="position: relative; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; width: 400px; background-color: white;">
                     <div style="margin-bottom: 10px; font-size: 0.8em; color: var(--text-color-secondary);">
-                        标注后的附图 ${index + 1}: ${drawing.name}
+                        标注后的附图 ${index + 1}: ${processedDrawing.name}
+                        <span style="margin-left: 10px; color: var(--success-color); font-weight: bold;">(${detectedCount}个标记)</span>
                     </div>
-                    <div style="position: relative; width: 100%; height: 250px;">
-                        <img src="${drawing.dataUrl}" alt="标注后的附图 ${index + 1}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 4px;">
-                        <!-- 模拟标注点 -->
-                        <div style="position: absolute; top: 20%; left: 30%; width: 20px; height: 20px; background-color: rgba(255, 0, 0, 0.7); border: 2px solid white; border-radius: 50%; cursor: pointer;" title="1: 底座"></div>
-                        <div style="position: absolute; top: 50%; left: 60%; width: 20px; height: 20px; background-color: rgba(255, 0, 0, 0.7); border: 2px solid white; border-radius: 50%; cursor: pointer;" title="2: 旋转臂"></div>
-                        <div style="position: absolute; top: 70%; left: 40%; width: 20px; height: 20px; background-color: rgba(255, 0, 0, 0.7); border: 2px solid white; border-radius: 50%; cursor: pointer;" title="3: 连接组件"></div>
+                    <div style="position: relative; width: 100%; height: 400px;">
+                        <canvas id="drawing_canvas_${index}" style="width: 100%; height: 100%; border-radius: 4px; border: 1px solid #ddd;"></canvas>
                     </div>
                     <div style="margin-top: 10px; font-size: 0.8em;">
-                        <strong>标注说明:</strong> 点击红色圆点查看详细部件名称
+                        <strong>标注说明:</strong> 红色圆点表示识别到的数字序号位置
                     </div>
                 </div>
             `;
         });
         html += '</div>';
         annotatedDrawingsContainer.innerHTML = html;
+        
+        // 在Canvas上绘制标注
+        setTimeout(() => {
+            data.drawings.forEach((processedDrawing, index) => {
+                const originalDrawing = uploadedDrawings.find(d => d.name === processedDrawing.name);
+                if (!originalDrawing) return;
+                
+                const canvas = document.getElementById(`drawing_canvas_${index}`);
+                if (!canvas) return;
+                
+                drawAnnotations(canvas, originalDrawing.dataUrl, processedDrawing.detected_numbers || []);
+            });
+        }, 100);
     }
 }
+
+// 在Canvas上绘制标注
+function drawAnnotations(canvas, imageUrl, detectedNumbers) {
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = function() {
+        // 设置Canvas尺寸匹配图片
+        canvas.width = img.width;
+        canvas.height = img.height;
+        
+        // 绘制图片
+        ctx.drawImage(img, 0, 0);
+        
+        // 绘制标注点
+        detectedNumbers.forEach(detected => {
+            // 绘制红色圆圈
+            ctx.beginPath();
+            ctx.arc(detected.x, detected.y, 10, 0, 2 * Math.PI);
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
+            ctx.fill();
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // 绘制文本标签
+            const label = `${detected.number}: ${detected.name}`;
+            ctx.font = 'bold 14px Arial';
+            ctx.fillStyle = 'white';
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 3;
+            
+            // 文本位置（圆圈右侧）
+            const textX = detected.x + 15;
+            const textY = detected.y + 5;
+            
+            // 绘制文本描边和填充
+            ctx.strokeText(label, textX, textY);
+            ctx.fillText(label, textX, textY);
+        });
+    };
+    
+    img.src = imageUrl;
+}
+
+// 旧的重复函数已删除
 
 // 显示处理结果
 function displayProcessingResult(data) {
