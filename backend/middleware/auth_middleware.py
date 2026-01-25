@@ -18,17 +18,10 @@ def validate_api_request():
                If valid, error_response is None
                If invalid, is_valid is False and error_response contains error
     """
-    # 诊断工具路由绕过认证（仅本地开发环境）
+    # 诊断工具路由完全绕过认证
     if request.path == '/api/drawing-marker/process':
-        # 获取客户端IP
-        client_ip = AuthService.get_client_ip()
-        # 检查是否是本地请求（支持多种本地IP格式）
-        local_ips = ['127.0.0.1', 'localhost', '::1', '0.0.0.0']
-        if client_ip in local_ips or client_ip.startswith('127.') or client_ip.startswith('192.168.'):
-            print(f"[DEBUG] 诊断工具请求来自本地IP: {client_ip}，绕过认证")
-            return True, None
-        else:
-            print(f"[DEBUG] 诊断工具请求来自远程IP: {client_ip}，需要认证")
+        print(f"[DEBUG] 诊断工具请求，完全绕过认证")
+        return True, None
     
     if 'user' not in session:
         return False, make_response(
