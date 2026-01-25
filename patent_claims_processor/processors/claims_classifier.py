@@ -15,22 +15,53 @@ class ClaimsClassifier(ClaimsClassifierInterface):
     def __init__(self):
         """初始化权利要求分类器"""
         # 不同语言的引用关键词
+        # 注意：关键词按优先级排序，越前面的越优先匹配
         self.reference_keywords = {
             'zh': [
+                # 普通引用关键词
                 '权利要求', '如权利要求', '根据权利要求', '按照权利要求',
                 '依据权利要求', '基于权利要求', '所述权利要求',
-                '前述权利要求', '上述权利要求', '任一权利要求', '任意权利要求',
-                '之一所述权利要求', '所述的任一权利要求'
+                '任一权利要求', '任意权利要求', '之一所述权利要求', '所述的任一权利要求',
+                # 向前引用关键词（表示仅引用前面的权利要求）
+                '前述权利要求', '上述权利要求', '前面的权利要求', '前述的权利要求',
+                '上述的权利要求', '前所述的权利要求', '前权利要求'
             ],
             'en': [
+                # 普通引用关键词
                 'claim', 'claims', 'according to claim', 'as claimed in',
-                'as defined in claim', 'of claim', 'in claim'
+                'as defined in claim', 'of claim', 'in claim',
+                # 向前引用关键词
+                'preceding claim', 'preceding claims', 'the preceding claim',
+                'the preceding claims', 'above claim', 'above claims',
+                'the above claim', 'the above claims', 'aforementioned claim',
+                'aforementioned claims', 'said preceding claim', 'said preceding claims'
             ],
             'de': [
+                # 普通引用关键词
                 'anspruch', 'ansprüche', 'anspruchs', 'gemäß anspruch',
-                'wie in anspruch', 'definiert in anspruch', 'von anspruch', 'in anspruch'
+                'wie in anspruch', 'definiert in anspruch', 'von anspruch', 'in anspruch',
+                # 向前引用关键词
+                'vorstehender anspruch', 'vorstehende ansprüche', 'obiger anspruch',
+                'obige ansprüche', 'vorgenannter anspruch', 'vorgenannte ansprüche',
+                'genannter vorstehender anspruch', 'genannte vorstehende ansprüche'
             ],
-            'other': ['claim', 'claims']
+            'other': [
+                # 普通引用关键词
+                'claim', 'claims',
+                # 向前引用关键词
+                'preceding claim', 'preceding claims', 'above claim', 'above claims',
+                'aforementioned claim', 'aforementioned claims'
+            ]
+        }
+        
+        # 向前引用专用关键词（用于检测仅引用前面权利要求的情况）
+        # 这些关键词表示仅引用当前权利要求之前的所有权利要求
+        # 注意：对于德语，使用词根形式，不使用完整的形容词变化形式
+        self.forward_reference_keywords = {
+            'zh': ['前述', '上述', '前面', '前所述', '前'],
+            'en': ['preceding', 'above', 'aforementioned'],
+            'de': ['vorstehend', 'obig', 'vorgenannt'],  # 使用词根形式，不包含形容词变化
+            'other': ['preceding', 'above', 'aforementioned']
         }
         
         # 编译正则表达式模式
@@ -67,6 +98,7 @@ class ClaimsClassifier(ClaimsClassifierInterface):
         
         # 特殊处理：如果引用列表只包含'all'，且文本开头是权利要求序号格式
         # 则可能是独立权利要求被错误分类
+        # 注意：'previous'引用不需要这个特殊处理，因为它明确表示引用前面的权利要求
         if referenced_claims == ['all']:
             # 检查文本开头是否是权利要求序号格式
             import re
@@ -263,6 +295,46 @@ class ClaimsClassifier(ClaimsClassifierInterface):
                             referenced_claims.add(int(digit_match.group()))
                 has_reference_keywords = True
         
+        # 辅助函数：检查文本中是否包含向前引用关键词
+        def has_forward_reference_keywords(text, lang):
+            """
+            检查文本中是否包含向前引用关键词
+            
+            Args:
+                text: 待检查的文本
+                lang: 语言类型
+                
+            Returns:
+                是否包含向前引用关键词
+            """
+            forward_keywords = self.forward_reference_keywords.get(lang, self.forward_reference_keywords.get('other', []))
+            for keyword in forward_keywords:
+                # 对于中文、德语等需要灵活匹配的语言，不使用严格的单词边界
+                # 直接检查关键词是否存在于文本中（忽略大小写）
+                if re.search(re.escape(keyword), text, re.IGNORECASE):
+                    return True
+            return False
+        
+        # 辅助函数：检查关键词附近是否有向前引用关键词
+        def has_forward_reference_nearby(keyword_start, keyword_end, text, lang):
+            """
+            检查关键词附近是否有向前引用关键词
+            
+            Args:
+                keyword_start: 关键词开始位置
+                keyword_end: 关键词结束位置
+                text: 完整文本
+                lang: 语言类型
+                
+            Returns:
+                是否在附近有向前引用关键词
+            """
+            # 检查关键词前后50个字符范围内是否有向前引用关键词
+            context_start = max(0, keyword_start - 50)
+            context_end = min(len(text), keyword_end + 50)
+            context_text = text[context_start:context_end]
+            return has_forward_reference_keywords(context_text, lang)
+        
         # 检查是否包含引用关键词但没有找到数字
         if has_reference_keywords and not referenced_claims:
             # 检查是否有单独的引用关键词出现（如"权利要求"、"claims"）
@@ -292,9 +364,15 @@ class ClaimsClassifier(ClaimsClassifierInterface):
                             has_number_nearby = True
                             break
                     
-                    # 如果周边三个单词以内没有数字，则默认引用全部
+                    # 如果周边三个单词以内没有数字
                     if not has_number_nearby:
-                        return ['all']
+                        # 检查是否有向前引用关键词
+                        if has_forward_reference_nearby(keyword_start, keyword_end, cleaned_text, language):
+                            # 向前引用：只引用前面的所有序号
+                            return ['previous']
+                        else:
+                            # 默认引用全部
+                            return ['all']
         
         # 额外检查：直接检查文本中是否包含引用关键词，即使正则表达式没有匹配
         # 这是为了处理只有关键词而没有数字的情况
@@ -323,16 +401,38 @@ class ClaimsClassifier(ClaimsClassifierInterface):
                                 break
                         
                         if not has_number_nearby:
-                            return ['all']
+                            # 检查是否有向前引用关键词
+                            if has_forward_reference_nearby(keyword_start, keyword_end, cleaned_text, language):
+                                # 向前引用：只引用前面的所有序号
+                                return ['previous']
+                            else:
+                                # 默认引用全部
+                                return ['all']
         
-        # 特殊检查：如果文本中包含"claims"相关短语，即使没有找到具体序号，也应识别为从权
+        # 特殊检查：如果文本中包含相关短语，即使没有找到具体序号，也应识别为从权
         if not has_reference_keywords:
-            # 检查是否包含"claims"、"preceding claims"等相关短语
-            if re.search(r'claims', cleaned_text, re.IGNORECASE):
-                return ['all']
-            # 检查是否包含"anspruch"等德语相关短语
-            elif re.search(r'anspruch', cleaned_text, re.IGNORECASE):
-                return ['all']
+            # 检查是否包含相关短语
+            has_relevant_phrases = False
+            lang_keywords = {
+                'en': ['claims', 'claim'],
+                'de': ['anspruch', 'ansprüche', 'anspruchs'],
+                'zh': ['权利要求'],
+                'other': ['claim', 'claims']
+            }
+            
+            for phrase in lang_keywords.get(language, lang_keywords['other']):
+                if re.search(rf'{re.escape(phrase)}', cleaned_text, re.IGNORECASE):
+                    has_relevant_phrases = True
+                    break
+            
+            if has_relevant_phrases:
+                # 检查是否有向前引用关键词
+                if has_forward_reference_keywords(cleaned_text, language):
+                    # 向前引用：只引用前面的所有序号
+                    return ['previous']
+                else:
+                    # 默认引用全部
+                    return ['all']
         
         return sorted(list(referenced_claims))
     
