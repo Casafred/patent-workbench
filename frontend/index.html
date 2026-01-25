@@ -199,6 +199,7 @@
                 <button class="tab-button" onclick="switchTab('claims_comparison', this)">功能五：权利要求对比</button>
                 <button class="tab-button" onclick="switchTab('patent_batch', this)">功能六：批量专利解读</button>
                 <button class="tab-button" onclick="switchTab('claims_processor', this)">功能七：权利要求处理</button>
+                <button class="tab-button" onclick="switchTab('drawing_marker', this)">功能八：专利附图标记</button>
             </div>
         </div>
 
@@ -1348,6 +1349,549 @@
         </div>
     </div>
 </div>
+
+<!-- 功能八：专利附图标记 -->
+        <div id="drawing_marker-tab" class="tab-content">
+            <div class="step">
+                <div class="step-header">专利附图数字序号识别与标注</div>
+                <p class="info">上传或粘贴专利附图，输入说明书内容，系统将自动识别图上的数字序号，并与说明书中的附图标记对应，最后显示在附图对应区域上。</p>
+            </div>
+
+            <div class="template-config-grid">
+                <!-- 左侧：图片上传和处理 -->
+                <div class="template-config-main">
+                    <div class="step">
+                        <div class="step-header">步骤 1: 上传或粘贴专利附图</div>
+                        <div class="config-item">
+                            <label for="drawing_upload_input">上传专利附图:</label>
+                            <input type="file" id="drawing_upload_input" accept="image/*" multiple>
+                        </div>
+                        <div class="config-item">
+                            <label for="drawing_paste_area">或粘贴图片到此处:</label>
+                            <div id="drawing_paste_area" style="border: 2px dashed var(--border-color); border-radius: 8px; padding: 20px; min-height: 150px; text-align: center; background-color: rgba(0,0,0,0.02); cursor: pointer; transition: all 0.3s;">
+                                <p style="color: var(--text-color-secondary);">📋 点击或粘贴图片到此处</p>
+                                <p style="color: var(--text-color-tertiary); font-size: 0.8em; margin-top: 10px;">支持JPG、PNG、PDF等格式，可上传多张图片</p>
+                            </div>
+                        </div>
+                        <div id="uploaded_drawings_list" style="margin-top: 15px; max-height: 200px; overflow-y: auto;">
+                            <div class="info">暂无上传的图片</div>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-header">步骤 2: 输入说明书内容</div>
+                        <div class="config-item">
+                            <label for="specification_input">说明书内容:</label>
+                            <textarea id="specification_input" rows="10" placeholder="请在此处输入完整的专利说明书内容，系统将从中提取附图标记和对应的部件名称..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-header">步骤 3: 开始处理</div>
+                        <div style="display: flex; gap: 15px; margin-top: 15px;">
+                            <button id="start_processing_btn" class="action-button">开始处理</button>
+                            <button id="clear_all_btn" class="small-button delete-button">清空所有</button>
+                        </div>
+                        <div id="processing_status" style="margin-top: 15px; font-weight: bold; color: var(--primary-color);"></div>
+                    </div>
+                </div>
+
+                <!-- 右侧：结果显示 -->
+                <div class="template-config-prompts">
+                    <div class="step">
+                        <div class="step-header">处理结果</div>
+                        <div id="processing_result" style="margin-top: 15px;">
+                            <div class="info">请先上传图片和输入说明书内容，然后点击开始处理按钮。</div>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-header">标注后的附图</div>
+                        <div id="annotated_drawings_container" style="margin-top: 15px; max-height: 500px; overflow-y: auto;">
+                            <div class="info">处理完成后，标注后的附图将显示在此处。</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+<!-- 功能八：专利附图标记功能 -->
+<script>
+// 专利附图标记功能数据存储
+let uploadedDrawings = [];
+
+// 初始化专利附图标记功能
+function initDrawingMarker() {
+    // 图片上传输入框事件监听
+    const drawingUploadInput = document.getElementById('drawing_upload_input');
+    if (drawingUploadInput) {
+        drawingUploadInput.addEventListener('change', handleDrawingUpload);
+    }
+
+    // 图片粘贴区域事件监听
+    const drawingPasteArea = document.getElementById('drawing_paste_area');
+    if (drawingPasteArea) {
+        // 点击粘贴区域触发文件选择
+        drawingPasteArea.addEventListener('click', function() {
+            drawingUploadInput.click();
+        });
+
+        // 粘贴事件处理
+        drawingPasteArea.addEventListener('paste', handleDrawingPaste);
+    }
+
+    // 开始处理按钮事件监听
+    const startProcessingBtn = document.getElementById('start_processing_btn');
+    if (startProcessingBtn) {
+        startProcessingBtn.addEventListener('click', startProcessing);
+    }
+
+    // 清空所有按钮事件监听
+    const clearAllBtn = document.getElementById('clear_all_btn');
+    if (clearAllBtn) {
+        clearAllBtn.addEventListener('click', clearAllDrawings);
+    }
+}
+
+// 处理图片上传
+function handleDrawingUpload(event) {
+    const files = event.target.files;
+    if (files.length === 0) return;
+
+    // 处理每个上传的文件
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.type.startsWith('image/')) {
+            processImageFile(file);
+        } else {
+            alert(`文件 ${file.name} 不是图片格式，请上传图片文件。`);
+        }
+    }
+
+    // 清空文件输入，允许重复上传同一文件
+    event.target.value = '';
+}
+
+// 处理图片粘贴
+function handleDrawingPaste(event) {
+    const items = event.clipboardData.items;
+    if (!items) return;
+
+    // 查找粘贴的图片
+    for (let i = 0; i < items.length; i++) {
+        if (items[i].type.startsWith('image/')) {
+            const file = items[i].getAsFile();
+            processImageFile(file);
+            break;
+        }
+    }
+}
+
+// 处理图片文件
+function processImageFile(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const imageData = {
+            id: Date.now() + Math.random(),
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            dataUrl: e.target.result
+        };
+        
+        uploadedDrawings.push(imageData);
+        updateUploadedDrawingsList();
+    };
+    reader.readAsDataURL(file);
+}
+
+// 更新上传图片列表
+function updateUploadedDrawingsList() {
+    const listContainer = document.getElementById('uploaded_drawings_list');
+    if (!listContainer) return;
+
+    if (uploadedDrawings.length === 0) {
+        listContainer.innerHTML = '<div class="info">暂无上传的图片</div>';
+        return;
+    }
+
+    let html = '<div style="display: flex; flex-wrap: wrap; gap: 15px;">';
+    uploadedDrawings.forEach((drawing, index) => {
+        html += `
+            <div style="position: relative; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; width: 200px; background-color: white;">
+                <div style="margin-bottom: 10px; font-size: 0.8em; color: var(--text-color-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    ${drawing.name}
+                </div>
+                <img src="${drawing.dataUrl}" alt="${drawing.name}" style="width: 100%; height: 150px; object-fit: contain; border-radius: 4px; margin-bottom: 10px;">
+                <button onclick="removeDrawing(${index})" class="small-button delete-button" style="width: 100%;">删除</button>
+            </div>
+        `;
+    });
+    html += '</div>';
+    
+    listContainer.innerHTML = html;
+}
+
+// 删除单个图片
+function removeDrawing(index) {
+    uploadedDrawings.splice(index, 1);
+    updateUploadedDrawingsList();
+}
+
+// 清空所有图片
+function clearAllDrawings() {
+    uploadedDrawings = [];
+    updateUploadedDrawingsList();
+    
+    // 清空说明书输入
+    const specificationInput = document.getElementById('specification_input');
+    if (specificationInput) {
+        specificationInput.value = '';
+    }
+    
+    // 清空处理结果
+    const processingResult = document.getElementById('processing_result');
+    if (processingResult) {
+        processingResult.innerHTML = '<div class="info">请先上传图片和输入说明书内容，然后点击开始处理按钮。</div>';
+    }
+    
+    // 清空标注后的附图
+    const annotatedDrawingsContainer = document.getElementById('annotated_drawings_container');
+    if (annotatedDrawingsContainer) {
+        annotatedDrawingsContainer.innerHTML = '<div class="info">处理完成后，标注后的附图将显示在此处。</div>';
+    }
+    
+    // 清空处理状态
+    const processingStatus = document.getElementById('processing_status');
+    if (processingStatus) {
+        processingStatus.textContent = '';
+    }
+}
+
+// 开始处理
+function startProcessing() {
+    // 表单验证
+    if (uploadedDrawings.length === 0) {
+        alert('请先上传或粘贴专利附图。');
+        return;
+    }
+    
+    const specificationInput = document.getElementById('specification_input');
+    if (!specificationInput || specificationInput.value.trim() === '') {
+        alert('请输入说明书内容。');
+        return;
+    }
+    
+    // 更新处理状态
+    const processingStatus = document.getElementById('processing_status');
+    if (processingStatus) {
+        processingStatus.textContent = '正在处理...';
+    }
+    
+    // 准备数据
+    const processingData = {
+        drawings: uploadedDrawings.map(drawing => {
+            // 移除data URL前缀，只保留base64数据
+            const base64Data = drawing.dataUrl.split(',')[1];
+            return {
+                name: drawing.name,
+                type: drawing.type,
+                size: drawing.size,
+                data: base64Data
+            };
+        }),
+        specification: specificationInput.value.trim()
+    };
+    
+    // 调用后端API进行处理
+    fetch('/api/drawing-marker/process', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(processingData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.data) {
+            displayProcessingResult(data.data);
+        } else {
+            // 处理失败
+            const processingStatus = document.getElementById('processing_status');
+            if (processingStatus) {
+                processingStatus.textContent = '处理失败';
+            }
+            
+            const processingResult = document.getElementById('processing_result');
+            if (processingResult) {
+                processingResult.innerHTML = `
+                    <div style="padding: 15px; background-color: rgba(220, 53, 69, 0.1); border-radius: 8px; border: 1px solid rgba(220, 53, 69, 0.3);">
+                        <h4 style="color: var(--error-color); margin-bottom: 10px;">❌ 处理失败</h4>
+                        <p>${data.error || '未知错误'}</p>
+                    </div>
+                `;
+            }
+        }
+    })
+    .catch(error => {
+        console.error('处理失败:', error);
+        const processingStatus = document.getElementById('processing_status');
+        if (processingStatus) {
+            processingStatus.textContent = '处理失败';
+        }
+        
+        const processingResult = document.getElementById('processing_result');
+        if (processingResult) {
+            processingResult.innerHTML = `
+                <div style="padding: 15px; background-color: rgba(220, 53, 69, 0.1); border-radius: 8px; border: 1px solid rgba(220, 53, 69, 0.3);">
+                    <h4 style="color: var(--error-color); margin-bottom: 10px;">❌ 处理失败</h4>
+                    <p>网络错误或服务器问题，请重试。</p>
+                </div>
+            `;
+        }
+    });
+}
+
+// 模拟处理结果（实际项目中替换为真实API调用）
+// 显示处理结果
+function displayProcessingResult(data) {
+    // 更新处理状态
+    const processingStatus = document.getElementById('processing_status');
+    if (processingStatus) {
+        processingStatus.textContent = '处理完成';
+    }
+    
+    // 更新处理结果
+    const processingResult = document.getElementById('processing_result');
+    if (processingResult) {
+        processingResult.innerHTML = `
+            <div style="padding: 15px; background-color: rgba(40, 167, 69, 0.1); border-radius: 8px; border: 1px solid rgba(40, 167, 69, 0.3);">
+                <h4 style="color: var(--success-color); margin-bottom: 10px;">✅ 处理成功</h4>
+                <p>已识别 ${uploadedDrawings.length} 张附图中的数字序号，并与说明书中的附图标记对应。</p>
+                <p>共识别出 <strong>23</strong> 个数字序号，匹配率 <strong>95%</strong>。</p>
+            </div>
+        `;
+    }
+    
+    // 更新标注后的附图
+    const annotatedDrawingsContainer = document.getElementById('annotated_drawings_container');
+    if (annotatedDrawingsContainer) {
+        let html = '<div style="display: flex; flex-wrap: wrap; gap: 15px;">';
+        uploadedDrawings.forEach((drawing, index) => {
+            html += `
+                <div style="position: relative; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; width: 300px; background-color: white;">
+                    <div style="margin-bottom: 10px; font-size: 0.8em; color: var(--text-color-secondary);">
+                        标注后的附图 ${index + 1}: ${drawing.name}
+                    </div>
+                    <div style="position: relative; width: 100%; height: 250px;">
+                        <img src="${drawing.dataUrl}" alt="标注后的附图 ${index + 1}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 4px;">
+                        <!-- 模拟标注点 -->
+                        <div style="position: absolute; top: 20%; left: 30%; width: 20px; height: 20px; background-color: rgba(255, 0, 0, 0.7); border: 2px solid white; border-radius: 50%; cursor: pointer;" title="1: 底座"></div>
+                        <div style="position: absolute; top: 50%; left: 60%; width: 20px; height: 20px; background-color: rgba(255, 0, 0, 0.7); border: 2px solid white; border-radius: 50%; cursor: pointer;" title="2: 旋转臂"></div>
+                        <div style="position: absolute; top: 70%; left: 40%; width: 20px; height: 20px; background-color: rgba(255, 0, 0, 0.7); border: 2px solid white; border-radius: 50%; cursor: pointer;" title="3: 连接组件"></div>
+                    </div>
+                    <div style="margin-top: 10px; font-size: 0.8em;">
+                        <strong>标注说明:</strong> 点击红色圆点查看详细部件名称
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        annotatedDrawingsContainer.innerHTML = html;
+    }
+}
+
+// 显示处理结果
+function displayProcessingResult(data) {
+    // 更新处理状态
+    const processingStatus = document.getElementById('processing_status');
+    if (processingStatus) {
+        processingStatus.textContent = '处理完成';
+    }
+    
+    // 更新处理结果
+    const processingResult = document.getElementById('processing_result');
+    if (processingResult) {
+        processingResult.innerHTML = `
+            <div style="padding: 15px; background-color: rgba(40, 167, 69, 0.1); border-radius: 8px; border: 1px solid rgba(40, 167, 69, 0.3);">
+                <h4 style="color: var(--success-color); margin-bottom: 10px;">✅ 处理成功</h4>
+                <p>已识别 ${data.drawings.length} 张附图中的数字序号，并与说明书中的附图标记对应。</p>
+                <p>共识别出 <strong>${data.total_numbers}</strong> 个数字序号，匹配率 <strong>${data.match_rate}%</strong>。</p>
+            </div>
+        `;
+    }
+    
+    // 更新标注后的附图
+    const annotatedDrawingsContainer = document.getElementById('annotated_drawings_container');
+    if (annotatedDrawingsContainer) {
+        let html = '<div style="display: flex; flex-wrap: wrap; gap: 15px;">';
+        
+        // 遍历处理后的结果
+        data.drawings.forEach((processedDrawing, index) => {
+            // 查找原始图片数据
+            const originalDrawing = uploadedDrawings.find(d => d.name === processedDrawing.name);
+            if (!originalDrawing) return;
+            
+            html += `
+                <div style="position: relative; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; width: 300px; background-color: white;">
+                    <div style="margin-bottom: 10px; font-size: 0.8em; color: var(--text-color-secondary);">
+                        标注后的附图 ${index + 1}: ${processedDrawing.name}
+                        <span style="margin-left: 10px; color: var(--success-color); font-weight: bold;">(${processedDrawing.detected_numbers.length}个标记)</span>
+                    </div>
+                    <div style="position: relative; width: 100%; height: 250px; overflow: hidden; border-radius: 4px;">
+                        <img id="annotated_img_${index}" src="${originalDrawing.dataUrl}" alt="标注后的附图 ${index + 1}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 4px;">
+                        <canvas id="drawing_canvas_${index}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
+                        <div id="annotation_areas_${index}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: all;"></div>
+                    </div>
+                    <div style="margin-top: 10px; font-size: 0.8em;">
+                        <strong>标注说明:</strong> 鼠标悬停在红色圆点上查看详细部件名称
+                    </div>
+                </div>
+                <script>
+                (function() {
+                    const img = document.getElementById('annotated_img_${index}');
+                    const canvas = document.getElementById('drawing_canvas_${index}');
+                    const ctx = canvas.getContext('2d');
+                    const annotationAreas = document.getElementById('annotation_areas_${index}');
+                    
+                    // 检测到的数字数据
+                    const detectedNumbers = ${JSON.stringify(processedDrawing.detected_numbers)};
+                    
+                    // 绘制标注
+                    function drawAnnotations() {
+                        // 设置canvas大小与图片实际显示大小一致
+                        canvas.width = img.clientWidth;
+                        canvas.height = img.clientHeight;
+                        
+                        // 清空canvas
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        
+                        // 计算缩放比例
+                        const scaleX = img.clientWidth / img.naturalWidth;
+                        const scaleY = img.clientHeight / img.naturalHeight;
+                        
+                        // 绘制所有标注点
+                        detectedNumbers.forEach(numData => {
+                            const x = numData.x * scaleX;
+                            const y = numData.y * scaleY;
+                            
+                            // 绘制红色圆点
+                            ctx.beginPath();
+                            ctx.arc(x, y, 10, 0, 2 * Math.PI);
+                            ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
+                            ctx.fill();
+                            ctx.strokeStyle = 'white';
+                            ctx.lineWidth = 2;
+                            ctx.stroke();
+                            
+                            // 绘制数字
+                            ctx.font = 'bold 12px Arial';
+                            ctx.fillStyle = 'white';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText(numData.number, x, y);
+                        });
+                        
+                        // 更新交互区域
+                        updateAnnotationAreas();
+                    }
+                    
+                    // 更新交互区域
+                    function updateAnnotationAreas() {
+                        // 清空现有交互区域
+                        annotationAreas.innerHTML = '';
+                        
+                        // 计算缩放比例
+                        const scaleX = img.clientWidth / img.naturalWidth;
+                        const scaleY = img.clientHeight / img.naturalHeight;
+                        
+                        // 添加交互区域
+                        detectedNumbers.forEach(numData => {
+                            const x = numData.x * scaleX;
+                            const y = numData.y * scaleY;
+                            
+                            // 创建交互区域
+                            const area = document.createElement('div');
+                            area.style.position = 'absolute';
+                            area.style.left = `${x - 15}px`;
+                            area.style.top = `${y - 15}px`;
+                            area.style.width = '30px';
+                            area.style.height = '30px';
+                            area.style.cursor = 'pointer';
+                            area.title = `${numData.number}: ${numData.name}`;
+                            
+                            // 添加鼠标事件
+                            area.addEventListener('mouseover', (e) => {
+                                showAnnotationDetails(e, '${numData.number}', '${numData.name}');
+                            });
+                            area.addEventListener('mouseout', hideAnnotationDetails);
+                            
+                            annotationAreas.appendChild(area);
+                        });
+                    }
+                    
+                    // 图片加载完成后绘制
+                    if (img.complete) {
+                        drawAnnotations();
+                    } else {
+                        img.onload = drawAnnotations;
+                    }
+                    
+                    // 窗口大小变化时重新绘制
+                    window.addEventListener('resize', drawAnnotations);
+                })();
+                </script>
+            `;
+        });
+        
+        html += '</div>';
+        annotatedDrawingsContainer.innerHTML = html;
+    }
+}
+
+// 显示标注详情
+function showAnnotationDetails(event, number, name) {
+    // 检查是否已经存在详情框
+    let detailsBox = document.getElementById('annotation_details_box');
+    if (!detailsBox) {
+        detailsBox = document.createElement('div');
+        detailsBox.id = 'annotation_details_box';
+        detailsBox.style.cssText = `
+            position: fixed;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 14px;
+            z-index: 1000;
+            pointer-events: none;
+            white-space: nowrap;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        `;
+        document.body.appendChild(detailsBox);
+    }
+    
+    detailsBox.textContent = `${number}: ${name}`;
+    detailsBox.style.left = `${event.clientX + 15}px`;
+    detailsBox.style.top = `${event.clientY - 10}px`;
+    detailsBox.style.display = 'block';
+}
+
+// 隐藏标注详情
+function hideAnnotationDetails() {
+    const detailsBox = document.getElementById('annotation_details_box');
+    if (detailsBox) {
+        detailsBox.style.display = 'none';
+    }
+}
+
+// 页面加载完成后初始化
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initDrawingMarker);
+} else {
+    initDrawingMarker();
+}
+</script>
 
 <!-- 新增：专利附图展示和按需爬取功能 -->
 <script>

@@ -25,3 +25,8 @@ openpyxl>=3.0.0
 
 # Language Detection
 langdetect>=1.0.9
+
+# OCR and Image Processing
+pytesseract>=0.3.10
+opencv-python>=4.9.0.80
+Pillow>=10.2.0
