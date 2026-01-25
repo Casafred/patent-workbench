@@ -84,3 +84,19 @@ docs/USER_MANAGEMENT_QUICK_REFERENCE.md
 *.tmp
 tmp/
 temp/
+
+# Certificates and private keys
+*.key
+*.pem
+*.pfx
+*.p12
+*.cer
+*.crt
+*.csr
+
+# Certificate directories
+certificates/
+certs/
+ssl/
+nginx_config/
+23127280_ipx.asia_nginx/
