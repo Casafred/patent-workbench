@@ -557,12 +557,21 @@ async function handleStreamChatRequest() {
         
         const reader = await apiCall('/stream_chat', requestPayload, 'POST', true);
         const decoder = new TextDecoder();
+        let buffer = '';
         while (true) {
             const { value, done } = await reader.read();
+            if (value) {
+                buffer += decoder.decode(value, { stream: !done });
+            }
             if (done) break;
-            const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk.split('\n\n').filter(line => line.startsWith('data: '));
+            
+            // 处理所有完整的行
+            let lines = buffer.split('\n\n');
+            // 保留最后一个不完整的行到buffer
+            buffer = lines.pop() || '';
+            
             for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
                 const data = line.substring(6);
                 if (data === '[DONE]') continue;
                 try {
@@ -652,6 +661,30 @@ async function handleStreamChatRequest() {
                         fullResponse += delta;
                         assistantContentEl.innerHTML = window.marked.parse(fullResponse + '<span class="blinking-cursor">|</span>', { gfm: true, breaks: true });
                         chatWindow.scrollTop = chatWindow.scrollHeight;
+                    }
+                } catch(e) { /* 忽略流解析错误 */ }
+            }
+        }
+        
+        // 处理最后一个不完整的行（如果有）
+        if (buffer.startsWith('data: ')) {
+            const data = buffer.substring(6);
+            if (data !== '[DONE]') {
+                try {
+                    const parsed = JSON.parse(data);
+                    if (parsed.error) throw new Error(parsed.error.message || JSON.stringify(parsed.error));
+                    if (parsed.usage) usageInfo = parsed.usage;
+                    
+                    const delta = parsed.choices[0]?.delta?.content || "";
+                    if (delta) {
+                        if (!contentStarted) {
+                            contentStarted = true;
+                            isSearching = false;
+                            assistantContentEl.innerHTML = '';
+                            fullResponse = '';
+                        }
+                        
+                        fullResponse += delta;
                     }
                 } catch(e) { /* 忽略流解析错误 */ }
             }
