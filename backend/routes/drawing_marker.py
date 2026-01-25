@@ -134,6 +134,28 @@ def process_drawing_marker():
         print(f"[DEBUG] 从说明书中提取到 {len(reference_map)} 个附图标记")
         print(f"[DEBUG] 附图标记映射: {reference_map}")
         
+        # 添加调试信息，显示说明书解析的详细结果
+        debug_info = {
+            'tesseract_available': False,
+            'specification_parsing': {
+                'input': specification[:100] + ("..." if len(specification) > 100 else ""),
+                'reference_count': len(reference_map),
+                'reference_map': reference_map
+            },
+            'image_processing': [],
+            'ocr_results': []
+        }
+        
+        # 测试Tesseract是否可用
+        try:
+            tesseract_version = pytesseract.get_tesseract_version()
+            debug_info['tesseract_available'] = True
+            debug_info['tesseract_version'] = str(tesseract_version)
+            print(f"[DEBUG] Tesseract版本: {tesseract_version}")
+        except Exception as e:
+            print(f"[DEBUG] Tesseract不可用: {str(e)}")
+            debug_info['tesseract_error'] = str(e)
+        
         # 2. 处理每张图片
         for drawing in drawings:
             try:
@@ -162,27 +184,62 @@ def process_drawing_marker():
                 # 收集所有方法的OCR结果
                 all_detected_numbers = []
                 
-                # 配置Tesseract - 只识别数字和字母
-                custom_config = r'--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                # 添加更多的图像预处理方法
+                # 方法4: 高斯模糊 + 自适应阈值（适合噪点较多的图像）
+                blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+                blurred_adaptive = cv2.adaptiveThreshold(
+                    blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                    cv2.THRESH_BINARY, 11, 2
+                )
                 
-                # 对每种预处理方法进行OCR
-                for processed_img in [gray, adaptive_thresh, otsu_thresh, simple_thresh]:
-                    try:
-                        ocr_result = pytesseract.image_to_data(
-                            processed_img, 
-                            output_type=pytesseract.Output.DICT, 
-                            config=custom_config
-                        )
-                        
-                        # 提取识别结果
-                        for i in range(len(ocr_result['text'])):
-                            text = ocr_result['text'][i].strip()
-                            conf = int(ocr_result['conf'][i])
+                # 方法5: 反转阈值（适合深色背景的图像）
+                _, inverted_thresh = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
+                
+                # 方法6: 形态学操作（膨胀+腐蚀，适合连接断开的字符）
+                kernel = np.ones((3, 3), np.uint8)
+                dilated = cv2.dilate(adaptive_thresh, kernel, iterations=1)
+                eroded = cv2.erode(dilated, kernel, iterations=1)
+                
+                # 配置Tesseract - 只识别数字和字母
+                # 尝试多种PSM（Page Segmentation Mode）设置
+                custom_configs = [
+                    r'--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ',  # 块文本
+                    r'--oem 3 --psm 8 -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ',  # 单个字符
+                    r'--oem 3 --psm 10 -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'  # 单个字符，假设很小的旋转
+                ]
+                
+                # 预处理方法列表，包含名称和处理后的图像
+                preprocessing_methods = [
+                    ('灰度图', gray),
+                    ('自适应阈值', adaptive_thresh),
+                    ('Otsu二值化', otsu_thresh),
+                    ('简单阈值', simple_thresh),
+                    ('高斯模糊+自适应阈值', blurred_adaptive),
+                    ('反转阈值', inverted_thresh),
+                    ('形态学操作', eroded)
+                ]
+                
+                # 记录每种预处理方法的OCR结果
+                preprocessing_results = []
+                
+                # 对每种预处理方法和配置组合进行OCR
+                for config in custom_configs:
+                    for method_name, processed_img in preprocessing_methods:
+                        try:
+                            ocr_result = pytesseract.image_to_data(
+                                processed_img, 
+                                output_type=pytesseract.Output.DICT, 
+                                config=config
+                            )
                             
-                            # 只保留置信度大于50的结果，且文本不为空
-                            if text and conf > 50:
-                                # 检查是否匹配数字或数字+字母的模式
-                                if re.match(r'^[0-9]+[A-Z]*$', text):
+                            # 提取识别结果
+                            method_detected = []
+                            for i in range(len(ocr_result['text'])):
+                                text = ocr_result['text'][i].strip()
+                                conf = int(ocr_result['conf'][i])
+                                
+                                # 放宽置信度阈值，记录更多结果用于调试
+                                if text:
                                     x = ocr_result['left'][i]
                                     y = ocr_result['top'][i]
                                     w = ocr_result['width'][i]
@@ -192,38 +249,72 @@ def process_drawing_marker():
                                     center_x = x + w // 2
                                     center_y = y + h // 2
                                     
+                                    method_detected.append({
+                                        'text': text,
+                                        'confidence': conf,
+                                        'x': x,
+                                        'y': y,
+                                        'width': w,
+                                        'height': h,
+                                        'center_x': center_x,
+                                        'center_y': center_y
+                                    })
+                            
+                            # 记录该方法的结果
+                            preprocessing_results.append({
+                                'method': method_name,
+                                'config': config,
+                                'detected_count': len([d for d in method_detected if re.match(r'^[0-9]+[A-Z]*$', d['text'])]),
+                                'all_results': method_detected[:10]  # 只记录前10个结果
+                            })
+                            
+                            # 提取匹配的数字或数字+字母结果，置信度大于30
+                            for det in method_detected:
+                                if re.match(r'^[0-9]+[A-Z]*$', det['text']) and det['confidence'] > 30:
                                     # 检查是否已经存在相同位置的识别结果（去重）
                                     is_duplicate = False
                                     for existing in all_detected_numbers:
-                                        if (abs(existing['x'] - center_x) < 20 and 
-                                            abs(existing['y'] - center_y) < 20 and
-                                            existing['number'] == text):
+                                        if (abs(existing['x'] - det['center_x']) < 20 and 
+                                            abs(existing['y'] - det['center_y']) < 20 and
+                                            existing['number'] == det['text']):
                                             # 如果新的置信度更高，替换
-                                            if conf > existing['confidence']:
-                                                existing['confidence'] = conf
-                                                existing['x'] = center_x
-                                                existing['y'] = center_y
-                                                existing['width'] = w
-                                                existing['height'] = h
+                                            if det['confidence'] > existing['confidence']:
+                                                existing['confidence'] = det['confidence']
+                                                existing['x'] = det['center_x']
+                                                existing['y'] = det['center_y']
+                                                existing['width'] = det['width']
+                                                existing['height'] = det['height']
                                             is_duplicate = True
                                             break
                                     
                                     if not is_duplicate:
                                         all_detected_numbers.append({
-                                            'number': text,
-                                            'x': center_x,
-                                            'y': center_y,
-                                            'width': w,
-                                            'height': h,
-                                            'confidence': conf
+                                            'number': det['text'],
+                                            'x': det['center_x'],
+                                            'y': det['center_y'],
+                                            'width': det['width'],
+                                            'height': det['height'],
+                                            'confidence': det['confidence'],
+                                            'method': method_name
                                         })
-                    except Exception as e:
-                        print(f"OCR processing error: {str(e)}")
-                        continue
+                        except Exception as e:
+                            print(f"[DEBUG] OCR处理错误 ({method_name}, {config}): {str(e)}")
+                            continue
+                
+                # 记录图像信息和OCR结果
+                image_info = {
+                    'name': drawing['name'],
+                    'width': img_cv.shape[1],
+                    'height': img_cv.shape[0],
+                    'preprocessing_results': preprocessing_results,
+                    'detected_numbers': all_detected_numbers,
+                    'detected_count': len(all_detected_numbers)
+                }
+                debug_info['image_processing'].append(image_info)
                 
                 print(f"[DEBUG] 图片 {drawing['name']} OCR识别到 {len(all_detected_numbers)} 个数字/标记")
                 for det in all_detected_numbers[:10]:  # 只打印前10个
-                    print(f"  - {det['number']} (置信度: {det['confidence']}%)")
+                    print(f"  - {det['number']} (置信度: {det['confidence']}%, 方法: {det['method']})")
                 
                 # 匹配识别结果与说明书中的附图标记
                 detected_numbers = []
@@ -277,13 +368,14 @@ def process_drawing_marker():
         if len(reference_map) > 0:
             match_rate = round((total_numbers / len(reference_map)) * 100, 2)
         
-        # 返回处理结果
+        # 返回处理结果，包含详细的调试信息
         return create_response(data={
             'drawings': processed_results,
             'reference_map': reference_map,
             'total_numbers': total_numbers,
             'match_rate': match_rate,
-            'message': f"成功处理 {len(drawings)} 张图片，识别出 {total_numbers} 个数字序号，匹配率 {match_rate}%"
+            'message': f"成功处理 {len(drawings)} 张图片，识别出 {total_numbers} 个数字序号，匹配率 {match_rate}%",
+            'debug_info': debug_info  # 添加详细的调试信息
         })
     
     except Exception as e:
