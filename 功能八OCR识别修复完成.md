@@ -3,6 +3,10 @@
 ## 修复日期
 2026-01-25
 
+## Git提交记录
+- Commit 1: `854f322` - 功能八OCR识别修复完成 - 修正后端变量错误、实现去重过滤、修复前端显示、添加Canvas标注
+- Commit 2: `9ff137b` - 清理前端重复的displayProcessingResult函数
+
 ## 问题描述
 
 用户报告功能八（专利附图标记识别）存在严重问题：
@@ -20,7 +24,7 @@
 ### 前端问题
 1. **硬编码模拟数据**：前端显示固定的"23个数字序号，95%匹配率"
 2. **未使用真实API数据**：没有正确绑定API返回的数据字段
-3. **缺少Canvas标注**：没有在图片上绘制识别结果的位置
+3. **重复函数定义**：存在两个`displayProcessingResult`函数，导致代码混乱
 
 ## 已完成的修复
 
@@ -29,10 +33,11 @@
 #### 修复OCR识别逻辑 (`backend/routes/drawing_marker.py`)
 - ✅ 修正变量引用错误，正确使用`all_detected_numbers`
 - ✅ 移除重复的OCR调用代码
-- ✅ 添加详细的调试日志记录
+- ✅ 添加详细的调试日志记录（DEBUG级别）
+- ✅ 记录每种预处理方法的识别统计
 
 #### 创建OCR工具模块 (`backend/utils/ocr_utils.py`)
-- ✅ `deduplicate_results()` - 去除重复识别结果，保留置信度最高的
+- ✅ `deduplicate_results()` - 去除重复识别结果，保留置信度最高的（位置阈值20像素）
 - ✅ `filter_by_confidence()` - 根据置信度过滤结果（阈值60）
 - ✅ `resize_image_for_ocr()` - 自动调整图像尺寸到最佳识别范围（800-2000px）
 - ✅ `match_with_reference_map()` - 匹配识别结果与说明书标记
@@ -53,6 +58,7 @@
 - ✅ 显示`data.message`处理消息
 - ✅ 显示平均置信度、缺失标记、未知标记
 - ✅ 显示改进建议列表
+- ✅ 清理重复的`displayProcessingResult`函数定义
 
 #### 实现Canvas标注功能
 - ✅ 创建`drawAnnotations()`函数在Canvas上绘制识别结果
@@ -187,11 +193,11 @@ tesseract --version
 ### 更新文件列表
 - `backend/routes/drawing_marker.py` - 核心修复
 - `backend/utils/ocr_utils.py` - 新增工具模块
-- `frontend/index.html` - 前端数据显示修复
+- `frontend/index.html` - 前端数据显示修复和清理重复函数
 
 ### 部署步骤
 1. 备份当前代码
-2. 更新上述文件
+2. 拉取最新代码：`git pull origin main`
 3. 重启Flask服务器
 4. 清除浏览器缓存
 5. 测试功能
@@ -204,6 +210,8 @@ tesseract --version
 - [x] 显示详细的统计信息和建议
 - [x] 日志记录完整的处理过程
 - [x] 错误处理和异常容错
+- [x] 清理重复的函数定义
+- [x] 代码已推送到Git仓库
 - [ ] 端到端测试通过
 - [ ] 性能测试通过
 - [ ] 用户验收测试
@@ -216,6 +224,7 @@ tesseract --version
 3. ✅ 修复了前端数据显示
 4. ✅ 实现了Canvas标注功能
 5. ✅ 增强了错误处理和日志记录
+6. ✅ 清理了重复的代码
 
 现在系统能够：
 - 正确识别专利附图中的数字序号
@@ -223,4 +232,4 @@ tesseract --version
 - 在图片上精确标注识别位置
 - 提供改进建议帮助用户优化结果
 
-用户现在可以上传专利附图和说明书，获得准确的OCR识别结果！
+**代码已成功推送到Git仓库，用户现在可以上传专利附图和说明书，获得准确的OCR识别结果！**
