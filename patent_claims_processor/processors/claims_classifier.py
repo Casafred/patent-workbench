@@ -18,7 +18,9 @@ class ClaimsClassifier(ClaimsClassifierInterface):
         self.reference_keywords = {
             'zh': [
                 '权利要求', '如权利要求', '根据权利要求', '按照权利要求',
-                '依据权利要求', '基于权利要求', '所述权利要求'
+                '依据权利要求', '基于权利要求', '所述权利要求',
+                '前述权利要求', '上述权利要求', '任一权利要求', '任意权利要求',
+                '之一所述权利要求', '所述的任一权利要求'
             ],
             'en': [
                 'claim', 'claims', 'according to claim', 'as claimed in',
