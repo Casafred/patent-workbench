@@ -323,9 +323,28 @@ class ProcessingService(ProcessingServiceInterface):
                             # 引用提取失败时，仍然标记为从属权利要求但引用为空
                             pass
                     
+                    # 处理特殊引用标记
+                    resolved_references = []
+                    for ref in referenced_claims:
+                        if ref == 'previous':
+                            # 向前引用：只引用当前权利要求之前的所有权利要求
+                            # 获取当前权利要求之前的所有序号
+                            for prev_num in claims_dict.keys():
+                                if prev_num < claim_number:
+                                    resolved_references.append(prev_num)
+                        elif ref == 'all':
+                            # 引用全部权利要求
+                            resolved_references.extend(claims_dict.keys())
+                        else:
+                            # 普通引用
+                            resolved_references.append(ref)
+                    
+                    # 去重并排序
+                    resolved_references = sorted(list(set(resolved_references)))
+                    
                     # 计算置信度分数
                     confidence_score = self._calculate_confidence_score(
-                        normalized_text, claim_type, referenced_claims
+                        normalized_text, claim_type, resolved_references
                     )
                     
                     claim_info = ClaimInfo(
@@ -333,7 +352,7 @@ class ProcessingService(ProcessingServiceInterface):
                         claim_type=claim_type,
                         claim_text=normalized_text,
                         language=claim_language,
-                        referenced_claims=referenced_claims,
+                        referenced_claims=resolved_references,
                         original_text=cleaned_text,  # 保存完整的原始文本
                         confidence_score=confidence_score,
                         patent_number=None,  # 在单元格处理阶段暂时为None，后续会在上层设置
