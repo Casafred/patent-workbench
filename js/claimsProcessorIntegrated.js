@@ -3103,11 +3103,40 @@ function parseClaimsText(text) {
         claims.push(currentClaim);
     }
     
+    // 按照权利要求号排序，确保处理引用关系时，前面的权利要求已经存在
+    claims.sort((a, b) => a.claim_number - b.claim_number);
+    
     // 分析引用关系
     claims.forEach(claim => {
-        const refs = extractClaimReferences(claim.full_text);
-        claim.referenced_claims = refs;
-        claim.claim_type = refs.length > 0 ? 'dependent' : 'independent';
+        let refs = extractClaimReferences(claim.full_text);
+        
+        // 处理特殊引用标记
+        const resolved_refs = [];
+        let has_all_prev = false;
+        
+        for (const ref of refs) {
+            if (ref === 'all_prev') {
+                has_all_prev = true;
+            } else {
+                resolved_refs.push(ref);
+            }
+        }
+        
+        // 如果有all_prev标记，添加当前权利要求之前的所有权利要求
+        if (has_all_prev) {
+            for (const prev_claim of claims) {
+                if (prev_claim.claim_number < claim.claim_number) {
+                    resolved_refs.push(prev_claim.claim_number);
+                }
+            }
+        }
+        
+        // 去重并排序
+        const unique_refs = [...new Set(resolved_refs)];
+        unique_refs.sort((a, b) => a - b);
+        
+        claim.referenced_claims = unique_refs;
+        claim.claim_type = unique_refs.length > 0 ? 'dependent' : 'independent';
         claim.language = 'zh'; // 简化处理
         claim.confidence_score = 0.95;
     });
