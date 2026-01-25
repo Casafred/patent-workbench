@@ -74,32 +74,18 @@ def stream_chat():
             
             # Add web search tools if enabled
             if req_data.get('enable_web_search'):
-                web_search_config = {
-                    "type": "web_search",
-                    "web_search": {
-                        "enable": True,  # 布尔值，不是字符串
-                        "search_engine": req_data.get('search_engine', 'search_pro'),
-                        "search_result": True,  # 布尔值，不是字符串
-                        "count": int(req_data.get('search_count', 5)),  # 整数，不是字符串，使用正确的参数名
-                        "content_size": req_data.get('content_size', 'medium')
-                    }
-                }
+                # 使用简化的web_search配置，只保留必要参数
+                request_params['enable_web_search'] = True
+                request_params['search_engine'] = req_data.get('search_engine', 'search_pro')
+                request_params['search_count'] = int(req_data.get('search_count', 5))
+                request_params['content_size'] = req_data.get('content_size', 'medium')
                 
-                # 添加可选参数
+                # 添加搜索提示词
                 if req_data.get('search_prompt'):
-                    web_search_config['web_search']['search_prompt'] = req_data.get('search_prompt')
-                
-                if req_data.get('search_domain_filter'):
-                    web_search_config['web_search']['search_domain_filter'] = req_data.get('search_domain_filter')
-                
-                if req_data.get('search_recency_filter'):
-                    web_search_config['web_search']['search_recency_filter'] = req_data.get('search_recency_filter')
-                
-                request_params['tools'] = [web_search_config]
-                request_params['tool_choice'] = 'auto'
+                    request_params['search_prompt'] = req_data.get('search_prompt')
                 
                 # 【调试信息】输出完整的搜索配置
-                print(f"🔍 [后端-联网搜索] 已启用！配置: {web_search_config}")
+                print(f"🔍 [后端-联网搜索] 已启用！配置: enable_web_search={request_params['enable_web_search']}, search_engine={request_params['search_engine']}, search_count={request_params['search_count']}, content_size={request_params['content_size']}")
             else:
                 print("🔍 [后端-联网搜索] 未启用，使用普通对话模式")
             
@@ -158,31 +144,16 @@ def simple_chat():
             'temperature': temperature
         }
         
-        # Add web search tools if enabled
+        # Add web search parameters if enabled
         if req_data.get('enable_web_search'):
-            web_search_config = {
-                "type": "web_search",
-                "web_search": {
-                    "enable": True,  # 布尔值，不是字符串
-                    "search_engine": req_data.get('search_engine', 'search_pro'),
-                    "search_result": True,  # 布尔值，不是字符串
-                    "count": int(req_data.get('search_count', 5)),  # 整数，不是字符串，使用正确的参数名
-                    "content_size": req_data.get('content_size', 'medium')
-                }
-            }
+            request_params['enable_web_search'] = True
+            request_params['search_engine'] = req_data.get('search_engine', 'search_pro')
+            request_params['search_count'] = int(req_data.get('search_count', 5))
+            request_params['content_size'] = req_data.get('content_size', 'medium')
             
-            # 添加可选参数
+            # 添加搜索提示词
             if req_data.get('search_prompt'):
-                web_search_config['web_search']['search_prompt'] = req_data.get('search_prompt')
-            
-            if req_data.get('search_domain_filter'):
-                web_search_config['web_search']['search_domain_filter'] = req_data.get('search_domain_filter')
-            
-            if req_data.get('search_recency_filter'):
-                web_search_config['web_search']['search_recency_filter'] = req_data.get('search_recency_filter')
-            
-            request_params['tools'] = [web_search_config]
-            request_params['tool_choice'] = 'auto'
+                request_params['search_prompt'] = req_data.get('search_prompt')
         
         response_from_sdk = client.chat.completions.create(**request_params)
         json_string = response_from_sdk.model_dump_json()
