@@ -3121,11 +3121,21 @@ function extractClaimReferences(text) {
     
     // 匹配各种引用格式
     const patterns = [
-        /根据权利要求\s*(\d+(?:\s*[-至或、和,]\s*\d+)*)/g,
-        /according\s+to\s+claim\s*(\d+(?:\s*[-or,and\s]+\d+)*)/gi,
-        /of\s+claim\s*(\d+(?:\s*[-or,and\s]+\d+)*)/gi,
+        // 中文引用格式
+        /根据(?:权利要求|前述权利要求|上述权利要求|前面的权利要求|前所述的权利要求|前权利要求)\s*(\d+(?:\s*[-至或、和,]\s*\d+)*)/g,
+        /如(?:权利要求|前述权利要求|上述权利要求|前面的权利要求|前所述的权利要求|前权利要求)\s*(\d+(?:\s*[-至或、和,]\s*\d+)*)/g,
+        /按照(?:权利要求|前述权利要求|上述权利要求|前面的权利要求|前所述的权利要求|前权利要求)\s*(\d+(?:\s*[-至或、和,]\s*\d+)*)/g,
+        /依据(?:权利要求|前述权利要求|上述权利要求|前面的权利要求|前所述的权利要求|前权利要求)\s*(\d+(?:\s*[-至或、和,]\s*\d+)*)/g,
+        /基于(?:权利要求|前述权利要求|上述权利要求|前面的权利要求|前所述的权利要求|前权利要求)\s*(\d+(?:\s*[-至或、和,]\s*\d+)*)/g,
+        // 英文引用格式
+        /according\s+to\s+(?:claim|preceding\s+claim|above\s+claim|aforementioned\s+claim|said\s+preceding\s+claim)\s*(\d+(?:\s*[-or,and\s]+\d+)*)/gi,
+        /of\s+(?:claim|preceding\s+claim|above\s+claim|aforementioned\s+claim|said\s+preceding\s+claim)\s*(\d+(?:\s*[-or,and\s]+\d+)*)/gi,
+        // 德语引用格式
+        /gemäß\s+(?:anspruch|vorstehender\s+anspruch|obiger\s+anspruch|vorgenannter\s+anspruch)\s*(\d+(?:\s*[-oder,und\s]+\d+)*)/gi,
+        // 日语引用格式
         /請求項\s*(\d+(?:\s*[-または、及び,]\s*\d+)*)/g,
-        /claim\s*(\d+(?:\s*[-or,and\s]+\d+)*)/gi
+        // 通用引用格式
+        /(?:claim|claims|anspruch|ansprüche)\s*(\d+(?:\s*[-or,and,oder,und,または、及び]\s*\d+)*)/gi
     ];
     
     patterns.forEach(pattern => {
@@ -3144,7 +3154,32 @@ function extractClaimReferences(text) {
         }
     });
     
-    return references.sort((a, b) => a - b);
+    // 特殊处理：如果没有找到数字引用，但包含向前引用关键词，认为引用了前面的所有权利要求
+    if (references.length === 0) {
+        // 检查是否包含向前引用关键词
+        const forwardReferenceKeywords = [
+            // 中文向前引用关键词
+            '前述', '上述', '前面', '前所述', '前',
+            // 英文向前引用关键词
+            'preceding', 'above', 'aforementioned', 'said preceding',
+            // 德向前引用关键词
+            'vorstehender', 'obiger', 'vorgenannter',
+            // 通用向前引用关键词
+            'aforementioned'
+        ];
+        
+        for (const keyword of forwardReferenceKeywords) {
+            const regex = new RegExp(keyword, 'i');
+            if (regex.test(text)) {
+                // 由于前端无法确定前面的具体权利要求，我们返回一个特殊标记
+                // 这个标记会在后续处理中被解释为引用前面的所有权利要求
+                references.push('all_prev');
+                break;
+            }
+        }
+    }
+    
+    return references;
 }
 
 // 显示文本分析结果
@@ -3267,17 +3302,39 @@ function createClaimsTextVizData() {
     claimsTextAnalyzedData.forEach(claim => {
         if (claim.referenced_claims && claim.referenced_claims.length > 0) {
             claim.referenced_claims.forEach(ref => {
-                const source_id = `claim_${ref}`;
-                const target_id = `claim_${claim.claim_number}`;
-                const link_key = `${source_id}_${target_id}`;
-                
-                if (!links_set.has(link_key) && nodes_map[source_id]) {
-                    links.push({
-                        source: source_id,
-                        target: target_id,
-                        type: 'dependency'
+                if (ref === 'all_prev') {
+                    // 特殊处理：引用前面的所有权利要求
+                    // 遍历当前权利要求之前的所有权利要求
+                    claimsTextAnalyzedData.forEach(prev_claim => {
+                        if (prev_claim.claim_number < claim.claim_number) {
+                            const source_id = `claim_${prev_claim.claim_number}`;
+                            const target_id = `claim_${claim.claim_number}`;
+                            const link_key = `${source_id}_${target_id}`;
+                            
+                            if (!links_set.has(link_key) && nodes_map[source_id]) {
+                                links.push({
+                                    source: source_id,
+                                    target: target_id,
+                                    type: 'dependency'
+                                });
+                                links_set.add(link_key);
+                            }
+                        }
                     });
-                    links_set.add(link_key);
+                } else {
+                    // 普通引用
+                    const source_id = `claim_${ref}`;
+                    const target_id = `claim_${claim.claim_number}`;
+                    const link_key = `${source_id}_${target_id}`;
+                    
+                    if (!links_set.has(link_key) && nodes_map[source_id]) {
+                        links.push({
+                            source: source_id,
+                            target: target_id,
+                            type: 'dependency'
+                        });
+                        links_set.add(link_key);
+                    }
                 }
             });
         }
