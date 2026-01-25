@@ -5,6 +5,12 @@ This is the refactored entry point for the application using the
 application factory pattern.
 """
 
+import sys
+import os
+
+# Add parent directory to path so Python can find the backend module
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from flask import Flask
 from backend.config import Config
 from backend.extensions import init_extensions

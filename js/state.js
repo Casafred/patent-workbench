@@ -9,7 +9,14 @@ const appState = {
         currentConversationId: null,
         isManagementMode: false,
         // ▼▼▼ 新增：存储当前对话附加的文件信息 ▼▼▼
-        activeFile: null // { fileId, filename, content }
+        activeFile: null, // { fileId, filename, content }
+        // ▼▼▼ 新增：联网搜索配置 ▼▼▼
+        searchMode: {
+            enabled: false,
+            searchEngine: 'search_pro',
+            count: 5,
+            contentSize: 'medium'
+        }
         // ▲▲▲ 新增结束 ▲▲▲
     },
     asyncBatch: {

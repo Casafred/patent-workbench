@@ -80,7 +80,7 @@ def stream_chat():
                         "enable": True,  # 布尔值，不是字符串
                         "search_engine": req_data.get('search_engine', 'search_pro'),
                         "search_result": True,  # 布尔值，不是字符串
-                        "count": int(req_data.get('count', 5)),  # 整数，不是字符串
+                        "count": int(req_data.get('search_count', 5)),  # 整数，不是字符串，使用正确的参数名
                         "content_size": req_data.get('content_size', 'medium')
                     }
                 }
@@ -166,7 +166,7 @@ def simple_chat():
                     "enable": True,  # 布尔值，不是字符串
                     "search_engine": req_data.get('search_engine', 'search_pro'),
                     "search_result": True,  # 布尔值，不是字符串
-                    "count": int(req_data.get('count', 5)),  # 整数，不是字符串
+                    "count": int(req_data.get('search_count', 5)),  # 整数，不是字符串，使用正确的参数名
                     "content_size": req_data.get('content_size', 'medium')
                 }
             }

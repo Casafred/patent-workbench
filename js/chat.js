@@ -528,7 +528,7 @@ async function handleStreamChatRequest() {
         if (appState.chat.searchMode.enabled) {
             requestPayload.enable_web_search = true;
             requestPayload.search_engine = appState.chat.searchMode.searchEngine;
-            requestPayload.count = appState.chat.searchMode.count;
+            requestPayload.search_count = appState.chat.searchMode.count;
             requestPayload.content_size = appState.chat.searchMode.contentSize;
             
             // 添加搜索提示词，指导AI如何使用搜索结果
@@ -538,7 +538,7 @@ async function handleStreamChatRequest() {
             console.log('🔍 [联网搜索] 已启用！请求参数:', {
                 enable_web_search: requestPayload.enable_web_search,
                 search_engine: requestPayload.search_engine,
-                count: requestPayload.count,
+                search_count: requestPayload.search_count,
                 content_size: requestPayload.content_size,
                 search_prompt: requestPayload.search_prompt
             });
