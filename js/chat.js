@@ -1228,8 +1228,33 @@ async function exportChatHistory(format = 'txt') {
 
 function copyMessage(buttonElement) {
     const contentDiv = buttonElement.closest('.message-body').querySelector('.message-content');
+    
+    // 创建一个临时元素来处理复制内容，确保包含列表序号
+    const tempElement = document.createElement('div');
+    tempElement.innerHTML = contentDiv.innerHTML;
+    
+    // 处理有序列表，确保复制时包含序号
+    const olElements = tempElement.querySelectorAll('ol');
+    olElements.forEach(ol => {
+        const liElements = ol.querySelectorAll('li');
+        liElements.forEach((li, index) => {
+            // 检查li是否已经有内容（防止重复添加）
+            if (li.firstChild && li.firstChild.nodeType === 3) {
+                // 如果第一个子节点是文本节点，在前面添加序号
+                const textNode = li.firstChild;
+                const numberText = `${index + 1}. `;
+                li.insertBefore(document.createTextNode(numberText), textNode);
+            } else {
+                // 否则在最前面添加序号
+                li.insertBefore(document.createTextNode(`${index + 1}. `), li.firstChild);
+            }
+        });
+    });
+    
+    const copyText = tempElement.innerText;
     const originalContent = buttonElement.innerHTML;
-    navigator.clipboard.writeText(contentDiv.innerText).then(() => {
+    
+    navigator.clipboard.writeText(copyText).then(() => {
         buttonElement.innerHTML = '✓';
         buttonElement.title = '已复制!';
         setTimeout(() => {
