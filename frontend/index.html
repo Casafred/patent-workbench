@@ -1733,18 +1733,18 @@ function displayProcessingResult(data) {
             if (!originalDrawing) return;
             
             html += `
-                <div style="position: relative; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; width: 300px; background-color: white;">
+                <div style="position: relative; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; min-width: 400px; background-color: white;">
                     <div style="margin-bottom: 10px; font-size: 0.8em; color: var(--text-color-secondary);">
                         标注后的附图 ${index + 1}: ${processedDrawing.name}
                         <span style="margin-left: 10px; color: var(--success-color); font-weight: bold;">(${processedDrawing.detected_numbers.length}个标记)</span>
                     </div>
-                    <div style="position: relative; width: 100%; height: 250px; overflow: hidden; border-radius: 4px;">
-                        <img id="annotated_img_${index}" src="${originalDrawing.dataUrl}" alt="标注后的附图 ${index + 1}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 4px;">
+                    <div style="position: relative; width: 100%; min-height: 400px; overflow: visible; border-radius: 4px; background-color: #f5f5f5;">
+                        <img id="annotated_img_${index}" src="${originalDrawing.dataUrl}" alt="标注后的附图 ${index + 1}" style="width: 100%; height: auto; object-fit: contain; border-radius: 4px;">
                         <canvas id="drawing_canvas_${index}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
-                        <div id="annotation_areas_${index}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: all;"></div>
+                        <div id="annotation_container_${index}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></div>
                     </div>
                     <div style="margin-top: 10px; font-size: 0.8em;">
-                        <strong>标注说明:</strong> 鼠标悬停在红色圆点上查看详细部件名称
+                        <strong>操作说明:</strong> 拖拽标注框可移动位置，点击编辑按钮可修改名称，点击删除按钮可移除标注
                     </div>
                 </div>
                 <script>
@@ -1752,93 +1752,213 @@ function displayProcessingResult(data) {
                     const img = document.getElementById('annotated_img_${index}');
                     const canvas = document.getElementById('drawing_canvas_${index}');
                     const ctx = canvas.getContext('2d');
-                    const annotationAreas = document.getElementById('annotation_areas_${index}');
-                    
-                    // 检测到的数字数据
-                    const detectedNumbers = ${JSON.stringify(processedDrawing.detected_numbers)};
-                    
-                    // 绘制标注
-                    function drawAnnotations() {
-                        // 设置canvas大小与图片实际显示大小一致
+                    const annotationContainer = document.getElementById('annotation_container_${index}');
+
+                    // 检测到的数字数据（添加标注框位置信息）
+                    const annotations = ${JSON.stringify(processedDrawing.detected_numbers)}.map((item, idx) => ({
+                        ...item,
+                        id: 'annotation_' + ${index} + '_' + idx,
+                        labelX: null, // 标注框位置将自动计算
+                        labelY: null
+                    }));
+
+                    // 绘制所有内容
+                    function draw() {
+                        if (!img.naturalWidth) return;
+
+                        // 设置canvas大小
                         canvas.width = img.clientWidth;
                         canvas.height = img.clientHeight;
-                        
-                        // 清空canvas
                         ctx.clearRect(0, 0, canvas.width, canvas.height);
-                        
+
                         // 计算缩放比例
                         const scaleX = img.clientWidth / img.naturalWidth;
                         const scaleY = img.clientHeight / img.naturalHeight;
-                        
-                        // 绘制所有标注点
-                        detectedNumbers.forEach(numData => {
-                            const x = numData.x * scaleX;
-                            const y = numData.y * scaleY;
-                            
-                            // 绘制红色圆点
+
+                        annotations.forEach(annotation => {
+                            const dotX = annotation.x * scaleX;
+                            const dotY = annotation.y * scaleY;
+
+                            // 绘制标记点
                             ctx.beginPath();
-                            ctx.arc(x, y, 10, 0, 2 * Math.PI);
-                            ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
+                            ctx.arc(dotX, dotY, 8, 0, 2 * Math.PI);
+                            ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
                             ctx.fill();
                             ctx.strokeStyle = 'white';
                             ctx.lineWidth = 2;
                             ctx.stroke();
-                            
+
                             // 绘制数字
-                            ctx.font = 'bold 12px Arial';
+                            ctx.font = 'bold 11px Arial';
                             ctx.fillStyle = 'white';
                             ctx.textAlign = 'center';
                             ctx.textBaseline = 'middle';
-                            ctx.fillText(numData.number, x, y);
+                            ctx.fillText(annotation.number, dotX, dotY);
+
+                            // 如果标注框存在，绘制连接线
+                            const labelEl = document.getElementById(annotation.id);
+                            if (labelEl) {
+                                const labelRect = labelEl.getBoundingClientRect();
+                                const containerRect = annotationContainer.getBoundingClientRect();
+                                const labelCenterX = labelRect.left + labelRect.width / 2 - containerRect.left;
+                                const labelCenterY = labelRect.top + labelRect.height / 2 - containerRect.top;
+
+                                // 绘制连接线
+                                ctx.beginPath();
+                                ctx.moveTo(dotX, dotY);
+                                ctx.lineTo(labelCenterX, labelCenterY);
+                                ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+                                ctx.lineWidth = 1;
+                                ctx.setLineDash([3, 3]);
+                                ctx.stroke();
+                                ctx.setLineDash([]);
+                            }
                         });
-                        
-                        // 更新交互区域
-                        updateAnnotationAreas();
                     }
-                    
-                    // 更新交互区域
-                    function updateAnnotationAreas() {
-                        // 清空现有交互区域
-                        annotationAreas.innerHTML = '';
-                        
-                        // 计算缩放比例
+
+                    // 创建标注框
+                    function createAnnotationLabels() {
+                        annotationContainer.innerHTML = '';
+
                         const scaleX = img.clientWidth / img.naturalWidth;
                         const scaleY = img.clientHeight / img.naturalHeight;
-                        
-                        // 添加交互区域
-                        detectedNumbers.forEach(numData => {
-                            const x = numData.x * scaleX;
-                            const y = numData.y * scaleY;
-                            
-                            // 创建交互区域
-                            const area = document.createElement('div');
-                            area.style.position = 'absolute';
-                            area.style.left = `${x - 15}px`;
-                            area.style.top = `${y - 15}px`;
-                            area.style.width = '30px';
-                            area.style.height = '30px';
-                            area.style.cursor = 'pointer';
-                            area.title = `${numData.number}: ${numData.name}`;
-                            
-                            // 添加鼠标事件
-                            area.addEventListener('mouseover', (e) => {
-                                showAnnotationDetails(e, '${numData.number}', '${numData.name}');
+
+                        annotations.forEach((annotation, idx) => {
+                            const dotX = annotation.x * scaleX;
+                            const dotY = annotation.y * scaleY;
+
+                            // 自动计算标注框位置（避免遮挡）
+                            if (annotation.labelX === null) {
+                                // 尝试放在右侧
+                                annotation.labelX = dotX + 40;
+                                annotation.labelY = dotY - 20;
+
+                                // 如果超出右边界，放在左侧
+                                if (annotation.labelX + 150 > img.clientWidth) {
+                                    annotation.labelX = dotX - 190;
+                                }
+
+                                // 如果超出上边界
+                                if (annotation.labelY < 0) {
+                                    annotation.labelY = 5;
+                                }
+
+                                // 如果超出下边界
+                                if (annotation.labelY + 60 > img.clientHeight) {
+                                    annotation.labelY = img.clientHeight - 65;
+                                }
+                            }
+
+                            // 创建标注框
+                            const label = document.createElement('div');
+                            label.id = annotation.id;
+                            label.style.cssText = \`
+                                position: absolute;
+                                left: \${annotation.labelX}px;
+                                top: \${annotation.labelY}px;
+                                background: rgba(255, 255, 255, 0.95);
+                                border: 2px solid #007bff;
+                                border-radius: 6px;
+                                padding: 8px 10px;
+                                min-width: 150px;
+                                cursor: move;
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                                font-size: 12px;
+                                z-index: 10;
+                            \`;
+
+                            label.innerHTML = \`
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                    <strong style="color: #dc3545; font-size: 14px;">\${annotation.number}</strong>
+                                    <div>
+                                        <button onclick="editAnnotation_${index}(\${idx})" style="background: none; border: none; cursor: pointer; padding: 2px 4px; color: #007bff; font-size: 12px;" title="编辑">✏️</button>
+                                        <button onclick="deleteAnnotation_${index}(\${idx})" style="background: none; border: none; cursor: pointer; padding: 2px 4px; color: #dc3545; font-size: 12px;" title="删除">🗑️</button>
+                                    </div>
+                                </div>
+                                <div style="color: #333; word-break: break-word;">\${annotation.name || '未命名'}</div>
+                            \`;
+
+                            // 实现拖拽功能
+                            let isDragging = false;
+                            let startX, startY, initialLeft, initialTop;
+
+                            label.addEventListener('mousedown', (e) => {
+                                isDragging = true;
+                                startX = e.clientX;
+                                startY = e.clientY;
+                                initialLeft = annotation.labelX;
+                                initialTop = annotation.labelY;
+                                label.style.cursor = 'grabbing';
+                                e.preventDefault();
                             });
-                            area.addEventListener('mouseout', hideAnnotationDetails);
-                            
-                            annotationAreas.appendChild(area);
+
+                            document.addEventListener('mousemove', (e) => {
+                                if (!isDragging) return;
+
+                                const dx = e.clientX - startX;
+                                const dy = e.clientY - startY;
+                                annotation.labelX = initialLeft + dx;
+                                annotation.labelY = initialTop + dy;
+
+                                label.style.left = annotation.labelX + 'px';
+                                label.style.top = annotation.labelY + 'px';
+
+                                draw(); // 重绘连接线
+                            });
+
+                            document.addEventListener('mouseup', () => {
+                                if (isDragging) {
+                                    isDragging = false;
+                                    label.style.cursor = 'move';
+                                }
+                            });
+
+                            annotationContainer.appendChild(label);
                         });
+
+                        draw();
                     }
-                    
-                    // 图片加载完成后绘制
-                    if (img.complete) {
-                        drawAnnotations();
-                    } else {
-                        img.onload = drawAnnotations;
+
+                    // 编辑标注
+                    window['editAnnotation_${index}'] = function(idx) {
+                        const annotation = annotations[idx];
+                        const newName = prompt('编辑标注名称:', annotation.name);
+                        if (newName !== null && newName.trim() !== '') {
+                            annotation.name = newName.trim();
+                            createAnnotationLabels();
+                        }
+                    };
+
+                    // 删除标注
+                    window['deleteAnnotation_${index}'] = function(idx) {
+                        if (confirm('确定要删除这个标注吗？')) {
+                            annotations.splice(idx, 1);
+                            createAnnotationLabels();
+                        }
+                    };
+
+                    // 初始化
+                    function init() {
+                        if (img.complete && img.naturalWidth) {
+                            createAnnotationLabels();
+                        } else {
+                            img.onload = () => {
+                                createAnnotationLabels();
+                            };
+                        }
                     }
-                    
-                    // 窗口大小变化时重新绘制
-                    window.addEventListener('resize', drawAnnotations);
+
+                    init();
+
+                    // 窗口大小变化时重新计算
+                    window.addEventListener('resize', () => {
+                        // 重置标注框位置以重新计算
+                        annotations.forEach(a => {
+                            a.labelX = null;
+                            a.labelY = null;
+                        });
+                        createAnnotationLabels();
+                    });
                 })();
                 </script>
             `;
