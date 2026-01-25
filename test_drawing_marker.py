@@ -16,8 +16,8 @@ import os
 API_URL = "http://127.0.0.1:5001/api/drawing-marker/process"
 
 # 测试用的图片文件
-# 请将图片文件放在当前目录下，或者修改图片路径
-TEST_IMAGE_PATH = "test_drawing.png"  # 替换为你的测试图片路径
+# 图片位于tests文件夹中
+TEST_IMAGE_PATH = "tests/test patent pic.png"  # 测试图片路径
 
 # 测试用的说明书内容
 TEST_SPECIFICATION = "1电动工具、2外壳、2L左侧外壳、2R右侧外壳、3后盖、3S螺钉"
