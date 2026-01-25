@@ -636,7 +636,7 @@ function initPatentBatch() {
                             htmlContent += `
                                 <p style="margin-bottom: 10px; font-family: 'Noto Sans SC', Arial, sans-serif; position: relative;">
                                     <strong style="color: var(--primary-color);">${field.label}:</strong>
-                                    <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', '${field.key}')" title="复制${field.label}" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">📋</button>
+                                    <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', '${field.key}', event)" title="复制${field.label}" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">📋</button>
                                     <br/>
                                     <a href="${field.value}" target="_blank" style="color: var(--primary-color); text-decoration: underline;">${field.value}</a>
                                 </p>
@@ -645,7 +645,7 @@ function initPatentBatch() {
                             htmlContent += `
                                 <p style="margin-bottom: 10px; font-family: 'Noto Sans SC', Arial, sans-serif; position: relative;">
                                     <strong style="color: var(--primary-color);">${field.label}:</strong>
-                                    <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', '${field.key}')" title="复制${field.label}" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">📋</button>
+                                    <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', '${field.key}', event)" title="复制${field.label}" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">📋</button>
                                     <br/>
                                     <span style="line-height: 1.6;">${field.value}</span>
                                 </p>
@@ -663,7 +663,7 @@ function initPatentBatch() {
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                                 <div>
                                     <strong style="color: var(--primary-color); font-family: 'Noto Sans SC', Arial, sans-serif;">⚖️ 权利要求 (共${data.claims.length}条):</strong>
-                                    <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'claims')" title="复制所有权利要求" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">📋</button>
+                                    <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'claims', event)" title="复制所有权利要求" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">📋</button>
                                 </div>
                                 ${hasMore ? `<button class="small-button" onclick="toggleClaims('${result.patent_number}')" style="padding: 2px 8px; font-size: 0.8em;">展开全部</button>` : ''}
                             </div>
@@ -691,16 +691,18 @@ function initPatentBatch() {
                         <div style="margin-top: 15px; padding: 10px; background-color: #fff8e1; border-radius: 5px;">
                             <div style="margin-bottom: 10px;">
                                 <strong style="color: var(--primary-color); font-family: 'Noto Sans SC', Arial, sans-serif;">🖼️ 专利附图 (共${data.drawings.length}张):</strong>
-                                <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'drawings')" title="复制所有附图链接" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">📋</button>
+                                <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'drawings', event)" title="复制所有附图链接" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">📋</button>
                             </div>
                             <div style="display: flex; flex-wrap: wrap; gap: 10px;">
                     `;
                     
                     data.drawings.forEach((drawing, index) => {
                         console.log(`  附图 ${index + 1}:`, drawing);
+                        // 清理图片URL，移除可能的额外空格和引号
+                        const cleanDrawingUrl = drawing.trim().replace(/^[`'"]+|[`'"]+$/g, '');
                         htmlContent += `
                             <div style="border: 1px solid #ddd; border-radius: 5px; padding: 5px; background-color: white;">
-                                <img src="${drawing}" alt="附图 ${index + 1}" style="max-width: 200px; max-height: 200px; cursor: pointer;" onclick="window.open('${drawing}', '_blank')" onerror="this.parentElement.innerHTML='<div style=\\'padding:20px;color:#999;\\'>图片加载失败</div>'">
+                                <img src="${cleanDrawingUrl}" alt="附图 ${index + 1}" style="max-width: 200px; max-height: 200px; cursor: pointer;" onclick="window.open('${cleanDrawingUrl}', '_blank')" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\'padding:20px;color:#999;\'>📷 图片加载失败<br>点击下方链接查看原图</div><div style=\'text-align:center;font-size:0.7em;margin-top:5px;color:var(--primary-color);\'><a href=\'${cleanDrawingUrl}\' target=\'_blank\'>查看原图</a></div>'">
                                 <div style="text-align: center; font-size: 0.8em; margin-top: 5px; color: #666;">附图 ${index + 1}</div>
                             </div>
                         `;
@@ -717,7 +719,7 @@ function initPatentBatch() {
                         <div style="margin-top: 15px; padding: 10px; background-color: #f0f8ff; border-radius: 5px;">
                             <div style="margin-bottom: 8px;">
                                 <strong style="color: var(--primary-color); font-family: 'Noto Sans SC', Arial, sans-serif;">📝 说明书:</strong>
-                                <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'description')" title="复制说明书" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">📋</button>
+                                <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'description', event)" title="复制说明书" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">📋</button>
                             </div>
                             <div style="margin-top: 8px; font-size: 0.9em; line-height: 1.6; font-family: 'Noto Sans SC', Arial, sans-serif; max-height: 300px; overflow-y: auto;">
                                 ${data.description}
@@ -732,7 +734,7 @@ function initPatentBatch() {
                         <div style="margin-top: 15px; padding: 10px; background-color: #e8f5e9; border-radius: 5px;">
                             <div style="margin-bottom: 8px;">
                                 <strong style="color: var(--primary-color); font-family: 'Noto Sans SC', Arial, sans-serif;">📚 引用专利 (共${data.patent_citations.length}条):</strong>
-                                <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'patent_citations')" title="复制引用专利" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">📋</button>
+                                <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'patent_citations', event)" title="复制引用专利" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">📋</button>
                             </div>
                             <div style="max-height: 200px; overflow-y: auto;">
                                 <table style="width: 100%; font-size: 0.85em; border-collapse: collapse;">
@@ -768,7 +770,7 @@ function initPatentBatch() {
                         <div style="margin-top: 15px; padding: 10px; background-color: #fff3e0; border-radius: 5px;">
                             <div style="margin-bottom: 8px;">
                                 <strong style="color: var(--primary-color); font-family: 'Noto Sans SC', Arial, sans-serif;">🔗 被引用专利 (共${data.cited_by.length}条):</strong>
-                                <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'cited_by')" title="复制被引用专利" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">📋</button>
+                                <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'cited_by', event)" title="复制被引用专利" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">📋</button>
                             </div>
                             <div style="max-height: 200px; overflow-y: auto;">
                                 <table style="width: 100%; font-size: 0.85em; border-collapse: collapse;">
@@ -804,7 +806,7 @@ function initPatentBatch() {
                         <div style="margin-top: 15px; padding: 10px; background-color: #f3e5f5; border-radius: 5px;">
                             <div style="margin-bottom: 8px;">
                                 <strong style="color: var(--primary-color); font-family: 'Noto Sans SC', Arial, sans-serif;">⚖️ 法律事件 (共${data.legal_events.length}条):</strong>
-                                <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'legal_events')" title="复制法律事件" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">📋</button>
+                                <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'legal_events', event)" title="复制法律事件" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">📋</button>
                             </div>
                             <div style="max-height: 200px; overflow-y: auto;">
                                 <table style="width: 100%; font-size: 0.85em; border-collapse: collapse;">
@@ -910,7 +912,7 @@ function initPatentBatch() {
     }
     
     // 复制单个字段内容
-    window.copyFieldContent = function(patentNumber, fieldKey) {
+    window.copyFieldContent = function(patentNumber, fieldKey, event) {
         const result = patentResults.find(r => r.patent_number === patentNumber);
         if (!result || !result.success) return;
         
