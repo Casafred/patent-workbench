@@ -24,6 +24,7 @@
     --warning-color: #F59E0B;
     
     /* 聊天气泡颜色 */
-    --chat-user-bubble: #DCF8C6;
+    --chat-user-bubble: #22C55E;  /* 绿底 */
+    --chat-user-bubble-text: #FFFFFF;  /* 白字 */
     --chat-assistant-bubble: #FFFFFF;
 }

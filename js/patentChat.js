@@ -2,6 +2,61 @@
 // 专利对话功能模块
 // =================================================================================
 
+// 初始化模态框拖动功能
+function initModalDrag(modal) {
+    const modalContent = modal.querySelector('.patent-chat-modal');
+    const header = modalContent.querySelector('.modal-header');
+    
+    if (!header || header.dataset.dragInitialized) return;
+    header.dataset.dragInitialized = 'true';
+    
+    let isDragging = false;
+    let currentX;
+    let currentY;
+    let initialX;
+    let initialY;
+    
+    header.addEventListener('mousedown', dragStart);
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('mouseup', dragEnd);
+    
+    function dragStart(e) {
+        // 不拖动关闭按钮
+        if (e.target.closest('.close-btn')) return;
+        
+        isDragging = true;
+        initialX = e.clientX - (modalContent.offsetLeft || 0);
+        initialY = e.clientY - (modalContent.offsetTop || 0);
+        header.style.cursor = 'grabbing';
+        modalContent.classList.add('dragging');
+    }
+    
+    function drag(e) {
+        if (!isDragging) return;
+        
+        e.preventDefault();
+        currentX = e.clientX - initialX;
+        currentY = e.clientY - initialY;
+        
+        // 限制在视口内
+        const maxX = window.innerWidth - modalContent.offsetWidth;
+        const maxY = window.innerHeight - modalContent.offsetHeight;
+        
+        currentX = Math.max(0, Math.min(currentX, maxX));
+        currentY = Math.max(0, Math.min(currentY, maxY));
+        
+        modal.style.left = currentX + 'px';
+        modal.style.top = currentY + 'px';
+        modal.style.transform = 'none';
+    }
+    
+    function dragEnd() {
+        isDragging = false;
+        header.style.cursor = 'move';
+        modalContent.classList.remove('dragging');
+    }
+}
+
 // 打开专利对话窗口
 function openPatentChat(patentNumber) {
     // 查找专利数据
@@ -24,10 +79,12 @@ function openPatentChat(patentNumber) {
         appState.patentBatch.patentChats[patentNumber].isOpen = true;
     }
     
-    // 显示弹窗
+    // 显示弹窗（不使用flex，直接显示）
     const modal = getEl('patent_chat_modal');
     if (modal) {
-        modal.style.display = 'flex';
+        modal.style.display = 'block';
+        // 初始化拖动功能
+        initModalDrag(modal);
     }
     
     // 更新弹窗内容
@@ -94,7 +151,13 @@ function updateChatHistory(patentNumber) {
         welcomeDiv.className = 'chat-message system-message';
         welcomeDiv.innerHTML = `
             <div class="message-content">
-                <p><strong>👋 欢迎使用专利问一问功能！</strong></p>
+                <p><strong>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: text-bottom; margin-right: 4px;">
+                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                        <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/>
+                    </svg>
+                    欢迎使用专利问一问功能！
+                </strong></p>
                 <p>您可以针对这个专利提出任何问题，例如：</p>
                 <ul style="margin-top: 10px; padding-left: 20px;">
                     <li>这个专利的核心创新点是什么？</li>
@@ -116,7 +179,9 @@ function updateChatHistory(patentNumber) {
         messageDiv.className = `chat-message ${msg.role}-message`;
         
         const roleLabel = msg.role === 'user' ? '您' : 'AI助手';
-        const roleIcon = msg.role === 'user' ? '👤' : '🤖';
+        const roleIcon = msg.role === 'user' 
+            ? '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: text-bottom;"><path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/></svg>'
+            : '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: text-bottom;"><path d="M6 12.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5ZM3 8.062C3 6.76 4.235 5.765 5.53 5.886a26.58 26.58 0 0 0 4.94 0C11.765 5.765 13 6.76 13 8.062v1.157a.933.933 0 0 1-.765.935c-.845.147-2.34.346-4.235.346-1.895 0-3.39-.2-4.235-.346A.933.933 0 0 1 3 9.219V8.062Zm4.542-.827a.25.25 0 0 0-.217.068l-.92.9a24.767 24.767 0 0 1-1.871-.183.25.25 0 0 0-.068.495c.55.076 1.232.149 2.02.193a.25.25 0 0 0 .189-.071l.754-.736.847 1.71a.25.25 0 0 0 .404.062l.932-.97a25.286 25.286 0 0 0 1.922-.188.25.25 0 0 0-.068-.495c-.538.074-1.207.145-1.98.189a.25.25 0 0 0-.166.076l-.754.785-.842-1.7a.25.25 0 0 0-.182-.135Z"/><path d="M8.5 1.866a1 1 0 1 0-1 0V3h-2A4.5 4.5 0 0 0 1 7.5V8a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1v1a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1v-.5A4.5 4.5 0 0 0 10.5 3h-2V1.866ZM14 7.5V13a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7.5A3.5 3.5 0 0 1 5.5 4h5A3.5 3.5 0 0 1 14 7.5Z"/></svg>';
         
         messageDiv.innerHTML = `
             <div class="message-header">
@@ -194,7 +259,12 @@ async function sendPatentChatMessage() {
         loadingDiv.className = 'chat-message assistant-message loading';
         loadingDiv.innerHTML = `
             <div class="message-header">
-                <span class="message-role">🤖 AI助手</span>
+                <span class="message-role">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: text-bottom;">
+                        <path d="M6 12.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5ZM3 8.062C3 6.76 4.235 5.765 5.53 5.886a26.58 26.58 0 0 0 4.94 0C11.765 5.765 13 6.76 13 8.062v1.157a.933.933 0 0 1-.765.935c-.845.147-2.34.346-4.235.346-1.895 0-3.39-.2-4.235-.346A.933.933 0 0 1 3 9.219V8.062Zm4.542-.827a.25.25 0 0 0-.217.068l-.92.9a24.767 24.767 0 0 1-1.871-.183.25.25 0 0 0-.068.495c.55.076 1.232.149 2.02.193a.25.25 0 0 0 .189-.071l.754-.736.847 1.71a.25.25 0 0 0 .404.062l.932-.97a25.286 25.286 0 0 0 1.922-.188.25.25 0 0 0-.068-.495c-.538.074-1.207.145-1.98.189a.25.25 0 0 0-.166.076l-.754.785-.842-1.7a.25.25 0 0 0-.182-.135Z"/><path d="M8.5 1.866a1 1 0 1 0-1 0V3h-2A4.5 4.5 0 0 0 1 7.5V8a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1v1a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1v-.5A4.5 4.5 0 0 0 10.5 3h-2V1.866ZM14 7.5V13a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7.5A3.5 3.5 0 0 1 5.5 4h5A3.5 3.5 0 0 1 14 7.5Z"/>
+                    </svg>
+                    AI助手
+                </span>
             </div>
             <div class="message-content">
                 <div class="loading-dots">
@@ -344,15 +414,8 @@ function initPatentChat() {
         exportBtn.addEventListener('click', exportPatentChat);
     }
     
-    // 点击模态框外部关闭
-    const modal = getEl('patent_chat_modal');
-    if (modal) {
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                closePatentChat();
-            }
-        });
-    }
+    // 注意：移除了点击模态框外部关闭的功能，因为现在是悬浮窗模式
+}
 }
 
 // 暴露到全局

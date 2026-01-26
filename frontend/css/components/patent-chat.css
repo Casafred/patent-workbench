@@ -6,7 +6,7 @@
 .ask-patent-btn {
     padding: 6px 14px;
     font-size: 0.85em;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--primary-color);
     color: white;
     border: none;
     border-radius: 6px;
@@ -16,12 +16,13 @@
     gap: 6px;
     transition: all 0.3s;
     font-weight: 500;
-    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+    box-shadow: 0 2px 4px rgba(34, 197, 94, 0.2);
 }
 
 .ask-patent-btn:hover {
+    background: var(--primary-color-dark);
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 8px rgba(34, 197, 94, 0.3);
 }
 
 .ask-patent-btn:active {
@@ -47,31 +48,34 @@
     margin: 0;
 }
 
-/* 对话弹窗 */
+/* 对话弹窗 - 可拖动悬浮窗 */
 #patent_chat_modal {
     display: none;
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     z-index: 10000;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
+    padding: 0;
 }
 
 .patent-chat-modal {
     background: white;
     border-radius: 12px;
-    max-width: 800px;
-    width: 100%;
+    width: 800px;
+    max-width: 90vw;
     max-height: 85vh;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
     animation: modalSlideIn 0.3s ease-out;
+    cursor: default;
+    position: relative;
+}
+
+.patent-chat-modal.dragging {
+    transition: none;
+    user-select: none;
 }
 
 @keyframes modalSlideIn {
@@ -91,9 +95,10 @@
     align-items: flex-start;
     padding: 20px;
     border-bottom: 2px solid var(--primary-color);
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--primary-color);
     color: white;
     border-radius: 12px 12px 0 0;
+    cursor: move;
 }
 
 .patent-chat-modal .patent-info {
@@ -174,7 +179,7 @@
 }
 
 .chat-message.user-message .message-content {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--primary-color);
     color: white;
     margin-left: auto;
 }
@@ -282,7 +287,7 @@
 
 .chat-input-area button {
     padding: 12px 24px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--primary-color);
     color: white;
     border: none;
     border-radius: 8px;
@@ -294,8 +299,9 @@
 }
 
 .chat-input-area button:hover:not(:disabled) {
+    background: var(--primary-color-dark);
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 8px rgba(34, 197, 94, 0.3);
 }
 
 .chat-input-area button:disabled {
@@ -329,15 +335,23 @@
 @media (max-width: 768px) {
     #patent_chat_modal {
         padding: 10px;
+        /* 移动端保持居中 */
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
     }
     
     .patent-chat-modal {
         max-height: 90vh;
         border-radius: 8px;
+        width: 95vw;
+        /* 移动端禁用拖动 */
+        cursor: default !important;
     }
     
     .patent-chat-modal .modal-header {
         padding: 15px;
+        cursor: default !important;
     }
     
     .patent-chat-modal .patent-chat-title {

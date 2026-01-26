@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UI优化测试</title>
+    <link rel="stylesheet" href="frontend/css/base/variables.css">
+    <link rel="stylesheet" href="frontend/css/pages/chat.css">
+    <link rel="stylesheet" href="frontend/css/components/patent-chat.css">
+    <style>
+        body {
+            font-family: 'Noto Sans SC', Arial, sans-serif;
+            padding: 20px;
+            background: var(--bg-color);
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .test-section h2 {
+            color: var(--primary-color);
+            margin-top: 0;
+        }
+        .color-demo {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 10px;
+            border-radius: 8px;
+        }
+        .user-message-demo {
+            background: var(--chat-user-bubble);
+            color: var(--chat-user-bubble-text);
+        }
+        .button-demo {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>UI优化测试页面</h1>
+    
+    <!-- 测试1: 用户消息颜色 -->
+    <div class="test-section">
+        <h2>测试1: 功能一用户消息颜色</h2>
+        <p>用户消息应该是绿底白字：</p>
+        <div class="color-demo user-message-demo">
+            这是用户消息示例 - 应该是绿底白字
+        </div>
+        <p>CSS变量值：</p>
+        <ul>
+            <li>--chat-user-bubble: #22C55E (绿色)</li>
+            <li>--chat-user-bubble-text: #FFFFFF (白色)</li>
+        </ul>
+    </div>
+    
+    <!-- 测试2: 问一问按钮 -->
+    <div class="test-section">
+        <h2>测试2: 功能六问一问按钮</h2>
+        <p>按钮应该是主题绿色，带SVG图标：</p>
+        <div class="button-demo">
+            <button class="ask-patent-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M2.678 11.894a1 1 0 0 1 .287.801 10.97 10.97 0 0 1-.398 2c1.395-.323 2.247-.697 2.634-.893a1 1 0 0 1 .71-.074A8.06 8.06 0 0 0 8 14c3.996 0 7-2.807 7-6 0-3.192-3.004-6-7-6S1 4.808 1 8c0 1.468.617 2.83 1.678 3.894zm-.493 3.905a21.682 21.682 0 0 1-.713.129c-.2.032-.352-.176-.273-.362a9.68 9.68 0 0 0 .244-.637l.003-.01c.248-.72.45-1.548.524-2.319C.743 11.37 0 9.76 0 8c0-3.866 3.582-7 8-7s8 3.134 8 7-3.582 7-8 7a9.06 9.06 0 0 1-2.347-.306c-.52.263-1.639.742-3.468 1.105z"/>
+                </svg>
+                问一问
+            </button>
+        </div>
+        <p>按钮特性：</p>
+        <ul>
+            <li>背景色：var(--primary-color) = #22C55E</li>
+            <li>悬停效果：变为 var(--primary-color-dark) = #16A34A</li>
+            <li>图标：SVG对话气泡（不是emoji）</li>
+        </ul>
+    </div>
+    
+    <!-- 测试3: SVG图标 -->
+    <div class="test-section">
+        <h2>测试3: Emoji替换为SVG</h2>
+        <p>所有图标应该是SVG格式：</p>
+        <div style="display: flex; gap: 20px; align-items: center;">
+            <div>
+                <p>用户图标：</p>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
+                    <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/>
+                </svg>
+            </div>
+            <div>
+                <p>AI助手图标：</p>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M6 12.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5ZM3 8.062C3 6.76 4.235 5.765 5.53 5.886a26.58 26.58 0 0 0 4.94 0C11.765 5.765 13 6.76 13 8.062v1.157a.933.933 0 0 1-.765.935c-.845.147-2.34.346-4.235.346-1.895 0-3.39-.2-4.235-.346A.933.933 0 0 1 3 9.219V8.062Zm4.542-.827a.25.25 0 0 0-.217.068l-.92.9a24.767 24.767 0 0 1-1.871-.183.25.25 0 0 0-.068.495c.55.076 1.232.149 2.02.193a.25.25 0 0 0 .189-.071l.754-.736.847 1.71a.25.25 0 0 0 .404.062l.932-.97a25.286 25.286 0 0 0 1.922-.188.25.25 0 0 0-.068-.495c-.538.074-1.207.145-1.98.189a.25.25 0 0 0-.166.076l-.754.785-.842-1.7a.25.25 0 0 0-.182-.135Z"/>
+                    <path d="M8.5 1.866a1 1 0 1 0-1 0V3h-2A4.5 4.5 0 0 0 1 7.5V8a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1v1a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1v-.5A4.5 4.5 0 0 0 10.5 3h-2V1.866ZM14 7.5V13a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7.5A3.5 3.5 0 0 1 5.5 4h5A3.5 3.5 0 0 1 14 7.5Z"/>
+                </svg>
+            </div>
+            <div>
+                <p>对话图标：</p>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M2.678 11.894a1 1 0 0 1 .287.801 10.97 10.97 0 0 1-.398 2c1.395-.323 2.247-.697 2.634-.893a1 1 0 0 1 .71-.074A8.06 8.06 0 0 0 8 14c3.996 0 7-2.807 7-6 0-3.192-3.004-6-7-6S1 4.808 1 8c0 1.468.617 2.83 1.678 3.894zm-.493 3.905a21.682 21.682 0 0 1-.713.129c-.2.032-.352-.176-.273-.362a9.68 9.68 0 0 0 .244-.637l.003-.01c.248-.72.45-1.548.524-2.319C.743 11.37 0 9.76 0 8c0-3.866 3.582-7 8-7s8 3.134 8 7-3.582 7-8 7a9.06 9.06 0 0 1-2.347-.306c-.52.263-1.639.742-3.468 1.105z"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 测试4: 拖动功能说明 -->
+    <div class="test-section">
+        <h2>测试4: 问一问弹窗拖动功能</h2>
+        <p>弹窗特性：</p>
+        <ul>
+            <li>✅ 无遮罩层背景</li>
+            <li>✅ 可以通过标题栏拖动</li>
+            <li>✅ 拖动时光标变为 grabbing</li>
+            <li>✅ 限制在视口范围内</li>
+            <li>✅ 移动端保持居中，禁用拖动</li>
+        </ul>
+        <p>CSS实现：</p>
+        <pre style="background: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto;">
+#patent_chat_modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10000;
+    padding: 0;
+    /* 无遮罩层背景 */
+}
+
+.patent-chat-modal .modal-header {
+    cursor: move;
+    /* 标题栏可拖动 */
+}
+        </pre>
+    </div>
+    
+    <!-- 测试总结 -->
+    <div class="test-section">
+        <h2>测试总结</h2>
+        <p>请验证以下内容：</p>
+        <ol>
+            <li>用户消息背景是否为绿色（#22C55E），文字是否为白色</li>
+            <li>问一问按钮是否为绿色，悬停时是否变为深绿色</li>
+            <li>所有emoji是否已替换为SVG图标</li>
+            <li>打开问一问弹窗时，是否没有遮罩层</li>
+            <li>是否可以通过拖动标题栏移动弹窗</li>
+            <li>弹窗是否被限制在视口范围内</li>
+        </ol>
+    </div>
+</body>
+</html>

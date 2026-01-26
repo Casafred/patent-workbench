@@ -231,6 +231,7 @@
 
 .user-message .message-content {
     background-color: var(--chat-user-bubble);
+    color: var(--chat-user-bubble-text);
 }
 
 .assistant-message .message-main-content {
