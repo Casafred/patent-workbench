@@ -205,20 +205,45 @@ function formatMessageContent(content) {
         try {
             // 配置marked选项
             marked.setOptions({
-                breaks: true,  // 支持GFM换行
-                gfm: true,     // 启用GitHub风格的Markdown
-                headerIds: false,  // 禁用标题ID
-                mangle: false  // 禁用邮箱混淆
+                breaks: true,          // 支持GFM换行
+                gfm: true,             // 启用GitHub风格的Markdown
+                headerIds: false,      // 禁用标题ID
+                mangle: false,         // 禁用邮箱混淆
+                sanitize: false,       // 不使用内置的sanitize（已废弃）
+                smartLists: true,      // 智能列表
+                smartypants: false,    // 不转换引号等
+                xhtml: false           // 不使用XHTML
             });
             
             // 使用marked渲染Markdown
-            return marked.parse(content);
+            const html = marked.parse(content);
+            
+            // 简单的XSS防护：移除潜在危险的标签和属性
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+            
+            // 移除script标签
+            const scripts = tempDiv.querySelectorAll('script');
+            scripts.forEach(script => script.remove());
+            
+            // 移除on*事件属性
+            const allElements = tempDiv.querySelectorAll('*');
+            allElements.forEach(el => {
+                Array.from(el.attributes).forEach(attr => {
+                    if (attr.name.startsWith('on')) {
+                        el.removeAttribute(attr.name);
+                    }
+                });
+            });
+            
+            return tempDiv.innerHTML;
         } catch (e) {
             console.error('Markdown渲染失败:', e);
             // 如果渲染失败，使用简单格式化
             return simpleFormatContent(content);
         }
     } else {
+        console.warn('marked库未加载，使用简单格式化');
         // 如果没有marked库，使用简单格式化
         return simpleFormatContent(content);
     }
@@ -306,18 +331,46 @@ async function sendPatentChatMessage() {
         historyEl.scrollTop = historyEl.scrollHeight;
         
         // 调用流式API - 使用与功能一相同的 /stream_chat 端点
-        // 构建符合智谱API规范的消息格式
+        // 构建完整的专利上下文信息
+        const patentInfo = chatState.patentData;
+        let contextInfo = `你是一个专业的专利分析助手。当前正在分析专利号为 ${patentNumber} 的专利。
+
+## 专利完整信息
+
+### 基本信息
+- **专利号**: ${patentInfo.patent_number || patentNumber}
+- **标题**: ${patentInfo.title || '无标题'}
+- **申请日期**: ${patentInfo.application_date || '未知'}
+- **公开日期**: ${patentInfo.publication_date || '未知'}
+- **授权日期**: ${patentInfo.grant_date || '未知'}
+- **法律状态**: ${patentInfo.legal_status || '未知'}
+
+### 申请人与发明人
+- **申请人**: ${patentInfo.applicant || patentInfo.assignee || '未知'}
+- **发明人**: ${patentInfo.inventor ? (Array.isArray(patentInfo.inventor) ? patentInfo.inventor.join(', ') : patentInfo.inventor) : '未知'}
+
+### 分类信息
+- **IPC分类**: ${patentInfo.ipc_classification || '未知'}
+- **CPC分类**: ${patentInfo.cpc_classification || '未知'}
+
+### 摘要
+${patentInfo.abstract || '无摘要'}
+
+### 权利要求
+${patentInfo.claims ? patentInfo.claims.slice(0, 5).map((c, i) => `${i + 1}. ${c}`).join('\n\n') : '无权利要求信息'}
+
+${patentInfo.description ? `### 说明书摘要\n${patentInfo.description.substring(0, 500)}...\n` : ''}
+
+${patentInfo.citations ? `### 引用专利\n${patentInfo.citations.slice(0, 5).map(c => `- ${c}`).join('\n')}\n` : ''}
+
+${patentInfo.cited_by ? `### 被引用专利\n${patentInfo.cited_by.slice(0, 5).map(c => `- ${c}`).join('\n')}\n` : ''}
+
+请基于以上完整的专利信息，准确、专业地回答用户的问题。回答时可以使用Markdown格式来组织内容，使其更易读。`;
+
         const apiMessages = [
             {
                 role: 'system',
-                content: `你是一个专业的专利分析助手。当前正在分析专利号为 ${patentNumber} 的专利。
-
-专利信息：
-标题：${chatState.patentData.title || '无标题'}
-摘要：${chatState.patentData.abstract || '无摘要'}
-${chatState.patentData.claims ? `权利要求：\n${chatState.patentData.claims.slice(0, 3).map((c, i) => `${i + 1}. ${c}`).join('\n')}` : ''}
-
-请基于以上专利信息，准确、专业地回答用户的问题。`
+                content: contextInfo
             },
             ...chatState.messages.filter(m => m.role !== 'system')
         ];
@@ -332,6 +385,8 @@ ${chatState.patentData.claims ? `权利要求：\n${chatState.patentData.claims.
         let fullContent = '';
         const decoder = new TextDecoder();
         let buffer = '';
+        let lastRenderTime = 0;
+        const RENDER_INTERVAL = 100; // 每100ms渲染一次，避免过于频繁
         
         while (true) {
             const { value, done } = await reader.read();
@@ -354,8 +409,15 @@ ${chatState.patentData.claims ? `权利要求：\n${chatState.patentData.claims.
                     const delta = parsed.choices?.[0]?.delta?.content;
                     if (delta) {
                         fullContent += delta;
-                        contentDiv.textContent = fullContent;
-                        historyEl.scrollTop = historyEl.scrollHeight;
+                        
+                        // 节流渲染：避免过于频繁的Markdown解析
+                        const now = Date.now();
+                        if (now - lastRenderTime > RENDER_INTERVAL) {
+                            // 流式过程中显示纯文本，避免频繁的Markdown解析影响性能
+                            contentDiv.textContent = fullContent;
+                            historyEl.scrollTop = historyEl.scrollHeight;
+                            lastRenderTime = now;
+                        }
                     }
                 } catch (e) {
                     console.warn('解析流式数据失败:', e);
@@ -365,7 +427,9 @@ ${chatState.patentData.claims ? `权利要求：\n${chatState.patentData.claims.
         
         // 移除流式标记和光标
         assistantDiv.classList.remove('streaming');
-        contentDiv.textContent = fullContent;
+        
+        // 使用Markdown渲染最终内容
+        contentDiv.innerHTML = formatMessageContent(fullContent);
         
         // 添加AI回复到历史
         chatState.messages.push({
