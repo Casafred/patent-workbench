@@ -129,12 +129,18 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false) {
         // ▼▼▼ FIX START: 优雅处理非JSON响应 ▼▼▼
         const contentType = response.headers.get("content-type");
         if (!response.ok) {
-            // 对于失败的响应，尝试解析为JSON，如果失败则返回文本
+            // 对于失败的响应，先克隆response以便多次读取
+            const clonedResponse = response.clone();
             let errorData;
             try {
                 errorData = await response.json();
             } catch (e) {
-                errorData = await response.text();
+                // 如果JSON解析失败，使用克隆的response读取文本
+                try {
+                    errorData = await clonedResponse.text();
+                } catch (textError) {
+                    errorData = 'Unknown error';
+                }
             }
             const errorMessage = errorData.error?.message || errorData.error || (typeof errorData === 'string' ? errorData : JSON.stringify(errorData));
             throw new Error(errorMessage);
