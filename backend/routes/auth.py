@@ -245,6 +245,95 @@ LOGIN_PAGE_HTML = """
         .agreement-text a:hover {
             text-decoration: underline;
         }
+        .get-account-btn {
+            display: inline-block;
+            margin-left: 10px;
+            color: var(--primary-color-dark);
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .get-account-btn:hover {
+            text-decoration: underline;
+        }
+        .qr-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s;
+        }
+        .qr-modal-content {
+            position: relative;
+            background-color: white;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            animation: slideDown 0.3s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideDown {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .qr-modal-close {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            color: #999;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+        }
+        .qr-modal-close:hover {
+            color: #333;
+        }
+        .qr-modal h3 {
+            color: var(--primary-color-dark);
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        .qr-modal p {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        .qr-code-image {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 20px;
+            border: 2px solid #eee;
+            border-radius: 8px;
+            padding: 10px;
+            background: white;
+        }
+        .qr-code-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .qr-tips {
+            font-size: 14px;
+            color: #999;
+            margin-top: 15px;
+        }
         .footer {
             position: absolute;
             bottom: 20px;
@@ -308,6 +397,21 @@ LOGIN_PAGE_HTML = """
         <div class="links">
             忘记密码? 
             <a href="javascript:void(0);" onclick="alert('请联系管理员邮箱：freecasafred@outlook.com'); return false;">联系管理员</a>
+            <br>
+            <a href="javascript:void(0);" id="get-account-btn" class="get-account-btn">获取账号</a>
+        </div>
+    </div>
+
+    <!-- 获取账号二维码弹窗 -->
+    <div id="qr-modal" class="qr-modal">
+        <div class="qr-modal-content">
+            <button class="qr-modal-close" id="qr-modal-close">&times;</button>
+            <h3>获取免费使用账号</h3>
+            <p>请关注公众号：<strong>IP智友</strong><br>后台私信联系获取免费使用账号</p>
+            <div class="qr-code-image">
+                <img src="/frontend/images/QRcode.jpg" alt="IP智友公众号二维码">
+            </div>
+            <p class="qr-tips">扫描二维码关注公众号</p>
         </div>
     </div>
 
@@ -377,6 +481,29 @@ LOGIN_PAGE_HTML = """
                 btnText.style.display = 'none';
                 spinner.style.display = 'block';
             });
+
+            // 获取账号按钮和弹窗控制
+            const getAccountBtn = document.getElementById('get-account-btn');
+            const qrModal = document.getElementById('qr-modal');
+            const qrModalClose = document.getElementById('qr-modal-close');
+
+            // 打开弹窗
+            getAccountBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                qrModal.style.display = 'block';
+            });
+
+            // 关闭弹窗
+            qrModalClose.addEventListener('click', function() {
+                qrModal.style.display = 'none';
+            });
+
+            // 点击弹窗外部关闭
+            window.addEventListener('click', function(e) {
+                if (e.target === qrModal) {
+                    qrModal.style.display = 'none';
+                }
+            });
         });
     </script>
 </body>
@@ -392,8 +519,6 @@ def login():
     GET: Display login page
     POST: Process login credentials
     """
-    error_from_redirect = request.args.get('error')
-    
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -415,7 +540,8 @@ def login():
                 error="用户名或密码不正确，请重试。"
             )
     
-    return render_template_string(LOGIN_PAGE_HTML, error=error_from_redirect)
+    # GET请求：不显示任何错误信息
+    return render_template_string(LOGIN_PAGE_HTML, error=None)
 
 
 @auth_bp.route('/logout')
