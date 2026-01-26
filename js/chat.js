@@ -996,6 +996,36 @@ async function exportChatHistory(format = 'txt') {
     const conversationTitle = convo.title || '未命名对话';
     const filename = `聊天记录_${conversationTitle}_${personaName}_${new Date().toISOString().slice(0,10)}`;
 
+    // 处理选择性导出
+    if (format === 'txt-selected') {
+        // 获取选中的消息
+        const selectedCheckboxes = document.querySelectorAll('#chat_window input[type="checkbox"]:checked');
+        if (selectedCheckboxes.length === 0) {
+            return alert("请先选择要导出的消息");
+        }
+        
+        const selectedIndices = Array.from(selectedCheckboxes).map(cb => parseInt(cb.dataset.index));
+        const selectedMessages = convo.messages.filter((msg, idx) => selectedIndices.includes(idx) && msg.role !== 'system');
+        
+        if (selectedMessages.length === 0) {
+            return alert("没有选中有效的消息");
+        }
+        
+        let content = `聊天记录（选中部分） - ${conversationTitle}\n角色: ${personaName}\n导出时间: ${new Date().toLocaleString()}\n========================\n\n`;
+        selectedMessages.forEach(msg => {
+            const timestamp = msg.timestamp ? new Date(msg.timestamp).toLocaleString('zh-CN') : '未知时间';
+            content += `[${msg.role.toUpperCase()}] - ${timestamp}\n${msg.content}\n\n------------------------\n\n`;
+        });
+        
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${filename}_选中部分.txt`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+        return;
+    }
+
     if (format === 'txt') {
         let content = `聊天记录 - ${conversationTitle}\n角色: ${personaName}\n导出时间: ${new Date().toLocaleString()}\n========================\n\n`;
         convo.messages.forEach(msg => { 

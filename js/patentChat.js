@@ -299,14 +299,14 @@ async function sendPatentChatMessage() {
                 </span>
                 <span class="message-time">${new Date().toLocaleTimeString()}</span>
             </div>
-            <div class="message-content"></div>
+            <div class="message-content"><span class="blinking-cursor">|</span></div>
         `;
         historyEl.appendChild(assistantDiv);
         const contentDiv = assistantDiv.querySelector('.message-content');
         historyEl.scrollTop = historyEl.scrollHeight;
         
-        // 调用流式API
-        const reader = await apiCall('/patent/chat', {
+        // 调用流式API - 参考功能一的实现
+        const reader = await apiCall('/patent/chat_stream', {
             patent_number: patentNumber,
             patent_data: chatState.patentData,
             messages: chatState.messages
@@ -314,36 +314,41 @@ async function sendPatentChatMessage() {
         
         let fullContent = '';
         const decoder = new TextDecoder();
+        let buffer = '';
         
         while (true) {
-            const { done, value } = await reader.read();
+            const { value, done } = await reader.read();
+            if (value) {
+                buffer += decoder.decode(value, { stream: !done });
+            }
             if (done) break;
             
-            const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk.split('\n');
+            // 处理所有完整的行
+            let lines = buffer.split('\n\n');
+            buffer = lines.pop() || '';
             
             for (const line of lines) {
-                if (line.startsWith('data: ')) {
-                    const data = line.slice(6);
-                    if (data === '[DONE]') continue;
-                    
-                    try {
-                        const parsed = JSON.parse(data);
-                        const delta = parsed.choices?.[0]?.delta?.content;
-                        if (delta) {
-                            fullContent += delta;
-                            contentDiv.textContent = fullContent;
-                            historyEl.scrollTop = historyEl.scrollHeight;
-                        }
-                    } catch (e) {
-                        console.warn('解析流式数据失败:', e);
+                if (!line.startsWith('data: ')) continue;
+                const data = line.substring(6);
+                if (data === '[DONE]') continue;
+                
+                try {
+                    const parsed = JSON.parse(data);
+                    const delta = parsed.choices?.[0]?.delta?.content;
+                    if (delta) {
+                        fullContent += delta;
+                        contentDiv.textContent = fullContent;
+                        historyEl.scrollTop = historyEl.scrollHeight;
                     }
+                } catch (e) {
+                    console.warn('解析流式数据失败:', e);
                 }
             }
         }
         
-        // 移除流式标记
+        // 移除流式标记和光标
         assistantDiv.classList.remove('streaming');
+        contentDiv.textContent = fullContent;
         
         // 添加AI回复到历史
         chatState.messages.push({

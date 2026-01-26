@@ -23,6 +23,15 @@ function initGenerator() {
     getEl('import_template_btn').addEventListener('click', () => templateFileInput.click());
     templateFileInput.addEventListener('change', importTemplate);
     getEl('add-output-field-btn').addEventListener('click', () => addOutputField());
+    
+    // 初始化模板 - 这是关键！
+    initTemplates();
+}
+    getEl('delete_template_btn').addEventListener('click', deleteTemplate);
+    getEl('export_template_btn').addEventListener('click', exportTemplate);
+    getEl('import_template_btn').addEventListener('click', () => templateFileInput.click());
+    templateFileInput.addEventListener('change', importTemplate);
+    getEl('add-output-field-btn').addEventListener('click', () => addOutputField());
     initTemplates();
 }
 
