@@ -1,0 +1,36 @@
+紧急修复：删除largeBatch.js中的重复代码
+
+问题：
+- JavaScript语法错误：expected expression, got '}' (line 35)
+- initLargeBatch is not defined
+- 页面无法正常加载
+
+根本原因：
+- initGenerator() 函数中代码被重复粘贴两次
+- 第30-36行是重复的代码，导致多余的结束括号
+- 函数定义不完整，导致全局函数无法正常工作
+
+修复内容：
+- 删除 js/largeBatch.js 第30-36行的重复代码
+- 保留正确的函数定义（第12-29行）
+- 确保 initTemplates() 调用正确
+
+影响范围：
+- 功能三：大批量处理（之前完全无法使用）
+- 全局JavaScript加载（语法错误阻止后续代码执行）
+
+测试建议：
+1. 硬刷新页面（Ctrl+Shift+R）
+2. 检查控制台无语法错误
+3. 测试功能三是否正常显示
+4. 验证模板选择器有5个预设模板
+
+修改文件：
+- js/largeBatch.js（删除重复代码）
+- 语法错误紧急修复_20260126.md（新增文档）
+
+---
+Date: 2026-01-26 22:52
+Type: Critical Bug Fix
+Priority: Urgent
+Status: Fixed
