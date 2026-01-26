@@ -122,12 +122,14 @@ def search_patents():
 @patent_bp.route('/patent/analyze', methods=['POST'])
 def analyze_patent():
     """
-    Analyze patent data using AI.
+    Analyze patent data using AI with custom template support.
     
     Request body:
         - patent_data: Patent data to analyze
+        - template: Optional custom template with fields and system_prompt
+        - user_prompt: Optional custom user prompt (overrides default)
         - include_specification: Whether to include specification in analysis (default: False)
-        - model: AI model to use (default: 'glm-4-flash')
+        - model: AI model to use (default: 'GLM-4.7-Flash')
         - temperature: Temperature parameter (default: 0.4)
     
     Returns:
@@ -144,6 +146,8 @@ def analyze_patent():
     try:
         req_data = request.get_json()
         patent_data = req_data.get('patent_data')
+        template = req_data.get('template')
+        user_prompt = req_data.get('user_prompt')
         include_specification = req_data.get('include_specification', False)
         model = req_data.get('model', 'GLM-4.7-Flash')
         temperature = req_data.get('temperature', 0.4)
@@ -154,50 +158,60 @@ def analyze_patent():
                 status_code=400
             )
         
-        # Build prompt for AI analysis
-        prompt = f"请详细解读以下专利信息，并以JSON格式返回结构化的解读结果：\n\n"
-        prompt += f"专利号: {patent_data.get('patent_number', 'N/A')}\n"
-        prompt += f"标题: {patent_data.get('title', 'N/A')}\n"
-        prompt += f"摘要: {patent_data.get('abstract', 'N/A')}\n"
-        prompt += f"发明人: {', '.join(patent_data.get('inventors', []))}\n"
-        prompt += f"受让人: {', '.join(patent_data.get('assignees', []))}\n"
-        prompt += f"申请日期: {patent_data.get('application_date', 'N/A')}\n"
-        prompt += f"公开日期: {patent_data.get('publication_date', 'N/A')}\n"
-        
-        if patent_data.get('claims'):
-            claims_text = patent_data.get('claims', 'N/A')
-            if isinstance(claims_text, list):
-                claims_text = ' '.join(claims_text)
-            prompt += f"权利要求: {claims_text[:500]}...\n"
+        # 使用自定义提示词或构建默认提示词
+        if user_prompt:
+            # 使用前端传来的完整提示词
+            prompt = user_prompt
         else:
-            prompt += "权利要求: N/A\n"
+            # 构建默认提示词
+            prompt = f"请详细解读以下专利信息，并以JSON格式返回结构化的解读结果：\n\n"
+            prompt += f"专利号: {patent_data.get('patent_number', 'N/A')}\n"
+            prompt += f"标题: {patent_data.get('title', 'N/A')}\n"
+            prompt += f"摘要: {patent_data.get('abstract', 'N/A')}\n"
+            prompt += f"发明人: {', '.join(patent_data.get('inventors', []))}\n"
+            prompt += f"受让人: {', '.join(patent_data.get('assignees', []))}\n"
+            prompt += f"申请日期: {patent_data.get('application_date', 'N/A')}\n"
+            prompt += f"公开日期: {patent_data.get('publication_date', 'N/A')}\n"
+            
+            if patent_data.get('claims'):
+                claims_text = patent_data.get('claims', 'N/A')
+                if isinstance(claims_text, list):
+                    claims_text = ' '.join(claims_text)
+                prompt += f"权利要求: {claims_text[:500]}...\n"
+            else:
+                prompt += "权利要求: N/A\n"
+            
+            # 如果选择包含说明书，则添加说明书内容
+            if include_specification and patent_data.get('description'):
+                description_text = patent_data.get('description', '')
+                # 限制说明书长度，避免超出token限制
+                if len(description_text) > 3000:
+                    description_text = description_text[:3000] + "..."
+                prompt += f"说明书: {description_text}\n"
+            
+            # 添加JSON格式要求
+            prompt += "\n请严格按照以下JSON格式返回解读结果（只返回JSON对象，不要添加markdown代码块标记）：\n"
+            prompt += "{\n"
+            prompt += '  "technical_field": "技术领域",\n'
+            prompt += '  "innovation_points": "创新点",\n'
+            prompt += '  "technical_solution": "技术方案",\n'
+            prompt += '  "application_scenarios": "应用场景",\n'
+            prompt += '  "market_value": "市场价值",\n'
+            prompt += '  "advantages": "技术优势",\n'
+            prompt += '  "limitations": "局限性",\n'
+            prompt += '  "summary": "总结"\n'
+            prompt += "}\n"
+            prompt += "\n注意：直接返回JSON对象，不要使用```json```标记包裹。\n"
         
-        # 如果选择包含说明书，则添加说明书内容
-        if include_specification and patent_data.get('description'):
-            description_text = patent_data.get('description', '')
-            # 限制说明书长度，避免超出token限制
-            if len(description_text) > 3000:
-                description_text = description_text[:3000] + "..."
-            prompt += f"说明书: {description_text}\n"
-        
-        # 添加JSON格式要求
-        prompt += "\n请严格按照以下JSON格式返回解读结果（只返回JSON对象，不要添加markdown代码块标记）：\n"
-        prompt += "{\n"
-        prompt += '  "technical_field": "技术领域",\n'
-        prompt += '  "innovation_points": "创新点",\n'
-        prompt += '  "technical_solution": "技术方案",\n'
-        prompt += '  "application_scenarios": "应用场景",\n'
-        prompt += '  "market_value": "市场价值",\n'
-        prompt += '  "advantages": "技术优势",\n'
-        prompt += '  "limitations": "局限性",\n'
-        prompt += '  "summary": "总结"\n'
-        prompt += "}\n"
-        prompt += "\n注意：直接返回JSON对象，不要使用```json```标记包裹。\n"
+        # 使用自定义系统提示词或默认提示词
+        system_prompt = "你是一位专业的专利分析师。你必须严格按照要求的JSON格式返回结果，不要添加任何markdown标记（如```json），只返回纯JSON对象。"
+        if template and template.get('system_prompt'):
+            system_prompt = template['system_prompt']
         
         messages = [
             {
                 "role": "system",
-                "content": "你是一位专业的专利分析师。你必须严格按照要求的JSON格式返回结果，不要添加任何markdown标记（如```json），只返回纯JSON对象。"
+                "content": system_prompt
             },
             {
                 "role": "user",
@@ -221,6 +235,102 @@ def analyze_patent():
         error_payload = {
             "error": {
                 "message": f"专利解读失败: {str(e)}",
+                "type": "backend_exception"
+            }
+        }
+        return jsonify(error_payload), 500
+
+
+@patent_bp.route('/patent/chat', methods=['POST'])
+def patent_chat():
+    """
+    Chat with AI about a specific patent.
+    
+    Request body:
+        - patent_number: Patent number
+        - patent_data: Patent data for context
+        - messages: Chat message history (list of {role, content})
+        - model: AI model to use (default: 'GLM-4.7-Flash')
+        - temperature: Temperature parameter (default: 0.7)
+    
+    Returns:
+        AI chat response
+    """
+    is_valid, error_response = validate_api_request()
+    if not is_valid:
+        return error_response
+    
+    client, error_response = get_zhipu_client()
+    if error_response:
+        return error_response
+    
+    try:
+        req_data = request.get_json()
+        patent_number = req_data.get('patent_number')
+        patent_data = req_data.get('patent_data', {})
+        messages = req_data.get('messages', [])
+        model = req_data.get('model', 'GLM-4.7-Flash')
+        temperature = req_data.get('temperature', 0.7)
+        
+        if not patent_number or not patent_data:
+            return create_response(
+                error="patent_number and patent_data are required",
+                status_code=400
+            )
+        
+        # 构建专利上下文
+        patent_context = f"""专利号：{patent_number}
+标题：{patent_data.get('title', '未知')}
+摘要：{patent_data.get('abstract', '未知')}
+发明人：{', '.join(patent_data.get('inventors', []))}
+受让人：{', '.join(patent_data.get('assignees', []))}
+申请日期：{patent_data.get('application_date', '未知')}
+公开日期：{patent_data.get('publication_date', '未知')}
+
+权利要求：
+"""
+        
+        # 添加权利要求
+        if patent_data.get('claims'):
+            claims = patent_data.get('claims', [])
+            if isinstance(claims, list):
+                patent_context += '\n'.join(claims[:5])  # 只包含前5条权利要求
+            else:
+                patent_context += str(claims)[:1000]  # 限制长度
+        
+        # 添加说明书（如果有）
+        if patent_data.get('description'):
+            description = patent_data.get('description', '')
+            if len(description) > 2000:
+                description = description[:2000] + "..."
+            patent_context += f"\n\n说明书摘要：\n{description}"
+        
+        # 构建完整消息列表
+        full_messages = [
+            {
+                "role": "system",
+                "content": f"你是一位专利分析专家。以下是专利的详细信息：\n\n{patent_context}\n\n请基于这些信息回答用户的问题。回答要专业、准确、有针对性。"
+            }
+        ] + messages
+        
+        # 调用AI API
+        response_from_sdk = client.chat.completions.create(
+            model=model,
+            messages=full_messages,
+            stream=False,
+            temperature=temperature
+        )
+        
+        json_string = response_from_sdk.model_dump_json()
+        clean_dict = json.loads(json_string)
+        
+        return jsonify(clean_dict)
+        
+    except Exception as e:
+        print(f"Error in patent_chat: {traceback.format_exc()}")
+        error_payload = {
+            "error": {
+                "message": f"专利对话失败: {str(e)}",
                 "type": "backend_exception"
             }
         }

@@ -119,6 +119,18 @@ const appState = {
         mergedData: null,
     },
     // ▲▲▲ 添加结束 ▲▲▲
+    
+    // ▼▼▼ 新增：批量专利解读状态 ▼▼▼
+    patentBatch: {
+        customTemplates: [], // 自定义模板列表
+        currentTemplate: null, // 当前选中的模板
+        isEditingTemplate: false, // 是否正在编辑模板
+        patentResults: [], // 专利查询结果
+        analysisResults: [], // 解读结果
+        patentChats: {} // 专利对话状态 { patentNumber: { patentNumber, patentData, messages, isOpen } }
+    },
+    // ▲▲▲ 新增结束 ▲▲▲
+    
     // --- 新增：文件管理状态 ---
     files: {
         purposeFilter: 'file-extract',

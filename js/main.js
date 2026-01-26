@@ -249,6 +249,12 @@ function switchLPLSubTab(subTabId, clickedElement) {
 // 批量专利解读功能
 // =================================================================================
 function initPatentBatch() {
+    // 初始化模板管理
+    initPatentTemplate();
+    
+    // 初始化对话功能
+    initPatentChat();
+    
     // 获取DOM元素
     const patentNumbersInput = getEl('patent_numbers_input');
     const patentCountDisplay = getEl('patent_count_display');
@@ -309,12 +315,19 @@ function initPatentBatch() {
                 return;
             }
             
+            // 获取当前模板
+            const template = appState.patentBatch.currentTemplate;
+            if (!template) {
+                alert('无法获取解读模板信息');
+                return;
+            }
+            
             try {
                 // 显示导出状态
                 searchStatus.textContent = '正在导出Excel文件...';
                 searchStatus.style.display = 'block';
                 
-                // 准备导出数据 - 将JSON字段拆分到各列
+                // 准备导出数据 - 动态适配模板字段
                 const exportData = analysisResults.map(result => {
                     const patentData = result.patent_data || {};
                     
@@ -333,14 +346,14 @@ function initPatentBatch() {
                         console.log('Excel导出 - 成功解析JSON:', result.patent_number);
                     } catch (e) {
                         console.error('Excel导出 - JSON解析失败:', result.patent_number, e);
-                        // 如果不是JSON格式，将整个内容放到总结字段
-                        analysisJson = {
-                            summary: result.analysis_content || ''
-                        };
+                        // 如果不是JSON格式，将整个内容放到第一个字段
+                        if (template.fields.length > 0) {
+                            analysisJson[template.fields[0].id] = result.analysis_content || '';
+                        }
                     }
                     
-                    // 返回扁平化的数据结构，每个字段一列
-                    return {
+                    // 构建基础数据行
+                    const row = {
                         '专利号': result.patent_number,
                         '标题': patentData.title || '',
                         '摘要': patentData.abstract || '',
@@ -350,23 +363,22 @@ function initPatentBatch() {
                         '公开日期': patentData.publication_date || '',
                         '权利要求': patentData.claims ? (Array.isArray(patentData.claims) ? patentData.claims.join('\n') : patentData.claims) : '',
                         '附图链接': patentData.drawings ? (Array.isArray(patentData.drawings) ? patentData.drawings.join('\n') : patentData.drawings) : '',
-                        '说明书': patentData.description || '',
-                        '技术领域': analysisJson.technical_field || '',
-                        '创新点': analysisJson.innovation_points || '',
-                        '技术方案': analysisJson.technical_solution || '',
-                        '应用场景': analysisJson.application_scenarios || '',
-                        '市场价值': analysisJson.market_value || '',
-                        '技术优势': analysisJson.advantages || '',
-                        '局限性': analysisJson.limitations || '',
-                        '解读总结': analysisJson.summary || ''
+                        '说明书': patentData.description || ''
                     };
+                    
+                    // 动态添加模板字段
+                    template.fields.forEach(field => {
+                        row[field.name] = analysisJson[field.id] || '';
+                    });
+                    
+                    return row;
                 });
                 
                 // 使用XLSX库生成Excel文件
                 const ws = XLSX.utils.json_to_sheet(exportData);
                 
-                // 设置列宽以便更好地显示内容
-                const colWidths = [
+                // 动态设置列宽
+                const baseColWidths = [
                     { wch: 15 },  // 专利号
                     { wch: 30 },  // 标题
                     { wch: 40 },  // 摘要
@@ -376,17 +388,12 @@ function initPatentBatch() {
                     { wch: 12 },  // 公开日期
                     { wch: 50 },  // 权利要求
                     { wch: 60 },  // 附图链接
-                    { wch: 50 },  // 说明书
-                    { wch: 20 },  // 技术领域
-                    { wch: 50 },  // 创新点
-                    { wch: 50 },  // 技术方案
-                    { wch: 40 },  // 应用场景
-                    { wch: 40 },  // 市场价值
-                    { wch: 40 },  // 技术优势
-                    { wch: 40 },  // 局限性
-                    { wch: 50 }   // 解读总结
+                    { wch: 50 }   // 说明书
                 ];
-                ws['!cols'] = colWidths;
+                
+                // 为模板字段添加列宽
+                const templateColWidths = template.fields.map(() => ({ wch: 50 }));
+                ws['!cols'] = [...baseColWidths, ...templateColWidths];
                 
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, '专利解读结果');
@@ -481,6 +488,13 @@ function initPatentBatch() {
             return;
         }
         
+        // 获取当前模板
+        const template = appState.patentBatch.currentTemplate;
+        if (!template) {
+            alert('请先选择解读模板');
+            return;
+        }
+        
         // 获取是否包含说明书的选项
         const includeSpecification = document.getElementById('crawl_specification_checkbox')?.checked || false;
         
@@ -489,7 +503,7 @@ function initPatentBatch() {
         analysisResults = [];
         
         // 显示解读状态
-        searchStatus.textContent = `正在解读 ${successfulResults.length} 个专利...`;
+        searchStatus.textContent = `正在使用"${template.name}"模板解读 ${successfulResults.length} 个专利...`;
         searchStatus.style.display = 'block';
         
         try {
@@ -500,12 +514,20 @@ function initPatentBatch() {
                 // 创建解读结果项
                 const resultItem = document.createElement('div');
                 resultItem.className = 'result-item';
-                resultItem.innerHTML = `<h5>正在解读专利：${patent.patent_number}</h5>`;
+                resultItem.innerHTML = `<h5>正在解读专利：${patent.patent_number} (${i + 1}/${successfulResults.length})</h5>`;
                 analysisResultsList.appendChild(resultItem);
+                
+                // 使用模板构建提示词
+                const userPrompt = buildAnalysisPrompt(template, patent.data, includeSpecification);
                 
                 // 调用API解读专利
                 const analysisResult = await apiCall('/patent/analyze', {
                     patent_data: patent.data,
+                    template: {
+                        fields: template.fields,
+                        system_prompt: template.systemPrompt
+                    },
+                    user_prompt: userPrompt,
                     include_specification: includeSpecification
                 });
                 
@@ -529,18 +551,22 @@ function initPatentBatch() {
                     analysisJson = JSON.parse(cleanContent);
                     console.log('解析后的JSON:', analysisJson); // 调试日志
                     
-                    // 以表格形式显示JSON内容
+                    // 动态生成表格内容（根据模板字段）
+                    let tableRows = '';
+                    template.fields.forEach(field => {
+                        const value = analysisJson[field.id] || '-';
+                        const displayValue = typeof value === 'string' ? value.replace(/\n/g, '<br>') : value;
+                        tableRows += `<tr><td style="border: 1px solid #ddd; padding: 8px;">${field.name}</td><td style="border: 1px solid #ddd; padding: 8px;">${displayValue}</td></tr>`;
+                    });
+                    
                     displayContent = `
                         <div class="analysis-content">
                             <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
                                 <tr><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">字段</th><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">内容</th></tr>
-                                <tr><td style="border: 1px solid #ddd; padding: 8px;">技术领域</td><td style="border: 1px solid #ddd; padding: 8px;">${analysisJson.technical_field || '-'}</td></tr>
-                                <tr><td style="border: 1px solid #ddd; padding: 8px;">创新点</td><td style="border: 1px solid #ddd; padding: 8px;">${(analysisJson.innovation_points || '-').replace(/\n/g, '<br>')}</td></tr>
-                                <tr><td style="border: 1px solid #ddd; padding: 8px;">技术方案</td><td style="border: 1px solid #ddd; padding: 8px;">${(analysisJson.technical_solution || '-').replace(/\n/g, '<br>')}</td></tr>
-                                <tr><td style="border: 1px solid #ddd; padding: 8px;">应用场景</td><td style="border: 1px solid #ddd; padding: 8px;">${(analysisJson.application_scenarios || '-').replace(/\n/g, '<br>')}</td></tr>
-                                <tr><td style="border: 1px solid #ddd; padding: 8px;">市场价值</td><td style="border: 1px solid #ddd; padding: 8px;">${(analysisJson.market_value || '-').replace(/\n/g, '<br>')}</td></tr>
-                                <tr><td style="border: 1px solid #ddd; padding: 8px;">技术优势</td><td style="border: 1px solid #ddd; padding: 8px;">${(analysisJson.advantages || '-').replace(/\n/g, '<br>')}</td></tr>
-                                <tr><td style="border: 1px solid #ddd; padding: 8px;">局限性</td><td style="border: 1px solid #ddd; padding: 8px;">${(analysisJson.limitations || '-').replace(/\n/g, '<br>')}</td></tr>
+                                ${tableRows}
+                            </table>
+                        </div>
+                    `;
                                 <tr><td style="border: 1px solid #ddd; padding: 8px;">总结</td><td style="border: 1px solid #ddd; padding: 8px;">${(analysisJson.summary || '-').replace(/\n/g, '<br>')}</td></tr>
                             </table>
                         </div>
@@ -593,6 +619,9 @@ function initPatentBatch() {
     
     // 显示专利查询结果
     function displayPatentResults(results) {
+        // 保存到状态
+        appState.patentBatch.patentResults = results;
+        
         patentResultsList.innerHTML = '';
         
         results.forEach(result => {
@@ -604,15 +633,20 @@ function initPatentBatch() {
             if (result.success) {
                 const data = result.data;
                 
-                // 构建完整的专利信息显示
+                // 构建完整的专利信息显示 - 添加问一问按钮
                 let htmlContent = `
-                    <div style="border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; margin-bottom: 15px;">
-                        <h5 style="color: var(--primary-color); margin-bottom: 5px; font-family: 'Noto Sans SC', Arial, sans-serif;">
-                            ${result.patent_number} - ${data.title || '无标题'}
-                        </h5>
-                        <div style="font-size: 0.9em; color: #666;">
-                            查询耗时: ${result.processing_time?.toFixed(2) || 'N/A'}秒
+                    <div class="patent-card-header" style="border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; margin-bottom: 15px;">
+                        <div style="flex: 1;">
+                            <h5 style="color: var(--primary-color); margin: 0 0 5px 0; font-family: 'Noto Sans SC', Arial, sans-serif;">
+                                ${result.patent_number} - ${data.title || '无标题'}
+                            </h5>
+                            <div style="font-size: 0.9em; color: #666;">
+                                查询耗时: ${result.processing_time?.toFixed(2) || 'N/A'}秒
+                            </div>
                         </div>
+                        <button class="ask-patent-btn" onclick="openPatentChat('${result.patent_number}')">
+                            💬 问一问
+                        </button>
                     </div>
                 `;
                 

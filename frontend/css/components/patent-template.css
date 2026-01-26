@@ -1,0 +1,217 @@
+/* =================================================================================
+   专利解读模板管理样式
+   ================================================================================= */
+
+.template-management-section {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.template-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.template-header label {
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+#patent_template_selector {
+    flex: 1;
+    min-width: 200px;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background: white;
+    font-size: 0.95em;
+}
+
+#manage_template_btn {
+    background: var(--primary-color);
+    color: white;
+}
+
+#template_editor {
+    margin-top: 20px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.template-info {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.template-info input,
+.template-info textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    font-size: 0.95em;
+}
+
+.template-info textarea {
+    min-height: 60px;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.fields-container {
+    margin-top: 15px;
+    padding: 15px;
+    background: white;
+    border-radius: 5px;
+    border: 1px solid var(--border-color);
+}
+
+.fields-container h5 {
+    margin: 0 0 15px 0;
+    color: var(--primary-color);
+    font-size: 1em;
+}
+
+#fields_list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.field-config-item {
+    display: grid;
+    grid-template-columns: 1fr 2fr auto;
+    gap: 10px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 5px;
+    border: 1px solid #e0e0e0;
+    align-items: center;
+}
+
+.field-config-item input {
+    padding: 8px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.field-config-item .field-name {
+    font-weight: 500;
+}
+
+.field-config-item .field-description {
+    color: #666;
+}
+
+#add_field_btn {
+    width: 100%;
+    padding: 10px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.95em;
+    transition: all 0.3s;
+}
+
+#add_field_btn:hover {
+    background: #218838;
+    transform: translateY(-1px);
+}
+
+.template-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.template-actions button {
+    flex: 1;
+    min-width: 120px;
+    padding: 10px 15px;
+}
+
+#save_template_btn {
+    background: var(--primary-color);
+    color: white;
+}
+
+#new_template_btn {
+    background: #28a745;
+    color: white;
+}
+
+#delete_template_btn {
+    background: #dc3545;
+    color: white;
+}
+
+#export_template_btn,
+#import_template_btn {
+    background: #6c757d;
+    color: white;
+}
+
+#cancel_edit_btn {
+    background: #f8f9fa;
+    color: #333;
+    border: 1px solid var(--border-color);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .template-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    #patent_template_selector {
+        width: 100%;
+    }
+    
+    .field-config-item {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .template-actions {
+        flex-direction: column;
+    }
+    
+    .template-actions button {
+        width: 100%;
+    }
+}
+
+/* 动画效果 */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#template_editor {
+    animation: slideDown 0.3s ease-out;
+}
+
+.field-config-item {
+    animation: slideDown 0.2s ease-out;
+}
