@@ -8,7 +8,9 @@ body {
     font-family: 'Noto Sans SC', sans-serif; 
     line-height: 1.7; 
     color: var(--text-color); 
-    background-color: var(--bg-color); 
+    background-color: transparent; /* 改为透明，显示Vanta.js背景 */
     margin: 0; 
     padding: 20px; 
+    position: relative;
+    min-height: 100vh;
 }
