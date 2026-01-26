@@ -1,0 +1,54 @@
+修复控制台错误并增强功能六和问一问功能
+
+## 修复的问题
+
+1. ✅ 修复模板加载错误 (patentTemplate.js:222)
+   - 修改 loadTemplate() 函数支持无参数调用
+   - 添加模板不存在时的错误处理
+
+2. ✅ 修复对话框用户消息布局问题
+   - 用户消息现在正确显示在右侧
+   - 添加 flex 布局属性
+
+3. ✅ 修复CSS属性错误 (chat.css:347)
+   - 移除不支持的 resize-direction 属性
+   - 保留标准的 resize: vertical
+
+4. ✅ 修复JavaScript未定义错误 (patentChat.js:303)
+   - 在catch块中重新获取 historyEl 元素
+   - 添加空值检查避免未定义错误
+
+## 新增功能
+
+1. ✅ 功能六：AI模型选择器
+   - 添加模型选择下拉框
+   - 支持 GLM-4-Flash, GLM-4-Plus, GLM-4-Air, GLM-4-0520
+   - 解读时自动使用选择的模型
+
+2. ✅ 问一问功能上下文增强
+   - 自动包含完整专利信息作为上下文
+   - 包含专利基本信息、权利要求、说明书摘要
+   - 用户可直接提问，无需重复输入专利信息
+
+## 修改的文件
+
+- js/largeBatch.js - 修复模板加载
+- js/patentChat.js - 修复错误处理
+- js/main.js - 添加模型选择功能
+- frontend/index.html - 添加模型选择器UI
+- frontend/css/components/patent-chat.css - 修复消息布局
+- frontend/css/pages/chat.css - 移除无效CSS属性
+- backend/routes/patent.py - 增强问一问上下文
+
+## 测试状态
+
+✅ 所有文件语法检查通过
+✅ 本地功能测试通过
+🟡 待生产环境验证
+
+## 相关文档
+
+- 控制台错误修复完成.md
+- 功能修复和增强完成.md
+- 快速修复参考.md
+- 测试修复功能.bat

@@ -176,6 +176,8 @@
 
 .chat-message.user-message {
     text-align: right;
+    display: flex;
+    justify-content: flex-end;
 }
 
 .chat-message.user-message .message-content {

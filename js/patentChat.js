@@ -300,7 +300,8 @@ async function sendPatentChatMessage() {
         console.error('发送消息失败:', error);
         
         // 移除加载状态
-        const loadingDiv = historyEl.querySelector('.loading');
+        const historyEl = getEl('patent_chat_history');
+        const loadingDiv = historyEl ? historyEl.querySelector('.loading') : null;
         if (loadingDiv) loadingDiv.remove();
         
         // 显示错误消息

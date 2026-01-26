@@ -194,9 +194,19 @@ function updateTemplateSelector() {
     if (allTemplates.some(t => t.name === selectedValue)) templateSelector.value = selectedValue;
 }
 
-function loadTemplate() {
-    const selectedName = templateSelector.value;
-    const template = [...appState.generator.presetTemplates, ...appState.generator.customTemplates].find(t => t.name === selectedName);
+function loadTemplate(templateId) {
+    // 如果没有传入templateId，从选择器获取
+    if (!templateId) {
+        templateId = templateSelector.value;
+    }
+    
+    const template = [...appState.generator.presetTemplates, ...appState.generator.customTemplates].find(t => t.name === templateId);
+    
+    if (!template) {
+        console.error('模板不存在:', templateId);
+        return;
+    }
+    
     loadTemplateUI(template);
 }
 

@@ -520,6 +520,9 @@ function initPatentBatch() {
                 // 使用模板构建提示词
                 const userPrompt = buildAnalysisPrompt(template, patent.data, includeSpecification);
                 
+                // 获取选择的模型
+                const selectedModel = getEl('patent_batch_model_selector')?.value || 'GLM-4-Flash';
+                
                 // 调用API解读专利
                 const analysisResult = await apiCall('/patent/analyze', {
                     patent_data: patent.data,
@@ -528,7 +531,8 @@ function initPatentBatch() {
                         system_prompt: template.systemPrompt
                     },
                     user_prompt: userPrompt,
-                    include_specification: includeSpecification
+                    include_specification: includeSpecification,
+                    model: selectedModel  // 添加模型参数
                 });
                 
                 // 更新解读结果
