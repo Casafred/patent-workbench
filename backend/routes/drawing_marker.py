@@ -88,7 +88,7 @@ def process_drawing_marker():
             return create_response(error="specification is required and must be a non-empty string", status_code=400)
         
         # 导入OCR和图像处理模块
-        from PIL import Image, ImageEnhance, ImageFilter
+        from PIL import Image, ImageEnhance, ImageFilter, ImageOps
         import pytesseract
         import re
         import base64
@@ -165,46 +165,60 @@ def process_drawing_marker():
                 if image.mode != 'L':
                     image = image.convert('L')
                 
-                # 调整图像尺寸到最佳识别范围 (1500-3000px)
+                # 针对专利附图优化：白底黑线、小数字
+                # 策略：大幅放大图像以提高小数字识别率
                 width, height = image.size
+                print(f"[DEBUG] Original size: {width}x{height}")
+                
+                # 放大到至少3000px，专利附图的小数字需要更大的尺寸
                 max_dim = max(width, height)
-                if max_dim < 1500:
-                    scale = 1500 / max_dim
+                target_size = 3000  # 目标尺寸
+                
+                if max_dim < target_size:
+                    scale = target_size / max_dim
                     new_width = int(width * scale)
                     new_height = int(height * scale)
                     image = image.resize((new_width, new_height), Image.LANCZOS)
-                    print(f"[DEBUG] Resized image to: {image.size}")
-                elif max_dim > 3000:
-                    scale = 3000 / max_dim
-                    new_width = int(width * scale)
-                    new_height = int(height * scale)
-                    image = image.resize((new_width, new_height), Image.LANCZOS)
-                    print(f"[DEBUG] Resized image to: {image.size}")
+                    print(f"[DEBUG] Upscaled to: {image.size} (scale: {scale:.2f}x)")
                 
-                # 图像预处理 - 尝试多种预处理方式以提高识别率
-                # 方法1: 原始灰度图
-                gray = image
+                # 专利附图预处理方法 - 针对白底黑字优化
+                preprocessing_methods = []
                 
-                # 方法2: 增强对比度
+                # 方法1: 反转 + 二值化（白底黑字 -> 黑底白字，OCR效果更好）
+                inverted = ImageOps.invert(image)
+                binary_inverted = inverted.point(lambda x: 255 if x > 180 else 0, mode='1')
+                preprocessing_methods.append(('inverted_binary', binary_inverted))
+                
+                # 方法2: 高对比度 + 锐化（增强小数字边缘）
                 enhancer = ImageEnhance.Contrast(image)
-                contrast_enhanced = enhancer.enhance(2.0)
+                high_contrast = enhancer.enhance(3.0)  # 更高的对比度
+                sharpened = high_contrast.filter(ImageFilter.SHARPEN)
+                sharpened = sharpened.filter(ImageFilter.SHARPEN)  # 二次锐化
+                preprocessing_methods.append(('high_contrast_sharp', sharpened))
                 
-                # 方法3: 锐化
-                sharpened = image.filter(ImageFilter.SHARPEN)
+                # 方法3: 二值化（高阈值，适合白底黑字）
+                binary_high = image.point(lambda x: 255 if x > 200 else 0, mode='1')
+                preprocessing_methods.append(('binary_high_threshold', binary_high))
                 
-                # 方法4: 二值化（简单阈值）
-                threshold = 127
-                binary = image.point(lambda x: 255 if x > threshold else 0, mode='1')
+                # 方法4: 形态学处理 - 膨胀（加粗细线条）
+                binary_dilated = image.point(lambda x: 255 if x > 180 else 0, mode='1')
+                # 简单膨胀：使用MaxFilter
+                dilated = binary_dilated.filter(ImageFilter.MaxFilter(3))
+                preprocessing_methods.append(('dilated', dilated))
+                
+                # 方法5: 原始灰度图（作为基准）
+                preprocessing_methods.append(('grayscale', image))
                 
                 # 收集所有方法的OCR结果
                 all_detected_numbers = []
                 
-                # 配置Tesseract - 只识别数字和字母
-                custom_config = r'--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                # 配置Tesseract - 针对专利附图优化
+                # PSM 11: 稀疏文本，适合数字分散在图中的场景
+                # 只识别数字和大写字母（专利附图标记格式）
+                custom_config = r'--oem 3 --psm 11 -c tessedit_char_whitelist=0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                 
                 # 对每种预处理方法进行OCR
-                for idx, processed_img in enumerate([gray, contrast_enhanced, sharpened, binary]):
-                    method_name = ['grayscale', 'contrast_enhanced', 'sharpened', 'binary'][idx]
+                for method_name, processed_img in preprocessing_methods:
                     try:
                         print(f"[DEBUG] Running OCR with method: {method_name}")
                         
@@ -233,8 +247,8 @@ def process_drawing_marker():
                             if text:
                                 print(f"[DEBUG] OCR detected: '{text}' (confidence: {conf})")
                             
-                            # 只保留置信度大于50的结果，且文本不为空
-                            if text and conf > 50:
+                            # 只保留置信度大于40的结果（降低阈值以捕获小数字）
+                            if text and conf > 40:
                                 # 检查是否匹配数字或数字+字母的模式
                                 if re.match(r'^[0-9]+[A-Z]*$', text):
                                     method_detections += 1
@@ -285,9 +299,9 @@ def process_drawing_marker():
                 print(f"[DEBUG] Total unique detections after deduplication: {len(all_detected_numbers)}")
                 print(f"[DEBUG] Detected numbers: {[d['number'] for d in all_detected_numbers]}")
                 
-                # 应用去重和置信度过滤
-                all_detected_numbers = deduplicate_results(all_detected_numbers, position_threshold=20)
-                all_detected_numbers = filter_by_confidence(all_detected_numbers, min_confidence=60)
+                # 应用去重和置信度过滤（降低阈值以适应小数字）
+                all_detected_numbers = deduplicate_results(all_detected_numbers, position_threshold=30)
+                all_detected_numbers = filter_by_confidence(all_detected_numbers, min_confidence=50)
                 print(f"[DEBUG] After filtering: {len(all_detected_numbers)} detections remain")
                 
                 # 从all_detected_numbers中提取与reference_map匹配的结果

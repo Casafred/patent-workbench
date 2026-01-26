@@ -24,6 +24,9 @@ LOGIN_PAGE_HTML = """
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Vanta.js Dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js"></script>
     <style>
         :root {
             --primary-color: #22C55E;
@@ -42,15 +45,28 @@ LOGIN_PAGE_HTML = """
             background-color: var(--bg-color);
             margin: 0;
             color: var(--text-color);
+            position: relative;
+            overflow: hidden;
+        }
+        #vanta-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
         }
         .login-container {
-            background: var(--surface-color);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
             padding: 40px 50px;
             border-radius: 12px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.1);
             width: 360px;
             text-align: center;
             border: 1px solid rgba(34, 197, 94, 0.2);
+            position: relative;
+            z-index: 1;
         }
         .logo-container {
             margin-bottom: 25px;
@@ -169,10 +185,12 @@ LOGIN_PAGE_HTML = """
             bottom: 20px;
             font-size: 12px;
             color: #aaa;
+            z-index: 1;
         }
     </style>
 </head>
 <body>
+    <div id="vanta-bg"></div>
     <div class="login-container">
         <div class="logo-container">
             <h1 class="logo-text">ALFRED X IP</h1>
@@ -219,6 +237,26 @@ LOGIN_PAGE_HTML = """
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // 初始化 Vanta.js NET 动画
+            VANTA.NET({
+                el: "#vanta-bg",
+                mouseControls: true,
+                touchControls: true,
+                gyroControls: false,
+                minHeight: 200.00,
+                minWidth: 200.00,
+                scale: 1.00,
+                scaleMobile: 1.00,
+                // 绿色系配色
+                color: 0x4ade80,           // 荧光绿连线颜色
+                backgroundColor: 0xf0fdf4, // 白色明亮的薄荷绿背景
+                // 简洁高格调设置
+                points: 8.00,              // 较低的点数量，保持留白
+                maxDistance: 18.00,        // 较短的连线距离，避免拥挤
+                spacing: 18.00,            // 较大的间距，避免网格细碎
+                showDots: true
+            });
+
             const passwordInput = document.getElementById('password');
             const passwordToggle = document.getElementById('password-toggle');
             const eyeIcon = document.getElementById('eye-icon');

@@ -212,9 +212,58 @@ tesseract --version
 - [x] 错误处理和异常容错
 - [x] 清理重复的函数定义
 - [x] 代码已推送到Git仓库
+- [ ] **阿里云服务器安装Python依赖（待完成）**
 - [ ] 端到端测试通过
 - [ ] 性能测试通过
 - [ ] 用户验收测试
+
+## 阿里云部署状态
+
+### 诊断结果（2026-01-25）
+
+通过远程诊断发现：
+- ✅ **Tesseract OCR 4.1.1 已安装**
+- ❌ **缺少Python库**：pytesseract、opencv-python、Pillow
+
+**这就是OCR识别返回0结果的根本原因！**
+
+### 待完成的部署步骤
+
+1. **SSH连接到阿里云服务器**
+2. **进入应用目录**：`cd /home/appuser/patent-app`
+3. **安装Python依赖**：
+   ```bash
+   pip3 install pytesseract==0.3.10 opencv-python==4.8.1.78 Pillow==10.1.0
+   ```
+4. **验证安装**：
+   ```bash
+   python3 -c "import pytesseract; import cv2; from PIL import Image; print('✅ 所有库安装成功')"
+   ```
+5. **重启应用服务**（gunicorn/uwsgi/systemd）
+6. **测试功能八**并查看日志
+
+### 快速部署
+
+使用自动化脚本：
+```bash
+# 上传脚本到服务器
+scp scripts/install_ocr_deps_aliyun.sh appuser@服务器IP:/home/appuser/patent-app/
+
+# SSH到服务器
+ssh appuser@服务器IP
+
+# 运行脚本
+cd /home/appuser/patent-app
+chmod +x scripts/install_ocr_deps_aliyun.sh
+./scripts/install_ocr_deps_aliyun.sh
+```
+
+### 详细指南
+
+参考文档：
+- `阿里云OCR依赖安装指南.md` - 完整的安装步骤和故障排查
+- `阿里云后端日志查看指南.md` - 如何查看服务器日志
+- `scripts/install_ocr_deps_aliyun.sh` - 自动化安装脚本
 
 ## 总结
 
