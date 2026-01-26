@@ -305,11 +305,28 @@ async function sendPatentChatMessage() {
         const contentDiv = assistantDiv.querySelector('.message-content');
         historyEl.scrollTop = historyEl.scrollHeight;
         
-        // 调用流式API - 参考功能一的实现
-        const reader = await apiCall('/patent/chat_stream', {
-            patent_number: patentNumber,
-            patent_data: chatState.patentData,
-            messages: chatState.messages
+        // 调用流式API - 使用与功能一相同的 /stream_chat 端点
+        // 构建符合智谱API规范的消息格式
+        const apiMessages = [
+            {
+                role: 'system',
+                content: `你是一个专业的专利分析助手。当前正在分析专利号为 ${patentNumber} 的专利。
+
+专利信息：
+标题：${chatState.patentData.title || '无标题'}
+摘要：${chatState.patentData.abstract || '无摘要'}
+${chatState.patentData.claims ? `权利要求：\n${chatState.patentData.claims.slice(0, 3).map((c, i) => `${i + 1}. ${c}`).join('\n')}` : ''}
+
+请基于以上专利信息，准确、专业地回答用户的问题。`
+            },
+            ...chatState.messages.filter(m => m.role !== 'system')
+        ];
+        
+        const reader = await apiCall('/stream_chat', {
+            model: appState.selectedModel || 'glm-4-flash',
+            messages: apiMessages,
+            temperature: 0.7,
+            enable_web_search: false
         }, 'POST', true); // 启用流式传输
         
         let fullContent = '';

@@ -70,6 +70,16 @@ const PRESET_TEMPLATES = [
 
 // 初始化模板管理
 function initPatentTemplate() {
+    console.log('🔧 初始化专利解读模板管理...');
+    
+    // 初始化状态
+    if (!appState.patentBatch) {
+        appState.patentBatch = {};
+    }
+    if (!appState.patentBatch.customTemplates) {
+        appState.patentBatch.customTemplates = [];
+    }
+    
     // 加载自定义模板
     loadCustomTemplates();
     
@@ -81,6 +91,8 @@ function initPatentTemplate() {
     
     // 加载默认模板
     loadTemplate('default');
+    
+    console.log('✅ 模板管理初始化完成，预设模板数量:', PRESET_TEMPLATES.length);
 }
 
 // 加载自定义模板
@@ -107,13 +119,19 @@ function saveCustomTemplates() {
 // 更新模板选择器
 function updateTemplateSelector() {
     const selector = getEl('patent_template_selector');
-    if (!selector) return;
+    if (!selector) {
+        console.warn('⚠️ 模板选择器元素不存在');
+        return;
+    }
+    
+    // 保存当前选中的值
+    const currentValue = selector.value;
     
     selector.innerHTML = '';
     
     // 添加预设模板
     const presetGroup = document.createElement('optgroup');
-    presetGroup.label = '预设模板';
+    presetGroup.label = '📋 预设模板';
     PRESET_TEMPLATES.forEach(template => {
         const option = document.createElement('option');
         option.value = template.id;
@@ -123,9 +141,9 @@ function updateTemplateSelector() {
     selector.appendChild(presetGroup);
     
     // 添加自定义模板
-    if (appState.patentBatch.customTemplates.length > 0) {
+    if (appState.patentBatch.customTemplates && appState.patentBatch.customTemplates.length > 0) {
         const customGroup = document.createElement('optgroup');
-        customGroup.label = '自定义模板';
+        customGroup.label = '✏️ 自定义模板';
         appState.patentBatch.customTemplates.forEach(template => {
             const option = document.createElement('option');
             option.value = template.id;
@@ -134,6 +152,16 @@ function updateTemplateSelector() {
         });
         selector.appendChild(customGroup);
     }
+    
+    // 恢复之前的选中值，如果存在的话
+    if (currentValue && Array.from(selector.options).some(opt => opt.value === currentValue)) {
+        selector.value = currentValue;
+    } else {
+        // 默认选中第一个预设模板
+        selector.value = 'default';
+    }
+    
+    console.log('✅ 模板选择器已更新，当前选中:', selector.value);
 }
 
 // 绑定模板事件
@@ -212,19 +240,27 @@ function toggleTemplateEditor() {
 
 // 加载模板
 function loadTemplate(templateId) {
+    console.log('📖 加载模板:', templateId);
+    
     // 查找模板
     let template = PRESET_TEMPLATES.find(t => t.id === templateId);
-    if (!template) {
+    if (!template && appState.patentBatch.customTemplates) {
         template = appState.patentBatch.customTemplates.find(t => t.id === templateId);
     }
     
     if (!template) {
-        console.error('模板不存在:', templateId);
+        console.error('❌ 模板不存在:', templateId);
+        // 尝试加载默认模板
+        if (templateId !== 'default') {
+            console.log('🔄 尝试加载默认模板...');
+            loadTemplate('default');
+        }
         return;
     }
     
     // 保存当前模板
     appState.patentBatch.currentTemplate = template;
+    console.log('✅ 模板已加载:', template.name, '字段数:', template.fields.length);
     
     // 如果编辑器打开，更新编辑器内容
     if (appState.patentBatch.isEditingTemplate) {

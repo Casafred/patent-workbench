@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模板功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .template-selector {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        .template-info {
+            background: #f9f9f9;
+            padding: 15px;
+            border-left: 4px solid #4CAF50;
+            margin: 10px 0;
+        }
+        .field-list {
+            list-style: none;
+            padding: 0;
+        }
+        .field-list li {
+            padding: 8px;
+            margin: 5px 0;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .field-name {
+            font-weight: bold;
+            color: #2196F3;
+        }
+        .field-desc {
+            color: #666;
+            font-size: 14px;
+        }
+        .success {
+            color: #4CAF50;
+        }
+        .error {
+            color: #f44336;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        #log {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 专利解读模板功能测试</h1>
+    
+    <div class="test-section">
+        <h2>1. 模板选择器</h2>
+        <label for="patent_template_selector">选择模板：</label>
+        <select id="patent_template_selector" class="template-selector"></select>
+        <button onclick="testLoadTemplate()">加载选中模板</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. 当前模板信息</h2>
+        <div id="template_display" class="template-info">
+            <p>请选择一个模板...</p>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. 测试日志</h2>
+        <button onclick="clearLog()">清空日志</button>
+        <button onclick="testAllTemplates()">测试所有预设模板</button>
+        <div id="log"></div>
+    </div>
+
+    <!-- 引入必要的脚本 -->
+    <script src="/js/dom.js"></script>
+    <script src="/js/state.js"></script>
+    <script src="/js/patentTemplate.js"></script>
+    
+    <script>
+        // 日志函数
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#f44' : type === 'success' ? '#4f4' : '#0f0';
+            logEl.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+        
+        // 显示模板信息
+        function displayTemplate(template) {
+            const display = document.getElementById('template_display');
+            if (!template) {
+                display.innerHTML = '<p class="error">❌ 模板不存在</p>';
+                return;
+            }
+            
+            let html = `
+                <h3 class="success">✅ ${template.name}</h3>
+                <p><strong>描述：</strong>${template.description || '无描述'}</p>
+                <p><strong>类型：</strong>${template.isPreset ? '预设模板' : '自定义模板'}</p>
+                <p><strong>字段数量：</strong>${template.fields.length}</p>
+                <h4>字段列表：</h4>
+                <ul class="field-list">
+            `;
+            
+            template.fields.forEach(field => {
+                html += `
+                    <li>
+                        <span class="field-name">${field.name}</span>
+                        <span class="field-desc"> - ${field.description}</span>
+                    </li>
+                `;
+            });
+            
+            html += '</ul>';
+            display.innerHTML = html;
+        }
+        
+        // 测试加载模板
+        function testLoadTemplate() {
+            const selector = document.getElementById('patent_template_selector');
+            const templateId = selector.value;
+            
+            log(`正在加载模板: ${templateId}`);
+            
+            try {
+                loadTemplate(templateId);
+                const template = appState.patentBatch.currentTemplate;
+                
+                if (template) {
+                    log(`✅ 模板加载成功: ${template.name}`, 'success');
+                    displayTemplate(template);
+                } else {
+                    log(`❌ 模板加载失败: ${templateId}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ 加载模板时出错: ${error.message}`, 'error');
+            }
+        }
+        
+        // 测试所有预设模板
+        function testAllTemplates() {
+            log('开始测试所有预设模板...');
+            
+            const presetTemplates = [
+                'default',
+                'technical',
+                'business',
+                'legal'
+            ];
+            
+            presetTemplates.forEach(templateId => {
+                try {
+                    loadTemplate(templateId);
+                    const template = appState.patentBatch.currentTemplate;
+                    
+                    if (template && template.fields && template.fields.length > 0) {
+                        log(`✅ ${templateId}: ${template.name} (${template.fields.length}个字段)`, 'success');
+                    } else {
+                        log(`❌ ${templateId}: 加载失败或字段为空`, 'error');
+                    }
+                } catch (error) {
+                    log(`❌ ${templateId}: ${error.message}`, 'error');
+                }
+            });
+            
+            log('测试完成！', 'success');
+        }
+        
+        // 页面加载时初始化
+        window.addEventListener('DOMContentLoaded', () => {
+            log('初始化模板系统...');
+            
+            try {
+                // 初始化状态
+                if (!window.appState) {
+                    window.appState = {};
+                }
+                if (!window.appState.patentBatch) {
+                    window.appState.patentBatch = {
+                        customTemplates: [],
+                        currentTemplate: null,
+                        isEditingTemplate: false
+                    };
+                }
+                
+                // 初始化模板
+                initPatentTemplate();
+                
+                log('✅ 模板系统初始化完成', 'success');
+                
+                // 自动加载默认模板
+                setTimeout(() => {
+                    testLoadTemplate();
+                }, 500);
+                
+            } catch (error) {
+                log(`❌ 初始化失败: ${error.message}`, 'error');
+                console.error(error);
+            }
+        });
+    </script>
+</body>
+</html>
