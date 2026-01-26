@@ -285,11 +285,11 @@ async function sendPatentChatMessage() {
         // 清空输入框
         input.value = '';
         
-        // 显示加载状态
+        // 创建AI消息容器（用于流式显示）
         const historyEl = getEl('patent_chat_history');
-        const loadingDiv = document.createElement('div');
-        loadingDiv.className = 'chat-message assistant-message loading';
-        loadingDiv.innerHTML = `
+        const assistantDiv = document.createElement('div');
+        assistantDiv.className = 'chat-message assistant-message streaming';
+        assistantDiv.innerHTML = `
             <div class="message-header">
                 <span class="message-role">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: text-bottom;">
@@ -297,44 +297,68 @@ async function sendPatentChatMessage() {
                     </svg>
                     AI助手
                 </span>
+                <span class="message-time">${new Date().toLocaleTimeString()}</span>
             </div>
-            <div class="message-content">
-                <div class="loading-dots">
-                    <span>.</span><span>.</span><span>.</span>
-                </div>
-            </div>
+            <div class="message-content"></div>
         `;
-        historyEl.appendChild(loadingDiv);
+        historyEl.appendChild(assistantDiv);
+        const contentDiv = assistantDiv.querySelector('.message-content');
         historyEl.scrollTop = historyEl.scrollHeight;
         
-        // 调用API
-        const response = await apiCall('/patent/chat', {
+        // 调用流式API
+        const reader = await apiCall('/patent/chat', {
             patent_number: patentNumber,
             patent_data: chatState.patentData,
             messages: chatState.messages
-        });
+        }, 'POST', true); // 启用流式传输
         
-        // 移除加载状态
-        loadingDiv.remove();
+        let fullContent = '';
+        const decoder = new TextDecoder();
+        
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+            
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const data = line.slice(6);
+                    if (data === '[DONE]') continue;
+                    
+                    try {
+                        const parsed = JSON.parse(data);
+                        const delta = parsed.choices?.[0]?.delta?.content;
+                        if (delta) {
+                            fullContent += delta;
+                            contentDiv.textContent = fullContent;
+                            historyEl.scrollTop = historyEl.scrollHeight;
+                        }
+                    } catch (e) {
+                        console.warn('解析流式数据失败:', e);
+                    }
+                }
+            }
+        }
+        
+        // 移除流式标记
+        assistantDiv.classList.remove('streaming');
         
         // 添加AI回复到历史
-        const assistantMessage = response.choices[0]?.message?.content || '抱歉，我无法回答这个问题。';
         chatState.messages.push({
             role: 'assistant',
-            content: assistantMessage,
+            content: fullContent || '抱歉，我无法回答这个问题。',
             timestamp: new Date().toISOString()
         });
-        
-        // 更新显示
-        updateChatHistory(patentNumber);
         
     } catch (error) {
         console.error('发送消息失败:', error);
         
-        // 移除加载状态
+        // 移除流式消息
         const historyEl = getEl('patent_chat_history');
-        const loadingDiv = historyEl ? historyEl.querySelector('.loading') : null;
-        if (loadingDiv) loadingDiv.remove();
+        const streamingDiv = historyEl ? historyEl.querySelector('.streaming') : null;
+        if (streamingDiv) streamingDiv.remove();
         
         // 显示错误消息
         chatState.messages.push({

@@ -750,12 +750,19 @@ function updateStatsPanel() {
  * 处理视图模式切换
  */
 function handleViewModeChange(viewMode) {
+    // 保存当前分析结果到状态，防止切换时丢失
+    if (!appState.claimsComparison.analysisResult) {
+        alert('请先进行对比分析');
+        return;
+    }
+    
     appState.claimsComparison.viewMode = viewMode;
     
     viewModeBtns.forEach(btn => {
         btn.classList.toggle('active', btn.dataset.view === viewMode);
     });
     
+    // 重新渲染结果（使用保存的数据）
     renderResults();
 }
 
@@ -1001,11 +1008,18 @@ function displayCouplingResult(result, selectedClaims) {
  * 导出对比报告
  */
 function exportComparisonReport() {
+    // 从状态中获取数据，确保数据持久化
     const data = appState.claimsComparison.analysisResult;
     const claims = appState.claimsComparison.claims;
     
-    if (!data) {
-        alert('没有可导出的分析结果');
+    if (!data || !claims || claims.length === 0) {
+        alert('没有可导出的分析结果，请先进行对比分析');
+        return;
+    }
+    
+    // 验证数据完整性
+    if (!data.comparison_matrix || data.comparison_matrix.length === 0) {
+        alert('对比数据不完整，请重新进行分析');
         return;
     }
     
