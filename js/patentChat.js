@@ -416,7 +416,6 @@ function initPatentChat() {
     
     // 注意：移除了点击模态框外部关闭的功能，因为现在是悬浮窗模式
 }
-}
 
 // 暴露到全局
 globalThis.initPatentChat = initPatentChat;
