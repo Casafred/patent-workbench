@@ -280,7 +280,9 @@
     height: 50px; 
     padding: 12px 50px 12px 20px; 
     overflow-y: auto; 
-    margin: 0; 
+    margin: 0;
+    resize: vertical; /* 允许垂直调整大小 */
+    resize-direction: vertical; /* 确保只能向下扩展 */
 }
 
 #chat_char_count { 

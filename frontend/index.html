@@ -904,23 +904,45 @@
                     <span class="model-description" id="model_description">快速模型，适合简单对比</span>
                 </div>
                 <div class="config-item">
-                    <label>对比数量：</label>
+                    <label>权利要求数量：</label>
                     <div class="comparison-count-selector">
-                        <button class="count-btn active" data-count="2">2个</button>
-                        <button class="count-btn" data-count="3">3个</button>
-                        <button class="count-btn" data-count="4">4个</button>
+                        <span id="claims_count_display">当前：2个</span>
+                        <button class="add-claim-btn" id="add_claim_btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            添加
+                        </button>
                     </div>
+                    <span class="model-description">最多支持10个权利要求对比</span>
                 </div>
             </div>
         </div>
 
         <!-- 动态输入区 -->
         <div id="claims_input_container" class="claims-input-grid">
-            <!-- 动态生成2-4个输入组 -->
+            <!-- 动态生成输入组 -->
+        </div>
+        
+        <!-- 耦合对比区域 -->
+        <div class="coupling-comparison-area">
+            <h3>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M12 1v6m0 6v6m-5.2-9.8l4.2 4.2m0 0l4.2 4.2m-8.4 0l4.2-4.2m0 0l4.2-4.2"></path>
+                </svg>
+                耦合对比分析
+            </h3>
+            <p class="info" style="margin-bottom: 15px;">选择多个权利要求进行耦合对比分析，例如：分析第1、4、5号权利要求之间的关系</p>
+            <div class="coupling-selector" id="coupling_selector">
+                <!-- 动态生成复选框 -->
+            </div>
+            <button class="coupling-analyze-btn" id="coupling_analyze_btn" disabled>开始耦合分析</button>
         </div>
         
         <div style="text-align: center; margin: 25px 0;">
-            <button id="claims_analyze_btn">开始分析</button>
+            <button id="claims_analyze_btn">开始全部对比分析</button>
         </div>
 
         <!-- 结果展示区 -->
