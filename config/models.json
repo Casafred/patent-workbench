@@ -1,0 +1,9 @@
+{
+  "models": [
+    "glm-4-flashX-250414",
+    "glm-4-flash",
+    "glm-4-long",
+    "GLM-4.7-Flash"
+  ],
+  "description": "统一的模型配置文件，所有功能的模型选择列表都从这里读取"
+}

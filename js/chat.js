@@ -181,7 +181,7 @@ function initChat() {
         }
     }
 
-    chatModelSelect.innerHTML = AVAILABLE_MODELS.map(m => `<option value="${m}">${m}</option>`).join('');
+    // 模型选择器现在由 state.js 的 updateAllModelSelectors() 统一管理
     loadPersonas();
     loadConversations();
 

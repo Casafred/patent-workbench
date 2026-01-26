@@ -68,7 +68,10 @@ const appState = {
         customTemplates: [],
         presetTemplates: [
             { name: "专利文本翻译", isPreset: true, system: "你是一个专业精通各技术领域术语的、精通多国语言的专利文本翻译引擎。你的任务是自动检测用户输入专利文本的语言并将其翻译成中文。请直接返回翻译后的文本，不要添加任何额外的解释或说明。你必须严格遵循输出格式要求。", user: { rules: "请基于以下文本，直接输出翻译后的内容。\n要求：\n1. 结果必须是直接的翻译后中文文本，必须忠实于原文不得臆测，并选择贴合技术领域的专业术语表达", outputFields: [] }},
-            { name: "技术方案解读", isPreset: true, system: "你是一位资深的专利技术分析师。你的任务是基于专利内容，梳理总结其要解决的技术问题，采用的核心方案内容、以及实现的技术效果和最重要的核心关键词短语。", user: { rules: "请分析此专利并按以下JSON格式输出：", outputFields: [ { name: "技术方案", desc: "此处填写技术方案，总结专利的主要方案内容" }, { name: "技术问题", desc: "此处填写该专利可能主要解决的技术问题" }, { name: "技术效果", desc: "此处填写该专利可能带来的技术效果" }, { name: "技术关键词", desc: "此处按照专利文本中构成核心方案的重要程度输出15个关键词或短语" }] }}
+            { name: "技术方案解读", isPreset: true, system: "你是一位资深的专利技术分析师。你的任务是基于专利内容，梳理总结其要解决的技术问题，采用的核心方案内容、以及实现的技术效果和最重要的核心关键词短语。", user: { rules: "请分析此专利并按以下JSON格式输出：", outputFields: [ { name: "技术方案", desc: "此处填写技术方案，总结专利的主要方案内容" }, { name: "技术问题", desc: "此处填写该专利可能主要解决的技术问题" }, { name: "技术效果", desc: "此处填写该专利可能带来的技术效果" }, { name: "技术关键词", desc: "此处按照专利文本中构成核心方案的重要程度输出15个关键词或短语" }] }},
+            { name: "技术文本翻译", isPreset: true, system: "你是一个专业精通各技术领域术语的、精通多国语言的翻译引擎。你的任务是自动检测用户输入文本的语言并将其翻译成中文。请直接返回翻译后的文本，不要添加任何额外的解释或说明。", user: { rules: "请翻译以下文本：", outputFields: [] }},
+            { name: "检索词拓展", isPreset: true, system: "你是一个专业的专利检索分析师。你的任务是根据用户提供的关键词，生成相关的拓展检索词。请确保生成的检索词与原关键词相关且具有多样性，能够覆盖不同的表达方式和相关领域。", user: { rules: "请为以下关键词生成10个相关的拓展检索词：", outputFields: [] }},
+            { name: "技术文本总结", isPreset: true, system: "你是一位资深的技术分析师。你的任务是基于提供的技术文本，总结其核心内容、技术要点和关键数据。请保持总结简洁明了，不超过200字。", user: { rules: "请总结以下技术文本的核心内容（不超过200字）：", outputFields: [] }}
         ]
     },
     reporter: {
@@ -139,7 +142,94 @@ const appState = {
 };
 
 const BACKEND_URL = 'https://patent-workbench-backend.onrender.com';
-const AVAILABLE_MODELS = ["glm-4-flash-250414", "glm-4-flashX-250414", "glm-4-flash", "glm-4-long", "GLM-4.7-Flash"];
-const BATCH_MODELS = ["glm-4-flashX-250414" , "glm-4-flash","glm-4-long", "GLM-4.7-Flash"];
-const ASYNC_MODELS = ["glm-4-flash", "glm-4-flashX-250414", "glm-4-flash-250414", "GLM-4.7-Flash"];
+
+// ▼▼▼ 统一模型配置 - 从配置文件加载 ▼▼▼
+let AVAILABLE_MODELS = ["glm-4-flashX-250414", "glm-4-flash", "glm-4-long", "GLM-4.7-Flash"];
+let BATCH_MODELS = ["glm-4-flashX-250414", "glm-4-flash", "glm-4-long", "GLM-4.7-Flash"];
+let ASYNC_MODELS = ["glm-4-flashX-250414", "glm-4-flash", "glm-4-long", "GLM-4.7-Flash"];
+
+// 从配置文件加载模型列表
+async function loadModelsConfig() {
+    try {
+        const response = await fetch('config/models.json');
+        const config = await response.json();
+        if (config.models && Array.isArray(config.models)) {
+            AVAILABLE_MODELS = config.models;
+            BATCH_MODELS = config.models;
+            ASYNC_MODELS = config.models;
+            console.log('✅ 模型配置已从 config/models.json 加载:', config.models);
+            
+            // 更新所有模型选择器
+            updateAllModelSelectors();
+        }
+    } catch (error) {
+        console.warn('⚠️ 无法加载模型配置文件，使用默认配置:', error);
+    }
+}
+
+// 更新所有功能的模型选择器
+function updateAllModelSelectors() {
+    const modelOptions = AVAILABLE_MODELS.map(m => `<option value="${m}">${m}</option>`).join('');
+    
+    // 功能一：即时对话
+    const chatModelSelect = document.getElementById('chat_model_select');
+    if (chatModelSelect) {
+        const currentValue = chatModelSelect.value;
+        chatModelSelect.innerHTML = modelOptions;
+        if (AVAILABLE_MODELS.includes(currentValue)) {
+            chatModelSelect.value = currentValue;
+        }
+    }
+    
+    // 功能二：小批量异步
+    const asyncTemplateModelSelect = document.getElementById('async_template_model_select');
+    if (asyncTemplateModelSelect) {
+        const currentValue = asyncTemplateModelSelect.value;
+        asyncTemplateModelSelect.innerHTML = modelOptions;
+        if (AVAILABLE_MODELS.includes(currentValue)) {
+            asyncTemplateModelSelect.value = currentValue;
+        }
+    }
+    
+    // 功能三：大批量处理
+    const apiModelSelect = document.getElementById('api_model_select');
+    if (apiModelSelect) {
+        const currentValue = apiModelSelect.value;
+        apiModelSelect.innerHTML = modelOptions;
+        if (AVAILABLE_MODELS.includes(currentValue)) {
+            apiModelSelect.value = currentValue;
+        }
+    }
+    
+    // 功能五：权利要求对比
+    const comparisonModelSelect = document.getElementById('comparison_model_select');
+    if (comparisonModelSelect) {
+        const currentValue = comparisonModelSelect.value;
+        comparisonModelSelect.innerHTML = modelOptions;
+        if (AVAILABLE_MODELS.includes(currentValue)) {
+            comparisonModelSelect.value = currentValue;
+        }
+    }
+    
+    // 功能六：批量专利解读
+    const patentBatchModelSelector = document.getElementById('patent_batch_model_selector');
+    if (patentBatchModelSelector) {
+        const currentValue = patentBatchModelSelector.value;
+        patentBatchModelSelector.innerHTML = modelOptions;
+        if (AVAILABLE_MODELS.includes(currentValue)) {
+            patentBatchModelSelector.value = currentValue;
+        }
+    }
+    
+    console.log('✅ 所有模型选择器已更新');
+}
+
+// 在页面加载时自动加载模型配置
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadModelsConfig);
+} else {
+    loadModelsConfig();
+}
+// ▲▲▲ 统一模型配置结束 ▲▲▲
+
 const MAX_ASYNC_RETRIES = 3;

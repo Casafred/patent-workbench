@@ -10,7 +10,7 @@ globalThis.initLargeBatch = function() {
 }
 
 function initGenerator() {
-    apiModelSelect.innerHTML = BATCH_MODELS.map(m => `<option value="${m}">${m}</option>`).join('');
+    // 模型选择器现在由 state.js 的 updateAllModelSelectors() 统一管理
     genFileInput.addEventListener('change', handleGenFile);
     genSheetSelector.addEventListener('change', e => loadGenSheet(e.target.value));
     columnCountInput.addEventListener('input', () => { updateColumnSelectors(); updateContentInsertionPreview(); });

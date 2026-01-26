@@ -50,9 +50,7 @@ function initAsyncBatch() {
     const submitBtn = getEl('async_submit_batch_btn');
 
     presetTemplateSelect.innerHTML = '<option value="">选择预置模板或新建</option>' + appState.asyncBatch.presetTemplates.map(t => `<option value="${t.name}">${t.name}</option>`).join('');
-    // ▼▼▼ FIX: Remove or comment out this line to make the area visible by default ▼▼▼
-    // templateEditArea.style.display = 'none'; 
-    templateModelSelect.innerHTML = ASYNC_MODELS.map(m => `<option value="${m}">${m}</option>`).join('');
+    // 模型选择器现在由 state.js 的 updateAllModelSelectors() 统一管理
 
     presetTemplateSelect.addEventListener('change', () => {
         const selectedName = presetTemplateSelect.value;
