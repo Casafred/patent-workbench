@@ -180,6 +180,71 @@ LOGIN_PAGE_HTML = """
         .links a:hover {
             text-decoration: underline;
         }
+        .agreement-section {
+            margin: 20px 0;
+            text-align: left;
+        }
+        .agreement-checkbox {
+            display: flex;
+            align-items: flex-start;
+            cursor: pointer;
+            position: relative;
+            padding-left: 30px;
+            user-select: none;
+            line-height: 1.6;
+        }
+        .agreement-checkbox input[type="checkbox"] {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+        .checkmark {
+            position: absolute;
+            left: 0;
+            top: 2px;
+            height: 20px;
+            width: 20px;
+            background-color: #fff;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        .agreement-checkbox:hover .checkmark {
+            border-color: var(--primary-color);
+        }
+        .agreement-checkbox input:checked ~ .checkmark {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        .checkmark:after {
+            content: "";
+            position: absolute;
+            display: none;
+            left: 6px;
+            top: 2px;
+            width: 5px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+        .agreement-checkbox input:checked ~ .checkmark:after {
+            display: block;
+        }
+        .agreement-text {
+            font-size: 13px;
+            color: #666;
+        }
+        .agreement-text a {
+            color: var(--primary-color-dark);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .agreement-text a:hover {
+            text-decoration: underline;
+        }
         .footer {
             position: absolute;
             bottom: 20px;
@@ -219,6 +284,21 @@ LOGIN_PAGE_HTML = """
                     </svg>
                 </button>
             </div>
+            
+            <!-- 协议勾选区域 -->
+            <div class="agreement-section">
+                <label class="agreement-checkbox">
+                    <input type="checkbox" id="agreement-check" name="agreement" required>
+                    <span class="checkmark"></span>
+                    <span class="agreement-text">
+                        我已阅读并同意
+                        <a href="/frontend/user-agreement.html" target="_blank">《用户协议》</a>、
+                        <a href="/frontend/privacy.html" target="_blank">《隐私政策》</a>和
+                        <a href="/frontend/disclaimer.html" target="_blank">《免责声明》</a>
+                    </span>
+                </label>
+            </div>
+            
             <button id="login-btn" type="submit" class="login-btn">
                 <span id="btn-text">登 录</span>
                 <div id="spinner" class="spinner"></div>
@@ -283,7 +363,16 @@ LOGIN_PAGE_HTML = """
             });
 
             // 表单提交时显示加载状态
-            loginForm.addEventListener('submit', function() {
+            loginForm.addEventListener('submit', function(e) {
+                const agreementCheck = document.getElementById('agreement-check');
+                
+                // 验证是否勾选协议
+                if (!agreementCheck.checked) {
+                    e.preventDefault();
+                    alert('请先阅读并同意用户协议、隐私政策和免责声明');
+                    return false;
+                }
+                
                 loginBtn.disabled = true;
                 btnText.style.display = 'none';
                 spinner.style.display = 'block';
