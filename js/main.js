@@ -437,7 +437,7 @@ function initPatentBatch() {
         
         // 首先检查后端版本
         try {
-            const versionResponse = await apiCall('/patent/version');
+            const versionResponse = await apiCall('/patent/version', null, 'GET');
             console.log('✅ 后端版本信息:', versionResponse);
             console.log('✅ 支持的功能:', versionResponse.features);
         } catch (error) {

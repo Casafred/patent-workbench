@@ -198,13 +198,45 @@ function updateChatHistory(patentNumber) {
     historyEl.scrollTop = historyEl.scrollHeight;
 }
 
-// 格式化消息内容
+// 格式化消息内容 - 支持Markdown渲染
 function formatMessageContent(content) {
+    // 检查是否有marked库
+    if (typeof marked !== 'undefined') {
+        try {
+            // 配置marked选项
+            marked.setOptions({
+                breaks: true,  // 支持GFM换行
+                gfm: true,     // 启用GitHub风格的Markdown
+                headerIds: false,  // 禁用标题ID
+                mangle: false  // 禁用邮箱混淆
+            });
+            
+            // 使用marked渲染Markdown
+            return marked.parse(content);
+        } catch (e) {
+            console.error('Markdown渲染失败:', e);
+            // 如果渲染失败，使用简单格式化
+            return simpleFormatContent(content);
+        }
+    } else {
+        // 如果没有marked库，使用简单格式化
+        return simpleFormatContent(content);
+    }
+}
+
+// 简单格式化（备用方案）
+function simpleFormatContent(content) {
     // 转义HTML
     let formatted = content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
     
     // 转换换行
     formatted = formatted.replace(/\n/g, '<br>');
+    
+    // 转换粗体
+    formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    
+    // 转换斜体
+    formatted = formatted.replace(/\*(.+?)\*/g, '<em>$1</em>');
     
     // 转换列表
     formatted = formatted.replace(/^- (.+)$/gm, '<li>$1</li>');

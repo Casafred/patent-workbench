@@ -175,7 +175,10 @@ function loadTemplateUI(template) {
 function initTemplates() {
     appState.generator.customTemplates = JSON.parse(localStorage.getItem('custom_templates') || '[]');
     updateTemplateSelector();
-    loadTemplate();
+    // 加载默认模板（第一个预设模板）
+    if (appState.generator.presetTemplates.length > 0) {
+        loadTemplate(appState.generator.presetTemplates[0].name);
+    }
 }
 
 function updateTemplateSelector() {
