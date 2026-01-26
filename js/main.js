@@ -669,7 +669,7 @@ function initPatentBatch() {
                             htmlContent += `
                                 <p style="margin-bottom: 10px; font-family: 'Noto Sans SC', Arial, sans-serif; position: relative;">
                                     <strong style="color: var(--primary-color);">${field.label}:</strong>
-                                    <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', '${field.key}', event)" title="复制${field.label}" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">📋</button>
+                                    <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', '${field.key}', event)" title="复制${field.label}" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg></button>
                                     <br/>
                                     <a href="${field.value}" target="_blank" style="color: var(--primary-color); text-decoration: underline;">${field.value}</a>
                                 </p>
@@ -678,7 +678,7 @@ function initPatentBatch() {
                             htmlContent += `
                                 <p style="margin-bottom: 10px; font-family: 'Noto Sans SC', Arial, sans-serif; position: relative;">
                                     <strong style="color: var(--primary-color);">${field.label}:</strong>
-                                    <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', '${field.key}', event)" title="复制${field.label}" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">📋</button>
+                                    <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', '${field.key}', event)" title="复制${field.label}" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg></button>
                                     <br/>
                                     <span style="line-height: 1.6;">${field.value}</span>
                                 </p>
@@ -696,7 +696,7 @@ function initPatentBatch() {
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                                 <div>
                                     <strong style="color: var(--primary-color); font-family: 'Noto Sans SC', Arial, sans-serif;">⚖️ 权利要求 (共${data.claims.length}条):</strong>
-                                    <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'claims', event)" title="复制所有权利要求" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">📋</button>
+                                    <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'claims', event)" title="复制所有权利要求" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg></button>
                                 </div>
                                 ${hasMore ? `<button class="small-button" onclick="toggleClaims('${result.patent_number}')" style="padding: 2px 8px; font-size: 0.8em;">展开全部</button>` : ''}
                             </div>
@@ -725,7 +725,7 @@ function initPatentBatch() {
                         <div style="margin-top: 15px; padding: 10px; background-color: #fff8e1; border-radius: 5px;">
                             <div style="margin-bottom: 10px;">
                                 <strong style="color: var(--primary-color); font-family: 'Noto Sans SC', Arial, sans-serif;">🖼️ 专利附图 (共${data.drawings.length}张):</strong>
-                                <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'drawings', event)" title="复制所有附图链接" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">📋</button>
+                                <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'drawings', event)" title="复制所有附图链接" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg></button>
                             </div>
                             <div style="display: flex; flex-wrap: wrap; gap: 10px;">
                     `;
@@ -754,7 +754,7 @@ function initPatentBatch() {
                         <div style="margin-top: 15px; padding: 10px; background-color: #f0f8ff; border-radius: 5px;">
                             <div style="margin-bottom: 8px;">
                                 <strong style="color: var(--primary-color); font-family: 'Noto Sans SC', Arial, sans-serif;">📝 说明书:</strong>
-                                <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'description', event)" title="复制说明书" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">📋</button>
+                                <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'description', event)" title="复制说明书" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg></button>
                             </div>
                             <div style="margin-top: 8px; font-size: 0.9em; line-height: 1.6; font-family: 'Noto Sans SC', Arial, sans-serif; max-height: 300px; overflow-y: auto;">
                                 ${data.description}
@@ -769,7 +769,7 @@ function initPatentBatch() {
                         <div style="margin-top: 15px; padding: 10px; background-color: #e8f5e9; border-radius: 5px;">
                             <div style="margin-bottom: 8px;">
                                 <strong style="color: var(--primary-color); font-family: 'Noto Sans SC', Arial, sans-serif;">📚 引用专利 (共${data.patent_citations.length}条):</strong>
-                                <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'patent_citations', event)" title="复制引用专利" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">📋</button>
+                                <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'patent_citations', event)" title="复制引用专利" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg></button>
                             </div>
                             <div style="max-height: 200px; overflow-y: auto;">
                                 <table style="width: 100%; font-size: 0.85em; border-collapse: collapse;">
@@ -805,7 +805,7 @@ function initPatentBatch() {
                         <div style="margin-top: 15px; padding: 10px; background-color: #fff3e0; border-radius: 5px;">
                             <div style="margin-bottom: 8px;">
                                 <strong style="color: var(--primary-color); font-family: 'Noto Sans SC', Arial, sans-serif;">🔗 被引用专利 (共${data.cited_by.length}条):</strong>
-                                <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'cited_by', event)" title="复制被引用专利" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">📋</button>
+                                <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'cited_by', event)" title="复制被引用专利" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg></button>
                             </div>
                             <div style="max-height: 200px; overflow-y: auto;">
                                 <table style="width: 100%; font-size: 0.85em; border-collapse: collapse;">
@@ -841,7 +841,7 @@ function initPatentBatch() {
                         <div style="margin-top: 15px; padding: 10px; background-color: #f3e5f5; border-radius: 5px;">
                             <div style="margin-bottom: 8px;">
                                 <strong style="color: var(--primary-color); font-family: 'Noto Sans SC', Arial, sans-serif;">⚖️ 法律事件 (共${data.legal_events.length}条):</strong>
-                                <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'legal_events', event)" title="复制法律事件" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">📋</button>
+                                <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'legal_events', event)" title="复制法律事件" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg></button>
                             </div>
                             <div style="max-height: 200px; overflow-y: auto;">
                                 <table style="width: 100%; font-size: 0.85em; border-collapse: collapse;">
@@ -876,11 +876,19 @@ function initPatentBatch() {
                 // 操作按钮
                 htmlContent += `
                     <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
-                        <a href="${result.url}" target="_blank" class="small-button" style="text-decoration: none;">
-                            🔗 查看原始专利
+                        <a href="${result.url}" target="_blank" class="small-button" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l1.828-1.829A3 3 0 0 0 8.586 5.5L8 6.086a1.002 1.002 0 0 0-.154.199 2 2 0 0 1 .861 3.337L6.88 11.45a2 2 0 1 1-2.83-2.83l.793-.792a4.018 4.018 0 0 1-.128-1.287z"/>
+                                <path d="M6.586 4.672A3 3 0 0 0 7.414 9.5l.775-.776a2 2 0 0 1-.896-3.346L9.12 3.55a2 2 0 1 1 2.83 2.83l-.793.792c.112.42.155.855.128 1.287l1.372-1.372a3 3 0 1 0-4.243-4.243L6.586 4.672z"/>
+                            </svg>
+                            查看原始专利
                         </a>
-                        <button class="small-button" onclick="copyPatentInfo('${result.patent_number}')" style="background-color: #28a745;">
-                            📋 复制信息
+                        <button class="small-button" onclick="copyPatentInfo('${result.patent_number}')" style="background-color: #28a745; display: inline-flex; align-items: center; gap: 6px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                            </svg>
+                            复制信息
                         </button>
                     </div>
                 `;

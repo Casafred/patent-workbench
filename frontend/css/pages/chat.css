@@ -158,7 +158,7 @@
     display: flex;
     gap: 15px;
     align-items: flex-start;
-    max-width: 90%;
+    max-width: 85%;
     width: fit-content;
 }
 
@@ -167,11 +167,11 @@
 }
 
 .user-message {
-    justify-content: flex-end;
+    justify-content: flex-start;
 }
 
 .user-message .message-main-content {
-    flex-direction: row-reverse;
+    flex-direction: row;
 }
 
 .chat-message .avatar { 
@@ -197,9 +197,70 @@
 
 .message-content { 
     padding: 12px 18px; 
-    border-radius: 18px; 
+    border-radius: 12px; 
     word-break: break-word; 
-    position: relative; 
+    position: relative;
+    line-height: 1.6;
+}
+
+/* Markdown样式优化 */
+.message-content p {
+    margin: 0 0 10px 0;
+    line-height: 1.6;
+}
+
+.message-content p:last-child {
+    margin-bottom: 0;
+}
+
+.message-content ul,
+.message-content ol {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.message-content li {
+    margin: 5px 0;
+    line-height: 1.6;
+}
+
+.message-content code {
+    background: rgba(0, 0, 0, 0.05);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.9em;
+}
+
+.message-content pre {
+    background-color: #2D3748;
+    color: #F7F9FC;
+    padding: 15px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 10px 0;
+}
+
+.message-content pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+}
+
+.message-content blockquote {
+    border-left: 4px solid var(--primary-color);
+    padding-left: 15px;
+    margin: 10px 0;
+    color: var(--text-color-secondary);
+}
+
+.message-content a {
+    color: var(--primary-color);
+    text-decoration: underline;
+}
+
+.message-content a:hover {
+    color: var(--primary-color-dark);
 }
 
 .message-footer { 
