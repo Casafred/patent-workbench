@@ -567,10 +567,6 @@ function initPatentBatch() {
                             </table>
                         </div>
                     `;
-                                <tr><td style="border: 1px solid #ddd; padding: 8px;">总结</td><td style="border: 1px solid #ddd; padding: 8px;">${(analysisJson.summary || '-').replace(/\n/g, '<br>')}</td></tr>
-                            </table>
-                        </div>
-                    `;
                 } catch (e) {
                     console.error('JSON解析失败:', e, '原始内容:', analysisContent); // 调试日志
                     // 如果不是JSON格式，显示原始内容
