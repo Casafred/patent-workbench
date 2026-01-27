@@ -26,10 +26,12 @@
     height: 100%;
     opacity: 0;
     transition: opacity 0.3s ease;
+    pointer-events: none;
 }
 
 #patent_detail_modal.show {
     opacity: 1;
+    pointer-events: auto;
 }
 
 #patent_detail_modal .modal-content {
@@ -44,6 +46,13 @@
     max-height: 80vh;
     resize: both;
     overflow: auto;
+    padding: 20px;
+    background-color: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    left: auto;
+    top: auto;
+    margin: auto;
 }
 
 #patent_detail_modal.show .modal-content {
