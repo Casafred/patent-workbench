@@ -665,443 +665,67 @@ function initPatentBatch() {
         }
     });
     
-    // 显示专利查询结果
-    function displayPatentResults(results) {
-        // 保存到状态
-        appState.patentBatch.patentResults = results;
-        
-        // 显示结果容器
-        if (patentResultsContainer) {
-            patentResultsContainer.style.display = 'block';
-        }
-        
-        patentResultsList.innerHTML = '';
-        
-        results.forEach(result => {
-            const resultItem = document.createElement('div');
-            resultItem.className = 'result-item';
-            resultItem.style.fontFamily = '"Noto Sans SC", Arial, sans-serif';
-            resultItem.style.lineHeight = '1.6';
-            
-            if (result.success) {
-                const data = result.data;
-                
-                // 构建完整的专利信息显示 - 添加问一问按钮
-                let htmlContent = `
-                    <div class="patent-card-header" style="border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; margin-bottom: 15px;">
-                        <div style="flex: 1;">
-                            <h5 style="color: var(--primary-color); margin: 0 0 5px 0; font-family: 'Noto Sans SC', Arial, sans-serif;">
-                                ${result.patent_number} - ${data.title || '无标题'}
-                            </h5>
-                            <div style="font-size: 0.9em; color: #666;">
-                                查询耗时: ${result.processing_time?.toFixed(2) || 'N/A'}秒
-                            </div>
-                        </div>
-                        <button class="ask-patent-btn" onclick="openPatentChat('${result.patent_number}')">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M2.678 11.894a1 1 0 0 1 .287.801 10.97 10.97 0 0 1-.398 2c1.395-.323 2.247-.697 2.634-.893a1 1 0 0 1 .71-.074A8.06 8.06 0 0 0 8 14c3.996 0 7-2.807 7-6 0-3.192-3.004-6-7-6S1 4.808 1 8c0 1.468.617 2.83 1.678 3.894zm-.493 3.905a21.682 21.682 0 0 1-.713.129c-.2.032-.352-.176-.273-.362a9.68 9.68 0 0 0 .244-.637l.003-.01c.248-.72.45-1.548.524-2.319C.743 11.37 0 9.76 0 8c0-3.866 3.582-7 8-7s8 3.134 8 7-3.582 7-8 7a9.06 9.06 0 0 1-2.347-.306c-.52.263-1.639.742-3.468 1.105z"/>
-                            </svg>
-                            问一问
-                        </button>
-                    </div>
-                `;
-                
-                // 基本信息
-                htmlContent += `<div style="margin-bottom: 15px;">`;
-                
-                // 所有可用字段的完整显示
-                const fields = [
-                    { label: '📄 摘要', value: data.abstract, type: 'text', key: 'abstract' },
-                    { label: '👤 发明人', value: data.inventors && data.inventors.length > 0 ? data.inventors.join(', ') : null, type: 'text', key: 'inventors' },
-                    { label: '🏢 受让人', value: data.assignees && data.assignees.length > 0 ? data.assignees.join(', ') : null, type: 'text', key: 'assignees' },
-                    { label: '📅 申请日期', value: data.application_date, type: 'text', key: 'application_date' },
-                    { label: '📅 公开日期', value: data.publication_date, type: 'text', key: 'publication_date' },
-                    { label: '🔗 专利链接', value: result.url, type: 'url', key: 'url' }
-                ];
-                
-                // 显示所有基本字段
-                fields.forEach(field => {
-                    if (field.value) {
-                        if (field.type === 'url') {
-                            htmlContent += `
-                                <p style="margin-bottom: 10px; font-family: 'Noto Sans SC', Arial, sans-serif; position: relative;">
-                                    <strong style="color: var(--primary-color);">${field.label}:</strong>
-                                    <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', '${field.key}', event)" title="复制${field.label}" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg></button>
-                                    <br/>
-                                    <a href="${field.value}" target="_blank" style="color: var(--primary-color); text-decoration: underline;">${field.value}</a>
-                                </p>
-                            `;
-                        } else {
-                            htmlContent += `
-                                <p style="margin-bottom: 10px; font-family: 'Noto Sans SC', Arial, sans-serif; position: relative;">
-                                    <strong style="color: var(--primary-color);">${field.label}:</strong>
-                                    <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', '${field.key}', event)" title="复制${field.label}" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg></button>
-                                    <br/>
-                                    <span style="line-height: 1.6;">${field.value}</span>
-                                </p>
-                            `;
-                        }
-                    }
-                });
-                
-                // 权利要求
-                if (data.claims && data.claims.length > 0) {
-                    const hasMore = data.claims.length > 3;
-                    
-                    htmlContent += `
-                        <div style="margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 5px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                <div>
-                                    <strong style="color: var(--primary-color); font-family: 'Noto Sans SC', Arial, sans-serif;">⚖️ 权利要求 (共${data.claims.length}条):</strong>
-                                    <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'claims', event)" title="复制所有权利要求" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg></button>
-                                </div>
-                                ${hasMore ? `<button class="small-button" onclick="toggleClaims('${result.patent_number}')" style="padding: 2px 8px; font-size: 0.8em;">展开全部</button>` : ''}
-                            </div>
-                            <div id="claims_${result.patent_number}" class="claims-container" style="max-height: ${hasMore ? '200px' : 'none'}; overflow-y: ${hasMore ? 'auto' : 'visible'};">
-                    `;
-                    
-                    data.claims.forEach((claim, index) => {
-                        const isVisible = index < 3;
-                        htmlContent += `
-                            <div class="claim-item" id="claim_${result.patent_number}_${index}" style="margin-bottom: 8px; padding: 8px; background-color: white; border-radius: 3px; font-size: 0.9em; font-family: 'Noto Sans SC', Arial, sans-serif; ${!isVisible ? 'display: none;' : ''}">
-                                <strong>权利要求 ${index + 1}:</strong><br/>
-                                ${claim}
-                            </div>
-                        `;
-                    });
-                    
-                    htmlContent += `</div></div>`;
-                }
-                
-                // 附图显示 - 暂时注释掉
-                /*
-                console.log('🖼️ 检查附图数据:', data.drawings);
-                if (data.drawings && data.drawings.length > 0) {
-                    console.log(`✓ 找到 ${data.drawings.length} 张附图`);
-                    htmlContent += `
-                        <div style="margin-top: 15px; padding: 10px; background-color: #fff8e1; border-radius: 5px;">
-                            <div style="margin-bottom: 10px;">
-                                <strong style="color: var(--primary-color); font-family: 'Noto Sans SC', Arial, sans-serif;">🖼️ 专利附图 (共${data.drawings.length}张):</strong>
-                                <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'drawings', event)" title="复制所有附图链接" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg></button>
-                            </div>
-                            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                    `;
-                    
-                    data.drawings.forEach((drawing, index) => {
-                        console.log(`  附图 ${index + 1}:`, drawing);
-                        // 清理图片URL，移除可能的额外空格和引号
-                        const cleanDrawingUrl = drawing.trim().replace(/^[`'"]+|[`'"]+$/g, '');
-                        htmlContent += `
-                            <div style="border: 1px solid #ddd; border-radius: 5px; padding: 5px; background-color: white;">
-                                <img src="${cleanDrawingUrl}" alt="附图 ${index + 1}" style="max-width: 200px; max-height: 200px; cursor: pointer;" onclick="window.open('${cleanDrawingUrl}', '_blank')" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\'padding:20px;color:#999;\'>📷 图片加载失败<br>点击下方链接查看原图</div><div style=\'text-align:center;font-size:0.7em;margin-top:5px;color:var(--primary-color);\'><a href=\'${cleanDrawingUrl}\' target=\'_blank\'>查看原图</a></div>'">
-                                <div style="text-align: center; font-size: 0.8em; margin-top: 5px; color: #666;">附图 ${index + 1}</div>
-                            </div>
-                        `;
-                    });
-                    
-                    htmlContent += `</div></div>`;
-                } else {
-                    console.log('⚠️ 没有附图数据或附图数组为空');
-                }
-                */
-                
-                // 说明书描述
-                if (data.description) {
-                    htmlContent += `
-                        <div style="margin-top: 15px; padding: 10px; background-color: #f0f8ff; border-radius: 5px;">
-                            <div style="margin-bottom: 8px;">
-                                <strong style="color: var(--primary-color); font-family: 'Noto Sans SC', Arial, sans-serif;">📝 说明书:</strong>
-                                <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'description', event)" title="复制说明书" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg></button>
-                            </div>
-                            <div style="margin-top: 8px; font-size: 0.9em; line-height: 1.6; font-family: 'Noto Sans SC', Arial, sans-serif; max-height: 300px; overflow-y: auto;">
-                                ${data.description}
-                            </div>
-                        </div>
-                    `;
-                }
-                
-                // Patent Citations (引用的专利)
-                if (data.patent_citations && data.patent_citations.length > 0) {
-                    htmlContent += `
-                        <div style="margin-top: 15px; padding: 10px; background-color: #e8f5e9; border-radius: 5px;">
-                            <div style="margin-bottom: 8px;">
-                                <strong style="color: var(--primary-color); font-family: 'Noto Sans SC', Arial, sans-serif;">📚 引用专利 (共${data.patent_citations.length}条):</strong>
-                                <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'patent_citations', event)" title="复制引用专利" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg></button>
-                            </div>
-                            <div style="max-height: 200px; overflow-y: auto;">
-                                <table style="width: 100%; font-size: 0.85em; border-collapse: collapse;">
-                                    <thead>
-                                        <tr style="background-color: #c8e6c9;">
-                                            <th style="padding: 5px; text-align: left; border: 1px solid #ddd;">专利号</th>
-                                            <th style="padding: 5px; text-align: left; border: 1px solid #ddd;">标题</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                    `;
-                    
-                    data.patent_citations.forEach(citation => {
-                        htmlContent += `
-                            <tr>
-                                <td style="padding: 5px; border: 1px solid #ddd;">${citation.patent_number}</td>
-                                <td style="padding: 5px; border: 1px solid #ddd;">${citation.title || '-'}</td>
-                            </tr>
-                        `;
-                    });
-                    
-                    htmlContent += `
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    `;
-                }
-                
-                // Cited By (被引用的专利)
-                if (data.cited_by && data.cited_by.length > 0) {
-                    htmlContent += `
-                        <div style="margin-top: 15px; padding: 10px; background-color: #fff3e0; border-radius: 5px;">
-                            <div style="margin-bottom: 8px;">
-                                <strong style="color: var(--primary-color); font-family: 'Noto Sans SC', Arial, sans-serif;">🔗 被引用专利 (共${data.cited_by.length}条):</strong>
-                                <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'cited_by', event)" title="复制被引用专利" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg></button>
-                            </div>
-                            <div style="max-height: 200px; overflow-y: auto;">
-                                <table style="width: 100%; font-size: 0.85em; border-collapse: collapse;">
-                                    <thead>
-                                        <tr style="background-color: #ffe0b2;">
-                                            <th style="padding: 5px; text-align: left; border: 1px solid #ddd;">专利号</th>
-                                            <th style="padding: 5px; text-align: left; border: 1px solid #ddd;">标题</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                    `;
-                    
-                    data.cited_by.forEach(citation => {
-                        htmlContent += `
-                            <tr>
-                                <td style="padding: 5px; border: 1px solid #ddd;">${citation.patent_number}</td>
-                                <td style="padding: 5px; border: 1px solid #ddd;">${citation.title || '-'}</td>
-                            </tr>
-                        `;
-                    });
-                    
-                    htmlContent += `
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    `;
-                }
-                
-                // Legal Events (法律事件)
-                if (data.legal_events && data.legal_events.length > 0) {
-                    htmlContent += `
-                        <div style="margin-top: 15px; padding: 10px; background-color: #f3e5f5; border-radius: 5px;">
-                            <div style="margin-bottom: 8px;">
-                                <strong style="color: var(--primary-color); font-family: 'Noto Sans SC', Arial, sans-serif;">⚖️ 法律事件 (共${data.legal_events.length}条):</strong>
-                                <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'legal_events', event)" title="复制法律事件" style="margin-left: 8px; padding: 2px 6px; font-size: 0.75em; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg></button>
-                            </div>
-                            <div style="max-height: 200px; overflow-y: auto;">
-                                <table style="width: 100%; font-size: 0.85em; border-collapse: collapse;">
-                                    <thead>
-                                        <tr style="background-color: #e1bee7;">
-                                            <th style="padding: 5px; text-align: left; border: 1px solid #ddd; width: 120px;">日期</th>
-                                            <th style="padding: 5px; text-align: left; border: 1px solid #ddd;">事件描述</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                    `;
-                    
-                    data.legal_events.forEach(event => {
-                        htmlContent += `
-                            <tr>
-                                <td style="padding: 5px; border: 1px solid #ddd;">${event.date}</td>
-                                <td style="padding: 5px; border: 1px solid #ddd;">${event.description}</td>
-                            </tr>
-                        `;
-                    });
-                    
-                    htmlContent += `
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    `;
-                }
-                
-                htmlContent += `</div>`;
-                
-                // 操作按钮
-                htmlContent += `
-                    <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
-                        <a href="${result.url}" target="_blank" class="small-button" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l1.828-1.829A3 3 0 0 0 8.586 5.5L8 6.086a1.002 1.002 0 0 0-.154.199 2 2 0 0 1 .861 3.337L6.88 11.45a2 2 0 1 1-2.83-2.83l.793-.792a4.018 4.018 0 0 1-.128-1.287z"/>
-                                <path d="M6.586 4.672A3 3 0 0 0 7.414 9.5l.775-.776a2 2 0 0 1-.896-3.346L9.12 3.55a2 2 0 1 1 2.83 2.83l-.793.792c.112.42.155.855.128 1.287l1.372-1.372a3 3 0 1 0-4.243-4.243L6.586 4.672z"/>
-                            </svg>
-                            查看原始专利
-                        </a>
-                        <button class="small-button" onclick="copyPatentInfo('${result.patent_number}')" style="background-color: #28a745; display: inline-flex; align-items: center; gap: 6px;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
-                                <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
-                            </svg>
-                            复制信息
-                        </button>
-                    </div>
-                `;
-                
-                resultItem.innerHTML = htmlContent;
-            } else {
-                resultItem.innerHTML = `
-                    <h5 style="color: red; font-family: 'Noto Sans SC', Arial, sans-serif;">❌ ${result.patent_number} - 查询失败</h5>
-                    <p style="padding: 10px; background-color: #fff3cd; border-radius: 5px; border-left: 4px solid #ffc107; font-family: 'Noto Sans SC', Arial, sans-serif;">
-                        <strong>错误信息:</strong> ${result.error}
-                    </p>
-                `;
-            }
-            
-            patentResultsList.appendChild(resultItem);
-        });
+// 显示专利查询结果 - 条带式展示
+function displayPatentResults(results) {
+    // 保存到状态
+    appState.patentBatch.patentResults = results;
+    
+    // 显示结果容器
+    if (patentResultsContainer) {
+        patentResultsContainer.style.display = 'block';
     }
     
-    // 复制专利信息到剪贴板
-    window.copyPatentInfo = function(patentNumber) {
-        const result = patentResults.find(r => r.patent_number === patentNumber);
-        if (!result || !result.success) return;
-        
-        const data = result.data;
-        let text = `专利号: ${patentNumber}\n`;
-        text += `标题: ${data.title || '无'}\n`;
-        text += `\n摘要:\n${data.abstract || '无'}\n`;
-        
-        if (data.inventors && data.inventors.length > 0) {
-            text += `\n发明人: ${data.inventors.join(', ')}\n`;
-        }
-        
-        if (data.assignees && data.assignees.length > 0) {
-            text += `受让人: ${data.assignees.join(', ')}\n`;
-        }
-        
-        if (data.application_date) {
-            text += `申请日期: ${data.application_date}\n`;
-        }
-        
-        if (data.publication_date) {
-            text += `公开日期: ${data.publication_date}\n`;
-        }
-        
-        if (data.claims && data.claims.length > 0) {
-            text += `\n权利要求 (共${data.claims.length}条):\n`;
-            data.claims.forEach((claim, index) => {
-                text += `\n${index + 1}. ${claim}\n`;
-            });
-        }
-        
-        // 附图部分 - 暂时注释掉
-        /*
-        if (data.drawings && data.drawings.length > 0) {
-            text += `\n附图 (共${data.drawings.length}张):\n`;
-            data.drawings.forEach((drawing, index) => {
-                text += `${index + 1}. ${drawing}\n`;
-            });
-        }
-        */
-        
-        text += `\n原始链接: ${result.url}\n`;
-        
-        navigator.clipboard.writeText(text)
-            .then(() => alert('✅ 专利信息已复制到剪贴板！'))
-            .catch(() => alert('❌ 复制失败，请手动复制。'));
-    }
+    patentResultsList.innerHTML = '';
     
-    // 复制单个字段内容
-    window.copyFieldContent = function(patentNumber, fieldKey, event) {
-        // 阻止事件冒泡
-        if (event) {
-            event.stopPropagation();
-            event.preventDefault();
+    results.forEach(result => {
+        const stripItem = document.createElement('div');
+        stripItem.className = `patent-strip ${result.success ? 'success' : 'error'}`;
+        
+        if (result.success) {
+            const data = result.data;
+            const titlePreview = data.title ? (data.title.length > 60 ? data.title.substring(0, 60) + '...' : data.title) : '无标题';
+            
+            stripItem.innerHTML = `
+                <div class="patent-strip-icon">
+                    ✓
+                </div>
+                <div class="patent-strip-content">
+                    <div class="patent-strip-number">${result.patent_number}</div>
+                    <div class="patent-strip-title">${titlePreview}</div>
+                </div>
+                <div class="patent-strip-actions">
+                    <button class="patent-strip-copy-btn" onclick="copyPatentNumber('${result.patent_number}', event)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                            <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                        </svg>
+                        复制
+                    </button>
+                </div>
+            `;
+            
+            // 点击条带打开详情弹窗
+            stripItem.addEventListener('click', (e) => {
+                // 如果点击的是复制按钮，不打开弹窗
+                if (e.target.closest('.patent-strip-copy-btn')) {
+                    return;
+                }
+                openPatentDetailModal(result);
+            });
+        } else {
+            stripItem.innerHTML = `
+                <div class="patent-strip-icon">
+                    ✗
+                </div>
+                <div class="patent-strip-content">
+                    <div class="patent-strip-number">${result.patent_number}</div>
+                    <div class="patent-strip-error">查询失败: ${result.error}</div>
+                </div>
+            `;
         }
         
-        const result = patentResults.find(r => r.patent_number === patentNumber);
-        if (!result || !result.success) return;
-        
-        const data = result.data;
-        let text = '';
-        
-        switch(fieldKey) {
-            case 'abstract':
-                text = data.abstract || '';
-                break;
-            case 'inventors':
-                text = data.inventors ? data.inventors.join(', ') : '';
-                break;
-            case 'assignees':
-                text = data.assignees ? data.assignees.join(', ') : '';
-                break;
-            case 'application_date':
-                text = data.application_date || '';
-                break;
-            case 'publication_date':
-                text = data.publication_date || '';
-                break;
-            case 'url':
-                text = result.url || '';
-                break;
-            case 'claims':
-                if (data.claims && data.claims.length > 0) {
-                    text = data.claims.map((claim, index) => {
-                        // 检查权利要求文本是否已经以序号开头
-                        if (/^\s*\d+\.\s*/.test(claim)) {
-                            return claim; // 已经有序号，直接使用
-                        }
-                        return `${index + 1}. ${claim}`; // 没有序号，添加序号
-                    }).join('\n\n');
-                }
-                break;
-            case 'description':
-                text = data.description || '';
-                break;
-            case 'patent_citations':
-                if (data.patent_citations && data.patent_citations.length > 0) {
-                    text = '引用专利:\n' + data.patent_citations.map((citation, index) => 
-                        `${index + 1}. ${citation.patent_number} - ${citation.title || '无标题'}`
-                    ).join('\n');
-                }
-                break;
-            case 'cited_by':
-                if (data.cited_by && data.cited_by.length > 0) {
-                    text = '被引用专利:\n' + data.cited_by.map((citation, index) => 
-                        `${index + 1}. ${citation.patent_number} - ${citation.title || '无标题'}`
-                    ).join('\n');
-                }
-                break;
-            case 'legal_events':
-                if (data.legal_events && data.legal_events.length > 0) {
-                    text = '法律事件:\n' + data.legal_events.map((event, index) => 
-                        `${index + 1}. ${event.date} - ${event.description}`
-                    ).join('\n');
-                }
-                break;
-            default:
-                text = '';
-        }
-        
-        if (text) {
-            navigator.clipboard.writeText(text)
-                .then(() => {
-                    // 不改变按钮样式，只显示临时提示
-                    const btn = event?.target?.closest('button');
-                    if (btn) {
-                        const originalHTML = btn.innerHTML;
-                        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/></svg>';
-                        setTimeout(() => {
-                            btn.innerHTML = originalHTML;
-                        }, 1000);
-                    }
-                })
-                .catch(() => alert('❌ 复制失败，请手动复制。'));
-        }
-    }
+        patentResultsList.appendChild(stripItem);
+    });
 }
 
 // 切换权利要求显示/隐藏 - 单按钮切换
@@ -1228,7 +852,7 @@ function buildPatentDetailHTML(result) {
     const fields = [
         { label: '📄 摘要', value: data.abstract, type: 'text', key: 'abstract' },
         { label: '👤 发明人', value: data.inventors && data.inventors.length > 0 ? data.inventors.join(', ') : null, type: 'text', key: 'inventors' },
-        { label: '🏢 受让人', value: data.assignees && data.assignees.length > 0 ? data.assignees.join(', ') : null, type: 'text', key: 'assignees' },
+        { label: '🏢 申请人', value: data.assignees && data.assignees.length > 0 ? data.assignees.join(', ') : null, type: 'text', key: 'assignees' },
         { label: '📅 申请日期', value: data.application_date, type: 'text', key: 'application_date' },
         { label: '📅 公开日期', value: data.publication_date, type: 'text', key: 'publication_date' },
         { label: '🔗 专利链接', value: result.url, type: 'url', key: 'url' }
@@ -1447,4 +1071,4 @@ function buildPatentDetailHTML(result) {
     `;
     
     return htmlContent;
-}
+}}
