@@ -344,15 +344,8 @@ function initPatentBatch() {
     // 导出Excel按钮
     if (exportAnalysisExcelBtn) {
         exportAnalysisExcelBtn.addEventListener('click', async () => {
-            if (analysisResults.length === 0) {
-                alert('没有可导出的解读结果');
-                return;
-            }
-            
-            // 获取当前模板
-            const template = appState.patentBatch.currentTemplate;
-            if (!template) {
-                alert('无法获取解读模板信息');
+            if (patentResults.length === 0) {
+                alert('没有可导出的专利数据');
                 return;
             }
             
@@ -361,30 +354,27 @@ function initPatentBatch() {
                 searchStatus.textContent = '正在导出Excel文件...';
                 searchStatus.style.display = 'block';
                 
-                // 准备导出数据 - 动态适配模板字段
-                const exportData = analysisResults.map(result => {
-                    const patentData = result.patent_data || {};
-                    
-                    // 解析JSON格式的解读结果
-                    let analysisJson = {};
-                    try {
-                        // 尝试清理可能的markdown代码块标记
-                        let cleanContent = (result.analysis_content || '').trim();
-                        if (cleanContent.startsWith('```json')) {
-                            cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-                        } else if (cleanContent.startsWith('```')) {
-                            cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
-                        }
-                        
-                        analysisJson = JSON.parse(cleanContent);
-                        console.log('Excel导出 - 成功解析JSON:', result.patent_number);
-                    } catch (e) {
-                        console.error('Excel导出 - JSON解析失败:', result.patent_number, e);
-                        // 如果不是JSON格式，将整个内容放到第一个字段
-                        if (template.fields.length > 0) {
-                            analysisJson[template.fields[0].id] = result.analysis_content || '';
-                        }
+                // 准备导出数据
+                const exportData = patentResults.map(result => {
+                    // 检查result是否成功
+                    if (!result.success) {
+                        // 如果查询失败，只导出专利号和错误信息
+                        return {
+                            '专利号': result.patent_number,
+                            '错误信息': result.error || '查询失败',
+                            '标题': '',
+                            '摘要': '',
+                            '发明人': '',
+                            '受让人': '',
+                            '申请日期': '',
+                            '公开日期': '',
+                            '权利要求': '',
+                            '附图链接': '',
+                            '说明书': ''
+                        };
                     }
+                    
+                    const patentData = result.data || {};
                     
                     // 构建基础数据行
                     const row = {
@@ -400,10 +390,29 @@ function initPatentBatch() {
                         '说明书': patentData.description || ''
                     };
                     
-                    // 动态添加模板字段
-                    template.fields.forEach(field => {
-                        row[field.name] = analysisJson[field.id] || '';
-                    });
+                    // 尝试添加解读结果
+                    const analysisResult = analysisResults.find(item => item.patent_number === result.patent_number);
+                    if (analysisResult) {
+                        try {
+                            // 尝试清理可能的markdown代码块标记
+                            let cleanContent = (analysisResult.analysis_content || '').trim();
+                            if (cleanContent.startsWith('```json')) {
+                                cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+                            } else if (cleanContent.startsWith('```')) {
+                                cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
+                            }
+                            
+                            const analysisJson = JSON.parse(cleanContent);
+                            
+                            // 动态添加解读字段
+                            Object.keys(analysisJson).forEach(key => {
+                                row[key] = analysisJson[key] || '';
+                            });
+                        } catch (e) {
+                            // 如果不是JSON格式，将整个内容放到一个字段
+                            row['解读结果'] = analysisResult.analysis_content || '';
+                        }
+                    }
                     
                     return row;
                 });
@@ -412,7 +421,7 @@ function initPatentBatch() {
                 const ws = XLSX.utils.json_to_sheet(exportData);
                 
                 // 动态设置列宽
-                const baseColWidths = [
+                const colWidths = [
                     { wch: 15 },  // 专利号
                     { wch: 30 },  // 标题
                     { wch: 40 },  // 摘要
@@ -422,22 +431,20 @@ function initPatentBatch() {
                     { wch: 12 },  // 公开日期
                     { wch: 50 },  // 权利要求
                     { wch: 60 },  // 附图链接
-                    { wch: 50 }   // 说明书
+                    { wch: 50 },  // 说明书
+                    { wch: 50 }   // 解读结果（如果有）
                 ];
-                
-                // 为模板字段添加列宽
-                const templateColWidths = template.fields.map(() => ({ wch: 50 }));
-                ws['!cols'] = [...baseColWidths, ...templateColWidths];
+                ws['!cols'] = colWidths;
                 
                 const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, '专利解读结果');
+                XLSX.utils.book_append_sheet(wb, ws, '专利数据');
                 
                 // 导出文件
-                const filename = `专利解读结果_${new Date().toISOString().slice(0, 10)}.xlsx`;
+                const filename = `专利数据_${new Date().toISOString().slice(0, 10)}.xlsx`;
                 XLSX.writeFile(wb, filename);
                 
                 // 更新状态
-                searchStatus.textContent = `导出成功，共导出 ${analysisResults.length} 个专利解读结果`;
+                searchStatus.textContent = `导出成功，共导出 ${patentResults.length} 个专利数据`;
             } catch (error) {
                 console.error('导出Excel失败:', error);
                 searchStatus.textContent = `导出失败: ${error.message}`;
@@ -733,6 +740,11 @@ function displayPatentResults(results) {
         
         patentResultsList.appendChild(stripItem);
     });
+    
+    // 启用导出按钮，即使没有解读结果也可以导出爬取的字段
+    if (exportAnalysisExcelBtn) {
+        exportAnalysisExcelBtn.disabled = false;
+    }
 }
 
 // 切换权利要求显示/隐藏 - 单按钮切换
@@ -794,19 +806,27 @@ window.openPatentDetailModal = function(result) {
     let htmlContent = buildPatentDetailHTML(result);
     
     modalBody.innerHTML = htmlContent;
-    modal.style.display = 'block';
     
-    // 确保弹窗内容加载完成后再显示
+    // 先设置为flex显示，确保居中
+    modal.style.display = 'flex';
+    
+    // 触发重排，然后添加show类以触发过渡效果
     setTimeout(() => {
-        modal.style.display = 'block';
-    }, 100);
+        modal.classList.add('show');
+    }, 10);
 };
 
 // 关闭专利详情弹窗
 window.closePatentDetailModal = function() {
     const modal = document.getElementById('patent_detail_modal');
     if (modal) {
-        modal.style.display = 'none';
+        // 移除show类，触发过渡效果
+        modal.classList.remove('show');
+        
+        // 等待过渡效果完成后再隐藏
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 300);
     }
 };
 

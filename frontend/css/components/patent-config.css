@@ -356,8 +356,9 @@
 
 /* 权利要求容器 */
 .claims-container {
-    max-height: 200px;
-    overflow-y: auto;
+    /* 移除内置滚动区域限制，让权利要求直接展示在弹窗页面中 */
+    max-height: none;
+    overflow-y: visible;
 }
 
 .claim-item {
