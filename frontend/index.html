@@ -1002,85 +1002,112 @@
         <div class="step-header">批量专利查询与解读</div>
         <p class="info">输入专利号列表（支持换行符或空格分隔），系统将批量查询专利详情并提供AI解读功能。最多支持50个专利号。</p>
         
-        <!-- 专利号输入区域 -->
-        <div class="config-item">
-            <label for="patent_numbers_input">专利号列表：</label>
-            <textarea id="patent_numbers_input" rows="8" placeholder="请输入专利号，用换行符或空格分隔（最多50个）"></textarea>
-            <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
-                <span id="patent_count_display">专利号数量：0/50</span>
-                <button id="clear_patent_input_btn" class="small-button delete-button">清空输入</button>
-            </div>
-        </div>
-        
-        <!-- 模板管理区域 -->
-        <div class="template-management-section">
-            <div class="template-header">
-                <label for="patent_template_selector">解读模板：</label>
-                <select id="patent_template_selector"></select>
-                <button id="manage_template_btn" class="small-button">管理模板</button>
-            </div>
-            
-            <div id="template_editor" style="display: none;">
-                <div class="template-info">
-                    <input type="text" id="template_name" placeholder="模板名称">
-                    <textarea id="template_description" placeholder="模板描述（可选）" rows="2"></textarea>
+        <!-- 专利号输入和配置区域 - 新布局 -->
+        <div class="patent-batch-config-grid">
+            <!-- 左侧：专利号输入 -->
+            <div class="patent-input-section">
+                <label for="patent_numbers_input">专利号列表：</label>
+                <div class="patent-input-wrapper">
+                    <textarea id="patent_numbers_input" rows="8" placeholder="请输入专利号，用换行符或空格分隔（最多50个）"></textarea>
+                    <button id="copy_patent_numbers_btn" class="copy-btn-overlay" title="复制专利号">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                            <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                        </svg>
+                    </button>
                 </div>
-                
-                <div class="fields-container">
-                    <h5>字段配置：</h5>
-                    <div id="fields_list"></div>
-                    <button class="small-button" id="add_field_btn">+ 添加字段</button>
-                </div>
-                
-                <div class="template-actions">
-                    <button class="small-button" id="save_template_btn">保存模板</button>
-                    <button class="small-button" id="new_template_btn">新建模板</button>
-                    <button class="small-button delete-button" id="delete_template_btn">删除模板</button>
-                    <button class="small-button" id="export_template_btn">导出模板</button>
-                    <button class="small-button" id="import_template_btn">导入模板</button>
-                    <button class="small-button" id="cancel_edit_btn">取消</button>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 选项设置 -->
-        <div style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;">
-            <!-- 模型选择 -->
-            <div class="config-item" style="margin-bottom: 10px;">
-                <label for="patent_batch_model_selector">AI解读模型：</label>
-                <select id="patent_batch_model_selector" style="width: 100%; max-width: 300px;">
-                    <option value="GLM-4-Flash">GLM-4-Flash（推荐，快速经济）</option>
-                    <option value="GLM-4-Plus">GLM-4-Plus（高质量）</option>
-                    <option value="GLM-4-Air">GLM-4-Air（平衡）</option>
-                    <option value="GLM-4-0520">GLM-4-0520（稳定版）</option>
-                </select>
-                <div class="info" style="margin-top: 5px; font-size: 0.85em; color: #666;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                    不同模型在速度、质量和成本上有所差异，Flash模型适合快速批量处理
+                <div class="patent-input-footer">
+                    <span id="patent_count_display">专利号数量：0/50</span>
+                    <button id="clear_patent_input_btn" class="small-button delete-button">清空</button>
                 </div>
             </div>
             
-            <label style="display: flex; align-items: center; cursor: pointer;">
-                <input type="checkbox" id="crawl_specification_checkbox" style="width: auto; margin-right: 8px;">
-                获取说明书字段（打开后会爬取说明书内容，否则仅爬取基本信息）
-            </label>
-            <div class="info" style="margin-left: 28px; font-size: 0.9em; color: #666;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                提示：勾选此选项后，解读时会将说明书内容纳入AI分析，可获得更全面的解读结果，但会增加处理时间和token消耗。
+            <!-- 右侧：配置选项 -->
+            <div class="patent-config-section">
+                <!-- 解读模板 -->
+                <div class="config-item-compact">
+                    <label for="patent_template_selector">解读模板：</label>
+                    <div class="config-input-group">
+                        <select id="patent_template_selector"></select>
+                        <button id="manage_template_btn" class="small-button">管理</button>
+                    </div>
+                </div>
+                
+                <!-- 解读模型 -->
+                <div class="config-item-compact">
+                    <label for="patent_batch_model_selector">解读模型：</label>
+                    <select id="patent_batch_model_selector">
+                        <option value="GLM-4-Flash">GLM-4-Flash（推荐）</option>
+                        <option value="GLM-4-Plus">GLM-4-Plus（高质量）</option>
+                        <option value="GLM-4-Air">GLM-4-Air（平衡）</option>
+                        <option value="GLM-4-0520">GLM-4-0520（稳定版）</option>
+                    </select>
+                </div>
+                
+                <!-- 获取说明书 -->
+                <div class="config-item-compact">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="crawl_specification_checkbox">
+                        <span>获取说明书</span>
+                    </label>
+                    <div class="info-hint">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        勾选后会爬取说明书内容，解读更全面但耗时更长
+                    </div>
+                </div>
+                
+                <!-- 操作按钮 -->
+                <div class="config-actions">
+                    <button id="search_patents_btn" class="small-button primary-btn">批量查询专利</button>
+                    <button id="analyze_all_btn" class="small-button primary-btn" disabled>批量解读</button>
+                </div>
             </div>
         </div>
         
-        <!-- 查询按钮 -->
-        <div style="margin-top: 20px; display: flex; gap: 15px;">
-            <button id="search_patents_btn" class="small-button" style="background: var(--primary-color); color: white;">批量查询专利</button>
-            <button id="analyze_all_btn" class="small-button" style="background: var(--primary-color); color: white;" disabled>一键解读全部</button>
+        <!-- 模板编辑器（折叠） -->
+        <div id="template_editor" class="template-editor-panel" style="display: none;">
+            <div class="template-info">
+                <input type="text" id="template_name" placeholder="模板名称">
+                <textarea id="template_description" placeholder="模板描述（可选）" rows="2"></textarea>
+            </div>
+            
+            <div class="fields-container">
+                <h5>字段配置：</h5>
+                <div id="fields_list"></div>
+                <button class="small-button" id="add_field_btn">+ 添加字段</button>
+            </div>
+            
+            <div class="template-actions">
+                <button class="small-button" id="save_template_btn">保存模板</button>
+                <button class="small-button" id="new_template_btn">新建模板</button>
+                <button class="small-button delete-button" id="delete_template_btn">删除模板</button>
+                <button class="small-button" id="export_template_btn">导出模板</button>
+                <button class="small-button" id="import_template_btn">导入模板</button>
+                <button class="small-button" id="cancel_edit_btn">取消</button>
+            </div>
         </div>
         
         <!-- 查询结果状态 -->
         <div id="search_status" class="info" style="margin-top: 15px; display: none;"></div>
         
-        <!-- 查询结果列表 -->
-        <div id="patent_results_list" class="scrollable-list" style="margin-top: 20px; max-height: 300px;"></div>
+        <!-- 查询结果列表 - 简化为专利号条带 -->
+        <div id="patent_results_container" style="margin-top: 20px; display: none;">
+            <h4>查询结果</h4>
+            <div id="patent_results_list" class="patent-strip-list"></div>
+        </div>
+        
+        <!-- 专利详情弹窗 -->
+        <div id="patent_detail_modal" class="modal" style="display: none;">
+            <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+                <div class="modal-header">
+                    <h3 id="patent_detail_title">专利详情</h3>
+                    <button class="close-modal" onclick="closePatentDetailModal()">&times;</button>
+                </div>
+                <div class="modal-body" id="patent_detail_body">
+                    <!-- 动态填充专利详情 -->
+                </div>
+            </div>
+        </div>
         
         <!-- 解读结果区域 -->
         <div id="analysis_results" style="margin-top: 30px;">
@@ -1422,6 +1449,7 @@
 <!-- 功能六增强脚本 -->
 <script src="js/patentTemplate.js"></script>
 <script src="js/patentChat.js"></script>
+<script src="js/patentBatchUI.js?v=20260127"></script>
 <script src="js/main.js?v=20260119"></script>
 
 <!-- 新增：专利附图弹窗组件 -->

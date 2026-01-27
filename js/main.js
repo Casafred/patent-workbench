@@ -265,10 +265,12 @@ function initPatentBatch() {
     const patentNumbersInput = getEl('patent_numbers_input');
     const patentCountDisplay = getEl('patent_count_display');
     const clearPatentInputBtn = getEl('clear_patent_input_btn');
+    const copyPatentNumbersBtn = getEl('copy_patent_numbers_btn');
     const searchPatentsBtn = getEl('search_patents_btn');
     const analyzeAllBtn = getEl('analyze_all_btn');
     const exportAnalysisExcelBtn = getEl('export_analysis_excel_btn');
     const searchStatus = getEl('search_status');
+    const patentResultsContainer = getEl('patent_results_container');
     const patentResultsList = getEl('patent_results_list');
     const analysisResultsList = getEl('analysis_results_list');
     
@@ -277,6 +279,29 @@ function initPatentBatch() {
     
     // 存储解读结果
     let analysisResults = [];
+    
+    // 复制专利号按钮
+    if (copyPatentNumbersBtn) {
+        copyPatentNumbersBtn.addEventListener('click', () => {
+            const text = patentNumbersInput.value.trim();
+            if (!text) {
+                alert('没有可复制的内容');
+                return;
+            }
+            
+            navigator.clipboard.writeText(text).then(() => {
+                // 显示复制成功提示
+                const originalHTML = copyPatentNumbersBtn.innerHTML;
+                copyPatentNumbersBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>';
+                setTimeout(() => {
+                    copyPatentNumbersBtn.innerHTML = originalHTML;
+                }, 1500);
+            }).catch(err => {
+                console.error('复制失败:', err);
+                alert('复制失败，请手动复制');
+            });
+        });
+    }
     
     // 实时更新专利号数量
     patentNumbersInput.addEventListener('input', () => {
@@ -306,6 +331,7 @@ function initPatentBatch() {
         if (exportAnalysisExcelBtn) {
             exportAnalysisExcelBtn.disabled = true;
         }
+        patentResultsContainer.style.display = 'none';
         patentResultsList.innerHTML = '';
         analysisResultsList.innerHTML = '';
         searchStatus.style.display = 'none';
