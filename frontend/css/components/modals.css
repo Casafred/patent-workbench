@@ -12,6 +12,15 @@
     will-change: opacity;
 }
 
+/* 专利详情弹窗 - 移除遮罩层 */
+#patent_detail_modal {
+    background-color: transparent;
+}
+
+#patent_detail_modal .modal-content {
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+}
+
 .modal-content {
     background-color: var(--surface-color);
     position: absolute;
