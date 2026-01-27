@@ -331,8 +331,16 @@ async function sendPatentChatMessage() {
         historyEl.scrollTop = historyEl.scrollHeight;
         
         // 调用流式API - 使用与功能一相同的 /stream_chat 端点
-        // 构建完整的专利上下文信息
+        // 构建完整的专利上下文信息 - 包含所有爬取的字段
         const patentInfo = chatState.patentData;
+        
+        // 辅助函数：安全获取数组或字符串值
+        const safeValue = (val) => {
+            if (!val) return '未知';
+            if (Array.isArray(val)) return val.length > 0 ? val.join(', ') : '未知';
+            return val;
+        };
+        
         let contextInfo = `你是一个专业的专利分析助手。当前正在分析专利号为 ${patentNumber} 的专利。
 
 ## 专利完整信息
@@ -343,11 +351,12 @@ async function sendPatentChatMessage() {
 - **申请日期**: ${patentInfo.application_date || '未知'}
 - **公开日期**: ${patentInfo.publication_date || '未知'}
 - **授权日期**: ${patentInfo.grant_date || '未知'}
+- **优先权日期**: ${patentInfo.priority_date || '未知'}
 - **法律状态**: ${patentInfo.legal_status || '未知'}
 
 ### 申请人与发明人
-- **申请人**: ${patentInfo.applicant || patentInfo.assignee || '未知'}
-- **发明人**: ${patentInfo.inventor ? (Array.isArray(patentInfo.inventor) ? patentInfo.inventor.join(', ') : patentInfo.inventor) : '未知'}
+- **申请人/受让人**: ${safeValue(patentInfo.assignees || patentInfo.applicant)}
+- **发明人**: ${safeValue(patentInfo.inventors || patentInfo.inventor)}
 
 ### 分类信息
 - **IPC分类**: ${patentInfo.ipc_classification || '未知'}
@@ -361,9 +370,11 @@ ${patentInfo.claims ? patentInfo.claims.slice(0, 5).map((c, i) => `${i + 1}. ${c
 
 ${patentInfo.description ? `### 说明书摘要\n${patentInfo.description.substring(0, 500)}...\n` : ''}
 
-${patentInfo.citations ? `### 引用专利\n${patentInfo.citations.slice(0, 5).map(c => `- ${c}`).join('\n')}\n` : ''}
+${patentInfo.patent_citations && patentInfo.patent_citations.length > 0 ? `### 引用专利\n${patentInfo.patent_citations.slice(0, 5).map(c => `- ${c.patent_number}: ${c.title || '无标题'}`).join('\n')}\n` : ''}
 
-${patentInfo.cited_by ? `### 被引用专利\n${patentInfo.cited_by.slice(0, 5).map(c => `- ${c}`).join('\n')}\n` : ''}
+${patentInfo.cited_by && patentInfo.cited_by.length > 0 ? `### 被引用专利\n${patentInfo.cited_by.slice(0, 5).map(c => `- ${c.patent_number}: ${c.title || '无标题'}`).join('\n')}\n` : ''}
+
+${patentInfo.legal_events && patentInfo.legal_events.length > 0 ? `### 法律事件\n${patentInfo.legal_events.slice(0, 3).map(e => `- ${e.date}: ${e.event}`).join('\n')}\n` : ''}
 
 请基于以上完整的专利信息，准确、专业地回答用户的问题。回答时可以使用Markdown格式来组织内容，使其更易读。`;
 

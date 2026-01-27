@@ -512,16 +512,23 @@ function initPatentBatch() {
         searchStatus.textContent = `正在使用"${template.name}"模板解读 ${successfulResults.length} 个专利...`;
         searchStatus.style.display = 'block';
         
+        // 创建一个Map来存储解读结果，key是专利号
+        const analysisResultsMap = new Map();
+        
         try {
             // 逐个解读专利
             for (let i = 0; i < successfulResults.length; i++) {
                 const patent = successfulResults[i];
                 
-                // 创建解读结果项
-                const resultItem = document.createElement('div');
-                resultItem.className = 'result-item';
-                resultItem.innerHTML = `<h5>正在解读专利：${patent.patent_number} (${i + 1}/${successfulResults.length})</h5>`;
-                analysisResultsList.appendChild(resultItem);
+                // 创建占位符（按用户输入顺序）
+                const placeholderId = `analysis_placeholder_${patent.patent_number}`;
+                if (!document.getElementById(placeholderId)) {
+                    const placeholder = document.createElement('div');
+                    placeholder.id = placeholderId;
+                    placeholder.className = 'result-item';
+                    placeholder.innerHTML = `<h5>正在解读专利：${patent.patent_number} (${i + 1}/${successfulResults.length})</h5>`;
+                    analysisResultsList.appendChild(placeholder);
+                }
                 
                 // 使用模板构建提示词
                 const userPrompt = buildAnalysisPrompt(template, patent.data, includeSpecification);
@@ -538,13 +545,11 @@ function initPatentBatch() {
                     },
                     user_prompt: userPrompt,
                     include_specification: includeSpecification,
-                    model: selectedModel  // 添加模型参数
+                    model: selectedModel
                 });
                 
                 // 更新解读结果
                 const analysisContent = analysisResult.choices[0]?.message?.content || '解读失败';
-                
-                console.log('原始解读内容:', analysisContent); // 调试日志
                 
                 // 尝试解析JSON格式的解读结果
                 let analysisJson = {};
@@ -559,7 +564,6 @@ function initPatentBatch() {
                     }
                     
                     analysisJson = JSON.parse(cleanContent);
-                    console.log('解析后的JSON:', analysisJson); // 调试日志
                     
                     // 动态生成表格内容（根据模板字段）
                     let tableRows = '';
@@ -578,7 +582,7 @@ function initPatentBatch() {
                         </div>
                     `;
                 } catch (e) {
-                    console.error('JSON解析失败:', e, '原始内容:', analysisContent); // 调试日志
+                    console.error('JSON解析失败:', e);
                     // 如果不是JSON格式，显示原始内容
                     displayContent = `
                         <div class="analysis-content">
@@ -592,22 +596,34 @@ function initPatentBatch() {
                     `;
                 }
                 
-                resultItem.innerHTML = `
-                    <h5>专利 ${patent.patent_number} 解读结果</h5>
-                    <div class="ai-disclaimer compact">
-                        <div class="ai-disclaimer-icon">AI</div>
-                        <div class="ai-disclaimer-text"><strong>AI生成：</strong>以下解读由AI生成，仅供参考</div>
-                    </div>
-                    ${displayContent}
-                `;
+                // 更新占位符内容
+                const placeholder = document.getElementById(placeholderId);
+                if (placeholder) {
+                    placeholder.innerHTML = `
+                        <h5>专利 ${patent.patent_number} 解读结果</h5>
+                        <div class="ai-disclaimer compact">
+                            <div class="ai-disclaimer-icon">AI</div>
+                            <div class="ai-disclaimer-text"><strong>AI生成：</strong>以下解读由AI生成，仅供参考</div>
+                        </div>
+                        ${displayContent}
+                    `;
+                }
                 
-                // 存储解读结果
-                analysisResults.push({
+                // 存储解读结果到Map
+                analysisResultsMap.set(patent.patent_number, {
                     patent_number: patent.patent_number,
                     patent_data: patent.data,
                     analysis_content: analysisContent
                 });
             }
+            
+            // 按照用户输入的顺序重新组织 analysisResults 数组
+            analysisResults = [];
+            patentResults.forEach(result => {
+                if (result.success && analysisResultsMap.has(result.patent_number)) {
+                    analysisResults.push(analysisResultsMap.get(result.patent_number));
+                }
+            });
             
             // 更新状态
             searchStatus.textContent = `解读完成，共解读 ${successfulResults.length} 个专利`;
@@ -969,6 +985,12 @@ function initPatentBatch() {
     
     // 复制单个字段内容
     window.copyFieldContent = function(patentNumber, fieldKey, event) {
+        // 阻止事件冒泡
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
+        
         const result = patentResults.find(r => r.patent_number === patentNumber);
         if (!result || !result.success) return;
         
@@ -1005,11 +1027,6 @@ function initPatentBatch() {
                     }).join('\n\n');
                 }
                 break;
-            // case 'drawings':
-            //     if (data.drawings && data.drawings.length > 0) {
-            //         text = data.drawings.map((drawing, index) => `${index + 1}. ${drawing}`).join('\n');
-            //     }
-            //     break;
             case 'description':
                 text = data.description || '';
                 break;
@@ -1041,37 +1058,50 @@ function initPatentBatch() {
         if (text) {
             navigator.clipboard.writeText(text)
                 .then(() => {
-                    // 显示简短的成功提示
-                    const btn = event.target;
-                    const originalText = btn.textContent;
-                    btn.textContent = '✓';
-                    btn.style.background = '#28a745';
-                    setTimeout(() => {
-                        btn.textContent = originalText;
-                    }, 1000);
+                    // 不改变按钮样式，只显示临时提示
+                    const btn = event?.target?.closest('button');
+                    if (btn) {
+                        const originalHTML = btn.innerHTML;
+                        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/></svg>';
+                        setTimeout(() => {
+                            btn.innerHTML = originalHTML;
+                        }, 1000);
+                    }
                 })
                 .catch(() => alert('❌ 复制失败，请手动复制。'));
         }
     }
 }
 
-// 切换权利要求显示/隐藏
+// 切换权利要求显示/隐藏 - 单按钮切换
 function toggleClaims(patentNumber) {
     const container = document.getElementById(`claims_${patentNumber}`);
     const claimItems = document.querySelectorAll(`.claim-item[id^="claim_${patentNumber}"]`);
-    const toggleBtn = container?.parentElement?.querySelector('button');
     
     if (!container || !claimItems.length) return;
     
-    let allVisible = true;
+    // 查找切换按钮
+    const toggleBtn = container.parentElement.querySelector(`button[onclick*="toggleClaims('${patentNumber}')"]`);
+    if (!toggleBtn) return;
+    
+    // 检查当前状态：如果有任何一个隐藏的项，说明是收起状态
+    let isCollapsed = false;
     claimItems.forEach((item, index) => {
         if (index >= 3 && item.style.display === 'none') {
-            allVisible = false;
+            isCollapsed = true;
         }
     });
     
-    if (allVisible) {
-        // 隐藏超出部分
+    if (isCollapsed) {
+        // 展开全部
+        claimItems.forEach((item) => {
+            item.style.display = 'block';
+        });
+        container.style.maxHeight = 'none';
+        container.style.overflowY = 'visible';
+        toggleBtn.textContent = '收起';
+    } else {
+        // 收起，只显示前3条
         claimItems.forEach((item, index) => {
             if (index >= 3) {
                 item.style.display = 'none';
@@ -1079,18 +1109,6 @@ function toggleClaims(patentNumber) {
         });
         container.style.maxHeight = '200px';
         container.style.overflowY = 'auto';
-        if (toggleBtn) {
-            toggleBtn.textContent = '展开全部';
-        }
-    } else {
-        // 显示全部
-        claimItems.forEach((item) => {
-            item.style.display = 'block';
-        });
-        container.style.maxHeight = 'none';
-        container.style.overflowY = 'visible';
-        if (toggleBtn) {
-            toggleBtn.textContent = '收起';
-        }
+        toggleBtn.textContent = '展开全部';
     }
 }
