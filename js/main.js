@@ -885,6 +885,69 @@ function buildPatentDetailHTML(result) {
         }
     });
     
+    // 批量解读结果
+    const analysisResult = analysisResults.find(item => item.patent_number === result.patent_number);
+    if (analysisResult) {
+        let analysisJson = {};
+        let displayContent = '';
+        try {
+            // 尝试清理可能的markdown代码块标记
+            let cleanContent = analysisResult.analysis_content.trim();
+            if (cleanContent.startsWith('```json')) {
+                cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+            } else if (cleanContent.startsWith('```')) {
+                cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
+            }
+            
+            analysisJson = JSON.parse(cleanContent);
+            
+            // 动态生成表格内容
+            let tableRows = '';
+            Object.keys(analysisJson).forEach(key => {
+                const value = analysisJson[key];
+                const displayValue = typeof value === 'string' ? value.replace(/\n/g, '<br>') : value;
+                tableRows += `<tr><td style="border: 1px solid #ddd; padding: 8px;">${key}</td><td style="border: 1px solid #ddd; padding: 8px;">${displayValue}</td></tr>`;
+            });
+            
+            displayContent = `
+                <div class="analysis-content">
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                        <tr><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">字段</th><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">内容</th></tr>
+                        ${tableRows}
+                    </table>
+                </div>
+            `;
+        } catch (e) {
+            console.error('JSON解析失败:', e);
+            // 如果不是JSON格式，显示原始内容
+            displayContent = `
+                <div class="analysis-content">
+                    <div style="padding: 10px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; margin-bottom: 10px;">
+                        ⚠️ 解读结果未能解析为结构化格式，显示原始内容：
+                    </div>
+                    <div style="white-space: pre-wrap; font-family: monospace; background-color: #f5f5f5; padding: 10px; border-radius: 4px;">
+                        ${analysisResult.analysis_content}
+                    </div>
+                </div>
+            `;
+        }
+        
+        htmlContent += `
+            <div style="margin-top: 15px; padding: 10px; background-color: #e3f2fd; border-radius: 5px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div>
+                        <strong style="color: var(--primary-color);">🤖 批量解读结果:</strong>
+                    </div>
+                </div>
+                <div class="ai-disclaimer compact">
+                    <div class="ai-disclaimer-icon">AI</div>
+                    <div class="ai-disclaimer-text"><strong>AI生成：</strong>以下解读由AI生成，仅供参考</div>
+                </div>
+                ${displayContent}
+            </div>
+        `;
+    }
+    
     // 权利要求
     if (data.claims && data.claims.length > 0) {
         const hasMore = data.claims.length > 3;
