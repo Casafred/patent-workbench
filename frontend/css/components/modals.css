@@ -12,13 +12,28 @@
     will-change: opacity;
 }
 
-/* 专利详情弹窗 - 移除遮罩层 */
+/* 专利详情弹窗 - 移除遮罩层并优化显示 */
 #patent_detail_modal {
     background-color: transparent;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 #patent_detail_modal .modal-content {
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    opacity: 1;
+    position: relative;
+    left: 0;
+    top: 0;
+    transform: none;
+    width: 800px;
+    max-width: 95%;
+    max-height: 95vh;
+}
+
+#patent_detail_modal .modal-body {
+    max-height: 70vh;
 }
 
 .modal-content {

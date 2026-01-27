@@ -788,7 +788,12 @@ window.openPatentDetailModal = function(result) {
     let htmlContent = buildPatentDetailHTML(result);
     
     modalBody.innerHTML = htmlContent;
-    modal.style.display = 'flex';
+    modal.style.display = 'block';
+    
+    // 确保弹窗内容加载完成后再显示
+    setTimeout(() => {
+        modal.style.display = 'block';
+    }, 100);
 };
 
 // 关闭专利详情弹窗
