@@ -788,13 +788,6 @@ window.openPatentDetailModal = function(result) {
     
     modalBody.innerHTML = htmlContent;
     modal.style.display = 'flex';
-    
-    // 点击弹窗外部关闭
-    modal.onclick = function(e) {
-        if (e.target === modal) {
-            closePatentDetailModal();
-        }
-    };
 };
 
 // 关闭专利详情弹窗
@@ -804,6 +797,19 @@ window.closePatentDetailModal = function() {
         modal.style.display = 'none';
     }
 };
+
+// 初始化弹窗点击外部关闭功能（只执行一次）
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('patent_detail_modal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            // 只有点击遮罩层本身（不是弹窗内容）时才关闭
+            if (e.target === modal) {
+                closePatentDetailModal();
+            }
+        });
+    }
+});
 
 // 复制专利号
 window.copyPatentNumber = function(patentNumber, event) {

@@ -236,11 +236,15 @@
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
-    display: flex;
+    display: none; /* 默认隐藏 */
     align-items: center;
     justify-content: center;
     z-index: 10000;
     padding: 20px;
+}
+
+.modal.show {
+    display: flex; /* 显示时使用flex布局 */
 }
 
 .modal-content {
