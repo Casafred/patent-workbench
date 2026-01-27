@@ -333,7 +333,9 @@ function initPatentBatch() {
         }
         patentResultsContainer.style.display = 'none';
         patentResultsList.innerHTML = '';
-        analysisResultsList.innerHTML = '';
+        if (analysisResultsList) {
+            analysisResultsList.innerHTML = '';
+        }
         searchStatus.style.display = 'none';
         patentResults = [];
         analysisResults = [];
@@ -476,7 +478,9 @@ function initPatentBatch() {
         
         // 清空之前的结果
         patentResultsList.innerHTML = '';
-        analysisResultsList.innerHTML = '';
+        if (analysisResultsList) {
+            analysisResultsList.innerHTML = '';
+        }
         analyzeAllBtn.disabled = true;
         
         // 显示查询状态
@@ -531,7 +535,9 @@ function initPatentBatch() {
         const includeSpecification = document.getElementById('crawl_specification_checkbox')?.checked || false;
         
         // 清空之前的解读结果
-        analysisResultsList.innerHTML = '';
+        if (analysisResultsList) {
+            analysisResultsList.innerHTML = '';
+        }
         analysisResults = [];
         
         // 显示解读状态
@@ -548,7 +554,7 @@ function initPatentBatch() {
                 
                 // 创建占位符（按用户输入顺序）
                 const placeholderId = `analysis_placeholder_${patent.patent_number}`;
-                if (!document.getElementById(placeholderId)) {
+                if (!document.getElementById(placeholderId) && analysisResultsList) {
                     const placeholder = document.createElement('div');
                     placeholder.id = placeholderId;
                     placeholder.className = 'result-item';
