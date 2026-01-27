@@ -192,7 +192,7 @@ function updateAllModelSelectors() {
     }
     
     // 功能三：大批量处理
-    const apiModelSelect = document.getElementById('api_model_select');
+    const apiModelSelect = document.getElementById('api-model');
     if (apiModelSelect) {
         const currentValue = apiModelSelect.value;
         apiModelSelect.innerHTML = modelOptions;
