@@ -670,6 +670,11 @@ function initPatentBatch() {
         // 保存到状态
         appState.patentBatch.patentResults = results;
         
+        // 显示结果容器
+        if (patentResultsContainer) {
+            patentResultsContainer.style.display = 'block';
+        }
+        
         patentResultsList.innerHTML = '';
         
         results.forEach(result => {
