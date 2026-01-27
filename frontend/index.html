@@ -1093,7 +1093,10 @@
         
         <!-- 查询结果列表 - 简化为专利号条带 -->
         <div id="patent_results_container" style="margin-top: 20px; display: none;">
-            <h4>查询结果</h4>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h4>查询结果</h4>
+                <button id="export_analysis_excel_btn" class="small-button" disabled>导出为Excel</button>
+            </div>
             <div id="patent_results_list" class="patent-strip-list"></div>
         </div>
         
@@ -1108,15 +1111,6 @@
                     <!-- 动态填充专利详情 -->
                 </div>
             </div>
-        </div>
-        
-        <!-- 解读结果区域 -->
-        <div id="analysis_results" style="margin-top: 30px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h4>专利解读结果</h4>
-                <button id="export_analysis_excel_btn" class="small-button" disabled>导出为Excel</button>
-            </div>
-            <div id="analysis_results_list" class="scrollable-list"></div>
         </div>
     </div>
 </div>
