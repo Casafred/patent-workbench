@@ -1896,18 +1896,28 @@ function drawAnnotations(canvas, imageUrl, detectedNumbers) {
     const img = new Image();
     
     img.onload = function() {
-        // 设置Canvas尺寸匹配图片
-        canvas.width = img.width;
-        canvas.height = img.height;
+        // 获取容器宽度，确保Canvas不会超出container边界
+        const containerWidth = document.querySelector('.container').offsetWidth;
+        const maxCanvasWidth = containerWidth - 60; // 留出边距
         
-        // 绘制图片
-        ctx.drawImage(img, 0, 0);
+        // 计算缩放比例
+        let scale = 1;
+        if (img.width > maxCanvasWidth) {
+            scale = maxCanvasWidth / img.width;
+        }
         
-        // 绘制标注点
+        // 设置Canvas尺寸（应用缩放）
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        
+        // 绘制图片（应用缩放）
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        // 绘制标注点（应用缩放）
         detectedNumbers.forEach(detected => {
             // 绘制红色圆圈
             ctx.beginPath();
-            ctx.arc(detected.x, detected.y, 10, 0, 2 * Math.PI);
+            ctx.arc(detected.x * scale, detected.y * scale, 10, 0, 2 * Math.PI);
             ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
             ctx.fill();
             ctx.strokeStyle = 'white';
@@ -1921,9 +1931,9 @@ function drawAnnotations(canvas, imageUrl, detectedNumbers) {
             ctx.strokeStyle = 'black';
             ctx.lineWidth = 3;
             
-            // 文本位置（圆圈右侧）
-            const textX = detected.x + 15;
-            const textY = detected.y + 5;
+            // 文本位置（圆圈右侧，应用缩放）
+            const textX = detected.x * scale + 15;
+            const textY = detected.y * scale + 5;
             
             // 绘制文本描边和填充
             ctx.strokeText(label, textX, textY);
