@@ -168,11 +168,11 @@ function updateTemplateSelector() {
 function bindTemplateEvents() {
     const selector = getEl('patent_template_selector');
     const manageBtn = getEl('manage_template_btn');
-    const saveBtn = getEl('save_template_btn');
-    const newBtn = getEl('new_template_btn');
-    const deleteBtn = getEl('delete_template_btn');
-    const exportBtn = getEl('export_template_btn');
-    const importBtn = getEl('import_template_btn');
+    const saveBtn = getEl('patent_save_template_btn');
+    const newBtn = getEl('patent_new_template_btn');
+    const deleteBtn = getEl('patent_delete_template_btn');
+    const exportBtn = getEl('patent_export_template_btn');
+    const importBtn = getEl('patent_import_template_btn');
     const cancelBtn = getEl('cancel_edit_btn');
     const addFieldBtn = getEl('add_field_btn');
     
