@@ -4,10 +4,13 @@
 // 初始化
 // =================================================================================
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('开始初始化所有模块');
     initApiKeyConfig();
     initChat();
     initAsyncBatch();
+    console.log('准备初始化大批量处理模块');
     initLargeBatch();
+    console.log('大批量处理模块初始化完成');
     initLocalPatentLib();
     initClaimsComparison();
     initFilesManager();

@@ -151,7 +151,7 @@ let ASYNC_MODELS = ["glm-4-flashX-250414", "glm-4-flash", "glm-4-long", "GLM-4.7
 // 从配置文件加载模型列表
 async function loadModelsConfig() {
     try {
-        const response = await fetch('config/models.json');
+        const response = await fetch('../config/models.json');
         const config = await response.json();
         if (config.models && Array.isArray(config.models)) {
             AVAILABLE_MODELS = config.models;

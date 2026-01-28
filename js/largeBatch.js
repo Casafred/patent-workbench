@@ -16,7 +16,11 @@ function initGenerator() {
     columnCountInput.addEventListener('input', () => { updateColumnSelectors(); updateContentInsertionPreview(); });
     genGenerateBtn.addEventListener('click', generateJsonl);
     genDownloadBtn.addEventListener('click', downloadJsonl);
-    templateSelector.addEventListener('change', loadTemplate);
+    
+    if (templateSelector) {
+        templateSelector.addEventListener('change', loadTemplate);
+    }
+    
     getEl('save_template_btn').addEventListener('click', saveTemplate);
     getEl('delete_template_btn').addEventListener('click', deleteTemplate);
     getEl('export_template_btn').addEventListener('click', exportTemplate);
@@ -175,10 +179,14 @@ function loadTemplateUI(template) {
 }
 
 function initTemplates() {
+    // 加载自定义模板
     appState.generator.customTemplates = JSON.parse(localStorage.getItem('custom_templates') || '[]');
+    
+    // 更新模板选择器
     updateTemplateSelector();
+    
     // 加载默认模板（第一个预设模板）
-    if (appState.generator.presetTemplates.length > 0) {
+    if (appState.generator.presetTemplates && appState.generator.presetTemplates.length > 0) {
         const defaultTemplate = appState.generator.presetTemplates[0];
         if (defaultTemplate) {
             loadTemplateUI(defaultTemplate);
@@ -187,12 +195,29 @@ function initTemplates() {
 }
 
 function updateTemplateSelector() {
+    // 检查模板选择器元素是否存在
     if (!templateSelector) {
-        console.error('模板选择器元素不存在');
         return;
     }
     
+    // 检查appState和相关属性是否存在
+    if (typeof appState === 'undefined' || !appState.generator) {
+        return;
+    }
+    
+    // 确保预设模板和自定义模板数组存在
+    if (!appState.generator.presetTemplates) {
+        appState.generator.presetTemplates = [];
+    }
+    
+    if (!appState.generator.customTemplates) {
+        appState.generator.customTemplates = [];
+    }
+    
+    // 保存当前选中的值
     const selectedValue = templateSelector.value;
+    
+    // 清空选择器
     templateSelector.innerHTML = '';
     
     // 添加默认选项
@@ -201,22 +226,24 @@ function updateTemplateSelector() {
     defaultOption.textContent = '选择预置模板或新建';
     templateSelector.appendChild(defaultOption);
     
-    const allTemplates = [...appState.generator.presetTemplates, ...appState.generator.customTemplates];
-    ['预设模板', '自定义模板'].forEach(groupName => {
-        const templatesInGroup = allTemplates.filter(t => (t.isPreset && groupName === '预设模板') || (!t.isPreset && groupName === '自定义模板'));
-        if (templatesInGroup.length > 0) {
-            const optgroup = document.createElement('optgroup');
-            optgroup.label = groupName;
-            templatesInGroup.forEach(t => {
-                const option = document.createElement('option');
-                option.value = t.name;
-                option.textContent = t.name;
-                optgroup.appendChild(option);
-            });
-            templateSelector.appendChild(optgroup);
-        }
+    // 添加预设模板
+    appState.generator.presetTemplates.forEach(template => {
+        const option = document.createElement('option');
+        option.value = template.name;
+        option.textContent = template.name;
+        templateSelector.appendChild(option);
     });
-    if (allTemplates.some(t => t.name === selectedValue)) {
+    
+    // 添加自定义模板
+    appState.generator.customTemplates.forEach(template => {
+        const option = document.createElement('option');
+        option.value = template.name;
+        option.textContent = template.name;
+        templateSelector.appendChild(option);
+    });
+    
+    // 保持选中状态
+    if (selectedValue) {
         templateSelector.value = selectedValue;
     }
 }
