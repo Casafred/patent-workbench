@@ -110,12 +110,13 @@ def check_memory_available(required_mb: int = 500) -> bool:
         return True
 
 
-def transform_rapidocr_result(rapid_result: List) -> List[Dict]:
+def transform_rapidocr_result(rapid_result) -> List[Dict]:
     """
     Transform RapidOCR output format to unified format.
     
-    RapidOCR returns: [
-        [[[x1,y1], [x2,y2], [x3,y3], [x4,y4]], 'text', confidence],
+    RapidOCR returns a tuple: (detections, timings)
+    where detections is: [
+        [[[x1,y1], [x2,y2], [x3,y3], [x4,y4]], 'text', 'confidence_str'],
         ...
     ]
     
@@ -132,7 +133,7 @@ def transform_rapidocr_result(rapid_result: List) -> List[Dict]:
     ]
     
     Args:
-        rapid_result: RapidOCR detection results
+        rapid_result: RapidOCR detection results (tuple or list)
         
     Returns:
         List[Dict]: Transformed results in unified format
@@ -140,11 +141,29 @@ def transform_rapidocr_result(rapid_result: List) -> List[Dict]:
     if not rapid_result:
         return []
     
+    # RapidOCR returns (detections, timings) tuple
+    # Extract just the detections list
+    if isinstance(rapid_result, tuple) and len(rapid_result) >= 1:
+        detections = rapid_result[0]
+    else:
+        detections = rapid_result
+    
+    if not detections:
+        return []
+    
     results = []
     
-    for detection in rapid_result:
+    for detection in detections:
         try:
+            # Each detection is [box, text, score_str]
+            if not detection or len(detection) < 3:
+                continue
+                
             box, text, score = detection
+            
+            # Convert score from string to float if needed
+            if isinstance(score, str):
+                score = float(score)
             
             # Calculate bounding box from corners
             xs = [point[0] for point in box]
