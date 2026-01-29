@@ -167,11 +167,11 @@
 }
 
 .user-message {
-    justify-content: flex-start;
+    justify-content: flex-end;
 }
 
 .user-message .message-main-content {
-    flex-direction: row;
+    flex-direction: row-reverse;
 }
 
 .chat-message .avatar { 
