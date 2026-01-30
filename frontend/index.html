@@ -1548,9 +1548,11 @@
         </div>
 
 <!-- 功能八：专利附图标记功能 -->
+<script src="../js/drawingMarkerInteractive.js?v=20260130"></script>
 <script>
 // 专利附图标记功能数据存储
 let uploadedDrawings = [];
+let currentReferenceMap = {}; // 存储说明书中的标记映射
 
 // 初始化专利附图标记功能
 function initDrawingMarker() {
@@ -1786,6 +1788,9 @@ function startProcessing() {
 
 // 显示处理结果 - 使用真实API返回的数据
 function displayProcessingResult(data) {
+    // 保存reference_map供交互式标注使用
+    currentReferenceMap = data.reference_map || {};
+    
     // 更新处理状态
     const processingStatus = document.getElementById('processing_status');
     if (processingStatus) {
@@ -1836,7 +1841,7 @@ function displayProcessingResult(data) {
         processingResult.innerHTML = html;
     }
     
-    // 更新标注后的附图 - 使用真实的识别结果
+    // 更新标注后的附图 - 使用交互式Canvas
     const annotatedDrawingsContainer = document.getElementById('annotated_drawings_container');
     if (annotatedDrawingsContainer) {
         if (data.total_numbers === 0) {
@@ -1851,7 +1856,16 @@ function displayProcessingResult(data) {
             return;
         }
         
-        let html = '<div style="display: flex; flex-wrap: wrap; gap: 15px;">';
+        let html = '<div style="margin-bottom: 15px; padding: 10px; background-color: rgba(33, 150, 243, 0.1); border-radius: 8px;">';
+        html += '<strong>💡 交互提示:</strong> ';
+        html += '<span style="color: #2196f3;">拖动标注框</span>可调整位置，';
+        html += '<span style="color: #ff9800;">双击标注框</span>可编辑名称';
+        html += '</div>';
+        
+        html += '<div style="display: flex; flex-wrap: wrap; gap: 15px;">';
+        
+        // 清空之前的交互式标注实例
+        window.interactiveMarkers = [];
         
         // 遍历处理后的结果
         data.drawings.forEach((processedDrawing, index) => {
@@ -1862,16 +1876,25 @@ function displayProcessingResult(data) {
             const detectedCount = processedDrawing.detected_numbers ? processedDrawing.detected_numbers.length : 0;
             
             html += `
-                <div style="position: relative; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; max-width: 100%; flex: 1 1 300px; min-width: 300px; background-color: white;">
-                    <div style="margin-bottom: 10px; font-size: 0.8em; color: var(--text-color-secondary);">
-                        标注后的附图 ${index + 1}: ${processedDrawing.name}
-                        <span style="margin-left: 10px; color: var(--success-color); font-weight: bold;">(${detectedCount}个标记)</span>
+                <div style="position: relative; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; max-width: 100%; flex: 1 1 400px; min-width: 400px; background-color: white;">
+                    <div style="margin-bottom: 10px; font-size: 0.9em; color: var(--text-color-secondary); display: flex; justify-content: space-between; align-items: center;">
+                        <span>
+                            <strong>附图 ${index + 1}:</strong> ${processedDrawing.name}
+                            <span style="margin-left: 10px; color: var(--success-color); font-weight: bold;">(${detectedCount}个标记)</span>
+                        </span>
+                        <button onclick="exportDrawing(${index})" class="small-button" style="padding: 5px 10px; font-size: 0.8em;">
+                            导出图片
+                        </button>
                     </div>
-                    <div style="position: relative; width: 100%; height: 300px;">
-                        <canvas id="drawing_canvas_${index}" style="width: 100%; height: 100%; border-radius: 4px; border: 1px solid #ddd;"></canvas>
+                    <div style="position: relative; width: 100%; min-height: 400px; background-color: #f5f5f5; border-radius: 4px;">
+                        <canvas id="interactive_canvas_${index}" style="width: 100%; border-radius: 4px; border: 1px solid #ddd;"></canvas>
                     </div>
-                    <div style="margin-top: 10px; font-size: 0.8em;">
-                        <strong>标注说明:</strong> 红色圆点表示识别到的数字序号位置
+                    <div style="margin-top: 10px; font-size: 0.8em; color: #666;">
+                        <strong>标注说明:</strong> 
+                        <span style="color: #f44336;">●</span> 红点=识别位置 | 
+                        <span style="color: #4caf50;">绿框</span>=标注 | 
+                        <span style="color: #2196f3;">蓝框</span>=选中 | 
+                        <span style="color: #ff9800;">橙框</span>=悬停
                     </div>
                 </div>
             `;
@@ -1879,76 +1902,44 @@ function displayProcessingResult(data) {
         html += '</div>';
         annotatedDrawingsContainer.innerHTML = html;
         
-        // 在Canvas上绘制标注
+        // 创建交互式标注实例
         setTimeout(() => {
             data.drawings.forEach((processedDrawing, index) => {
                 const originalDrawing = uploadedDrawings.find(d => d.name === processedDrawing.name);
                 if (!originalDrawing) return;
                 
-                const canvas = document.getElementById(`drawing_canvas_${index}`);
-                if (!canvas) return;
+                const canvasId = `interactive_canvas_${index}`;
+                const marker = new InteractiveDrawingMarker(
+                    canvasId,
+                    originalDrawing.dataUrl,
+                    processedDrawing.detected_numbers || [],
+                    currentReferenceMap
+                );
                 
-                drawAnnotations(canvas, originalDrawing.dataUrl, processedDrawing.detected_numbers || []);
+                window.interactiveMarkers.push(marker);
             });
         }, 100);
     }
 }
 
-// 在Canvas上绘制标注
-function drawAnnotations(canvas, imageUrl, detectedNumbers) {
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
+// 导出单个附图
+function exportDrawing(index) {
+    if (!window.interactiveMarkers || !window.interactiveMarkers[index]) {
+        alert('无法导出图片');
+        return;
+    }
     
-    img.onload = function() {
-        // 获取容器宽度，确保Canvas不会超出container边界
-        const containerWidth = document.querySelector('.container').offsetWidth;
-        const maxCanvasWidth = containerWidth - 60; // 留出边距
-        
-        // 计算缩放比例
-        let scale = 1;
-        if (img.width > maxCanvasWidth) {
-            scale = maxCanvasWidth / img.width;
-        }
-        
-        // 设置Canvas尺寸（应用缩放）
-        canvas.width = img.width * scale;
-        canvas.height = img.height * scale;
-        
-        // 绘制图片（应用缩放）
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        
-        // 绘制标注点（应用缩放）
-        detectedNumbers.forEach(detected => {
-            // 绘制红色圆圈
-            ctx.beginPath();
-            ctx.arc(detected.x * scale, detected.y * scale, 10, 0, 2 * Math.PI);
-            ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
-            ctx.fill();
-            ctx.strokeStyle = 'white';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            
-            // 绘制文本标签
-            const label = `${detected.number}: ${detected.name}`;
-            ctx.font = 'bold 14px Arial';
-            ctx.fillStyle = 'white';
-            ctx.strokeStyle = 'black';
-            ctx.lineWidth = 3;
-            
-            // 文本位置（圆圈右侧，应用缩放）
-            const textX = detected.x * scale + 15;
-            const textY = detected.y * scale + 5;
-            
-            // 绘制文本描边和填充
-            ctx.strokeText(label, textX, textY);
-            ctx.fillText(label, textX, textY);
-        });
-    };
+    const marker = window.interactiveMarkers[index];
+    const imageData = marker.exportImage();
     
-    img.src = imageUrl;
+    // 创建下载链接
+    const link = document.createElement('a');
+    link.download = `annotated_drawing_${index + 1}.png`;
+    link.href = imageData;
+    link.click();
 }
 
-// 旧的重复函数已删除
+// 旧的静态绘制函数已被交互式系统替代
 
 // 页面加载完成后初始化
 if (document.readyState === 'loading') {

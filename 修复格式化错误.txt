@@ -1,0 +1,22 @@
+=== 修复OCR格式化字符串错误 ===
+
+问题: unsupported format string passed to list.__format__
+原因: image.shape 是 tuple，不能直接在 f-string 中格式化
+
+执行以下命令:
+
+1. 上传修复后的文件
+scp backend/utils/ocr_utils.py root@43.99.101.195:/home/appuser/patent-app/backend/utils/
+
+2. 修改权限
+ssh root@43.99.101.195 "chown appuser:appuser /home/appuser/patent-app/backend/utils/ocr_utils.py"
+
+3. 重启服务
+ssh root@43.99.101.195 "systemctl restart patent-app && sleep 3 && systemctl status patent-app"
+
+4. 测试OCR功能
+访问 http://43.99.101.195 进入功能八测试
+
+修复内容:
+- 修复 image.shape 格式化错误
+- 改为: f"Starting OCR on image of size {img_shape[0]}x{img_shape[1]}"

@@ -39,7 +39,6 @@ def initialize_ocr_engine():
     Uses singleton pattern to avoid repeated model loading.
     Configured for:
     - CPU-only operation (2GB server constraint)
-    - Horizontal text detection
     - English and numeric character recognition
     - White background with black text optimization
     
@@ -57,8 +56,8 @@ def initialize_ocr_engine():
     try:
         from rapidocr_onnxruntime import RapidOCR
         
-        # Initialize with default parameters (optimized for general use)
-        # RapidOCR automatically handles model loading and configuration
+        # Initialize RapidOCR with minimal configuration
+        # This is much faster than PaddleOCR and requires less memory
         _ocr_engine = RapidOCR()
         
         logger.info("RapidOCR engine initialized successfully")
@@ -114,9 +113,12 @@ def transform_rapidocr_result(rapid_result) -> List[Dict]:
     """
     Transform RapidOCR output format to unified format.
     
-    RapidOCR returns a tuple: (detections, timings)
-    where detections is: [
-        [[[x1,y1], [x2,y2], [x3,y3], [x4,y4]], 'text', 'confidence_str'],
+    RapidOCR returns: [
+        [
+            [[x1,y1], [x2,y2], [x3,y3], [x4,y4]],
+            'text',
+            confidence_float
+        ],
         ...
     ]
     
@@ -133,7 +135,7 @@ def transform_rapidocr_result(rapid_result) -> List[Dict]:
     ]
     
     Args:
-        rapid_result: RapidOCR detection results (tuple or list)
+        rapid_result: RapidOCR detection results
         
     Returns:
         List[Dict]: Transformed results in unified format
@@ -141,29 +143,14 @@ def transform_rapidocr_result(rapid_result) -> List[Dict]:
     if not rapid_result:
         return []
     
-    # RapidOCR returns (detections, timings) tuple
-    # Extract just the detections list
-    if isinstance(rapid_result, tuple) and len(rapid_result) >= 1:
-        detections = rapid_result[0]
-    else:
-        detections = rapid_result
-    
-    if not detections:
-        return []
-    
     results = []
     
-    for detection in detections:
+    for detection in rapid_result:
         try:
-            # Each detection is [box, text, score_str]
             if not detection or len(detection) < 3:
                 continue
                 
             box, text, score = detection
-            
-            # Convert score from string to float if needed
-            if isinstance(score, str):
-                score = float(score)
             
             # Calculate bounding box from corners
             xs = [point[0] for point in box]
@@ -177,13 +164,16 @@ def transform_rapidocr_result(rapid_result) -> List[Dict]:
             center_x = (x_min + x_max) / 2
             center_y = (y_min + y_max) / 2
             
+            # Convert score to float first (RapidOCR returns string), then scale to 0-100
+            confidence_score = float(score) * 100 if isinstance(score, str) else score * 100
+            
             results.append({
                 'number': text.strip(),
                 'x': int(center_x),
                 'y': int(center_y),
                 'width': int(width),
                 'height': int(height),
-                'confidence': float(score * 100)  # Convert 0-1 to 0-100
+                'confidence': confidence_score
             })
             
         except (ValueError, IndexError, TypeError) as e:
@@ -246,7 +236,7 @@ def perform_ocr(
     image_data: bytes,
     use_angle_cls: bool = True,
     use_text_score: bool = True,
-    timeout_seconds: int = 10
+    timeout_seconds: int = 60
 ) -> List[Dict]:
     """
     Perform OCR on image data using RapidOCR.
@@ -260,7 +250,7 @@ def perform_ocr(
         image_data: Raw image bytes (PNG, JPEG, etc.)
         use_angle_cls: Whether to use angle classification for rotated text
         use_text_score: Whether to return confidence scores
-        timeout_seconds: Maximum processing time in seconds (default: 10)
+        timeout_seconds: Maximum processing time in seconds (default: 60)
         
     Returns:
         List[Dict]: Detected text regions with format:
@@ -293,7 +283,9 @@ def perform_ocr(
             check_memory_available(required_mb=500)
             
             # Initialize OCR engine (singleton)
+            logger.info("Initializing RapidOCR engine...")
             ocr_engine = initialize_ocr_engine()
+            logger.info("RapidOCR engine ready")
             
             # Convert image bytes to numpy array using Pillow (more reliable for various formats)
             try:
@@ -320,7 +312,19 @@ def perform_ocr(
             
             # Perform OCR
             try:
-                result = ocr_engine(image, use_det=True, use_cls=use_angle_cls, use_rec=True)
+                img_shape = image.shape
+                logger.info(f"Starting OCR on image of size {img_shape[0]}x{img_shape[1]}")
+                result, elapse = ocr_engine(image)
+                
+                # Handle elapse time (can be None, float, or list of floats)
+                if elapse is not None:
+                    if isinstance(elapse, (list, tuple)):
+                        total_time = sum(elapse) if elapse else 0
+                        logger.info(f"OCR completed in {total_time:.2f}s")
+                    else:
+                        logger.info(f"OCR completed in {elapse:.2f}s")
+                else:
+                    logger.info("OCR completed")
                 
                 if result is None or not result:
                     logger.info("No text detected in image")

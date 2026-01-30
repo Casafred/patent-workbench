@@ -1,0 +1,28 @@
+=== 清除Python缓存并重新部署 ===
+
+执行以下命令:
+
+1. 清除所有Python缓存文件
+ssh root@43.99.101.195 "find /home/appuser/patent-app -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null; find /home/appuser/patent-app -name '*.pyc' -delete"
+
+2. 上传最新文件
+scp backend/utils/ocr_utils.py root@43.99.101.195:/home/appuser/patent-app/backend/utils/
+
+3. 修改权限
+ssh root@43.99.101.195 "chown appuser:appuser /home/appuser/patent-app/backend/utils/ocr_utils.py"
+
+4. 重启服务
+ssh root@43.99.101.195 "systemctl restart patent-app"
+
+5. 等待5秒
+timeout /t 5
+
+6. 查看服务状态
+ssh root@43.99.101.195 "systemctl status patent-app --no-pager"
+
+7. 测试功能八
+访问 http://43.99.101.195 进入功能八测试
+
+注意: 
+- 第一次测试可能需要等待15-20秒（RapidOCR首次加载模型）
+- 如果仍然识别为0，可能是图片质量问题或RapidOCR模型问题

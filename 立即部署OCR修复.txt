@@ -1,0 +1,33 @@
+=== 立即部署OCR超时修复 ===
+
+复制以下命令逐条执行：
+
+1. 上传修复后的文件
+scp backend/utils/ocr_utils.py root@43.99.101.195:/home/appuser/patent-app/backend/utils/
+
+2. 修改文件权限
+ssh root@43.99.101.195 "chown appuser:appuser /home/appuser/patent-app/backend/utils/ocr_utils.py"
+
+3. 重启服务
+ssh root@43.99.101.195 "systemctl restart patent-app"
+
+4. 查看服务状态
+ssh root@43.99.101.195 "systemctl status patent-app"
+
+5. 查看实时日志（测试时使用）
+ssh root@43.99.101.195 "journalctl -u patent-app -f"
+
+=== 修复内容 ===
+✅ 超时时间: 10秒 → 60秒
+✅ OCR引擎: PaddleOCR → RapidOCR (更快)
+✅ 添加详细日志输出
+✅ 修复结果解析格式
+
+=== 测试步骤 ===
+1. 访问 http://43.99.101.195
+2. 进入功能八
+3. 上传专利附图
+4. 输入说明书标记
+5. 点击"开始识别"
+
+预期: 识别出 > 0 个标记，不再超时

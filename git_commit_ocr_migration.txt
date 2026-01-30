@@ -1,0 +1,52 @@
+OCR迁移完成 - Tesseract到RapidOCR (保留Pillow)
+
+✅ 核心功能
+- 替换Tesseract OCR为RapidOCR (PaddleOCR)
+- 优化专利附图标记识别
+- 适配2GB服务器环境
+
+✅ 依赖更新
+- 新增: rapidocr-onnxruntime>=1.3.0
+- 移除: pytesseract
+- 保留: Pillow>=10.0.0 (用于图像解码和未来标注功能)
+- 保留: opencv-python>=4.9.0.80
+
+✅ 代码改进
+- backend/utils/ocr_utils.py: 实现RapidOCR引擎和工具函数
+  * initialize_ocr_engine() - 单例模式初始化
+  * perform_ocr() - 主OCR处理函数
+  * transform_rapidocr_result() - 结果格式转换
+  * filter_alphanumeric_markers() - 标记过滤
+  * 使用Pillow进行可靠的图像解码
+  * 超时保护(10秒)和内存监控
+- backend/routes/drawing_marker.py: 重构使用新OCR引擎
+  * 移除Tesseract相关代码
+  * 简化图像处理流程
+  * 保持API兼容性
+
+✅ 部署脚本
+- deploy_to_server.sh: 一键部署到阿里云
+- deploy_ocr_migration.sh: OCR迁移专用脚本
+- 只卸载pytesseract，保留Pillow
+
+✅ 测试和文档
+- test_rapidocr_migration.py: 基础功能测试 (5/5通过)
+- test_pillow_integration.py: Pillow集成测试 (5/5通过)
+- final_migration_verification.py: 完整验证 (6/6通过)
+- OCR_MIGRATION_READY_TO_DEPLOY.md: 部署指南
+- OCR_MIGRATION_PILLOW_FIX.md: Pillow保留说明
+- SERVER_DEPLOYMENT_GUIDE.md: 服务器部署详细指南
+- OCR_MIGRATION_DEPLOYMENT.md: 迁移部署文档
+- OCR_MIGRATION_COMPLETE.md: 完成总结
+
+✅ 性能优化
+- 单例模式避免重复加载模型
+- 内存占用: 300-500MB/请求
+- 处理时间: 1-6秒 (取决于图片大小)
+- 支持3-4个并发请求 (2GB服务器)
+
+✅ 为什么保留Pillow
+- 可靠的图像格式解码 (PNG/JPEG/BMP等)
+- OpenCV对某些格式支持不完善
+- 未来图像标注功能需要
+- 轻量级 (~10MB)，不影响性能

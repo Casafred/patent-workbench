@@ -1,0 +1,32 @@
+=== 强制更新OCR文件 ===
+
+问题: 服务器上的文件没有更新，仍然是旧代码
+
+解决方案: 强制覆盖并验证
+
+执行以下命令:
+
+1. 检查服务器上当前文件的第313行
+ssh root@43.99.101.195 "sed -n '310,315p' /home/appuser/patent-app/backend/utils/ocr_utils.py"
+
+2. 强制上传新文件（覆盖）
+scp -o "StrictHostKeyChecking=no" backend/utils/ocr_utils.py root@43.99.101.195:/home/appuser/patent-app/backend/utils/ocr_utils.py
+
+3. 验证文件已更新
+ssh root@43.99.101.195 "sed -n '310,315p' /home/appuser/patent-app/backend/utils/ocr_utils.py"
+
+应该看到:
+    img_shape = image.shape
+    logger.info(f"Starting OCR on image of size {img_shape[0]}x{img_shape[1]}")
+
+4. 删除所有.pyc缓存
+ssh root@43.99.101.195 "find /home/appuser/patent-app/backend -name '*.pyc' -delete && find /home/appuser/patent-app/backend -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true"
+
+5. 修改权限
+ssh root@43.99.101.195 "chown -R appuser:appuser /home/appuser/patent-app/backend/utils/"
+
+6. 重启服务
+ssh root@43.99.101.195 "systemctl restart patent-app && sleep 5 && systemctl status patent-app --no-pager"
+
+7. 测试
+访问 http://43.99.101.195 测试功能八
