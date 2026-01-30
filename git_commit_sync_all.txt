@@ -1,0 +1,31 @@
+同步服务器部署到GitHub - 完整更新
+
+本次提交包含服务器上所有最新的部署文件和功能更新：
+
+## 核心功能更新
+- OCR功能完整迁移和优化（RapidOCR集成）
+- 交互式标注功能实现
+- 专利附图OCR识别增强
+- Python版本兼容性修复
+
+## 新增文件
+- 交互式标注相关：drawingMarkerInteractive.js, test_interactive_marker.html
+- OCR诊断工具：diagnose_ocr_complete.py, diagnose_ocr_issue.py
+- OCR测试脚本：quick_ocr_test.py, quick_rapidocr_test.py等
+- 部署脚本：deploy_interactive_marker.bat, deploy_ocr_fix.bat
+- 修复脚本：fix_ocr_aliyun.sh
+- 诊断工具：一键诊断OCR.bat, 查看OCR实时日志.bat等
+
+## 修改文件
+- backend/utils/ocr_utils.py - OCR核心功能优化
+- frontend/index.html - 前端界面更新
+- requirements.txt - 依赖包更新（添加RapidOCR）
+
+## 文档更新
+- OCR故障排查指南
+- 交互式标注路径修复说明
+- Python版本升级指南
+- 功能八完整修复总结
+- 各类快速部署和验证文档
+
+所有功能已在服务器上验证通过，现同步到GitHub仓库。
