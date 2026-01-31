@@ -1,10 +1,10 @@
 /**
- * 交互式专利附图标注系统
- * 支持拖动标注、编辑文字、连线显示
+ * 交互式专利附图标注系统 v2.0
+ * 支持拖动标注、编辑文字、连线显示、缩放查看、弹窗展示
  */
 
 class InteractiveDrawingMarker {
-    constructor(canvasId, imageUrl, detectedNumbers, referenceMap) {
+    constructor(canvasId, imageUrl, detectedNumbers, referenceMap, options = {}) {
         this.canvas = document.getElementById(canvasId);
         if (!this.canvas) {
             console.error(`Canvas ${canvasId} not found`);
@@ -25,8 +25,20 @@ class InteractiveDrawingMarker {
         this.dragOffset = { x: 0, y: 0 };
         this.isEditing = false;
         
-        // 缩放比例
-        this.scale = 1;
+        // 缩放和显示控制
+        this.scale = 1;  // 图片缩放比例（用于适应容器）
+        this.zoom = 1;   // 用户缩放比例（1.0 = 100%）
+        this.minZoom = 0.5;
+        this.maxZoom = 3.0;
+        this.zoomStep = 0.1;
+        
+        // 配置选项
+        this.options = {
+            enableModal: options.enableModal !== false,  // 默认启用弹窗
+            containerWidth: options.containerWidth || null,
+            fontSize: options.fontSize || 12,
+            ...options
+        };
         
         // 初始化
         this.init();
@@ -52,22 +64,39 @@ class InteractiveDrawingMarker {
     }
     
     setupCanvas() {
+        // 使用原始图片尺寸，保持高清
+        this.originalWidth = this.image.width;
+        this.originalHeight = this.image.height;
+        
         // 获取容器宽度
-        const containerWidth = this.canvas.parentElement.offsetWidth;
+        const containerWidth = this.options.containerWidth || 
+                              (this.canvas.parentElement ? this.canvas.parentElement.offsetWidth : 800);
         const maxCanvasWidth = containerWidth - 20;
         
-        // 计算缩放比例
+        // 计算初始缩放比例（仅用于适应容器）
         this.scale = 1;
-        if (this.image.width > maxCanvasWidth) {
-            this.scale = maxCanvasWidth / this.image.width;
+        if (this.originalWidth > maxCanvasWidth) {
+            this.scale = maxCanvasWidth / this.originalWidth;
         }
         
-        // 设置Canvas尺寸
-        this.canvas.width = this.image.width * this.scale;
-        this.canvas.height = this.image.height * this.scale;
+        // 设置Canvas尺寸为原始尺寸（保持高清）
+        this.canvas.width = this.originalWidth;
+        this.canvas.height = this.originalHeight;
+        
+        // 设置显示尺寸
+        this.updateCanvasDisplaySize();
         
         // 设置样式
         this.canvas.style.cursor = 'default';
+    }
+    
+    updateCanvasDisplaySize() {
+        // 更新Canvas的显示尺寸（CSS尺寸）
+        const displayWidth = this.originalWidth * this.scale * this.zoom;
+        const displayHeight = this.originalHeight * this.scale * this.zoom;
+        
+        this.canvas.style.width = `${displayWidth}px`;
+        this.canvas.style.height = `${displayHeight}px`;
     }
     
     initializeAnnotations() {
@@ -81,12 +110,12 @@ class InteractiveDrawingMarker {
             
             return {
                 id: `annotation_${index}`,
-                // 原始标记位置
-                markerX: detected.x * this.scale,
-                markerY: detected.y * this.scale,
-                // 标注位置（偏移后）
-                labelX: detected.x * this.scale + offsetX,
-                labelY: detected.y * this.scale + offsetY,
+                // 原始标记位置（使用原始坐标）
+                markerX: detected.x,
+                markerY: detected.y,
+                // 标注位置（偏移后，使用原始坐标）
+                labelX: detected.x + offsetX,
+                labelY: detected.y + offsetY,
                 // 标注内容
                 number: detected.number,
                 name: detected.name || this.referenceMap[detected.number] || '未知',
@@ -116,13 +145,20 @@ class InteractiveDrawingMarker {
         
         // 双击编辑
         this.canvas.addEventListener('dblclick', (e) => this.handleDoubleClick(e));
+        
+        // 鼠标滚轮缩放
+        this.canvas.addEventListener('wheel', (e) => this.handleWheel(e), { passive: false });
     }
     
     getMousePos(e) {
         const rect = this.canvas.getBoundingClientRect();
+        // 转换为Canvas坐标（考虑缩放）
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+        
         return {
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top
+            x: (e.clientX - rect.left) * scaleX,
+            y: (e.clientY - rect.top) * scaleY
         };
     }
     
@@ -227,6 +263,25 @@ class InteractiveDrawingMarker {
         }
     }
     
+    handleWheel(e) {
+        e.preventDefault();
+        
+        // 计算缩放
+        const delta = e.deltaY > 0 ? -this.zoomStep : this.zoomStep;
+        const newZoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.zoom + delta));
+        
+        if (newZoom !== this.zoom) {
+            this.zoom = newZoom;
+            this.updateCanvasDisplaySize();
+            this.render();
+            
+            // 触发缩放事件（用于更新UI）
+            if (this.options.onZoomChange) {
+                this.options.onZoomChange(this.zoom);
+            }
+        }
+    }
+    
     isPointInAnnotation(point, annotation) {
         return point.x >= annotation.labelX &&
                point.x <= annotation.labelX + annotation.width &&
@@ -242,11 +297,48 @@ class InteractiveDrawingMarker {
         }
     }
     
+    // 缩放控制方法
+    zoomIn() {
+        const newZoom = Math.min(this.maxZoom, this.zoom + this.zoomStep);
+        if (newZoom !== this.zoom) {
+            this.zoom = newZoom;
+            this.updateCanvasDisplaySize();
+            this.render();
+            return this.zoom;
+        }
+        return this.zoom;
+    }
+    
+    zoomOut() {
+        const newZoom = Math.max(this.minZoom, this.zoom - this.zoomStep);
+        if (newZoom !== this.zoom) {
+            this.zoom = newZoom;
+            this.updateCanvasDisplaySize();
+            this.render();
+            return this.zoom;
+        }
+        return this.zoom;
+    }
+    
+    resetZoom() {
+        this.zoom = 1;
+        this.updateCanvasDisplaySize();
+        this.render();
+        return this.zoom;
+    }
+    
+    setZoom(zoom) {
+        this.zoom = Math.max(this.minZoom, Math.min(this.maxZoom, zoom));
+        this.updateCanvasDisplaySize();
+        this.render();
+        return this.zoom;
+    }
+    
     render() {
         // 清空画布
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // 绘制图片
+        // 绘制图片（使用原始尺寸，保持高清）
         this.ctx.drawImage(this.image, 0, 0, this.canvas.width, this.canvas.height);
         
         // 绘制所有标注
@@ -257,6 +349,10 @@ class InteractiveDrawingMarker {
     
     drawAnnotation(annotation) {
         const ctx = this.ctx;
+        
+        // 根据缩放调整字体大小
+        const baseFontSize = this.options.fontSize || 12;
+        const fontSize = baseFontSize;  // 字体大小不随zoom变化，保持清晰
         
         // 1. 绘制原始标记位置（小圆点）
         ctx.beginPath();
@@ -281,7 +377,7 @@ class InteractiveDrawingMarker {
         
         // 3. 绘制标注框
         const text = `${annotation.number}: ${annotation.name}`;
-        ctx.font = 'bold 12px Arial';
+        ctx.font = `bold ${fontSize}px Arial`;
         const textMetrics = ctx.measureText(text);
         const padding = 8;
         const boxWidth = textMetrics.width + padding * 2;
@@ -312,7 +408,7 @@ class InteractiveDrawingMarker {
         
         // 5. 绘制置信度（小字）
         if (annotation.confidence > 0) {
-            ctx.font = '10px Arial';
+            ctx.font = `${fontSize - 2}px Arial`;
             ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
             ctx.fillText(`${annotation.confidence.toFixed(0)}%`, 
                         annotation.labelX + padding, 
@@ -321,7 +417,7 @@ class InteractiveDrawingMarker {
         
         // 6. 如果选中，显示拖动提示
         if (annotation.isSelected) {
-            ctx.font = '10px Arial';
+            ctx.font = `${fontSize - 2}px Arial`;
             ctx.fillStyle = 'rgba(33, 150, 243, 0.8)';
             ctx.fillText('拖动移动 | 双击编辑', 
                         annotation.labelX, 
@@ -334,8 +430,8 @@ class InteractiveDrawingMarker {
         return this.annotations.map(a => ({
             number: a.number,
             name: a.name,
-            markerPosition: { x: a.markerX / this.scale, y: a.markerY / this.scale },
-            labelPosition: { x: a.labelX / this.scale, y: a.labelY / this.scale },
+            markerPosition: { x: a.markerX, y: a.markerY },
+            labelPosition: { x: a.labelX, y: a.labelY },
             confidence: a.confidence
         }));
     }
@@ -343,6 +439,142 @@ class InteractiveDrawingMarker {
     // 导出标注后的图片
     exportImage() {
         return this.canvas.toDataURL('image/png');
+    }
+    
+    // 打开弹窗查看
+    openModal() {
+        if (!this.options.enableModal) return;
+        
+        // 创建弹窗
+        const modal = this.createModal();
+        document.body.appendChild(modal);
+        
+        // 显示弹窗
+        setTimeout(() => {
+            modal.style.display = 'flex';
+        }, 10);
+    }
+    
+    createModal() {
+        const modal = document.createElement('div');
+        modal.className = 'drawing-marker-modal';
+        modal.style.cssText = `
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        `;
+        
+        // 工具栏
+        const toolbar = document.createElement('div');
+        toolbar.style.cssText = `
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 10001;
+        `;
+        
+        // 缩放显示
+        const zoomDisplay = document.createElement('div');
+        zoomDisplay.style.cssText = `
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 8px 15px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: #333;
+        `;
+        zoomDisplay.textContent = `${Math.round(this.zoom * 100)}%`;
+        
+        // 缩放按钮
+        const zoomInBtn = this.createButton('放大 +', () => {
+            const newZoom = this.zoomIn();
+            zoomDisplay.textContent = `${Math.round(newZoom * 100)}%`;
+        });
+        
+        const zoomOutBtn = this.createButton('缩小 -', () => {
+            const newZoom = this.zoomOut();
+            zoomDisplay.textContent = `${Math.round(newZoom * 100)}%`;
+        });
+        
+        const resetBtn = this.createButton('重置', () => {
+            const newZoom = this.resetZoom();
+            zoomDisplay.textContent = `${Math.round(newZoom * 100)}%`;
+        });
+        
+        const closeBtn = this.createButton('关闭 ×', () => {
+            modal.remove();
+        });
+        closeBtn.style.backgroundColor = '#f44336';
+        
+        toolbar.appendChild(zoomDisplay);
+        toolbar.appendChild(zoomOutBtn);
+        toolbar.appendChild(resetBtn);
+        toolbar.appendChild(zoomInBtn);
+        toolbar.appendChild(closeBtn);
+        
+        // 图片容器
+        const container = document.createElement('div');
+        container.style.cssText = `
+            max-width: 95%;
+            max-height: 90%;
+            overflow: auto;
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+        `;
+        
+        // 克隆Canvas
+        const clonedCanvas = this.canvas.cloneNode(true);
+        clonedCanvas.style.cssText = `
+            display: block;
+            margin: 0 auto;
+            cursor: grab;
+        `;
+        
+        container.appendChild(clonedCanvas);
+        modal.appendChild(toolbar);
+        modal.appendChild(container);
+        
+        // 点击背景关闭
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+        
+        return modal;
+    }
+    
+    createButton(text, onClick) {
+        const btn = document.createElement('button');
+        btn.textContent = text;
+        btn.style.cssText = `
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        `;
+        btn.addEventListener('click', onClick);
+        btn.addEventListener('mouseenter', () => {
+            btn.style.opacity = '0.8';
+        });
+        btn.addEventListener('mouseleave', () => {
+            btn.style.opacity = '1';
+        });
+        return btn;
     }
 }
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>交互式标注测试</title>
+    <title>交互式标注测试 v2.0 - 支持缩放和弹窗</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -36,6 +36,7 @@
             border-radius: 8px;
             padding: 10px;
             background-color: #fafafa;
+            overflow: hidden;
         }
         button {
             background-color: #4caf50;
@@ -46,9 +47,19 @@
             cursor: pointer;
             font-size: 14px;
             margin: 5px;
+            transition: opacity 0.2s;
         }
         button:hover {
-            background-color: #45a049;
+            opacity: 0.8;
+        }
+        button.secondary {
+            background-color: #2196f3;
+        }
+        button.danger {
+            background-color: #f44336;
+        }
+        button.warning {
+            background-color: #ff9800;
         }
         .legend {
             display: flex;
@@ -67,16 +78,46 @@
             border-radius: 3px;
             border: 2px solid #333;
         }
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+        .zoom-display {
+            background-color: #e0e0e0;
+            padding: 8px 15px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .feature-highlight {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎨 交互式标注系统测试</h1>
+        <h1>🎨 交互式标注系统测试 v2.0</h1>
+        
+        <div class="feature-highlight">
+            <strong>🎉 新功能:</strong><br>
+            • <strong>高清显示</strong>：图片不再模糊，保持原始分辨率<br>
+            • <strong>缩放功能</strong>：鼠标滚轮或按钮缩放（50% - 300%）<br>
+            • <strong>弹窗查看</strong>：全屏弹窗，更大视野<br>
+            • <strong>智能字体</strong>：标注框字体随缩放自适应
+        </div>
         
         <div class="info-box">
             <strong>💡 交互提示:</strong><br>
             • <strong>拖动标注框</strong>：点击并拖动绿色/蓝色/橙色框<br>
             • <strong>双击标注框</strong>：编辑部件名称<br>
+            • <strong>鼠标滚轮</strong>：在图片上滚动缩放<br>
             • <strong>鼠标悬停</strong>：查看颜色变化效果<br>
             • <strong>点击空白</strong>：取消选中
         </div>
@@ -100,9 +141,14 @@
             </div>
         </div>
         
-        <div>
+        <div class="controls">
+            <span class="zoom-display" id="zoom_display">100%</span>
+            <button onclick="zoomOut()">缩小 -</button>
+            <button onclick="resetZoom()" class="secondary">重置 100%</button>
+            <button onclick="zoomIn()">放大 +</button>
+            <button onclick="openModal()" class="warning">🔍 弹窗查看</button>
             <button onclick="exportImage()">📥 导出图片</button>
-            <button onclick="resetAnnotations()">🔄 重置位置</button>
+            <button onclick="resetAnnotations()" class="secondary">🔄 重置位置</button>
             <button onclick="showAnnotationData()">📊 查看数据</button>
         </div>
         
@@ -146,8 +192,162 @@
                 'test_canvas',
                 testImageUrl,
                 testDetectedNumbers,
-                testReferenceMap
+                testReferenceMap,
+                {
+                    enableModal: true,
+                    onZoomChange: (zoom) => {
+                        document.getElementById('zoom_display').textContent = `${Math.round(zoom * 100)}%`;
+                    }
+                }
             );
+        }
+        
+        // 缩放控制
+        function zoomIn() {
+            if (!marker) return;
+            marker.zoomIn();
+        }
+        
+        function zoomOut() {
+            if (!marker) return;
+            marker.zoomOut();
+        }
+        
+        function resetZoom() {
+            if (!marker) return;
+            marker.resetZoom();
+        }
+        
+        // 打开弹窗
+        function openModal() {
+            if (!marker) return;
+            
+            // 创建弹窗
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                display: flex;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.95);
+                z-index: 10000;
+                justify-content: center;
+                align-items: center;
+                flex-direction: column;
+                padding: 20px;
+                box-sizing: border-box;
+            `;
+            
+            // 工具栏
+            const toolbar = document.createElement('div');
+            toolbar.style.cssText = `
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                display: flex;
+                gap: 10px;
+                z-index: 10001;
+            `;
+            
+            const modalZoomDisplay = document.createElement('div');
+            modalZoomDisplay.style.cssText = `
+                background-color: rgba(255, 255, 255, 0.95);
+                padding: 8px 15px;
+                border-radius: 4px;
+                font-weight: bold;
+                font-size: 16px;
+            `;
+            modalZoomDisplay.textContent = `${Math.round(marker.zoom * 100)}%`;
+            
+            const createBtn = (text, onClick, bgColor = '#4caf50') => {
+                const btn = document.createElement('button');
+                btn.textContent = text;
+                btn.style.cssText = `
+                    background-color: ${bgColor};
+                    color: white;
+                    border: none;
+                    padding: 8px 15px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    font-weight: bold;
+                `;
+                btn.addEventListener('click', onClick);
+                return btn;
+            };
+            
+            toolbar.appendChild(modalZoomDisplay);
+            toolbar.appendChild(createBtn('缩小 -', () => {
+                marker.zoomOut();
+                modalZoomDisplay.textContent = `${Math.round(marker.zoom * 100)}%`;
+            }));
+            toolbar.appendChild(createBtn('重置', () => {
+                marker.resetZoom();
+                modalZoomDisplay.textContent = `${Math.round(marker.zoom * 100)}%`;
+            }, '#2196f3'));
+            toolbar.appendChild(createBtn('放大 +', () => {
+                marker.zoomIn();
+                modalZoomDisplay.textContent = `${Math.round(marker.zoom * 100)}%`;
+            }));
+            toolbar.appendChild(createBtn('关闭 ×', () => {
+                marker.resetZoom();
+                modal.remove();
+            }, '#f44336'));
+            
+            const container = document.createElement('div');
+            container.style.cssText = `
+                max-width: 95%;
+                max-height: 90%;
+                overflow: auto;
+                background-color: #fff;
+                border-radius: 8px;
+                padding: 20px;
+            `;
+            
+            const clonedCanvas = marker.canvas.cloneNode(true);
+            clonedCanvas.getContext('2d').drawImage(marker.canvas, 0, 0);
+            clonedCanvas.style.cssText = `
+                display: block;
+                margin: 0 auto;
+                max-width: 100%;
+            `;
+            
+            const hint = document.createElement('div');
+            hint.style.cssText = `
+                margin-top: 15px;
+                padding: 10px;
+                background-color: rgba(33, 150, 243, 0.1);
+                border-radius: 4px;
+                text-align: center;
+            `;
+            hint.innerHTML = '<strong>💡 提示:</strong> 使用上方按钮或鼠标滚轮缩放 | 点击背景关闭';
+            
+            container.appendChild(clonedCanvas);
+            container.appendChild(hint);
+            modal.appendChild(toolbar);
+            modal.appendChild(container);
+            
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    marker.resetZoom();
+                    modal.remove();
+                }
+            });
+            
+            container.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                if (e.deltaY > 0) {
+                    marker.zoomOut();
+                } else {
+                    marker.zoomIn();
+                }
+                modalZoomDisplay.textContent = `${Math.round(marker.zoom * 100)}%`;
+                clonedCanvas.style.width = marker.canvas.style.width;
+            }, { passive: false });
+            
+            document.body.appendChild(modal);
         }
         
         // 导出图片
