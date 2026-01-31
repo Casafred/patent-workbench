@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>功能八交互式标注测试 v4.0</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .version {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        
+        .improvements {
+            background: #f0f9ff;
+            border-left: 4px solid #0ea5e9;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        
+        .improvements h3 {
+            color: #0369a1;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .improvements ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .improvements li {
+            padding: 5px 0;
+            color: #0c4a6e;
+        }
+        
+        .improvements li:before {
+            content: "✓ ";
+            color: #10b981;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        
+        .canvas-container {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        canvas {
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: block;
+            margin: 0 auto;
+        }
+        
+        canvas:hover {
+            transform: scale(1.02);
+            border-color: #FF5722;
+        }
+        
+        .instructions {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+        
+        .instructions h3 {
+            color: #92400e;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .instructions p {
+            color: #78350f;
+            line-height: 1.6;
+        }
+        
+        .hint {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-top: 10px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 功能八交互式标注测试</h1>
+        <div class="version">版本 v4.0 - 高清显示 + 纯线条标注 + 专业弹窗</div>
+        
+        <div class="improvements">
+            <h3>本次改进：</h3>
+            <ul>
+                <li>使用高清原图作为展示基底，图片不再模糊</li>
+                <li>移除红点标识，直接用线条连接标注</li>
+                <li>标注文字无背景框，使用醒目的橙红色</li>
+                <li>大弹窗支持缩放（50%-500%）和拖动查看</li>
+                <li>鼠标滚轮缩放，拖动平移，专业图片查看器体验</li>
+            </ul>
+        </div>
+        
+        <div class="canvas-container">
+            <canvas id="testCanvas"></canvas>
+            <div class="hint">💡 点击图片打开大弹窗查看完整附图</div>
+        </div>
+        
+        <div class="instructions">
+            <h3>使用说明：</h3>
+            <p>
+                <strong>主界面：</strong>显示高清原图 + 标注（线条 + 文字，无红点，无背景框）<br>
+                <strong>点击图片：</strong>打开大弹窗，可以缩放和拖动查看<br>
+                <strong>弹窗操作：</strong><br>
+                • 鼠标滚轮：缩放图片（50%-500%）<br>
+                • 拖动鼠标：平移查看不同位置<br>
+                • 工具栏按钮：放大、缩小、重置、关闭<br>
+                • 点击背景或按ESC：关闭弹窗
+            </p>
+        </div>
+    </div>
+    
+    <script src="js/drawingMarkerInteractive.js"></script>
+    <script>
+        // 创建测试图片（模拟专利附图）
+        function createTestImage() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1200;
+            canvas.height = 900;
+            const ctx = canvas.getContext('2d');
+            
+            // 白色背景
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制一些简单的机械部件示意图
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 3;
+            
+            // 底座
+            ctx.fillStyle = '#E0E0E0';
+            ctx.fillRect(300, 600, 600, 150);
+            ctx.strokeRect(300, 600, 600, 150);
+            
+            // 立柱
+            ctx.fillStyle = '#C0C0C0';
+            ctx.fillRect(550, 300, 100, 300);
+            ctx.strokeRect(550, 300, 100, 300);
+            
+            // 旋转臂
+            ctx.fillStyle = '#A0A0A0';
+            ctx.beginPath();
+            ctx.moveTo(600, 350);
+            ctx.lineTo(900, 250);
+            ctx.lineTo(900, 300);
+            ctx.lineTo(600, 400);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            
+            // 夹紧装置
+            ctx.fillStyle = '#808080';
+            ctx.beginPath();
+            ctx.arc(900, 275, 40, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            
+            // 固定螺栓
+            ctx.fillStyle = '#606060';
+            ctx.beginPath();
+            ctx.arc(350, 650, 15, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.arc(850, 650, 15, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            
+            // 连接件
+            ctx.fillStyle = '#707070';
+            ctx.fillRect(580, 320, 40, 40);
+            ctx.strokeRect(580, 320, 40, 40);
+            
+            // 添加原始标记（模拟专利附图上的数字）
+            ctx.font = 'bold 24px Arial';
+            ctx.fillStyle = '#000000';
+            
+            // 在各个部件旁边标注数字
+            ctx.fillText('1', 320, 680);  // 底座
+            ctx.fillText('2', 570, 450);  // 立柱
+            ctx.fillText('3', 750, 300);  // 旋转臂
+            ctx.fillText('10', 920, 280); // 夹紧装置
+            ctx.fillText('11', 360, 660); // 固定螺栓
+            ctx.fillText('12', 590, 345); // 连接件
+            
+            return canvas.toDataURL('image/png');
+        }
+        
+        // 模拟OCR识别结果
+        const detectedNumbers = [
+            { number: '1', x: 320, y: 680, confidence: 95, name: '底座' },
+            { number: '2', x: 570, y: 450, confidence: 92, name: '立柱' },
+            { number: '3', x: 750, y: 300, confidence: 88, name: '旋转臂' },
+            { number: '10', x: 920, y: 280, confidence: 90, name: '夹紧装置' },
+            { number: '11', x: 360, y: 660, confidence: 93, name: '固定螺栓' },
+            { number: '12', x: 590, y: 345, confidence: 91, name: '连接件' }
+        ];
+        
+        // 参考映射
+        const referenceMap = {
+            '1': '底座',
+            '2': '立柱',
+            '3': '旋转臂',
+            '10': '夹紧装置',
+            '11': '固定螺栓',
+            '12': '连接件'
+        };
+        
+        // 创建交互式标注
+        const imageUrl = createTestImage();
+        const marker = new InteractiveDrawingMarker(
+            'testCanvas',
+            imageUrl,
+            detectedNumbers,
+            referenceMap,
+            {
+                enableModal: true,
+                fontSize: 18
+            }
+        );
+        
+        // 保存到全局
+        window.interactiveMarkers = window.interactiveMarkers || [];
+        window.interactiveMarkers.push(marker);
+        
+        console.log('✅ 交互式标注初始化完成');
+        console.log('📊 检测到的标记:', detectedNumbers);
+    </script>
+</body>
+</html>
