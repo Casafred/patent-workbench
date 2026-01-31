@@ -1857,10 +1857,13 @@ function displayProcessingResult(data) {
         }
         
         let html = '<div style="margin-bottom: 15px; padding: 10px; background-color: rgba(33, 150, 243, 0.1); border-radius: 8px;">';
-        html += '<strong>💡 交互提示:</strong> ';
-        html += '<span style="color: #2196f3;">拖动标注框</span>可调整位置，';
-        html += '<span style="color: #ff9800;">双击标注框</span>可编辑名称，';
-        html += '<span style="color: #9c27b0;">鼠标滚轮</span>可缩放图片';
+        html += '<strong>💡 v6.0 交互提示:</strong> ';
+        html += '<span style="color: #FF6B6B;">滚轮缩放</span> | ';
+        html += '<span style="color: #4CAF50;">拖动空白处移动视图</span> | ';
+        html += '<span style="color: #2196F3;">拖动标注调整位置</span> | ';
+        html += '<span style="color: #9C27B0;">双击编辑</span> | ';
+        html += '<span style="color: #FF9800;">右键删除</span> | ';
+        html += '<span style="color: #00BCD4;">点击选中(Ctrl多选)</span>';
         html += '</div>';
         
         html += '<div style="display: flex; flex-wrap: wrap; gap: 15px;">';
@@ -1897,17 +1900,20 @@ function displayProcessingResult(data) {
                     </div>
                     <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                         <div style="font-size: 0.8em; color: #666;">
-                            <strong>标注说明:</strong> 
-                            <span style="color: #f44336;">●</span> 红点=识别位置 | 
-                            <span style="color: #4caf50;">绿框</span>=标注 | 
-                            <span style="color: #2196f3;">蓝框</span>=选中 | 
-                            <span style="color: #ff9800;">橙框</span>=悬停
+                            <strong>💡 提示:</strong> 
+                            <span style="color: #FF6B6B;">滚轮缩放</span> | 
+                            <span style="color: #4CAF50;">拖动空白处移动</span> | 
+                            <span style="color: #2196F3;">拖动标注调整位置</span> | 
+                            <span style="color: #9C27B0;">双击编辑</span> | 
+                            <span style="color: #FF9800;">右键删除</span>
                         </div>
-                        <div style="display: flex; gap: 5px; align-items: center;">
-                            <span id="zoom_display_${index}" style="font-size: 0.8em; color: #666; font-weight: bold;">100%</span>
-                            <button onclick="zoomDrawing(${index}, 'out')" class="small-button" style="padding: 3px 8px; font-size: 0.75em;">-</button>
-                            <button onclick="zoomDrawing(${index}, 'reset')" class="small-button" style="padding: 3px 8px; font-size: 0.75em;">重置</button>
-                            <button onclick="zoomDrawing(${index}, 'in')" class="small-button" style="padding: 3px 8px; font-size: 0.75em;">+</button>
+                        <div style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap;">
+                            <button onclick="window.interactiveMarkers[${index}].increaseFontSize(true)" class="small-button" style="padding: 3px 8px; font-size: 0.75em; background-color: #4CAF50;">选中+</button>
+                            <button onclick="window.interactiveMarkers[${index}].decreaseFontSize(true)" class="small-button" style="padding: 3px 8px; font-size: 0.75em; background-color: #FF9800;">选中-</button>
+                            <button onclick="window.interactiveMarkers[${index}].increaseFontSize(false)" class="small-button" style="padding: 3px 8px; font-size: 0.75em; background-color: #2196F3;">全部+</button>
+                            <button onclick="window.interactiveMarkers[${index}].decreaseFontSize(false)" class="small-button" style="padding: 3px 8px; font-size: 0.75em; background-color: #9C27B0;">全部-</button>
+                            <button onclick="window.interactiveMarkers[${index}].selectAll()" class="small-button" style="padding: 3px 8px; font-size: 0.75em; background-color: #607D8B;">全选</button>
+                            <button onclick="window.interactiveMarkers[${index}].deselectAll()" class="small-button" style="padding: 3px 8px; font-size: 0.75em; background-color: #795548;">取消</button>
                         </div>
                     </div>
                 </div>
@@ -1945,35 +1951,7 @@ function displayProcessingResult(data) {
     }
 }
 
-// 缩放附图
-function zoomDrawing(index, action) {
-    if (!window.interactiveMarkers || !window.interactiveMarkers[index]) {
-        return;
-    }
-    
-    const marker = window.interactiveMarkers[index];
-    let newZoom;
-    
-    switch(action) {
-        case 'in':
-            newZoom = marker.zoomIn();
-            break;
-        case 'out':
-            newZoom = marker.zoomOut();
-            break;
-        case 'reset':
-            newZoom = marker.resetZoom();
-            break;
-    }
-    
-    // 更新显示
-    const display = document.getElementById(`zoom_display_${index}`);
-    if (display) {
-        display.textContent = `${Math.round(newZoom * 100)}%`;
-    }
-}
-
-// 打开附图弹窗
+// 打开附图弹窗 - v6.0版本使用marker自带的openModal方法
 function openDrawingModal(index) {
     if (!window.interactiveMarkers || !window.interactiveMarkers[index]) {
         alert('无法打开弹窗');
@@ -1982,180 +1960,9 @@ function openDrawingModal(index) {
     
     const marker = window.interactiveMarkers[index];
     
-    // 创建弹窗
-    const modal = document.createElement('div');
-    modal.className = 'drawing-marker-modal';
-    modal.style.cssText = `
-        display: flex;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.95);
-        z-index: 10000;
-        justify-content: center;
-        align-items: center;
-        flex-direction: column;
-        padding: 20px;
-        box-sizing: border-box;
-    `;
-    
-    // 工具栏
-    const toolbar = document.createElement('div');
-    toolbar.style.cssText = `
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        display: flex;
-        gap: 10px;
-        z-index: 10001;
-        flex-wrap: wrap;
-    `;
-    
-    // 缩放显示
-    const zoomDisplay = document.createElement('div');
-    zoomDisplay.style.cssText = `
-        background-color: rgba(255, 255, 255, 0.95);
-        padding: 8px 15px;
-        border-radius: 4px;
-        font-weight: bold;
-        color: #333;
-        font-size: 16px;
-    `;
-    zoomDisplay.textContent = `${Math.round(marker.zoom * 100)}%`;
-    
-    // 创建按钮辅助函数
-    const createBtn = (text, onClick, bgColor = '#4caf50') => {
-        const btn = document.createElement('button');
-        btn.textContent = text;
-        btn.style.cssText = `
-            background-color: ${bgColor};
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
-            transition: opacity 0.2s;
-        `;
-        btn.addEventListener('click', onClick);
-        btn.addEventListener('mouseenter', () => btn.style.opacity = '0.8');
-        btn.addEventListener('mouseleave', () => btn.style.opacity = '1');
-        return btn;
-    };
-    
-    // 缩放按钮
-    const zoomInBtn = createBtn('放大 +', () => {
-        const newZoom = marker.zoomIn();
-        zoomDisplay.textContent = `${Math.round(newZoom * 100)}%`;
-    });
-    
-    const zoomOutBtn = createBtn('缩小 -', () => {
-        const newZoom = marker.zoomOut();
-        zoomDisplay.textContent = `${Math.round(newZoom * 100)}%`;
-    });
-    
-    const resetBtn = createBtn('重置 100%', () => {
-        const newZoom = marker.resetZoom();
-        zoomDisplay.textContent = `${Math.round(newZoom * 100)}%`;
-    }, '#2196f3');
-    
-    const exportBtn = createBtn('导出图片', () => {
-        const imageData = marker.exportImage();
-        const link = document.createElement('a');
-        link.download = `annotated_drawing_${index + 1}.png`;
-        link.href = imageData;
-        link.click();
-    }, '#ff9800');
-    
-    const closeBtn = createBtn('关闭 ×', () => {
-        // 恢复原始缩放
-        marker.resetZoom();
-        document.getElementById(`zoom_display_${index}`).textContent = '100%';
-        modal.remove();
-    }, '#f44336');
-    
-    toolbar.appendChild(zoomDisplay);
-    toolbar.appendChild(zoomOutBtn);
-    toolbar.appendChild(resetBtn);
-    toolbar.appendChild(zoomInBtn);
-    toolbar.appendChild(exportBtn);
-    toolbar.appendChild(closeBtn);
-    
-    // 图片容器
-    const container = document.createElement('div');
-    container.style.cssText = `
-        max-width: 95%;
-        max-height: 90%;
-        overflow: auto;
-        background-color: #fff;
-        border-radius: 8px;
-        padding: 20px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-    `;
-    
-    // 克隆Canvas
-    const clonedCanvas = marker.canvas.cloneNode(true);
-    clonedCanvas.getContext('2d').drawImage(marker.canvas, 0, 0);
-    clonedCanvas.style.cssText = `
-        display: block;
-        margin: 0 auto;
-        cursor: default;
-        max-width: 100%;
-        height: auto;
-    `;
-    
-    // 提示信息
-    const hint = document.createElement('div');
-    hint.style.cssText = `
-        margin-top: 15px;
-        padding: 10px;
-        background-color: rgba(33, 150, 243, 0.1);
-        border-radius: 4px;
-        text-align: center;
-        color: #333;
-        font-size: 14px;
-    `;
-    hint.innerHTML = `
-        <strong>💡 提示:</strong> 
-        使用上方按钮或<strong>鼠标滚轮</strong>缩放图片 | 
-        点击背景或关闭按钮退出
-    `;
-    
-    container.appendChild(clonedCanvas);
-    container.appendChild(hint);
-    modal.appendChild(toolbar);
-    modal.appendChild(container);
-    
-    // 点击背景关闭
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            marker.resetZoom();
-            document.getElementById(`zoom_display_${index}`).textContent = '100%';
-            modal.remove();
-        }
-    });
-    
-    // 在弹窗中也支持滚轮缩放
-    container.addEventListener('wheel', (e) => {
-        e.preventDefault();
-        const delta = e.deltaY > 0 ? 'out' : 'in';
-        let newZoom;
-        if (delta === 'in') {
-            newZoom = marker.zoomIn();
-        } else {
-            newZoom = marker.zoomOut();
-        }
-        zoomDisplay.textContent = `${Math.round(newZoom * 100)}%`;
-        
-        // 更新克隆的canvas显示
-        clonedCanvas.style.width = marker.canvas.style.width;
-        clonedCanvas.style.height = marker.canvas.style.height;
-    }, { passive: false });
-    
-    document.body.appendChild(modal);
+    // v6.0: 直接调用marker的openModal方法
+    // 该方法已经包含所有交互功能：滚轮缩放、拖拽移动、拖拽标注、编辑、删除等
+    marker.openModal();
 }
 
 // 导出单个附图
