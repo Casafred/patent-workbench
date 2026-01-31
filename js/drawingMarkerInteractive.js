@@ -1,9 +1,12 @@
 /**
- * 交互式专利附图标注系统 v3.0
- * 优化版本：
- * - 使用高清原图作为展示基底
- * - 移除红点标记，直接拉线
- * - 大弹窗 + 可拖动图片 + 可缩放 + 纯文本标注（无背景框）
+ * 交互式专利附图标注系统 v5.0
+ * 完整交互版本：
+ * - 高清原图展示
+ * - 主界面和弹窗都可拖拽标注
+ * - 字体大小可调整 (12-48px)
+ * - 双击编辑，右键删除
+ * - 缩放范围 10%-1000%
+ * - 标注列表管理
  */
 
 class InteractiveDrawingMarker {
@@ -19,35 +22,27 @@ class InteractiveDrawingMarker {
         this.detectedNumbers = detectedNumbers || [];
         this.referenceMap = referenceMap || {};
         
-        // 标注数据（包含偏移位置）
+        // 标注数据
         this.annotations = [];
         
         // 交互状态
         this.selectedAnnotation = null;
         this.isDragging = false;
         this.dragOffset = { x: 0, y: 0 };
-        this.isEditing = false;
-        
-        // 缩放和显示控制（小预览）
-        this.scale = 1;  // 图片缩放比例（用于适应容器）
         
         // 配置选项
         this.options = {
-            enableModal: options.enableModal !== false,  // 默认启用弹窗
+            enableModal: options.enableModal !== false,
             containerWidth: options.containerWidth || null,
-            fontSize: options.fontSize || 16,  // 增大字体
+            fontSize: options.fontSize || 18,
             ...options
         };
         
-        // 初始化
         this.init();
     }
     
     init() {
-        // 加载图片
         this.loadImage();
-        
-        // 绑定事件
         this.bindEvents();
     }
     
@@ -63,73 +58,104 @@ class InteractiveDrawingMarker {
     }
     
     setupCanvas() {
-        // 使用原始图片尺寸，保持高清
         this.originalWidth = this.image.width;
         this.originalHeight = this.image.height;
         
-        // 获取容器宽度
-        const containerWidth = this.options.containerWidth || 
-                              (this.canvas.parentElement ? this.canvas.parentElement.offsetWidth : 800);
-        const maxCanvasWidth = containerWidth - 20;
-        
-        // 计算初始缩放比例（仅用于适应容器）
-        this.scale = 1;
-        if (this.originalWidth > maxCanvasWidth) {
-            this.scale = maxCanvasWidth / this.originalWidth;
-        }
-        
-        // 设置Canvas尺寸为原始尺寸（保持高清）
         this.canvas.width = this.originalWidth;
         this.canvas.height = this.originalHeight;
-        
-        // 设置显示尺寸（使用原始尺寸，不缩小）
         this.canvas.style.width = `${this.originalWidth}px`;
         this.canvas.style.height = `${this.originalHeight}px`;
-        
-        // 设置样式
-        this.canvas.style.cursor = 'pointer';
+        this.canvas.style.cursor = 'default';
         this.canvas.style.maxWidth = '100%';
         this.canvas.style.height = 'auto';
     }
     
     initializeAnnotations() {
-        // 为每个检测到的标记创建标注
         this.annotations = this.detectedNumbers.map((detected, index) => {
-            // 计算偏移位置（避免遮挡原始标记）
-            const offsetDistance = 80; // 增大偏移距离
-            const angle = (index * 45) % 360; // 分散角度
+            const offsetDistance = 80;
+            const angle = (index * 45) % 360;
             const offsetX = Math.cos(angle * Math.PI / 180) * offsetDistance;
             const offsetY = Math.sin(angle * Math.PI / 180) * offsetDistance;
             
             return {
                 id: `annotation_${index}`,
-                // 原始标记位置（使用原始坐标）
                 markerX: detected.x,
                 markerY: detected.y,
-                // 标注位置（偏移后，使用原始坐标）
                 labelX: detected.x + offsetX,
                 labelY: detected.y + offsetY,
-                // 标注内容
                 number: detected.number,
                 name: detected.name || this.referenceMap[detected.number] || '未知',
-                confidence: detected.confidence || 0,
-                // 状态
-                isHovered: false,
-                isSelected: false
+                confidence: detected.confidence || 0
             };
         });
     }
     
     bindEvents() {
-        // 点击打开大弹窗
-        this.canvas.addEventListener('click', (e) => {
-            this.openModal();
+        this.canvas.addEventListener('mousedown', (e) => {
+            const pos = this.getMousePos(e);
+            const annotation = this.findAnnotationAt(pos.x, pos.y);
+            
+            if (annotation) {
+                this.selectedAnnotation = annotation;
+                this.isDragging = true;
+                this.dragOffset = {
+                    x: pos.x - annotation.labelX,
+                    y: pos.y - annotation.labelY
+                };
+                this.canvas.style.cursor = 'move';
+                e.preventDefault();
+            }
+        });
+        
+        this.canvas.addEventListener('mousemove', (e) => {
+            const pos = this.getMousePos(e);
+            
+            if (this.isDragging && this.selectedAnnotation) {
+                this.selectedAnnotation.labelX = pos.x - this.dragOffset.x;
+                this.selectedAnnotation.labelY = pos.y - this.dragOffset.y;
+                this.render();
+            } else {
+                const annotation = this.findAnnotationAt(pos.x, pos.y);
+                this.canvas.style.cursor = annotation ? 'pointer' : 'default';
+            }
+        });
+        
+        this.canvas.addEventListener('mouseup', () => {
+            this.isDragging = false;
+            this.canvas.style.cursor = 'default';
+        });
+        
+        this.canvas.addEventListener('mouseleave', () => {
+            this.isDragging = false;
+            this.canvas.style.cursor = 'default';
+        });
+        
+        this.canvas.addEventListener('dblclick', (e) => {
+            const pos = this.getMousePos(e);
+            const annotation = this.findAnnotationAt(pos.x, pos.y);
+            
+            if (annotation) {
+                this.editAnnotation(annotation);
+            } else {
+                this.openModal();
+            }
+        });
+        
+        this.canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            const pos = this.getMousePos(e);
+            const annotation = this.findAnnotationAt(pos.x, pos.y);
+            
+            if (annotation) {
+                if (confirm(`确定删除标注 "${annotation.number}: ${annotation.name}" 吗？`)) {
+                    this.deleteAnnotation(annotation);
+                }
+            }
         });
     }
     
     getMousePos(e) {
         const rect = this.canvas.getBoundingClientRect();
-        // 转换为Canvas坐标（考虑缩放）
         const scaleX = this.canvas.width / rect.width;
         const scaleY = this.canvas.height / rect.height;
         
@@ -139,48 +165,73 @@ class InteractiveDrawingMarker {
         };
     }
     
+    findAnnotationAt(x, y) {
+        for (let i = this.annotations.length - 1; i >= 0; i--) {
+            const ann = this.annotations[i];
+            const text = `${ann.number}: ${ann.name}`;
+            const fontSize = this.options.fontSize || 18;
+            
+            this.ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+            const textWidth = this.ctx.measureText(text).width;
+            const textHeight = fontSize * 1.5;
+            
+            if (x >= ann.labelX && x <= ann.labelX + textWidth &&
+                y >= ann.labelY - textHeight/2 && y <= ann.labelY + textHeight/2) {
+                return ann;
+            }
+        }
+        return null;
+    }
+    
+    editAnnotation(annotation) {
+        const newName = prompt(`编辑标注名称 (${annotation.number}):`, annotation.name);
+        if (newName !== null && newName.trim() !== '') {
+            annotation.name = newName.trim();
+            this.render();
+        }
+    }
+    
+    deleteAnnotation(annotation) {
+        const index = this.annotations.indexOf(annotation);
+        if (index > -1) {
+            this.annotations.splice(index, 1);
+            this.render();
+        }
+    }
+    
     render() {
-        // 清空画布
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        // 绘制图片（使用原始尺寸，保持高清）
         this.ctx.drawImage(this.image, 0, 0, this.canvas.width, this.canvas.height);
         
-        // 绘制所有标注
         this.annotations.forEach(annotation => {
             this.drawAnnotation(annotation);
         });
     }
     
-    drawAnnotation(annotation) {
+    drawAnnotation(annotation, fontSize) {
         const ctx = this.ctx;
-        const fontSize = this.options.fontSize || 18;
+        const size = fontSize || this.options.fontSize || 18;
         
-        // 1. 绘制连接线（从原始标记位置到标注文字）
         ctx.beginPath();
         ctx.moveTo(annotation.markerX, annotation.markerY);
         ctx.lineTo(annotation.labelX, annotation.labelY);
-        ctx.strokeStyle = '#FF5722';  // 橙红色线条，更醒目
+        ctx.strokeStyle = '#FF5722';
         ctx.lineWidth = 2;
         ctx.stroke();
         
-        // 2. 绘制纯文本标注（无背景框，无红点）
         const text = `${annotation.number}: ${annotation.name}`;
-        ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+        ctx.font = `bold ${size}px Arial, sans-serif`;
         ctx.textBaseline = 'middle';
         ctx.textAlign = 'left';
         
-        // 添加白色描边，增强可读性
         ctx.strokeStyle = '#FFFFFF';
         ctx.lineWidth = 4;
         ctx.strokeText(text, annotation.labelX, annotation.labelY);
         
-        // 绘制文字（使用醒目的颜色）
-        ctx.fillStyle = '#FF5722';  // 橙红色文字
+        ctx.fillStyle = '#FF5722';
         ctx.fillText(text, annotation.labelX, annotation.labelY);
     }
     
-    // 导出标注数据
     exportAnnotations() {
         return this.annotations.map(a => ({
             number: a.number,
@@ -191,20 +242,16 @@ class InteractiveDrawingMarker {
         }));
     }
     
-    // 导出标注后的图片
     exportImage() {
         return this.canvas.toDataURL('image/png');
     }
     
-    // 打开大弹窗查看
     openModal() {
         if (!this.options.enableModal) return;
         
-        // 创建弹窗
         const modal = this.createModal();
         document.body.appendChild(modal);
         
-        // 显示弹窗
         setTimeout(() => {
             modal.style.display = 'flex';
         }, 10);
@@ -235,15 +282,25 @@ class InteractiveDrawingMarker {
             display: flex;
             gap: 10px;
             z-index: 10002;
+            flex-wrap: wrap;
+            max-width: 600px;
         `;
         
-        // 缩放状态
+        // 状态变量
         let currentZoom = 1.0;
-        const minZoom = 0.5;
-        const maxZoom = 5.0;
+        const minZoom = 0.1;
+        const maxZoom = 10.0;
         const zoomStep = 0.2;
         
-        // 缩放显示
+        let currentFontSize = 22;
+        const minFontSize = 12;
+        const maxFontSize = 48;
+        
+        let isDraggingAnnotation = false;
+        let selectedAnnotation = null;
+        let dragOffset = { x: 0, y: 0 };
+        
+        // 显示元素
         const zoomDisplay = document.createElement('div');
         zoomDisplay.style.cssText = `
             background-color: rgba(255, 255, 255, 0.95);
@@ -253,9 +310,13 @@ class InteractiveDrawingMarker {
             font-size: 16px;
             color: #333;
         `;
-        zoomDisplay.textContent = `${Math.round(currentZoom * 100)}%`;
+        zoomDisplay.textContent = `缩放: ${Math.round(currentZoom * 100)}%`;
         
-        // 图片容器（可滚动）
+        const fontDisplay = document.createElement('div');
+        fontDisplay.style.cssText = zoomDisplay.style.cssText;
+        fontDisplay.textContent = `字体: ${currentFontSize}px`;
+        
+        // 图片容器
         const container = document.createElement('div');
         container.style.cssText = `
             width: 90%;
@@ -264,10 +325,9 @@ class InteractiveDrawingMarker {
             background-color: #f5f5f5;
             border-radius: 8px;
             position: relative;
-            cursor: grab;
         `;
         
-        // 创建新的Canvas用于大弹窗显示
+        // 创建Canvas
         const modalCanvas = document.createElement('canvas');
         modalCanvas.width = this.originalWidth;
         modalCanvas.height = this.originalHeight;
@@ -277,64 +337,166 @@ class InteractiveDrawingMarker {
             transition: transform 0.1s ease-out;
         `;
         
-        // 绘制高清图片和标注到modalCanvas
         const modalCtx = modalCanvas.getContext('2d');
-        modalCtx.drawImage(this.image, 0, 0, this.originalWidth, this.originalHeight);
         
-        // 绘制标注
-        this.annotations.forEach(annotation => {
-            const fontSize = 22;  // 大弹窗使用更大字体
+        // 渲染函数
+        const renderModal = () => {
+            modalCtx.clearRect(0, 0, this.originalWidth, this.originalHeight);
+            modalCtx.drawImage(this.image, 0, 0, this.originalWidth, this.originalHeight);
             
-            // 绘制连接线
-            modalCtx.beginPath();
-            modalCtx.moveTo(annotation.markerX, annotation.markerY);
-            modalCtx.lineTo(annotation.labelX, annotation.labelY);
-            modalCtx.strokeStyle = '#FF5722';  // 橙红色线条
-            modalCtx.lineWidth = 3;
-            modalCtx.stroke();
-            
-            // 绘制纯文本标注（无背景框，无红点）
-            const text = `${annotation.number}: ${annotation.name}`;
-            modalCtx.font = `bold ${fontSize}px Arial, sans-serif`;
-            modalCtx.textBaseline = 'middle';
-            modalCtx.textAlign = 'left';
-            
-            // 白色描边
-            modalCtx.strokeStyle = '#FFFFFF';
-            modalCtx.lineWidth = 5;
-            modalCtx.strokeText(text, annotation.labelX, annotation.labelY);
-            
-            // 橙红色文字
-            modalCtx.fillStyle = '#FF5722';
-            modalCtx.fillText(text, annotation.labelX, annotation.labelY);
-        });
+            this.annotations.forEach(annotation => {
+                // 绘制连接线
+                modalCtx.beginPath();
+                modalCtx.moveTo(annotation.markerX, annotation.markerY);
+                modalCtx.lineTo(annotation.labelX, annotation.labelY);
+                modalCtx.strokeStyle = '#FF5722';
+                modalCtx.lineWidth = 3;
+                modalCtx.stroke();
+                
+                // 绘制文字
+                const text = `${annotation.number}: ${annotation.name}`;
+                modalCtx.font = `bold ${currentFontSize}px Arial, sans-serif`;
+                modalCtx.textBaseline = 'middle';
+                modalCtx.textAlign = 'left';
+                
+                modalCtx.strokeStyle = '#FFFFFF';
+                modalCtx.lineWidth = 5;
+                modalCtx.strokeText(text, annotation.labelX, annotation.labelY);
+                
+                modalCtx.fillStyle = '#FF5722';
+                modalCtx.fillText(text, annotation.labelX, annotation.labelY);
+            });
+        };
         
-        // 更新Canvas显示尺寸
+        renderModal();
+        
+        // 更新Canvas尺寸
         const updateCanvasSize = () => {
             modalCanvas.style.width = `${this.originalWidth * currentZoom}px`;
             modalCanvas.style.height = `${this.originalHeight * currentZoom}px`;
         };
         updateCanvasSize();
         
-        // 缩放按钮
+        // 查找标注
+        const findAnnotationAtModal = (x, y) => {
+            const rect = modalCanvas.getBoundingClientRect();
+            const scaleX = this.originalWidth / rect.width;
+            const scaleY = this.originalHeight / rect.height;
+            const canvasX = (x - rect.left) * scaleX;
+            const canvasY = (y - rect.top) * scaleY;
+            
+            for (let i = this.annotations.length - 1; i >= 0; i--) {
+                const ann = this.annotations[i];
+                const text = `${ann.number}: ${ann.name}`;
+                modalCtx.font = `bold ${currentFontSize}px Arial, sans-serif`;
+                const textWidth = modalCtx.measureText(text).width;
+                const textHeight = currentFontSize * 1.5;
+                
+                if (canvasX >= ann.labelX && canvasX <= ann.labelX + textWidth &&
+                    canvasY >= ann.labelY - textHeight/2 && canvasY <= ann.labelY + textHeight/2) {
+                    return ann;
+                }
+            }
+            return null;
+        };
+        
+        // 标注拖拽事件
+        modalCanvas.addEventListener('mousedown', (e) => {
+            const annotation = findAnnotationAtModal(e.clientX, e.clientY);
+            if (annotation) {
+                isDraggingAnnotation = true;
+                selectedAnnotation = annotation;
+                const rect = modalCanvas.getBoundingClientRect();
+                const scaleX = this.originalWidth / rect.width;
+                const scaleY = this.originalHeight / rect.height;
+                const canvasX = (e.clientX - rect.left) * scaleX;
+                const canvasY = (e.clientY - rect.top) * scaleY;
+                dragOffset = {
+                    x: canvasX - annotation.labelX,
+                    y: canvasY - annotation.labelY
+                };
+                modalCanvas.style.cursor = 'move';
+                e.stopPropagation();
+            }
+        });
+        
+        modalCanvas.addEventListener('mousemove', (e) => {
+            if (isDraggingAnnotation && selectedAnnotation) {
+                const rect = modalCanvas.getBoundingClientRect();
+                const scaleX = this.originalWidth / rect.width;
+                const scaleY = this.originalHeight / rect.height;
+                const canvasX = (e.clientX - rect.left) * scaleX;
+                const canvasY = (e.clientY - rect.top) * scaleY;
+                selectedAnnotation.labelX = canvasX - dragOffset.x;
+                selectedAnnotation.labelY = canvasY - dragOffset.y;
+                renderModal();
+                this.render(); // 同步更新主界面
+            } else {
+                const annotation = findAnnotationAtModal(e.clientX, e.clientY);
+                modalCanvas.style.cursor = annotation ? 'pointer' : 'default';
+            }
+        });
+        
+        modalCanvas.addEventListener('mouseup', () => {
+            isDraggingAnnotation = false;
+            selectedAnnotation = null;
+            modalCanvas.style.cursor = 'default';
+        });
+        
+        modalCanvas.addEventListener('dblclick', (e) => {
+            const annotation = findAnnotationAtModal(e.clientX, e.clientY);
+            if (annotation) {
+                const newName = prompt(`编辑标注名称 (${annotation.number}):`, annotation.name);
+                if (newName !== null && newName.trim() !== '') {
+                    annotation.name = newName.trim();
+                    renderModal();
+                    this.render();
+                }
+            }
+        });
+        
+        modalCanvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            const annotation = findAnnotationAtModal(e.clientX, e.clientY);
+            if (annotation) {
+                if (confirm(`确定删除标注 "${annotation.number}: ${annotation.name}" 吗？`)) {
+                    this.deleteAnnotation(annotation);
+                    renderModal();
+                }
+            }
+        });
+        
+        // 按钮
         const zoomInBtn = this.createButton('放大 +', () => {
             currentZoom = Math.min(maxZoom, currentZoom + zoomStep);
             updateCanvasSize();
-            zoomDisplay.textContent = `${Math.round(currentZoom * 100)}%`;
+            zoomDisplay.textContent = `缩放: ${Math.round(currentZoom * 100)}%`;
         });
         
         const zoomOutBtn = this.createButton('缩小 -', () => {
             currentZoom = Math.max(minZoom, currentZoom - zoomStep);
             updateCanvasSize();
-            zoomDisplay.textContent = `${Math.round(currentZoom * 100)}%`;
+            zoomDisplay.textContent = `缩放: ${Math.round(currentZoom * 100)}%`;
         });
         
-        const resetBtn = this.createButton('重置 100%', () => {
+        const resetBtn = this.createButton('重置', () => {
             currentZoom = 1.0;
             updateCanvasSize();
-            zoomDisplay.textContent = `${Math.round(currentZoom * 100)}%`;
+            zoomDisplay.textContent = `缩放: ${Math.round(currentZoom * 100)}%`;
             container.scrollLeft = 0;
             container.scrollTop = 0;
+        });
+        
+        const fontIncBtn = this.createButton('字体+', () => {
+            currentFontSize = Math.min(maxFontSize, currentFontSize + 2);
+            fontDisplay.textContent = `字体: ${currentFontSize}px`;
+            renderModal();
+        });
+        
+        const fontDecBtn = this.createButton('字体-', () => {
+            currentFontSize = Math.max(minFontSize, currentFontSize - 2);
+            fontDisplay.textContent = `字体: ${currentFontSize}px`;
+            renderModal();
         });
         
         const closeBtn = this.createButton('关闭 ×', () => {
@@ -346,6 +508,9 @@ class InteractiveDrawingMarker {
         toolbar.appendChild(zoomOutBtn);
         toolbar.appendChild(resetBtn);
         toolbar.appendChild(zoomInBtn);
+        toolbar.appendChild(fontDisplay);
+        toolbar.appendChild(fontDecBtn);
+        toolbar.appendChild(fontIncBtn);
         toolbar.appendChild(closeBtn);
         
         // 鼠标滚轮缩放
@@ -354,41 +519,44 @@ class InteractiveDrawingMarker {
             const delta = e.deltaY > 0 ? -zoomStep : zoomStep;
             currentZoom = Math.max(minZoom, Math.min(maxZoom, currentZoom + delta));
             updateCanvasSize();
-            zoomDisplay.textContent = `${Math.round(currentZoom * 100)}%`;
+            zoomDisplay.textContent = `缩放: ${Math.round(currentZoom * 100)}%`;
         }, { passive: false });
         
-        // 拖动图片功能
-        let isDragging = false;
+        // 拖动背景平移
+        let isDraggingBg = false;
         let startX, startY, scrollLeft, scrollTop;
         
         container.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            container.style.cursor = 'grabbing';
-            startX = e.pageX - container.offsetLeft;
-            startY = e.pageY - container.offsetTop;
-            scrollLeft = container.scrollLeft;
-            scrollTop = container.scrollTop;
+            if (e.target === container || e.target === modalCanvas) {
+                isDraggingBg = true;
+                container.style.cursor = 'grabbing';
+                startX = e.pageX - container.offsetLeft;
+                startY = e.pageY - container.offsetTop;
+                scrollLeft = container.scrollLeft;
+                scrollTop = container.scrollTop;
+            }
         });
         
         container.addEventListener('mouseleave', () => {
-            isDragging = false;
+            isDraggingBg = false;
             container.style.cursor = 'grab';
         });
         
         container.addEventListener('mouseup', () => {
-            isDragging = false;
+            isDraggingBg = false;
             container.style.cursor = 'grab';
         });
         
         container.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            e.preventDefault();
-            const x = e.pageX - container.offsetLeft;
-            const y = e.pageY - container.offsetTop;
-            const walkX = (x - startX) * 1.5;  // 拖动速度
-            const walkY = (y - startY) * 1.5;
-            container.scrollLeft = scrollLeft - walkX;
-            container.scrollTop = scrollTop - walkY;
+            if (isDraggingBg && !isDraggingAnnotation) {
+                e.preventDefault();
+                const x = e.pageX - container.offsetLeft;
+                const y = e.pageY - container.offsetTop;
+                const walkX = (x - startX) * 1.5;
+                const walkY = (y - startY) * 1.5;
+                container.scrollLeft = scrollLeft - walkX;
+                container.scrollTop = scrollTop - walkY;
+            }
         });
         
         container.appendChild(modalCanvas);
@@ -438,5 +606,5 @@ class InteractiveDrawingMarker {
     }
 }
 
-// 全局存储所有交互式标注实例
+// 全局存储
 window.interactiveMarkers = window.interactiveMarkers || [];
