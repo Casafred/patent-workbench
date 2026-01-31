@@ -94,7 +94,8 @@ class InteractiveDrawingMarker {
                 name: detected.name || this.referenceMap[detected.number] || '未知',
                 confidence: detected.confidence || 0,
                 fontSize: this.options.fontSize || 18,
-                selected: false
+                selected: false,
+                color: '#FF6B6B' // 默认颜色
             };
         });
     }
@@ -291,6 +292,17 @@ class InteractiveDrawingMarker {
         this.render();
     }
     
+    setColor(color, selectedOnly = true) {
+        const targets = selectedOnly 
+            ? this.annotations.filter(a => a.selected)
+            : this.annotations;
+        
+        targets.forEach(ann => {
+            ann.color = color;
+        });
+        this.render();
+    }
+    
     render() {
         this.ctx.save();
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -310,14 +322,14 @@ class InteractiveDrawingMarker {
             this.ctx.beginPath();
             this.ctx.moveTo(annotation.markerX, annotation.markerY);
             this.ctx.lineTo(annotation.labelX, annotation.labelY);
-            this.ctx.strokeStyle = annotation.selected ? '#00FF00' : '#FF6B6B';
+            this.ctx.strokeStyle = annotation.selected ? '#00FF00' : (annotation.color || '#FF6B6B');
             this.ctx.lineWidth = annotation.selected ? 3 : 2;
             this.ctx.stroke();
             
             // 绘制标注文字
             const text = `${annotation.number}: ${annotation.name}`;
             this.ctx.font = `bold ${fontSize}px Arial, sans-serif`;
-            this.ctx.fillStyle = annotation.selected ? '#00FF00' : '#FF6B6B';
+            this.ctx.fillStyle = annotation.selected ? '#00FF00' : (annotation.color || '#FF6B6B');
             this.ctx.textBaseline = 'middle';
             this.ctx.fillText(text, annotation.labelX, annotation.labelY);
             
@@ -444,14 +456,14 @@ class InteractiveDrawingMarker {
                 modalCtx.beginPath();
                 modalCtx.moveTo(annotation.markerX, annotation.markerY);
                 modalCtx.lineTo(annotation.labelX, annotation.labelY);
-                modalCtx.strokeStyle = annotation.selected ? '#00FF00' : '#FF6B6B';
+                modalCtx.strokeStyle = annotation.selected ? '#00FF00' : (annotation.color || '#FF6B6B');
                 modalCtx.lineWidth = annotation.selected ? 3 : 2;
                 modalCtx.stroke();
                 
                 // 绘制标注文字
                 const text = `${annotation.number}: ${annotation.name}`;
                 modalCtx.font = `bold ${fontSize}px Arial, sans-serif`;
-                modalCtx.fillStyle = annotation.selected ? '#00FF00' : '#FF6B6B';
+                modalCtx.fillStyle = annotation.selected ? '#00FF00' : (annotation.color || '#FF6B6B');
                 modalCtx.textBaseline = 'middle';
                 modalCtx.fillText(text, annotation.labelX, annotation.labelY);
                 
@@ -649,6 +661,52 @@ class InteractiveDrawingMarker {
         selectControls.appendChild(btnSelectAll);
         selectControls.appendChild(btnDeselectAll);
         
+        // 颜色控制按钮
+        const colorControls = document.createElement('div');
+        colorControls.style.cssText = fontControls.style.cssText;
+        
+        const colorLabel = document.createElement('span');
+        colorLabel.textContent = '颜色:';
+        colorLabel.style.cssText = 'font-weight: bold; margin-right: 5px;';
+        
+        const btnColorRed = this.createButton('🔴 红', '#FF6B6B', () => {
+            this.setColor('#FF6B6B', true);
+            renderModal();
+        });
+        
+        const btnColorBlue = this.createButton('🔵 蓝', '#2196F3', () => {
+            this.setColor('#2196F3', true);
+            renderModal();
+        });
+        
+        const btnColorOrange = this.createButton('🟠 橙', '#FF9800', () => {
+            this.setColor('#FF9800', true);
+            renderModal();
+        });
+        
+        const btnColorPurple = this.createButton('🟣 紫', '#9C27B0', () => {
+            this.setColor('#9C27B0', true);
+            renderModal();
+        });
+        
+        const btnColorYellow = this.createButton('🟡 黄', '#FFC107', () => {
+            this.setColor('#FFC107', true);
+            renderModal();
+        });
+        
+        const btnColorCyan = this.createButton('🔷 青', '#00BCD4', () => {
+            this.setColor('#00BCD4', true);
+            renderModal();
+        });
+        
+        colorControls.appendChild(colorLabel);
+        colorControls.appendChild(btnColorRed);
+        colorControls.appendChild(btnColorBlue);
+        colorControls.appendChild(btnColorOrange);
+        colorControls.appendChild(btnColorPurple);
+        colorControls.appendChild(btnColorYellow);
+        colorControls.appendChild(btnColorCyan);
+        
         // 关闭按钮
         const closeBtn = this.createButton('关闭 ✕', '#f44336', () => {
             modal.remove();
@@ -657,6 +715,7 @@ class InteractiveDrawingMarker {
         toolbar.appendChild(zoomDisplay);
         toolbar.appendChild(fontControls);
         toolbar.appendChild(selectControls);
+        toolbar.appendChild(colorControls);
         toolbar.appendChild(closeBtn);
         
         container.appendChild(modalCanvas);

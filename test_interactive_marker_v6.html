@@ -184,9 +184,9 @@
 </head>
 <body>
     <div class="header">
-        <h1>🎨 功能八 v6.0 完整测试</h1>
-        <span class="version-badge">主界面和弹窗功能完全一致</span>
-        <p style="margin: 10px 0 0 0; opacity: 0.9;">滚轮缩放 + 鼠标拖拽 + 完整交互</p>
+        <h1>🎨 功能八 v6.1 完整测试</h1>
+        <span class="version-badge">主界面和弹窗功能完全一致 + 颜色高亮</span>
+        <p style="margin: 10px 0 0 0; opacity: 0.9;">滚轮缩放 + 鼠标拖拽 + 完整交互 + 颜色标记</p>
     </div>
 
     <div class="features">
@@ -234,6 +234,17 @@
                     <li>全选按钮</li>
                     <li>取消选择按钮</li>
                     <li>选中标注高亮显示</li>
+                </ul>
+            </div>
+            
+            <div class="feature-item">
+                <h3>🎨 颜色高亮（新增）</h3>
+                <ul>
+                    <li>选中标注后设置颜色</li>
+                    <li>6种预设颜色可选</li>
+                    <li>🔴 红 🔵 蓝 🟠 橙</li>
+                    <li>🟣 紫 🟡 黄 🔷 青</li>
+                    <li>主界面和弹窗都支持</li>
                 </ul>
             </div>
         </div>
@@ -288,6 +299,13 @@
             <button class="btn btn-purple" onclick="marker.decreaseFontSize(false)">全部字体-</button>
             <button class="btn btn-primary" onclick="marker.selectAll()">全选</button>
             <button class="btn btn-warning" onclick="marker.deselectAll()">取消选择</button>
+            <div style="width: 100%; height: 1px; background: #ddd; margin: 5px 0;"></div>
+            <button class="btn" style="background-color: #FF6B6B;" onclick="marker.setColor('#FF6B6B', true)">🔴 红色</button>
+            <button class="btn" style="background-color: #2196F3;" onclick="marker.setColor('#2196F3', true)">🔵 蓝色</button>
+            <button class="btn" style="background-color: #FF9800;" onclick="marker.setColor('#FF9800', true)">🟠 橙色</button>
+            <button class="btn" style="background-color: #9C27B0;" onclick="marker.setColor('#9C27B0', true)">🟣 紫色</button>
+            <button class="btn" style="background-color: #FFC107;" onclick="marker.setColor('#FFC107', true)">🟡 黄色</button>
+            <button class="btn" style="background-color: #00BCD4;" onclick="marker.setColor('#00BCD4', true)">🔷 青色</button>
         </div>
         
         <div class="canvas-container">

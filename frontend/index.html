@@ -1912,6 +1912,14 @@ function displayProcessingResult(data) {
                             <button onclick="window.interactiveMarkers[${index}].decreaseFontSize(true)" class="small-button" style="padding: 3px 8px; font-size: 0.75em; background-color: #FF9800;">选中-</button>
                             <button onclick="window.interactiveMarkers[${index}].increaseFontSize(false)" class="small-button" style="padding: 3px 8px; font-size: 0.75em; background-color: #2196F3;">全部+</button>
                             <button onclick="window.interactiveMarkers[${index}].decreaseFontSize(false)" class="small-button" style="padding: 3px 8px; font-size: 0.75em; background-color: #9C27B0;">全部-</button>
+                            <span style="margin: 0 5px; color: #999;">|</span>
+                            <button onclick="window.interactiveMarkers[${index}].setColor('#FF6B6B', true)" class="small-button" style="padding: 3px 8px; font-size: 0.75em; background-color: #FF6B6B;">🔴</button>
+                            <button onclick="window.interactiveMarkers[${index}].setColor('#2196F3', true)" class="small-button" style="padding: 3px 8px; font-size: 0.75em; background-color: #2196F3;">🔵</button>
+                            <button onclick="window.interactiveMarkers[${index}].setColor('#FF9800', true)" class="small-button" style="padding: 3px 8px; font-size: 0.75em; background-color: #FF9800;">🟠</button>
+                            <button onclick="window.interactiveMarkers[${index}].setColor('#9C27B0', true)" class="small-button" style="padding: 3px 8px; font-size: 0.75em; background-color: #9C27B0;">🟣</button>
+                            <button onclick="window.interactiveMarkers[${index}].setColor('#FFC107', true)" class="small-button" style="padding: 3px 8px; font-size: 0.75em; background-color: #FFC107;">🟡</button>
+                            <button onclick="window.interactiveMarkers[${index}].setColor('#00BCD4', true)" class="small-button" style="padding: 3px 8px; font-size: 0.75em; background-color: #00BCD4;">🔷</button>
+                            <span style="margin: 0 5px; color: #999;">|</span>
                             <button onclick="window.interactiveMarkers[${index}].selectAll()" class="small-button" style="padding: 3px 8px; font-size: 0.75em; background-color: #607D8B;">全选</button>
                             <button onclick="window.interactiveMarkers[${index}].deselectAll()" class="small-button" style="padding: 3px 8px; font-size: 0.75em; background-color: #795548;">取消</button>
                         </div>
