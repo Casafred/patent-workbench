@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>功能八v6.0测试 - 主界面和弹窗功能完全一致</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            margin: 0 0 10px 0;
+        }
+        
+        .version-badge {
+            display: inline-block;
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        
+        .features {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .features h2 {
+            color: #667eea;
+            margin-top: 0;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .feature-item {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .feature-item h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .feature-item ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .feature-item li {
+            margin: 5px 0;
+            color: #666;
+        }
+        
+        .test-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background-color: #667eea;
+            color: white;
+        }
+        
+        .btn-success {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .btn-warning {
+            background-color: #FF9800;
+            color: white;
+        }
+        
+        .btn-info {
+            background-color: #2196F3;
+            color: white;
+        }
+        
+        .btn-purple {
+            background-color: #9C27B0;
+            color: white;
+        }
+        
+        .btn:hover {
+            opacity: 0.8;
+            transform: translateY(-2px);
+        }
+        
+        .canvas-container {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: #f9f9f9;
+            position: relative;
+        }
+        
+        #test_canvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
+        
+        .info-box {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .info-box h3 {
+            margin: 0 0 10px 0;
+            color: #1976D2;
+        }
+        
+        .keyboard-shortcuts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .shortcut {
+            background-color: white;
+            padding: 10px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .shortcut-key {
+            background-color: #333;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎨 功能八 v6.0 完整测试</h1>
+        <span class="version-badge">主界面和弹窗功能完全一致</span>
+        <p style="margin: 10px 0 0 0; opacity: 0.9;">滚轮缩放 + 鼠标拖拽 + 完整交互</p>
+    </div>
+
+    <div class="features">
+        <h2>✨ v6.0 核心特性</h2>
+        <div class="feature-grid">
+            <div class="feature-item">
+                <h3>🖱️ 主界面交互</h3>
+                <ul>
+                    <li>滚轮缩放（10%-1000%）</li>
+                    <li>鼠标拖拽移动视图</li>
+                    <li>拖拽标注位置</li>
+                    <li>双击编辑标注</li>
+                    <li>右键删除标注</li>
+                    <li>点击选中标注</li>
+                </ul>
+            </div>
+            
+            <div class="feature-item">
+                <h3>🔍 弹窗交互（完全一致）</h3>
+                <ul>
+                    <li>滚轮缩放（10%-1000%）</li>
+                    <li>鼠标拖拽移动视图</li>
+                    <li>拖拽标注位置</li>
+                    <li>双击编辑标注</li>
+                    <li>右键删除标注</li>
+                    <li>点击选中标注</li>
+                </ul>
+            </div>
+            
+            <div class="feature-item">
+                <h3>📝 字体控制</h3>
+                <ul>
+                    <li>选中+ / 选中-（选中标注）</li>
+                    <li>全部+ / 全部-（所有标注）</li>
+                    <li>字号范围：12-48px</li>
+                    <li>快捷按钮触发</li>
+                </ul>
+            </div>
+            
+            <div class="feature-item">
+                <h3>🎯 选择功能</h3>
+                <ul>
+                    <li>单击选中标注</li>
+                    <li>Ctrl+点击多选</li>
+                    <li>全选按钮</li>
+                    <li>取消选择按钮</li>
+                    <li>选中标注高亮显示</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-box">
+        <h3>⌨️ 快捷键说明</h3>
+        <div class="keyboard-shortcuts">
+            <div class="shortcut">
+                <span>滚轮缩放</span>
+                <span class="shortcut-key">鼠标滚轮</span>
+            </div>
+            <div class="shortcut">
+                <span>拖拽视图</span>
+                <span class="shortcut-key">鼠标拖动空白处</span>
+            </div>
+            <div class="shortcut">
+                <span>拖拽标注</span>
+                <span class="shortcut-key">鼠标拖动标注</span>
+            </div>
+            <div class="shortcut">
+                <span>编辑标注</span>
+                <span class="shortcut-key">双击标注</span>
+            </div>
+            <div class="shortcut">
+                <span>删除标注</span>
+                <span class="shortcut-key">右键标注</span>
+            </div>
+            <div class="shortcut">
+                <span>选中标注</span>
+                <span class="shortcut-key">单击标注</span>
+            </div>
+            <div class="shortcut">
+                <span>多选标注</span>
+                <span class="shortcut-key">Ctrl + 点击</span>
+            </div>
+            <div class="shortcut">
+                <span>取消选择</span>
+                <span class="shortcut-key">点击空白处</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2>🧪 测试区域</h2>
+        
+        <div class="controls">
+            <button class="btn btn-primary" onclick="marker.openModal()">🔍 打开弹窗（大窗口查看）</button>
+            <button class="btn btn-success" onclick="marker.increaseFontSize(true)">选中字体+</button>
+            <button class="btn btn-warning" onclick="marker.decreaseFontSize(true)">选中字体-</button>
+            <button class="btn btn-info" onclick="marker.increaseFontSize(false)">全部字体+</button>
+            <button class="btn btn-purple" onclick="marker.decreaseFontSize(false)">全部字体-</button>
+            <button class="btn btn-primary" onclick="marker.selectAll()">全选</button>
+            <button class="btn btn-warning" onclick="marker.deselectAll()">取消选择</button>
+        </div>
+        
+        <div class="canvas-container">
+            <canvas id="test_canvas"></canvas>
+        </div>
+    </div>
+
+    <div class="info-box" style="background-color: #fff3e0; border-left-color: #FF9800;">
+        <h3>📋 测试步骤</h3>
+        <ol style="margin: 10px 0 0 20px; color: #666;">
+            <li><strong>主界面测试</strong>：
+                <ul>
+                    <li>滚动鼠标滚轮，观察缩放效果</li>
+                    <li>拖动空白处，移动视图</li>
+                    <li>拖动标注文字，改变位置</li>
+                    <li>双击标注，编辑名称</li>
+                    <li>右键标注，删除</li>
+                    <li>单击标注，观察选中效果（绿色高亮）</li>
+                    <li>Ctrl+点击多个标注，多选</li>
+                </ul>
+            </li>
+            <li><strong>字体控制测试</strong>：
+                <ul>
+                    <li>选中一个或多个标注</li>
+                    <li>点击"选中字体+"，观察选中标注字体变大</li>
+                    <li>点击"全部字体+"，观察所有标注字体变大</li>
+                </ul>
+            </li>
+            <li><strong>弹窗测试</strong>：
+                <ul>
+                    <li>点击"打开弹窗"按钮</li>
+                    <li>在弹窗中重复主界面的所有操作</li>
+                    <li>确认功能完全一致</li>
+                    <li>关闭弹窗，确认主界面已同步</li>
+                </ul>
+            </li>
+        </ol>
+    </div>
+
+    <script src="js/drawingMarkerInteractive.js"></script>
+    <script>
+        // 模拟OCR识别结果
+        const mockDetectedNumbers = [
+            { x: 150, y: 100, number: '1', name: '外壳', confidence: 0.95 },
+            { x: 300, y: 150, number: '2', name: '显示屏', confidence: 0.92 },
+            { x: 200, y: 250, number: '3', name: '按键', confidence: 0.88 },
+            { x: 400, y: 200, number: '4', name: '电池', confidence: 0.90 },
+            { x: 250, y: 350, number: '5', name: '接口', confidence: 0.87 }
+        ];
+
+        const mockReferenceMap = {
+            '1': '外壳',
+            '2': '显示屏',
+            '3': '按键',
+            '4': '电池',
+            '5': '接口'
+        };
+
+        // 创建测试图片
+        const canvas = document.createElement('canvas');
+        canvas.width = 600;
+        canvas.height = 400;
+        const ctx = canvas.getContext('2d');
+        
+        // 绘制背景
+        ctx.fillStyle = '#f0f0f0';
+        ctx.fillRect(0, 0, 600, 400);
+        
+        // 绘制一些形状模拟专利附图
+        ctx.fillStyle = '#333';
+        ctx.fillRect(100, 50, 400, 300);
+        
+        ctx.fillStyle = '#666';
+        ctx.fillRect(120, 70, 150, 200);
+        ctx.fillRect(290, 70, 190, 200);
+        
+        ctx.fillStyle = '#999';
+        ctx.fillRect(130, 280, 340, 50);
+        
+        // 绘制标记点
+        ctx.fillStyle = '#FF0000';
+        mockDetectedNumbers.forEach(detected => {
+            ctx.beginPath();
+            ctx.arc(detected.x, detected.y, 5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.font = 'bold 16px Arial';
+            ctx.fillText(detected.number, detected.x - 5, detected.y - 10);
+        });
+        
+        const testImageUrl = canvas.toDataURL();
+        
+        // 初始化标注系统
+        const marker = new InteractiveDrawingMarker(
+            'test_canvas',
+            testImageUrl,
+            mockDetectedNumbers,
+            mockReferenceMap,
+            {
+                enableModal: true,
+                fontSize: 18
+            }
+        );
+        
+        console.log('功能八v6.0测试页面加载完成');
+        console.log('主界面和弹窗功能完全一致');
+    </script>
+</body>
+</html>
