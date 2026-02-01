@@ -83,6 +83,9 @@ def process_drawing_marker():
         req_data = request.get_json()
         drawings = req_data.get('drawings')
         specification = req_data.get('specification')
+        ai_mode = req_data.get('ai_mode', False)
+        model_name = req_data.get('model_name')
+        custom_prompt = req_data.get('custom_prompt')
         
         if not drawings or not isinstance(drawings, list) or len(drawings) == 0:
             return create_response(error="drawings is required and must be a non-empty list", status_code=400)
@@ -100,9 +103,64 @@ def process_drawing_marker():
         total_numbers = 0
         
         # 1. 解析说明书，提取附图标记和部件名称
-        reference_map = extract_reference_markers(specification)
-        print(f"[DEBUG] Extracted reference_map: {reference_map}")
-        print(f"[DEBUG] Total markers in specification: {len(reference_map)}")
+        # 根据AI模式选择不同的处理方式
+        if ai_mode:
+            # AI模式：使用AI处理说明书
+            print(f"[DEBUG] Using AI mode to extract components")
+            
+            if not model_name:
+                return create_response(
+                    error="model_name is required when ai_mode is true",
+                    status_code=400
+                )
+            
+            # Get API key from Authorization header
+            client, error = get_zhipu_client()
+            if error:
+                return error
+            
+            # Get API key from client
+            api_key = client.api_key
+            
+            # Import AI processor
+            from backend.services.ai_description.ai_description_processor import AIDescriptionProcessor
+            
+            # Create processor instance
+            processor = AIDescriptionProcessor(api_key)
+            
+            # Process description using AI
+            # Run async function in sync context
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                ai_result = loop.run_until_complete(
+                    processor.process(specification, model_name, custom_prompt)
+                )
+            finally:
+                loop.close()
+            
+            # Check AI processing result
+            if not ai_result.get('success'):
+                return create_response(
+                    error=ai_result.get('error', 'AI processing failed'),
+                    status_code=500
+                )
+            
+            # Convert AI components to reference_map format
+            components = ai_result['data'].get('components', [])
+            reference_map = {
+                comp['marker']: comp['name']
+                for comp in components
+            }
+            
+            print(f"[DEBUG] AI extracted reference_map: {reference_map}")
+            print(f"[DEBUG] Total markers from AI: {len(reference_map)}")
+        else:
+            # 规则模式：使用jieba分词
+            print(f"[DEBUG] Using rule-based mode (jieba) to extract components")
+            reference_map = extract_reference_markers(specification)
+            print(f"[DEBUG] Extracted reference_map: {reference_map}")
+            print(f"[DEBUG] Total markers in specification: {len(reference_map)}")
         
         # 2. 处理每张图片
         for drawing in drawings:
@@ -212,7 +270,7 @@ def process_drawing_marker():
             'debug_info': {
                 'total_markers_in_spec': len(reference_map),
                 'reference_map': reference_map,
-                'extraction_method': 'jieba分词' if 'jieba' in str(type(extract_reference_markers)) else '正则表达式'
+                'extraction_method': 'AI智能抽取' if ai_mode else 'jieba分词'
             }
         })
     

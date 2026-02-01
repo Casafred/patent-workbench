@@ -1,0 +1,32 @@
+fix: 修复AI说明书处理开关不生效的问题
+
+问题描述:
+- 用户打开"AI说明书解析"按钮后，说明书仍使用正则/jieba方式处理
+- AI模式开关没有实际作用
+
+修复内容:
+- 在 backend/routes/drawing_marker.py 的 process_drawing_marker 函数中添加 ai_mode 判断
+- AI模式开启时使用 AIDescriptionProcessor 进行智能抽取
+- AI模式关闭时使用 extract_reference_markers (jieba分词)
+- 更新返回结果中的 extraction_method 标识
+
+技术细节:
+- 从请求中获取 ai_mode, model_name, custom_prompt 参数
+- AI模式下调用 AIDescriptionProcessor.process() 方法
+- 将AI返回的 components 转换为 reference_map 格式
+- 添加详细的调试日志输出
+
+影响范围:
+- 功能八（交互式附图标注）
+- AI说明书处理功能
+
+测试验证:
+- AI模式关闭: extraction_method = 'jieba分词'
+- AI模式开启: extraction_method = 'AI智能抽取'
+- 后端日志正确显示处理模式
+
+相关文件:
+- backend/routes/drawing_marker.py (主要修复)
+- test_ai_mode_fix.md (修复说明文档)
+- test_ai_mode_switch.py (测试脚本)
+- deploy_ai_mode_fix.bat (部署脚本)
