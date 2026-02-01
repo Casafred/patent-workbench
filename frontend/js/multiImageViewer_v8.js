@@ -456,24 +456,23 @@ class MultiImageViewerV8 {
             transform: translateY(-50%);
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
             z-index: 101;
-            background-color: rgba(255, 255, 255, 0.95);
-            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 8px;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         `;
         
         // 字体大小按钮组
         const fontGroup = document.createElement('div');
-        fontGroup.style.cssText = 'display: flex; flex-direction: column; gap: 5px; border-bottom: 1px solid #ddd; padding-bottom: 10px;';
+        fontGroup.style.cssText = 'display: flex; flex-direction: column; gap: 4px; border-bottom: 1px solid #ddd; padding-bottom: 8px;';
         
-        const fontLabel = document.createElement('div');
-        fontLabel.textContent = '字体';
-        fontLabel.style.cssText = 'font-size: 11px; color: #666; text-align: center; margin-bottom: 3px;';
-        fontGroup.appendChild(fontLabel);
-        
-        const fontPlusBtn = this.createToolbarButton('A+', () => {
+        const fontPlusBtn = this.createIconButton(`
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <text x="4" y="18" font-size="14" font-weight="bold" fill="currentColor">A+</text>
+            </svg>
+        `, () => {
             const selected = this.annotations.filter(a => a.isSelected);
             if (selected.length > 0) {
                 selected.forEach(ann => {
@@ -484,9 +483,13 @@ class MultiImageViewerV8 {
                 this.annotations.forEach(ann => ann.fontSize = this.currentFontSize);
             }
             this.renderCanvas();
-        }, '#4CAF50');
+        }, '增大字体');
         
-        const fontMinusBtn = this.createToolbarButton('A-', () => {
+        const fontMinusBtn = this.createIconButton(`
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <text x="4" y="18" font-size="14" font-weight="bold" fill="currentColor">A-</text>
+            </svg>
+        `, () => {
             const selected = this.annotations.filter(a => a.isSelected);
             if (selected.length > 0) {
                 selected.forEach(ann => {
@@ -497,7 +500,7 @@ class MultiImageViewerV8 {
                 this.annotations.forEach(ann => ann.fontSize = this.currentFontSize);
             }
             this.renderCanvas();
-        }, '#FF9800');
+        }, '减小字体');
         
         fontGroup.appendChild(fontPlusBtn);
         fontGroup.appendChild(fontMinusBtn);
@@ -505,22 +508,27 @@ class MultiImageViewerV8 {
         
         // 旋转按钮组
         const rotateGroup = document.createElement('div');
-        rotateGroup.style.cssText = 'display: flex; flex-direction: column; gap: 5px; border-bottom: 1px solid #ddd; padding-bottom: 10px;';
+        rotateGroup.style.cssText = 'display: flex; flex-direction: column; gap: 4px; border-bottom: 1px solid #ddd; padding-bottom: 8px;';
         
-        const rotateLabel = document.createElement('div');
-        rotateLabel.textContent = '旋转';
-        rotateLabel.style.cssText = 'font-size: 11px; color: #666; text-align: center; margin-bottom: 3px;';
-        rotateGroup.appendChild(rotateLabel);
-        
-        const rotateLeftBtn = this.createToolbarButton('↺', () => {
+        const rotateLeftBtn = this.createIconButton(`
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                <path d="M21 3v5h-5"/>
+            </svg>
+        `, () => {
             this.currentRotation = (this.currentRotation - 90 + 360) % 360;
             this.renderCanvas();
-        }, '#2196F3');
+        }, '逆时针旋转');
         
-        const rotateRightBtn = this.createToolbarButton('↻', () => {
+        const rotateRightBtn = this.createIconButton(`
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
+                <path d="M3 3v5h5"/>
+            </svg>
+        `, () => {
             this.currentRotation = (this.currentRotation + 90) % 360;
             this.renderCanvas();
-        }, '#2196F3');
+        }, '顺时针旋转');
         
         rotateGroup.appendChild(rotateLeftBtn);
         rotateGroup.appendChild(rotateRightBtn);
@@ -528,35 +536,47 @@ class MultiImageViewerV8 {
         
         // 缩放按钮组
         const zoomGroup = document.createElement('div');
-        zoomGroup.style.cssText = 'display: flex; flex-direction: column; gap: 5px; border-bottom: 1px solid #ddd; padding-bottom: 10px;';
-        
-        const zoomLabel = document.createElement('div');
-        zoomLabel.textContent = '缩放';
-        zoomLabel.style.cssText = 'font-size: 11px; color: #666; text-align: center; margin-bottom: 3px;';
-        zoomGroup.appendChild(zoomLabel);
+        zoomGroup.style.cssText = 'display: flex; flex-direction: column; gap: 4px; border-bottom: 1px solid #ddd; padding-bottom: 8px;';
         
         this.zoomDisplay = document.createElement('div');
         this.zoomDisplay.textContent = '100%';
-        this.zoomDisplay.style.cssText = 'font-size: 11px; font-weight: bold; text-align: center; color: #333;';
+        this.zoomDisplay.style.cssText = 'font-size: 11px; font-weight: bold; text-align: center; color: #333; padding: 2px 0;';
         zoomGroup.appendChild(this.zoomDisplay);
         
-        const zoomInBtn = this.createToolbarButton('+', () => {
+        const zoomInBtn = this.createIconButton(`
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="M21 21l-4.35-4.35"/>
+                <line x1="11" y1="8" x2="11" y2="14"/>
+                <line x1="8" y1="11" x2="14" y2="11"/>
+            </svg>
+        `, () => {
             this.currentZoom = Math.min(this.maxZoom, this.currentZoom + this.zoomStep);
             this.updateCanvasSize();
             this.updateZoomDisplay();
-        }, '#9C27B0');
+        }, '放大');
         
-        const zoomOutBtn = this.createToolbarButton('-', () => {
+        const zoomOutBtn = this.createIconButton(`
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="M21 21l-4.35-4.35"/>
+                <line x1="8" y1="11" x2="14" y2="11"/>
+            </svg>
+        `, () => {
             this.currentZoom = Math.max(this.minZoom, this.currentZoom - this.zoomStep);
             this.updateCanvasSize();
             this.updateZoomDisplay();
-        }, '#9C27B0');
+        }, '缩小');
         
-        const zoomResetBtn = this.createToolbarButton('1:1', () => {
+        const zoomResetBtn = this.createIconButton(`
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <text x="6" y="16" font-size="10" font-weight="bold" fill="currentColor">1:1</text>
+            </svg>
+        `, () => {
             this.currentZoom = 1.0;
             this.updateCanvasSize();
             this.updateZoomDisplay();
-        }, '#607D8B');
+        }, '重置缩放');
         
         zoomGroup.appendChild(zoomInBtn);
         zoomGroup.appendChild(zoomOutBtn);
@@ -564,39 +584,45 @@ class MultiImageViewerV8 {
         toolbar.appendChild(zoomGroup);
         
         // 截图按钮
-        const screenshotBtn = this.createToolbarButton('📸', () => {
+        const screenshotBtn = this.createIconButton(`
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+            </svg>
+        `, () => {
             this.takeScreenshot();
-        }, '#FF9800');
-        screenshotBtn.title = '高清截图';
+        }, '高清截图');
         toolbar.appendChild(screenshotBtn);
         
         return toolbar;
     }
     
-    createToolbarButton(text, onClick, bgColor = '#4CAF50') {
+    createIconButton(svgContent, onClick, title) {
         const btn = document.createElement('button');
-        btn.textContent = text;
+        btn.innerHTML = svgContent;
+        btn.title = title;
         btn.style.cssText = `
-            width: 45px;
-            height: 45px;
-            background-color: ${bgColor};
-            color: white;
+            width: 40px;
+            height: 40px;
+            background-color: transparent;
+            color: #333;
             border: none;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             transition: all 0.2s;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            padding: 0;
         `;
         btn.addEventListener('click', onClick);
         btn.addEventListener('mouseenter', () => {
+            btn.style.backgroundColor = 'rgba(76, 175, 80, 0.1)';
             btn.style.transform = 'scale(1.1)';
-            btn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
         });
         btn.addEventListener('mouseleave', () => {
+            btn.style.backgroundColor = 'transparent';
             btn.style.transform = 'scale(1)';
-            btn.style.boxShadow = '0 2px 6px rgba(0,0,0,0.2)';
         });
         return btn;
     }
@@ -679,7 +705,7 @@ class MultiImageViewerV8 {
             colorBtn.style.cssText = `
                 width: 100%;
                 height: 35px;
-                background-color: ${colorObj.value};
+                background-color: ${colorObj.value} !important;
                 border: 2px solid ${this.currentColor === colorObj.value ? '#FFF' : 'transparent'};
                 border-radius: 4px;
                 cursor: pointer;
