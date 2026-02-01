@@ -13,18 +13,22 @@ class MultiImageViewerV8 {
             highlightColor: options.highlightColor || '#00FF00',
             ...options
         };
-        
+
         this.annotations = [];
         this.selectedAnnotationId = null;
         this.currentZoom = 1.0;
         this.currentRotation = 0;
         this.currentFontSize = this.options.fontSize;
         this.currentColor = '#4CAF50'; // 默认绿色
-        
+
         this.minZoom = 0.5;
         this.maxZoom = 5.0;
         this.zoomStep = 0.2;
-        
+
+        // 本地存储相关
+        this.imageHash = null;
+        this.storageKey = null;
+
         // 可选颜色列表
         this.availableColors = [
             { name: '橙色', value: '#FF5722' },
@@ -40,12 +44,20 @@ class MultiImageViewerV8 {
     
     open(startIndex = 0) {
         this.currentIndex = startIndex;
-        const modal = this.createModal();
-        document.body.appendChild(modal);
-        
-        setTimeout(() => {
-            modal.style.display = 'flex';
-        }, 10);
+
+        // 生成当前图片的哈希值用于本地存储
+        const currentImage = this.images[this.currentIndex];
+        this.generateImageHash(currentImage.url, () => {
+            // 尝试加载保存的标记
+            this.loadSavedAnnotations();
+
+            const modal = this.createModal();
+            document.body.appendChild(modal);
+
+            setTimeout(() => {
+                modal.style.display = 'flex';
+            }, 10);
+        });
     }
     
     createModal() {
@@ -249,6 +261,12 @@ class MultiImageViewerV8 {
         
         // 鼠标释放 - 停止拖动
         modalCanvas.addEventListener('mouseup', () => {
+            if (isDraggingAnnotation && draggedAnnotation) {
+                // 标记为用户修改过
+                draggedAnnotation.userModified = true;
+                // 保存到本地存储
+                this.saveAnnotations();
+            }
             isDraggingAnnotation = false;
             draggedAnnotation = null;
             imageContainer.style.cursor = 'default';
@@ -284,8 +302,10 @@ class MultiImageViewerV8 {
                 const newName = prompt(`编辑标注名称 (${annotation.number}):`, annotation.name);
                 if (newName !== null && newName.trim() !== '') {
                     annotation.name = newName.trim();
+                    annotation.userModified = true;
                     this.renderCanvas();
                     this.updateAnnotationList();
+                    this.saveAnnotations(); // 保存修改
                 }
                 return;
             }
@@ -293,15 +313,15 @@ class MultiImageViewerV8 {
             // 添加新标注
             const number = prompt('请输入标记序号：');
             if (!number) return;
-            
+
             const name = prompt('请输入标记说明：');
             if (!name) return;
-            
+
             // 计算标签位置（自动偏移，避免遮挡标注点）
             const offsetDistance = 80;
             let labelX = clickX + offsetDistance;
             let labelY = clickY - offsetDistance;
-            
+
             // 边界检查
             if (labelX > this.modalCanvas.width - 100) {
                 labelX = clickX - offsetDistance;
@@ -309,7 +329,7 @@ class MultiImageViewerV8 {
             if (labelY < 50) {
                 labelY = clickY + offsetDistance;
             }
-            
+
             const newAnnotation = {
                 id: `manual_${Date.now()}`,
                 markerX: clickX,
@@ -322,12 +342,14 @@ class MultiImageViewerV8 {
                 isSelected: false,
                 isManual: true,
                 fontSize: this.currentFontSize,
-                color: this.currentColor
+                color: this.currentColor,
+                userModified: true
             };
-            
+
             this.annotations.push(newAnnotation);
             this.renderCanvas();
             this.updateAnnotationList();
+            this.saveAnnotations(); // 保存到本地存储
         });
         
         // 键盘导航
@@ -362,6 +384,7 @@ class MultiImageViewerV8 {
                         this.annotations.splice(index, 1);
                         this.renderCanvas();
                         this.updateAnnotationList();
+                        this.saveAnnotations(); // 保存删除操作
                     }
                 }
             }
@@ -411,7 +434,7 @@ class MultiImageViewerV8 {
         arrow.style.cssText = `
             position: absolute;
             top: 50%;
-            ${direction === 'left' ? 'left: 20px' : 'right: 20px'};
+            ${direction === 'left' ? 'left: 80px' : 'right: 80px'};
             transform: translateY(-50%);
             width: 60px;
             height: 60px;
@@ -428,7 +451,7 @@ class MultiImageViewerV8 {
             z-index: 100;
             box-shadow: 0 2px 10px rgba(0,0,0,0.3);
         `;
-        
+
         arrow.textContent = direction === 'left' ? '‹' : '›';
         
         arrow.addEventListener('click', (e) => {
@@ -465,37 +488,50 @@ class MultiImageViewerV8 {
         fontGroup.style.cssText = 'display: flex; flex-direction: column; gap: 4px;';
         
         const fontPlusBtn = this.createIconButton(`
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
-                <text x="2" y="17" font-size="12" font-weight="bold" fill="white">A+</text>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="1.5">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+                <text x="1" y="20" font-size="11" font-weight="normal" fill="#4CAF50">A</text>
             </svg>
         `, () => {
             const selected = this.annotations.filter(a => a.isSelected);
             if (selected.length > 0) {
                 selected.forEach(ann => {
                     ann.fontSize = Math.min((ann.fontSize || this.currentFontSize) + 2, 48);
+                    ann.userModified = true;
                 });
             } else {
                 this.currentFontSize = Math.min(this.currentFontSize + 2, 48);
-                this.annotations.forEach(ann => ann.fontSize = this.currentFontSize);
+                this.annotations.forEach(ann => {
+                    ann.fontSize = this.currentFontSize;
+                    ann.userModified = true;
+                });
             }
             this.renderCanvas();
+            this.saveAnnotations();
         }, '增大字体');
         
         const fontMinusBtn = this.createIconButton(`
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
-                <text x="2" y="17" font-size="12" font-weight="bold" fill="white">A-</text>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="1.5">
+                <line x1="5" y1="12" x2="19" y2="12"/>
+                <text x="1" y="20" font-size="11" font-weight="normal" fill="#4CAF50">A</text>
             </svg>
         `, () => {
             const selected = this.annotations.filter(a => a.isSelected);
             if (selected.length > 0) {
                 selected.forEach(ann => {
                     ann.fontSize = Math.max((ann.fontSize || this.currentFontSize) - 2, 12);
+                    ann.userModified = true;
                 });
             } else {
                 this.currentFontSize = Math.max(this.currentFontSize - 2, 12);
-                this.annotations.forEach(ann => ann.fontSize = this.currentFontSize);
+                this.annotations.forEach(ann => {
+                    ann.fontSize = this.currentFontSize;
+                    ann.userModified = true;
+                });
             }
             this.renderCanvas();
+            this.saveAnnotations();
         }, '减小字体');
         
         fontGroup.appendChild(fontPlusBtn);
@@ -507,7 +543,7 @@ class MultiImageViewerV8 {
         rotateGroup.style.cssText = 'display: flex; flex-direction: column; gap: 4px;';
         
         const rotateLeftBtn = this.createIconButton(`
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
                 <path d="M21 3v5h-5"/>
             </svg>
@@ -517,7 +553,7 @@ class MultiImageViewerV8 {
         }, '逆时针旋转');
         
         const rotateRightBtn = this.createIconButton(`
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
                 <path d="M3 3v5h5"/>
             </svg>
@@ -540,17 +576,18 @@ class MultiImageViewerV8 {
             font-size: 12px;
             font-weight: bold;
             text-align: center;
-            color: white;
+            color: #4CAF50;
             padding: 10px 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: white;
+            border: 3px solid #4CAF50;
             border-radius: 24px;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 3px 10px rgba(76, 175, 80, 0.3);
             min-width: 48px;
         `;
         zoomGroup.appendChild(this.zoomDisplay);
         
         const zoomInBtn = this.createIconButton(`
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="1.5" stroke-linecap="round">
                 <circle cx="11" cy="11" r="7"/>
                 <path d="M21 21l-4.35-4.35"/>
                 <line x1="11" y1="8" x2="11" y2="14"/>
@@ -563,7 +600,7 @@ class MultiImageViewerV8 {
         }, '放大');
         
         const zoomOutBtn = this.createIconButton(`
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="1.5" stroke-linecap="round">
                 <circle cx="11" cy="11" r="7"/>
                 <path d="M21 21l-4.35-4.35"/>
                 <line x1="8" y1="11" x2="14" y2="11"/>
@@ -575,8 +612,8 @@ class MultiImageViewerV8 {
         }, '缩小');
         
         const zoomResetBtn = this.createIconButton(`
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
-                <text x="5" y="16" font-size="10" font-weight="bold" fill="white">1:1</text>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="1.5">
+                <text x="4" y="17" font-size="10" font-weight="normal" fill="#4CAF50">1:1</text>
             </svg>
         `, () => {
             this.currentZoom = 1.0;
@@ -591,7 +628,7 @@ class MultiImageViewerV8 {
         
         // 截图按钮
         const screenshotBtn = this.createIconButton(`
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
                 <circle cx="12" cy="13" r="3.5"/>
             </svg>
@@ -599,6 +636,18 @@ class MultiImageViewerV8 {
             this.takeScreenshot();
         }, '高清截图');
         toolbar.appendChild(screenshotBtn);
+
+        // 导出标记按钮
+        const exportBtn = this.createIconButton(`
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+        `, () => {
+            this.exportAnnotations();
+        }, '导出标记');
+        toolbar.appendChild(exportBtn);
         
         return toolbar;
     }
@@ -610,9 +659,9 @@ class MultiImageViewerV8 {
         btn.style.cssText = `
             width: 48px;
             height: 48px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
+            background: white;
+            border: 3px solid #4CAF50;
+            color: #4CAF50;
             border-radius: 50%;
             cursor: pointer;
             display: flex;
@@ -620,16 +669,16 @@ class MultiImageViewerV8 {
             align-items: center;
             transition: all 0.3s ease;
             padding: 0;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 3px 10px rgba(76, 175, 80, 0.3);
         `;
         btn.addEventListener('click', onClick);
         btn.addEventListener('mouseenter', () => {
-            btn.style.transform = 'scale(1.15) translateY(-2px)';
-            btn.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.6)';
+            btn.style.transform = 'scale(1.1) translateY(-2px)';
+            btn.style.boxShadow = '0 5px 15px rgba(76, 175, 80, 0.5)';
         });
         btn.addEventListener('mouseleave', () => {
             btn.style.transform = 'scale(1)';
-            btn.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.4)';
+            btn.style.boxShadow = '0 3px 10px rgba(76, 175, 80, 0.3)';
         });
         return btn;
     }
@@ -647,16 +696,16 @@ class MultiImageViewerV8 {
             overflow-y: auto;
         `;
         
-        // 标题
+        // 标题 + 本地存储状态指示
         const title = document.createElement('div');
-        title.textContent = '功能控制';
-        title.style.cssText = `
-            font-size: 18px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 10px;
-            text-align: center;
+        const hasSaved = this.storageKey && localStorage.getItem(this.storageKey);
+        title.innerHTML = `
+            <div style="font-size: 18px; font-weight: bold; color: #333; margin-bottom: 10px; text-align: center;">
+                功能控制
+            </div>
+            ${hasSaved ? '<div style="font-size: 11px; color: #4CAF50; text-align: center; margin-top: 5px;">✓ 已加载历史标记</div>' : ''}
         `;
+        title.style.cssText = 'margin-bottom: 10px;';
         sidebar.appendChild(title);
         
         // 图片信息
@@ -724,20 +773,22 @@ class MultiImageViewerV8 {
             colorBtn.addEventListener('click', () => {
                 // 更新当前颜色
                 this.currentColor = colorObj.value;
-                
+
                 // 更新选中标注的颜色
                 const selected = this.annotations.filter(a => a.isSelected);
                 if (selected.length > 0) {
                     selected.forEach(ann => {
                         ann.color = colorObj.value;
+                        ann.userModified = true;
                     });
                 } else {
                     // 如果没有选中标注，提示用户
                     // 但仍然更新默认颜色，用于新添加的标注
                 }
-                
+
                 this.renderCanvas();
-                
+                this.saveAnnotations(); // 保存颜色修改
+
                 // 更新按钮边框
                 colorGrid.querySelectorAll('button').forEach((btn, idx) => {
                     const btnColor = this.availableColors[idx].value;
@@ -861,6 +912,14 @@ class MultiImageViewerV8 {
         const detectedNumbers = this.currentImageData.detectedNumbers || [];
         const referenceMap = this.currentImageData.referenceMap || {};
 
+        // 尝试加载保存的标记
+        const hasSavedData = this.loadSavedAnnotations();
+        if (hasSavedData) {
+            console.log('Loaded saved annotations, skipping initialization');
+            return;
+        }
+
+        // 没有保存的数据，使用OCR识别结果初始化
         const canvasWidth = this.modalCanvas.width;
         const canvasHeight = this.modalCanvas.height;
         const edgeMargin = 100; // 距离边缘距离
@@ -920,7 +979,8 @@ class MultiImageViewerV8 {
                 isManual: false,
                 fontSize: this.currentFontSize,
                 color: this.currentColor,
-                region: region
+                region: region,
+                userModified: false
             };
 
             regions[region].push(annotation);
@@ -955,6 +1015,9 @@ class MultiImageViewerV8 {
                 });
             }
         });
+
+        // 自动保存初始化的标记
+        this.saveAnnotations();
     }
     
     updateDisplay() {
@@ -963,6 +1026,15 @@ class MultiImageViewerV8 {
             this.renderCanvas();
             this.updateAnnotationList();
             this.updateImageInfo();
+            // 切换图片时重新加载该图片的标记
+            this.generateImageHash(this.images[this.currentIndex].url, () => {
+                const loaded = this.loadSavedAnnotations();
+                if (!loaded) {
+                    this.initializeAnnotations();
+                }
+                this.renderCanvas();
+                this.updateAnnotationList();
+            });
         });
     }
     
@@ -999,7 +1071,7 @@ class MultiImageViewerV8 {
         this.annotations.forEach(annotation => {
             const isHighlighted = annotation.isSelected || annotation.id === this.selectedAnnotationId;
             const color = annotation.color || this.currentColor;
-            const lineWidth = isHighlighted ? 4 : 3;
+            const lineWidth = isHighlighted ? 2 : 1.5; // 引线变细
             const fontSize = annotation.fontSize || this.currentFontSize;
 
             // 计算旋转后的标注点位置
@@ -1013,36 +1085,44 @@ class MultiImageViewerV8 {
             const rotatedMarkerX = centerX + (relX * Math.cos(radians) - relY * Math.sin(radians));
             const rotatedMarkerY = centerY + (relX * Math.sin(radians) + relY * Math.cos(radians));
 
+            // 计算偏移方向，让标记点偏离原图标记
+            const dx = annotation.labelX - rotatedMarkerX;
+            const dy = annotation.labelY - rotatedMarkerY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const offsetDistance = 12; // 偏移距离
+
+            const offsetX = distance > 0 ? (dx / distance) * offsetDistance : offsetDistance;
+            const offsetY = distance > 0 ? (dy / distance) * offsetDistance : 0;
+
+            const offsetMarkerX = rotatedMarkerX + offsetX;
+            const offsetMarkerY = rotatedMarkerY + offsetY;
+
             // 使用水平+竖直线条作为引线（非倾斜）
             ctx.save();
             ctx.beginPath();
             ctx.strokeStyle = color;
             ctx.lineWidth = lineWidth;
 
-            // 先判断引线方向：优先水平，然后竖直
-            const dx = annotation.labelX - rotatedMarkerX;
-            const dy = annotation.labelY - rotatedMarkerY;
-
-            // 绘制直角引线
+            // 绘制直角引线（从偏移后的标记点开始）
             if (Math.abs(dx) > Math.abs(dy)) {
                 // 先水平再竖直
-                ctx.moveTo(rotatedMarkerX, rotatedMarkerY);
-                ctx.lineTo(annotation.labelX, rotatedMarkerY);
+                ctx.moveTo(offsetMarkerX, offsetMarkerY);
+                ctx.lineTo(annotation.labelX, offsetMarkerY);
                 ctx.lineTo(annotation.labelX, annotation.labelY);
             } else {
                 // 先竖直再水平
-                ctx.moveTo(rotatedMarkerX, rotatedMarkerY);
-                ctx.lineTo(rotatedMarkerX, annotation.labelY);
+                ctx.moveTo(offsetMarkerX, offsetMarkerY);
+                ctx.lineTo(offsetMarkerX, annotation.labelY);
                 ctx.lineTo(annotation.labelX, annotation.labelY);
             }
 
             ctx.stroke();
             ctx.restore();
 
-            // 绘制标注点
+            // 绘制标注点（偏移后的位置）
             ctx.save();
             ctx.beginPath();
-            ctx.arc(rotatedMarkerX, rotatedMarkerY, 6, 0, 2 * Math.PI);
+            ctx.arc(offsetMarkerX, offsetMarkerY, 5, 0, 2 * Math.PI);
             ctx.fillStyle = color;
             ctx.fill();
             ctx.strokeStyle = '#FFFFFF';
@@ -1582,13 +1662,157 @@ class MultiImageViewerV8 {
     hexToRgba(hex, alpha) {
         // 移除 # 号
         hex = hex.replace('#', '');
-        
+
         // 解析 RGB 值
         const r = parseInt(hex.substring(0, 2), 16);
         const g = parseInt(hex.substring(2, 4), 16);
         const b = parseInt(hex.substring(4, 6), 16);
-        
+
         return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    // 生成图片哈希值（用于本地存储）
+    generateImageHash(imageUrl, callback) {
+        // 使用URL和图片标题生成简单哈希
+        const imageData = this.images[this.currentIndex];
+        const titleHash = imageData.title ? imageData.title.replace(/\s+/g, '_') : 'unnamed';
+        const urlHash = imageUrl.substring(imageUrl.length - 50);
+
+        // 创建更稳定的哈希值
+        let hash = 0;
+        const str = titleHash + urlHash;
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
+        }
+
+        this.imageHash = `img_${Math.abs(hash)}`;
+        this.storageKey = `patent_annotations_${this.imageHash}`;
+
+        if (callback) callback();
+    }
+
+    // 保存标记到本地存储
+    saveAnnotations() {
+        if (!this.storageKey) return;
+
+        try {
+            const data = {
+                timestamp: Date.now(),
+                imageTitle: this.currentImageData.title || '未命名图片',
+                annotations: this.annotations.map(ann => ({
+                    id: ann.id,
+                    markerX: ann.markerX,
+                    markerY: ann.markerY,
+                    labelX: ann.labelX,
+                    labelY: ann.labelY,
+                    number: ann.number,
+                    name: ann.name,
+                    confidence: ann.confidence,
+                    isManual: ann.isManual,
+                    fontSize: ann.fontSize,
+                    color: ann.color,
+                    userModified: ann.userModified || false
+                })),
+                currentFontSize: this.currentFontSize,
+                currentColor: this.currentColor
+            };
+
+            localStorage.setItem(this.storageKey, JSON.stringify(data));
+            console.log('Annotations saved to localStorage:', this.storageKey);
+        } catch (e) {
+            console.error('Failed to save annotations:', e);
+        }
+    }
+
+    // 加载保存的标记
+    loadSavedAnnotations() {
+        if (!this.storageKey) return false;
+
+        try {
+            const savedData = localStorage.getItem(this.storageKey);
+            if (!savedData) return false;
+
+            const data = JSON.parse(savedData);
+            console.log('Loading saved annotations from:', this.storageKey);
+
+            // 恢复标记数据
+            this.annotations = data.annotations || [];
+            this.currentFontSize = data.currentFontSize || this.options.fontSize;
+            this.currentColor = data.currentColor || '#4CAF50';
+
+            return true;
+        } catch (e) {
+            console.error('Failed to load saved annotations:', e);
+            return false;
+        }
+    }
+
+    // 导出标记为JSON文件
+    exportAnnotations() {
+        const exportData = {
+            exportTime: new Date().toISOString(),
+            imageTitle: this.currentImageData.title || '未命名图片',
+            imageHash: this.imageHash,
+            annotations: this.annotations.map(ann => ({
+                number: ann.number,
+                name: ann.name,
+                markerX: ann.markerX,
+                markerY: ann.markerY,
+                labelX: ann.labelX,
+                labelY: ann.labelY,
+                confidence: ann.confidence,
+                isManual: ann.isManual,
+                fontSize: ann.fontSize,
+                color: ann.color,
+                userModified: ann.userModified
+            })),
+            settings: {
+                fontSize: this.currentFontSize,
+                color: this.currentColor
+            },
+            stats: {
+                totalAnnotations: this.annotations.length,
+                manualAnnotations: this.annotations.filter(a => a.isManual).length,
+                modifiedAnnotations: this.annotations.filter(a => a.userModified).length
+            }
+        };
+
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+        const filename = `标记导出_${this.currentImageData.title || 'image'}_${timestamp}.json`;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        // 显示成功提示
+        const Toast = document.createElement('div');
+        Toast.textContent = `✓ 标记已导出：${this.annotations.length}个标注`;
+        Toast.style.cssText = `
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: bold;
+            z-index: 10005;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            animation: slideUp 0.3s ease;
+        `;
+        document.body.appendChild(Toast);
+        setTimeout(() => {
+            Toast.style.animation = 'slideDown 0.3s ease';
+            setTimeout(() => Toast.remove(), 300);
+        }, 2000);
     }
 }
 
