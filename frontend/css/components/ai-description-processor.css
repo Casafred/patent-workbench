@@ -203,10 +203,10 @@
 /* Buttons */
 .btn-primary,
 .btn-secondary {
-    padding: 6px 12px;
+    padding: 5px 10px;
     border: none;
     border-radius: 4px;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
@@ -231,8 +231,8 @@
 }
 
 .btn-sm {
-    padding: 5px 10px;
-    font-size: 12px;
+    padding: 4px 8px;
+    font-size: 11px;
 }
 
 .btn-primary:disabled,
