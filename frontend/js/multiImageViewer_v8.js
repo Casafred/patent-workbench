@@ -133,7 +133,59 @@ class MultiImageViewerV8 {
         });
         
         // 拖动功能
+        let isDraggingAnnotation = false;
+        let draggedAnnotation = null;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+        
         this.setupDragScroll(imageContainer);
+        
+        // 鼠标按下 - 检查是否点击标注
+        modalCanvas.addEventListener('mousedown', (e) => {
+            const rect = modalCanvas.getBoundingClientRect();
+            const scaleX = this.modalCanvas.width / rect.width;
+            const scaleY = this.modalCanvas.height / rect.height;
+            const clickX = (e.clientX - rect.left) * scaleX;
+            const clickY = (e.clientY - rect.top) * scaleY;
+            
+            const annotation = this.findAnnotationAt(clickX, clickY);
+            if (annotation) {
+                isDraggingAnnotation = true;
+                draggedAnnotation = annotation;
+                dragOffsetX = clickX - annotation.labelX;
+                dragOffsetY = clickY - annotation.labelY;
+                imageContainer.style.cursor = 'move';
+                e.stopPropagation();
+            }
+        });
+        
+        // 鼠标移动 - 拖动标注
+        modalCanvas.addEventListener('mousemove', (e) => {
+            if (isDraggingAnnotation && draggedAnnotation) {
+                const rect = modalCanvas.getBoundingClientRect();
+                const scaleX = this.modalCanvas.width / rect.width;
+                const scaleY = this.modalCanvas.height / rect.height;
+                const mouseX = (e.clientX - rect.left) * scaleX;
+                const mouseY = (e.clientY - rect.top) * scaleY;
+                
+                draggedAnnotation.labelX = mouseX - dragOffsetX;
+                draggedAnnotation.labelY = mouseY - dragOffsetY;
+                this.renderCanvas();
+            }
+        });
+        
+        // 鼠标释放 - 停止拖动
+        modalCanvas.addEventListener('mouseup', () => {
+            isDraggingAnnotation = false;
+            draggedAnnotation = null;
+            imageContainer.style.cursor = 'default';
+        });
+        
+        modalCanvas.addEventListener('mouseleave', () => {
+            isDraggingAnnotation = false;
+            draggedAnnotation = null;
+            imageContainer.style.cursor = 'default';
+        });
         
         // 滚轮缩放
         imageContainer.addEventListener('wheel', (e) => {
@@ -146,7 +198,62 @@ class MultiImageViewerV8 {
         
         // 双击添加标注
         modalCanvas.addEventListener('dblclick', (e) => {
-            this.handleDoubleClick(e);
+            const rect = modalCanvas.getBoundingClientRect();
+            const scaleX = this.modalCanvas.width / rect.width;
+            const scaleY = this.modalCanvas.height / rect.height;
+            const clickX = (e.clientX - rect.left) * scaleX;
+            const clickY = (e.clientY - rect.top) * scaleY;
+            
+            // 先检查是否点击了现有标注
+            const annotation = this.findAnnotationAt(clickX, clickY);
+            if (annotation) {
+                // 编辑现有标注
+                const newName = prompt(`编辑标注名称 (${annotation.number}):`, annotation.name);
+                if (newName !== null && newName.trim() !== '') {
+                    annotation.name = newName.trim();
+                    this.renderCanvas();
+                    this.updateAnnotationList();
+                }
+                return;
+            }
+            
+            // 添加新标注
+            const number = prompt('请输入标记序号：');
+            if (!number) return;
+            
+            const name = prompt('请输入标记说明：');
+            if (!name) return;
+            
+            // 计算标签位置（自动偏移，避免遮挡标注点）
+            const offsetDistance = 80;
+            let labelX = clickX + offsetDistance;
+            let labelY = clickY - offsetDistance;
+            
+            // 边界检查
+            if (labelX > this.modalCanvas.width - 100) {
+                labelX = clickX - offsetDistance;
+            }
+            if (labelY < 50) {
+                labelY = clickY + offsetDistance;
+            }
+            
+            const newAnnotation = {
+                id: `manual_${Date.now()}`,
+                markerX: clickX,
+                markerY: clickY,
+                labelX: labelX,
+                labelY: labelY,
+                number: number,
+                name: name,
+                confidence: 1.0,
+                isSelected: false,
+                isManual: true,
+                fontSize: this.currentFontSize
+            };
+            
+            this.annotations.push(newAnnotation);
+            this.renderCanvas();
+            this.updateAnnotationList();
         });
         
         // 键盘导航
@@ -163,6 +270,59 @@ class MultiImageViewerV8 {
             }
         };
         document.addEventListener('keydown', handleKeydown);
+        
+        // 右键删除标注
+        modalCanvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            const rect = modalCanvas.getBoundingClientRect();
+            const scaleX = this.modalCanvas.width / rect.width;
+            const scaleY = this.modalCanvas.height / rect.height;
+            const clickX = (e.clientX - rect.left) * scaleX;
+            const clickY = (e.clientY - rect.top) * scaleY;
+            
+            const annotation = this.findAnnotationAt(clickX, clickY);
+            if (annotation) {
+                if (confirm(`确定删除标注 "${annotation.number}: ${annotation.name}" 吗？`)) {
+                    const index = this.annotations.indexOf(annotation);
+                    if (index > -1) {
+                        this.annotations.splice(index, 1);
+                        this.renderCanvas();
+                        this.updateAnnotationList();
+                    }
+                }
+            }
+        });
+        
+        // 单击选择标注
+        modalCanvas.addEventListener('click', (e) => {
+            const rect = modalCanvas.getBoundingClientRect();
+            const scaleX = this.modalCanvas.width / rect.width;
+            const scaleY = this.modalCanvas.height / rect.height;
+            const clickX = (e.clientX - rect.left) * scaleX;
+            const clickY = (e.clientY - rect.top) * scaleY;
+            
+            const annotation = this.findAnnotationAt(clickX, clickY);
+            
+            if (annotation) {
+                if (e.ctrlKey || e.metaKey) {
+                    // Ctrl/Cmd + 点击：多选
+                    annotation.isSelected = !annotation.isSelected;
+                } else {
+                    // 单击：单选
+                    this.annotations.forEach(a => a.isSelected = false);
+                    annotation.isSelected = true;
+                }
+                this.selectedAnnotationId = annotation.id;
+                this.renderCanvas();
+                this.updateAnnotationList();
+            } else if (!e.ctrlKey && !e.metaKey) {
+                // 点击空白处：取消所有选中
+                this.annotations.forEach(a => a.isSelected = false);
+                this.selectedAnnotationId = null;
+                this.renderCanvas();
+                this.updateAnnotationList();
+            }
+        });
         
         mainContainer.appendChild(imageContainer);
         mainContainer.appendChild(sidebar);
@@ -215,7 +375,7 @@ class MultiImageViewerV8 {
     createSidebar() {
         const sidebar = document.createElement('div');
         sidebar.style.cssText = `
-            width: 200px;
+            width: 250px;
             background-color: rgba(255, 255, 255, 0.95);
             border-radius: 8px;
             padding: 15px;
@@ -254,31 +414,80 @@ class MultiImageViewerV8 {
         // 字体大小
         const fontSection = this.createSection('字体大小');
         this.fontSizeDisplay = document.createElement('div');
-        this.fontSizeDisplay.textContent = `${this.currentFontSize}px`;
+        this.fontSizeDisplay.textContent = `当前: ${this.currentFontSize}px`;
         this.fontSizeDisplay.style.cssText = `
             text-align: center;
             font-weight: bold;
             margin: 5px 0;
+            font-size: 13px;
         `;
         
         const fontBtnContainer = document.createElement('div');
-        fontBtnContainer.style.cssText = 'display: flex; gap: 5px;';
+        fontBtnContainer.style.cssText = 'display: flex; flex-direction: column; gap: 5px;';
         
-        const fontMinusBtn = this.createButton('-', () => {
-            this.currentFontSize = Math.max(12, this.currentFontSize - 2);
-            this.fontSizeDisplay.textContent = `${this.currentFontSize}px`;
+        // 选中标注字体调整
+        const selectedFontRow = document.createElement('div');
+        selectedFontRow.style.cssText = 'display: flex; gap: 5px;';
+        
+        const fontMinusSelectedBtn = this.createButton('选中-', () => {
+            const selected = this.annotations.filter(a => a.isSelected);
+            if (selected.length === 0) {
+                alert('请先选择标注');
+                return;
+            }
+            selected.forEach(ann => {
+                ann.fontSize = Math.max((ann.fontSize || this.currentFontSize) - 2, 12);
+            });
             this.renderCanvas();
         });
+        fontMinusSelectedBtn.style.backgroundColor = '#FF9800';
         
-        const fontPlusBtn = this.createButton('+', () => {
-            this.currentFontSize = Math.min(40, this.currentFontSize + 2);
-            this.fontSizeDisplay.textContent = `${this.currentFontSize}px`;
+        const fontPlusSelectedBtn = this.createButton('选中+', () => {
+            const selected = this.annotations.filter(a => a.isSelected);
+            if (selected.length === 0) {
+                alert('请先选择标注');
+                return;
+            }
+            selected.forEach(ann => {
+                ann.fontSize = Math.min((ann.fontSize || this.currentFontSize) + 2, 48);
+            });
             this.renderCanvas();
         });
+        fontPlusSelectedBtn.style.backgroundColor = '#4CAF50';
         
-        fontBtnContainer.appendChild(fontMinusBtn);
-        fontBtnContainer.appendChild(fontPlusBtn);
-        fontSection.appendChild(this.fontSizeDisplay);
+        selectedFontRow.appendChild(fontMinusSelectedBtn);
+        selectedFontRow.appendChild(fontPlusSelectedBtn);
+        
+        // 全部标注字体调整
+        const allFontRow = document.createElement('div');
+        allFontRow.style.cssText = 'display: flex; gap: 5px;';
+        
+        const fontMinusAllBtn = this.createButton('全部-', () => {
+            this.currentFontSize = Math.max(this.currentFontSize - 2, 12);
+            this.annotations.forEach(ann => {
+                ann.fontSize = this.currentFontSize;
+            });
+            this.fontSizeDisplay.textContent = `当前: ${this.currentFontSize}px`;
+            this.renderCanvas();
+        });
+        fontMinusAllBtn.style.backgroundColor = '#9C27B0';
+        
+        const fontPlusAllBtn = this.createButton('全部+', () => {
+            this.currentFontSize = Math.min(this.currentFontSize + 2, 48);
+            this.annotations.forEach(ann => {
+                ann.fontSize = this.currentFontSize;
+            });
+            this.fontSizeDisplay.textContent = `当前: ${this.currentFontSize}px`;
+            this.renderCanvas();
+        });
+        fontPlusAllBtn.style.backgroundColor = '#2196F3';
+        
+        allFontRow.appendChild(fontMinusAllBtn);
+        allFontRow.appendChild(fontPlusAllBtn);
+        
+        fontBtnContainer.appendChild(this.fontSizeDisplay);
+        fontBtnContainer.appendChild(selectedFontRow);
+        fontBtnContainer.appendChild(allFontRow);
         fontSection.appendChild(fontBtnContainer);
         sidebar.appendChild(fontSection);
         
@@ -339,6 +548,31 @@ class MultiImageViewerV8 {
         zoomSection.appendChild(this.zoomDisplay);
         zoomSection.appendChild(zoomBtnContainer);
         sidebar.appendChild(zoomSection);
+        
+        // 选择控制
+        const selectSection = this.createSection('选择控制');
+        const selectBtnContainer = document.createElement('div');
+        selectBtnContainer.style.cssText = 'display: flex; gap: 5px;';
+        
+        const selectAllBtn = this.createButton('全选', () => {
+            this.annotations.forEach(a => a.isSelected = true);
+            this.renderCanvas();
+            this.updateAnnotationList();
+        });
+        selectAllBtn.style.backgroundColor = '#607D8B';
+        
+        const deselectAllBtn = this.createButton('取消选择', () => {
+            this.annotations.forEach(a => a.isSelected = false);
+            this.selectedAnnotationId = null;
+            this.renderCanvas();
+            this.updateAnnotationList();
+        });
+        deselectAllBtn.style.backgroundColor = '#795548';
+        
+        selectBtnContainer.appendChild(selectAllBtn);
+        selectBtnContainer.appendChild(deselectAllBtn);
+        selectSection.appendChild(selectBtnContainer);
+        sidebar.appendChild(selectSection);
         
         // 标注列表
         this.annotationSection = this.createSection('标注列表');
@@ -443,7 +677,8 @@ class MultiImageViewerV8 {
                 name: detected.name || referenceMap[detected.number] || '未知',
                 confidence: detected.confidence || 0,
                 isSelected: false,
-                isManual: false
+                isManual: false,
+                fontSize: this.currentFontSize
             };
         });
     }
@@ -488,10 +723,12 @@ class MultiImageViewerV8 {
         
         // 绘制标注
         this.annotations.forEach(annotation => {
-            const isHighlighted = annotation.id === this.selectedAnnotationId;
-            const color = isHighlighted ? this.options.highlightColor : '#FF5722';
+            const isHighlighted = annotation.isSelected || annotation.id === this.selectedAnnotationId;
+            const color = isHighlighted ? '#00FF00' : '#FF5722';
             const lineWidth = isHighlighted ? 4 : 3;
+            const fontSize = annotation.fontSize || this.currentFontSize;
             
+            // 绘制连接线
             ctx.beginPath();
             ctx.moveTo(annotation.markerX, annotation.markerY);
             ctx.lineTo(annotation.labelX, annotation.labelY);
@@ -499,17 +736,40 @@ class MultiImageViewerV8 {
             ctx.lineWidth = lineWidth;
             ctx.stroke();
             
+            // 绘制标注点
+            ctx.beginPath();
+            ctx.arc(annotation.markerX, annotation.markerY, 5, 0, 2 * Math.PI);
+            ctx.fillStyle = color;
+            ctx.fill();
+            
+            // 绘制标注文字
             const text = `${annotation.number}: ${annotation.name}`;
-            ctx.font = `bold ${this.currentFontSize}px Arial, sans-serif`;
+            ctx.font = `bold ${fontSize}px Arial, sans-serif`;
             ctx.textBaseline = 'middle';
             ctx.textAlign = 'left';
             
+            // 白色描边
             ctx.strokeStyle = '#FFFFFF';
             ctx.lineWidth = 5;
             ctx.strokeText(text, annotation.labelX, annotation.labelY);
             
+            // 彩色填充
             ctx.fillStyle = color;
             ctx.fillText(text, annotation.labelX, annotation.labelY);
+            
+            // 选中时绘制边框
+            if (isHighlighted) {
+                const textWidth = ctx.measureText(text).width;
+                const textHeight = fontSize * 1.5;
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(
+                    annotation.labelX - 4,
+                    annotation.labelY - textHeight/2 - 2,
+                    textWidth + 8,
+                    textHeight + 4
+                );
+            }
         });
     }
     
@@ -518,23 +778,25 @@ class MultiImageViewerV8 {
         
         this.annotations.forEach(annotation => {
             const item = document.createElement('div');
+            const isHighlighted = annotation.isSelected || annotation.id === this.selectedAnnotationId;
             item.style.cssText = `
                 padding: 8px;
-                background-color: #f0f0f0;
+                background-color: ${isHighlighted ? '#00FF00' : '#f0f0f0'};
+                color: ${isHighlighted ? '#000' : '#333'};
                 border-radius: 4px;
                 cursor: pointer;
                 transition: background-color 0.2s;
+                font-weight: ${isHighlighted ? 'bold' : 'normal'};
+                border: ${isHighlighted ? '2px solid #00AA00' : '1px solid #ddd'};
             `;
             item.textContent = `${annotation.number}: ${annotation.name}${annotation.isManual ? ' (手动)' : ''}`;
             
             item.addEventListener('click', () => {
-                this.selectedAnnotationId = annotation.id;
+                // 切换选中状态
+                annotation.isSelected = !annotation.isSelected;
+                this.selectedAnnotationId = annotation.isSelected ? annotation.id : null;
                 this.renderCanvas();
-                
-                this.annotationList.querySelectorAll('div').forEach(el => {
-                    el.style.backgroundColor = '#f0f0f0';
-                });
-                item.style.backgroundColor = this.options.highlightColor;
+                this.updateAnnotationList();
             });
             
             this.annotationList.appendChild(item);
@@ -560,6 +822,27 @@ class MultiImageViewerV8 {
     nextImage() {
         this.currentIndex = (this.currentIndex + 1) % this.images.length;
         this.selectedAnnotationId = null;
+    }
+    
+    
+    findAnnotationAt(x, y) {
+        const ctx = this.modalCanvas.getContext('2d');
+        
+        for (let i = this.annotations.length - 1; i >= 0; i--) {
+            const ann = this.annotations[i];
+            const text = `${ann.number}: ${ann.name}`;
+            const fontSize = ann.fontSize || this.currentFontSize;
+            
+            ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+            const textWidth = ctx.measureText(text).width;
+            const textHeight = fontSize * 1.5;
+            
+            if (x >= ann.labelX - 4 && x <= ann.labelX + textWidth + 4 &&
+                y >= ann.labelY - textHeight/2 - 2 && y <= ann.labelY + textHeight/2 + 2) {
+                return ann;
+            }
+        }
+        return null;
     }
     
     handleDoubleClick(e) {
@@ -650,8 +933,9 @@ class MultiImageViewerV8 {
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 600px;
-            max-height: 80vh;
+            width: 80%;
+            max-width: 1200px;
+            max-height: 85vh;
             background-color: white;
             border-radius: 8px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
@@ -673,7 +957,7 @@ class MultiImageViewerV8 {
             align-items: center;
         `;
         header.innerHTML = `
-            <span>🔧 调试面板</span>
+            <span>🔧 调试面板 - ${this.currentImageData.title || '当前图片'}</span>
             <button style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">✕</button>
         `;
         header.querySelector('button').addEventListener('click', () => {
@@ -687,21 +971,192 @@ class MultiImageViewerV8 {
             flex: 1;
         `;
         
-        const debugInfo = `
-            <h3>当前图片信息</h3>
-            <ul>
-                <li>索引: ${this.currentIndex + 1} / ${this.images.length}</li>
-                <li>尺寸: ${this.currentImage.width} × ${this.currentImage.height}</li>
-                <li>缩放: ${Math.round(this.currentZoom * 100)}%</li>
-                <li>旋转: ${this.currentRotation}°</li>
-                <li>标注数量: ${this.annotations.length}</li>
-            </ul>
-            
-            <h3>标注数据</h3>
-            <pre style="background-color: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto; max-height: 300px;">${JSON.stringify(this.annotations, null, 2)}</pre>
+        // 创建两列布局
+        const columnsContainer = document.createElement('div');
+        columnsContainer.style.cssText = `
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
         `;
         
-        content.innerHTML = debugInfo;
+        // 左列：OCR识别结果
+        const leftColumn = document.createElement('div');
+        leftColumn.style.cssText = `
+            background-color: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+        `;
+        
+        const ocrTitle = document.createElement('h4');
+        ocrTitle.textContent = '📷 附图OCR识别结果';
+        ocrTitle.style.cssText = `
+            margin: 0 0 10px 0;
+            color: #007bff;
+            font-size: 16px;
+        `;
+        leftColumn.appendChild(ocrTitle);
+        
+        // OCR统计信息
+        const ocrStats = document.createElement('div');
+        ocrStats.style.cssText = `
+            background-color: #e7f3ff;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        `;
+        
+        const detectedNumbers = this.currentImageData.detectedNumbers || [];
+        const referenceMap = this.currentImageData.referenceMap || {};
+        const matchedCount = detectedNumbers.filter(d => referenceMap[d.number]).length;
+        
+        ocrStats.innerHTML = `
+            <div><strong>识别标号数:</strong> ${detectedNumbers.length} 个</div>
+            <div><strong>匹配成功:</strong> ${matchedCount} 个</div>
+            <div><strong>未匹配:</strong> ${detectedNumbers.length - matchedCount} 个</div>
+        `;
+        leftColumn.appendChild(ocrStats);
+        
+        // OCR识别列表
+        const ocrList = document.createElement('div');
+        ocrList.style.cssText = `
+            max-height: 500px;
+            overflow-y: auto;
+            font-size: 13px;
+        `;
+        
+        if (detectedNumbers.length > 0) {
+            const sortedOcr = [...detectedNumbers].sort((a, b) => {
+                const numA = parseInt(a.number) || 0;
+                const numB = parseInt(b.number) || 0;
+                return numA - numB;
+            });
+            
+            sortedOcr.forEach(item => {
+                const itemDiv = document.createElement('div');
+                const isMatched = referenceMap[item.number];
+                itemDiv.style.cssText = `
+                    padding: 8px;
+                    margin: 5px 0;
+                    border-left: 4px solid ${isMatched ? '#28a745' : '#ffc107'};
+                    background-color: ${isMatched ? '#d4edda' : '#fff3cd'};
+                    border-radius: 4px;
+                `;
+                itemDiv.innerHTML = `
+                    <div><strong>标号:</strong> ${item.number}</div>
+                    <div><strong>位置:</strong> (${Math.round(item.x)}, ${Math.round(item.y)})</div>
+                    <div><strong>置信度:</strong> ${Math.round((item.confidence || 0) * 100)}%</div>
+                    <div><strong>状态:</strong> ${isMatched ? '✅ 已匹配 → ' + referenceMap[item.number] : '⚠️ 未匹配'}</div>
+                `;
+                ocrList.appendChild(itemDiv);
+            });
+        } else {
+            ocrList.innerHTML = '<div style="color: #6c757d; padding: 10px;">暂无OCR识别结果</div>';
+        }
+        
+        leftColumn.appendChild(ocrList);
+        
+        // 右列：说明书提取结果
+        const rightColumn = document.createElement('div');
+        rightColumn.style.cssText = `
+            background-color: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+        `;
+        
+        const specTitle = document.createElement('h4');
+        specTitle.textContent = '📝 说明书提取结果';
+        specTitle.style.cssText = `
+            margin: 0 0 10px 0;
+            color: #28a745;
+            font-size: 16px;
+        `;
+        rightColumn.appendChild(specTitle);
+        
+        // 说明书统计信息
+        const specStats = document.createElement('div');
+        specStats.style.cssText = `
+            background-color: #d4edda;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        `;
+        
+        const totalMarkers = Object.keys(referenceMap).length;
+        const detectedMarkers = detectedNumbers.length;
+        const matchRate = totalMarkers > 0 ? Math.round((matchedCount / totalMarkers) * 100) : 0;
+        
+        specStats.innerHTML = `
+            <div><strong>总部件数:</strong> ${totalMarkers} 个</div>
+            <div><strong>已识别:</strong> ${detectedMarkers} 个</div>
+            <div><strong>匹配率:</strong> ${matchRate}%</div>
+        `;
+        rightColumn.appendChild(specStats);
+        
+        // 说明书部件列表
+        const specList = document.createElement('div');
+        specList.style.cssText = `
+            max-height: 500px;
+            overflow-y: auto;
+            font-size: 13px;
+        `;
+        
+        if (Object.keys(referenceMap).length > 0) {
+            const sortedMarkers = Object.entries(referenceMap).sort((a, b) => {
+                const numA = parseInt(a[0]) || 0;
+                const numB = parseInt(b[0]) || 0;
+                return numA - numB;
+            });
+            
+            sortedMarkers.forEach(([number, name]) => {
+                const isDetected = detectedNumbers.some(d => d.number === number);
+                const itemDiv = document.createElement('div');
+                itemDiv.style.cssText = `
+                    padding: 8px;
+                    margin: 5px 0;
+                    border-left: 4px solid ${isDetected ? '#28a745' : '#dc3545'};
+                    background-color: ${isDetected ? '#d4edda' : '#f8d7da'};
+                    border-radius: 4px;
+                `;
+                itemDiv.innerHTML = `
+                    <div><strong>${number}:</strong> ${name}</div>
+                    <div style="margin-top: 4px; font-size: 12px;">
+                        ${isDetected ? '✅ 已在附图中识别' : '❌ 未在附图中识别'}
+                    </div>
+                `;
+                specList.appendChild(itemDiv);
+            });
+        } else {
+            specList.innerHTML = '<div style="color: #6c757d; padding: 10px;">暂无说明书提取结果</div>';
+        }
+        
+        rightColumn.appendChild(specList);
+        
+        // 添加列到容器
+        columnsContainer.appendChild(leftColumn);
+        columnsContainer.appendChild(rightColumn);
+        content.appendChild(columnsContainer);
+        
+        // 添加图例说明
+        const legend = document.createElement('div');
+        legend.style.cssText = `
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #495057;
+        `;
+        legend.innerHTML = `
+            <strong>图例说明:</strong>
+            <span style="color: #28a745; margin-left: 10px;">● 绿色</span> = 已匹配/已识别 |
+            <span style="color: #ffc107; margin-left: 10px;">● 黄色</span> = OCR识别但未匹配 |
+            <span style="color: #dc3545; margin-left: 10px;">● 红色</span> = 说明书中有但未识别
+        `;
+        content.appendChild(legend);
         
         debugModal.appendChild(header);
         debugModal.appendChild(content);
