@@ -1,0 +1,26 @@
+fix: 添加stream=False参数修复模型不存在错误
+
+问题描述:
+- AI模型调用失败，报错"模型不存在"（错误代码1211）
+- 其他功能使用相同模型列表可以正常工作
+- 错误信息: Error code: 400, 模型不存在，请检查模型代码
+
+根本原因:
+- 功能八的AI调用缺少stream=False参数
+- 功能六等其他功能明确指定了stream=False
+- 智谱AI API可能要求明确指定stream参数
+
+修复内容:
+- 在ai_component_extractor.py中添加stream=False
+- 在translation_service.py中添加stream=False
+- 与其他功能的API调用方式保持一致
+
+参考:
+- backend/routes/patent.py (功能六)
+- backend/routes/chat.py (聊天功能)
+- 都明确指定了stream=False参数
+
+影响范围:
+- AI说明书处理功能
+- AI组件抽取
+- 翻译服务

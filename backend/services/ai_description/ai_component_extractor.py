@@ -233,6 +233,7 @@ class AIComponentExtractor:
                 messages=[
                     {"role": "user", "content": prompt}
                 ],
+                stream=False,  # Explicitly set stream to False
                 temperature=0.1,  # Low temperature for consistent extraction
                 max_tokens=4000
             )

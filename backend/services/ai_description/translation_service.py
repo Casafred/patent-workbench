@@ -147,6 +147,7 @@ class TranslationService:
                 messages=[
                     {"role": "user", "content": prompt}
                 ],
+                stream=False,  # Explicitly set stream to False
                 temperature=0.3,  # Lower temperature for more consistent translation
                 max_tokens=8000
             )
