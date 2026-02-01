@@ -115,6 +115,17 @@ def process_drawing_marker():
                 print(f"[DEBUG] OCR detected {len(all_detected_numbers)} markers")
                 print(f"[DEBUG] Detected numbers: {[d['number'] for d in all_detected_numbers]}")
                 
+                # 保存原始OCR结果（用于调试）
+                raw_ocr_results = [
+                    {
+                        'number': d['number'],
+                        'x': d['x'],
+                        'y': d['y'],
+                        'confidence': d.get('confidence', 0)
+                    }
+                    for d in all_detected_numbers
+                ]
+                
                 # 应用去重和置信度过滤
                 all_detected_numbers = deduplicate_results(all_detected_numbers, position_threshold=30)
                 all_detected_numbers = filter_by_confidence(all_detected_numbers, min_confidence=50)
@@ -129,12 +140,17 @@ def process_drawing_marker():
                 total_numbers += len(detected_numbers)
                 print(f"[DEBUG] Matched {len(detected_numbers)} numbers with reference_map")
                 
-                # 保存处理结果
+                # 保存处理结果（包含调试信息）
                 processed_results.append({
                     'name': drawing['name'],
                     'type': drawing['type'],
                     'size': drawing['size'],
-                    'detected_numbers': detected_numbers
+                    'detected_numbers': detected_numbers,
+                    'debug_info': {
+                        'raw_ocr_results': raw_ocr_results,
+                        'filtered_count': len(all_detected_numbers),
+                        'matched_count': len(detected_numbers)
+                    }
                 })
                 
             except Exception as e:
@@ -178,7 +194,7 @@ def process_drawing_marker():
                 if detected['number'] not in reference_map and detected['number'] not in unknown_markers:
                     unknown_markers.append(detected['number'])
         
-        # 返回处理结果
+        # 返回处理结果（包含调试信息）
         return create_response(data={
             'drawings': processed_results,
             'reference_map': reference_map,
@@ -189,7 +205,12 @@ def process_drawing_marker():
             'unknown_markers': unknown_markers,
             'missing_markers': missing_markers,
             'suggestions': stats['suggestions'],
-            'message': f"成功处理 {len(drawings)} 张图片，识别出 {total_numbers} 个数字序号，匹配率 {stats['match_rate']}%"
+            'message': f"成功处理 {len(drawings)} 张图片，识别出 {total_numbers} 个数字序号，匹配率 {stats['match_rate']}%",
+            'debug_info': {
+                'total_markers_in_spec': len(reference_map),
+                'reference_map': reference_map,
+                'extraction_method': 'jieba分词' if 'jieba' in str(type(extract_reference_markers)) else '正则表达式'
+            }
         })
     
     except Exception as e:

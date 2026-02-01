@@ -21,6 +21,9 @@ class InteractiveDrawingMarker {
         this.detectedNumbers = detectedNumbers || [];
         this.referenceMap = referenceMap || {};
         
+        // 调试信息
+        this.debugInfo = options.debugInfo || null;
+        
         // 标注数据
         this.annotations = [];
         
@@ -44,6 +47,7 @@ class InteractiveDrawingMarker {
             enableModal: options.enableModal !== false,
             containerWidth: options.containerWidth || null,
             fontSize: options.fontSize || 18,
+            enableDebugPanel: options.enableDebugPanel !== false,
             ...options
         };
         
@@ -689,5 +693,231 @@ class InteractiveDrawingMarker {
             btn.style.opacity = '1';
         });
         return btn;
+    }
+    
+    /**
+     * 创建调试面板
+     * 显示OCR识别的所有标号和说明书提取的所有部件
+     */
+    createDebugPanel(containerId) {
+        if (!this.options.enableDebugPanel) return;
+        
+        const container = document.getElementById(containerId);
+        if (!container) {
+            console.warn(`Debug panel container ${containerId} not found`);
+            return;
+        }
+        
+        const panel = document.createElement('div');
+        panel.className = 'drawing-marker-debug-panel';
+        panel.style.cssText = `
+            background-color: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+        `;
+        
+        // 标题
+        const title = document.createElement('h3');
+        title.textContent = '🔍 调试信息面板';
+        title.style.cssText = `
+            margin: 0 0 15px 0;
+            color: #495057;
+            font-size: 18px;
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 10px;
+        `;
+        panel.appendChild(title);
+        
+        // 创建两列布局
+        const columnsContainer = document.createElement('div');
+        columnsContainer.style.cssText = `
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        `;
+        
+        // 左列：OCR识别结果
+        const leftColumn = document.createElement('div');
+        leftColumn.style.cssText = `
+            background-color: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+        `;
+        
+        const ocrTitle = document.createElement('h4');
+        ocrTitle.textContent = '📷 附图OCR识别结果';
+        ocrTitle.style.cssText = `
+            margin: 0 0 10px 0;
+            color: #007bff;
+            font-size: 16px;
+        `;
+        leftColumn.appendChild(ocrTitle);
+        
+        // OCR统计信息
+        const ocrStats = document.createElement('div');
+        ocrStats.style.cssText = `
+            background-color: #e7f3ff;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        `;
+        
+        const rawCount = this.debugInfo?.raw_ocr_results?.length || 0;
+        const filteredCount = this.debugInfo?.filtered_count || 0;
+        const matchedCount = this.debugInfo?.matched_count || 0;
+        
+        ocrStats.innerHTML = `
+            <div><strong>原始识别:</strong> ${rawCount} 个标号</div>
+            <div><strong>过滤后:</strong> ${filteredCount} 个标号</div>
+            <div><strong>匹配成功:</strong> ${matchedCount} 个标号</div>
+        `;
+        leftColumn.appendChild(ocrStats);
+        
+        // OCR识别列表
+        const ocrList = document.createElement('div');
+        ocrList.style.cssText = `
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 13px;
+        `;
+        
+        if (this.debugInfo?.raw_ocr_results && this.debugInfo.raw_ocr_results.length > 0) {
+            const sortedOcr = [...this.debugInfo.raw_ocr_results].sort((a, b) => {
+                const numA = parseInt(a.number) || 0;
+                const numB = parseInt(b.number) || 0;
+                return numA - numB;
+            });
+            
+            sortedOcr.forEach(item => {
+                const itemDiv = document.createElement('div');
+                const isMatched = this.referenceMap[item.number];
+                itemDiv.style.cssText = `
+                    padding: 8px;
+                    margin: 5px 0;
+                    border-left: 4px solid ${isMatched ? '#28a745' : '#ffc107'};
+                    background-color: ${isMatched ? '#d4edda' : '#fff3cd'};
+                    border-radius: 4px;
+                `;
+                itemDiv.innerHTML = `
+                    <div><strong>标号:</strong> ${item.number}</div>
+                    <div><strong>位置:</strong> (${Math.round(item.x)}, ${Math.round(item.y)})</div>
+                    <div><strong>置信度:</strong> ${Math.round(item.confidence)}%</div>
+                    <div><strong>状态:</strong> ${isMatched ? '✅ 已匹配 → ' + this.referenceMap[item.number] : '⚠️ 未匹配'}</div>
+                `;
+                ocrList.appendChild(itemDiv);
+            });
+        } else {
+            ocrList.innerHTML = '<div style="color: #6c757d; padding: 10px;">暂无OCR识别结果</div>';
+        }
+        
+        leftColumn.appendChild(ocrList);
+        
+        // 右列：说明书提取结果
+        const rightColumn = document.createElement('div');
+        rightColumn.style.cssText = `
+            background-color: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+        `;
+        
+        const specTitle = document.createElement('h4');
+        specTitle.textContent = '📝 说明书提取结果';
+        specTitle.style.cssText = `
+            margin: 0 0 10px 0;
+            color: #28a745;
+            font-size: 16px;
+        `;
+        rightColumn.appendChild(specTitle);
+        
+        // 说明书统计信息
+        const specStats = document.createElement('div');
+        specStats.style.cssText = `
+            background-color: #d4edda;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        `;
+        
+        const totalMarkers = Object.keys(this.referenceMap).length;
+        const detectedMarkers = this.detectedNumbers.length;
+        const matchRate = totalMarkers > 0 ? Math.round((detectedMarkers / totalMarkers) * 100) : 0;
+        
+        specStats.innerHTML = `
+            <div><strong>总部件数:</strong> ${totalMarkers} 个</div>
+            <div><strong>已识别:</strong> ${detectedMarkers} 个</div>
+            <div><strong>匹配率:</strong> ${matchRate}%</div>
+        `;
+        rightColumn.appendChild(specStats);
+        
+        // 说明书部件列表
+        const specList = document.createElement('div');
+        specList.style.cssText = `
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 13px;
+        `;
+        
+        if (Object.keys(this.referenceMap).length > 0) {
+            const sortedMarkers = Object.entries(this.referenceMap).sort((a, b) => {
+                const numA = parseInt(a[0]) || 0;
+                const numB = parseInt(b[0]) || 0;
+                return numA - numB;
+            });
+            
+            sortedMarkers.forEach(([number, name]) => {
+                const isDetected = this.detectedNumbers.some(d => d.number === number);
+                const itemDiv = document.createElement('div');
+                itemDiv.style.cssText = `
+                    padding: 8px;
+                    margin: 5px 0;
+                    border-left: 4px solid ${isDetected ? '#28a745' : '#dc3545'};
+                    background-color: ${isDetected ? '#d4edda' : '#f8d7da'};
+                    border-radius: 4px;
+                `;
+                itemDiv.innerHTML = `
+                    <div><strong>${number}:</strong> ${name}</div>
+                    <div style="margin-top: 4px; font-size: 12px;">
+                        ${isDetected ? '✅ 已在附图中识别' : '❌ 未在附图中识别'}
+                    </div>
+                `;
+                specList.appendChild(itemDiv);
+            });
+        } else {
+            specList.innerHTML = '<div style="color: #6c757d; padding: 10px;">暂无说明书提取结果</div>';
+        }
+        
+        rightColumn.appendChild(specList);
+        
+        // 添加列到容器
+        columnsContainer.appendChild(leftColumn);
+        columnsContainer.appendChild(rightColumn);
+        panel.appendChild(columnsContainer);
+        
+        // 添加图例说明
+        const legend = document.createElement('div');
+        legend.style.cssText = `
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #495057;
+        `;
+        legend.innerHTML = `
+            <strong>图例说明:</strong>
+            <span style="color: #28a745; margin-left: 10px;">● 绿色</span> = 已匹配/已识别 |
+            <span style="color: #ffc107; margin-left: 10px;">● 黄色</span> = OCR识别但未匹配 |
+            <span style="color: #dc3545; margin-left: 10px;">● 红色</span> = 说明书中有但未识别
+        `;
+        panel.appendChild(legend);
+        
+        container.appendChild(panel);
     }
 }
