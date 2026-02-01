@@ -826,7 +826,7 @@ class MultiImageViewerV8 {
         
         ctx.save();
         
-        // 旋转
+        // 应用旋转变换到图片
         if (this.currentRotation !== 0) {
             ctx.translate(this.modalCanvas.width / 2, this.modalCanvas.height / 2);
             ctx.rotate((this.currentRotation * Math.PI) / 180);
@@ -838,7 +838,7 @@ class MultiImageViewerV8 {
         
         ctx.restore();
         
-        // 绘制标注
+        // 绘制标注（标注点跟随旋转，文字不旋转）
         this.annotations.forEach(annotation => {
             const isHighlighted = annotation.isSelected || annotation.id === this.selectedAnnotationId;
             const baseColor = annotation.color || this.currentColor;
@@ -846,28 +846,43 @@ class MultiImageViewerV8 {
             const lineWidth = isHighlighted ? 4 : 3;
             const fontSize = annotation.fontSize || this.currentFontSize;
             
+            // 计算旋转后的标注点位置
+            const centerX = this.modalCanvas.width / 2;
+            const centerY = this.modalCanvas.height / 2;
+            const radians = (this.currentRotation * Math.PI) / 180;
+            
+            // 原始标注点相对于中心的位置
+            const relX = annotation.markerX - centerX;
+            const relY = annotation.markerY - centerY;
+            
+            // 旋转后的标注点位置
+            const rotatedMarkerX = centerX + (relX * Math.cos(radians) - relY * Math.sin(radians));
+            const rotatedMarkerY = centerY + (relX * Math.sin(radians) + relY * Math.cos(radians));
+            
             // 计算标注点偏移位置（避免遮挡原图标记）
-            // 根据连接线方向偏移标注点
-            const dx = annotation.labelX - annotation.markerX;
-            const dy = annotation.labelY - annotation.markerY;
+            const dx = annotation.labelX - rotatedMarkerX;
+            const dy = annotation.labelY - rotatedMarkerY;
             const distance = Math.sqrt(dx * dx + dy * dy);
-            const offsetDistance = 15; // 偏移距离
+            const offsetDistance = 15;
             
-            const offsetX = (dx / distance) * offsetDistance;
-            const offsetY = (dy / distance) * offsetDistance;
+            const offsetX = distance > 0 ? (dx / distance) * offsetDistance : 0;
+            const offsetY = distance > 0 ? (dy / distance) * offsetDistance : 0;
             
-            const markerDisplayX = annotation.markerX + offsetX;
-            const markerDisplayY = annotation.markerY + offsetY;
+            const markerDisplayX = rotatedMarkerX + offsetX;
+            const markerDisplayY = rotatedMarkerY + offsetY;
             
-            // 绘制连接线（从偏移后的标注点到标签）
+            // 绘制连接线（从偏移后的标注点到标签文字）
+            ctx.save();
             ctx.beginPath();
             ctx.moveTo(markerDisplayX, markerDisplayY);
             ctx.lineTo(annotation.labelX, annotation.labelY);
             ctx.strokeStyle = color;
             ctx.lineWidth = lineWidth;
             ctx.stroke();
+            ctx.restore();
             
             // 绘制标注点（偏移后的位置）
+            ctx.save();
             ctx.beginPath();
             ctx.arc(markerDisplayX, markerDisplayY, 6, 0, 2 * Math.PI);
             ctx.fillStyle = color;
@@ -875,8 +890,10 @@ class MultiImageViewerV8 {
             ctx.strokeStyle = '#FFFFFF';
             ctx.lineWidth = 2;
             ctx.stroke();
+            ctx.restore();
             
-            // 绘制标注文字
+            // 绘制标注文字（不旋转，保持可读）
+            ctx.save();
             const text = `${annotation.number}: ${annotation.name}`;
             ctx.font = `bold ${fontSize}px Arial, sans-serif`;
             ctx.textBaseline = 'middle';
@@ -904,6 +921,7 @@ class MultiImageViewerV8 {
                     textHeight + 4
                 );
             }
+            ctx.restore();
         });
     }
     
