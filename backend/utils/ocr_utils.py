@@ -61,11 +61,11 @@ def initialize_ocr_engine():
         # text_score: Lower threshold to detect more markers (default 0.5)
         # box_thresh: Lower threshold for text box detection (default 0.5)
         _ocr_engine = RapidOCR(
-            text_score=0.3,  # 降低文本置信度阈值，提高检测率
-            box_thresh=0.3   # 降低文本框检测阈值，检测更多候选区域
+            text_score=0.25,  # 进一步降低阈值，提高检测率
+            box_thresh=0.25   # 进一步降低文本框检测阈值
         )
-        
-        logger.info("RapidOCR engine initialized with optimized parameters (text_score=0.3, box_thresh=0.3)")
+
+        logger.info("RapidOCR engine initialized with optimized parameters (text_score=0.25, box_thresh=0.25)")
         return _ocr_engine
         
     except ImportError as e:
@@ -190,54 +190,34 @@ def transform_rapidocr_result(rapid_result) -> List[Dict]:
 
 def preprocess_image_for_ocr(image: np.ndarray) -> List[np.ndarray]:
     """
-    预处理图像以提高OCR识别率
-    
-    对专利附图进行多种预处理，生成多个候选图像：
-    1. 原图（基准）
-    2. 灰度化 + 对比度增强
-    3. 自适应二值化
-    4. 锐化处理
-    
+    预处理图像以提高OCR识别率（优化版，减少处理变体，提高速度）
+
     Args:
         image: 输入图像（BGR格式）
-        
+
     Returns:
         List[np.ndarray]: 预处理后的图像列表
     """
     processed_images = []
-    
-    # 1. 原图
+
+    # 1. 原图（最重要）
     processed_images.append(image.copy())
-    
-    # 2. 灰度化 + 对比度增强（CLAHE）
+
+    # 2. 灰度化 + 对比度增强（CLAHE）- 效果最好的预处理
     try:
         if len(image.shape) == 3:
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         else:
             gray = image.copy()
-        
+
         # CLAHE (Contrast Limited Adaptive Histogram Equalization)
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
         enhanced = clahe.apply(gray)
         processed_images.append(cv2.cvtColor(enhanced, cv2.COLOR_GRAY2BGR))
-        
-        # 3. 自适应二值化（适合不均匀光照）
-        binary = cv2.adaptiveThreshold(
-            gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
-            cv2.THRESH_BINARY, 11, 2
-        )
-        processed_images.append(cv2.cvtColor(binary, cv2.COLOR_GRAY2BGR))
-        
-        # 4. 锐化处理（增强边缘）
-        kernel = np.array([[-1, -1, -1],
-                          [-1,  9, -1],
-                          [-1, -1, -1]])
-        sharpened = cv2.filter2D(gray, -1, kernel)
-        processed_images.append(cv2.cvtColor(sharpened, cv2.COLOR_GRAY2BGR))
-        
+
     except Exception as e:
         logger.warning(f"Image preprocessing failed: {str(e)}, using original image only")
-    
+
     return processed_images
 
 
@@ -271,9 +251,10 @@ def filter_alphanumeric_markers(ocr_results: List[Dict]) -> List[Dict]:
     # 更宽松的模式匹配，支持更多格式
     # - 纯数字: 1, 10, 100
     # - 字母+数字: A1, B2
-    # - 数字+字母: 1A, 2B
+    # - 数字+字母: 1A, 2B, 10a
     # - 纯字母: A, B, C
-    pattern = re.compile(r'^[0-9]+[A-Za-z]*$|^[A-Z]+[0-9]*[a-z]*$|^[A-Za-z]$', re.IGNORECASE)
+    # - 带撇号: 1', 2', 10'
+    pattern = re.compile(r"^[0-9]+[A-Za-z]*'*$|^[A-Z]+[0-9]*[a-z]*'*$|^[A-Za-z]'*$", re.IGNORECASE)
     
     for result in ocr_results:
         text = result['number'].strip()
@@ -286,8 +267,8 @@ def filter_alphanumeric_markers(ocr_results: List[Dict]) -> List[Dict]:
         if not text:
             continue
         
-        # 放宽长度限制到6个字符（支持如"100A"这样的标记）
-        if len(text) > 6:
+        # 放宽长度限制到8个字符（支持更长标记）
+        if len(text) > 8:
             logger.debug(f"Filtered out too long text: '{text}' (length: {len(text)})")
             continue
         

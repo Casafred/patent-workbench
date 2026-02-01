@@ -127,8 +127,8 @@ def process_drawing_marker():
                 ]
                 
                 # 应用去重和置信度过滤（降低阈值以提高检测率）
-                all_detected_numbers = deduplicate_results(all_detected_numbers, position_threshold=30)
-                all_detected_numbers = filter_by_confidence(all_detected_numbers, min_confidence=40)
+                all_detected_numbers = deduplicate_results(all_detected_numbers, position_threshold=25)
+                all_detected_numbers = filter_by_confidence(all_detected_numbers, min_confidence=30)
                 print(f"[DEBUG] After filtering: {len(all_detected_numbers)} detections remain")
                 
                 # 匹配识别结果与reference_map

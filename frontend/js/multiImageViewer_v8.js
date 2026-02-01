@@ -451,12 +451,12 @@ class MultiImageViewerV8 {
         const toolbar = document.createElement('div');
         toolbar.style.cssText = `
             position: absolute;
-            left: 20px;
+            right: 20px;
             top: 50%;
             transform: translateY(-50%);
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
             z-index: 101;
         `;
         
@@ -465,8 +465,8 @@ class MultiImageViewerV8 {
         fontGroup.style.cssText = 'display: flex; flex-direction: column; gap: 4px;';
         
         const fontPlusBtn = this.createIconButton(`
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <text x="4" y="18" font-size="14" font-weight="bold" fill="currentColor">A+</text>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+                <text x="2" y="17" font-size="12" font-weight="bold" fill="white">A+</text>
             </svg>
         `, () => {
             const selected = this.annotations.filter(a => a.isSelected);
@@ -482,8 +482,8 @@ class MultiImageViewerV8 {
         }, '增大字体');
         
         const fontMinusBtn = this.createIconButton(`
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <text x="4" y="18" font-size="14" font-weight="bold" fill="currentColor">A-</text>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+                <text x="2" y="17" font-size="12" font-weight="bold" fill="white">A-</text>
             </svg>
         `, () => {
             const selected = this.annotations.filter(a => a.isSelected);
@@ -507,7 +507,7 @@ class MultiImageViewerV8 {
         rotateGroup.style.cssText = 'display: flex; flex-direction: column; gap: 4px;';
         
         const rotateLeftBtn = this.createIconButton(`
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
                 <path d="M21 3v5h-5"/>
             </svg>
@@ -517,7 +517,7 @@ class MultiImageViewerV8 {
         }, '逆时针旋转');
         
         const rotateRightBtn = this.createIconButton(`
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
                 <path d="M3 3v5h5"/>
             </svg>
@@ -537,20 +537,21 @@ class MultiImageViewerV8 {
         this.zoomDisplay = document.createElement('div');
         this.zoomDisplay.textContent = '100%';
         this.zoomDisplay.style.cssText = `
-            font-size: 11px;
+            font-size: 12px;
             font-weight: bold;
             text-align: center;
             color: white;
-            padding: 8px 0;
-            background-color: rgba(76, 175, 80, 0.9);
-            border-radius: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            padding: 10px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 24px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            min-width: 48px;
         `;
         zoomGroup.appendChild(this.zoomDisplay);
         
         const zoomInBtn = this.createIconButton(`
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"/>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round">
+                <circle cx="11" cy="11" r="7"/>
                 <path d="M21 21l-4.35-4.35"/>
                 <line x1="11" y1="8" x2="11" y2="14"/>
                 <line x1="8" y1="11" x2="14" y2="11"/>
@@ -562,8 +563,8 @@ class MultiImageViewerV8 {
         }, '放大');
         
         const zoomOutBtn = this.createIconButton(`
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"/>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round">
+                <circle cx="11" cy="11" r="7"/>
                 <path d="M21 21l-4.35-4.35"/>
                 <line x1="8" y1="11" x2="14" y2="11"/>
             </svg>
@@ -574,8 +575,8 @@ class MultiImageViewerV8 {
         }, '缩小');
         
         const zoomResetBtn = this.createIconButton(`
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <text x="6" y="16" font-size="10" font-weight="bold" fill="currentColor">1:1</text>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+                <text x="5" y="16" font-size="10" font-weight="bold" fill="white">1:1</text>
             </svg>
         `, () => {
             this.currentZoom = 1.0;
@@ -590,9 +591,9 @@ class MultiImageViewerV8 {
         
         // 截图按钮
         const screenshotBtn = this.createIconButton(`
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                <circle cx="12" cy="13" r="4"/>
+                <circle cx="12" cy="13" r="3.5"/>
             </svg>
         `, () => {
             this.takeScreenshot();
@@ -604,15 +605,12 @@ class MultiImageViewerV8 {
     
     createIconButton(svgContent, onClick, title) {
         const btn = document.createElement('button');
-        // 将SVG中的stroke="currentColor"替换为white
-        const whiteSvg = svgContent.replace(/stroke="currentColor"/g, 'stroke="white"')
-                                   .replace(/fill="currentColor"/g, 'fill="white"');
-        btn.innerHTML = whiteSvg;
+        btn.innerHTML = svgContent;
         btn.title = title;
         btn.style.cssText = `
-            width: 44px;
-            height: 44px;
-            background-color: rgba(255, 255, 255, 0.95);
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
             border-radius: 50%;
@@ -620,20 +618,18 @@ class MultiImageViewerV8 {
             display: flex;
             justify-content: center;
             align-items: center;
-            transition: all 0.2s;
+            transition: all 0.3s ease;
             padding: 0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         `;
         btn.addEventListener('click', onClick);
         btn.addEventListener('mouseenter', () => {
-            btn.style.transform = 'scale(1.15)';
-            btn.style.backgroundColor = 'rgba(76, 175, 80, 0.95)';
-            btn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+            btn.style.transform = 'scale(1.15) translateY(-2px)';
+            btn.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.6)';
         });
         btn.addEventListener('mouseleave', () => {
             btn.style.transform = 'scale(1)';
-            btn.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
-            btn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+            btn.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.4)';
         });
         return btn;
     }
@@ -865,41 +861,50 @@ class MultiImageViewerV8 {
         const detectedNumbers = this.currentImageData.detectedNumbers || [];
         const referenceMap = this.currentImageData.referenceMap || {};
 
-        // 最简单的边缘分布算法：快速且有效
         const canvasWidth = this.modalCanvas.width;
         const canvasHeight = this.modalCanvas.height;
-        const edgeMargin = 80; // 距离边缘的距离，适当靠外
+        const edgeMargin = 100; // 距离边缘距离
+
+        // 获取文本尺寸的辅助函数
+        const ctx = this.modalCanvas.getContext('2d');
+        ctx.font = `bold ${this.currentFontSize}px Arial, sans-serif`;
 
         // 将标注分配到四个边缘
-        const regions = {
-            top: [],
-            right: [],
-            bottom: [],
-            left: []
-        };
+        const regions = { top: [], right: [], bottom: [], left: [] };
 
         this.annotations = detectedNumbers.map((detected, index) => {
             const centerX = canvasWidth / 2;
             const centerY = canvasHeight / 2;
 
-            // 根据标注点位置决定放在哪个边缘
             const toLeft = detected.x < centerX;
             const toTop = detected.y < centerY;
             const dx = Math.abs(detected.x - centerX);
             const dy = Math.abs(detected.y - centerY);
 
             let region, labelX, labelY;
+            const name = detected.name || referenceMap[detected.number] || '未知';
+            const text = `${detected.number}: ${name}`;
+            const textWidth = ctx.measureText(text).width;
+            const textHeight = this.currentFontSize * 1.5;
 
             if (dx > dy) {
                 // 靠近左右边缘
                 region = toLeft ? 'left' : 'right';
-                labelX = toLeft ? edgeMargin : canvasWidth - edgeMargin;
-                labelY = detected.y;
+                if (toLeft) {
+                    labelX = Math.max(textWidth / 2 + 10, edgeMargin);
+                } else {
+                    labelX = Math.min(canvasWidth - textWidth / 2 - 10, canvasWidth - edgeMargin);
+                }
+                labelY = Math.max(textHeight / 2 + 10, Math.min(canvasHeight - textHeight / 2 - 10, detected.y));
             } else {
                 // 靠近上下边缘
                 region = toTop ? 'top' : 'bottom';
-                labelX = detected.x;
-                labelY = toTop ? edgeMargin : canvasHeight - edgeMargin;
+                labelX = Math.max(textWidth / 2 + 10, Math.min(canvasWidth - textWidth / 2 - 10, detected.x));
+                if (toTop) {
+                    labelY = Math.max(textHeight / 2 + 10, edgeMargin);
+                } else {
+                    labelY = Math.min(canvasHeight - textHeight / 2 - 10, canvasHeight - edgeMargin);
+                }
             }
 
             const annotation = {
@@ -909,7 +914,7 @@ class MultiImageViewerV8 {
                 labelX: labelX,
                 labelY: labelY,
                 number: detected.number,
-                name: detected.name || referenceMap[detected.number] || '未知',
+                name: name,
                 confidence: detected.confidence || 0,
                 isSelected: false,
                 isManual: false,
@@ -922,24 +927,31 @@ class MultiImageViewerV8 {
             return annotation;
         });
 
-        // 在每个边缘均匀分布，确保较大间距
+        // 在每个边缘均匀分布
         Object.keys(regions).forEach(regionName => {
             const labels = regions[regionName];
             if (labels.length === 0) return;
 
             if (regionName === 'top' || regionName === 'bottom') {
-                // 水平分布
                 labels.sort((a, b) => a.markerX - b.markerX);
-                const spacing = (canvasWidth - 2 * edgeMargin) / (labels.length + 1);
+                const usableWidth = canvasWidth - 2 * edgeMargin;
+                const spacing = usableWidth / (labels.length + 1);
                 labels.forEach((label, i) => {
-                    label.labelX = edgeMargin + spacing * (i + 1);
+                    const text = `${label.number}: ${label.name}`;
+                    const textWidth = ctx.measureText(text).width;
+                    const proposedX = edgeMargin + spacing * (i + 1);
+                    // 确保不超出边界
+                    label.labelX = Math.max(textWidth / 2 + 10, Math.min(canvasWidth - textWidth / 2 - 10, proposedX));
                 });
             } else {
-                // 垂直分布
                 labels.sort((a, b) => a.markerY - b.markerY);
-                const spacing = (canvasHeight - 2 * edgeMargin) / (labels.length + 1);
+                const usableHeight = canvasHeight - 2 * edgeMargin;
+                const spacing = usableHeight / (labels.length + 1);
                 labels.forEach((label, i) => {
-                    label.labelY = edgeMargin + spacing * (i + 1);
+                    const textHeight = label.fontSize * 1.5;
+                    const proposedY = edgeMargin + spacing * (i + 1);
+                    // 确保不超出边界
+                    label.labelY = Math.max(textHeight / 2 + 10, Math.min(canvasHeight - textHeight / 2 - 10, proposedY));
                 });
             }
         });
@@ -989,69 +1001,71 @@ class MultiImageViewerV8 {
             const color = annotation.color || this.currentColor;
             const lineWidth = isHighlighted ? 4 : 3;
             const fontSize = annotation.fontSize || this.currentFontSize;
-            
+
             // 计算旋转后的标注点位置
             const centerX = this.modalCanvas.width / 2;
             const centerY = this.modalCanvas.height / 2;
             const radians = (this.currentRotation * Math.PI) / 180;
-            
-            // 原始标注点相对于中心的位置
+
             const relX = annotation.markerX - centerX;
             const relY = annotation.markerY - centerY;
-            
-            // 旋转后的标注点位置
+
             const rotatedMarkerX = centerX + (relX * Math.cos(radians) - relY * Math.sin(radians));
             const rotatedMarkerY = centerY + (relX * Math.sin(radians) + relY * Math.cos(radians));
-            
-            // 计算标注点偏移位置（避免遮挡原图标记）
-            const dx = annotation.labelX - rotatedMarkerX;
-            const dy = annotation.labelY - rotatedMarkerY;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            const offsetDistance = 15;
-            
-            const offsetX = distance > 0 ? (dx / distance) * offsetDistance : 0;
-            const offsetY = distance > 0 ? (dy / distance) * offsetDistance : 0;
-            
-            const markerDisplayX = rotatedMarkerX + offsetX;
-            const markerDisplayY = rotatedMarkerY + offsetY;
-            
-            // 绘制连接线（从偏移后的标注点到标签文字）
+
+            // 使用水平+竖直线条作为引线（非倾斜）
             ctx.save();
             ctx.beginPath();
-            ctx.moveTo(markerDisplayX, markerDisplayY);
-            ctx.lineTo(annotation.labelX, annotation.labelY);
             ctx.strokeStyle = color;
             ctx.lineWidth = lineWidth;
+
+            // 先判断引线方向：优先水平，然后竖直
+            const dx = annotation.labelX - rotatedMarkerX;
+            const dy = annotation.labelY - rotatedMarkerY;
+
+            // 绘制直角引线
+            if (Math.abs(dx) > Math.abs(dy)) {
+                // 先水平再竖直
+                ctx.moveTo(rotatedMarkerX, rotatedMarkerY);
+                ctx.lineTo(annotation.labelX, rotatedMarkerY);
+                ctx.lineTo(annotation.labelX, annotation.labelY);
+            } else {
+                // 先竖直再水平
+                ctx.moveTo(rotatedMarkerX, rotatedMarkerY);
+                ctx.lineTo(rotatedMarkerX, annotation.labelY);
+                ctx.lineTo(annotation.labelX, annotation.labelY);
+            }
+
             ctx.stroke();
             ctx.restore();
-            
-            // 绘制标注点（偏移后的位置）
+
+            // 绘制标注点
             ctx.save();
             ctx.beginPath();
-            ctx.arc(markerDisplayX, markerDisplayY, 6, 0, 2 * Math.PI);
+            ctx.arc(rotatedMarkerX, rotatedMarkerY, 6, 0, 2 * Math.PI);
             ctx.fillStyle = color;
             ctx.fill();
             ctx.strokeStyle = '#FFFFFF';
             ctx.lineWidth = 2;
             ctx.stroke();
             ctx.restore();
-            
-            // 绘制标注文字（不旋转，保持可读）
+
+            // 绘制标注文字
             ctx.save();
             const text = `${annotation.number}: ${annotation.name}`;
             ctx.font = `bold ${fontSize}px Arial, sans-serif`;
             ctx.textBaseline = 'middle';
             ctx.textAlign = 'left';
-            
+
             // 白色描边
             ctx.strokeStyle = '#FFFFFF';
             ctx.lineWidth = 5;
             ctx.strokeText(text, annotation.labelX, annotation.labelY);
-            
+
             // 彩色填充
             ctx.fillStyle = color;
             ctx.fillText(text, annotation.labelX, annotation.labelY);
-            
+
             // 选中时绘制边框
             if (isHighlighted) {
                 const textWidth = ctx.measureText(text).width;
