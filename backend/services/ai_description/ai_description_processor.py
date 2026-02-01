@@ -86,7 +86,7 @@ class AIDescriptionProcessor:
             text_to_process = description_text
             translated_text = None
             
-            if detected_language != 'zh':
+            if detected_language != 'zh' and detected_language != 'zh-cn' and detected_language != 'zh-tw':
                 logger.info(f"Step 2: Translating from {detected_language} to Chinese...")
                 try:
                     translated_text = await self.translator.translate_to_chinese(
@@ -98,12 +98,14 @@ class AIDescriptionProcessor:
                     logger.info("Translation completed successfully")
                 except TranslationServiceUnavailable as e:
                     logger.error(f"Translation failed: {str(e)}")
-                    return {
-                        "success": False,
-                        "error": "翻译服务暂时不可用,建议使用中文说明书或稍后重试",
-                        "error_code": "TRANSLATION_UNAVAILABLE",
-                        "suggestion": "如果有中文版本说明书,请直接使用中文版本"
-                    }
+                    # 翻译失败时，尝试直接使用原文进行抽取
+                    logger.warning("Translation failed, will try to extract components from original text")
+                    text_to_process = description_text
+                except Exception as e:
+                    logger.error(f"Unexpected translation error: {str(e)}")
+                    # 翻译失败时，尝试直接使用原文进行抽取
+                    logger.warning("Translation failed, will try to extract components from original text")
+                    text_to_process = description_text
             else:
                 logger.info("Step 2: Text is already in Chinese, skipping translation")
             
