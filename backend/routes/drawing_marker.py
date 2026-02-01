@@ -88,46 +88,15 @@ def process_drawing_marker():
             return create_response(error="specification is required and must be a non-empty string", status_code=400)
         
         # 导入必要的模块
-        import re
         import base64
         from backend.utils.ocr_utils import perform_ocr
+        from backend.utils.component_extractor import extract_reference_markers
         
         # 处理结果数据
         processed_results = []
         total_numbers = 0
         
         # 1. 解析说明书，提取附图标记和部件名称
-        def extract_reference_markers(spec_text):
-            """
-            提取附图标记，支持多种格式：
-            - "1. 底座" 或 "1、底座"
-            - "1电动工具" (数字直接连接文字)
-            - "1 电动工具" (数字和文字之间有空格)
-            """
-            reference_map = {}
-            
-            # 模式1: 数字 + 分隔符(. 、) + 名称
-            pattern1 = r'([0-9]+[A-Z]*)\s*[.、]\s*([^。；，,;\n、]+)'
-            matches1 = re.findall(pattern1, spec_text)
-            for match in matches1:
-                number = match[0]
-                name = match[1].strip()
-                if name:  # 确保名称不为空
-                    reference_map[number] = name
-            
-            # 模式2: 数字(可能带字母) + 中文字符 (如 "1电动工具"、"2L左侧外壳")
-            pattern2 = r'([0-9]+[A-Z]*)([一-龥\u4e00-\u9fa5][^0-9、。；，,;\n]*?)(?=[0-9]+[A-Z]*[一-龥\u4e00-\u9fa5]|$)'
-            matches2 = re.findall(pattern2, spec_text)
-            for match in matches2:
-                number = match[0]
-                name = match[1].strip('、，,；; \t')
-                if name and len(name) > 1:  # 确保名称有意义
-                    # 如果这个编号还没有被模式1匹配到，才添加
-                    if number not in reference_map:
-                        reference_map[number] = name
-            
-            return reference_map
-        
         reference_map = extract_reference_markers(specification)
         print(f"[DEBUG] Extracted reference_map: {reference_map}")
         print(f"[DEBUG] Total markers in specification: {len(reference_map)}")

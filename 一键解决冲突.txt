@@ -1,0 +1,46 @@
+========================================
+解决Git冲突 - 复制粘贴这个命令
+========================================
+
+【完整命令（推荐）】
+
+ssh root@43.99.101.195 "cd /home/appuser/patent-app && mv gunicorn_config.py gunicorn_config.py.server.backup && git pull origin main && chown -R appuser:appuser /home/appuser/patent-app && systemctl restart patent-app"
+
+
+【如果服务无法访问，恢复配置】
+
+ssh root@43.99.101.195 "cd /home/appuser/patent-app && cp gunicorn_config.py.server.backup gunicorn_config.py && systemctl restart patent-app"
+
+
+【验证命令】
+
+# 检查服务状态
+ssh root@43.99.101.195 "systemctl status patent-app | grep Active"
+
+# 检查端口监听（应该是 0.0.0.0:5000）
+ssh root@43.99.101.195 "netstat -tlnp | grep 5000"
+
+# 检查配置文件
+ssh root@43.99.101.195 "cat /home/appuser/patent-app/gunicorn_config.py | grep bind"
+
+
+========================================
+说明
+========================================
+
+1. 第一个命令会：
+   - 备份服务器的 gunicorn_config.py
+   - 拉取GitHub的新代码
+   - 修复权限
+   - 重启服务
+
+2. 如果拉取后网站无法访问：
+   - 说明配置被覆盖了（变成了 127.0.0.1）
+   - 执行恢复命令即可
+
+3. 验证成功标志：
+   - 服务状态：Active: active (running)
+   - 端口监听：0.0.0.0:5000
+   - 网站可访问：http://43.99.101.195
+
+========================================

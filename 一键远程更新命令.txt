@@ -1,0 +1,79 @@
+========================================
+一键远程更新阿里云服务器命令
+========================================
+
+【完整命令（复制粘贴到本地CMD）】
+
+ssh root@43.99.101.195 "cd /www/wwwroot/patent-workbench && git pull origin main && if grep -q '127.0.0.1:5000' gunicorn_config.py; then sed -i 's/127.0.0.1:5000/0.0.0.0:5000/g' gunicorn_config.py && echo '配置已修复'; fi && systemctl restart gunicorn && systemctl status gunicorn | grep Active"
+
+
+【如果main分支失败，用master分支】
+
+ssh root@43.99.101.195 "cd /www/wwwroot/patent-workbench && git pull origin master && if grep -q '127.0.0.1:5000' gunicorn_config.py; then sed -i 's/127.0.0.1:5000/0.0.0.0:5000/g' gunicorn_config.py && echo '配置已修复'; fi && systemctl restart gunicorn && systemctl status gunicorn | grep Active"
+
+
+【分步执行版本】
+
+# 步骤1：拉取代码
+ssh root@43.99.101.195 "cd /www/wwwroot/patent-workbench && git pull origin main"
+
+# 步骤2：检查并修复配置
+ssh root@43.99.101.195 "cd /www/wwwroot/patent-workbench && if grep -q '127.0.0.1:5000' gunicorn_config.py; then sed -i 's/127.0.0.1:5000/0.0.0.0:5000/g' gunicorn_config.py && echo '配置已修复'; else echo '配置正常'; fi"
+
+# 步骤3：重启服务
+ssh root@43.99.101.195 "systemctl restart gunicorn"
+
+# 步骤4：检查状态
+ssh root@43.99.101.195 "systemctl status gunicorn"
+
+
+【验证命令】
+
+# 查看服务状态
+ssh root@43.99.101.195 "systemctl status gunicorn | grep Active"
+
+# 查看端口监听
+ssh root@43.99.101.195 "netstat -tlnp | grep 5000"
+
+# 查看最新提交
+ssh root@43.99.101.195 "cd /www/wwwroot/patent-workbench && git log --oneline -1"
+
+# 查看配置
+ssh root@43.99.101.195 "cd /www/wwwroot/patent-workbench && cat gunicorn_config.py | grep bind"
+
+
+【回滚命令（如有问题）】
+
+ssh root@43.99.101.195 "cd /www/wwwroot/patent-workbench && git reset --hard HEAD^ && systemctl restart gunicorn"
+
+
+========================================
+注意事项
+========================================
+
+1. 确保本地已推送到GitHub
+2. 确保SSH密钥已配置
+3. 更新后清除浏览器缓存
+4. 测试功能八的新功能
+
+========================================
+你的旧命令对比
+========================================
+
+旧命令（不正确）：
+ssh root@43.99.101.195 "su - appuser -c 'cd ~/patent-app && git pull origin main' && systemctl restart patent-app"
+
+问题：
+❌ 用户：appuser（不存在）
+❌ 路径：~/patent-app（不正确）
+❌ 服务：patent-app（不正确）
+
+新命令（正确）：
+ssh root@43.99.101.195 "cd /www/wwwroot/patent-workbench && git pull origin main && systemctl restart gunicorn"
+
+修正：
+✓ 用户：root（直接用root）
+✓ 路径：/www/wwwroot/patent-workbench
+✓ 服务：gunicorn
+
+========================================
