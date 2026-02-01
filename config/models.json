@@ -1,9 +1,59 @@
 {
   "models": [
-    "glm-4-flashX-250414",
-    "glm-4-flash",
-    "glm-4-long",
-    "GLM-4.7-Flash"
+    {
+      "name": "glm-4-flash",
+      "display_name": "GLM-4-Flash (推荐)",
+      "description": "快速、经济的模型，适合日常使用",
+      "max_tokens": 4096,
+      "supports_translation": true,
+      "supports_extraction": true
+    },
+    {
+      "name": "glm-4-plus",
+      "display_name": "GLM-4-Plus",
+      "description": "高性能模型，准确率更高",
+      "max_tokens": 8192,
+      "supports_translation": true,
+      "supports_extraction": true
+    },
+    {
+      "name": "glm-4-air",
+      "display_name": "GLM-4-Air",
+      "description": "轻量级模型，速度最快",
+      "max_tokens": 4096,
+      "supports_translation": true,
+      "supports_extraction": true
+    },
+    {
+      "name": "glm-4-long",
+      "display_name": "GLM-4-Long",
+      "description": "长文本模型，支持更长的说明书",
+      "max_tokens": 128000,
+      "supports_translation": true,
+      "supports_extraction": true
+    },
+    {
+      "name": "glm-4-flashX-250414",
+      "display_name": "GLM-4-FlashX",
+      "description": "实验性模型",
+      "max_tokens": 4096,
+      "supports_translation": true,
+      "supports_extraction": true
+    },
+    {
+      "name": "GLM-4.7-Flash",
+      "display_name": "GLM-4.7-Flash",
+      "description": "紧凑型模型",
+      "max_tokens": 4096,
+      "supports_translation": true,
+      "supports_extraction": true
+    }
   ],
-  "description": "统一的模型配置文件，所有功能的模型选择列表都从这里读取"
+  "description": "统一的模型配置文件，所有功能的模型选择列表都从这里读取",
+  "default_model": "glm-4-flash",
+  "api_settings": {
+    "base_url": "https://open.bigmodel.cn/api/paas/v4/",
+    "timeout": 60,
+    "max_retries": 3
+  }
 }

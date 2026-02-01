@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Description Processor - 测试页面</title>
+    <link rel="stylesheet" href="frontend/css/components/ai-description-processor.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        
+        .test-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .test-section h2 {
+            margin-top: 0;
+            color: #555;
+            font-size: 18px;
+        }
+        
+        .description-input {
+            width: 100%;
+            min-height: 150px;
+            padding: 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+            margin-bottom: 15px;
+        }
+        
+        .process-btn {
+            background-color: #28a745;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .process-btn:hover {
+            background-color: #218838;
+        }
+        
+        .process-btn:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .result-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .result-section.show {
+            display: block;
+        }
+        
+        .result-section h3 {
+            margin-top: 0;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .component-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .component-item {
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            background: white;
+            border-left: 3px solid #007bff;
+            border-radius: 4px;
+        }
+        
+        .component-marker {
+            font-weight: bold;
+            color: #007bff;
+            margin-right: 10px;
+        }
+        
+        .error-message {
+            padding: 12px;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>🤖 AI Description Processor 测试页面</h1>
+    
+    <div class="test-section">
+        <h2>AI处理控制面板</h2>
+        <div id="aiProcessingPanelContainer"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>说明书文本输入</h2>
+        <textarea 
+            id="descriptionInput" 
+            class="description-input"
+            placeholder="请输入专利说明书文本...&#10;&#10;示例:&#10;本发明涉及一种显示装置。如图1所示,该显示装置包括外壳10、显示屏20和控制电路30。外壳10用于容纳其他部件。显示屏20安装在外壳10的前表面。控制电路30位于外壳10内部,用于控制显示屏20的显示。"
+        ></textarea>
+        
+        <button id="processBtn" class="process-btn">开始处理</button>
+        
+        <div id="resultSection" class="result-section">
+            <h3>处理结果</h3>
+            <div id="resultContent"></div>
+        </div>
+    </div>
+    
+    <script src="frontend/js/ai_description/ai_processing_panel.js"></script>
+    <script src="frontend/js/ai_description/prompt_editor.js"></script>
+    <script>
+        // Initialize AI Processing Panel
+        const panel = new AIProcessingPanel('aiProcessingPanelContainer');
+        panel.render();
+        
+        // Initialize Prompt Editor
+        const promptEditor = new PromptEditor('promptEditorContainer');
+        promptEditor.render();
+        
+        // Set custom prompt in panel
+        panel.setCustomPrompt(promptEditor.getPrompt());
+        
+        // Listen for prompt changes
+        document.addEventListener('promptChanged', (e) => {
+            panel.setCustomPrompt(e.detail.prompt);
+        });
+        
+        document.addEventListener('promptReset', () => {
+            panel.setCustomPrompt(promptEditor.getPrompt());
+        });
+        
+        // Process button handler
+        document.getElementById('processBtn').addEventListener('click', async () => {
+            const descriptionText = document.getElementById('descriptionInput').value.trim();
+            const resultSection = document.getElementById('resultSection');
+            const resultContent = document.getElementById('resultContent');
+            const processBtn = document.getElementById('processBtn');
+            
+            if (!descriptionText) {
+                alert('请输入说明书文本');
+                return;
+            }
+            
+            const config = panel.getConfig();
+            
+            if (config.aiMode && !config.model) {
+                alert('请选择AI模型');
+                return;
+            }
+            
+            // Show loading
+            processBtn.disabled = true;
+            processBtn.textContent = '处理中...';
+            resultSection.classList.remove('show');
+            
+            try {
+                // Prepare request data
+                const requestData = {
+                    description_text: descriptionText,
+                    ai_mode: config.aiMode,
+                    model_name: config.model,
+                    custom_prompt: config.prompt
+                };
+                
+                console.log('Request:', requestData);
+                
+                // Call API
+                const response = await fetch('/api/drawing-marker/extract', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer YOUR_API_KEY_HERE' // Replace with actual API key
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const result = await response.json();
+                console.log('Response:', result);
+                
+                // Display result
+                if (result.success) {
+                    const data = result.data;
+                    let html = '';
+                    
+                    if (data.language) {
+                        html += `<p><strong>检测语言:</strong> ${data.language}</p>`;
+                    }
+                    
+                    if (data.translated_text) {
+                        html += `<p><strong>翻译文本:</strong></p><div style="padding: 10px; background: white; border-radius: 4px; margin-bottom: 15px;">${data.translated_text.substring(0, 200)}...</div>`;
+                    }
+                    
+                    if (data.processing_time) {
+                        html += `<p><strong>处理时间:</strong> ${data.processing_time}秒</p>`;
+                    }
+                    
+                    html += `<p><strong>抽取的部件标记 (${data.components.length}):</strong></p>`;
+                    
+                    if (data.components.length > 0) {
+                        html += '<ul class="component-list">';
+                        data.components.forEach(comp => {
+                            html += `<li class="component-item"><span class="component-marker">${comp.marker}</span>${comp.name}</li>`;
+                        });
+                        html += '</ul>';
+                    } else {
+                        html += '<p style="color: #666;">未抽取到部件标记</p>';
+                    }
+                    
+                    if (data.warning) {
+                        html += `<p style="color: #856404; background: #fff3cd; padding: 10px; border-radius: 4px;">${data.warning}</p>`;
+                    }
+                    
+                    resultContent.innerHTML = html;
+                } else {
+                    resultContent.innerHTML = `<div class="error-message">${result.error || '处理失败'}</div>`;
+                }
+                
+                resultSection.classList.add('show');
+                
+            } catch (error) {
+                console.error('Error:', error);
+                resultContent.innerHTML = `<div class="error-message">请求失败: ${error.message}</div>`;
+                resultSection.classList.add('show');
+            } finally {
+                processBtn.disabled = false;
+                processBtn.textContent = '开始处理';
+            }
+        });
+    </script>
+</body>
+</html>

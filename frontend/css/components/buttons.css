@@ -1,7 +1,7 @@
 /* Button Styles */
 
 /* 主按钮样式 */
-button { 
+button:not(.color-button) { 
     background: linear-gradient(45deg, var(--primary-color-dark), var(--primary-color)); 
     color: #FFFFFF; 
     font-weight: bold; 
@@ -14,18 +14,34 @@ button {
     box-shadow: 0 4px 12px var(--primary-color-glow); 
 }
 
-button:hover { 
+/* 颜色按钮样式 */
+.color-button {
+    all: unset;
+    width: 100%;
+    height: 28px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: 0.2s;
+    transform: scale(1);
+}
+
+button:not(.color-button):hover { 
     transform: translateY(-2px); 
     box-shadow: 0 7px 20px var(--primary-color-glow); 
     filter: brightness(1.05); 
 }
 
-button:disabled { 
+button:not(.color-button):disabled { 
     background: rgba(34, 197, 94, 0.4); 
     color: rgba(255, 255, 255, 0.7); 
     cursor: not-allowed; 
     transform: none; 
     box-shadow: none; 
+}
+
+/* 颜色按钮hover效果 */
+.color-button:hover {
+    transform: scale(1.05);
 }
 
 /* 操作按钮 */

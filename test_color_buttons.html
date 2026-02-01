@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>颜色按钮测试</title>
+    <link rel="stylesheet" href="frontend/css/main.css?v=20260124-mobile">
+    <link rel="stylesheet" href="frontend/css/components/buttons.css">
+    <style>
+        .test-container {
+            padding: 20px;
+        }
+        .color-grid {
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>颜色按钮测试</h1>
+        <div class="color-grid">
+            <button class="color-button" style="background-color: rgb(255, 87, 34); border: 3px solid rgb(255, 255, 255); border-radius: 4px; cursor: pointer; transition: 0.2s; box-shadow: rgb(255, 87, 34) 0px 0px 0px 2px; transform: scale(1);" title="橙色"></button>
+            <button class="color-button" style="background-color: rgb(76, 175, 80); border: 2px solid rgba(0, 0, 0, 0.2); border-radius: 4px; cursor: pointer; transition: 0.2s; box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 4px; transform: scale(1);" title="绿色"></button>
+            <button class="color-button" style="background-color: rgb(33, 150, 243); border: 2px solid rgba(0, 0, 0, 0.2); border-radius: 4px; cursor: pointer; transition: 0.2s; box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 4px; transform: scale(1);" title="蓝色"></button>
+            <button class="color-button" style="background-color: rgb(156, 39, 176); border: 2px solid rgba(0, 0, 0, 0.2); border-radius: 4px; cursor: pointer; transition: 0.2s; box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 4px; transform: scale(1);" title="紫色"></button>
+            <button class="color-button" style="background-color: rgb(244, 67, 54); border: 2px solid rgba(0, 0, 0, 0.2); border-radius: 4px; cursor: pointer; transition: 0.2s; box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 4px; transform: scale(1);" title="红色"></button>
+            <button class="color-button" style="background-color: rgb(0, 188, 212); border: 2px solid rgba(0, 0, 0, 0.2); border-radius: 4px; cursor: pointer; transition: 0.2s; box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 4px; transform: scale(1);" title="青色"></button>
+            <button class="color-button" style="background-color: rgb(255, 193, 7); border: 2px solid rgba(0, 0, 0, 0.2); border-radius: 4px; cursor: pointer; transition: 0.2s; box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 4px; transform: scale(1);" title="黄色"></button>
+            <button class="color-button" style="background-color: rgb(233, 30, 99); border: 2px solid rgba(0, 0, 0, 0.2); border-radius: 4px; cursor: pointer; transition: 0.2s; box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 4px;" title="粉色"></button>
+        </div>
+        
+        <h2>普通按钮对比</h2>
+        <button>普通主按钮</button>
+        <button class="small-button">小按钮</button>
+    </div>
+</body>
+</html>

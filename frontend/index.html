@@ -27,6 +27,8 @@
     <link rel="stylesheet" href="frontend/css/components/patent-template.css">
     <link rel="stylesheet" href="frontend/css/components/patent-chat.css">
     <link rel="stylesheet" href="frontend/css/components/patent-config.css">
+    <!-- AI说明书处理器CSS -->
+    <link rel="stylesheet" href="frontend/css/components/ai-description-processor.css">
 
         <style>
             /* Vanta.js 背景容器 */
@@ -1524,6 +1526,9 @@
                                 </div>
                             </div>
 
+                            <!-- AI处理控制面板 -->
+                            <div id="aiProcessingPanelContainer" style="margin-bottom: 20px;"></div>
+
                             <!-- 说明书输入 -->
                             <div style="margin-bottom: 20px;">
                                 <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #495057;">
@@ -1589,6 +1594,9 @@
 
 <!-- 功能八：专利附图标记功能 -->
 <script src="frontend/js/multiImageViewer_v8.js?v=20260201"></script>
+<!-- AI说明书处理器 -->
+<script src="frontend/js/ai_description/ai_processing_panel.js?v=20260201"></script>
+<script src="frontend/js/ai_description/prompt_editor.js?v=20260201"></script>
 <script>
 // 专利附图标记功能数据存储
 let uploadedDrawings = [];
@@ -1596,6 +1604,29 @@ let currentReferenceMap = {}; // 存储说明书中的标记映射
 
 // 初始化专利附图标记功能
 function initDrawingMarker() {
+    // 初始化AI处理控制面板
+    const aiPanel = new AIProcessingPanel('aiProcessingPanelContainer');
+    aiPanel.render();
+    
+    // 初始化提示词编辑器
+    const promptEditor = new PromptEditor('promptEditorContainer');
+    promptEditor.render();
+    
+    // 设置自定义提示词
+    aiPanel.setCustomPrompt(promptEditor.getPrompt());
+    
+    // 监听提示词变化
+    document.addEventListener('promptChanged', (e) => {
+        aiPanel.setCustomPrompt(e.detail.prompt);
+    });
+    
+    document.addEventListener('promptReset', () => {
+        aiPanel.setCustomPrompt(promptEditor.getPrompt());
+    });
+    
+    // 将AI面板实例保存到全局,供其他函数使用
+    window.aiProcessingPanel = aiPanel;
+    
     // 图片上传输入框事件监听
     const drawingUploadInput = document.getElementById('drawing_upload_input');
     if (drawingUploadInput) {
@@ -1758,10 +1789,71 @@ function startProcessing() {
         return;
     }
     
-    // 更新处理状态
+    // 获取AI处理配置
+    const aiConfig = window.aiProcessingPanel ? window.aiProcessingPanel.getConfig() : { aiMode: false };
+    
+    // 如果启用AI模式但未选择模型,提示用户
+    if (aiConfig.aiMode && !aiConfig.model) {
+        alert('请选择AI模型。');
+        return;
+    }
+    
+    // 禁用开始处理按钮,防止重复提交
+    const startBtn = document.getElementById('start_processing_btn');
+    if (startBtn) {
+        startBtn.disabled = true;
+        startBtn.style.opacity = '0.6';
+        startBtn.style.cursor = 'not-allowed';
+    }
+    
+    // 显示进度反馈
     const processingStatus = document.getElementById('processing_status');
     if (processingStatus) {
-        processingStatus.textContent = '正在处理...';
+        if (aiConfig.aiMode) {
+            // AI模式显示详细进度
+            processingStatus.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <div class="spinner" style="width: 16px; height: 16px; border: 2px solid #f3f3f3; border-top: 2px solid #28a745; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                    <span id="progress_text">正在检测语言...</span>
+                </div>
+                <style>
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                </style>
+            `;
+            
+            // 模拟进度更新(因为后端是同步的,我们用定时器模拟)
+            let progressStep = 0;
+            const progressTexts = [
+                '正在检测语言...',
+                '正在翻译文本...',
+                '正在AI抽取标记...',
+                '正在生成结果...'
+            ];
+            
+            const progressInterval = setInterval(() => {
+                progressStep++;
+                if (progressStep < progressTexts.length) {
+                    const progressText = document.getElementById('progress_text');
+                    if (progressText) {
+                        progressText.textContent = progressTexts[progressStep];
+                    }
+                }
+            }, 2000); // 每2秒更新一次进度文本
+            
+            // 保存interval ID以便后续清除
+            window.currentProgressInterval = progressInterval;
+        } else {
+            // 规则模式显示简单进度
+            processingStatus.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <div class="spinner" style="width: 16px; height: 16px; border: 2px solid #f3f3f3; border-top: 2px solid #28a745; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                    <span>正在处理...</span>
+                </div>
+            `;
+        }
     }
     
     // 准备数据
@@ -1776,8 +1868,36 @@ function startProcessing() {
                 data: base64Data
             };
         }),
-        specification: specificationInput.value.trim()
+        specification: specificationInput.value.trim(),
+        // 添加AI模式配置
+        ai_mode: aiConfig.aiMode,
+        model_name: aiConfig.model,
+        custom_prompt: aiConfig.prompt
     };
+    
+    // 设置超时时间(AI模式60秒,规则模式30秒)
+    const timeoutMs = aiConfig.aiMode ? 60000 : 30000;
+    const timeoutId = setTimeout(() => {
+        // 超时处理
+        if (window.currentProgressInterval) {
+            clearInterval(window.currentProgressInterval);
+        }
+        
+        if (processingStatus) {
+            processingStatus.innerHTML = `
+                <div style="color: #856404; background-color: #fff3cd; padding: 10px; border-radius: 4px; border: 1px solid #ffeaa7;">
+                    ⚠️ 处理超时,请重试或缩短说明书长度
+                </div>
+            `;
+        }
+        
+        // 重新启用按钮
+        if (startBtn) {
+            startBtn.disabled = false;
+            startBtn.style.opacity = '1';
+            startBtn.style.cursor = 'pointer';
+        }
+    }, timeoutMs);
     
     // 调用后端API进行处理
     fetch('/api/drawing-marker/process', {
@@ -1787,15 +1907,24 @@ function startProcessing() {
         },
         body: JSON.stringify(processingData)
     })
-    .then(response => response.json())
+    .then(response => {
+        clearTimeout(timeoutId); // 清除超时定时器
+        if (window.currentProgressInterval) {
+            clearInterval(window.currentProgressInterval); // 清除进度更新定时器
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success && data.data) {
-            displayProcessingResult(data.data);
+            displayProcessingResult(data.data, aiConfig.aiMode);
         } else {
             // 处理失败
-            const processingStatus = document.getElementById('processing_status');
             if (processingStatus) {
-                processingStatus.textContent = '处理失败';
+                processingStatus.innerHTML = `
+                    <div style="color: #721c24; background-color: #f8d7da; padding: 10px; border-radius: 4px; border: 1px solid #f5c6cb;">
+                        ❌ 处理失败
+                    </div>
+                `;
             }
             
             const processingResult = document.getElementById('processing_result');
@@ -1810,10 +1939,18 @@ function startProcessing() {
         }
     })
     .catch(error => {
+        clearTimeout(timeoutId); // 清除超时定时器
+        if (window.currentProgressInterval) {
+            clearInterval(window.currentProgressInterval); // 清除进度更新定时器
+        }
+        
         console.error('处理失败:', error);
-        const processingStatus = document.getElementById('processing_status');
         if (processingStatus) {
-            processingStatus.textContent = '处理失败';
+            processingStatus.innerHTML = `
+                <div style="color: #721c24; background-color: #f8d7da; padding: 10px; border-radius: 4px; border: 1px solid #f5c6cb;">
+                    ❌ 网络错误
+                </div>
+            `;
         }
         
         const processingResult = document.getElementById('processing_result');
@@ -1825,11 +1962,19 @@ function startProcessing() {
                 </div>
             `;
         }
+    })
+    .finally(() => {
+        // 重新启用按钮
+        if (startBtn) {
+            startBtn.disabled = false;
+            startBtn.style.opacity = '1';
+            startBtn.style.cursor = 'pointer';
+        }
     });
 }
 
 // 显示处理结果 - 使用真实API返回的数据
-function displayProcessingResult(data) {
+function displayProcessingResult(data, isAIMode = false) {
     // 保存reference_map供交互式标注使用
     currentReferenceMap = data.reference_map || {};
     
@@ -1854,6 +1999,41 @@ function displayProcessingResult(data) {
         let html = `
             <div style="padding: 15px; background-color: ${statusColor}; border-radius: 6px; border: 1px solid ${borderColor}; color: ${textColor};">
                 <h4 style="margin: 0 0 10px 0; font-size: 16px;">${icon} ${data.message || '处理完成'}</h4>
+        `;
+        
+        // 如果是AI模式,显示AI处理信息
+        if (isAIMode && data.language) {
+            html += `
+                <div style="margin-bottom: 10px; padding: 10px; background-color: rgba(13, 110, 253, 0.1); border-radius: 4px; border: 1px solid rgba(13, 110, 253, 0.2);">
+                    <div style="font-size: 13px; color: #0d6efd; margin-bottom: 5px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        <strong>AI处理信息</strong>
+                    </div>
+                    <div style="font-size: 12px; color: #495057;">
+                        <div>检测语言: <strong>${data.language}</strong></div>
+            `;
+            
+            if (data.translated_text) {
+                html += `<div style="margin-top: 5px;">已翻译为中文</div>`;
+            }
+            
+            if (data.processing_time) {
+                html += `<div style="margin-top: 5px;">处理时间: <strong>${data.processing_time.toFixed(2)}秒</strong></div>`;
+            }
+            
+            if (data.warning) {
+                html += `<div style="margin-top: 5px; color: #856404;">⚠️ ${data.warning}</div>`;
+            }
+            
+            html += `
+                    </div>
+                </div>
+            `;
+        }
+        
+        html += `
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px;">
                     <div style="text-align: center; padding: 10px; background-color: white; border-radius: 4px;">
                         <div style="font-size: 24px; font-weight: bold; color: #28a745;">${data.total_numbers}</div>

@@ -6,9 +6,11 @@ This module handles patent drawing marker functionality, including:
 - Extracting reference markers and component names from specifications
 - Matching detected numbers with component names
 - Returning annotated drawing results
+- AI-powered description processing for intelligent component extraction
 """
 
 import traceback
+import asyncio
 from io import BytesIO
 from flask import Blueprint, request
 
@@ -20,6 +22,7 @@ from backend.utils.ocr_utils import (
     match_with_reference_map,
     calculate_statistics
 )
+from backend.services.api_service import get_zhipu_client
 
 
 drawing_marker_bp = Blueprint('drawing_marker', __name__)
@@ -216,3 +219,121 @@ def process_drawing_marker():
     except Exception as e:
         print(f"Error in process_drawing_marker: {traceback.format_exc()}")
         return create_response(error=f"处理失败: {str(e)}", status_code=500)
+
+
+
+@drawing_marker_bp.route('/drawing-marker/extract', methods=['POST'])
+def extract_components():
+    """
+    Extract component markers from patent description text.
+    
+    Supports two modes:
+    1. Rule-based mode (ai_mode=false): Uses jieba word segmentation
+    2. AI mode (ai_mode=true): Uses AI model for intelligent extraction
+    
+    Request body:
+    {
+        "description_text": "说明书内容",
+        "ai_mode": true/false,
+        "model_name": "glm-4-flash" (required when ai_mode=true),
+        "custom_prompt": "自定义提示词" (optional)
+    }
+    
+    Response:
+    {
+        "success": true,
+        "data": {
+            "language": "en",  // Only in AI mode
+            "translated_text": "...",  // Only if translation occurred
+            "components": [
+                {"marker": "10", "name": "外壳"},
+                {"marker": "20", "name": "显示屏"}
+            ],
+            "processing_time": 1.23  // Only in AI mode
+        }
+    }
+    """
+    is_valid, error_response = validate_api_request()
+    if not is_valid:
+        return error_response
+    
+    try:
+        req_data = request.get_json()
+        description_text = req_data.get('description_text')
+        ai_mode = req_data.get('ai_mode', False)
+        model_name = req_data.get('model_name')
+        custom_prompt = req_data.get('custom_prompt')
+        
+        # Validate input
+        if not description_text or not isinstance(description_text, str) or description_text.strip() == '':
+            return create_response(
+                error="description_text is required and must be a non-empty string",
+                status_code=400
+            )
+        
+        if ai_mode:
+            # AI mode processing
+            if not model_name:
+                return create_response(
+                    error="model_name is required when ai_mode is true",
+                    status_code=400
+                )
+            
+            # Get API key from Authorization header
+            client, error = get_zhipu_client()
+            if error:
+                return error
+            
+            # Get API key from client
+            api_key = client.api_key
+            
+            # Import AI processor
+            from backend.services.ai_description.ai_description_processor import AIDescriptionProcessor
+            
+            # Create processor instance
+            processor = AIDescriptionProcessor(api_key)
+            
+            # Process description using AI
+            # Run async function in sync context
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                result = loop.run_until_complete(
+                    processor.process(description_text, model_name, custom_prompt)
+                )
+            finally:
+                loop.close()
+            
+            # Return result
+            if result.get('success'):
+                return create_response(data=result['data'])
+            else:
+                return create_response(
+                    error=result.get('error', 'AI processing failed'),
+                    status_code=500
+                )
+        
+        else:
+            # Rule-based mode (existing jieba logic)
+            from backend.utils.component_extractor import extract_reference_markers
+            
+            # Extract components using jieba
+            reference_map = extract_reference_markers(description_text)
+            
+            # Convert to components format for consistency
+            components = [
+                {"marker": marker, "name": name}
+                for marker, name in reference_map.items()
+            ]
+            
+            return create_response(data={
+                "components": components,
+                "extraction_method": "jieba分词"
+            })
+    
+    except Exception as e:
+        print(f"Error in extract_components: {traceback.format_exc()}")
+        return create_response(
+            error=f"处理失败: {str(e)}",
+            status_code=500
+        )
