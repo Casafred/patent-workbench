@@ -43,7 +43,7 @@ class InteractiveDrawingMarker {
         this.options = {
             enableModal: options.enableModal !== false,
             containerWidth: options.containerWidth || null,
-            fontSize: options.fontSize || 18,
+            fontSize: options.fontSize || 24,  // 默认字号从18改为24
             ...options
         };
         
@@ -93,7 +93,7 @@ class InteractiveDrawingMarker {
                 number: detected.number,
                 name: detected.name || this.referenceMap[detected.number] || '未知',
                 confidence: detected.confidence || 0,
-                fontSize: this.options.fontSize || 18,
+                fontSize: this.options.fontSize || 24,  // 默认字号24
                 selected: false,
                 color: '#FF6B6B' // 默认颜色
             };
@@ -133,9 +133,9 @@ class InteractiveDrawingMarker {
                 this.selectedAnnotation.labelY = pos.y - this.dragOffset.y;
                 this.render();
             } else if (this.viewState.isDraggingView) {
-                // 拖拽视图
-                const deltaX = e.clientX - this.viewState.lastMouseX;
-                const deltaY = e.clientY - this.viewState.lastMouseY;
+                // 拖拽视图 - 提高灵敏度
+                const deltaX = (e.clientX - this.viewState.lastMouseX) * 1.2;  // 1.2倍灵敏度
+                const deltaY = (e.clientY - this.viewState.lastMouseY) * 1.2;
                 this.viewState.offsetX += deltaX;
                 this.viewState.offsetY += deltaY;
                 this.viewState.lastMouseX = e.clientX;
@@ -535,8 +535,9 @@ class InteractiveDrawingMarker {
                 renderModal();
                 this.render(); // 同步主界面
             } else if (modalState.isDraggingView) {
-                const deltaX = e.clientX - modalState.lastMouseX;
-                const deltaY = e.clientY - modalState.lastMouseY;
+                // 拖拽视图 - 提高灵敏度
+                const deltaX = (e.clientX - modalState.lastMouseX) * 1.2;  // 1.2倍灵敏度
+                const deltaY = (e.clientY - modalState.lastMouseY) * 1.2;
                 modalState.offsetX += deltaX;
                 modalState.offsetY += deltaY;
                 modalState.lastMouseX = e.clientX;
