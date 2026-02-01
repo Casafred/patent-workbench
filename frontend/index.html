@@ -1588,7 +1588,7 @@
         </div>
 
 <!-- 功能八：专利附图标记功能 -->
-<script src="../js/drawingMarkerInteractive_v6.js?v=20260201"></script>
+<script src="../js/multiImageViewer_v8.js?v=20260201"></script>
 <script>
 // 专利附图标记功能数据存储
 let uploadedDrawings = [];
@@ -1884,7 +1884,7 @@ function displayProcessingResult(data) {
         processingResult.innerHTML = html;
     }
     
-    // 更新标注后的附图 - 使用交互式Canvas
+    // 更新标注后的附图 - 使用 v8.0 多图查看器
     const annotatedDrawingsContainer = document.getElementById('annotated_drawings_container');
     if (annotatedDrawingsContainer) {
         if (data.total_numbers === 0) {
@@ -1905,141 +1905,123 @@ function displayProcessingResult(data) {
             return;
         }
         
-        let html = '';
-        
-        // 清空之前的交互式标注实例
-        window.interactiveMarkers = [];
-        
-        // 遍历处理后的结果
+        // 准备多图查看器数据
+        const viewerImages = [];
         data.drawings.forEach((processedDrawing, index) => {
-            // 查找原始图片数据
             const originalDrawing = uploadedDrawings.find(d => d.name === processedDrawing.name);
-            if (!originalDrawing) return;
-            
-            const detectedCount = processedDrawing.detected_numbers ? processedDrawing.detected_numbers.length : 0;
-            
+            if (originalDrawing) {
+                viewerImages.push({
+                    url: originalDrawing.dataUrl,
+                    title: processedDrawing.name,
+                    detectedNumbers: processedDrawing.detected_numbers || [],
+                    referenceMap: currentReferenceMap
+                });
+            }
+        });
+        
+        // 保存到全局供后续使用
+        window.currentViewerImages = viewerImages;
+        
+        // 显示图片缩略图和打开按钮
+        let html = `
+            <div style="text-align: center; margin-bottom: 20px;">
+                <button onclick="openMultiImageViewer()" style="padding: 15px 30px; font-size: 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); transition: transform 0.2s;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    打开多图查看器 (${viewerImages.length}张图片)
+                </button>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
+        `;
+        
+        viewerImages.forEach((img, index) => {
+            const detectedCount = img.detectedNumbers.length;
             html += `
-                <div style="margin-bottom: 20px; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; background-color: #f8f9fa;">
-                    <div style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                        <span style="font-size: 14px; font-weight: bold; color: #495057;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;">
-                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
-                            </svg>
-                            ${processedDrawing.name} <span style="color: #28a745;">(${detectedCount}个标记)</span>
-                        </span>
-                        <div style="display: flex; gap: 5px;">
-                            <button onclick="openDrawingModal(${index})" style="padding: 5px 10px; font-size: 12px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;">
-                                    <circle cx="11" cy="11" r="8"></circle>
-                                    <path d="m21 21-4.35-4.35"></path>
-                                </svg>
-                                放大
-                            </button>
-                            <button onclick="exportDrawing(${index})" style="padding: 5px 10px; font-size: 12px; background-color: #20c997; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                    <polyline points="7 10 12 15 17 10"></polyline>
-                                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                                </svg>
-                                导出
-                            </button>
-                        </div>
+                <div onclick="openMultiImageViewer(${index})" style="cursor: pointer; border: 1px solid #dee2e6; border-radius: 8px; padding: 10px; background-color: white; transition: transform 0.2s, box-shadow 0.2s;" onmouseenter="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 4px 16px rgba(0,0,0,0.15)';" onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                    <div style="width: 100%; height: 150px; background-color: #f8f9fa; border-radius: 4px; display: flex; justify-content: center; align-items: center; overflow: hidden; margin-bottom: 10px;">
+                        <img src="${img.url}" alt="${img.title}" style="max-width: 100%; max-height: 100%; object-fit: contain;">
                     </div>
-                    <div style="background-color: white; border-radius: 6px; padding: 10px;">
-                        <canvas id="interactive_canvas_${index}" style="width: 100%; border-radius: 4px;"></canvas>
-                    </div>
-                    <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                        <div style="font-size: 11px; color: #6c757d;">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 3px;">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                            </svg>
-                            滚轮缩放 | 拖动移动 | 拖动标注 | 双击编辑
-                        </div>
-                        <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                            <button onclick="window.interactiveMarkers[${index}].increaseFontSize(true)" style="padding: 3px 8px; font-size: 11px; background-color: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">选中+</button>
-                            <button onclick="window.interactiveMarkers[${index}].decreaseFontSize(true)" style="padding: 3px 8px; font-size: 11px; background-color: #ffc107; color: white; border: none; border-radius: 3px; cursor: pointer;">选中-</button>
-                            <button onclick="window.interactiveMarkers[${index}].increaseFontSize(false)" style="padding: 3px 8px; font-size: 11px; background-color: #20c997; color: white; border: none; border-radius: 3px; cursor: pointer;">全部+</button>
-                            <button onclick="window.interactiveMarkers[${index}].decreaseFontSize(false)" style="padding: 3px 8px; font-size: 11px; background-color: #17a2b8; color: white; border: none; border-radius: 3px; cursor: pointer;">全部-</button>
-                        </div>
+                    <div style="font-size: 13px; font-weight: bold; color: #495057; margin-bottom: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${img.title}</div>
+                    <div style="font-size: 12px; color: #28a745;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;">
+                            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                        </svg>
+                        ${detectedCount} 个标记
                     </div>
                 </div>
             `;
         });
         
-        // 添加调试面板容器
-        html += '<div id="debug_panel_container" style="margin-top: 20px;"></div>';
+        html += '</div>';
+        
+        html += `
+            <div style="margin-top: 20px; padding: 15px; background-color: #f0f7ff; border-left: 4px solid #2196F3; border-radius: 4px;">
+                <h4 style="color: #2196F3; margin-bottom: 10px; font-size: 14px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    v8.0 新功能提示
+                </h4>
+                <ul style="margin: 0; padding-left: 20px; font-size: 12px; color: #555;">
+                    <li>点击图片或按钮打开多图查看器</li>
+                    <li>鼠标移到图片边缘显示左右箭头切换</li>
+                    <li>使用键盘方向键快速导航</li>
+                    <li>点击侧边栏标注列表高亮对应标记</li>
+                    <li>双击图片添加手动标注</li>
+                    <li>点击"🔧 调试面板"按钮查看详细数据</li>
+                    <li>使用旋转按钮调整图片角度</li>
+                </ul>
+            </div>
+        `;
         
         annotatedDrawingsContainer.innerHTML = html;
-        
-        // 创建交互式标注实例
-        setTimeout(() => {
-            data.drawings.forEach((processedDrawing, index) => {
-                const originalDrawing = uploadedDrawings.find(d => d.name === processedDrawing.name);
-                if (!originalDrawing) return;
-                
-                const canvasId = `interactive_canvas_${index}`;
-                const marker = new InteractiveDrawingMarker(
-                    canvasId,
-                    originalDrawing.dataUrl,
-                    processedDrawing.detected_numbers || [],
-                    currentReferenceMap,
-                    {
-                        enableModal: true,
-                        enableDebugPanel: true,  // 启用调试面板
-                        debugInfo: processedDrawing.debug_info,  // 传入调试信息
-                        onZoomChange: (zoom) => {
-                            const display = document.getElementById(`zoom_display_${index}`);
-                            if (display) {
-                                display.textContent = `${Math.round(zoom * 100)}%`;
-                            }
-                        }
-                    }
-                );
-                
-                window.interactiveMarkers.push(marker);
-                
-                // 创建调试面板（只为第一个图片创建，避免重复）
-                if (index === 0) {
-                    setTimeout(() => {
-                        marker.createDebugPanel('debug_panel_container');
-                    }, 200);
-                }
-            });
-        }, 100);
     }
 }
 
-// 打开附图弹窗 - v6.0版本使用marker自带的openModal方法
-function openDrawingModal(index) {
-    if (!window.interactiveMarkers || !window.interactiveMarkers[index]) {
-        alert('无法打开弹窗');
+// 打开多图查看器 - v8.0 新功能
+function openMultiImageViewer(startIndex = 0) {
+    if (!window.currentViewerImages || window.currentViewerImages.length === 0) {
+        alert('没有可查看的图片');
         return;
     }
     
-    const marker = window.interactiveMarkers[index];
-    
-    // v6.0: 直接调用marker的openModal方法
-    // 该方法已经包含所有交互功能：滚轮缩放、拖拽移动、拖拽标注、编辑、删除等
-    marker.openModal();
+    const viewer = new MultiImageViewerV8(window.currentViewerImages, {
+        fontSize: 22,
+        highlightColor: '#FFD700'
+    });
+    viewer.open(startIndex);
 }
 
-// 导出单个附图
+// 导出单个附图（从多图查看器中）
 function exportDrawing(index) {
-    if (!window.interactiveMarkers || !window.interactiveMarkers[index]) {
+    if (!window.currentViewerImages || !window.currentViewerImages[index]) {
         alert('无法导出图片');
         return;
     }
     
-    const marker = window.interactiveMarkers[index];
-    const imageData = marker.exportImage();
+    // 创建临时canvas导出
+    const img = window.currentViewerImages[index];
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
     
-    // 创建下载链接
-    const link = document.createElement('a');
-    link.download = `annotated_drawing_${index + 1}.png`;
-    link.href = imageData;
-    link.click();
+    const image = new Image();
+    image.onload = function() {
+        canvas.width = image.width;
+        canvas.height = image.height;
+        ctx.drawImage(image, 0, 0);
+        
+        // 创建下载链接
+        const link = document.createElement('a');
+        link.download = `${img.title || 'annotated_drawing'}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    };
+    image.src = img.url;
 }
 
 // 旧的静态绘制函数已被交互式系统替代

@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手动标注测试 - v8.0</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        
+        .badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        
+        .feature-box {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e8f4f8 100%);
+            border-left: 4px solid #2196F3;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        
+        .feature-box h3 {
+            color: #2196F3;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .feature-list li {
+            padding: 8px 0;
+            color: #555;
+        }
+        
+        .feature-list li:before {
+            content: "✓ ";
+            color: #4caf50;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        
+        .demo-area {
+            margin-top: 30px;
+        }
+        
+        .demo-button {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 20px;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .demo-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        
+        .instructions {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffe8a1 100%);
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 8px;
+        }
+        
+        .instructions h3 {
+            color: #856404;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        
+        .step {
+            background-color: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .step-number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background-color: #ffc107;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .visual-demo {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .visual-demo h4 {
+            color: #555;
+            margin-bottom: 15px;
+        }
+        
+        .demo-canvas {
+            width: 100%;
+            max-width: 600px;
+            height: 300px;
+            background-color: white;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            margin: 0 auto;
+            display: block;
+            cursor: crosshair;
+        }
+        
+        .tip {
+            background-color: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 手动标注功能测试</h1>
+        <span class="badge">v8.0 - 双击位置作为标注点</span>
+        
+        <div class="feature-box">
+            <h3>🚀 核心改进</h3>
+            <ul class="feature-list">
+                <li>双击位置就是标注点（精确定位）</li>
+                <li>自动绘制连接线（从标注点到标签）</li>
+                <li>智能标签偏移（避免遮挡标注点）</li>
+                <li>边界自动检查（确保标签可见）</li>
+                <li>高亮显示支持（点击列表高亮）</li>
+            </ul>
+        </div>
+        
+        <div class="demo-area">
+            <h2 style="color: #555; margin-bottom: 15px;">📸 演示图片</h2>
+            <button class="demo-button" onclick="openDemo()">
+                🖼️ 打开演示图片（点击测试手动标注）
+            </button>
+        </div>
+        
+        <div class="instructions">
+            <h3>📖 使用说明</h3>
+            
+            <div class="step">
+                <span class="step-number">1</span>
+                <strong>打开查看器</strong><br>
+                点击上方按钮打开演示图片
+            </div>
+            
+            <div class="step">
+                <span class="step-number">2</span>
+                <strong>双击添加标注</strong><br>
+                在图片上任意位置双击，会弹出输入框
+            </div>
+            
+            <div class="step">
+                <span class="step-number">3</span>
+                <strong>输入标注信息</strong><br>
+                第一个输入框：输入标记序号（如 "100"）<br>
+                第二个输入框：输入标记说明（如 "新增部件"）
+            </div>
+            
+            <div class="step">
+                <span class="step-number">4</span>
+                <strong>查看标注效果</strong><br>
+                - 标注点：就在双击位置<br>
+                - 连接线：从标注点到标签<br>
+                - 标签文字：自动偏移，避免遮挡<br>
+                - 列表显示：标记为"(手动)"
+            </div>
+            
+            <div class="step">
+                <span class="step-number">5</span>
+                <strong>测试其他功能</strong><br>
+                - 点击标注列表：高亮对应标记<br>
+                - 旋转图片：测试标注是否正确<br>
+                - 缩放图片：测试标注是否清晰<br>
+                - 添加多个标注：测试边界处理
+            </div>
+        </div>
+        
+        <div class="visual-demo">
+            <h4>🎨 标注效果示意</h4>
+            <canvas id="demoCanvas" class="demo-canvas"></canvas>
+            <p style="text-align: center; margin-top: 10px; color: #666; font-size: 14px;">
+                ↑ 双击画布任意位置添加标注（演示用）
+            </p>
+        </div>
+        
+        <div class="tip">
+            <strong>💡 提示：</strong><br>
+            - 双击位置会作为标注点（红色圆点）<br>
+            - 标签会自动偏移到合适位置<br>
+            - 靠近边界时会自动调整方向<br>
+            - 连接线会从标注点连到标签<br>
+            - 所有标注都可以高亮显示
+        </div>
+    </div>
+    
+    <script src="frontend/js/multiImageViewer_v8.js"></script>
+    <script>
+        // 创建演示图片
+        function createDemoImage() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 800;
+            canvas.height = 600;
+            const ctx = canvas.getContext('2d');
+            
+            // 背景
+            ctx.fillStyle = '#e3f2fd';
+            ctx.fillRect(0, 0, 800, 600);
+            
+            // 网格
+            ctx.strokeStyle = '#ddd';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 800; i += 50) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, 600);
+                ctx.stroke();
+            }
+            for (let i = 0; i < 600; i += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(800, i);
+                ctx.stroke();
+            }
+            
+            // 标题
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 32px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('双击任意位置添加标注', 400, 300);
+            
+            // 提示
+            ctx.font = '20px Arial';
+            ctx.fillStyle = '#666';
+            ctx.fillText('标注点会在双击位置，标签会自动偏移', 400, 350);
+            
+            return canvas.toDataURL();
+        }
+        
+        // 打开演示
+        function openDemo() {
+            const images = [{
+                url: createDemoImage(),
+                title: '演示图片 - 测试手动标注',
+                detectedNumbers: [
+                    { x: 200, y: 150, number: '1', name: '示例标注1' },
+                    { x: 600, y: 150, number: '2', name: '示例标注2' },
+                    { x: 400, y: 450, number: '3', name: '示例标注3' }
+                ],
+                referenceMap: {
+                    '1': '示例标注1',
+                    '2': '示例标注2',
+                    '3': '示例标注3'
+                }
+            }];
+            
+            const viewer = new MultiImageViewerV8(images, {
+                fontSize: 22,
+                highlightColor: '#FFD700'
+            });
+            viewer.open(0);
+        }
+        
+        // 简单演示画布
+        const demoCanvas = document.getElementById('demoCanvas');
+        const demoCtx = demoCanvas.getContext('2d');
+        const annotations = [];
+        
+        // 设置画布尺寸
+        demoCanvas.width = 600;
+        demoCanvas.height = 300;
+        
+        // 绘制背景
+        function drawDemo() {
+            demoCtx.clearRect(0, 0, demoCanvas.width, demoCanvas.height);
+            
+            // 背景
+            demoCtx.fillStyle = '#f8f9fa';
+            demoCtx.fillRect(0, 0, demoCanvas.width, demoCanvas.height);
+            
+            // 提示文字
+            if (annotations.length === 0) {
+                demoCtx.fillStyle = '#999';
+                demoCtx.font = '16px Arial';
+                demoCtx.textAlign = 'center';
+                demoCtx.textBaseline = 'middle';
+                demoCtx.fillText('双击画布添加标注', demoCanvas.width / 2, demoCanvas.height / 2);
+            }
+            
+            // 绘制标注
+            annotations.forEach(ann => {
+                // 标注点（红色圆点）
+                demoCtx.beginPath();
+                demoCtx.arc(ann.markerX, ann.markerY, 5, 0, Math.PI * 2);
+                demoCtx.fillStyle = '#FF5722';
+                demoCtx.fill();
+                
+                // 连接线
+                demoCtx.beginPath();
+                demoCtx.moveTo(ann.markerX, ann.markerY);
+                demoCtx.lineTo(ann.labelX, ann.labelY);
+                demoCtx.strokeStyle = '#FF5722';
+                demoCtx.lineWidth = 2;
+                demoCtx.stroke();
+                
+                // 标签文字
+                const text = `${ann.number}: ${ann.name}`;
+                demoCtx.font = 'bold 14px Arial';
+                demoCtx.textAlign = 'left';
+                demoCtx.textBaseline = 'middle';
+                
+                // 白色描边
+                demoCtx.strokeStyle = '#FFFFFF';
+                demoCtx.lineWidth = 3;
+                demoCtx.strokeText(text, ann.labelX, ann.labelY);
+                
+                // 文字
+                demoCtx.fillStyle = '#FF5722';
+                demoCtx.fillText(text, ann.labelX, ann.labelY);
+            });
+        }
+        
+        // 双击添加标注
+        demoCanvas.addEventListener('dblclick', (e) => {
+            const rect = demoCanvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+            
+            const number = prompt('请输入标记序号：');
+            if (!number) return;
+            
+            const name = prompt('请输入标记说明：');
+            if (!name) return;
+            
+            // 智能计算标签位置
+            const offsetDistance = 60;
+            let labelX = clickX + offsetDistance;
+            let labelY = clickY - offsetDistance;
+            
+            if (labelX > demoCanvas.width - 80) {
+                labelX = clickX - offsetDistance;
+            }
+            if (labelY < 30) {
+                labelY = clickY + offsetDistance;
+            }
+            
+            annotations.push({
+                markerX: clickX,
+                markerY: clickY,
+                labelX: labelX,
+                labelY: labelY,
+                number: number,
+                name: name
+            });
+            
+            drawDemo();
+        });
+        
+        // 初始绘制
+        drawDemo();
+        
+        console.log('✅ 手动标注测试页面加载完成');
+        console.log('🎯 双击位置作为标注点');
+        console.log('📏 智能标签偏移');
+        console.log('🔗 自动绘制连接线');
+    </script>
+</body>
+</html>
