@@ -1483,8 +1483,14 @@
             <div class="container">
                 <div class="main-content">
                     <!-- 功能说明 - 紧凑版 -->
-                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; color: white;">
-                        <h3 style="margin: 0 0 5px 0; font-size: 18px;">🔍 专利附图数字序号识别与标注</h3>
+                    <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; color: white; box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2);">
+                        <h3 style="margin: 0 0 5px 0; font-size: 18px;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                            专利附图数字序号识别与标注
+                        </h3>
                         <p style="margin: 0; font-size: 14px; opacity: 0.9;">上传附图 + 输入说明书 → 自动识别标号并标注</p>
                     </div>
 
@@ -1494,10 +1500,23 @@
                         <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px;">
                             <!-- 上传附图 -->
                             <div style="margin-bottom: 20px;">
-                                <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #495057;">📤 上传附图</h4>
+                                <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #495057;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="17 8 12 3 7 8"></polyline>
+                                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                                    </svg>
+                                    上传附图
+                                </h4>
                                 <input type="file" id="drawing_upload_input" accept="image/*" multiple style="display: none;">
-                                <div id="drawing_paste_area" style="border: 2px dashed #dee2e6; border-radius: 6px; padding: 15px; text-align: center; background-color: white; cursor: pointer; transition: all 0.3s;">
-                                    <p style="margin: 0; color: #6c757d; font-size: 13px;">📋 点击或粘贴图片</p>
+                                <div id="drawing_paste_area" style="border: 2px dashed #28a745; border-radius: 6px; padding: 15px; text-align: center; background-color: white; cursor: pointer; transition: all 0.3s;">
+                                    <p style="margin: 0; color: #28a745; font-size: 13px;">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;">
+                                            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                                            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                                        </svg>
+                                        点击或粘贴图片
+                                    </p>
                                     <p style="margin: 5px 0 0 0; color: #adb5bd; font-size: 11px;">支持多张图片</p>
                                 </div>
                                 <div id="uploaded_drawings_list" style="margin-top: 10px; max-height: 150px; overflow-y: auto;">
@@ -1507,16 +1526,35 @@
 
                             <!-- 说明书输入 -->
                             <div style="margin-bottom: 20px;">
-                                <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #495057;">📝 说明书内容</h4>
+                                <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #495057;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                                        <polyline points="10 9 9 9 8 9"></polyline>
+                                    </svg>
+                                    说明书内容
+                                </h4>
                                 <textarea id="specification_input" rows="8" placeholder="输入说明书内容，例如：&#10;71. 机壳&#10;711. 前壳体&#10;712. 后壳体&#10;..." style="width: 100%; padding: 10px; border: 1px solid #dee2e6; border-radius: 6px; font-size: 13px; font-family: 'Courier New', monospace; resize: vertical;"></textarea>
                             </div>
 
                             <!-- 操作按钮 -->
                             <div style="display: flex; gap: 10px;">
-                                <button id="start_processing_btn" class="action-button" style="flex: 1; padding: 12px; font-size: 14px; font-weight: bold;">🚀 开始处理</button>
-                                <button id="clear_all_btn" class="small-button delete-button" style="padding: 12px 15px;">🗑️</button>
+                                <button id="start_processing_btn" class="action-button" style="flex: 1; padding: 12px; font-size: 14px; font-weight: bold; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border: none; color: white; border-radius: 6px; cursor: pointer; transition: all 0.3s;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;">
+                                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                    </svg>
+                                    开始处理
+                                </button>
+                                <button id="clear_all_btn" class="small-button delete-button" style="padding: 12px 15px; background-color: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    </svg>
+                                </button>
                             </div>
-                            <div id="processing_status" style="margin-top: 10px; font-size: 13px; font-weight: bold; color: #667eea; text-align: center;"></div>
+                            <div id="processing_status" style="margin-top: 10px; font-size: 13px; font-weight: bold; color: #28a745; text-align: center;"></div>
                         </div>
 
                         <!-- 右侧：结果显示区域 -->
@@ -1524,14 +1562,23 @@
                             <!-- 处理结果统计 -->
                             <div id="processing_result" style="margin-bottom: 20px;">
                                 <div style="color: #6c757d; font-size: 14px; text-align: center; padding: 20px; background-color: #f8f9fa; border-radius: 6px;">
-                                    ⏳ 请上传图片和输入说明书，然后点击"开始处理"
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                    请上传图片和输入说明书，然后点击"开始处理"
                                 </div>
                             </div>
 
                             <!-- 标注后的附图 -->
                             <div id="annotated_drawings_container">
                                 <div style="color: #6c757d; font-size: 14px; text-align: center; padding: 40px; background-color: #f8f9fa; border-radius: 6px; border: 2px dashed #dee2e6;">
-                                    🖼️ 处理完成后，标注后的附图将显示在此处
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom: 10px;">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                        <polyline points="21 15 16 10 5 21"></polyline>
+                                    </svg>
+                                    <div>处理完成后，标注后的附图将显示在此处</div>
                                 </div>
                             </div>
                         </div>
@@ -1541,7 +1588,7 @@
         </div>
 
 <!-- 功能八：专利附图标记功能 -->
-<script src="../js/drawingMarkerInteractive.js?v=20260130"></script>
+<script src="../js/drawingMarkerInteractive_v6.js?v=20260201"></script>
 <script>
 // 专利附图标记功能数据存储
 let uploadedDrawings = [];
@@ -1681,13 +1728,13 @@ function clearAllDrawings() {
     // 清空处理结果
     const processingResult = document.getElementById('processing_result');
     if (processingResult) {
-        processingResult.innerHTML = '<div style="color: #6c757d; font-size: 14px; text-align: center; padding: 20px; background-color: #f8f9fa; border-radius: 6px;">⏳ 请上传图片和输入说明书，然后点击"开始处理"</div>';
+        processingResult.innerHTML = '<div style="color: #6c757d; font-size: 14px; text-align: center; padding: 20px; background-color: #f8f9fa; border-radius: 6px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> 请上传图片和输入说明书，然后点击"开始处理"</div>';
     }
     
     // 清空标注后的附图
     const annotatedDrawingsContainer = document.getElementById('annotated_drawings_container');
     if (annotatedDrawingsContainer) {
-        annotatedDrawingsContainer.innerHTML = '<div style="color: #6c757d; font-size: 14px; text-align: center; padding: 40px; background-color: #f8f9fa; border-radius: 6px; border: 2px dashed #dee2e6;">🖼️ 处理完成后，标注后的附图将显示在此处</div>';
+        annotatedDrawingsContainer.innerHTML = '<div style="color: #6c757d; font-size: 14px; text-align: center; padding: 40px; background-color: #f8f9fa; border-radius: 6px; border: 2px dashed #dee2e6;"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom: 10px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><div>处理完成后，标注后的附图将显示在此处</div></div>';
     }
     
     // 清空处理状态
@@ -1789,7 +1836,7 @@ function displayProcessingResult(data) {
     // 更新处理状态
     const processingStatus = document.getElementById('processing_status');
     if (processingStatus) {
-        processingStatus.textContent = '✅ 处理完成';
+        processingStatus.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;"><polyline points="20 6 9 17 4 12"></polyline></svg> 处理完成';
         processingStatus.style.color = '#28a745';
     }
     
@@ -1800,14 +1847,16 @@ function displayProcessingResult(data) {
         const statusColor = hasResults ? '#d4edda' : '#fff3cd';
         const borderColor = hasResults ? '#c3e6cb' : '#ffeaa7';
         const textColor = hasResults ? '#155724' : '#856404';
-        const icon = hasResults ? '✅' : '⚠️';
+        const icon = hasResults ? 
+            '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;"><polyline points="20 6 9 17 4 12"></polyline></svg>' : 
+            '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
         
         let html = `
             <div style="padding: 15px; background-color: ${statusColor}; border-radius: 6px; border: 1px solid ${borderColor}; color: ${textColor};">
                 <h4 style="margin: 0 0 10px 0; font-size: 16px;">${icon} ${data.message || '处理完成'}</h4>
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px;">
                     <div style="text-align: center; padding: 10px; background-color: white; border-radius: 4px;">
-                        <div style="font-size: 24px; font-weight: bold; color: #667eea;">${data.total_numbers}</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #28a745;">${data.total_numbers}</div>
                         <div style="font-size: 12px; color: #6c757d;">识别标号</div>
                     </div>
                     <div style="text-align: center; padding: 10px; background-color: white; border-radius: 4px;">
@@ -1823,8 +1872,8 @@ function displayProcessingResult(data) {
         
         // 显示建议
         if (data.suggestions && data.suggestions.length > 0) {
-            html += `<div style="margin-top: 10px; padding: 10px; background-color: rgba(33, 150, 243, 0.1); border-radius: 4px; font-size: 13px;">`;
-            html += `<strong>💡 建议:</strong><ul style="margin: 5px 0; padding-left: 20px;">`;
+            html += `<div style="margin-top: 10px; padding: 10px; background-color: rgba(40, 167, 69, 0.1); border-radius: 4px; font-size: 13px;">`;
+            html += `<strong><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> 建议:</strong><ul style="margin: 5px 0; padding-left: 20px;">`;
             data.suggestions.forEach(suggestion => {
                 html += `<li>${suggestion}</li>`;
             });
@@ -1841,7 +1890,12 @@ function displayProcessingResult(data) {
         if (data.total_numbers === 0) {
             annotatedDrawingsContainer.innerHTML = `
                 <div style="color: #856404; background-color: #fff3cd; padding: 20px; border-radius: 6px; border: 1px solid #ffeaa7; text-align: center;">
-                    <strong>⚠️ 未识别到任何数字序号</strong><br><br>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom: 10px;">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    <div><strong>未识别到任何数字序号</strong></div><br>
                     请检查：<br>
                     1. 图片是否清晰<br>
                     2. 图片中是否包含数字序号<br>
@@ -1868,11 +1922,27 @@ function displayProcessingResult(data) {
                 <div style="margin-bottom: 20px; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; background-color: #f8f9fa;">
                     <div style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                         <span style="font-size: 14px; font-weight: bold; color: #495057;">
-                            📎 ${processedDrawing.name} <span style="color: #28a745;">(${detectedCount}个标记)</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;">
+                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                            </svg>
+                            ${processedDrawing.name} <span style="color: #28a745;">(${detectedCount}个标记)</span>
                         </span>
                         <div style="display: flex; gap: 5px;">
-                            <button onclick="openDrawingModal(${index})" style="padding: 5px 10px; font-size: 12px; background-color: #9c27b0; color: white; border: none; border-radius: 4px; cursor: pointer;">🔍 放大</button>
-                            <button onclick="exportDrawing(${index})" style="padding: 5px 10px; font-size: 12px; background-color: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer;">📥 导出</button>
+                            <button onclick="openDrawingModal(${index})" style="padding: 5px 10px; font-size: 12px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <path d="m21 21-4.35-4.35"></path>
+                                </svg>
+                                放大
+                            </button>
+                            <button onclick="exportDrawing(${index})" style="padding: 5px 10px; font-size: 12px; background-color: #20c997; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                导出
+                            </button>
                         </div>
                     </div>
                     <div style="background-color: white; border-radius: 6px; padding: 10px;">
@@ -1880,13 +1950,18 @@ function displayProcessingResult(data) {
                     </div>
                     <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                         <div style="font-size: 11px; color: #6c757d;">
-                            💡 <span style="color: #FF6B6B;">滚轮缩放</span> | <span style="color: #4CAF50;">拖动移动</span> | <span style="color: #2196F3;">拖动标注</span> | <span style="color: #9C27B0;">双击编辑</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 3px;">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                            </svg>
+                            滚轮缩放 | 拖动移动 | 拖动标注 | 双击编辑
                         </div>
                         <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                            <button onclick="window.interactiveMarkers[${index}].increaseFontSize(true)" style="padding: 3px 8px; font-size: 11px; background-color: #4CAF50; color: white; border: none; border-radius: 3px; cursor: pointer;">选中+</button>
-                            <button onclick="window.interactiveMarkers[${index}].decreaseFontSize(true)" style="padding: 3px 8px; font-size: 11px; background-color: #FF9800; color: white; border: none; border-radius: 3px; cursor: pointer;">选中-</button>
-                            <button onclick="window.interactiveMarkers[${index}].increaseFontSize(false)" style="padding: 3px 8px; font-size: 11px; background-color: #2196F3; color: white; border: none; border-radius: 3px; cursor: pointer;">全部+</button>
-                            <button onclick="window.interactiveMarkers[${index}].decreaseFontSize(false)" style="padding: 3px 8px; font-size: 11px; background-color: #9C27B0; color: white; border: none; border-radius: 3px; cursor: pointer;">全部-</button>
+                            <button onclick="window.interactiveMarkers[${index}].increaseFontSize(true)" style="padding: 3px 8px; font-size: 11px; background-color: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">选中+</button>
+                            <button onclick="window.interactiveMarkers[${index}].decreaseFontSize(true)" style="padding: 3px 8px; font-size: 11px; background-color: #ffc107; color: white; border: none; border-radius: 3px; cursor: pointer;">选中-</button>
+                            <button onclick="window.interactiveMarkers[${index}].increaseFontSize(false)" style="padding: 3px 8px; font-size: 11px; background-color: #20c997; color: white; border: none; border-radius: 3px; cursor: pointer;">全部+</button>
+                            <button onclick="window.interactiveMarkers[${index}].decreaseFontSize(false)" style="padding: 3px 8px; font-size: 11px; background-color: #17a2b8; color: white; border: none; border-radius: 3px; cursor: pointer;">全部-</button>
                         </div>
                     </div>
                 </div>
