@@ -1899,12 +1899,41 @@ function startProcessing() {
         }
     }, timeoutMs);
     
+    // 获取API Key（AI模式需要）
+    const apiKey = appState?.apiKey || localStorage.getItem('zhipuai_api_key') || '';
+    
+    // 准备请求头
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+    
+    // 如果是AI模式，必须添加Authorization header
+    if (aiConfig.aiMode) {
+        if (!apiKey) {
+            if (processingStatus) {
+                processingStatus.innerHTML = `
+                    <div style="color: #721c24; background-color: #f8d7da; padding: 10px; border-radius: 4px; border: 1px solid #f5c6cb;">
+                        ❌ AI模式需要API Key
+                    </div>
+                `;
+            }
+            alert('AI模式需要配置API Key。请点击右上角⚙️设置并保存您的智谱AI API Key。');
+            
+            // 重新启用按钮
+            if (startBtn) {
+                startBtn.disabled = false;
+                startBtn.style.opacity = '1';
+                startBtn.style.cursor = 'pointer';
+            }
+            return;
+        }
+        headers['Authorization'] = `Bearer ${apiKey}`;
+    }
+    
     // 调用后端API进行处理
     fetch('/api/drawing-marker/process', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
+        headers: headers,
         body: JSON.stringify(processingData)
     })
     .then(response => {

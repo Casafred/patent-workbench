@@ -1,0 +1,32 @@
+fix: 修复AI说明书处理缺少Authorization header的问题
+
+问题描述:
+- AI模式下点击"开始处理"直接报错
+- 错误信息: "Authorization header with Bearer token is required"
+- 原因: 前端调用接口时没有添加Authorization header
+
+修复内容:
+- 前端: 在AI模式下添加Authorization header
+- 前端: 检查API Key是否存在，未配置时提示用户
+- 后端: 优化注释，说明AI模式需要Authorization
+- 规则模式: 不需要Authorization，保持向后兼容
+
+技术细节:
+- 从 appState 或 localStorage 获取 API Key
+- AI模式下添加 Authorization: Bearer <api_key>
+- 规则模式下不添加 Authorization（不需要）
+- 符合现有API规范，与功能六等保持一致
+
+影响范围:
+- 功能八（交互式附图标注）
+- AI说明书处理功能
+
+测试验证:
+- AI模式有API Key: 正常处理
+- AI模式无API Key: 友好提示
+- 规则模式: 正常工作（不需要API Key）
+
+相关文件:
+- frontend/index.html (主要修复)
+- backend/routes/drawing_marker.py (注释优化)
+- AI说明书开关Authorization修复.md (详细说明)

@@ -114,7 +114,7 @@ def process_drawing_marker():
                     status_code=400
                 )
             
-            # Get API key from Authorization header
+            # Get API key from Authorization header (AI mode requires it)
             client, error = get_zhipu_client()
             if error:
                 return error
@@ -156,7 +156,7 @@ def process_drawing_marker():
             print(f"[DEBUG] AI extracted reference_map: {reference_map}")
             print(f"[DEBUG] Total markers from AI: {len(reference_map)}")
         else:
-            # 规则模式：使用jieba分词
+            # 规则模式：使用jieba分词（不需要API key）
             print(f"[DEBUG] Using rule-based mode (jieba) to extract components")
             reference_map = extract_reference_markers(specification)
             print(f"[DEBUG] Extracted reference_map: {reference_map}")
