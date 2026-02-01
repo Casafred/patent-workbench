@@ -1032,7 +1032,7 @@ class MultiImageViewerV8 {
                         labels[j].labelY += isTopRegion ? rowOffset : -rowOffset;
                         
                         // 边界检查
-                        labels[j].labelY = Math.max(label.textHeight / 2 + 10, 
+                        labels[j].labelY = Math.max(labels[j].textHeight / 2 + 10, 
                             Math.min(canvasHeight - labels[j].textHeight / 2 - 10, labels[j].labelY));
                     }
                 }
