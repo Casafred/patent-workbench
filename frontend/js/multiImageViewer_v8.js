@@ -617,11 +617,9 @@ class MultiImageViewerV8 {
         `;
         btn.addEventListener('click', onClick);
         btn.addEventListener('mouseenter', () => {
-            btn.style.backgroundColor = 'rgba(76, 175, 80, 0.1)';
             btn.style.transform = 'scale(1.1)';
         });
         btn.addEventListener('mouseleave', () => {
-            btn.style.backgroundColor = 'transparent';
             btn.style.transform = 'scale(1)';
         });
         return btn;
@@ -909,7 +907,7 @@ class MultiImageViewerV8 {
                 isSelected: false,
                 isManual: false,
                 fontSize: this.currentFontSize,
-                color: '#4CAF50' // 默认统一使用绿色
+                color: this.currentColor // 使用当前选择的颜色
             };
             
             region.labels.push(annotation);
