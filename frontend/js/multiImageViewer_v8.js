@@ -216,8 +216,29 @@ class MultiImageViewerV8 {
                 const mouseX = (e.clientX - rect.left) * scaleX;
                 const mouseY = (e.clientY - rect.top) * scaleY;
                 
-                draggedAnnotation.labelX = mouseX - dragOffsetX;
-                draggedAnnotation.labelY = mouseY - dragOffsetY;
+                // 计算新位置
+                let newLabelX = mouseX - dragOffsetX;
+                let newLabelY = mouseY - dragOffsetY;
+                
+                // 边界限制：获取文字宽度和高度
+                const ctx = this.modalCanvas.getContext('2d');
+                const text = `${draggedAnnotation.number}: ${draggedAnnotation.name}`;
+                const fontSize = draggedAnnotation.fontSize || this.currentFontSize;
+                ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+                const textWidth = ctx.measureText(text).width;
+                const textHeight = fontSize * 1.5;
+                
+                // 限制在画布范围内
+                const minX = 10;
+                const maxX = this.modalCanvas.width - textWidth - 10;
+                const minY = textHeight / 2 + 10;
+                const maxY = this.modalCanvas.height - textHeight / 2 - 10;
+                
+                newLabelX = Math.max(minX, Math.min(maxX, newLabelX));
+                newLabelY = Math.max(minY, Math.min(maxY, newLabelY));
+                
+                draggedAnnotation.labelX = newLabelX;
+                draggedAnnotation.labelY = newLabelY;
                 this.renderCanvas();
             }
         });
@@ -648,15 +669,22 @@ class MultiImageViewerV8 {
             colorBtn.title = colorObj.name;
             
             colorBtn.addEventListener('click', () => {
+                // 更新当前颜色
                 this.currentColor = colorObj.value;
+                
                 // 更新选中标注的颜色
                 const selected = this.annotations.filter(a => a.isSelected);
                 if (selected.length > 0) {
                     selected.forEach(ann => {
                         ann.color = colorObj.value;
                     });
-                    this.renderCanvas();
+                } else {
+                    // 如果没有选中标注，提示用户
+                    // 但仍然更新默认颜色，用于新添加的标注
                 }
+                
+                this.renderCanvas();
+                
                 // 更新按钮边框
                 colorGrid.querySelectorAll('button').forEach(btn => {
                     btn.style.border = '2px solid transparent';
@@ -678,7 +706,7 @@ class MultiImageViewerV8 {
         });
         
         const colorHint = document.createElement('div');
-        colorHint.textContent = '选中标注后点击颜色';
+        colorHint.textContent = '点击颜色改变选中标注';
         colorHint.style.cssText = `
             text-align: center;
             font-size: 11px;
@@ -777,26 +805,92 @@ class MultiImageViewerV8 {
         const detectedNumbers = this.currentImageData.detectedNumbers || [];
         const referenceMap = this.currentImageData.referenceMap || {};
         
+        // 智能布局：将标注分布到画布边缘
+        const canvasWidth = this.modalCanvas.width;
+        const canvasHeight = this.modalCanvas.height;
+        const margin = 50; // 距离边缘的最小距离
+        const labelPadding = 150; // 标签之间的最小间距
+        
+        // 将标注分配到四个边缘区域
+        const regions = [
+            { name: 'top', labels: [] },
+            { name: 'right', labels: [] },
+            { name: 'bottom', labels: [] },
+            { name: 'left', labels: [] }
+        ];
+        
         this.annotations = detectedNumbers.map((detected, index) => {
-            const offsetDistance = 80;
-            const angle = (index * 45) % 360;
-            const offsetX = Math.cos(angle * Math.PI / 180) * offsetDistance;
-            const offsetY = Math.sin(angle * Math.PI / 180) * offsetDistance;
+            // 根据标注点位置决定标签放在哪个边缘
+            const centerX = canvasWidth / 2;
+            const centerY = canvasHeight / 2;
+            const dx = detected.x - centerX;
+            const dy = detected.y - centerY;
             
-            return {
+            let region;
+            let labelX, labelY;
+            
+            // 根据标注点相对于中心的位置，选择最近的边缘
+            if (Math.abs(dx) > Math.abs(dy)) {
+                // 左右边缘
+                if (dx > 0) {
+                    region = regions[1]; // right
+                    labelX = canvasWidth - margin;
+                } else {
+                    region = regions[3]; // left
+                    labelX = margin;
+                }
+                labelY = detected.y;
+            } else {
+                // 上下边缘
+                if (dy > 0) {
+                    region = regions[2]; // bottom
+                    labelY = canvasHeight - margin;
+                } else {
+                    region = regions[0]; // top
+                    labelY = margin;
+                }
+                labelX = detected.x;
+            }
+            
+            const annotation = {
                 id: `annotation_${index}`,
                 markerX: detected.x,
                 markerY: detected.y,
-                labelX: detected.x + offsetX,
-                labelY: detected.y + offsetY,
+                labelX: labelX,
+                labelY: labelY,
                 number: detected.number,
                 name: detected.name || referenceMap[detected.number] || '未知',
                 confidence: detected.confidence || 0,
                 isSelected: false,
                 isManual: false,
                 fontSize: this.currentFontSize,
-                color: this.currentColor
+                color: this.availableColors[index % this.availableColors.length].value // 循环使用颜色
             };
+            
+            region.labels.push(annotation);
+            return annotation;
+        });
+        
+        // 调整每个区域内的标签位置，避免重叠
+        regions.forEach(region => {
+            if (region.labels.length === 0) return;
+            
+            // 按照标注点位置排序
+            if (region.name === 'top' || region.name === 'bottom') {
+                region.labels.sort((a, b) => a.markerX - b.markerX);
+                // 均匀分布在水平方向
+                const spacing = (canvasWidth - 2 * margin) / (region.labels.length + 1);
+                region.labels.forEach((label, i) => {
+                    label.labelX = margin + spacing * (i + 1);
+                });
+            } else {
+                region.labels.sort((a, b) => a.markerY - b.markerY);
+                // 均匀分布在垂直方向
+                const spacing = (canvasHeight - 2 * margin) / (region.labels.length + 1);
+                region.labels.forEach((label, i) => {
+                    label.labelY = margin + spacing * (i + 1);
+                });
+            }
         });
     }
     
