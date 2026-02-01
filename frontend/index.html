@@ -1928,6 +1928,10 @@ function displayProcessingResult(data) {
             `;
         });
         html += '</div>';
+        
+        // 添加调试面板容器
+        html += '<div id="debug_panel_container" style="margin-top: 30px;"></div>';
+        
         annotatedDrawingsContainer.innerHTML = html;
         
         // 创建交互式标注实例
@@ -1944,6 +1948,8 @@ function displayProcessingResult(data) {
                     currentReferenceMap,
                     {
                         enableModal: true,
+                        enableDebugPanel: true,  // 启用调试面板
+                        debugInfo: processedDrawing.debug_info,  // 传入调试信息
                         onZoomChange: (zoom) => {
                             const display = document.getElementById(`zoom_display_${index}`);
                             if (display) {
@@ -1954,6 +1960,11 @@ function displayProcessingResult(data) {
                 );
                 
                 window.interactiveMarkers.push(marker);
+                
+                // 创建调试面板（只为第一个图片创建，避免重复）
+                if (index === 0) {
+                    marker.createDebugPanel('debug_panel_container');
+                }
             });
         }, 100);
     }
