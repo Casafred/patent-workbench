@@ -1482,67 +1482,60 @@
         <div id="drawing_marker-tab" class="tab-content">
             <div class="container">
                 <div class="main-content">
-                    <div class="step">
-                <div class="step-header">专利附图数字序号识别与标注</div>
-                <p class="info">上传或粘贴专利附图，输入说明书内容，系统将自动识别图上的数字序号，并与说明书中的附图标记对应，最后显示在附图对应区域上。</p>
-            </div>
+                    <!-- 功能说明 - 紧凑版 -->
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; color: white;">
+                        <h3 style="margin: 0 0 5px 0; font-size: 18px;">🔍 专利附图数字序号识别与标注</h3>
+                        <p style="margin: 0; font-size: 14px; opacity: 0.9;">上传附图 + 输入说明书 → 自动识别标号并标注</p>
+                    </div>
 
-            <div class="template-config-grid">
-                <!-- 左侧：图片上传和处理 -->
-                <div class="template-config-main">
-                    <div class="step">
-                        <div class="step-header">步骤 1: 上传或粘贴专利附图</div>
-                        <div class="config-item">
-                            <label for="drawing_upload_input">上传专利附图:</label>
-                            <input type="file" id="drawing_upload_input" accept="image/*" multiple>
+                    <!-- 主要内容区域 - 左右布局 -->
+                    <div style="display: grid; grid-template-columns: 380px 1fr; gap: 20px; align-items: start;">
+                        <!-- 左侧：输入区域（紧凑） -->
+                        <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px;">
+                            <!-- 上传附图 -->
+                            <div style="margin-bottom: 20px;">
+                                <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #495057;">📤 上传附图</h4>
+                                <input type="file" id="drawing_upload_input" accept="image/*" multiple style="display: none;">
+                                <div id="drawing_paste_area" style="border: 2px dashed #dee2e6; border-radius: 6px; padding: 15px; text-align: center; background-color: white; cursor: pointer; transition: all 0.3s;">
+                                    <p style="margin: 0; color: #6c757d; font-size: 13px;">📋 点击或粘贴图片</p>
+                                    <p style="margin: 5px 0 0 0; color: #adb5bd; font-size: 11px;">支持多张图片</p>
+                                </div>
+                                <div id="uploaded_drawings_list" style="margin-top: 10px; max-height: 150px; overflow-y: auto;">
+                                    <div style="color: #6c757d; font-size: 12px; text-align: center; padding: 10px;">暂无图片</div>
+                                </div>
+                            </div>
+
+                            <!-- 说明书输入 -->
+                            <div style="margin-bottom: 20px;">
+                                <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #495057;">📝 说明书内容</h4>
+                                <textarea id="specification_input" rows="8" placeholder="输入说明书内容，例如：&#10;71. 机壳&#10;711. 前壳体&#10;712. 后壳体&#10;..." style="width: 100%; padding: 10px; border: 1px solid #dee2e6; border-radius: 6px; font-size: 13px; font-family: 'Courier New', monospace; resize: vertical;"></textarea>
+                            </div>
+
+                            <!-- 操作按钮 -->
+                            <div style="display: flex; gap: 10px;">
+                                <button id="start_processing_btn" class="action-button" style="flex: 1; padding: 12px; font-size: 14px; font-weight: bold;">🚀 开始处理</button>
+                                <button id="clear_all_btn" class="small-button delete-button" style="padding: 12px 15px;">🗑️</button>
+                            </div>
+                            <div id="processing_status" style="margin-top: 10px; font-size: 13px; font-weight: bold; color: #667eea; text-align: center;"></div>
                         </div>
-                        <div class="config-item">
-                            <label for="drawing_paste_area">或粘贴图片到此处:</label>
-                            <div id="drawing_paste_area" style="border: 2px dashed var(--border-color); border-radius: 8px; padding: 20px; min-height: 150px; text-align: center; background-color: rgba(0,0,0,0.02); cursor: pointer; transition: all 0.3s;">
-                                <p style="color: var(--text-color-secondary);">📋 点击或粘贴图片到此处</p>
-                                <p style="color: var(--text-color-tertiary); font-size: 0.8em; margin-top: 10px;">支持JPG、PNG、PDF等格式，可上传多张图片</p>
+
+                        <!-- 右侧：结果显示区域 -->
+                        <div style="background-color: white; border-radius: 8px; border: 1px solid #dee2e6; padding: 20px;">
+                            <!-- 处理结果统计 -->
+                            <div id="processing_result" style="margin-bottom: 20px;">
+                                <div style="color: #6c757d; font-size: 14px; text-align: center; padding: 20px; background-color: #f8f9fa; border-radius: 6px;">
+                                    ⏳ 请上传图片和输入说明书，然后点击"开始处理"
+                                </div>
+                            </div>
+
+                            <!-- 标注后的附图 -->
+                            <div id="annotated_drawings_container">
+                                <div style="color: #6c757d; font-size: 14px; text-align: center; padding: 40px; background-color: #f8f9fa; border-radius: 6px; border: 2px dashed #dee2e6;">
+                                    🖼️ 处理完成后，标注后的附图将显示在此处
+                                </div>
                             </div>
                         </div>
-                        <div id="uploaded_drawings_list" style="margin-top: 15px; max-height: 200px; overflow-y: auto;">
-                            <div class="info">暂无上传的图片</div>
-                        </div>
                     </div>
-
-                    <div class="step">
-                        <div class="step-header">步骤 2: 输入说明书内容</div>
-                        <div class="config-item">
-                            <label for="specification_input">说明书内容:</label>
-                            <textarea id="specification_input" rows="10" placeholder="请在此处输入完整的专利说明书内容，系统将从中提取附图标记和对应的部件名称..."></textarea>
-                        </div>
-                    </div>
-
-                    <div class="step">
-                        <div class="step-header">步骤 3: 开始处理</div>
-                        <div style="display: flex; gap: 15px; margin-top: 15px;">
-                            <button id="start_processing_btn" class="action-button">开始处理</button>
-                            <button id="clear_all_btn" class="small-button delete-button">清空所有</button>
-                        </div>
-                        <div id="processing_status" style="margin-top: 15px; font-weight: bold; color: var(--primary-color);"></div>
-                    </div>
-                </div>
-
-                <!-- 右侧：结果显示 -->
-                <div class="template-config-prompts">
-                    <div class="step">
-                        <div class="step-header">处理结果</div>
-                        <div id="processing_result" style="margin-top: 15px;">
-                            <div class="info">请先上传图片和输入说明书内容，然后点击开始处理按钮。</div>
-                        </div>
-                    </div>
-
-                    <div class="step">
-                        <div class="step-header">标注后的附图</div>
-                        <div id="annotated_drawings_container" style="margin-top: 15px; max-height: 500px; overflow-y: auto;">
-                            <div class="info">处理完成后，标注后的附图将显示在此处。</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
                 </div>
             </div>
         </div>
@@ -1645,19 +1638,21 @@ function updateUploadedDrawingsList() {
     if (!listContainer) return;
 
     if (uploadedDrawings.length === 0) {
-        listContainer.innerHTML = '<div class="info">暂无上传的图片</div>';
+        listContainer.innerHTML = '<div style="color: #6c757d; font-size: 12px; text-align: center; padding: 10px;">暂无图片</div>';
         return;
     }
 
-    let html = '<div style="display: flex; flex-wrap: wrap; gap: 15px;">';
+    let html = '<div style="display: flex; flex-direction: column; gap: 8px;">';
     uploadedDrawings.forEach((drawing, index) => {
+        const sizeKB = (drawing.size / 1024).toFixed(1);
         html += `
-            <div style="position: relative; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; max-width: 200px; flex: 1 1 200px; background-color: white;">
-                <div style="margin-bottom: 10px; font-size: 0.8em; color: var(--text-color-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                    ${drawing.name}
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px; background-color: white; border: 1px solid #dee2e6; border-radius: 6px;">
+                <img src="${drawing.dataUrl}" alt="${drawing.name}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; flex-shrink: 0;">
+                <div style="flex: 1; min-width: 0;">
+                    <div style="font-size: 12px; color: #495057; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${drawing.name}</div>
+                    <div style="font-size: 11px; color: #adb5bd;">${sizeKB} KB</div>
                 </div>
-                <img src="${drawing.dataUrl}" alt="${drawing.name}" style="width: 100%; height: 150px; object-fit: contain; border-radius: 4px; margin-bottom: 10px;">
-                <button onclick="removeDrawing(${index})" class="small-button delete-button" style="width: 100%;">删除</button>
+                <button onclick="removeDrawing(${index})" style="padding: 4px 8px; font-size: 11px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; flex-shrink: 0;">删除</button>
             </div>
         `;
     });
@@ -1686,13 +1681,13 @@ function clearAllDrawings() {
     // 清空处理结果
     const processingResult = document.getElementById('processing_result');
     if (processingResult) {
-        processingResult.innerHTML = '<div class="info">请先上传图片和输入说明书内容，然后点击开始处理按钮。</div>';
+        processingResult.innerHTML = '<div style="color: #6c757d; font-size: 14px; text-align: center; padding: 20px; background-color: #f8f9fa; border-radius: 6px;">⏳ 请上传图片和输入说明书，然后点击"开始处理"</div>';
     }
     
     // 清空标注后的附图
     const annotatedDrawingsContainer = document.getElementById('annotated_drawings_container');
     if (annotatedDrawingsContainer) {
-        annotatedDrawingsContainer.innerHTML = '<div class="info">处理完成后，标注后的附图将显示在此处。</div>';
+        annotatedDrawingsContainer.innerHTML = '<div style="color: #6c757d; font-size: 14px; text-align: center; padding: 40px; background-color: #f8f9fa; border-radius: 6px; border: 2px dashed #dee2e6;">🖼️ 处理完成后，标注后的附图将显示在此处</div>';
     }
     
     // 清空处理状态
@@ -1794,42 +1789,41 @@ function displayProcessingResult(data) {
     // 更新处理状态
     const processingStatus = document.getElementById('processing_status');
     if (processingStatus) {
-        processingStatus.textContent = '处理完成';
+        processingStatus.textContent = '✅ 处理完成';
+        processingStatus.style.color = '#28a745';
     }
     
-    // 更新处理结果 - 使用真实API返回的数据
+    // 更新处理结果统计
     const processingResult = document.getElementById('processing_result');
     if (processingResult) {
         const hasResults = data.total_numbers > 0;
-        const statusColor = hasResults ? 'rgba(40, 167, 69, 0.1)' : 'rgba(255, 193, 7, 0.1)';
-        const borderColor = hasResults ? 'rgba(40, 167, 69, 0.3)' : 'rgba(255, 193, 7, 0.3)';
-        const iconColor = hasResults ? 'var(--success-color)' : '#ff9800';
+        const statusColor = hasResults ? '#d4edda' : '#fff3cd';
+        const borderColor = hasResults ? '#c3e6cb' : '#ffeaa7';
+        const textColor = hasResults ? '#155724' : '#856404';
         const icon = hasResults ? '✅' : '⚠️';
         
         let html = `
-            <div style="padding: 15px; background-color: ${statusColor}; border-radius: 8px; border: 1px solid ${borderColor};">
-                <h4 style="color: ${iconColor}; margin-bottom: 10px;">${icon} ${data.message || '处理完成'}</h4>
-                <p>已识别 ${data.drawings.length} 张附图中的数字序号，并与说明书中的附图标记对应。</p>
-                <p>共识别出 <strong>${data.total_numbers}</strong> 个数字序号，匹配率 <strong>${data.match_rate}%</strong>。</p>
+            <div style="padding: 15px; background-color: ${statusColor}; border-radius: 6px; border: 1px solid ${borderColor}; color: ${textColor};">
+                <h4 style="margin: 0 0 10px 0; font-size: 16px;">${icon} ${data.message || '处理完成'}</h4>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px;">
+                    <div style="text-align: center; padding: 10px; background-color: white; border-radius: 4px;">
+                        <div style="font-size: 24px; font-weight: bold; color: #667eea;">${data.total_numbers}</div>
+                        <div style="font-size: 12px; color: #6c757d;">识别标号</div>
+                    </div>
+                    <div style="text-align: center; padding: 10px; background-color: white; border-radius: 4px;">
+                        <div style="font-size: 24px; font-weight: bold; color: #28a745;">${data.match_rate}%</div>
+                        <div style="font-size: 12px; color: #6c757d;">匹配率</div>
+                    </div>
+                    <div style="text-align: center; padding: 10px; background-color: white; border-radius: 4px;">
+                        <div style="font-size: 24px; font-weight: bold; color: #ffc107;">${Math.round(data.avg_confidence || 0)}%</div>
+                        <div style="font-size: 12px; color: #6c757d;">置信度</div>
+                    </div>
+                </div>
         `;
-        
-        // 显示统计信息
-        if (data.avg_confidence !== undefined) {
-            html += `<p>平均识别置信度: <strong>${data.avg_confidence}%</strong></p>`;
-        }
-        
-        // 显示缺失和未知标记
-        if (data.missing_markers && data.missing_markers.length > 0) {
-            html += `<p style="color: #ff9800;">缺失标记: ${data.missing_markers.join(', ')}</p>`;
-        }
-        
-        if (data.unknown_markers && data.unknown_markers.length > 0) {
-            html += `<p style="color: #2196f3;">未知标记: ${data.unknown_markers.join(', ')}</p>`;
-        }
         
         // 显示建议
         if (data.suggestions && data.suggestions.length > 0) {
-            html += `<div style="margin-top: 10px; padding: 10px; background-color: rgba(33, 150, 243, 0.1); border-radius: 4px;">`;
+            html += `<div style="margin-top: 10px; padding: 10px; background-color: rgba(33, 150, 243, 0.1); border-radius: 4px; font-size: 13px;">`;
             html += `<strong>💡 建议:</strong><ul style="margin: 5px 0; padding-left: 20px;">`;
             data.suggestions.forEach(suggestion => {
                 html += `<li>${suggestion}</li>`;
@@ -1846,8 +1840,9 @@ function displayProcessingResult(data) {
     if (annotatedDrawingsContainer) {
         if (data.total_numbers === 0) {
             annotatedDrawingsContainer.innerHTML = `
-                <div class="info">
-                    未识别到任何数字序号。请检查：<br>
+                <div style="color: #856404; background-color: #fff3cd; padding: 20px; border-radius: 6px; border: 1px solid #ffeaa7; text-align: center;">
+                    <strong>⚠️ 未识别到任何数字序号</strong><br><br>
+                    请检查：<br>
                     1. 图片是否清晰<br>
                     2. 图片中是否包含数字序号<br>
                     3. 说明书格式是否正确
@@ -1856,17 +1851,7 @@ function displayProcessingResult(data) {
             return;
         }
         
-        let html = '<div style="margin-bottom: 15px; padding: 10px; background-color: rgba(33, 150, 243, 0.1); border-radius: 8px;">';
-        html += '<strong>💡 v6.0 交互提示:</strong> ';
-        html += '<span style="color: #FF6B6B;">滚轮缩放</span> | ';
-        html += '<span style="color: #4CAF50;">拖动空白处移动视图</span> | ';
-        html += '<span style="color: #2196F3;">拖动标注调整位置</span> | ';
-        html += '<span style="color: #9C27B0;">双击编辑</span> | ';
-        html += '<span style="color: #FF9800;">右键删除</span> | ';
-        html += '<span style="color: #00BCD4;">点击选中(Ctrl多选)</span>';
-        html += '</div>';
-        
-        html += '<div style="display: flex; flex-wrap: wrap; gap: 15px;">';
+        let html = '';
         
         // 清空之前的交互式标注实例
         window.interactiveMarkers = [];
@@ -1880,57 +1865,36 @@ function displayProcessingResult(data) {
             const detectedCount = processedDrawing.detected_numbers ? processedDrawing.detected_numbers.length : 0;
             
             html += `
-                <div style="position: relative; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; max-width: 100%; flex: 1 1 400px; min-width: 400px; background-color: white;">
-                    <div style="margin-bottom: 10px; font-size: 0.9em; color: var(--text-color-secondary); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                        <span>
-                            <strong>附图 ${index + 1}:</strong> ${processedDrawing.name}
-                            <span style="margin-left: 10px; color: var(--success-color); font-weight: bold;">(${detectedCount}个标记)</span>
+                <div style="margin-bottom: 20px; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; background-color: #f8f9fa;">
+                    <div style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <span style="font-size: 14px; font-weight: bold; color: #495057;">
+                            📎 ${processedDrawing.name} <span style="color: #28a745;">(${detectedCount}个标记)</span>
                         </span>
                         <div style="display: flex; gap: 5px;">
-                            <button onclick="openDrawingModal(${index})" class="small-button" style="padding: 5px 10px; font-size: 0.8em; background-color: #9c27b0;">
-                                🔍 放大查看
-                            </button>
-                            <button onclick="exportDrawing(${index})" class="small-button" style="padding: 5px 10px; font-size: 0.8em;">
-                                📥 导出图片
-                            </button>
+                            <button onclick="openDrawingModal(${index})" style="padding: 5px 10px; font-size: 12px; background-color: #9c27b0; color: white; border: none; border-radius: 4px; cursor: pointer;">🔍 放大</button>
+                            <button onclick="exportDrawing(${index})" style="padding: 5px 10px; font-size: 12px; background-color: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer;">📥 导出</button>
                         </div>
                     </div>
-                    <div style="position: relative; width: 100%; min-height: 400px; background-color: #f5f5f5; border-radius: 4px; overflow: hidden;">
-                        <canvas id="interactive_canvas_${index}" style="width: 100%; border-radius: 4px; border: 1px solid #ddd;"></canvas>
+                    <div style="background-color: white; border-radius: 6px; padding: 10px;">
+                        <canvas id="interactive_canvas_${index}" style="width: 100%; border-radius: 4px;"></canvas>
                     </div>
                     <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                        <div style="font-size: 0.8em; color: #666;">
-                            <strong>💡 提示:</strong> 
-                            <span style="color: #FF6B6B;">滚轮缩放</span> | 
-                            <span style="color: #4CAF50;">拖动空白处移动</span> | 
-                            <span style="color: #2196F3;">拖动标注调整位置</span> | 
-                            <span style="color: #9C27B0;">双击编辑</span> | 
-                            <span style="color: #FF9800;">右键删除</span>
+                        <div style="font-size: 11px; color: #6c757d;">
+                            💡 <span style="color: #FF6B6B;">滚轮缩放</span> | <span style="color: #4CAF50;">拖动移动</span> | <span style="color: #2196F3;">拖动标注</span> | <span style="color: #9C27B0;">双击编辑</span>
                         </div>
-                        <div style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap;">
-                            <button onclick="window.interactiveMarkers[${index}].increaseFontSize(true)" class="small-button" style="padding: 3px 8px; font-size: 0.75em; background-color: #4CAF50;">选中+</button>
-                            <button onclick="window.interactiveMarkers[${index}].decreaseFontSize(true)" class="small-button" style="padding: 3px 8px; font-size: 0.75em; background-color: #FF9800;">选中-</button>
-                            <button onclick="window.interactiveMarkers[${index}].increaseFontSize(false)" class="small-button" style="padding: 3px 8px; font-size: 0.75em; background-color: #2196F3;">全部+</button>
-                            <button onclick="window.interactiveMarkers[${index}].decreaseFontSize(false)" class="small-button" style="padding: 3px 8px; font-size: 0.75em; background-color: #9C27B0;">全部-</button>
-                            <span style="margin: 0 5px; color: #999;">|</span>
-                            <button onclick="window.interactiveMarkers[${index}].setColor('#FF6B6B', true)" class="small-button" style="padding: 3px 8px; font-size: 0.75em; background-color: #FF6B6B;">🔴</button>
-                            <button onclick="window.interactiveMarkers[${index}].setColor('#2196F3', true)" class="small-button" style="padding: 3px 8px; font-size: 0.75em; background-color: #2196F3;">🔵</button>
-                            <button onclick="window.interactiveMarkers[${index}].setColor('#FF9800', true)" class="small-button" style="padding: 3px 8px; font-size: 0.75em; background-color: #FF9800;">🟠</button>
-                            <button onclick="window.interactiveMarkers[${index}].setColor('#9C27B0', true)" class="small-button" style="padding: 3px 8px; font-size: 0.75em; background-color: #9C27B0;">🟣</button>
-                            <button onclick="window.interactiveMarkers[${index}].setColor('#FFC107', true)" class="small-button" style="padding: 3px 8px; font-size: 0.75em; background-color: #FFC107;">🟡</button>
-                            <button onclick="window.interactiveMarkers[${index}].setColor('#00BCD4', true)" class="small-button" style="padding: 3px 8px; font-size: 0.75em; background-color: #00BCD4;">🔷</button>
-                            <span style="margin: 0 5px; color: #999;">|</span>
-                            <button onclick="window.interactiveMarkers[${index}].selectAll()" class="small-button" style="padding: 3px 8px; font-size: 0.75em; background-color: #607D8B;">全选</button>
-                            <button onclick="window.interactiveMarkers[${index}].deselectAll()" class="small-button" style="padding: 3px 8px; font-size: 0.75em; background-color: #795548;">取消</button>
+                        <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                            <button onclick="window.interactiveMarkers[${index}].increaseFontSize(true)" style="padding: 3px 8px; font-size: 11px; background-color: #4CAF50; color: white; border: none; border-radius: 3px; cursor: pointer;">选中+</button>
+                            <button onclick="window.interactiveMarkers[${index}].decreaseFontSize(true)" style="padding: 3px 8px; font-size: 11px; background-color: #FF9800; color: white; border: none; border-radius: 3px; cursor: pointer;">选中-</button>
+                            <button onclick="window.interactiveMarkers[${index}].increaseFontSize(false)" style="padding: 3px 8px; font-size: 11px; background-color: #2196F3; color: white; border: none; border-radius: 3px; cursor: pointer;">全部+</button>
+                            <button onclick="window.interactiveMarkers[${index}].decreaseFontSize(false)" style="padding: 3px 8px; font-size: 11px; background-color: #9C27B0; color: white; border: none; border-radius: 3px; cursor: pointer;">全部-</button>
                         </div>
                     </div>
                 </div>
             `;
         });
-        html += '</div>';
         
         // 添加调试面板容器
-        html += '<div id="debug_panel_container" style="margin-top: 30px;"></div>';
+        html += '<div id="debug_panel_container" style="margin-top: 20px;"></div>';
         
         annotatedDrawingsContainer.innerHTML = html;
         
@@ -1963,7 +1927,9 @@ function displayProcessingResult(data) {
                 
                 // 创建调试面板（只为第一个图片创建，避免重复）
                 if (index === 0) {
-                    marker.createDebugPanel('debug_panel_container');
+                    setTimeout(() => {
+                        marker.createDebugPanel('debug_panel_container');
+                    }, 200);
                 }
             });
         }, 100);
