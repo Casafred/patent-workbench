@@ -19,7 +19,7 @@ class MultiImageViewerV8 {
         this.currentZoom = 1.0;
         this.currentRotation = 0;
         this.currentFontSize = this.options.fontSize;
-        this.currentColor = '#FF5722'; // 默认橙色
+        this.currentColor = '#4CAF50'; // 默认绿色
         
         this.minZoom = 0.5;
         this.maxZoom = 5.0;
@@ -871,14 +871,14 @@ class MultiImageViewerV8 {
                 isSelected: false,
                 isManual: false,
                 fontSize: this.currentFontSize,
-                color: this.availableColors[index % this.availableColors.length].value // 循环使用颜色
+                color: '#4CAF50' // 默认统一使用绿色
             };
             
             region.labels.push(annotation);
             return annotation;
         });
         
-        // 调整每个区域内的标签位置，避免重叠
+        // 调整每个区域内的标签位置，避免重叠，并确保不超出边界
         regions.forEach(region => {
             if (region.labels.length === 0) return;
             
@@ -889,6 +889,17 @@ class MultiImageViewerV8 {
                 const spacing = (canvasWidth - 2 * margin) / (region.labels.length + 1);
                 region.labels.forEach((label, i) => {
                     label.labelX = margin + spacing * (i + 1);
+                    
+                    // 边界检查：确保文字不超出画布
+                    const ctx = this.modalCanvas.getContext('2d');
+                    const text = `${label.number}: ${label.name}`;
+                    ctx.font = `bold ${label.fontSize}px Arial, sans-serif`;
+                    const textWidth = ctx.measureText(text).width;
+                    
+                    // 限制在画布范围内
+                    const minX = 10;
+                    const maxX = canvasWidth - textWidth - 10;
+                    label.labelX = Math.max(minX, Math.min(maxX, label.labelX));
                 });
             } else {
                 region.labels.sort((a, b) => a.markerY - b.markerY);
@@ -896,6 +907,12 @@ class MultiImageViewerV8 {
                 const spacing = (canvasHeight - 2 * margin) / (region.labels.length + 1);
                 region.labels.forEach((label, i) => {
                     label.labelY = margin + spacing * (i + 1);
+                    
+                    // 边界检查：确保文字不超出画布
+                    const textHeight = label.fontSize * 1.5;
+                    const minY = textHeight / 2 + 10;
+                    const maxY = canvasHeight - textHeight / 2 - 10;
+                    label.labelY = Math.max(minY, Math.min(maxY, label.labelY));
                 });
             }
         });
