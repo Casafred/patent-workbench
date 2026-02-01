@@ -43,7 +43,7 @@ class InteractiveDrawingMarker {
         this.options = {
             enableModal: options.enableModal !== false,
             containerWidth: options.containerWidth || null,
-            fontSize: options.fontSize || 24,  // 默认字号从18改为24
+            fontSize: options.fontSize || 120,  // 默认字号120px（原来24px的5倍）
             ...options
         };
         
@@ -93,7 +93,7 @@ class InteractiveDrawingMarker {
                 number: detected.number,
                 name: detected.name || this.referenceMap[detected.number] || '未知',
                 confidence: detected.confidence || 0,
-                fontSize: this.options.fontSize || 24,  // 默认字号24
+                fontSize: this.options.fontSize || 120,  // 默认字号120px
                 selected: false,
                 color: '#FF6B6B' // 默认颜色
             };
@@ -129,8 +129,23 @@ class InteractiveDrawingMarker {
             if (this.isDragging && this.selectedAnnotation) {
                 // 拖拽标注
                 const pos = this.getMousePos(e);
-                this.selectedAnnotation.labelX = pos.x - this.dragOffset.x;
-                this.selectedAnnotation.labelY = pos.y - this.dragOffset.y;
+                let newX = pos.x - this.dragOffset.x;
+                let newY = pos.y - this.dragOffset.y;
+                
+                // 边界限制：标注不能超出原图边缘
+                const text = `${this.selectedAnnotation.number}: ${this.selectedAnnotation.name}`;
+                const fontSize = this.selectedAnnotation.fontSize || 120;
+                this.ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+                const textWidth = this.ctx.measureText(text).width;
+                const textHeight = fontSize * 1.5;
+                
+                // 限制X坐标
+                newX = Math.max(0, Math.min(newX, this.originalWidth - textWidth));
+                // 限制Y坐标
+                newY = Math.max(textHeight/2, Math.min(newY, this.originalHeight - textHeight/2));
+                
+                this.selectedAnnotation.labelX = newX;
+                this.selectedAnnotation.labelY = newY;
                 this.render();
             } else if (this.viewState.isDraggingView) {
                 // 拖拽视图 - 提高灵敏度
@@ -530,8 +545,23 @@ class InteractiveDrawingMarker {
         modalCanvas.addEventListener('mousemove', (e) => {
             if (modalState.isDraggingAnnotation && modalState.selectedAnnotation) {
                 const pos = getModalMousePos(e);
-                modalState.selectedAnnotation.labelX = pos.x - modalState.dragOffset.x;
-                modalState.selectedAnnotation.labelY = pos.y - modalState.dragOffset.y;
+                let newX = pos.x - modalState.dragOffset.x;
+                let newY = pos.y - modalState.dragOffset.y;
+                
+                // 边界限制：标注不能超出原图边缘
+                const text = `${modalState.selectedAnnotation.number}: ${modalState.selectedAnnotation.name}`;
+                const fontSize = modalState.selectedAnnotation.fontSize || 120;
+                modalCtx.font = `bold ${fontSize}px Arial, sans-serif`;
+                const textWidth = modalCtx.measureText(text).width;
+                const textHeight = fontSize * 1.5;
+                
+                // 限制X坐标
+                newX = Math.max(0, Math.min(newX, this.originalWidth - textWidth));
+                // 限制Y坐标
+                newY = Math.max(textHeight/2, Math.min(newY, this.originalHeight - textHeight/2));
+                
+                modalState.selectedAnnotation.labelX = newX;
+                modalState.selectedAnnotation.labelY = newY;
                 renderModal();
                 this.render(); // 同步主界面
             } else if (modalState.isDraggingView) {
