@@ -143,6 +143,10 @@ class MultiImageViewerV8 {
         imageContainer.appendChild(rightArrow);
         imageContainer.appendChild(modalCanvas);
         
+        // 左侧悬浮工具栏
+        const floatingToolbar = this.createFloatingToolbar();
+        imageContainer.appendChild(floatingToolbar);
+        
         // 鼠标移动显示/隐藏箭头
         imageContainer.addEventListener('mousemove', (e) => {
             const rect = imageContainer.getBoundingClientRect();
@@ -443,6 +447,160 @@ class MultiImageViewerV8 {
         return arrow;
     }
     
+    createFloatingToolbar() {
+        const toolbar = document.createElement('div');
+        toolbar.style.cssText = `
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 101;
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        `;
+        
+        // 字体大小按钮组
+        const fontGroup = document.createElement('div');
+        fontGroup.style.cssText = 'display: flex; flex-direction: column; gap: 5px; border-bottom: 1px solid #ddd; padding-bottom: 10px;';
+        
+        const fontLabel = document.createElement('div');
+        fontLabel.textContent = '字体';
+        fontLabel.style.cssText = 'font-size: 11px; color: #666; text-align: center; margin-bottom: 3px;';
+        fontGroup.appendChild(fontLabel);
+        
+        const fontPlusBtn = this.createToolbarButton('A+', () => {
+            const selected = this.annotations.filter(a => a.isSelected);
+            if (selected.length > 0) {
+                selected.forEach(ann => {
+                    ann.fontSize = Math.min((ann.fontSize || this.currentFontSize) + 2, 48);
+                });
+            } else {
+                this.currentFontSize = Math.min(this.currentFontSize + 2, 48);
+                this.annotations.forEach(ann => ann.fontSize = this.currentFontSize);
+            }
+            this.renderCanvas();
+        }, '#4CAF50');
+        
+        const fontMinusBtn = this.createToolbarButton('A-', () => {
+            const selected = this.annotations.filter(a => a.isSelected);
+            if (selected.length > 0) {
+                selected.forEach(ann => {
+                    ann.fontSize = Math.max((ann.fontSize || this.currentFontSize) - 2, 12);
+                });
+            } else {
+                this.currentFontSize = Math.max(this.currentFontSize - 2, 12);
+                this.annotations.forEach(ann => ann.fontSize = this.currentFontSize);
+            }
+            this.renderCanvas();
+        }, '#FF9800');
+        
+        fontGroup.appendChild(fontPlusBtn);
+        fontGroup.appendChild(fontMinusBtn);
+        toolbar.appendChild(fontGroup);
+        
+        // 旋转按钮组
+        const rotateGroup = document.createElement('div');
+        rotateGroup.style.cssText = 'display: flex; flex-direction: column; gap: 5px; border-bottom: 1px solid #ddd; padding-bottom: 10px;';
+        
+        const rotateLabel = document.createElement('div');
+        rotateLabel.textContent = '旋转';
+        rotateLabel.style.cssText = 'font-size: 11px; color: #666; text-align: center; margin-bottom: 3px;';
+        rotateGroup.appendChild(rotateLabel);
+        
+        const rotateLeftBtn = this.createToolbarButton('↺', () => {
+            this.currentRotation = (this.currentRotation - 90 + 360) % 360;
+            this.renderCanvas();
+        }, '#2196F3');
+        
+        const rotateRightBtn = this.createToolbarButton('↻', () => {
+            this.currentRotation = (this.currentRotation + 90) % 360;
+            this.renderCanvas();
+        }, '#2196F3');
+        
+        rotateGroup.appendChild(rotateLeftBtn);
+        rotateGroup.appendChild(rotateRightBtn);
+        toolbar.appendChild(rotateGroup);
+        
+        // 缩放按钮组
+        const zoomGroup = document.createElement('div');
+        zoomGroup.style.cssText = 'display: flex; flex-direction: column; gap: 5px; border-bottom: 1px solid #ddd; padding-bottom: 10px;';
+        
+        const zoomLabel = document.createElement('div');
+        zoomLabel.textContent = '缩放';
+        zoomLabel.style.cssText = 'font-size: 11px; color: #666; text-align: center; margin-bottom: 3px;';
+        zoomGroup.appendChild(zoomLabel);
+        
+        this.zoomDisplay = document.createElement('div');
+        this.zoomDisplay.textContent = '100%';
+        this.zoomDisplay.style.cssText = 'font-size: 11px; font-weight: bold; text-align: center; color: #333;';
+        zoomGroup.appendChild(this.zoomDisplay);
+        
+        const zoomInBtn = this.createToolbarButton('+', () => {
+            this.currentZoom = Math.min(this.maxZoom, this.currentZoom + this.zoomStep);
+            this.updateCanvasSize();
+            this.updateZoomDisplay();
+        }, '#9C27B0');
+        
+        const zoomOutBtn = this.createToolbarButton('-', () => {
+            this.currentZoom = Math.max(this.minZoom, this.currentZoom - this.zoomStep);
+            this.updateCanvasSize();
+            this.updateZoomDisplay();
+        }, '#9C27B0');
+        
+        const zoomResetBtn = this.createToolbarButton('1:1', () => {
+            this.currentZoom = 1.0;
+            this.updateCanvasSize();
+            this.updateZoomDisplay();
+        }, '#607D8B');
+        
+        zoomGroup.appendChild(zoomInBtn);
+        zoomGroup.appendChild(zoomOutBtn);
+        zoomGroup.appendChild(zoomResetBtn);
+        toolbar.appendChild(zoomGroup);
+        
+        // 截图按钮
+        const screenshotBtn = this.createToolbarButton('📸', () => {
+            this.takeScreenshot();
+        }, '#FF9800');
+        screenshotBtn.title = '高清截图';
+        toolbar.appendChild(screenshotBtn);
+        
+        return toolbar;
+    }
+    
+    createToolbarButton(text, onClick, bgColor = '#4CAF50') {
+        const btn = document.createElement('button');
+        btn.textContent = text;
+        btn.style.cssText = `
+            width: 45px;
+            height: 45px;
+            background-color: ${bgColor};
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.2s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        `;
+        btn.addEventListener('click', onClick);
+        btn.addEventListener('mouseenter', () => {
+            btn.style.transform = 'scale(1.1)';
+            btn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+        });
+        btn.addEventListener('mouseleave', () => {
+            btn.style.transform = 'scale(1)';
+            btn.style.boxShadow = '0 2px 6px rgba(0,0,0,0.2)';
+        });
+        return btn;
+    }
+    
     createSidebar() {
         const sidebar = document.createElement('div');
         sidebar.style.cssText = `
@@ -481,144 +639,6 @@ class MultiImageViewerV8 {
         `;
         this.imageInfoSection.appendChild(this.imageInfoDisplay);
         sidebar.appendChild(this.imageInfoSection);
-        
-        // 字体大小
-        const fontSection = this.createSection('字体大小');
-        this.fontSizeDisplay = document.createElement('div');
-        this.fontSizeDisplay.textContent = `当前: ${this.currentFontSize}px`;
-        this.fontSizeDisplay.style.cssText = `
-            text-align: center;
-            font-weight: bold;
-            margin: 5px 0;
-            font-size: 13px;
-        `;
-        
-        const fontBtnContainer = document.createElement('div');
-        fontBtnContainer.style.cssText = 'display: flex; flex-direction: column; gap: 5px;';
-        
-        // 选中标注字体调整
-        const selectedFontRow = document.createElement('div');
-        selectedFontRow.style.cssText = 'display: flex; gap: 5px;';
-        
-        const fontMinusSelectedBtn = this.createButton('选中-', () => {
-            const selected = this.annotations.filter(a => a.isSelected);
-            if (selected.length === 0) {
-                alert('请先选择标注');
-                return;
-            }
-            selected.forEach(ann => {
-                ann.fontSize = Math.max((ann.fontSize || this.currentFontSize) - 2, 12);
-            });
-            this.renderCanvas();
-        });
-        fontMinusSelectedBtn.style.backgroundColor = '#FF9800';
-        
-        const fontPlusSelectedBtn = this.createButton('选中+', () => {
-            const selected = this.annotations.filter(a => a.isSelected);
-            if (selected.length === 0) {
-                alert('请先选择标注');
-                return;
-            }
-            selected.forEach(ann => {
-                ann.fontSize = Math.min((ann.fontSize || this.currentFontSize) + 2, 48);
-            });
-            this.renderCanvas();
-        });
-        fontPlusSelectedBtn.style.backgroundColor = '#4CAF50';
-        
-        selectedFontRow.appendChild(fontMinusSelectedBtn);
-        selectedFontRow.appendChild(fontPlusSelectedBtn);
-        
-        // 全部标注字体调整
-        const allFontRow = document.createElement('div');
-        allFontRow.style.cssText = 'display: flex; gap: 5px;';
-        
-        const fontMinusAllBtn = this.createButton('全部-', () => {
-            this.currentFontSize = Math.max(this.currentFontSize - 2, 12);
-            this.annotations.forEach(ann => {
-                ann.fontSize = this.currentFontSize;
-            });
-            this.fontSizeDisplay.textContent = `当前: ${this.currentFontSize}px`;
-            this.renderCanvas();
-        });
-        fontMinusAllBtn.style.backgroundColor = '#9C27B0';
-        
-        const fontPlusAllBtn = this.createButton('全部+', () => {
-            this.currentFontSize = Math.min(this.currentFontSize + 2, 48);
-            this.annotations.forEach(ann => {
-                ann.fontSize = this.currentFontSize;
-            });
-            this.fontSizeDisplay.textContent = `当前: ${this.currentFontSize}px`;
-            this.renderCanvas();
-        });
-        fontPlusAllBtn.style.backgroundColor = '#2196F3';
-        
-        allFontRow.appendChild(fontMinusAllBtn);
-        allFontRow.appendChild(fontPlusAllBtn);
-        
-        fontBtnContainer.appendChild(this.fontSizeDisplay);
-        fontBtnContainer.appendChild(selectedFontRow);
-        fontBtnContainer.appendChild(allFontRow);
-        fontSection.appendChild(fontBtnContainer);
-        sidebar.appendChild(fontSection);
-        
-        // 旋转
-        const rotateSection = this.createSection('图片旋转');
-        const rotateBtnContainer = document.createElement('div');
-        rotateBtnContainer.style.cssText = 'display: flex; gap: 5px;';
-        
-        const rotateLeftBtn = this.createButton('↺ 逆时针', () => {
-            this.currentRotation = (this.currentRotation - 90 + 360) % 360;
-            this.renderCanvas();
-        });
-        
-        const rotateRightBtn = this.createButton('↻ 顺时针', () => {
-            this.currentRotation = (this.currentRotation + 90) % 360;
-            this.renderCanvas();
-        });
-        
-        rotateBtnContainer.appendChild(rotateLeftBtn);
-        rotateBtnContainer.appendChild(rotateRightBtn);
-        rotateSection.appendChild(rotateBtnContainer);
-        sidebar.appendChild(rotateSection);
-        
-        // 缩放
-        const zoomSection = this.createSection('缩放');
-        this.zoomDisplay = document.createElement('div');
-        this.zoomDisplay.textContent = `${Math.round(this.currentZoom * 100)}%`;
-        this.zoomDisplay.style.cssText = `
-            text-align: center;
-            font-weight: bold;
-            margin: 5px 0;
-        `;
-        
-        const zoomBtnContainer = document.createElement('div');
-        zoomBtnContainer.style.cssText = 'display: flex; gap: 5px;';
-        
-        const zoomOutBtn = this.createButton('-', () => {
-            this.currentZoom = Math.max(this.minZoom, this.currentZoom - this.zoomStep);
-            this.updateCanvasSize();
-            this.updateZoomDisplay();
-        });
-        
-        const zoomInBtn = this.createButton('+', () => {
-            this.currentZoom = Math.min(this.maxZoom, this.currentZoom + this.zoomStep);
-            this.updateCanvasSize();
-            this.updateZoomDisplay();
-        });
-        
-        const zoomResetBtn = this.createButton('重置', () => {
-            this.currentZoom = 1.0;
-            this.updateCanvasSize();
-            this.updateZoomDisplay();
-        });
-        
-        zoomBtnContainer.appendChild(zoomOutBtn);
-        zoomBtnContainer.appendChild(zoomResetBtn);
-        zoomBtnContainer.appendChild(zoomInBtn);
-        zoomSection.appendChild(this.zoomDisplay);
-        zoomSection.appendChild(zoomBtnContainer);
-        sidebar.appendChild(zoomSection);
         
         // 选择控制
         const selectSection = this.createSection('选择控制');
@@ -717,13 +737,6 @@ class MultiImageViewerV8 {
         colorSection.appendChild(colorGrid);
         colorSection.appendChild(colorHint);
         sidebar.appendChild(colorSection);
-        
-        // 高清截图按钮
-        const screenshotBtn = this.createButton('📸 高清截图', () => {
-            this.takeScreenshot();
-        });
-        screenshotBtn.style.cssText += 'background-color: #FF9800; margin-top: 10px;';
-        sidebar.appendChild(screenshotBtn);
         
         // 标注列表
         this.annotationSection = this.createSection('标注列表');
