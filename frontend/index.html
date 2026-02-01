@@ -1925,13 +1925,13 @@ function displayProcessingResult(data) {
         // 显示图片缩略图和打开按钮
         let html = `
             <div style="text-align: center; margin-bottom: 20px;">
-                <button onclick="openMultiImageViewer()" style="padding: 15px 30px; font-size: 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); transition: transform 0.2s;">
+                <button onclick="openMultiImageViewer()" style="padding: 15px 30px; font-size: 16px; background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4); transition: transform 0.2s;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                         <circle cx="8.5" cy="8.5" r="1.5"></circle>
                         <polyline points="21 15 16 10 5 21"></polyline>
                     </svg>
-                    打开多图查看器 (${viewerImages.length}张图片)
+                    📷 打开多图查看器 (${viewerImages.length}张图片)
                 </button>
             </div>
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">

@@ -10,7 +10,7 @@ class MultiImageViewerV8 {
         this.currentIndex = 0;
         this.options = {
             fontSize: options.fontSize || 22,
-            highlightColor: options.highlightColor || '#FFD700',
+            highlightColor: options.highlightColor || '#00FF00',
             ...options
         };
         
@@ -19,10 +19,23 @@ class MultiImageViewerV8 {
         this.currentZoom = 1.0;
         this.currentRotation = 0;
         this.currentFontSize = this.options.fontSize;
+        this.currentColor = '#FF5722'; // 默认橙色
         
         this.minZoom = 0.5;
         this.maxZoom = 5.0;
         this.zoomStep = 0.2;
+        
+        // 可选颜色列表
+        this.availableColors = [
+            { name: '橙色', value: '#FF5722' },
+            { name: '绿色', value: '#4CAF50' },
+            { name: '蓝色', value: '#2196F3' },
+            { name: '紫色', value: '#9C27B0' },
+            { name: '红色', value: '#F44336' },
+            { name: '青色', value: '#00BCD4' },
+            { name: '黄色', value: '#FFC107' },
+            { name: '粉色', value: '#E91E63' }
+        ];
     }
     
     open(startIndex = 0) {
@@ -50,6 +63,41 @@ class MultiImageViewerV8 {
             justify-content: center;
             align-items: center;
         `;
+        
+        // 顶部关闭按钮
+        const topCloseBtn = document.createElement('button');
+        topCloseBtn.innerHTML = '✕';
+        topCloseBtn.style.cssText = `
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 50px;
+            height: 50px;
+            background-color: rgba(244, 67, 54, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 10003;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: all 0.3s;
+        `;
+        topCloseBtn.addEventListener('click', () => {
+            modal.remove();
+        });
+        topCloseBtn.addEventListener('mouseenter', () => {
+            topCloseBtn.style.backgroundColor = 'rgba(244, 67, 54, 1)';
+            topCloseBtn.style.transform = 'scale(1.1)';
+        });
+        topCloseBtn.addEventListener('mouseleave', () => {
+            topCloseBtn.style.backgroundColor = 'rgba(244, 67, 54, 0.9)';
+            topCloseBtn.style.transform = 'scale(1)';
+        });
         
         // 主容器
         const mainContainer = document.createElement('div');
@@ -248,7 +296,8 @@ class MultiImageViewerV8 {
                 confidence: 1.0,
                 isSelected: false,
                 isManual: true,
-                fontSize: this.currentFontSize
+                fontSize: this.currentFontSize,
+                color: this.currentColor
             };
             
             this.annotations.push(newAnnotation);
@@ -326,6 +375,7 @@ class MultiImageViewerV8 {
         
         mainContainer.appendChild(imageContainer);
         mainContainer.appendChild(sidebar);
+        modal.appendChild(topCloseBtn);
         modal.appendChild(mainContainer);
         
         return modal;
@@ -574,6 +624,72 @@ class MultiImageViewerV8 {
         selectSection.appendChild(selectBtnContainer);
         sidebar.appendChild(selectSection);
         
+        // 颜色选择
+        const colorSection = this.createSection('标注颜色');
+        const colorGrid = document.createElement('div');
+        colorGrid.style.cssText = `
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+        `;
+        
+        this.availableColors.forEach(colorObj => {
+            const colorBtn = document.createElement('button');
+            colorBtn.style.cssText = `
+                width: 100%;
+                height: 35px;
+                background-color: ${colorObj.value};
+                border: 2px solid ${this.currentColor === colorObj.value ? '#FFF' : 'transparent'};
+                border-radius: 4px;
+                cursor: pointer;
+                transition: all 0.2s;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            `;
+            colorBtn.title = colorObj.name;
+            
+            colorBtn.addEventListener('click', () => {
+                this.currentColor = colorObj.value;
+                // 更新选中标注的颜色
+                const selected = this.annotations.filter(a => a.isSelected);
+                if (selected.length > 0) {
+                    selected.forEach(ann => {
+                        ann.color = colorObj.value;
+                    });
+                    this.renderCanvas();
+                }
+                // 更新按钮边框
+                colorGrid.querySelectorAll('button').forEach(btn => {
+                    btn.style.border = '2px solid transparent';
+                });
+                colorBtn.style.border = '2px solid #FFF';
+            });
+            
+            colorBtn.addEventListener('mouseenter', () => {
+                if (this.currentColor !== colorObj.value) {
+                    colorBtn.style.transform = 'scale(1.1)';
+                }
+            });
+            
+            colorBtn.addEventListener('mouseleave', () => {
+                colorBtn.style.transform = 'scale(1)';
+            });
+            
+            colorGrid.appendChild(colorBtn);
+        });
+        
+        const colorHint = document.createElement('div');
+        colorHint.textContent = '选中标注后点击颜色';
+        colorHint.style.cssText = `
+            text-align: center;
+            font-size: 11px;
+            color: #666;
+            margin-top: 5px;
+        `;
+        
+        colorSection.appendChild(colorGrid);
+        colorSection.appendChild(colorHint);
+        sidebar.appendChild(colorSection);
+        
         // 标注列表
         this.annotationSection = this.createSection('标注列表');
         this.annotationList = document.createElement('div');
@@ -678,7 +794,8 @@ class MultiImageViewerV8 {
                 confidence: detected.confidence || 0,
                 isSelected: false,
                 isManual: false,
-                fontSize: this.currentFontSize
+                fontSize: this.currentFontSize,
+                color: this.currentColor
             };
         });
     }
@@ -724,23 +841,40 @@ class MultiImageViewerV8 {
         // 绘制标注
         this.annotations.forEach(annotation => {
             const isHighlighted = annotation.isSelected || annotation.id === this.selectedAnnotationId;
-            const color = isHighlighted ? '#00FF00' : '#FF5722';
+            const baseColor = annotation.color || this.currentColor;
+            const color = isHighlighted ? '#00FF00' : baseColor;
             const lineWidth = isHighlighted ? 4 : 3;
             const fontSize = annotation.fontSize || this.currentFontSize;
             
-            // 绘制连接线
+            // 计算标注点偏移位置（避免遮挡原图标记）
+            // 根据连接线方向偏移标注点
+            const dx = annotation.labelX - annotation.markerX;
+            const dy = annotation.labelY - annotation.markerY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const offsetDistance = 15; // 偏移距离
+            
+            const offsetX = (dx / distance) * offsetDistance;
+            const offsetY = (dy / distance) * offsetDistance;
+            
+            const markerDisplayX = annotation.markerX + offsetX;
+            const markerDisplayY = annotation.markerY + offsetY;
+            
+            // 绘制连接线（从偏移后的标注点到标签）
             ctx.beginPath();
-            ctx.moveTo(annotation.markerX, annotation.markerY);
+            ctx.moveTo(markerDisplayX, markerDisplayY);
             ctx.lineTo(annotation.labelX, annotation.labelY);
             ctx.strokeStyle = color;
             ctx.lineWidth = lineWidth;
             ctx.stroke();
             
-            // 绘制标注点
+            // 绘制标注点（偏移后的位置）
             ctx.beginPath();
-            ctx.arc(annotation.markerX, annotation.markerY, 5, 0, 2 * Math.PI);
+            ctx.arc(markerDisplayX, markerDisplayY, 6, 0, 2 * Math.PI);
             ctx.fillStyle = color;
             ctx.fill();
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 2;
+            ctx.stroke();
             
             // 绘制标注文字
             const text = `${annotation.number}: ${annotation.name}`;
