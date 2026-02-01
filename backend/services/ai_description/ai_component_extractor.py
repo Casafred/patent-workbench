@@ -218,6 +218,16 @@ class AIComponentExtractor:
             AI model response text
         """
         try:
+            # Debug: log model_name type and value
+            logger.info(f"Calling AI model with model_name: {model_name} (type: {type(model_name)})")
+            
+            # Ensure model_name is a string
+            if not isinstance(model_name, str):
+                logger.error(f"model_name is not a string: {type(model_name)}, value: {model_name}")
+                # Try to convert to string
+                model_name = str(model_name)
+                logger.info(f"Converted model_name to string: {model_name}")
+            
             response = self.client.chat.completions.create(
                 model=model_name,
                 messages=[
