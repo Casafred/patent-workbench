@@ -4,6 +4,89 @@
  */
 
 class MultiImageViewerV8 {
+    // 静态：全局任务管理器
+    static TaskManager = {
+        tasks: new Map(), // 存储所有任务
+
+        // 创建任务
+        createTask(taskName, images) {
+            const taskId = `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const task = {
+                taskId: taskId,
+                taskName: taskName || `分析_${new Date().toLocaleString()}`,
+                createTime: new Date().toISOString(),
+                images: images.map(img => ({
+                    url: img.url,
+                    title: img.title || '未命名',
+                    detectedNumbers: img.detectedNumbers || [],
+                    referenceMap: img.referenceMap || {}
+                })),
+                analysisData: {} // 存储每个图片的分析数据 { imageHash: { annotations, settings } }
+            };
+
+            this.tasks.set(taskId, task);
+            this.saveToStorage();
+            return taskId;
+        },
+
+        // 保存分析数据
+        saveAnalysisData(taskId, imageHash, data) {
+            const task = this.tasks.get(taskId);
+            if (task) {
+                task.analysisData[imageHash] = data;
+                this.saveToStorage();
+            }
+        },
+
+        // 获取任务
+        getTask(taskId) {
+            return this.tasks.get(taskId);
+        },
+
+        // 列出所有任务
+        listTasks() {
+            return Array.from(this.tasks.values()).sort((a, b) =>
+                new Date(b.createTime) - new Date(a.createTime)
+            );
+        },
+
+        // 删除任务
+        deleteTask(taskId) {
+            this.tasks.delete(taskId);
+            this.saveToStorage();
+        },
+
+        // 保存到localStorage
+        saveToStorage() {
+            try {
+                const tasksArray = Array.from(this.tasks.values());
+                localStorage.setItem('patent_workbench_tasks', JSON.stringify(tasksArray));
+                console.log('Tasks saved to localStorage');
+            } catch (e) {
+                console.error('Failed to save tasks:', e);
+            }
+        },
+
+        // 从localStorage加载
+        loadFromStorage() {
+            try {
+                const data = localStorage.getItem('patent_workbench_tasks');
+                if (data) {
+                    const tasksArray = JSON.parse(data);
+                    this.tasks.clear();
+                    tasksArray.forEach(task => {
+                        this.tasks.set(task.taskId, task);
+                    });
+                    console.log(`Loaded ${tasksArray.length} tasks from localStorage`);
+                    return true;
+                }
+            } catch (e) {
+                console.error('Failed to load tasks:', e);
+            }
+            return false;
+        }
+    };
+
     constructor(images, options = {}) {
         // images: [{ url, detectedNumbers, referenceMap, title }]
         this.images = images;
@@ -28,6 +111,7 @@ class MultiImageViewerV8 {
         // 本地存储相关
         this.imageHash = null;
         this.storageKey = null;
+        this.taskId = null; // 关联的任务ID
 
         // 可选颜色列表
         this.availableColors = [
@@ -40,10 +124,14 @@ class MultiImageViewerV8 {
             { name: '黄色', value: '#FFC107' },
             { name: '粉色', value: '#E91E63' }
         ];
+
+        // 加载全局任务管理器中的任务
+        MultiImageViewerV8.TaskManager.loadFromStorage();
     }
     
-    open(startIndex = 0) {
+    open(startIndex = 0, taskId = null) {
         this.currentIndex = startIndex;
+        this.taskId = taskId;
 
         // 生成当前图片的哈希值用于本地存储
         const currentImage = this.images[this.currentIndex];
@@ -645,9 +733,21 @@ class MultiImageViewerV8 {
                 <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
         `, () => {
-            this.exportAnnotations();
-        }, '导出标记');
+            this.openTaskExportManager();
+        }, '导出任务');
         toolbar.appendChild(exportBtn);
+
+        // 导入标记按钮
+        const importBtn = this.createIconButton(`
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 9v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9"/>
+                <polyline points="7 14 12 9 17 14"/>
+                <line x1="12" y1="9" x2="12" y2="21"/>
+            </svg>
+        `, () => {
+            this.openTaskImportManager();
+        }, '导入任务');
+        toolbar.appendChild(importBtn);
         
         return toolbar;
     }
@@ -1347,58 +1447,70 @@ class MultiImageViewerV8 {
         this.annotations.forEach(annotation => {
             const isHighlighted = annotation.isSelected || annotation.id === this.selectedAnnotationId;
             const color = annotation.color || this.currentColor;
-            const lineWidth = isHighlighted ? 4 : 3;
+            const lineWidth = isHighlighted ? 2 : 1.5;
             const fontSize = annotation.fontSize || this.currentFontSize;
-            
+
             // 计算旋转后的标注点位置
             const centerX = screenshotCanvas.width / 2;
             const centerY = screenshotCanvas.height / 2;
             const radians = (this.currentRotation * Math.PI) / 180;
-            
+
             const relX = annotation.markerX - centerX;
             const relY = annotation.markerY - centerY;
-            
+
             const rotatedMarkerX = centerX + (relX * Math.cos(radians) - relY * Math.sin(radians));
             const rotatedMarkerY = centerY + (relX * Math.sin(radians) + relY * Math.cos(radians));
-            
+
+            // 计算偏移方向，让标记点偏离原图标记
             const dx = annotation.labelX - rotatedMarkerX;
             const dy = annotation.labelY - rotatedMarkerY;
             const distance = Math.sqrt(dx * dx + dy * dy);
-            const offsetDistance = 15;
-            
-            const offsetX = distance > 0 ? (dx / distance) * offsetDistance : 0;
+            const offsetDistance = 12;
+
+            const offsetX = distance > 0 ? (dx / distance) * offsetDistance : offsetDistance;
             const offsetY = distance > 0 ? (dy / distance) * offsetDistance : 0;
-            
-            const markerDisplayX = rotatedMarkerX + offsetX;
-            const markerDisplayY = rotatedMarkerY + offsetY;
-            
-            // 绘制连接线
+
+            const offsetMarkerX = rotatedMarkerX + offsetX;
+            const offsetMarkerY = rotatedMarkerY + offsetY;
+
+            // 绘制直角引线
             ctx.beginPath();
-            ctx.moveTo(markerDisplayX, markerDisplayY);
-            ctx.lineTo(annotation.labelX, annotation.labelY);
             ctx.strokeStyle = color;
             ctx.lineWidth = lineWidth;
+
+            if (Math.abs(dx) > Math.abs(dy)) {
+                // 先水平再竖直
+                ctx.moveTo(offsetMarkerX, offsetMarkerY);
+                ctx.lineTo(annotation.labelX, offsetMarkerY);
+                ctx.lineTo(annotation.labelX, annotation.labelY);
+            } else {
+                // 先竖直再水平
+                ctx.moveTo(offsetMarkerX, offsetMarkerY);
+                ctx.lineTo(offsetMarkerX, annotation.labelY);
+                ctx.lineTo(annotation.labelX, annotation.labelY);
+            }
+
             ctx.stroke();
-            
+
             // 绘制标注点
             ctx.beginPath();
-            ctx.arc(markerDisplayX, markerDisplayY, 6, 0, 2 * Math.PI);
+            ctx.arc(offsetMarkerX, offsetMarkerY, 5, 0, 2 * Math.PI);
             ctx.fillStyle = color;
             ctx.fill();
             ctx.strokeStyle = '#FFFFFF';
             ctx.lineWidth = 2;
             ctx.stroke();
-            
+
             // 绘制标注文字
             const text = `${annotation.number}: ${annotation.name}`;
             ctx.font = `bold ${fontSize}px Arial, sans-serif`;
             ctx.textBaseline = 'middle';
             ctx.textAlign = 'left';
-            
+
             ctx.strokeStyle = '#FFFFFF';
             ctx.lineWidth = 5;
             ctx.strokeText(text, annotation.labelX, annotation.labelY);
-            
+
             ctx.fillStyle = color;
             ctx.fillText(text, annotation.labelX, annotation.labelY);
         });
@@ -1719,8 +1831,15 @@ class MultiImageViewerV8 {
                 currentColor: this.currentColor
             };
 
+            // 保存到localStorage
             localStorage.setItem(this.storageKey, JSON.stringify(data));
-            console.log('Annotations saved to localStorage:', this.storageKey);
+
+            // 如果关联了任务，也保存到任务管理器
+            if (this.taskId) {
+                MultiImageViewerV8.TaskManager.saveAnalysisData(this.taskId, this.imageHash, data);
+            }
+
+            console.log('Annotations saved');
         } catch (e) {
             console.error('Failed to save annotations:', e);
         }
@@ -1749,34 +1868,186 @@ class MultiImageViewerV8 {
         }
     }
 
-    // 导出标记为JSON文件
-    exportAnnotations() {
+    // 打开任务导出管理器
+    openTaskExportManager() {
+        const tasks = MultiImageViewerV8.TaskManager.listTasks();
+
+        if (tasks.length === 0) {
+            alert('暂无任务可导出');
+            return;
+        }
+
+        // 创建导出对话框
+        const dialog = document.createElement('div');
+        dialog.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 10006;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        `;
+
+        const header = document.createElement('div');
+        header.style.cssText = `
+            padding: 15px;
+            background: #4CAF50;
+            color: white;
+            font-weight: bold;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        `;
+        header.innerHTML = `
+            <span>导出任务</span>
+            <button style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">×</button>
+        `;
+        dialog.appendChild(header);
+
+        const closeBtn = header.querySelector('button');
+        closeBtn.addEventListener('click', () => dialog.remove());
+
+        const content = document.createElement('div');
+        content.style.cssText = `
+            padding: 15px;
+            overflow-y: auto;
+            flex: 1;
+        `;
+
+        // 选择框列表
+        const checkboxes = [];
+        tasks.forEach((task, idx) => {
+            const item = document.createElement('div');
+            item.style.cssText = `
+                padding: 10px;
+                margin: 8px 0;
+                background: #f5f5f5;
+                border-radius: 4px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            `;
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.style.cssText = 'cursor: pointer; width: 18px; height: 18px;';
+            checkbox.dataset.taskId = task.taskId;
+            checkboxes.push(checkbox);
+
+            const label = document.createElement('div');
+            label.style.cssText = 'flex: 1; cursor: pointer;';
+            label.innerHTML = `
+                <div style="font-weight: bold; color: #333;">${task.taskName}</div>
+                <div style="font-size: 12px; color: #666;">
+                    ${task.images.length} 张图片 | ${Object.keys(task.analysisData).length} 个已分析
+                </div>
+                <div style="font-size: 11px; color: #999;">
+                    ${new Date(task.createTime).toLocaleString()}
+                </div>
+            `;
+
+            label.addEventListener('click', () => {
+                checkbox.checked = !checkbox.checked;
+            });
+
+            item.appendChild(checkbox);
+            item.appendChild(label);
+            content.appendChild(item);
+        });
+
+        dialog.appendChild(content);
+
+        // 底部按钮
+        const footer = document.createElement('div');
+        footer.style.cssText = `
+            padding: 15px;
+            border-top: 1px solid #ddd;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        `;
+
+        const exportAllBtn = document.createElement('button');
+        exportAllBtn.textContent = '全选';
+        exportAllBtn.style.cssText = `
+            padding: 8px 16px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        `;
+        exportAllBtn.addEventListener('click', () => {
+            checkboxes.forEach(cb => cb.checked = true);
+        });
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = '取消';
+        cancelBtn.style.cssText = `
+            padding: 8px 16px;
+            background: #ddd;
+            color: #333;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        `;
+        cancelBtn.addEventListener('click', () => dialog.remove());
+
+        const exportBtn = document.createElement('button');
+        exportBtn.textContent = '导出';
+        exportBtn.style.cssText = `
+            padding: 8px 16px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        `;
+        exportBtn.addEventListener('click', () => {
+            const selectedTasks = checkboxes
+                .filter(cb => cb.checked)
+                .map(cb => MultiImageViewerV8.TaskManager.getTask(cb.dataset.taskId));
+
+            if (selectedTasks.length === 0) {
+                alert('请选择至少一个任务');
+                return;
+            }
+
+            this.exportSelectedTasks(selectedTasks);
+            dialog.remove();
+        });
+
+        footer.appendChild(exportAllBtn);
+        footer.appendChild(cancelBtn);
+        footer.appendChild(exportBtn);
+        dialog.appendChild(footer);
+
+        document.body.appendChild(dialog);
+    }
+
+    // 导出选中的任务
+    exportSelectedTasks(selectedTasks) {
         const exportData = {
             exportTime: new Date().toISOString(),
-            imageTitle: this.currentImageData.title || '未命名图片',
-            imageHash: this.imageHash,
-            annotations: this.annotations.map(ann => ({
-                number: ann.number,
-                name: ann.name,
-                markerX: ann.markerX,
-                markerY: ann.markerY,
-                labelX: ann.labelX,
-                labelY: ann.labelY,
-                confidence: ann.confidence,
-                isManual: ann.isManual,
-                fontSize: ann.fontSize,
-                color: ann.color,
-                userModified: ann.userModified
-            })),
-            settings: {
-                fontSize: this.currentFontSize,
-                color: this.currentColor
-            },
-            stats: {
-                totalAnnotations: this.annotations.length,
-                manualAnnotations: this.annotations.filter(a => a.isManual).length,
-                modifiedAnnotations: this.annotations.filter(a => a.userModified).length
-            }
+            exportVersion: '1.0',
+            tasks: selectedTasks.map(task => ({
+                taskId: task.taskId,
+                taskName: task.taskName,
+                createTime: task.createTime,
+                images: task.images,
+                analysisData: task.analysisData
+            }))
         };
 
         const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -1784,7 +2055,7 @@ class MultiImageViewerV8 {
         const a = document.createElement('a');
         a.href = url;
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-        const filename = `标记导出_${this.currentImageData.title || 'image'}_${timestamp}.json`;
+        const filename = `专利标注任务导出_${selectedTasks.length}个任务_${timestamp}.json`;
         a.download = filename;
         document.body.appendChild(a);
         a.click();
@@ -1792,9 +2063,9 @@ class MultiImageViewerV8 {
         URL.revokeObjectURL(url);
 
         // 显示成功提示
-        const Toast = document.createElement('div');
-        Toast.textContent = `✓ 标记已导出：${this.annotations.length}个标注`;
-        Toast.style.cssText = `
+        const toast = document.createElement('div');
+        toast.textContent = `✓ ${selectedTasks.length} 个任务已导出`;
+        toast.style.cssText = `
             position: fixed;
             bottom: 30px;
             left: 50%;
@@ -1804,15 +2075,182 @@ class MultiImageViewerV8 {
             padding: 12px 24px;
             border-radius: 25px;
             font-weight: bold;
-            z-index: 10005;
+            z-index: 10007;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            animation: slideUp 0.3s ease;
         `;
-        document.body.appendChild(Toast);
-        setTimeout(() => {
-            Toast.style.animation = 'slideDown 0.3s ease';
-            setTimeout(() => Toast.remove(), 300);
-        }, 2000);
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+    }
+
+    // 打开任务导入管理器
+    openTaskImportManager() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.style.display = 'none';
+
+        input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const importData = JSON.parse(event.target.result);
+
+                    if (!importData.tasks || !Array.isArray(importData.tasks)) {
+                        alert('无效的任务文件格式');
+                        return;
+                    }
+
+                    // 显示导入预览
+                    this.showImportPreview(importData.tasks);
+                } catch (error) {
+                    alert('解析文件失败：' + error.message);
+                }
+            };
+
+            reader.readAsText(file);
+        });
+
+        document.body.appendChild(input);
+        input.click();
+        document.body.removeChild(input);
+    }
+
+    // 显示导入预览
+    showImportPreview(tasksToImport) {
+        const dialog = document.createElement('div');
+        dialog.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 10006;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        `;
+
+        const header = document.createElement('div');
+        header.style.cssText = `
+            padding: 15px;
+            background: #2196F3;
+            color: white;
+            font-weight: bold;
+            border-radius: 8px 8px 0 0;
+        `;
+        header.textContent = '导入任务';
+        dialog.appendChild(header);
+
+        const content = document.createElement('div');
+        content.style.cssText = `
+            padding: 15px;
+            overflow-y: auto;
+            flex: 1;
+        `;
+
+        content.innerHTML = `
+            <div style="color: #333; margin-bottom: 15px;">
+                检测到 <strong>${tasksToImport.length}</strong> 个任务待导入：
+            </div>
+        `;
+
+        tasksToImport.forEach(task => {
+            const item = document.createElement('div');
+            item.style.cssText = `
+                padding: 10px;
+                margin: 8px 0;
+                background: #f5f5f5;
+                border-radius: 4px;
+            `;
+            item.innerHTML = `
+                <div style="font-weight: bold; color: #333;">${task.taskName}</div>
+                <div style="font-size: 12px; color: #666;">
+                    ${task.images.length} 张图片 | ${Object.keys(task.analysisData).length} 个已分析
+                </div>
+            `;
+            content.appendChild(item);
+        });
+
+        dialog.appendChild(content);
+
+        // 底部按钮
+        const footer = document.createElement('div');
+        footer.style.cssText = `
+            padding: 15px;
+            border-top: 1px solid #ddd;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        `;
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = '取消';
+        cancelBtn.style.cssText = `
+            padding: 8px 16px;
+            background: #ddd;
+            color: #333;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        `;
+        cancelBtn.addEventListener('click', () => dialog.remove());
+
+        const importBtn = document.createElement('button');
+        importBtn.textContent = '导入';
+        importBtn.style.cssText = `
+            padding: 8px 16px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        `;
+        importBtn.addEventListener('click', () => {
+            tasksToImport.forEach(task => {
+                MultiImageViewerV8.TaskManager.tasks.set(task.taskId, task);
+            });
+            MultiImageViewerV8.TaskManager.saveToStorage();
+
+            const toast = document.createElement('div');
+            toast.textContent = `✓ ${tasksToImport.length} 个任务已导入`;
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 30px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: #2196F3;
+                color: white;
+                padding: 12px 24px;
+                border-radius: 25px;
+                font-weight: bold;
+                z-index: 10007;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+
+            dialog.remove();
+        });
+
+        footer.appendChild(cancelBtn);
+        footer.appendChild(importBtn);
+        dialog.appendChild(footer);
+
+        document.body.appendChild(dialog);
+    }
+
+    // 旧的导出函数（保留兼容性）
+    exportAnnotations() {
+        alert('请使用新的任务导出功能');
     }
 }
 

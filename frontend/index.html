@@ -1921,6 +1921,11 @@ function displayProcessingResult(data) {
         
         // 保存到全局供后续使用
         window.currentViewerImages = viewerImages;
+
+        // 创建分析任务
+        const taskName = `分析任务_${new Date().toLocaleString()}`;
+        window.currentTaskId = MultiImageViewerV8.TaskManager.createTask(taskName, viewerImages);
+        console.log('Created task:', window.currentTaskId);
         
         // 显示图片缩略图和打开按钮
         let html = `
@@ -1970,12 +1975,12 @@ function openMultiImageViewer(startIndex = 0) {
         alert('没有可查看的图片');
         return;
     }
-    
+
     const viewer = new MultiImageViewerV8(window.currentViewerImages, {
         fontSize: 22,
         highlightColor: '#FFD700'
     });
-    viewer.open(startIndex);
+    viewer.open(startIndex, window.currentTaskId);
 }
 
 // 导出单个附图（从多图查看器中）
