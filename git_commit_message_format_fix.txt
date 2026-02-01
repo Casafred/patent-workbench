@@ -1,0 +1,35 @@
+fix(ai-description): 修复AI模型调用消息格式
+
+修复功能八AI说明书处理器的API调用格式问题
+
+问题：
+- AI模型调用报错"模型不存在"（错误代码1211）
+- 与功能六、聊天功能使用相同模型但调用失败
+
+根本原因：
+- messages数组缺少system角色消息
+- 与其他功能的成功实现不一致
+
+修复内容：
+1. translation_service.py
+   - 添加system角色消息设定翻译专家身份
+   - 移除不必要的max_tokens参数
+   - 与功能六保持一致的调用方式
+
+2. ai_component_extractor.py
+   - 添加system角色消息设定分析助手身份
+   - 移除不必要的max_tokens参数
+   - 与功能六保持一致的调用方式
+
+参考实现：
+- backend/routes/patent.py（功能六）
+- backend/routes/chat.py（聊天功能）
+
+影响范围：
+- 功能八AI说明书处理功能
+- 翻译服务和部件抽取服务
+
+测试：
+- 开启AI模式处理说明书
+- 验证API调用成功
+- 验证返回正确的部件标记

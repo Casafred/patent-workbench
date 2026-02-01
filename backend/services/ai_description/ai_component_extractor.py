@@ -228,14 +228,23 @@ class AIComponentExtractor:
                 model_name = str(model_name)
                 logger.info(f"Converted model_name to string: {model_name}")
             
+            # Use the same message structure as patent.py and chat.py
+            messages = [
+                {
+                    "role": "system",
+                    "content": "你是一个专业的专利文献分析助手。请严格按照要求的JSON格式返回结果。"
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+            
             response = self.client.chat.completions.create(
                 model=model_name,
-                messages=[
-                    {"role": "user", "content": prompt}
-                ],
-                stream=False,  # Explicitly set stream to False
-                temperature=0.1,  # Low temperature for consistent extraction
-                max_tokens=4000
+                messages=messages,
+                stream=False,
+                temperature=0.1
             )
             
             return response.choices[0].message.content

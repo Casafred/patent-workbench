@@ -142,14 +142,23 @@ class TranslationService:
                 model_name = str(model_name)
                 logger.info(f"Converted model_name to string: {model_name}")
             
+            # Use the same message structure as patent.py and chat.py
+            messages = [
+                {
+                    "role": "system",
+                    "content": "你是一位专业的专利文献翻译专家。请准确翻译专利文本，保持专业术语的准确性。"
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+            
             response = self.client.chat.completions.create(
                 model=model_name,
-                messages=[
-                    {"role": "user", "content": prompt}
-                ],
-                stream=False,  # Explicitly set stream to False
-                temperature=0.3,  # Lower temperature for more consistent translation
-                max_tokens=8000
+                messages=messages,
+                stream=False,
+                temperature=0.3
             )
             
             return response.choices[0].message.content
