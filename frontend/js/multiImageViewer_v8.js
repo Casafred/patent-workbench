@@ -718,6 +718,13 @@ class MultiImageViewerV8 {
         colorSection.appendChild(colorHint);
         sidebar.appendChild(colorSection);
         
+        // 高清截图按钮
+        const screenshotBtn = this.createButton('📸 高清截图', () => {
+            this.takeScreenshot();
+        });
+        screenshotBtn.style.cssText += 'background-color: #FF9800; margin-top: 10px;';
+        sidebar.appendChild(screenshotBtn);
+        
         // 标注列表
         this.annotationSection = this.createSection('标注列表');
         this.annotationList = document.createElement('div');
@@ -1170,6 +1177,106 @@ class MultiImageViewerV8 {
             container.scrollLeft = scrollLeft - walkX;
             container.scrollTop = scrollTop - walkY;
         });
+    }
+    
+    takeScreenshot() {
+        // 创建一个临时canvas来绘制高清截图
+        const screenshotCanvas = document.createElement('canvas');
+        screenshotCanvas.width = this.modalCanvas.width;
+        screenshotCanvas.height = this.modalCanvas.height;
+        const ctx = screenshotCanvas.getContext('2d');
+        
+        // 绘制当前状态（包括旋转、标注等）
+        ctx.save();
+        
+        // 应用旋转
+        if (this.currentRotation !== 0) {
+            ctx.translate(screenshotCanvas.width / 2, screenshotCanvas.height / 2);
+            ctx.rotate((this.currentRotation * Math.PI) / 180);
+            ctx.translate(-screenshotCanvas.width / 2, -screenshotCanvas.height / 2);
+        }
+        
+        // 绘制图片
+        ctx.drawImage(this.currentImage, 0, 0, screenshotCanvas.width, screenshotCanvas.height);
+        ctx.restore();
+        
+        // 绘制标注
+        this.annotations.forEach(annotation => {
+            const isHighlighted = annotation.isSelected || annotation.id === this.selectedAnnotationId;
+            const baseColor = annotation.color || this.currentColor;
+            const color = isHighlighted ? '#00FF00' : baseColor;
+            const lineWidth = isHighlighted ? 4 : 3;
+            const fontSize = annotation.fontSize || this.currentFontSize;
+            
+            // 计算旋转后的标注点位置
+            const centerX = screenshotCanvas.width / 2;
+            const centerY = screenshotCanvas.height / 2;
+            const radians = (this.currentRotation * Math.PI) / 180;
+            
+            const relX = annotation.markerX - centerX;
+            const relY = annotation.markerY - centerY;
+            
+            const rotatedMarkerX = centerX + (relX * Math.cos(radians) - relY * Math.sin(radians));
+            const rotatedMarkerY = centerY + (relX * Math.sin(radians) + relY * Math.cos(radians));
+            
+            const dx = annotation.labelX - rotatedMarkerX;
+            const dy = annotation.labelY - rotatedMarkerY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const offsetDistance = 15;
+            
+            const offsetX = distance > 0 ? (dx / distance) * offsetDistance : 0;
+            const offsetY = distance > 0 ? (dy / distance) * offsetDistance : 0;
+            
+            const markerDisplayX = rotatedMarkerX + offsetX;
+            const markerDisplayY = rotatedMarkerY + offsetY;
+            
+            // 绘制连接线
+            ctx.beginPath();
+            ctx.moveTo(markerDisplayX, markerDisplayY);
+            ctx.lineTo(annotation.labelX, annotation.labelY);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
+            ctx.stroke();
+            
+            // 绘制标注点
+            ctx.beginPath();
+            ctx.arc(markerDisplayX, markerDisplayY, 6, 0, 2 * Math.PI);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // 绘制标注文字
+            const text = `${annotation.number}: ${annotation.name}`;
+            ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+            ctx.textBaseline = 'middle';
+            ctx.textAlign = 'left';
+            
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 5;
+            ctx.strokeText(text, annotation.labelX, annotation.labelY);
+            
+            ctx.fillStyle = color;
+            ctx.fillText(text, annotation.labelX, annotation.labelY);
+        });
+        
+        // 转换为图片并下载
+        screenshotCanvas.toBlob((blob) => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            const imageName = this.currentImageData.title || `图片${this.currentIndex + 1}`;
+            a.download = `${imageName}_标注_${timestamp}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            // 显示成功提示
+            alert('高清截图已保存！');
+        }, 'image/png', 1.0);
     }
     
     openDebugPanel() {
