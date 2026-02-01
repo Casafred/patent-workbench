@@ -858,10 +858,11 @@ class MultiImageViewerV8 {
         
         this.availableColors.forEach(colorObj => {
             const colorBtn = document.createElement('button');
+            colorBtn.className = 'color-button'; // 添加color-button类，避免被默认按钮样式覆盖
             colorBtn.style.cssText = `
                 width: 100%;
                 height: 28px;
-                background-color: ${colorObj.value};
+                background-color: ${colorObj.value} !important;
                 border: ${this.currentColor === colorObj.value ? '3px solid #FFF' : '2px solid rgba(0,0,0,0.2)'};
                 border-radius: 4px;
                 cursor: pointer;
@@ -892,9 +893,11 @@ class MultiImageViewerV8 {
                 // 更新按钮边框
                 colorGrid.querySelectorAll('button').forEach((btn, idx) => {
                     const btnColor = this.availableColors[idx].value;
+                    btn.style.backgroundColor = btnColor + ' !important'; // 确保背景色正确
                     btn.style.border = '2px solid rgba(0,0,0,0.2)';
                     btn.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
                 });
+                colorBtn.style.backgroundColor = colorObj.value + ' !important'; // 确保选中按钮背景色正确
                 colorBtn.style.border = '3px solid #FFF';
                 colorBtn.style.boxShadow = `0 0 0 2px ${colorObj.value}`;
             });
