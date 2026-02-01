@@ -540,9 +540,9 @@ class MultiImageViewerV8 {
             font-size: 11px;
             font-weight: bold;
             text-align: center;
-            color: #333;
-            padding: 6px 0;
-            background-color: rgba(255, 255, 255, 0.95);
+            color: white;
+            padding: 8px 0;
+            background-color: rgba(76, 175, 80, 0.9);
             border-radius: 20px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         `;
@@ -604,13 +604,16 @@ class MultiImageViewerV8 {
     
     createIconButton(svgContent, onClick, title) {
         const btn = document.createElement('button');
-        btn.innerHTML = svgContent;
+        // 将SVG中的stroke="currentColor"替换为white
+        const whiteSvg = svgContent.replace(/stroke="currentColor"/g, 'stroke="white"')
+                                   .replace(/fill="currentColor"/g, 'fill="white"');
+        btn.innerHTML = whiteSvg;
         btn.title = title;
         btn.style.cssText = `
             width: 44px;
             height: 44px;
             background-color: rgba(255, 255, 255, 0.95);
-            color: #333;
+            color: white;
             border: none;
             border-radius: 50%;
             cursor: pointer;
@@ -624,7 +627,7 @@ class MultiImageViewerV8 {
         btn.addEventListener('click', onClick);
         btn.addEventListener('mouseenter', () => {
             btn.style.transform = 'scale(1.15)';
-            btn.style.backgroundColor = 'rgba(255, 255, 255, 1)';
+            btn.style.backgroundColor = 'rgba(76, 175, 80, 0.95)';
             btn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
         });
         btn.addEventListener('mouseleave', () => {
@@ -705,26 +708,22 @@ class MultiImageViewerV8 {
         colorGrid.style.cssText = `
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 5px;
+            gap: 8px;
         `;
         
         this.availableColors.forEach(colorObj => {
             const colorBtn = document.createElement('button');
             colorBtn.style.cssText = `
                 width: 100%;
-                height: 35px;
+                height: 28px;
                 background-color: ${colorObj.value};
-                color: ${colorObj.value};
-                border: 3px solid ${this.currentColor === colorObj.value ? '#FFF' : colorObj.value};
+                border: ${this.currentColor === colorObj.value ? '3px solid #FFF' : '2px solid rgba(0,0,0,0.2)'};
                 border-radius: 4px;
                 cursor: pointer;
                 transition: all 0.2s;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-                font-weight: bold;
-                font-size: 12px;
+                box-shadow: ${this.currentColor === colorObj.value ? '0 0 0 2px ' + colorObj.value : '0 2px 4px rgba(0,0,0,0.2)'};
             `;
             colorBtn.title = colorObj.name;
-            colorBtn.textContent = colorObj.name;
             
             colorBtn.addEventListener('click', () => {
                 // 更新当前颜色
@@ -746,9 +745,11 @@ class MultiImageViewerV8 {
                 // 更新按钮边框
                 colorGrid.querySelectorAll('button').forEach((btn, idx) => {
                     const btnColor = this.availableColors[idx].value;
-                    btn.style.border = `3px solid ${btnColor}`;
+                    btn.style.border = '2px solid rgba(0,0,0,0.2)';
+                    btn.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
                 });
                 colorBtn.style.border = '3px solid #FFF';
+                colorBtn.style.boxShadow = `0 0 0 2px ${colorObj.value}`;
             });
             
             colorBtn.addEventListener('mouseenter', () => {
@@ -864,24 +865,44 @@ class MultiImageViewerV8 {
         const detectedNumbers = this.currentImageData.detectedNumbers || [];
         const referenceMap = this.currentImageData.referenceMap || {};
 
-        // 简单高效的标注布局算法：避免遮挡
+        // 最简单的边缘分布算法：快速且有效
         const canvasWidth = this.modalCanvas.width;
         const canvasHeight = this.modalCanvas.height;
-        const margin = 60;
-        const minSpacing = 30; // 标注之间的最小间距
+        const edgeMargin = 80; // 距离边缘的距离，适当靠外
+
+        // 将标注分配到四个边缘
+        const regions = {
+            top: [],
+            right: [],
+            bottom: [],
+            left: []
+        };
 
         this.annotations = detectedNumbers.map((detected, index) => {
-            // 初始位置：在标注点右上方
-            let labelX = detected.x + 80;
-            let labelY = detected.y - 40;
+            const centerX = canvasWidth / 2;
+            const centerY = canvasHeight / 2;
 
-            // 边界检查
-            if (labelX > canvasWidth - margin) labelX = detected.x - 80;
-            if (labelY < margin) labelY = detected.y + 40;
-            if (labelX < margin) labelX = margin;
-            if (labelY > canvasHeight - margin) labelY = canvasHeight - margin;
+            // 根据标注点位置决定放在哪个边缘
+            const toLeft = detected.x < centerX;
+            const toTop = detected.y < centerY;
+            const dx = Math.abs(detected.x - centerX);
+            const dy = Math.abs(detected.y - centerY);
 
-            return {
+            let region, labelX, labelY;
+
+            if (dx > dy) {
+                // 靠近左右边缘
+                region = toLeft ? 'left' : 'right';
+                labelX = toLeft ? edgeMargin : canvasWidth - edgeMargin;
+                labelY = detected.y;
+            } else {
+                // 靠近上下边缘
+                region = toTop ? 'top' : 'bottom';
+                labelX = detected.x;
+                labelY = toTop ? edgeMargin : canvasHeight - edgeMargin;
+            }
+
+            const annotation = {
                 id: `annotation_${index}`,
                 markerX: detected.x,
                 markerY: detected.y,
@@ -893,47 +914,35 @@ class MultiImageViewerV8 {
                 isSelected: false,
                 isManual: false,
                 fontSize: this.currentFontSize,
-                color: this.currentColor
+                color: this.currentColor,
+                region: region
             };
+
+            regions[region].push(annotation);
+            return annotation;
         });
 
-        // 简单的碰撞检测和调整（最多3次迭代）
-        const ctx = this.modalCanvas.getContext('2d');
-        ctx.font = `bold ${this.currentFontSize}px Arial, sans-serif`;
+        // 在每个边缘均匀分布，确保较大间距
+        Object.keys(regions).forEach(regionName => {
+            const labels = regions[regionName];
+            if (labels.length === 0) return;
 
-        for (let iteration = 0; iteration < 3; iteration++) {
-            let adjusted = false;
-
-            for (let i = 0; i < this.annotations.length; i++) {
-                const ann1 = this.annotations[i];
-                const text1 = `${ann1.number}: ${ann1.name}`;
-                const width1 = ctx.measureText(text1).width;
-                const height1 = this.currentFontSize * 1.5;
-
-                for (let j = i + 1; j < this.annotations.length; j++) {
-                    const ann2 = this.annotations[j];
-                    const text2 = `${ann2.number}: ${ann2.name}`;
-                    const width2 = ctx.measureText(text2).width;
-                    const height2 = this.currentFontSize * 1.5;
-
-                    // 检测是否重叠
-                    const overlapX = Math.abs(ann1.labelX - ann2.labelX) < (width1 + width2) / 2 + minSpacing;
-                    const overlapY = Math.abs(ann1.labelY - ann2.labelY) < (height1 + height2) / 2 + minSpacing;
-
-                    if (overlapX && overlapY) {
-                        // 简单调整：将第二个标注向下或向右移动
-                        if (ann2.labelY + height2 + minSpacing < canvasHeight - margin) {
-                            ann2.labelY += height2 + minSpacing;
-                        } else if (ann2.labelX + width2 + minSpacing < canvasWidth - margin) {
-                            ann2.labelX += minSpacing;
-                        }
-                        adjusted = true;
-                    }
-                }
+            if (regionName === 'top' || regionName === 'bottom') {
+                // 水平分布
+                labels.sort((a, b) => a.markerX - b.markerX);
+                const spacing = (canvasWidth - 2 * edgeMargin) / (labels.length + 1);
+                labels.forEach((label, i) => {
+                    label.labelX = edgeMargin + spacing * (i + 1);
+                });
+            } else {
+                // 垂直分布
+                labels.sort((a, b) => a.markerY - b.markerY);
+                const spacing = (canvasHeight - 2 * edgeMargin) / (labels.length + 1);
+                labels.forEach((label, i) => {
+                    label.labelY = edgeMargin + spacing * (i + 1);
+                });
             }
-
-            if (!adjusted) break; // 如果没有调整，提前退出
-        }
+        });
     }
     
     updateDisplay() {
