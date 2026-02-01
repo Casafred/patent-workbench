@@ -916,232 +916,45 @@ class MultiImageViewerV8 {
             return annotation;
         });
         
-        // 使用智能避让算法调整标注位置
-        this.applySmartLayoutAvoidance(regions, canvasWidth, canvasHeight, margin);
-    }
-    
-    /**
-     * 智能避让算法：调整标注框位置避免相互遮挡
-     * 策略：
-     * 1. 先在同一区域内左右/上下错开
-     * 2. 如果空间不够，向垂直方向扩展
-     * 3. 确保所有标注框都在画布范围内且完整可见
-     */
-    applySmartLayoutAvoidance(regions, canvasWidth, canvasHeight, margin) {
-        const ctx = this.modalCanvas.getContext('2d');
-        const minSpacing = 10; // 标注框之间的最小间距
-        const labelHeight = this.currentFontSize * 1.5; // 标注框高度
-        
+        // 简单布局：均匀分布到边缘，确保不超出边界
         regions.forEach(region => {
             if (region.labels.length === 0) return;
             
+            const ctx = this.modalCanvas.getContext('2d');
+            
             // 按照标注点位置排序
             if (region.name === 'top' || region.name === 'bottom') {
-                // 水平区域：按X坐标排序
                 region.labels.sort((a, b) => a.markerX - b.markerX);
-                
-                // 计算每个标注框的宽度
-                region.labels.forEach(label => {
+                // 均匀分布在水平方向
+                const spacing = (canvasWidth - 2 * margin) / (region.labels.length + 1);
+                region.labels.forEach((label, i) => {
+                    label.labelX = margin + spacing * (i + 1);
+                    
+                    // 边界检查：确保文字不超出画布
                     const text = `${label.number}: ${label.name}`;
                     ctx.font = `bold ${label.fontSize}px Arial, sans-serif`;
-                    label.textWidth = ctx.measureText(text).width + 20; // 加上padding
-                    label.textHeight = labelHeight;
+                    const textWidth = ctx.measureText(text).width;
+                    
+                    // 限制在画布范围内
+                    const minX = 10;
+                    const maxX = canvasWidth - textWidth - 10;
+                    label.labelX = Math.max(minX, Math.min(maxX, label.labelX));
                 });
-                
-                // 智能布局：检测重叠并调整
-                this.resolveHorizontalOverlaps(region.labels, canvasWidth, canvasHeight, margin, minSpacing);
-                
             } else {
-                // 垂直区域：按Y坐标排序
                 region.labels.sort((a, b) => a.markerY - b.markerY);
-                
-                // 计算每个标注框的宽度
-                region.labels.forEach(label => {
-                    const text = `${label.number}: ${label.name}`;
-                    ctx.font = `bold ${label.fontSize}px Arial, sans-serif`;
-                    label.textWidth = ctx.measureText(text).width + 20;
-                    label.textHeight = labelHeight;
+                // 均匀分布在垂直方向
+                const spacing = (canvasHeight - 2 * margin) / (region.labels.length + 1);
+                region.labels.forEach((label, i) => {
+                    label.labelY = margin + spacing * (i + 1);
+                    
+                    // 边界检查：确保文字不超出画布
+                    const textHeight = label.fontSize * 1.5;
+                    const minY = textHeight / 2 + 10;
+                    const maxY = canvasHeight - textHeight / 2 - 10;
+                    label.labelY = Math.max(minY, Math.min(maxY, label.labelY));
                 });
-                
-                // 智能布局：检测重叠并调整
-                this.resolveVerticalOverlaps(region.labels, canvasWidth, canvasHeight, margin, minSpacing);
             }
         });
-    }
-    
-    /**
-     * 解决水平区域（上/下）的标注框重叠
-     */
-    resolveHorizontalOverlaps(labels, canvasWidth, canvasHeight, margin, minSpacing) {
-        if (labels.length === 0) return;
-        
-        const isTopRegion = labels[0].labelY < canvasHeight / 2;
-        const baseY = isTopRegion ? margin : canvasHeight - margin;
-        
-        // 第一遍：尝试在同一行内左右错开
-        for (let i = 0; i < labels.length; i++) {
-            const label = labels[i];
-            label.labelY = baseY;
-            
-            // 检查与前面的标注框是否重叠
-            for (let j = 0; j < i; j++) {
-                const prevLabel = labels[j];
-                
-                // 检查X方向是否重叠
-                const xOverlap = this.checkHorizontalOverlap(prevLabel, label, minSpacing);
-                
-                if (xOverlap && Math.abs(prevLabel.labelY - label.labelY) < label.textHeight + minSpacing) {
-                    // 有重叠，尝试向右移动
-                    const newX = prevLabel.labelX + prevLabel.textWidth + minSpacing;
-                    
-                    // 检查是否超出画布
-                    if (newX + label.textWidth < canvasWidth - margin) {
-                        label.labelX = newX;
-                    } else {
-                        // 空间不够，向上/下移动一行
-                        const rowOffset = label.textHeight + minSpacing;
-                        label.labelY = isTopRegion ? baseY + rowOffset : baseY - rowOffset;
-                        
-                        // 重新设置X位置为标注点附近
-                        label.labelX = Math.max(margin, Math.min(canvasWidth - label.textWidth - margin, label.markerX));
-                    }
-                }
-            }
-            
-            // 边界检查
-            label.labelX = Math.max(margin, Math.min(canvasWidth - label.textWidth - margin, label.labelX));
-            label.labelY = Math.max(label.textHeight / 2 + 10, Math.min(canvasHeight - label.textHeight / 2 - 10, label.labelY));
-        }
-        
-        // 第二遍：检查是否还有重叠，如果有则继续调整
-        let hasOverlap = true;
-        let iterations = 0;
-        const maxIterations = 10;
-        
-        while (hasOverlap && iterations < maxIterations) {
-            hasOverlap = false;
-            iterations++;
-            
-            for (let i = 0; i < labels.length; i++) {
-                for (let j = i + 1; j < labels.length; j++) {
-                    if (this.checkLabelOverlap(labels[i], labels[j], minSpacing)) {
-                        hasOverlap = true;
-                        
-                        // 将第二个标注框向下/上移动
-                        const rowOffset = labels[i].textHeight + minSpacing;
-                        labels[j].labelY += isTopRegion ? rowOffset : -rowOffset;
-                        
-                        // 边界检查
-                        labels[j].labelY = Math.max(labels[j].textHeight / 2 + 10, 
-                            Math.min(canvasHeight - labels[j].textHeight / 2 - 10, labels[j].labelY));
-                    }
-                }
-            }
-        }
-    }
-    
-    /**
-     * 解决垂直区域（左/右）的标注框重叠
-     */
-    resolveVerticalOverlaps(labels, canvasWidth, canvasHeight, margin, minSpacing) {
-        if (labels.length === 0) return;
-        
-        const isLeftRegion = labels[0].labelX < canvasWidth / 2;
-        const baseX = isLeftRegion ? margin : canvasWidth - margin;
-        
-        // 第一遍：尝试在同一列内上下错开
-        for (let i = 0; i < labels.length; i++) {
-            const label = labels[i];
-            label.labelX = baseX;
-            
-            // 检查与前面的标注框是否重叠
-            for (let j = 0; j < i; j++) {
-                const prevLabel = labels[j];
-                
-                // 检查Y方向是否重叠
-                const yOverlap = this.checkVerticalOverlap(prevLabel, label, minSpacing);
-                
-                if (yOverlap && Math.abs(prevLabel.labelX - label.labelX) < Math.max(prevLabel.textWidth, label.textWidth) + minSpacing) {
-                    // 有重叠，尝试向下移动
-                    const newY = prevLabel.labelY + prevLabel.textHeight + minSpacing;
-                    
-                    // 检查是否超出画布
-                    if (newY + label.textHeight / 2 < canvasHeight - margin) {
-                        label.labelY = newY;
-                    } else {
-                        // 空间不够，向左/右移动一列
-                        const colOffset = Math.max(prevLabel.textWidth, label.textWidth) + minSpacing;
-                        label.labelX = isLeftRegion ? baseX + colOffset : baseX - colOffset;
-                        
-                        // 重新设置Y位置为标注点附近
-                        label.labelY = Math.max(label.textHeight / 2 + margin, 
-                            Math.min(canvasHeight - label.textHeight / 2 - margin, label.markerY));
-                    }
-                }
-            }
-            
-            // 边界检查
-            label.labelX = Math.max(margin, Math.min(canvasWidth - label.textWidth - margin, label.labelX));
-            label.labelY = Math.max(label.textHeight / 2 + 10, Math.min(canvasHeight - label.textHeight / 2 - 10, label.labelY));
-        }
-        
-        // 第二遍：检查是否还有重叠，如果有则继续调整
-        let hasOverlap = true;
-        let iterations = 0;
-        const maxIterations = 10;
-        
-        while (hasOverlap && iterations < maxIterations) {
-            hasOverlap = false;
-            iterations++;
-            
-            for (let i = 0; i < labels.length; i++) {
-                for (let j = i + 1; j < labels.length; j++) {
-                    if (this.checkLabelOverlap(labels[i], labels[j], minSpacing)) {
-                        hasOverlap = true;
-                        
-                        // 将第二个标注框向右/左移动
-                        const colOffset = Math.max(labels[i].textWidth, labels[j].textWidth) + minSpacing;
-                        labels[j].labelX += isLeftRegion ? colOffset : -colOffset;
-                        
-                        // 边界检查
-                        labels[j].labelX = Math.max(margin, 
-                            Math.min(canvasWidth - labels[j].textWidth - margin, labels[j].labelX));
-                    }
-                }
-            }
-        }
-    }
-    
-    /**
-     * 检查两个标注框是否在X方向重叠
-     */
-    checkHorizontalOverlap(label1, label2, minSpacing) {
-        const left1 = label1.labelX - label1.textWidth / 2;
-        const right1 = label1.labelX + label1.textWidth / 2;
-        const left2 = label2.labelX - label2.textWidth / 2;
-        const right2 = label2.labelX + label2.textWidth / 2;
-        
-        return !(right1 + minSpacing < left2 || right2 + minSpacing < left1);
-    }
-    
-    /**
-     * 检查两个标注框是否在Y方向重叠
-     */
-    checkVerticalOverlap(label1, label2, minSpacing) {
-        const top1 = label1.labelY - label1.textHeight / 2;
-        const bottom1 = label1.labelY + label1.textHeight / 2;
-        const top2 = label2.labelY - label2.textHeight / 2;
-        const bottom2 = label2.labelY + label2.textHeight / 2;
-        
-        return !(bottom1 + minSpacing < top2 || bottom2 + minSpacing < top1);
-    }
-    
-    /**
-     * 检查两个标注框是否完全重叠（X和Y方向都重叠）
-     */
-    checkLabelOverlap(label1, label2, minSpacing) {
-        return this.checkHorizontalOverlap(label1, label2, minSpacing) && 
-               this.checkVerticalOverlap(label1, label2, minSpacing);
     }
     
     updateDisplay() {
