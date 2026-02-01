@@ -52,8 +52,24 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
 
 /* 小按钮 */
 .small-button { 
-    padding: 8px 16px; 
-    font-size: 0.9em; 
+    padding: 6px 12px; 
+    font-size: 0.85em; 
+    background: linear-gradient(45deg, var(--primary-color-dark), var(--primary-color)); 
+    color: #FFFFFF; 
+    font-weight: 500; 
+    border: none; 
+    border-radius: 6px; 
+    cursor: pointer; 
+    transition: all 0.3s ease; 
+    box-shadow: 0 2px 6px var(--primary-color-glow); 
+}
+
+.small-button:hover { 
+    transform: translateY(-1px); 
+    box-shadow: 0 4px 10px var(--primary-color-glow); 
+    filter: brightness(1.05); 
+    background: linear-gradient(45deg, var(--primary-color-dark), var(--primary-color)); 
+    color: #FFFFFF; 
 }
 
 /* 图标按钮 */
