@@ -41,6 +41,7 @@ def initialize_ocr_engine():
     - CPU-only operation (2GB server constraint)
     - English and numeric character recognition
     - White background with black text optimization
+    - Lower text score threshold for better detection
     
     Returns:
         RapidOCR: Initialized OCR engine instance
@@ -56,11 +57,15 @@ def initialize_ocr_engine():
     try:
         from rapidocr_onnxruntime import RapidOCR
         
-        # Initialize RapidOCR with minimal configuration
-        # This is much faster than PaddleOCR and requires less memory
-        _ocr_engine = RapidOCR()
+        # Initialize RapidOCR with optimized parameters for patent drawings
+        # text_score: Lower threshold to detect more markers (default 0.5)
+        # box_thresh: Lower threshold for text box detection (default 0.5)
+        _ocr_engine = RapidOCR(
+            text_score=0.3,  # 降低文本置信度阈值，提高检测率
+            box_thresh=0.3   # 降低文本框检测阈值，检测更多候选区域
+        )
         
-        logger.info("RapidOCR engine initialized successfully")
+        logger.info("RapidOCR engine initialized with optimized parameters (text_score=0.3, box_thresh=0.3)")
         return _ocr_engine
         
     except ImportError as e:
@@ -183,6 +188,59 @@ def transform_rapidocr_result(rapid_result) -> List[Dict]:
     return results
 
 
+def preprocess_image_for_ocr(image: np.ndarray) -> List[np.ndarray]:
+    """
+    预处理图像以提高OCR识别率
+    
+    对专利附图进行多种预处理，生成多个候选图像：
+    1. 原图（基准）
+    2. 灰度化 + 对比度增强
+    3. 自适应二值化
+    4. 锐化处理
+    
+    Args:
+        image: 输入图像（BGR格式）
+        
+    Returns:
+        List[np.ndarray]: 预处理后的图像列表
+    """
+    processed_images = []
+    
+    # 1. 原图
+    processed_images.append(image.copy())
+    
+    # 2. 灰度化 + 对比度增强（CLAHE）
+    try:
+        if len(image.shape) == 3:
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        else:
+            gray = image.copy()
+        
+        # CLAHE (Contrast Limited Adaptive Histogram Equalization)
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        enhanced = clahe.apply(gray)
+        processed_images.append(cv2.cvtColor(enhanced, cv2.COLOR_GRAY2BGR))
+        
+        # 3. 自适应二值化（适合不均匀光照）
+        binary = cv2.adaptiveThreshold(
+            gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+            cv2.THRESH_BINARY, 11, 2
+        )
+        processed_images.append(cv2.cvtColor(binary, cv2.COLOR_GRAY2BGR))
+        
+        # 4. 锐化处理（增强边缘）
+        kernel = np.array([[-1, -1, -1],
+                          [-1,  9, -1],
+                          [-1, -1, -1]])
+        sharpened = cv2.filter2D(gray, -1, kernel)
+        processed_images.append(cv2.cvtColor(sharpened, cv2.COLOR_GRAY2BGR))
+        
+    except Exception as e:
+        logger.warning(f"Image preprocessing failed: {str(e)}, using original image only")
+    
+    return processed_images
+
+
 def filter_alphanumeric_markers(ocr_results: List[Dict]) -> List[Dict]:
     """
     Filter OCR results to only include alphanumeric markers.
@@ -210,21 +268,33 @@ def filter_alphanumeric_markers(ocr_results: List[Dict]) -> List[Dict]:
     
     filtered = []
     
-    # Pattern for alphanumeric markers:
-    # - Starts with digit(s) or letter(s)
-    # - May contain lowercase letters
-    # - Length typically 1-4 characters
-    pattern = re.compile(r'^[0-9]+[A-Za-z]*$|^[A-Z]+[0-9]*[a-z]*$', re.IGNORECASE)
+    # 更宽松的模式匹配，支持更多格式
+    # - 纯数字: 1, 10, 100
+    # - 字母+数字: A1, B2
+    # - 数字+字母: 1A, 2B
+    # - 纯字母: A, B, C
+    pattern = re.compile(r'^[0-9]+[A-Za-z]*$|^[A-Z]+[0-9]*[a-z]*$|^[A-Za-z]$', re.IGNORECASE)
     
     for result in ocr_results:
         text = result['number'].strip()
         
-        # Skip empty or too long text
-        if not text or len(text) > 5:
+        # 清理常见的OCR错误
+        # 移除前后的标点符号
+        text = re.sub(r'^[^\w]+|[^\w]+$', '', text)
+        
+        # 跳过空文本
+        if not text:
             continue
         
-        # Check if matches marker pattern
+        # 放宽长度限制到6个字符（支持如"100A"这样的标记）
+        if len(text) > 6:
+            logger.debug(f"Filtered out too long text: '{text}' (length: {len(text)})")
+            continue
+        
+        # 检查是否匹配标记模式
         if pattern.match(text):
+            # 更新清理后的文本
+            result['number'] = text
             filtered.append(result)
         else:
             logger.debug(f"Filtered out non-marker text: '{text}'")
@@ -310,42 +380,55 @@ def perform_ocr(
                 logger.error(f"Failed to decode image: {str(e)}")
                 raise ValueError(f"Invalid image data: {str(e)}")
             
-            # Perform OCR
-            try:
-                img_shape = image.shape
-                logger.info(f"Starting OCR on image of size {img_shape[0]}x{img_shape[1]}")
-                result, elapse = ocr_engine(image)
-                
-                # Handle elapse time (can be None, float, or list of floats)
-                if elapse is not None:
-                    if isinstance(elapse, (list, tuple)):
-                        total_time = sum(elapse) if elapse else 0
-                        logger.info(f"OCR completed in {total_time:.2f}s")
-                    else:
-                        logger.info(f"OCR completed in {elapse:.2f}s")
-                else:
-                    logger.info("OCR completed")
-                
-                if result is None or not result:
-                    logger.info("No text detected in image")
-                    result_container['result'] = []
-                    return
+            # 多尺度预处理：生成多个候选图像
+            img_shape = image.shape
+            logger.info(f"Starting multi-scale OCR on image of size {img_shape[0]}x{img_shape[1]}")
+            
+            processed_images = preprocess_image_for_ocr(image)
+            logger.info(f"Generated {len(processed_images)} preprocessed variants")
+            
+            # 对每个预处理图像进行OCR，合并结果
+            all_results = []
+            
+            for idx, proc_img in enumerate(processed_images):
+                try:
+                    result, elapse = ocr_engine(proc_img)
                     
-            except Exception as e:
-                logger.error(f"OCR processing failed: {str(e)}")
-                # Return empty results instead of crashing
+                    # Handle elapse time
+                    if elapse is not None:
+                        if isinstance(elapse, (list, tuple)):
+                            total_time = sum(elapse) if elapse else 0
+                            logger.info(f"OCR variant {idx+1} completed in {total_time:.2f}s")
+                        else:
+                            logger.info(f"OCR variant {idx+1} completed in {elapse:.2f}s")
+                    
+                    if result and len(result) > 0:
+                        # Transform and add to results
+                        transformed = transform_rapidocr_result(result)
+                        all_results.extend(transformed)
+                        logger.info(f"Variant {idx+1} detected {len(transformed)} items")
+                        
+                except Exception as e:
+                    logger.warning(f"OCR variant {idx+1} failed: {str(e)}")
+                    continue
+            
+            if not all_results:
+                logger.info("No text detected in any image variant")
                 result_container['result'] = []
                 return
             
-            # Transform results to unified format
-            transformed_results = transform_rapidocr_result(result)
+            # 合并和去重所有结果
+            logger.info(f"Total detections before deduplication: {len(all_results)}")
             
             # Filter to only include alphanumeric markers
-            filtered_results = filter_alphanumeric_markers(transformed_results)
+            filtered_results = filter_alphanumeric_markers(all_results)
             
-            logger.info(f"OCR completed: {len(filtered_results)} markers detected")
+            # 去重（位置相近的保留置信度最高的）
+            deduplicated_results = deduplicate_results(filtered_results, position_threshold=30)
             
-            result_container['result'] = filtered_results
+            logger.info(f"OCR completed: {len(deduplicated_results)} unique markers detected")
+            
+            result_container['result'] = deduplicated_results
             
         except Exception as e:
             result_container['error'] = e
