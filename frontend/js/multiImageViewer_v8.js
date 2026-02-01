@@ -942,8 +942,7 @@ class MultiImageViewerV8 {
         // 绘制标注（标注点跟随旋转，文字不旋转）
         this.annotations.forEach(annotation => {
             const isHighlighted = annotation.isSelected || annotation.id === this.selectedAnnotationId;
-            const baseColor = annotation.color || this.currentColor;
-            const color = isHighlighted ? '#00FF00' : baseColor;
+            const color = annotation.color || this.currentColor;
             const lineWidth = isHighlighted ? 4 : 3;
             const fontSize = annotation.fontSize || this.currentFontSize;
             
@@ -1032,15 +1031,21 @@ class MultiImageViewerV8 {
         this.annotations.forEach(annotation => {
             const item = document.createElement('div');
             const isHighlighted = annotation.isSelected || annotation.id === this.selectedAnnotationId;
+            const annotationColor = annotation.color || this.currentColor;
+            
+            // 将颜色转换为淡化版本作为背景色
+            const bgColor = isHighlighted ? this.hexToRgba(annotationColor, 0.3) : '#f0f0f0';
+            const borderColor = isHighlighted ? annotationColor : '#ddd';
+            
             item.style.cssText = `
                 padding: 8px;
-                background-color: ${isHighlighted ? '#00FF00' : '#f0f0f0'};
-                color: ${isHighlighted ? '#000' : '#333'};
+                background-color: ${bgColor};
+                color: #000;
                 border-radius: 4px;
                 cursor: pointer;
-                transition: background-color 0.2s;
+                transition: all 0.2s;
                 font-weight: ${isHighlighted ? 'bold' : 'normal'};
-                border: ${isHighlighted ? '2px solid #00AA00' : '1px solid #ddd'};
+                border: ${isHighlighted ? `3px solid ${borderColor}` : '1px solid #ddd'};
             `;
             item.textContent = `${annotation.number}: ${annotation.name}${annotation.isManual ? ' (手动)' : ''}`;
             
@@ -1203,8 +1208,7 @@ class MultiImageViewerV8 {
         // 绘制标注
         this.annotations.forEach(annotation => {
             const isHighlighted = annotation.isSelected || annotation.id === this.selectedAnnotationId;
-            const baseColor = annotation.color || this.currentColor;
-            const color = isHighlighted ? '#00FF00' : baseColor;
+            const color = annotation.color || this.currentColor;
             const lineWidth = isHighlighted ? 4 : 3;
             const fontSize = annotation.fontSize || this.currentFontSize;
             
@@ -1514,6 +1518,19 @@ class MultiImageViewerV8 {
         debugModal.appendChild(header);
         debugModal.appendChild(content);
         document.body.appendChild(debugModal);
+    }
+    
+    // 辅助函数：将十六进制颜色转换为 RGBA
+    hexToRgba(hex, alpha) {
+        // 移除 # 号
+        hex = hex.replace('#', '');
+        
+        // 解析 RGB 值
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+        
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     }
 }
 
