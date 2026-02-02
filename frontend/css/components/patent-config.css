@@ -339,15 +339,16 @@
 
 /* 字段复制按钮 */
 .copy-field-btn {
-    margin-left: 6px;
-    padding: 1px 4px;
-    font-size: 0.6em;
+    margin-left: 4px;
+    padding: 1px 3px;
+    font-size: 0.55em;
     background: #28a745;
     color: white;
     border: none;
     border-radius: 2px;
     cursor: pointer;
     transition: background 0.2s;
+    vertical-align: middle;
 }
 
 .copy-field-btn:hover {
