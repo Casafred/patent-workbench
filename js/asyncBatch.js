@@ -689,3 +689,13 @@ function exportAsyncResultsToExcel() {
     XLSX.writeFile(workbook, `小批量异步结果快照_${new Date().toISOString().slice(0,16).replace('T','_').replace(':','-')}.xlsx`);
     alert("Excel结果快照已开始下载。");
 }
+
+
+// ▼▼▼ 自动初始化功能三 ▼▼▼
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAsyncBatch);
+} else {
+    // DOM已经加载完成，直接初始化
+    initAsyncBatch();
+}
+// ▲▲▲ 自动初始化结束 ▲▲▲
