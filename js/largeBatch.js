@@ -16,18 +16,26 @@ function initGenerator() {
     columnCountInput.addEventListener('input', () => { updateColumnSelectors(); updateContentInsertionPreview(); });
     genGenerateBtn.addEventListener('click', generateJsonl);
     genDownloadBtn.addEventListener('click', downloadJsonl);
-    
-    if (templateSelector) {
-        templateSelector.addEventListener('change', loadTemplate);
+
+    // ▼▼▼ 修复：在运行时重新获取templateSelector元素 ▼▼▼
+    const templateSelectorElement = getEl('template_selector');
+    if (templateSelectorElement) {
+        templateSelectorElement.addEventListener('change', function() {
+            loadTemplate(this.value);
+        });
+        console.log('✅ template_selector 事件监听器已绑定');
+    } else {
+        console.error('❌ template_selector 元素不存在，无法绑定事件');
     }
-    
+    // ▲▲▲ 修复结束 ▲▲▲
+
     getEl('save_template_btn').addEventListener('click', saveTemplate);
     getEl('delete_template_btn').addEventListener('click', deleteTemplate);
     getEl('export_template_btn').addEventListener('click', exportTemplate);
     getEl('import_template_btn').addEventListener('click', () => templateFileInput.click());
     templateFileInput.addEventListener('change', importTemplate);
     getEl('add-output-field-btn').addEventListener('click', () => addOutputField());
-    
+
     // 初始化模板 - 这是关键！
     initTemplates();
 }
@@ -213,11 +221,18 @@ function initTemplates() {
 }
 
 function updateTemplateSelector() {
+    // ▼▼▼ 修复：在函数内部重新获取元素，而不是依赖全局缓存 ▼▼▼
+    const templateSelectorElement = getEl('template_selector');
+
     // 检查模板选择器元素是否存在
-    if (!templateSelector) {
-        console.warn('⚠️ templateSelector 元素不存在，跳过初始化');
+    if (!templateSelectorElement) {
+        console.error('❌ template_selector 元素不存在，跳过初始化');
+        console.trace('堆栈跟踪:');
         return;
     }
+
+    console.log('✅ 找到 template_selector 元素');
+    // ▲▲▲ 修复结束 ▲▲▲
 
     // 检查appState和相关属性是否存在
     if (typeof appState === 'undefined' || !appState.generator) {
@@ -235,16 +250,16 @@ function updateTemplateSelector() {
     }
 
     // 保存当前选中的值
-    const selectedValue = templateSelector.value;
+    const selectedValue = templateSelectorElement.value;
 
     // 清空选择器
-    templateSelector.innerHTML = '';
+    templateSelectorElement.innerHTML = '';
 
     // 添加默认选项
     const defaultOption = document.createElement('option');
     defaultOption.value = '';
     defaultOption.textContent = '选择预置模板或新建';
-    templateSelector.appendChild(defaultOption);
+    templateSelectorElement.appendChild(defaultOption);
 
     // ▼▼▼ 改进：添加预设模板时，同时输出日志便于调试 ▼▼▼
     if (appState.generator.presetTemplates.length > 0) {
@@ -253,7 +268,7 @@ function updateTemplateSelector() {
             const option = document.createElement('option');
             option.value = template.name;
             option.textContent = template.name + ' [预设]';
-            templateSelector.appendChild(option);
+            templateSelectorElement.appendChild(option);
         });
     } else {
         console.warn('⚠️ 没有预设模板可以添加');
@@ -267,22 +282,33 @@ function updateTemplateSelector() {
             const option = document.createElement('option');
             option.value = template.name;
             option.textContent = template.name;
-            templateSelector.appendChild(option);
+            templateSelectorElement.appendChild(option);
         });
     }
 
     // 保持选中状态
     if (selectedValue) {
-        templateSelector.value = selectedValue;
+        templateSelectorElement.value = selectedValue;
     }
+
+    console.log(`✅ 模板选择器已初始化，共 ${templateSelectorElement.options.length} 个选项`);
 }
 
 function loadTemplate(templateId) {
+    // ▼▼▼ 修复：在函数内部重新获取templateSelector元素 ▼▼▼
+    const templateSelectorElement = getEl('template_selector');
+    // ▲▲▲ 修复结束 ▲▲▲
+
     // 如果没有传入templateId，从选择器获取
     if (!templateId) {
-        templateId = templateSelector.value;
+        if (templateSelectorElement) {
+            templateId = templateSelectorElement.value;
+        } else {
+            console.error('❌ 无法获取模板ID');
+            return;
+        }
     }
-    
+
     // 处理空选项
     if (!templateId) {
         // 重置表单为默认状态
@@ -291,38 +317,38 @@ function loadTemplate(templateId) {
         outputFieldsContainer.innerHTML = '';
         return;
     }
-    
+
     console.log('尝试加载模板:', templateId);
     console.log('预设模板数量:', appState.generator.presetTemplates.length);
     console.log('自定义模板数量:', appState.generator.customTemplates.length);
-    
+
     // 改进模板查找逻辑，使其更加健壮
     let template = null;
-    
+
     // 首先尝试精确匹配
     template = [...appState.generator.presetTemplates, ...appState.generator.customTemplates].find(t => t.name === templateId);
-    
+
     // 如果精确匹配失败，尝试模糊匹配
     if (!template) {
         console.log('精确匹配失败，尝试模糊匹配');
-        template = [...appState.generator.presetTemplates, ...appState.generator.customTemplates].find(t => 
-            t.name.toLowerCase().includes(templateId.toLowerCase()) || 
+        template = [...appState.generator.presetTemplates, ...appState.generator.customTemplates].find(t =>
+            t.name.toLowerCase().includes(templateId.toLowerCase()) ||
             templateId.toLowerCase().includes(t.name.toLowerCase())
         );
     }
-    
+
     // 如果仍然找不到模板，使用第一个预设模板
     if (!template && appState.generator.presetTemplates.length > 0) {
         console.log('模糊匹配失败，使用第一个预设模板');
         template = appState.generator.presetTemplates[0];
     }
-    
+
     if (!template) {
         console.error('模板不存在:', templateId);
         console.error('可用模板列表:', [...appState.generator.presetTemplates, ...appState.generator.customTemplates].map(t => t.name));
         return;
     }
-    
+
     console.log('成功找到模板:', template.name);
     loadTemplateUI(template);
 }
@@ -335,12 +361,27 @@ function saveTemplate() {
     appState.generator.customTemplates.push(template);
     localStorage.setItem('custom_templates', JSON.stringify(appState.generator.customTemplates));
     updateTemplateSelector();
-    templateSelector.value = name;
+
+    // ▼▼▼ 修复：重新获取元素来设置选中值 ▼▼▼
+    const templateSelectorElement = getEl('template_selector');
+    if (templateSelectorElement) {
+        templateSelectorElement.value = name;
+    }
+    // ▲▲▲ 修复结束 ▲▲▲
+
     alert("模板已保存！");
 }
 
 function deleteTemplate() {
-    const selectedName = templateSelector.value;
+    // ▼▼▼ 修复：重新获取元素 ▼▼▼
+    const templateSelectorElement = getEl('template_selector');
+    if (!templateSelectorElement) {
+        alert("错误：无法访问模板选择器。");
+        return;
+    }
+    const selectedName = templateSelectorElement.value;
+    // ▲▲▲ 修复结束 ▲▲▲
+
     const template = appState.generator.customTemplates.find(t => t.name === selectedName);
     if (!template) return alert("错误：只能删除自定义模板。");
     if (confirm(`确定要删除模板 "${selectedName}" 吗？`)) {
@@ -352,7 +393,15 @@ function deleteTemplate() {
 }
 
 function exportTemplate() {
-    const selectedName = templateSelector.value;
+    // ▼▼▼ 修复：重新获取元素 ▼▼▼
+    const templateSelectorElement = getEl('template_selector');
+    if (!templateSelectorElement) {
+        alert("错误：无法访问模板选择器。");
+        return;
+    }
+    const selectedName = templateSelectorElement.value;
+    // ▲▲▲ 修复结束 ▲▲▲
+
     const template = [...appState.generator.presetTemplates, ...appState.generator.customTemplates].find(t => t.name === selectedName);
     if (!template) return alert("请先选择一个要导出的模板");
     const blob = new Blob([JSON.stringify(template, null, 2)], { type: 'application/json' });
@@ -372,14 +421,24 @@ function importTemplate(event) {
             const t = JSON.parse(e.target.result);
             if (!t.name || !t.system || !t.user) throw new Error("模板文件格式不正确。");
             let newName = t.name;
-            if ([...appState.generator.presetTemplates, ...appState.generator.customTemplates].some(temp => temp.name === newName)) { newName = `${t.name}_imported_${Date.now()}`; alert(`模板名称冲突，已重命名为 "${newName}"`); }
+            if ([...appState.generator.presetTemplates, ...appState.generator.customTemplates].some(temp => temp.name === newName)) {
+                newName = `${t.name}_imported_${Date.now()}`;
+                alert(`模板名称冲突，已重命名为 "${newName}"`);
+            }
             t.name = newName;
             delete t.isPreset;
             appState.generator.customTemplates.push(t);
             localStorage.setItem('custom_templates', JSON.stringify(appState.generator.customTemplates));
             updateTemplateSelector();
-            templateSelector.value = newName;
-            loadTemplate();
+
+            // ▼▼▼ 修复：重新获取元素来设置选中值 ▼▼▼
+            const templateSelectorElement = getEl('template_selector');
+            if (templateSelectorElement) {
+                templateSelectorElement.value = newName;
+                loadTemplate();
+            }
+            // ▲▲▲ 修复结束 ▲▲▲
+
             alert("模板导入成功！");
         } catch (err) { alert(`导入失败: ${err.message}`); }
     };
