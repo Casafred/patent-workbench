@@ -77,8 +77,8 @@
 }
 
 .small-button {
-    padding: 4px 8px;
-    font-size: 0.75em;
+    padding: 6px 12px;
+    font-size: 0.9em;
     background-color: var(--primary-color);
     color: white;
     border: none;
