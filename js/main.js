@@ -193,6 +193,17 @@ function switchTab(tabId, clickedButton) {
     document.querySelectorAll(".tab-button").forEach(el => el.classList.remove("active"));
     getEl(`${tabId}-tab`).classList.add("active");
     if (clickedButton) clickedButton.classList.add("active");
+    
+    // 当切换到功能三标签页时，确保模板选择器能够正确初始化
+    if (tabId === 'large_batch') {
+        setTimeout(() => {
+            // 确保DOM元素已渲染
+            if (typeof updateTemplateSelector === 'function') {
+                updateTemplateSelector();
+                console.log('✅ 功能三标签页切换，模板选择器已重新初始化');
+            }
+        }, 100);
+    }
 }
 
 function switchAsyncSubTab(subTabId, clickedElement) {

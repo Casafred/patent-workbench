@@ -9,6 +9,9 @@ globalThis.initLargeBatch = function() {
     switchSubTab('generator', document.querySelector('#large_batch-tab .sub-tab-button'));
 }
 
+// 全局暴露updateTemplateSelector函数，以便在main.js中调用
+globalThis.updateTemplateSelector = updateTemplateSelector;
+
 function initGenerator() {
     // 模型选择器现在由 state.js 的 updateAllModelSelectors() 统一管理
     genFileInput.addEventListener('change', handleGenFile);
