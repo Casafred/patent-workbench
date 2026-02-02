@@ -24,11 +24,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const asyncFirstStep = document.querySelector('#async_batch-tab .step-item');
     if (asyncFirstStep) switchAsyncSubTab('input', asyncFirstStep);
     
-    const largeBatchFirstStep = document.querySelector('#large_batch-tab .step-item');
-    if (largeBatchFirstStep) switchSubTab('generator', largeBatchFirstStep);
-    
     const lplFirstStep = document.querySelector('#local_patent_lib-tab .step-item');
     if (lplFirstStep) switchLPLSubTab('expand', lplFirstStep);
+    
+    // 注意：功能三的内部步骤激活需要在标签页显示后进行
+    // 现在只获取元素引用，不立即激活
 });
 
 // =================================================================================
@@ -197,7 +197,14 @@ function switchTab(tabId, clickedButton) {
     // 当切换到功能三标签页时，确保模板选择器能够正确初始化
     if (tabId === 'large_batch') {
         setTimeout(() => {
-            // 确保DOM元素已渲染
+            // 首先激活功能三内部的第一个步骤
+            const largeBatchFirstStep = document.querySelector('#large_batch-tab .step-item');
+            if (largeBatchFirstStep) {
+                switchSubTab('generator', largeBatchFirstStep);
+                console.log('✅ 功能三内部步骤已激活');
+            }
+            
+            // 然后初始化模板选择器
             if (typeof updateTemplateSelector === 'function') {
                 updateTemplateSelector();
                 console.log('✅ 功能三标签页切换，模板选择器已重新初始化');
@@ -235,6 +242,17 @@ function switchSubTab(subTabId, clickedElement) {
     if (clickedElement) {
         const stepper = clickedElement.closest('.progress-stepper');
         updateStepperState(stepper, clickedElement);
+    }
+
+    // 当切换到generator子标签页时，确保模板选择器能够正确初始化
+    if (subTabId === 'generator') {
+        setTimeout(() => {
+            // 确保DOM元素已渲染
+            if (typeof updateTemplateSelector === 'function') {
+                updateTemplateSelector();
+                console.log('✅ 功能三generator子标签页切换，模板选择器已重新初始化');
+            }
+        }, 50);
     }
 
     // ▼▼▼ 新增的核心逻辑 ▼▼▼
