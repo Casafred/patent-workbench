@@ -71,25 +71,40 @@ const PRESET_TEMPLATES = [
 // 初始化模板管理
 function initPatentTemplate() {
     console.log('🔧 初始化专利解读模板管理...');
+    console.log('📍 检查DOM元素是否存在...');
+    
+    const selector = getEl('patent_template_selector');
+    if (!selector) {
+        console.error('❌ 致命错误: patent_template_selector 元素不存在！');
+        console.log('💡 提示: 请确保在功能六标签页中存在 id="patent_template_selector" 的 select 元素');
+        return;
+    }
+    console.log('✅ patent_template_selector 元素已找到');
     
     // 初始化状态
     if (!appState.patentBatch) {
+        console.log('📦 创建 appState.patentBatch 对象');
         appState.patentBatch = {};
     }
     if (!appState.patentBatch.customTemplates) {
+        console.log('📦 初始化 customTemplates 数组');
         appState.patentBatch.customTemplates = [];
     }
     
     // 加载自定义模板
+    console.log('📂 加载自定义模板...');
     loadCustomTemplates();
     
     // 初始化模板选择器
+    console.log('🎨 初始化模板选择器...');
     updateTemplateSelector();
     
     // 绑定事件
+    console.log('🔗 绑定事件监听器...');
     bindTemplateEvents();
     
     // 加载默认模板
+    console.log('📖 加载默认模板...');
     loadTemplate('default');
     
     console.log('✅ 模板管理初始化完成，预设模板数量:', PRESET_TEMPLATES.length);
@@ -120,9 +135,13 @@ function saveCustomTemplates() {
 function updateTemplateSelector() {
     const selector = getEl('patent_template_selector');
     if (!selector) {
-        console.warn('⚠️ 模板选择器元素不存在');
+        console.error('❌ 模板选择器元素不存在: patent_template_selector');
         return;
     }
+    
+    console.log('🔄 开始更新模板选择器...');
+    console.log('📋 预设模板数量:', PRESET_TEMPLATES.length);
+    console.log('✏️ 自定义模板数量:', appState.patentBatch.customTemplates ? appState.patentBatch.customTemplates.length : 0);
     
     // 保存当前选中的值
     const currentValue = selector.value;
@@ -137,6 +156,7 @@ function updateTemplateSelector() {
         option.value = template.id;
         option.textContent = template.name;
         presetGroup.appendChild(option);
+        console.log('  ✅ 添加预设模板:', template.name);
     });
     selector.appendChild(presetGroup);
     
@@ -149,6 +169,7 @@ function updateTemplateSelector() {
             option.value = template.id;
             option.textContent = template.name;
             customGroup.appendChild(option);
+            console.log('  ✅ 添加自定义模板:', template.name);
         });
         selector.appendChild(customGroup);
     }
@@ -162,6 +183,7 @@ function updateTemplateSelector() {
     }
     
     console.log('✅ 模板选择器已更新，当前选中:', selector.value);
+    console.log('📊 选择器选项总数:', selector.options.length);
 }
 
 // 绑定模板事件
