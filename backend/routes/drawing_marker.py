@@ -114,48 +114,24 @@ def process_drawing_marker():
                     status_code=400
                 )
             
-            # Get API key from Authorization header (AI mode requires it)
+            # Get ZhipuAI client from Authorization header (AI mode requires it)
             client, error = get_zhipu_client()
             if error:
                 return error
             
-            # Get API key from client
-            # Debug: Check if client has api_key attribute
-            print(f"[DEBUG] Client type: {type(client)}")
-            print(f"[DEBUG] Client attributes: {dir(client)}")
-            
-            # Try to get API key from client
-            if hasattr(client, 'api_key'):
-                api_key = client.api_key
-                print(f"[DEBUG] Got API key from client.api_key: {api_key[:10]}...")
-            elif hasattr(client, '_api_key'):
-                api_key = client._api_key
-                print(f"[DEBUG] Got API key from client._api_key: {api_key[:10]}...")
-            else:
-                # Fallback: get from Authorization header directly
-                auth_header = request.headers.get('Authorization')
-                api_key = auth_header.split(' ')[1] if auth_header else None
-                print(f"[DEBUG] Got API key from Authorization header: {api_key[:10] if api_key else 'None'}...")
-            
-            if not api_key:
-                return create_response(
-                    error="Failed to extract API key from client",
-                    status_code=500
-                )
-            
             # Import AI processor
             from backend.services.ai_description.ai_description_processor import AIDescriptionProcessor
             
-            # Create processor instance
-            processor = AIDescriptionProcessor(api_key)
+            # Create processor instance (no longer needs api_key)
+            processor = AIDescriptionProcessor()
             
-            # Process description using AI
+            # Process description using AI, passing client directly
             # Run async function in sync context
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             try:
                 ai_result = loop.run_until_complete(
-                    processor.process(specification, model_name, custom_prompt)
+                    processor.process(specification, model_name, client, custom_prompt)
                 )
             finally:
                 loop.close()

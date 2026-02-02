@@ -22,21 +22,12 @@ class AIComponentExtractor:
     and their corresponding component names from Chinese patent description text.
     """
     
-    def __init__(self, api_key: str):
+    def __init__(self):
         """
         Initialize the AI component extractor.
         
-        Args:
-            api_key: ZhipuAI API key
+        Note: Client is created per-request, not stored in instance
         """
-        self.api_key = api_key
-        self.client = None
-        if api_key:
-            try:
-                self.client = ZhipuAI(api_key=api_key)
-            except Exception as e:
-                logger.error(f"Failed to initialize ZhipuAI client: {str(e)}")
-        
         self.prompt_template = self._load_default_template()
     
     def _load_default_template(self) -> str:
@@ -150,6 +141,7 @@ class AIComponentExtractor:
         self,
         description_text: str,
         model_name: str,
+        client,  # Add client parameter
         custom_prompt: Optional[str] = None
     ) -> List[Dict[str, str]]:
         """
@@ -158,6 +150,7 @@ class AIComponentExtractor:
         Args:
             description_text: Patent description text (in Chinese)
             model_name: AI model name to use
+            client: ZhipuAI client instance
             custom_prompt: Optional custom prompt template
             
         Returns:
@@ -167,8 +160,8 @@ class AIComponentExtractor:
         Raises:
             Exception: If AI model call fails or response parsing fails
         """
-        if not self.client:
-            raise Exception("AI client not initialized. Please check API key.")
+        if not client:
+            raise Exception("AI client not provided")
         
         # Use custom prompt if provided, otherwise use default
         template = custom_prompt if custom_prompt else self.prompt_template
@@ -183,7 +176,8 @@ class AIComponentExtractor:
             response = await asyncio.to_thread(
                 self._call_ai_model,
                 prompt,
-                model_name
+                model_name,
+                client  # Pass client
             )
             
             # Parse response
@@ -206,13 +200,14 @@ class AIComponentExtractor:
             logger.error(f"Component extraction failed: {str(e)}")
             raise Exception(f"部件标记抽取失败: {str(e)}")
     
-    def _call_ai_model(self, prompt: str, model_name: str) -> str:
+    def _call_ai_model(self, prompt: str, model_name: str, client) -> str:
         """
         Call AI model API (synchronous).
         
         Args:
             prompt: Prompt text
             model_name: Model name
+            client: ZhipuAI client instance
             
         Returns:
             AI model response text
@@ -240,7 +235,7 @@ class AIComponentExtractor:
                 }
             ]
             
-            response = self.client.chat.completions.create(
+            response = client.chat.completions.create(
                 model=model_name,
                 messages=messages,
                 stream=False,

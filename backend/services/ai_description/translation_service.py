@@ -38,25 +38,19 @@ class TranslationService:
 
 请直接返回中文翻译:"""
     
-    def __init__(self, api_key: str):
+    def __init__(self):
         """
         Initialize the translation service.
         
-        Args:
-            api_key: ZhipuAI API key
+        Note: Client is created per-request, not stored in instance
         """
-        self.api_key = api_key
-        self.client = None
-        if api_key:
-            try:
-                self.client = ZhipuAI(api_key=api_key)
-            except Exception as e:
-                logger.error(f"Failed to initialize ZhipuAI client: {str(e)}")
+        pass
     
     async def translate_to_chinese(
         self,
         text: str,
         source_lang: str,
+        client,  # Add client parameter
         model_name: str = "glm-4-flash"
     ) -> str:
         """
@@ -65,6 +59,7 @@ class TranslationService:
         Args:
             text: Source text to translate
             source_lang: Source language code (e.g., 'en', 'ja', 'ko')
+            client: ZhipuAI client instance
             model_name: AI model to use for translation
             
         Returns:
@@ -73,7 +68,7 @@ class TranslationService:
         Raises:
             TranslationServiceUnavailable: If translation service is not available
         """
-        if not self.client:
+        if not client:
             raise TranslationServiceUnavailable(
                 "Translation service is not available. "
                 "Please check API key configuration."
@@ -105,7 +100,8 @@ class TranslationService:
             response = await asyncio.to_thread(
                 self._call_ai_model,
                 prompt,
-                model_name
+                model_name,
+                client  # Pass client
             )
             
             translated_text = response.strip()
@@ -120,13 +116,14 @@ class TranslationService:
                 "Please try again later or use Chinese description text."
             )
     
-    def _call_ai_model(self, prompt: str, model_name: str) -> str:
+    def _call_ai_model(self, prompt: str, model_name: str, client) -> str:
         """
         Call AI model API (synchronous).
         
         Args:
             prompt: Prompt text
             model_name: Model name
+            client: ZhipuAI client instance
             
         Returns:
             AI model response text
@@ -154,7 +151,7 @@ class TranslationService:
                 }
             ]
             
-            response = self.client.chat.completions.create(
+            response = client.chat.completions.create(
                 model=model_name,
                 messages=messages,
                 stream=False,

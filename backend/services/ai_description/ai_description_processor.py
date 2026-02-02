@@ -27,22 +27,21 @@ class AIDescriptionProcessor:
     3. Extract component markers using AI
     """
     
-    def __init__(self, api_key: str):
+    def __init__(self):
         """
         Initialize the AI description processor.
         
-        Args:
-            api_key: ZhipuAI API key for AI model access
+        Note: Client is passed per-request, not stored in instance
         """
-        self.api_key = api_key
         self.language_detector = LanguageDetector()
-        self.translator = TranslationService(api_key)
-        self.extractor = AIComponentExtractor(api_key)
+        self.translator = TranslationService()
+        self.extractor = AIComponentExtractor()
     
     async def process(
         self,
         description_text: str,
         model_name: str,
+        client,  # Add client parameter
         custom_prompt: Optional[str] = None
     ) -> Dict:
         """
@@ -92,6 +91,7 @@ class AIDescriptionProcessor:
                     translated_text = await self.translator.translate_to_chinese(
                         description_text,
                         detected_language,
+                        client,  # Pass client
                         model_name
                     )
                     text_to_process = translated_text
@@ -115,6 +115,7 @@ class AIDescriptionProcessor:
                 components = await self.extractor.extract(
                     text_to_process,
                     model_name,
+                    client,  # Pass client
                     custom_prompt
                 )
                 logger.info(f"Extracted {len(components)} components")
