@@ -97,82 +97,29 @@ def process_drawing_marker():
         import base64
         from backend.utils.ocr_utils import perform_ocr
         from backend.utils.component_extractor import extract_reference_markers
-        
+        from backend.utils.text_preprocessor import TextPreprocessor
+
         # 处理结果数据
         processed_results = []
         total_numbers = 0
-        
-        # 1. 解析说明书，提取附图标记和部件名称
-        # 根据AI模式选择不同的处理方式
-        if ai_mode:
-            # AI模式：使用AI处理说明书
-            print(f"[DEBUG] Using AI mode to extract components")
-            
-            if not model_name:
-                return create_response(
-                    error="model_name is required when ai_mode is true",
-                    status_code=400
-                )
-            
-            # Get ZhipuAI client from Authorization header (AI mode requires it)
-            client, error = get_zhipu_client()
-            if error:
-                return error
-            
-            # Import AI processor
-            from backend.services.ai_description.ai_description_processor import AIDescriptionProcessor
-            
-            # Create processor instance (no longer needs api_key)
-            processor = AIDescriptionProcessor()
-            
-            # Process description using AI, passing client directly
-            # Run async function in sync context
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                ai_result = loop.run_until_complete(
-                    processor.process(specification, model_name, client, custom_prompt)
-                )
-            finally:
-                loop.close()
-            
-            # Check AI processing result
-            if not ai_result.get('success'):
-                return create_response(
-                    error=ai_result.get('error', 'AI processing failed'),
-                    status_code=500
-                )
-            
-            # Convert AI components to reference_map format
-            components = ai_result['data'].get('components', [])
-            reference_map = {
-                comp['marker']: comp['name']
-                for comp in components
-            }
-            
-            print(f"[DEBUG] AI extracted reference_map: {reference_map}")
-            print(f"[DEBUG] Total markers from AI: {len(reference_map)}")
-        else:
-            # 规则模式：使用jieba分词（不需要API key）
-            print(f"[DEBUG] Using rule-based mode (jieba) to extract components")
-            reference_map = extract_reference_markers(specification)
-            print(f"[DEBUG] Extracted reference_map: {reference_map}")
-            print(f"[DEBUG] Total markers in specification: {len(reference_map)}")
-        
-        # 2. 处理每张图片
+        all_ocr_markers = set()  # 收集所有OCR检测到的标记
+
+        # 🚀 STEP 1: 先处理所有图片，进行OCR识别
+        print(f"[DEBUG] Step 1: Processing {len(drawings)} drawings with OCR...")
+
         for drawing in drawings:
             try:
                 print(f"[DEBUG] Processing drawing: {drawing['name']}")
-                
+
                 # 解析base64图片数据
                 image_data = base64.b64decode(drawing['data'])
-                
+
                 # 使用RapidOCR进行识别
                 all_detected_numbers = perform_ocr(image_data)
-                
+
                 print(f"[DEBUG] OCR detected {len(all_detected_numbers)} markers")
                 print(f"[DEBUG] Detected numbers: {[d['number'] for d in all_detected_numbers]}")
-                
+
                 # 保存原始OCR结果（用于调试）
                 raw_ocr_results = [
                     {
@@ -183,43 +130,145 @@ def process_drawing_marker():
                     }
                     for d in all_detected_numbers
                 ]
-                
+
                 # 应用去重和置信度过滤（降低阈值以提高检测率）
                 all_detected_numbers = deduplicate_results(all_detected_numbers, position_threshold=25)
                 all_detected_numbers = filter_by_confidence(all_detected_numbers, min_confidence=30)
                 print(f"[DEBUG] After filtering: {len(all_detected_numbers)} detections remain")
-                
-                # 匹配识别结果与reference_map
-                detected_numbers, unknown, missing = match_with_reference_map(
-                    all_detected_numbers,
-                    reference_map
-                )
-                
-                total_numbers += len(detected_numbers)
-                print(f"[DEBUG] Matched {len(detected_numbers)} numbers with reference_map")
-                
-                # 保存处理结果（包含调试信息）
+
+                # 收集OCR检测到的所有标记（用于预处理说明书）
+                for detection in all_detected_numbers:
+                    all_ocr_markers.add(detection['number'])
+
+                # 暂存处理结果（标注信息稍后匹配）
                 processed_results.append({
                     'name': drawing['name'],
                     'type': drawing['type'],
                     'size': drawing['size'],
-                    'detected_numbers': detected_numbers,
-                    'debug_info': {
-                        'raw_ocr_results': raw_ocr_results,
-                        'filtered_count': len(all_detected_numbers),
-                        'matched_count': len(detected_numbers)
-                    }
+                    'ocr_results': all_detected_numbers,  # 暂存OCR结果
+                    'raw_ocr_results': raw_ocr_results
                 })
-                
+
             except Exception as e:
                 print(f"Error processing drawing {drawing['name']}: {traceback.format_exc()}")
                 processed_results.append({
                     'name': drawing['name'],
                     'type': drawing['type'],
                     'size': drawing['size'],
-                    'detected_numbers': [],
+                    'ocr_results': [],
                     'error': str(e)
                 })
+
+        print(f"[DEBUG] Step 1 complete: Collected {len(all_ocr_markers)} unique markers from OCR: {all_ocr_markers}")
+
+        # 🚀 STEP 2: 根据OCR结果预处理说明书（只提取相关句子）
+        print(f"[DEBUG] Step 2: Preprocessing specification based on OCR results...")
+
+        preprocessor = TextPreprocessor()
+        processed_specification = specification
+
+        # 如果是AI模式且OCR检测到标记，则预处理说明书
+        if ai_mode and all_ocr_markers:
+            processed_specification = preprocessor.extract_relevant_sentences(
+                specification,
+                all_ocr_markers,
+                context_window=1  # 包含前后各1句作为上下文
+            )
+            print(f"[DEBUG] Preprocessed specification: {len(processed_specification)} chars (original: {len(specification)} chars)")
+        else:
+            print(f"[DEBUG] Skipping preprocessing (ai_mode={ai_mode}, markers found={len(all_ocr_markers)})")
+
+        # 🚀 STEP 3: 解析说明书，提取附图标记和部件名称
+        print(f"[DEBUG] Step 3: Extracting components from specification...")
+
+        # 根据AI模式选择不同的处理方式
+        if ai_mode:
+            # AI模式：使用AI处理说明书
+            print(f"[DEBUG] Using AI mode to extract components")
+
+            if not model_name:
+                return create_response(
+                    error="model_name is required when ai_mode is true",
+                    status_code=400
+                )
+
+            # Get ZhipuAI client from Authorization header (AI mode requires it)
+            client, error = get_zhipu_client()
+            if error:
+                return error
+
+            # Import AI processor
+            from backend.services.ai_description.ai_description_processor import AIDescriptionProcessor
+
+            # Create processor instance (no longer needs api_key)
+            processor = AIDescriptionProcessor()
+
+            # Process description using AI, passing client directly
+            # Run async function in sync context
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                ai_result = loop.run_until_complete(
+                    processor.process(processed_specification, model_name, client, custom_prompt)
+                )
+            finally:
+                loop.close()
+
+            # Check AI processing result
+            if not ai_result.get('success'):
+                return create_response(
+                    error=ai_result.get('error', 'AI processing failed'),
+                    status_code=500
+                )
+
+            # Convert AI components to reference_map format
+            components = ai_result['data'].get('components', [])
+            reference_map = {
+                comp['marker']: comp['name']
+                for comp in components
+            }
+
+            print(f"[DEBUG] AI extracted reference_map: {reference_map}")
+            print(f"[DEBUG] Total markers from AI: {len(reference_map)}")
+        else:
+            # 规则模式：使用jieba分词（不需要API key）
+            print(f"[DEBUG] Using rule-based mode (jieba) to extract components")
+            reference_map = extract_reference_markers(specification)
+            print(f"[DEBUG] Extracted reference_map: {reference_map}")
+            print(f"[DEBUG] Total markers in specification: {len(reference_map)}")
+
+        # 🚀 STEP 4: 将OCR结果与reference_map匹配
+        print(f"[DEBUG] Step 4: Matching OCR results with reference_map...")
+
+        for drawing_result in processed_results:
+            if 'error' in drawing_result:
+                continue
+
+            try:
+                # 获取该图片的OCR结果
+                ocr_results = drawing_result.pop('ocr_results', [])
+
+                # 匹配识别结果与reference_map
+                detected_numbers, unknown, missing = match_with_reference_map(
+                    ocr_results,
+                    reference_map
+                )
+
+                total_numbers += len(detected_numbers)
+                print(f"[DEBUG] Drawing {drawing_result['name']}: Matched {len(detected_numbers)} numbers")
+
+                # 保存最终结果
+                drawing_result['detected_numbers'] = detected_numbers
+                drawing_result['debug_info'] = {
+                    'raw_ocr_results': drawing_result.pop('raw_ocr_results', []),
+                    'filtered_count': len(ocr_results),
+                    'matched_count': len(detected_numbers)
+                }
+
+            except Exception as e:
+                print(f"Error matching drawing {drawing_result['name']}: {traceback.format_exc()}")
+                drawing_result['detected_numbers'] = []
+                drawing_result['error'] = str(e)
         
         # 计算匹配率和统计信息
         all_detected_numbers = []

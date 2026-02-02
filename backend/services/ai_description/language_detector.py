@@ -55,16 +55,48 @@ class LanguageDetector:
                 "Please ensure the text is long enough and contains valid characters."
             )
     
+    def is_chinese_fast(self, text: str) -> bool:
+        """
+        Fast Chinese detection without using langdetect.
+        Checks for presence of Chinese characters.
+
+        Args:
+            text: Input text to check
+
+        Returns:
+            True if text contains significant Chinese characters
+        """
+        if not text:
+            return False
+
+        import re
+        # Count Chinese characters (CJK Unified Ideographs)
+        chinese_chars = re.findall(r'[\u4e00-\u9fff]', text)
+        chinese_ratio = len(chinese_chars) / len(text) if text else 0
+
+        # Consider it Chinese if >20% of characters are Chinese
+        is_chinese = chinese_ratio > 0.2
+
+        logger.info(f"Fast Chinese detection: {chinese_ratio*100:.1f}% Chinese chars, result: {is_chinese}")
+        return is_chinese
+
     def is_chinese(self, text: str) -> bool:
         """
         Check if the text is in Chinese.
-        
+
+        First tries fast detection for obvious cases, then falls back to langdetect.
+
         Args:
             text: Input text to check
-            
+
         Returns:
             True if the text is Chinese, False otherwise
         """
+        # Try fast detection first
+        if self.is_chinese_fast(text):
+            return True
+
+        # If fast detection is inconclusive, use langdetect
         try:
             return self.detect(text) == 'zh'
         except LangDetectException:
