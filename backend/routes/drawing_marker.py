@@ -120,7 +120,28 @@ def process_drawing_marker():
                 return error
             
             # Get API key from client
-            api_key = client.api_key
+            # Debug: Check if client has api_key attribute
+            print(f"[DEBUG] Client type: {type(client)}")
+            print(f"[DEBUG] Client attributes: {dir(client)}")
+            
+            # Try to get API key from client
+            if hasattr(client, 'api_key'):
+                api_key = client.api_key
+                print(f"[DEBUG] Got API key from client.api_key: {api_key[:10]}...")
+            elif hasattr(client, '_api_key'):
+                api_key = client._api_key
+                print(f"[DEBUG] Got API key from client._api_key: {api_key[:10]}...")
+            else:
+                # Fallback: get from Authorization header directly
+                auth_header = request.headers.get('Authorization')
+                api_key = auth_header.split(' ')[1] if auth_header else None
+                print(f"[DEBUG] Got API key from Authorization header: {api_key[:10] if api_key else 'None'}...")
+            
+            if not api_key:
+                return create_response(
+                    error="Failed to extract API key from client",
+                    status_code=500
+                )
             
             # Import AI processor
             from backend.services.ai_description.ai_description_processor import AIDescriptionProcessor
