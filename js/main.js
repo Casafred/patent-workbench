@@ -204,10 +204,10 @@ function switchTab(tabId, clickedButton) {
                 console.log('✅ 功能三内部步骤已激活');
             }
             
-            // 然后初始化模板选择器
+            // 然后初始化功能三独立的模板选择器
             if (typeof updateTemplateSelector === 'function') {
                 updateTemplateSelector();
-                console.log('✅ 功能三标签页切换，模板选择器已重新初始化');
+                console.log('✅ 功能三标签页切换，独立模板选择器已重新初始化');
             }
         }, 100);
     }
@@ -244,13 +244,13 @@ function switchSubTab(subTabId, clickedElement) {
         updateStepperState(stepper, clickedElement);
     }
 
-    // 当切换到generator子标签页时，确保模板选择器能够正确初始化
+    // 当切换到generator子标签页时，确保功能三独立的模板选择器能够正确初始化
     if (subTabId === 'generator') {
         setTimeout(() => {
             // 确保DOM元素已渲染
             if (typeof updateTemplateSelector === 'function') {
                 updateTemplateSelector();
-                console.log('✅ 功能三generator子标签页切换，模板选择器已重新初始化');
+                console.log('✅ 功能三generator子标签页切换，独立模板选择器已重新初始化');
             }
         }, 50);
     }

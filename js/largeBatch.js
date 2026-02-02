@@ -20,17 +20,17 @@ function initGenerator() {
     genGenerateBtn.addEventListener('click', generateJsonl);
     genDownloadBtn.addEventListener('click', downloadJsonl);
 
-    // ▼▼▼ 修复：在运行时重新获取templateSelector元素 ▼▼▼
-    const templateSelectorElement = getEl('template_selector');
+    // ▼▼▼ 功能三独立模板选择器：在运行时重新获取元素 ▼▼▼
+    const templateSelectorElement = getEl('large_batch_template_selector');
     if (templateSelectorElement) {
         templateSelectorElement.addEventListener('change', function() {
             loadTemplate(this.value);
         });
-        console.log('✅ template_selector 事件监听器已绑定');
+        console.log('✅ large_batch_template_selector 事件监听器已绑定');
     } else {
-        console.error('❌ template_selector 元素不存在，无法绑定事件');
+        console.error('❌ large_batch_template_selector 元素不存在，无法绑定事件');
     }
-    // ▲▲▲ 修复结束 ▲▲▲
+    // ▲▲▲ 功能三独立模板选择器结束 ▲▲▲
 
     getEl('save_template_btn').addEventListener('click', saveTemplate);
     getEl('delete_template_btn').addEventListener('click', deleteTemplate);
@@ -224,18 +224,18 @@ function initTemplates() {
 }
 
 function updateTemplateSelector() {
-    // ▼▼▼ 修复：在函数内部重新获取元素，而不是依赖全局缓存 ▼▼▼
-    const templateSelectorElement = getEl('template_selector');
+    // ▼▼▼ 功能三独立模板选择器：在函数内部重新获取元素 ▼▼▼
+    const templateSelectorElement = getEl('large_batch_template_selector');
 
     // 检查模板选择器元素是否存在
     if (!templateSelectorElement) {
-        console.error('❌ template_selector 元素不存在，跳过初始化');
+        console.error('❌ large_batch_template_selector 元素不存在，跳过初始化');
         console.trace('堆栈跟踪:');
         return;
     }
 
-    console.log('✅ 找到 template_selector 元素');
-    // ▲▲▲ 修复结束 ▲▲▲
+    console.log('✅ 找到 large_batch_template_selector 元素');
+    // ▲▲▲ 功能三独立模板选择器结束 ▲▲▲
 
     // 检查appState和相关属性是否存在
     if (typeof appState === 'undefined' || !appState.generator) {
@@ -298,9 +298,9 @@ function updateTemplateSelector() {
 }
 
 function loadTemplate(templateId) {
-    // ▼▼▼ 修复：在函数内部重新获取templateSelector元素 ▼▼▼
-    const templateSelectorElement = getEl('template_selector');
-    // ▲▲▲ 修复结束 ▲▲▲
+    // ▼▼▼ 功能三独立模板选择器：在函数内部重新获取元素 ▼▼▼
+    const templateSelectorElement = getEl('large_batch_template_selector');
+    // ▲▲▲ 功能三独立模板选择器结束 ▲▲▲
 
     // 如果没有传入templateId，从选择器获取
     if (!templateId) {
@@ -365,25 +365,25 @@ function saveTemplate() {
     localStorage.setItem('custom_templates', JSON.stringify(appState.generator.customTemplates));
     updateTemplateSelector();
 
-    // ▼▼▼ 修复：重新获取元素来设置选中值 ▼▼▼
-    const templateSelectorElement = getEl('template_selector');
+    // ▼▼▼ 功能三独立模板选择器：重新获取元素来设置选中值 ▼▼▼
+    const templateSelectorElement = getEl('large_batch_template_selector');
     if (templateSelectorElement) {
         templateSelectorElement.value = name;
     }
-    // ▲▲▲ 修复结束 ▲▲▲
+    // ▲▲▲ 功能三独立模板选择器结束 ▲▲▲
 
     alert("模板已保存！");
 }
 
 function deleteTemplate() {
-    // ▼▼▼ 修复：重新获取元素 ▼▼▼
-    const templateSelectorElement = getEl('template_selector');
+    // ▼▼▼ 功能三独立模板选择器：重新获取元素 ▼▼▼
+    const templateSelectorElement = getEl('large_batch_template_selector');
     if (!templateSelectorElement) {
         alert("错误：无法访问模板选择器。");
         return;
     }
     const selectedName = templateSelectorElement.value;
-    // ▲▲▲ 修复结束 ▲▲▲
+    // ▲▲▲ 功能三独立模板选择器结束 ▲▲▲
 
     const template = appState.generator.customTemplates.find(t => t.name === selectedName);
     if (!template) return alert("错误：只能删除自定义模板。");
@@ -396,14 +396,14 @@ function deleteTemplate() {
 }
 
 function exportTemplate() {
-    // ▼▼▼ 修复：重新获取元素 ▼▼▼
-    const templateSelectorElement = getEl('template_selector');
+    // ▼▼▼ 功能三独立模板选择器：重新获取元素 ▼▼▼
+    const templateSelectorElement = getEl('large_batch_template_selector');
     if (!templateSelectorElement) {
         alert("错误：无法访问模板选择器。");
         return;
     }
     const selectedName = templateSelectorElement.value;
-    // ▲▲▲ 修复结束 ▲▲▲
+    // ▲▲▲ 功能三独立模板选择器结束 ▲▲▲
 
     const template = [...appState.generator.presetTemplates, ...appState.generator.customTemplates].find(t => t.name === selectedName);
     if (!template) return alert("请先选择一个要导出的模板");
@@ -434,13 +434,13 @@ function importTemplate(event) {
             localStorage.setItem('custom_templates', JSON.stringify(appState.generator.customTemplates));
             updateTemplateSelector();
 
-            // ▼▼▼ 修复：重新获取元素来设置选中值 ▼▼▼
-            const templateSelectorElement = getEl('template_selector');
+            // ▼▼▼ 功能三独立模板选择器：重新获取元素来设置选中值 ▼▼▼
+            const templateSelectorElement = getEl('large_batch_template_selector');
             if (templateSelectorElement) {
                 templateSelectorElement.value = newName;
                 loadTemplate();
             }
-            // ▲▲▲ 修复结束 ▲▲▲
+            // ▲▲▲ 功能三独立模板选择器结束 ▲▲▲
 
             alert("模板导入成功！");
         } catch (err) { alert(`导入失败: ${err.message}`); }
