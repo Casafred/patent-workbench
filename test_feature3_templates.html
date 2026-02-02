@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>功能三模板测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .test-section h3 { margin-top: 0; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        select, textarea, input { margin: 10px 0; padding: 5px; width: 100%; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>功能三：大批量处理 - 模板功能测试</h1>
+
+    <div class="test-section">
+        <h3>测试1：检查预设模板数据</h3>
+        <button onclick="testPresetTemplates()">运行测试</button>
+        <div id="test1-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>测试2：模板选择器初始化</h3>
+        <label>模板选择：</label>
+        <select id="template_selector"></select>
+        <button onclick="testTemplateSelectorInit()">运行测试</button>
+        <div id="test2-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>测试3：加载模板到UI</h3>
+        <label>系统提示：</label>
+        <textarea id="api-system-prompt" rows="3"></textarea>
+        <label>用户提示规则：</label>
+        <textarea id="prompt-rules" rows="3"></textarea>
+        <div id="output-fields-container"></div>
+        <button onclick="testLoadTemplate()">加载第一个预设模板</button>
+        <div id="test3-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>测试4：API请求格式验证</h3>
+        <button onclick="testAPIFormat()">验证API请求格式</button>
+        <div id="test4-result"></div>
+    </div>
+
+    <script>
+        // 模拟 appState 结构
+        const appState = {
+            generator: {
+                presetTemplates: [
+                    {
+                        name: "专利文本翻译",
+                        isPreset: true,
+                        system: "你是一个专业精通各技术领域术语的、精通多国语言的专利文本翻译引擎。",
+                        user: {
+                            rules: "请基于以下文本，直接输出翻译后的内容。",
+                            outputFields: []
+                        }
+                    },
+                    {
+                        name: "技术方案解读",
+                        isPreset: true,
+                        system: "你是一位资深的专利技术分析师。",
+                        user: {
+                            rules: "请分析此专利并按以下JSON格式输出：",
+                            outputFields: [
+                                { name: "技术方案", desc: "此处填写技术方案" },
+                                { name: "技术问题", desc: "此处填写技术问题" }
+                            ]
+                        }
+                    }
+                ],
+                customTemplates: []
+            }
+        };
+
+        function testPresetTemplates() {
+            const result = document.getElementById('test1-result');
+            result.innerHTML = '';
+
+            if (!appState.generator.presetTemplates || appState.generator.presetTemplates.length === 0) {
+                result.innerHTML = '<p class="error">❌ 失败：预设模板数组为空或未定义</p>';
+                return;
+            }
+
+            result.innerHTML = `<p class="success">✅ 成功：找到 ${appState.generator.presetTemplates.length} 个预设模板</p>`;
+            result.innerHTML += '<ul>';
+            appState.generator.presetTemplates.forEach(t => {
+                result.innerHTML += `<li><strong>${t.name}</strong> - System: ${t.system.substring(0, 50)}...</li>`;
+            });
+            result.innerHTML += '</ul>';
+        }
+
+        function testTemplateSelectorInit() {
+            const selector = document.getElementById('template_selector');
+            const result = document.getElementById('test2-result');
+            result.innerHTML = '';
+
+            // 清空选择器
+            selector.innerHTML = '';
+
+            // 添加默认选项
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = '选择预置模板或新建';
+            selector.appendChild(defaultOption);
+
+            // 添加预设模板
+            appState.generator.presetTemplates.forEach(template => {
+                const option = document.createElement('option');
+                option.value = template.name;
+                option.textContent = template.name + ' [预设]';
+                selector.appendChild(option);
+            });
+
+            if (selector.options.length > 1) {
+                result.innerHTML = `<p class="success">✅ 成功：模板选择器已初始化，包含 ${selector.options.length - 1} 个模板</p>`;
+            } else {
+                result.innerHTML = '<p class="error">❌ 失败：模板选择器未能正确初始化</p>';
+            }
+        }
+
+        function testLoadTemplate() {
+            const result = document.getElementById('test3-result');
+            result.innerHTML = '';
+
+            const template = appState.generator.presetTemplates[0];
+            if (!template) {
+                result.innerHTML = '<p class="error">❌ 失败：无法获取第一个预设模板</p>';
+                return;
+            }
+
+            // 加载模板到UI
+            document.getElementById('api-system-prompt').value = template.system || '';
+
+            if (typeof template.user === 'string') {
+                document.getElementById('prompt-rules').value = template.user;
+            } else if (template.user && typeof template.user === 'object') {
+                document.getElementById('prompt-rules').value = template.user.rules || '';
+
+                // 显示输出字段
+                const container = document.getElementById('output-fields-container');
+                container.innerHTML = '';
+                if (template.user.outputFields && template.user.outputFields.length > 0) {
+                    template.user.outputFields.forEach(f => {
+                        container.innerHTML += `<div><strong>${f.name}:</strong> ${f.desc}</div>`;
+                    });
+                }
+            }
+
+            result.innerHTML = `<p class="success">✅ 成功：已加载模板 "${template.name}"</p>`;
+        }
+
+        function testAPIFormat() {
+            const result = document.getElementById('test4-result');
+            result.innerHTML = '';
+
+            // 模拟生成API请求
+            const template = appState.generator.presetTemplates[1]; // 使用技术方案解读
+            const systemPrompt = template.system;
+            const userPrompt = template.user.rules + "\n\n专利内容如下：\n{专利标题}\n\n{专利摘要}";
+
+            // 构建输出格式
+            let outputFormat = "";
+            if (template.user.outputFields && template.user.outputFields.length > 0) {
+                const jsonFields = template.user.outputFields.map(f => `  "${f.name}": "[${f.desc}]"`).join(',\n');
+                outputFormat = `\n\n请严格按照以下JSON格式输出：\n{\n${jsonFields}\n}`;
+            }
+
+            const finalUserPrompt = userPrompt + outputFormat;
+
+            // 构建API请求
+            const apiRequest = {
+                "custom_id": "request-1",
+                "method": "POST",
+                "url": "/v4/chat/completions",
+                "body": {
+                    "model": "glm-4-flash",
+                    "messages": [
+                        { "role": "system", "content": systemPrompt },
+                        { "role": "user", "content": finalUserPrompt }
+                    ],
+                    "temperature": 0.1
+                }
+            };
+
+            // 验证请求格式
+            let isValid = true;
+            let errors = [];
+
+            if (!apiRequest.custom_id) errors.push('缺少 custom_id');
+            if (apiRequest.method !== 'POST') errors.push('method 应为 POST');
+            if (apiRequest.url !== '/v4/chat/completions') errors.push('url 不正确');
+            if (!apiRequest.body.model) errors.push('缺少 model');
+            if (!apiRequest.body.messages || apiRequest.body.messages.length !== 2) errors.push('messages 格式不正确');
+
+            if (errors.length > 0) {
+                result.innerHTML = '<p class="error">❌ 失败：API请求格式不符合规范</p><ul>';
+                errors.forEach(e => result.innerHTML += `<li>${e}</li>`);
+                result.innerHTML += '</ul>';
+            } else {
+                result.innerHTML = '<p class="success">✅ 成功：API请求格式符合智谱AI Batch API规范</p>';
+                result.innerHTML += '<p class="info">请求示例：</p>';
+                result.innerHTML += `<pre>${JSON.stringify(apiRequest, null, 2)}</pre>`;
+            }
+        }
+
+        // 页面加载时自动运行测试
+        window.onload = function() {
+            testPresetTemplates();
+            testTemplateSelectorInit();
+        };
+    </script>
+</body>
+</html>

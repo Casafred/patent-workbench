@@ -105,11 +105,16 @@ function buildUserPrompt() {
     const contentInsertionTemplate = "专利内容如下：\n" + Array.from(document.querySelectorAll('.column-selector')).map(sel => `{${sel.value}}`).join('\n\n');
     const outputFields = getOutputFieldsFromUI();
     let outputFormat = "";
+
     if (outputFields.length > 0) {
         const jsonFields = outputFields.map(f => `  "${f.name}": "[${f.desc}]"`).join(',\n');
         outputFormat = `请严格按照以下JSON格式输出，不要添加任何其他说明或markdown标记：\n{\n${jsonFields}\n}`;
     }
-    return [rules, contentInsertionTemplate.trim(), outputFormat].filter(Boolean).join('\n\n');
+
+    // ▼▼▼ 修复：确保返回格式符合API规范 ▼▼▼
+    const parts = [rules, contentInsertionTemplate.trim(), outputFormat].filter(Boolean);
+    return parts.length > 0 ? parts.join('\n\n') : '请分析以下专利内容：\n\n{内容}';
+    // ▲▲▲ 修复结束 ▲▲▲
 }
 
 function loadTemplateUI(template) {
@@ -181,10 +186,23 @@ function loadTemplateUI(template) {
 function initTemplates() {
     // 加载自定义模板
     appState.generator.customTemplates = JSON.parse(localStorage.getItem('custom_templates') || '[]');
-    
+
+    // ▼▼▼ 修复：检查并初始化预设模板 ▼▼▼
+    if (!appState.generator.presetTemplates || appState.generator.presetTemplates.length === 0) {
+        console.warn('⚠️ appState.generator.presetTemplates 为空，使用备用模板');
+        appState.generator.presetTemplates = [
+            { name: "专利文本翻译", isPreset: true, system: "你是一个专业精通各技术领域术语的、精通多国语言的专利文本翻译引擎。你的任务是自动检测用户输入专利文本的语言并将其翻译成中文。请直接返回翻译后的文本，不要添加任何额外的解释或说明。你必须严格遵循输出格式要求。", user: { rules: "请基于以下文本，直接输出翻译后的内容。\n要求：\n1. 结果必须是直接的翻译后中文文本，必须忠实于原文不得臆测，并选择贴合技术领域的专业术语表达", outputFields: [] }},
+            { name: "技术方案解读", isPreset: true, system: "你是一位资深的专利技术分析师。你的任务是基于专利内容，梳理总结其要解决的技术问题，采用的核心方案内容、以及实现的技术效果和最重要的核心关键词短语。", user: { rules: "请分析此专利并按以下JSON格式输出：", outputFields: [ { name: "技术方案", desc: "此处填写技术方案，总结专利的主要方案内容" }, { name: "技术问题", desc: "此处填写该专利可能主要解决的技术问题" }, { name: "技术效果", desc: "此处填写该专利可能带来的技术效果" }, { name: "技术关键词", desc: "此处按照专利文本中构成核心方案的重要程度输出15个关键词或短语" }] }},
+            { name: "技术文本翻译", isPreset: true, system: "你是一个专业精通各技术领域术语的、精通多国语言的翻译引擎。你的任务是自动检测用户输入文本的语言并将其翻译成中文。请直接返回翻译后的文本，不要添加任何额外的解释或说明。", user: { rules: "请翻译以下文本：", outputFields: [] }},
+            { name: "检索词拓展", isPreset: true, system: "你是一个专业的专利检索分析师。你的任务是根据用户提供的关键词，生成相关的拓展检索词。请确保生成的检索词与原关键词相关且具有多样性，能够覆盖不同的表达方式和相关领域。", user: { rules: "请为以下关键词生成10个相关的拓展检索词：", outputFields: [] }},
+            { name: "技术文本总结", isPreset: true, system: "你是一位资深的技术分析师。你的任务是基于提供的技术文本，总结其核心内容、技术要点和关键数据。请保持总结简洁明了，不超过200字。", user: { rules: "请总结以下技术文本的核心内容（不超过200字）：", outputFields: [] }}
+        ];
+    }
+    // ▲▲▲ 修复结束 ▲▲▲
+
     // 更新模板选择器
     updateTemplateSelector();
-    
+
     // 加载默认模板（第一个预设模板）
     if (appState.generator.presetTemplates && appState.generator.presetTemplates.length > 0) {
         const defaultTemplate = appState.generator.presetTemplates[0];
@@ -197,51 +215,62 @@ function initTemplates() {
 function updateTemplateSelector() {
     // 检查模板选择器元素是否存在
     if (!templateSelector) {
+        console.warn('⚠️ templateSelector 元素不存在，跳过初始化');
         return;
     }
-    
+
     // 检查appState和相关属性是否存在
     if (typeof appState === 'undefined' || !appState.generator) {
+        console.warn('⚠️ appState.generator 不存在');
         return;
     }
-    
+
     // 确保预设模板和自定义模板数组存在
     if (!appState.generator.presetTemplates) {
         appState.generator.presetTemplates = [];
     }
-    
+
     if (!appState.generator.customTemplates) {
         appState.generator.customTemplates = [];
     }
-    
+
     // 保存当前选中的值
     const selectedValue = templateSelector.value;
-    
+
     // 清空选择器
     templateSelector.innerHTML = '';
-    
+
     // 添加默认选项
     const defaultOption = document.createElement('option');
     defaultOption.value = '';
     defaultOption.textContent = '选择预置模板或新建';
     templateSelector.appendChild(defaultOption);
-    
-    // 添加预设模板
-    appState.generator.presetTemplates.forEach(template => {
-        const option = document.createElement('option');
-        option.value = template.name;
-        option.textContent = template.name;
-        templateSelector.appendChild(option);
-    });
-    
+
+    // ▼▼▼ 改进：添加预设模板时，同时输出日志便于调试 ▼▼▼
+    if (appState.generator.presetTemplates.length > 0) {
+        console.log('✅ 正在添加预设模板：', appState.generator.presetTemplates.map(t => t.name));
+        appState.generator.presetTemplates.forEach(template => {
+            const option = document.createElement('option');
+            option.value = template.name;
+            option.textContent = template.name + ' [预设]';
+            templateSelector.appendChild(option);
+        });
+    } else {
+        console.warn('⚠️ 没有预设模板可以添加');
+    }
+    // ▲▲▲ 改进结束 ▲▲▲
+
     // 添加自定义模板
-    appState.generator.customTemplates.forEach(template => {
-        const option = document.createElement('option');
-        option.value = template.name;
-        option.textContent = template.name;
-        templateSelector.appendChild(option);
-    });
-    
+    if (appState.generator.customTemplates.length > 0) {
+        console.log('✅ 正在添加自定义模板：', appState.generator.customTemplates.map(t => t.name));
+        appState.generator.customTemplates.forEach(template => {
+            const option = document.createElement('option');
+            option.value = template.name;
+            option.textContent = template.name;
+            templateSelector.appendChild(option);
+        });
+    }
+
     // 保持选中状态
     if (selectedValue) {
         templateSelector.value = selectedValue;
