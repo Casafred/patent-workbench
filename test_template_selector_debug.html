@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>模板选择器调试</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        select { width: 100%; padding: 5px; margin: 10px 0; }
+        button { padding: 10px 15px; margin: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+        pre { background: #f5f5f5; padding: 10px; overflow: auto; }
+    </style>
+</head>
+<body>
+    <h1>功能三 - 模板选择器调试</h1>
+
+    <div class="debug-section">
+        <h3>测试1: 检查DOM元素</h3>
+        <div id="test1"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>测试2: 检查appState</h3>
+        <div id="test2"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>测试3: 模板选择器</h3>
+        <label>Template Selector:</label>
+        <select id="template_selector"></select>
+        <button onclick="manualInit()">手动初始化</button>
+        <div id="test3"></div>
+    </div>
+
+    <div class="debug-section">
+        <h3>测试4: 控制台命令</h3>
+        <p>在浏览器控制台执行以下命令：</p>
+        <pre>
+// 查看预设模板
+console.log("预设模板:", appState.generator.presetTemplates);
+
+// 查看选择器
+console.log("选择器元素:", document.getElementById('template_selector'));
+
+// 手动初始化
+updateTemplateSelector();
+
+// 查看选项数量
+console.log("选项数量:", document.getElementById('template_selector').options.length);
+        </pre>
+    </div>
+
+    <script src="js/state.js"></script>
+    <script>
+        // 辅助函数
+        const getEl = id => document.getElementById(id);
+
+        function checkDOM() {
+            const result = getEl('test1');
+            const selector = getEl('template_selector');
+
+            if (selector) {
+                result.innerHTML = '<p class="success">✅ template_selector 元素存在</p>';
+                result.innerHTML += `<p>元素类型: ${selector.tagName}</p>`;
+                result.innerHTML += `<p>当前选项数: ${selector.options.length}</p>`;
+            } else {
+                result.innerHTML = '<p class="error">❌ template_selector 元素不存在</p>';
+            }
+        }
+
+        function checkAppState() {
+            const result = getEl('test2');
+
+            if (typeof appState === 'undefined') {
+                result.innerHTML = '<p class="error">❌ appState 未定义</p>';
+                return;
+            }
+
+            result.innerHTML = '<p class="success">✅ appState 已定义</p>';
+
+            if (!appState.generator) {
+                result.innerHTML += '<p class="error">❌ appState.generator 不存在</p>';
+                return;
+            }
+
+            result.innerHTML += '<p class="success">✅ appState.generator 存在</p>';
+
+            if (!appState.generator.presetTemplates) {
+                result.innerHTML += '<p class="error">❌ 预设模板数组不存在</p>';
+                return;
+            }
+
+            result.innerHTML += `<p class="success">✅ 找到 ${appState.generator.presetTemplates.length} 个预设模板</p>`;
+            result.innerHTML += '<ul>';
+            appState.generator.presetTemplates.forEach(t => {
+                result.innerHTML += `<li>${t.name}</li>`;
+            });
+            result.innerHTML += '</ul>';
+        }
+
+        function updateTemplateSelector() {
+            const templateSelector = getEl('template_selector');
+            const result = getEl('test3');
+
+            if (!templateSelector) {
+                result.innerHTML = '<p class="error">❌ templateSelector 元素不存在</p>';
+                return;
+            }
+
+            if (!appState.generator.presetTemplates) {
+                appState.generator.presetTemplates = [];
+            }
+
+            if (!appState.generator.customTemplates) {
+                appState.generator.customTemplates = [];
+            }
+
+            // 清空选择器
+            templateSelector.innerHTML = '';
+
+            // 添加默认选项
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = '选择预置模板或新建';
+            templateSelector.appendChild(defaultOption);
+
+            // 添加预设模板
+            if (appState.generator.presetTemplates.length > 0) {
+                console.log('✅ 正在添加预设模板：', appState.generator.presetTemplates.map(t => t.name));
+                appState.generator.presetTemplates.forEach(template => {
+                    const option = document.createElement('option');
+                    option.value = template.name;
+                    option.textContent = template.name + ' [预设]';
+                    templateSelector.appendChild(option);
+                });
+                result.innerHTML = `<p class="success">✅ 成功添加 ${appState.generator.presetTemplates.length} 个预设模板</p>`;
+            } else {
+                console.warn('⚠️ 没有预设模板可以添加');
+                result.innerHTML = '<p class="error">❌ 没有预设模板</p>';
+            }
+
+            // 添加自定义模板
+            if (appState.generator.customTemplates.length > 0) {
+                appState.generator.customTemplates.forEach(template => {
+                    const option = document.createElement('option');
+                    option.value = template.name;
+                    option.textContent = template.name;
+                    templateSelector.appendChild(option);
+                });
+            }
+
+            result.innerHTML += `<p>当前选项总数: ${templateSelector.options.length}</p>`;
+        }
+
+        function manualInit() {
+            updateTemplateSelector();
+        }
+
+        // 页面加载完成后执行检查
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('DOMContentLoaded 触发');
+            checkDOM();
+            checkAppState();
+
+            // 延迟500ms后自动初始化
+            setTimeout(function() {
+                console.log('开始自动初始化...');
+                updateTemplateSelector();
+            }, 500);
+        });
+
+        // 页面完全加载后再次检查
+        window.addEventListener('load', function() {
+            console.log('window.load 触发');
+        });
+    </script>
+</body>
+</html>

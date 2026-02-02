@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>按钮尺寸修复测试</title>
+    <link rel="stylesheet" href="frontend/css/base/variables.css">
+    <link rel="stylesheet" href="frontend/css/components/buttons.css">
+    <link rel="stylesheet" href="frontend/css/components/patent-config.css">
+    <link rel="stylesheet" href="frontend/css/components/ai-description-processor.css">
+    <style>
+        body {
+            font-family: 'Noto Sans SC', Arial, sans-serif;
+            padding: 30px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .test-item {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        .test-item h3 {
+            margin-top: 0;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h1>按钮尺寸修复测试</h1>
+    
+    <!-- 测试1: 功能六专利弹窗复制按钮 -->
+    <div class="test-section">
+        <h2>测试1: 功能六专利弹窗 - 字段复制按钮</h2>
+        
+        <div class="test-item">
+            <h3>📄 摘要</h3>
+            <p>这是一段摘要内容示例文本...</p>
+            <button class="copy-field-btn" onclick="alert('复制成功')" title="复制📄 摘要">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"></path>
+                    <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="test-item">
+            <h3>📋 权利要求</h3>
+            <p>1. 一种专利技术方案...</p>
+            <button class="copy-field-btn" onclick="alert('复制成功')" title="复制📋 权利要求">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"></path>
+                    <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="test-item">
+            <h3>📖 说明书</h3>
+            <p>技术领域：本发明涉及...</p>
+            <button class="copy-field-btn" onclick="alert('复制成功')" title="复制📖 说明书">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"></path>
+                    <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+    
+    <!-- 测试2: 功能八模板区域按钮 -->
+    <div class="test-section">
+        <h2>测试2: 功能八 - 模板编辑器按钮</h2>
+        
+        <div class="test-item">
+            <h3>提示词编辑器</h3>
+            <textarea class="prompt-textarea" rows="4" placeholder="请输入AI处理提示词...">你是一个专业的专利分析助手。请分析以下专利说明书内容...</textarea>
+            
+            <div class="prompt-editor-actions" style="margin-top: 10px;">
+                <button id="resetPromptBtn" class="btn-secondary btn-sm">重置为默认</button>
+                <button id="savePromptBtn" class="btn-primary btn-sm">保存</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 对比说明 -->
+    <div class="test-section">
+        <h2>✅ 修复说明</h2>
+        <ul>
+            <li><strong>功能六复制按钮</strong>：使用 <code>.copy-field-btn</code> 样式，尺寸为 10px 字体 + 2px×4px 内边距</li>
+            <li><strong>功能八模板按钮</strong>：使用 <code>.prompt-editor-actions</code> 下的按钮样式，尺寸为 11px 字体 + 4px×8px 内边距</li>
+            <li>所有样式都使用了 <code>!important</code> 确保不被其他样式覆盖</li>
+        </ul>
+    </div>
+    
+    <script>
+        // 测试按钮功能
+        document.getElementById('resetPromptBtn').addEventListener('click', function() {
+            alert('重置为默认提示词');
+        });
+        
+        document.getElementById('savePromptBtn').addEventListener('click', function() {
+            alert('保存提示词成功');
+        });
+    </script>
+</body>
+</html>

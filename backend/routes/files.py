@@ -22,6 +22,9 @@ def upload_any_file():
     """
     Upload a file to ZhipuAI API.
     
+    DEPRECATED: This endpoint uses the old file management API.
+    Please use /api/files/parser/create for new implementations.
+    
     Form data:
         - file: File to upload
         - purpose: Purpose of the file ('batch', 'file-extract', 'code-interpreter', 'agent')
@@ -29,6 +32,9 @@ def upload_any_file():
     Returns:
         File upload result data
     """
+    # Log deprecation warning
+    print("WARNING: /files/upload endpoint is deprecated. Use /files/parser/create instead.")
+    
     client, error_response = get_zhipu_client()
     if error_response:
         return error_response

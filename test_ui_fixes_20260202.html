@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UI修复测试 - 2026-02-02</title>
+    <link rel="stylesheet" href="frontend/css/main.css">
+    <link rel="stylesheet" href="frontend/css/components/buttons.css">
+    <link rel="stylesheet" href="frontend/css/components/patent-config.css">
+    <link rel="stylesheet" href="frontend/css/components/ai-description-processor.css">
+    <link rel="stylesheet" href="frontend/css/pages/claims.css">
+    <style>
+        body {
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .test-section {
+            margin-bottom: 40px;
+            padding: 20px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        .test-result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 4px;
+        }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>UI修复测试页面</h1>
+    
+    <!-- 测试1: 功能六的small-button -->
+    <div class="test-section">
+        <h2>测试1: 功能六按钮尺寸</h2>
+        <p>这些按钮应该比之前更小 (padding: 4px 8px, font-size: 0.75em)</p>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="small-button">保存模板</button>
+            <button class="small-button">新建模板</button>
+            <button class="small-button delete-button">删除模板</button>
+            <button class="small-button">导出模板</button>
+            <button class="small-button">导入模板</button>
+            <button class="small-button">管理</button>
+        </div>
+        <div class="test-result">
+            <strong>预期效果:</strong> 按钮应该明显比之前小，padding从6px 12px减少到4px 8px，字体从0.85em减少到0.75em
+        </div>
+    </div>
+    
+    <!-- 测试2: 功能六的复制按钮 -->
+    <div class="test-section">
+        <h2>测试2: 功能六复制按钮尺寸</h2>
+        <p>这些复制按钮应该非常小 (padding: 1px 3px, font-size: 0.55em)</p>
+        <div style="background: white; padding: 15px; border: 1px solid #ddd; border-radius: 4px;">
+            <p>
+                <strong>专利号:</strong> CN123456789A 
+                <button class="copy-field-btn">复制</button>
+            </p>
+            <p>
+                <strong>标题:</strong> 一种创新的技术方案 
+                <button class="copy-field-btn">复制</button>
+            </p>
+            <p>
+                <strong>摘要:</strong> 本发明公开了一种... 
+                <button class="copy-field-btn">复制</button>
+            </p>
+        </div>
+        <div class="test-result">
+            <strong>预期效果:</strong> 复制按钮应该非常小，不影响文本阅读，padding从1px 4px减少到1px 3px，字体从0.6em减少到0.55em
+        </div>
+    </div>
+    
+    <!-- 测试3: 功能八的btn-primary和btn-secondary -->
+    <div class="test-section">
+        <h2>测试3: 功能八模板配置按钮</h2>
+        <p>这些按钮应该比之前更小 (padding: 4px 8px, font-size: 11px)</p>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <button class="btn-secondary btn-sm">重置为默认</button>
+            <button class="btn-primary btn-sm">保存</button>
+        </div>
+        <div class="test-result">
+            <strong>预期效果:</strong> 按钮应该明显比之前小，padding从5px 10px减少到4px 8px，字体从12px减少到11px
+        </div>
+    </div>
+    
+    <!-- 测试4: 模板选择器 -->
+    <div class="test-section">
+        <h2>测试4: 模板选择器</h2>
+        <p>下拉菜单应该显示4个预设模板</p>
+        <div style="max-width: 400px;">
+            <label for="test_template_selector">解读模板：</label>
+            <select id="test_template_selector" style="width: 100%; padding: 8px; margin-top: 5px;">
+                <optgroup label="📋 预设模板">
+                    <option value="default">默认模板</option>
+                    <option value="technical">技术分析模板</option>
+                    <option value="business">商业价值模板</option>
+                    <option value="legal">法律分析模板</option>
+                </optgroup>
+            </select>
+        </div>
+        <div class="test-result">
+            <strong>预期效果:</strong> 下拉菜单应该显示4个预设模板，分组标签为"📋 预设模板"
+        </div>
+    </div>
+    
+    <!-- 测试5: models.json加载 -->
+    <div class="test-section">
+        <h2>测试5: models.json加载测试</h2>
+        <p>检查模型配置是否正确加载</p>
+        <button onclick="testModelsJson()" class="small-button">测试加载</button>
+        <div id="models_test_result" class="test-result" style="margin-top: 10px;">
+            点击按钮测试...
+        </div>
+    </div>
+    
+    <!-- 控制台日志 -->
+    <div class="test-section">
+        <h2>控制台检查清单</h2>
+        <ul>
+            <li>✅ 不应该看到: <code class="error">SyntaxError: JSON.parse: expected ',' or ']'</code></li>
+            <li>✅ 应该看到: <code class="success">✅ 模型配置已从 config/models.json 加载</code></li>
+            <li>✅ 不应该看到: <code class="error">⚠️ 无法加载模型配置文件</code></li>
+            <li>✅ 应该看到: <code class="success">✅ 模板选择器已更新</code></li>
+            <li>✅ 不应该看到: <code class="error">解析 'transform' 的值时出错</code></li>
+        </ul>
+    </div>
+    
+    <script>
+        // 测试models.json加载
+        async function testModelsJson() {
+            const resultDiv = document.getElementById('models_test_result');
+            resultDiv.innerHTML = '<div style="color: blue;">正在加载...</div>';
+            
+            try {
+                const response = await fetch('config/models.json');
+                const config = await response.json();
+                
+                if (config.models && Array.isArray(config.models)) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>✅ 加载成功！</strong><br>
+                            模型数量: ${config.models.length}<br>
+                            模型列表: ${config.models.join(', ')}<br>
+                            默认模型: ${config.default_model}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = '<div class="error">❌ 配置格式错误：缺少models数组</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <strong>❌ 加载失败！</strong><br>
+                        错误信息: ${error.message}<br>
+                        <br>
+                        <strong>可能的原因:</strong><br>
+                        1. models.json文件不存在<br>
+                        2. JSON语法错误（缺少逗号、括号等）<br>
+                        3. 文件编码问题
+                    </div>
+                `;
+            }
+        }
+        
+        // 页面加载时自动测试
+        window.addEventListener('load', () => {
+            console.log('='.repeat(60));
+            console.log('UI修复测试页面已加载');
+            console.log('='.repeat(60));
+            
+            // 自动测试models.json
+            testModelsJson();
+            
+            // 检查按钮尺寸
+            const smallButtons = document.querySelectorAll('.small-button');
+            console.log('small-button 数量:', smallButtons.length);
+            if (smallButtons.length > 0) {
+                const firstButton = smallButtons[0];
+                const styles = window.getComputedStyle(firstButton);
+                console.log('small-button 样式:');
+                console.log('  padding:', styles.padding);
+                console.log('  font-size:', styles.fontSize);
+            }
+            
+            // 检查复制按钮尺寸
+            const copyButtons = document.querySelectorAll('.copy-field-btn');
+            console.log('copy-field-btn 数量:', copyButtons.length);
+            if (copyButtons.length > 0) {
+                const firstCopyBtn = copyButtons[0];
+                const styles = window.getComputedStyle(firstCopyBtn);
+                console.log('copy-field-btn 样式:');
+                console.log('  padding:', styles.padding);
+                console.log('  font-size:', styles.fontSize);
+            }
+            
+            // 检查功能八按钮尺寸
+            const btnPrimary = document.querySelector('.btn-primary');
+            if (btnPrimary) {
+                const styles = window.getComputedStyle(btnPrimary);
+                console.log('btn-primary 样式:');
+                console.log('  padding:', styles.padding);
+                console.log('  font-size:', styles.fontSize);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>功能三模板选择器 - 完整测试</title>
+    <style>
+        body { font-family: 'Microsoft YaHei', Arial; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { color: #333; border-bottom: 3px solid #4a6cf7; padding-bottom: 10px; }
+        .test-section { background: white; margin: 20px 0; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .test-section h3 { color: #4a6cf7; margin-top: 0; }
+        select, textarea, input { width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; }
+        button { padding: 10px 20px; margin: 5px; background: #4a6cf7; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #3a5cd7; }
+        .success { color: #28a745; font-weight: bold; }
+        .error { color: #dc3545; font-weight: bold; }
+        .warning { color: #ffc107; font-weight: bold; }
+        .info { color: #17a2b8; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 4px; overflow: auto; border-left: 4px solid #4a6cf7; }
+        .status-box { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .status-box.success { background: #d4edda; border: 1px solid #c3e6cb; }
+        .status-box.error { background: #f8d7da; border: 1px solid #f5c6cb; }
+        .step-by-step { background: #e7f3ff; padding: 15px; border-radius: 4px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 功能三：大批量处理 - 模板选择器完整测试</h1>
+
+        <div class="test-section">
+            <h3>📋 测试步骤说明</h3>
+            <div class="step-by-step">
+                <p><strong>这个页面将帮助你验证模板选择器是否正常工作</strong></p>
+                <ol>
+                    <li>页面加载时会自动运行基础检查</li>
+                    <li>查看每个测试部分的结果</li>
+                    <li>如果看到 ✅ 表示成功，❌ 表示失败</li>
+                    <li>所有测试通过后，实际应用中的模板选择器应该能正常工作</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>测试1️⃣: DOM元素检查</h3>
+            <p>检查 template_selector 元素是否存在</p>
+            <div id="test1-result" class="status-box"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>测试2️⃣: appState数据检查</h3>
+            <p>检查 appState.generator.presetTemplates 数据</p>
+            <div id="test2-result" class="status-box"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>测试3️⃣: 模板选择器初始化</h3>
+            <p>测试 updateTemplateSelector() 函数</p>
+            <label>模板选择器（应该有5个预设模板）:</label>
+            <select id="template_selector"></select>
+            <button onclick="testUpdateSelector()">🔄 重新初始化</button>
+            <div id="test3-result" class="status-box"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>测试4️⃣: 模板加载测试</h3>
+            <p>测试选择模板后是否正确加载内容</p>
+            <button onclick="testLoadTemplate()">📥 加载第一个模板</button>
+            <div style="margin-top: 15px;">
+                <label>系统提示:</label>
+                <textarea id="api-system-prompt" rows="3" readonly></textarea>
+                <label>用户规则:</label>
+                <textarea id="prompt-rules" rows="3" readonly></textarea>
+                <div id="output-fields-container"></div>
+            </div>
+            <div id="test4-result" class="status-box"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>测试5️⃣: 事件监听器测试</h3>
+            <p>测试下拉菜单的 change 事件</p>
+            <button onclick="testEventListener()">🎯 测试事件监听</button>
+            <div id="test5-result" class="status-box"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔍 调试信息</h3>
+            <button onclick="showDebugInfo()">显示完整调试信息</button>
+            <pre id="debug-info"></pre>
+        </div>
+
+        <div class="test-section">
+            <h3>✅ 验证清单</h3>
+            <div id="checklist">
+                <p><input type="checkbox" id="check1"> DOM元素存在</p>
+                <p><input type="checkbox" id="check2"> appState数据正确</p>
+                <p><input type="checkbox" id="check3"> 下拉菜单有5个预设模板</p>
+                <p><input type="checkbox" id="check4"> 可以正确加载模板内容</p>
+                <p><input type="checkbox" id="check5"> change事件正常工作</p>
+            </div>
+            <button onclick="checkAllPassed()" style="background: #28a745; margin-top: 10px;">🎉 检查是否全部通过</button>
+        </div>
+    </div>
+
+    <!-- 加载必要的脚本 -->
+    <script src="js/state.js"></script>
+    <script src="js/dom.js"></script>
+    <script>
+        // 辅助函数
+        const getEl = id => document.getElementById(id);
+
+        let testResults = {
+            test1: false,
+            test2: false,
+            test3: false,
+            test4: false,
+            test5: false
+        };
+
+        // 测试1: DOM元素检查
+        function test1_checkDOM() {
+            const result = getEl('test1-result');
+            const selector = getEl('template_selector');
+
+            if (selector) {
+                result.className = 'status-box success';
+                result.innerHTML = '<p class="success">✅ template_selector 元素存在</p>';
+                result.innerHTML += `<p>元素类型: ${selector.tagName}</p>`;
+                result.innerHTML += `<p>当前选项数: ${selector.options.length}</p>`;
+                testResults.test1 = true;
+                document.getElementById('check1').checked = true;
+            } else {
+                result.className = 'status-box error';
+                result.innerHTML = '<p class="error">❌ template_selector 元素不存在</p>';
+                testResults.test1 = false;
+            }
+        }
+
+        // 测试2: appState检查
+        function test2_checkAppState() {
+            const result = getEl('test2-result');
+
+            if (typeof appState === 'undefined') {
+                result.className = 'status-box error';
+                result.innerHTML = '<p class="error">❌ appState 未定义</p>';
+                testResults.test2 = false;
+                return;
+            }
+
+            result.innerHTML = '<p class="success">✅ appState 已定义</p>';
+
+            if (!appState.generator) {
+                result.className = 'status-box error';
+                result.innerHTML += '<p class="error">❌ appState.generator 不存在</p>';
+                testResults.test2 = false;
+                return;
+            }
+
+            result.innerHTML += '<p class="success">✅ appState.generator 存在</p>';
+
+            if (!appState.generator.presetTemplates || appState.generator.presetTemplates.length === 0) {
+                result.className = 'status-box error';
+                result.innerHTML += '<p class="error">❌ 预设模板数组为空</p>';
+                testResults.test2 = false;
+                return;
+            }
+
+            result.className = 'status-box success';
+            result.innerHTML += `<p class="success">✅ 找到 ${appState.generator.presetTemplates.length} 个预设模板</p>`;
+            result.innerHTML += '<ul>';
+            appState.generator.presetTemplates.forEach(t => {
+                result.innerHTML += `<li>${t.name}</li>`;
+            });
+            result.innerHTML += '</ul>';
+            testResults.test2 = true;
+            document.getElementById('check2').checked = true;
+        }
+
+        // 复制修复后的 updateTemplateSelector 函数
+        function updateTemplateSelector() {
+            const templateSelectorElement = getEl('template_selector');
+
+            if (!templateSelectorElement) {
+                console.error('❌ template_selector 元素不存在');
+                return false;
+            }
+
+            console.log('✅ 找到 template_selector 元素');
+
+            if (typeof appState === 'undefined' || !appState.generator) {
+                console.warn('⚠️ appState.generator 不存在');
+                return false;
+            }
+
+            if (!appState.generator.presetTemplates) {
+                appState.generator.presetTemplates = [];
+            }
+
+            if (!appState.generator.customTemplates) {
+                appState.generator.customTemplates = [];
+            }
+
+            const selectedValue = templateSelectorElement.value;
+            templateSelectorElement.innerHTML = '';
+
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = '选择预置模板或新建';
+            templateSelectorElement.appendChild(defaultOption);
+
+            if (appState.generator.presetTemplates.length > 0) {
+                console.log('✅ 正在添加预设模板：', appState.generator.presetTemplates.map(t => t.name));
+                appState.generator.presetTemplates.forEach(template => {
+                    const option = document.createElement('option');
+                    option.value = template.name;
+                    option.textContent = template.name + ' [预设]';
+                    templateSelectorElement.appendChild(option);
+                });
+            } else {
+                console.warn('⚠️ 没有预设模板可以添加');
+                return false;
+            }
+
+            if (appState.generator.customTemplates && appState.generator.customTemplates.length > 0) {
+                appState.generator.customTemplates.forEach(template => {
+                    const option = document.createElement('option');
+                    option.value = template.name;
+                    option.textContent = template.name;
+                    templateSelectorElement.appendChild(option);
+                });
+            }
+
+            if (selectedValue) {
+                templateSelectorElement.value = selectedValue;
+            }
+
+            console.log(`✅ 模板选择器已初始化，共 ${templateSelectorElement.options.length} 个选项`);
+            return true;
+        }
+
+        // 测试3: 模板选择器初始化
+        function testUpdateSelector() {
+            const result = getEl('test3-result');
+            const success = updateTemplateSelector();
+            const selector = getEl('template_selector');
+
+            if (success && selector.options.length > 1) {
+                result.className = 'status-box success';
+                result.innerHTML = `<p class="success">✅ 成功初始化模板选择器</p>`;
+                result.innerHTML += `<p>总选项数: ${selector.options.length}</p>`;
+                result.innerHTML += `<p>预设模板数: ${appState.generator.presetTemplates.length}</p>`;
+                testResults.test3 = true;
+                document.getElementById('check3').checked = true;
+            } else {
+                result.className = 'status-box error';
+                result.innerHTML = '<p class="error">❌ 模板选择器初始化失败</p>';
+                testResults.test3 = false;
+            }
+        }
+
+        // 测试4: 模板加载
+        function testLoadTemplate() {
+            const result = getEl('test4-result');
+
+            if (!appState.generator.presetTemplates || appState.generator.presetTemplates.length === 0) {
+                result.className = 'status-box error';
+                result.innerHTML = '<p class="error">❌ 没有可用的预设模板</p>';
+                testResults.test4 = false;
+                return;
+            }
+
+            const template = appState.generator.presetTemplates[0];
+
+            // 加载模板到UI
+            getEl('api-system-prompt').value = template.system || '';
+
+            if (typeof template.user === 'string') {
+                getEl('prompt-rules').value = template.user;
+            } else if (template.user && typeof template.user === 'object') {
+                getEl('prompt-rules').value = template.user.rules || '';
+
+                const container = getEl('output-fields-container');
+                container.innerHTML = '';
+                if (template.user.outputFields && template.user.outputFields.length > 0) {
+                    container.innerHTML = '<p><strong>输出字段:</strong></p>';
+                    template.user.outputFields.forEach(f => {
+                        container.innerHTML += `<div style="padding: 5px; background: #f0f0f0; margin: 5px 0; border-radius: 3px;"><strong>${f.name}:</strong> ${f.desc}</div>`;
+                    });
+                }
+            }
+
+            result.className = 'status-box success';
+            result.innerHTML = `<p class="success">✅ 成功加载模板 "${template.name}"</p>`;
+            testResults.test4 = true;
+            document.getElementById('check4').checked = true;
+        }
+
+        // 测试5: 事件监听器
+        function testEventListener() {
+            const result = getEl('test5-result');
+            const selector = getEl('template_selector');
+
+            if (!selector) {
+                result.className = 'status-box error';
+                result.innerHTML = '<p class="error">❌ 选择器元素不存在</p>';
+                testResults.test5 = false;
+                return;
+            }
+
+            // 测试是否可以手动触发change事件
+            let eventFired = false;
+            const testHandler = () => { eventFired = true; };
+            selector.addEventListener('change', testHandler);
+
+            // 选择第一个预设模板
+            if (selector.options.length > 1) {
+                selector.selectedIndex = 1;
+                selector.dispatchEvent(new Event('change'));
+            }
+
+            selector.removeEventListener('change', testHandler);
+
+            if (eventFired) {
+                result.className = 'status-box success';
+                result.innerHTML = '<p class="success">✅ change 事件可以正常触发</p>';
+                testResults.test5 = true;
+                document.getElementById('check5').checked = true;
+            } else {
+                result.className = 'status-box error';
+                result.innerHTML = '<p class="error">❌ change 事件未触发</p>';
+                testResults.test5 = false;
+            }
+        }
+
+        // 显示调试信息
+        function showDebugInfo() {
+            const info = {
+                'DOM元素': {
+                    'template_selector存在': !!getEl('template_selector'),
+                    '当前选项数': getEl('template_selector')?.options.length || 0
+                },
+                'appState': {
+                    '已定义': typeof appState !== 'undefined',
+                    'generator存在': !!appState?.generator,
+                    '预设模板数量': appState?.generator?.presetTemplates?.length || 0,
+                    '自定义模板数量': appState?.generator?.customTemplates?.length || 0
+                },
+                '预设模板列表': appState?.generator?.presetTemplates?.map(t => t.name) || [],
+                '测试结果': testResults
+            };
+
+            getEl('debug-info').textContent = JSON.stringify(info, null, 2);
+        }
+
+        // 检查是否全部通过
+        function checkAllPassed() {
+            const allPassed = Object.values(testResults).every(v => v === true);
+
+            if (allPassed) {
+                alert('🎉 恭喜！所有测试都通过了！\n\n现在可以在实际应用中使用功能三的模板选择器了。');
+            } else {
+                const failed = Object.keys(testResults).filter(k => !testResults[k]);
+                alert('❌ 还有测试未通过:\n\n' + failed.map(k => `- ${k}`).join('\n') + '\n\n请查看相应测试部分的详细信息。');
+            }
+        }
+
+        // 页面加载完成后执行所有测试
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 开始执行自动测试...');
+
+            setTimeout(() => {
+                test1_checkDOM();
+                test2_checkAppState();
+                testUpdateSelector();
+
+                // 延迟执行后续测试
+                setTimeout(() => {
+                    testLoadTemplate();
+                    testEventListener();
+                    showDebugInfo();
+
+                    // 检查整体结果
+                    const allPassed = Object.values(testResults).every(v => v === true);
+                    if (allPassed) {
+                        console.log('✅ 所有测试通过！');
+                    } else {
+                        console.warn('⚠️ 部分测试未通过，请查看页面详情');
+                    }
+                }, 500);
+            }, 200);
+        });
+    </script>
+</body>
+</html>

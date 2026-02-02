@@ -608,3 +608,89 @@
         color: #ce93d8;
     }
 }
+
+/* File Attachment Indicator */
+.message-attachment-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background-color: rgba(74, 108, 247, 0.1);
+    border: 1px solid rgba(74, 108, 247, 0.3);
+    border-radius: 6px;
+    font-size: 0.85em;
+    color: var(--primary-color);
+    margin-bottom: 8px;
+    max-width: fit-content;
+}
+
+.message-attachment-indicator svg {
+    flex-shrink: 0;
+}
+
+.message-attachment-indicator span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+.file-service-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 3px;
+    font-size: 0.75em;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-left: 4px;
+}
+
+/* File Processing Status Area */
+#chat_file_status_area {
+    padding: 8px 12px;
+    background-color: #f0f7ff;
+    border: 1px solid #d0e7ff;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    display: none;
+}
+
+#chat_file_status_area .file-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+    color: #333;
+}
+
+#chat_file_status_area .file-processing-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+#chat_file_status_area .file-remove-btn {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: #999;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+}
+
+#chat_file_status_area .file-remove-btn:hover {
+    color: #e74c3c;
+}

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>功能三预置模板下拉菜单测试</title>
+    <link rel="stylesheet" href="frontend/css/base/variables.css">
+    <link rel="stylesheet" href="frontend/css/components/forms.css">
+    <style>
+        body {
+            font-family: 'Noto Sans SC', Arial, sans-serif;
+            padding: 30px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .config-item {
+            margin-bottom: 15px;
+        }
+        .config-item label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #666;
+        }
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            background-color: white;
+            color: #333;
+        }
+        select option {
+            padding: 10px;
+            background-color: white;
+            color: #333;
+        }
+        .debug-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+        .debug-info pre {
+            margin: 0;
+            white-space: pre-wrap;
+        }
+        .test-button {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>功能三预置模板下拉菜单诊断</h1>
+    
+    <!-- 测试1: 基础下拉菜单 -->
+    <div class="test-section">
+        <h2>测试1: 基础HTML下拉菜单（静态）</h2>
+        <div class="config-item">
+            <label for="test_static_select">静态下拉菜单:</label>
+            <select id="test_static_select">
+                <option value="">选择预置模板或新建</option>
+                <option value="技术文本翻译">技术文本翻译</option>
+                <option value="检索词拓展">检索词拓展</option>
+                <option value="技术文本总结">技术文本总结</option>
+            </select>
+        </div>
+        <div class="debug-info">
+            <strong>说明：</strong>这是一个静态HTML下拉菜单，如果这个能正常显示选项，说明CSS样式没问题。
+        </div>
+    </div>
+    
+    <!-- 测试2: 动态生成的下拉菜单 -->
+    <div class="test-section">
+        <h2>测试2: 动态生成的下拉菜单（模拟asyncBatch.js）</h2>
+        <div class="config-item">
+            <label for="test_dynamic_select">动态下拉菜单:</label>
+            <select id="test_dynamic_select"></select>
+        </div>
+        <button class="test-button" onclick="initDynamicSelect()">初始化动态下拉菜单</button>
+        <div class="debug-info">
+            <strong>说明：</strong>点击按钮后，会模拟asyncBatch.js的方式动态生成选项。
+            <pre id="dynamic_debug"></pre>
+        </div>
+    </div>
+    
+    <!-- 测试3: 实际的asyncBatch下拉菜单 -->
+    <div class="test-section">
+        <h2>测试3: 实际的功能三下拉菜单</h2>
+        <div class="config-item">
+            <label for="async_preset_template_select">选择预置模板或新建:</label>
+            <select id="async_preset_template_select"></select>
+        </div>
+        <button class="test-button" onclick="checkActualState()">检查appState状态</button>
+        <div class="debug-info">
+            <pre id="actual_debug"></pre>
+        </div>
+    </div>
+    
+    <!-- 测试4: CSS样式检查 -->
+    <div class="test-section">
+        <h2>测试4: CSS样式检查</h2>
+        <div class="config-item">
+            <label for="test_styled_select">带完整样式的下拉菜单:</label>
+            <select id="test_styled_select" style="background-color: white; color: #333; padding: 12px; border: 1px solid #ddd;">
+                <option value="" style="background-color: white; color: #333;">选择预置模板或新建</option>
+                <option value="技术文本翻译" style="background-color: white; color: #333;">技术文本翻译</option>
+                <option value="检索词拓展" style="background-color: white; color: #333;">检索词拓展</option>
+                <option value="技术文本总结" style="background-color: white; color: #333;">技术文本总结</option>
+            </select>
+        </div>
+        <div class="debug-info">
+            <strong>说明：</strong>这个下拉菜单使用内联样式强制设置背景色和文字颜色。
+        </div>
+    </div>
+    
+    <script src="js/state.js"></script>
+    <script>
+        // 测试2: 动态生成下拉菜单
+        function initDynamicSelect() {
+            const select = document.getElementById('test_dynamic_select');
+            const debugDiv = document.getElementById('dynamic_debug');
+            
+            // 模拟asyncBatch.js的逻辑
+            const presetTemplates = [
+                {
+                    name: "技术文本翻译",
+                    systemPrompt: "你是一个专业翻译引擎...",
+                    userPromptTemplate: "请翻译以下文本：\n\n{{INPUT}}",
+                    model: "GLM-4.7-Flash",
+                    temperature: 0.1
+                },
+                {
+                    name: "检索词拓展",
+                    systemPrompt: "你是一个专业的专利检索分析师...",
+                    userPromptTemplate: "请为以下关键词生成10个相关的拓展检索词：\n\n{{INPUT}}",
+                    model: "GLM-4.7-Flash",
+                    temperature: 0.7
+                },
+                {
+                    name: "技术文本总结",
+                    systemPrompt: "你是一位资深的技术分析师...",
+                    userPromptTemplate: "请总结以下技术文本的核心内容（不超过200字）：\n\n{{INPUT}}",
+                    model: "GLM-4.7-Flash",
+                    temperature: 0.3
+                }
+            ];
+            
+            // 生成选项
+            const html = '<option value="">选择预置模板或新建</option>' + 
+                         presetTemplates.map(t => `<option value="${t.name}">${t.name}</option>`).join('');
+            
+            select.innerHTML = html;
+            
+            // 显示调试信息
+            debugDiv.textContent = `✅ 已生成 ${presetTemplates.length} 个选项\n` +
+                                  `HTML长度: ${html.length} 字符\n` +
+                                  `选项数量: ${select.options.length}\n` +
+                                  `选项列表:\n${Array.from(select.options).map((opt, i) => `  ${i}. ${opt.value} - ${opt.text}`).join('\n')}`;
+        }
+        
+        // 测试3: 检查实际的appState
+        function checkActualState() {
+            const select = document.getElementById('async_preset_template_select');
+            const debugDiv = document.getElementById('actual_debug');
+            
+            if (typeof appState === 'undefined') {
+                debugDiv.textContent = '❌ appState 未定义！请确保 state.js 已加载。';
+                return;
+            }
+            
+            if (!appState.asyncBatch) {
+                debugDiv.textContent = '❌ appState.asyncBatch 未定义！';
+                return;
+            }
+            
+            if (!appState.asyncBatch.presetTemplates) {
+                debugDiv.textContent = '❌ appState.asyncBatch.presetTemplates 未定义！';
+                return;
+            }
+            
+            const templates = appState.asyncBatch.presetTemplates;
+            
+            // 尝试初始化下拉菜单
+            const html = '<option value="">选择预置模板或新建</option>' + 
+                         templates.map(t => `<option value="${t.name}">${t.name}</option>`).join('');
+            select.innerHTML = html;
+            
+            // 显示调试信息
+            debugDiv.textContent = `✅ appState.asyncBatch.presetTemplates 存在\n` +
+                                  `模板数量: ${templates.length}\n` +
+                                  `模板列表:\n${templates.map((t, i) => `  ${i + 1}. ${t.name}`).join('\n')}\n\n` +
+                                  `下拉菜单选项数量: ${select.options.length}\n` +
+                                  `选项列表:\n${Array.from(select.options).map((opt, i) => `  ${i}. ${opt.value} - ${opt.text}`).join('\n')}`;
+        }
+        
+        // 页面加载时自动检查
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('页面加载完成，开始检查...');
+            setTimeout(() => {
+                checkActualState();
+            }, 500);
+        });
+    </script>
+</body>
+</html>

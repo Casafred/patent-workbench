@@ -373,6 +373,27 @@
                         <div id="chat_file_status_area" style="display:none;">
                         </div>
                         <!-- ▲▲▲ 新增结束 ▲▲▲ -->
+                        <!-- ▼▼▼ 新增：文件解析服务选择区域 ▼▼▼ -->
+                        <div id="chat_parser_service_selector" style="display:none; padding: 8px 12px; background-color: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 6px; margin-bottom: 8px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <label for="chat_parser_service_select" style="font-size: 0.9em; font-weight: 500; color: #333;">解析服务:</label>
+                                <select id="chat_parser_service_select" style="flex: 1; padding: 6px 10px; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.9em; background-color: white;">
+                                    <option value="lite" selected>Lite (免费) - 常见格式，纯文本</option>
+                                    <option value="expert">Expert (0.03元/次) - 专业PDF，Markdown+图片</option>
+                                    <option value="prime">Prime (0.05元/次) - 最多格式，完整结构</option>
+                                </select>
+                                <button id="chat_parser_service_info_btn" class="icon-button" title="查看服务说明" style="padding: 4px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                        <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div id="chat_parser_service_description" style="margin-top: 6px; font-size: 0.85em; color: #666; line-height: 1.4;">
+                                满足日常查询需求，性价比极高
+                            </div>
+                        </div>
+                        <!-- ▲▲▲ 新增结束 ▲▲▲ -->
                         <div id="chat_input_area">
                             <button id="chat_input_new_btn" class="new-chat-btn" title="开启新对话">+</button>
                             <!-- ▼▼▼ 新增：文件上传按钮和隐藏的input ▼▼▼ -->

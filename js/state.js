@@ -9,7 +9,11 @@ const appState = {
         currentConversationId: null,
         isManagementMode: false,
         // ▼▼▼ 新增：存储当前对话附加的文件信息 ▼▼▼
-        activeFile: null, // { fileId, filename, content }
+        activeFile: null, // { taskId, filename, content, toolType }
+        // ▼▼▼ 新增：文件解析状态 ▼▼▼
+        pendingFile: null, // 待上传的文件对象
+        pendingFileEvent: null, // 文件选择事件
+        fileProcessing: false, // 文件是否正在处理中
         // ▼▼▼ 新增：联网搜索配置 ▼▼▼
         searchMode: {
             enabled: false,
