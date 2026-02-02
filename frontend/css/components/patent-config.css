@@ -337,22 +337,33 @@
     background: #0056b3;
 }
 
-/* 字段复制按钮 */
+/* 字段复制按钮 - 超小尺寸 */
 .copy-field-btn {
     margin-left: 4px;
-    padding: 1px 3px;
-    font-size: 0.55em;
-    background: #28a745;
-    color: white;
-    border: none;
-    border-radius: 2px;
+    padding: 2px 4px !important;
+    font-size: 10px !important;
+    line-height: 1 !important;
+    min-height: auto !important;
+    height: auto !important;
+    background: #28a745 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 2px !important;
     cursor: pointer;
     transition: background 0.2s;
     vertical-align: middle;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+}
+
+.copy-field-btn svg {
+    width: 10px !important;
+    height: 10px !important;
 }
 
 .copy-field-btn:hover {
-    background: #218838;
+    background: #218838 !important;
 }
 
 /* 权利要求容器 */
