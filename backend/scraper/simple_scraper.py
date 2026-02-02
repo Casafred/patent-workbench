@@ -32,6 +32,7 @@ class SimplePatentData:
     patent_citations: List[Dict[str, str]] = None  # 引用的专利
     cited_by: List[Dict[str, str]] = None  # 被引用的专利
     legal_events: List[Dict[str, str]] = None  # 法律事件
+    similar_documents: List[Dict[str, str]] = None  # 相似文档
     
     def __post_init__(self):
         if self.inventors is None:
@@ -48,6 +49,8 @@ class SimplePatentData:
             self.cited_by = []
         if self.legal_events is None:
             self.legal_events = []
+        if self.similar_documents is None:
+            self.similar_documents = []
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
@@ -521,39 +524,107 @@ class SimplePatentScraper:
             logger.warning(f"⚠️ No drawings found for {patent_number}. Google Patents loads images dynamically with JavaScript.")
         
         # Extract Patent Citations (引用的专利)
-        # 注意：Google Patents使用JavaScript动态加载这些数据，静态HTML中不包含
-        # 需要使用浏览器自动化工具（如Selenium/Playwright）才能获取
         if crawl_specification:
             try:
                 citations = []
-                # Try to find citations heading (usually loaded by JS)
-                citations_h3 = soup.find('h3', {'id': 'patentCitations'})
-                if citations_h3:
-                    # Find table after heading
-                    citations_table = citations_h3.find_next('table')
-                    if citations_table:
-                        rows = citations_table.find_all('tr')
-                        for row in rows[1:]:  # Skip header row
-                            try:
-                                cells = row.find_all('td')
-                                if len(cells) >= 2:
-                                    # Usually: patent number, title, date, etc.
-                                    patent_link = cells[0].find('a')
-                                    if patent_link:
-                                        cited_patent_number = patent_link.get_text().strip()
-                                        cited_title = cells[1].get_text().strip() if len(cells) > 1 else ''
-                                        
-                                        citations.append({
-                                            'patent_number': cited_patent_number,
-                                            'title': cited_title
-                                        })
-                            except Exception as e:
-                                logger.warning(f"Error parsing citation row: {e}")
+                
+                # 尝试找到引用部分的表格
+                # 方法1：查找带有backwardReferencesOrig属性的tr元素
+                backward_refs = soup.find_all('tr', {'itemprop': 'backwardReferencesOrig'})
+                family_refs = soup.find_all('tr', {'itemprop': 'backwardReferencesFamily'})
+                
+                all_refs = backward_refs + family_refs
+                
+                if all_refs:
+                    logger.info(f"找到 {len(all_refs)} 个引用专利")
+                    for row in all_refs:
+                        try:
+                            # 提取专利号
+                            pub_num_elem = row.find('span', {'itemprop': 'publicationNumber'})
+                            if not pub_num_elem:
                                 continue
+                            
+                            patent_num = pub_num_elem.get_text().strip()
+                            
+                            # 提取链接
+                            link_elem = row.find('a')
+                            link = link_elem.get('href', '') if link_elem else ''
+                            
+                            # 提取优先权日期
+                            priority_date = row.find('td', {'itemprop': 'priorityDate'})
+                            priority_date = priority_date.get_text().strip() if priority_date else ''
+                            
+                            # 提取公开日期
+                            pub_date = row.find('td', {'itemprop': 'publicationDate'})
+                            pub_date = pub_date.get_text().strip() if pub_date else ''
+                            
+                            # 提取申请人
+                            assignee = row.find('span', {'itemprop': 'assigneeOriginal'})
+                            assignee = assignee.get_text().strip() if assignee else ''
+                            
+                            # 提取标题
+                            title = row.find('td', {'itemprop': 'title'})
+                            title = title.get_text().strip() if title else ''
+                            
+                            # 提取引用类型
+                            examiner_cited = row.find('span', {'itemprop': 'examinerCited'})
+                            is_examiner_cited = '*' in examiner_cited.get_text() if examiner_cited else False
+                            
+                            if patent_num:
+                                citations.append({
+                                    'patent_number': patent_num,
+                                    'title': title,
+                                    'priority_date': priority_date,
+                                    'publication_date': pub_date,
+                                    'assignee': assignee,
+                                    'link': f"https://patents.google.com{link}" if link.startswith('/') else link,
+                                    'examiner_cited': is_examiner_cited
+                                })
+                        except Exception as e:
+                            logger.warning(f"Error parsing citation row: {e}")
+                            continue
+                else:
+                    # 方法2：查找包含Citations的h2标题
+                    citations_h2 = None
+                    for h2 in soup.find_all('h2'):
+                        if 'Citations' in h2.get_text():
+                            citations_h2 = h2
+                            break
+                    
+                    if citations_h2:
+                        citations_table = citations_h2.find_next('table')
+                        if citations_table:
+                            rows = citations_table.find_all('tr')
+                            for row in rows[1:]:  # Skip header row
+                                try:
+                                    cells = row.find_all('td')
+                                    if len(cells) >= 2:
+                                        # 提取专利号
+                                        patent_link = cells[0].find('a')
+                                        if patent_link:
+                                            cited_patent_number = patent_link.get_text().strip()
+                                            # 提取标题
+                                            title = cells[4].get_text().strip() if len(cells) > 4 else ''
+                                            # 提取优先权日期
+                                            priority_date = cells[1].get_text().strip() if len(cells) > 1 else ''
+                                            # 提取公开日期
+                                            pub_date = cells[2].get_text().strip() if len(cells) > 2 else ''
+                                            # 提取申请人
+                                            assignee = cells[3].get_text().strip() if len(cells) > 3 else ''
+                                            
+                                            citations.append({
+                                                'patent_number': cited_patent_number,
+                                                'title': title,
+                                                'priority_date': priority_date,
+                                                'publication_date': pub_date,
+                                                'assignee': assignee
+                                            })
+                                except Exception as e:
+                                    logger.warning(f"Error parsing citation table row: {e}")
+                                    continue
                 
                 patent_data.patent_citations = citations[:20]  # 限制前20条
-                if not citations:
-                    logger.info(f"⚠️ Patent citations not found (likely requires JavaScript rendering)")
+                logger.info(f"提取到 {len(citations)} 条引用专利")
             except Exception as e:
                 logger.warning(f"Error extracting patent citations for {patent_number}: {e}")
                 patent_data.patent_citations = []
@@ -595,32 +666,126 @@ class SimplePatentScraper:
         if crawl_specification:
             try:
                 legal_events = []
-                legal_h3 = soup.find('h3', {'id': 'legalEvents'})
-                if legal_h3:
-                    legal_table = legal_h3.find_next('table')
-                    if legal_table:
-                        rows = legal_table.find_all('tr')
-                        for row in rows[1:]:  # Skip header row
-                            try:
-                                cells = row.find_all('td')
-                                if len(cells) >= 2:
-                                    event_date = cells[0].get_text().strip()
-                                    event_description = cells[1].get_text().strip()
-                                    
-                                    legal_events.append({
-                                        'date': event_date,
-                                        'description': event_description
-                                    })
-                            except Exception as e:
-                                logger.warning(f"Error parsing legal event row: {e}")
-                                continue
+                
+                # 查找法律事件部分
+                # 方法1：查找带有legalEvents属性的tr元素
+                legal_event_rows = soup.find_all('tr', {'itemprop': 'legalEvents'})
+                
+                if legal_event_rows:
+                    logger.info(f"找到 {len(legal_event_rows)} 个法律事件")
+                    for row in legal_event_rows:
+                        try:
+                            # 提取日期
+                            date_elem = row.find('time', {'itemprop': 'date'})
+                            event_date = date_elem.get('datetime', '') if date_elem else ''
+                            if not event_date:
+                                # 尝试从第一个td获取日期
+                                date_cell = row.find('td')
+                                event_date = date_cell.get_text().strip() if date_cell else ''
+                            
+                            # 提取代码
+                            code_elem = row.find('td', {'itemprop': 'code'})
+                            event_code = code_elem.get_text().strip() if code_elem else ''
+                            
+                            # 提取标题
+                            title_elem = row.find('td', {'itemprop': 'title'})
+                            event_title = title_elem.get_text().strip() if title_elem else ''
+                            
+                            # 提取自由格式文本
+                            free_format_text = ''
+                            attributes = row.find_all('p', {'itemprop': 'attributes'})
+                            for attr in attributes:
+                                label = attr.find('strong', {'itemprop': 'label'})
+                                value = attr.find('span', {'itemprop': 'value'})
+                                if label and value and label.get_text().strip() == 'Free format text':
+                                    free_format_text = value.get_text().strip()
+                                    break
+                            
+                            # 构建完整描述
+                            description = f"{event_title} - {free_format_text}" if free_format_text else event_title
+                            
+                            legal_events.append({
+                                'date': event_date,
+                                'code': event_code,
+                                'title': event_title,
+                                'description': description,
+                                'free_format_text': free_format_text
+                            })
+                        except Exception as e:
+                            logger.warning(f"Error parsing legal event row: {e}")
+                            continue
+                else:
+                    # 方法2：查找包含Legal Events的h2标题
+                    legal_h2 = None
+                    for h2 in soup.find_all('h2'):
+                        if 'Legal Events' in h2.get_text():
+                            legal_h2 = h2
+                            break
+                    
+                    if legal_h2:
+                        legal_table = legal_h2.find_next('table')
+                        if legal_table:
+                            rows = legal_table.find_all('tr')
+                            for row in rows[1:]:  # Skip header row
+                                try:
+                                    cells = row.find_all('td')
+                                    if len(cells) >= 2:
+                                        event_date = cells[0].get_text().strip()
+                                        event_description = cells[1].get_text().strip()
+                                        
+                                        legal_events.append({
+                                            'date': event_date,
+                                            'description': event_description
+                                        })
+                                except Exception as e:
+                                    logger.warning(f"Error parsing legal event table row: {e}")
+                                    continue
                 
                 patent_data.legal_events = legal_events[:20]  # 限制前20条
-                if not legal_events:
-                    logger.info(f"⚠️ Legal events not found (likely requires JavaScript rendering)")
+                logger.info(f"提取到 {len(legal_events)} 个法律事件")
             except Exception as e:
                 logger.warning(f"Error extracting legal events for {patent_number}: {e}")
                 patent_data.legal_events = []
+        
+        # Extract Similar Documents (相似文档)
+        if crawl_specification:
+            try:
+                similar_documents = []
+                # 查找带有similarDocuments属性的tr元素
+                similar_rows = soup.find_all('tr', {'itemprop': 'similarDocuments'})
+                
+                if similar_rows:
+                    logger.info(f"找到 {len(similar_rows)} 个相似文档")
+                    for row in similar_rows:
+                        try:
+                            is_patent_elem = row.find('meta', {'itemprop': 'isPatent'})
+                            is_patent = is_patent_elem.get('content', 'false') == 'true' if is_patent_elem else False
+                            
+                            if is_patent:
+                                patent_link = row.find('a')
+                                if patent_link:
+                                    patent_number_elem = row.find('span', {'itemprop': 'publicationNumber'})
+                                    language_elem = row.find('span', {'itemprop': 'primaryLanguage'})
+                                    
+                                    patent_number = patent_number_elem.get_text().strip() if patent_number_elem else ''
+                                    language = language_elem.get_text().strip() if language_elem else ''
+                                    link = patent_link.get('href', '')
+                                    
+                                    if patent_number:
+                                        similar_documents.append({
+                                            'patent_number': patent_number,
+                                            'language': language,
+                                            'link': f"https://patents.google.com{link}" if link.startswith('/') else link
+                                        })
+                        except Exception as e:
+                            logger.warning(f"Error parsing similar document row: {e}")
+                            continue
+                
+                patent_data.similar_documents = similar_documents[:10]  # 限制前10条
+                logger.info(f"提取到 {len(similar_documents)} 个相似文档")
+            except Exception as e:
+                logger.warning(f"Error extracting similar documents for {patent_number}: {e}")
+                patent_data.similar_documents = []
         
         return patent_data
     

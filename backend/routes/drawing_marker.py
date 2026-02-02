@@ -333,28 +333,25 @@ def extract_components():
                     error="model_name is required when ai_mode is true",
                     status_code=400
                 )
-            
-            # Get API key from Authorization header
+
+            # Get ZhipuAI client from Authorization header (AI mode requires it)
             client, error = get_zhipu_client()
             if error:
                 return error
-            
-            # Get API key from client
-            api_key = client.api_key
-            
+
             # Import AI processor
             from backend.services.ai_description.ai_description_processor import AIDescriptionProcessor
-            
-            # Create processor instance
-            processor = AIDescriptionProcessor(api_key)
-            
-            # Process description using AI
+
+            # Create processor instance (no longer needs api_key)
+            processor = AIDescriptionProcessor()
+
+            # Process description using AI, passing client directly
             # Run async function in sync context
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             try:
                 result = loop.run_until_complete(
-                    processor.process(description_text, model_name, custom_prompt)
+                    processor.process(description_text, model_name, client, custom_prompt)
                 )
             finally:
                 loop.close()

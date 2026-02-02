@@ -482,8 +482,8 @@ function initPatentBatch() {
             console.warn('⚠️ 无法获取版本信息，可能是旧版本后端');
         }
         
-        // 获取是否需要爬取说明书的选项
-        const crawlSpecification = document.getElementById('crawl_specification_checkbox')?.checked || false;
+        // 总是启用爬取额外信息
+        const crawlSpecification = true; // 强制启用，确保获取所有额外信息
         console.log('📋 crawl_specification:', crawlSpecification);
         
         // 清空之前的结果
@@ -1110,6 +1110,7 @@ function buildPatentDetailHTML(result) {
                         <thead>
                             <tr style="background-color: #e1bee7;">
                                 <th style="padding: 5px; text-align: left; border: 1px solid #ddd; width: 120px;">日期</th>
+                                <th style="padding: 5px; text-align: left; border: 1px solid #ddd; width: 80px;">代码</th>
                                 <th style="padding: 5px; text-align: left; border: 1px solid #ddd;">事件描述</th>
                             </tr>
                         </thead>
@@ -1120,6 +1121,7 @@ function buildPatentDetailHTML(result) {
             htmlContent += `
                 <tr>
                     <td style="padding: 5px; border: 1px solid #ddd;">${event.date}</td>
+                    <td style="padding: 5px; border: 1px solid #ddd;">${event.code || '-'}</td>
                     <td style="padding: 5px; border: 1px solid #ddd;">${event.description}</td>
                 </tr>
             `;
@@ -1133,7 +1135,58 @@ function buildPatentDetailHTML(result) {
         `;
     }
     
+    // 相似文档
+    if (data.similar_documents && data.similar_documents.length > 0) {
+        htmlContent += `
+            <div style="margin-top: 15px; padding: 10px; background-color: #e8f5e9; border-radius: 5px;">
+                <div style="margin-bottom: 8px;">
+                    <strong style="color: var(--primary-color);">📋 相似文档 (共${data.similar_documents.length}条):</strong>
+                </div>
+                <div style="max-height: 200px; overflow-y: auto;">
+                    <table style="width: 100%; font-size: 0.85em; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background-color: #c8e6c9;">
+                                <th style="padding: 5px; text-align: left; border: 1px solid #ddd;">专利号</th>
+                                <th style="padding: 5px; text-align: left; border: 1px solid #ddd; width: 80px;">语言</th>
+                                <th style="padding: 5px; text-align: left; border: 1px solid #ddd; width: 80px;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        `;
+        
+        data.similar_documents.forEach(doc => {
+            htmlContent += `
+                <tr>
+                    <td style="padding: 5px; border: 1px solid #ddd;">${doc.patent_number}</td>
+                    <td style="padding: 5px; border: 1px solid #ddd;">${doc.language || '-'}</td>
+                    <td style="padding: 5px; border: 1px solid #ddd;">
+                        <a href="${doc.link}" target="_blank" style="color: var(--primary-color); text-decoration: underline;">查看</a>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        htmlContent += `
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+    
     htmlContent += `</div>`;
+    
+    // 调试信息
+    htmlContent += `
+        <div style="margin-top: 15px; padding: 10px; background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px;">
+            <h5>调试信息：</h5>
+            <pre>引用专利数量: ${data.patent_citations ? data.patent_citations.length : 0}</pre>
+            <pre>法律事件数量: ${data.legal_events ? data.legal_events.length : 0}</pre>
+            <pre>相似文档数量: ${data.similar_documents ? data.similar_documents.length : 0}</pre>
+            <pre>是否有法律事件数据: ${data.legal_events ? '是' : '否'}</pre>
+            <pre>是否有相似文档数据: ${data.similar_documents ? '是' : '否'}</pre>
+        </div>
+    `;
     
     // 操作按钮
     htmlContent += `

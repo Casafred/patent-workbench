@@ -1,14 +1,17 @@
 {
   "models": [
-    "glm-4-flash",
-    "glm-4-plus",
-    "glm-4-0520",
-    "glm-4-air",
-    "glm-4-airx",
-    "glm-4-long",
-    "glm-4-flashx"
+    "glm-4.7",
+    "glm-4.7-flash",
+    "glm-4.7-flashx",
+    "glm-4.6",
+    "glm-4.5-air",
+    "glm-4.5-airx",
+    "glm-4.5-flash",
+    "glm-4-flash-250414",
+    "glm-4-flashx-250414"
   ],
-  "description": "统一的模型配置文件，所有功能的模型选择列表都从这里读取。模型名称必须与智谱AI官方API完全一致（全小写）",
-  "default_model": "glm-4-flash",
-  "note": "智谱AI模型名称格式：全小写，使用连字符分隔，例如 glm-4-flash"
+  "description": "统一的模型配置文件，所有功能的模型选择列表都从这里读取。模型名称严格按照智谱AI官方API文档",
+  "default_model": "glm-4.7",
+  "note": "模型名称来源：https://docs.bigmodel.cn 官方API文档 ChatCompletionTextRequest.model 枚举值",
+  "reference": "官方文档示例使用 glm-4.7 作为默认模型"
 }
