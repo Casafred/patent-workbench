@@ -13,45 +13,66 @@ async function handleChatFileUpload(event, fileFromReuse = null) {
     const file = fileFromReuse || (event.target ? event.target.files[0] : null);
     if (!file) return;
 
-    // 【新增】显示服务选择器，让用户选择解析服务
-    const parserServiceSelector = document.getElementById('chat_parser_service_selector');
-    const parserServiceSelect = document.getElementById('chat_parser_service_select');
-    
-    // 根据文件类型自动推荐服务
-    const fileType = file.type;
-    if (fileType === 'application/pdf') {
-        parserServiceSelect.value = 'lite'; // PDF默认Lite
-    } else if (fileType.includes('image')) {
-        parserServiceSelect.value = 'prime'; // 图片推荐Prime
-    } else if (fileType.includes('officedocument') || fileType.includes('msword') || fileType.includes('ms-excel') || fileType.includes('ms-powerpoint')) {
-        parserServiceSelect.value = 'prime'; // Office文档推荐Prime
-    } else {
-        parserServiceSelect.value = 'lite'; // 其他默认Lite
+    // 【修复】检查是否有已激活的文件，如果有则复用
+    if (appState.chat.activeFile && appState.chat.activeFile.filename === file.name) {
+        console.log('文件已解析，直接复用:', file.name);
+        // 显示复用提示
+        const chatFileStatusArea = document.getElementById('chat_file_status_area');
+        chatFileStatusArea.style.display = 'flex';
+        chatFileStatusArea.innerHTML = `
+            <div class="file-info">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 8px; color: var(--primary-color);">
+                    <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z"/>
+                </svg>
+                <span>已附加文件:</span>
+                <span class="filename" title="${file.name}">${file.name}</span>
+            </div>
+            <button class="file-remove-btn" onclick="removeActiveFile()" title="移除文件">&times;</button>
+        `;
+        chatInput.focus();
+        return;
     }
-    
-    // 更新服务描述
-    updateParserServiceDescription();
-    
-    // 显示服务选择器
-    parserServiceSelector.style.display = 'block';
-    
-    // 存储待上传的文件
-    appState.chat.pendingFile = file;
-    appState.chat.pendingFileEvent = event;
-    
-    // 提示用户选择服务
-    const chatFileStatusArea = document.getElementById('chat_file_status_area');
-    chatFileStatusArea.style.display = 'block';
-    chatFileStatusArea.innerHTML = `
-        <div class="file-info" style="display: flex; align-items: center; gap: 8px;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M4.5 3a2.5 2.5 0 0 1 5 0v9a1.5 1.5 0 0 1-3 0V5a.5.5 0 0 1 1 0v7a.5.5 0 0 0 1 0V3a1.5 1.5 0 1 0-3 0v9a2.5 2.5 0 0 0 5 0V5a.5.5 0 0 1 1 0v7a3.5 3.5 0 1 1-7 0V3z"/>
-            </svg>
-            <span>已选择文件: <strong>${file.name}</strong></span>
-            <button class="small-button" onclick="startFileUpload()" style="margin-left: auto; background-color: var(--primary-color); color: white; padding: 4px 12px; border: none; border-radius: 4px; cursor: pointer;">开始上传</button>
-            <button class="file-remove-btn" onclick="cancelFileUpload()" style="background: none; border: none; color: #999; font-size: 20px; cursor: pointer; padding: 0 4px;">&times;</button>
-        </div>
-    `;
+
+    // 【新增】添加文件处理状态标志
+    appState.chat.fileProcessing = true;
+    chatUploadFileBtn.disabled = true;
+
+    // 根据文件类型自动选择服务
+    const fileType = file.type;
+    let toolType = 'lite'; // 默认Lite
+    if (fileType === 'application/pdf') {
+        toolType = 'lite'; // PDF默认Lite
+    } else if (fileType.includes('image')) {
+        toolType = 'prime'; // 图片推荐Prime
+    } else if (fileType.includes('officedocument') || fileType.includes('msword') || fileType.includes('ms-excel') || fileType.includes('ms-powerpoint')) {
+        toolType = 'prime'; // Office文档推荐Prime
+    }
+
+    try {
+        // 使用新的 FileParserHandler 自动上传
+        const parser = new FileParserHandler();
+        const result = await parser.handleFileUpload(file, toolType);
+        
+        // 存储解析结果
+        appState.chat.activeFile = {
+            taskId: result.task_id,
+            filename: file.name,
+            content: result.content,
+            toolType: toolType
+        };
+        
+        chatInput.focus();
+    } catch (error) {
+        alert(`文件解析失败: ${error.message}`);
+        removeActiveFile(); 
+    } finally {
+        // 【修改】无论成功失败，都更新文件处理状态
+        appState.chat.fileProcessing = false;
+        chatUploadFileBtn.disabled = false;
+        if (event && event.target) {
+            event.target.value = ''; 
+        }
+    }
 }
 
 // 开始文件上传（用户选择服务后）

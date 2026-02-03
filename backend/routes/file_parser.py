@@ -27,7 +27,15 @@ def get_file_parser_service():
     Returns:
         tuple: (service, error_response) where error_response is None if successful
     """
-    api_key = os.environ.get('ZHIPUAI_API_KEY')
+    # Try to get API key from Authorization header first, then environment variable
+    api_key = None
+    auth_header = request.headers.get('Authorization')
+    if auth_header and auth_header.startswith('Bearer '):
+        api_key = auth_header.split(' ', 1)[1]
+    
+    if not api_key:
+        api_key = os.environ.get('ZHIPUAI_API_KEY')
+    
     if not api_key:
         return None, create_response(
             error="ZhipuAI API key not configured",
