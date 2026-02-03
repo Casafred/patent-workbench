@@ -411,14 +411,14 @@ function initPatentBatch() {
                     const row = {
                         '专利号': result.patent_number,
                         '标题': patentData.title || '',
-                        '摘要': patentData.abstract || '',
-                        '发明人': patentData.inventors ? patentData.inventors.join(', ') : '',
-                        '受让人': patentData.assignees ? patentData.assignees.join(', ') : '',
+                        '摘要': patentData.abstract ? patentData.abstract.substring(0, 32767) : '',
+                        '发明人': patentData.inventors ? patentData.inventors.join(', ').substring(0, 32767) : '',
+                        '受让人': patentData.assignees ? patentData.assignees.join(', ').substring(0, 32767) : '',
                         '申请日期': patentData.application_date || '',
                         '公开日期': patentData.publication_date || '',
-                        '权利要求': patentData.claims ? (Array.isArray(patentData.claims) ? patentData.claims.join('\n') : patentData.claims) : '',
-                        '附图链接': patentData.drawings ? (Array.isArray(patentData.drawings) ? patentData.drawings.join('\n') : patentData.drawings) : '',
-                        '说明书': patentData.description || ''
+                        '权利要求': patentData.claims ? ((Array.isArray(patentData.claims) ? patentData.claims.join('\n') : patentData.claims).substring(0, 32767)) : '',
+                        '附图链接': patentData.drawings ? ((Array.isArray(patentData.drawings) ? patentData.drawings.join('\n') : patentData.drawings).substring(0, 32767)) : '',
+                        '说明书': patentData.description ? patentData.description.substring(0, 32767) : ''
                     };
                     
                     // 尝试添加解读结果
@@ -437,11 +437,12 @@ function initPatentBatch() {
                             
                             // 动态添加解读字段
                             Object.keys(analysisJson).forEach(key => {
-                                row[key] = analysisJson[key] || '';
+                                const value = analysisJson[key] || '';
+                                row[key] = typeof value === 'string' ? value.substring(0, 32767) : value;
                             });
                         } catch (e) {
                             // 如果不是JSON格式，将整个内容放到一个字段
-                            row['解读结果'] = analysisResult.analysis_content || '';
+                            row['解读结果'] = analysisResult.analysis_content ? analysisResult.analysis_content.substring(0, 32767) : '';
                         }
                     }
                     
@@ -922,6 +923,11 @@ window.addEventListener('keydown', function(event) {
     }
 });
 
+// 在新标签页打开专利
+window.openPatentInNewTab = function(url) {
+    window.open(url, '_blank');
+};
+
 // 复制字段内容
 window.copyFieldContent = function(patentNumber, fieldKey, event) {
     if (event) {
@@ -1201,7 +1207,7 @@ function buildPatentDetailHTML(result) {
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg>
                     </button>
                 </div>
-                <div style="margin-top: 8px; font-size: 0.9em; line-height: 1.6; max-height: 300px; overflow-y: auto;">
+                <div style="margin-top: 8px; font-size: 0.9em; line-height: 1.6; max-height: 300px; overflow-y: auto; white-space: pre-wrap;">
                     ${data.description}
                 </div>
             </div>
@@ -1388,6 +1394,14 @@ function buildPatentDetailHTML(result) {
                     </svg>
                     查看原始专利
                 </a>
+                <button class="small-button" onclick="openPatentInNewTab('${result.url}')" style="background-color: #17a2b8; color: white; display: inline-flex; align-items: center; gap: 6px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M10.5 1a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h2a.5.5 0 0 0 .5-.5V1a.5.5 0 0 0-.5-.5h-2zM10 2.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-1zM10.5 4a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h2a.5.5 0 0 0 .5-.5V4.5a.5.5 0 0 0-.5-.5h-2z"/>
+                        <path d="M3 1h8a2 2 0 0 1 2 2v2.5h-1V3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h2.5v-1H3a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2z"/>
+                        <path d="M14 9a1 1 0 0 1 1 1v2.5a1 1 0 0 1-1 1H9.5v-1H13a1 1 0 0 0 1-1v-2.5a1 1 0 0 1 1-1z"/>
+                    </svg>
+                    新标签页打开
+                </button>
             </div>
         </div>
     `;
