@@ -28,6 +28,7 @@
     <link rel="stylesheet" href="frontend/css/components/patent-chat.css">
     <link rel="stylesheet" href="frontend/css/components/patent-config.css">
     <link rel="stylesheet" href="frontend/css/components/patent-timeline.css">
+    <link rel="stylesheet" href="frontend/css/components/field-selector.css">
     <!-- AI说明书处理器CSS -->
     <link rel="stylesheet" href="frontend/css/components/ai-description-processor.css">
 
@@ -997,11 +998,221 @@
                     </div>
                 </div>
                 
+                <!-- 字段选择器 -->
+                <div class="config-item-compact">
+                    <button id="toggle_field_selector_btn" class="small-button" style="width: 100%;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 6px;">
+                            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                        </svg>
+                        选择爬取字段
+                    </button>
+                </div>
+                
                 <!-- 操作按钮 -->
                 <div class="config-actions">
                     <button id="search_patents_btn" class="small-button primary-btn">批量查询专利</button>
                     <button id="analyze_all_btn" class="small-button primary-btn" disabled>批量解读</button>
                 </div>
+            </div>
+        </div>
+        
+        <!-- 字段选择器面板（折叠） -->
+        <div id="field_selector_panel" class="field-selector-container" style="display: none; margin-top: 20px;">
+            <div class="field-selector-header">
+                <div class="field-selector-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                    </svg>
+                    选择爬取字段
+                </div>
+                <div class="field-selector-actions">
+                    <button class="field-selector-btn" onclick="selectAllOptionalFields()">全选可选</button>
+                    <button class="field-selector-btn" onclick="deselectAllOptionalFields()">取消全选</button>
+                    <button class="field-selector-btn" onclick="selectRecommendedFields()">推荐配置</button>
+                </div>
+            </div>
+            
+            <!-- 基础字段（必选） -->
+            <div class="field-group">
+                <div class="field-group-title">
+                    基础字段
+                    <span class="field-group-badge required">必选</span>
+                </div>
+                <div class="field-options-grid">
+                    <div class="field-option disabled checked">
+                        <input type="checkbox" checked disabled>
+                        <span class="field-option-label">专利号</span>
+                    </div>
+                    <div class="field-option disabled checked">
+                        <input type="checkbox" checked disabled>
+                        <span class="field-option-label">标题</span>
+                    </div>
+                    <div class="field-option disabled checked">
+                        <input type="checkbox" checked disabled>
+                        <span class="field-option-label">摘要</span>
+                    </div>
+                    <div class="field-option disabled checked">
+                        <input type="checkbox" checked disabled>
+                        <span class="field-option-label">发明人</span>
+                    </div>
+                    <div class="field-option disabled checked">
+                        <input type="checkbox" checked disabled>
+                        <span class="field-option-label">申请人</span>
+                    </div>
+                    <div class="field-option disabled checked">
+                        <input type="checkbox" checked disabled>
+                        <span class="field-option-label">申请日期</span>
+                    </div>
+                    <div class="field-option disabled checked">
+                        <input type="checkbox" checked disabled>
+                        <span class="field-option-label">公开日期</span>
+                    </div>
+                    <div class="field-option disabled checked">
+                        <input type="checkbox" checked disabled>
+                        <span class="field-option-label">权利要求</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 可选字段 -->
+            <div class="field-group">
+                <div class="field-group-title">
+                    分类与领域
+                    <span class="field-group-badge">可选</span>
+                </div>
+                <div class="field-options-grid">
+                    <div class="field-option" onclick="toggleFieldOption(this)">
+                        <input type="checkbox" id="field_classifications" checked>
+                        <span class="field-option-label">
+                            CPC分类
+                            <span class="field-option-info">推荐</span>
+                        </span>
+                    </div>
+                    <div class="field-option" onclick="toggleFieldOption(this)">
+                        <input type="checkbox" id="field_landscapes" checked>
+                        <span class="field-option-label">
+                            技术领域
+                            <span class="field-option-info">推荐</span>
+                        </span>
+                    </div>
+                    <div class="field-option" onclick="toggleFieldOption(this)">
+                        <input type="checkbox" id="field_priority_date">
+                        <span class="field-option-label">优先权日期</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="field-group">
+                <div class="field-group-title">
+                    同族信息
+                    <span class="field-group-badge">可选</span>
+                </div>
+                <div class="field-options-grid">
+                    <div class="field-option" onclick="toggleFieldOption(this)">
+                        <input type="checkbox" id="field_family_id">
+                        <span class="field-option-label">同族ID</span>
+                    </div>
+                    <div class="field-option" onclick="toggleFieldOption(this)">
+                        <input type="checkbox" id="field_family_applications">
+                        <span class="field-option-label">
+                            同族申请
+                            <span class="field-option-info">耗时</span>
+                        </span>
+                    </div>
+                    <div class="field-option" onclick="toggleFieldOption(this)">
+                        <input type="checkbox" id="field_country_status">
+                        <span class="field-option-label">
+                            国家状态
+                            <span class="field-option-info">耗时</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="field-group">
+                <div class="field-group-title">
+                    引用信息
+                    <span class="field-group-badge">可选</span>
+                </div>
+                <div class="field-options-grid">
+                    <div class="field-option" onclick="toggleFieldOption(this)">
+                        <input type="checkbox" id="field_patent_citations" checked>
+                        <span class="field-option-label">
+                            引用专利
+                            <span class="field-option-info">推荐</span>
+                        </span>
+                    </div>
+                    <div class="field-option" onclick="toggleFieldOption(this)">
+                        <input type="checkbox" id="field_cited_by" checked>
+                        <span class="field-option-label">
+                            被引用专利
+                            <span class="field-option-info">推荐</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="field-group">
+                <div class="field-group-title">
+                    法律与事件
+                    <span class="field-group-badge">可选</span>
+                </div>
+                <div class="field-options-grid">
+                    <div class="field-option" onclick="toggleFieldOption(this)">
+                        <input type="checkbox" id="field_legal_events">
+                        <span class="field-option-label">
+                            法律事件
+                            <span class="field-option-info">耗时</span>
+                        </span>
+                    </div>
+                    <div class="field-option" onclick="toggleFieldOption(this)">
+                        <input type="checkbox" id="field_similar_documents">
+                        <span class="field-option-label">相似文档</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="field-group">
+                <div class="field-group-title">
+                    附加内容
+                    <span class="field-group-badge">可选</span>
+                </div>
+                <div class="field-options-grid">
+                    <div class="field-option" onclick="toggleFieldOption(this)">
+                        <input type="checkbox" id="field_description">
+                        <span class="field-option-label">
+                            说明书
+                            <span class="field-option-info">耗时</span>
+                        </span>
+                    </div>
+                    <div class="field-option" onclick="toggleFieldOption(this)">
+                        <input type="checkbox" id="field_drawings" checked>
+                        <span class="field-option-label">
+                            附图
+                            <span class="field-option-info">推荐</span>
+                        </span>
+                    </div>
+                    <div class="field-option" onclick="toggleFieldOption(this)">
+                        <input type="checkbox" id="field_external_links">
+                        <span class="field-option-label">外部链接</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 统计信息 -->
+            <div class="field-selector-stats">
+                <div class="field-selector-count">
+                    已选择 <strong id="selected_fields_count">11</strong> 个字段（基础8个 + 可选3个）
+                </div>
+            </div>
+            
+            <!-- 性能警告 -->
+            <div id="field_selector_warning" class="field-selector-warning" style="display: none;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                </svg>
+                您选择了多个耗时字段，爬取时间可能较长
             </div>
         </div>
         

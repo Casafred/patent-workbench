@@ -1787,3 +1787,170 @@ function buildPatentDetailHTML(result) {
     
     return htmlContent;
 }}
+
+
+// ====================================================================
+// 字段选择器功能
+// ====================================================================
+
+// 切换字段选择器面板
+window.toggleFieldSelectorPanel = function() {
+    const panel = document.getElementById('field_selector_panel');
+    const btn = document.getElementById('toggle_field_selector_btn');
+    
+    if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 6px;"><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg>收起字段选择';
+    } else {
+        panel.style.display = 'none';
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 6px;"><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg>选择爬取字段';
+    }
+};
+
+// 切换字段选项
+window.toggleFieldOption = function(element) {
+    const checkbox = element.querySelector('input[type="checkbox"]');
+    if (checkbox && !checkbox.disabled) {
+        checkbox.checked = !checkbox.checked;
+        element.classList.toggle('checked', checkbox.checked);
+        updateFieldCount();
+        checkPerformanceWarning();
+    }
+};
+
+// 全选可选字段
+window.selectAllOptionalFields = function() {
+    const checkboxes = document.querySelectorAll('#field_selector_panel input[type="checkbox"]:not([disabled])');
+    checkboxes.forEach(cb => {
+        cb.checked = true;
+        cb.closest('.field-option').classList.add('checked');
+    });
+    updateFieldCount();
+    checkPerformanceWarning();
+};
+
+// 取消全选可选字段
+window.deselectAllOptionalFields = function() {
+    const checkboxes = document.querySelectorAll('#field_selector_panel input[type="checkbox"]:not([disabled])');
+    checkboxes.forEach(cb => {
+        cb.checked = false;
+        cb.closest('.field-option').classList.remove('checked');
+    });
+    updateFieldCount();
+    checkPerformanceWarning();
+};
+
+// 推荐配置
+window.selectRecommendedFields = function() {
+    // 先取消全选
+    deselectAllOptionalFields();
+    
+    // 选择推荐字段
+    const recommendedFields = [
+        'field_classifications',
+        'field_landscapes',
+        'field_patent_citations',
+        'field_cited_by',
+        'field_drawings'
+    ];
+    
+    recommendedFields.forEach(fieldId => {
+        const checkbox = document.getElementById(fieldId);
+        if (checkbox) {
+            checkbox.checked = true;
+            checkbox.closest('.field-option').classList.add('checked');
+        }
+    });
+    
+    updateFieldCount();
+    checkPerformanceWarning();
+};
+
+// 更新字段计数
+function updateFieldCount() {
+    const baseCount = 8; // 基础字段数量
+    const optionalCheckboxes = document.querySelectorAll('#field_selector_panel input[type="checkbox"]:not([disabled])');
+    const selectedOptional = Array.from(optionalCheckboxes).filter(cb => cb.checked).length;
+    const total = baseCount + selectedOptional;
+    
+    const countElement = document.getElementById('selected_fields_count');
+    if (countElement) {
+        countElement.textContent = total;
+        countElement.parentElement.innerHTML = `已选择 <strong id="selected_fields_count">${total}</strong> 个字段（基础${baseCount}个 + 可选${selectedOptional}个）`;
+    }
+}
+
+// 检查性能警告
+function checkPerformanceWarning() {
+    const expensiveFields = [
+        'field_family_applications',
+        'field_country_status',
+        'field_legal_events',
+        'field_description'
+    ];
+    
+    const selectedExpensive = expensiveFields.filter(fieldId => {
+        const checkbox = document.getElementById(fieldId);
+        return checkbox && checkbox.checked;
+    }).length;
+    
+    const warning = document.getElementById('field_selector_warning');
+    if (warning) {
+        warning.style.display = selectedExpensive >= 2 ? 'flex' : 'none';
+    }
+}
+
+// 获取选中的字段
+function getSelectedFields() {
+    const fields = {
+        // 基础字段（始终包含）
+        patent_number: true,
+        title: true,
+        abstract: true,
+        inventors: true,
+        assignees: true,
+        application_date: true,
+        publication_date: true,
+        claims: true,
+        
+        // 可选字段
+        classifications: document.getElementById('field_classifications')?.checked || false,
+        landscapes: document.getElementById('field_landscapes')?.checked || false,
+        priority_date: document.getElementById('field_priority_date')?.checked || false,
+        family_id: document.getElementById('field_family_id')?.checked || false,
+        family_applications: document.getElementById('field_family_applications')?.checked || false,
+        country_status: document.getElementById('field_country_status')?.checked || false,
+        patent_citations: document.getElementById('field_patent_citations')?.checked || false,
+        cited_by: document.getElementById('field_cited_by')?.checked || false,
+        legal_events: document.getElementById('field_legal_events')?.checked || false,
+        similar_documents: document.getElementById('field_similar_documents')?.checked || false,
+        description: document.getElementById('field_description')?.checked || false,
+        drawings: document.getElementById('field_drawings')?.checked || false,
+        external_links: document.getElementById('field_external_links')?.checked || false
+    };
+    
+    return fields;
+}
+
+// 初始化字段选择器
+document.addEventListener('DOMContentLoaded', function() {
+    // 绑定切换按钮
+    const toggleBtn = document.getElementById('toggle_field_selector_btn');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', toggleFieldSelectorPanel);
+    }
+    
+    // 初始化字段计数
+    updateFieldCount();
+    
+    // 初始化性能警告
+    checkPerformanceWarning();
+    
+    // 为所有字段选项添加checked类（如果已选中）
+    const checkboxes = document.querySelectorAll('#field_selector_panel input[type="checkbox"]');
+    checkboxes.forEach(cb => {
+        if (cb.checked) {
+            cb.closest('.field-option')?.classList.add('checked');
+        }
+    });
+});
