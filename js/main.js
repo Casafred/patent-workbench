@@ -958,35 +958,106 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     font-family: 'Noto Sans SC', Arial, sans-serif;
                     line-height: 1.6;
                     color: #333;
-                    background-color: #f5f5f5;
+                    background-color: #f0f8f0;
                     padding: 20px;
+                    margin: 0;
                 }
                 
                 .container {
-                    max-width: 1200px;
+                    max-width: 1400px;
                     margin: 0 auto;
-                    background-color: white;
+                    background-color: #ffffff;
                     padding: 30px;
                     border-radius: 8px;
                     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                    display: flex;
+                    min-height: 90vh;
+                }
+                
+                /* 侧边导航栏 */
+                .sidebar {
+                    width: 200px;
+                    background-color: #e8f5e8;
+                    border-radius: 6px;
+                    padding: 20px;
+                    margin-right: 30px;
+                    position: sticky;
+                    top: 20px;
+                    align-self: flex-start;
+                    max-height: 80vh;
+                    overflow-y: auto;
+                }
+                
+                .sidebar h3 {
+                    color: #2e7d32;
+                    margin-top: 0;
+                    margin-bottom: 15px;
+                    font-size: 16px;
+                    border-bottom: 2px solid #c8e6c8;
+                    padding-bottom: 8px;
+                }
+                
+                .nav-item {
+                    display: block;
+                    padding: 10px 15px;
+                    margin-bottom: 8px;
+                    background-color: #ffffff;
+                    color: #2e7d32;
+                    text-decoration: none;
+                    border-radius: 4px;
+                    transition: all 0.3s ease;
+                    border: 1px solid #c8e6c8;
+                }
+                
+                .nav-item:hover {
+                    background-color: #c8e6c8;
+                    transform: translateX(5px);
+                }
+                
+                .nav-item.active {
+                    background-color: #81c784;
+                    color: white;
+                }
+                
+                /* 主内容区域 */
+                .main-content {
+                    flex: 1;
                 }
                 
                 h1 {
-                    color: #1976d2;
+                    color: #2e7d32;
                     margin-bottom: 20px;
                     font-size: 24px;
                 }
                 
                 h2 {
-                    color: #333;
+                    color: #2e7d32;
                     margin: 25px 0 15px 0;
                     font-size: 18px;
-                    border-bottom: 2px solid #e0e0e0;
+                    border-bottom: 2px solid #c8e6c8;
                     padding-bottom: 8px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    cursor: pointer;
+                }
+                
+                h2:hover {
+                    background-color: #f1f8f1;
+                }
+                
+                h2 .toggle-btn {
+                    font-size: 12px;
+                    padding: 2px 8px;
+                    background-color: #c8e6c8;
+                    color: #2e7d32;
+                    border: none;
+                    border-radius: 3px;
+                    cursor: pointer;
                 }
                 
                 h3 {
-                    color: #666;
+                    color: #388e3c;
                     margin: 15px 0 10px 0;
                     font-size: 16px;
                 }
@@ -994,8 +1065,24 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 .section {
                     margin-bottom: 25px;
                     padding: 15px;
-                    background-color: #f9f9f9;
+                    background-color: #f1f8f1;
                     border-radius: 6px;
+                    border: 1px solid #c8e6c8;
+                }
+                
+                .section.collapsed {
+                    padding: 15px;
+                }
+                
+                .section-content {
+                    max-height: 2000px;
+                    overflow: hidden;
+                    transition: max-height 0.3s ease;
+                }
+                
+                .section.collapsed .section-content {
+                    max-height: 0;
+                    overflow: hidden;
                 }
                 
                 .info-item {
@@ -1004,7 +1091,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 
                 .info-label {
                     font-weight: bold;
-                    color: #555;
+                    color: #388e3c;
                     margin-right: 10px;
                 }
                 
@@ -1012,6 +1099,10 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     white-space: pre-wrap;
                     line-height: 1.8;
                     font-size: 14px;
+                    background-color: #ffffff;
+                    padding: 15px;
+                    border-radius: 4px;
+                    border: 1px solid #e8f5e8;
                 }
                 
                 .claims {
@@ -1021,36 +1112,42 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 .claim-item {
                     margin-bottom: 15px;
                     padding: 10px;
-                    background-color: #f0f8ff;
+                    background-color: #ffffff;
                     border-radius: 4px;
+                    border: 1px solid #e8f5e8;
                 }
                 
                 table {
                     width: 100%;
                     border-collapse: collapse;
                     margin: 15px 0;
+                    background-color: #ffffff;
+                    border: 1px solid #e8f5e8;
+                    border-radius: 4px;
+                    overflow: hidden;
                 }
                 
                 th, td {
                     padding: 10px;
                     text-align: left;
-                    border-bottom: 1px solid #ddd;
+                    border-bottom: 1px solid #e8f5e8;
                 }
                 
                 th {
-                    background-color: #f2f2f2;
+                    background-color: #e8f5e8;
                     font-weight: bold;
+                    color: #2e7d32;
                 }
                 
                 tr:hover {
-                    background-color: #f5f5f5;
+                    background-color: #f1f8f1;
                 }
                 
                 .back-button {
                     display: inline-block;
                     margin-bottom: 20px;
                     padding: 10px 20px;
-                    background-color: #1976d2;
+                    background-color: #4caf50;
                     color: white;
                     text-decoration: none;
                     border-radius: 4px;
@@ -1058,16 +1155,17 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 }
                 
                 .back-button:hover {
-                    background-color: #1565c0;
+                    background-color: #388e3c;
                 }
                 
                 .meta-info {
                     font-size: 14px;
-                    color: #666;
+                    color: #388e3c;
                     margin-bottom: 20px;
                     padding: 10px;
-                    background-color: #e3f2fd;
+                    background-color: #e8f5e8;
                     border-radius: 4px;
+                    border: 1px solid #c8e6c8;
                 }
             </style>
         </head>
@@ -1330,7 +1428,7 @@ function buildPatentDetailHTML(result) {
     const data = result.data;
     
     let htmlContent = `
-        <div class="patent-card-header" style="position: sticky; top: 0; z-index: 10; background-color: white; padding: 10px; border-bottom: 1px solid #e0e0e0; margin: -10px -10px 15px -10px;">
+        <div class="patent-card-header" style="position: sticky; top: 0; z-index: 10; background-color: white; padding: 10px; border-bottom: 1px solid #e0e0e0; margin: -20px -20px 15px -20px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div style="flex: 1;">
                     <div style="font-size: 0.9em; color: #666;">
@@ -1363,7 +1461,7 @@ function buildPatentDetailHTML(result) {
                         新标签页
                     </button>
                     <!-- 问一问按钮（仅图标） -->
-                    <button class="small-button" onclick="openPatentChat('${result.patent_number}')" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 50%;">
+                    <button class="small-button" onclick="openPatentChat('${result.patent_number}')" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 50%; border: none; background-color: #e8f5e8; color: #2e7d32;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
                             <path d="M2.678 11.894a1 1 0 0 1 .287.801 10.97 10.97 0 0 1-.398 2c1.395-.323 2.247-.697 2.634-.893a1 1 0 0 1 .71-.074A8.06 8.06 0 0 0 8 14c3.996 0 7-2.807 7-6 0-3.192-3.004-6-7-6S1 4.808 1 8c0 1.468.617 2.83 1.678 3.894zm-.493 3.905a21.682 21.682 0 0 1-.713.129c-.2.032-.352-.176-.273-.362a9.68 9.68 0 0 0 .244-.637l.003-.01c.248-.72.45-1.548.524-2.319C.743 11.37 0 9.76 0 8c0-3.866 3.582-7 8-7s8 3.134 8-7s-3.582-7-8-7a9.06 9.06 0 0 1-2.347-.306c-.52.263-1.639.742-3.468 1.105z"/>
                         </svg>
