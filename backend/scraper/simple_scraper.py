@@ -33,6 +33,14 @@ class SimplePatentData:
     cited_by: List[Dict[str, str]] = None  # 被引用的专利
     legal_events: List[Dict[str, str]] = None  # 法律事件
     similar_documents: List[Dict[str, str]] = None  # 相似文档
+    # 新增字段
+    classifications: List[Dict[str, str]] = None  # CPC分类信息
+    landscapes: List[Dict[str, str]] = None  # 技术领域
+    family_id: str = ""  # 同族ID
+    family_applications: List[Dict[str, str]] = None  # 同族申请
+    country_status: List[Dict[str, str]] = None  # 国家状态
+    priority_date: str = ""  # 优先权日期
+    external_links: Dict[str, str] = None  # 外部链接
     
     def __post_init__(self):
         if self.inventors is None:
@@ -51,6 +59,16 @@ class SimplePatentData:
             self.legal_events = []
         if self.similar_documents is None:
             self.similar_documents = []
+        if self.classifications is None:
+            self.classifications = []
+        if self.landscapes is None:
+            self.landscapes = []
+        if self.family_applications is None:
+            self.family_applications = []
+        if self.country_status is None:
+            self.country_status = []
+        if self.external_links is None:
+            self.external_links = {}
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
@@ -786,6 +804,330 @@ class SimplePatentScraper:
             except Exception as e:
                 logger.warning(f"Error extracting similar documents for {patent_number}: {e}")
                 patent_data.similar_documents = []
+        
+        # Extract CPC Classifications (CPC分类信息) - 始终提取
+        try:
+            classifications = []
+            
+            # 查找分类部分
+            classifications_section = soup.find('section')
+            if classifications_section:
+                # 查找所有带有itemprop='classifications'的ul元素
+                classification_lists = soup.find_all('ul', {'itemprop': 'classifications'})
+                
+                for ul in classification_lists:
+                    # 每个ul代表一个完整的分类路径
+                    classification_items = ul.find_all('li', {'itemprop': 'classifications'})
+                    
+                    if classification_items:
+                        # 构建完整的分类路径
+                        codes = []
+                        descriptions = []
+                        is_cpc = False
+                        is_leaf = False
+                        
+                        for item in classification_items:
+                            code_elem = item.find('span', {'itemprop': 'Code'})
+                            desc_elem = item.find('span', {'itemprop': 'Description'})
+                            
+                            if code_elem:
+                                codes.append(code_elem.get_text().strip())
+                            if desc_elem:
+                                descriptions.append(desc_elem.get_text().strip())
+                            
+                            # 检查是否为CPC分类
+                            is_cpc_meta = item.find('meta', {'itemprop': 'IsCPC'})
+                            if is_cpc_meta and is_cpc_meta.get('content') == 'true':
+                                is_cpc = True
+                            
+                            # 检查是否为叶子节点
+                            is_leaf_meta = item.find('meta', {'itemprop': 'Leaf'})
+                            if is_leaf_meta and is_leaf_meta.get('content') == 'true':
+                                is_leaf = True
+                        
+                        if codes:
+                            classifications.append({
+                                'code': ' → '.join(codes),  # 完整分类路径
+                                'description': ' → '.join(descriptions),
+                                'leaf_code': codes[-1] if codes else '',  # 最终分类代码
+                                'leaf_description': descriptions[-1] if descriptions else '',
+                                'is_cpc': is_cpc,
+                                'is_leaf': is_leaf
+                            })
+            
+            patent_data.classifications = classifications[:20]  # 限制前20条
+            logger.info(f"提取到 {len(classifications)} 个分类信息")
+        except Exception as e:
+            logger.warning(f"Error extracting classifications for {patent_number}: {e}")
+            patent_data.classifications = []
+        
+        # Extract Landscapes (技术领域) - 始终提取
+        try:
+            landscapes = []
+            
+            # 查找技术领域部分
+            landscapes_section = None
+            for section in soup.find_all('section'):
+                h2 = section.find('h2')
+                if h2 and 'Landscapes' in h2.get_text():
+                    landscapes_section = section
+                    break
+            
+            if landscapes_section:
+                landscape_items = landscapes_section.find_all('li', {'itemprop': 'landscapes'})
+                
+                for item in landscape_items:
+                    name_elem = item.find('span', {'itemprop': 'name'})
+                    type_elem = item.find('span', {'itemprop': 'type'})
+                    
+                    if name_elem:
+                        landscapes.append({
+                            'name': name_elem.get_text().strip(),
+                            'type': type_elem.get_text().strip() if type_elem else ''
+                        })
+            
+            patent_data.landscapes = landscapes
+            logger.info(f"提取到 {len(landscapes)} 个技术领域")
+        except Exception as e:
+            logger.warning(f"Error extracting landscapes for {patent_number}: {e}")
+            patent_data.landscapes = []
+        
+        # Extract Priority Date (优先权日期) - 始终提取
+        try:
+            if not patent_data.priority_date:
+                priority_date_elem = soup.find('time', {'itemprop': 'priorityDate'})
+                if priority_date_elem:
+                    patent_data.priority_date = priority_date_elem.get('datetime', '') or priority_date_elem.get_text().strip()
+                    logger.info(f"提取到优先权日期: {patent_data.priority_date}")
+        except Exception as e:
+            logger.warning(f"Error extracting priority date for {patent_number}: {e}")
+        
+        # Extract External Links (外部链接) - 始终提取
+        try:
+            external_links = {}
+            
+            # 方法1: 直接查找所有带有itemprop='links'的li元素
+            link_items = soup.find_all('li', {'itemprop': 'links'})
+            
+            if link_items:
+                for item in link_items:
+                    id_elem = item.find('meta', {'itemprop': 'id'})
+                    url_elem = item.find('a', {'itemprop': 'url'})
+                    text_elem = item.find('span', {'itemprop': 'text'})
+                    
+                    if id_elem and url_elem:
+                        link_id = id_elem.get('content', '')
+                        link_url = url_elem.get('href', '')
+                        link_text = text_elem.get_text().strip() if text_elem else link_id
+                        
+                        if link_id and link_url:
+                            external_links[link_id] = {
+                                'text': link_text,
+                                'url': link_url
+                            }
+            else:
+                # 方法2: 查找Links标题后的ul
+                for h2 in soup.find_all('h2'):
+                    if 'Links' in h2.get_text():
+                        links_ul = h2.find_next('ul')
+                        if links_ul:
+                            link_items = links_ul.find_all('li')
+                            for item in link_items:
+                                id_elem = item.find('meta', {'itemprop': 'id'})
+                                url_elem = item.find('a')
+                                text_elem = item.find('span', {'itemprop': 'text'})
+                                
+                                if id_elem and url_elem:
+                                    link_id = id_elem.get('content', '')
+                                    link_url = url_elem.get('href', '')
+                                    link_text = text_elem.get_text().strip() if text_elem else link_id
+                                    
+                                    if link_id and link_url:
+                                        external_links[link_id] = {
+                                            'text': link_text,
+                                            'url': link_url
+                                        }
+                        break
+            
+            patent_data.external_links = external_links
+            logger.info(f"提取到 {len(external_links)} 个外部链接")
+        except Exception as e:
+            logger.warning(f"Error extracting external links for {patent_number}: {e}")
+            patent_data.external_links = {}
+        
+        # Extract Family Information (同族信息) - 当crawl_specification=True时提取
+        if crawl_specification:
+            try:
+                # Extract Family ID
+                family_section = soup.find('section', {'itemprop': 'family'})
+                if family_section:
+                    # 提取Family ID
+                    family_id_h2 = None
+                    for h2 in family_section.find_all('h2'):
+                        if 'ID=' in h2.get_text():
+                            family_id_text = h2.get_text().strip()
+                            patent_data.family_id = family_id_text.replace('ID=', '').strip()
+                            logger.info(f"提取到同族ID: {patent_data.family_id}")
+                            break
+                    
+                    # Extract Family Applications (同族申请)
+                    family_applications = []
+                    
+                    # 查找Family Applications表格
+                    family_apps_h2 = None
+                    for h2 in family_section.find_all('h2'):
+                        if 'Family Applications' in h2.get_text():
+                            family_apps_h2 = h2
+                            break
+                    
+                    if family_apps_h2:
+                        family_table = family_apps_h2.find_next('table')
+                        if family_table:
+                            rows = family_table.find_all('tr', {'itemprop': 'applications'})
+                            
+                            for row in rows:
+                                try:
+                                    app_num_elem = row.find('span', {'itemprop': 'applicationNumber'})
+                                    status_elem = row.find('span', {'itemprop': 'ifiStatus'})
+                                    expiration_elem = row.find('span', {'itemprop': 'ifiExpiration'})
+                                    pub_num_elem = row.find('span', {'itemprop': 'representativePublication'})
+                                    lang_elem = row.find('span', {'itemprop': 'primaryLanguage'})
+                                    
+                                    # 提取日期
+                                    priority_date_td = row.find('td', {'itemprop': 'priorityDate'})
+                                    filing_date_td = row.find('td', {'itemprop': 'filingDate'})
+                                    title_td = row.find('td', {'itemprop': 'title'})
+                                    
+                                    # 提取链接
+                                    link_elem = row.find('a')
+                                    
+                                    if app_num_elem:
+                                        family_applications.append({
+                                            'application_number': app_num_elem.get_text().strip(),
+                                            'status': status_elem.get_text().strip() if status_elem else '',
+                                            'expiration': expiration_elem.get_text().strip() if expiration_elem else '',
+                                            'publication_number': pub_num_elem.get_text().strip() if pub_num_elem else '',
+                                            'language': lang_elem.get_text().strip() if lang_elem else '',
+                                            'priority_date': priority_date_td.get_text().strip() if priority_date_td else '',
+                                            'filing_date': filing_date_td.get_text().strip() if filing_date_td else '',
+                                            'title': title_td.get_text().strip() if title_td else '',
+                                            'link': f"https://patents.google.com{link_elem.get('href')}" if link_elem and link_elem.get('href', '').startswith('/') else (link_elem.get('href', '') if link_elem else '')
+                                        })
+                                except Exception as e:
+                                    logger.warning(f"Error parsing family application row: {e}")
+                                    continue
+                    
+                    patent_data.family_applications = family_applications[:20]  # 限制前20条
+                    logger.info(f"提取到 {len(family_applications)} 个同族申请")
+                    
+                    # Extract Country Status (国家状态)
+                    country_status = []
+                    
+                    # 查找Country Status表格
+                    country_status_h2 = None
+                    for h2 in family_section.find_all('h2'):
+                        if 'Country Status' in h2.get_text():
+                            country_status_h2 = h2
+                            break
+                    
+                    if country_status_h2:
+                        country_table = country_status_h2.find_next('table')
+                        if country_table:
+                            rows = country_table.find_all('tr', {'itemprop': 'countryStatus'})
+                            
+                            for row in rows:
+                                try:
+                                    country_code_elem = row.find('span', {'itemprop': 'countryCode'})
+                                    num_elem = row.find('span', {'itemprop': 'num'})
+                                    pub_num_elem = row.find('span', {'itemprop': 'representativePublication'})
+                                    lang_elem = row.find('span', {'itemprop': 'primaryLanguage'})
+                                    this_country_elem = row.find('meta', {'itemprop': 'thisCountry'})
+                                    
+                                    # 提取链接
+                                    link_elem = row.find('a')
+                                    
+                                    if country_code_elem:
+                                        country_status.append({
+                                            'country_code': country_code_elem.get_text().strip(),
+                                            'count': num_elem.get_text().strip() if num_elem else '1',
+                                            'publication_number': pub_num_elem.get_text().strip() if pub_num_elem else '',
+                                            'language': lang_elem.get_text().strip() if lang_elem else '',
+                                            'is_this_country': this_country_elem.get('content') == 'true' if this_country_elem else False,
+                                            'link': f"https://patents.google.com{link_elem.get('href')}" if link_elem and link_elem.get('href', '').startswith('/') else (link_elem.get('href', '') if link_elem else '')
+                                        })
+                                except Exception as e:
+                                    logger.warning(f"Error parsing country status row: {e}")
+                                    continue
+                    
+                    patent_data.country_status = country_status
+                    logger.info(f"提取到 {len(country_status)} 个国家状态")
+                    
+            except Exception as e:
+                logger.warning(f"Error extracting family information for {patent_number}: {e}")
+                patent_data.family_applications = []
+                patent_data.country_status = []
+        
+        # Improve Cited By extraction (改进被引用专利提取)
+        if crawl_specification:
+            try:
+                cited_by = []
+                
+                # 方法1: 查找Family section中的"Families Citing this family"
+                family_section = soup.find('section', {'itemprop': 'family'})
+                if family_section:
+                    families_citing_h2 = None
+                    for h2 in family_section.find_all('h2'):
+                        if 'Families Citing this family' in h2.get_text():
+                            families_citing_h2 = h2
+                            break
+                    
+                    if families_citing_h2:
+                        citing_table = families_citing_h2.find_next('table')
+                        if citing_table:
+                            rows = citing_table.find_all('tr', {'itemprop': 'forwardReferencesFamily'})
+                            
+                            for row in rows:
+                                try:
+                                    pub_num_elem = row.find('span', {'itemprop': 'publicationNumber'})
+                                    lang_elem = row.find('span', {'itemprop': 'primaryLanguage'})
+                                    examiner_cited_elem = row.find('span', {'itemprop': 'examinerCited'})
+                                    
+                                    # 提取日期
+                                    priority_date_td = row.find('td', {'itemprop': 'priorityDate'})
+                                    pub_date_td = row.find('td', {'itemprop': 'publicationDate'})
+                                    
+                                    # 提取申请人
+                                    assignee_elem = row.find('span', {'itemprop': 'assigneeOriginal'})
+                                    
+                                    # 提取标题
+                                    title_td = row.find('td', {'itemprop': 'title'})
+                                    
+                                    # 提取链接
+                                    link_elem = row.find('a')
+                                    
+                                    if pub_num_elem:
+                                        cited_by.append({
+                                            'patent_number': pub_num_elem.get_text().strip(),
+                                            'language': lang_elem.get_text().strip() if lang_elem else '',
+                                            'examiner_cited': '*' in examiner_cited_elem.get_text() if examiner_cited_elem else False,
+                                            'priority_date': priority_date_td.get_text().strip() if priority_date_td else '',
+                                            'publication_date': pub_date_td.get_text().strip() if pub_date_td else '',
+                                            'assignee': assignee_elem.get_text().strip() if assignee_elem else '',
+                                            'title': title_td.get_text().strip() if title_td else '',
+                                            'link': f"https://patents.google.com{link_elem.get('href')}" if link_elem and link_elem.get('href', '').startswith('/') else (link_elem.get('href', '') if link_elem else '')
+                                        })
+                                except Exception as e:
+                                    logger.warning(f"Error parsing cited by row: {e}")
+                                    continue
+                
+                # 如果找到了数据，更新patent_data
+                if cited_by:
+                    patent_data.cited_by = cited_by[:20]  # 限制前20条
+                    logger.info(f"提取到 {len(cited_by)} 个被引用专利")
+                else:
+                    logger.info(f"⚠️ Cited by data not found (likely requires JavaScript rendering)")
+            except Exception as e:
+                logger.warning(f"Error extracting cited by for {patent_number}: {e}")
         
         return patent_data
     

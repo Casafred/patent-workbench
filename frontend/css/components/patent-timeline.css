@@ -1,0 +1,176 @@
+/* 专利事件时间轴样式 */
+
+.patent-timeline-container {
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+.patent-timeline {
+    position: relative;
+    padding: 20px 0;
+    margin: 0 auto;
+    max-width: 800px;
+}
+
+/* 时间轴主线 */
+.patent-timeline::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(to bottom, #4a6cf7, #8b9dc3);
+    transform: translateX(-50%);
+}
+
+/* 时间轴事件项 */
+.timeline-event {
+    position: relative;
+    margin-bottom: 40px;
+    display: flex;
+    align-items: center;
+}
+
+/* 左侧事件（偶数） */
+.timeline-event:nth-child(even) {
+    flex-direction: row-reverse;
+}
+
+/* 事件内容卡片 */
+.timeline-event-content {
+    width: 45%;
+    padding: 16px 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.timeline-event-content:hover {
+    box-shadow: 0 4px 16px rgba(74, 108, 247, 0.2);
+    transform: translateY(-2px);
+}
+
+/* 事件日期 */
+.timeline-event-date {
+    font-size: 14px;
+    font-weight: 600;
+    color: #4a6cf7;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.timeline-event-date svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* 事件标题 */
+.timeline-event-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 6px;
+}
+
+/* 事件代码 */
+.timeline-event-code {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #e3f2fd;
+    color: #1976d2;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+/* 事件描述 */
+.timeline-event-description {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.6;
+}
+
+/* 时间轴节点 */
+.timeline-event-node {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 16px;
+    height: 16px;
+    background: white;
+    border: 3px solid #4a6cf7;
+    border-radius: 50%;
+    z-index: 2;
+    transition: all 0.3s ease;
+}
+
+.timeline-event:hover .timeline-event-node {
+    width: 20px;
+    height: 20px;
+    border-width: 4px;
+    box-shadow: 0 0 0 4px rgba(74, 108, 247, 0.2);
+}
+
+/* 特殊事件节点 */
+.timeline-event.critical .timeline-event-node {
+    background: #4a6cf7;
+    border-color: #4a6cf7;
+}
+
+.timeline-event.critical .timeline-event-code {
+    background: #4a6cf7;
+    color: white;
+}
+
+/* 连接线 */
+.timeline-event-connector {
+    position: absolute;
+    left: 50%;
+    width: 50px;
+    height: 2px;
+    background: #4a6cf7;
+}
+
+.timeline-event:nth-child(odd) .timeline-event-connector {
+    right: 50%;
+    transform: translateX(8px);
+}
+
+.timeline-event:nth-child(even) .timeline-event-connector {
+    left: 50%;
+    transform: translateX(-8px);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .patent-timeline::before {
+        left: 20px;
+    }
+    
+    .timeline-event {
+        flex-direction: row !important;
+        padding-left: 50px;
+    }
+    
+    .timeline-event-content {
+        width: 100%;
+    }
+    
+    .timeline-event-node {
+        left: 20px;
+    }
+    
+    .timeline-event-connector {
+        left: 20px;
+        width: 30px;
+        transform: translateX(8px) !important;
+    }
+}

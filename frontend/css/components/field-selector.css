@@ -1,0 +1,218 @@
+/* 字段选择器样式 */
+
+.field-selector-container {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 16px 0;
+}
+
+.field-selector-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.field-selector-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.field-selector-title svg {
+    width: 16px;
+    height: 16px;
+    color: #4a6cf7;
+}
+
+.field-selector-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.field-selector-btn {
+    padding: 4px 12px;
+    font-size: 12px;
+    border: 1px solid #e0e0e0;
+    background: white;
+    color: #666;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.field-selector-btn:hover {
+    background: #f5f5f5;
+    border-color: #4a6cf7;
+    color: #4a6cf7;
+}
+
+/* 字段分组 */
+.field-group {
+    margin-bottom: 16px;
+}
+
+.field-group:last-child {
+    margin-bottom: 0;
+}
+
+.field-group-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.field-group-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    background: #e3f2fd;
+    color: #1976d2;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.field-group-badge.required {
+    background: #fce4ec;
+    color: #c2185b;
+}
+
+/* 字段选项网格 */
+.field-options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px;
+}
+
+/* 字段选项 */
+.field-option {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.field-option:hover {
+    background: #e3f2fd;
+    border-color: #4a6cf7;
+}
+
+.field-option.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #f5f5f5;
+}
+
+.field-option.disabled:hover {
+    background: #f5f5f5;
+    border-color: #e0e0e0;
+}
+
+.field-option input[type="checkbox"] {
+    margin-right: 8px;
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+    accent-color: #4a6cf7;
+}
+
+.field-option.disabled input[type="checkbox"] {
+    cursor: not-allowed;
+}
+
+.field-option-label {
+    flex: 1;
+    font-size: 13px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.field-option-icon {
+    width: 14px;
+    height: 14px;
+    color: #666;
+}
+
+.field-option-info {
+    color: #999;
+    font-size: 11px;
+    margin-left: auto;
+}
+
+/* 选中状态 */
+.field-option.checked {
+    background: #e3f2fd;
+    border-color: #4a6cf7;
+}
+
+.field-option.checked .field-option-label {
+    color: #1976d2;
+    font-weight: 500;
+}
+
+/* 统计信息 */
+.field-selector-stats {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #666;
+}
+
+.field-selector-count {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.field-selector-count strong {
+    color: #4a6cf7;
+    font-size: 14px;
+}
+
+.field-selector-warning {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #856404;
+    margin-top: 8px;
+}
+
+.field-selector-warning svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .field-options-grid {
+        grid-template-columns: 1fr;
+    }
+}
