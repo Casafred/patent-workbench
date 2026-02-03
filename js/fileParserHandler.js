@@ -12,6 +12,7 @@ class FileParserHandler {
         
         // Supported file types and their MIME types
         this.supportedTypes = {
+            // 文档格式
             'application/pdf': { ext: 'PDF', maxSize: 100 * 1024 * 1024 },
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document': { ext: 'DOCX', maxSize: 50 * 1024 * 1024 },
             'application/msword': { ext: 'DOC', maxSize: 50 * 1024 * 1024 },
@@ -19,11 +20,22 @@ class FileParserHandler {
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': { ext: 'XLSX', maxSize: 10 * 1024 * 1024 },
             'application/vnd.ms-powerpoint': { ext: 'PPT', maxSize: 50 * 1024 * 1024 },
             'application/vnd.openxmlformats-officedocument.presentationml.presentation': { ext: 'PPTX', maxSize: 50 * 1024 * 1024 },
-            'image/png': { ext: 'PNG', maxSize: 20 * 1024 * 1024 },
-            'image/jpeg': { ext: 'JPG', maxSize: 20 * 1024 * 1024 },
             'text/plain': { ext: 'TXT', maxSize: 50 * 1024 * 1024 },
             'text/markdown': { ext: 'MD', maxSize: 50 * 1024 * 1024 },
-            'text/csv': { ext: 'CSV', maxSize: 10 * 1024 * 1024 }
+            'text/csv': { ext: 'CSV', maxSize: 10 * 1024 * 1024 },
+            'text/html': { ext: 'HTML', maxSize: 50 * 1024 * 1024 },
+            'application/epub+zip': { ext: 'EPUB', maxSize: 50 * 1024 * 1024 },
+            // 图片格式
+            'image/png': { ext: 'PNG', maxSize: 20 * 1024 * 1024 },
+            'image/jpeg': { ext: 'JPG', maxSize: 20 * 1024 * 1024 },
+            'image/bmp': { ext: 'BMP', maxSize: 20 * 1024 * 1024 },
+            'image/gif': { ext: 'GIF', maxSize: 20 * 1024 * 1024 },
+            'image/webp': { ext: 'WEBP', maxSize: 20 * 1024 * 1024 },
+            'image/heic': { ext: 'HEIC', maxSize: 20 * 1024 * 1024 },
+            'application/postscript': { ext: 'EPS', maxSize: 20 * 1024 * 1024 },
+            'image/tiff': { ext: 'TIFF', maxSize: 20 * 1024 * 1024 },
+            'image/heif': { ext: 'HEIF', maxSize: 20 * 1024 * 1024 },
+            'image/jp2': { ext: 'JP2', maxSize: 20 * 1024 * 1024 }
         };
     }
     
@@ -69,13 +81,49 @@ class FileParserHandler {
         formData.append('file', file);
         formData.append('tool_type', toolType);
         
-        const response = await apiCall('/files/parser/create', formData, 'POST');
-        
-        if (!response || !response.data || !response.data.task_id) {
-            throw new Error('Failed to create parsing task');
+        try {
+            // apiCall 已经解包了 response.data，所以直接使用返回值
+            const data = await apiCall('/files/parser/create', formData, 'POST');
+            
+            if (!data || !data.task_id) {
+                console.error('Invalid response from parser API:', data);
+                throw new Error('服务器返回无效响应，请稍后重试');
+            }
+            
+            return data;
+        } catch (error) {
+            console.error('Create parser task error:', error);
+            
+            // 提取详细的错误信息
+            let errorMessage = '创建解析任务失败';
+            
+            if (error.message) {
+                // 如果错误消息已经是中文的详细信息，直接使用
+                if (error.message.includes('API调用失败') || 
+                    error.message.includes('创建解析任务失败') ||
+                    error.message.includes('不支持的文件类型') ||
+                    error.message.includes('文件大小超过限制')) {
+                    errorMessage = error.message;
+                }
+                // 处理特定的英文错误
+                else if (error.message.includes('API key')) {
+                    errorMessage = 'API Key配置错误，请检查设置';
+                } else if (error.message.includes('Unsupported file type')) {
+                    errorMessage = '不支持的文件类型';
+                } else if (error.message.includes('exceeds limit')) {
+                    errorMessage = '文件大小超过限制';
+                } else if (error.message.includes('timeout')) {
+                    errorMessage = '请求超时，请检查网络连接';
+                } else if (error.message.includes('network') || error.message.includes('fetch')) {
+                    errorMessage = '网络错误，请检查连接';
+                } else {
+                    // 其他错误，显示原始消息
+                    errorMessage = `创建解析任务失败: ${error.message}`;
+                }
+            }
+            
+            throw new Error(errorMessage);
         }
-        
-        return response.data;
     }
     
     /**
@@ -86,22 +134,21 @@ class FileParserHandler {
      */
     async pollParserResult(taskId, maxAttempts = 30) {
         for (let i = 0; i < maxAttempts; i++) {
-            const response = await apiCall(
+            // apiCall 已经解包了 response.data，所以直接使用返回值
+            const data = await apiCall(
                 `/files/parser/result/${taskId}?format_type=text&poll=false`,
                 undefined,
                 'GET'
             );
             
-            if (!response || !response.data) {
+            if (!data) {
                 throw new Error('Failed to get parsing result');
             }
             
-            const result = response.data;
-            
-            if (result.status === 'succeeded') {
-                return result;
-            } else if (result.status === 'failed') {
-                throw new Error(result.error || 'Parsing failed');
+            if (data.status === 'succeeded') {
+                return data;
+            } else if (data.status === 'failed') {
+                throw new Error(data.error || 'Parsing failed');
             }
             
             // Update progress
