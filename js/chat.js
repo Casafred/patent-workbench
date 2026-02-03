@@ -33,46 +33,61 @@ async function handleChatFileUpload(event, fileFromReuse = null) {
         return;
     }
 
-    // 【新增】添加文件处理状态标志
-    appState.chat.fileProcessing = true;
-    chatUploadFileBtn.disabled = true;
-
-    // 根据文件类型自动选择服务
-    const fileType = file.type;
-    let toolType = 'lite'; // 默认Lite
-    if (fileType === 'application/pdf') {
-        toolType = 'lite'; // PDF默认Lite
-    } else if (fileType.includes('image')) {
-        toolType = 'prime'; // 图片推荐Prime
-    } else if (fileType.includes('officedocument') || fileType.includes('msword') || fileType.includes('ms-excel') || fileType.includes('ms-powerpoint')) {
-        toolType = 'prime'; // Office文档推荐Prime
-    }
-
-    try {
-        // 使用新的 FileParserHandler 自动上传
-        const parser = new FileParserHandler();
-        const result = await parser.handleFileUpload(file, toolType);
-        
-        // 存储解析结果
-        appState.chat.activeFile = {
-            taskId: result.task_id,
-            filename: file.name,
-            content: result.content,
-            toolType: toolType
-        };
-        
-        chatInput.focus();
-    } catch (error) {
-        alert(`文件解析失败: ${error.message}`);
-        removeActiveFile(); 
-    } finally {
-        // 【修改】无论成功失败，都更新文件处理状态
-        appState.chat.fileProcessing = false;
-        chatUploadFileBtn.disabled = false;
-        if (event && event.target) {
-            event.target.value = ''; 
+    // 保存待上传的文件和事件
+    appState.chat.pendingFile = file;
+    appState.chat.pendingFileEvent = event;
+    
+    // 根据文件类型推荐服务
+    const fileType = file.type || '';
+    let recommendedService = 'lite'; // 默认Lite
+    
+    // 如果没有type，尝试从文件名推断
+    if (!fileType && file.name) {
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (ext === 'pdf') {
+            recommendedService = 'lite';
+        } else if (['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'heic'].includes(ext)) {
+            recommendedService = 'prime';
+        } else if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext)) {
+            recommendedService = 'prime';
+        }
+    } else {
+        // 有type的情况，按原逻辑处理
+        if (fileType === 'application/pdf') {
+            recommendedService = 'lite';
+        } else if (fileType.includes('image')) {
+            recommendedService = 'prime';
+        } else if (fileType.includes('officedocument') || fileType.includes('msword') || fileType.includes('ms-excel') || fileType.includes('ms-powerpoint')) {
+            recommendedService = 'prime';
         }
     }
+    
+    // 设置推荐的服务
+    const parserServiceSelect = document.getElementById('chat_parser_service_select');
+    parserServiceSelect.value = recommendedService;
+    updateParserServiceDescription();
+    
+    // 显示服务选择器
+    const parserServiceSelector = document.getElementById('chat_parser_service_selector');
+    parserServiceSelector.style.display = 'block';
+    
+    // 显示文件信息
+    const chatFileStatusArea = document.getElementById('chat_file_status_area');
+    chatFileStatusArea.style.display = 'flex';
+    chatFileStatusArea.innerHTML = `
+        <div class="file-info">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 8px; color: var(--primary-color);">
+                <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z"/>
+            </svg>
+            <span>已选择文件:</span>
+            <span class="filename" title="${file.name}">${file.name}</span>
+            <span style="margin-left: 8px; color: #666; font-size: 0.9em;">(${(file.size / 1024).toFixed(1)} KB)</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <button class="small-button" onclick="startFileUpload()" title="开始上传">上传</button>
+            <button class="file-remove-btn" onclick="cancelFileUpload()" title="取消">&times;</button>
+        </div>
+    `;
 }
 
 // 开始文件上传（用户选择服务后）
