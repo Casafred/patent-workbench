@@ -1,0 +1,85 @@
+fix: 修复发明人提取和时间线字段
+
+🐛 问题修复:
+1. ✅ 发明人提取不完整
+   - 之前：只提取第一个发明人
+   - 现在：提取所有发明人（从meta标签）
+   - 方法：查找所有 <meta name="DC.contributor" scheme="inventor">
+
+2. ✅ 时间线字段错误
+   - 之前：查找 legalEvents（旧格式）
+   - 现在：查找 events（新格式）
+   - 支持：<dd itemprop="events"> 格式
+
+🔧 技术实现:
+
+### 发明人提取（多策略）
+方法1（优先）：从meta标签提取
+```python
+meta_inventors = soup.find_all('meta', {
+    'name': 'DC.contributor', 
+    'scheme': 'inventor'
+})
+```
+
+方法2（备用）：从dd标签提取
+```python
+inventor_section = soup.find('dd', {'itemprop': 'inventor'})
+```
+
+### 时间线提取（多策略）
+方法1（优先）：从events提取（新格式）
+```python
+event_elements = soup.find_all('dd', {'itemprop': 'events'})
+```
+提取字段：
+- date (datetime)
+- title
+- type (publication/granted/legal-status)
+- critical (是否关键事件)
+- current (是否当前状态)
+- documentId
+
+方法2（备用）：从legalEvents提取（旧格式）
+```python
+legal_event_rows = soup.find_all('tr', {'itemprop': 'legalEvents'})
+```
+
+方法3（最后备用）：从h2标题查找
+
+📊 数据结构:
+
+### 时间线事件
+```python
+{
+    'date': '2024-01-10',
+    'title': 'Publication of EP4302926A2',
+    'type': 'publication',
+    'is_critical': True,
+    'is_current': False,
+    'document_id': 'patent/EP4302926A2/en',
+    'description': 'Publication of EP4302926A2 (publication)'
+}
+```
+
+### 关键事件标识
+- is_critical: True - 实心蓝色节点
+- is_critical: False - 空心节点
+- is_current: True - 当前状态（特殊标记）
+
+🎯 改进效果:
+- ✅ 发明人：支持多个发明人提取
+- ✅ 时间线：支持新格式events
+- ✅ 兼容性：保留旧格式legalEvents支持
+- ✅ 日志：添加详细的提取日志
+
+📝 测试建议:
+测试专利号：
+- EP4302926B1 (欧洲专利，有events)
+- US10000000B2 (美国专利)
+- CN104154208B (中国专利)
+
+影响范围:
+- backend/scraper/simple_scraper.py
+- 发明人提取逻辑
+- 时间线提取逻辑

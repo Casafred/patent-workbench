@@ -986,18 +986,6 @@
                     </select>
                 </div>
                 
-                <!-- 获取说明书 -->
-                <div class="config-item-compact">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="crawl_specification_checkbox">
-                        <span>获取说明书</span>
-                    </label>
-                    <div class="info-hint">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                        勾选后会爬取说明书内容，解读更全面但耗时更长
-                    </div>
-                </div>
-                
                 <!-- 字段选择器 -->
                 <div class="config-item-compact">
                     <button id="toggle_field_selector_btn" class="small-button" style="width: 100%;">
@@ -1160,10 +1148,10 @@
                 </div>
                 <div class="field-options-grid">
                     <div class="field-option" onclick="toggleFieldOption(this)">
-                        <input type="checkbox" id="field_legal_events">
+                        <input type="checkbox" id="field_legal_events" checked>
                         <span class="field-option-label">
-                            法律事件
-                            <span class="field-option-info">耗时</span>
+                            事件时间轴
+                            <span class="field-option-info">推荐</span>
                         </span>
                     </div>
                     <div class="field-option" onclick="toggleFieldOption(this)">
@@ -1595,6 +1583,8 @@
 <script src="../js/patentTemplate.js"></script>
 <script src="../js/patentChat.js"></script>
 <script src="../js/main.js?v=20260127"></script>
+<!-- 功能六：新标签页打开专利详情 - 全新现代化设计 -->
+<script src="../js/patentDetailNewTab.js?v=20260203"></script>
 
 <!-- 新增：专利附图弹窗组件 -->
 <div id="drawings_modal" class="modal" style="display: none;">
