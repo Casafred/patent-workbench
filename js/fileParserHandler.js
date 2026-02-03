@@ -132,33 +132,54 @@ class FileParserHandler {
      * @param {number} maxAttempts - Maximum polling attempts
      * @returns {Promise<Object>} Parsing result
      */
-    async pollParserResult(taskId, maxAttempts = 30) {
+    async pollParserResult(taskId, maxAttempts = 60) {
+        let consecutiveErrors = 0;
+        const maxConsecutiveErrors = 3;
+        
         for (let i = 0; i < maxAttempts; i++) {
-            // apiCall 已经解包了 response.data，所以直接使用返回值
-            const data = await apiCall(
-                `/files/parser/result/${taskId}?format_type=text&poll=false`,
-                undefined,
-                'GET'
-            );
-            
-            if (!data) {
-                throw new Error('Failed to get parsing result');
+            try {
+                // apiCall 已经解包了 response.data，所以直接使用返回值
+                const data = await apiCall(
+                    `/files/parser/result/${taskId}?format_type=text&poll=false`,
+                    undefined,
+                    'GET'
+                );
+                
+                // 重置连续错误计数
+                consecutiveErrors = 0;
+                
+                if (!data) {
+                    throw new Error('服务器返回空响应');
+                }
+                
+                if (data.status === 'succeeded') {
+                    return data;
+                } else if (data.status === 'failed') {
+                    throw new Error(data.message || data.error || '解析失败');
+                }
+                
+                // Update progress
+                this.updateProgress(i + 1, maxAttempts);
+                
+                // Wait 3 seconds before next poll (增加间隔，减少服务器压力)
+                await this.sleep(3000);
+                
+            } catch (error) {
+                consecutiveErrors++;
+                console.warn(`轮询第 ${i + 1} 次失败:`, error.message);
+                
+                // 如果连续失败次数过多，抛出错误
+                if (consecutiveErrors >= maxConsecutiveErrors) {
+                    throw new Error(`网络连接不稳定，已连续失败 ${maxConsecutiveErrors} 次。请检查网络连接后重试。`);
+                }
+                
+                // 网络错误时等待更长时间再重试
+                this.updateProgress(i + 1, maxAttempts, '网络不稳定，正在重试...');
+                await this.sleep(5000);
             }
-            
-            if (data.status === 'succeeded') {
-                return data;
-            } else if (data.status === 'failed') {
-                throw new Error(data.error || 'Parsing failed');
-            }
-            
-            // Update progress
-            this.updateProgress(i + 1, maxAttempts);
-            
-            // Wait 2 seconds before next poll
-            await this.sleep(2000);
         }
         
-        throw new Error('解析超时，请稍后重试');
+        throw new Error('解析超时。文件可能较大，请稍后在"对话历史"中查看解析结果，或重新上传。');
     }
     
     /**
@@ -212,9 +233,11 @@ class FileParserHandler {
      * Update progress
      * @param {number} current - Current attempt
      * @param {number} total - Total attempts
+     * @param {string} message - Optional custom message
      */
-    updateProgress(current, total) {
+    updateProgress(current, total, message = null) {
         const percentage = Math.round((current / total) * 100);
+        const displayMessage = message || `正在解析文件... ${percentage}%`;
         console.log(`Parsing progress: ${percentage}%`);
         
         // Update UI if chatFileStatusArea exists
@@ -222,7 +245,7 @@ class FileParserHandler {
             chatFileStatusArea.innerHTML = `
                 <div class="file-info">
                     <div class="file-processing-spinner"></div>
-                    <span>正在解析文件... ${percentage}%</span>
+                    <span>${displayMessage}</span>
                 </div>
             `;
         }
