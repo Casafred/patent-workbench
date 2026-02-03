@@ -279,26 +279,38 @@ class SimplePatentScraper:
         
         if not patent_data.inventors:
             inventors = []
-            # Try multiple selectors
-            inventor_section = soup.find('dd', {'itemprop': 'inventor'})
             
-            if inventor_section:
-                # First try to find spans with itemprop='name'
-                inventor_elements = inventor_section.find_all('span', {'itemprop': 'name'})
+            # 方法1：从meta标签提取（最可靠）
+            meta_inventors = soup.find_all('meta', {'name': 'DC.contributor', 'scheme': 'inventor'})
+            if meta_inventors:
+                for meta in meta_inventors:
+                    inventor_name = meta.get('content', '').strip()
+                    if inventor_name and inventor_name not in inventors:
+                        inventors.append(inventor_name)
+                logger.info(f"从meta标签提取到 {len(inventors)} 个发明人")
+            
+            # 方法2：从dd标签提取（备用）
+            if not inventors:
+                inventor_section = soup.find('dd', {'itemprop': 'inventor'})
                 
-                if inventor_elements:
-                    # If we found spans, use them
-                    for inv in inventor_elements:
-                        inventor_name = inv.get_text().strip()
-                        if inventor_name and inventor_name not in ['Inventor', 'Inventors']:
-                            inventors.append(inventor_name)
-                else:
-                    # If no spans, get text directly from dd
-                    inventor_text = inventor_section.get_text().strip()
-                    if inventor_text and inventor_text not in ['Inventor', 'Inventors']:
-                        inventors.append(inventor_text)
+                if inventor_section:
+                    # First try to find spans with itemprop='name'
+                    inventor_elements = inventor_section.find_all('span', {'itemprop': 'name'})
+                    
+                    if inventor_elements:
+                        # If we found spans, use them
+                        for inv in inventor_elements:
+                            inventor_name = inv.get_text().strip()
+                            if inventor_name and inventor_name not in ['Inventor', 'Inventors'] and inventor_name not in inventors:
+                                inventors.append(inventor_name)
+                    else:
+                        # If no spans, get text directly from dd
+                        inventor_text = inventor_section.get_text().strip()
+                        if inventor_text and inventor_text not in ['Inventor', 'Inventors']:
+                            inventors.append(inventor_text)
             
             patent_data.inventors = inventors
+            logger.info(f"最终提取到 {len(inventors)} 个发明人")
         
         # Extract assignees if not already extracted
         if not patent_data.assignees:
@@ -680,60 +692,109 @@ class SimplePatentScraper:
                 logger.warning(f"Error extracting cited by for {patent_number}: {e}")
                 patent_data.cited_by = []
         
-        # Extract Legal Events (法律事件)
+        # Extract Legal Events (法律事件/时间线)
         if crawl_specification:
             try:
                 legal_events = []
                 
-                # 查找法律事件部分
-                # 方法1：查找带有legalEvents属性的tr元素
-                legal_event_rows = soup.find_all('tr', {'itemprop': 'legalEvents'})
+                # 方法1：查找带有events属性的dd元素（新格式）
+                event_elements = soup.find_all('dd', {'itemprop': 'events'})
                 
-                if legal_event_rows:
-                    logger.info(f"找到 {len(legal_event_rows)} 个法律事件")
-                    for row in legal_event_rows:
+                if event_elements:
+                    logger.info(f"找到 {len(event_elements)} 个事件（events格式）")
+                    for event_dd in event_elements:
                         try:
                             # 提取日期
-                            date_elem = row.find('time', {'itemprop': 'date'})
+                            date_elem = event_dd.find('time', {'itemprop': 'date'})
                             event_date = date_elem.get('datetime', '') if date_elem else ''
-                            if not event_date:
-                                # 尝试从第一个td获取日期
-                                date_cell = row.find('td')
-                                event_date = date_cell.get_text().strip() if date_cell else ''
-                            
-                            # 提取代码
-                            code_elem = row.find('td', {'itemprop': 'code'})
-                            event_code = code_elem.get_text().strip() if code_elem else ''
+                            if not event_date and date_elem:
+                                event_date = date_elem.get_text().strip()
                             
                             # 提取标题
-                            title_elem = row.find('td', {'itemprop': 'title'})
+                            title_elem = event_dd.find('span', {'itemprop': 'title'})
                             event_title = title_elem.get_text().strip() if title_elem else ''
                             
-                            # 提取自由格式文本
-                            free_format_text = ''
-                            attributes = row.find_all('p', {'itemprop': 'attributes'})
-                            for attr in attributes:
-                                label = attr.find('strong', {'itemprop': 'label'})
-                                value = attr.find('span', {'itemprop': 'value'})
-                                if label and value and label.get_text().strip() == 'Free format text':
-                                    free_format_text = value.get_text().strip()
-                                    break
+                            # 提取类型
+                            type_elem = event_dd.find('span', {'itemprop': 'type'})
+                            event_type = type_elem.get_text().strip() if type_elem else ''
                             
-                            # 构建完整描述
-                            description = f"{event_title} - {free_format_text}" if free_format_text else event_title
+                            # 检查是否是关键事件
+                            critical_elem = event_dd.find('span', {'itemprop': 'critical'})
+                            is_critical = critical_elem.get('content', 'false') == 'true' if critical_elem else False
                             
-                            legal_events.append({
-                                'date': event_date,
-                                'code': event_code,
-                                'title': event_title,
-                                'description': description,
-                                'free_format_text': free_format_text
-                            })
+                            # 检查是否是当前状态
+                            current_elem = event_dd.find('span', {'itemprop': 'current'})
+                            is_current = current_elem.get('content', 'false') == 'true' if current_elem else False
+                            
+                            # 提取文档ID（如果有）
+                            doc_id_elem = event_dd.find('span', {'itemprop': 'documentId'})
+                            doc_id = doc_id_elem.get_text().strip() if doc_id_elem else ''
+                            
+                            if event_title:
+                                legal_events.append({
+                                    'date': event_date,
+                                    'title': event_title,
+                                    'type': event_type,
+                                    'is_critical': is_critical,
+                                    'is_current': is_current,
+                                    'document_id': doc_id,
+                                    'description': f"{event_title} ({event_type})" if event_type else event_title
+                                })
                         except Exception as e:
-                            logger.warning(f"Error parsing legal event row: {e}")
+                            logger.warning(f"Error parsing event dd: {e}")
                             continue
-                else:
-                    # 方法2：查找包含Legal Events的h2标题
+                
+                # 方法2：查找带有legalEvents属性的tr元素（旧格式，备用）
+                if not legal_events:
+                    legal_event_rows = soup.find_all('tr', {'itemprop': 'legalEvents'})
+                    
+                    if legal_event_rows:
+                        logger.info(f"找到 {len(legal_event_rows)} 个法律事件（legalEvents格式）")
+                        for row in legal_event_rows:
+                            try:
+                                # 提取日期
+                                date_elem = row.find('time', {'itemprop': 'date'})
+                                event_date = date_elem.get('datetime', '') if date_elem else ''
+                                if not event_date:
+                                    # 尝试从第一个td获取日期
+                                    date_cell = row.find('td')
+                                    event_date = date_cell.get_text().strip() if date_cell else ''
+                                
+                                # 提取代码
+                                code_elem = row.find('td', {'itemprop': 'code'})
+                                event_code = code_elem.get_text().strip() if code_elem else ''
+                                
+                                # 提取标题
+                                title_elem = row.find('td', {'itemprop': 'title'})
+                                event_title = title_elem.get_text().strip() if title_elem else ''
+                                
+                                # 提取自由格式文本
+                                free_format_text = ''
+                                attributes = row.find_all('p', {'itemprop': 'attributes'})
+                                for attr in attributes:
+                                    label = attr.find('strong', {'itemprop': 'label'})
+                                    value = attr.find('span', {'itemprop': 'value'})
+                                    if label and value and label.get_text().strip() == 'Free format text':
+                                        free_format_text = value.get_text().strip()
+                                        break
+                                
+                                # 构建完整描述
+                                description = f"{event_title} - {free_format_text}" if free_format_text else event_title
+                                
+                                legal_events.append({
+                                    'date': event_date,
+                                    'code': event_code,
+                                    'title': event_title,
+                                    'description': description,
+                                    'free_format_text': free_format_text,
+                                    'is_critical': False
+                                })
+                            except Exception as e:
+                                logger.warning(f"Error parsing legal event row: {e}")
+                                continue
+                
+                # 方法3：查找包含Legal Events的h2标题（最后备用）
+                if not legal_events:
                     legal_h2 = None
                     for h2 in soup.find_all('h2'):
                         if 'Legal Events' in h2.get_text():
