@@ -928,6 +928,299 @@ window.openPatentInNewTab = function(url) {
     window.open(url, '_blank');
 };
 
+// 在新标签页打开专利详情
+window.openPatentDetailInNewTab = function(patentNumber) {
+    // 找到对应的专利结果
+    const patentResult = patentResults.find(result => result.patent_number === patentNumber);
+    if (!patentResult || !patentResult.success) {
+        alert('❌ 无法打开：专利数据不存在');
+        return;
+    }
+    
+    const data = patentResult.data;
+    
+    // 构建完整的HTML页面
+    let htmlContent = `
+        <!DOCTYPE html>
+        <html lang="zh-CN">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>专利详情 - ${patentNumber}</title>
+            <style>
+                * {
+                    margin: 0;
+                    padding: 0;
+                    box-sizing: border-box;
+                }
+                
+                body {
+                    font-family: 'Noto Sans SC', Arial, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                    background-color: #f5f5f5;
+                    padding: 20px;
+                }
+                
+                .container {
+                    max-width: 1200px;
+                    margin: 0 auto;
+                    background-color: white;
+                    padding: 30px;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                }
+                
+                h1 {
+                    color: #1976d2;
+                    margin-bottom: 20px;
+                    font-size: 24px;
+                }
+                
+                h2 {
+                    color: #333;
+                    margin: 25px 0 15px 0;
+                    font-size: 18px;
+                    border-bottom: 2px solid #e0e0e0;
+                    padding-bottom: 8px;
+                }
+                
+                h3 {
+                    color: #666;
+                    margin: 15px 0 10px 0;
+                    font-size: 16px;
+                }
+                
+                .section {
+                    margin-bottom: 25px;
+                    padding: 15px;
+                    background-color: #f9f9f9;
+                    border-radius: 6px;
+                }
+                
+                .info-item {
+                    margin-bottom: 10px;
+                }
+                
+                .info-label {
+                    font-weight: bold;
+                    color: #555;
+                    margin-right: 10px;
+                }
+                
+                .description {
+                    white-space: pre-wrap;
+                    line-height: 1.8;
+                    font-size: 14px;
+                }
+                
+                .claims {
+                    margin-left: 20px;
+                }
+                
+                .claim-item {
+                    margin-bottom: 15px;
+                    padding: 10px;
+                    background-color: #f0f8ff;
+                    border-radius: 4px;
+                }
+                
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 15px 0;
+                }
+                
+                th, td {
+                    padding: 10px;
+                    text-align: left;
+                    border-bottom: 1px solid #ddd;
+                }
+                
+                th {
+                    background-color: #f2f2f2;
+                    font-weight: bold;
+                }
+                
+                tr:hover {
+                    background-color: #f5f5f5;
+                }
+                
+                .back-button {
+                    display: inline-block;
+                    margin-bottom: 20px;
+                    padding: 10px 20px;
+                    background-color: #1976d2;
+                    color: white;
+                    text-decoration: none;
+                    border-radius: 4px;
+                    transition: background-color 0.3s;
+                }
+                
+                .back-button:hover {
+                    background-color: #1565c0;
+                }
+                
+                .meta-info {
+                    font-size: 14px;
+                    color: #666;
+                    margin-bottom: 20px;
+                    padding: 10px;
+                    background-color: #e3f2fd;
+                    border-radius: 4px;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <a href="#" class="back-button" onclick="window.close();">关闭标签页</a>
+                
+                <h1>专利详情 - ${patentNumber}</h1>
+                
+                <div class="meta-info">
+                    <div>查询耗时: ${patentResult.processing_time?.toFixed(2) || 'N/A'}秒</div>
+                    <div>原始链接: <a href="${patentResult.url}" target="_blank">${patentResult.url}</a></div>
+                </div>
+                
+                <div class="section">
+                    <h2>基本信息</h2>
+                    
+                    ${data.title ? `<div class="info-item"><span class="info-label">标题:</span> ${data.title}</div>` : ''}
+                    ${data.abstract ? `<div class="info-item"><span class="info-label">摘要:</span> ${data.abstract}</div>` : ''}
+                    ${data.inventors && data.inventors.length > 0 ? `<div class="info-item"><span class="info-label">发明人:</span> ${data.inventors.join(', ')}</div>` : ''}
+                    ${data.assignees && data.assignees.length > 0 ? `<div class="info-item"><span class="info-label">申请人:</span> ${data.assignees.join(', ')}</div>` : ''}
+                    ${data.application_date ? `<div class="info-item"><span class="info-label">申请日期:</span> ${data.application_date}</div>` : ''}
+                    ${data.publication_date ? `<div class="info-item"><span class="info-label">公开日期:</span> ${data.publication_date}</div>` : ''}
+                </div>
+                
+                ${data.claims && data.claims.length > 0 ? `
+                <div class="section">
+                    <h2>权利要求 (共${data.claims.length}条)</h2>
+                    <div class="claims">
+                        ${data.claims.map((claim, index) => `
+                        <div class="claim-item">
+                            <h3>权利要求 ${index + 1}:</h3>
+                            ${claim}
+                        </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+                
+                ${data.description ? `
+                <div class="section">
+                    <h2>说明书</h2>
+                    <div class="description">
+                        ${data.description}
+                    </div>
+                </div>
+                ` : ''}
+                
+                ${data.patent_citations && data.patent_citations.length > 0 ? `
+                <div class="section">
+                    <h2>引用专利 (共${data.patent_citations.length}条)</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>专利号</th>
+                                <th>标题</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.patent_citations.map(citation => `
+                            <tr>
+                                <td>${citation.patent_number}</td>
+                                <td>${citation.title || '-'}</td>
+                            </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                ` : ''}
+                
+                ${data.cited_by && data.cited_by.length > 0 ? `
+                <div class="section">
+                    <h2>被引用专利 (共${data.cited_by.length}条)</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>专利号</th>
+                                <th>标题</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.cited_by.map(citation => `
+                            <tr>
+                                <td>${citation.patent_number}</td>
+                                <td>${citation.title || '-'}</td>
+                            </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                ` : ''}
+                
+                ${data.legal_events && data.legal_events.length > 0 ? `
+                <div class="section">
+                    <h2>法律事件 (共${data.legal_events.length}条)</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>日期</th>
+                                <th>代码</th>
+                                <th>事件描述</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.legal_events.map(event => `
+                            <tr>
+                                <td>${event.date}</td>
+                                <td>${event.code || '-'}</td>
+                                <td>${event.description}</td>
+                            </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                ` : ''}
+                
+                ${data.similar_documents && data.similar_documents.length > 0 ? `
+                <div class="section">
+                    <h2>相似文档 (共${data.similar_documents.length}条)</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>专利号</th>
+                                <th>语言</th>
+                                <th>链接</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.similar_documents.map(doc => `
+                            <tr>
+                                <td>${doc.patent_number}</td>
+                                <td>${doc.language || '-'}</td>
+                                <td><a href="${doc.link}" target="_blank">查看</a></td>
+                            </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                ` : ''}
+            </div>
+        </body>
+        </html>
+    `;
+    
+    // 创建一个新窗口
+    const newWindow = window.open('', '_blank');
+    if (newWindow) {
+        // 写入HTML内容
+        newWindow.document.write(htmlContent);
+        newWindow.document.close();
+    }
+};
+
 // 复制字段内容
 window.copyFieldContent = function(patentNumber, fieldKey, event) {
     if (event) {
@@ -1037,34 +1330,45 @@ function buildPatentDetailHTML(result) {
     const data = result.data;
     
     let htmlContent = `
-        <div class="patent-card-header">
-            <div style="flex: 1;">
-                <div style="font-size: 0.9em; color: #666; margin-bottom: 8px;">
-                    查询耗时: ${result.processing_time?.toFixed(2) || 'N/A'}秒
+        <div class="patent-card-header" style="position: sticky; top: 0; z-index: 10; background-color: white; padding: 10px; border-bottom: 1px solid #e0e0e0; margin: -10px -10px 15px -10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="flex: 1;">
+                    <div style="font-size: 0.9em; color: #666;">
+                        查询耗时: ${result.processing_time?.toFixed(2) || 'N/A'}秒
+                    </div>
                 </div>
-            </div>
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <!-- 上一条/下一条切换按钮 -->
-                <div style="display: flex; gap: 5px; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden;">
-                    <button class="small-button" onclick="navigatePatent('prev', '${result.patent_number}')" style="border-radius: 0; border-right: 1px solid var(--border-color);">
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <!-- 上一条/下一条切换按钮 -->
+                    <div style="display: flex; gap: 5px; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden;">
+                        <button class="small-button" onclick="navigatePatent('prev', '${result.patent_number}')" style="border-radius: 0; border-right: 1px solid var(--border-color);">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M15 8a.5.5 0 0 1-.5.5H2.707l3.147 3.146a.5.5 0 0 1-.708.708l-4-4a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 7.5H14.5A.5.5 0 0 1 15 8z"/>
+                            </svg>
+                            上一条
+                        </button>
+                        <button class="small-button" onclick="navigatePatent('next', '${result.patent_number}')" style="border-radius: 0;">
+                            下一条
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <!-- 新标签页打开按钮 -->
+                    <button class="small-button" onclick="openPatentDetailInNewTab('${result.patent_number}')" style="display: inline-flex; align-items: center; gap: 6px;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                            <path d="M15 8a.5.5 0 0 1-.5.5H2.707l3.147 3.146a.5.5 0 0 1-.708.708l-4-4a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 7.5H14.5A.5.5 0 0 1 15 8z"/>
+                            <path d="M10.5 1a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h2a.5.5 0 0 0 .5-.5V1a.5.5 0 0 0-.5-.5h-2zM10 2.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-1zM10.5 4a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h2a.5.5 0 0 0 .5-.5V4.5a.5.5 0 0 0-.5-.5h-2z"/>
+                            <path d="M3 1h8a2 2 0 0 1 2 2v2.5h-1V3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h2.5v-1H3a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2z"/>
+                            <path d="M14 9a1 1 0 0 1 1 1v2.5a1 1 0 0 1-1 1H9.5v-1H13a1 1 0 0 0 1-1v-2.5a1 1 0 0 1 1-1z"/>
                         </svg>
-                        上一条
+                        新标签页
                     </button>
-                    <button class="small-button" onclick="navigatePatent('next', '${result.patent_number}')" style="border-radius: 0;">
-                        下一条
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                            <path d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z"/>
+                    <!-- 问一问按钮（仅图标） -->
+                    <button class="small-button" onclick="openPatentChat('${result.patent_number}')" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 50%;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M2.678 11.894a1 1 0 0 1 .287.801 10.97 10.97 0 0 1-.398 2c1.395-.323 2.247-.697 2.634-.893a1 1 0 0 1 .71-.074A8.06 8.06 0 0 0 8 14c3.996 0 7-2.807 7-6 0-3.192-3.004-6-7-6S1 4.808 1 8c0 1.468.617 2.83 1.678 3.894zm-.493 3.905a21.682 21.682 0 0 1-.713.129c-.2.032-.352-.176-.273-.362a9.68 9.68 0 0 0 .244-.637l.003-.01c.248-.72.45-1.548.524-2.319C.743 11.37 0 9.76 0 8c0-3.866 3.582-7 8-7s8 3.134 8-7s-3.582-7-8-7a9.06 9.06 0 0 1-2.347-.306c-.52.263-1.639.742-3.468 1.105z"/>
                         </svg>
                     </button>
                 </div>
-                <button class="ask-patent-btn" onclick="openPatentChat('${result.patent_number}')">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M2.678 11.894a1 1 0 0 1 .287.801 10.97 10.97 0 0 1-.398 2c1.395-.323 2.247-.697 2.634-.893a1 1 0 0 1 .71-.074A8.06 8.06 0 0 0 8 14c3.996 0 7-2.807 7-6 0-3.192-3.004-6-7-6S1 4.808 1 8c0 1.468.617 2.83 1.678 3.894zm-.493 3.905a21.682 21.682 0 0 1-.713.129c-.2.032-.352-.176-.273-.362a9.68 9.68 0 0 0 .244-.637l.003-.01c.248-.72.45-1.548.524-2.319C.743 11.37 0 9.76 0 8c0-3.866 3.582-7 8-7s8 3.134 8-7s-3.582-7-8-7a9.06 9.06 0 0 1-2.347-.306c-.52.263-1.639.742-3.468 1.105z"/>
-                    </svg>
-                    问一问
-                </button>
             </div>
         </div>
     `;
@@ -1380,29 +1684,6 @@ function buildPatentDetailHTML(result) {
             <pre>相似文档数量: ${data.similar_documents ? data.similar_documents.length : 0}</pre>
             <pre>是否有法律事件数据: ${data.legal_events ? '是' : '否'}</pre>
             <pre>是否有相似文档数据: ${data.similar_documents ? '是' : '否'}</pre>
-        </div>
-    `;
-    
-    // 操作按钮
-    htmlContent += `
-        <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-            <div style="flex: 1; display: flex; gap: 10px; flex-wrap: wrap;">
-                <a href="${result.url}" target="_blank" class="small-button" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l1.828-1.829A3 3 0 0 0 8.586 5.5L8 6.086a1.002 1.002 0 0 0-.154.199 2 2 0 0 1 .861 3.337L6.88 11.45a2 2 0 1 1-2.83-2.83l.793-.792a4.018 4.018 0 0 1-.128-1.287z"/>
-                        <path d="M6.586 4.672A3 3 0 0 0 7.414 9.5l.775-.776a2 2 0 0 1-.896-3.346L9.12 3.55a2 2 0 1 1 2.83 2.83l-.793.792c.112.42.155.855.128 1.287l1.372-1.372a3 3 0 1 0-4.243-4.243L6.586 4.672z"/>
-                    </svg>
-                    查看原始专利
-                </a>
-                <button class="small-button" onclick="openPatentInNewTab('${result.url}')" style="background-color: #17a2b8; color: white; display: inline-flex; align-items: center; gap: 6px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M10.5 1a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h2a.5.5 0 0 0 .5-.5V1a.5.5 0 0 0-.5-.5h-2zM10 2.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-1zM10.5 4a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h2a.5.5 0 0 0 .5-.5V4.5a.5.5 0 0 0-.5-.5h-2z"/>
-                        <path d="M3 1h8a2 2 0 0 1 2 2v2.5h-1V3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h2.5v-1H3a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2z"/>
-                        <path d="M14 9a1 1 0 0 1 1 1v2.5a1 1 0 0 1-1 1H9.5v-1H13a1 1 0 0 0 1-1v-2.5a1 1 0 0 1 1-1z"/>
-                    </svg>
-                    新标签页打开
-                </button>
-            </div>
         </div>
     `;
     
