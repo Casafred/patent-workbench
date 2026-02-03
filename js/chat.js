@@ -13,22 +13,36 @@ async function handleChatFileUpload(event, fileFromReuse = null) {
     const file = fileFromReuse || (event.target ? event.target.files[0] : null);
     if (!file) return;
 
-    // 【修复】检查是否有已激活的文件，如果有则复用
-    if (appState.chat.activeFile && appState.chat.activeFile.filename === file.name) {
-        console.log('文件已解析，直接复用:', file.name);
+    // 【修复】检查缓存中是否有已解析的文件
+    const cachedFile = appState.chat.parsedFilesCache[file.name];
+    if (cachedFile) {
+        console.log('✅ 文件已解析，直接复用缓存:', file.name);
+        
+        // 设置为当前激活文件
+        appState.chat.activeFile = cachedFile;
+        
         // 显示复用提示
         const chatFileStatusArea = document.getElementById('chat_file_status_area');
         chatFileStatusArea.style.display = 'flex';
         chatFileStatusArea.innerHTML = `
             <div class="file-info">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 8px; color: var(--primary-color);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 8px; color: var(--success-color, #22c55e);">
                     <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z"/>
+                    <path d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z"/>
                 </svg>
-                <span>已附加文件:</span>
+                <span>已附加文件（复用）:</span>
                 <span class="filename" title="${file.name}">${file.name}</span>
+                <span style="margin-left: 8px; color: #22c55e; font-size: 0.85em;">✓ 已缓存</span>
             </div>
             <button class="file-remove-btn" onclick="removeActiveFile()" title="移除文件">&times;</button>
         `;
+        
+        // 隐藏服务选择器
+        const parserServiceSelector = document.getElementById('chat_parser_service_selector');
+        if (parserServiceSelector) {
+            parserServiceSelector.style.display = 'none';
+        }
+        
         chatInput.focus();
         return;
     }
@@ -122,6 +136,23 @@ async function startFileUpload() {
             toolType: toolType
         };
         
+        // 【新增】保存到缓存，避免重复解析
+        appState.chat.parsedFilesCache[file.name] = {
+            taskId: result.task_id,
+            filename: file.name,
+            content: result.content,
+            toolType: toolType,
+            timestamp: Date.now()
+        };
+        
+        // 【新增】持久化缓存到 localStorage
+        try {
+            localStorage.setItem('parsedFilesCache', JSON.stringify(appState.chat.parsedFilesCache));
+            console.log('✅ 文件已保存到缓存:', file.name);
+        } catch (e) {
+            console.warn('⚠️ 无法保存缓存到 localStorage:', e);
+        }
+        
         // 清除待上传文件
         appState.chat.pendingFile = null;
         appState.chat.pendingFileEvent = null;
@@ -197,6 +228,42 @@ function removeActiveFile() {
     updateCharCount();
 }
 // ▲▲▲ 替换结束 ▲▲▲
+
+// 【新增】清理文件缓存 - 删除超过7天的缓存
+function cleanupFileCache() {
+    const MAX_CACHE_AGE = 7 * 24 * 60 * 60 * 1000; // 7天
+    const now = Date.now();
+    let cleanedCount = 0;
+    
+    for (const filename in appState.chat.parsedFilesCache) {
+        const cacheEntry = appState.chat.parsedFilesCache[filename];
+        if (now - cacheEntry.timestamp > MAX_CACHE_AGE) {
+            delete appState.chat.parsedFilesCache[filename];
+            cleanedCount++;
+        }
+    }
+    
+    if (cleanedCount > 0) {
+        console.log(`🧹 已清理 ${cleanedCount} 个过期缓存文件`);
+        try {
+            localStorage.setItem('parsedFilesCache', JSON.stringify(appState.chat.parsedFilesCache));
+        } catch (e) {
+            console.warn('⚠️ 无法保存清理后的缓存:', e);
+        }
+    }
+}
+
+// 【新增】手动清除所有文件缓存
+function clearAllFileCache() {
+    appState.chat.parsedFilesCache = {};
+    try {
+        localStorage.removeItem('parsedFilesCache');
+        console.log('✅ 已清除所有文件缓存');
+        alert('文件缓存已清除');
+    } catch (e) {
+        console.warn('⚠️ 无法清除缓存:', e);
+    }
+}
 
 // 显示解析服务信息
 function showParserServiceInfo() {
@@ -370,6 +437,9 @@ function initChat() {
     // 模型选择器现在由 state.js 的 updateAllModelSelectors() 统一管理
     loadPersonas();
     loadConversations();
+    
+    // 【新增】清理过期的文件缓存
+    cleanupFileCache();
 
     // 初始化对话参数模态框
     const chatParamsModal = document.getElementById('chat_params_modal');
@@ -982,6 +1052,18 @@ function loadConversations() {
     appState.chat.currentConversationId = localStorage.getItem('currentConversationId');
     if (savedConvos.length > 0 && (!appState.chat.currentConversationId || !savedConvos.find(c => c.id === appState.chat.currentConversationId))) {
         appState.chat.currentConversationId = savedConvos.sort((a,b) => b.lastUpdate - a.lastUpdate)[0].id;
+    }
+    
+    // 【新增】加载文件缓存
+    try {
+        const savedCache = localStorage.getItem('parsedFilesCache');
+        if (savedCache) {
+            appState.chat.parsedFilesCache = JSON.parse(savedCache);
+            console.log('✅ 已加载文件缓存，共', Object.keys(appState.chat.parsedFilesCache).length, '个文件');
+        }
+    } catch (e) {
+        console.warn('⚠️ 无法加载文件缓存:', e);
+        appState.chat.parsedFilesCache = {};
     }
 }
 

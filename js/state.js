@@ -10,6 +10,8 @@ const appState = {
         isManagementMode: false,
         // ▼▼▼ 新增：存储当前对话附加的文件信息 ▼▼▼
         activeFile: null, // { taskId, filename, content, toolType }
+        // ▼▼▼ 新增：文件缓存 - 避免重复解析 ▼▼▼
+        parsedFilesCache: {}, // { filename: { taskId, filename, content, toolType, timestamp } }
         // ▼▼▼ 新增：文件解析状态 ▼▼▼
         pendingFile: null, // 待上传的文件对象
         pendingFileEvent: null, // 文件选择事件
