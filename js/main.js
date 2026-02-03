@@ -1616,6 +1616,140 @@ function buildPatentDetailHTML(result) {
         `;
     }
     
+    // CPC分类信息
+    if (data.classifications && data.classifications.length > 0) {
+        htmlContent += `
+            <div style="margin-top: 15px; padding: 10px; background-color: #e3f2fd; border-radius: 5px;">
+                <div style="margin-bottom: 8px;">
+                    <strong style="color: var(--primary-color);">🏷️ CPC分类 (共${data.classifications.length}条):</strong>
+                </div>
+                <div class="cpc-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px;">
+        `;
+        
+        data.classifications.forEach(cls => {
+            htmlContent += `
+                <div class="cpc-item" style="padding: 10px; background-color: white; border-radius: 4px; border-left: 3px solid var(--primary-color);">
+                    <div style="font-weight: 600; color: var(--primary-color); margin-bottom: 4px;">${cls.leaf_code || cls.code}</div>
+                    <div style="font-size: 0.85em; color: #666;">${cls.leaf_description || cls.description}</div>
+                </div>
+            `;
+        });
+        
+        htmlContent += `
+                </div>
+            </div>
+        `;
+    }
+    
+    // 技术领域
+    if (data.landscapes && data.landscapes.length > 0) {
+        htmlContent += `
+            <div style="margin-top: 15px; padding: 10px; background-color: #f3e5f5; border-radius: 5px;">
+                <div style="margin-bottom: 8px;">
+                    <strong style="color: var(--primary-color);">🌐 技术领域:</strong>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        `;
+        
+        data.landscapes.forEach(landscape => {
+            htmlContent += `
+                <span style="padding: 6px 12px; background-color: white; border-radius: 20px; font-size: 0.9em; border: 1px solid #ddd;">
+                    ${landscape.name}
+                </span>
+            `;
+        });
+        
+        htmlContent += `
+                </div>
+            </div>
+        `;
+    }
+    
+    // 优先权日期
+    if (data.priority_date) {
+        htmlContent += `
+            <div style="margin-top: 15px; padding: 10px; background-color: #fff9c4; border-radius: 5px;">
+                <p style="margin: 0;">
+                    <strong style="color: var(--primary-color);">📅 优先权日期:</strong> ${data.priority_date}
+                </p>
+            </div>
+        `;
+    }
+    
+    // 同族信息
+    if (data.family_id || (data.family_applications && data.family_applications.length > 0)) {
+        htmlContent += `
+            <div style="margin-top: 15px; padding: 10px; background-color: #fff3e0; border-radius: 5px;">
+                <div style="margin-bottom: 8px;">
+                    <strong style="color: var(--primary-color);">👨‍👩‍👧‍👦 同族信息:</strong>
+                </div>
+        `;
+        
+        if (data.family_id) {
+            htmlContent += `<p style="margin: 5px 0;"><strong>同族ID:</strong> ${data.family_id}</p>`;
+        }
+        
+        if (data.family_applications && data.family_applications.length > 0) {
+            htmlContent += `
+                <div style="margin-top: 10px;">
+                    <strong>同族申请 (共${data.family_applications.length}条):</strong>
+                    <div style="max-height: 200px; overflow-y: auto; margin-top: 8px;">
+                        <table style="width: 100%; font-size: 0.85em; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background-color: #ffe0b2;">
+                                    <th style="padding: 5px; text-align: left; border: 1px solid #ddd;">申请号</th>
+                                    <th style="padding: 5px; text-align: left; border: 1px solid #ddd;">状态</th>
+                                    <th style="padding: 5px; text-align: left; border: 1px solid #ddd;">公开号</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+            
+            data.family_applications.forEach(app => {
+                htmlContent += `
+                    <tr>
+                        <td style="padding: 5px; border: 1px solid #ddd;">${app.application_number}</td>
+                        <td style="padding: 5px; border: 1px solid #ddd;">${app.status || '-'}</td>
+                        <td style="padding: 5px; border: 1px solid #ddd;">${app.publication_number || '-'}</td>
+                    </tr>
+                `;
+            });
+            
+            htmlContent += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+        
+        htmlContent += `</div>`;
+    }
+    
+    // 外部链接
+    if (data.external_links && Object.keys(data.external_links).length > 0) {
+        htmlContent += `
+            <div style="margin-top: 15px; padding: 10px; background-color: #e8f5e9; border-radius: 5px;">
+                <div style="margin-bottom: 8px;">
+                    <strong style="color: var(--primary-color);">🔗 外部链接:</strong>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+        `;
+        
+        Object.entries(data.external_links).forEach(([id, link]) => {
+            htmlContent += `
+                <a href="${link.url}" target="_blank" style="padding: 8px 16px; background-color: white; border-radius: 4px; border: 1px solid #ddd; text-decoration: none; color: var(--primary-color);">
+                    ${link.text}
+                </a>
+            `;
+        });
+        
+        htmlContent += `
+                </div>
+            </div>
+        `;
+    }
+    
     // 引用专利
     if (data.patent_citations && data.patent_citations.length > 0) {
         htmlContent += `
@@ -1692,41 +1826,38 @@ function buildPatentDetailHTML(result) {
         `;
     }
     
-    // 法律事件
+    // 事件时间轴（使用patent-timeline.css样式）
     if (data.legal_events && data.legal_events.length > 0) {
         htmlContent += `
             <div style="margin-top: 15px; padding: 10px; background-color: #f3e5f5; border-radius: 5px;">
-                <div style="margin-bottom: 8px;">
-                    <strong style="color: var(--primary-color);">⚖️ 法律事件 (共${data.legal_events.length}条):</strong>
+                <div style="margin-bottom: 12px;">
+                    <strong style="color: var(--primary-color);">📅 事件时间轴 (共${data.legal_events.length}条):</strong>
                     <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'legal_events', event)" title="复制法律事件">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg>
                     </button>
                 </div>
-                <div style="max-height: 200px; overflow-y: auto;">
-                    <table style="width: 100%; font-size: 0.85em; border-collapse: collapse;">
-                        <thead>
-                            <tr style="background-color: #e1bee7;">
-                                <th style="padding: 5px; text-align: left; border: 1px solid #ddd; width: 120px;">日期</th>
-                                <th style="padding: 5px; text-align: left; border: 1px solid #ddd; width: 80px;">代码</th>
-                                <th style="padding: 5px; text-align: left; border: 1px solid #ddd;">事件描述</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                <div class="patent-timeline" style="max-height: 400px; overflow-y: auto;">
         `;
         
-        data.legal_events.forEach(event => {
+        data.legal_events.forEach((event, index) => {
+            const position = index % 2 === 0 ? 'left' : 'right';
+            const isCritical = event.is_critical ? 'critical' : '';
+            const isCurrent = event.is_current ? 'current' : '';
+            
             htmlContent += `
-                <tr>
-                    <td style="padding: 5px; border: 1px solid #ddd;">${event.date}</td>
-                    <td style="padding: 5px; border: 1px solid #ddd;">${event.code || '-'}</td>
-                    <td style="padding: 5px; border: 1px solid #ddd;">${event.description}</td>
-                </tr>
+                <div class="timeline-event ${position} ${isCritical} ${isCurrent}">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-date">${event.date}</div>
+                        <div class="timeline-title">${event.title || event.description}</div>
+                        ${event.type ? `<div class="timeline-type">${event.type}</div>` : ''}
+                        ${event.code ? `<div class="timeline-type">代码: ${event.code}</div>` : ''}
+                    </div>
+                </div>
             `;
         });
         
         htmlContent += `
-                        </tbody>
-                    </table>
                 </div>
             </div>
         `;
@@ -1772,18 +1903,6 @@ function buildPatentDetailHTML(result) {
     }
     
     htmlContent += `</div>`;
-    
-    // 调试信息
-    htmlContent += `
-        <div style="margin-top: 15px; padding: 10px; background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px;">
-            <h5>调试信息：</h5>
-            <pre>引用专利数量: ${data.patent_citations ? data.patent_citations.length : 0}</pre>
-            <pre>法律事件数量: ${data.legal_events ? data.legal_events.length : 0}</pre>
-            <pre>相似文档数量: ${data.similar_documents ? data.similar_documents.length : 0}</pre>
-            <pre>是否有法律事件数据: ${data.legal_events ? '是' : '否'}</pre>
-            <pre>是否有相似文档数据: ${data.similar_documents ? '是' : '否'}</pre>
-        </div>
-    `;
     
     return htmlContent;
 }}
