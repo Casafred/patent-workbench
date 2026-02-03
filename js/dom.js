@@ -131,13 +131,3 @@ const claimsAnalyzeBtn = getEl('claims_analyze_btn');
 const comparisonResultContainerRefactored = getEl('comparison_result_container_refactored');
 const toggleLanguageBtn = getEl('toggle_language_btn');
 // ▲▲▲ 新增结束 ▲▲▲
-// Files Manager (新增)
-const chatManageFilesBtn = getEl('chat_manage_files_btn');
-const fileManagerModal = getEl('file_manager_modal');
-const fileManagerCloseBtn = getEl('file_manager_close_btn');
-const fmFileInput = getEl('fm_file_input');
-const fmPurposeSelect = getEl('fm_purpose_select');
-const fmUploadBtn = getEl('fm_upload_btn');
-const fmFilterPurpose = getEl('fm_filter_purpose');
-const fmRefreshBtn = getEl('fm_refresh_btn');
-const fmList = getEl('fm_list');

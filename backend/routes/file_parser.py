@@ -74,13 +74,19 @@ def create_parser_task():
         400: Missing file or invalid parameters
         500: Service error
     """
+    print(f"[File Parser] Received create request")
+    print(f"[File Parser] Files in request: {list(request.files.keys())}")
+    print(f"[File Parser] Form data: {dict(request.form)}")
+    
     # Get file parser service
     service, error_response = get_file_parser_service()
     if error_response:
+        print(f"[File Parser] Service initialization failed")
         return error_response
     
     # Validate file presence
     if 'file' not in request.files:
+        print(f"[File Parser] No file in request")
         return create_response(
             error="Missing file in request",
             status_code=400
@@ -89,17 +95,23 @@ def create_parser_task():
     file_storage = request.files['file']
     
     if not file_storage or file_storage.filename == '':
+        print(f"[File Parser] Empty file or filename")
         return create_response(
             error="No file selected",
             status_code=400
         )
     
+    print(f"[File Parser] Processing file: {file_storage.filename}")
+    
     # Get parameters
     tool_type = request.form.get('tool_type', 'lite')
     file_type = request.form.get('file_type')
     
+    print(f"[File Parser] Tool type: {tool_type}, File type: {file_type}")
+    
     # Validate tool_type
     if tool_type not in FileParserService.TOOL_TYPES:
+        print(f"[File Parser] Invalid tool type: {tool_type}")
         return create_response(
             error=f"Invalid tool_type: {tool_type}. Must be one of {FileParserService.TOOL_TYPES}",
             status_code=400
@@ -110,12 +122,16 @@ def create_parser_task():
     try:
         # Secure the filename
         filename = secure_filename(file_storage.filename)
+        print(f"[File Parser] Secured filename: {filename}")
         
         # Create temporary file
         suffix = os.path.splitext(filename)[1]
         temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
         file_storage.save(temp_file.name)
         temp_file.close()
+        
+        print(f"[File Parser] Saved to temp file: {temp_file.name}")
+        print(f"[File Parser] File size: {os.path.getsize(temp_file.name)} bytes")
         
         # Create parsing task
         result = service.create_parser_task(
@@ -124,21 +140,28 @@ def create_parser_task():
             file_type=file_type
         )
         
+        print(f"[File Parser] Task created successfully: {result.get('task_id')}")
+        
         # Add filename to response
         result['filename'] = filename
         
         return create_response(data=result)
         
     except ValueError as e:
-        # Validation errors (file type, size, etc.)
+        # Validation errors (file type, size, etc.) or API errors
+        error_msg = str(e)
+        print(f"[File Parser] Validation/API error: {error_msg}")
+        print(f"[File Parser] Full traceback: {traceback.format_exc()}")
         return create_response(
-            error=str(e),
+            error=error_msg,
             status_code=400
         )
     except Exception as e:
-        print(f"File parser task creation failed: {traceback.format_exc()}")
+        error_msg = str(e)
+        print(f"[File Parser] Task creation failed: {error_msg}")
+        print(f"[File Parser] Full traceback: {traceback.format_exc()}")
         return create_response(
-            error=f"Failed to create parsing task: {str(e)}",
+            error=f"创建解析任务失败: {error_msg}",
             status_code=500
         )
     finally:
@@ -146,8 +169,9 @@ def create_parser_task():
         if temp_file and os.path.exists(temp_file.name):
             try:
                 os.unlink(temp_file.name)
+                print(f"[File Parser] Cleaned up temp file")
             except Exception as e:
-                print(f"Failed to delete temporary file: {e}")
+                print(f"[File Parser] Failed to delete temporary file: {e}")
 
 
 @file_parser_bp.route('/files/parser/result/<task_id>', methods=['GET'])

@@ -13,7 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('大批量处理模块初始化完成');
     initLocalPatentLib();
     initClaimsComparison();
-    initFilesManager();
     initPatentBatch();
 
 

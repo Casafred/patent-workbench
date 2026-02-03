@@ -19,8 +19,15 @@ class FileParserService:
     
     # Supported file formats
     SUPPORTED_FORMATS = {
-        'PDF', 'DOCX', 'DOC', 'XLS', 'XLSX', 'PPT', 'PPTX',
-        'PNG', 'JPG', 'JPEG', 'CSV', 'TXT', 'MD'
+        # 文档格式（所有服务支持）
+        'PDF', 'DOCX', 'DOC', 'XLS', 'XLSX', 'PPT', 'PPTX', 'TXT', 'MD', 'CSV',
+        # Prime 额外支持的文档格式
+        'HTML', 'EPUB',
+        # 图片格式（所有服务支持）
+        'PNG', 'JPG', 'JPEG',
+        # Prime 额外支持的图片格式
+        'BMP', 'GIF', 'WEBP', 'HEIC', 'EPS', 'ICNS', 'IM', 'PCX', 'PPM', 
+        'TIFF', 'XBM', 'HEIF', 'JP2'
     }
     
     # File size limits (in bytes)
@@ -111,19 +118,41 @@ class FileParserService:
                 
                 result = response.json()
                 
-                logger.info(f"Parser task created: {result.get('task_id')}")
+                # 根据官方文档，响应格式为：
+                # {"message": "任务创建成功", "success": true, "task_id": "task_id"}
+                if not result.get('success'):
+                    error_msg = result.get('message', 'Unknown error')
+                    logger.error(f"API returned success=false: {error_msg}")
+                    raise ValueError(f"API调用失败: {error_msg}")
+                
+                task_id = result.get('task_id')
+                if not task_id:
+                    logger.error(f"API response missing task_id: {result}")
+                    raise ValueError("API返回的响应中缺少task_id")
+                
+                logger.info(f"Parser task created successfully: {task_id}")
                 
                 return {
-                    "task_id": result.get('task_id'),
+                    "task_id": task_id,
                     "status": "processing"
                 }
                 
         except requests.RequestException as e:
             logger.error(f"Failed to create parser task: {e}")
-            raise
+            # Try to extract error details from response
+            error_msg = str(e)
+            if hasattr(e, 'response') and e.response is not None:
+                try:
+                    error_data = e.response.json()
+                    error_msg = error_data.get('error', {}).get('message', str(e))
+                    logger.error(f"API error details: {error_data}")
+                except:
+                    error_msg = e.response.text or str(e)
+                    logger.error(f"API error response: {error_msg}")
+            raise ValueError(f"API调用失败: {error_msg}")
         except Exception as e:
             logger.error(f"Unexpected error creating parser task: {e}")
-            raise
+            raise ValueError(f"创建解析任务失败: {str(e)}")
     
     def get_parser_result(
         self, 
@@ -292,6 +321,7 @@ class FileParserService:
             MIME type string
         """
         mime_types = {
+            # 文档格式
             'PDF': 'application/pdf',
             'DOCX': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'DOC': 'application/msword',
@@ -299,11 +329,27 @@ class FileParserService:
             'XLSX': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'PPT': 'application/vnd.ms-powerpoint',
             'PPTX': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'TXT': 'text/plain',
+            'MD': 'text/markdown',
+            'CSV': 'text/csv',
+            'HTML': 'text/html',
+            'EPUB': 'application/epub+zip',
+            # 图片格式
             'PNG': 'image/png',
             'JPG': 'image/jpeg',
             'JPEG': 'image/jpeg',
-            'CSV': 'text/csv',
-            'TXT': 'text/plain',
-            'MD': 'text/markdown'
+            'BMP': 'image/bmp',
+            'GIF': 'image/gif',
+            'WEBP': 'image/webp',
+            'HEIC': 'image/heic',
+            'EPS': 'application/postscript',
+            'ICNS': 'image/icns',
+            'IM': 'image/x-im',
+            'PCX': 'image/x-pcx',
+            'PPM': 'image/x-portable-pixmap',
+            'TIFF': 'image/tiff',
+            'XBM': 'image/x-xbitmap',
+            'HEIF': 'image/heif',
+            'JP2': 'image/jp2'
         }
         return mime_types.get(file_type.upper(), 'application/octet-stream')

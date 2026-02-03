@@ -133,45 +133,6 @@
         }
         
         /* 其他样式 */
-        .file-manager-modal {
-            display: none; position: fixed; z-index: 1001; left: 0; top: 0;
-            width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);
-            -webkit-animation-name: fadeIn; animation-name: fadeIn;
-            -webkit-animation-duration: 0.4s; animation-duration: 0.4s;
-        }
-        .file-manager-content {
-            position: relative; background-color: var(--surface-color); margin: 5% auto;
-            padding: 0; border: 1px solid var(--border-color); border-radius: 12px;
-            width: 80%; max-width: 900px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            -webkit-animation-name: slideIn; animation-name: slideIn;
-            -webkit-animation-duration: 0.4s; animation-duration: 0.4s
-        }
-        .file-manager-header {
-            padding: 15px 25px; background: linear-gradient(90deg, var(--primary-color-dark), var(--primary-color));
-            color: white; border-radius: 12px 12px 0 0; display: flex;
-            justify-content: space-between; align-items: center;
-        }
-        .file-manager-header h2 { margin: 0; font-size: 1.2em; }
-        .close-file-manager {
-            color: white; float: right; font-size: 28px; font-weight: bold;
-            background: none; border: none; cursor: pointer; opacity: 0.8;
-        }
-        .close-file-manager:hover, .close-file-manager:focus { opacity: 1; text-decoration: none; }
-        .file-manager-body { padding: 20px; max-height: 65vh; overflow-y: auto; }
-        .file-manager-table { width: 100%; border-collapse: collapse; }
-        .file-manager-table th, .file-manager-table td {
-            border-bottom: 1px solid var(--border-color); padding: 12px 15px;
-            text-align: left; vertical-align: middle;
-        }
-        .file-manager-table th { font-weight: 600; color: var(--text-color-secondary); }
-        .file-manager-table tr:hover { background-color: var(--primary-color-hover-bg); }
-        .file-name-cell { max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .file-actions-cell { text-align: right; white-space: nowrap; }
-        #file_manager_status { margin-top: 15px; text-align: center; }
-        @-webkit-keyframes slideIn { from {top: -300px; opacity: 0} to {top: 0; opacity: 1} }
-        @keyframes slideIn { from {margin-top: -5%; opacity: 0} to {margin-top: 5%; opacity: 1} }
-        @-webkit-keyframes fadeIn { from {opacity: 0} to {opacity: 1} }
-        @keyframes fadeIn { from {opacity: 0} to {opacity: 1} }
         </style>
 
 </head>
@@ -277,62 +238,6 @@
                 </div>
             </div>
 
-            <!-- 新增：文件管理模态框 -->
-            <div id="file_manager_modal" class="modal" style="display: none;">
-              <div class="modal-content" style="max-width: 800px;">
-                <div class="modal-header">
-                  <h3>文件管理</h3>
-                  <button class="close-modal" id="file_manager_close_btn">&times;</button>
-                </div>
-                <div class="modal-body">
-                  <div class="config-section">
-                    <h4>上传新文件</h4>
-                    <div class="template-config-grid" style="grid-template-columns: 1fr 1fr;">
-                      <div class="config-item">
-                        <label for="fm_file_input">选择文件:</label>
-                        <input type="file" id="fm_file_input" />
-                      </div>
-                      <div class="config-item">
-                        <label for="fm_purpose_select">用途 (purpose):</label>
-                        <select id="fm_purpose_select">
-                          <option value="file-extract" selected>file-extract (内容抽取)</option>
-                          <option value="agent">agent</option>
-                          <option value="code-interpreter">code-interpreter</option>
-                          <option value="batch">batch (jsonl/xlsx)</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div style="text-align:right; margin-top: 15px;">
-                      <button id="fm_upload_btn" class="small-button">上传</button>
-                    </div>
-                  </div>
-            
-                  <hr style="margin: 20px 0; border-color: var(--border-color);">
-            
-                  <div class="config-section">
-                    <h4>已上传文件列表</h4>
-                    <div class="template-config-grid" style="grid-template-columns: 1fr auto; align-items: end;">
-                      <div class="config-item">
-                        <label for="fm_filter_purpose">按用途筛选:</label>
-                        <select id="fm_filter_purpose">
-                          <option value="file-extract" selected>file-extract</option>
-                          <option value="batch">batch</option>
-                          <option value="agent">agent</option>
-                          <option value="code-interpreter">code-interpreter</option>
-                        </select>
-                      </div>
-                      <div class="config-item">
-                        <button id="fm_refresh_btn" class="small-button">刷新列表</button>
-                      </div>
-                    </div>
-                    <div id="fm_list" class="scrollable-list" style="max-height:300px; margin-top:15px;">
-                        <div class="info">正在加载...</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             <div id="instant-chat-layout">
                 <div id="chat_history_panel">
                     <div id="chat_history_header">
@@ -348,8 +253,6 @@
                             <h2 id="chat_current_title" contenteditable="true">未命名对话</h2>
                         </div>
                         <div class="title-bar-actions">
-                           <!-- 新增的文件管理按钮 -->
-                                <button id="chat_manage_files_btn" class="small-button">文件管理</button>
                             <button id="chat_params_btn" class="small-button">对话参数设置</button>
                             <button id="chat_manage_btn" class="small-button">管理消息</button>
                                 <div class="export-dropdown">
@@ -1474,8 +1377,6 @@
 <script src="../js/asyncBatch.js?v=20260119"></script>
 <script src="../js/largeBatch.js?v=20260119"></script>
 <script src="../js/localPatentLib.js?v=20260119"></script>
-<!-- 新增：引入文件管理脚本 -->
-<script src="../js/files.js?v=20260119"></script>
 <script src="../js/claimsComparison.js?v=20260119"></script>
 <script src="../js/claimsProcessorIntegrated.js?v=20260119"></script>
 <!-- 功能六增强脚本 -->

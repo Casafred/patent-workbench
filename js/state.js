@@ -137,14 +137,8 @@ const appState = {
         patentResults: [], // 专利查询结果
         analysisResults: [], // 解读结果
         patentChats: {} // 专利对话状态 { patentNumber: { patentNumber, patentData, messages, isOpen } }
-    },
-    // ▲▲▲ 新增结束 ▲▲▲
-    
-    // --- 新增：文件管理状态 ---
-    files: {
-        purposeFilter: 'file-extract',
-        items: [] // {id, filename, bytes, created_at, purpose}
     }
+    // ▲▲▲ 新增结束 ▲▲▲
 };
 
 const BACKEND_URL = 'https://patent-workbench-backend.onrender.com';
