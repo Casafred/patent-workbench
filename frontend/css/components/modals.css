@@ -55,6 +55,32 @@
     margin: auto;
 }
 
+/* 固定关闭按钮 */
+#patent_detail_modal .modal-content .close-modal {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--error-color);
+    color: white;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+}
+
+#patent_detail_modal .modal-content .close-modal:hover {
+    background: var(--error-color-dark);
+    transform: scale(1.1);
+}
+
 #patent_detail_modal.show .modal-content {
     opacity: 1;
     transform: scale(1);
