@@ -17,7 +17,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
         <html lang="zh-CN">
         <head>
             <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta name="viewport" content="width=device-width, initial-scale=0.9">
             <title>${data.title || patentNumber} - 专利详情</title>
             <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
             <style>
@@ -25,6 +25,10 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     margin: 0;
                     padding: 0;
                     box-sizing: border-box;
+                }
+                
+                html {
+                    zoom: 0.9;
                 }
                 
                 body {
@@ -834,9 +838,10 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     if (!claimItems || claimItems.length === 0) return;
                     
                     let textToCopy = '';
-                    claimItems.forEach((item, index) => {
-                        const claimText = item.querySelector('.claim-text').textContent.trim();
-                        textToCopy += (index + 1) + '. ' + claimText + '\\n\\n';
+                    claimItems.forEach((item) => {
+                        const claimNumber = item.getAttribute('data-claim-number');
+                        const claimText = item.getAttribute('data-claim-text');
+                        textToCopy += claimNumber + '. ' + claimText + '\\n\\n';
                     });
                     
                     navigator.clipboard.writeText(textToCopy.trim()).then(() => {

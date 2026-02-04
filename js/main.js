@@ -880,8 +880,6 @@ window.openPatentDetailModal = function(result) {
                         <path d="m2.165 15.803.02-.004c1.83-.363 2.948-.842 3.468-1.105A9.06 9.06 0 0 0 8 15c4.418 0 8-3.134 8-7s-3.582-7-8-7-8 3.134-8 7c0 1.76.743 3.37 1.97 4.6a10.437 10.437 0 0 1-.524 2.318l-.003.011a10.722 10.722 0 0 1-.244.637c-.079.186.074.394.273.362a21.673 21.673 0 0 0 .693-.125zm.8-3.108a1 1 0 0 0-.287-.801C1.618 10.83 1 9.468 1 8c0-3.192 3.004-6 7-6s7 2.808 7 6c0 3.193-3.004 6-7 6a8.06 8.06 0 0 1-2.088-.272 1 1 0 0 0-.711.074c-.387.196-1.24.57-2.634.893a10.97 10.97 0 0 0 .398-2z"/>
                     </svg>
                 </button>
-                <!-- 关闭按钮 - 移到最右侧，独立位置 -->
-                <button class="close-modal" onclick="closePatentDetailModal()" style="font-size: 1.8em; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; margin-left: 8px; background: transparent; border: none; color: #666; cursor: pointer; border-radius: 4px; transition: all 0.2s;" onmouseover="this.style.background='#f5f5f5'; this.style.color='#333';" onmouseout="this.style.background='transparent'; this.style.color='#666';">&times;</button>
             </div>
         </div>
     `;
@@ -898,6 +896,14 @@ window.openPatentDetailModal = function(result) {
     setTimeout(() => {
         modal.classList.add('show');
     }, 10);
+    
+    // 添加点击外部关闭功能
+    modal.onclick = function(event) {
+        // 如果点击的是modal背景（不是modal-content），则关闭
+        if (event.target === modal) {
+            closePatentDetailModal();
+        }
+    };
 };
 
 // 关闭专利详情弹窗
@@ -1377,16 +1383,19 @@ function buildPatentDetailHTML(result) {
                             <tr style="background-color: #c8e6c9;">
                                 <th style="padding: 5px; text-align: left; border: 1px solid #ddd;">专利号</th>
                                 <th style="padding: 5px; text-align: left; border: 1px solid #ddd;">标题</th>
+                                <th style="padding: 5px; text-align: center; border: 1px solid #ddd; width: 80px;">审查员引用</th>
                             </tr>
                         </thead>
                         <tbody>
         `;
         
         data.patent_citations.forEach(citation => {
+            const examinerMark = citation.examiner_cited ? '<span style="color: #d32f2f; font-weight: bold;">✓</span>' : '-';
             htmlContent += `
                 <tr>
-                    <td style="padding: 5px; border: 1px solid #ddd;">${citation.patent_number}</td>
+                    <td style="padding: 5px; border: 1px solid #ddd;">${citation.patent_number}${citation.examiner_cited ? ' <span style="color: #d32f2f; font-weight: bold;">*</span>' : ''}</td>
                     <td style="padding: 5px; border: 1px solid #ddd;">${citation.title || '-'}</td>
+                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center;">${examinerMark}</td>
                 </tr>
             `;
         });
