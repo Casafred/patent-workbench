@@ -26,12 +26,10 @@
     height: 100%;
     opacity: 0;
     transition: opacity 0.3s ease;
-    pointer-events: none;
 }
 
 #patent_detail_modal.show {
     opacity: 1;
-    pointer-events: auto;
 }
 
 #patent_detail_modal .modal-content {
