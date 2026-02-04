@@ -609,7 +609,6 @@ class SimplePatentScraper:
                                     'assignee': assignee,
                                     'link': f"https://patents.google.com{link}" if link.startswith('/') else link,
                                     'examiner_cited': is_examiner_cited  # 添加审查员引用标记
-                                    'examiner_cited': is_examiner_cited
                                 })
                         except Exception as e:
                             logger.warning(f"Error parsing citation row: {e}")
