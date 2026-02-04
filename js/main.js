@@ -1214,10 +1214,28 @@ function buildPatentDetailHTML(result) {
         `;
         
         data.claims.forEach((claim, index) => {
+            // Support both string format (old) and object format (new with type)
+            let claimText, claimType;
+            if (typeof claim === 'string') {
+                claimText = claim;
+                claimType = 'unknown'; // Backward compatibility
+            } else {
+                claimText = claim.text;
+                claimType = claim.type || 'unknown';
+            }
+            
+            // Add CSS class based on claim type
+            let claimClass = 'claim-item';
+            if (claimType === 'independent') {
+                claimClass += ' claim-independent';
+            } else if (claimType === 'dependent') {
+                claimClass += ' claim-dependent';
+            }
+            
             htmlContent += `
-                <div class="claim-item" id="claim_${result.patent_number}_${index}">
-                    <strong>权利要求 ${index + 1}:</strong><br/>
-                    ${claim}
+                <div class="${claimClass}" id="claim_${result.patent_number}_${index}">
+                    <strong>权利要求 ${index + 1}${claimType === 'independent' ? ' (独立权利要求)' : claimType === 'dependent' ? ' (从属权利要求)' : ''}:</strong><br/>
+                    ${claimText}
                 </div>
             `;
         });

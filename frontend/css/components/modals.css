@@ -243,3 +243,40 @@
         max-height: 70vh;
     }
 }
+
+/* 权利要求独立/从属样式 */
+.claim-item {
+    margin-bottom: 10px;
+    padding: 12px;
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    background: white;
+    transition: all 0.3s ease;
+}
+
+.claim-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 独立权利要求 - 绿色边框和背景 */
+.claim-item.claim-independent {
+    border-color: #2e7d32;
+    background: #f1f8f4;
+}
+
+.claim-item.claim-independent:hover {
+    border-color: #1b5e20;
+    box-shadow: 0 2px 8px rgba(46, 125, 50, 0.2);
+}
+
+/* 从属权利要求 - 蓝色边框和背景 + 左侧缩进 */
+.claim-item.claim-dependent {
+    border-color: #1976d2;
+    background: #f5f9fc;
+    margin-left: 20px;
+}
+
+.claim-item.claim-dependent:hover {
+    border-color: #0d47a1;
+    box-shadow: 0 2px 8px rgba(25, 118, 210, 0.2);
+}

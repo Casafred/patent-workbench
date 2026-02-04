@@ -306,6 +306,29 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     box-shadow: 0 4px 12px rgba(46, 125, 50, 0.1);
                 }
                 
+                /* 独立权利要求样式 - 绿色 */
+                .claim-item.claim-independent {
+                    border-color: #2e7d32;
+                    background: #f1f8f4;
+                }
+                
+                .claim-item.claim-independent:hover {
+                    border-color: #1b5e20;
+                    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.2);
+                }
+                
+                /* 从属权利要求样式 - 蓝色 + 左侧缩进 */
+                .claim-item.claim-dependent {
+                    border-color: #1976d2;
+                    background: #f5f9fc;
+                    margin-left: 20px;
+                }
+                
+                .claim-item.claim-dependent:hover {
+                    border-color: #0d47a1;
+                    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.2);
+                }
+                
                 .claim-number {
                     font-weight: 700;
                     color: #2e7d32;
@@ -510,18 +533,24 @@ window.openPatentDetailInNewTab = function(patentNumber) {
         <body>
             <!-- 左侧悬浮导航 -->
             <nav class="side-nav" id="sideNav">
-                <a href="#abstract" class="side-nav-item">📄 摘要</a>
-                <a href="#basic-info" class="side-nav-item">ℹ️ 基本信息</a>
-                <a href="#classifications" class="side-nav-item">🏷️ CPC分类</a>
-                <a href="#landscapes" class="side-nav-item">🌐 技术领域</a>
-                <a href="#claims" class="side-nav-item">⚖️ 权利要求</a>
-                <a href="#timeline" class="side-nav-item">📅 事件时间轴</a>
-                <a href="#family" class="side-nav-item">👨‍👩‍👧‍👦 同族信息</a>
-                <a href="#external-links" class="side-nav-item">🔗 外部链接</a>
-                <a href="#citations" class="side-nav-item">📚 引用专利</a>
-                <a href="#cited-by" class="side-nav-item">🔗 被引用</a>
-                <a href="#similar" class="side-nav-item">📋 相似文档</a>
-                <a href="#description" class="side-nav-item">📝 说明书</a>
+                <a href="#" class="side-nav-item scroll-to-top" onclick="scrollToTop(event)" title="回到顶部" style="background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); color: white; font-weight: 600; margin-bottom: 15px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 5px;">
+                        <path fill-rule="evenodd" d="M8 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 1 .708.708L7.5 2.707V14.5a.5.5 0 0 0 .5.5z"/>
+                    </svg>
+                    顶部
+                </a>
+                <a href="#abstract" class="side-nav-item" data-section="abstract">📄 摘要</a>
+                <a href="#basic-info" class="side-nav-item" data-section="basic-info">ℹ️ 基本信息</a>
+                <a href="#classifications" class="side-nav-item" data-section="classifications">🏷️ CPC分类</a>
+                <a href="#landscapes" class="side-nav-item" data-section="landscapes">🌐 技术领域</a>
+                <a href="#claims" class="side-nav-item" data-section="claims">⚖️ 权利要求</a>
+                <a href="#timeline" class="side-nav-item" data-section="timeline">📅 事件时间轴</a>
+                <a href="#family" class="side-nav-item" data-section="family">👨‍👩‍👧‍👦 同族信息</a>
+                <a href="#external-links" class="side-nav-item" data-section="external-links">🔗 外部链接</a>
+                <a href="#citations" class="side-nav-item" data-section="citations">📚 引用专利</a>
+                <a href="#cited-by" class="side-nav-item" data-section="cited-by">🔗 被引用</a>
+                <a href="#similar" class="side-nav-item" data-section="similar">📋 相似文档</a>
+                <a href="#description" class="side-nav-item" data-section="description">📝 说明书</a>
             </nav>
             
             <div class="container">
@@ -640,12 +669,32 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         </h2>
                         <div class="section-content">
                             <div class="claims-list" data-section-content="claims">
-                                ${data.claims.map((claim, index) => `
-                                <div class="claim-item" data-claim-number="${index + 1}" data-claim-text="${claim.replace(/"/g, '&quot;')}">
-                                    <div class="claim-number">权利要求 ${index + 1}</div>
-                                    <div class="claim-text">${claim}</div>
-                                </div>
-                                `).join('')}
+                                ${data.claims.map((claim, index) => {
+                                    // Support both string format (old) and object format (new with type)
+                                    let claimText, claimType;
+                                    if (typeof claim === 'string') {
+                                        claimText = claim;
+                                        claimType = 'unknown';
+                                    } else {
+                                        claimText = claim.text;
+                                        claimType = claim.type || 'unknown';
+                                    }
+                                    
+                                    // Add CSS class based on claim type
+                                    let claimClass = 'claim-item';
+                                    if (claimType === 'independent') {
+                                        claimClass += ' claim-independent';
+                                    } else if (claimType === 'dependent') {
+                                        claimClass += ' claim-dependent';
+                                    }
+                                    
+                                    return `
+                                    <div class="${claimClass}" data-claim-number="${index + 1}" data-claim-text="${claimText.replace(/"/g, '&quot;')}">
+                                        <div class="claim-number">权利要求 ${index + 1}${claimType === 'independent' ? ' <span style="color: #2e7d32; font-size: 0.85em;">(独立权利要求)</span>' : claimType === 'dependent' ? ' <span style="color: #1976d2; font-size: 0.85em;">(从属权利要求)</span>' : ''}</div>
+                                        <div class="claim-text">${claimText}</div>
+                                    </div>
+                                    `;
+                                }).join('')}
                             </div>
                         </div>
                     </div>
@@ -851,6 +900,12 @@ window.openPatentDetailInNewTab = function(patentNumber) {
             </div>
             
             <script>
+                // 回到顶部
+                function scrollToTop(event) {
+                    event.preventDefault();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+                
                 // 折叠/展开section
                 function toggleSection(sectionId) {
                     const section = document.querySelector('[data-section-id="' + sectionId + '"]');
@@ -950,6 +1005,29 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 document.addEventListener('DOMContentLoaded', function() {
                     const navItems = document.querySelectorAll('.side-nav-item');
                     const sections = document.querySelectorAll('.section');
+                    
+                    // 检测哪些section有数据，标记缺失数据的导航项
+                    const data = ${JSON.stringify(data)};
+                    const sectionDataMap = {
+                        'abstract': data.abstract && data.abstract.length > 0,
+                        'claims': data.claims && data.claims.length > 0,
+                        'citations': data.patent_citations && data.patent_citations.length > 0,
+                        'cited-by': data.cited_by && data.cited_by.length > 0,
+                        'similar': data.similar_documents && data.similar_documents.length > 0,
+                        'description': data.description && data.description.length > 0
+                    };
+                    
+                    // 标记缺失数据的导航项
+                    navItems.forEach(item => {
+                        const sectionId = item.getAttribute('data-section');
+                        if (sectionId && sectionDataMap.hasOwnProperty(sectionId) && !sectionDataMap[sectionId]) {
+                            item.style.color = '#d32f2f';
+                            item.style.opacity = '0.6';
+                            item.style.pointerEvents = 'none';
+                            item.style.cursor = 'not-allowed';
+                            item.title = '该部分数据未抓取到';
+                        }
+                    });
                     
                     // 点击导航项平滑滚动并展开对应section
                     navItems.forEach(item => {

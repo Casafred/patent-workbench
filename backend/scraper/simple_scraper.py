@@ -350,6 +350,7 @@ class SimplePatentScraper:
                 patent_data.publication_date = pub_date.get_text().strip()
         
         # Extract claims - 始终提取权利要求，不受crawl_specification限制
+        # 新增：识别独立权利要求和从属权利要求
         try:
             claims = []
             
@@ -366,55 +367,91 @@ class SimplePatentScraper:
                         break
             
             if claims_section:
-                # Find all claim divs with 'num' attribute (most reliable)
-                claim_elements = claims_section.find_all('div', {'num': True, 'class': 'claim'})
+                # Find all <li> elements with class 'claim' or 'claim-dependent'
+                # Google Patents uses <li class="claim"> for independent claims
+                # and <li class="claim-dependent"> for dependent claims
+                claim_li_elements = claims_section.find_all('li', class_=['claim', 'claim-dependent'])
                 
-                if claim_elements:
-                    logger.info(f"找到 {len(claim_elements)} 个带num属性的claim元素")
-                    # Extract from elements with num attribute
-                    for claim in claim_elements:
-                        # Get claim number from num attribute
-                        claim_num = claim.get('num', '')
-                        # Get all claim-text divs within this claim
-                        claim_texts = claim.find_all('div', {'class': 'claim-text'})
+                if claim_li_elements:
+                    logger.info(f"找到 {len(claim_li_elements)} 个<li>权利要求元素")
+                    for li in claim_li_elements:
+                        # Check if it's a dependent claim
+                        is_dependent = 'claim-dependent' in li.get('class', [])
+                        claim_type = 'dependent' if is_dependent else 'independent'
                         
-                        if claim_texts:
-                            # Combine all claim-text divs
-                            full_claim_text = ' '.join([ct.get_text(strip=True) for ct in claim_texts])
-                            if full_claim_text and len(full_claim_text) > 10:
-                                claims.append(full_claim_text)
-                        else:
-                            # Fallback: get all text from claim div
-                            claim_text = claim.get_text(separator=' ', strip=True)
-                            if claim_text and len(claim_text) > 10:
-                                claims.append(claim_text)
+                        # Find the claim div inside the li
+                        claim_div = li.find('div', {'class': 'claim'})
+                        if claim_div:
+                            claim_num = claim_div.get('num', '')
+                            claim_texts = claim_div.find_all('div', {'class': 'claim-text'})
+                            
+                            if claim_texts:
+                                full_claim_text = ' '.join([ct.get_text(strip=True) for ct in claim_texts])
+                                if full_claim_text and len(full_claim_text) > 10:
+                                    claims.append({
+                                        'number': claim_num,
+                                        'text': full_claim_text,
+                                        'type': claim_type
+                                    })
+                            else:
+                                claim_text = claim_div.get_text(separator=' ', strip=True)
+                                if claim_text and len(claim_text) > 10:
+                                    claims.append({
+                                        'number': claim_num,
+                                        'text': claim_text,
+                                        'type': claim_type
+                                    })
                 else:
-                    # Fallback: Find all divs with class 'claim' (without num attribute)
-                    logger.info("未找到带num属性的claim，尝试查找所有class='claim'的div")
-                    claim_elements = claims_section.find_all('div', {'class': 'claim'})
+                    # Fallback: Find all claim divs with 'num' attribute (most reliable)
+                    claim_elements = claims_section.find_all('div', {'num': True, 'class': 'claim'})
                     
                     if claim_elements:
-                        seen_claims = set()
+                        logger.info(f"找到 {len(claim_elements)} 个带num属性的claim元素")
+                        # Extract from elements with num attribute
                         for claim in claim_elements:
-                            claim_text = claim.get_text(separator=' ', strip=True)
-                            if claim_text and len(claim_text) > 10:
-                                # Use first 50 chars as identifier for deduplication
-                                claim_id = claim_text[:50]
-                                if claim_id not in seen_claims:
-                                    seen_claims.add(claim_id)
+                            # Get claim number from num attribute
+                            claim_num = claim.get('num', '')
+                            # Get all claim-text divs within this claim
+                            claim_texts = claim.find_all('div', {'class': 'claim-text'})
+                            
+                            if claim_texts:
+                                # Combine all claim-text divs
+                                full_claim_text = ' '.join([ct.get_text(strip=True) for ct in claim_texts])
+                                if full_claim_text and len(full_claim_text) > 10:
+                                    # Fallback: treat as string for backward compatibility
+                                    claims.append(full_claim_text)
+                            else:
+                                # Fallback: get all text from claim div
+                                claim_text = claim.get_text(separator=' ', strip=True)
+                                if claim_text and len(claim_text) > 10:
                                     claims.append(claim_text)
                     else:
-                        # Last resort: Split by claim numbers using regex
-                        logger.info("未找到claim元素，尝试使用正则表达式分割")
-                        full_text = claims_section.get_text(separator='\n', strip=True)
-                        import re
-                        claim_pattern = r'(\d+)\.\s*(.+?)(?=\d+\.|$)'
-                        matches = re.findall(claim_pattern, full_text, re.DOTALL)
-                        if matches:
-                            for num, text in matches:
-                                claim_text = f"{num}. {text.strip()}"
-                                if len(claim_text) > 10:
-                                    claims.append(claim_text)
+                        # Fallback: Find all divs with class 'claim' (without num attribute)
+                        logger.info("未找到带num属性的claim，尝试查找所有class='claim'的div")
+                        claim_elements = claims_section.find_all('div', {'class': 'claim'})
+                        
+                        if claim_elements:
+                            seen_claims = set()
+                            for claim in claim_elements:
+                                claim_text = claim.get_text(separator=' ', strip=True)
+                                if claim_text and len(claim_text) > 10:
+                                    # Use first 50 chars as identifier for deduplication
+                                    claim_id = claim_text[:50]
+                                    if claim_id not in seen_claims:
+                                        seen_claims.add(claim_id)
+                                        claims.append(claim_text)
+                        else:
+                            # Last resort: Split by claim numbers using regex
+                            logger.info("未找到claim元素，尝试使用正则表达式分割")
+                            full_text = claims_section.get_text(separator='\n', strip=True)
+                            import re
+                            claim_pattern = r'(\d+)\.\s*(.+?)(?=\d+\.|$)'
+                            matches = re.findall(claim_pattern, full_text, re.DOTALL)
+                            if matches:
+                                for num, text in matches:
+                                    claim_text = f"{num}. {text.strip()}"
+                                    if len(claim_text) > 10:
+                                        claims.append(claim_text)
             
             logger.info(f"提取到 {len(claims)} 条权利要求")
             patent_data.claims = claims
