@@ -795,7 +795,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
             <script>
                 // 复制section内容的通用函数
                 function copySectionContent(sectionId, sectionName) {
-                    const section = document.querySelector(`[data-section-content="${sectionId}"]`);
+                    const section = document.querySelector('[data-section-content="' + sectionId + '"]');
                     if (!section) return;
                     
                     let textToCopy = section.textContent.trim();
@@ -824,7 +824,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     let textToCopy = '';
                     claimItems.forEach((item, index) => {
                         const claimText = item.querySelector('.claim-text').textContent.trim();
-                        textToCopy += `${index + 1}. ${claimText}\n\n`;
+                        textToCopy += (index + 1) + '. ' + claimText + '\\n\\n';
                     });
                     
                     navigator.clipboard.writeText(textToCopy.trim()).then(() => {
