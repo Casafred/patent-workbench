@@ -902,12 +902,16 @@ window.openPatentDetailModal = function(result) {
 document.addEventListener('DOMContentLoaded', function() {
     const modal = document.getElementById('patent_detail_modal');
     if (modal) {
+        // 使用捕获阶段确保事件能够正确触发
         modal.addEventListener('click', function(event) {
-            // 如果点击的是modal背景（不是modal-content），则关闭
-            if (event.target === modal) {
+            console.log('Modal clicked:', event.target.id, event.target.className);
+            // 如果点击的是modal背景（不是modal-content或其子元素），则关闭
+            if (event.target.id === 'patent_detail_modal') {
+                console.log('Closing modal...');
                 closePatentDetailModal();
             }
-        });
+        }, false);
+        console.log('✅ 弹窗点击外部关闭事件已绑定');
     }
 });
 
