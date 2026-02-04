@@ -76,7 +76,7 @@
 
 #patent_detail_modal .modal-content .close-modal:hover {
     background: var(--error-color-dark);
-    transform: scale(1.15) rotate(90deg);
+    transform: scale(1.15);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }
 

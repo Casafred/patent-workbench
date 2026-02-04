@@ -1,0 +1,29 @@
+功能六三项增强：导航栏优化 + 权利要求独从权识别
+
+1. 新标签页导航栏优化
+   - 添加"回到顶部"按钮（绿色背景，固定在导航栏顶部）
+   - 自动检测数据并标记缺失项为红色不可点击
+   - 实现scrollToTop平滑滚动功能
+   - 检测字段：abstract, claims, citations, cited-by, similar, description
+
+2. 权利要求独从权识别和样式区分
+   - 爬取器识别<li class="claim">和<li class="claim-dependent">
+   - 数据格式升级为对象数组（保持向后兼容）
+   - 独立权利要求：绿色边框(#2e7d32)+浅绿背景(#f1f8f4)
+   - 从属权利要求：蓝色边框(#1976d2)+浅蓝背景(#f5f9fc)+左侧缩进20px
+   - 弹窗和新标签页均支持新样式
+   - 添加类型标签显示："(独立权利要求)"/"(从属权利要求)"
+
+3. 技术改进
+   - 支持新旧两种数据格式（字符串和对象）
+   - 添加类型标签显示
+   - CSS样式统一管理
+   - 完整的向后兼容性
+
+文件修改：
+- js/patentDetailNewTab.js - 导航栏优化+独从权样式
+- backend/scraper/simple_scraper.py - 识别独从权
+- js/main.js - 弹窗独从权样式
+- frontend/css/components/modals.css - CSS样式
+
+测试指南：功能六三项增强_快速测试指南_20260204.md
