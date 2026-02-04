@@ -116,6 +116,36 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     height: 14px;
                 }
                 
+                /* 折叠/展开功能样式 */
+                .collapsible-section {
+                    transition: all 0.3s ease;
+                }
+                
+                .collapsible-section.collapsed .section-content {
+                    display: none;
+                }
+                
+                .collapsible-section .section-title {
+                    cursor: pointer;
+                    user-select: none;
+                }
+                
+                .collapsible-section .section-title::after {
+                    content: '▼';
+                    float: right;
+                    margin-left: 10px;
+                    transition: transform 0.3s ease;
+                    font-size: 0.8em;
+                }
+                
+                .collapsible-section.collapsed .section-title::after {
+                    transform: rotate(-90deg);
+                }
+                
+                .section-content {
+                    transition: all 0.3s ease;
+                }
+                
                 .section-title {
                     display: flex;
                     align-items: center;
@@ -509,8 +539,8 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 
                 <div class="content">
                     ${data.abstract ? `
-                    <div class="section" id="abstract">
-                        <h2 class="section-title">
+                    <div class="section collapsible-section" id="abstract" data-section-id="abstract">
+                        <h2 class="section-title" onclick="toggleSection('abstract')">
                             <div class="section-title-content">
                                 <span class="section-icon">📄</span>
                                 摘要
@@ -523,7 +553,9 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 复制
                             </button>
                         </h2>
-                        <div class="abstract-box" data-section-content="abstract">${data.abstract}</div>
+                        <div class="section-content">
+                            <div class="abstract-box" data-section-content="abstract">${data.abstract}</div>
+                        </div>
                     </div>
                     ` : ''}
                     
@@ -592,8 +624,8 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     ` : ''}
                     
                     ${data.claims && data.claims.length > 0 ? `
-                    <div class="section" id="claims">
-                        <h2 class="section-title">
+                    <div class="section collapsible-section collapsed" id="claims" data-section-id="claims">
+                        <h2 class="section-title" onclick="toggleSection('claims')">
                             <div class="section-title-content">
                                 <span class="section-icon">⚖️</span>
                                 权利要求 (${data.claims.length})
@@ -606,13 +638,15 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 复制
                             </button>
                         </h2>
-                        <div class="claims-list" data-section-content="claims">
-                            ${data.claims.map((claim, index) => `
-                            <div class="claim-item" data-claim-number="${index + 1}" data-claim-text="${claim.replace(/"/g, '&quot;')}">
-                                <div class="claim-number">权利要求 ${index + 1}</div>
-                                <div class="claim-text">${claim}</div>
+                        <div class="section-content">
+                            <div class="claims-list" data-section-content="claims">
+                                ${data.claims.map((claim, index) => `
+                                <div class="claim-item" data-claim-number="${index + 1}" data-claim-text="${claim.replace(/"/g, '&quot;')}">
+                                    <div class="claim-number">权利要求 ${index + 1}</div>
+                                    <div class="claim-text">${claim}</div>
+                                </div>
+                                `).join('')}
                             </div>
-                            `).join('')}
                         </div>
                     </div>
                     ` : ''}
@@ -680,87 +714,120 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     ` : ''}
                     
                     ${data.patent_citations && data.patent_citations.length > 0 ? `
-                    <div class="section" id="citations">
-                        <h2 class="section-title">
-                            <span class="section-icon">📚</span>
-                            引用专利 (${data.patent_citations.length})
+                    <div class="section collapsible-section collapsed" id="citations" data-section-id="citations">
+                        <h2 class="section-title" onclick="toggleSection('citations')">
+                            <div class="section-title-content">
+                                <span class="section-icon">📚</span>
+                                引用专利 (${data.patent_citations.length})
+                            </div>
+                            <button class="copy-section-btn" onclick="copyPatentNumbersList(event, 'citations')">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                    <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                                </svg>
+                                复制专利号
+                            </button>
                         </h2>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>专利号</th>
-                                    <th>标题</th>
-                                    <th>审查员引用</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${data.patent_citations.map(citation => `
-                                <tr>
-                                    <td>${citation.patent_number}${citation.examiner_cited ? ' <span style="color: #d32f2f; font-weight: bold;">*</span>' : ''}</td>
-                                    <td>${citation.title || '-'}</td>
-                                    <td>${citation.examiner_cited ? '<span style="color: #d32f2f; font-weight: bold;">✓ 审查员引用</span>' : '-'}</td>
-                                </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
+                        <div class="section-content">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>专利号</th>
+                                        <th>标题</th>
+                                        <th>审查员引用</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${data.patent_citations.map(citation => `
+                                    <tr data-patent-number="${citation.patent_number}">
+                                        <td>${citation.patent_number}${citation.examiner_cited ? ' <span style="color: #d32f2f; font-weight: bold;">*</span>' : ''}</td>
+                                        <td>${citation.title || '-'}</td>
+                                        <td>${citation.examiner_cited ? '<span style="color: #d32f2f; font-weight: bold;">✓ 审查员引用</span>' : '-'}</td>
+                                    </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                     ` : ''}
                     
                     ${data.cited_by && data.cited_by.length > 0 ? `
-                    <div class="section" id="cited-by">
-                        <h2 class="section-title">
-                            <span class="section-icon">🔗</span>
-                            被引用专利 (${data.cited_by.length})
+                    <div class="section collapsible-section collapsed" id="cited-by" data-section-id="cited-by">
+                        <h2 class="section-title" onclick="toggleSection('cited-by')">
+                            <div class="section-title-content">
+                                <span class="section-icon">🔗</span>
+                                被引用专利 (${data.cited_by.length})
+                            </div>
+                            <button class="copy-section-btn" onclick="copyPatentNumbersList(event, 'cited-by')">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                    <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                                </svg>
+                                复制专利号
+                            </button>
                         </h2>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>专利号</th>
-                                    <th>标题</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${data.cited_by.map(citation => `
-                                <tr>
-                                    <td>${citation.patent_number}</td>
-                                    <td>${citation.title || '-'}</td>
-                                </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
+                        <div class="section-content">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>专利号</th>
+                                        <th>标题</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${data.cited_by.map(citation => `
+                                    <tr data-patent-number="${citation.patent_number}">
+                                        <td>${citation.patent_number}</td>
+                                        <td>${citation.title || '-'}</td>
+                                    </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                     ` : ''}
                     
                     ${data.similar_documents && data.similar_documents.length > 0 ? `
-                    <div class="section" id="similar">
-                        <h2 class="section-title">
-                            <span class="section-icon">📋</span>
-                            相似文档 (${data.similar_documents.length})
+                    <div class="section collapsible-section collapsed" id="similar" data-section-id="similar">
+                        <h2 class="section-title" onclick="toggleSection('similar')">
+                            <div class="section-title-content">
+                                <span class="section-icon">📋</span>
+                                相似文档 (${data.similar_documents.length})
+                            </div>
+                            <button class="copy-section-btn" onclick="copyPatentNumbersList(event, 'similar')">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                    <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                                </svg>
+                                复制专利号
+                            </button>
                         </h2>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>专利号</th>
-                                    <th>语言</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${data.similar_documents.map(doc => `
-                                <tr>
-                                    <td>${doc.patent_number}</td>
-                                    <td>${doc.language || '-'}</td>
-                                    <td><a href="${doc.link}" target="_blank" style="color: #2e7d32;">查看</a></td>
-                                </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
+                        <div class="section-content">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>专利号</th>
+                                        <th>语言</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${data.similar_documents.map(doc => `
+                                    <tr data-patent-number="${doc.patent_number}">
+                                        <td>${doc.patent_number}</td>
+                                        <td>${doc.language || '-'}</td>
+                                        <td><a href="${doc.link}" target="_blank" style="color: #2e7d32;">查看</a></td>
+                                    </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                     ` : ''}
                     
                     ${data.description ? `
-                    <div class="section" id="description">
-                        <h2 class="section-title">
+                    <div class="section collapsible-section collapsed" id="description" data-section-id="description">
+                        <h2 class="section-title" onclick="toggleSection('description')">
                             <div class="section-title-content">
                                 <span class="section-icon">📝</span>
                                 说明书
@@ -773,8 +840,10 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 复制
                             </button>
                         </h2>
-                        <div class="abstract-box" style="white-space: pre-wrap; line-height: 1.8;" data-section-content="description">
-                            ${data.description.replace(/(\[[A-Z\s]+\])/g, '<br/><br/><strong style="font-size: 1.1em; color: #2e7d32;">$1</strong><br/><br/>').replace(/\n/g, '<br/>')}
+                        <div class="section-content">
+                            <div class="abstract-box" style="white-space: pre-wrap; line-height: 1.8;" data-section-content="description">
+                                ${data.description.replace(/(\[[A-Z\s]+\])/g, '<br/><br/><strong style="font-size: 1.1em; color: #2e7d32;">$1</strong><br/><br/>').replace(/\n/g, '<br/>')}
+                            </div>
                         </div>
                     </div>
                     ` : ''}
@@ -782,8 +851,51 @@ window.openPatentDetailInNewTab = function(patentNumber) {
             </div>
             
             <script>
+                // 折叠/展开section
+                function toggleSection(sectionId) {
+                    const section = document.querySelector('[data-section-id="' + sectionId + '"]');
+                    if (section) {
+                        section.classList.toggle('collapsed');
+                    }
+                }
+                
+                // 复制专利号列表
+                function copyPatentNumbersList(event, sectionId) {
+                    event.stopPropagation(); // 阻止触发折叠/展开
+                    
+                    const section = document.querySelector('[data-section-id="' + sectionId + '"]');
+                    if (!section) return;
+                    
+                    // 从表格中提取所有专利号
+                    const rows = section.querySelectorAll('tbody tr[data-patent-number]');
+                    const patentNumbers = Array.from(rows).map(row => row.getAttribute('data-patent-number'));
+                    
+                    if (patentNumbers.length === 0) {
+                        alert('没有可复制的专利号');
+                        return;
+                    }
+                    
+                    const textToCopy = patentNumbers.join('\\n');
+                    
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                        const btn = event.target.closest('.copy-section-btn');
+                        if (btn) {
+                            const originalHTML = btn.innerHTML;
+                            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" style="width:14px;height:14px"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/></svg> 已复制 ' + patentNumbers.length + ' 个';
+                            setTimeout(() => {
+                                btn.innerHTML = originalHTML;
+                            }, 2000);
+                        }
+                    }).catch(err => {
+                        console.error('复制失败:', err);
+                        alert('复制失败，请手动复制');
+                    });
+                }
+                
                 // 复制section内容的通用函数
                 function copySectionContent(event, sectionId, sectionName) {
+                    event.stopPropagation(); // 阻止触发折叠/展开
+                    
                     const section = document.querySelector('[data-section-content="' + sectionId + '"]');
                     if (!section) return;
                     
@@ -807,6 +919,8 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 
                 // 复制权利要求（带序号）
                 function copyClaimsWithNumbers(event) {
+                    event.stopPropagation(); // 阻止触发折叠/展开
+                    
                     const claimItems = document.querySelectorAll('.claim-item');
                     if (!claimItems || claimItems.length === 0) return;
                     
@@ -832,40 +946,68 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     });
                 }
                 
-                // 平滑滚动和导航高亮
+                // 平滑滚动和导航高亮，以及自动展开/折叠
                 document.addEventListener('DOMContentLoaded', function() {
                     const navItems = document.querySelectorAll('.side-nav-item');
                     const sections = document.querySelectorAll('.section');
                     
-                    // 点击导航项平滑滚动
+                    // 点击导航项平滑滚动并展开对应section
                     navItems.forEach(item => {
                         item.addEventListener('click', function(e) {
                             e.preventDefault();
                             const targetId = this.getAttribute('href').substring(1);
                             const targetSection = document.getElementById(targetId);
                             if (targetSection) {
+                                // 如果是可折叠的section，先展开
+                                if (targetSection.classList.contains('collapsible-section')) {
+                                    targetSection.classList.remove('collapsed');
+                                }
                                 targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
                             }
                         });
                     });
                     
-                    // 滚动时高亮当前section
+                    // 滚动时高亮当前section，并自动展开/折叠
+                    let lastActiveSection = null;
                     function highlightNav() {
                         let current = '';
+                        let currentSection = null;
+                        
                         sections.forEach(section => {
                             const sectionTop = section.offsetTop;
                             const sectionHeight = section.clientHeight;
                             if (window.pageYOffset >= sectionTop - 100) {
                                 current = section.getAttribute('id');
+                                currentSection = section;
                             }
                         });
                         
+                        // 更新导航高亮
                         navItems.forEach(item => {
                             item.classList.remove('active');
                             if (item.getAttribute('href') === '#' + current) {
                                 item.classList.add('active');
                             }
                         });
+                        
+                        // 自动展开当前section，折叠其他section
+                        if (currentSection && currentSection !== lastActiveSection) {
+                            sections.forEach(section => {
+                                if (section.classList.contains('collapsible-section')) {
+                                    if (section === currentSection) {
+                                        section.classList.remove('collapsed');
+                                    } else if (section !== lastActiveSection) {
+                                        // 延迟折叠，避免立即折叠刚离开的section
+                                        setTimeout(() => {
+                                            if (section !== currentSection) {
+                                                section.classList.add('collapsed');
+                                            }
+                                        }, 500);
+                                    }
+                                }
+                            });
+                            lastActiveSection = currentSection;
+                        }
                     }
                     
                     window.addEventListener('scroll', highlightNav);

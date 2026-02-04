@@ -896,15 +896,20 @@ window.openPatentDetailModal = function(result) {
     setTimeout(() => {
         modal.classList.add('show');
     }, 10);
-    
-    // 添加点击外部关闭功能
-    modal.onclick = function(event) {
-        // 如果点击的是modal背景（不是modal-content），则关闭
-        if (event.target === modal) {
-            closePatentDetailModal();
-        }
-    };
 };
+
+// 初始化弹窗点击外部关闭功能（只初始化一次）
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('patent_detail_modal');
+    if (modal) {
+        modal.addEventListener('click', function(event) {
+            // 如果点击的是modal背景（不是modal-content），则关闭
+            if (event.target === modal) {
+                closePatentDetailModal();
+            }
+        });
+    }
+});
 
 // 关闭专利详情弹窗
 window.closePatentDetailModal = function() {

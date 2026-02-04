@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>功能六增强功能测试 - 2026年2月4日</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .test-container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        h2 {
+            color: #764ba2;
+            margin-top: 30px;
+        }
+        
+        .test-section {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+        }
+        
+        .test-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .status.pass {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .test-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            transition: all 0.3s;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 10px 0;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .feature-list li:before {
+            content: "✓ ";
+            color: #28a745;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        
+        .note {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎯 功能六增强功能测试</h1>
+        <p><strong>测试日期：</strong>2026年2月4日</p>
+        <p><strong>测试目的：</strong>验证功能六的四项增强功能是否正常工作</p>
+        
+        <h2>📋 测试清单</h2>
+        
+        <div class="test-section">
+            <h3>1. 弹窗点击外部关闭功能 <span class="status pending">待测试</span></h3>
+            <div class="test-item">
+                <strong>测试步骤：</strong>
+                <ol>
+                    <li>在功能六中查询任意专利号（例如：US10000000B2）</li>
+                    <li>点击专利卡片打开详情弹窗</li>
+                    <li>点击弹窗外部的灰色遮罩区域</li>
+                    <li>验证弹窗是否正确关闭</li>
+                </ol>
+                <strong>预期结果：</strong>
+                <ul class="feature-list">
+                    <li>点击弹窗外部区域时，弹窗应该平滑关闭</li>
+                    <li>点击弹窗内部内容时，弹窗不应关闭</li>
+                    <li>关闭按钮(×)仍然正常工作</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>2. 新标签页显示摘要 <span class="status pending">待测试</span></h3>
+            <div class="test-item">
+                <strong>测试步骤：</strong>
+                <ol>
+                    <li>在功能六中查询任意专利号</li>
+                    <li>打开专利详情弹窗</li>
+                    <li>点击"新标签页打开"按钮（右上角）</li>
+                    <li>在新标签页中查看是否显示摘要部分</li>
+                </ol>
+                <strong>预期结果：</strong>
+                <ul class="feature-list">
+                    <li>新标签页应该显示"📄 摘要"section</li>
+                    <li>摘要内容应该完整显示</li>
+                    <li>摘要section应该有复制按钮</li>
+                    <li>摘要section支持折叠/展开（默认展开）</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>3. 一键复制专利号列表 <span class="status pending">待测试</span></h3>
+            <div class="test-item">
+                <strong>测试步骤：</strong>
+                <ol>
+                    <li>在新标签页中找到"引用专利"section</li>
+                    <li>点击section标题右侧的"复制专利号"按钮</li>
+                    <li>粘贴到文本编辑器中验证</li>
+                    <li>重复测试"被引用专利"和"相似文档"section</li>
+                </ol>
+                <strong>预期结果：</strong>
+                <ul class="feature-list">
+                    <li>点击按钮后，所有专利号应该被复制到剪贴板</li>
+                    <li>专利号应该以换行符分隔（每行一个专利号）</li>
+                    <li>按钮应该显示"已复制 X 个"提示</li>
+                    <li>2秒后按钮恢复原状</li>
+                </ul>
+                <div class="note">
+                    <strong>💡 提示：</strong>复制的专利号格式示例：
+                    <div class="code-block">US10000000B2
+US10000001B2
+US10000002B2</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>4. 内容折叠和展开功能 <span class="status pending">待测试</span></h3>
+            <div class="test-item">
+                <strong>测试步骤：</strong>
+                <ol>
+                    <li>在新标签页中观察各个section的初始状态</li>
+                    <li>点击"权利要求"section的标题</li>
+                    <li>点击左侧导航中的"引用专利"</li>
+                    <li>滚动页面到"说明书"section</li>
+                    <li>继续滚动离开"说明书"section</li>
+                </ol>
+                <strong>预期结果：</strong>
+                <ul class="feature-list">
+                    <li>默认折叠：权利要求、引用专利、被引用、相似文档、说明书</li>
+                    <li>默认展开：摘要、基本信息、CPC分类等</li>
+                    <li>点击标题可以手动切换折叠/展开状态</li>
+                    <li>点击左侧导航时，目标section自动展开</li>
+                    <li>滚动到某个section时，该section自动展开</li>
+                    <li>离开某个section后，延迟500ms自动折叠</li>
+                    <li>标题右侧显示箭头图标（▼展开 / ▶折叠）</li>
+                </ul>
+                <div class="warning">
+                    <strong>⚠️ 注意：</strong>自动折叠有500ms延迟，避免频繁切换导致的闪烁。
+                </div>
+            </div>
+        </div>
+        
+        <h2>🔧 技术实现</h2>
+        
+        <div class="test-section">
+            <h3>修改的文件</h3>
+            <ul class="feature-list">
+                <li><code>js/main.js</code> - 弹窗点击外部关闭功能</li>
+                <li><code>js/patentDetailNewTab.js</code> - 新标签页所有增强功能</li>
+            </ul>
+        </div>
+        
+        <div class="test-section">
+            <h3>新增功能函数</h3>
+            <div class="code-block">// 折叠/展开section
+function toggleSection(sectionId)
+
+// 复制专利号列表
+function copyPatentNumbersList(event, sectionId)
+
+// 自动展开/折叠逻辑
+function highlightNav() {
+    // 检测当前section
+    // 自动展开当前section
+    // 延迟折叠其他section
+}</div>
+        </div>
+        
+        <h2>📊 测试结果记录</h2>
+        
+        <div class="test-section">
+            <h3>测试环境</h3>
+            <ul>
+                <li><strong>浏览器：</strong>_____________</li>
+                <li><strong>操作系统：</strong>_____________</li>
+                <li><strong>测试人员：</strong>_____________</li>
+                <li><strong>测试时间：</strong>_____________</li>
+            </ul>
+        </div>
+        
+        <div class="test-section">
+            <h3>测试结果</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #667eea; color: white;">
+                        <th style="padding: 12px; text-align: left;">功能</th>
+                        <th style="padding: 12px; text-align: center;">状态</th>
+                        <th style="padding: 12px; text-align: left;">备注</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 12px;">1. 弹窗点击外部关闭</td>
+                        <td style="padding: 12px; text-align: center;">☐ 通过 ☐ 失败</td>
+                        <td style="padding: 12px;">_____________</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 12px;">2. 新标签页显示摘要</td>
+                        <td style="padding: 12px; text-align: center;">☐ 通过 ☐ 失败</td>
+                        <td style="padding: 12px;">_____________</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e9ecef;">
+                        <td style="padding: 12px;">3. 复制专利号列表</td>
+                        <td style="padding: 12px; text-align: center;">☐ 通过 ☐ 失败</td>
+                        <td style="padding: 12px;">_____________</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px;">4. 内容折叠和展开</td>
+                        <td style="padding: 12px; text-align: center;">☐ 通过 ☐ 失败</td>
+                        <td style="padding: 12px;">_____________</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="note">
+            <h3>💡 测试提示</h3>
+            <ul>
+                <li>建议使用有引用专利、被引用专利和相似文档的专利号进行测试</li>
+                <li>测试时注意观察动画效果和过渡效果</li>
+                <li>测试复制功能时，建议粘贴到文本编辑器中验证格式</li>
+                <li>测试折叠功能时，注意观察500ms延迟效果</li>
+                <li>如发现问题，请记录详细的复现步骤</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
