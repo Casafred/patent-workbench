@@ -34,13 +34,13 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%);
                     min-height: 100vh;
                     padding: 20px;
-                    padding-left: 100px;
+                    padding-left: 85px;
                 }
                 
                 /* 左侧悬浮导航 */
                 .side-nav {
                     position: fixed;
-                    left: 20px;
+                    left: 5px;
                     top: 50%;
                     transform: translateY(-50%);
                     background: white;
@@ -132,6 +132,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     color: white;
                     padding: 30px 40px;
                     position: relative;
+                    overflow: visible;
                 }
                 
                 .header-top {
@@ -148,20 +149,29 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 }
                 
                 .close-btn {
-                    background: rgba(255,255,255,0.2);
-                    border: none;
+                    position: absolute;
+                    top: -15px;
+                    right: -15px;
+                    background: #d32f2f;
+                    border: 3px solid white;
                     color: white;
-                    padding: 10px 20px;
-                    border-radius: 8px;
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
                     cursor: pointer;
-                    font-size: 0.95em;
+                    font-size: 1.2em;
                     transition: all 0.3s;
-                    backdrop-filter: blur(10px);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                    z-index: 10;
                 }
                 
                 .close-btn:hover {
-                    background: rgba(255,255,255,0.3);
-                    transform: translateY(-2px);
+                    background: #b71c1c;
+                    transform: scale(1.1) rotate(90deg);
+                    box-shadow: 0 6px 16px rgba(0,0,0,0.4);
                 }
                 
                 .patent-title {
@@ -703,13 +713,15 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 <tr>
                                     <th>专利号</th>
                                     <th>标题</th>
+                                    <th>审查员引用</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 ${data.patent_citations.map(citation => `
                                 <tr>
-                                    <td>${citation.patent_number}</td>
+                                    <td>${citation.patent_number}${citation.examiner_cited ? ' <span style="color: #d32f2f; font-weight: bold;">*</span>' : ''}</td>
                                     <td>${citation.title || '-'}</td>
+                                    <td>${citation.examiner_cited ? '<span style="color: #d32f2f; font-weight: bold;">✓ 审查员引用</span>' : '-'}</td>
                                 </tr>
                                 `).join('')}
                             </tbody>

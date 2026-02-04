@@ -55,15 +55,15 @@
     margin: auto;
 }
 
-/* 固定关闭按钮 */
+/* 固定关闭按钮 - 突出于弹窗右上角 */
 #patent_detail_modal .modal-content .close-modal {
-    position: fixed;
-    top: 20px;
-    right: 20px;
+    position: absolute;
+    top: -15px;
+    right: -15px;
     background: var(--error-color);
     color: white;
-    border: none;
-    font-size: 24px;
+    border: 3px solid white;
+    font-size: 20px;
     cursor: pointer;
     width: 40px;
     height: 40px;
@@ -71,14 +71,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1001;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    z-index: 1002;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     transition: all 0.2s ease;
 }
 
 #patent_detail_modal .modal-content .close-modal:hover {
     background: var(--error-color-dark);
-    transform: scale(1.1);
+    transform: scale(1.15) rotate(90deg);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }
 
 #patent_detail_modal.show .modal-content {

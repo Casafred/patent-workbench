@@ -596,9 +596,9 @@ class SimplePatentScraper:
                             title = row.find('td', {'itemprop': 'title'})
                             title = title.get_text().strip() if title else ''
                             
-                            # 提取引用类型
+                            # 提取审查员引用标记（examinerCited）
                             examiner_cited = row.find('span', {'itemprop': 'examinerCited'})
-                            is_examiner_cited = '*' in examiner_cited.get_text() if examiner_cited else False
+                            is_examiner_cited = examiner_cited is not None and '*' in examiner_cited.get_text()
                             
                             if patent_num:
                                 citations.append({
@@ -608,6 +608,7 @@ class SimplePatentScraper:
                                     'publication_date': pub_date,
                                     'assignee': assignee,
                                     'link': f"https://patents.google.com{link}" if link.startswith('/') else link,
+                                    'examiner_cited': is_examiner_cited  # 添加审查员引用标记
                                     'examiner_cited': is_examiner_cited
                                 })
                         except Exception as e:
@@ -653,7 +654,7 @@ class SimplePatentScraper:
                                     logger.warning(f"Error parsing citation table row: {e}")
                                     continue
                 
-                patent_data.patent_citations = citations[:20]  # 限制前20条
+                patent_data.patent_citations = citations  # 不限制数量，提取所有引用专利
                 logger.info(f"提取到 {len(citations)} 条引用专利")
             except Exception as e:
                 logger.warning(f"Error extracting patent citations for {patent_number}: {e}")

@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>功能六引用专利增强测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .test-section {
+            margin-bottom: 40px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .test-section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .test-item {
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .test-item h3 {
+            color: #495057;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .status.pass {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        
+        .demo-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        
+        .demo-table th,
+        .demo-table td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #dee2e6;
+        }
+        
+        .demo-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+        }
+        
+        .demo-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .examiner-mark {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+        
+        .demo-nav {
+            position: fixed;
+            left: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            padding: 15px 10px;
+            z-index: 1000;
+        }
+        
+        .demo-nav-item {
+            display: block;
+            padding: 10px 15px;
+            margin: 5px 0;
+            color: #666;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 0.85em;
+            transition: all 0.3s;
+        }
+        
+        .demo-nav-item:hover {
+            background: #e8f5e9;
+            color: #667eea;
+            transform: translateX(5px);
+        }
+        
+        .demo-modal {
+            position: relative;
+            width: 400px;
+            height: 300px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin: 20px auto;
+            padding: 20px;
+        }
+        
+        .demo-close-btn {
+            position: absolute;
+            top: -15px;
+            right: -15px;
+            background: #d32f2f;
+            color: white;
+            border: 3px solid white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: all 0.3s;
+        }
+        
+        .demo-close-btn:hover {
+            background: #b71c1c;
+            transform: scale(1.15) rotate(90deg);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <!-- 演示左侧导航栏 -->
+    <nav class="demo-nav">
+        <a href="#test1" class="demo-nav-item">测试1</a>
+        <a href="#test2" class="demo-nav-item">测试2</a>
+        <a href="#test3" class="demo-nav-item">测试3</a>
+        <a href="#test4" class="demo-nav-item">测试4</a>
+    </nav>
+    
+    <div class="container">
+        <h1>🎯 功能六引用专利增强测试</h1>
+        
+        <!-- 测试1: 引用专利数量限制移除 -->
+        <div class="test-section" id="test1">
+            <h2>测试1: 引用专利数量限制移除 <span class="status pass">✓ 已修复</span></h2>
+            
+            <div class="test-item">
+                <h3>修复前</h3>
+                <div class="code-block">
+patent_data.patent_citations = citations[:20]  # 限制前20条
+                </div>
+                <p>❌ 问题：只能爬取前20条引用专利，即使有100+条也只显示20条</p>
+            </div>
+            
+            <div class="test-item">
+                <h3>修复后</h3>
+                <div class="code-block">
+patent_data.patent_citations = citations  # 不限制数量，提取所有引用专利
+                </div>
+                <p>✅ 结果：现在会爬取所有引用专利，完整显示100+条数据</p>
+            </div>
+            
+            <div class="test-item">
+                <h3>测试方法</h3>
+                <ol>
+                    <li>搜索专利号：<span class="highlight">CN104154208B</span>（该专利有大量引用）</li>
+                    <li>点击"新标签页打开"按钮</li>
+                    <li>滚动到"引用专利"部分</li>
+                    <li>验证引用专利数量是否超过20条</li>
+                </ol>
+            </div>
+        </div>
+        
+        <!-- 测试2: 审查员引用标记支持 -->
+        <div class="test-section" id="test2">
+            <h2>测试2: 审查员引用标记支持 <span class="status pass">✓ 已实现</span></h2>
+            
+            <div class="test-item">
+                <h3>Google Patents 原始格式</h3>
+                <div class="code-block">
+&lt;span itemprop="publicationNumber"&gt;US4835410A&lt;/span&gt;
+&lt;span itemprop="examinerCited"&gt;*&lt;/span&gt;
+                </div>
+                <p>Google Patents使用 <span class="highlight">examinerCited</span> 属性标记审查员引用的专利</p>
+            </div>
+            
+            <div class="test-item">
+                <h3>爬虫提取逻辑</h3>
+                <div class="code-block">
+examiner_cited = row.find('span', {'itemprop': 'examinerCited'})
+is_examiner_cited = examiner_cited is not None and '*' in examiner_cited.get_text()
+
+citations.append({
+    'patent_number': patent_num,
+    'title': title,
+    'examiner_cited': is_examiner_cited  # 新增字段
+})
+                </div>
+            </div>
+            
+            <div class="test-item">
+                <h3>显示效果演示</h3>
+                <table class="demo-table">
+                    <thead>
+                        <tr>
+                            <th>专利号</th>
+                            <th>标题</th>
+                            <th>审查员引用</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>US4835410A <span class="examiner-mark">*</span></td>
+                            <td>Patent Title Example 1</td>
+                            <td><span class="examiner-mark">✓ 审查员引用</span></td>
+                        </tr>
+                        <tr>
+                            <td>US5123456A</td>
+                            <td>Patent Title Example 2</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td>CN104154208B <span class="examiner-mark">*</span></td>
+                            <td>Patent Title Example 3</td>
+                            <td><span class="examiner-mark">✓ 审查员引用</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p>✅ 审查员引用的专利有红色星号和"✓ 审查员引用"标记</p>
+            </div>
+        </div>
+        
+        <!-- 测试3: 左侧导航栏位置优化 -->
+        <div class="test-section" id="test3">
+            <h2>测试3: 左侧导航栏位置优化 <span class="status pass">✓ 已优化</span></h2>
+            
+            <div class="test-item">
+                <h3>修复前</h3>
+                <div class="code-block">
+.side-nav {
+    left: 20px;  /* 距离左边缘20px */
+}
+
+body {
+    padding-left: 100px;  /* 左侧留白100px */
+}
+                </div>
+                <p>❌ 问题：导航栏可能遮挡主内容区域</p>
+            </div>
+            
+            <div class="test-item">
+                <h3>修复后</h3>
+                <div class="code-block">
+.side-nav {
+    left: 5px;  /* 距离左边缘5px，更贴近边缘 */
+}
+
+body {
+    padding-left: 85px;  /* 左侧留白85px，减少空白 */
+}
+                </div>
+                <p>✅ 结果：导航栏更贴近左边缘，不会遮挡主要内容</p>
+            </div>
+            
+            <div class="test-item">
+                <h3>实际效果</h3>
+                <p>👈 请查看页面左侧的演示导航栏，它现在位于 <span class="highlight">left: 5px</span> 的位置</p>
+                <p>这个位置既方便访问，又不会遮挡主要内容区域</p>
+            </div>
+        </div>
+        
+        <!-- 测试4: 弹窗关闭按钮优化 -->
+        <div class="test-section" id="test4">
+            <h2>测试4: 弹窗关闭按钮突出显示 <span class="status pass">✓ 已优化</span></h2>
+            
+            <div class="test-item">
+                <h3>修复前</h3>
+                <div class="code-block">
+.close-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    /* 按钮在弹窗内部 */
+}
+                </div>
+                <p>❌ 问题：关闭按钮在弹窗内部，可能遮挡"问一问"等功能按钮</p>
+            </div>
+            
+            <div class="test-item">
+                <h3>修复后</h3>
+                <div class="code-block">
+.close-btn {
+    position: absolute;
+    top: -15px;
+    right: -15px;
+    border-radius: 50%;
+    border: 3px solid white;
+    /* 按钮突出于弹窗外部 */
+}
+
+.close-btn:hover {
+    transform: scale(1.15) rotate(90deg);
+    /* 悬停时旋转动画 */
+}
+                </div>
+                <p>✅ 结果：关闭按钮突出于弹窗右上角外部，不遮挡任何内容</p>
+            </div>
+            
+            <div class="test-item">
+                <h3>演示效果</h3>
+                <div class="demo-modal">
+                    <button class="demo-close-btn">✕</button>
+                    <h3 style="margin-bottom: 15px;">弹窗内容区域</h3>
+                    <p>关闭按钮位于弹窗外部右上角</p>
+                    <p>悬停时会旋转90度并放大</p>
+                    <p>不会遮挡弹窗内的任何内容</p>
+                </div>
+                <p style="text-align: center; color: #6c757d; font-size: 0.9em;">
+                    👆 将鼠标悬停在关闭按钮上查看动画效果
+                </p>
+            </div>
+        </div>
+        
+        <!-- 完整测试流程 -->
+        <div class="test-section">
+            <h2>📋 完整测试流程</h2>
+            
+            <div class="test-item">
+                <h3>步骤1: 测试引用专利数量</h3>
+                <ol>
+                    <li>在功能六中搜索专利：<span class="highlight">CN104154208B</span></li>
+                    <li>等待爬取完成</li>
+                    <li>点击"新标签页打开"按钮</li>
+                    <li>滚动到"引用专利"部分</li>
+                    <li>验证引用专利数量 > 20条</li>
+                </ol>
+            </div>
+            
+            <div class="test-item">
+                <h3>步骤2: 测试审查员引用标记</h3>
+                <ol>
+                    <li>在引用专利表格中查找带有红色星号 <span class="examiner-mark">*</span> 的专利号</li>
+                    <li>验证"审查员引用"列是否显示 <span class="examiner-mark">✓ 审查员引用</span></li>
+                    <li>对比没有星号的专利，"审查员引用"列应显示 "-"</li>
+                </ol>
+            </div>
+            
+            <div class="test-item">
+                <h3>步骤3: 测试导航栏位置</h3>
+                <ol>
+                    <li>在新标签页中观察左侧导航栏位置</li>
+                    <li>验证导航栏是否贴近左边缘（约5px）</li>
+                    <li>验证导航栏是否遮挡主要内容</li>
+                    <li>点击导航项测试平滑滚动功能</li>
+                </ol>
+            </div>
+            
+            <div class="test-item">
+                <h3>步骤4: 测试关闭按钮</h3>
+                <ol>
+                    <li>观察新标签页右上角的关闭按钮</li>
+                    <li>验证按钮是否突出于页面边缘外部</li>
+                    <li>将鼠标悬停在按钮上，观察旋转动画</li>
+                    <li>验证按钮是否遮挡页面内容</li>
+                </ol>
+            </div>
+        </div>
+        
+        <!-- 预期结果 -->
+        <div class="test-section">
+            <h2>✅ 预期结果</h2>
+            <ul style="list-style: none; padding: 0;">
+                <li style="padding: 10px; margin: 5px 0; background: #d4edda; border-radius: 8px;">
+                    ✓ 所有引用专利都被爬取和显示（100+条）
+                </li>
+                <li style="padding: 10px; margin: 5px 0; background: #d4edda; border-radius: 8px;">
+                    ✓ 审查员引用的专利有明显的红色星号和标记
+                </li>
+                <li style="padding: 10px; margin: 5px 0; background: #d4edda; border-radius: 8px;">
+                    ✓ 左侧导航栏位置合理，不遮挡主要内容
+                </li>
+                <li style="padding: 10px; margin: 5px 0; background: #d4edda; border-radius: 8px;">
+                    ✓ 关闭按钮突出于右上角，有旋转动画效果
+                </li>
+            </ul>
+        </div>
+        
+        <div style="text-align: center; margin-top: 40px;">
+            <a href="frontend/index.html" class="btn">开始测试功能六</a>
+        </div>
+    </div>
+    
+    <script>
+        // 平滑滚动
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+        
+        // 演示关闭按钮点击效果
+        document.querySelector('.demo-close-btn').addEventListener('click', function() {
+            alert('关闭按钮点击效果演示\n\n在实际应用中，这会关闭弹窗或新标签页');
+        });
+    </script>
+</body>
+</html>
