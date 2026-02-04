@@ -85,6 +85,39 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     border-radius: 2px;
                 }
                 
+                /* 复制按钮样式 */
+                .copy-section-btn {
+                    background: #2e7d32;
+                    color: white;
+                    border: none;
+                    padding: 6px 12px;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-size: 0.85em;
+                    transition: all 0.3s;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 5px;
+                    margin-left: auto;
+                }
+                
+                .copy-section-btn:hover {
+                    background: #1b5e20;
+                    transform: translateY(-2px);
+                    box-shadow: 0 2px 8px rgba(46, 125, 50, 0.3);
+                }
+                
+                .copy-section-btn svg {
+                    width: 14px;
+                    height: 14px;
+                }
+                
+                .section-title {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                }
+                
                 .container {
                     max-width: 1200px;
                     margin: 0 auto;
@@ -173,6 +206,9 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     margin-bottom: 20px;
                     padding-bottom: 10px;
                     border-bottom: 3px solid #2e7d32;
+                }
+                
+                .section-title-content {
                     display: flex;
                     align-items: center;
                     gap: 10px;
@@ -488,10 +524,19 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     ${data.abstract ? `
                     <div class="section" id="abstract">
                         <h2 class="section-title">
-                            <span class="section-icon">📄</span>
-                            摘要
+                            <div class="section-title-content">
+                                <span class="section-icon">📄</span>
+                                摘要
+                            </div>
+                            <button class="copy-section-btn" onclick="copySectionContent('abstract', '摘要')">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                    <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                                </svg>
+                                复制
+                            </button>
                         </h2>
-                        <div class="abstract-box">${data.abstract}</div>
+                        <div class="abstract-box" data-section-content="abstract">${data.abstract}</div>
                     </div>
                     ` : ''}
                     
@@ -562,12 +607,21 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     ${data.claims && data.claims.length > 0 ? `
                     <div class="section" id="claims">
                         <h2 class="section-title">
-                            <span class="section-icon">⚖️</span>
-                            权利要求 (${data.claims.length})
+                            <div class="section-title-content">
+                                <span class="section-icon">⚖️</span>
+                                权利要求 (${data.claims.length})
+                            </div>
+                            <button class="copy-section-btn" onclick="copyClaimsWithNumbers()">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                    <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                                </svg>
+                                复制
+                            </button>
                         </h2>
-                        <div class="claims-list">
+                        <div class="claims-list" data-section-content="claims">
                             ${data.claims.map((claim, index) => `
-                            <div class="claim-item">
+                            <div class="claim-item" data-claim-number="${index + 1}" data-claim-text="${claim.replace(/"/g, '&quot;')}">
                                 <div class="claim-number">权利要求 ${index + 1}</div>
                                 <div class="claim-text">${claim}</div>
                             </div>
@@ -718,10 +772,19 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     ${data.description ? `
                     <div class="section" id="description">
                         <h2 class="section-title">
-                            <span class="section-icon">📝</span>
-                            说明书
+                            <div class="section-title-content">
+                                <span class="section-icon">📝</span>
+                                说明书
+                            </div>
+                            <button class="copy-section-btn" onclick="copySectionContent('description', '说明书')">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                    <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                                </svg>
+                                复制
+                            </button>
                         </h2>
-                        <div class="abstract-box" style="white-space: pre-wrap; line-height: 1.8;">
+                        <div class="abstract-box" style="white-space: pre-wrap; line-height: 1.8;" data-section-content="description">
                             ${data.description.replace(/(\[[A-Z\s]+\])/g, '<br/><br/><strong style="font-size: 1.1em; color: #2e7d32;">$1</strong><br/><br/>').replace(/\n/g, '<br/>')}
                         </div>
                     </div>
@@ -730,6 +793,55 @@ window.openPatentDetailInNewTab = function(patentNumber) {
             </div>
             
             <script>
+                // 复制section内容的通用函数
+                function copySectionContent(sectionId, sectionName) {
+                    const section = document.querySelector(`[data-section-content="${sectionId}"]`);
+                    if (!section) return;
+                    
+                    let textToCopy = section.textContent.trim();
+                    
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                        // 找到对应的复制按钮并显示成功提示
+                        const btn = event.target.closest('.copy-section-btn');
+                        if (btn) {
+                            const originalHTML = btn.innerHTML;
+                            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" style="width:14px;height:14px"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/></svg> 已复制';
+                            setTimeout(() => {
+                                btn.innerHTML = originalHTML;
+                            }, 2000);
+                        }
+                    }).catch(err => {
+                        console.error('复制失败:', err);
+                        alert('复制失败，请手动复制');
+                    });
+                }
+                
+                // 复制权利要求（带序号）
+                function copyClaimsWithNumbers() {
+                    const claimItems = document.querySelectorAll('.claim-item');
+                    if (!claimItems || claimItems.length === 0) return;
+                    
+                    let textToCopy = '';
+                    claimItems.forEach((item, index) => {
+                        const claimText = item.querySelector('.claim-text').textContent.trim();
+                        textToCopy += `${index + 1}. ${claimText}\n\n`;
+                    });
+                    
+                    navigator.clipboard.writeText(textToCopy.trim()).then(() => {
+                        const btn = event.target.closest('.copy-section-btn');
+                        if (btn) {
+                            const originalHTML = btn.innerHTML;
+                            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" style="width:14px;height:14px"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/></svg> 已复制';
+                            setTimeout(() => {
+                                btn.innerHTML = originalHTML;
+                            }, 2000);
+                        }
+                    }).catch(err => {
+                        console.error('复制失败:', err);
+                        alert('复制失败，请手动复制');
+                    });
+                }
+                
                 // 平滑滚动和导航高亮
                 document.addEventListener('DOMContentLoaded', function() {
                     const navItems = document.querySelectorAll('.side-nav-item');

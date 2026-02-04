@@ -845,14 +845,14 @@ window.openPatentDetailModal = function(result) {
     
     // 清空并重建modal header，合并标题和操作按钮
     modalHeader.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 15px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; gap: 15px;">
             <div style="flex: 1; min-width: 0;">
                 <h3 style="margin: 0; font-size: 1.2em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${result.patent_number} - ${data.title || '无标题'}</h3>
                 <div style="font-size: 0.85em; color: #666; margin-top: 5px;">
                     查询耗时: ${result.processing_time?.toFixed(2) || 'N/A'}秒
                 </div>
             </div>
-            <div style="display: flex; gap: 8px; align-items: center; flex-shrink: 0;">
+            <div style="display: flex; gap: 8px; align-items: flex-start; flex-shrink: 0;">
                 <!-- 上一条/下一条切换按钮 -->
                 <div style="display: flex; gap: 5px; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden;">
                     <button class="small-button" onclick="navigatePatent('prev', '${result.patent_number}')" style="border-radius: 0; border-right: 1px solid var(--border-color);" title="上一条">
@@ -880,8 +880,8 @@ window.openPatentDetailModal = function(result) {
                         <path d="m2.165 15.803.02-.004c1.83-.363 2.948-.842 3.468-1.105A9.06 9.06 0 0 0 8 15c4.418 0 8-3.134 8-7s-3.582-7-8-7-8 3.134-8 7c0 1.76.743 3.37 1.97 4.6a10.437 10.437 0 0 1-.524 2.318l-.003.011a10.722 10.722 0 0 1-.244.637c-.079.186.074.394.273.362a21.673 21.673 0 0 0 .693-.125zm.8-3.108a1 1 0 0 0-.287-.801C1.618 10.83 1 9.468 1 8c0-3.192 3.004-6 7-6s7 2.808 7 6c0 3.193-3.004 6-7 6a8.06 8.06 0 0 1-2.088-.272 1 1 0 0 0-.711.074c-.387.196-1.24.57-2.634.893a10.97 10.97 0 0 0 .398-2z"/>
                     </svg>
                 </button>
-                <!-- 关闭按钮 -->
-                <button class="close-modal" onclick="closePatentDetailModal()" style="font-size: 1.5em; padding: 5px 10px;">&times;</button>
+                <!-- 关闭按钮 - 移到最右侧，独立位置 -->
+                <button class="close-modal" onclick="closePatentDetailModal()" style="font-size: 1.8em; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; margin-left: 8px; background: transparent; border: none; color: #666; cursor: pointer; border-radius: 4px; transition: all 0.2s;" onmouseover="this.style.background='#f5f5f5'; this.style.color='#333';" onmouseout="this.style.background='transparent'; this.style.color='#666';">&times;</button>
             </div>
         </div>
     `;
@@ -1437,38 +1437,44 @@ function buildPatentDetailHTML(result) {
         `;
     }
     
-    // 事件时间轴（使用patent-timeline.css样式）
+    // 事件时间轴（优化版 - 使用patent-timeline.css样式）
     if (data.legal_events && data.legal_events.length > 0) {
         htmlContent += `
-            <div style="margin-top: 15px; padding: 10px; background-color: #f3e5f5; border-radius: 5px;">
-                <div style="margin-bottom: 12px;">
+            <div style="margin-top: 15px;">
+                <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
                     <strong style="color: var(--primary-color);">📅 事件时间轴 (共${data.legal_events.length}条):</strong>
                     <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'legal_events', event)" title="复制法律事件">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg>
                     </button>
                 </div>
-                <div class="patent-timeline" style="max-height: 400px; overflow-y: auto;">
+                <div class="patent-timeline-container">
+                    <div class="patent-timeline">
         `;
         
         data.legal_events.forEach((event, index) => {
-            const position = index % 2 === 0 ? 'left' : 'right';
             const isCritical = event.is_critical ? 'critical' : '';
-            const isCurrent = event.is_current ? 'current' : '';
             
             htmlContent += `
-                <div class="timeline-event ${position} ${isCritical} ${isCurrent}">
-                    <div class="timeline-marker"></div>
-                    <div class="timeline-content">
-                        <div class="timeline-date">${event.date}</div>
-                        <div class="timeline-title">${event.title || event.description}</div>
-                        ${event.type ? `<div class="timeline-type">${event.type}</div>` : ''}
-                        ${event.code ? `<div class="timeline-type">代码: ${event.code}</div>` : ''}
+                <div class="timeline-event ${isCritical}">
+                    <div class="timeline-event-node"></div>
+                    <div class="timeline-event-connector"></div>
+                    <div class="timeline-event-content">
+                        <div class="timeline-event-date">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
+                            </svg>
+                            ${event.date}
+                        </div>
+                        <div class="timeline-event-title">${event.title || event.description}</div>
+                        ${event.code ? `<div class="timeline-event-code">${event.code}</div>` : ''}
+                        ${event.type ? `<div class="timeline-event-description">${event.type}</div>` : ''}
                     </div>
                 </div>
             `;
         });
         
         htmlContent += `
+                    </div>
                 </div>
             </div>
         `;
