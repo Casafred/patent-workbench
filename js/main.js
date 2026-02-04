@@ -305,8 +305,8 @@ function initPatentBatch() {
     const patentResultsList = getEl('patent_results_list');
     const analysisResultsList = getEl('analysis_results_list');
     
-    // 存储专利查询结果
-    let patentResults = [];
+    // 存储专利查询结果（全局变量，供 patentDetailNewTab.js 使用）
+    window.patentResults = [];
     
     // 存储解读结果
     let analysisResults = [];
@@ -368,14 +368,14 @@ function initPatentBatch() {
             analysisResultsList.innerHTML = '';
         }
         searchStatus.style.display = 'none';
-        patentResults = [];
+        window.patentResults = [];
         analysisResults = [];
     });
     
     // 导出Excel按钮
     if (exportAnalysisExcelBtn) {
         exportAnalysisExcelBtn.addEventListener('click', async () => {
-            if (patentResults.length === 0) {
+            if (window.patentResults.length === 0) {
                 alert('没有可导出的专利数据');
                 return;
             }
@@ -386,7 +386,7 @@ function initPatentBatch() {
                 searchStatus.style.display = 'block';
                 
                 // 准备导出数据
-                const exportData = patentResults.map(result => {
+                const exportData = window.patentResults.map(result => {
                     // 检查result是否成功
                     if (!result.success) {
                         // 如果查询失败，只导出专利号和错误信息
@@ -476,7 +476,7 @@ function initPatentBatch() {
                 XLSX.writeFile(wb, filename);
                 
                 // 更新状态
-                searchStatus.textContent = `导出成功，共导出 ${patentResults.length} 个专利数据`;
+                searchStatus.textContent = `导出成功，共导出 ${window.patentResults.length} 个专利数据`;
             } catch (error) {
                 console.error('导出Excel失败:', error);
                 searchStatus.textContent = `导出失败: ${error.message}`;
@@ -545,7 +545,7 @@ function initPatentBatch() {
                 }
             }
             
-            patentResults = orderedResults;
+            window.patentResults = orderedResults;
             
             // 显示查询结果
             displayPatentResults(orderedResults);
@@ -566,7 +566,7 @@ function initPatentBatch() {
     
     // 一键解读全部
     analyzeAllBtn.addEventListener('click', async () => {
-        const successfulResults = patentResults.filter(r => r.success);
+        const successfulResults = window.patentResults.filter(r => r.success);
         if (successfulResults.length === 0) {
             alert('没有可解读的专利');
             return;
@@ -699,7 +699,7 @@ function initPatentBatch() {
             
             // 按照用户输入的顺序重新组织 analysisResults 数组
             analysisResults = [];
-            patentResults.forEach(result => {
+            window.patentResults.forEach(result => {
                 if (result.success && analysisResultsMap.has(result.patent_number)) {
                     analysisResults.push(analysisResultsMap.get(result.patent_number));
                 }
@@ -873,21 +873,21 @@ window.closePatentDetailModal = function() {
 
 // 导航到上一条或下一条专利
 window.navigatePatent = function(direction, currentPatentNumber) {
-    if (!patentResults || patentResults.length === 0) return;
+    if (!window.patentResults || window.patentResults.length === 0) return;
     
     // 找到当前专利在结果列表中的索引
-    const currentIndex = patentResults.findIndex(result => result.patent_number === currentPatentNumber);
+    const currentIndex = window.patentResults.findIndex(result => result.patent_number === currentPatentNumber);
     if (currentIndex === -1) return;
     
     let targetIndex;
     if (direction === 'prev') {
-        targetIndex = currentIndex > 0 ? currentIndex - 1 : patentResults.length - 1;
+        targetIndex = currentIndex > 0 ? currentIndex - 1 : window.patentResults.length - 1;
     } else if (direction === 'next') {
-        targetIndex = currentIndex < patentResults.length - 1 ? currentIndex + 1 : 0;
+        targetIndex = currentIndex < window.patentResults.length - 1 ? currentIndex + 1 : 0;
     }
     
     // 打开目标专利详情
-    const targetResult = patentResults[targetIndex];
+    const targetResult = window.patentResults[targetIndex];
     if (targetResult) {
         openPatentDetailModal(targetResult);
         
@@ -939,7 +939,7 @@ window.copyFieldContent = function(patentNumber, fieldKey, event) {
     }
     
     // 找到对应的专利结果
-    const patentResult = patentResults.find(result => result.patent_number === patentNumber);
+    const patentResult = window.patentResults.find(result => result.patent_number === patentNumber);
     if (!patentResult || !patentResult.success) {
         alert('❌ 无法复制：专利数据不存在');
         return;
