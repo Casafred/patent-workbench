@@ -837,13 +837,56 @@ window.openPatentDetailModal = function(result) {
     const modal = document.getElementById('patent_detail_modal');
     const modalBody = document.getElementById('patent_detail_body');
     const modalTitle = document.getElementById('patent_detail_title');
+    const modalHeader = modal.querySelector('.modal-header');
     
-    if (!modal || !modalBody || !modalTitle) return;
+    if (!modal || !modalBody || !modalTitle || !modalHeader) return;
     
     const data = result.data;
-    modalTitle.textContent = `${result.patent_number} - ${data.title || '无标题'}`;
     
-    // 构建完整的专利信息HTML
+    // 清空并重建modal header，合并标题和操作按钮
+    modalHeader.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 15px;">
+            <div style="flex: 1; min-width: 0;">
+                <h3 style="margin: 0; font-size: 1.2em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${result.patent_number} - ${data.title || '无标题'}</h3>
+                <div style="font-size: 0.85em; color: #666; margin-top: 5px;">
+                    查询耗时: ${result.processing_time?.toFixed(2) || 'N/A'}秒
+                </div>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center; flex-shrink: 0;">
+                <!-- 上一条/下一条切换按钮 -->
+                <div style="display: flex; gap: 5px; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden;">
+                    <button class="small-button" onclick="navigatePatent('prev', '${result.patent_number}')" style="border-radius: 0; border-right: 1px solid var(--border-color);" title="上一条">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M15 8a.5.5 0 0 1-.5.5H2.707l3.147 3.146a.5.5 0 0 1-.708.708l-4-4a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 7.5H14.5A.5.5 0 0 1 15 8z"/>
+                        </svg>
+                    </button>
+                    <button class="small-button" onclick="navigatePatent('next', '${result.patent_number}')" style="border-radius: 0;" title="下一条">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z"/>
+                        </svg>
+                    </button>
+                </div>
+                <!-- 新标签页打开按钮 -->
+                <button class="small-button" onclick="openPatentDetailInNewTab('${result.patent_number}')" title="新标签页打开">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5z"/>
+                        <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0v-5z"/>
+                    </svg>
+                </button>
+                <!-- 问一问按钮 -->
+                <button class="small-button patent-chat-btn" onclick="openPatentChat('${result.patent_number}')" title="问一问">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M5 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm4 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 1a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+                        <path d="m2.165 15.803.02-.004c1.83-.363 2.948-.842 3.468-1.105A9.06 9.06 0 0 0 8 15c4.418 0 8-3.134 8-7s-3.582-7-8-7-8 3.134-8 7c0 1.76.743 3.37 1.97 4.6a10.437 10.437 0 0 1-.524 2.318l-.003.011a10.722 10.722 0 0 1-.244.637c-.079.186.074.394.273.362a21.673 21.673 0 0 0 .693-.125zm.8-3.108a1 1 0 0 0-.287-.801C1.618 10.83 1 9.468 1 8c0-3.192 3.004-6 7-6s7 2.808 7 6c0 3.193-3.004 6-7 6a8.06 8.06 0 0 1-2.088-.272 1 1 0 0 0-.711.074c-.387.196-1.24.57-2.634.893a10.97 10.97 0 0 0 .398-2z"/>
+                    </svg>
+                </button>
+                <!-- 关闭按钮 -->
+                <button class="close-modal" onclick="closePatentDetailModal()" style="font-size: 1.5em; padding: 5px 10px;">&times;</button>
+            </div>
+        </div>
+    `;
+    
+    // 构建完整的专利信息HTML（不再包含patent-card-header）
     let htmlContent = buildPatentDetailHTML(result);
     
     modalBody.innerHTML = htmlContent;
@@ -1039,53 +1082,8 @@ window.copyPatentNumber = function(patentNumber, event) {
 function buildPatentDetailHTML(result) {
     const data = result.data;
     
-    let htmlContent = `
-        <div class="patent-card-header" style="position: sticky; top: 0; z-index: 10; background-color: white; padding: 10px; border-bottom: 1px solid #e0e0e0; margin: -20px -20px 15px -20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div style="flex: 1;">
-                    <div style="font-size: 0.9em; color: #666;">
-                        查询耗时: ${result.processing_time?.toFixed(2) || 'N/A'}秒
-                    </div>
-                </div>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <!-- 上一条/下一条切换按钮 -->
-                    <div style="display: flex; gap: 5px; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden;">
-                        <button class="small-button" onclick="navigatePatent('prev', '${result.patent_number}')" style="border-radius: 0; border-right: 1px solid var(--border-color);">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M15 8a.5.5 0 0 1-.5.5H2.707l3.147 3.146a.5.5 0 0 1-.708.708l-4-4a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 7.5H14.5A.5.5 0 0 1 15 8z"/>
-                            </svg>
-                            上一条
-                        </button>
-                        <button class="small-button" onclick="navigatePatent('next', '${result.patent_number}')" style="border-radius: 0;">
-                            下一条
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z"/>
-                            </svg>
-                        </button>
-                    </div>
-                    <!-- 新标签页打开按钮 -->
-                    <button class="small-button" onclick="openPatentDetailInNewTab('${result.patent_number}')" title="新标签页打开">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                            <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5z"/>
-                            <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0v-5z"/>
-                        </svg>
-                        新标签页
-                    </button>
-                    <!-- 问一问按钮 -->
-                    <button class="small-button patent-chat-btn" onclick="openPatentChat('${result.patent_number}')" title="问一问">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                            <path d="M5 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm4 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 1a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
-                            <path d="m2.165 15.803.02-.004c1.83-.363 2.948-.842 3.468-1.105A9.06 9.06 0 0 0 8 15c4.418 0 8-3.134 8-7s-3.582-7-8-7-8 3.134-8 7c0 1.76.743 3.37 1.97 4.6a10.437 10.437 0 0 1-.524 2.318l-.003.011a10.722 10.722 0 0 1-.244.637c-.079.186.074.394.273.362a21.673 21.673 0 0 0 .693-.125zm.8-3.108a1 1 0 0 0-.287-.801C1.618 10.83 1 9.468 1 8c0-3.192 3.004-6 7-6s7 2.808 7 6c0 3.193-3.004 6-7 6a8.06 8.06 0 0 1-2.088-.272 1 1 0 0 0-.711.074c-.387.196-1.24.57-2.634.893a10.97 10.97 0 0 0 .398-2z"/>
-                        </svg>
-                        问一问
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // 基本信息
-    htmlContent += `<div style="margin-bottom: 15px;">`;
+    // 直接开始构建基本信息，不再包含patent-card-header
+    let htmlContent = `<div style="margin-bottom: 15px;">`;
     
     const fields = [
         { label: '📄 摘要', value: data.abstract, type: 'text', key: 'abstract' },

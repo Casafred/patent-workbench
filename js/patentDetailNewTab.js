@@ -1,9 +1,9 @@
-// 功能六：在新标签页打开专利详情 - 全新现代化设计
+// 功能六：在新标签页打开专利详情 - 绿色主题 + 左侧导航
 // 此文件需要在 main.js 之后加载
 
 window.openPatentDetailInNewTab = function(patentNumber) {
     // 找到对应的专利结果
-    const patentResult = patentResults.find(result => result.patent_number === patentNumber);
+    const patentResult = window.patentResults.find(result => result.patent_number === patentNumber);
     if (!patentResult || !patentResult.success) {
         alert('❌ 无法打开：专利数据不存在');
         return;
@@ -11,7 +11,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
     
     const data = patentResult.data;
     
-    // 构建完整的HTML页面 - 全新现代化设计
+    // 构建完整的HTML页面 - 绿色主题 + 左侧导航
     const htmlContent = `
         <!DOCTYPE html>
         <html lang="zh-CN">
@@ -31,9 +31,58 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
                     line-height: 1.7;
                     color: #2c3e50;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%);
                     min-height: 100vh;
                     padding: 20px;
+                    padding-left: 100px;
+                }
+                
+                /* 左侧悬浮导航 */
+                .side-nav {
+                    position: fixed;
+                    left: 20px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    background: white;
+                    border-radius: 12px;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+                    padding: 15px 10px;
+                    z-index: 1000;
+                    max-height: 80vh;
+                    overflow-y: auto;
+                }
+                
+                .side-nav-item {
+                    display: block;
+                    padding: 10px 15px;
+                    margin: 5px 0;
+                    color: #666;
+                    text-decoration: none;
+                    border-radius: 8px;
+                    font-size: 0.85em;
+                    transition: all 0.3s;
+                    white-space: nowrap;
+                }
+                
+                .side-nav-item:hover {
+                    background: #e8f5e9;
+                    color: #2e7d32;
+                    transform: translateX(5px);
+                }
+                
+                .side-nav-item.active {
+                    background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%);
+                    color: white;
+                    font-weight: 600;
+                }
+                
+                .side-nav::-webkit-scrollbar {
+                    width: 4px;
+                }
+                
+                .side-nav::-webkit-scrollbar-thumb {
+                    background: #2e7d32;
+                    border-radius: 2px;
                 }
                 
                 .container {
@@ -46,7 +95,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 }
                 
                 .header {
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%);
                     color: white;
                     padding: 30px 40px;
                     position: relative;
@@ -120,10 +169,10 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 .section-title {
                     font-size: 1.4em;
                     font-weight: 600;
-                    color: #667eea;
+                    color: #2e7d32;
                     margin-bottom: 20px;
                     padding-bottom: 10px;
-                    border-bottom: 3px solid #667eea;
+                    border-bottom: 3px solid #2e7d32;
                     display: flex;
                     align-items: center;
                     gap: 10px;
@@ -132,7 +181,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 .section-icon {
                     width: 28px;
                     height: 28px;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%);
                     border-radius: 6px;
                     display: flex;
                     align-items: center;
@@ -151,18 +200,18 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     background: #f8f9fa;
                     padding: 20px;
                     border-radius: 12px;
-                    border-left: 4px solid #667eea;
+                    border-left: 4px solid #2e7d32;
                     transition: all 0.3s;
                 }
                 
                 .info-card:hover {
                     transform: translateX(5px);
-                    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+                    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.2);
                 }
                 
                 .info-label {
                     font-weight: 600;
-                    color: #667eea;
+                    color: #2e7d32;
                     font-size: 0.9em;
                     margin-bottom: 8px;
                     text-transform: uppercase;
@@ -199,13 +248,13 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 }
                 
                 .claim-item:hover {
-                    border-color: #667eea;
-                    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+                    border-color: #2e7d32;
+                    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.1);
                 }
                 
                 .claim-number {
                     font-weight: 700;
-                    color: #667eea;
+                    color: #2e7d32;
                     font-size: 1.1em;
                     margin-bottom: 10px;
                 }
@@ -226,7 +275,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 }
                 
                 .data-table thead {
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%);
                     color: white;
                 }
                 
@@ -262,7 +311,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     top: 0;
                     bottom: 0;
                     width: 3px;
-                    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+                    background: linear-gradient(180deg, #2e7d32 0%, #43a047 100%);
                 }
                 
                 .timeline-item {
@@ -281,15 +330,15 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     top: 25px;
                     width: 13px;
                     height: 13px;
-                    background: #667eea;
+                    background: #2e7d32;
                     border: 3px solid white;
                     border-radius: 50%;
-                    box-shadow: 0 0 0 3px #667eea;
+                    box-shadow: 0 0 0 3px #2e7d32;
                 }
                 
                 .timeline-date {
                     font-weight: 600;
-                    color: #667eea;
+                    color: #2e7d32;
                     margin-bottom: 8px;
                 }
                 
@@ -319,14 +368,14 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 }
                 
                 .cpc-card:hover {
-                    border-color: #667eea;
+                    border-color: #2e7d32;
                     transform: translateY(-3px);
-                    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+                    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.15);
                 }
                 
                 .cpc-code {
                     font-weight: 700;
-                    color: #667eea;
+                    color: #2e7d32;
                     font-size: 1.1em;
                     margin-bottom: 8px;
                 }
@@ -345,7 +394,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 
                 .tag {
                     padding: 8px 16px;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%);
                     color: white;
                     border-radius: 20px;
                     font-size: 0.9em;
@@ -364,7 +413,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     border: 2px solid #e9ecef;
                     border-radius: 10px;
                     text-decoration: none;
-                    color: #667eea;
+                    color: #2e7d32;
                     font-weight: 500;
                     transition: all 0.3s;
                     text-align: center;
@@ -372,10 +421,10 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 }
                 
                 .link-card:hover {
-                    background: #667eea;
+                    background: #2e7d32;
                     color: white;
                     transform: translateY(-3px);
-                    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+                    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
                 }
                 
                 @media (max-width: 768px) {
@@ -405,6 +454,22 @@ window.openPatentDetailInNewTab = function(patentNumber) {
             </style>
         </head>
         <body>
+            <!-- 左侧悬浮导航 -->
+            <nav class="side-nav" id="sideNav">
+                <a href="#abstract" class="side-nav-item">📄 摘要</a>
+                <a href="#basic-info" class="side-nav-item">ℹ️ 基本信息</a>
+                <a href="#classifications" class="side-nav-item">🏷️ CPC分类</a>
+                <a href="#landscapes" class="side-nav-item">🌐 技术领域</a>
+                <a href="#claims" class="side-nav-item">⚖️ 权利要求</a>
+                <a href="#timeline" class="side-nav-item">📅 事件时间轴</a>
+                <a href="#family" class="side-nav-item">👨‍👩‍👧‍👦 同族信息</a>
+                <a href="#external-links" class="side-nav-item">🔗 外部链接</a>
+                <a href="#citations" class="side-nav-item">📚 引用专利</a>
+                <a href="#cited-by" class="side-nav-item">🔗 被引用</a>
+                <a href="#similar" class="side-nav-item">📋 相似文档</a>
+                <a href="#description" class="side-nav-item">📝 说明书</a>
+            </nav>
+            
             <div class="container">
                 <div class="header">
                     <div class="header-top">
@@ -421,7 +486,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 
                 <div class="content">
                     ${data.abstract ? `
-                    <div class="section">
+                    <div class="section" id="abstract">
                         <h2 class="section-title">
                             <span class="section-icon">📄</span>
                             摘要
@@ -430,7 +495,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     </div>
                     ` : ''}
                     
-                    <div class="section">
+                    <div class="section" id="basic-info">
                         <h2 class="section-title">
                             <span class="section-icon">ℹ️</span>
                             基本信息
@@ -457,14 +522,14 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                             ${patentResult.url ? `
                             <div class="info-card">
                                 <div class="info-label">原始链接</div>
-                                <div class="info-value"><a href="${patentResult.url}" target="_blank" style="color: #667eea;">Google Patents</a></div>
+                                <div class="info-value"><a href="${patentResult.url}" target="_blank" style="color: #2e7d32;">Google Patents</a></div>
                             </div>
                             ` : ''}
                         </div>
                     </div>
                     
                     ${data.classifications && data.classifications.length > 0 ? `
-                    <div class="section">
+                    <div class="section" id="classifications">
                         <h2 class="section-title">
                             <span class="section-icon">🏷️</span>
                             CPC分类 (${data.classifications.length})
@@ -481,7 +546,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     ` : ''}
                     
                     ${data.landscapes && data.landscapes.length > 0 ? `
-                    <div class="section">
+                    <div class="section" id="landscapes">
                         <h2 class="section-title">
                             <span class="section-icon">🌐</span>
                             技术领域
@@ -495,7 +560,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     ` : ''}
                     
                     ${data.claims && data.claims.length > 0 ? `
-                    <div class="section">
+                    <div class="section" id="claims">
                         <h2 class="section-title">
                             <span class="section-icon">⚖️</span>
                             权利要求 (${data.claims.length})
@@ -512,7 +577,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     ` : ''}
                     
                     ${data.legal_events && data.legal_events.length > 0 ? `
-                    <div class="section">
+                    <div class="section" id="timeline">
                         <h2 class="section-title">
                             <span class="section-icon">📅</span>
                             事件时间轴 (${data.legal_events.length})
@@ -530,7 +595,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     ` : ''}
                     
                     ${data.family_id || (data.family_applications && data.family_applications.length > 0) ? `
-                    <div class="section">
+                    <div class="section" id="family">
                         <h2 class="section-title">
                             <span class="section-icon">👨‍👩‍👧‍👦</span>
                             同族信息
@@ -560,7 +625,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     ` : ''}
                     
                     ${data.external_links && Object.keys(data.external_links).length > 0 ? `
-                    <div class="section">
+                    <div class="section" id="external-links">
                         <h2 class="section-title">
                             <span class="section-icon">🔗</span>
                             外部链接
@@ -574,7 +639,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     ` : ''}
                     
                     ${data.patent_citations && data.patent_citations.length > 0 ? `
-                    <div class="section">
+                    <div class="section" id="citations">
                         <h2 class="section-title">
                             <span class="section-icon">📚</span>
                             引用专利 (${data.patent_citations.length})
@@ -599,7 +664,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     ` : ''}
                     
                     ${data.cited_by && data.cited_by.length > 0 ? `
-                    <div class="section">
+                    <div class="section" id="cited-by">
                         <h2 class="section-title">
                             <span class="section-icon">🔗</span>
                             被引用专利 (${data.cited_by.length})
@@ -624,7 +689,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     ` : ''}
                     
                     ${data.similar_documents && data.similar_documents.length > 0 ? `
-                    <div class="section">
+                    <div class="section" id="similar">
                         <h2 class="section-title">
                             <span class="section-icon">📋</span>
                             相似文档 (${data.similar_documents.length})
@@ -642,7 +707,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 <tr>
                                     <td>${doc.patent_number}</td>
                                     <td>${doc.language || '-'}</td>
-                                    <td><a href="${doc.link}" target="_blank" style="color: #667eea;">查看</a></td>
+                                    <td><a href="${doc.link}" target="_blank" style="color: #2e7d32;">查看</a></td>
                                 </tr>
                                 `).join('')}
                             </tbody>
@@ -651,18 +716,60 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     ` : ''}
                     
                     ${data.description ? `
-                    <div class="section">
+                    <div class="section" id="description">
                         <h2 class="section-title">
                             <span class="section-icon">📝</span>
                             说明书
                         </h2>
                         <div class="abstract-box" style="white-space: pre-wrap; line-height: 1.8;">
-                            ${data.description.replace(/(\[[A-Z\s]+\])/g, '<br/><br/><strong style="font-size: 1.1em; color: #667eea;">$1</strong><br/><br/>').replace(/\n/g, '<br/>')}
+                            ${data.description.replace(/(\[[A-Z\s]+\])/g, '<br/><br/><strong style="font-size: 1.1em; color: #2e7d32;">$1</strong><br/><br/>').replace(/\n/g, '<br/>')}
                         </div>
                     </div>
                     ` : ''}
                 </div>
             </div>
+            
+            <script>
+                // 平滑滚动和导航高亮
+                document.addEventListener('DOMContentLoaded', function() {
+                    const navItems = document.querySelectorAll('.side-nav-item');
+                    const sections = document.querySelectorAll('.section');
+                    
+                    // 点击导航项平滑滚动
+                    navItems.forEach(item => {
+                        item.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            const targetId = this.getAttribute('href').substring(1);
+                            const targetSection = document.getElementById(targetId);
+                            if (targetSection) {
+                                targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }
+                        });
+                    });
+                    
+                    // 滚动时高亮当前section
+                    function highlightNav() {
+                        let current = '';
+                        sections.forEach(section => {
+                            const sectionTop = section.offsetTop;
+                            const sectionHeight = section.clientHeight;
+                            if (window.pageYOffset >= sectionTop - 100) {
+                                current = section.getAttribute('id');
+                            }
+                        });
+                        
+                        navItems.forEach(item => {
+                            item.classList.remove('active');
+                            if (item.getAttribute('href') === '#' + current) {
+                                item.classList.add('active');
+                            }
+                        });
+                    }
+                    
+                    window.addEventListener('scroll', highlightNav);
+                    highlightNav(); // 初始化
+                });
+            </script>
         </body>
         </html>
     `;
