@@ -152,32 +152,6 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     opacity: 0.9;
                 }
                 
-                .close-btn {
-                    position: absolute;
-                    top: -15px;
-                    right: -15px;
-                    background: #d32f2f;
-                    border: 3px solid white;
-                    color: white;
-                    width: 40px;
-                    height: 40px;
-                    border-radius: 50%;
-                    cursor: pointer;
-                    font-size: 1.2em;
-                    transition: all 0.3s;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                    z-index: 10;
-                }
-                
-                .close-btn:hover {
-                    background: #b71c1c;
-                    transform: scale(1.1) rotate(90deg);
-                    box-shadow: 0 6px 16px rgba(0,0,0,0.4);
-                }
-                
                 .patent-title {
                     font-size: 1.8em;
                     font-weight: 700;
@@ -524,7 +498,6 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 <div class="header">
                     <div class="header-top">
                         <div class="patent-number">专利号: ${patentNumber}</div>
-                        <button class="close-btn" onclick="window.close()">✕ 关闭</button>
                     </div>
                     <h1 class="patent-title">${data.title || '专利详情'}</h1>
                     <div class="meta-info">
