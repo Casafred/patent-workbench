@@ -946,7 +946,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     });
                 }
                 
-                // 平滑滚动和导航高亮，以及自动展开/折叠
+                // 平滑滚动和导航高亮（移除自动展开/折叠逻辑）
                 document.addEventListener('DOMContentLoaded', function() {
                     const navItems = document.querySelectorAll('.side-nav-item');
                     const sections = document.querySelectorAll('.section');
@@ -958,7 +958,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                             const targetId = this.getAttribute('href').substring(1);
                             const targetSection = document.getElementById(targetId);
                             if (targetSection) {
-                                // 如果是可折叠的section，先展开
+                                // 如果是可折叠的section，展开它
                                 if (targetSection.classList.contains('collapsible-section')) {
                                     targetSection.classList.remove('collapsed');
                                 }
@@ -967,18 +967,15 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         });
                     });
                     
-                    // 滚动时高亮当前section，并自动展开/折叠
-                    let lastActiveSection = null;
+                    // 滚动时高亮当前section（不自动展开/折叠）
                     function highlightNav() {
                         let current = '';
-                        let currentSection = null;
                         
                         sections.forEach(section => {
                             const sectionTop = section.offsetTop;
                             const sectionHeight = section.clientHeight;
                             if (window.pageYOffset >= sectionTop - 100) {
                                 current = section.getAttribute('id');
-                                currentSection = section;
                             }
                         });
                         
@@ -989,25 +986,6 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 item.classList.add('active');
                             }
                         });
-                        
-                        // 自动展开当前section，折叠其他section
-                        if (currentSection && currentSection !== lastActiveSection) {
-                            sections.forEach(section => {
-                                if (section.classList.contains('collapsible-section')) {
-                                    if (section === currentSection) {
-                                        section.classList.remove('collapsed');
-                                    } else if (section !== lastActiveSection) {
-                                        // 延迟折叠，避免立即折叠刚离开的section
-                                        setTimeout(() => {
-                                            if (section !== currentSection) {
-                                                section.classList.add('collapsed');
-                                            }
-                                        }, 500);
-                                    }
-                                }
-                            });
-                            lastActiveSection = currentSection;
-                        }
                     }
                     
                     window.addEventListener('scroll', highlightNav);

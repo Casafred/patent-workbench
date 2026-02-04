@@ -12,9 +12,9 @@
     will-change: opacity;
 }
 
-/* 专利详情弹窗 - 移除遮罩层并优化显示 */
+/* 专利详情弹窗 - 添加半透明遮罩层 */
 #patent_detail_modal {
-    background-color: transparent;
+    background-color: rgba(0, 0, 0, 0.5);
     display: none;
     justify-content: center;
     align-items: center;
