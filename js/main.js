@@ -841,11 +841,10 @@ function toggleClaims(patentNumber) {
 window.openPatentDetailModal = function(result) {
     const modal = document.getElementById('patent_detail_modal');
     const modalBody = document.getElementById('patent_detail_body');
-    const modalTitle = document.getElementById('patent_detail_title');
     const modalHeader = modal.querySelector('.modal-header');
     const modalContent = modal.querySelector('.modal-content');
 
-    if (!modal || !modalBody || !modalTitle || !modalHeader) return;
+    if (!modal || !modalBody || !modalHeader) return;
 
     const data = result.data;
 
