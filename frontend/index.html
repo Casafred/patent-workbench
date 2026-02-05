@@ -1807,45 +1807,71 @@ function restoreCachedProcessingResult() {
     
     // 尝试从localStorage恢复处理结果
     try {
+        console.log('开始检查缓存...');
+        let latestCache = null;
+        let latestCacheKey = null;
+        let latestTimestamp = 0;
+        
         // 遍历所有localStorage项，查找处理缓存
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             if (key && key.startsWith('processing_cache_')) {
-                const cacheData = JSON.parse(localStorage.getItem(key));
-                if (cacheData && cacheData.timestamp) {
-                    // 检查缓存是否在24小时内
-                    const elapsed = Date.now() - cacheData.timestamp;
-                    if (elapsed < 24 * 60 * 60 * 1000) {
-                        console.log('发现缓存的处理结果，尝试恢复...');
-                        
-                        // 恢复上传的图片
-                        if (cacheData.uploadedDrawings) {
-                            uploadedDrawings = cacheData.uploadedDrawings.map(d => ({
-                                ...d,
-                                id: Date.now() + Math.random()
-                            }));
-                            console.log('已恢复', uploadedDrawings.length, '张上传的图片');
-                            
-                            // 更新上传图片的显示
-                            updateUploadedDrawingsDisplay();
+                try {
+                    const cacheData = JSON.parse(localStorage.getItem(key));
+                    if (cacheData && cacheData.timestamp) {
+                        // 检查缓存是否在24小时内
+                        const elapsed = Date.now() - cacheData.timestamp;
+                        if (elapsed < 24 * 60 * 60 * 1000) {
+                            // 找到最新的缓存
+                            if (cacheData.timestamp > latestTimestamp) {
+                                latestTimestamp = cacheData.timestamp;
+                                latestCache = cacheData;
+                                latestCacheKey = key;
+                            }
+                        } else {
+                            // 缓存过期，删除
+                            localStorage.removeItem(key);
+                            console.log('缓存已过期，已删除:', key);
                         }
-                        
-                        // 恢复说明书内容
-                        if (cacheData.specification) {
-                            specificationInput.value = cacheData.specification;
-                        }
-                        
-                        // 恢复处理结果
-                        displayProcessingResult(cacheData.data, cacheData.isAIMode);
-                        console.log('处理结果已从缓存恢复');
-                        return;
-                    } else {
-                        // 缓存过期，删除
-                        localStorage.removeItem(key);
-                        console.log('缓存已过期，已删除');
                     }
+                } catch (parseError) {
+                    console.warn('解析缓存失败，删除无效缓存:', key);
+                    localStorage.removeItem(key);
                 }
             }
+        }
+        
+        // 如果找到最新的缓存
+        if (latestCache) {
+            console.log('发现最新的缓存，尝试恢复...', latestCacheKey);
+            
+            // 恢复上传的图片
+            if (latestCache.uploadedDrawings) {
+                uploadedDrawings = latestCache.uploadedDrawings.map(d => ({
+                    ...d,
+                    id: Date.now() + Math.random()
+                }));
+                console.log('已恢复', uploadedDrawings.length, '张上传的图片');
+                
+                // 更新上传图片的显示
+                if (typeof updateUploadedDrawingsDisplay === 'function') {
+                    updateUploadedDrawingsDisplay();
+                } else if (typeof updateUploadedDrawingsList === 'function') {
+                    updateUploadedDrawingsList();
+                }
+            }
+            
+            // 恢复说明书内容
+            if (latestCache.specification) {
+                specificationInput.value = latestCache.specification;
+                console.log('已恢复说明书内容');
+            }
+            
+            // 恢复处理结果
+            displayProcessingResult(latestCache.data, latestCache.isAIMode);
+            console.log('处理结果已从缓存恢复');
+        } else {
+            console.log('没有找到有效的缓存');
         }
     } catch (e) {
         console.warn('恢复缓存失败:', e);
@@ -2018,10 +2044,13 @@ function clearAllDrawings() {
 
 // 生成缓存键的辅助函数
 function generateProcessingCacheKey(drawings, specification) {
-    // 基于文件名和说明书内容生成简单的哈希键
-    const drawingNames = drawings.map(d => d.name).sort().join('_');
-    const specHash = specification.length + '_' + specification.substring(0, 100);
-    return drawingNames + '_' + specHash;
+    // 基于文件名、数量、顺序和说明书内容生成唯一缓存键
+    const drawingInfo = drawings.map(d => {
+        return d.name + '_' + d.size + '_' + (d.id || Date.now() + Math.random());
+    }).sort().join('|');
+    const specHash = specification.length + '_' + (specification.substring(0, 200) || 'empty') + '_' + Math.random().toString(36).substr(2, 9);
+    const timestamp = Date.now();
+    return 'cache_' + btoa(drawingInfo + '_' + specHash + '_' + timestamp).substring(0, 100);
 }
 
 // 开始处理
@@ -2038,11 +2067,17 @@ function startProcessing() {
         return;
     }
     
-    // 清除之前的缓存，确保使用最新的处理结果
-    // 缓存键：基于上传的文件名和说明书内容的哈希值
-    const cacheKey = generateProcessingCacheKey(uploadedDrawings, specificationInput.value.trim());
-    localStorage.removeItem(`processing_cache_${cacheKey}`);
-    console.log('已清除旧缓存，将使用最新处理结果');
+    // 清除所有旧的处理缓存，确保使用最新的处理结果
+    console.log('开始清除旧缓存...');
+    let removedCount = 0;
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith('processing_cache_') || key.startsWith('cache_'))) {
+            localStorage.removeItem(key);
+            removedCount++;
+        }
+    }
+    console.log(`已清除 ${removedCount} 个旧缓存，将使用最新处理结果`);
     
     // 获取AI处理配置
     const aiConfig = window.aiProcessingPanel ? window.aiProcessingPanel.getConfig() : { aiMode: false };
@@ -2289,8 +2324,10 @@ function displayProcessingResult(data, isAIMode = false) {
         };
         
         try {
-            localStorage.setItem(`processing_cache_${cacheKey}`, JSON.stringify(cacheData));
-            console.log('处理结果已缓存，页面刷新后仍然可用');
+            // 使用统一的缓存键格式
+            const finalCacheKey = 'processing_cache_' + cacheKey;
+            localStorage.setItem(finalCacheKey, JSON.stringify(cacheData));
+            console.log('处理结果已缓存，页面刷新后仍然可用，缓存键:', finalCacheKey);
         } catch (e) {
             console.warn('缓存失败:', e);
         }
