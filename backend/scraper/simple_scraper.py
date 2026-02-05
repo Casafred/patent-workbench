@@ -475,11 +475,48 @@ class SimplePatentScraper:
                         description_section = abstract_section.find_next_sibling()
                 
                 if description_section:
-                    # Get all text content from description section
-                    description = description_section.get_text(separator=' ', strip=True)
+                    # 方法1: 尝试提取带有段落结构的说明书（保留换行）
+                    # 查找所有description-paragraph div元素
+                    paragraphs = description_section.find_all('div', {'class': 'description-paragraph'})
+                    
+                    if paragraphs:
+                        logger.info(f"找到 {len(paragraphs)} 个说明书段落")
+                        # 每个段落单独提取，用双换行符分隔
+                        paragraph_texts = []
+                        for para in paragraphs:
+                            para_text = para.get_text(separator=' ', strip=True)
+                            if para_text:
+                                paragraph_texts.append(para_text)
+                        
+                        # 用双换行符连接段落，保留原网页的段落结构
+                        description = '\n\n'.join(paragraph_texts)
+                    else:
+                        # 方法2: 如果没有找到段落结构，尝试查找heading和div
+                        # 这种方法也尝试保留一些结构
+                        content_div = description_section.find('div', {'itemprop': 'content'})
+                        if content_div:
+                            # 提取所有heading和div，保留结构
+                            elements = content_div.find_all(['heading', 'div'])
+                            text_parts = []
+                            for elem in elements:
+                                if elem.name == 'heading':
+                                    # 标题前后加换行
+                                    heading_text = elem.get_text(strip=True)
+                                    if heading_text:
+                                        text_parts.append(f"\n{heading_text}\n")
+                                elif elem.name == 'div' and 'description-paragraph' in elem.get('class', []):
+                                    # 段落后加换行
+                                    para_text = elem.get_text(separator=' ', strip=True)
+                                    if para_text:
+                                        text_parts.append(para_text + '\n')
+                            
+                            description = ''.join(text_parts).strip()
+                        else:
+                            # 方法3: 最后备用方案，直接提取所有文本
+                            description = description_section.get_text(separator=' ', strip=True)
+                    
                     # 不限制说明书长度，提取完整内容
-                    # if len(description) > 2000:
-                    #     description = description[:2000] + '...'
+                    logger.info(f"提取到说明书，长度: {len(description)} 字符")
                 
                 patent_data.description = description
             except Exception as e:
@@ -1071,7 +1108,7 @@ class SimplePatentScraper:
                     # Extract Family Applications (同族申请)
                     family_applications = []
                     
-                    # 查找Family Applications表格
+                    # 方法1: 查找Family Applications表格
                     family_apps_h2 = None
                     for h2 in family_section.find_all('h2'):
                         if 'Family Applications' in h2.get_text():
@@ -1115,8 +1152,47 @@ class SimplePatentScraper:
                                     logger.warning(f"Error parsing family application row: {e}")
                                     continue
                     
-                    patent_data.family_applications = family_applications[:20]  # 限制前20条
-                    logger.info(f"提取到 {len(family_applications)} 个同族申请")
+                    # 方法2: 补充提取"Also Published As"部分的worldwide application信息（docdbFamily）
+                    # 这部分信息通常包含更完整的同族专利信息
+                    also_published_rows = soup.find_all('tr', {'itemprop': 'docdbFamily'})
+                    if also_published_rows:
+                        logger.info(f"找到 {len(also_published_rows)} 个worldwide application (docdbFamily)")
+                        for row in also_published_rows:
+                            try:
+                                pub_num_elem = row.find('span', {'itemprop': 'publicationNumber'})
+                                lang_elem = row.find('span', {'itemprop': 'primaryLanguage'})
+                                pub_date_td = row.find('td', {'itemprop': 'publicationDate'})
+                                link_elem = row.find('a')
+                                
+                                if pub_num_elem:
+                                    pub_number = pub_num_elem.get_text().strip()
+                                    
+                                    # 检查是否已经存在（避免重复）
+                                    already_exists = any(
+                                        app.get('publication_number') == pub_number 
+                                        for app in family_applications
+                                    )
+                                    
+                                    if not already_exists:
+                                        family_applications.append({
+                                            'application_number': '',  # docdbFamily通常没有申请号
+                                            'status': '',
+                                            'expiration': '',
+                                            'publication_number': pub_number,
+                                            'language': lang_elem.get_text().strip() if lang_elem else '',
+                                            'priority_date': '',
+                                            'filing_date': '',
+                                            'publication_date': pub_date_td.get_text().strip() if pub_date_td else '',
+                                            'title': '',
+                                            'link': f"https://patents.google.com{link_elem.get('href')}" if link_elem and link_elem.get('href', '').startswith('/') else (link_elem.get('href', '') if link_elem else ''),
+                                            'source': 'worldwide'  # 标记来源
+                                        })
+                            except Exception as e:
+                                logger.warning(f"Error parsing docdbFamily row: {e}")
+                                continue
+                    
+                    patent_data.family_applications = family_applications[:30]  # 增加限制到30条以包含更多同族信息
+                    logger.info(f"提取到 {len(family_applications)} 个同族申请（包含worldwide application）")
                     
                     # Extract Country Status (国家状态)
                     country_status = []

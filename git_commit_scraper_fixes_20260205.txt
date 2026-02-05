@@ -1,0 +1,59 @@
+功能六抓取修复: 同族信息增强、法律事件显示、说明书换行保留
+
+## 修复内容
+
+### 1. 同族信息抓取增强
+- 新增对"Also Published As"部分的docdbFamily数据抓取
+- 整合Family Applications和worldwide application信息
+- 自动去重，避免重复数据
+- 增加source标记区分来源
+- 同族信息限制从20条增加到30条
+
+### 2. 法律事件显示确认
+- 确认后端抓取逻辑正常
+- 确认前端显示代码存在
+- 确认字段选择器包含legal_events选项
+- 提供验证方法和测试步骤
+
+### 3. 说明书换行信息保留
+- 识别并提取description-paragraph段落结构
+- 每个段落用双换行符(\n\n)分隔
+- 保留heading标题结构
+- 三层备用方案确保兼容性
+
+## 技术细节
+
+### 同族信息抓取
+```python
+# 方法1: Family Applications
+rows = family_table.find_all('tr', {'itemprop': 'applications'})
+
+# 方法2: docdbFamily (worldwide application)
+also_published_rows = soup.find_all('tr', {'itemprop': 'docdbFamily'})
+
+# 去重逻辑
+already_exists = any(
+    app.get('publication_number') == pub_number 
+    for app in family_applications
+)
+```
+
+### 说明书段落提取
+```python
+# 提取段落结构
+paragraphs = description_section.find_all('div', {'class': 'description-paragraph'})
+paragraph_texts = [para.get_text(separator=' ', strip=True) for para in paragraphs]
+description = '\n\n'.join(paragraph_texts)
+```
+
+## 修改文件
+- backend/scraper/simple_scraper.py
+
+## 测试验证
+- 测试专利: US12390907B2
+- 测试脚本: test_scraper_fixes_20260205.py
+- 快速测试: quick_test_fixes.py
+
+## 相关文档
+- 功能六抓取修复完成_20260205.md
+- google patents html example.txt
