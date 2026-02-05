@@ -527,11 +527,16 @@ function initPatentBatch() {
         searchStatus.style.display = 'block';
         
         try {
+            // 获取用户选择的字段
+            const selectedFields = getSelectedFields();
+            console.log('📋 用户选择的字段:', selectedFields);
+            
             // 调用API查询专利
-            console.log('🚀 开始查询专利，参数:', { patent_numbers: uniquePatents, crawl_specification: crawlSpecification });
+            console.log('🚀 开始查询专利，参数:', { patent_numbers: uniquePatents, crawl_specification: crawlSpecification, selected_fields: selectedFields });
             const results = await apiCall('/patent/search', {
                 patent_numbers: uniquePatents,
-                crawl_specification: crawlSpecification
+                crawl_specification: crawlSpecification,
+                selected_fields: selectedFields
             });
             
             console.log('📦 查询结果:', results);
@@ -1694,6 +1699,7 @@ function getSelectedFields() {
         country_status: document.getElementById('field_country_status')?.checked || false,
         patent_citations: document.getElementById('field_patent_citations')?.checked || false,
         cited_by: document.getElementById('field_cited_by')?.checked || false,
+        events_timeline: document.getElementById('field_events_timeline')?.checked || false,
         legal_events: document.getElementById('field_legal_events')?.checked || false,
         similar_documents: document.getElementById('field_similar_documents')?.checked || false,
         description: document.getElementById('field_description')?.checked || false,

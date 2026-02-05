@@ -35,15 +35,16 @@ def get_scraper_instance() -> SimplePatentScraper:
 def get_version():
     """Get scraper version info for debugging."""
     return create_response(data={
-        'version': '2.0-enhanced',
+        'version': '2.1-events-timeline-split',
         'features': [
             'claims_always_extracted',
             'drawings_three_strategies',
             'patent_citations',
             'cited_by',
-            'legal_events'
+            'events_timeline',  # 新增：事件时间轴（申请、公开、授权等）
+            'legal_events'  # 法律事件（USPTO法律状态代码）
         ],
-        'timestamp': '2026-01-24'
+        'timestamp': '2026-02-05'
     })
 
 

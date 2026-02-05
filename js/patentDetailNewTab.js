@@ -545,6 +545,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 <a href="#landscapes" class="side-nav-item" data-section="landscapes">🌐 技术领域</a>
                 <a href="#claims" class="side-nav-item" data-section="claims">⚖️ 权利要求</a>
                 <a href="#timeline" class="side-nav-item" data-section="timeline">📅 事件时间轴</a>
+                <a href="#legal-events" class="side-nav-item" data-section="legal-events">⚖️ 法律事件</a>
                 <a href="#family" class="side-nav-item" data-section="family">👨‍👩‍👧‍👦 同族信息</a>
                 <a href="#external-links" class="side-nav-item" data-section="external-links">🔗 外部链接</a>
                 <a href="#citations" class="side-nav-item" data-section="citations">📚 引用专利</a>
@@ -700,14 +701,14 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     </div>
                     ` : ''}
                     
-                    ${data.legal_events && data.legal_events.length > 0 ? `
+                    ${data.events_timeline && data.events_timeline.length > 0 ? `
                     <div class="section" id="timeline">
                         <h2 class="section-title">
                             <span class="section-icon">📅</span>
-                            事件时间轴 (${data.legal_events.length})
+                            事件时间轴 (${data.events_timeline.length})
                         </h2>
                         <div class="timeline">
-                            ${data.legal_events.map(event => `
+                            ${data.events_timeline.map(event => `
                             <div class="timeline-item">
                                 <div class="timeline-date">${event.date}</div>
                                 <div class="timeline-title">${event.title || event.description}</div>
@@ -715,6 +716,33 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                             </div>
                             `).join('')}
                         </div>
+                    </div>
+                    ` : ''}
+                    
+                    ${data.legal_events && data.legal_events.length > 0 ? `
+                    <div class="section" id="legal-events">
+                        <h2 class="section-title">
+                            <span class="section-icon">⚖️</span>
+                            法律事件 (${data.legal_events.length})
+                        </h2>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>日期</th>
+                                    <th>代码</th>
+                                    <th>描述</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.legal_events.map(event => `
+                                <tr>
+                                    <td>${event.date}</td>
+                                    <td>${event.code || '-'}</td>
+                                    <td>${event.description || event.title || '-'}</td>
+                                </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
                     </div>
                     ` : ''}
                     

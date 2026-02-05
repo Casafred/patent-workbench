@@ -31,7 +31,8 @@ class SimplePatentData:
     # 进阶字段
     patent_citations: List[Dict[str, str]] = None  # 引用的专利
     cited_by: List[Dict[str, str]] = None  # 被引用的专利
-    legal_events: List[Dict[str, str]] = None  # 法律事件
+    events_timeline: List[Dict[str, str]] = None  # 事件时间轴（申请、公开、授权等关键事件）
+    legal_events: List[Dict[str, str]] = None  # 法律事件（USPTO法律状态代码：FEPP, STPP, AS等）
     similar_documents: List[Dict[str, str]] = None  # 相似文档
     # 新增字段
     classifications: List[Dict[str, str]] = None  # CPC分类信息
@@ -55,6 +56,8 @@ class SimplePatentData:
             self.patent_citations = []
         if self.cited_by is None:
             self.cited_by = []
+        if self.events_timeline is None:
+            self.events_timeline = []
         if self.legal_events is None:
             self.legal_events = []
         if self.similar_documents is None:
@@ -168,6 +171,7 @@ class SimplePatentScraper:
             logger.info(f"  - 附图数量: {len(patent_data.drawings)}")
             logger.info(f"  - 引用专利数量: {len(patent_data.patent_citations)}")
             logger.info(f"  - 被引用专利数量: {len(patent_data.cited_by)}")
+            logger.info(f"  - 事件时间轴数量: {len(patent_data.events_timeline)}")
             logger.info(f"  - 法律事件数量: {len(patent_data.legal_events)}")
             
             processing_time = time.time() - start_time
@@ -766,16 +770,16 @@ class SimplePatentScraper:
                 logger.warning(f"Error extracting cited by for {patent_number}: {e}")
                 patent_data.cited_by = []
         
-        # Extract Legal Events (法律事件/时间线)
+        # Extract Events Timeline (事件时间轴 - 申请、公开、授权等关键事件)
         if crawl_specification:
             try:
-                legal_events = []
+                events_timeline = []
                 
-                # 方法1：查找带有events属性的dd元素（新格式）
+                # 查找带有events属性的dd元素
                 event_elements = soup.find_all('dd', {'itemprop': 'events'})
                 
                 if event_elements:
-                    logger.info(f"找到 {len(event_elements)} 个事件（events格式）")
+                    logger.info(f"找到 {len(event_elements)} 个时间轴事件（events格式）")
                     for event_dd in event_elements:
                         try:
                             # 提取日期
@@ -805,7 +809,7 @@ class SimplePatentScraper:
                             doc_id = doc_id_elem.get_text().strip() if doc_id_elem else ''
                             
                             if event_title:
-                                legal_events.append({
+                                events_timeline.append({
                                     'date': event_date,
                                     'title': event_title,
                                     'type': event_type,
@@ -818,56 +822,65 @@ class SimplePatentScraper:
                             logger.warning(f"Error parsing event dd: {e}")
                             continue
                 
-                # 方法2：查找带有legalEvents属性的tr元素（旧格式，备用）
-                if not legal_events:
-                    legal_event_rows = soup.find_all('tr', {'itemprop': 'legalEvents'})
-                    
-                    if legal_event_rows:
-                        logger.info(f"找到 {len(legal_event_rows)} 个法律事件（legalEvents格式）")
-                        for row in legal_event_rows:
-                            try:
-                                # 提取日期
-                                date_elem = row.find('time', {'itemprop': 'date'})
-                                event_date = date_elem.get('datetime', '') if date_elem else ''
-                                if not event_date:
-                                    # 尝试从第一个td获取日期
-                                    date_cell = row.find('td')
-                                    event_date = date_cell.get_text().strip() if date_cell else ''
-                                
-                                # 提取代码
-                                code_elem = row.find('td', {'itemprop': 'code'})
-                                event_code = code_elem.get_text().strip() if code_elem else ''
-                                
-                                # 提取标题
-                                title_elem = row.find('td', {'itemprop': 'title'})
-                                event_title = title_elem.get_text().strip() if title_elem else ''
-                                
-                                # 提取自由格式文本
-                                free_format_text = ''
-                                attributes = row.find_all('p', {'itemprop': 'attributes'})
-                                for attr in attributes:
-                                    label = attr.find('strong', {'itemprop': 'label'})
-                                    value = attr.find('span', {'itemprop': 'value'})
-                                    if label and value and label.get_text().strip() == 'Free format text':
-                                        free_format_text = value.get_text().strip()
-                                        break
-                                
-                                # 构建完整描述
-                                description = f"{event_title} - {free_format_text}" if free_format_text else event_title
-                                
-                                legal_events.append({
-                                    'date': event_date,
-                                    'code': event_code,
-                                    'title': event_title,
-                                    'description': description,
-                                    'free_format_text': free_format_text,
-                                    'is_critical': False
-                                })
-                            except Exception as e:
-                                logger.warning(f"Error parsing legal event row: {e}")
-                                continue
+                patent_data.events_timeline = events_timeline[:20]  # 限制前20条
+                logger.info(f"提取到 {len(events_timeline)} 个时间轴事件")
+            except Exception as e:
+                logger.warning(f"Error extracting events timeline for {patent_number}: {e}")
+                patent_data.events_timeline = []
+        
+        # Extract Legal Events (法律事件 - USPTO法律状态代码)
+        if crawl_specification:
+            try:
+                legal_events = []
                 
-                # 方法3：查找包含Legal Events的h2标题（最后备用）
+                # 方法1：查找带有legalEvents属性的tr元素
+                legal_event_rows = soup.find_all('tr', {'itemprop': 'legalEvents'})
+                
+                if legal_event_rows:
+                    logger.info(f"找到 {len(legal_event_rows)} 个法律事件（legalEvents格式）")
+                    for row in legal_event_rows:
+                        try:
+                            # 提取日期
+                            date_elem = row.find('time', {'itemprop': 'date'})
+                            event_date = date_elem.get('datetime', '') if date_elem else ''
+                            if not event_date:
+                                # 尝试从第一个td获取日期
+                                date_cell = row.find('td')
+                                event_date = date_cell.get_text().strip() if date_cell else ''
+                            
+                            # 提取代码
+                            code_elem = row.find('td', {'itemprop': 'code'})
+                            event_code = code_elem.get_text().strip() if code_elem else ''
+                            
+                            # 提取标题
+                            title_elem = row.find('td', {'itemprop': 'title'})
+                            event_title = title_elem.get_text().strip() if title_elem else ''
+                            
+                            # 提取自由格式文本
+                            free_format_text = ''
+                            attributes = row.find_all('p', {'itemprop': 'attributes'})
+                            for attr in attributes:
+                                label = attr.find('strong', {'itemprop': 'label'})
+                                value = attr.find('span', {'itemprop': 'value'})
+                                if label and value and label.get_text().strip() == 'Free format text':
+                                    free_format_text = value.get_text().strip()
+                                    break
+                            
+                            # 构建完整描述
+                            description = f"{event_title} - {free_format_text}" if free_format_text else event_title
+                            
+                            legal_events.append({
+                                'date': event_date,
+                                'code': event_code,
+                                'title': event_title,
+                                'description': description,
+                                'free_format_text': free_format_text
+                            })
+                        except Exception as e:
+                            logger.warning(f"Error parsing legal event row: {e}")
+                            continue
+                
+                # 方法2：查找包含Legal Events的h2标题（备用）
                 if not legal_events:
                     legal_h2 = None
                     for h2 in soup.find_all('h2'):
@@ -884,18 +897,23 @@ class SimplePatentScraper:
                                     cells = row.find_all('td')
                                     if len(cells) >= 2:
                                         event_date = cells[0].get_text().strip()
-                                        event_description = cells[1].get_text().strip()
+                                        event_code = cells[1].get_text().strip() if len(cells) > 1 else ''
+                                        event_description = cells[2].get_text().strip() if len(cells) > 2 else cells[1].get_text().strip()
                                         
                                         legal_events.append({
                                             'date': event_date,
+                                            'code': event_code,
                                             'description': event_description
                                         })
                                 except Exception as e:
                                     logger.warning(f"Error parsing legal event table row: {e}")
                                     continue
                 
-                patent_data.legal_events = legal_events[:20]  # 限制前20条
+                patent_data.legal_events = legal_events[:30]  # 限制前30条
                 logger.info(f"提取到 {len(legal_events)} 个法律事件")
+            except Exception as e:
+                logger.warning(f"Error extracting legal events for {patent_number}: {e}")
+                patent_data.legal_events = []
             except Exception as e:
                 logger.warning(f"Error extracting legal events for {patent_number}: {e}")
                 patent_data.legal_events = []

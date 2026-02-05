@@ -1,8 +1,8 @@
-/* 字段选择器样式 */
+/* 字段选择器样式 - 淡绿色系 */
 
 .field-selector-container {
     background: white;
-    border: 1px solid #e0e0e0;
+    border: 1px solid #c8e6c9;
     border-radius: 8px;
     padding: 16px;
     margin: 16px 0;
@@ -14,13 +14,13 @@
     align-items: center;
     margin-bottom: 12px;
     padding-bottom: 12px;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid #c8e6c9;
 }
 
 .field-selector-title {
     font-size: 14px;
     font-weight: 600;
-    color: #2c3e50;
+    color: #2e7d32;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -29,7 +29,7 @@
 .field-selector-title svg {
     width: 16px;
     height: 16px;
-    color: #4a6cf7;
+    color: #43a047;
 }
 
 .field-selector-actions {
@@ -40,18 +40,18 @@
 .field-selector-btn {
     padding: 4px 12px;
     font-size: 12px;
-    border: 1px solid #e0e0e0;
+    border: 1px solid #c8e6c9;
     background: white;
-    color: #666;
+    color: #2e7d32;
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .field-selector-btn:hover {
-    background: #f5f5f5;
-    border-color: #4a6cf7;
-    color: #4a6cf7;
+    background: #e8f5e9;
+    border-color: #43a047;
+    color: #1b5e20;
 }
 
 /* 字段分组 */
@@ -66,7 +66,7 @@
 .field-group-title {
     font-size: 13px;
     font-weight: 600;
-    color: #555;
+    color: #2e7d32;
     margin-bottom: 8px;
     display: flex;
     align-items: center;
@@ -76,8 +76,8 @@
 .field-group-badge {
     display: inline-block;
     padding: 2px 6px;
-    background: #e3f2fd;
-    color: #1976d2;
+    background: #e8f5e9;
+    color: #2e7d32;
     border-radius: 3px;
     font-size: 11px;
     font-weight: 500;
@@ -95,13 +95,13 @@
     gap: 8px;
 }
 
-/* 字段选项 */
+/* 字段选项 - 淡绿色系 */
 .field-option {
     display: flex;
     align-items: center;
     padding: 8px 12px;
-    background: #f8f9fa;
-    border: 1px solid #e0e0e0;
+    background: #f1f8f4;
+    border: 1px solid #c8e6c9;
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s;
@@ -109,8 +109,8 @@
 }
 
 .field-option:hover {
-    background: #e3f2fd;
-    border-color: #4a6cf7;
+    background: #e8f5e9;
+    border-color: #43a047;
 }
 
 .field-option.disabled {
@@ -129,7 +129,7 @@
     cursor: pointer;
     width: 16px;
     height: 16px;
-    accent-color: #4a6cf7;
+    accent-color: #43a047;
 }
 
 .field-option.disabled input[type="checkbox"] {
@@ -157,14 +157,14 @@
     margin-left: auto;
 }
 
-/* 选中状态 */
+/* 选中状态 - 淡绿色系 */
 .field-option.checked {
-    background: #e3f2fd;
-    border-color: #4a6cf7;
+    background: #c8e6c9;
+    border-color: #43a047;
 }
 
 .field-option.checked .field-option-label {
-    color: #1976d2;
+    color: #1b5e20;
     font-weight: 500;
 }
 
@@ -172,7 +172,7 @@
 .field-selector-stats {
     margin-top: 12px;
     padding-top: 12px;
-    border-top: 1px solid #e0e0e0;
+    border-top: 1px solid #c8e6c9;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -187,7 +187,7 @@
 }
 
 .field-selector-count strong {
-    color: #4a6cf7;
+    color: #43a047;
     font-size: 14px;
 }
 
