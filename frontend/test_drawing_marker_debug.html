@@ -175,6 +175,32 @@
             border: 1px solid #ddd;
             border-radius: 6px;
             margin-top: 10px;
+            transition: transform 0.3s ease;
+        }
+        
+        .rotation-controls {
+            margin: 10px 0;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .rotation-controls button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+        }
+        
+        .rotation-controls button:hover {
+            background-color: #45a049;
+        }
+        
+        .rotation-controls button:active {
+            background-color: #3d8b40;
         }
         
         .debug-info {
@@ -306,7 +332,13 @@
                 
                 // 显示预览
                 const preview = document.getElementById('imagePreview');
-                preview.innerHTML = `<img src="${event.target.result}" class="image-preview" alt="预览">`;
+                preview.innerHTML = `
+                    <img id="previewImage" src="${event.target.result}" class="image-preview" alt="预览">
+                    <div class="rotation-controls">
+                        <button id="rotateLeft">↺ 逆时针旋转</button>
+                        <button id="rotateRight">↻ 顺时针旋转</button>
+                    </div>
+                `;
                 
                 // 显示结果
                 const result = document.getElementById('imageResult');
@@ -320,9 +352,79 @@
                         </ul>
                     </div>
                 `;
+                
+                // 添加旋转事件监听器
+                document.getElementById('rotateLeft').addEventListener('click', function() {
+                    rotateImage(-90);
+                });
+                
+                document.getElementById('rotateRight').addEventListener('click', function() {
+                    rotateImage(90);
+                });
             };
             reader.readAsDataURL(file);
         });
+        
+        // 旋转角度
+        let currentRotation = 0;
+        
+        // 旋转图片函数
+        function rotateImage(angle) {
+            const preview = document.getElementById('previewImage');
+            if (!preview) return;
+            
+            currentRotation += angle;
+            
+            // 应用旋转
+            preview.style.transform = `rotate(${currentRotation}deg)`;
+            
+            // 重新生成base64数据
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            const img = new Image();
+            img.src = preview.src;
+            
+            img.onload = function() {
+                // 计算旋转后的画布尺寸
+                const radians = (currentRotation * Math.PI) / 180;
+                const sin = Math.abs(Math.sin(radians));
+                const cos = Math.abs(Math.cos(radians));
+                const newWidth = img.width * cos + img.height * sin;
+                const newHeight = img.width * sin + img.height * cos;
+                
+                canvas.width = newWidth;
+                canvas.height = newHeight;
+                
+                // 旋转画布
+                ctx.translate(newWidth / 2, newHeight / 2);
+                ctx.rotate(radians);
+                ctx.drawImage(img, -img.width / 2, -img.height / 2);
+                
+                // 更新上传的图片数据
+                const rotatedDataUrl = canvas.toDataURL('image/png');
+                uploadedImage.data = rotatedDataUrl.split(',')[1];
+                uploadedImage.type = 'image/png';
+                
+                // 更新预览图片
+                preview.src = rotatedDataUrl;
+                preview.style.transform = 'rotate(0deg)';
+                currentRotation = 0;
+                
+                // 显示旋转成功提示
+                const result = document.getElementById('imageResult');
+                result.innerHTML = `
+                    <div class="result success">
+                        <div class="result-title">✅ 图片旋转成功</div>
+                        <ul class="result-list">
+                            <li>文件名: ${uploadedImage.name}</li>
+                            <li>文件类型: ${uploadedImage.type}</li>
+                            <li>状态: 已准备就绪，可以开始处理</li>
+                        </ul>
+                    </div>
+                `;
+            };
+        }
         
         // 测试说明书解析
         function testSpecification() {

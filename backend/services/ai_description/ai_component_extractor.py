@@ -54,6 +54,8 @@ class AIComponentExtractor:
             # Return a fallback template
             return """请从以下专利说明书中抽取所有的附图标记及其对应的部件名称。
 
+如果说明书不是中文，请先将其翻译成中文，然后再进行抽取。
+
 请严格按照以下JSON格式返回结果:
 {
   "components": [

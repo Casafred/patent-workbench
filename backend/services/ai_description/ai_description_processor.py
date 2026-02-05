@@ -55,8 +55,6 @@ class AIDescriptionProcessor:
         Returns:
             Dictionary with processing results:
             {
-                "language": "en/zh/ja/...",
-                "translated_text": "翻译后的文本(如果需要)",
                 "components": [
                     {"marker": "10", "name": "外壳"},
                     ...
@@ -67,60 +65,11 @@ class AIDescriptionProcessor:
         start_time = time.time()
         
         try:
-            # Step 1: Fast language detection (optimized for Chinese)
-            logger.info("Step 1: Detecting language (fast mode)...")
-
-            # Try fast Chinese detection first (no langdetect)
-            if self.language_detector.is_chinese_fast(description_text):
-                detected_language = 'zh'
-                logger.info("Text is detected as Chinese (fast detection), skipping translation")
-            else:
-                # Use full langdetect for non-obvious cases
-                try:
-                    detected_language = self.language_detector.detect(description_text)
-                    logger.info(f"Detected language: {detected_language}")
-                except LangDetectException as e:
-                    logger.error(f"Language detection failed: {str(e)}")
-                    return {
-                        "success": False,
-                        "error": "无法检测文本语言,请确保文本长度足够或手动指定语言",
-                        "error_code": "LANGUAGE_DETECTION_FAILED",
-                        "suggestion": "建议使用至少50个字符的文本"
-                    }
-
-            # Step 2: Translate if not Chinese
-            text_to_process = description_text
-            translated_text = None
-
-            if detected_language != 'zh' and detected_language != 'zh-cn' and detected_language != 'zh-tw':
-                logger.info(f"Step 2: Translating from {detected_language} to Chinese...")
-                try:
-                    translated_text = await self.translator.translate_to_chinese(
-                        description_text,
-                        detected_language,
-                        client,  # Pass client
-                        model_name
-                    )
-                    text_to_process = translated_text
-                    logger.info("Translation completed successfully")
-                except TranslationServiceUnavailable as e:
-                    logger.error(f"Translation failed: {str(e)}")
-                    # 翻译失败时，尝试直接使用原文进行抽取
-                    logger.warning("Translation failed, will try to extract components from original text")
-                    text_to_process = description_text
-                except Exception as e:
-                    logger.error(f"Unexpected translation error: {str(e)}")
-                    # 翻译失败时，尝试直接使用原文进行抽取
-                    logger.warning("Translation failed, will try to extract components from original text")
-                    text_to_process = description_text
-            else:
-                logger.info("Step 2: Text is already in Chinese, skipping translation")
-            
-            # Step 3: Extract components
-            logger.info("Step 3: Extracting components...")
+            # 直接提取组件，将语言检测和翻译集成到提示词中
+            logger.info("Extracting components with integrated language detection and translation...")
             try:
                 components = await self.extractor.extract(
-                    text_to_process,
+                    description_text,
                     model_name,
                     client,  # Pass client
                     custom_prompt
@@ -141,15 +90,10 @@ class AIDescriptionProcessor:
             result = {
                 "success": True,
                 "data": {
-                    "language": detected_language,
                     "components": components,
                     "processing_time": round(processing_time, 2)
                 }
             }
-            
-            # Add translated text if translation occurred
-            if translated_text:
-                result["data"]["translated_text"] = translated_text
             
             # Add warning if no components found
             if len(components) == 0:
