@@ -3190,7 +3190,7 @@ async function analyzeClaimsTextWithAI(text, detectedLanguage) {
     
     try {
         // 【关键修复】从全局状态获取API Key并添加到Authorization header
-        const apiKey = window.state?.apiKey;
+        const apiKey = appState.apiKey;
         if (!apiKey) {
             showClaimsTextMessage('请先在设置中配置API Key', 'error');
             return;
