@@ -190,7 +190,7 @@ def transform_rapidocr_result(rapid_result) -> List[Dict]:
 
 def preprocess_image_for_ocr(image: np.ndarray) -> List[np.ndarray]:
     """
-    预处理图像以提高OCR识别率（优化版，减少处理变体，提高速度）
+    预处理图像以提高OCR识别率（优化版，包含旋转变体以处理倒置图片）
 
     Args:
         image: 输入图像（BGR格式）
@@ -213,12 +213,58 @@ def preprocess_image_for_ocr(image: np.ndarray) -> List[np.ndarray]:
         # CLAHE (Contrast Limited Adaptive Histogram Equalization)
         clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
         enhanced = clahe.apply(gray)
-        processed_images.append(cv2.cvtColor(enhanced, cv2.COLOR_GRAY2BGR))
+        enhanced_bgr = cv2.cvtColor(enhanced, cv2.COLOR_GRAY2BGR)
+        processed_images.append(enhanced_bgr)
+
+        # 3. 添加旋转变体，处理倒置图片
+        # 旋转角度：90°, 180°, 270°
+        angles = [90, 180, 270]
+        for angle in angles:
+            # 对原图进行旋转
+            rotated_original = rotate_image(image, angle)
+            processed_images.append(rotated_original)
+            
+            # 对增强后的图像进行旋转
+            rotated_enhanced = rotate_image(enhanced_bgr, angle)
+            processed_images.append(rotated_enhanced)
 
     except Exception as e:
         logger.warning(f"Image preprocessing failed: {str(e)}, using original image only")
 
     return processed_images
+
+
+def rotate_image(image: np.ndarray, angle: int) -> np.ndarray:
+    """
+    旋转图像到指定角度
+
+    Args:
+        image: 输入图像（BGR格式）
+        angle: 旋转角度（90, 180, 270）
+
+    Returns:
+        np.ndarray: 旋转后的图像
+    """
+    height, width = image.shape[:2]
+    center = (width // 2, height // 2)
+    
+    # 计算旋转矩阵
+    matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
+    
+    # 计算旋转后的图像尺寸
+    cos = abs(matrix[0, 0])
+    sin = abs(matrix[0, 1])
+    new_width = int((height * sin) + (width * cos))
+    new_height = int((height * cos) + (width * sin))
+    
+    # 调整旋转矩阵以考虑平移
+    matrix[0, 2] += (new_width / 2) - center[0]
+    matrix[1, 2] += (new_height / 2) - center[1]
+    
+    # 执行旋转
+    rotated = cv2.warpAffine(image, matrix, (new_width, new_height))
+    
+    return rotated
 
 
 def filter_alphanumeric_markers(ocr_results: List[Dict]) -> List[Dict]:

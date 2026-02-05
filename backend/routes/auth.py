@@ -5,6 +5,7 @@ This module handles user authentication including login, logout, and app serving
 """
 
 import os
+import random
 from flask import Blueprint, request, session, redirect, url_for, render_template_string, Response
 from backend.services.auth_service import AuthService
 from backend.middleware.auth_middleware import login_required
@@ -374,6 +375,14 @@ LOGIN_PAGE_HTML = """
                 </button>
             </div>
             
+            <!-- 防机器人验证 -->
+            <div class="input-group">
+                <div style="margin-bottom: 8px; text-align: left; font-size: 14px; color: var(--text-color);">
+                    <label for="captcha">验证：{{ captcha_question }}</label>
+                </div>
+                <input type="number" id="captcha" name="captcha" placeholder="请输入计算结果" required>
+            </div>
+            
             <!-- 协议勾选区域 -->
             <div class="agreement-section">
                 <label class="agreement-checkbox">
@@ -511,17 +520,67 @@ LOGIN_PAGE_HTML = """
 """
 
 
+def generate_captcha():
+    """Generate a simple math captcha question and answer."""
+    num1 = random.randint(1, 20)
+    num2 = random.randint(1, 20)
+    operation = random.choice(['+', '-'])
+    
+    if operation == '+':
+        answer = num1 + num2
+        question = f"{num1} + {num2} = ?"
+    else:
+        # Ensure non-negative result for subtraction
+        if num1 < num2:
+            num1, num2 = num2, num1
+        answer = num1 - num2
+        question = f"{num1} - {num2} = ?"
+    
+    return question, answer
+
+
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     """
     Handle user login.
     
-    GET: Display login page
-    POST: Process login credentials
+    GET: Display login page with captcha
+    POST: Process login credentials and verify captcha
     """
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        captcha_answer = request.form.get('captcha')
+        
+        # Verify captcha
+        if not captcha_answer:
+            return render_template_string(
+                LOGIN_PAGE_HTML,
+                error="请输入验证码",
+                captcha_question="",
+                captcha_answer=""
+            )
+        
+        try:
+            captcha_answer = int(captcha_answer)
+            if session.get('captcha_answer') != captcha_answer:
+                # Generate new captcha for next attempt
+                new_captcha_question, new_captcha_answer = generate_captcha()
+                session['captcha_answer'] = new_captcha_answer
+                return render_template_string(
+                    LOGIN_PAGE_HTML,
+                    error="验证码不正确，请重试",
+                    captcha_question=new_captcha_question
+                )
+        except ValueError:
+            # Generate new captcha for next attempt
+            new_captcha_question, new_captcha_answer = generate_captcha()
+            session['captcha_answer'] = new_captcha_answer
+            return render_template_string(
+                LOGIN_PAGE_HTML,
+                error="验证码格式不正确，请输入数字",
+                captcha_question=new_captcha_question
+            )
         
         # Verify credentials
         if AuthService.verify_credentials(username, password):
@@ -535,13 +594,23 @@ def login():
             
             return redirect(url_for('auth.serve_app'))
         else:
+            # Generate new captcha for next attempt
+            new_captcha_question, new_captcha_answer = generate_captcha()
+            session['captcha_answer'] = new_captcha_answer
             return render_template_string(
                 LOGIN_PAGE_HTML,
-                error="用户名或密码不正确，请重试。"
+                error="用户名或密码不正确，请重试。",
+                captcha_question=new_captcha_question
             )
     
-    # GET请求：不显示任何错误信息
-    return render_template_string(LOGIN_PAGE_HTML, error=None)
+    # GET请求：生成新的验证码并显示登录页面
+    captcha_question, captcha_answer = generate_captcha()
+    session['captcha_answer'] = captcha_answer
+    return render_template_string(
+        LOGIN_PAGE_HTML,
+        error=None,
+        captcha_question=captcha_question
+    )
 
 
 @auth_bp.route('/logout')

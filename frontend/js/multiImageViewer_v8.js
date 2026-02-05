@@ -1045,38 +1045,46 @@ class MultiImageViewerV8 {
         const regions = { top: [], right: [], bottom: [], left: [] };
 
         this.annotations = detectedNumbers.map((detected, index) => {
-            const centerX = canvasWidth / 2;
-            const centerY = canvasHeight / 2;
-
-            const toLeft = detected.x < centerX;
-            const toTop = detected.y < centerY;
-            const dx = Math.abs(detected.x - centerX);
-            const dy = Math.abs(detected.y - centerY);
-
-            let region, labelX, labelY;
             const name = detected.name || referenceMap[detected.number] || '未知';
             const text = `${detected.number}: ${name}`;
             const textWidth = ctx.measureText(text).width;
             const textHeight = this.currentFontSize * 1.5;
 
-            if (dx > dy) {
-                // 靠近左右边缘
-                region = toLeft ? 'left' : 'right';
-                if (toLeft) {
-                    labelX = Math.max(textWidth / 2 + 10, edgeMargin);
-                } else {
-                    labelX = Math.min(canvasWidth - textWidth / 2 - 10, canvasWidth - edgeMargin);
-                }
-                labelY = Math.max(textHeight / 2 + 10, Math.min(canvasHeight - textHeight / 2 - 10, detected.y));
-            } else {
-                // 靠近上下边缘
-                region = toTop ? 'top' : 'bottom';
-                labelX = Math.max(textWidth / 2 + 10, Math.min(canvasWidth - textWidth / 2 - 10, detected.x));
-                if (toTop) {
+            // 计算离标记点最近的边框
+            const distances = {
+                top: detected.y,
+                right: canvasWidth - detected.x,
+                bottom: canvasHeight - detected.y,
+                left: detected.x
+            };
+            
+            // 找到最近的边框
+            let closestRegion = Object.keys(distances).reduce((a, b) => distances[a] < distances[b] ? a : b);
+            let labelX, labelY;
+
+            // 首先将文本框放在靠近原图标记的位置
+            // 然后向最近的边框方向移动
+            switch (closestRegion) {
+                case 'top':
+                    // 向上移动，保持x坐标接近标记点
+                    labelX = Math.max(textWidth / 2 + 10, Math.min(canvasWidth - textWidth / 2 - 10, detected.x));
                     labelY = Math.max(textHeight / 2 + 10, edgeMargin);
-                } else {
+                    break;
+                case 'right':
+                    // 向右移动，保持y坐标接近标记点
+                    labelX = Math.min(canvasWidth - textWidth / 2 - 10, canvasWidth - edgeMargin);
+                    labelY = Math.max(textHeight / 2 + 10, Math.min(canvasHeight - textHeight / 2 - 10, detected.y));
+                    break;
+                case 'bottom':
+                    // 向下移动，保持x坐标接近标记点
+                    labelX = Math.max(textWidth / 2 + 10, Math.min(canvasWidth - textWidth / 2 - 10, detected.x));
                     labelY = Math.min(canvasHeight - textHeight / 2 - 10, canvasHeight - edgeMargin);
-                }
+                    break;
+                case 'left':
+                    // 向左移动，保持y坐标接近标记点
+                    labelX = Math.max(textWidth / 2 + 10, edgeMargin);
+                    labelY = Math.max(textHeight / 2 + 10, Math.min(canvasHeight - textHeight / 2 - 10, detected.y));
+                    break;
             }
 
             const annotation = {
@@ -1092,11 +1100,11 @@ class MultiImageViewerV8 {
                 isManual: false,
                 fontSize: this.currentFontSize,
                 color: this.currentColor,
-                region: region,
+                region: closestRegion,
                 userModified: false
             };
 
-            regions[region].push(annotation);
+            regions[closestRegion].push(annotation);
             return annotation;
         });
 
