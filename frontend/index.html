@@ -2050,7 +2050,26 @@ function generateProcessingCacheKey(drawings, specification) {
     }).sort().join('|');
     const specHash = specification.length + '_' + (specification.substring(0, 200) || 'empty') + '_' + Math.random().toString(36).substr(2, 9);
     const timestamp = Date.now();
-    return 'cache_' + btoa(drawingInfo + '_' + specHash + '_' + timestamp).substring(0, 100);
+    
+    // 安全生成缓存键，处理非ASCII字符
+    try {
+        // 先编码为UTF-8，再进行base64编码
+        const input = drawingInfo + '_' + specHash + '_' + timestamp;
+        const encoded = btoa(unescape(encodeURIComponent(input)));
+        return 'cache_' + encoded.substring(0, 100);
+    } catch (error) {
+        // 如果编码失败，使用替代方案
+        console.warn('缓存键生成失败，使用替代方案:', error);
+        // 使用简单的哈希方案
+        let hash = 0;
+        const input = drawingInfo + '_' + specHash + '_' + timestamp;
+        for (let i = 0; i < input.length; i++) {
+            const char = input.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
+        }
+        return 'cache_' + Math.abs(hash).toString(36) + '_' + timestamp.toString(36).substr(0, 8);
+    }
 }
 
 // 开始处理
