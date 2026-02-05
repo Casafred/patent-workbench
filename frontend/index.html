@@ -1840,7 +1840,8 @@ function processImageFile(file) {
             name: file.name,
             type: file.type,
             size: file.size,
-            dataUrl: e.target.result
+            dataUrl: e.target.result,
+            rotation: 0
         };
         
         uploadedDrawings.push(imageData);
@@ -1862,14 +1863,19 @@ function updateUploadedDrawingsList() {
     let html = '<div style="display: flex; flex-direction: column; gap: 8px;">';
     uploadedDrawings.forEach((drawing, index) => {
         const sizeKB = (drawing.size / 1024).toFixed(1);
+        const rotation = drawing.rotation || 0;
         html += `
             <div style="display: flex; align-items: center; gap: 10px; padding: 8px; background-color: white; border: 1px solid #dee2e6; border-radius: 6px;">
-                <img src="${drawing.dataUrl}" alt="${drawing.name}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; flex-shrink: 0;">
+                <img src="${drawing.dataUrl}" alt="${drawing.name}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; flex-shrink: 0; transform: rotate(${rotation}deg);">
                 <div style="flex: 1; min-width: 0;">
                     <div style="font-size: 12px; color: #495057; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${drawing.name}</div>
-                    <div style="font-size: 11px; color: #adb5bd;">${sizeKB} KB</div>
+                    <div style="font-size: 11px; color: #adb5bd;">${sizeKB} KB | 旋转: ${rotation}°</div>
                 </div>
-                <button onclick="removeDrawing(${index})" style="padding: 4px 8px; font-size: 11px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; flex-shrink: 0;">删除</button>
+                <div style="display: flex; gap: 5px; flex-shrink: 0;">
+                    <button onclick="rotateDrawing(${index}, -90)" style="padding: 4px 8px; font-size: 11px; background-color: #ffc107; color: black; border: none; border-radius: 4px; cursor: pointer;">↶</button>
+                    <button onclick="rotateDrawing(${index}, 90)" style="padding: 4px 8px; font-size: 11px; background-color: #ffc107; color: black; border: none; border-radius: 4px; cursor: pointer;">↷</button>
+                    <button onclick="removeDrawing(${index})" style="padding: 4px 8px; font-size: 11px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">删除</button>
+                </div>
             </div>
         `;
     });
@@ -1882,6 +1888,47 @@ function updateUploadedDrawingsList() {
 function removeDrawing(index) {
     uploadedDrawings.splice(index, 1);
     updateUploadedDrawingsList();
+}
+
+// 旋转图片
+function rotateDrawing(index, degrees) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const image = new Image();
+    
+    image.onload = function() {
+        const rotation = uploadedDrawings[index].rotation || 0;
+        const newRotation = (rotation + degrees) % 360;
+        
+        // 计算旋转后的画布尺寸
+        let canvasWidth, canvasHeight;
+        if (Math.abs(newRotation) === 90 || Math.abs(newRotation) === 270) {
+            canvasWidth = image.height;
+            canvasHeight = image.width;
+        } else {
+            canvasWidth = image.width;
+            canvasHeight = image.height;
+        }
+        
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+        
+        // 旋转画布并绘制图片
+        ctx.save();
+        ctx.translate(canvasWidth / 2, canvasHeight / 2);
+        ctx.rotate((newRotation * Math.PI) / 180);
+        ctx.drawImage(image, -image.width / 2, -image.height / 2);
+        ctx.restore();
+        
+        // 更新图片数据
+        uploadedDrawings[index].dataUrl = canvas.toDataURL('image/png');
+        uploadedDrawings[index].rotation = newRotation;
+        
+        // 更新列表显示
+        updateUploadedDrawingsList();
+    };
+    
+    image.src = uploadedDrawings[index].dataUrl;
 }
 
 // 清空所有图片
