@@ -849,10 +849,13 @@ window.openPatentDetailModal = function(result) {
 
     const data = result.data;
 
-    // 清空并重建modal header，合并标题和操作按钮（移除关闭按钮）
+    // 清空并重建modal header，添加左上角关闭按钮
     modalHeader.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; gap: 15px;">
-            <div style="flex: 1; min-width: 0;">
+            <!-- 左上角关闭按钮 -->
+            <button class="close-modal" onclick="closePatentDetailModal()" style="position: absolute; left: 15px; top: 15px; z-index: 10; background: rgba(255, 255, 255, 0.9); border: 1px solid #ddd; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 20px; color: #666; transition: all 0.3s;" onmouseover="this.style.background='#f44336'; this.style.color='white'; this.style.borderColor='#f44336';" onmouseout="this.style.background='rgba(255, 255, 255, 0.9)'; this.style.color='#666'; this.style.borderColor='#ddd';" title="关闭">&times;</button>
+            
+            <div style="flex: 1; min-width: 0; padding-left: 40px;">
                 <h3 style="margin: 0; font-size: 1.2em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${result.patent_number} - ${data.title || '无标题'}</h3>
                 <div style="font-size: 0.85em; color: #666; margin-top: 5px;">
                     查询耗时: ${result.processing_time?.toFixed(2) || 'N/A'}秒
@@ -902,27 +905,6 @@ window.openPatentDetailModal = function(result) {
     setTimeout(() => {
         modal.classList.add('show');
     }, 10);
-
-    // 添加点击背景关闭的事件监听器（每次打开时重新绑定）
-    // 使用命名函数以便后续移除
-    const handleModalClick = function(e) {
-        // 点击背景区域（modal本身）时关闭
-        if (e.target === modal) {
-            closePatentDetailModal();
-            // 移除事件监听器
-            modal.removeEventListener('click', handleModalClick);
-        }
-    };
-
-    // 阻止modal-content的点击事件冒泡到modal
-    if (modalContent) {
-        modalContent.addEventListener('click', function(e) {
-            e.stopPropagation();
-        });
-    }
-
-    // 绑定点击事件
-    modal.addEventListener('click', handleModalClick);
 };
 
 // 关闭专利详情弹窗

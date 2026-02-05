@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>功能六弹窗关闭按钮测试</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #2e7d32;
+            margin-bottom: 20px;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-left: 4px solid #2e7d32;
+        }
+        
+        .test-button {
+            background: #2e7d32;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .test-button:hover {
+            background: #1b5e20;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+        }
+        
+        /* 弹窗样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.show {
+            opacity: 1;
+        }
+        
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 0;
+            border: 1px solid #888;
+            border-radius: 12px;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        
+        .modal-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%);
+            color: white;
+            border-radius: 12px 12px 0 0;
+            position: relative;
+        }
+        
+        .modal-body {
+            padding: 30px;
+        }
+        
+        .close-modal {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ddd;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            color: #666;
+            transition: all 0.3s;
+            position: absolute;
+            left: 15px;
+            top: 15px;
+            z-index: 10;
+        }
+        
+        .close-modal:hover {
+            background: #f44336;
+            color: white;
+            border-color: #f44336;
+            transform: scale(1.1);
+        }
+        
+        .info-box {
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+        
+        .warning-box {
+            background: #fff3e0;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            border-left: 4px solid #ff9800;
+        }
+        
+        .success-box {
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            border-left: 4px solid #4caf50;
+        }
+        
+        code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎯 功能六弹窗关闭按钮测试</h1>
+        
+        <div class="test-section">
+            <h3>✅ 修改内容</h3>
+            <ul>
+                <li><strong>移除</strong>：点击弹窗外部遮罩层关闭弹窗的功能</li>
+                <li><strong>新增</strong>：在弹窗左上角添加圆形关闭按钮（×）</li>
+                <li><strong>样式</strong>：白色背景，悬停时变为红色</li>
+            </ul>
+        </div>
+        
+        <div class="test-section">
+            <h3>🧪 测试步骤</h3>
+            <ol>
+                <li>点击下方按钮打开测试弹窗</li>
+                <li><strong>测试1</strong>：尝试点击弹窗外部的灰色遮罩层 → 应该<strong>不会关闭</strong></li>
+                <li><strong>测试2</strong>：点击左上角的关闭按钮（×）→ 应该<strong>正常关闭</strong></li>
+                <li><strong>测试3</strong>：按ESC键 → 应该<strong>正常关闭</strong>（保留原有功能）</li>
+            </ol>
+        </div>
+        
+        <div class="success-box">
+            <strong>✨ 预期效果：</strong>
+            <ul>
+                <li>左上角有一个圆形关闭按钮</li>
+                <li>鼠标悬停时按钮变红色</li>
+                <li>点击遮罩层不会关闭弹窗</li>
+                <li>只能通过关闭按钮或ESC键关闭</li>
+            </ul>
+        </div>
+        
+        <button class="test-button" onclick="openTestModal()">打开测试弹窗</button>
+    </div>
+    
+    <!-- 测试弹窗 -->
+    <div id="patent_detail_modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header" id="modal_header">
+                <!-- 动态生成内容 -->
+            </div>
+            <div class="modal-body">
+                <h2>专利详情测试</h2>
+                <div class="info-box">
+                    <h3>📋 测试说明</h3>
+                    <p>这是一个模拟的专利详情弹窗，用于测试新的关闭按钮功能。</p>
+                </div>
+                
+                <div class="warning-box">
+                    <h3>⚠️ 重要提示</h3>
+                    <p><strong>点击弹窗外部的灰色区域不会关闭弹窗！</strong></p>
+                    <p>请使用左上角的关闭按钮（×）或按ESC键关闭。</p>
+                </div>
+                
+                <h3>专利信息</h3>
+                <p><strong>专利号：</strong>CN123456789A</p>
+                <p><strong>标题：</strong>一种测试用的专利发明</p>
+                <p><strong>申请日期：</strong>2024-01-01</p>
+                <p><strong>查询耗时：</strong>1.23秒</p>
+                
+                <h3>摘要</h3>
+                <p>本发明公开了一种用于测试弹窗关闭功能的方法和系统。通过在弹窗左上角添加关闭按钮，并移除点击遮罩层关闭的功能，提高了用户体验和操作的明确性。</p>
+                
+                <h3>权利要求</h3>
+                <ol>
+                    <li>一种弹窗关闭方法，其特征在于包括在左上角设置关闭按钮。</li>
+                    <li>根据权利要求1所述的方法，其特征在于所述关闭按钮为圆形。</li>
+                    <li>根据权利要求2所述的方法，其特征在于悬停时按钮变为红色。</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 模拟专利数据
+        const mockPatentResult = {
+            patent_number: 'CN123456789A',
+            processing_time: 1.23,
+            data: {
+                title: '一种测试用的专利发明'
+            }
+        };
+        
+        // 打开测试弹窗
+        function openTestModal() {
+            const modal = document.getElementById('patent_detail_modal');
+            const modalHeader = document.getElementById('modal_header');
+            const result = mockPatentResult;
+            const data = result.data;
+            
+            // 动态生成header内容（包含左上角关闭按钮）
+            modalHeader.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; gap: 15px;">
+                    <!-- 左上角关闭按钮 -->
+                    <button class="close-modal" onclick="closeTestModal()" title="关闭">&times;</button>
+                    
+                    <div style="flex: 1; min-width: 0; padding-left: 40px;">
+                        <h3 style="margin: 0; font-size: 1.2em;">${result.patent_number} - ${data.title || '无标题'}</h3>
+                        <div style="font-size: 0.85em; opacity: 0.9; margin-top: 5px;">
+                            查询耗时: ${result.processing_time?.toFixed(2) || 'N/A'}秒
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // 显示弹窗
+            modal.style.display = 'flex';
+            setTimeout(() => {
+                modal.classList.add('show');
+            }, 10);
+        }
+        
+        // 关闭测试弹窗
+        function closeTestModal() {
+            const modal = document.getElementById('patent_detail_modal');
+            modal.classList.remove('show');
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300);
+        }
+        
+        // ESC键关闭
+        window.addEventListener('keydown', function(event) {
+            const modal = document.getElementById('patent_detail_modal');
+            if (modal && modal.style.display !== 'none' && event.key === 'Escape') {
+                closeTestModal();
+            }
+        });
+        
+        // 注意：这里故意不添加点击遮罩层关闭的功能
+        // 这是为了测试新的交互方式
+    </script>
+</body>
+</html>
