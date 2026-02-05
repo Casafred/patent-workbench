@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多语言权利要求分析测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .test-section h2 {
+            color: #007bff;
+            margin-top: 0;
+        }
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        button {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 5px 10px 0;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button.secondary {
+            background: #6c757d;
+        }
+        button.secondary:hover {
+            background: #545b62;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .result h3 {
+            margin-top: 0;
+            color: #28a745;
+        }
+        .claim-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-left: 3px solid #007bff;
+        }
+        .claim-item.independent {
+            border-left-color: #28a745;
+        }
+        .claim-item.dependent {
+            border-left-color: #ffc107;
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .badge.independent {
+            background: #28a745;
+            color: white;
+        }
+        .badge.dependent {
+            background: #ffc107;
+            color: #333;
+        }
+        .info-box {
+            padding: 15px;
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        .info-box strong {
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌍 多语言权利要求分析测试</h1>
+        
+        <div class="info-box">
+            <strong>功能说明：</strong><br>
+            • 中英文文本：直接使用正则规则识别独从权<br>
+            • 其他语言文本：提示用户开启AI模式，使用glm-4-flash翻译后再解析<br>
+            • 支持语言：中文、英文、日文、德文、法文、韩文等
+        </div>
+
+        <!-- 中文测试 -->
+        <div class="test-section">
+            <h2>测试1：中文权利要求（直接解析）</h2>
+            <textarea id="chinese_text">1. 一种智能手机，其特征在于，包括：
+处理器，用于执行指令；
+存储器，与所述处理器连接，用于存储数据；
+显示屏，与所述处理器连接，用于显示信息。
+
+2. 根据权利要求1所述的智能手机，其特征在于，所述处理器为八核处理器。
+
+3. 根据权利要求1或2所述的智能手机，其特征在于，所述存储器容量为8GB以上。</textarea>
+            <button onclick="testAnalysis('chinese_text', 'chinese_result')">分析中文文本</button>
+            <div id="chinese_result" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- 英文测试 -->
+        <div class="test-section">
+            <h2>测试2：英文权利要求（直接解析）</h2>
+            <textarea id="english_text">1. A smartphone comprising:
+a processor configured to execute instructions;
+a memory coupled to the processor and configured to store data;
+a display coupled to the processor and configured to display information.
+
+2. The smartphone of claim 1, wherein the processor is an octa-core processor.
+
+3. The smartphone of claim 1 or 2, wherein the memory has a capacity of at least 8GB.</textarea>
+            <button onclick="testAnalysis('english_text', 'english_result')">分析英文文本</button>
+            <div id="english_result" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- 日文测试 -->
+        <div class="test-section">
+            <h2>测试3：日文权利要求（AI翻译模式）</h2>
+            <textarea id="japanese_text">1. スマートフォンであって、
+命令を実行するように構成されたプロセッサと、
+前記プロセッサに結合され、データを記憶するように構成されたメモリと、
+前記プロセッサに結合され、情報を表示するように構成されたディスプレイと、
+を備えることを特徴とするスマートフォン。
+
+2. 請求項1に記載のスマートフォンにおいて、前記プロセッサはオクタコアプロセッサであることを特徴とするスマートフォン。
+
+3. 請求項1または2に記載のスマートフォンにおいて、前記メモリは少なくとも8GBの容量を有することを特徴とするスマートフォン。</textarea>
+            <button onclick="testAnalysis('japanese_text', 'japanese_result')">分析日文文本（需AI）</button>
+            <div id="japanese_result" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- 德文测试 -->
+        <div class="test-section">
+            <h2>测试4：德文权利要求（AI翻译模式）</h2>
+            <textarea id="german_text">1. Smartphone, umfassend:
+einen Prozessor, der zum Ausführen von Anweisungen konfiguriert ist;
+einen Speicher, der mit dem Prozessor gekoppelt und zum Speichern von Daten konfiguriert ist;
+ein Display, das mit dem Prozessor gekoppelt und zum Anzeigen von Informationen konfiguriert ist.
+
+2. Smartphone nach Anspruch 1, dadurch gekennzeichnet, dass der Prozessor ein Octa-Core-Prozessor ist.
+
+3. Smartphone nach Anspruch 1 oder 2, dadurch gekennzeichnet, dass der Speicher eine Kapazität von mindestens 8 GB aufweist.</textarea>
+            <button onclick="testAnalysis('german_text', 'german_result')">分析德文文本（需AI）</button>
+            <div id="german_result" class="result" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        // 检测文本语言
+        function detectTextLanguage(text) {
+            if (!text) return 'other';
+            
+            const chineseChars = (text.match(/[\u4e00-\u9fff]/g) || []).length;
+            const hiraganaChars = (text.match(/[\u3040-\u309f]/g) || []).length;
+            const katakanaChars = (text.match(/[\u30a0-\u30ff]/g) || []).length;
+            const englishChars = (text.match(/[a-zA-Z]/g) || []).length;
+            
+            const totalChars = text.replace(/\s/g, '').length;
+            if (totalChars === 0) return 'other';
+            
+            const kanaRatio = (hiraganaChars + katakanaChars) / totalChars;
+            if (kanaRatio > 0.05) return 'ja';
+            
+            const chineseRatio = chineseChars / totalChars;
+            if (chineseRatio > 0.1) return 'zh';
+            
+            const englishRatio = englishChars / totalChars;
+            if (englishRatio > 0.3) return 'en';
+            
+            if (/anspruch|ansprüche|gemäß|dadurch/i.test(text)) return 'de';
+            if (/revendication|selon|caractérisé/i.test(text)) return 'fr';
+            if (/[\uac00-\ud7af]/.test(text)) return 'ko';
+            
+            return 'other';
+        }
+
+        // 测试分析功能
+        async function testAnalysis(textareaId, resultId) {
+            const textarea = document.getElementById(textareaId);
+            const resultDiv = document.getElementById(resultId);
+            const text = textarea.value.trim();
+            
+            if (!text) {
+                alert('请输入文本');
+                return;
+            }
+            
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<p>正在分析...</p>';
+            
+            try {
+                // 检测语言
+                const detectedLanguage = detectTextLanguage(text);
+                console.log('检测到的语言:', detectedLanguage);
+                
+                const languageNames = {
+                    'zh': '中文',
+                    'en': '英文',
+                    'ja': '日文',
+                    'ko': '韩文',
+                    'de': '德文',
+                    'fr': '法文',
+                    'other': '其他语言'
+                };
+                
+                // 如果不是中英文，询问是否使用AI模式
+                let useAI = false;
+                if (detectedLanguage !== 'zh' && detectedLanguage !== 'en') {
+                    const langName = languageNames[detectedLanguage] || '非中英文';
+                    useAI = confirm(`检测到${langName}文本。\n\n建议开启AI模式，系统将使用AI翻译为中文后再进行独从权分析。\n\n是否开启AI模式？`);
+                    
+                    if (!useAI) {
+                        resultDiv.innerHTML = '<p style="color: #666;">已取消分析</p>';
+                        return;
+                    }
+                }
+                
+                // 调用后端API
+                const response = await fetch('/api/claims-analyzer/parse', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        use_ai_translation: useAI,
+                        detected_language: detectedLanguage
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayResults(data.data, resultDiv);
+                } else {
+                    resultDiv.innerHTML = `<p style="color: red;">分析失败: ${data.error}</p>`;
+                }
+            } catch (error) {
+                console.error('Analysis error:', error);
+                resultDiv.innerHTML = `<p style="color: red;">分析失败: ${error.message}</p>`;
+            }
+        }
+
+        // 显示结果
+        function displayResults(data, resultDiv) {
+            const claims = data.claims || [];
+            const summary = data.summary || {};
+            const langInfo = data.language_info || {};
+            
+            let html = '<h3>✓ 分析完成</h3>';
+            
+            // 语言信息
+            if (langInfo.translation_applied) {
+                html += `<div class="info-box">
+                    <strong>🤖 AI翻译模式：</strong><br>
+                    原始语言：${langInfo.original_language}<br>
+                    翻译后语言：${langInfo.final_language}<br>
+                    使用模型：glm-4-flash
+                </div>`;
+            } else {
+                html += `<div class="info-box">
+                    <strong>📝 直接解析模式：</strong><br>
+                    检测语言：${langInfo.detected_language}<br>
+                    使用正则规则识别独从权
+                </div>`;
+            }
+            
+            // 统计信息
+            html += `<p><strong>统计信息：</strong></p>
+                <ul>
+                    <li>总权利要求数：${summary.total_claims}</li>
+                    <li>独立权利要求：${summary.independent_claims}</li>
+                    <li>从属权利要求：${summary.dependent_claims}</li>
+                </ul>`;
+            
+            // 权利要求列表
+            html += '<p><strong>权利要求详情：</strong></p>';
+            claims.forEach(claim => {
+                const typeText = claim.claim_type === 'independent' ? '独立' : '从属';
+                const refs = claim.referenced_claims && claim.referenced_claims.length > 0 
+                    ? `<br><small>引用: ${claim.referenced_claims.join(', ')}</small>` 
+                    : '';
+                
+                html += `<div class="claim-item ${claim.claim_type}">
+                    <strong>权利要求 ${claim.claim_number}</strong>
+                    <span class="badge ${claim.claim_type}">${typeText}</span>
+                    <p>${claim.claim_text.substring(0, 150)}${claim.claim_text.length > 150 ? '...' : ''}</p>
+                    ${refs}
+                </div>`;
+            });
+            
+            resultDiv.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

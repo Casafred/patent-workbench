@@ -3035,7 +3035,7 @@ if (document.readyState === 'loading') {
 // ============================================================================
 
 // 分析权利要求文本
-function analyzeClaimsText() {
+async function analyzeClaimsText() {
     const input = document.getElementById('claims_text_input');
     const text = input.value.trim();
     
@@ -3045,22 +3045,201 @@ function analyzeClaimsText() {
     }
     
     try {
-        // 解析权利要求文本
-        claimsTextAnalyzedData = parseClaimsText(text);
+        // 检测语言
+        const detectedLanguage = detectTextLanguage(text);
+        console.log('检测到的语言:', detectedLanguage);
         
-        if (claimsTextAnalyzedData.length === 0) {
-            showClaimsTextMessage('未能识别到有效的权利要求，请检查格式', 'error');
-            return;
+        // 如果不是中英文，提示用户开启AI模式
+        if (detectedLanguage !== 'zh' && detectedLanguage !== 'en') {
+            const languageNames = {
+                'ja': '日语',
+                'ko': '韩语',
+                'de': '德语',
+                'fr': '法语',
+                'es': '西班牙语',
+                'ru': '俄语',
+                'other': '其他语言'
+            };
+            const langName = languageNames[detectedLanguage] || '非中英文';
+            
+            // 显示AI模式提示
+            const useAI = await showAIModePrompt(langName);
+            if (!useAI) {
+                showClaimsTextMessage('已取消分析', 'info');
+                return;
+            }
+            
+            // 使用AI模式分析
+            await analyzeClaimsTextWithAI(text, detectedLanguage);
+        } else {
+            // 直接使用正则规则解析
+            analyzeClaimsTextDirect(text);
         }
-        
-        // 显示结果
-        displayClaimsTextResults();
-        showClaimsTextMessage(`成功识别 ${claimsTextAnalyzedData.length} 条权利要求`, 'success');
         
     } catch (error) {
         console.error('Analysis error:', error);
         showClaimsTextMessage('分析失败：' + error.message, 'error');
     }
+}
+
+// 检测文本语言
+function detectTextLanguage(text) {
+    if (!text) return 'other';
+    
+    // 统计各类字符
+    const chineseChars = (text.match(/[\u4e00-\u9fff]/g) || []).length;
+    const hiraganaChars = (text.match(/[\u3040-\u309f]/g) || []).length;
+    const katakanaChars = (text.match(/[\u30a0-\u30ff]/g) || []).length;
+    const englishChars = (text.match(/[a-zA-Z]/g) || []).length;
+    
+    const totalChars = text.replace(/\s/g, '').length;
+    if (totalChars === 0) return 'other';
+    
+    // 日语检测（包含假名）
+    const kanaRatio = (hiraganaChars + katakanaChars) / totalChars;
+    if (kanaRatio > 0.05) return 'ja';
+    
+    // 中文检测
+    const chineseRatio = chineseChars / totalChars;
+    if (chineseRatio > 0.1) return 'zh';
+    
+    // 英文检测
+    const englishRatio = englishChars / totalChars;
+    if (englishRatio > 0.3) return 'en';
+    
+    // 德语关键词检测
+    if (/anspruch|ansprüche|gemäß|dadurch/i.test(text)) return 'de';
+    
+    // 法语关键词检测
+    if (/revendication|selon|caractérisé/i.test(text)) return 'fr';
+    
+    // 韩语检测
+    if (/[\uac00-\ud7af]/.test(text)) return 'ko';
+    
+    return 'other';
+}
+
+// 显示AI模式提示对话框
+function showAIModePrompt(languageName) {
+    return new Promise((resolve) => {
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        `;
+        
+        const dialog = document.createElement('div');
+        dialog.style.cssText = `
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        `;
+        
+        dialog.innerHTML = `
+            <h3 style="margin-top: 0; color: #333;">检测到${languageName}文本</h3>
+            <p style="color: #666; line-height: 1.6;">
+                系统检测到您输入的文本为${languageName}。<br>
+                <strong>建议开启AI模式</strong>，系统将使用AI翻译为中文后再进行独从权分析，以获得更准确的结果。
+            </p>
+            <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                <button id="ai_mode_cancel" style="padding: 8px 20px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer;">
+                    取消
+                </button>
+                <button id="ai_mode_confirm" style="padding: 8px 20px; border: none; background: #007bff; color: white; border-radius: 4px; cursor: pointer;">
+                    开启AI模式
+                </button>
+            </div>
+        `;
+        
+        modal.appendChild(dialog);
+        document.body.appendChild(modal);
+        
+        document.getElementById('ai_mode_confirm').onclick = () => {
+            document.body.removeChild(modal);
+            resolve(true);
+        };
+        
+        document.getElementById('ai_mode_cancel').onclick = () => {
+            document.body.removeChild(modal);
+            resolve(false);
+        };
+        
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                document.body.removeChild(modal);
+                resolve(false);
+            }
+        };
+    });
+}
+
+// 使用AI模式分析（调用后端API）
+async function analyzeClaimsTextWithAI(text, detectedLanguage) {
+    showClaimsTextMessage('正在使用AI翻译并分析...', 'info');
+    
+    try {
+        const response = await fetch('/api/claims-analyzer/parse', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                text: text,
+                use_ai_translation: true,
+                detected_language: detectedLanguage
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            claimsTextAnalyzedData = data.data.claims;
+            
+            // 显示翻译信息
+            if (data.data.language_info && data.data.language_info.translation_applied) {
+                const langInfo = data.data.language_info;
+                showClaimsTextMessage(
+                    `✓ AI翻译完成（${langInfo.original_language} → 中文），成功识别 ${claimsTextAnalyzedData.length} 条权利要求`,
+                    'success'
+                );
+            } else {
+                showClaimsTextMessage(`成功识别 ${claimsTextAnalyzedData.length} 条权利要求`, 'success');
+            }
+            
+            // 显示结果
+            displayClaimsTextResults();
+        } else {
+            showClaimsTextMessage('AI分析失败：' + (data.error || '未知错误'), 'error');
+        }
+    } catch (error) {
+        console.error('AI analysis error:', error);
+        showClaimsTextMessage('AI分析失败：' + error.message, 'error');
+    }
+}
+
+// 直接分析（中英文使用正则规则）
+function analyzeClaimsTextDirect(text) {
+    // 解析权利要求文本
+    claimsTextAnalyzedData = parseClaimsText(text);
+    
+    if (claimsTextAnalyzedData.length === 0) {
+        showClaimsTextMessage('未能识别到有效的权利要求，请检查格式', 'error');
+        return;
+    }
+    
+    // 显示结果
+    displayClaimsTextResults();
+    showClaimsTextMessage(`成功识别 ${claimsTextAnalyzedData.length} 条权利要求`, 'success');
 }
 
 // 解析权利要求文本

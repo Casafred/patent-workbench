@@ -48,10 +48,13 @@ def parse_claims_text():
     解析权利要求文本
     
     接收纯文本输入，返回解析后的权利要求结构
+    支持AI翻译模式：对于非中英文文本，使用glm-4-flash翻译后再解析
     """
     try:
         data = request.get_json()
         text = data.get('text', '')
+        use_ai_translation = data.get('use_ai_translation', False)
+        detected_language = data.get('detected_language', None)
         
         if not text:
             return create_response(error="请提供权利要求文本", status_code=400)
@@ -86,67 +89,76 @@ def parse_claims_text():
         
         # 检测文本语言并翻译非中英文内容
         text_to_process = cleaned_text
-        detected_language = 'zh'  # 默认中文
         translation_applied = False
+        original_language = None
         
-        try:
-            # 检测整个文本的语言
-            detected_language = language_detector.detect_language(cleaned_text)
-            logger.info(f"Detected text language: {detected_language}")
+        # 如果前端已经检测了语言，使用前端的检测结果
+        if not detected_language:
+            try:
+                detected_language = language_detector.detect_language(cleaned_text)
+                logger.info(f"Backend detected text language: {detected_language}")
+            except Exception as e:
+                logger.error(f"Language detection failed: {str(e)}")
+                detected_language = 'zh'  # 默认中文
+        else:
+            logger.info(f"Using frontend detected language: {detected_language}")
+        
+        # 如果用户选择了AI翻译模式，且不是中英文，进行翻译
+        if use_ai_translation and detected_language not in ['zh', 'en']:
+            logger.info(f"AI translation mode enabled for {detected_language} text")
+            original_language = detected_language
             
-            # 如果不是中文或英文，需要翻译
-            if detected_language not in ['zh', 'en']:
-                logger.info(f"Non-Chinese/English text detected, will translate to Chinese")
+            try:
                 
                 # 初始化翻译服务
                 api_key = os.getenv('ZHIPU_API_KEY')
                 if not api_key:
-                    logger.warning("ZHIPU_API_KEY not configured, skipping translation")
-                else:
-                    try:
-                        client = ZhipuAI(api_key=api_key)
-                        
-                        # 准备翻译提示
-                        source_lang_name = LANG_NAMES.get(detected_language, detected_language)
-                        prompt = TRANSLATION_PROMPT.format(
-                            source_lang=source_lang_name,
-                            text=cleaned_text
-                        )
-                        
-                        # 调用翻译API
-                        logger.info(f"Translating text using glm-4-flash")
-                        response = client.chat.completions.create(
-                            model="glm-4-flash",
-                            messages=[
-                                {
-                                    "role": "system",
-                                    "content": "你是一位专业的专利文献翻译专家。请准确翻译专利文本，保持专业术语的准确性。"
-                                },
-                                {
-                                    "role": "user",
-                                    "content": prompt
-                                }
-                            ],
-                            stream=False,
-                            temperature=0.3
-                        )
-                        
-                        translated_text = response.choices[0].message.content.strip()
-                        logger.info(f"Translation completed successfully")
-                        
-                        # 使用翻译后的文本进行处理
-                        text_to_process = translated_text
-                        translation_applied = True
-                        
-                    except Exception as e:
-                        logger.error(f"Translation failed: {str(e)}")
-                        logger.warning("Translation failed, will try to process original text")
-                        # 翻译失败时使用原文
-                        text_to_process = cleaned_text
-        except Exception as e:
-            logger.error(f"Language detection failed: {str(e)}")
-            # 语言检测失败时使用原文
-            text_to_process = cleaned_text
+                    logger.error("ZHIPU_API_KEY not configured")
+                    return create_response(
+                        error="AI翻译功能未配置，请联系管理员配置ZHIPU_API_KEY",
+                        status_code=500
+                    )
+                
+                client = ZhipuAI(api_key=api_key)
+                
+                # 准备翻译提示
+                source_lang_name = LANG_NAMES.get(detected_language, detected_language)
+                prompt = TRANSLATION_PROMPT.format(
+                    source_lang=source_lang_name,
+                    text=cleaned_text
+                )
+                
+                # 调用翻译API
+                logger.info(f"Translating {source_lang_name} text using glm-4-flash")
+                response = client.chat.completions.create(
+                    model="glm-4-flash",
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "你是一位专业的专利文献翻译专家。请准确翻译专利文本，保持专业术语的准确性和权利要求序号。"
+                        },
+                        {
+                            "role": "user",
+                            "content": prompt
+                        }
+                    ],
+                    stream=False,
+                    temperature=0.3
+                )
+                
+                translated_text = response.choices[0].message.content.strip()
+                logger.info(f"Translation completed successfully, length: {len(translated_text)}")
+                
+                # 使用翻译后的文本进行处理
+                text_to_process = translated_text
+                translation_applied = True
+                
+            except Exception as e:
+                logger.error(f"Translation failed: {str(e)}")
+                return create_response(
+                    error=f"AI翻译失败: {str(e)}",
+                    status_code=500
+                )
         
         # 解析权利要求 - 使用处理后的文本（可能是翻译后的）
         try:
@@ -313,7 +325,8 @@ def parse_claims_text():
             'language_info': {
                 'detected_language': detected_language,
                 'translation_applied': translation_applied,
-                'original_language': detected_language if translation_applied else None
+                'original_language': original_language,
+                'final_language': 'zh' if translation_applied else detected_language
             }
         })
         
