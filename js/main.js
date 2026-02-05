@@ -1478,13 +1478,13 @@ function buildPatentDetailHTML(result) {
         `;
     }
     
-    // 事件时间轴（优化版 - 使用patent-timeline.css样式）
-    if (data.legal_events && data.legal_events.length > 0) {
+    // 事件时间轴（Events Timeline）
+    if (data.events_timeline && data.events_timeline.length > 0) {
         htmlContent += `
             <div style="margin-top: 15px;">
                 <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
-                    <strong style="color: var(--primary-color);">📅 事件时间轴 (共${data.legal_events.length}条):</strong>
-                    <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'legal_events', event)" title="复制法律事件">
+                    <strong style="color: var(--primary-color);">📅 事件时间轴 (共${data.events_timeline.length}条):</strong>
+                    <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'events_timeline', event)" title="复制事件时间轴">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg>
                     </button>
                 </div>
@@ -1492,7 +1492,7 @@ function buildPatentDetailHTML(result) {
                     <div class="patent-timeline">
         `;
         
-        data.legal_events.forEach((event, index) => {
+        data.events_timeline.forEach((event, index) => {
             const isCritical = event.is_critical ? 'critical' : '';
             
             htmlContent += `
@@ -1507,7 +1507,6 @@ function buildPatentDetailHTML(result) {
                             ${event.date}
                         </div>
                         <div class="timeline-event-title">${event.title || event.description}</div>
-                        ${event.code ? `<div class="timeline-event-code">${event.code}</div>` : ''}
                         ${event.type ? `<div class="timeline-event-description">${event.type}</div>` : ''}
                     </div>
                 </div>
@@ -1516,6 +1515,46 @@ function buildPatentDetailHTML(result) {
         
         htmlContent += `
                     </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // 法律事件（Legal Events）- 表格样式
+    if (data.legal_events && data.legal_events.length > 0) {
+        htmlContent += `
+            <div style="margin-top: 15px; padding: 10px; background-color: #fff3e0; border-radius: 5px;">
+                <div style="margin-bottom: 8px;">
+                    <strong style="color: var(--primary-color);">⚖️ 法律事件 (共${data.legal_events.length}条):</strong>
+                    <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'legal_events', event)" title="复制法律事件">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg>
+                    </button>
+                </div>
+                <div style="max-height: 300px; overflow-y: auto;">
+                    <table style="width: 100%; font-size: 0.85em; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background-color: #ffe0b2;">
+                                <th style="padding: 5px; text-align: left; border: 1px solid #ddd;">日期</th>
+                                <th style="padding: 5px; text-align: left; border: 1px solid #ddd; width: 100px;">代码</th>
+                                <th style="padding: 5px; text-align: left; border: 1px solid #ddd;">描述</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        `;
+        
+        data.legal_events.forEach(event => {
+            htmlContent += `
+                <tr>
+                    <td style="padding: 5px; border: 1px solid #ddd;">${event.date}</td>
+                    <td style="padding: 5px; border: 1px solid #ddd;">${event.code || '-'}</td>
+                    <td style="padding: 5px; border: 1px solid #ddd;">${event.description || event.title || '-'}</td>
+                </tr>
+            `;
+        });
+        
+        htmlContent += `
+                        </tbody>
+                    </table>
                 </div>
             </div>
         `;
