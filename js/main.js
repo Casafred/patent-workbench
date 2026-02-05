@@ -850,6 +850,12 @@ window.openPatentDetailModal = function(result) {
     
     // 清空并重建modal header，合并标题和操作按钮
     modalHeader.innerHTML = `
+        <!-- 左上角关闭按钮 -->
+        <button class="modal-close-btn" onclick="closePatentDetailModal()" title="关闭">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+            </svg>
+        </button>
         <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; gap: 15px;">
             <div style="flex: 1; min-width: 0;">
                 <h3 style="margin: 0; font-size: 1.2em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${result.patent_number} - ${data.title || '无标题'}</h3>
@@ -903,20 +909,11 @@ window.openPatentDetailModal = function(result) {
     }, 10);
 };
 
-// 初始化弹窗点击外部关闭功能（只初始化一次）
+// 弹窗初始化（已移除点击外部关闭功能，改为左上角叉号关闭）
 document.addEventListener('DOMContentLoaded', function() {
     const modal = document.getElementById('patent_detail_modal');
     if (modal) {
-        // 使用捕获阶段确保事件能够正确触发
-        modal.addEventListener('click', function(event) {
-            console.log('Modal clicked:', event.target.id, event.target.className);
-            // 如果点击的是modal背景（不是modal-content或其子元素），则关闭
-            if (event.target.id === 'patent_detail_modal') {
-                console.log('Closing modal...');
-                closePatentDetailModal();
-            }
-        }, false);
-        console.log('✅ 弹窗点击外部关闭事件已绑定');
+        console.log('✅ 弹窗已初始化（使用左上角叉号关闭）');
     }
 });
 
@@ -1090,6 +1087,94 @@ window.copyPatentNumber = function(patentNumber, event) {
             if (btn) {
                 const originalHTML = btn.innerHTML;
                 btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/></svg> 已复制';
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                }, 1500);
+            }
+        })
+        .catch(() => alert('❌ 复制失败'));
+};
+
+// 复制同族专利的所有公开号
+window.copyFamilyPublicationNumbers = function(patentNumber, event) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    
+    // 找到对应的专利结果
+    const patentResult = window.patentResults.find(result => result.patent_number === patentNumber);
+    if (!patentResult || !patentResult.success) {
+        alert('❌ 无法复制：专利数据不存在');
+        return;
+    }
+    
+    const data = patentResult.data;
+    let contentToCopy = '';
+    
+    if (data.family_applications && data.family_applications.length > 0) {
+        contentToCopy = data.family_applications
+            .map(app => app.publication_number || '')
+            .filter(num => num !== '' && num !== '-')
+            .join('\n');
+    }
+    
+    if (!contentToCopy) {
+        alert('❌ 没有可复制的公开号');
+        return;
+    }
+    
+    // 复制到剪贴板
+    navigator.clipboard.writeText(contentToCopy)
+        .then(() => {
+            const btn = event?.target?.closest('button');
+            if (btn) {
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/></svg> 已复制';
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                }, 1500);
+            }
+        })
+        .catch(() => alert('❌ 复制失败'));
+};
+
+// 复制相似文档的所有专利号
+window.copySimilarDocumentNumbers = function(patentNumber, event) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    
+    // 找到对应的专利结果
+    const patentResult = window.patentResults.find(result => result.patent_number === patentNumber);
+    if (!patentResult || !patentResult.success) {
+        alert('❌ 无法复制：专利数据不存在');
+        return;
+    }
+    
+    const data = patentResult.data;
+    let contentToCopy = '';
+    
+    if (data.similar_documents && data.similar_documents.length > 0) {
+        contentToCopy = data.similar_documents
+            .map(doc => doc.patent_number || '')
+            .filter(num => num !== '')
+            .join('\n');
+    }
+    
+    if (!contentToCopy) {
+        alert('❌ 没有可复制的专利号');
+        return;
+    }
+    
+    // 复制到剪贴板
+    navigator.clipboard.writeText(contentToCopy)
+        .then(() => {
+            const btn = event?.target?.closest('button');
+            if (btn) {
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/></svg> 已复制';
                 setTimeout(() => {
                     btn.innerHTML = originalHTML;
                 }, 1500);
@@ -1342,6 +1427,9 @@ function buildPatentDetailHTML(result) {
             htmlContent += `
                 <div style="margin-top: 10px;">
                     <strong>同族申请 (共${data.family_applications.length}条):</strong>
+                    <button class="copy-field-btn" onclick="copyFamilyPublicationNumbers('${result.patent_number}', event)" title="复制所有公开号">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg>
+                    </button>
                     <div style="max-height: 200px; overflow-y: auto; margin-top: 8px;">
                         <table style="width: 100%; font-size: 0.85em; border-collapse: collapse;">
                             <thead>
@@ -1566,6 +1654,9 @@ function buildPatentDetailHTML(result) {
             <div style="margin-top: 15px; padding: 10px; background-color: #e8f5e9; border-radius: 5px;">
                 <div style="margin-bottom: 8px;">
                     <strong style="color: var(--primary-color);">📋 相似文档 (共${data.similar_documents.length}条):</strong>
+                    <button class="copy-field-btn" onclick="copySimilarDocumentNumbers('${result.patent_number}', event)" title="复制所有专利号">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg>
+                    </button>
                 </div>
                 <div style="max-height: 200px; overflow-y: auto;">
                     <table style="width: 100%; font-size: 0.85em; border-collapse: collapse;">
