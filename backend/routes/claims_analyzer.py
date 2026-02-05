@@ -109,17 +109,13 @@ def parse_claims_text():
             original_language = detected_language
             
             try:
+                # 使用get_zhipu_client获取客户端（从Authorization header）
+                from backend.services import get_zhipu_client
+                client, error_response = get_zhipu_client()
                 
-                # 初始化翻译服务
-                api_key = os.getenv('ZHIPU_API_KEY')
-                if not api_key:
-                    logger.error("ZHIPU_API_KEY not configured")
-                    return create_response(
-                        error="AI翻译功能未配置，请联系管理员配置ZHIPU_API_KEY",
-                        status_code=500
-                    )
-                
-                client = ZhipuAI(api_key=api_key)
+                if error_response:
+                    logger.error("Failed to get ZhipuAI client")
+                    return error_response
                 
                 # 准备翻译提示
                 source_lang_name = LANG_NAMES.get(detected_language, detected_language)

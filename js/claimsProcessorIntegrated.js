@@ -3189,8 +3189,12 @@ async function analyzeClaimsTextWithAI(text, detectedLanguage) {
     showClaimsTextMessage('正在使用AI翻译并分析...', 'info');
     
     try {
-        // 【关键修复】从全局状态获取API Key并添加到Authorization header
-        const apiKey = appState.apiKey;
+        // 【关键修复】从全局状态获取API Key，增加localStorage回退机制
+        let apiKey = appState?.apiKey;
+        // 如果appState未初始化或apiKey为空，从localStorage直接获取
+        if (!apiKey) {
+            apiKey = localStorage.getItem('globalApiKey');
+        }
         if (!apiKey) {
             showClaimsTextMessage('请先在设置中配置API Key', 'error');
             return;

@@ -103,6 +103,7 @@ class MultiImageViewerV8 {
         this.currentRotation = 0;
         this.currentFontSize = this.options.fontSize;
         this.currentColor = '#4CAF50'; // 默认绿色
+        this.markersVisible = true; // 标记是否显示
 
         this.minZoom = 0.5;
         this.maxZoom = 5.0;
@@ -941,6 +942,15 @@ class MultiImageViewerV8 {
         this.annotationSection.appendChild(this.annotationList);
         sidebar.appendChild(this.annotationSection);
         
+        // 显示/隐藏标记按钮
+        const toggleMarkersBtn = this.createButton('👁️ 隐藏标记', () => {
+            this.markersVisible = !this.markersVisible;
+            toggleMarkersBtn.textContent = this.markersVisible ? '👁️ 隐藏标记' : '👁️ 显示标记';
+            this.renderCanvas();
+        });
+        toggleMarkersBtn.style.cssText += 'background-color: #9C27B0; margin-top: 10px;';
+        sidebar.appendChild(toggleMarkersBtn);
+
         // 调试面板
         const debugBtn = this.createButton('🔧 调试面板', () => {
             this.openDebugPanel();
@@ -1171,7 +1181,8 @@ class MultiImageViewerV8 {
         ctx.restore();
         
         // 绘制标注（标注点跟随旋转，文字不旋转）
-        this.annotations.forEach(annotation => {
+        if (this.markersVisible) {
+            this.annotations.forEach(annotation => {
             const isHighlighted = annotation.isSelected || annotation.id === this.selectedAnnotationId;
             const color = annotation.color || this.currentColor;
             const lineWidth = isHighlighted ? 2 : 1.5; // 引线变细
@@ -1263,7 +1274,8 @@ class MultiImageViewerV8 {
                 );
             }
             ctx.restore();
-        });
+            });
+        }
     }
     
     updateAnnotationList() {
