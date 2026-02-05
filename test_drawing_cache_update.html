@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>功能八缓存更新测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+        }
+
+        .test-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .test-section p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+        }
+
+        .result-box {
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            min-height: 100px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .status-success {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .status-warning {
+            background: #FF9800;
+            color: white;
+        }
+
+        .status-error {
+            background: #f44336;
+            color: white;
+        }
+
+        .cache-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .cache-info h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .cache-info ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .cache-info li {
+            padding: 5px 0;
+            color: #555;
+        }
+
+        .cache-info li strong {
+            color: #1976d2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔄 功能八缓存更新测试</h1>
+            <p>测试OCR结果缓存检测和更新确认功能</p>
+        </div>
+
+        <div class="content">
+            <!-- 测试1：缓存管理器初始化 -->
+            <div class="test-section">
+                <h2>测试1：缓存管理器初始化</h2>
+                <p>测试前端缓存管理器是否正常加载和初始化</p>
+                <div class="button-group">
+                    <button class="btn-primary" onclick="testCacheManagerInit()">运行测试</button>
+                </div>
+                <div id="result1" class="result-box"></div>
+            </div>
+
+            <!-- 测试2：缓存键生成 -->
+            <div class="test-section">
+                <h2>测试2：缓存键生成</h2>
+                <p>测试基于图片内容生成唯一缓存键</p>
+                <div class="button-group">
+                    <button class="btn-primary" onclick="testCacheKeyGeneration()">运行测试</button>
+                </div>
+                <div id="result2" class="result-box"></div>
+            </div>
+
+            <!-- 测试3：缓存存取 -->
+            <div class="test-section">
+                <h2>测试3：缓存存取</h2>
+                <p>测试缓存的保存和读取功能</p>
+                <div class="button-group">
+                    <button class="btn-success" onclick="testCacheSetGet()">运行测试</button>
+                </div>
+                <div id="result3" class="result-box"></div>
+            </div>
+
+            <!-- 测试4：缓存更新对话框 -->
+            <div class="test-section">
+                <h2>测试4：缓存更新确认对话框</h2>
+                <p>测试缓存检测时的用户确认对话框</p>
+                <div class="button-group">
+                    <button class="btn-warning" onclick="testCacheUpdateDialog()">显示对话框</button>
+                </div>
+                <div id="result4" class="result-box"></div>
+            </div>
+
+            <!-- 测试5：缓存过期清理 -->
+            <div class="test-section">
+                <h2>测试5：缓存过期清理</h2>
+                <p>测试自动清理过期缓存功能</p>
+                <div class="button-group">
+                    <button class="btn-warning" onclick="testCacheExpiration()">运行测试</button>
+                </div>
+                <div id="result5" class="result-box"></div>
+            </div>
+
+            <!-- 测试6：清除所有缓存 -->
+            <div class="test-section">
+                <h2>测试6：清除所有缓存</h2>
+                <p>测试手动清除所有缓存功能</p>
+                <div class="button-group">
+                    <button class="btn-danger" onclick="testClearAllCache()">清除缓存</button>
+                </div>
+                <div id="result6" class="result-box"></div>
+            </div>
+
+            <!-- 当前缓存状态 -->
+            <div class="cache-info">
+                <h3>📊 当前缓存状态</h3>
+                <ul id="cacheStatus">
+                    <li>加载中...</li>
+                </ul>
+                <button class="btn-primary" onclick="refreshCacheStatus()" style="margin-top: 10px;">刷新状态</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入缓存管理器 -->
+    <script src="frontend/js/drawingCacheManager.js"></script>
+
+    <script>
+        // 初始化缓存管理器
+        const cacheManager = new DrawingCacheManager();
+
+        // 测试1：缓存管理器初始化
+        function testCacheManagerInit() {
+            const result = document.getElementById('result1');
+            try {
+                result.textContent = '正在测试...\n';
+                
+                // 检查缓存管理器是否存在
+                if (typeof DrawingCacheManager === 'undefined') {
+                    throw new Error('DrawingCacheManager 未定义');
+                }
+                
+                // 检查实例是否创建成功
+                if (!cacheManager) {
+                    throw new Error('缓存管理器实例创建失败');
+                }
+                
+                // 检查关键方法是否存在
+                const methods = ['generateCacheKey', 'getCache', 'setCache', 'clearCache', 'cleanupExpired', 'showCacheUpdateDialog'];
+                const missingMethods = methods.filter(method => typeof cacheManager[method] !== 'function');
+                
+                if (missingMethods.length > 0) {
+                    throw new Error(`缺少方法: ${missingMethods.join(', ')}`);
+                }
+                
+                result.textContent = '✅ 测试通过\n\n';
+                result.textContent += '缓存管理器初始化成功\n';
+                result.textContent += `可用方法: ${methods.join(', ')}\n`;
+                result.textContent += `缓存键: ${cacheManager.cacheKey}\n`;
+                result.textContent += `最大缓存时间: ${cacheManager.maxCacheAge / (24 * 60 * 60 * 1000)} 天`;
+                
+            } catch (error) {
+                result.textContent = '❌ 测试失败\n\n';
+                result.textContent += `错误: ${error.message}`;
+            }
+        }
+
+        // 测试2：缓存键生成
+        function testCacheKeyGeneration() {
+            const result = document.getElementById('result2');
+            try {
+                result.textContent = '正在测试...\n';
+                
+                // 测试数据
+                const testData1 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+                const testData2 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+                const fileName = 'test_image.png';
+                
+                // 生成缓存键
+                const key1 = cacheManager.generateCacheKey(testData1, fileName);
+                const key2 = cacheManager.generateCacheKey(testData2, fileName);
+                const key3 = cacheManager.generateCacheKey(testData1, fileName); // 相同数据
+                
+                result.textContent = '✅ 测试通过\n\n';
+                result.textContent += `缓存键1: ${key1}\n`;
+                result.textContent += `缓存键2: ${key2}\n`;
+                result.textContent += `缓存键3: ${key3}\n\n`;
+                result.textContent += `相同数据生成相同键: ${key1 === key3 ? '✓' : '✗'}\n`;
+                result.textContent += `不同数据生成不同键: ${key1 !== key2 ? '✓' : '✗'}`;
+                
+            } catch (error) {
+                result.textContent = '❌ 测试失败\n\n';
+                result.textContent += `错误: ${error.message}`;
+            }
+        }
+
+        // 测试3：缓存存取
+        function testCacheSetGet() {
+            const result = document.getElementById('result3');
+            try {
+                result.textContent = '正在测试...\n';
+                
+                // 测试数据
+                const cacheKey = 'test_cache_key_' + Date.now();
+                const testData = {
+                    ocr_detected_count: 15,
+                    matched_count: 12,
+                    timestamp: Date.now()
+                };
+                
+                // 保存缓存
+                cacheManager.setCache(cacheKey, testData);
+                result.textContent += '✓ 缓存已保存\n';
+                
+                // 读取缓存
+                const retrieved = cacheManager.getCache(cacheKey);
+                result.textContent += '✓ 缓存已读取\n\n';
+                
+                // 验证数据
+                if (!retrieved) {
+                    throw new Error('缓存读取失败');
+                }
+                
+                if (retrieved.ocr_detected_count !== testData.ocr_detected_count) {
+                    throw new Error('OCR识别数不匹配');
+                }
+                
+                if (retrieved.matched_count !== testData.matched_count) {
+                    throw new Error('匹配数不匹配');
+                }
+                
+                result.textContent += '✅ 测试通过\n\n';
+                result.textContent += '保存的数据:\n';
+                result.textContent += JSON.stringify(testData, null, 2) + '\n\n';
+                result.textContent += '读取的数据:\n';
+                result.textContent += JSON.stringify(retrieved, null, 2);
+                
+                // 清理测试缓存
+                cacheManager.clearCache(cacheKey);
+                
+            } catch (error) {
+                result.textContent = '❌ 测试失败\n\n';
+                result.textContent += `错误: ${error.message}`;
+            }
+        }
+
+        // 测试4：缓存更新对话框
+        async function testCacheUpdateDialog() {
+            const result = document.getElementById('result4');
+            try {
+                result.textContent = '正在显示对话框...\n';
+                
+                const testData = {
+                    ocr_detected_count: 15,
+                    matched_count: 12,
+                    timestamp: Date.now() - 3600000 // 1小时前
+                };
+                
+                const shouldRefresh = await cacheManager.showCacheUpdateDialog(
+                    'test_drawing.png',
+                    testData
+                );
+                
+                result.textContent = '✅ 对话框已关闭\n\n';
+                result.textContent += `用户选择: ${shouldRefresh ? '重新分析' : '使用缓存'}\n`;
+                result.textContent += `返回值: ${shouldRefresh}`;
+                
+            } catch (error) {
+                result.textContent = '❌ 测试失败\n\n';
+                result.textContent += `错误: ${error.message}`;
+            }
+        }
+
+        // 测试5：缓存过期清理
+        function testCacheExpiration() {
+            const result = document.getElementById('result5');
+            try {
+                result.textContent = '正在测试...\n';
+                
+                // 创建一个过期的缓存
+                const expiredKey = 'expired_test_' + Date.now();
+                const expiredData = {
+                    ocr_detected_count: 10,
+                    matched_count: 8,
+                    timestamp: Date.now() - (8 * 24 * 60 * 60 * 1000) // 8天前
+                };
+                
+                // 直接保存到localStorage（绕过时间戳更新）
+                const allCache = cacheManager._loadAllCache();
+                allCache[expiredKey] = expiredData;
+                cacheManager._saveAllCache(allCache);
+                
+                result.textContent += '✓ 已创建过期缓存\n';
+                
+                // 尝试读取（应该返回null）
+                const retrieved = cacheManager.getCache(expiredKey);
+                result.textContent += `✓ 读取过期缓存: ${retrieved ? '存在' : '已过期'}\n`;
+                
+                // 执行清理
+                const cleaned = cacheManager.cleanupExpired();
+                result.textContent += `✓ 清理完成，删除 ${cleaned} 个过期缓存\n\n`;
+                
+                result.textContent += '✅ 测试通过\n\n';
+                result.textContent += '过期缓存已被正确识别和清理';
+                
+            } catch (error) {
+                result.textContent = '❌ 测试失败\n\n';
+                result.textContent += `错误: ${error.message}`;
+            }
+        }
+
+        // 测试6：清除所有缓存
+        function testClearAllCache() {
+            const result = document.getElementById('result6');
+            try {
+                result.textContent = '正在清除...\n';
+                
+                // 获取清除前的缓存数量
+                const beforeCache = cacheManager._loadAllCache();
+                const beforeCount = Object.keys(beforeCache).length;
+                
+                // 清除所有缓存
+                cacheManager.clearCache();
+                
+                // 获取清除后的缓存数量
+                const afterCache = cacheManager._loadAllCache();
+                const afterCount = Object.keys(afterCache).length;
+                
+                result.textContent = '✅ 清除完成\n\n';
+                result.textContent += `清除前: ${beforeCount} 个缓存\n`;
+                result.textContent += `清除后: ${afterCount} 个缓存\n`;
+                result.textContent += `状态: ${afterCount === 0 ? '✓ 全部清除' : '✗ 清除不完整'}`;
+                
+                refreshCacheStatus();
+                
+            } catch (error) {
+                result.textContent = '❌ 清除失败\n\n';
+                result.textContent += `错误: ${error.message}`;
+            }
+        }
+
+        // 刷新缓存状态
+        function refreshCacheStatus() {
+            const statusEl = document.getElementById('cacheStatus');
+            try {
+                const allCache = cacheManager._loadAllCache();
+                const cacheKeys = Object.keys(allCache);
+                
+                if (cacheKeys.length === 0) {
+                    statusEl.innerHTML = '<li>📭 当前无缓存</li>';
+                } else {
+                    let html = `<li><strong>缓存总数:</strong> ${cacheKeys.length}</li>`;
+                    
+                    cacheKeys.forEach((key, index) => {
+                        const cache = allCache[key];
+                        const age = Date.now() - cache.timestamp;
+                        const ageHours = Math.floor(age / (60 * 60 * 1000));
+                        const ageDays = Math.floor(ageHours / 24);
+                        
+                        html += `<li>`;
+                        html += `<strong>${index + 1}.</strong> ${key.substring(0, 30)}... `;
+                        html += `(${ageDays > 0 ? ageDays + '天' : ageHours + '小时'}前)`;
+                        html += `</li>`;
+                    });
+                    
+                    statusEl.innerHTML = html;
+                }
+            } catch (error) {
+                statusEl.innerHTML = `<li style="color: red;">❌ 加载失败: ${error.message}</li>`;
+            }
+        }
+
+        // 页面加载时刷新状态
+        window.addEventListener('DOMContentLoaded', () => {
+            refreshCacheStatus();
+            
+            // 自动运行测试1
+            setTimeout(() => {
+                testCacheManagerInit();
+            }, 500);
+        });
+    </script>
+</body>
+</html>

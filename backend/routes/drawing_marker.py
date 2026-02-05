@@ -40,10 +40,12 @@ def process_drawing_marker():
                 "name": "drawing1.png",
                 "type": "image/png",
                 "size": 1024,
-                "data": "base64encodeddata"
+                "data": "base64encodeddata",
+                "cache_key": "optional_cache_identifier"
             }
         ],
-        "specification": "1. 底座\n2. 旋转臂\n3. 夹紧装置"
+        "specification": "1. 底座\n2. 旋转臂\n3. 夹紧装置",
+        "force_refresh": false  // 是否强制刷新缓存
     }
     
     Response:
@@ -71,7 +73,11 @@ def process_drawing_marker():
             "reference_map": {"1": "底座", "2": "旋转臂", "3": "夹紧装置"},
             "total_numbers": 1,
             "match_rate": 33.33,
-            "message": "成功处理 1 张图片，识别出 1 个数字序号，匹配率 33.33%"
+            "message": "成功处理 1 张图片，识别出 1 个数字序号，匹配率 33.33%",
+            "cache_info": {
+                "has_cache": false,
+                "cache_key": "drawing1.png_hash123"
+            }
         }
     }
     """
@@ -86,6 +92,7 @@ def process_drawing_marker():
         ai_mode = req_data.get('ai_mode', False)
         model_name = req_data.get('model_name')
         custom_prompt = req_data.get('custom_prompt')
+        force_refresh = req_data.get('force_refresh', False)  # 是否强制刷新缓存
         
         if not drawings or not isinstance(drawings, list) or len(drawings) == 0:
             return create_response(error="drawings is required and must be a non-empty list", status_code=400)
@@ -95,14 +102,20 @@ def process_drawing_marker():
         
         # 导入必要的模块
         import base64
+        import hashlib
         from backend.utils.ocr_utils import perform_ocr
         from backend.utils.component_extractor import extract_reference_markers
         from backend.utils.text_preprocessor import TextPreprocessor
+
+        # 缓存管理
+        from backend.utils.drawing_cache import DrawingCacheManager
+        cache_manager = DrawingCacheManager()
 
         # 处理结果数据
         processed_results = []
         total_numbers = 0
         all_ocr_markers = set()  # 收集所有OCR检测到的标记
+        cache_info = {}  # 缓存信息
 
         # 🚀 STEP 1: 先处理所有图片，进行OCR识别
         print(f"[DEBUG] Step 1: Processing {len(drawings)} drawings with OCR...")
@@ -113,9 +126,44 @@ def process_drawing_marker():
 
                 # 解析base64图片数据
                 image_data = base64.b64decode(drawing['data'])
+                
+                # 生成缓存键（基于图片内容的哈希）
+                image_hash = hashlib.md5(image_data).hexdigest()
+                cache_key = f"{drawing['name']}_{image_hash}"
+                
+                # 检查缓存（如果不是强制刷新）
+                cached_result = None
+                if not force_refresh:
+                    cached_result = cache_manager.get_cache(cache_key)
+                    if cached_result:
+                        print(f"[DEBUG] Found cached result for {drawing['name']}")
+                        cache_info[drawing['name']] = {
+                            'has_cache': True,
+                            'cache_key': cache_key,
+                            'cached_at': cached_result.get('timestamp')
+                        }
 
-                # 使用RapidOCR进行识别
-                all_detected_numbers = perform_ocr(image_data)
+                # 如果有缓存且不强制刷新，使用缓存结果
+                if cached_result and not force_refresh:
+                    all_detected_numbers = cached_result['ocr_results']
+                    print(f"[DEBUG] Using cached OCR results: {len(all_detected_numbers)} markers")
+                else:
+                    # 使用RapidOCR进行识别
+                    all_detected_numbers = perform_ocr(image_data)
+                    
+                    # 保存到缓存
+                    cache_manager.set_cache(cache_key, {
+                        'drawing_name': drawing['name'],
+                        'ocr_results': all_detected_numbers,
+                        'image_hash': image_hash
+                    })
+                    print(f"[DEBUG] Cached OCR results for {drawing['name']}")
+                    
+                    cache_info[drawing['name']] = {
+                        'has_cache': False,
+                        'cache_key': cache_key,
+                        'cached_at': None
+                    }
 
                 print(f"[DEBUG] OCR detected {len(all_detected_numbers)} markers")
                 print(f"[DEBUG] Detected numbers: {[d['number'] for d in all_detected_numbers]}")
@@ -323,7 +371,7 @@ def process_drawing_marker():
         else:
             message = f"❌ 未识别到任何标记，请检查图片清晰度"
         
-        # 返回处理结果（包含调试信息）
+        # 返回处理结果（包含调试信息和缓存信息）
         return create_response(data={
             'drawings': processed_results,
             'reference_map': reference_map,
@@ -337,6 +385,7 @@ def process_drawing_marker():
             'missing_markers': missing_markers,
             'suggestions': stats['suggestions'],
             'message': message,
+            'cache_info': cache_info,  # 新增：缓存信息
             'debug_info': {
                 'total_markers_in_spec': len(reference_map),
                 'reference_map': reference_map,
