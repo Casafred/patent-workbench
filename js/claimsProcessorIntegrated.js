@@ -3103,18 +3103,19 @@ function detectTextLanguage(text) {
     const chineseRatio = chineseChars / totalChars;
     if (chineseRatio > 0.1) return 'zh';
     
-    // 英文检测
-    const englishRatio = englishChars / totalChars;
-    if (englishRatio > 0.3) return 'en';
+    // 关键词检测（优先于字符统计）
+    // 德语关键词
+    if (/\b(anspruch|ansprüche|gemäß|dadurch|gekennzeichnet)\b/i.test(text)) return 'de';
     
-    // 德语关键词检测
-    if (/anspruch|ansprüche|gemäß|dadurch/i.test(text)) return 'de';
-    
-    // 法语关键词检测
-    if (/revendication|selon|caractérisé/i.test(text)) return 'fr';
+    // 法语关键词
+    if (/\b(revendication|selon|caractérisé|comprenant|dispositif)\b/i.test(text)) return 'fr';
     
     // 韩语检测
     if (/[\uac00-\ud7af]/.test(text)) return 'ko';
+    
+    // 英文检测（降低阈值，避免误判）
+    const englishRatio = englishChars / totalChars;
+    if (englishRatio > 0.5) return 'en';  // 提高到50%才判定为英文
     
     return 'other';
 }
