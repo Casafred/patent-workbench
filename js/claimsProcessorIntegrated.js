@@ -3086,6 +3086,16 @@ async function analyzeClaimsText() {
 function detectTextLanguage(text) {
     if (!text) return 'other';
     
+    // 【关键修复】关键词检测优先于字符统计，避免误判
+    // 法语关键词检测（最优先）
+    if (/\b(revendication|selon|caractérisé|comprenant|dispositif)\b/i.test(text)) return 'fr';
+    
+    // 德语关键词检测
+    if (/\b(anspruch|ansprüche|gemäß|dadurch|gekennzeichnet)\b/i.test(text)) return 'de';
+    
+    // 韩语检测
+    if (/[\uac00-\ud7af]/.test(text)) return 'ko';
+    
     // 统计各类字符
     const chineseChars = (text.match(/[\u4e00-\u9fff]/g) || []).length;
     const hiraganaChars = (text.match(/[\u3040-\u309f]/g) || []).length;
@@ -3103,19 +3113,9 @@ function detectTextLanguage(text) {
     const chineseRatio = chineseChars / totalChars;
     if (chineseRatio > 0.1) return 'zh';
     
-    // 关键词检测（优先于字符统计）
-    // 德语关键词
-    if (/\b(anspruch|ansprüche|gemäß|dadurch|gekennzeichnet)\b/i.test(text)) return 'de';
-    
-    // 法语关键词
-    if (/\b(revendication|selon|caractérisé|comprenant|dispositif)\b/i.test(text)) return 'fr';
-    
-    // 韩语检测
-    if (/[\uac00-\ud7af]/.test(text)) return 'ko';
-    
-    // 英文检测（降低阈值，避免误判）
+    // 英文检测（提高阈值到50%，避免误判）
     const englishRatio = englishChars / totalChars;
-    if (englishRatio > 0.5) return 'en';  // 提高到50%才判定为英文
+    if (englishRatio > 0.5) return 'en';
     
     return 'other';
 }
@@ -3153,10 +3153,10 @@ function showAIModePrompt(languageName) {
                 <strong>建议开启AI模式</strong>，系统将使用AI翻译为中文后再进行独从权分析，以获得更准确的结果。
             </p>
             <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
-                <button id="ai_mode_cancel" style="padding: 8px 20px; border: 1px solid #ddd; background: white; border-radius: 4px; cursor: pointer;">
+                <button id="ai_mode_cancel" style="padding: 8px 20px; border: 1px solid #ccc; background: #f5f5f5; color: #333; border-radius: 4px; cursor: pointer; font-weight: 500;">
                     取消
                 </button>
-                <button id="ai_mode_confirm" style="padding: 8px 20px; border: none; background: #007bff; color: white; border-radius: 4px; cursor: pointer;">
+                <button id="ai_mode_confirm" style="padding: 8px 20px; border: none; background: #007bff; color: white; border-radius: 4px; cursor: pointer; font-weight: 500;">
                     开启AI模式
                 </button>
             </div>
@@ -3189,10 +3189,18 @@ async function analyzeClaimsTextWithAI(text, detectedLanguage) {
     showClaimsTextMessage('正在使用AI翻译并分析...', 'info');
     
     try {
+        // 【关键修复】从全局状态获取API Key并添加到Authorization header
+        const apiKey = window.state?.apiKey;
+        if (!apiKey) {
+            showClaimsTextMessage('请先在设置中配置API Key', 'error');
+            return;
+        }
+        
         const response = await fetch('/api/claims-analyzer/parse', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`  // 添加Authorization header
             },
             body: JSON.stringify({
                 text: text,
