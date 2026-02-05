@@ -2455,11 +2455,18 @@ function displayProcessingResult(data, isAIMode = false) {
                         <line x1="12" y1="9" x2="12" y2="13"></line>
                         <line x1="12" y1="17" x2="12.01" y2="17"></line>
                     </svg>
-                    <div><strong>未识别到任何数字序号</strong></div><br>
-                    请检查：<br>
-                    1. 图片是否清晰<br>
-                    2. 图片中是否包含数字序号<br>
-                    3. 说明书格式是否正确
+                    <div style="font-size: 16px; font-weight: bold; margin-bottom: 15px;">❌ OCR未识别到任何标记</div>
+                    <div style="font-size: 14px; color: #856404; line-height: 1.8;">
+                        <strong>可能的原因：</strong><br>
+                        • 图片清晰度不足，标记模糊不清<br>
+                        • 图片中没有数字或字母标记<br>
+                        • 标记字体过小或过于艺术化<br>
+                        • 图片对比度太低，标记难以识别<br><br>
+                        <strong>建议：</strong><br>
+                        • 使用更高分辨率的图片<br>
+                        • 确认图片包含清晰的数字序号（如10、20、30）<br>
+                        • 尝试调整图片亮度和对比度
+                    </div>
                 </div>
             `;
             return;

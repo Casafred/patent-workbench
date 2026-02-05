@@ -139,8 +139,8 @@
                 </tr>
                 <tr>
                     <td><strong>OCR识别0个</strong></td>
-                    <td class="before">❌ 显示"未识别到任何数字序号"</td>
-                    <td class="after">❌ 显示"未识别到任何数字序号"<br>（保持不变，因为确实没有OCR结果）</td>
+                    <td class="before">❌ 显示"未识别到任何数字序号"<br>提示检查图片、序号、说明书</td>
+                    <td class="after">❌ 显示"OCR未识别到任何标记"<br>✅ 提示更准确：检查图片清晰度、标记存在性、对比度<br>✅ 不再提及说明书（因为OCR阶段与说明书无关）</td>
                 </tr>
             </tbody>
         </table>
@@ -306,7 +306,17 @@ if (!hasOcrResults) {
                 canOpenViewer: false,
                 buttonText: "无",
                 buttonColor: "无",
-                tipMessage: "❌ 未识别到任何数字序号",
+                tipMessage: "❌ OCR未识别到任何标记",
+                detailedMessage: `可能的原因：
+• 图片清晰度不足，标记模糊不清
+• 图片中没有数字或字母标记
+• 标记字体过小或过于艺术化
+• 图片对比度太低，标记难以识别
+
+建议：
+• 使用更高分辨率的图片
+• 确认图片包含清晰的数字序号（如10、20、30）
+• 尝试调整图片亮度和对比度`,
                 statistics: {
                     ocr_detected: 0,
                     matched: 0,
@@ -337,6 +347,9 @@ if (!hasOcrResults) {
             html += `<li><strong>按钮颜色：</strong> ${result.buttonColor}</li>`;
             if (result.tipMessage) {
                 html += `<li><strong>提示信息：</strong> ${result.tipMessage}</li>`;
+            }
+            if (result.detailedMessage) {
+                html += `<li><strong>详细说明：</strong><pre style="white-space: pre-wrap; margin-top: 5px;">${result.detailedMessage}</pre></li>`;
             }
             html += `</ul>`;
             
