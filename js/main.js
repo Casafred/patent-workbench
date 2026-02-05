@@ -843,19 +843,13 @@ window.openPatentDetailModal = function(result) {
     const modalBody = document.getElementById('patent_detail_body');
     const modalTitle = document.getElementById('patent_detail_title');
     const modalHeader = modal.querySelector('.modal-header');
-    
+
     if (!modal || !modalBody || !modalTitle || !modalHeader) return;
-    
+
     const data = result.data;
-    
-    // 清空并重建modal header，合并标题和操作按钮
+
+    // 清空并重建modal header，合并标题和操作按钮（移除关闭按钮）
     modalHeader.innerHTML = `
-        <!-- 左上角关闭按钮 -->
-        <button class="modal-close-btn" onclick="closePatentDetailModal()" title="关闭">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
-            </svg>
-        </button>
         <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; gap: 15px;">
             <div style="flex: 1; min-width: 0;">
                 <h3 style="margin: 0; font-size: 1.2em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${result.patent_number} - ${data.title || '无标题'}</h3>
@@ -894,26 +888,34 @@ window.openPatentDetailModal = function(result) {
             </div>
         </div>
     `;
-    
+
     // 构建完整的专利信息HTML（不再包含patent-card-header）
     let htmlContent = buildPatentDetailHTML(result);
-    
+
     modalBody.innerHTML = htmlContent;
-    
-    // 先设置为flex显示，确保居中
+
+    // 恢复pointer-events并设置为flex显示，确保居中
+    modal.style.pointerEvents = 'auto';
     modal.style.display = 'flex';
-    
+
     // 触发重排，然后添加show类以触发过渡效果
     setTimeout(() => {
         modal.classList.add('show');
     }, 10);
 };
 
-// 弹窗初始化（已移除点击外部关闭功能，改为左上角叉号关闭）
+// 弹窗初始化 - 点击弹窗外部区域关闭
 document.addEventListener('DOMContentLoaded', function() {
     const modal = document.getElementById('patent_detail_modal');
     if (modal) {
-        console.log('✅ 弹窗已初始化（使用左上角叉号关闭）');
+        // 点击弹窗背景区域（非内容区域）时关闭弹窗
+        modal.addEventListener('click', function(e) {
+            // 只有点击背景层（不是modal-content）时才关闭
+            if (e.target === modal) {
+                closePatentDetailModal();
+            }
+        });
+        console.log('✅ 弹窗已初始化（点击外部区域关闭）');
     }
 });
 
@@ -923,10 +925,12 @@ window.closePatentDetailModal = function() {
     if (modal) {
         // 移除show类，触发过渡效果
         modal.classList.remove('show');
-        
+
         // 等待过渡效果完成后再隐藏
         setTimeout(() => {
             modal.style.display = 'none';
+            // 确保完全隐藏，移除所有可能阻挡点击的样式
+            modal.style.pointerEvents = 'none';
         }, 300);
     }
 };

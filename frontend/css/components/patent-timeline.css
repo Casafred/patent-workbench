@@ -1,37 +1,58 @@
-/* 专利事件时间轴样式 */
+/* 专利事件时间轴样式 - 优化版 */
 
 .patent-timeline-container {
-    padding: 20px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    margin: 20px 0;
+    padding: 25px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 10%, #f5f7fa 100%);
+    border-radius: 12px;
+    margin: 25px 0;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 
 .patent-timeline {
     position: relative;
-    padding: 20px 0;
+    padding: 30px 0;
     margin: 0 auto;
-    max-width: 800px;
+    max-width: 900px;
 }
 
-/* 时间轴主线 */
+/* 时间轴主线 - 增强渐变效果 */
 .patent-timeline::before {
     content: '';
     position: absolute;
     left: 50%;
     top: 0;
     bottom: 0;
-    width: 3px;
-    background: linear-gradient(to bottom, #4a6cf7, #8b9dc3);
+    width: 4px;
+    background: linear-gradient(to bottom, 
+        #4a6cf7 0%, 
+        #667eea 25%, 
+        #764ba2 50%, 
+        #667eea 75%, 
+        #4a6cf7 100%
+    );
     transform: translateX(-50%);
+    border-radius: 2px;
+    box-shadow: 0 0 10px rgba(74, 108, 247, 0.3);
 }
 
 /* 时间轴事件项 */
 .timeline-event {
     position: relative;
-    margin-bottom: 40px;
+    margin-bottom: 50px;
     display: flex;
     align-items: center;
+    animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* 左侧事件（偶数） */
@@ -39,138 +60,211 @@
     flex-direction: row-reverse;
 }
 
-/* 事件内容卡片 */
+/* 事件内容卡片 - 增强设计 */
 .timeline-event-content {
     width: 45%;
-    padding: 16px 20px;
+    padding: 20px 24px;
     background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
+    border-left: 4px solid #4a6cf7;
+}
+
+.timeline-event:nth-child(even) .timeline-event-content {
+    border-left: none;
+    border-right: 4px solid #4a6cf7;
+}
+
+.timeline-event-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #4a6cf7, #667eea, #764ba2);
+    border-radius: 12px 12px 0 0;
 }
 
 .timeline-event-content:hover {
-    box-shadow: 0 4px 16px rgba(74, 108, 247, 0.2);
-    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(74, 108, 247, 0.25);
+    transform: translateY(-4px) scale(1.02);
+    border-left-color: #667eea;
 }
 
-/* 事件日期 */
+.timeline-event:nth-child(even) .timeline-event-content:hover {
+    border-right-color: #667eea;
+}
+
+/* 事件日期 - 增强样式 */
 .timeline-event-date {
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 15px;
+    font-weight: 700;
     color: #4a6cf7;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
+    letter-spacing: 0.3px;
 }
 
 .timeline-event-date svg {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
+    opacity: 0.8;
 }
 
-/* 事件标题 */
+/* 事件标题 - 增强可读性 */
 .timeline-event-title {
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 600;
     color: #2c3e50;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
+    line-height: 1.4;
 }
 
-/* 事件代码 */
+/* 事件代码 - 更现代的设计 */
 .timeline-event-code {
     display: inline-block;
-    padding: 2px 8px;
-    background: #e3f2fd;
-    color: #1976d2;
-    border-radius: 4px;
+    padding: 4px 12px;
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    color: #1565c0;
+    border-radius: 6px;
     font-size: 12px;
-    font-weight: 500;
-    margin-bottom: 8px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(21, 101, 192, 0.1);
 }
 
-/* 事件描述 */
+/* 事件描述 - 改进排版 */
 .timeline-event-description {
     font-size: 14px;
-    color: #666;
-    line-height: 1.6;
+    color: #555;
+    line-height: 1.7;
 }
 
-/* 时间轴节点 */
+/* 时间轴节点 - 增强视觉效果 */
 .timeline-event-node {
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
     background: white;
-    border: 3px solid #4a6cf7;
+    border: 4px solid #4a6cf7;
     border-radius: 50%;
     z-index: 2;
-    transition: all 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 0 4px rgba(74, 108, 247, 0.15);
 }
 
 .timeline-event:hover .timeline-event-node {
-    width: 20px;
-    height: 20px;
-    border-width: 4px;
-    box-shadow: 0 0 0 4px rgba(74, 108, 247, 0.2);
+    width: 24px;
+    height: 24px;
+    border-width: 5px;
+    box-shadow: 0 0 0 8px rgba(74, 108, 247, 0.25), 0 0 20px rgba(74, 108, 247, 0.4);
+    border-color: #667eea;
 }
 
-/* 特殊事件节点 */
+/* 特殊事件节点 - 关键事件高亮 */
 .timeline-event.critical .timeline-event-node {
-    background: #4a6cf7;
+    background: linear-gradient(135deg, #4a6cf7 0%, #667eea 100%);
     border-color: #4a6cf7;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 4px rgba(74, 108, 247, 0.15);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(74, 108, 247, 0.3);
+    }
 }
 
 .timeline-event.critical .timeline-event-code {
-    background: #4a6cf7;
+    background: linear-gradient(135deg, #4a6cf7 0%, #667eea 100%);
     color: white;
 }
 
-/* 连接线 */
+.timeline-event.critical .timeline-event-content {
+    border-left-color: #667eea;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+}
+
+.timeline-event.critical:nth-child(even) .timeline-event-content {
+    border-right-color: #667eea;
+}
+
+/* 连接线 - 更流畅的连接 */
 .timeline-event-connector {
     position: absolute;
     left: 50%;
-    width: 50px;
-    height: 2px;
-    background: #4a6cf7;
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, #4a6cf7, #667eea);
+    border-radius: 2px;
 }
 
 .timeline-event:nth-child(odd) .timeline-event-connector {
     right: 50%;
-    transform: translateX(8px);
+    transform: translateX(9px);
 }
 
 .timeline-event:nth-child(even) .timeline-event-connector {
     left: 50%;
-    transform: translateX(-8px);
+    transform: translateX(-9px);
 }
 
-/* 响应式设计 */
+/* 响应式设计 - 移动端优化 */
 @media (max-width: 768px) {
+    .patent-timeline-container {
+        padding: 20px 15px;
+    }
+    
     .patent-timeline::before {
-        left: 20px;
+        left: 25px;
     }
     
     .timeline-event {
         flex-direction: row !important;
-        padding-left: 50px;
+        padding-left: 60px;
+        margin-bottom: 35px;
     }
     
     .timeline-event-content {
         width: 100%;
+        border-left: 4px solid #4a6cf7 !important;
+        border-right: none !important;
     }
     
     .timeline-event-node {
-        left: 20px;
+        left: 25px;
     }
     
     .timeline-event-connector {
-        left: 20px;
-        width: 30px;
-        transform: translateX(8px) !important;
+        left: 25px;
+        width: 35px;
+        transform: translateX(9px) !important;
+    }
+}
+
+/* 打印样式 */
+@media print {
+    .patent-timeline-container {
+        background: white;
+        box-shadow: none;
+    }
+    
+    .timeline-event-content {
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+    
+    .timeline-event-content:hover {
+        transform: none;
     }
 }
