@@ -843,6 +843,7 @@ window.openPatentDetailModal = function(result) {
     const modalBody = document.getElementById('patent_detail_body');
     const modalTitle = document.getElementById('patent_detail_title');
     const modalHeader = modal.querySelector('.modal-header');
+    const modalContent = modal.querySelector('.modal-content');
 
     if (!modal || !modalBody || !modalTitle || !modalHeader) return;
 
@@ -894,30 +895,35 @@ window.openPatentDetailModal = function(result) {
 
     modalBody.innerHTML = htmlContent;
 
-    // 恢复pointer-events并设置为flex显示，确保居中
-    modal.style.pointerEvents = 'auto';
+    // 设置为flex显示，确保居中
     modal.style.display = 'flex';
 
     // 触发重排，然后添加show类以触发过渡效果
     setTimeout(() => {
         modal.classList.add('show');
     }, 10);
-};
 
-// 弹窗初始化 - 点击弹窗外部区域关闭
-document.addEventListener('DOMContentLoaded', function() {
-    const modal = document.getElementById('patent_detail_modal');
-    if (modal) {
-        // 点击弹窗背景区域（非内容区域）时关闭弹窗
-        modal.addEventListener('click', function(e) {
-            // 只有点击背景层（不是modal-content）时才关闭
-            if (e.target === modal) {
-                closePatentDetailModal();
-            }
+    // 添加点击背景关闭的事件监听器（每次打开时重新绑定）
+    // 使用命名函数以便后续移除
+    const handleModalClick = function(e) {
+        // 点击背景区域（modal本身）时关闭
+        if (e.target === modal) {
+            closePatentDetailModal();
+            // 移除事件监听器
+            modal.removeEventListener('click', handleModalClick);
+        }
+    };
+
+    // 阻止modal-content的点击事件冒泡到modal
+    if (modalContent) {
+        modalContent.addEventListener('click', function(e) {
+            e.stopPropagation();
         });
-        console.log('✅ 弹窗已初始化（点击外部区域关闭）');
     }
-});
+
+    // 绑定点击事件
+    modal.addEventListener('click', handleModalClick);
+};
 
 // 关闭专利详情弹窗
 window.closePatentDetailModal = function() {
@@ -929,8 +935,6 @@ window.closePatentDetailModal = function() {
         // 等待过渡效果完成后再隐藏
         setTimeout(() => {
             modal.style.display = 'none';
-            // 确保完全隐藏，移除所有可能阻挡点击的样式
-            modal.style.pointerEvents = 'none';
         }, 300);
     }
 };
