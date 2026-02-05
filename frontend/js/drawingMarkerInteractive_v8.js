@@ -92,6 +92,10 @@ class InteractiveDrawingMarkerV8 {
             const offsetX = Math.cos(angle * Math.PI / 180) * offsetDistance;
             const offsetY = Math.sin(angle * Math.PI / 180) * offsetDistance;
             
+            // 🔥 优化：区分匹配和未匹配的标记
+            const isMatched = detected.is_matched !== false; // 默认为true（兼容旧数据）
+            const displayName = detected.name || this.referenceMap[detected.number] || '(说明书未匹配)';
+            
             return {
                 id: `annotation_${index}`,
                 markerX: detected.x,
@@ -99,10 +103,11 @@ class InteractiveDrawingMarkerV8 {
                 labelX: detected.x + offsetX,
                 labelY: detected.y + offsetY,
                 number: detected.number,
-                name: detected.name || this.referenceMap[detected.number] || '未知',
+                name: displayName,
                 confidence: detected.confidence || 0,
                 isSelected: false,
-                isManual: false // 标记是否为手动添加
+                isManual: false, // 标记是否为手动添加
+                isMatched: isMatched // 🔥 新增：标记是否匹配
             };
         });
     }
@@ -126,8 +131,16 @@ class InteractiveDrawingMarkerV8 {
         const ctx = this.ctx;
         const fontSize = this.options.fontSize || 18;
         
-        // 选择颜色
-        const color = isHighlighted ? this.options.highlightColor : '#FF5722';
+        // 🔥 优化：根据匹配状态选择颜色
+        let color;
+        if (isHighlighted) {
+            color = this.options.highlightColor; // 高亮颜色（选中时）
+        } else if (!annotation.isMatched) {
+            color = '#FFA500'; // 橙色表示未匹配（OCR识别但说明书未匹配）
+        } else {
+            color = '#FF5722'; // 红色表示已匹配
+        }
+        
         const lineWidth = isHighlighted ? 4 : 2;
         
         // 绘制连接线
@@ -245,7 +258,17 @@ class InteractiveDrawingMarkerV8 {
             // 绘制标注
             this.annotations.forEach(annotation => {
                 const isHighlighted = annotation.id === selectedAnnotationId;
-                const color = isHighlighted ? this.options.highlightColor : '#FF5722';
+                
+                // 🔥 优化：根据匹配状态选择颜色
+                let color;
+                if (isHighlighted) {
+                    color = this.options.highlightColor;
+                } else if (!annotation.isMatched) {
+                    color = '#FFA500'; // 橙色表示未匹配
+                } else {
+                    color = '#FF5722'; // 红色表示已匹配
+                }
+                
                 const lineWidth = isHighlighted ? 4 : 3;
                 
                 // 绘制连接线
@@ -399,6 +422,24 @@ class InteractiveDrawingMarkerV8 {
         
         // 标注列表
         const annotationSection = this.createSection('标注列表');
+        
+        // 🔥 优化：添加图例说明
+        const legend = document.createElement('div');
+        legend.style.cssText = `
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+            padding: 8px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        `;
+        legend.innerHTML = `
+            <div style="margin-bottom: 4px;"><span style="color: #FF5722;">●</span> 已匹配</div>
+            <div style="margin-bottom: 4px;"><span style="color: #FFA500;">●</span> 未匹配（仅OCR识别）</div>
+            <div><span style="color: ${this.options.highlightColor};">●</span> 当前选中</div>
+        `;
+        annotationSection.appendChild(legend);
+        
         const annotationList = document.createElement('div');
         annotationList.style.cssText = `
             max-height: 300px;
@@ -410,14 +451,22 @@ class InteractiveDrawingMarkerV8 {
         
         this.annotations.forEach(annotation => {
             const item = document.createElement('div');
+            
+            // 🔥 优化：根据匹配状态设置不同的背景色
+            const bgColor = annotation.isMatched ? '#f0f0f0' : '#fff3e0'; // 未匹配用浅橙色
+            
             item.style.cssText = `
                 padding: 8px;
-                background-color: #f0f0f0;
+                background-color: ${bgColor};
                 border-radius: 4px;
                 cursor: pointer;
                 transition: background-color 0.2s;
+                border-left: 3px solid ${annotation.isMatched ? '#FF5722' : '#FFA500'};
             `;
-            item.textContent = `${annotation.number}: ${annotation.name}`;
+            
+            // 🔥 优化：显示匹配状态
+            const statusIcon = annotation.isMatched ? '✓' : '⚠';
+            item.textContent = `${statusIcon} ${annotation.number}: ${annotation.name}`;
             
             item.addEventListener('click', () => {
                 selectedAnnotationId = annotation.id;
@@ -425,23 +474,27 @@ class InteractiveDrawingMarkerV8 {
                 
                 // 更新列表样式
                 annotationList.querySelectorAll('div').forEach(el => {
-                    el.style.backgroundColor = '#f0f0f0';
+                    const ann = this.annotations.find(a => a.id === el.dataset.annotationId);
+                    if (ann) {
+                        el.style.backgroundColor = ann.isMatched ? '#f0f0f0' : '#fff3e0';
+                    }
                 });
                 item.style.backgroundColor = this.options.highlightColor;
             });
             
             item.addEventListener('mouseenter', () => {
                 if (selectedAnnotationId !== annotation.id) {
-                    item.style.backgroundColor = '#e0e0e0';
+                    item.style.backgroundColor = annotation.isMatched ? '#e0e0e0' : '#ffe0b2';
                 }
             });
             
             item.addEventListener('mouseleave', () => {
                 if (selectedAnnotationId !== annotation.id) {
-                    item.style.backgroundColor = '#f0f0f0';
+                    item.style.backgroundColor = annotation.isMatched ? '#f0f0f0' : '#fff3e0';
                 }
             });
             
+            item.dataset.annotationId = annotation.id; // 存储ID用于更新
             annotationList.appendChild(item);
         });
         
@@ -635,7 +688,7 @@ class InteractiveDrawingMarkerV8 {
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 600px;
+            width: 700px;
             max-height: 80vh;
             background-color: white;
             border-radius: 8px;
@@ -659,7 +712,7 @@ class InteractiveDrawingMarkerV8 {
             align-items: center;
         `;
         header.innerHTML = `
-            <span>🔧 调试面板</span>
+            <span>🔧 调试面板 - OCR识别详情</span>
             <button style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">✕</button>
         `;
         header.querySelector('button').addEventListener('click', () => {
@@ -674,19 +727,89 @@ class InteractiveDrawingMarkerV8 {
             flex: 1;
         `;
         
+        // 🔥 优化：分类显示OCR结果
+        const matchedAnnotations = this.annotations.filter(a => a.isMatched);
+        const unmatchedAnnotations = this.annotations.filter(a => !a.isMatched && !a.isManual);
+        const manualAnnotations = this.annotations.filter(a => a.isManual);
+        
         const debugInfo = `
-            <h3>标注数据</h3>
-            <pre style="background-color: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto;">${JSON.stringify(this.annotations, null, 2)}</pre>
+            <div style="margin-bottom: 20px; padding: 15px; background-color: #e3f2fd; border-radius: 4px;">
+                <h3 style="margin-top: 0; color: #1976d2;">📊 识别统计</h3>
+                <ul style="margin: 10px 0; padding-left: 20px;">
+                    <li><strong>OCR识别总数:</strong> ${this.annotations.length - manualAnnotations.length} 个</li>
+                    <li><strong style="color: #4caf50;">✓ 说明书匹配:</strong> ${matchedAnnotations.length} 个</li>
+                    <li><strong style="color: #ff9800;">⚠ 未匹配:</strong> ${unmatchedAnnotations.length} 个</li>
+                    <li><strong style="color: #2196f3;">✎ 手动添加:</strong> ${manualAnnotations.length} 个</li>
+                </ul>
+            </div>
             
-            <h3>图片信息</h3>
-            <ul>
-                <li>原始尺寸: ${this.originalWidth} × ${this.originalHeight}</li>
-                <li>当前缩放: ${this.scale}</li>
-                <li>标注数量: ${this.annotations.length}</li>
-            </ul>
+            ${matchedAnnotations.length > 0 ? `
+            <div style="margin-bottom: 20px;">
+                <h3 style="color: #4caf50;">✓ 已匹配标记 (${matchedAnnotations.length})</h3>
+                <div style="background-color: #f5f5f5; padding: 10px; border-radius: 4px; max-height: 200px; overflow-y: auto;">
+                    ${matchedAnnotations.map(a => `
+                        <div style="padding: 5px; border-bottom: 1px solid #ddd;">
+                            <strong>${a.number}</strong>: ${a.name} 
+                            <span style="color: #666; font-size: 12px;">(置信度: ${a.confidence.toFixed(1)}%)</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
             
-            <h3>检测到的标记</h3>
-            <pre style="background-color: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto;">${JSON.stringify(this.detectedNumbers, null, 2)}</pre>
+            ${unmatchedAnnotations.length > 0 ? `
+            <div style="margin-bottom: 20px;">
+                <h3 style="color: #ff9800;">⚠ 未匹配标记 (${unmatchedAnnotations.length})</h3>
+                <p style="color: #666; font-size: 14px; margin: 5px 0;">
+                    这些标记被OCR识别到，但在说明书中未找到对应的部件名称。
+                    <br>建议：检查说明书内容是否完整，或使用AI模式重新处理。
+                </p>
+                <div style="background-color: #fff3e0; padding: 10px; border-radius: 4px; max-height: 200px; overflow-y: auto;">
+                    ${unmatchedAnnotations.map(a => `
+                        <div style="padding: 5px; border-bottom: 1px solid #ffe0b2;">
+                            <strong>${a.number}</strong>: ${a.name} 
+                            <span style="color: #666; font-size: 12px;">(置信度: ${a.confidence.toFixed(1)}%)</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+            
+            ${manualAnnotations.length > 0 ? `
+            <div style="margin-bottom: 20px;">
+                <h3 style="color: #2196f3;">✎ 手动添加标记 (${manualAnnotations.length})</h3>
+                <div style="background-color: #e3f2fd; padding: 10px; border-radius: 4px; max-height: 200px; overflow-y: auto;">
+                    ${manualAnnotations.map(a => `
+                        <div style="padding: 5px; border-bottom: 1px solid #bbdefb;">
+                            <strong>${a.number}</strong>: ${a.name}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+            
+            <div style="margin-bottom: 20px;">
+                <h3>🖼️ 图片信息</h3>
+                <ul style="margin: 10px 0; padding-left: 20px;">
+                    <li>原始尺寸: ${this.originalWidth} × ${this.originalHeight}</li>
+                    <li>当前缩放: ${this.scale.toFixed(2)}</li>
+                    <li>标注总数: ${this.annotations.length}</li>
+                </ul>
+            </div>
+            
+            <details style="margin-bottom: 20px;">
+                <summary style="cursor: pointer; font-weight: bold; padding: 10px; background-color: #f5f5f5; border-radius: 4px;">
+                    📋 完整标注数据 (JSON)
+                </summary>
+                <pre style="background-color: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto; margin-top: 10px; font-size: 12px;">${JSON.stringify(this.annotations, null, 2)}</pre>
+            </details>
+            
+            <details>
+                <summary style="cursor: pointer; font-weight: bold; padding: 10px; background-color: #f5f5f5; border-radius: 4px;">
+                    🔍 原始检测数据 (JSON)
+                </summary>
+                <pre style="background-color: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto; margin-top: 10px; font-size: 12px;">${JSON.stringify(this.detectedNumbers, null, 2)}</pre>
+            </details>
         `;
         
         content.innerHTML = debugInfo;

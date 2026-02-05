@@ -161,25 +161,9 @@ def process_drawing_marker():
 
         print(f"[DEBUG] Step 1 complete: Collected {len(all_ocr_markers)} unique markers from OCR: {all_ocr_markers}")
 
-        # 🚀 STEP 2: 根据OCR结果预处理说明书（只提取相关句子）
-        print(f"[DEBUG] Step 2: Preprocessing specification based on OCR results...")
-
-        preprocessor = TextPreprocessor()
-        processed_specification = specification
-
-        # 如果是AI模式且OCR检测到标记，则预处理说明书
-        if ai_mode and all_ocr_markers:
-            processed_specification = preprocessor.extract_relevant_sentences(
-                specification,
-                all_ocr_markers,
-                context_window=1  # 包含前后各1句作为上下文
-            )
-            print(f"[DEBUG] Preprocessed specification: {len(processed_specification)} chars (original: {len(specification)} chars)")
-        else:
-            print(f"[DEBUG] Skipping preprocessing (ai_mode={ai_mode}, markers found={len(all_ocr_markers)})")
-
-        # 🚀 STEP 3: 解析说明书，提取附图标记和部件名称
-        print(f"[DEBUG] Step 3: Extracting components from specification...")
+        # 🚀 STEP 2: 解析说明书，提取附图标记和部件名称
+        # 🔥 优化：移除预处理步骤，直接处理完整说明书（提高准确性，减少处理时间）
+        print(f"[DEBUG] Step 2: Extracting components from specification...")
 
         # 根据AI模式选择不同的处理方式
         if ai_mode:
@@ -203,13 +187,14 @@ def process_drawing_marker():
             # Create processor instance (no longer needs api_key)
             processor = AIDescriptionProcessor()
 
+            # 🔥 优化：直接处理完整说明书，让AI自己判断相关内容
             # Process description using AI, passing client directly
             # Run async function in sync context
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             try:
                 ai_result = loop.run_until_complete(
-                    processor.process(processed_specification, model_name, client, custom_prompt)
+                    processor.process(specification, model_name, client, custom_prompt)
                 )
             finally:
                 loop.close()
@@ -237,8 +222,8 @@ def process_drawing_marker():
             print(f"[DEBUG] Extracted reference_map: {reference_map}")
             print(f"[DEBUG] Total markers in specification: {len(reference_map)}")
 
-        # 🚀 STEP 4: 将OCR结果与reference_map匹配
-        print(f"[DEBUG] Step 4: Matching OCR results with reference_map...")
+        # 🚀 STEP 3: 将OCR结果与reference_map匹配
+        print(f"[DEBUG] Step 3: Matching OCR results with reference_map...")
 
         for drawing_result in processed_results:
             if 'error' in drawing_result:
@@ -247,6 +232,7 @@ def process_drawing_marker():
             try:
                 # 获取该图片的OCR结果
                 ocr_results = drawing_result.pop('ocr_results', [])
+                raw_ocr_results = drawing_result.pop('raw_ocr_results', [])
 
                 # 匹配识别结果与reference_map
                 detected_numbers, unknown, missing = match_with_reference_map(
@@ -257,12 +243,34 @@ def process_drawing_marker():
                 total_numbers += len(detected_numbers)
                 print(f"[DEBUG] Drawing {drawing_result['name']}: Matched {len(detected_numbers)} numbers")
 
+                # 🔥 关键优化：即使没有匹配，也要保留OCR识别结果
+                # 将未匹配的OCR结果也添加到detected_numbers中，标记为"未匹配"
+                unmatched_ocr = []
+                for ocr_item in ocr_results:
+                    if ocr_item['number'] not in reference_map:
+                        unmatched_ocr.append({
+                            **ocr_item,
+                            'name': '(说明书未匹配)',
+                            'is_matched': False
+                        })
+                
+                # 标记已匹配的项
+                for item in detected_numbers:
+                    item['is_matched'] = True
+                
+                # 合并匹配和未匹配的结果
+                all_detected = detected_numbers + unmatched_ocr
+
                 # 保存最终结果
-                drawing_result['detected_numbers'] = detected_numbers
+                drawing_result['detected_numbers'] = all_detected
+                drawing_result['ocr_detected_count'] = len(ocr_results)  # OCR识别总数
+                drawing_result['matched_count'] = len(detected_numbers)  # 匹配成功数
+                drawing_result['unmatched_count'] = len(unmatched_ocr)   # 未匹配数
                 drawing_result['debug_info'] = {
-                    'raw_ocr_results': drawing_result.pop('raw_ocr_results', []),
+                    'raw_ocr_results': raw_ocr_results,
                     'filtered_count': len(ocr_results),
-                    'matched_count': len(detected_numbers)
+                    'matched_count': len(detected_numbers),
+                    'unmatched_count': len(unmatched_ocr)
                 }
 
             except Exception as e:
@@ -301,22 +309,40 @@ def process_drawing_marker():
                 if detected['number'] not in reference_map and detected['number'] not in unknown_markers:
                     unknown_markers.append(detected['number'])
         
+        # 🔥 优化：计算OCR识别总数和匹配统计
+        total_ocr_detected = sum(d.get('ocr_detected_count', 0) for d in processed_results)
+        total_matched = sum(d.get('matched_count', 0) for d in processed_results)
+        total_unmatched = sum(d.get('unmatched_count', 0) for d in processed_results)
+        
+        # 生成更详细的消息
+        if total_ocr_detected > 0:
+            if total_matched > 0:
+                message = f"✅ OCR识别: {total_ocr_detected}个标记 | 说明书匹配: {total_matched}个 | 未匹配: {total_unmatched}个"
+            else:
+                message = f"⚠️ OCR识别: {total_ocr_detected}个标记 | 说明书匹配: 0个 (请检查说明书内容或使用AI模式)"
+        else:
+            message = f"❌ 未识别到任何标记，请检查图片清晰度"
+        
         # 返回处理结果（包含调试信息）
         return create_response(data={
             'drawings': processed_results,
             'reference_map': reference_map,
             'total_numbers': total_numbers,
-            'matched_count': total_numbers,
+            'matched_count': total_matched,
+            'ocr_detected_count': total_ocr_detected,  # 新增：OCR识别总数
+            'unmatched_count': total_unmatched,        # 新增：未匹配数
             'match_rate': stats['match_rate'],
             'avg_confidence': stats['avg_confidence'],
             'unknown_markers': unknown_markers,
             'missing_markers': missing_markers,
             'suggestions': stats['suggestions'],
-            'message': f"成功处理 {len(drawings)} 张图片，识别出 {total_numbers} 个数字序号，匹配率 {stats['match_rate']}%",
+            'message': message,
             'debug_info': {
                 'total_markers_in_spec': len(reference_map),
                 'reference_map': reference_map,
-                'extraction_method': 'AI智能抽取' if ai_mode else 'jieba分词'
+                'extraction_method': 'AI智能抽取' if ai_mode else 'jieba分词',
+                'has_ocr_results': total_ocr_detected > 0,  # 标记是否有OCR结果
+                'has_matched_results': total_matched > 0     # 标记是否有匹配结果
             }
         })
     
