@@ -2500,7 +2500,7 @@ class ClaimsD3TreeRenderer {
     
     // 设置可视化散开程度（引力强度）
     setTreeSpreadFactor(factor) {
-        this.treeSpreadFactor = Math.max(0.5, Math.min(3.0, factor));
+        this.treeSpreadFactor = Math.max(0.5, Math.min(5.0, factor));
         
         // 保存引力强度，用于网络图
         this.chargeStrength = -300 * this.treeSpreadFactor; // 根据散开程度调整引力强度

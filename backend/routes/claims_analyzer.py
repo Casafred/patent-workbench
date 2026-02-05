@@ -3,9 +3,41 @@ Claims Analyzer API - 独立权利要求分析器
 提供文本分析API，支持直接输入权利要求文本进行分析
 """
 
+import os
+import logging
 from flask import Blueprint, request
 from backend.utils import create_response
 from patent_claims_processor.processors import ClaimsParser, ClaimsClassifier, LanguageDetector
+from zhipuai import ZhipuAI
+
+# 配置日志
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# 翻译提示模板
+TRANSLATION_PROMPT = """你是一个专业的专利文献翻译专家。请将以下{source_lang}文本翻译为中文。
+
+要求:
+1. 保持专利术语的准确性
+2. 保留所有数字标记和权利要求序号
+3. 翻译要流畅自然,符合中文专利文献的表达习惯
+4. 不要添加任何解释或注释,只返回翻译结果
+
+原文:
+{text}
+
+请直接返回中文翻译:"""
+
+# 语言名称映射
+LANG_NAMES = {
+    'en': '英文',
+    'ja': '日文',
+    'ko': '韩文',
+    'de': '德文',
+    'fr': '法文',
+    'es': '西班牙文',
+    'ru': '俄文'
+}
 
 claims_analyzer_bp = Blueprint('claims_analyzer', __name__)
 
@@ -52,9 +84,73 @@ def parse_claims_text():
         
         cleaned_text = preprocess_text(text)
         
-        # 直接解析权利要求 - 让解析器处理多语言版本（与Excel处理相同）
+        # 检测文本语言并翻译非中英文内容
+        text_to_process = cleaned_text
+        detected_language = 'zh'  # 默认中文
+        translation_applied = False
+        
         try:
-            claims_dict = parser.split_claims_by_numbers(cleaned_text)
+            # 检测整个文本的语言
+            detected_language = language_detector.detect_language(cleaned_text)
+            logger.info(f"Detected text language: {detected_language}")
+            
+            # 如果不是中文或英文，需要翻译
+            if detected_language not in ['zh', 'en']:
+                logger.info(f"Non-Chinese/English text detected, will translate to Chinese")
+                
+                # 初始化翻译服务
+                api_key = os.getenv('ZHIPU_API_KEY')
+                if not api_key:
+                    logger.warning("ZHIPU_API_KEY not configured, skipping translation")
+                else:
+                    try:
+                        client = ZhipuAI(api_key=api_key)
+                        
+                        # 准备翻译提示
+                        source_lang_name = LANG_NAMES.get(detected_language, detected_language)
+                        prompt = TRANSLATION_PROMPT.format(
+                            source_lang=source_lang_name,
+                            text=cleaned_text
+                        )
+                        
+                        # 调用翻译API
+                        logger.info(f"Translating text using glm-4-flash")
+                        response = client.chat.completions.create(
+                            model="glm-4-flash",
+                            messages=[
+                                {
+                                    "role": "system",
+                                    "content": "你是一位专业的专利文献翻译专家。请准确翻译专利文本，保持专业术语的准确性。"
+                                },
+                                {
+                                    "role": "user",
+                                    "content": prompt
+                                }
+                            ],
+                            stream=False,
+                            temperature=0.3
+                        )
+                        
+                        translated_text = response.choices[0].message.content.strip()
+                        logger.info(f"Translation completed successfully")
+                        
+                        # 使用翻译后的文本进行处理
+                        text_to_process = translated_text
+                        translation_applied = True
+                        
+                    except Exception as e:
+                        logger.error(f"Translation failed: {str(e)}")
+                        logger.warning("Translation failed, will try to process original text")
+                        # 翻译失败时使用原文
+                        text_to_process = cleaned_text
+        except Exception as e:
+            logger.error(f"Language detection failed: {str(e)}")
+            # 语言检测失败时使用原文
+            text_to_process = cleaned_text
+        
+        # 解析权利要求 - 使用处理后的文本（可能是翻译后的）
+        try:
+            claims_dict = parser.split_claims_by_numbers(text_to_process)
             
             # 如果标准解析失败，尝试更宽松的解析
             if not claims_dict:
@@ -69,7 +165,7 @@ def parse_claims_text():
                 ]
                 
                 for pattern in patterns:
-                    matches = re.findall(pattern, cleaned_text, re.DOTALL)
+                    matches = re.findall(pattern, text_to_process, re.DOTALL)
                     if matches:
                         for match in matches:
                             try:
@@ -82,10 +178,10 @@ def parse_claims_text():
                         break  # 如果找到匹配，就不尝试其他模式
                 
                 # 如果仍然没有找到，尝试将整个文本作为单个权利要求
-                if not claims_dict and cleaned_text.strip():
+                if not claims_dict and text_to_process.strip():
                     # 检查是否包含任何数字
-                    if re.search(r'\d', cleaned_text):
-                        claims_dict[1] = cleaned_text.strip()
+                    if re.search(r'\d', text_to_process):
+                        claims_dict[1] = text_to_process.strip()
                     
         except Exception as e:
             # 解析失败时尝试备用方法
@@ -99,7 +195,7 @@ def parse_claims_text():
             ]
             
             for pattern in patterns:
-                matches = re.findall(pattern, cleaned_text, re.DOTALL)
+                matches = re.findall(pattern, text_to_process, re.DOTALL)
                 if matches:
                     for match in matches:
                         try:
@@ -112,10 +208,10 @@ def parse_claims_text():
                     break  # 如果找到匹配，就不尝试其他模式
             
             # 如果仍然没有找到，尝试将整个文本作为单个权利要求
-            if not claims_dict and cleaned_text.strip():
+            if not claims_dict and text_to_process.strip():
                 # 检查是否包含任何数字
-                if re.search(r'\d', cleaned_text):
-                    claims_dict[1] = cleaned_text.strip()
+                if re.search(r'\d', text_to_process):
+                    claims_dict[1] = text_to_process.strip()
         
         # 分析每条权利要求
         processed_claims = []
@@ -213,6 +309,11 @@ def parse_claims_text():
                 'total_claims': total_claims,
                 'independent_claims': independent_count,
                 'dependent_claims': dependent_count
+            },
+            'language_info': {
+                'detected_language': detected_language,
+                'translation_applied': translation_applied,
+                'original_language': detected_language if translation_applied else None
             }
         })
         

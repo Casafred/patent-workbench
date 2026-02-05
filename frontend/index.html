@@ -1251,6 +1251,7 @@
             <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
                 <div class="modal-header">
                     <h3 id="patent_detail_title">专利详情</h3>
+                    <button class="close-modal" onclick="closePatentDetailModal()">&times;</button>
                 </div>
                 <div class="modal-body" id="patent_detail_body">
                     <!-- 动态填充专利详情 -->
@@ -1418,7 +1419,7 @@
                         <!-- 树状图散开程度控制 -->
                         <div id="claims_tree_spread_control" style="display: flex; gap: 5px; align-items: center;">
                             <label for="claims_tree_spread_slider" style="font-size: 0.9em;">散开:</label>
-                            <input type="range" id="claims_tree_spread_slider" min="0.5" max="2.5" step="0.1" value="1.0" style="width: 80px;">
+                            <input type="range" id="claims_tree_spread_slider" min="0.5" max="5.0" step="0.1" value="1.0" style="width: 80px;">
                             <span id="claims_tree_spread_value" style="font-size: 0.9em; min-width: 30px;">1.0x</span>
                         </div>
                         
