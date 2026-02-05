@@ -1795,6 +1795,61 @@ function initDrawingMarker() {
     if (clearAllBtn) {
         clearAllBtn.addEventListener('click', clearAllDrawings);
     }
+    
+    // 尝试恢复缓存的处理结果
+    restoreCachedProcessingResult();
+}
+
+// 尝试恢复缓存的处理结果
+function restoreCachedProcessingResult() {
+    const specificationInput = document.getElementById('specification_input');
+    if (!specificationInput) return;
+    
+    // 尝试从localStorage恢复处理结果
+    try {
+        // 遍历所有localStorage项，查找处理缓存
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('processing_cache_')) {
+                const cacheData = JSON.parse(localStorage.getItem(key));
+                if (cacheData && cacheData.timestamp) {
+                    // 检查缓存是否在24小时内
+                    const elapsed = Date.now() - cacheData.timestamp;
+                    if (elapsed < 24 * 60 * 60 * 1000) {
+                        console.log('发现缓存的处理结果，尝试恢复...');
+                        
+                        // 恢复上传的图片
+                        if (cacheData.uploadedDrawings) {
+                            uploadedDrawings = cacheData.uploadedDrawings.map(d => ({
+                                ...d,
+                                id: Date.now() + Math.random()
+                            }));
+                            console.log('已恢复', uploadedDrawings.length, '张上传的图片');
+                            
+                            // 更新上传图片的显示
+                            updateUploadedDrawingsDisplay();
+                        }
+                        
+                        // 恢复说明书内容
+                        if (cacheData.specification) {
+                            specificationInput.value = cacheData.specification;
+                        }
+                        
+                        // 恢复处理结果
+                        displayProcessingResult(cacheData.data, cacheData.isAIMode);
+                        console.log('处理结果已从缓存恢复');
+                        return;
+                    } else {
+                        // 缓存过期，删除
+                        localStorage.removeItem(key);
+                        console.log('缓存已过期，已删除');
+                    }
+                }
+            }
+        }
+    } catch (e) {
+        console.warn('恢复缓存失败:', e);
+    }
 }
 
 // 处理图片上传
@@ -1961,6 +2016,14 @@ function clearAllDrawings() {
     }
 }
 
+// 生成缓存键的辅助函数
+function generateProcessingCacheKey(drawings, specification) {
+    // 基于文件名和说明书内容生成简单的哈希键
+    const drawingNames = drawings.map(d => d.name).sort().join('_');
+    const specHash = specification.length + '_' + specification.substring(0, 100);
+    return drawingNames + '_' + specHash;
+}
+
 // 开始处理
 function startProcessing() {
     // 表单验证
@@ -1974,6 +2037,12 @@ function startProcessing() {
         alert('请输入说明书内容。');
         return;
     }
+    
+    // 清除之前的缓存，确保使用最新的处理结果
+    // 缓存键：基于上传的文件名和说明书内容的哈希值
+    const cacheKey = generateProcessingCacheKey(uploadedDrawings, specificationInput.value.trim());
+    localStorage.removeItem(`processing_cache_${cacheKey}`);
+    console.log('已清除旧缓存，将使用最新处理结果');
     
     // 获取AI处理配置
     const aiConfig = window.aiProcessingPanel ? window.aiProcessingPanel.getConfig() : { aiMode: false };
@@ -2010,12 +2079,12 @@ function startProcessing() {
                 </style>
             `;
             
-            // 模拟进度更新(因为后端是同步的,我们用定时器模拟)
+            // 优化进度更新逻辑，更频繁地更新状态
             let progressStep = 0;
             const progressTexts = [
-                '正在检测语言...',
-                '正在翻译文本...',
-                '正在AI抽取标记...',
+                '正在处理数据...',
+                '正在分析附图...',
+                '正在AI识别标记...',
                 '正在生成结果...'
             ];
             
@@ -2026,8 +2095,15 @@ function startProcessing() {
                     if (progressText) {
                         progressText.textContent = progressTexts[progressStep];
                     }
+                } else {
+                    // 循环显示进度，让用户感觉处理在持续进行
+                    progressStep = 0;
+                    const progressText = document.getElementById('progress_text');
+                    if (progressText) {
+                        progressText.textContent = progressTexts[progressStep];
+                    }
                 }
-            }, 2000); // 每2秒更新一次进度文本
+            }, 1000); // 每1秒更新一次进度文本，提高用户感知
             
             // 保存interval ID以便后续清除
             window.currentProgressInterval = progressInterval;
@@ -2192,6 +2268,33 @@ function startProcessing() {
 function displayProcessingResult(data, isAIMode = false) {
     // 保存reference_map供交互式标注使用
     currentReferenceMap = data.reference_map || {};
+    
+    // 缓存处理结果，以便页面刷新后仍然可用
+    // 但只在用户主动处理时缓存，确保下次处理时使用最新结果
+    const specificationInput = document.getElementById('specification_input');
+    if (specificationInput && uploadedDrawings.length > 0) {
+        const specificationText = specificationInput.value.trim();
+        const cacheKey = generateProcessingCacheKey(uploadedDrawings, specificationText);
+        const cacheData = {
+            timestamp: Date.now(),
+            data: data,
+            isAIMode: isAIMode,
+            specification: specificationText,
+            uploadedDrawings: uploadedDrawings.map(d => ({
+                name: d.name,
+                type: d.type,
+                size: d.size,
+                dataUrl: d.dataUrl
+            }))
+        };
+        
+        try {
+            localStorage.setItem(`processing_cache_${cacheKey}`, JSON.stringify(cacheData));
+            console.log('处理结果已缓存，页面刷新后仍然可用');
+        } catch (e) {
+            console.warn('缓存失败:', e);
+        }
+    }
     
     // 更新处理状态
     const processingStatus = document.getElementById('processing_status');

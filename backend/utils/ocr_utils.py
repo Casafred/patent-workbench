@@ -60,12 +60,16 @@ def initialize_ocr_engine():
         # Initialize RapidOCR with optimized parameters for patent drawings
         # text_score: Lower threshold to detect more markers (default 0.5)
         # box_thresh: Lower threshold for text box detection (default 0.5)
+        # unclip_ratio: Controls text box expansion (default 1.6)
+        # max_side_len: Maximum image side length for processing (default 960)
         _ocr_engine = RapidOCR(
-            text_score=0.25,  # 进一步降低阈值，提高检测率
-            box_thresh=0.25   # 进一步降低文本框检测阈值
+            text_score=0.3,   # 调整阈值
+            box_thresh=0.1,   # 降低文本框检测阈值
+            unclip_ratio=1.8, # 增加文本框扩展比例
+            max_side_len=2500 # 增加最大处理边长
         )
 
-        logger.info("RapidOCR engine initialized with optimized parameters (text_score=0.25, box_thresh=0.25)")
+        logger.info("RapidOCR engine initialized with optimized parameters (text_score=0.3, box_thresh=0.1, unclip_ratio=1.8, max_side_len=2500)")
         return _ocr_engine
         
     except ImportError as e:
