@@ -513,3 +513,342 @@ def extract_components():
             error=f"处理失败: {str(e)}",
             status_code=500
         )
+
+
+@drawing_marker_bp.route('/drawing-marker/reprocess-specification', methods=['POST'])
+def reprocess_specification():
+    """
+    Reprocess specification only (reuse cached OCR results).
+    
+    Use case: Specification content updated, but drawings remain the same.
+    
+    Request body:
+    {
+        "cache_keys": ["drawing1.png_hash123", "drawing2.png_hash456"],
+        "specification": "更新后的说明书内容",
+        "ai_mode": true/false,
+        "model_name": "glm-4-flash" (required when ai_mode=true),
+        "custom_prompt": "自定义提示词" (optional)
+    }
+    
+    Response: Same as /drawing-marker/process
+    """
+    is_valid, error_response = validate_api_request()
+    if not is_valid:
+        return error_response
+    
+    try:
+        req_data = request.get_json()
+        cache_keys = req_data.get('cache_keys')
+        specification = req_data.get('specification')
+        ai_mode = req_data.get('ai_mode', False)
+        model_name = req_data.get('model_name')
+        custom_prompt = req_data.get('custom_prompt')
+        
+        # Validate input
+        if not cache_keys or not isinstance(cache_keys, list) or len(cache_keys) == 0:
+            return create_response(
+                error="cache_keys is required and must be a non-empty list",
+                status_code=400
+            )
+        
+        if not specification or not isinstance(specification, str) or specification.strip() == '':
+            return create_response(
+                error="specification is required and must be a non-empty string",
+                status_code=400
+            )
+        
+        # Import cache manager
+        from backend.utils.drawing_cache import DrawingCacheManager
+        cache_manager = DrawingCacheManager()
+        
+        # Load cached OCR results
+        processed_results = []
+        total_ocr_detected = 0
+        
+        for cache_key in cache_keys:
+            cached_data = cache_manager.get_cache(cache_key)
+            
+            if not cached_data:
+                return create_response(
+                    error=f"Cache not found for key: {cache_key}",
+                    status_code=404
+                )
+            
+            # Extract OCR results from cache
+            ocr_results = cached_data.get('ocr_results', [])
+            drawing_name = cached_data.get('drawing_name', 'unknown')
+            
+            total_ocr_detected += len(ocr_results)
+            
+            processed_results.append({
+                'name': drawing_name,
+                'cache_key': cache_key,
+                'ocr_results': ocr_results,
+                'from_cache': True
+            })
+        
+        print(f"[DEBUG] Loaded {len(processed_results)} cached OCR results")
+        print(f"[DEBUG] Total OCR detected: {total_ocr_detected}")
+        
+        # Process specification (same logic as main endpoint)
+        if ai_mode:
+            if not model_name:
+                return create_response(
+                    error="model_name is required when ai_mode is true",
+                    status_code=400
+                )
+            
+            client, error = get_zhipu_client()
+            if error:
+                return error
+            
+            from backend.services.ai_description.ai_description_processor import AIDescriptionProcessor
+            processor = AIDescriptionProcessor()
+            
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                ai_result = loop.run_until_complete(
+                    processor.process(specification, model_name, client, custom_prompt)
+                )
+            finally:
+                loop.close()
+            
+            if not ai_result.get('success'):
+                return create_response(
+                    error=ai_result.get('error', 'AI processing failed'),
+                    status_code=500
+                )
+            
+            components = ai_result['data'].get('components', [])
+            reference_map = {comp['marker']: comp['name'] for comp in components}
+        else:
+            from backend.utils.component_extractor import extract_reference_markers
+            reference_map = extract_reference_markers(specification)
+        
+        print(f"[DEBUG] Extracted reference_map: {len(reference_map)} markers")
+        
+        # Match OCR results with new reference_map
+        from backend.utils.ocr_utils import match_with_reference_map
+        
+        total_matched = 0
+        total_unmatched = 0
+        
+        for drawing_result in processed_results:
+            ocr_results = drawing_result.pop('ocr_results')
+            
+            detected_numbers, unknown, missing = match_with_reference_map(
+                ocr_results,
+                reference_map
+            )
+            
+            # Add unmatched markers
+            unmatched_ocr = []
+            for ocr_item in ocr_results:
+                if ocr_item['number'] not in reference_map:
+                    unmatched_ocr.append({
+                        **ocr_item,
+                        'name': '(说明书未匹配)',
+                        'is_matched': False
+                    })
+            
+            for item in detected_numbers:
+                item['is_matched'] = True
+            
+            all_detected = detected_numbers + unmatched_ocr
+            
+            drawing_result['detected_numbers'] = all_detected
+            drawing_result['matched_count'] = len(detected_numbers)
+            drawing_result['unmatched_count'] = len(unmatched_ocr)
+            drawing_result['ocr_detected_count'] = len(ocr_results)
+            
+            total_matched += len(detected_numbers)
+            total_unmatched += len(unmatched_ocr)
+        
+        # Generate message
+        message = f"🔄 使用缓存OCR结果 ({total_ocr_detected}个) | 说明书重新解析 | 匹配: {total_matched}个 | 未匹配: {total_unmatched}个"
+        
+        return create_response(data={
+            'drawings': processed_results,
+            'reference_map': reference_map,
+            'matched_count': total_matched,
+            'ocr_detected_count': total_ocr_detected,
+            'unmatched_count': total_unmatched,
+            'match_rate': (total_matched / len(reference_map) * 100) if len(reference_map) > 0 else 0,
+            'message': message,
+            'reprocess_mode': 'specification_only',
+            'cache_used': True
+        })
+    
+    except Exception as e:
+        print(f"Error in reprocess_specification: {traceback.format_exc()}")
+        return create_response(
+            error=f"处理失败: {str(e)}",
+            status_code=500
+        )
+
+
+@drawing_marker_bp.route('/drawing-marker/reprocess-drawings', methods=['POST'])
+def reprocess_drawings():
+    """
+    Reprocess drawings only (reuse cached specification parsing results).
+    
+    Use case: Drawings updated or need re-OCR, but specification remains the same.
+    
+    Request body:
+    {
+        "drawings": [
+            {
+                "name": "drawing1.png",
+                "type": "image/png",
+                "size": 1024,
+                "data": "base64encodeddata"
+            }
+        ],
+        "reference_map": {
+            "1": "底座",
+            "2": "旋转臂"
+        }
+    }
+    
+    Response: Same as /drawing-marker/process
+    """
+    is_valid, error_response = validate_api_request()
+    if not is_valid:
+        return error_response
+    
+    try:
+        req_data = request.get_json()
+        drawings = req_data.get('drawings')
+        reference_map = req_data.get('reference_map')
+        
+        # Validate input
+        if not drawings or not isinstance(drawings, list) or len(drawings) == 0:
+            return create_response(
+                error="drawings is required and must be a non-empty list",
+                status_code=400
+            )
+        
+        if not reference_map or not isinstance(reference_map, dict):
+            return create_response(
+                error="reference_map is required and must be a dict",
+                status_code=400
+            )
+        
+        print(f"[DEBUG] Reprocessing {len(drawings)} drawings with cached reference_map")
+        print(f"[DEBUG] Reference map has {len(reference_map)} markers")
+        
+        # Import necessary modules
+        import base64
+        import hashlib
+        from backend.utils.ocr_utils import (
+            perform_ocr,
+            deduplicate_results,
+            filter_by_confidence,
+            match_with_reference_map
+        )
+        from backend.utils.drawing_cache import DrawingCacheManager
+        
+        cache_manager = DrawingCacheManager()
+        processed_results = []
+        total_ocr_detected = 0
+        total_matched = 0
+        total_unmatched = 0
+        
+        # Process each drawing with OCR
+        for drawing in drawings:
+            try:
+                print(f"[DEBUG] Processing drawing: {drawing['name']}")
+                
+                # Decode image
+                image_data = base64.b64decode(drawing['data'])
+                
+                # Generate cache key
+                image_hash = hashlib.md5(image_data).hexdigest()
+                cache_key = f"{drawing['name']}_{image_hash}"
+                
+                # Perform OCR (force refresh to get new results)
+                all_detected_numbers = perform_ocr(image_data)
+                
+                # Save to cache
+                cache_manager.set_cache(cache_key, {
+                    'drawing_name': drawing['name'],
+                    'ocr_results': all_detected_numbers,
+                    'image_hash': image_hash
+                })
+                
+                print(f"[DEBUG] OCR detected {len(all_detected_numbers)} markers")
+                
+                # Apply filtering
+                all_detected_numbers = deduplicate_results(all_detected_numbers, position_threshold=25)
+                all_detected_numbers = filter_by_confidence(all_detected_numbers, min_confidence=30)
+                
+                total_ocr_detected += len(all_detected_numbers)
+                
+                # Match with cached reference_map
+                detected_numbers, unknown, missing = match_with_reference_map(
+                    all_detected_numbers,
+                    reference_map
+                )
+                
+                # Add unmatched markers
+                unmatched_ocr = []
+                for ocr_item in all_detected_numbers:
+                    if ocr_item['number'] not in reference_map:
+                        unmatched_ocr.append({
+                            **ocr_item,
+                            'name': '(说明书未匹配)',
+                            'is_matched': False
+                        })
+                
+                for item in detected_numbers:
+                    item['is_matched'] = True
+                
+                all_detected = detected_numbers + unmatched_ocr
+                
+                total_matched += len(detected_numbers)
+                total_unmatched += len(unmatched_ocr)
+                
+                processed_results.append({
+                    'name': drawing['name'],
+                    'type': drawing['type'],
+                    'size': drawing['size'],
+                    'detected_numbers': all_detected,
+                    'matched_count': len(detected_numbers),
+                    'unmatched_count': len(unmatched_ocr),
+                    'ocr_detected_count': len(all_detected_numbers),
+                    'cache_key': cache_key
+                })
+                
+            except Exception as e:
+                print(f"Error processing drawing {drawing['name']}: {traceback.format_exc()}")
+                processed_results.append({
+                    'name': drawing['name'],
+                    'type': drawing['type'],
+                    'size': drawing['size'],
+                    'detected_numbers': [],
+                    'error': str(e)
+                })
+        
+        # Generate message
+        message = f"🔄 图片重新OCR识别 ({total_ocr_detected}个) | 使用缓存说明书 | 匹配: {total_matched}个 | 未匹配: {total_unmatched}个"
+        
+        return create_response(data={
+            'drawings': processed_results,
+            'reference_map': reference_map,
+            'matched_count': total_matched,
+            'ocr_detected_count': total_ocr_detected,
+            'unmatched_count': total_unmatched,
+            'match_rate': (total_matched / len(reference_map) * 100) if len(reference_map) > 0 else 0,
+            'message': message,
+            'reprocess_mode': 'drawings_only',
+            'cache_used': True
+        })
+    
+    except Exception as e:
+        print(f"Error in reprocess_drawings: {traceback.format_exc()}")
+        return create_response(
+            error=f"处理失败: {str(e)}",
+            status_code=500
+        )
