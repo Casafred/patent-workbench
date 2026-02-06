@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>功能八 - 拆分重新处理按钮测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #2196F3;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #2196F3;
+            margin-top: 0;
+        }
+        .button-layout {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .button-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .button-group {
+            display: flex;
+            gap: 8px;
+            padding: 10px;
+            background-color: #fff3e0;
+            border-radius: 6px;
+            border-left: 3px solid #ff9800;
+        }
+        .demo-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+        }
+        .start-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+        .ocr-btn {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+        .spec-btn {
+            background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%);
+            color: white;
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+        .clear-btn {
+            background-color: #dc3545;
+            color: white;
+            padding: 12px 15px;
+            flex: 0 0 auto;
+        }
+        .label {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            color: #e65100;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 0 8px;
+        }
+        .feature {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .comparison-item {
+            padding: 15px;
+            border-radius: 6px;
+        }
+        .old-design {
+            background: #ffebee;
+            border: 2px solid #ef5350;
+        }
+        .new-design {
+            background: #e8f5e9;
+            border: 2px solid #66bb6a;
+        }
+        code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔄 功能八 - 拆分重新处理按钮测试</h1>
+    
+    <div class="test-section">
+        <h2>📋 优化内容</h2>
+        <div class="feature">
+            <strong>问题：</strong>
+            <ul>
+                <li>❌ 原来的"重新处理"按钮功能不够明确</li>
+                <li>❌ 按钮太多导致布局超出边界</li>
+                <li>❌ 用户无法单独重新识别OCR或匹配说明书</li>
+            </ul>
+        </div>
+        
+        <div class="feature">
+            <strong>解决方案：</strong>
+            <ul>
+                <li>✅ 拆分为两个独立按钮：识别OCR + 匹配说明书</li>
+                <li>✅ 优化布局：两行设计，避免超出边界</li>
+                <li>✅ 清晰的视觉分组和颜色区分</li>
+                <li>✅ 更精确的功能控制</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎨 新旧布局对比</h2>
+        
+        <div class="comparison">
+            <div class="comparison-item old-design">
+                <h3 style="color: #c62828; margin-top: 0;">❌ 旧设计（有问题）</h3>
+                <div class="button-row">
+                    <button class="demo-btn start-btn">开始处理</button>
+                    <button class="demo-btn" style="background: linear-gradient(135deg, #ff9800 0%, #ff6f00 100%); color: white;">重新处理</button>
+                    <button class="demo-btn clear-btn">🗑️</button>
+                </div>
+                <p style="color: #c62828; font-size: 13px; margin: 10px 0 0 0;">
+                    <strong>问题：</strong><br>
+                    • 三个按钮挤在一行，容易超出边界<br>
+                    • "重新处理"功能不明确<br>
+                    • 无法单独控制OCR或说明书
+                </p>
+            </div>
+            
+            <div class="comparison-item new-design">
+                <h3 style="color: #2e7d32; margin-top: 0;">✅ 新设计（优化后）</h3>
+                <div class="button-row">
+                    <button class="demo-btn start-btn">开始处理</button>
+                    <button class="demo-btn clear-btn">🗑️</button>
+                </div>
+                <div class="button-group">
+                    <div class="label">🔄 重新处理</div>
+                    <button class="demo-btn ocr-btn">识别OCR</button>
+                    <button class="demo-btn spec-btn">匹配说明书</button>
+                </div>
+                <p style="color: #2e7d32; font-size: 13px; margin: 10px 0 0 0;">
+                    <strong>优势：</strong><br>
+                    • 两行布局，不会超出边界<br>
+                    • 功能明确，易于理解<br>
+                    • 可以单独控制每个步骤
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎯 按钮功能说明</h2>
+        
+        <div class="button-layout">
+            <h3 style="margin-top: 0;">第一行：主要操作</h3>
+            <div class="button-row">
+                <button class="demo-btn start-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                    开始处理
+                </button>
+                <button class="demo-btn clear-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>
+            </div>
+            <ul style="font-size: 13px; color: #666; margin: 10px 0 0 20px;">
+                <li><strong style="color: #28a745;">开始处理</strong>：首次处理，同时识别OCR和匹配说明书</li>
+                <li><strong style="color: #dc3545;">清空</strong>：清空所有图片和说明书</li>
+            </ul>
+        </div>
+        
+        <div class="button-layout">
+            <h3 style="margin-top: 0;">第二行：重新处理组</h3>
+            <div class="button-group">
+                <div class="label">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
+                    重新处理
+                </div>
+                <button class="demo-btn ocr-btn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    识别OCR
+                </button>
+                <button class="demo-btn spec-btn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    匹配说明书
+                </button>
+            </div>
+            <ul style="font-size: 13px; color: #666; margin: 10px 0 0 20px;">
+                <li><strong style="color: #2196F3;">识别OCR</strong>：仅重新识别图片中的标记（使用当前图片状态，包括旋转）</li>
+                <li><strong style="color: #9C27B0;">匹配说明书</strong>：仅重新匹配说明书内容（使用已缓存的OCR结果）</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔍 使用场景</h2>
+        
+        <div class="feature">
+            <strong>场景1：旋转图片后重新识别</strong>
+            <ol>
+                <li>上传图片 → 开始处理</li>
+                <li>发现图片方向不对 → 旋转90度</li>
+                <li>点击 <code style="color: #2196F3;">识别OCR</code> → 使用旋转后的图片重新识别</li>
+                <li>查看新的标注结果</li>
+            </ol>
+        </div>
+        
+        <div class="feature">
+            <strong>场景2：修改说明书后重新匹配</strong>
+            <ol>
+                <li>上传图片和说明书 → 开始处理</li>
+                <li>发现说明书有遗漏 → 添加新的标记</li>
+                <li>点击 <code style="color: #9C27B0;">匹配说明书</code> → 使用缓存的OCR结果重新匹配</li>
+                <li>查看更新的匹配结果（无需重新识别OCR，速度更快）</li>
+            </ol>
+        </div>
+        
+        <div class="feature">
+            <strong>场景3：同时修改图片和说明书</strong>
+            <ol>
+                <li>上传图片和说明书 → 开始处理</li>
+                <li>旋转图片 + 修改说明书</li>
+                <li>点击 <code style="color: #2196F3;">识别OCR</code> → 重新识别旋转后的图片</li>
+                <li>点击 <code style="color: #9C27B0;">匹配说明书</code> → 使用新的说明书重新匹配</li>
+                <li>查看完整的新结果</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎨 颜色方案</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f5f5f5;">
+                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">按钮</th>
+                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">颜色</th>
+                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">用途</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd;"><strong>开始处理</strong></td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">
+                        <span style="display: inline-block; width: 80px; height: 20px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border-radius: 3px;"></span>
+                        绿色
+                    </td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">首次处理</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd;"><strong>识别OCR</strong></td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">
+                        <span style="display: inline-block; width: 80px; height: 20px; background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%); border-radius: 3px;"></span>
+                        蓝色
+                    </td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">重新识别OCR</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd;"><strong>匹配说明书</strong></td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">
+                        <span style="display: inline-block; width: 80px; height: 20px; background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%); border-radius: 3px;"></span>
+                        紫色
+                    </td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">重新匹配说明书</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd;"><strong>清空</strong></td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">
+                        <span style="display: inline-block; width: 80px; height: 20px; background: #dc3545; border-radius: 3px;"></span>
+                        红色
+                    </td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">清空所有</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="test-section">
+        <h2>✅ 测试检查清单</h2>
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 6px;">
+            <h3 style="margin-top: 0;">布局检查</h3>
+            <label style="display: block; margin: 8px 0;">
+                <input type="checkbox"> 第一行：开始处理 + 清空按钮
+            </label>
+            <label style="display: block; margin: 8px 0;">
+                <input type="checkbox"> 第二行：重新处理组（标签 + 两个按钮）
+            </label>
+            <label style="display: block; margin: 8px 0;">
+                <input type="checkbox"> 按钮不超出边界
+            </label>
+            <label style="display: block; margin: 8px 0;">
+                <input type="checkbox"> 橙色背景分组清晰
+            </label>
+            
+            <h3>功能检查</h3>
+            <label style="display: block; margin: 8px 0;">
+                <input type="checkbox"> 识别OCR按钮：重新识别图片标记
+            </label>
+            <label style="display: block; margin: 8px 0;">
+                <input type="checkbox"> 匹配说明书按钮：使用缓存OCR结果
+            </label>
+            <label style="display: block; margin: 8px 0;">
+                <input type="checkbox"> 识别OCR使用当前图片状态（包括旋转）
+            </label>
+            <label style="display: block; margin: 8px 0;">
+                <input type="checkbox"> 匹配说明书检查缓存是否存在
+            </label>
+            
+            <h3>视觉检查</h3>
+            <label style="display: block; margin: 8px 0;">
+                <input type="checkbox"> 识别OCR按钮：蓝色渐变
+            </label>
+            <label style="display: block; margin: 8px 0;">
+                <input type="checkbox"> 匹配说明书按钮：紫色渐变
+            </label>
+            <label style="display: block; margin: 8px 0;">
+                <input type="checkbox"> 进度提示颜色正确（蓝色/紫色）
+            </label>
+            <label style="display: block; margin: 8px 0;">
+                <input type="checkbox"> 完成提示颜色正确
+            </label>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🚀 快速测试步骤</h2>
+        <div style="background: #263238; color: #aed581; padding: 15px; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 13px;">
+            # 1. 打开功能八页面<br>
+            http://localhost:5000/frontend/index.html#feature8<br>
+            <br>
+            # 2. 测试识别OCR<br>
+            - 上传图片 + 输入说明书<br>
+            - 点击"开始处理"<br>
+            - 旋转图片90度<br>
+            - 点击"识别OCR"（蓝色按钮）<br>
+            - 验证使用旋转后的图片<br>
+            <br>
+            # 3. 测试匹配说明书<br>
+            - 修改说明书内容<br>
+            - 点击"匹配说明书"（紫色按钮）<br>
+            - 验证使用缓存的OCR结果<br>
+            - 速度应该比重新识别OCR快<br>
+            <br>
+            # 4. 检查布局<br>
+            - 确认两行布局<br>
+            - 确认不超出边界<br>
+            - 确认颜色区分清晰<br>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 性能优势</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f5f5f5;">
+                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">操作</th>
+                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">旧方案</th>
+                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">新方案</th>
+                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">优势</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd;">修改说明书</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">重新处理（OCR+匹配）</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">仅匹配说明书</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">⚡ 速度提升50%+</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd;">旋转图片</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">重新处理（OCR+匹配）</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">仅识别OCR</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">✅ 功能明确</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd;">同时修改</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">重新处理一次</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">分步处理</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">🎯 更精确控制</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>

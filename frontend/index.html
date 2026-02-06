@@ -1684,26 +1684,51 @@
                             </div>
 
                             <!-- 操作按钮 -->
-                            <div style="display: flex; gap: 10px;">
-                                <button id="start_processing_btn" class="action-button" style="flex: 1; padding: 12px; font-size: 14px; font-weight: bold; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border: none; color: white; border-radius: 6px; cursor: pointer; transition: all 0.3s;" title="首次处理图片和说明书">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;">
-                                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                                    </svg>
-                                    开始处理
-                                </button>
-                                <button id="reprocess_btn" class="action-button" style="flex: 1; padding: 12px; font-size: 14px; font-weight: bold; background: linear-gradient(135deg, #ff9800 0%, #ff6f00 100%); border: none; color: white; border-radius: 6px; cursor: pointer; transition: all 0.3s;" title="使用当前图片状态（包括旋转）重新识别OCR和处理说明书">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;">
-                                        <polyline points="23 4 23 10 17 10"></polyline>
-                                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                                    </svg>
-                                    重新处理
-                                </button>
-                                <button id="clear_all_btn" class="small-button delete-button" style="padding: 12px 15px; background-color: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer;" title="清空所有图片和说明书">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <polyline points="3 6 5 6 21 6"></polyline>
-                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                    </svg>
-                                </button>
+                            <div style="display: flex; flex-direction: column; gap: 10px;">
+                                <!-- 第一行：主要处理按钮 -->
+                                <div style="display: flex; gap: 10px;">
+                                    <button id="start_processing_btn" class="action-button" style="flex: 1; padding: 12px; font-size: 14px; font-weight: bold; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border: none; color: white; border-radius: 6px; cursor: pointer; transition: all 0.3s;" title="首次处理：同时识别OCR和匹配说明书">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;">
+                                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                        </svg>
+                                        开始处理
+                                    </button>
+                                    <button id="clear_all_btn" class="small-button delete-button" style="padding: 12px 15px; background-color: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer;" title="清空所有图片和说明书">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                                
+                                <!-- 第二行：重新处理按钮组 -->
+                                <div style="display: flex; gap: 8px; padding: 10px; background-color: #fff3e0; border-radius: 6px; border-left: 3px solid #ff9800;">
+                                    <div style="flex-shrink: 0; display: flex; align-items: center; color: #e65100; font-size: 12px; font-weight: bold; padding: 0 8px;">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
+                                            <polyline points="23 4 23 10 17 10"></polyline>
+                                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                                        </svg>
+                                        重新处理
+                                    </div>
+                                    <button id="reprocess_ocr_btn" class="action-button" style="flex: 1; padding: 8px 12px; font-size: 13px; font-weight: bold; background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%); border: none; color: white; border-radius: 4px; cursor: pointer; transition: all 0.3s;" title="仅重新识别图片中的OCR标记（使用当前图片状态）">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                            <polyline points="21 15 16 10 5 21"></polyline>
+                                        </svg>
+                                        识别OCR
+                                    </button>
+                                    <button id="reprocess_spec_btn" class="action-button" style="flex: 1; padding: 8px 12px; font-size: 13px; font-weight: bold; background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%); border: none; color: white; border-radius: 4px; cursor: pointer; transition: all 0.3s;" title="仅重新匹配说明书内容（使用已缓存的OCR结果）">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 4px;">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                                            <polyline points="10 9 9 9 8 9"></polyline>
+                                        </svg>
+                                        匹配说明书
+                                    </button>
+                                </div>
                             </div>
                             <div id="processing_status" style="margin-top: 10px; font-size: 13px; font-weight: bold; color: #28a745; text-align: center;"></div>
                         </div>
@@ -1805,10 +1830,16 @@ function initDrawingMarker() {
         startProcessingBtn.addEventListener('click', startProcessing);
     }
 
-    // 🆕 重新处理按钮事件监听
-    const reprocessBtn = document.getElementById('reprocess_btn');
-    if (reprocessBtn) {
-        reprocessBtn.addEventListener('click', reprocessCurrentImages);
+    // 🆕 重新识别OCR按钮事件监听
+    const reprocessOcrBtn = document.getElementById('reprocess_ocr_btn');
+    if (reprocessOcrBtn) {
+        reprocessOcrBtn.addEventListener('click', reprocessOCR);
+    }
+
+    // 🆕 重新匹配说明书按钮事件监听
+    const reprocessSpecBtn = document.getElementById('reprocess_spec_btn');
+    if (reprocessSpecBtn) {
+        reprocessSpecBtn.addEventListener('click', reprocessSpecification);
     }
 
     // 清空所有按钮事件监听
@@ -2552,8 +2583,8 @@ function startProcessing() {
     });
 }
 
-// 🆕 重新处理当前图片（使用当前状态，包括旋转）
-function reprocessCurrentImages() {
+// 🆕 重新识别OCR（仅重新识别图片中的标记）
+function reprocessOCR() {
     // 表单验证
     if (uploadedDrawings.length === 0) {
         alert('请先上传或粘贴专利附图。');
@@ -2566,173 +2597,103 @@ function reprocessCurrentImages() {
         return;
     }
     
-    // 🔥 关键：清除缓存，强制重新处理
-    console.log('🔄 重新处理：清除缓存，使用当前图片状态（包括旋转）');
-    clearCacheOnInputChange('重新处理');
+    // 清除缓存，强制重新识别OCR
+    console.log('🔄 重新识别OCR：清除缓存，使用当前图片状态（包括旋转）');
+    clearCacheOnInputChange('重新识别OCR');
     
     // 获取AI处理配置
     const aiConfig = window.aiProcessingPanel ? window.aiProcessingPanel.getConfig() : { aiMode: false };
     
-    // 如果启用AI模式但未选择模型,提示用户
     if (aiConfig.aiMode && !aiConfig.model) {
         alert('请选择AI模型。');
         return;
     }
     
-    // 禁用重新处理按钮,防止重复提交
-    const reprocessBtn = document.getElementById('reprocess_btn');
+    // 禁用所有处理按钮
+    const reprocessOcrBtn = document.getElementById('reprocess_ocr_btn');
+    const reprocessSpecBtn = document.getElementById('reprocess_spec_btn');
     const startBtn = document.getElementById('start_processing_btn');
-    if (reprocessBtn) {
-        reprocessBtn.disabled = true;
-        reprocessBtn.style.opacity = '0.6';
-        reprocessBtn.style.cursor = 'not-allowed';
-    }
-    if (startBtn) {
-        startBtn.disabled = true;
-        startBtn.style.opacity = '0.6';
-        startBtn.style.cursor = 'not-allowed';
-    }
+    
+    [reprocessOcrBtn, reprocessSpecBtn, startBtn].forEach(btn => {
+        if (btn) {
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+            btn.style.cursor = 'not-allowed';
+        }
+    });
     
     // 显示进度反馈
     const processingStatus = document.getElementById('processing_status');
     if (processingStatus) {
-        if (aiConfig.aiMode) {
-            // AI模式显示详细进度
-            processingStatus.innerHTML = `
-                <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
-                    <div class="spinner" style="width: 16px; height: 16px; border: 2px solid #f3f3f3; border-top: 2px solid #ff9800; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-                    <span id="progress_text" style="color: #ff9800;">正在重新识别OCR...</span>
-                </div>
-            `;
-            
-            let progressStep = 0;
-            const progressTexts = [
-                '正在重新识别OCR...',
-                '正在分析附图...',
-                '正在AI识别标记...',
-                '正在生成结果...'
-            ];
-            
-            const progressInterval = setInterval(() => {
-                progressStep++;
-                if (progressStep < progressTexts.length) {
-                    const progressText = document.getElementById('progress_text');
-                    if (progressText) {
-                        progressText.textContent = progressTexts[progressStep];
-                    }
-                } else {
-                    progressStep = 0;
-                    const progressText = document.getElementById('progress_text');
-                    if (progressText) {
-                        progressText.textContent = progressTexts[progressStep];
-                    }
-                }
-            }, 1000);
-            
-            window.currentProgressInterval = progressInterval;
-        } else {
-            // 规则模式显示简单进度
-            processingStatus.innerHTML = `
-                <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
-                    <div class="spinner" style="width: 16px; height: 16px; border: 2px solid #f3f3f3; border-top: 2px solid #ff9800; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-                    <span style="color: #ff9800;">正在重新处理...</span>
-                </div>
-            `;
-        }
+        processingStatus.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <div class="spinner" style="width: 16px; height: 16px; border: 2px solid #f3f3f3; border-top: 2px solid #2196F3; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                <span style="color: #2196F3;">正在重新识别OCR...</span>
+            </div>
+        `;
     }
     
-    // 🔥 关键：准备数据，使用当前图片状态（包括旋转后的图片）
+    // 准备数据
     const processingData = {
         drawings: uploadedDrawings.map(drawing => {
-            // 移除data URL前缀，只保留base64数据
             const base64Data = drawing.dataUrl.split(',')[1];
             return {
                 name: drawing.name,
                 type: drawing.type,
                 size: drawing.size,
                 data: base64Data,
-                rotation: drawing.rotation || 0  // 包含旋转信息
+                rotation: drawing.rotation || 0
             };
         }),
         specification: specificationInput.value.trim(),
-        // 添加AI模式配置
         ai_mode: aiConfig.aiMode,
         model_name: aiConfig.model,
         custom_prompt: aiConfig.prompt
     };
     
-    console.log(`🔄 重新处理 ${uploadedDrawings.length} 张图片（包含旋转状态）`);
+    console.log(`🔄 重新识别OCR：${uploadedDrawings.length} 张图片`);
     uploadedDrawings.forEach((d, i) => {
         if (d.rotation) {
             console.log(`  图片 ${i}: ${d.name} - 旋转 ${d.rotation}°`);
         }
     });
     
-    // 设置超时时间(AI模式60秒,规则模式30秒)
     const timeoutMs = aiConfig.aiMode ? 60000 : 30000;
     const timeoutId = setTimeout(() => {
-        if (window.currentProgressInterval) {
-            clearInterval(window.currentProgressInterval);
-        }
-        
         if (processingStatus) {
             processingStatus.innerHTML = `
                 <div style="color: #856404; background-color: #fff3cd; padding: 10px; border-radius: 4px; border: 1px solid #ffeaa7;">
-                    ⚠️ 处理超时,请重试或缩短说明书长度
+                    ⚠️ 处理超时,请重试
                 </div>
             `;
         }
-        
-        // 重新启用按钮
-        if (reprocessBtn) {
-            reprocessBtn.disabled = false;
-            reprocessBtn.style.opacity = '1';
-            reprocessBtn.style.cursor = 'pointer';
-        }
-        if (startBtn) {
-            startBtn.disabled = false;
-            startBtn.style.opacity = '1';
-            startBtn.style.cursor = 'pointer';
-        }
+        [reprocessOcrBtn, reprocessSpecBtn, startBtn].forEach(btn => {
+            if (btn) {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            }
+        });
     }, timeoutMs);
     
-    // 获取API Key（AI模式需要）
     const apiKey = appState?.apiKey || localStorage.getItem('zhipuai_api_key') || '';
+    const headers = { 'Content-Type': 'application/json' };
     
-    // 准备请求头
-    const headers = {
-        'Content-Type': 'application/json'
-    };
-    
-    // 如果是AI模式，必须添加Authorization header
     if (aiConfig.aiMode) {
         if (!apiKey) {
-            if (processingStatus) {
-                processingStatus.innerHTML = `
-                    <div style="color: #721c24; background-color: #f8d7da; padding: 10px; border-radius: 4px; border: 1px solid #f5c6cb;">
-                        ❌ AI模式需要API Key
-                    </div>
-                `;
-            }
-            alert('AI模式需要配置API Key。请点击右上角⚙️设置并保存您的智谱AI API Key。');
-            
-            // 重新启用按钮
-            if (reprocessBtn) {
-                reprocessBtn.disabled = false;
-                reprocessBtn.style.opacity = '1';
-                reprocessBtn.style.cursor = 'pointer';
-            }
-            if (startBtn) {
-                startBtn.disabled = false;
-                startBtn.style.opacity = '1';
-                startBtn.style.cursor = 'pointer';
-            }
+            alert('AI模式需要配置API Key。');
+            [reprocessOcrBtn, reprocessSpecBtn, startBtn].forEach(btn => {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                    btn.style.cursor = 'pointer';
+                }
+            });
             return;
         }
         headers['Authorization'] = `Bearer ${apiKey}`;
     }
     
-    // 调用后端API进行处理
     fetch('/api/drawing-marker/process', {
         method: 'POST',
         headers: headers,
@@ -2740,36 +2701,20 @@ function reprocessCurrentImages() {
     })
     .then(response => {
         clearTimeout(timeoutId);
-        if (window.currentProgressInterval) {
-            clearInterval(window.currentProgressInterval);
-        }
         return response.json();
     })
     .then(data => {
         if (data.success && data.data) {
             displayProcessingResult(data.data, aiConfig.aiMode);
-            
-            // 显示成功提示
             if (processingStatus) {
-                processingStatus.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;"><polyline points="20 6 9 17 4 12"></polyline></svg> 重新处理完成';
-                processingStatus.style.color = '#ff9800';
+                processingStatus.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;"><polyline points="20 6 9 17 4 12"></polyline></svg> OCR识别完成';
+                processingStatus.style.color = '#2196F3';
             }
         } else {
-            // 处理失败
             if (processingStatus) {
                 processingStatus.innerHTML = `
                     <div style="color: #721c24; background-color: #f8d7da; padding: 10px; border-radius: 4px; border: 1px solid #f5c6cb;">
-                        ❌ 重新处理失败
-                    </div>
-                `;
-            }
-            
-            const processingResult = document.getElementById('processing_result');
-            if (processingResult) {
-                processingResult.innerHTML = `
-                    <div style="padding: 15px; background-color: rgba(220, 53, 69, 0.1); border-radius: 8px; border: 1px solid rgba(220, 53, 69, 0.3);">
-                        <h4 style="color: var(--error-color); margin-bottom: 10px;">❌ 重新处理失败</h4>
-                        <p>${data.error || '未知错误'}</p>
+                        ❌ OCR识别失败
                     </div>
                 `;
             }
@@ -2777,11 +2722,7 @@ function reprocessCurrentImages() {
     })
     .catch(error => {
         clearTimeout(timeoutId);
-        if (window.currentProgressInterval) {
-            clearInterval(window.currentProgressInterval);
-        }
-        
-        console.error('重新处理失败:', error);
+        console.error('OCR识别失败:', error);
         if (processingStatus) {
             processingStatus.innerHTML = `
                 <div style="color: #721c24; background-color: #f8d7da; padding: 10px; border-radius: 4px; border: 1px solid #f5c6cb;">
@@ -2789,30 +2730,127 @@ function reprocessCurrentImages() {
                 </div>
             `;
         }
-        
-        const processingResult = document.getElementById('processing_result');
-        if (processingResult) {
-            processingResult.innerHTML = `
-                <div style="padding: 15px; background-color: rgba(220, 53, 69, 0.1); border-radius: 8px; border: 1px solid rgba(220, 53, 69, 0.3);">
-                    <h4 style="color: var(--error-color); margin-bottom: 10px;">❌ 重新处理失败</h4>
-                    <p>网络错误或服务器问题，请重试。</p>
-                </div>
-            `;
-        }
     })
     .finally(() => {
-        // 重新启用按钮
-        if (reprocessBtn) {
-            reprocessBtn.disabled = false;
-            reprocessBtn.style.opacity = '1';
-            reprocessBtn.style.cursor = 'pointer';
+        [reprocessOcrBtn, reprocessSpecBtn, startBtn].forEach(btn => {
+            if (btn) {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            }
+        });
+    });
+}
+
+// 🆕 重新匹配说明书（使用已缓存的OCR结果）
+function reprocessSpecification() {
+    // 表单验证
+    const specificationInput = document.getElementById('specification_input');
+    if (!specificationInput || specificationInput.value.trim() === '') {
+        alert('请输入说明书内容。');
+        return;
+    }
+    
+    // 检查是否有缓存的OCR结果
+    let hasCachedOCR = false;
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('processing_cache_')) {
+            try {
+                const cached = JSON.parse(localStorage.getItem(key));
+                if (cached && cached.data && cached.data.ocr_detected_count > 0) {
+                    hasCachedOCR = true;
+                    break;
+                }
+            } catch (e) {
+                // 忽略解析错误
+            }
         }
-        if (startBtn) {
-            startBtn.disabled = false;
-            startBtn.style.opacity = '1';
-            startBtn.style.cursor = 'pointer';
+    }
+    
+    if (!hasCachedOCR) {
+        alert('没有找到缓存的OCR识别结果。请先点击"识别OCR"或"开始处理"按钮。');
+        return;
+    }
+    
+    console.log('🔄 重新匹配说明书：使用缓存的OCR结果');
+    
+    // 禁用所有处理按钮
+    const reprocessOcrBtn = document.getElementById('reprocess_ocr_btn');
+    const reprocessSpecBtn = document.getElementById('reprocess_spec_btn');
+    const startBtn = document.getElementById('start_processing_btn');
+    
+    [reprocessOcrBtn, reprocessSpecBtn, startBtn].forEach(btn => {
+        if (btn) {
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+            btn.style.cursor = 'not-allowed';
         }
     });
+    
+    // 显示进度反馈
+    const processingStatus = document.getElementById('processing_status');
+    if (processingStatus) {
+        processingStatus.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <div class="spinner" style="width: 16px; height: 16px; border: 2px solid #f3f3f3; border-top: 2px solid #9C27B0; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                <span style="color: #9C27B0;">正在重新匹配说明书...</span>
+            </div>
+        `;
+    }
+    
+    // 使用 DrawingReprocessManager 重新匹配说明书
+    if (window.reprocessManager) {
+        const newSpecification = specificationInput.value.trim();
+        
+        window.reprocessManager.reprocessSpecification(newSpecification)
+            .then(result => {
+                if (result) {
+                    displayProcessingResult(result, false);
+                    if (processingStatus) {
+                        processingStatus.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;"><polyline points="20 6 9 17 4 12"></polyline></svg> 说明书匹配完成';
+                        processingStatus.style.color = '#9C27B0';
+                    }
+                    console.log('✅ 说明书重新匹配完成');
+                } else {
+                    if (processingStatus) {
+                        processingStatus.innerHTML = `
+                            <div style="color: #721c24; background-color: #f8d7da; padding: 10px; border-radius: 4px; border: 1px solid #f5c6cb;">
+                                ❌ 说明书匹配失败
+                            </div>
+                        `;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('说明书匹配失败:', error);
+                if (processingStatus) {
+                    processingStatus.innerHTML = `
+                        <div style="color: #721c24; background-color: #f8d7da; padding: 10px; border-radius: 4px; border: 1px solid #f5c6cb;">
+                            ❌ 处理失败: ${error.message}
+                        </div>
+                    `;
+                }
+            })
+            .finally(() => {
+                [reprocessOcrBtn, reprocessSpecBtn, startBtn].forEach(btn => {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.style.opacity = '1';
+                        btn.style.cursor = 'pointer';
+                    }
+                });
+            });
+    } else {
+        alert('重新处理管理器未初始化，请刷新页面重试。');
+        [reprocessOcrBtn, reprocessSpecBtn, startBtn].forEach(btn => {
+            if (btn) {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            }
+        });
+    }
 }
 
 // 显示处理结果 - 使用真实API返回的数据
