@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>功能八图片上传测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+        .upload-area {
+            border: 2px dashed #28a745;
+            border-radius: 6px;
+            padding: 30px;
+            text-align: center;
+            background-color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-area:hover {
+            background-color: #f0f8f0;
+            border-color: #20c997;
+        }
+        .status {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #e3f2fd;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .image-list {
+            margin-top: 15px;
+        }
+        .image-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+        .image-item img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 功能八图片上传问题诊断</h1>
+    
+    <div class="test-section">
+        <h2>测试1：基础文件输入</h2>
+        <input type="file" id="basicInput" accept="image/*" multiple>
+        <div class="status" id="status1">等待选择文件...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>测试2：隐藏输入+点击触发</h2>
+        <input type="file" id="hiddenInput" accept="image/*" multiple style="display: none;">
+        <div class="upload-area" id="clickArea">
+            <p>点击此处上传图片</p>
+        </div>
+        <div class="status" id="status2">等待点击...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>测试3：模拟主界面结构</h2>
+        <input type="file" id="drawing_upload_input" accept="image/*" multiple style="display: none;">
+        <div id="drawing_paste_area" class="upload-area">
+            <p>点击或粘贴图片</p>
+        </div>
+        <div class="status" id="status3">等待操作...</div>
+        <div id="uploaded_drawings_list" class="image-list"></div>
+    </div>
+
+    <script>
+        // 测试1：基础文件输入
+        document.getElementById('basicInput').addEventListener('change', function(e) {
+            const files = e.target.files;
+            document.getElementById('status1').textContent = `✅ 选择了 ${files.length} 个文件`;
+            console.log('测试1成功:', files);
+        });
+
+        // 测试2：隐藏输入+点击触发
+        const hiddenInput = document.getElementById('hiddenInput');
+        const clickArea = document.getElementById('clickArea');
+        
+        clickArea.addEventListener('click', function() {
+            console.log('点击区域被点击');
+            document.getElementById('status2').textContent = '🔄 触发文件选择...';
+            hiddenInput.click();
+        });
+        
+        hiddenInput.addEventListener('change', function(e) {
+            const files = e.target.files;
+            document.getElementById('status2').textContent = `✅ 选择了 ${files.length} 个文件`;
+            console.log('测试2成功:', files);
+        });
+
+        // 测试3：模拟主界面
+        let uploadedDrawings = [];
+        
+        function initDrawingMarker() {
+            console.log('🚀 开始初始化...');
+            
+            const drawingUploadInput = document.getElementById('drawing_upload_input');
+            const drawingPasteArea = document.getElementById('drawing_paste_area');
+            
+            console.log('drawingUploadInput:', drawingUploadInput);
+            console.log('drawingPasteArea:', drawingPasteArea);
+            
+            if (!drawingUploadInput) {
+                console.error('❌ 找不到 drawing_upload_input');
+                document.getElementById('status3').textContent = '❌ 找不到上传输入框';
+                return;
+            }
+            
+            if (!drawingPasteArea) {
+                console.error('❌ 找不到 drawing_paste_area');
+                document.getElementById('status3').textContent = '❌ 找不到粘贴区域';
+                return;
+            }
+            
+            // 绑定change事件
+            drawingUploadInput.addEventListener('change', function(e) {
+                console.log('✅ change事件触发');
+                handleDrawingUpload(e);
+            });
+            
+            // 绑定click事件
+            drawingPasteArea.addEventListener('click', function() {
+                console.log('✅ 粘贴区域被点击');
+                document.getElementById('status3').textContent = '🔄 触发文件选择...';
+                drawingUploadInput.click();
+            });
+            
+            // 绑定paste事件
+            drawingPasteArea.addEventListener('paste', function(e) {
+                console.log('✅ paste事件触发');
+                handleDrawingPaste(e);
+            });
+            
+            console.log('✅ 初始化完成');
+            document.getElementById('status3').textContent = '✅ 初始化完成，可以点击上传';
+        }
+        
+        function handleDrawingUpload(event) {
+            console.log('handleDrawingUpload 被调用');
+            const files = event.target.files;
+            if (files.length === 0) return;
+            
+            document.getElementById('status3').textContent = `✅ 选择了 ${files.length} 个文件`;
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (file.type.startsWith('image/')) {
+                    processImageFile(file);
+                }
+            }
+            
+            event.target.value = '';
+        }
+        
+        function handleDrawingPaste(event) {
+            console.log('handleDrawingPaste 被调用');
+            const items = event.clipboardData.items;
+            if (!items) return;
+            
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.startsWith('image/')) {
+                    const file = items[i].getAsFile();
+                    processImageFile(file);
+                    break;
+                }
+            }
+        }
+        
+        function processImageFile(file) {
+            console.log('处理图片文件:', file.name);
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imageData = {
+                    id: Date.now() + Math.random(),
+                    name: file.name,
+                    dataUrl: e.target.result
+                };
+                
+                uploadedDrawings.push(imageData);
+                updateUploadedDrawingsList();
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function updateUploadedDrawingsList() {
+            const listContainer = document.getElementById('uploaded_drawings_list');
+            if (!listContainer) return;
+            
+            if (uploadedDrawings.length === 0) {
+                listContainer.innerHTML = '<div style="color: #999; text-align: center;">暂无图片</div>';
+                return;
+            }
+            
+            let html = '';
+            uploadedDrawings.forEach((drawing, index) => {
+                html += `
+                    <div class="image-item">
+                        <img src="${drawing.dataUrl}" alt="${drawing.name}">
+                        <div style="flex: 1;">
+                            <div>${drawing.name}</div>
+                        </div>
+                        <button onclick="removeDrawing(${index})">删除</button>
+                    </div>
+                `;
+            });
+            
+            listContainer.innerHTML = html;
+            document.getElementById('status3').textContent = `✅ 已上传 ${uploadedDrawings.length} 张图片`;
+        }
+        
+        function removeDrawing(index) {
+            uploadedDrawings.splice(index, 1);
+            updateUploadedDrawingsList();
+        }
+        
+        // 页面加载完成后初始化
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initDrawingMarker);
+        } else {
+            initDrawingMarker();
+        }
+    </script>
+</body>
+</html>
