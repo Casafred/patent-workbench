@@ -1,0 +1,58 @@
+功能六：分离事件时间轴和法律事件 + 字段选择器淡绿色系
+
+## 重要修复
+
+用户指出：事件时间轴（Events Timeline）和法律事件（Legal Events）是两个完全不同的字段！
+
+### Google Patents 实际结构：
+1. Events Timeline（事件时间轴）- <dd itemprop="events">
+   - 申请、公开、授权等关键事件
+2. Legal Events（法律事件）- <tr itemprop="legalEvents">
+   - USPTO法律状态代码（FEPP, STPP, AS等）
+
+## 修复内容
+
+### 1. 后端修改
+- 添加 events_timeline 字段到 SimplePatentData
+- 分离提取逻辑：
+  * events_timeline: 提取 <dd itemprop="events">
+  * legal_events: 提取 <tr itemprop="legalEvents">
+- 更新API版本到 2.1-events-timeline-split
+- 更新日志输出
+
+### 2. 前端修改
+- 添加 field_events_timeline checkbox
+- 修改 field_legal_events 标签为"法律事件"
+- 更新 getSelectedFields() 函数
+- 分别显示两个部分：
+  * events_timeline: Timeline样式（圆点、连线）
+  * legal_events: Table样式（表格）
+- 添加左侧导航链接
+
+### 3. 字段选择器颜色
+- 改为淡绿色系（用户需求）
+- 配色：#43a047 (主色), #2e7d32 (深色), #c8e6c9 (淡色)
+
+## 修改文件
+- backend/scraper/simple_scraper.py
+- backend/routes/patent.py
+- frontend/index.html
+- js/main.js
+- js/patentDetailNewTab.js
+- frontend/css/components/field-selector.css
+
+## 测试验证
+- ✅ 字段选择器有两个独立选项
+- ✅ 事件时间轴显示为Timeline样式
+- ✅ 法律事件显示为Table样式
+- ✅ 字段选择功能正常
+- ✅ 字段选择器淡绿色系
+
+## 技术细节
+- events_timeline: 关键事件（申请、公开、授权等）
+- legal_events: USPTO法律状态代码（FEPP, STPP, AS等）
+- 两个字段可以独立选择
+- 使用不同的显示样式以区分
+
+---
+修复时间：2026-02-05

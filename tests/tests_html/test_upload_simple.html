@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简单上传测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 40px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .upload-area {
+            border: 3px dashed #4CAF50;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            background: #f9f9f9;
+            margin: 20px 0;
+        }
+        .upload-btn {
+            background: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        .upload-btn:hover {
+            background: #45a049;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .image-preview {
+            margin: 20px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .image-preview img {
+            max-width: 200px;
+            max-height: 200px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 图片上传功能测试</h1>
+    
+    <div class="status" id="status">
+        等待上传图片...
+    </div>
+
+    <div class="upload-area">
+        <h2>📤 上传图片</h2>
+        <p>点击按钮选择图片文件</p>
+        <input type="file" id="fileInput" accept="image/*" multiple style="display: none;">
+        <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+            选择图片
+        </button>
+    </div>
+
+    <div class="image-preview" id="preview"></div>
+
+    <div style="margin-top: 30px; padding: 20px; background: #f5f5f5; border-radius: 8px;">
+        <h3>✅ 测试步骤</h3>
+        <ol>
+            <li>点击"选择图片"按钮</li>
+            <li>选择一张或多张图片</li>
+            <li>查看是否显示预览</li>
+            <li>查看状态信息</li>
+        </ol>
+        
+        <h3>🔍 如果没有反应</h3>
+        <ul>
+            <li>按 F12 打开开发者工具</li>
+            <li>查看 Console 标签是否有错误</li>
+            <li>尝试清除浏览器缓存</li>
+            <li>尝试使用无痕模式</li>
+        </ul>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const status = document.getElementById('status');
+        const preview = document.getElementById('preview');
+        let uploadCount = 0;
+
+        // 监听文件选择
+        fileInput.addEventListener('change', function(event) {
+            console.log('✅ 文件选择事件触发');
+            const files = event.target.files;
+            
+            if (files.length === 0) {
+                updateStatus('没有选择文件', 'error');
+                return;
+            }
+
+            updateStatus(`正在处理 ${files.length} 个文件...`, 'status');
+            
+            // 处理每个文件
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                console.log('处理文件:', file.name, file.type, file.size);
+                
+                if (file.type.startsWith('image/')) {
+                    processImage(file);
+                } else {
+                    updateStatus(`文件 ${file.name} 不是图片格式`, 'error');
+                }
+            }
+        });
+
+        function processImage(file) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                uploadCount++;
+                console.log('✅ 图片加载成功:', file.name);
+                
+                // 创建预览
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.title = file.name;
+                preview.appendChild(img);
+                
+                updateStatus(`✅ 成功上传 ${uploadCount} 张图片`, 'success');
+            };
+            
+            reader.onerror = function() {
+                console.error('❌ 图片加载失败:', file.name);
+                updateStatus(`❌ 加载失败: ${file.name}`, 'error');
+            };
+            
+            reader.readAsDataURL(file);
+        }
+
+        function updateStatus(message, type) {
+            status.textContent = message;
+            status.className = 'status ' + type;
+        }
+
+        // 页面加载完成
+        console.log('✅ 页面加载完成');
+        console.log('✅ 文件输入框:', fileInput);
+        console.log('✅ 事件监听器已绑定');
+    </script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+功能六：修复法律事件显示 + 字段选择器淡绿色系
+
+## 修复内容
+
+### 1. 法律事件显示问题修复
+- 问题：批量查询时法律事件不显示
+- 原因：前端未传递 selected_fields 参数给后端
+- 修复：在批量查询API调用中添加 selected_fields 参数
+- 文件：js/main.js (第530-540行)
+
+### 2. 字段选择器颜色修改
+- 需求：用户要求字段选择器改为淡绿色系
+- 修改：将所有蓝色系改为绿色系
+- 配色：#43a047 (主色), #2e7d32 (深色), #c8e6c9 (淡色), #e8f5e9 (极淡)
+- 文件：frontend/css/components/field-selector.css
+
+### 3. 字段对应关系验证
+- 验证前端checkbox ID与后端字段名一致
+- 验证getSelectedFields()函数返回正确字段
+- 验证显示逻辑使用正确字段名
+- 结论：所有字段对应关系正确，无需修改
+
+## 修改文件
+- js/main.js
+- frontend/css/components/field-selector.css
+
+## 测试验证
+- ✅ 法律事件正确显示
+- ✅ 字段选择器淡绿色系
+- ✅ 字段选择功能正常
+- ✅ 所有字段对应关系正确
+
+## 技术细节
+- 添加 getSelectedFields() 调用获取用户选择
+- 将 selected_fields 传递给 /patent/search API
+- 后端根据 selected_fields 返回对应数据
+- 前端根据返回数据显示对应字段
+
+---
+修复时间：2026-02-05

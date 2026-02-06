@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>功能八图片预览和旋转测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .container {
+            background-color: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .feature-badge {
+            display: inline-block;
+            background-color: #4caf50;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .upload-area {
+            border: 2px dashed #28a745;
+            border-radius: 6px;
+            padding: 30px;
+            text-align: center;
+            background-color: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+        .upload-area:hover {
+            background-color: #e8f5e9;
+            border-color: #20c997;
+        }
+        .features {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .features h3 {
+            color: #2196F3;
+            margin-top: 0;
+        }
+        .features ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .features li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖼️ 功能八图片预览和旋转测试</h1>
+        <span class="feature-badge">v2.0 - 预览 + 旋转修复</span>
+        
+        <div class="features">
+            <h3>🎯 新增功能</h3>
+            <ul>
+                <li>✅ <strong>鼠标悬浮预览</strong>：鼠标移到缩略图上自动显示大图</li>
+                <li>✅ <strong>点击预览大图</strong>：点击眼睛按钮查看全屏大图</li>
+                <li>✅ <strong>旋转角度修复</strong>：连续旋转角度正确累加</li>
+                <li>✅ <strong>旋转效果实时</strong>：每次旋转基于当前图片状态</li>
+                <li>✅ <strong>角度显示</strong>：实时显示当前旋转角度</li>
+            </ul>
+        </div>
+        
+        <input type="file" id="drawing_upload_input" accept="image/*" multiple style="display: none;">
+        <div id="drawing_paste_area" class="upload-area">
+            <p style="margin: 0; color: #28a745; font-size: 16px; font-weight: bold;">
+                📤 点击或粘贴图片
+            </p>
+            <p style="margin: 5px 0 0 0; color: #6c757d; font-size: 14px;">支持多张图片</p>
+        </div>
+        
+        <div id="uploaded_drawings_list" style="margin-top: 20px;">
+            <div style="color: #6c757d; font-size: 12px; text-align: center; padding: 10px;">暂无图片</div>
+        </div>
+        
+        <div style="margin-top: 20px; padding: 15px; background-color: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+            <h3 style="margin-top: 0; color: #856404;">📖 使用说明</h3>
+            <ol style="margin: 10px 0; padding-left: 20px; color: #856404;">
+                <li><strong>上传图片</strong>：点击上传区域或粘贴图片</li>
+                <li><strong>鼠标悬浮</strong>：鼠标移到缩略图上查看大图预览</li>
+                <li><strong>点击预览</strong>：点击 👁 按钮查看全屏大图</li>
+                <li><strong>旋转图片</strong>：点击 ↶ 或 ↷ 按钮旋转图片</li>
+                <li><strong>测试连续旋转</strong>：多次点击旋转按钮，角度应正确累加</li>
+                <li><strong>删除图片</strong>：点击 ✕ 按钮删除图片</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        let uploadedDrawings = [];
+        
+        // 初始化
+        function init() {
+            const drawingUploadInput = document.getElementById('drawing_upload_input');
+            const drawingPasteArea = document.getElementById('drawing_paste_area');
+            
+            // 点击上传
+            drawingPasteArea.addEventListener('click', () => {
+                drawingUploadInput.click();
+            });
+            
+            // 文件选择
+            drawingUploadInput.addEventListener('change', handleDrawingUpload);
+            
+            // 粘贴
+            drawingPasteArea.addEventListener('paste', handleDrawingPaste);
+        }
+        
+        function handleDrawingUpload(event) {
+            const files = event.target.files;
+            if (files.length === 0) return;
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (file.type.startsWith('image/')) {
+                    processImageFile(file);
+                }
+            }
+            
+            event.target.value = '';
+        }
+        
+        function handleDrawingPaste(event) {
+            const items = event.clipboardData.items;
+            if (!items) return;
+            
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.startsWith('image/')) {
+                    const file = items[i].getAsFile();
+                    processImageFile(file);
+                    break;
+                }
+            }
+        }
+        
+        function processImageFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imageData = {
+                    id: Date.now() + Math.random(),
+                    name: file.name,
+                    type: file.type,
+                    size: file.size,
+                    dataUrl: e.target.result,
+                    rotation: 0
+                };
+                
+                uploadedDrawings.push(imageData);
+                updateUploadedDrawingsList();
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // 更新上传图片列表
+        function updateUploadedDrawingsList() {
+            const listContainer = document.getElementById('uploaded_drawings_list');
+            if (!listContainer) return;
+
+            if (uploadedDrawings.length === 0) {
+                listContainer.innerHTML = '<div style="color: #6c757d; font-size: 12px; text-align: center; padding: 10px;">暂无图片</div>';
+                return;
+            }
+
+            let html = '<div style="display: flex; flex-direction: column; gap: 8px;">';
+            uploadedDrawings.forEach((drawing, index) => {
+                const sizeKB = (drawing.size / 1024).toFixed(1);
+                const rotation = drawing.rotation || 0;
+                html += `
+                    <div style="display: flex; align-items: center; gap: 10px; padding: 8px; background-color: white; border: 1px solid #dee2e6; border-radius: 6px; position: relative;">
+                        <div style="position: relative; width: 40px; height: 40px; flex-shrink: 0;">
+                            <img src="${drawing.dataUrl}" 
+                                 alt="${drawing.name}" 
+                                 class="drawing-thumbnail"
+                                 data-index="${index}"
+                                 style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; cursor: pointer; transition: transform 0.2s;">
+                        </div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-size: 12px; color: #495057; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${drawing.name}</div>
+                            <div style="font-size: 11px; color: #adb5bd;">${sizeKB} KB | 旋转: ${rotation}°</div>
+                        </div>
+                        <div style="display: flex; gap: 5px; flex-shrink: 0;">
+                            <button onclick="rotateDrawing(${index}, -90)" style="padding: 4px 8px; font-size: 11px; background-color: #ffc107; color: black; border: none; border-radius: 4px; cursor: pointer;" title="逆时针旋转90°">↶</button>
+                            <button onclick="rotateDrawing(${index}, 90)" style="padding: 4px 8px; font-size: 11px; background-color: #ffc107; color: black; border: none; border-radius: 4px; cursor: pointer;" title="顺时针旋转90°">↷</button>
+                            <button onclick="previewDrawing(${index})" style="padding: 4px 8px; font-size: 11px; background-color: #17a2b8; color: white; border: none; border-radius: 4px; cursor: pointer;" title="预览大图">👁</button>
+                            <button onclick="removeDrawing(${index})" style="padding: 4px 8px; font-size: 11px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;" title="删除">✕</button>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            listContainer.innerHTML = html;
+            
+            // 添加鼠标悬浮预览功能
+            setTimeout(() => {
+                document.querySelectorAll('.drawing-thumbnail').forEach(img => {
+                    img.addEventListener('mouseenter', showImagePreview);
+                    img.addEventListener('mouseleave', hideImagePreview);
+                });
+            }, 0);
+        }
+        
+        // 删除图片
+        function removeDrawing(index) {
+            uploadedDrawings.splice(index, 1);
+            updateUploadedDrawingsList();
+        }
+        
+        // 旋转图片（修复版）
+        function rotateDrawing(index, degrees) {
+            const drawing = uploadedDrawings[index];
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const image = new Image();
+            
+            image.onload = function() {
+                // 使用累加的旋转角度
+                const currentRotation = drawing.rotation || 0;
+                const newRotation = (currentRotation + degrees + 360) % 360;
+                
+                // 根据旋转角度决定画布尺寸
+                const isVertical = (newRotation === 90 || newRotation === 270);
+                canvas.width = isVertical ? image.height : image.width;
+                canvas.height = isVertical ? image.width : image.height;
+                
+                // 清空画布
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // 旋转并绘制
+                ctx.save();
+                ctx.translate(canvas.width / 2, canvas.height / 2);
+                ctx.rotate((degrees * Math.PI) / 180);
+                ctx.drawImage(image, -image.width / 2, -image.height / 2);
+                ctx.restore();
+                
+                // 更新图片数据
+                uploadedDrawings[index].dataUrl = canvas.toDataURL('image/png');
+                uploadedDrawings[index].rotation = newRotation;
+                
+                console.log(`✅ 图片 ${index} 旋转: ${currentRotation}° → ${newRotation}°`);
+                
+                // 更新列表显示
+                updateUploadedDrawingsList();
+            };
+            
+            // 关键：使用当前已旋转的图片作为基础
+            image.src = drawing.dataUrl;
+        }
+        
+        // 预览图片大图
+        function previewDrawing(index) {
+            const drawing = uploadedDrawings[index];
+            
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.9);
+                z-index: 10000;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                cursor: pointer;
+            `;
+            
+            const info = document.createElement('div');
+            info.style.cssText = `
+                color: white;
+                font-size: 16px;
+                margin-bottom: 20px;
+                text-align: center;
+                padding: 10px 20px;
+                background-color: rgba(0, 0, 0, 0.7);
+                border-radius: 8px;
+            `;
+            info.innerHTML = `
+                <div style="font-weight: bold; margin-bottom: 5px;">${drawing.name}</div>
+                <div style="font-size: 14px; color: #aaa;">
+                    大小: ${(drawing.size / 1024).toFixed(1)} KB | 
+                    旋转: ${drawing.rotation || 0}° | 
+                    点击任意处关闭
+                </div>
+            `;
+            
+            const img = document.createElement('img');
+            img.src = drawing.dataUrl;
+            img.style.cssText = `
+                max-width: 90%;
+                max-height: 80vh;
+                object-fit: contain;
+                border-radius: 8px;
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            `;
+            
+            modal.appendChild(info);
+            modal.appendChild(img);
+            
+            modal.addEventListener('click', () => {
+                modal.remove();
+            });
+            
+            const handleEsc = (e) => {
+                if (e.key === 'Escape') {
+                    modal.remove();
+                    document.removeEventListener('keydown', handleEsc);
+                }
+            };
+            document.addEventListener('keydown', handleEsc);
+            
+            document.body.appendChild(modal);
+        }
+        
+        // 鼠标悬浮显示预览
+        let previewTooltip = null;
+        function showImagePreview(event) {
+            const img = event.target;
+            const index = parseInt(img.dataset.index);
+            const drawing = uploadedDrawings[index];
+            
+            previewTooltip = document.createElement('div');
+            previewTooltip.style.cssText = `
+                position: fixed;
+                z-index: 9999;
+                background-color: white;
+                border: 2px solid #28a745;
+                border-radius: 8px;
+                padding: 10px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+                pointer-events: none;
+                max-width: 400px;
+            `;
+            
+            const previewImg = document.createElement('img');
+            previewImg.src = drawing.dataUrl;
+            previewImg.style.cssText = `
+                width: 300px;
+                height: auto;
+                display: block;
+                border-radius: 4px;
+            `;
+            
+            const previewInfo = document.createElement('div');
+            previewInfo.style.cssText = `
+                margin-top: 8px;
+                font-size: 12px;
+                color: #666;
+                text-align: center;
+            `;
+            previewInfo.textContent = `${drawing.name} | ${drawing.rotation || 0}°`;
+            
+            previewTooltip.appendChild(previewImg);
+            previewTooltip.appendChild(previewInfo);
+            document.body.appendChild(previewTooltip);
+            
+            const updatePosition = (e) => {
+                if (!previewTooltip) return;
+                const x = e.clientX + 20;
+                const y = e.clientY + 20;
+                
+                const maxX = window.innerWidth - previewTooltip.offsetWidth - 20;
+                const maxY = window.innerHeight - previewTooltip.offsetHeight - 20;
+                
+                previewTooltip.style.left = Math.min(x, maxX) + 'px';
+                previewTooltip.style.top = Math.min(y, maxY) + 'px';
+            };
+            
+            updatePosition(event);
+            img.addEventListener('mousemove', updatePosition);
+            img.dataset.mousemoveHandler = 'attached';
+        }
+        
+        function hideImagePreview(event) {
+            if (previewTooltip) {
+                previewTooltip.remove();
+                previewTooltip = null;
+            }
+            
+            const img = event.target;
+            if (img.dataset.mousemoveHandler) {
+                delete img.dataset.mousemoveHandler;
+            }
+        }
+        
+        // 初始化
+        init();
+        console.log('✅ 功能八图片预览和旋转测试页面已加载');
+    </script>
+</body>
+</html>

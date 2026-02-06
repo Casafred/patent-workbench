@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>组件加载器测试</title>
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        button {
+            padding: 8px 16px;
+            background: #4a6cf7;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #3a5ce7;
+        }
+        #component-target {
+            min-height: 100px;
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .log {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 组件加载器测试</h1>
+        
+        <div class="test-section">
+            <h3>测试1: 加载测试组件</h3>
+            <button onclick="testLoadComponent()">加载组件</button>
+            <button onclick="clearTarget()">清空</button>
+            <div id="component-target"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>测试2: 加载不存在的组件 (错误处理)</h3>
+            <button onclick="testLoadNonExistent()">加载不存在的组件</button>
+        </div>
+
+        <div class="test-section">
+            <h3>控制台日志</h3>
+            <div id="log" class="log"></div>
+        </div>
+    </div>
+
+    <script src="js/core/component-loader.js"></script>
+    <script>
+        // 拦截console.log以显示在页面上
+        const logDiv = document.getElementById('log');
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+
+        function addLog(type, ...args) {
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+            ).join(' ');
+            
+            const logEntry = document.createElement('div');
+            logEntry.style.color = type === 'error' ? 'red' : type === 'warn' ? 'orange' : 'black';
+            logEntry.textContent = `[${type.toUpperCase()}] ${message}`;
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addLog('log', ...args);
+        };
+
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addLog('error', ...args);
+        };
+
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addLog('warn', ...args);
+        };
+
+        // 测试函数
+        async function testLoadComponent() {
+            console.log('开始测试: 加载组件');
+            // 创建一个简单的测试组件
+            const testHtml = '<div style="padding: 10px; background: #e3f2fd; border-radius: 4px;"><strong>✓ 测试组件加载成功!</strong><br>这是一个动态加载的HTML组件。</div>';
+            
+            // 模拟组件文件 (实际应用中会从服务器加载)
+            const blob = new Blob([testHtml], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            
+            const success = await loadComponent(url, 'component-target');
+            console.log('加载结果:', success ? '成功' : '失败');
+            
+            URL.revokeObjectURL(url);
+        }
+
+        async function testLoadNonExistent() {
+            console.log('开始测试: 加载不存在的组件');
+            const success = await loadComponent('frontend/components/non-existent.html', 'component-target');
+            console.log('加载结果:', success ? '成功' : '失败 (预期)');
+        }
+
+        function clearTarget() {
+            document.getElementById('component-target').innerHTML = '';
+            console.log('已清空目标区域');
+        }
+
+        console.log('组件加载器测试页面已就绪');
+    </script>
+</body>
+</html>
