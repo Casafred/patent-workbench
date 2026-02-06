@@ -1050,7 +1050,7 @@ class MultiImageViewerV8 {
             const textWidth = ctx.measureText(text).width;
             const textHeight = this.currentFontSize * 1.5;
 
-            // 计算离标记点最近的边框
+            // 计算离标记点最近的边框及距离
             const distances = {
                 top: detected.y,
                 right: canvasWidth - detected.x,
@@ -1062,28 +1062,41 @@ class MultiImageViewerV8 {
             let closestRegion = Object.keys(distances).reduce((a, b) => distances[a] < distances[b] ? a : b);
             let labelX, labelY;
 
-            // 首先将文本框放在靠近原图标记的位置
-            // 然后向最近的边框方向移动
+            // 🆕 新算法：标记文字框在识别标记旁边，然后向最近边界移动三分之一距离
+            const moveDistance = distances[closestRegion] / 3; // 向最近边界移动三分之一距离
+            
             switch (closestRegion) {
                 case 'top':
-                    // 向上移动，保持x坐标接近标记点
-                    labelX = Math.max(textWidth / 2 + 10, Math.min(canvasWidth - textWidth / 2 - 10, detected.x));
-                    labelY = Math.max(textHeight / 2 + 10, edgeMargin);
+                    // 从标记点向上移动三分之一距离
+                    labelX = detected.x;
+                    labelY = detected.y - moveDistance;
+                    // 边界限制
+                    labelX = Math.max(textWidth / 2 + 10, Math.min(canvasWidth - textWidth / 2 - 10, labelX));
+                    labelY = Math.max(textHeight / 2 + 10, labelY);
                     break;
                 case 'right':
-                    // 向右移动，保持y坐标接近标记点
-                    labelX = Math.min(canvasWidth - textWidth / 2 - 10, canvasWidth - edgeMargin);
-                    labelY = Math.max(textHeight / 2 + 10, Math.min(canvasHeight - textHeight / 2 - 10, detected.y));
+                    // 从标记点向右移动三分之一距离
+                    labelX = detected.x + moveDistance;
+                    labelY = detected.y;
+                    // 边界限制
+                    labelX = Math.min(canvasWidth - textWidth / 2 - 10, labelX);
+                    labelY = Math.max(textHeight / 2 + 10, Math.min(canvasHeight - textHeight / 2 - 10, labelY));
                     break;
                 case 'bottom':
-                    // 向下移动，保持x坐标接近标记点
-                    labelX = Math.max(textWidth / 2 + 10, Math.min(canvasWidth - textWidth / 2 - 10, detected.x));
-                    labelY = Math.min(canvasHeight - textHeight / 2 - 10, canvasHeight - edgeMargin);
+                    // 从标记点向下移动三分之一距离
+                    labelX = detected.x;
+                    labelY = detected.y + moveDistance;
+                    // 边界限制
+                    labelX = Math.max(textWidth / 2 + 10, Math.min(canvasWidth - textWidth / 2 - 10, labelX));
+                    labelY = Math.min(canvasHeight - textHeight / 2 - 10, labelY);
                     break;
                 case 'left':
-                    // 向左移动，保持y坐标接近标记点
-                    labelX = Math.max(textWidth / 2 + 10, edgeMargin);
-                    labelY = Math.max(textHeight / 2 + 10, Math.min(canvasHeight - textHeight / 2 - 10, detected.y));
+                    // 从标记点向左移动三分之一距离
+                    labelX = detected.x - moveDistance;
+                    labelY = detected.y;
+                    // 边界限制
+                    labelX = Math.max(textWidth / 2 + 10, labelX);
+                    labelY = Math.max(textHeight / 2 + 10, Math.min(canvasHeight - textHeight / 2 - 10, labelY));
                     break;
             }
 
