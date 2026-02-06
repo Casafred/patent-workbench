@@ -1685,13 +1685,20 @@
 
                             <!-- 操作按钮 -->
                             <div style="display: flex; gap: 10px;">
-                                <button id="start_processing_btn" class="action-button" style="flex: 1; padding: 12px; font-size: 14px; font-weight: bold; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border: none; color: white; border-radius: 6px; cursor: pointer; transition: all 0.3s;">
+                                <button id="start_processing_btn" class="action-button" style="flex: 1; padding: 12px; font-size: 14px; font-weight: bold; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border: none; color: white; border-radius: 6px; cursor: pointer; transition: all 0.3s;" title="首次处理图片和说明书">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;">
                                         <polygon points="5 3 19 12 5 21 5 3"></polygon>
                                     </svg>
                                     开始处理
                                 </button>
-                                <button id="clear_all_btn" class="small-button delete-button" style="padding: 12px 15px; background-color: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                                <button id="reprocess_btn" class="action-button" style="flex: 1; padding: 12px; font-size: 14px; font-weight: bold; background: linear-gradient(135deg, #ff9800 0%, #ff6f00 100%); border: none; color: white; border-radius: 6px; cursor: pointer; transition: all 0.3s;" title="使用当前图片状态（包括旋转）重新识别OCR和处理说明书">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;">
+                                        <polyline points="23 4 23 10 17 10"></polyline>
+                                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                                    </svg>
+                                    重新处理
+                                </button>
+                                <button id="clear_all_btn" class="small-button delete-button" style="padding: 12px 15px; background-color: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer;" title="清空所有图片和说明书">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <polyline points="3 6 5 6 21 6"></polyline>
                                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -1798,20 +1805,47 @@ function initDrawingMarker() {
         startProcessingBtn.addEventListener('click', startProcessing);
     }
 
+    // 🆕 重新处理按钮事件监听
+    const reprocessBtn = document.getElementById('reprocess_btn');
+    if (reprocessBtn) {
+        reprocessBtn.addEventListener('click', reprocessCurrentImages);
+    }
+
     // 清空所有按钮事件监听
     const clearAllBtn = document.getElementById('clear_all_btn');
     if (clearAllBtn) {
         clearAllBtn.addEventListener('click', clearAllDrawings);
     }
     
+    // 🔥 新增：监听说明书输入变化
+    const specificationInput = document.getElementById('specification_input');
+    if (specificationInput) {
+        let specificationChangeTimeout;
+        specificationInput.addEventListener('input', () => {
+            // 防抖：用户停止输入1秒后才清除缓存
+            clearTimeout(specificationChangeTimeout);
+            specificationChangeTimeout = setTimeout(() => {
+                clearCacheOnInputChange('说明书内容');
+            }, 1000);
+        });
+    }
+    
     // 尝试恢复缓存的处理结果
     restoreCachedProcessingResult();
 }
 
-// 尝试恢复缓存的处理结果
+// 尝试恢复缓存的处理结果（改进版：检测输入变化）
 function restoreCachedProcessingResult() {
     const specificationInput = document.getElementById('specification_input');
     if (!specificationInput) return;
+    
+    // 🔥 新增：检查是否有手动保存的缓存标记
+    const hasSavedCache = localStorage.getItem('drawing_cache_saved') === 'true';
+    
+    if (!hasSavedCache) {
+        console.log('⚠️ 没有手动保存的缓存，跳过自动恢复');
+        return;
+    }
     
     // 尝试从localStorage恢复处理结果
     try {
@@ -1851,7 +1885,7 @@ function restoreCachedProcessingResult() {
         
         // 如果找到最新的缓存
         if (latestCache) {
-            console.log('发现最新的缓存，尝试恢复...', latestCacheKey);
+            console.log('✅ 发现手动保存的缓存，尝试恢复...', latestCacheKey);
             
             // 恢复上传的图片
             if (latestCache.uploadedDrawings) {
@@ -1935,8 +1969,41 @@ function processImageFile(file) {
         
         uploadedDrawings.push(imageData);
         updateUploadedDrawingsList();
+        
+        // 🔥 新增：图片变化时清除缓存标记
+        clearCacheOnInputChange('图片上传');
     };
     reader.readAsDataURL(file);
+}
+
+// 🔥 新增：当输入发生变化时清除缓存
+function clearCacheOnInputChange(changeType) {
+    // 清除保存标记
+    localStorage.removeItem('drawing_cache_saved');
+    
+    // 清除所有处理缓存
+    let removedCount = 0;
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith('processing_cache_') || key.startsWith('cache_'))) {
+            localStorage.removeItem(key);
+            removedCount++;
+        }
+    }
+    
+    console.log(`🔄 ${changeType}变化，已清除 ${removedCount} 个缓存`);
+    
+    // 清空标注结果显示
+    const annotatedDrawingsContainer = document.getElementById('annotated_drawings_container');
+    if (annotatedDrawingsContainer) {
+        annotatedDrawingsContainer.innerHTML = '<div style="color: #6c757d; font-size: 14px; text-align: center; padding: 40px; background-color: #f8f9fa; border-radius: 6px; border: 2px dashed #dee2e6;"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom: 10px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><div>处理完成后，标注后的附图将显示在此处</div></div>';
+    }
+    
+    // 清空处理结果
+    const processingResult = document.getElementById('processing_result');
+    if (processingResult) {
+        processingResult.innerHTML = '<div style="color: #6c757d; font-size: 14px; text-align: center; padding: 20px; background-color: #f8f9fa; border-radius: 6px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> 请上传图片和输入说明书，然后点击"开始处理"</div>';
+    }
 }
 
 // 更新上传图片列表
@@ -1954,16 +2021,23 @@ function updateUploadedDrawingsList() {
         const sizeKB = (drawing.size / 1024).toFixed(1);
         const rotation = drawing.rotation || 0;
         html += `
-            <div style="display: flex; align-items: center; gap: 10px; padding: 8px; background-color: white; border: 1px solid #dee2e6; border-radius: 6px;">
-                <img src="${drawing.dataUrl}" alt="${drawing.name}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; flex-shrink: 0; transform: rotate(${rotation}deg);">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px; background-color: white; border: 1px solid #dee2e6; border-radius: 6px; position: relative;">
+                <div style="position: relative; width: 40px; height: 40px; flex-shrink: 0;">
+                    <img src="${drawing.dataUrl}" 
+                         alt="${drawing.name}" 
+                         class="drawing-thumbnail"
+                         data-index="${index}"
+                         style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; cursor: pointer; transition: transform 0.2s;">
+                </div>
                 <div style="flex: 1; min-width: 0;">
                     <div style="font-size: 12px; color: #495057; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${drawing.name}</div>
                     <div style="font-size: 11px; color: #adb5bd;">${sizeKB} KB | 旋转: ${rotation}°</div>
                 </div>
                 <div style="display: flex; gap: 5px; flex-shrink: 0;">
-                    <button onclick="rotateDrawing(${index}, -90)" style="padding: 4px 8px; font-size: 11px; background-color: #ffc107; color: black; border: none; border-radius: 4px; cursor: pointer;">↶</button>
-                    <button onclick="rotateDrawing(${index}, 90)" style="padding: 4px 8px; font-size: 11px; background-color: #ffc107; color: black; border: none; border-radius: 4px; cursor: pointer;">↷</button>
-                    <button onclick="removeDrawing(${index})" style="padding: 4px 8px; font-size: 11px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">删除</button>
+                    <button onclick="rotateDrawing(${index}, -90)" style="padding: 4px 8px; font-size: 11px; background-color: #ffc107; color: black; border: none; border-radius: 4px; cursor: pointer;" title="逆时针旋转90°">↶</button>
+                    <button onclick="rotateDrawing(${index}, 90)" style="padding: 4px 8px; font-size: 11px; background-color: #ffc107; color: black; border: none; border-radius: 4px; cursor: pointer;" title="顺时针旋转90°">↷</button>
+                    <button onclick="previewDrawing(${index})" style="padding: 4px 8px; font-size: 11px; background-color: #17a2b8; color: white; border: none; border-radius: 4px; cursor: pointer;" title="预览大图">👁</button>
+                    <button onclick="removeDrawing(${index})" style="padding: 4px 8px; font-size: 11px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;" title="删除">✕</button>
                 </div>
             </div>
         `;
@@ -1971,41 +2045,50 @@ function updateUploadedDrawingsList() {
     html += '</div>';
     
     listContainer.innerHTML = html;
+    
+    // 添加鼠标悬浮预览功能
+    setTimeout(() => {
+        document.querySelectorAll('.drawing-thumbnail').forEach(img => {
+            img.addEventListener('mouseenter', showImagePreview);
+            img.addEventListener('mouseleave', hideImagePreview);
+        });
+    }, 0);
 }
 
 // 删除单个图片
 function removeDrawing(index) {
     uploadedDrawings.splice(index, 1);
     updateUploadedDrawingsList();
+    
+    // 🔥 新增：图片删除时清除缓存
+    clearCacheOnInputChange('图片删除');
 }
 
-// 旋转图片
+// 旋转图片（修复版：每次旋转90度，累加角度）
 function rotateDrawing(index, degrees) {
+    const drawing = uploadedDrawings[index];
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const image = new Image();
     
     image.onload = function() {
-        const rotation = uploadedDrawings[index].rotation || 0;
-        const newRotation = (rotation + degrees) % 360;
+        // 🔥 修复：使用累加的旋转角度
+        const currentRotation = drawing.rotation || 0;
+        const newRotation = (currentRotation + degrees + 360) % 360; // 确保角度在0-360之间
         
-        // 计算旋转后的画布尺寸
-        let canvasWidth, canvasHeight;
-        if (Math.abs(newRotation) === 90 || Math.abs(newRotation) === 270) {
-            canvasWidth = image.height;
-            canvasHeight = image.width;
-        } else {
-            canvasWidth = image.width;
-            canvasHeight = image.height;
-        }
+        // 🔥 修复：根据旋转角度决定画布尺寸
+        // 90度和270度时需要交换宽高
+        const isVertical = (newRotation === 90 || newRotation === 270);
+        canvas.width = isVertical ? image.height : image.width;
+        canvas.height = isVertical ? image.width : image.height;
         
-        canvas.width = canvasWidth;
-        canvas.height = canvasHeight;
+        // 清空画布
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // 旋转画布并绘制图片
+        // 旋转并绘制
         ctx.save();
-        ctx.translate(canvasWidth / 2, canvasHeight / 2);
-        ctx.rotate((newRotation * Math.PI) / 180);
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate((degrees * Math.PI) / 180); // 🔥 修复：只旋转增量角度
         ctx.drawImage(image, -image.width / 2, -image.height / 2);
         ctx.restore();
         
@@ -2013,11 +2096,163 @@ function rotateDrawing(index, degrees) {
         uploadedDrawings[index].dataUrl = canvas.toDataURL('image/png');
         uploadedDrawings[index].rotation = newRotation;
         
+        console.log(`图片 ${index} 旋转: ${currentRotation}° → ${newRotation}°`);
+        
         // 更新列表显示
         updateUploadedDrawingsList();
+        
+        // 🔥 新增：图片旋转时清除缓存
+        clearCacheOnInputChange('图片旋转');
     };
     
-    image.src = uploadedDrawings[index].dataUrl;
+    // 🔥 关键：使用当前已旋转的图片作为基础
+    image.src = drawing.dataUrl;
+}
+
+// 预览图片大图
+function previewDrawing(index) {
+    const drawing = uploadedDrawings[index];
+    
+    // 创建预览弹窗
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.9);
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+    `;
+    
+    // 图片信息
+    const info = document.createElement('div');
+    info.style.cssText = `
+        color: white;
+        font-size: 16px;
+        margin-bottom: 20px;
+        text-align: center;
+        padding: 10px 20px;
+        background-color: rgba(0, 0, 0, 0.7);
+        border-radius: 8px;
+    `;
+    info.innerHTML = `
+        <div style="font-weight: bold; margin-bottom: 5px;">${drawing.name}</div>
+        <div style="font-size: 14px; color: #aaa;">
+            大小: ${(drawing.size / 1024).toFixed(1)} KB | 
+            旋转: ${drawing.rotation || 0}° | 
+            点击任意处关闭
+        </div>
+    `;
+    
+    // 大图
+    const img = document.createElement('img');
+    img.src = drawing.dataUrl;
+    img.style.cssText = `
+        max-width: 90%;
+        max-height: 80vh;
+        object-fit: contain;
+        border-radius: 8px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    `;
+    
+    modal.appendChild(info);
+    modal.appendChild(img);
+    
+    // 点击关闭
+    modal.addEventListener('click', () => {
+        modal.remove();
+    });
+    
+    // ESC键关闭
+    const handleEsc = (e) => {
+        if (e.key === 'Escape') {
+            modal.remove();
+            document.removeEventListener('keydown', handleEsc);
+        }
+    };
+    document.addEventListener('keydown', handleEsc);
+    
+    document.body.appendChild(modal);
+}
+
+// 鼠标悬浮显示预览
+let previewTooltip = null;
+function showImagePreview(event) {
+    const img = event.target;
+    const index = parseInt(img.dataset.index);
+    const drawing = uploadedDrawings[index];
+    
+    // 创建预览提示框
+    previewTooltip = document.createElement('div');
+    previewTooltip.style.cssText = `
+        position: fixed;
+        z-index: 9999;
+        background-color: white;
+        border: 2px solid #28a745;
+        border-radius: 8px;
+        padding: 10px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        pointer-events: none;
+        max-width: 400px;
+    `;
+    
+    const previewImg = document.createElement('img');
+    previewImg.src = drawing.dataUrl;
+    previewImg.style.cssText = `
+        width: 300px;
+        height: auto;
+        display: block;
+        border-radius: 4px;
+    `;
+    
+    const previewInfo = document.createElement('div');
+    previewInfo.style.cssText = `
+        margin-top: 8px;
+        font-size: 12px;
+        color: #666;
+        text-align: center;
+    `;
+    previewInfo.textContent = `${drawing.name} | ${drawing.rotation || 0}°`;
+    
+    previewTooltip.appendChild(previewImg);
+    previewTooltip.appendChild(previewInfo);
+    document.body.appendChild(previewTooltip);
+    
+    // 定位预览框（跟随鼠标）
+    const updatePosition = (e) => {
+        if (!previewTooltip) return;
+        const x = e.clientX + 20;
+        const y = e.clientY + 20;
+        
+        // 防止超出屏幕
+        const maxX = window.innerWidth - previewTooltip.offsetWidth - 20;
+        const maxY = window.innerHeight - previewTooltip.offsetHeight - 20;
+        
+        previewTooltip.style.left = Math.min(x, maxX) + 'px';
+        previewTooltip.style.top = Math.min(y, maxY) + 'px';
+    };
+    
+    updatePosition(event);
+    img.addEventListener('mousemove', updatePosition);
+    img.dataset.mousemoveHandler = 'attached';
+}
+
+function hideImagePreview(event) {
+    if (previewTooltip) {
+        previewTooltip.remove();
+        previewTooltip = null;
+    }
+    
+    const img = event.target;
+    if (img.dataset.mousemoveHandler) {
+        delete img.dataset.mousemoveHandler;
+    }
 }
 
 // 清空所有图片
@@ -2094,17 +2329,8 @@ function startProcessing() {
         return;
     }
     
-    // 清除所有旧的处理缓存，确保使用最新的处理结果
-    console.log('开始清除旧缓存...');
-    let removedCount = 0;
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && (key.startsWith('processing_cache_') || key.startsWith('cache_'))) {
-            localStorage.removeItem(key);
-            removedCount++;
-        }
-    }
-    console.log(`已清除 ${removedCount} 个旧缓存，将使用最新处理结果`);
+    // 🔥 修改：不再自动清除缓存，而是在输入变化时清除
+    console.log('开始处理，使用当前输入...');
     
     // 获取AI处理配置
     const aiConfig = window.aiProcessingPanel ? window.aiProcessingPanel.getConfig() : { aiMode: false };
@@ -2326,13 +2552,276 @@ function startProcessing() {
     });
 }
 
+// 🆕 重新处理当前图片（使用当前状态，包括旋转）
+function reprocessCurrentImages() {
+    // 表单验证
+    if (uploadedDrawings.length === 0) {
+        alert('请先上传或粘贴专利附图。');
+        return;
+    }
+    
+    const specificationInput = document.getElementById('specification_input');
+    if (!specificationInput || specificationInput.value.trim() === '') {
+        alert('请输入说明书内容。');
+        return;
+    }
+    
+    // 🔥 关键：清除缓存，强制重新处理
+    console.log('🔄 重新处理：清除缓存，使用当前图片状态（包括旋转）');
+    clearCacheOnInputChange('重新处理');
+    
+    // 获取AI处理配置
+    const aiConfig = window.aiProcessingPanel ? window.aiProcessingPanel.getConfig() : { aiMode: false };
+    
+    // 如果启用AI模式但未选择模型,提示用户
+    if (aiConfig.aiMode && !aiConfig.model) {
+        alert('请选择AI模型。');
+        return;
+    }
+    
+    // 禁用重新处理按钮,防止重复提交
+    const reprocessBtn = document.getElementById('reprocess_btn');
+    const startBtn = document.getElementById('start_processing_btn');
+    if (reprocessBtn) {
+        reprocessBtn.disabled = true;
+        reprocessBtn.style.opacity = '0.6';
+        reprocessBtn.style.cursor = 'not-allowed';
+    }
+    if (startBtn) {
+        startBtn.disabled = true;
+        startBtn.style.opacity = '0.6';
+        startBtn.style.cursor = 'not-allowed';
+    }
+    
+    // 显示进度反馈
+    const processingStatus = document.getElementById('processing_status');
+    if (processingStatus) {
+        if (aiConfig.aiMode) {
+            // AI模式显示详细进度
+            processingStatus.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <div class="spinner" style="width: 16px; height: 16px; border: 2px solid #f3f3f3; border-top: 2px solid #ff9800; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                    <span id="progress_text" style="color: #ff9800;">正在重新识别OCR...</span>
+                </div>
+            `;
+            
+            let progressStep = 0;
+            const progressTexts = [
+                '正在重新识别OCR...',
+                '正在分析附图...',
+                '正在AI识别标记...',
+                '正在生成结果...'
+            ];
+            
+            const progressInterval = setInterval(() => {
+                progressStep++;
+                if (progressStep < progressTexts.length) {
+                    const progressText = document.getElementById('progress_text');
+                    if (progressText) {
+                        progressText.textContent = progressTexts[progressStep];
+                    }
+                } else {
+                    progressStep = 0;
+                    const progressText = document.getElementById('progress_text');
+                    if (progressText) {
+                        progressText.textContent = progressTexts[progressStep];
+                    }
+                }
+            }, 1000);
+            
+            window.currentProgressInterval = progressInterval;
+        } else {
+            // 规则模式显示简单进度
+            processingStatus.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <div class="spinner" style="width: 16px; height: 16px; border: 2px solid #f3f3f3; border-top: 2px solid #ff9800; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                    <span style="color: #ff9800;">正在重新处理...</span>
+                </div>
+            `;
+        }
+    }
+    
+    // 🔥 关键：准备数据，使用当前图片状态（包括旋转后的图片）
+    const processingData = {
+        drawings: uploadedDrawings.map(drawing => {
+            // 移除data URL前缀，只保留base64数据
+            const base64Data = drawing.dataUrl.split(',')[1];
+            return {
+                name: drawing.name,
+                type: drawing.type,
+                size: drawing.size,
+                data: base64Data,
+                rotation: drawing.rotation || 0  // 包含旋转信息
+            };
+        }),
+        specification: specificationInput.value.trim(),
+        // 添加AI模式配置
+        ai_mode: aiConfig.aiMode,
+        model_name: aiConfig.model,
+        custom_prompt: aiConfig.prompt
+    };
+    
+    console.log(`🔄 重新处理 ${uploadedDrawings.length} 张图片（包含旋转状态）`);
+    uploadedDrawings.forEach((d, i) => {
+        if (d.rotation) {
+            console.log(`  图片 ${i}: ${d.name} - 旋转 ${d.rotation}°`);
+        }
+    });
+    
+    // 设置超时时间(AI模式60秒,规则模式30秒)
+    const timeoutMs = aiConfig.aiMode ? 60000 : 30000;
+    const timeoutId = setTimeout(() => {
+        if (window.currentProgressInterval) {
+            clearInterval(window.currentProgressInterval);
+        }
+        
+        if (processingStatus) {
+            processingStatus.innerHTML = `
+                <div style="color: #856404; background-color: #fff3cd; padding: 10px; border-radius: 4px; border: 1px solid #ffeaa7;">
+                    ⚠️ 处理超时,请重试或缩短说明书长度
+                </div>
+            `;
+        }
+        
+        // 重新启用按钮
+        if (reprocessBtn) {
+            reprocessBtn.disabled = false;
+            reprocessBtn.style.opacity = '1';
+            reprocessBtn.style.cursor = 'pointer';
+        }
+        if (startBtn) {
+            startBtn.disabled = false;
+            startBtn.style.opacity = '1';
+            startBtn.style.cursor = 'pointer';
+        }
+    }, timeoutMs);
+    
+    // 获取API Key（AI模式需要）
+    const apiKey = appState?.apiKey || localStorage.getItem('zhipuai_api_key') || '';
+    
+    // 准备请求头
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+    
+    // 如果是AI模式，必须添加Authorization header
+    if (aiConfig.aiMode) {
+        if (!apiKey) {
+            if (processingStatus) {
+                processingStatus.innerHTML = `
+                    <div style="color: #721c24; background-color: #f8d7da; padding: 10px; border-radius: 4px; border: 1px solid #f5c6cb;">
+                        ❌ AI模式需要API Key
+                    </div>
+                `;
+            }
+            alert('AI模式需要配置API Key。请点击右上角⚙️设置并保存您的智谱AI API Key。');
+            
+            // 重新启用按钮
+            if (reprocessBtn) {
+                reprocessBtn.disabled = false;
+                reprocessBtn.style.opacity = '1';
+                reprocessBtn.style.cursor = 'pointer';
+            }
+            if (startBtn) {
+                startBtn.disabled = false;
+                startBtn.style.opacity = '1';
+                startBtn.style.cursor = 'pointer';
+            }
+            return;
+        }
+        headers['Authorization'] = `Bearer ${apiKey}`;
+    }
+    
+    // 调用后端API进行处理
+    fetch('/api/drawing-marker/process', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(processingData)
+    })
+    .then(response => {
+        clearTimeout(timeoutId);
+        if (window.currentProgressInterval) {
+            clearInterval(window.currentProgressInterval);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success && data.data) {
+            displayProcessingResult(data.data, aiConfig.aiMode);
+            
+            // 显示成功提示
+            if (processingStatus) {
+                processingStatus.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;"><polyline points="20 6 9 17 4 12"></polyline></svg> 重新处理完成';
+                processingStatus.style.color = '#ff9800';
+            }
+        } else {
+            // 处理失败
+            if (processingStatus) {
+                processingStatus.innerHTML = `
+                    <div style="color: #721c24; background-color: #f8d7da; padding: 10px; border-radius: 4px; border: 1px solid #f5c6cb;">
+                        ❌ 重新处理失败
+                    </div>
+                `;
+            }
+            
+            const processingResult = document.getElementById('processing_result');
+            if (processingResult) {
+                processingResult.innerHTML = `
+                    <div style="padding: 15px; background-color: rgba(220, 53, 69, 0.1); border-radius: 8px; border: 1px solid rgba(220, 53, 69, 0.3);">
+                        <h4 style="color: var(--error-color); margin-bottom: 10px;">❌ 重新处理失败</h4>
+                        <p>${data.error || '未知错误'}</p>
+                    </div>
+                `;
+            }
+        }
+    })
+    .catch(error => {
+        clearTimeout(timeoutId);
+        if (window.currentProgressInterval) {
+            clearInterval(window.currentProgressInterval);
+        }
+        
+        console.error('重新处理失败:', error);
+        if (processingStatus) {
+            processingStatus.innerHTML = `
+                <div style="color: #721c24; background-color: #f8d7da; padding: 10px; border-radius: 4px; border: 1px solid #f5c6cb;">
+                    ❌ 网络错误
+                </div>
+            `;
+        }
+        
+        const processingResult = document.getElementById('processing_result');
+        if (processingResult) {
+            processingResult.innerHTML = `
+                <div style="padding: 15px; background-color: rgba(220, 53, 69, 0.1); border-radius: 8px; border: 1px solid rgba(220, 53, 69, 0.3);">
+                    <h4 style="color: var(--error-color); margin-bottom: 10px;">❌ 重新处理失败</h4>
+                    <p>网络错误或服务器问题，请重试。</p>
+                </div>
+            `;
+        }
+    })
+    .finally(() => {
+        // 重新启用按钮
+        if (reprocessBtn) {
+            reprocessBtn.disabled = false;
+            reprocessBtn.style.opacity = '1';
+            reprocessBtn.style.cursor = 'pointer';
+        }
+        if (startBtn) {
+            startBtn.disabled = false;
+            startBtn.style.opacity = '1';
+            startBtn.style.cursor = 'pointer';
+        }
+    });
+}
+
 // 显示处理结果 - 使用真实API返回的数据
 function displayProcessingResult(data, isAIMode = false) {
     // 保存reference_map供交互式标注使用
     currentReferenceMap = data.reference_map || {};
     
     // 缓存处理结果，以便页面刷新后仍然可用
-    // 但只在用户主动处理时缓存，确保下次处理时使用最新结果
+    // 🔥 修改：添加手动保存标记
     const specificationInput = document.getElementById('specification_input');
     if (specificationInput && uploadedDrawings.length > 0) {
         const specificationText = specificationInput.value.trim();
@@ -2346,7 +2835,8 @@ function displayProcessingResult(data, isAIMode = false) {
                 name: d.name,
                 type: d.type,
                 size: d.size,
-                dataUrl: d.dataUrl
+                dataUrl: d.dataUrl,
+                rotation: d.rotation || 0
             }))
         };
         
@@ -2354,7 +2844,11 @@ function displayProcessingResult(data, isAIMode = false) {
             // 使用统一的缓存键格式
             const finalCacheKey = 'processing_cache_' + cacheKey;
             localStorage.setItem(finalCacheKey, JSON.stringify(cacheData));
-            console.log('处理结果已缓存，页面刷新后仍然可用，缓存键:', finalCacheKey);
+            
+            // 🔥 新增：设置保存标记（表示这是处理后的结果，可以恢复）
+            localStorage.setItem('drawing_cache_saved', 'true');
+            
+            console.log('✅ 处理结果已缓存（可恢复），缓存键:', finalCacheKey);
         } catch (e) {
             console.warn('缓存失败:', e);
         }
