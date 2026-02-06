@@ -1579,10 +1579,6 @@
 <script src="../js/claimsAnalyzer.js?v=20260123"></script>
 <script src="../js/aiDisclaimer.js?v=20260122"></script>
 <script src="../js/fileParserHandler.js?v=20260202"></script>
-
-<!-- 核心模块 -->
-<script src="../js/core/api.js?v=20260206"></script>
-
 <script src="../js/chat.js?v=20260119"></script>
 <script src="../js/asyncBatch.js?v=20260119"></script>
 <script src="../js/largeBatch.js?v=20260119"></script>
@@ -1592,7 +1588,7 @@
 <!-- 功能六增强脚本 -->
 <script src="../js/patentTemplate.js"></script>
 <script src="../js/patentChat.js"></script>
-<script src="../js/main.js?v=20260206"></script>
+<script src="../js/main.js?v=20260204"></script>
 <!-- 功能六：新标签页打开专利详情 - 绿色主题 + 左侧导航 + 复制按钮 -->
 <script src="../js/patentDetailNewTab.js?v=20260204"></script>
 
