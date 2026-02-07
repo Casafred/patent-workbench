@@ -1,31 +1,99 @@
 // js/localPatentLib.js (Refactored for Resizable & Wrapping Table)
 
 function initLocalPatentLib() {
+    // Get all required DOM elements first
+    const lplOriginalFileInput = getEl('lpl_original_file_input');
+    const lplOriginalSheetSelect = getEl('lpl_original_sheet_select');
+    const lplOriginalIgnoreHeader = getEl('lpl_original_ignore_header');
+    const lplExpandBtn = getEl('lpl_expand_btn');
+    const lplCopyBtn = getEl('lpl_copy_btn');
+    const lplDownloadTxtBtn = getEl('lpl_download_txt_btn');
+    
+    // 步骤 2 元素
+    const lplOriginalReuploadInput = getEl('lpl_original_reupload_input');
+    const lplOriginalMergeSheetSelect = getEl('lpl_original_merge_sheet_select');
+    const lplOriginalMergeIgnoreHeader = getEl('lpl_original_merge_ignore_header');
+    const lplNewFileInput = getEl('lpl_new_file_input');
+    const lplNewSheetSelect = getEl('lpl_new_sheet_select');
+    const lplNewIgnoreHeader = getEl('lpl_new_ignore_header');
+    const lplSelectAllColsBtn = getEl('lpl_select_all_cols_btn');
+    const lplDeselectAllColsBtn = getEl('lpl_deselect_all_cols_btn');
+    const lplMergeBtn = getEl('lpl_merge_btn');
+    
+    // 步骤 3 元素
+    const lplDownloadFinalBtn = getEl('lpl_download_final_btn');
+    
+    // Check if required elements exist
+    if (!lplOriginalFileInput) {
+        console.error('❌ lpl_original_file_input element not found');
+        return;
+    }
+    
     // --- 事件监听器绑定 ---
     // 步骤 1
     lplOriginalFileInput.addEventListener('change', (e) => handleFileUpload(e, 'originalFile', lplOriginalSheetSelect, lplOriginalIgnoreHeader));
-    lplOriginalSheetSelect.addEventListener('change', () => parseSheetData('originalFile', lplOriginalSheetSelect.value, lplOriginalIgnoreHeader.checked));
-    lplOriginalIgnoreHeader.addEventListener('change', () => parseSheetData('originalFile', lplOriginalSheetSelect.value, lplOriginalIgnoreHeader.checked));
-    lplExpandBtn.addEventListener('click', performExpansion);
-    lplCopyBtn.addEventListener('click', copyExpandedList);
-    lplDownloadTxtBtn.addEventListener('click', downloadExpandedListAsTxt);
+    
+    if (lplOriginalSheetSelect && lplOriginalIgnoreHeader) {
+        lplOriginalSheetSelect.addEventListener('change', () => parseSheetData('originalFile', lplOriginalSheetSelect.value, lplOriginalIgnoreHeader.checked));
+    }
+    
+    if (lplOriginalIgnoreHeader && lplOriginalSheetSelect) {
+        lplOriginalIgnoreHeader.addEventListener('change', () => parseSheetData('originalFile', lplOriginalSheetSelect.value, lplOriginalIgnoreHeader.checked));
+    }
+    
+    if (lplExpandBtn) {
+        lplExpandBtn.addEventListener('click', performExpansion);
+    }
+    
+    if (lplCopyBtn) {
+        lplCopyBtn.addEventListener('click', copyExpandedList);
+    }
+    
+    if (lplDownloadTxtBtn) {
+        lplDownloadTxtBtn.addEventListener('click', downloadExpandedListAsTxt);
+    }
 
     // 步骤 2
-    lplOriginalReuploadInput.addEventListener('change', (e) => handleFileUpload(e, 'originalFile', lplOriginalMergeSheetSelect, lplOriginalMergeIgnoreHeader));
-    lplOriginalMergeSheetSelect.addEventListener('change', () => parseSheetData('originalFile', lplOriginalMergeSheetSelect.value, lplOriginalMergeIgnoreHeader.checked, true));
-    lplOriginalMergeIgnoreHeader.addEventListener('change', () => parseSheetData('originalFile', lplOriginalMergeSheetSelect.value, lplOriginalMergeIgnoreHeader.checked, true));
+    if (lplOriginalReuploadInput && lplOriginalMergeSheetSelect && lplOriginalMergeIgnoreHeader) {
+        lplOriginalReuploadInput.addEventListener('change', (e) => handleFileUpload(e, 'originalFile', lplOriginalMergeSheetSelect, lplOriginalMergeIgnoreHeader));
+    }
     
-    lplNewFileInput.addEventListener('change', (e) => handleFileUpload(e, 'newFile', lplNewSheetSelect, lplNewIgnoreHeader));
-    lplNewSheetSelect.addEventListener('change', () => parseSheetData('newFile', lplNewSheetSelect.value, lplNewIgnoreHeader.checked));
-    lplNewIgnoreHeader.addEventListener('change', () => parseSheetData('newFile', lplNewSheetSelect.value, lplNewIgnoreHeader.checked));
+    if (lplOriginalMergeSheetSelect && lplOriginalMergeIgnoreHeader) {
+        lplOriginalMergeSheetSelect.addEventListener('change', () => parseSheetData('originalFile', lplOriginalMergeSheetSelect.value, lplOriginalMergeIgnoreHeader.checked, true));
+    }
+    
+    if (lplOriginalMergeIgnoreHeader && lplOriginalMergeSheetSelect) {
+        lplOriginalMergeIgnoreHeader.addEventListener('change', () => parseSheetData('originalFile', lplOriginalMergeSheetSelect.value, lplOriginalMergeIgnoreHeader.checked, true));
+    }
+    
+    if (lplNewFileInput && lplNewSheetSelect && lplNewIgnoreHeader) {
+        lplNewFileInput.addEventListener('change', (e) => handleFileUpload(e, 'newFile', lplNewSheetSelect, lplNewIgnoreHeader));
+    }
+    
+    if (lplNewSheetSelect && lplNewIgnoreHeader) {
+        lplNewSheetSelect.addEventListener('change', () => parseSheetData('newFile', lplNewSheetSelect.value, lplNewIgnoreHeader.checked));
+    }
+    
+    if (lplNewIgnoreHeader && lplNewSheetSelect) {
+        lplNewIgnoreHeader.addEventListener('change', () => parseSheetData('newFile', lplNewSheetSelect.value, lplNewIgnoreHeader.checked));
+    }
 
-    lplSelectAllColsBtn.addEventListener('click', () => toggleAllColCheckboxes(true));
-    lplDeselectAllColsBtn.addEventListener('click', () => toggleAllColCheckboxes(false));
+    if (lplSelectAllColsBtn) {
+        lplSelectAllColsBtn.addEventListener('click', () => toggleAllColCheckboxes(true));
+    }
     
-    lplMergeBtn.addEventListener('click', performMerge);
+    if (lplDeselectAllColsBtn) {
+        lplDeselectAllColsBtn.addEventListener('click', () => toggleAllColCheckboxes(false));
+    }
+    
+    if (lplMergeBtn) {
+        lplMergeBtn.addEventListener('click', performMerge);
+    }
     
     // 步骤 3
-    lplDownloadFinalBtn.addEventListener('click', downloadFinalMergedReport);
+    if (lplDownloadFinalBtn) {
+        lplDownloadFinalBtn.addEventListener('click', downloadFinalMergedReport);
+    }
 
 
     // --- 逻辑函数 ---
@@ -135,9 +203,13 @@ function initLocalPatentLib() {
     // ▲▲▲ 需求 1: 修改完成 ▲▲▲
 
     function checkMergeButtonState() {
+        const lplMergeBtn = getEl('lpl_merge_btn');
         const isOriginalDataReady = appState.lpl.originalFile.jsonData && appState.lpl.originalFile.jsonData.length > 0;
         const isNewDataReady = appState.lpl.newFile.jsonData && appState.lpl.newFile.jsonData.length > 0;
-        lplMergeBtn.disabled = !(isOriginalDataReady && isNewDataReady);
+        
+        if (lplMergeBtn) {
+            lplMergeBtn.disabled = !(isOriginalDataReady && isNewDataReady);
+        }
     }
     function handleFileUpload(event, fileType, sheetSelectElement, ignoreHeaderCheckbox) {
         const file = event.target.files[0];
@@ -147,9 +219,11 @@ function initLocalPatentLib() {
             try {
                 const workbook = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
                 appState.lpl[fileType] = { ...appState.lpl[fileType], name: file.name, workbook, sheets: workbook.SheetNames, jsonData: null, headers: [] };
-                sheetSelectElement.innerHTML = workbook.SheetNames.map(name => `<option value="${name}">${name}</option>`).join('');
-                sheetSelectElement.disabled = false;
-                sheetSelectElement.dispatchEvent(new Event('change'));
+                if (sheetSelectElement) {
+                    sheetSelectElement.innerHTML = workbook.SheetNames.map(name => `<option value="${name}">${name}</option>`).join('');
+                    sheetSelectElement.disabled = false;
+                    sheetSelectElement.dispatchEvent(new Event('change'));
+                }
             } catch (err) {
                 alert(`解析 ${file.name} 失败: ${err.message}`);
                 console.error(err);
@@ -187,43 +261,81 @@ function initLocalPatentLib() {
             const headers = Object.keys(jsonData[0]);
             fileState.headers = headers;
             if (fileType === 'originalFile') {
-                lplOriginalFileConfirm.value = fileState.name;
-                populateSelect(lplOriginalKeySelect, headers);
-                lplExpandBtn.disabled = false;
+                const lplOriginalFileConfirm = getEl('lpl_original_file_confirm');
+                const lplOriginalKeySelect = getEl('lpl_original_key_select');
+                const lplExpandBtn = getEl('lpl_expand_btn');
+                const lplOriginalMergeSheetSelect = getEl('lpl_original_merge_sheet_select');
+                
+                if (lplOriginalFileConfirm) {
+                    lplOriginalFileConfirm.value = fileState.name;
+                }
+                
+                if (lplOriginalKeySelect) {
+                    populateSelect(lplOriginalKeySelect, headers);
+                }
+                
+                if (lplExpandBtn) {
+                    lplExpandBtn.disabled = false;
+                }
+                
                 populateColumnSelection(headers);
-                if(isMergeContext) {
+                
+                if(isMergeContext && lplOriginalMergeSheetSelect) {
                     lplOriginalMergeSheetSelect.innerHTML = fileState.sheets.map(name => `<option value="${name}">${name}</option>`).join('');
                     lplOriginalMergeSheetSelect.value = sheetName;
                     lplOriginalMergeSheetSelect.disabled = false;
                 }
             } else if (fileType === 'newFile') {
-                populateSelect(lplNewKeySelect, headers);
+                const lplNewKeySelect = getEl('lpl_new_key_select');
+                if (lplNewKeySelect) {
+                    populateSelect(lplNewKeySelect, headers);
+                }
             }
         } else {
              fileState.jsonData = null;
              fileState.headers = [];
-             const keySelect = fileType === 'originalFile' ? lplOriginalKeySelect : lplNewKeySelect;
-             keySelect.innerHTML = '<option>无有效数据</option>';
-             keySelect.disabled = true;
+             const keySelect = fileType === 'originalFile' ? getEl('lpl_original_key_select') : getEl('lpl_new_key_select');
+             if (keySelect) {
+                 keySelect.innerHTML = '<option>无有效数据</option>';
+                 keySelect.disabled = true;
+             }
              if (fileType === 'originalFile') {
-                lplOldColsSelectionArea.style.display = 'none';
-                lplOldColsCheckboxes.innerHTML = '';
+                const lplOldColsSelectionArea = getEl('lpl_old_cols_selection_area');
+                const lplOldColsCheckboxes = getEl('lpl_old_cols_checkboxes');
+                
+                if (lplOldColsSelectionArea) {
+                    lplOldColsSelectionArea.style.display = 'none';
+                }
+                
+                if (lplOldColsCheckboxes) {
+                    lplOldColsCheckboxes.innerHTML = '';
+                }
              }
         }
         checkMergeButtonState();
     }
     function populateSelect(selectElement, headers) {
-        selectElement.innerHTML = headers.map(h => `<option value="${h}">${h}</option>`).join('');
-        selectElement.disabled = false;
+        if (selectElement) {
+            selectElement.innerHTML = headers.map(h => `<option value="${h}">${h}</option>`).join('');
+            selectElement.disabled = false;
+        }
     }
     function populateColumnSelection(headers) {
-        lplOldColsSelectionArea.style.display = 'block';
-        lplOldColsCheckboxes.innerHTML = headers.map(header => `
-            <label style="display: flex; align-items: center; cursor: pointer; padding: 5px; border-radius: 4px; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--primary-color-hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
-                <input type="checkbox" class="lpl-col-checkbox" value="${header}" style="width: auto; margin-right: 8px;">
-                <span title="${header}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${header}</span>
-            </label>
-        `).join('');
+        const lplOldColsSelectionArea = getEl('lpl_old_cols_selection_area');
+        const lplOldColsCheckboxes = getEl('lpl_old_cols_checkboxes');
+        
+        if (lplOldColsSelectionArea) {
+            lplOldColsSelectionArea.style.display = 'block';
+        }
+        
+        if (lplOldColsCheckboxes) {
+            lplOldColsCheckboxes.innerHTML = headers.map(header => `
+                <label style="display: flex; align-items: center; cursor: pointer; padding: 5px; border-radius: 4px; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--primary-color-hover-bg)'" onmouseout="this.style.backgroundColor='transparent'">
+                    <input type="checkbox" class="lpl-col-checkbox" value="${header}" style="width: auto; margin-right: 8px;">
+                    <span title="${header}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${header}</span>
+                </label>
+            `).join('');
+        }
     }
     function toggleAllColCheckboxes(checked) {
         document.querySelectorAll('.lpl-col-checkbox').forEach(cb => cb.checked = checked);
@@ -233,14 +345,35 @@ function initLocalPatentLib() {
     }
     function performExpansion() {
         if (!appState.lpl.originalFile.jsonData) return alert('请先上传并选择有效的原始文件和工作表！');
+        
+        const lplFamilyColNameInput = getEl('lpl_family_col_name_input');
+        const lplDelimiterInput = getEl('lpl_delimiter_input');
+        const lplExpandStatus = getEl('lpl_expand_status');
+        const lplExpandResultArea = getEl('lpl_expand_result_area');
+        const lplUniqueCountSpan = getEl('lpl_unique_count_span');
+        const lplExpandedListOutput = getEl('lpl_expanded_list_output');
+        
+        if (!lplFamilyColNameInput || !lplDelimiterInput) {
+            console.error('❌ Required elements not found for performExpansion');
+            return;
+        }
+        
         const familyColName = lplFamilyColNameInput.value.trim();
         const delimiter = lplDelimiterInput.value;
         const data = appState.lpl.originalFile.jsonData;
+        
         if (!familyColName || !data[0] || typeof data[0][familyColName] === 'undefined') {
             return alert(`错误：在当前工作表中找不到名为 "${familyColName}" 的列。`);
         }
-        updateStatus(lplExpandStatus, "正在处理，请稍候...", 'info');
-        lplExpandResultArea.style.display = 'none';
+        
+        if (lplExpandStatus) {
+            updateStatus(lplExpandStatus, "正在处理，请稍候...", 'info');
+        }
+        
+        if (lplExpandResultArea) {
+            lplExpandResultArea.style.display = 'none';
+        }
+        
         setTimeout(() => {
             try {
                 const allPatentsInOrder = data.flatMap(row => {
@@ -251,22 +384,50 @@ function initLocalPatentLib() {
                 });
                 const uniquePatents = [...new Set(allPatentsInOrder)];
                 appState.lpl.expandedPatents = uniquePatents;
-                lplUniqueCountSpan.textContent = uniquePatents.length;
-                lplExpandedListOutput.value = uniquePatents.join('\n');
-                updateStatus(lplExpandStatus, `✅ 处理成功！共展开 ${uniquePatents.length} 个唯一的专利号。`, 'success');
-                lplExpandResultArea.style.display = 'block';
+                
+                if (lplUniqueCountSpan) {
+                    lplUniqueCountSpan.textContent = uniquePatents.length;
+                }
+                
+                if (lplExpandedListOutput) {
+                    lplExpandedListOutput.value = uniquePatents.join('\n');
+                }
+                
+                if (lplExpandStatus) {
+                    updateStatus(lplExpandStatus, `✅ 处理成功！共展开 ${uniquePatents.length} 个唯一的专利号。`, 'success');
+                }
+                
+                if (lplExpandResultArea) {
+                    lplExpandResultArea.style.display = 'block';
+                }
             } catch (error) {
-                updateStatus(lplExpandStatus, `❌ 处理失败: ${error.message}`, 'error');
+                if (lplExpandStatus) {
+                    updateStatus(lplExpandStatus, `❌ 处理失败: ${error.message}`, 'error');
+                }
                 console.error(error);
             }
         }, 100);
     }
     function copyExpandedList() {
+        const lplExpandedListOutput = getEl('lpl_expanded_list_output');
+        
+        if (!lplExpandedListOutput) {
+            console.error('❌ lpl_expanded_list_output element not found');
+            return;
+        }
+        
         navigator.clipboard.writeText(lplExpandedListOutput.value)
             .then(() => alert('已成功复制到剪贴板！'))
             .catch(() => alert('复制失败，请手动复制。'));
     }
     function downloadExpandedListAsTxt() {
+        const lplExpandedListOutput = getEl('lpl_expanded_list_output');
+        
+        if (!lplExpandedListOutput) {
+            console.error('❌ lpl_expanded_list_output element not found');
+            return;
+        }
+        
         const blob = new Blob([lplExpandedListOutput.value], { type: 'text/plain;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -281,12 +442,27 @@ function initLocalPatentLib() {
         if (!appState.lpl.originalFile.jsonData || !appState.lpl.newFile.jsonData) {
             return alert('请确保原始库和新库文件都已成功上传并解析！');
         }
+        
+        const lplOriginalKeySelect = getEl('lpl_original_key_select');
+        const lplNewKeySelect = getEl('lpl_new_key_select');
+        const lplMergeStatus = getEl('lpl_merge_status');
+        
+        if (!lplOriginalKeySelect || !lplNewKeySelect) {
+            console.error('❌ Required elements not found for performMerge');
+            return;
+        }
+        
         const originalKey = lplOriginalKeySelect.value;
         const newKey = lplNewKeySelect.value;
         const selectedCols = getSelectedOldColumns();
+        
         if (!originalKey || !newKey) return alert('请为原始库和新库都选择一个用于匹配的列！');
         if (selectedCols.length === 0) return alert('请至少从旧表中选择一列进行补充！');
-        updateStatus(lplMergeStatus, "正在合并数据...", 'info');
+        
+        if (lplMergeStatus) {
+            updateStatus(lplMergeStatus, "正在合并数据...", 'info');
+        }
+        
         setTimeout(() => {
             try {
                 const oldDataMap = new Map();
@@ -312,11 +488,21 @@ function initLocalPatentLib() {
                     return finalRow;
                 });
                 appState.lpl.mergedData = mergedData;
-                updateStatus(lplMergeStatus, `✅ 合并成功！最终生成 ${mergedData.length} 行数据。`, 'success');
-                switchLPLSubTab('result', getEl('lpl-stepper').querySelectorAll('.step-item')[2]);
+                
+                if (lplMergeStatus) {
+                    updateStatus(lplMergeStatus, `✅ 合并成功！最终生成 ${mergedData.length} 行数据。`, 'success');
+                }
+                
+                const lplStepper = getEl('lpl-stepper');
+                if (lplStepper) {
+                    switchLPLSubTab('result', lplStepper.querySelectorAll('.step-item')[2]);
+                }
+                
                 displayMergeResults();
             } catch (error) {
-                updateStatus(lplMergeStatus, `❌ 合并失败: ${error.message}`, 'error');
+                if (lplMergeStatus) {
+                    updateStatus(lplMergeStatus, `❌ 合并失败: ${error.message}`, 'error');
+                }
                 console.error(error);
             }
         }, 100);
@@ -334,8 +520,10 @@ function initLocalPatentLib() {
         }
     }
     function updateStatus(element, message, type) {
-        element.textContent = message;
-        element.className = `info ${type}`;
-        element.style.display = 'block';
+        if (element) {
+            element.textContent = message;
+            element.className = `info ${type}`;
+            element.style.display = 'block';
+        }
     }
 }

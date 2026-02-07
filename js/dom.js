@@ -1,8 +1,7 @@
 // js/dom.js (最终修正版)
+// Note: getEl is defined in js/modules/navigation/tab-navigation.js
 
 // --- DOM 元素缓存 ---
-const getEl = id => document.getElementById(id);
-
 // API Key Config
 const globalApiKeyInput = getEl('global_api_key_input');
 const apiKeyToggleVisibilityBtn = getEl('api_key_toggle_visibility_btn');

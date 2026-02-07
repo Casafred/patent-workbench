@@ -444,37 +444,47 @@ function initChat() {
     // 初始化对话参数模态框
     const chatParamsModal = document.getElementById('chat_params_modal');
     const chatParamsBtn = document.getElementById('chat_params_btn');
-    const closeModalBtn = chatParamsModal.querySelector('.close-modal');
-    const saveChatParamsBtn = document.getElementById('save_chat_params_btn');
+    
+    // 检查必要元素是否存在
+    if (chatParamsModal && chatParamsBtn) {
+        const closeModalBtn = chatParamsModal.querySelector('.close-modal');
+        const saveChatParamsBtn = document.getElementById('save_chat_params_btn');
+        
+        if (closeModalBtn) {
+            // 打开模态框
+            chatParamsBtn.addEventListener('click', () => {
+                chatParamsModal.style.display = 'block';
+                setTimeout(() => {
+                    chatParamsModal.classList.add('show');
+                }, 10);
+            });
 
-    // 打开模态框
-    chatParamsBtn.addEventListener('click', () => {
-        chatParamsModal.style.display = 'block';
-        setTimeout(() => {
-            chatParamsModal.classList.add('show');
-        }, 10);
-    });
+            // 关闭模态框 - 点击关闭按钮
+            closeModalBtn.addEventListener('click', () => {
+                chatParamsModal.classList.remove('show');
+                setTimeout(() => {
+                    chatParamsModal.style.display = 'none';
+                }, 300);
+            });
 
-    // 关闭模态框 - 点击关闭按钮
-    closeModalBtn.addEventListener('click', () => {
-        chatParamsModal.classList.remove('show');
-        setTimeout(() => {
-            chatParamsModal.style.display = 'none';
-        }, 300);
-    });
+            // 关闭模态框 - 点击模态框外部
+            window.addEventListener('click', (event) => {
+                if (event.target === chatParamsModal) {
+                    closeModalBtn.click();
+                }
+            });
 
-    // 关闭模态框 - 点击模态框外部
-    window.addEventListener('click', (event) => {
-        if (event.target === chatParamsModal) {
-            closeModalBtn.click();
+            // 保存设置按钮事件
+            if (saveChatParamsBtn) {
+                saveChatParamsBtn.addEventListener('click', () => {
+                    closeModalBtn.click();
+                    alert('对话参数已保存');
+                });
+            }
         }
-    });
-
-    // 保存设置按钮事件
-    saveChatParamsBtn.addEventListener('click', () => {
-        closeModalBtn.click();
-        alert('对话参数已保存');
-    });
+    } else {
+        console.warn('对话参数模态框元素不存在，跳过初始化');
+    }
     
     // ▼▼▼ 新增：为回形针按钮和隐藏的文件输入框绑定事件 ▼▼▼
     chatUploadFileBtn.addEventListener('click', () => chatFileInput.click());

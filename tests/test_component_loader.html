@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Component Loader Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-target {
+            min-height: 100px;
+            border: 2px dashed #ccc;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .log {
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .warning { color: orange; }
+    </style>
+</head>
+<body>
+    <h1>Component Loader Test Suite</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Async Component Loading (Success)</h2>
+        <button onclick="testAsyncSuccess()">Run Test</button>
+        <div id="async-success-target" class="test-target">
+            <em>Component will load here...</em>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Async Component Loading (Missing File)</h2>
+        <button onclick="testAsyncMissing()">Run Test</button>
+        <div id="async-missing-target" class="test-target">
+            <em>Error handling will be tested here...</em>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Sync Component Loading</h2>
+        <button onclick="testSyncLoading()">Run Test</button>
+        <div id="sync-target" class="test-target">
+            <em>Component will load here synchronously...</em>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 4: Missing Target Element</h2>
+        <button onclick="testMissingTarget()">Run Test</button>
+        <p><em>Check console for error message (target element doesn't exist)</em></p>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 5: Batch Component Loading</h2>
+        <button onclick="testBatchLoading()">Run Test</button>
+        <div id="batch-target-1" class="test-target">Batch 1</div>
+        <div id="batch-target-2" class="test-target">Batch 2</div>
+    </div>
+
+    <div class="test-section">
+        <h2>Console Log</h2>
+        <div id="console-log" class="log"></div>
+    </div>
+
+    <!-- Load the component loader -->
+    <script src="../js/core/component-loader.js"></script>
+
+    <script>
+        // Intercept console methods for display
+        const logDiv = document.getElementById('console-log');
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+
+        function addLog(message, type = 'log') {
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'warn' ? 'warning' : 'success';
+            logDiv.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addLog(args.join(' '), 'log');
+        };
+
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addLog(args.join(' '), 'error');
+        };
+
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addLog(args.join(' '), 'warn');
+        };
+
+        // Test functions
+        async function testAsyncSuccess() {
+            console.log('=== Test 1: Async Loading (Success) ===');
+            // Create a test component
+            const testHTML = '<div style="background: #d4edda; padding: 15px; border-radius: 4px;"><strong>✓ Success!</strong> Component loaded asynchronously.</div>';
+            
+            // Create a blob URL for testing
+            const blob = new Blob([testHTML], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            
+            const result = await loadComponent(url, 'async-success-target');
+            console.log(`Result: ${result ? 'SUCCESS' : 'FAILED'}`);
+            
+            URL.revokeObjectURL(url);
+        }
+
+        async function testAsyncMissing() {
+            console.log('=== Test 2: Async Loading (Missing File) ===');
+            const result = await loadComponent('/nonexistent/component.html', 'async-missing-target');
+            console.log(`Result: ${result ? 'SUCCESS' : 'FAILED (Expected)'}`);
+        }
+
+        function testSyncLoading() {
+            console.log('=== Test 3: Sync Loading ===');
+            // Create a test component
+            const testHTML = '<div style="background: #cce5ff; padding: 15px; border-radius: 4px;"><strong>✓ Success!</strong> Component loaded synchronously.</div>';
+            
+            // Create a blob URL for testing
+            const blob = new Blob([testHTML], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            
+            const result = loadComponentSync(url, 'sync-target');
+            console.log(`Result: ${result ? 'SUCCESS' : 'FAILED'}`);
+            
+            URL.revokeObjectURL(url);
+        }
+
+        async function testMissingTarget() {
+            console.log('=== Test 4: Missing Target Element ===');
+            const result = await loadComponent('/some/path.html', 'nonexistent-target-id');
+            console.log(`Result: ${result ? 'SUCCESS' : 'FAILED (Expected)'}`);
+        }
+
+        async function testBatchLoading() {
+            console.log('=== Test 5: Batch Loading ===');
+            
+            // Create test components
+            const html1 = '<div style="background: #d1ecf1; padding: 15px;">Batch Component 1 Loaded</div>';
+            const html2 = '<div style="background: #f8d7da; padding: 15px;">Batch Component 2 Loaded</div>';
+            
+            const blob1 = new Blob([html1], { type: 'text/html' });
+            const blob2 = new Blob([html2], { type: 'text/html' });
+            const url1 = URL.createObjectURL(blob1);
+            const url2 = URL.createObjectURL(blob2);
+            
+            const components = [
+                { path: url1, targetId: 'batch-target-1' },
+                { path: url2, targetId: 'batch-target-2' }
+            ];
+            
+            const stats = await loadComponents(components);
+            console.log(`Batch Result: ${stats.success}/${stats.total} succeeded, ${stats.failed} failed`);
+            
+            URL.revokeObjectURL(url1);
+            URL.revokeObjectURL(url2);
+        }
+
+        // Initial message
+        console.log('Component Loader Test Suite Ready');
+        console.log('Click buttons above to run tests');
+    </script>
+</body>
+</html>

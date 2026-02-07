@@ -6,11 +6,27 @@ function initAsyncBatch() {
     // 初始化输出格式配置相关元素
     const asyncAddOutputFieldBtn = getEl('async_add_output_field_btn');
     const asyncOutputFieldsContainer = getEl('async_output_fields_container');
+    const asyncPresetTemplateSelect = getEl('async_preset_template_select');
+    const asyncExcelColumnCount = getEl('async_excel_column_count');
+    const asyncExcelColumnConfigArea = getEl('async_excel_column_config_area');
+    const asyncPreviewRequestBtn = getEl('async_preview_request_btn');
+    const asyncExportExcelBtn = getEl('async_export_excel_btn');
+    const asyncRecoverBtn = getEl('async_recover_btn');
+    const asyncInputsSelectAllBtn = getEl('async_inputs_select_all_btn');
+    const asyncInputsDeleteSelectedBtn = getEl('async_inputs_delete_selected_btn');
+    const asyncInputsCount = getEl('async_inputs_count');
+    const asyncInputsManagement = getEl('async_inputs_management');
+    const asyncRequestsCount = getEl('async_requests_count');
+    const asyncRequestBodyPreview = getEl('async_request_body_preview');
 
     // 添加输出字段按钮点击事件
-    asyncAddOutputFieldBtn.addEventListener('click', () => {
-        addAsyncOutputField();
-    });
+    if (asyncAddOutputFieldBtn) {
+        asyncAddOutputFieldBtn.addEventListener('click', () => {
+            addAsyncOutputField();
+        });
+    } else {
+        console.error('❌ async_add_output_field_btn element not found');
+    }
 
     // 初始化预设输出字段
     if (!appState.asyncBatch.currentOutputFields) {
@@ -21,8 +37,12 @@ function initAsyncBatch() {
     renderAsyncOutputFields();
 
     // 监听模板选择变化，更新输出字段
-    getEl('async_preset_template_select').addEventListener('change', () => {
-        const selectedName = getEl('async_preset_template_select').value;
+    if (!asyncPresetTemplateSelect) {
+        console.error('❌ async_preset_template_select element not found');
+        return;
+    }
+    asyncPresetTemplateSelect.addEventListener('change', () => {
+        const selectedName = asyncPresetTemplateSelect.value;
         const template = appState.asyncBatch.presetTemplates.find(t => t.name === selectedName);
         if (template && template.outputFields) {
             appState.asyncBatch.currentOutputFields = [...template.outputFields];
@@ -33,7 +53,7 @@ function initAsyncBatch() {
     });
 
     
-    const presetTemplateSelect = getEl('async_preset_template_select');
+    const presetTemplateSelect = asyncPresetTemplateSelect;
     const templateNameInput = getEl('async_template_name');
     const systemPromptInput = getEl('async_system_prompt');
     const userPromptInput = getEl('async_user_prompt');
@@ -148,8 +168,12 @@ function initAsyncBatch() {
         e.target.value = '';
     });
 
-    excelSheet.addEventListener('change', handleAsyncSheetChange);
-    asyncExcelColumnCount.addEventListener('input', renderAsyncColumnSelectors);
+    if (excelSheet) {
+        excelSheet.addEventListener('change', handleAsyncSheetChange);
+    }
+    if (asyncExcelColumnCount) {
+        asyncExcelColumnCount.addEventListener('input', renderAsyncColumnSelectors);
+    }
 
     loadExcelBtn.addEventListener('click', () => {
         if (appState.asyncBatch.inputs.length > 0 && !confirm("从Excel加载将清空并替换当前所有输入，确定吗？")) return;
@@ -205,18 +229,30 @@ function initAsyncBatch() {
         }
     });
 
-    submitBtn.addEventListener('click', handleAsyncBatchSubmit);
-    asyncPreviewRequestBtn.addEventListener('click', previewAsyncRequests);
-    asyncExportExcelBtn.addEventListener('click', exportAsyncResultsToExcel);
-    asyncRecoverBtn.addEventListener('click', recoverAsyncBatchState);
+    if (submitBtn) {
+        submitBtn.addEventListener('click', handleAsyncBatchSubmit);
+    }
+    if (asyncPreviewRequestBtn) {
+        asyncPreviewRequestBtn.addEventListener('click', previewAsyncRequests);
+    }
+    if (asyncExportExcelBtn) {
+        asyncExportExcelBtn.addEventListener('click', exportAsyncResultsToExcel);
+    }
+    if (asyncRecoverBtn) {
+        asyncRecoverBtn.addEventListener('click', recoverAsyncBatchState);
+    }
 
-    asyncInputsSelectAllBtn.addEventListener('click', () => {
-        const allChecked = Array.from(document.querySelectorAll('#async_inputs_list input[type="checkbox"]')).every(cb => cb.checked);
-        document.querySelectorAll('#async_inputs_list input[type="checkbox"]').forEach(cb => cb.checked = !allChecked);
-    });
-    asyncInputsDeleteSelectedBtn.addEventListener('click', deleteSelectedAsyncInputs);
+    if (asyncInputsSelectAllBtn) {
+        asyncInputsSelectAllBtn.addEventListener('click', () => {
+            const allChecked = Array.from(document.querySelectorAll('#async_inputs_list input[type="checkbox"]')).every(cb => cb.checked);
+            document.querySelectorAll('#async_inputs_list input[type="checkbox"]').forEach(cb => cb.checked = !allChecked);
+        });
+    }
+    if (asyncInputsDeleteSelectedBtn) {
+        asyncInputsDeleteSelectedBtn.addEventListener('click', deleteSelectedAsyncInputs);
+    }
     
-    if (localStorage.getItem('lastAsyncBatchState')) {
+    if (localStorage.getItem('lastAsyncBatchState') && asyncRecoverBtn) {
         asyncRecoverBtn.disabled = false;
     }
 }
@@ -289,6 +325,14 @@ function deleteAsyncOutputField(index) {
 }
 
 function renderAsyncColumnSelectors() {
+    const asyncExcelColumnConfigArea = getEl('async_excel_column_config_area');
+    const asyncExcelColumnCount = getEl('async_excel_column_count');
+    
+    if (!asyncExcelColumnConfigArea || !asyncExcelColumnCount) {
+        console.error('❌ Required elements not found for renderAsyncColumnSelectors');
+        return;
+    }
+    
     asyncExcelColumnConfigArea.innerHTML = '';
     const count = parseInt(asyncExcelColumnCount.value, 10);
     const headers = appState.asyncBatch.columnHeaders || [];
@@ -308,21 +352,34 @@ function renderAsyncLists() {
     const inputsListDiv = getEl('async_inputs_list');
     const templatesListDiv = getEl('async_templates_list');
     const taskCreationArea = getEl('async_task_creation_area');
+    const asyncInputsCount = getEl('async_inputs_count');
+    const asyncInputsManagement = getEl('async_inputs_management');
 
-    inputsListDiv.innerHTML = appState.asyncBatch.inputs.map((inputItem, index) => {
-        let displayContent = (typeof inputItem.content === 'string') ? inputItem.content : Object.entries(inputItem.content).map(([key, value]) => `<strong>${key}:</strong> ${String(value).substring(0, 30)}...`).join(' | ');
-        return `<div class="list-item"><input type="checkbox" value="${inputItem.id}" id="async-input-${inputItem.id}"><label for="async-input-${inputItem.id}" class="item-content" style="cursor: pointer;"><span class="item-index">${index + 1}.</span>${displayContent.substring(0, 150)}</label></div>`;
-    }).join('') || '<div class="info" style="padding:10px">暂无输入</div>';
+    if (inputsListDiv) {
+        inputsListDiv.innerHTML = appState.asyncBatch.inputs.map((inputItem, index) => {
+            let displayContent = (typeof inputItem.content === 'string') ? inputItem.content : Object.entries(inputItem.content).map(([key, value]) => `<strong>${key}:</strong> ${String(value).substring(0, 30)}...`).join(' | ');
+            return `<div class="list-item"><input type="checkbox" value="${inputItem.id}" id="async-input-${inputItem.id}"><label for="async-input-${inputItem.id}" class="item-content" style="cursor: pointer;"><span class="item-index">${index + 1}.</span>${displayContent.substring(0, 150)}</label></div>`;
+        }).join('') || '<div class="info" style="padding:10px">暂无输入</div>';
+    }
     
-    asyncInputsCount.textContent = appState.asyncBatch.inputs.length;
-    asyncInputsManagement.style.display = appState.asyncBatch.inputs.length > 0 ? 'flex' : 'none';
+    if (asyncInputsCount) {
+        asyncInputsCount.textContent = appState.asyncBatch.inputs.length;
+    }
+    
+    if (asyncInputsManagement) {
+        asyncInputsManagement.style.display = appState.asyncBatch.inputs.length > 0 ? 'flex' : 'none';
+    }
 
-    templatesListDiv.innerHTML = appState.asyncBatch.templates.map(t => `<div class="list-item" style="grid-template-columns: 1fr auto;"><span class="item-content"><strong>${t.id}:</strong> ${t.name} (模型: ${t.model}, 温度: ${t.temperature})</span><button class="icon-button" title="删除" onclick="deleteAsyncTemplate('${t.id}')">🗑️</button></div>`).join('') || '<div class="info" style="padding:10px">暂无模板</div>';
+    if (templatesListDiv) {
+        templatesListDiv.innerHTML = appState.asyncBatch.templates.map(t => `<div class="list-item" style="grid-template-columns: 1fr auto;"><span class="item-content"><strong>${t.id}:</strong> ${t.name} (模型: ${t.model}, 温度: ${t.temperature})</span><button class="icon-button" title="删除" onclick="deleteAsyncTemplate('${t.id}')">🗑️</button></div>`).join('') || '<div class="info" style="padding:10px">暂无模板</div>';
+    }
     
-    if (appState.asyncBatch.templates.length === 0 || appState.asyncBatch.inputs.length === 0) {
-        taskCreationArea.innerHTML = '<div class="info">请先在步骤1添加输入，并在步骤2中添加模板。</div>';
-    } else {
-        taskCreationArea.innerHTML = appState.asyncBatch.templates.map(t => `<div class="template-task-creator"><h5>模板: ${t.name} (${t.id})</h5><div class="config-item row-flex"><label for="range-input-${t.id}">输入序号范围:</label><input type="text" id="range-input-${t.id}" placeholder="默认全部 (1-${appState.asyncBatch.inputs.length}), 或手动输入范围"></div><button class="small-button" onclick="addAsyncTasksByRange('${t.id}')">添加至任务列表</button></div>`).join('');
+    if (taskCreationArea) {
+        if (appState.asyncBatch.templates.length === 0 || appState.asyncBatch.inputs.length === 0) {
+            taskCreationArea.innerHTML = '<div class="info">请先在步骤1添加输入，并在步骤2中添加模板。</div>';
+        } else {
+            taskCreationArea.innerHTML = appState.asyncBatch.templates.map(t => `<div class="template-task-creator"><h5>模板: ${t.name} (${t.id})</h5><div class="config-item row-flex"><label for="range-input-${t.id}">输入序号范围:</label><input type="text" id="range-input-${t.id}" placeholder="默认全部 (1-${appState.asyncBatch.inputs.length}), 或手动输入范围"></div><button class="small-button" onclick="addAsyncTasksByRange('${t.id}')">添加至任务列表</button></div>`).join('');
+        }
     }
 }
 
@@ -690,12 +747,5 @@ function exportAsyncResultsToExcel() {
     alert("Excel结果快照已开始下载。");
 }
 
-
-// ▼▼▼ 自动初始化功能三 ▼▼▼
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initAsyncBatch);
-} else {
-    // DOM已经加载完成，直接初始化
-    initAsyncBatch();
-}
-// ▲▲▲ 自动初始化结束 ▲▲▲
+// Note: Initialization is now handled by js/main.js after component loads
+// Removed auto-initialization to prevent double initialization

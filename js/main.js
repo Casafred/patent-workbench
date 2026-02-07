@@ -1,19 +1,211 @@
 // js/main.js (Final, Corrected, and Robust Version)
 
 // =================================================================================
+// DOM 辅助函数
+// =================================================================================
+// Note: getEl is defined in js/modules/navigation/tab-navigation.js which loads before this file
+
+// =================================================================================
 // 初始化
 // =================================================================================
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     console.log('开始初始化所有模块');
+    
+    // Load header component first
+    try {
+        await loadComponent('components/header.html', 'header-component');
+        console.log('✅ Header component loaded');
+    } catch (error) {
+        console.error('❌ Failed to load header component:', error);
+    }
+    
+    // Load tab navigation component
+    try {
+        await loadComponent('components/tab-navigation.html', 'tab-navigation-component');
+        console.log('✅ Tab navigation component loaded');
+    } catch (error) {
+        console.error('❌ Failed to load tab navigation component:', error);
+    }
+    
+    // Load instant chat component and initialize
+    try {
+        await loadComponent('components/tabs/instant-chat.html', 'instant-chat-component');
+        console.log('✅ Instant chat component loaded');
+        // Wait for DOM to be ready
+        await new Promise(resolve => setTimeout(resolve, 50));
+        initChat();
+        console.log('✅ Chat initialized');
+    } catch (error) {
+        console.error('❌ Failed to load instant chat component:', error);
+    }
+    
+    // Load Feature 2 (Async Batch) component and initialize
+    try {
+        const loaded = await loadComponent('components/tabs/async-batch.html', 'async-batch-component', {
+            requiredElements: [
+                'async_add_output_field_btn',
+                'async_output_fields_container',
+                'async_preset_template_select',
+                'async_excel_column_count'
+            ],
+            timeout: 5000
+        });
+        
+        if (loaded) {
+            console.log('✅ Feature 2 (Async Batch) component loaded');
+            // Wait for DOM to be ready
+            await new Promise(resolve => setTimeout(resolve, 50));
+            if (typeof initAsyncBatchModule === 'function') {
+                initAsyncBatchModule();
+            } else {
+                console.error('❌ initAsyncBatchModule function not found');
+            }
+        } else {
+            console.error('❌ Feature 2 (Async Batch) component failed to load');
+        }
+    } catch (error) {
+        console.error('❌ Failed to load Feature 2 (Async Batch) component:', error);
+    }
+    
+    // Load Feature 3 (Large Batch) component and initialize
+    try {
+        const loaded = await loadComponent('components/tabs/large-batch.html', 'large-batch-component', {
+            requiredElements: [
+                'gen_file-input',
+                'large_batch_template_selector'
+            ],
+            timeout: 5000
+        });
+        
+        if (loaded) {
+            console.log('✅ Feature 3 (Large Batch) component loaded');
+            // Wait for DOM to be ready
+            await new Promise(resolve => setTimeout(resolve, 50));
+            if (typeof initLargeBatchModule === 'function') {
+                initLargeBatchModule();
+            } else {
+                console.error('❌ initLargeBatchModule function not found');
+            }
+        } else {
+            console.error('❌ Feature 3 (Large Batch) component failed to load');
+        }
+    } catch (error) {
+        console.error('❌ Failed to load Feature 3 (Large Batch) component:', error);
+    }
+    
+    // Load Feature 4 (Local Patent Library) component and initialize
+    try {
+        const loaded = await loadComponent('components/tabs/local-patent-lib.html', 'local-patent-lib-component', {
+            requiredElements: [
+                'lpl_original_file_input',
+                'lpl_expand_btn'
+            ],
+            timeout: 5000
+        });
+        
+        if (loaded) {
+            console.log('✅ Feature 4 (Local Patent Library) component loaded');
+            // Wait for DOM to be ready
+            await new Promise(resolve => setTimeout(resolve, 50));
+            if (typeof initLocalPatentLibModule === 'function') {
+                initLocalPatentLibModule();
+            } else {
+                console.error('❌ initLocalPatentLibModule function not found');
+            }
+        } else {
+            console.error('❌ Feature 4 (Local Patent Library) component failed to load');
+        }
+    } catch (error) {
+        console.error('❌ Failed to load Feature 4 (Local Patent Library) component:', error);
+    }
+    
+    // Load Feature 5 (Claims Comparison) component and initialize
+    try {
+        const loaded = await loadComponent('components/tabs/claims-comparison.html', 'claims-comparison-component', {
+            requiredElements: [
+                'comparison_model_select',
+                'add_claim_btn',
+                'claims_input_container'
+            ],
+            timeout: 5000
+        });
+        
+        if (loaded) {
+            console.log('✅ Feature 5 (Claims Comparison) component loaded');
+            // Wait for DOM to be ready
+            await new Promise(resolve => setTimeout(resolve, 50));
+            if (typeof initClaimsComparisonModule === 'function') {
+                initClaimsComparisonModule();
+            } else {
+                console.error('❌ initClaimsComparisonModule function not found');
+            }
+        } else {
+            console.error('❌ Feature 5 (Claims Comparison) component failed to load');
+        }
+    } catch (error) {
+        console.error('❌ Failed to load Feature 5 (Claims Comparison) component:', error);
+    }
+    
+    // Load Feature 6 (Patent Batch) component and initialize
+    try {
+        await loadComponent('components/tabs/patent-batch.html', 'patent-batch-component');
+        console.log('✅ Feature 6 (Patent Batch) component loaded');
+        // Wait for DOM to be ready
+        await new Promise(resolve => setTimeout(resolve, 50));
+        if (typeof initPatentBatchModule === 'function') {
+            initPatentBatchModule();
+        } else {
+            console.error('❌ initPatentBatchModule function not found');
+        }
+    } catch (error) {
+        console.error('❌ Failed to load Feature 6 (Patent Batch) component:', error);
+    }
+    
+    // Load Feature 7 (Claims Processor) component
+    try {
+        await loadComponent('components/tabs/claims-processor.html', 'claims-processor-component');
+        console.log('✅ Feature 7 (Claims Processor) component loaded');
+        // Note: Claims Processor initialization is handled in the component itself
+    } catch (error) {
+        console.error('❌ Failed to load Feature 7 (Claims Processor) component:', error);
+    }
+    
+    // Load Feature 8 (Drawing Marker) component and initialize
+    try {
+        const loaded = await loadComponent('components/tabs/drawing-marker.html', 'drawing-marker-component', {
+            requiredElements: [
+                'aiProcessingPanelContainer',
+                // Note: promptEditorContainer is created dynamically by ai_processing_panel.js
+                'drawing_upload_input',
+                'specification_input',
+                'start_processing_btn',
+                'clear_all_btn'
+            ],
+            timeout: 5000,
+            onReady: async () => {
+                // Wait a bit for scripts to load
+                await new Promise(resolve => setTimeout(resolve, 100));
+                // Initialize Drawing Marker
+                if (typeof initDrawingMarker === 'function') {
+                    initDrawingMarker();
+                    console.log('✅ Drawing Marker initialized');
+                } else {
+                    console.error('❌ initDrawingMarker function not found');
+                }
+            }
+        });
+        
+        if (loaded) {
+            console.log('✅ Feature 8 (Drawing Marker) component loaded');
+        } else {
+            console.error('❌ Feature 8 (Drawing Marker) component failed to load');
+        }
+    } catch (error) {
+        console.error('❌ Failed to load Feature 8 (Drawing Marker) component:', error);
+    }
+    
+    // Initialize API Key Config (global, not tied to a specific component)
     initApiKeyConfig();
-    initChat();
-    initAsyncBatch();
-    console.log('准备初始化大批量处理模块');
-    initLargeBatch();
-    console.log('大批量处理模块初始化完成');
-    initLocalPatentLib();
-    initClaimsComparison();
-    initPatentBatch();
 
 
     // 默认激活第一个主页签
@@ -39,119 +231,13 @@ document.addEventListener('DOMContentLoaded', () => {
 // =================================================================================
 // 页面布局与导航
 // =================================================================================
-function updateStepperState(stepper, activeStepElement) {
-    if (!stepper || !activeStepElement) return;
-
-    const steps = Array.from(stepper.querySelectorAll('.step-item'));
-    const activeIndex = steps.indexOf(activeStepElement);
-
-    if (activeIndex === -1) return;
-
-    // 更新步骤状态：之前的步骤标记为completed，当前步骤标记为active
-    steps.forEach((step, index) => {
-        step.classList.remove('active', 'completed');
-        if (index < activeIndex) {
-            step.classList.add('completed');
-        } else if (index === activeIndex) {
-            step.classList.add('active');
-        }
-    });
-}
-
-function switchTab(tabId, clickedButton) {
-    document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
-    document.querySelectorAll(".tab-button").forEach(el => el.classList.remove("active"));
-    getEl(`${tabId}-tab`).classList.add("active");
-    if (clickedButton) clickedButton.classList.add("active");
-    
-    // 当切换到功能三标签页时，确保模板选择器能够正确初始化
-    if (tabId === 'large_batch') {
-        setTimeout(() => {
-            // 首先激活功能三内部的第一个步骤
-            const largeBatchFirstStep = document.querySelector('#large_batch-tab .step-item');
-            if (largeBatchFirstStep) {
-                switchSubTab('generator', largeBatchFirstStep);
-                console.log('✅ 功能三内部步骤已激活');
-            }
-            
-            // 然后初始化功能三独立的模板选择器
-            if (typeof updateTemplateSelector === 'function') {
-                updateTemplateSelector();
-                console.log('✅ 功能三标签页切换，独立模板选择器已重新初始化');
-            }
-        }, 100);
-    }
-}
-
-function switchAsyncSubTab(subTabId, clickedElement) {
-    const parent = getEl('async_batch-tab');
-    parent.querySelectorAll(".sub-tab-content").forEach(el => el.classList.remove("active"));
-    getEl(`async-sub-tab-${subTabId}`).classList.add("active");
-    
-    if (clickedElement) {
-        const stepper = clickedElement.closest('.progress-stepper');
-        updateStepperState(stepper, clickedElement);
-    }
-
-    if (subTabId === 'input') {
-        const activeInnerTabButton = document.querySelector('#async-sub-tab-input .sub-tab-container .sub-tab-button.active');
-        if (activeInnerTabButton) {
-            activeInnerTabButton.click();
-        } else {
-            const firstInnerTabButton = document.querySelector('#async-sub-tab-input .sub-tab-container .sub-tab-button');
-            if (firstInnerTabButton) firstInnerTabButton.click();
-        }
-    }
-}
-
-function switchSubTab(subTabId, clickedElement) {
-    const parent = getEl('large_batch-tab');
-    parent.querySelectorAll(".sub-tab-content").forEach(el => el.classList.remove("active"));
-    getEl(`sub-tab-${subTabId}`).classList.add("active");
-    
-    if (clickedElement) {
-        const stepper = clickedElement.closest('.progress-stepper');
-        updateStepperState(stepper, clickedElement);
-    }
-
-    // 当切换到generator子标签页时，确保功能三独立的模板选择器能够正确初始化
-    if (subTabId === 'generator') {
-        setTimeout(() => {
-            // 确保DOM元素已渲染
-            if (typeof updateTemplateSelector === 'function') {
-                updateTemplateSelector();
-                console.log('✅ 功能三generator子标签页切换，独立模板选择器已重新初始化');
-            }
-        }, 50);
-    }
-
-    // ▼▼▼ 新增的核心逻辑 ▼▼▼
-    // 当切换到“解析报告”页签时，主动检查内存中是否有待处理的结果
-    if (subTabId === 'reporter' && appState.batch.resultContent) {
-        // 显示提示信息
-        repInfoBox.style.display = 'block';
-        // 解析内存中的JSONL数据并存入报告模块的状态
-        appState.reporter.jsonlData = parseJsonl(appState.batch.resultContent);
-        // 检查是否可以启用“生成报告”按钮
-        checkReporterReady();
-    } else if(subTabId !== 'reporter') {
-        // 确保离开报告页再回来时，如果内存数据已清除，提示框会隐藏
-        // (虽然当前逻辑不会清除，但这是个好的防御性编程习惯)
-        repInfoBox.style.display = 'none';
-    }
-    // ▲▲▲ 新增逻辑结束 ▲▲▲
-}
-
-function switchLPLSubTab(subTabId, clickedElement) {
-    const parent = getEl('local_patent_lib-tab');
-    parent.querySelectorAll(".sub-tab-content").forEach(el => el.classList.remove("active"));
-    getEl(`lpl-sub-tab-${subTabId}`).classList.add("active");
-    
-    if (clickedElement) {
-        const stepper = clickedElement.closest('.progress-stepper');
-        updateStepperState(stepper, clickedElement);
-    }
-}
+// 注意: 导航函数现在在 js/modules/navigation/tab-navigation.js 中定义
+// 这些函数通过 <script> 标签加载，在全局作用域中可用:
+// - updateStepperState(stepper, activeStepElement)
+// - switchTab(tabId, clickedButton)
+// - switchAsyncSubTab(subTabId, clickedElement)
+// - switchSubTab(subTabId, clickedElement)
+// - switchLPLSubTab(subTabId, clickedElement)
 
 // =================================================================================
 // 批量专利解读功能
@@ -1722,3 +1808,142 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+
+// =================================================================================
+// 帮助按钮拖动功能 (优化版)
+// =================================================================================
+(function initDraggableHelpButton() {
+    const helpButton = document.querySelector('.floating-help-button');
+    if (!helpButton) {
+        console.warn('Help button not found, draggable functionality not initialized');
+        return;
+    }
+    
+    let isDragging = false;
+    let startX, startY, startLeft, startBottom;
+    
+    // 阻止默认的链接点击行为（仅在拖动时）
+    let hasMoved = false;
+    
+    helpButton.addEventListener('mousedown', function(e) {
+        // 只响应左键
+        if (e.button !== 0) return;
+        
+        isDragging = true;
+        hasMoved = false;
+        
+        // 记录初始位置
+        startX = e.clientX;
+        startY = e.clientY;
+        
+        // 获取当前位置
+        const rect = helpButton.getBoundingClientRect();
+        startLeft = rect.left;
+        startBottom = window.innerHeight - rect.bottom;
+        
+        // 禁用过渡效果，使拖动更流畅
+        helpButton.style.transition = 'none';
+        
+        e.preventDefault(); // 防止文本选择
+    });
+    
+    document.addEventListener('mousemove', function(e) {
+        if (!isDragging) return;
+        
+        const deltaX = e.clientX - startX;
+        const deltaY = e.clientY - startY;
+        
+        // 如果移动超过10px，认为是拖动而不是点击（增加阈值，减少误触）
+        if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
+            if (!hasMoved) {
+                // 第一次识别为拖动时，添加拖动样式
+                helpButton.classList.add('dragging');
+                hasMoved = true;
+            }
+        }
+        
+        if (hasMoved) {
+            // 计算新位置
+            let newLeft = startLeft + deltaX;
+            let newBottom = startBottom - deltaY;
+            
+            // 边界检查（留出10px边距，避免贴边）
+            const buttonWidth = helpButton.offsetWidth;
+            const buttonHeight = helpButton.offsetHeight;
+            const margin = 10;
+            
+            newLeft = Math.max(margin, Math.min(newLeft, window.innerWidth - buttonWidth - margin));
+            newBottom = Math.max(margin, Math.min(newBottom, window.innerHeight - buttonHeight - margin));
+            
+            // 应用新位置
+            helpButton.style.left = newLeft + 'px';
+            helpButton.style.bottom = newBottom + 'px';
+            helpButton.style.right = 'auto'; // 清除right定位
+        }
+    });
+    
+    document.addEventListener('mouseup', function(e) {
+        if (!isDragging) return;
+        
+        isDragging = false;
+        helpButton.classList.remove('dragging');
+        
+        // 延迟恢复过渡效果，避免拖动结束时的跳动
+        setTimeout(() => {
+            helpButton.style.transition = '';
+        }, 50);
+        
+        // 如果发生了拖动，阻止链接打开
+        if (hasMoved) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // 保存位置到localStorage
+            const rect = helpButton.getBoundingClientRect();
+            localStorage.setItem('helpButtonPosition', JSON.stringify({
+                left: rect.left,
+                bottom: window.innerHeight - rect.bottom
+            }));
+        }
+    });
+    
+    // 阻止拖动时的链接点击
+    helpButton.addEventListener('click', function(e) {
+        if (hasMoved) {
+            e.preventDefault();
+            e.stopPropagation();
+            hasMoved = false; // 重置状态
+            return false;
+        }
+    });
+    
+    // 恢复保存的位置
+    try {
+        const savedPosition = localStorage.getItem('helpButtonPosition');
+        if (savedPosition) {
+            const pos = JSON.parse(savedPosition);
+            
+            // 验证保存的位置是否在有效范围内
+            const buttonWidth = helpButton.offsetWidth || 60;
+            const buttonHeight = helpButton.offsetHeight || 60;
+            const margin = 10;
+            
+            // 确保位置在屏幕范围内
+            const validLeft = Math.max(margin, Math.min(pos.left, window.innerWidth - buttonWidth - margin));
+            const validBottom = Math.max(margin, Math.min(pos.bottom, window.innerHeight - buttonHeight - margin));
+            
+            helpButton.style.left = validLeft + 'px';
+            helpButton.style.bottom = validBottom + 'px';
+            helpButton.style.right = 'auto';
+            
+            console.log('✅ Help button position restored:', { left: validLeft, bottom: validBottom });
+        }
+    } catch (e) {
+        console.warn('Failed to restore help button position:', e);
+        // 如果恢复失败，清除保存的位置
+        localStorage.removeItem('helpButtonPosition');
+    }
+    
+    console.log('✅ Help button draggable functionality initialized');
+})();

@@ -9,16 +9,39 @@ globalThis.initLargeBatch = function() {
     switchSubTab('generator', document.querySelector('#large_batch-tab .sub-tab-button'));
 }
 
-// 全局暴露updateTemplateSelector函数，以便在main.js中调用
-globalThis.updateTemplateSelector = updateTemplateSelector;
+// 注意：updateTemplateSelector函数将在定义后再全局暴露
 
 function initGenerator() {
+    // Get all required DOM elements first
+    const genFileInput = getEl('gen_file-input');
+    const genSheetSelector = getEl('gen_sheet-selector');
+    const columnCountInput = getEl('column-count');
+    const genGenerateBtn = getEl('gen_generate-btn');
+    const genDownloadBtn = getEl('gen_download-btn');
+    const templateFileInput = getEl('template_file_input');
+    
     // 模型选择器现在由 state.js 的 updateAllModelSelectors() 统一管理
-    genFileInput.addEventListener('change', handleGenFile);
-    genSheetSelector.addEventListener('change', e => loadGenSheet(e.target.value));
-    columnCountInput.addEventListener('input', () => { updateColumnSelectors(); updateContentInsertionPreview(); });
-    genGenerateBtn.addEventListener('click', generateJsonl);
-    genDownloadBtn.addEventListener('click', downloadJsonl);
+    if (genFileInput) {
+        genFileInput.addEventListener('change', handleGenFile);
+    } else {
+        console.warn('⚠️ gen_file-input element not found');
+    }
+    
+    if (genSheetSelector) {
+        genSheetSelector.addEventListener('change', e => loadGenSheet(e.target.value));
+    }
+    
+    if (columnCountInput) {
+        columnCountInput.addEventListener('input', () => { updateColumnSelectors(); updateContentInsertionPreview(); });
+    }
+    
+    if (genGenerateBtn) {
+        genGenerateBtn.addEventListener('click', generateJsonl);
+    }
+    
+    if (genDownloadBtn) {
+        genDownloadBtn.addEventListener('click', downloadJsonl);
+    }
 
     // ▼▼▼ 功能三独立模板选择器：在运行时重新获取元素 ▼▼▼
     const templateSelectorElement = getEl('large_batch_template_selector');
@@ -32,12 +55,32 @@ function initGenerator() {
     }
     // ▲▲▲ 功能三独立模板选择器结束 ▲▲▲
 
-    getEl('save_template_btn').addEventListener('click', saveTemplate);
-    getEl('delete_template_btn').addEventListener('click', deleteTemplate);
-    getEl('export_template_btn').addEventListener('click', exportTemplate);
-    getEl('import_template_btn').addEventListener('click', () => templateFileInput.click());
-    templateFileInput.addEventListener('change', importTemplate);
-    getEl('add-output-field-btn').addEventListener('click', () => addOutputField());
+    const saveTemplateBtn = getEl('save_template_btn');
+    const deleteTemplateBtn = getEl('delete_template_btn');
+    const exportTemplateBtn = getEl('export_template_btn');
+    const importTemplateBtn = getEl('import_template_btn');
+    const addOutputFieldBtn = getEl('add-output-field-btn');
+    
+    if (saveTemplateBtn) {
+        saveTemplateBtn.addEventListener('click', saveTemplate);
+    }
+    
+    if (deleteTemplateBtn) {
+        deleteTemplateBtn.addEventListener('click', deleteTemplate);
+    }
+    
+    if (exportTemplateBtn) {
+        exportTemplateBtn.addEventListener('click', exportTemplate);
+    }
+    
+    if (importTemplateBtn && templateFileInput) {
+        importTemplateBtn.addEventListener('click', () => templateFileInput.click());
+        templateFileInput.addEventListener('change', importTemplate);
+    }
+    
+    if (addOutputFieldBtn) {
+        addOutputFieldBtn.addEventListener('click', () => addOutputField());
+    }
 
     // 初始化模板 - 这是关键！
     initTemplates();
@@ -46,29 +89,58 @@ function initGenerator() {
 function handleGenFile(event) {
     const file = event.target.files[0];
     if (!file) return;
+    
+    // 获取所有需要的DOM元素
+    const genSheetSelector = getEl('gen_sheet-selector');
+    const columnConfigContainer = getEl('column-config-container');
+    const genGenerateBtn = getEl('gen_generate-btn');
+    const genPreviewOutput = getEl('gen_preview_output');
+    const genDownloadBtn = getEl('gen_download-btn');
+    const genReadyInfo = getEl('gen_ready_info');
+    
     // 清除之前的数据
     appState.generator.workbook = null;
     appState.generator.currentSheetData = null;
     appState.generator.columnHeaders = [];
-    genSheetSelector.innerHTML = '';
-    genSheetSelector.style.display = 'none';
-    columnConfigContainer.style.display = 'none';
-    genGenerateBtn.disabled = true;
-    genPreviewOutput.style.display = 'none';
-    genDownloadBtn.style.display = 'none';
-    genReadyInfo.style.display = 'none';
+    
+    if (genSheetSelector) {
+        genSheetSelector.innerHTML = '';
+        genSheetSelector.style.display = 'none';
+    }
+    
+    if (columnConfigContainer) {
+        columnConfigContainer.style.display = 'none';
+    }
+    
+    if (genGenerateBtn) {
+        genGenerateBtn.disabled = true;
+    }
+    
+    if (genPreviewOutput) {
+        genPreviewOutput.style.display = 'none';
+    }
+    
+    if (genDownloadBtn) {
+        genDownloadBtn.style.display = 'none';
+    }
+    
+    if (genReadyInfo) {
+        genReadyInfo.style.display = 'none';
+    }
     
     const reader = new FileReader();
     reader.onload = e => {
         try {
             const data = new Uint8Array(e.target.result);
             appState.generator.workbook = XLSX.read(data, { type: 'array' });
-            genSheetSelector.innerHTML = '';
-            appState.generator.workbook.SheetNames.forEach(name => {
-                genSheetSelector.innerHTML += `<option value="${name}">${name}</option>`;
-            });
-            genSheetSelector.style.display = 'inline-block';
-            loadGenSheet(appState.generator.workbook.SheetNames[0]);
+            if (genSheetSelector) {
+                genSheetSelector.innerHTML = '';
+                appState.generator.workbook.SheetNames.forEach(name => {
+                    genSheetSelector.innerHTML += `<option value="${name}">${name}</option>`;
+                });
+                genSheetSelector.style.display = 'inline-block';
+                loadGenSheet(appState.generator.workbook.SheetNames[0]);
+            }
         } catch (err) { alert('无法解析文件，请确保是有效的Excel文件。'); console.error(err); }
     };
     reader.readAsArrayBuffer(file);
@@ -80,17 +152,36 @@ function handleGenFile(event) {
 function loadGenSheet(sheetName) {
     const worksheet = appState.generator.workbook.Sheets[sheetName];
     appState.generator.currentSheetData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-    genGenerateBtn.disabled = !appState.generator.currentSheetData || appState.generator.currentSheetData.length === 0;
+    
+    const genGenerateBtn = getEl('gen_generate_btn');
+    const columnConfigContainer = getEl('column_config_container');
+    
+    if (genGenerateBtn) {
+        genGenerateBtn.disabled = !appState.generator.currentSheetData || appState.generator.currentSheetData.length === 0;
+    }
+    
     if (appState.generator.currentSheetData.length > 0) {
         appState.generator.columnHeaders = Object.keys(appState.generator.currentSheetData[0]);
-        columnConfigContainer.style.display = 'block';
+        if (columnConfigContainer) {
+            columnConfigContainer.style.display = 'block';
+        }
         updateColumnSelectors();
     } else {
-        columnConfigContainer.style.display = 'none';
+        if (columnConfigContainer) {
+            columnConfigContainer.style.display = 'none';
+        }
     }
 }
 
 function updateColumnSelectors() {
+    const columnConfigArea = getEl('column-config-area');
+    const columnCountInput = getEl('column-count');
+    
+    if (!columnConfigArea || !columnCountInput) {
+        console.error('❌ Required elements not found for updateColumnSelectors');
+        return;
+    }
+    
     columnConfigArea.innerHTML = '';
     const count = parseInt(columnCountInput.value, 10);
     for (let i = 1; i <= count; i++) {
@@ -107,11 +198,25 @@ function updateColumnSelectors() {
 
 function updateContentInsertionPreview() {
     const selectors = document.querySelectorAll('.column-selector');
+    const contentInsertionPreview = getEl('content-insertion-preview');
+    
+    if (!contentInsertionPreview) {
+        console.error('❌ content-insertion-preview element not found');
+        return;
+    }
+    
     let placeholders = Array.from(selectors).map((sel, i) => `{${sel.value || `配置列${i+1}`}}`);
     contentInsertionPreview.textContent = `专利内容如下：\n${placeholders.join('\n\n')}`;
 }
 
 function buildUserPrompt() {
+    const promptRules = getEl('prompt-rules');
+    
+    if (!promptRules) {
+        console.error('❌ prompt-rules element not found');
+        return '请分析以下专利内容：\n\n{内容}';
+    }
+    
     const rules = promptRules.value.trim();
     const contentInsertionTemplate = "专利内容如下：\n" + Array.from(document.querySelectorAll('.column-selector')).map(sel => `{${sel.value}}`).join('\n\n');
     const outputFields = getOutputFieldsFromUI();
@@ -130,34 +235,80 @@ function buildUserPrompt() {
 
 function loadTemplateUI(template) {
     if (!template) return;
-    apiSystemInput.value = template.system || '';
+    
+    const apiSystemInput = getEl('api-system-prompt');
+    const promptRules = getEl('prompt-rules');
+    const outputFieldsContainer = getEl('output-fields-container');
+    
+    if (apiSystemInput) {
+        apiSystemInput.value = template.system || '';
+    }
+    
     if (typeof template.user === 'string') {
-        promptRules.value = template.user;
-        outputFieldsContainer.innerHTML = '';
+        if (promptRules) {
+            promptRules.value = template.user;
+        }
+        if (outputFieldsContainer) {
+            outputFieldsContainer.innerHTML = '';
+        }
     } else if (template.user && typeof template.user === 'object') {
-        promptRules.value = template.user.rules || '';
-        outputFieldsContainer.innerHTML = '';
-        if(template.user.outputFields) template.user.outputFields.forEach(f => addOutputField(f.name, f.desc));
+        if (promptRules) {
+            promptRules.value = template.user.rules || '';
+        }
+        if (outputFieldsContainer) {
+            outputFieldsContainer.innerHTML = '';
+            if(template.user.outputFields) template.user.outputFields.forEach(f => addOutputField(f.name, f.desc));
+        }
     }
 }
 
 function generateJsonl() {
     if (!appState.generator.currentSheetData) return;
+    
     const userPromptTemplate = buildUserPrompt();
     const selectedColumns = Array.from(document.querySelectorAll('.column-selector')).map(sel => sel.value);
+    
+    const apiModelSelect = getEl('api-model');
+    const apiSystemInput = getEl('api-system-prompt');
+    const apiTempInput = getEl('api-temperature');
+    const genPreviewOutput = getEl('gen_preview_output');
+    const genDownloadBtn = getEl('gen_download-btn');
+    const genReadyInfo = getEl('gen_ready_info');
+    
+    if (!apiModelSelect || !apiSystemInput || !apiTempInput) {
+        console.error('❌ Required API elements not found for generateJsonl');
+        return;
+    }
+    
     const requests = appState.generator.currentSheetData.map((row, index) => {
         let finalUserPrompt = userPromptTemplate;
         selectedColumns.forEach(colName => { finalUserPrompt = finalUserPrompt.replace(new RegExp(`{${colName}}`, 'g'), row[colName] || ''); });
         return { "custom_id": `request-${index + 1}`, "method": "POST", "url": "/v4/chat/completions", "body": { model: apiModelSelect.value, messages: [{ role: 'system', content: apiSystemInput.value }, { role: 'user', content: finalUserPrompt }], temperature: parseFloat(apiTempInput.value) } };
     });
     appState.batch.jsonlContent = requests.map(JSON.stringify).join('\n');
-    genPreviewOutput.style.display = 'block';
-    genPreviewOutput.innerHTML = requests.slice(0, 3).map(req => JSON.stringify(req, null, 2).replace(/</g, '&lt;')).join('<hr style="border-color: var(--border-color); margin: 10px 0;">');
-    genDownloadBtn.style.display = 'inline-block';
-    genReadyInfo.style.display = 'block';
+    
+    if (genPreviewOutput) {
+        genPreviewOutput.style.display = 'block';
+        genPreviewOutput.innerHTML = requests.slice(0, 3).map(req => JSON.stringify(req, null, 2).replace(/</g, '&lt;')).join('<hr style="border-color: var(--border-color); margin: 10px 0;">');
+    }
+    
+    if (genDownloadBtn) {
+        genDownloadBtn.style.display = 'inline-block';
+    }
+    
+    if (genReadyInfo) {
+        genReadyInfo.style.display = 'block';
+    }
 }
 
 function addOutputField(name = '', desc = '') {
+    const outputFieldsContainer = getEl('output-fields-container');
+    
+    if (!outputFieldsContainer) {
+        console.error('❌ output-fields-container element not found');
+        return;
+    }
+    
     const fieldId = `field-${Date.now()}`;
     const fieldDiv = document.createElement('div');
     fieldDiv.className = 'output-field';
@@ -181,57 +332,25 @@ function downloadJsonl(){
     URL.revokeObjectURL(a.href);
 }
 
-function loadTemplateUI(template) {
-    if (!template) return;
-    apiSystemInput.value = template.system || '';
-    if (typeof template.user === 'string') {
-        promptRules.value = template.user;
-        outputFieldsContainer.innerHTML = '';
-    } else if (template.user && typeof template.user === 'object') {
-        promptRules.value = template.user.rules || '';
-        outputFieldsContainer.innerHTML = '';
-        if(template.user.outputFields) template.user.outputFields.forEach(f => addOutputField(f.name, f.desc));
-    }
-}
+// 注意：已删除重复的loadTemplateUI函数，保留第239行的版本
+// 该函数已在文件上方定义，包含正确的getEl调用和null检查
 
-function initTemplates() {
-    // 加载自定义模板
-    appState.generator.customTemplates = JSON.parse(localStorage.getItem('custom_templates') || '[]');
-
-    // ▼▼▼ 修复：检查并初始化预设模板 ▼▼▼
-    if (!appState.generator.presetTemplates || appState.generator.presetTemplates.length === 0) {
-        console.warn('⚠️ appState.generator.presetTemplates 为空，使用备用模板');
-        appState.generator.presetTemplates = [
-            { name: "专利文本翻译", isPreset: true, system: "你是一个专业精通各技术领域术语的、精通多国语言的专利文本翻译引擎。你的任务是自动检测用户输入专利文本的语言并将其翻译成中文。请直接返回翻译后的文本，不要添加任何额外的解释或说明。你必须严格遵循输出格式要求。", user: { rules: "请基于以下文本，直接输出翻译后的内容。\n要求：\n1. 结果必须是直接的翻译后中文文本，必须忠实于原文不得臆测，并选择贴合技术领域的专业术语表达", outputFields: [] }},
-            { name: "技术方案解读", isPreset: true, system: "你是一位资深的专利技术分析师。你的任务是基于专利内容，梳理总结其要解决的技术问题，采用的核心方案内容、以及实现的技术效果和最重要的核心关键词短语。", user: { rules: "请分析此专利并按以下JSON格式输出：", outputFields: [ { name: "技术方案", desc: "此处填写技术方案，总结专利的主要方案内容" }, { name: "技术问题", desc: "此处填写该专利可能主要解决的技术问题" }, { name: "技术效果", desc: "此处填写该专利可能带来的技术效果" }, { name: "技术关键词", desc: "此处按照专利文本中构成核心方案的重要程度输出15个关键词或短语" }] }},
-            { name: "技术文本翻译", isPreset: true, system: "你是一个专业精通各技术领域术语的、精通多国语言的翻译引擎。你的任务是自动检测用户输入文本的语言并将其翻译成中文。请直接返回翻译后的文本，不要添加任何额外的解释或说明。", user: { rules: "请翻译以下文本：", outputFields: [] }},
-            { name: "检索词拓展", isPreset: true, system: "你是一个专业的专利检索分析师。你的任务是根据用户提供的关键词，生成相关的拓展检索词。请确保生成的检索词与原关键词相关且具有多样性，能够覆盖不同的表达方式和相关领域。", user: { rules: "请为以下关键词生成10个相关的拓展检索词：", outputFields: [] }},
-            { name: "技术文本总结", isPreset: true, system: "你是一位资深的技术分析师。你的任务是基于提供的技术文本，总结其核心内容、技术要点和关键数据。请保持总结简洁明了，不超过200字。", user: { rules: "请总结以下技术文本的核心内容（不超过200字）：", outputFields: [] }}
-        ];
-    }
-    // ▲▲▲ 修复结束 ▲▲▲
-
-    // 更新模板选择器
-    updateTemplateSelector();
-
-    // 加载默认模板（第一个预设模板）
-    if (appState.generator.presetTemplates && appState.generator.presetTemplates.length > 0) {
-        const defaultTemplate = appState.generator.presetTemplates[0];
-        if (defaultTemplate) {
-            loadTemplateUI(defaultTemplate);
-        }
-    }
-}
-
-function updateTemplateSelector() {
+function updateTemplateSelector(retryCount = 0) {
     // ▼▼▼ 功能三独立模板选择器：在函数内部重新获取元素 ▼▼▼
     const templateSelectorElement = getEl('large_batch_template_selector');
 
     // 检查模板选择器元素是否存在
     if (!templateSelectorElement) {
-        console.error('❌ large_batch_template_selector 元素不存在，跳过初始化');
-        console.trace('堆栈跟踪:');
-        return;
+        if (retryCount < 3) {
+            // 如果元素未找到，且重试次数未超过3次，则延迟重试
+            console.log(`⏳ large_batch_template_selector 元素未找到，${500}ms后重试 (${retryCount + 1}/3)`);
+            setTimeout(() => updateTemplateSelector(retryCount + 1), 500);
+            return;
+        } else {
+            console.error('❌ large_batch_template_selector 元素不存在，已达到最大重试次数');
+            console.trace('堆栈跟踪:');
+            return;
+        }
     }
 
     console.log('✅ 找到 large_batch_template_selector 元素');
@@ -297,10 +416,60 @@ function updateTemplateSelector() {
     console.log(`✅ 模板选择器已初始化，共 ${templateSelectorElement.options.length} 个选项`);
 }
 
+// 全局暴露updateTemplateSelector函数，以便在main.js中调用
+globalThis.updateTemplateSelector = updateTemplateSelector;
+
+function initTemplates() {
+    console.log('🔄 initTemplates() 开始执行...');
+    
+    // 加载自定义模板
+    appState.generator.customTemplates = JSON.parse(localStorage.getItem('custom_templates') || '[]');
+    console.log('✅ 自定义模板加载完成，数量:', appState.generator.customTemplates.length);
+
+    // ▼▼▼ 修复：检查并初始化预设模板 ▼▼▼
+    console.log('📋 当前预设模板数量:', appState.generator.presetTemplates ? appState.generator.presetTemplates.length : 0);
+    if (!appState.generator.presetTemplates || appState.generator.presetTemplates.length === 0) {
+        console.warn('⚠️ appState.generator.presetTemplates 为空，使用备用模板');
+        appState.generator.presetTemplates = [
+            { name: "专利文本翻译", isPreset: true, system: "你是一个专业精通各技术领域术语的、精通多国语言的专利文本翻译引擎。你的任务是自动检测用户输入专利文本的语言并将其翻译成中文。请直接返回翻译后的文本，不要添加任何额外的解释或说明。你必须严格遵循输出格式要求。", user: { rules: "请基于以下文本，直接输出翻译后的内容。\n要求：\n1. 结果必须是直接的翻译后中文文本，必须忠实于原文不得臆测，并选择贴合技术领域的专业术语表达", outputFields: [] }},
+            { name: "技术方案解读", isPreset: true, system: "你是一位资深的专利技术分析师。你的任务是基于专利内容，梳理总结其要解决的技术问题，采用的核心方案内容、以及实现的技术效果和最重要的核心关键词短语。", user: { rules: "请分析此专利并按以下JSON格式输出：", outputFields: [ { name: "技术方案", desc: "此处填写技术方案，总结专利的主要方案内容" }, { name: "技术问题", desc: "此处填写该专利可能主要解决的技术问题" }, { name: "技术效果", desc: "此处填写该专利可能带来的技术效果" }, { name: "技术关键词", desc: "此处按照专利文本中构成核心方案的重要程度输出15个关键词或短语" }] }},
+            { name: "技术文本翻译", isPreset: true, system: "你是一个专业精通各技术领域术语的、精通多国语言的翻译引擎。你的任务是自动检测用户输入文本的语言并将其翻译成中文。请直接返回翻译后的文本，不要添加任何额外的解释或说明。", user: { rules: "请翻译以下文本：", outputFields: [] }},
+            { name: "检索词拓展", isPreset: true, system: "你是一个专业的专利检索分析师。你的任务是根据用户提供的关键词，生成相关的拓展检索词。请确保生成的检索词与原关键词相关且具有多样性，能够覆盖不同的表达方式和相关领域。", user: { rules: "请为以下关键词生成10个相关的拓展检索词：", outputFields: [] }},
+            { name: "技术文本总结", isPreset: true, system: "你是一位资深的技术分析师。你的任务是基于提供的技术文本，总结其核心内容、技术要点和关键数据。请保持总结简洁明了，不超过200字。", user: { rules: "请总结以下技术文本的核心内容（不超过200字）：", outputFields: [] }}
+        ];
+    }
+    console.log('✅ 预设模板准备完成，数量:', appState.generator.presetTemplates.length);
+    // ▲▲▲ 修复结束 ▲▲▲
+
+    // 更新模板选择器 - 延迟执行以确保DOM已准备好
+    // 调用本地定义的updateTemplateSelector函数，避免与patentTemplate.js中的函数冲突
+    console.log('⏳ 延迟100ms后更新模板选择器...');
+    setTimeout(() => {
+        console.log('🔄 调用 updateTemplateSelector()...');
+        updateTemplateSelector();
+    }, 100);
+
+    // 加载默认模板（第一个预设模板）
+    if (appState.generator.presetTemplates && appState.generator.presetTemplates.length > 0) {
+        const defaultTemplate = appState.generator.presetTemplates[0];
+        if (defaultTemplate) {
+            console.log('✅ 加载默认模板:', defaultTemplate.name);
+            loadTemplateUI(defaultTemplate);
+        }
+    }
+    
+    console.log('✅ initTemplates() 执行完成');
+}
+
 function loadTemplate(templateId) {
     // ▼▼▼ 功能三独立模板选择器：在函数内部重新获取元素 ▼▼▼
     const templateSelectorElement = getEl('large_batch_template_selector');
     // ▲▲▲ 功能三独立模板选择器结束 ▲▲▲
+
+    // 获取所需的DOM元素
+    const apiSystemInput = getEl('api-system-prompt');
+    const promptRules = getEl('prompt-rules');
+    const outputFieldsContainer = getEl('output-fields-container');
 
     // 如果没有传入templateId，从选择器获取
     if (!templateId) {
@@ -315,9 +484,15 @@ function loadTemplate(templateId) {
     // 处理空选项
     if (!templateId) {
         // 重置表单为默认状态
-        apiSystemInput.value = '你是一个高效的专利文本分析助手。';
-        promptRules.value = '';
-        outputFieldsContainer.innerHTML = '';
+        if (apiSystemInput) {
+            apiSystemInput.value = '你是一个高效的专利文本分析助手。';
+        }
+        if (promptRules) {
+            promptRules.value = '';
+        }
+        if (outputFieldsContainer) {
+            outputFieldsContainer.innerHTML = '';
+        }
         return;
     }
 
@@ -450,15 +625,43 @@ function importTemplate(event) {
 }
 
 function initBatchWorkflow() {
-    btnUpload.addEventListener('click', runStep1_Upload);
-    btnCreate.addEventListener('click', runStep2_Create);
-    btnCheck.addEventListener('click', runStep3_Check);
-    btnDownload.addEventListener('click', runStep3_Download);
-    btnStopCheck.addEventListener('click', stopAutoCheck);
-    btnRecover.addEventListener('click', recoverBatchState);
+    // Get all required DOM elements first
+    const btnUpload = getEl('btn_upload');
+    const btnCreate = getEl('btn_create');
+    const btnCheck = getEl('btn_check');
+    const btnDownload = getEl('btn_download');
+    const btnStopCheck = getEl('btn_stop_check');
+    const btnRecover = getEl('btn_recover');
+    
+    // Add event listeners with null checks
+    if (btnUpload) {
+        btnUpload.addEventListener('click', runStep1_Upload);
+    }
+    if (btnCreate) {
+        btnCreate.addEventListener('click', runStep2_Create);
+    }
+    if (btnCheck) {
+        btnCheck.addEventListener('click', runStep3_Check);
+    }
+    if (btnDownload) {
+        btnDownload.addEventListener('click', runStep3_Download);
+    }
+    if (btnStopCheck) {
+        btnStopCheck.addEventListener('click', stopAutoCheck);
+    }
+    if (btnRecover) {
+        btnRecover.addEventListener('click', recoverBatchState);
+    }
 }
 
 function addLog(message,type="info"){
+    // 获取batchLog元素
+    const batchLog = getEl('batch_log');
+    if (!batchLog) {
+        console.error('❌ batch_log元素不存在，无法添加日志');
+        return;
+    }
+    
     if (batchLog.textContent === '等待操作...') batchLog.innerHTML = '';
     const logEntry = document.createElement("div");
     logEntry.className = `info ${type}`;
@@ -471,43 +674,88 @@ function addLog(message,type="info"){
 async function runStep1_Upload(){
     addLog("开始执行步骤1：上传请求文件...");
     if(!appState.batch.jsonlContent) return addLog("错误：请先在【1. 生成请求文件】中生成内容。","error");
-    btnUpload.disabled = true;
+    
+    // 获取所需的DOM元素
+    const btnUpload = getEl('btn_upload');
+    const btnCreate = getEl('btn_create');
+    const btnCheck = getEl('btn_check');
+    const btnDownload = getEl('btn_download');
+    const batchIdReminder = getEl('batch_id_reminder');
+    
+    if (btnUpload) {
+        btnUpload.disabled = true;
+    }
+    
     try {
         const data = await apiCall("/upload", { jsonlContent: appState.batch.jsonlContent, fileName: `patent_requests_${Date.now()}.jsonl` });
         appState.batch.fileId = data.fileId;
         addLog(`成功: ${data.message}`,"success");
         addLog(`获取到 File ID: ${appState.batch.fileId}`);
-        btnCreate.disabled = false; btnCheck.disabled = true; btnDownload.disabled = true;
-        batchIdReminder.style.display = "none";
+        
+        if (btnCreate) btnCreate.disabled = false;
+        if (btnCheck) btnCheck.disabled = true;
+        if (btnDownload) btnDownload.disabled = true;
+        if (batchIdReminder) batchIdReminder.style.display = "none";
+        
         stopAutoCheck();
         
         // 自动发起batch请求
         addLog("自动发起批处理任务...");
         setTimeout(() => runStep2_Create(), 500);
-    } catch(e) { addLog(`错误: ${e.message}`, "error"); } finally { btnUpload.disabled = false; }
+    } catch(e) { addLog(`错误: ${e.message}`, "error"); } finally { 
+        if (btnUpload) btnUpload.disabled = false;
+    }
 }
 
 async function runStep2_Create(){
     addLog("开始执行步骤2：创建Batch任务...");
     if(!appState.batch.fileId) return addLog("错误：File ID 缺失。","error");
-    btnCreate.disabled = true;
+    
+    // 获取所需的DOM元素
+    const btnCreate = getEl('btn_create');
+    const btnCheck = getEl('btn_check');
+    const btnDownload = getEl('btn_download');
+    const batchIdReminder = getEl('batch_id_reminder');
+    
+    if (btnCreate) {
+        btnCreate.disabled = true;
+    }
+    
     try {
         const data = await apiCall("/create_batch",{ fileId: appState.batch.fileId });
         appState.batch.batchId = data.id;
         addLog("成功: Batch任务创建成功！","success");
         addLog(`获取到 Batch ID: ${appState.batch.batchId}`);
-        batchIdReminder.innerHTML=`<strong>任务已创建！请务必记录您的 Batch ID: <span style="user-select:all; background: #eee; padding: 2px 6px;">${appState.batch.batchId}</span></strong>`;
-        batchIdReminder.style.display = "block";
+        
+        if (batchIdReminder) {
+            batchIdReminder.innerHTML=`<strong>任务已创建！请务必记录您的 Batch ID: <span style="user-select:all; background: #eee; padding: 2px 6px;">${appState.batch.batchId}</span></strong>`;
+            batchIdReminder.style.display = "block";
+        }
+        
         addLog(`任务初始状态: ${data.status}`);
-        btnCheck.disabled = false; btnDownload.disabled = true;
+        
+        if (btnCheck) btnCheck.disabled = false;
+        if (btnDownload) btnDownload.disabled = true;
+        
         startAutoCheck();
-    } catch(e) { addLog(`错误: ${e.message}`, "error"); } finally { btnCreate.disabled = false; }
+    } catch(e) { addLog(`错误: ${e.message}`, "error"); } finally { 
+        if (btnCreate) btnCreate.disabled = false;
+    }
 }
 
 async function runStep3_Check(){
     addLog("正在检查任务状态...");
     if(!appState.batch.batchId) { addLog("错误：Batch ID 缺失，无法检查状态。","error"); stopAutoCheck(); return; }
-    btnCheck.disabled = true;
+    
+    // 获取所需的DOM元素
+    const btnCheck = getEl('btn_check');
+    const btnDownload = getEl('btn_download');
+    const autoCheckStatusEl = getEl('auto_check_status');
+    
+    if (btnCheck) {
+        btnCheck.disabled = true;
+    }
+    
     try {
         const data = await apiCall(`/check_status`, { batchId: appState.batch.batchId });
 
@@ -525,7 +773,7 @@ async function runStep3_Check(){
         addLog(`任务状态: <strong style="color: var(--primary-color-dark)">${data.status.toUpperCase()}</strong>${progressInfo}`);
         
         // 更新自动检查状态栏的显示
-        if (appState.batch.autoCheckTimer) {
+        if (appState.batch.autoCheckTimer && autoCheckStatusEl) {
              autoCheckStatusEl.textContent = `检查中... [${data.status}]${progressInfo}`;
         }
         // ▲▲▲ 修改结束 ▲▲▲
@@ -533,7 +781,7 @@ async function runStep3_Check(){
         if(data.status === "completed"){
             appState.batch.outputFileId = data.output_file_id;
             addLog(`任务完成! Output File ID: ${data.output_file_id}`,"success");
-            btnDownload.disabled = false;
+            if (btnDownload) btnDownload.disabled = false;
             stopAutoCheck();
             // (可选) 任务完成后自动触发下载
             addLog("检测到任务已完成，将在2秒后自动获取结果...");
@@ -542,13 +790,23 @@ async function runStep3_Check(){
             addLog(`任务终止。状态: ${data.status.toUpperCase()}`,"error");
             stopAutoCheck();
         }
-    } catch(e) { addLog(`检查状态时发生错误: ${e.message}`, "error"); } finally { btnCheck.disabled = false; }
+    } catch(e) { addLog(`检查状态时发生错误: ${e.message}`, "error"); } finally { 
+        if (btnCheck) btnCheck.disabled = false;
+    }
 }
 
 async function runStep3_Download(){
     addLog("开始执行步骤3：获取结果内容...");
     if(!appState.batch.outputFileId) return addLog("错误：Output File ID 缺失。","error");
-    btnDownload.disabled = true;
+    
+    // 获取所需的DOM元素
+    const btnDownload = getEl('btn_download');
+    const repInfoBox = getEl('rep_info_box');
+    
+    if (btnDownload) {
+        btnDownload.disabled = true;
+    }
+    
     try {
         // 【修改1】为了清晰，将变量名从 data 改为 response
         const response = await apiCall(`/download_result`, { fileId: appState.batch.outputFileId });
@@ -559,13 +817,15 @@ async function runStep3_Download(){
         // 现在 appState.batch.resultContent 中已经有了正确的JSONL字符串
         addLog("成功: 已将结果文件内容加载到浏览器内存中！","success");
         
-        if(appState.batch.resultContent) {
+        if(appState.batch.resultContent) { 
             // 这部分代码现在可以正常执行了
             appState.reporter.jsonlData = parseJsonl(appState.batch.resultContent);
             addLog("已自动将结果内容加载到解析器中！","success");
             
             // 【优化】在切换前就显示提示框，体验更好
-            repInfoBox.style.display = 'block';
+            if (repInfoBox) {
+                repInfoBox.style.display = 'block';
+            }
         }
         
         addLog("正在自动切换到【3. 解析报告】...");
@@ -579,15 +839,27 @@ async function runStep3_Download(){
     } catch(e) { 
         addLog(`错误: 获取结果文件失败: ${e.message}`, "error"); 
     } finally { 
-        btnDownload.disabled = false; 
+        if (btnDownload) {
+            btnDownload.disabled = false;
+        }
     }
 }
 
 function startAutoCheck(){
     stopAutoCheck();
     addLog("已启动自动状态检查（每分钟一次）。");
-    autoCheckContainer.style.display = "block";
-    autoCheckStatusEl.textContent = "自动检查已激活，等待首次查询...";
+    
+    // 获取所需的DOM元素
+    const autoCheckContainer = getEl('auto_check_container');
+    const autoCheckStatusEl = getEl('auto_check_status');
+    
+    if (autoCheckContainer) {
+        autoCheckContainer.style.display = "block";
+    }
+    if (autoCheckStatusEl) {
+        autoCheckStatusEl.textContent = "自动检查已激活，等待首次查询...";
+    }
+    
     runStep3_Check();
     appState.batch.autoCheckTimer = setInterval(runStep3_Check, 60000);
 }
@@ -596,18 +868,41 @@ function stopAutoCheck(){
     if(appState.batch.autoCheckTimer){
         clearInterval(appState.batch.autoCheckTimer);
         appState.batch.autoCheckTimer = null;
-        autoCheckStatusEl.textContent = "自动检查已停止。";
+        
+        // 获取所需的DOM元素
+        const autoCheckStatusEl = getEl('auto_check_status');
+        const autoCheckContainer = getEl('auto_check_container');
+        
+        if (autoCheckStatusEl) {
+            autoCheckStatusEl.textContent = "自动检查已停止。";
+        }
+        
         addLog("自动检查已停止。");
-        setTimeout(() => { autoCheckContainer.style.display="none" }, 3000);
+        
+        if (autoCheckContainer) {
+            setTimeout(() => { autoCheckContainer.style.display="none" }, 3000);
+        }
     }
 }
 
 async function recoverBatchState(){
+    // 获取所需的DOM元素
+    const recoverIdInput = getEl('recover_id_input');
+    const btnCheck = getEl('btn_check');
+    
+    if (!recoverIdInput) {
+        console.error('❌ recover_id_input元素不存在');
+        return addLog("错误：无法获取恢复ID输入框。","error");
+    }
+    
     const recoverId = recoverIdInput.value.trim();
     if(!recoverId) return addLog("错误：请输入要恢复的 Batch ID。","error");
     addLog(`正在尝试恢复 Batch ID: ${recoverId}...`);
     appState.batch.batchId = recoverId;
-    btnCheck.disabled = false;
+    
+    if (btnCheck) {
+        btnCheck.disabled = false;
+    }
     
     // 直接检查状态并获取outputFileId，而不是依赖日志文本
     let taskCompleted = false;
@@ -630,17 +925,37 @@ async function recoverBatchState(){
         setTimeout(() => runStep3_Download(), 2000);
     } else {
         // 否则启动自动检查或只启用手动检查按钮
-        btnCheck.disabled = false;
+        if (btnCheck) {
+            btnCheck.disabled = false;
+        }
         startAutoCheck();
     }
 }
 
 function initReporter() {
-    repExcelInput.addEventListener('change', handleReporterExcel);
-    repSheetSelector.addEventListener('change', e => loadReporterSheet(e.target.value));
-    repJsonlInput.addEventListener('change', handleReporterJsonl);
-    repGenerateBtn.addEventListener('click', parseAndGenerateReport);
-    repDownloadBtn.addEventListener('click', downloadFinalReport);
+    // Get all required DOM elements first
+    const repExcelInput = getEl('rep_excel_input');
+    const repSheetSelector = getEl('rep_sheet_selector');
+    const repJsonlInput = getEl('rep_jsonl_input');
+    const repGenerateBtn = getEl('rep_generate_btn');
+    const repDownloadBtn = getEl('rep_download_btn');
+    
+    // Add event listeners with null checks
+    if (repExcelInput) {
+        repExcelInput.addEventListener('change', handleReporterExcel);
+    }
+    if (repSheetSelector) {
+        repSheetSelector.addEventListener('change', e => loadReporterSheet(e.target.value));
+    }
+    if (repJsonlInput) {
+        repJsonlInput.addEventListener('change', handleReporterJsonl);
+    }
+    if (repGenerateBtn) {
+        repGenerateBtn.addEventListener('click', parseAndGenerateReport);
+    }
+    if (repDownloadBtn) {
+        repDownloadBtn.addEventListener('click', downloadFinalReport);
+    }
 }
 
 function handleReporterExcel(event){

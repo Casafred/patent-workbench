@@ -1,0 +1,170 @@
+<!-- 功能四：本地专利库管理 -->
+        <div id="local_patent_lib-tab" class="tab-content">
+            <!-- ▼▼▼ BUG 1 修复: 将原有的页签按钮替换为进度步进器 ▼▼▼ -->
+            <div class="progress-stepper" id="lpl-stepper">
+                <div class="step-item active" onclick="switchLPLSubTab('expand', this)">
+                    <div class="step-number">1</div>
+                    <div class="step-title">上传与展开</div>
+                </div>
+                <div class="step-item" onclick="switchLPLSubTab('merge', this)">
+                    <div class="step-number">2</div>
+                    <div class="step-title">合并新旧库</div>
+                </div>
+                <div class="step-item" onclick="switchLPLSubTab('result', this)">
+                    <div class="step-number">3</div>
+                    <div class="step-title">下载最终结果</div>
+                </div>
+                <div class="progress-bar"></div>
+            </div>
+            <!-- ▲▲▲ BUG 1 修复结束 ▲▲▲ -->
+
+            <!-- 步骤 1: 上传与展开 -->
+            <div id="lpl-sub-tab-expand" class="sub-tab-content active">
+                <div class="step">
+                    <div class="step-header">步骤 1: 上传原始专利库并展开同族专利号</div>
+                    <div class="config-item">
+                        <label for="lpl_original_file_input">A. 上传或重新上传您的原始专利 Excel 文件:</label>
+                        <input type="file" id="lpl_original_file_input" accept=".xlsx, .xls">
+                    </div>
+                    <div class="template-config-grid" style="grid-template-columns: 1fr auto; align-items: end; margin-top: 15px;">
+                        <div class="config-item">
+                            <label for="lpl_original_sheet_select">选择工作表 (Sheet):</label>
+                            <select id="lpl_original_sheet_select" disabled><option>请先上传文件</option></select>
+                        </div>
+                        <div class="config-item" style="justify-self: start;">
+                            <label style="display: flex; align-items: center; cursor: pointer;">
+                                <input type="checkbox" id="lpl_original_ignore_header" style="width: auto; margin-right: 8px;">
+                                忽略首行 (当首行为无效信息时勾选)
+                            </label>
+                        </div>
+                    </div>
+                    <hr style="margin: 20px 0; border-color: var(--border-color);">
+                    <div class="template-config-grid" style="grid-template-columns: 1fr auto; align-items: end;">
+                        <div class="config-item">
+                             <label for="lpl_family_col_name">B. 包含同族专利号的列名:</label>
+                             <input type="text" id="lpl_family_col_name" value="INPADOC 同族专利成员" placeholder="例如: INPADOC 同族专利成员">
+                        </div>
+                        <div class="config-item">
+                            <label for="lpl_delimiter">分隔符:</label>
+                            <input type="text" id="lpl_delimiter" value="|">
+                        </div>
+                    </div>
+                    <div style="text-align: center; margin: 20px 0;">
+                        <button id="lpl_expand_btn" disabled>① 展开同族专利号</button>
+                    </div>
+                    <div class="info" id="lpl_expand_status" style="display:none;"></div>
+                    <div id="lpl_expand_result_area" style="display:none;">
+                        <label>D. 展开且去重后的专利号列表 (共 <span id="lpl_unique_count">0</span> 个):</label>
+                        <textarea id="lpl_expanded_list_output" rows="10" readonly style="margin-top: 10px; font-family: monospace; white-space: pre;"></textarea>
+                        <div style="margin-top: 15px; display: flex; gap: 15px;">
+                            <button id="lpl_copy_btn" class="small-button">一键复制</button>
+                            <button id="lpl_download_txt_btn" class="small-button">下载为.txt文件</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 步骤 2: 合并新旧库 -->
+            <div id="lpl-sub-tab-merge" class="sub-tab-content">
+                <div class="step">
+                    <div class="step-header">步骤 2: 上传新数据并配置合并规则</div>
+                    <p class="info warning">注意：此工具专注于数据处理，Excel中的图片、图表等对象将不会被保留在最终导出的文件中。</p>
+                    
+                    <!-- ▼▼▼ 需求 2: 重构E,F,G区域的布局 ▼▼▼ -->
+                    <div class="lpl-merge-grid">
+                        <!-- Left Column -->
+                        <div>
+                             <div class="config-item">
+                                <label>E. 原始文件:</label>
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <input type="text" id="lpl_original_file_confirm" readonly placeholder="已从上一步加载，或在此直接上传">
+                                    <label for="lpl_original_reupload_input" class="small-button" style="flex-shrink: 0; cursor: pointer;">重新上传</label>
+                                    <input type="file" id="lpl_original_reupload_input" accept=".xlsx, .xls" style="display:none;">
+                                </div>
+                                 <div class="template-config-grid" style="grid-template-columns: 1fr auto; align-items: end; margin-top: 15px;">
+                                    <div class="config-item">
+                                        <label for="lpl_original_merge_sheet_select">选择工作表 (Sheet):</label>
+                                        <select id="lpl_original_merge_sheet_select" disabled><option>请先加载或上传文件</option></select>
+                                    </div>
+                                    <div class="config-item" style="justify-self: start;">
+                                        <label style="display: flex; align-items: center; cursor: pointer;">
+                                            <input type="checkbox" id="lpl_original_merge_ignore_header" style="width: auto; margin-right: 8px;">
+                                            忽略首行
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="lpl_old_cols_selection_area" class="config-item" style="display:none; margin-top: 20px;">
+                                <label>选择需要从旧表补充到新表的列:</label>
+                                <div style="margin-bottom: 10px;">
+                                    <button id="lpl_select_all_cols_btn" class="small-button">全选</button>
+                                    <button id="lpl_deselect_all_cols_btn" class="small-button">全不选</button>
+                                </div>
+                                <div id="lpl_old_cols_checkboxes" class="scrollable-list" style="max-height: 150px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Right Column -->
+                        <div>
+                             <div class="config-item">
+                                <label for="lpl_new_file_input">F. 上传或重新上传从商业数据库下载的最新Excel文件:</label>
+                                <input type="file" id="lpl_new_file_input" accept=".xlsx, .xls">
+                                 <div class="template-config-grid" style="grid-template-columns: 1fr auto; align-items: end; margin-top: 15px;">
+                                    <div class="config-item">
+                                        <label for="lpl_new_sheet_select">选择工作表 (Sheet):</label>
+                                        <select id="lpl_new_sheet_select" disabled><option>请先上传新库文件</option></select>
+                                    </div>
+                                    <div class="config-item" style="justify-self: start;">
+                                        <label style="display: flex; align-items: center; cursor: pointer;">
+                                            <input type="checkbox" id="lpl_new_ignore_header" style="width: auto; margin-right: 8px;">
+                                            忽略首行
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr style="margin: 25px 0; border-color: var(--border-color);">
+
+                    <div class="config-item">
+                        <label>G. 配置用于匹配的列 (通常是公开号):</label>
+                        <div class="template-config-grid" style="grid-template-columns: 1fr 1fr;">
+                            <div>
+                                <label for="lpl_original_key_select">原始库匹配列:</label>
+                                <select id="lpl_original_key_select" disabled><option>请先加载或上传原始库</option></select>
+                            </div>
+                            <div>
+                                <label for="lpl_new_key_select">新库匹配列:</label>
+                                <select id="lpl_new_key_select" disabled><option>请先上传新库</option></select>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- ▲▲▲ 需求 2: 布局修改完成 ▲▲▲ -->
+
+                     <div style="text-align: center; margin-top: 30px;">
+                        <button id="lpl_merge_btn" disabled>② 开始合并与更新</button>
+                    </div>
+                    <div class="info" id="lpl_merge_status" style="display:none; margin-top: 20px;"></div>
+                </div>
+            </div>
+
+            <!-- 步骤 3: 下载最终结果 -->
+            <div id="lpl-sub-tab-result" class="sub-tab-content">
+                 <div class="step">
+                    <div class="step-header">步骤 3: 预览并下载最终结果</div>
+                    <div class="info success" id="lpl_result_summary" style="display:none;"></div>
+                    <div id="lpl_result_preview_area" style="display:none;">
+                        <!-- ▼▼▼ 需求 1: 修改这里的标题文本 ▼▼▼ -->
+                        <label style="margin-top: 20px;">最终合并数据预览 (前10行，列宽可拖动):</label>
+                        <!-- ▼▼▼ 需求 1: 容器 div 保持不变，JS 将在其中生成新结构的表格 ▼▼▼ -->
+                        <div id="lpl_result_preview_table" class="preview-output" style="max-height: 400px; overflow: auto; padding:0; background:transparent;"></div>
+                    </div>
+                     <div style="text-align: center; margin-top: 30px;">
+                        <button id="lpl_download_final_btn" disabled>③ 下载最终合并的Excel文件</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+<!-- ====================================================================== -->

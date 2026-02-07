@@ -135,7 +135,7 @@ function saveCustomTemplates() {
 function updateTemplateSelector() {
     const selector = getEl('patent_template_selector');
     if (!selector) {
-        console.error('❌ 模板选择器元素不存在: patent_template_selector');
+        console.warn('⚠️ 模板选择器元素不存在: patent_template_selector，跳过更新');
         return;
     }
     

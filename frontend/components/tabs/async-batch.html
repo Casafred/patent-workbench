@@ -1,0 +1,160 @@
+<!-- 功能二：小批量异步 (UI重构) -->
+        <!-- ====================================================================== -->
+        <div id="async_batch-tab" class="tab-content">
+            <div class="progress-stepper" id="async-stepper">
+                <div class="step-item active" onclick="switchAsyncSubTab('input', this)">
+                    <div class="step-number">1</div>
+                    <div class="step-title">输入内容</div>
+                </div>
+                <div class="step-item" onclick="switchAsyncSubTab('template', this)">
+                    <div class="step-number">2</div>
+                    <div class="step-title">配置模板</div>
+                </div>
+                <div class="step-item" onclick="switchAsyncSubTab('task', this)">
+                    <div class="step-number">3</div>
+                    <div class="step-title">创建任务</div>
+                </div>
+                <div class="step-item" onclick="switchAsyncSubTab('result', this)">
+                    <div class="step-number">4</div>
+                    <div class="step-title">任务与结果</div>
+                </div>
+                <div class="progress-bar"></div>
+            </div>
+
+            <!-- 页签 1: 输入内容 -->
+            <div id="async-sub-tab-input" class="sub-tab-content active">
+                <div class="step">
+                    <div class="step-header">步骤 1: 添加输入内容</div>
+                    <div class="sub-tab-container" style="border-bottom:none; margin-bottom: 20px;">
+                        <button class="sub-tab-button active" onclick="switchAsyncInput(event, 'excel')">Excel导入</button>
+                        <button class="sub-tab-button" onclick="switchAsyncInput(event, 'manual')">手动添加</button>
+                    </div>
+                    
+                    <div id="async-input-excel" class="sub-tab-content active">
+                        <div class="config-item"><label for="async_excel_file">上传Excel文件:</label><input type="file" id="async_excel_file" accept=".xlsx, .xls"></div>
+                        <div class="config-item"><label for="async_excel_sheet">选择Sheet:</label><select id="async_excel_sheet" disabled></select></div>
+                        <div id="async_column_config_container" style="display:none;"><div class="config-item row-flex"><label for="async_excel_column_count">选择输入列数量:</label><input type="number" id="async_excel_column_count" value="1" min="1" max="10" style="width: 100px;"></div><div id="async_excel_column_config_area"></div></div>
+                        <button id="async_load_excel_btn" class="small-button" disabled>从Excel加载输入</button>
+                    </div>
+
+                    <div id="async-input-manual" class="sub-tab-content">
+                        <div class="config-item"><label for="async_manual_input">新输入 (每行一条):</label><textarea id="async_manual_input" rows="5" placeholder="请输入需要处理的内容..."></textarea></div>
+                        <button id="async_add_input_btn" class="small-button">添加输入</button>
+                    </div>
+
+                    <hr style="margin: 20px 0; border-color: var(--border-color);">
+                    <label><strong>已添加的输入 (<span id="async_inputs_count">0</span>):</strong></label>
+                    <div id="async_inputs_management"><button id="async_inputs_select_all_btn" class="small-button">全选</button><button id="async_inputs_delete_selected_btn" class="small-button delete-button">删除选中</button></div>
+                    <div id="async_inputs_list" class="scrollable-list"></div>
+                </div>
+            </div>
+
+            <!-- 页签 2: 配置模板 -->
+            <div id="async-sub-tab-template" class="sub-tab-content">
+                <div class="step">
+                    <div class="step-header">步骤 2: 配置处理模板</div>
+                    <div id="async_template_edit_area">
+                        <div class="template-config-grid">
+                            <div class="template-config-main">
+                                <div class="config-item">
+                                    <label for="async_preset_template_select">选择预置模板或新建:</label>
+                                    <select id="async_preset_template_select"></select>
+                                </div>
+                                <div class="config-item">
+                                    <label for="async_template_name">模板名称:</label>
+                                    <input type="text" id="async_template_name" placeholder="例如：自定义技术总结">
+                                </div>
+                                <div class="model-temp-group">
+                                    <div class="config-item">
+                                        <label for="async_template_model_select">选择模型:</label>
+                                        <select id="async_template_model_select"></select>
+                                    </div>
+                                    <div class="config-item">
+                                        <label for="async_template_temperature">温度:</label>
+                                        <input type="number" id="async_template_temperature" min="0" max="1" step="0.1" value="0.1">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="template-config-prompts">
+                                <div class="config-item">
+                                    <label for="async_system_prompt">系统提示 (System Prompt):</label>
+                                    <textarea id="async_system_prompt" rows="3">你是一个高效的专利文本分析助手。</textarea>
+                                </div>
+                                <div class="config-item">
+                                    <div class="help-tooltip-wrapper">
+                                        <label for="async_user_prompt">用户提示模板:</label>
+                                        <div class="help-icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"></path></svg>
+                                            <span class="tooltip-text">请务必使用 `{{INPUT}}` 作为占位符。当从Excel导入多列时，系统会自动将多列内容及列名填充到 `{{INPUT}}` 的位置。</span>
+                                        </div>
+                                    </div>
+                                    <textarea id="async_user_prompt" rows="4">请根据以下文本，总结其核心技术点：
+
+{{INPUT}}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <hr style="margin: 25px 0 20px; border-color: var(--border-color);">
+                        <div class="config-item">
+                            <div class="help-tooltip-wrapper">
+                                 <label>输出格式 (JSON):</label>
+                                 <div class="help-icon">
+                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"></path></svg>
+                                     <span class="tooltip-text">系统将自动把您在此处定义的字段包装成严格的JSON格式要求，并附加到用户提示的末尾，以指导模型输出。</span>
+                                 </div>
+                            </div>
+                            <div id="async_output_fields_container"></div>
+                            <button id="async_add_output_field_btn" class="small-button" type="button">添加输出字段</button>
+                        </div>
+                        <div style="text-align: right; margin-top: 20px;">
+                            <button id="async_add_template_btn" class="small-button">保存模板</button>
+                        </div>
+                    </div>
+                    <hr style="margin: 20px 0; border-color: var(--border-color);">
+                    <label><strong>已创建的模板 (点击删除):</strong></label>
+                    <div id="async_templates_list" class="scrollable-list"></div>
+                </div>
+            </div>
+
+            <!-- 页签 3: 创建任务 -->
+            <div id="async-sub-tab-task" class="sub-tab-content">
+                <div class="step">
+                    <div class="step-header">步骤 3: 创建请求任务并预览</div>
+                    <p class="info">为每个模板指定要处理的输入数据序号范围，然后添加到任务列表。不填范围则默认全部。</p>
+                    <div id="async_task_creation_area"><div class="info">请先在步骤1添加输入，并在步骤2中添加模板。</div></div>
+                    <hr style="margin: 25px 0; border-color: var(--border-color);">
+                    <h4>待提交的请求列表 (<span id="async_requests_count">0</span>)</h4>
+                    <div id="async_requests_preview_list" class="scrollable-list" style="max-height: 200px;"><div class="info">请通过上方的模板任务创建器来添加请求。</div></div>
+                    <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center;">
+                        <button id="async_clear_requests_btn" class="small-button delete-button">全部清空</button>
+                        <button id="async_preview_request_btn" class="small-button" style="background: var(--warning-color); color: #fff;">预览前2条请求体</button>
+                    </div>
+                    <div id="async_request_body_preview" class="preview-output" style="display:none; margin-top: 15px;"></div>
+                </div>
+            </div>
+
+            <!-- 页签 4: 任务与结果 -->
+            <div id="async-sub-tab-result" class="sub-tab-content">
+                <div class="step">
+                    <div class="step-header">步骤 4: 提交任务与查看结果</div>
+                    <div style="text-align: center; margin-bottom: 25px;">
+                        <button id="async_submit_batch_btn" disabled>提交全部请求</button>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-bottom: 15px; flex-wrap: wrap;">
+                        <div id="async_progress_info" class="info" style="text-align:center; flex-grow: 1;">等待提交任务...</div>
+                        <div style="display:flex; gap:10px;">
+                            <button id="async_recover_btn" class="small-button" style="background: var(--warning-color); color: #fff;" disabled>恢复上次任务</button>
+                            <button id="async_export_excel_btn" class="small-button" disabled>导出为Excel</button>
+                        </div>
+                    </div>
+                    <div style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px;">
+                        <div style="overflow-x:auto;">
+                            <table id="async_results_table">
+                                <thead><tr><th>请求ID</th><th>输入预览</th><th>使用模板</th><th>状态</th><th>消耗Tokens</th><th>结果 / 错误</th></tr></thead>
+                                <tbody id="async_results_tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>

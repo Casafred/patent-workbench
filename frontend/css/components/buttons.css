@@ -397,6 +397,8 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
     box-shadow: 0 4px 12px var(--primary-color-glow);
     transition: all 0.3s ease;
     z-index: 1000;
+    cursor: move; /* 添加拖动光标 */
+    user-select: none; /* 防止拖动时选中文本 */
 }
 
 .floating-help-button svg {
@@ -404,10 +406,19 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
     height: 30px;
     stroke: white;
     fill: none;
+    pointer-events: none; /* 防止SVG干扰拖动 */
 }
 
 .floating-help-button:hover {
     transform: scale(1.1);
     box-shadow: 0 7px 20px var(--primary-color-glow);
     background-color: var(--primary-color-dark);
+}
+
+.floating-help-button.dragging {
+    opacity: 0.9;
+    cursor: grabbing;
+    transform: scale(1.05);
+    box-shadow: 0 10px 30px rgba(34, 197, 94, 0.4);
+    transition: opacity 0.1s ease, transform 0.1s ease;
 }

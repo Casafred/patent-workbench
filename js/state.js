@@ -151,6 +151,7 @@ let ASYNC_MODELS = ["glm-4-flashX-250414", "glm-4-flash", "glm-4-long", "GLM-4.7
 // 从配置文件加载模型列表
 async function loadModelsConfig() {
     try {
+        // 使用正确的相对路径，基于页面URL位置
         const response = await fetch('../config/models.json');
         const config = await response.json();
         if (config.models && Array.isArray(config.models)) {
@@ -159,17 +160,28 @@ async function loadModelsConfig() {
             ASYNC_MODELS = config.models;
             console.log('✅ 模型配置已从 config/models.json 加载:', config.models);
             
-            // 更新所有模型选择器
-            updateAllModelSelectors();
+            // 延迟更新所有模型选择器，确保DOM已准备好
+            setTimeout(() => {
+                updateAllModelSelectors();
+                // 触发自定义事件，通知模型配置已加载
+                window.dispatchEvent(new CustomEvent('modelsConfigLoaded', { 
+                    detail: { models: AVAILABLE_MODELS } 
+                }));
+            }, 100);
         }
     } catch (error) {
         console.warn('⚠️ 无法加载模型配置文件，使用默认配置:', error);
+        // 即使加载失败，也要更新选择器
+        setTimeout(() => {
+            updateAllModelSelectors();
+        }, 100);
     }
 }
 
 // 更新所有功能的模型选择器
-function updateAllModelSelectors() {
+function updateAllModelSelectors(retryCount = 0) {
     const modelOptions = AVAILABLE_MODELS.map(m => `<option value="${m}">${m}</option>`).join('');
+    let allFound = true;
     
     // 功能一：即时对话
     const chatModelSelect = document.getElementById('chat_model_select');
@@ -179,6 +191,10 @@ function updateAllModelSelectors() {
         if (AVAILABLE_MODELS.includes(currentValue)) {
             chatModelSelect.value = currentValue;
         }
+        console.log('✅ 功能一模型选择器已更新');
+    } else {
+        console.warn('⚠️ chat_model_select 未找到');
+        allFound = false;
     }
     
     // 功能二：小批量异步
@@ -189,6 +205,10 @@ function updateAllModelSelectors() {
         if (AVAILABLE_MODELS.includes(currentValue)) {
             asyncTemplateModelSelect.value = currentValue;
         }
+        console.log('✅ 功能二模型选择器已更新');
+    } else {
+        console.warn('⚠️ async_template_model_select 未找到');
+        allFound = false;
     }
     
     // 功能三：大批量处理
@@ -199,6 +219,10 @@ function updateAllModelSelectors() {
         if (AVAILABLE_MODELS.includes(currentValue)) {
             apiModelSelect.value = currentValue;
         }
+        console.log('✅ 功能三模型选择器已更新');
+    } else {
+        console.warn('⚠️ api-model 未找到');
+        allFound = false;
     }
     
     // 功能五：权利要求对比
@@ -209,6 +233,10 @@ function updateAllModelSelectors() {
         if (AVAILABLE_MODELS.includes(currentValue)) {
             comparisonModelSelect.value = currentValue;
         }
+        console.log('✅ 功能五模型选择器已更新');
+    } else {
+        console.warn('⚠️ comparison_model_select 未找到');
+        allFound = false;
     }
     
     // 功能六：批量专利解读
@@ -219,9 +247,21 @@ function updateAllModelSelectors() {
         if (AVAILABLE_MODELS.includes(currentValue)) {
             patentBatchModelSelector.value = currentValue;
         }
+        console.log('✅ 功能六模型选择器已更新');
+    } else {
+        console.warn('⚠️ patent_batch_model_selector 未找到');
+        allFound = false;
     }
     
-    console.log('✅ 所有模型选择器已更新');
+    if (allFound) {
+        console.log('✅ 所有模型选择器已更新');
+    } else if (retryCount < 3) {
+        // 如果有选择器未找到，且重试次数未超过3次，则延迟重试
+        console.log(`⏳ 部分选择器未找到，${500}ms后重试 (${retryCount + 1}/3)`);
+        setTimeout(() => updateAllModelSelectors(retryCount + 1), 500);
+    } else {
+        console.warn('⚠️ 部分模型选择器未找到，已达到最大重试次数');
+    }
 }
 
 // 在页面加载时自动加载模型配置

@@ -34,16 +34,45 @@ function initClaimsComparison() {
     couplingSelector = document.getElementById('coupling_selector');
     couplingAnalyzeBtn = document.getElementById('coupling_analyze_btn');
 
+    // Check if required elements exist
+    if (!comparisonModelSelect) {
+        console.error('❌ comparison_model_select element not found');
+        return;
+    }
+    
+    if (!addClaimBtn) {
+        console.error('❌ add_claim_btn element not found');
+        return;
+    }
+    
+    if (!claimsInputContainer) {
+        console.error('❌ claims_input_container element not found');
+        return;
+    }
+
     // 绑定事件
     comparisonModelSelect.addEventListener('change', handleModelChange);
     addClaimBtn.addEventListener('click', addNewClaim);
-    claimsAnalyzeBtn.addEventListener('click', runAnalysisWorkflow);
+    
+    if (claimsAnalyzeBtn) {
+        claimsAnalyzeBtn.addEventListener('click', runAnalysisWorkflow);
+    }
+    
     viewModeBtns.forEach(btn => {
         btn.addEventListener('click', () => handleViewModeChange(btn.dataset.view));
     });
-    toggleLanguageBtn.addEventListener('click', toggleDisplayLanguage);
-    exportComparisonBtn.addEventListener('click', exportComparisonReport);
-    couplingAnalyzeBtn.addEventListener('click', runCouplingAnalysis);
+    
+    if (toggleLanguageBtn) {
+        toggleLanguageBtn.addEventListener('click', toggleDisplayLanguage);
+    }
+    
+    if (exportComparisonBtn) {
+        exportComparisonBtn.addEventListener('click', exportComparisonReport);
+    }
+    
+    if (couplingAnalyzeBtn) {
+        couplingAnalyzeBtn.addEventListener('click', runCouplingAnalysis);
+    }
 
     // 初始化输入区（默认2个）
     renderInputGroups();
