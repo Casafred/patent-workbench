@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Load header component first
     try {
-        await loadComponent('components/header.html', 'header-component');
+        await loadComponent('frontend/components/header.html', 'header-component');
         console.log('✅ Header component loaded');
     } catch (error) {
         console.error('❌ Failed to load header component:', error);
@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Load tab navigation component
     try {
-        await loadComponent('components/tab-navigation.html', 'tab-navigation-component');
+        await loadComponent('frontend/components/tab-navigation.html', 'tab-navigation-component');
         console.log('✅ Tab navigation component loaded');
     } catch (error) {
         console.error('❌ Failed to load tab navigation component:', error);
@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Load instant chat component and initialize
     try {
-        await loadComponent('components/tabs/instant-chat.html', 'instant-chat-component');
+        await loadComponent('frontend/components/tabs/instant-chat.html', 'instant-chat-component');
         console.log('✅ Instant chat component loaded');
         // Wait for DOM to be ready
         await new Promise(resolve => setTimeout(resolve, 50));
@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Load Feature 2 (Async Batch) component and initialize
     try {
-        const loaded = await loadComponent('components/tabs/async-batch.html', 'async-batch-component', {
+        const loaded = await loadComponent('frontend/components/tabs/async-batch.html', 'async-batch-component', {
             requiredElements: [
                 'async_add_output_field_btn',
                 'async_output_fields_container',
@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Load Feature 3 (Large Batch) component and initialize
     try {
-        const loaded = await loadComponent('components/tabs/large-batch.html', 'large-batch-component', {
+        const loaded = await loadComponent('frontend/components/tabs/large-batch.html', 'large-batch-component', {
             requiredElements: [
                 'gen_file-input',
                 'large_batch_template_selector'
@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Load Feature 4 (Local Patent Library) component and initialize
     try {
-        const loaded = await loadComponent('components/tabs/local-patent-lib.html', 'local-patent-lib-component', {
+        const loaded = await loadComponent('frontend/components/tabs/local-patent-lib.html', 'local-patent-lib-component', {
             requiredElements: [
                 'lpl_original_file_input',
                 'lpl_expand_btn'
@@ -121,7 +121,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Load Feature 5 (Claims Comparison) component and initialize
     try {
-        const loaded = await loadComponent('components/tabs/claims-comparison.html', 'claims-comparison-component', {
+        const loaded = await loadComponent('frontend/components/tabs/claims-comparison.html', 'claims-comparison-component', {
             requiredElements: [
                 'comparison_model_select',
                 'add_claim_btn',
@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Load Feature 6 (Patent Batch) component and initialize
     try {
-        await loadComponent('components/tabs/patent-batch.html', 'patent-batch-component');
+        await loadComponent('frontend/components/tabs/patent-batch.html', 'patent-batch-component');
         console.log('✅ Feature 6 (Patent Batch) component loaded');
         // Wait for DOM to be ready
         await new Promise(resolve => setTimeout(resolve, 50));
@@ -163,7 +163,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Load Feature 7 (Claims Processor) component
     try {
-        await loadComponent('components/tabs/claims-processor.html', 'claims-processor-component');
+        await loadComponent('frontend/components/tabs/claims-processor.html', 'claims-processor-component');
         console.log('✅ Feature 7 (Claims Processor) component loaded');
         // Note: Claims Processor initialization is handled in the component itself
     } catch (error) {
@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Load Feature 8 (Drawing Marker) component and initialize
     try {
-        const loaded = await loadComponent('components/tabs/drawing-marker.html', 'drawing-marker-component', {
+        const loaded = await loadComponent('frontend/components/tabs/drawing-marker.html', 'drawing-marker-component', {
             requiredElements: [
                 'aiProcessingPanelContainer',
                 // Note: promptEditorContainer is created dynamically by ai_processing_panel.js
