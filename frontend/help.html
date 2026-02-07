@@ -10,7 +10,6 @@
     <!-- Vanta.js Dependencies -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js"></script>
-    <!-- 帮助页面使用内联样式，无需修改 -->
     <style>
         :root {
             --primary-color: #22C55E;
@@ -21,62 +20,65 @@
             --text-color-light: #166534;
             --border-color: rgba(34, 197, 94, 0.2);
             --sidebar-width: 280px;
-            /* 新增：高亮颜色 */
-            --highlight-bg: #FFD700; /* Gold */
-            --highlight-active-bg: #FFA500; /* Orange */
+            --highlight-bg: #FFD700;
+            --highlight-active-bg: #FFA500;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
         }
 
         body {
             font-family: 'Noto Sans SC', sans-serif;
-            margin: 0;
             background-color: transparent;
             color: var(--text-color);
             position: relative;
-            zoom: 0.8;
-            -moz-transform: scale(0.8);
+            zoom: 0.9;
+            -moz-transform: scale(0.9);
             -moz-transform-origin: 0 0;
         }
 
-        /* Vanta.js 背景容器 - 使用反向缩放抵消body的zoom效果 */
+        /* Vanta.js 背景容器 */
         #vanta-bg {
             position: fixed;
             top: 0;
             left: 0;
-            width: 125%;
-            height: 125%;
+            width: 111.11%;
+            height: 111.11%;
             z-index: -1;
             pointer-events: none;
-            zoom: 1.25;
-            -moz-transform: scale(1.25);
+            zoom: 1.111;
+            -moz-transform: scale(1.111);
             -moz-transform-origin: 0 0;
         }
 
         .help-container {
             display: flex;
-            justify-content: center;
-            min-height: 100vh;
+            height: 100vh;
             padding: 20px;
-            box-sizing: border-box;
+            gap: 20px;
         }
 
+        /* 左侧导航栏 - 固定不滚动 */
         .sidebar {
             width: var(--sidebar-width);
-            position: fixed;
-            top: 16px;
-            bottom: 16px;
-            left: 16px;
+            flex-shrink: 0;
             background-color: var(--surface-color);
             border: 1px solid var(--border-color);
             border-radius: 12px;
             padding: 20px;
-            overflow-y: auto;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            /* 新增：为搜索栏和导航留出空间 */
             display: flex;
             flex-direction: column;
             backdrop-filter: blur(10px);
-            /* 防止在缩放环境下被裁剪 */
-            max-height: calc(100vh - 32px);
+            overflow: hidden;
         }
 
         .sidebar-header {
@@ -84,6 +86,7 @@
             margin-bottom: 20px;
             padding-bottom: 20px;
             border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
         }
 
         .sidebar-logo {
@@ -98,11 +101,12 @@
             color: var(--text-color-light);
         }
 
-        /* --- 新增：搜索控件样式 --- */
+        /* 搜索控件 */
         .search-container {
             padding: 15px 0;
             border-bottom: 1px solid var(--border-color);
             margin-bottom: 15px;
+            flex-shrink: 0;
         }
 
         .search-input-wrapper {
@@ -115,7 +119,6 @@
             padding: 10px 30px 10px 10px;
             border: 1px solid var(--border-color);
             border-radius: 6px;
-            box-sizing: border-box;
             font-family: 'Noto Sans SC', sans-serif;
             font-size: 0.9em;
         }
@@ -136,7 +139,7 @@
             color: #999;
             font-size: 1.2em;
             padding: 0 5px;
-            display: none; /* 默认隐藏 */
+            display: none;
         }
         #clear-search-btn:hover {
             color: #333;
@@ -171,12 +174,12 @@
             font-size: 0.85em;
             color: var(--text-color-light);
         }
-        /* --- 搜索控件样式结束 --- */
 
+        /* 导航菜单 - 可滚动 */
         .sidebar-nav {
-             /* 新增：让导航部分可以滚动 */
             flex-grow: 1;
             overflow-y: auto;
+            min-height: 0;
         }
 
         .sidebar-nav ul {
@@ -194,6 +197,7 @@
             margin-bottom: 5px;
             transition: all 0.2s ease-in-out;
             font-weight: 500;
+            cursor: pointer;
         }
 
         .sidebar-nav li a:hover {
@@ -207,35 +211,69 @@
             font-weight: 700;
         }
 
+        /* 右侧内容区域 */
         .content-wrapper {
-            margin-left: calc(var(--sidebar-width) + 32px);
-            padding: 16px 0;
-            width: 100%;
-            max-width: 1000px;
-            /* 确保内容区域可以滚动 */
-            min-height: 100vh;
+            flex-grow: 1;
+            position: relative;
+            overflow: hidden;
         }
 
-        section {
+        /* 内容卡片 - 独立视图 */
+        .content-card {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             background-color: var(--surface-color);
-            padding: 30px;
             border-radius: 12px;
             border: 1px solid var(--border-color);
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            margin: 0 auto 40px auto;
             backdrop-filter: blur(10px);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
         }
 
-        h1, h2, h3, h4 {
+        .content-card.active {
+            display: flex;
+        }
+
+        /* 卡片头部 */
+        .card-header {
+            padding: 20px 30px;
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+
+        .card-header h2 {
+            margin: 0;
+            color: var(--primary-color-dark);
+            font-size: 1.8em;
+        }
+
+        /* 卡片内容 - 可滚动 */
+        .card-body {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 30px;
+        }
+
+        h3 { 
+            font-size: 1.5em; 
+            margin-top: 30px;
             color: var(--primary-color-dark);
             border-bottom: 2px solid var(--border-color);
             padding-bottom: 10px;
-            margin-top: 0;
         }
         
-        h2 { font-size: 1.8em; }
-        h3 { font-size: 1.5em; margin-top: 30px;}
-        h4 { font-size: 1.2em; margin-top: 25px; border-bottom-style: dashed; }
+        h4 { 
+            font-size: 1.2em; 
+            margin-top: 25px; 
+            color: var(--primary-color-dark);
+            border-bottom: 1px dashed var(--border-color);
+            padding-bottom: 8px;
+        }
 
         p, li {
             line-height: 1.8;
@@ -277,7 +315,6 @@
             border-color: #3b82f6;
         }
 
-        /* --- 新增：高亮样式 --- */
         .search-highlight {
             background-color: var(--highlight-bg);
             color: black;
@@ -289,6 +326,28 @@
             color: white;
             box-shadow: 0 0 5px var(--highlight-active-bg);
         }
+
+        /* 滚动条样式 */
+        .card-body::-webkit-scrollbar,
+        .sidebar-nav::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .card-body::-webkit-scrollbar-track,
+        .sidebar-nav::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .card-body::-webkit-scrollbar-thumb,
+        .sidebar-nav::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+
+        .card-body::-webkit-scrollbar-thumb:hover,
+        .sidebar-nav::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-color);
+        }
     </style>
 </head>
 <body>
@@ -296,13 +355,14 @@
 <div id="vanta-bg"></div>
 
 <div class="help-container">
+    <!-- 左侧导航栏 -->
     <aside class="sidebar">
         <div class="sidebar-header">
             <h1 class="sidebar-logo">ALFRED X IP</h1>
             <p class="sidebar-subtitle">用户使用手册</p>
         </div>
 
-        <!-- 新增：搜索控件 -->
+        <!-- 搜索控件 -->
         <div class="search-container">
             <div class="search-input-wrapper">
                 <input type="text" id="search-input" placeholder="输入关键词搜索...">
@@ -315,548 +375,391 @@
             </div>
         </div>
 
+        <!-- 导航菜单 -->
         <nav class="sidebar-nav">
             <ul>
-                <li><a href="#getting-started" class="active">入门指南</a></li>
-                <li><a href="#feature-instant-chat">功能一：即时对话</a></li>
-                <li><a href="#feature-async-batch">功能二：小批量异步</a></li>
-                <li><a href="#feature-large-batch">功能三：大批量处理</a></li>
-                <li><a href="#feature-local-lib">功能四：本地专利库管理</a></li>
-                <li><a href="#feature-claims-comparison">功能五：权利要求对比</a></li>
-                <li><a href="#feature-patent-batch">功能六：批量专利解读</a></li>
-                <li><a href="#feature-claims-processor">功能七：权利要求处理</a></li>
-                <li><a href="#feature-drawing-marker">功能八：专利附图标记</a></li>
-                <li><a href="#faq">常见问题 (FAQ)</a></li>
+                <li><a data-target="getting-started" class="active">入门指南</a></li>
+                <li><a data-target="feature-instant-chat">功能一：即时对话</a></li>
+                <li><a data-target="feature-async-batch">功能二：小批量异步</a></li>
+                <li><a data-target="feature-large-batch">功能三：大批量处理</a></li>
+                <li><a data-target="feature-local-lib">功能四：本地专利库管理</a></li>
+                <li><a data-target="feature-claims-comparison">功能五：权利要求对比</a></li>
+                <li><a data-target="feature-patent-batch">功能六：批量专利解读</a></li>
+                <li><a data-target="feature-claims-processor">功能七：权利要求处理</a></li>
+                <li><a data-target="feature-drawing-marker">功能八：专利附图标记</a></li>
+                <li><a data-target="faq">常见问题 (FAQ)</a></li>
             </ul>
         </nav>
     </aside>
 
+    <!-- 右侧内容区域 -->
     <main class="content-wrapper">
-        <!-- 原有内容保持不变 -->
-        <section id="getting-started">
-            <h2>入门指南</h2>
-            <p>欢迎使用 <strong>ALFRED X IP 专利分析智能工作台</strong>！本手册将引导您快速上手，充分利用本平台的强大功能。</p>
-
-            <h3>1. 登录系统</h3>
-            <p>您需要使用管理员分配的用户名和密码进行登录。为保障安全，系统会记录并限制每个账户的登录IP地址数量（默认为5个）。如果您在新的设备或网络环境下登录，最早的登录记录可能会被自动移除。</p>
-            <div class="gif-placeholder">[此处插入动图：展示用户输入用户名、密码并成功登录的过程]</div>
-
-            <h3>2. 界面概览</h3>
-            <p>登录后，您将看到主工作界面，主要分为三个区域：</p>
-            <ul>
-                <li><strong>顶部导航栏：</strong> 显示Logo、版本号，以及右上角的"帮助"和"API Key设置"按钮。</li>
-                <li><strong>功能页签区：</strong> 切换八个核心功能模块。</li>
-                <li><strong>主内容区：</strong> 显示当前选中功能模块的具体操作界面。</li>
-            </ul>
-            <div class="gif-placeholder">[此处插入图片：用箭头和文字标注主界面的各个区域]</div>
-
-            <h3>3. API Key 设置（最重要的一步！）</h3>
-            <p>本平台的所有AI功能都依赖于智谱AI提供的API服务。因此，在使用任何功能前，您<strong>必须</strong>配置自己的智谱AI API Key。</p>
-            <ol>
-                <li>点击界面右上角的 <strong>⚙️</strong> 图标，打开API Key设置面板。</li>
-                <li>将您从<a href="https://open.bigmodel.cn/overview" target="_blank">智谱AI开放平台</a>获取的API Key粘贴到输入框中。</li>
-                <li>点击"保存"按钮。看到"已保存!"提示即表示配置成功。</li>
-            </ol>
-            <div class="warning">
-                <strong>注意：</strong>API Key是您的个人凭证，请妥善保管，切勿泄露。所有通过本平台发起的AI调用都将消耗您API Key对应的账户额度。
+        <!-- 入门指南 -->
+        <div class="content-card active" id="getting-started">
+            <div class="card-header">
+                <h2>入门指南</h2>
             </div>
-            <div class="gif-placeholder">[此处插入动图：展示点击设置图标、粘贴API Key并保存的全过程]</div>
+            <div class="card-body">
+                <p>欢迎使用 <strong>ALFRED X IP 专利分析智能工作台</strong>！本手册将引导您快速上手，充分利用本平台的强大功能。</p>
 
-            <h3>4. 登出系统</h3>
-            <p>在主界面右上角，您可以看到当前登录的用户名和一个"登出"按钮。点击"登出"将安全退出系统，并清除您的会话信息。</p>
-        </section>
+                <h3>1. 登录系统</h3>
+                <p>您需要使用管理员分配的用户名和密码进行登录。为保障安全，系统会记录并限制每个账户的登录IP地址数量（默认为5个）。如果您在新的设备或网络环境下登录，最早的登录记录可能会被自动移除。</p>
+                <div class="gif-placeholder">[此处插入动图：展示用户输入用户名、密码并成功登录的过程]</div>
 
-        <section id="feature-instant-chat">
-            <h2>功能一：即时对话</h2>
-            <p>本功能提供了一个强大的、类似ChatGPT的交互界面，专为专利分析场景优化，支持多轮对话、角色扮演、文件上传解析和历史记录管理。</p>
+                <h3>2. 界面概览</h3>
+                <p>登录后，您将看到主工作界面，主要分为三个区域：</p>
+                <ul>
+                    <li><strong>顶部导航栏：</strong> 显示Logo、版本号，以及右上角的"帮助"和"API Key设置"按钮。</li>
+                    <li><strong>功能页签区：</strong> 切换八个核心功能模块。</li>
+                    <li><strong>主内容区：</strong> 显示当前选中功能模块的具体操作界面。</li>
+                </ul>
+                <div class="gif-placeholder">[此处插入图片：用箭头和文字标注主界面的各个区域]</div>
 
-            <h4>核心交互</h4>
-            <p>在底部的输入框中输入您的问题，按回车或点击"发送"按钮即可与AI进行实时对话。AI的回复将以流式方式逐字显示。</p>
+                <h3>3. API Key 设置（最重要的一步！）</h3>
+                <p>本平台的所有AI功能都依赖于智谱AI提供的API服务。因此，在使用任何功能前，您<strong>必须</strong>配置自己的智谱AI API Key。</p>
+                <ol>
+                    <li>点击界面右上角的 <strong>⚙️</strong> 图标，打开API Key设置面板。</li>
+                    <li>将您从<a href="https://open.bigmodel.cn/overview" target="_blank">智谱AI开放平台</a>获取的API Key粘贴到输入框中。</li>
+                    <li>点击"保存"按钮。看到"已保存!"提示即表示配置成功。</li>
+                </ol>
+                <div class="warning">
+                    <strong>注意：</strong>API Key是您的个人凭证，请妥善保管，切勿泄露。所有通过本平台发起的AI调用都将消耗您API Key对应的账户额度。
+                </div>
+                <div class="gif-placeholder">[此处插入动图：展示点击设置图标、粘贴API Key并保存的全过程]</div>
 
-            <h4>对话管理</h4>
-            <ul>
-                <li><strong>历史对话列表：</strong> 左侧面板会显示您所有的历史对话，按时间倒序排列。</li>
-                <li><strong>新建对话：</strong> 点击列表顶部的"+"号或输入框左侧的"+"号，可以随时开启一个全新的对话。</li>
-                <li><strong>切换对话：</strong> 在历史列表中点击任意对话，即可加载并继续该对话。</li>
-                <li><strong>重命名与删除：</strong> 将鼠标悬停在历史对话项上，会出现编辑和删除图标，方便您管理对话。您也可以直接点击主聊天窗口的标题进行修改。</li>
-            </ul>
-            <div class="gif-placeholder">[此处插入动图：展示新建、切换、重命名和删除对话的操作]</div>
-
-            <h4>对话参数设置</h4>
-            <p>点击右上角的"对话参数设置"按钮，可以打开配置面板：</p>
-            <ul>
-                <li><strong>模型选择：</strong> 选择不同的AI模型以应对不同复杂度的任务。</li>
-                <li><strong>温度（Temperature）：</strong> 控制回复的创造性。值越高（如0.9）回复越随机，值越低（如0.1）回复越确定。</li>
-                <li><strong>上下文条数：</strong> 决定每次请求时携带多少轮历史对话作为上下文，影响对话的连贯性和费用。</li>
-                <li><strong>角色设置：</strong> 这是本功能的核心特色之一。您可以选择预设的"资深专利分析师"、"专业技术翻译"等角色，或自定义新角色。</li>
-            </ul>
-
-            <h4>角色（Persona）管理</h4>
-            <p>在"对话参数设置"中，您可以：</p>
-            <ol>
-                <li><strong>选择角色：</strong> 从下拉菜单中选择一个角色，当前对话将立刻采用该角色的系统提示。</li>
-                <li><strong>新增角色：</strong> 点击"新增角色"，可以创建一个自定义角色，定义其名称、系统提示（System Prompt）和用户模板。</li>
-                <li><strong>保存与删除：</strong> 自定义角色可以随时编辑、保存或删除。</li>
-            </ol>
-            <div class="note">
-                <strong>用户模板提示：</strong> 在用户模板中使用 <code>{{INPUT}}</code> 作为占位符，系统会自动将您在输入框中输入的内容替换到该位置。例如，模板为 <code>请将以下内容翻译成英文：{{INPUT}}</code>，您只需在输入框输入中文即可。
+                <h3>4. 登出系统</h3>
+                <p>在主界面右上角，您可以看到当前登录的用户名和一个"登出"按钮。点击"登出"将安全退出系统，并清除您的会话信息。</p>
             </div>
-            <div class="gif-placeholder">[此处插入动图：演示如何新增一个自定义角色，并应用到当前对话中]</div>
+        </div>
 
-            <h4>文件处理与管理</h4>
-            <p>即时对话支持上传文件（如PDF, Word, TXT, Excel, 图片等）进行内容分析。</p>
-            <ul>
-                <li><strong>上传文件：</strong> 点击输入框左侧的<strong>回形针📎</strong>图标，选择文件进行上传。系统会自动提取文件内容。</li>
-                <li><strong>解析服务选择：</strong> 上传文件后，可选择不同的解析服务：
-                    <ul>
-                        <li><strong>Lite（免费）：</strong> 满足日常查询需求，支持常见格式，输出纯文本</li>
-                        <li><strong>Expert（0.03元/次）：</strong> 适合专业PDF解析，输出Markdown格式并保留图片</li>
-                        <li><strong>Prime（0.05元/次）：</strong> 支持最多格式，保留完整文档结构</li>
-                    </ul>
-                </li>
-                <li><strong>文件管理：</strong> 点击标题栏的"文件管理"按钮，可以查看、删除您已上传的所有文件，或将文件内容直接插入到输入框中。</li>
-                <li><strong>移除文件：</strong> 文件附加后，输入框上方会显示文件名，点击旁边的"×"可将其从当前对话中移除。</li>
-            </ul>
-            <div class="gif-placeholder">[此处插入动图：演示点击回形针上传文件，AI根据文件内容进行回答的过程]</div>
-
-            <h4>联网搜索</h4>
-            <p>点击输入框左侧的<strong>搜索🔍</strong>按钮，可以开启联网搜索功能。系统会使用智谱网络搜索API，在回答问题时参考最新的网络信息。</p>
-            <div class="note">
-                <strong>提示：</strong> 联网搜索功能需要消耗额外的API额度，建议在需要获取最新信息时使用。
+        <!-- 功能一：即时对话 -->
+        <div class="content-card" id="feature-instant-chat">
+            <div class="card-header">
+                <h2>功能一：即时对话</h2>
             </div>
+            <div class="card-body">
+                <p>本功能提供了一个强大的、类似ChatGPT的交互界面，专为专利分析场景优化，支持多轮对话、角色扮演、文件上传解析和历史记录管理。</p>
 
-            <h4>消息管理与导出</h4>
-            <ul>
-                <li><strong>管理消息：</strong> 点击"管理消息"按钮，可以进入多选模式，批量删除不需要的对话记录。</li>
-                <li><strong>导出：</strong> 点击"导出"按钮，可以将当前完整的对话记录导出为TXT、PNG图片或PDF文件，方便存档和分享。</li>
-            </ul>
-        </section>
+                <h4>核心交互</h4>
+                <p>在底部的输入框中输入您的问题，按回车或点击"发送"按钮即可与AI进行实时对话。AI的回复将以流式方式逐字显示。</p>
 
-        <section id="feature-async-batch">
-            <h2>功能二：小批量异步</h2>
-            <p>此功能适用于处理中等数量（几十到几百条）的独立任务，例如批量翻译、批量总结等。它通过异步API提交任务，无需等待即可继续操作，并在后台轮询结果。</p>
+                <h4>对话管理</h4>
+                <ul>
+                    <li><strong>历史对话列表：</strong> 左侧面板会显示您所有的历史对话，按时间倒序排列。</li>
+                    <li><strong>新建对话：</strong> 点击列表顶部的"+"号或输入框左侧的"+"号，可以随时开启一个全新的对话。</li>
+                    <li><strong>切换对话：</strong> 在历史列表中点击任意对话，即可加载并继续该对话。</li>
+                    <li><strong>重命名与删除：</strong> 将鼠标悬停在历史对话项上，会出现编辑和删除图标，方便您管理对话。您也可以直接点击主聊天窗口的标题进行修改。</li>
+                </ul>
+                <div class="gif-placeholder">[此处插入动图：展示新建、切换、重命名和删除对话的操作]</div>
 
-            <h4>工作流程</h4>
-            <p>整个过程遵循顶部的四步进式导航：</p>
-            <ol>
-                <li><strong>输入内容 &rarr; </strong></li>
-                <li><strong>配置模板 &rarr; </strong></li>
-                <li><strong>创建任务 &rarr; </strong></li>
-                <li><strong>任务与结果</strong></li>
-            </ol>
+                <h4>对话参数设置</h4>
+                <p>点击右上角的"对话参数设置"按钮，可以打开配置面板：</p>
+                <ul>
+                    <li><strong>模型选择：</strong> 选择不同的AI模型以应对不同复杂度的任务。</li>
+                    <li><strong>温度（Temperature）：</strong> 控制回复的创造性。值越高（如0.9）回复越随机，值越低（如0.1）回复越确定。</li>
+                    <li><strong>上下文条数：</strong> 决定每次请求时携带多少轮历史对话作为上下文，影响对话的连贯性和费用。</li>
+                    <li><strong>角色设置：</strong> 这是本功能的核心特色之一。您可以选择预设的"资深专利分析师"、"专业技术翻译"等角色，或自定义新角色。</li>
+                </ul>
 
-            <h4>Step 1: 输入内容</h4>
-            <p>您有两种方式添加需要处理的源数据：</p>
-            <ul>
-                <li><strong>Excel导入：</strong> 上传Excel文件，选择工作表(Sheet)，然后指定包含源数据的一列或多列。</li>
-                <li><strong>手动添加：</strong> 在文本框中直接输入，每行代表一条独立的输入数据。</li>
-            </ul>
-            <div class="gif-placeholder">[此处插入动图：演示如何从一个Excel文件的特定列导入数据]</div>
+                <h4>角色（Persona）管理</h4>
+                <p>在"对话参数设置"中，您可以：</p>
+                <ol>
+                    <li><strong>选择角色：</strong> 从下拉菜单中选择一个角色，当前对话将立刻采用该角色的系统提示。</li>
+                    <li><strong>新增角色：</strong> 点击"新增角色"，可以创建一个自定义角色，定义其名称、系统提示（System Prompt）和用户模板。</li>
+                    <li><strong>保存与删除：</strong> 自定义角色可以随时编辑、保存或删除。</li>
+                </ol>
+                <div class="note">
+                    <strong>用户模板提示：</strong> 在用户模板中使用 <code>{{INPUT}}</code> 作为占位符，系统会自动将您在输入框中输入的内容替换到该位置。
+                </div>
 
-            <h4>Step 2: 配置模板</h4>
-            <p>模板定义了如何处理每一条输入数据。一个模板包含：</p>
-            <ul>
-                <li><strong>模板名称：</strong> 为您的处理方式命名，方便复用。</li>
-                <li><strong>模型与温度：</strong> 同即时对话。</li>
-                <li><strong>系统提示：</strong> 定义AI的角色和总体指令。</li>
-                <li><strong>用户提示模板：</strong> 核心部分，必须包含 <code>{{INPUT}}</code> 占位符。系统会将每条输入数据替换到这里。</li>
-                <li><strong>输出格式(JSON)：</strong> 这是一个强大的功能。您可以定义希望AI输出的JSON字段名和描述，系统会自动生成严格的JSON格式要求附加到提示中，确保AI返回结构化数据。</li>
-            </ul>
-            <div class="gif-placeholder">[此处插入动图：展示如何创建一个"技术总结"模板，并定义"技术方案"、"技术问题"两个JSON输出字段]</div>
+                <h4>文件处理与管理</h4>
+                <p>即时对话支持上传文件（如PDF, Word, TXT, Excel, 图片等）进行内容分析。</p>
+                <ul>
+                    <li><strong>上传文件：</strong> 点击输入框左侧的<strong>回形针📎</strong>图标，选择文件进行上传。</li>
+                    <li><strong>解析服务选择：</strong> 上传文件后，可选择不同的解析服务：
+                        <ul>
+                            <li><strong>Lite（免费）：</strong> 满足日常查询需求，支持常见格式，输出纯文本</li>
+                            <li><strong>Expert（0.03元/次）：</strong> 适合专业PDF解析，输出Markdown格式并保留图片</li>
+                            <li><strong>Prime（0.05元/次）：</strong> 支持最多格式，保留完整文档结构</li>
+                        </ul>
+                    </li>
+                </ul>
 
-            <h4>Step 3: 创建任务</h4>
-            <p>此步骤将"输入"和"模板"进行配对。您可以为每个模板指定要处理的输入数据序号范围（如 <code>1-50, 60, 70-80</code>），然后将其添加到下方的"待提交请求列表"。</p>
-
-            <h4>Step 4: 任务与结果</h4>
-            <ol>
-                <li><strong>提交任务：</strong> 点击"提交全部请求"，系统会将所有请求发送到异步处理队列。</li>
-                <li><strong>查看结果：</strong> 提交后，下方的表格会实时更新每个请求的状态（处理中、成功、失败）。</li>
-                <li><strong>恢复任务：</strong> 如果您关闭了浏览器，可以点击"恢复上次任务"按钮，从浏览器缓存中加载未完成的任务并继续轮询。</li>
-                <li><strong>导出Excel：</strong> 任务完成后，点击"导出为Excel"按钮，可以将所有输入、状态和AI返回的结果合并到一个Excel文件中。</li>
-            </ol>
-        </section>
-
-        <section id="feature-large-batch">
-            <h2>功能三：大批量处理</h2>
-            <p>专为大规模数据处理（数千至数万条）设计，基于智谱AI的官方Batch API。此功能完全在后端执行，即使关闭浏览器，任务也会继续运行，适合耗时较长的分析任务。</p>
-
-            <h4>工作流程</h4>
-            <p>同样采用三步进式导航：</p>
-            <ol>
-                <li><strong>生成请求文件 &rarr; </strong></li>
-                <li><strong>执行批处理 &rarr; </strong></li>
-                <li><strong>解析报告</strong></li>
-            </ol>
-
-            <h4>Step 1: 生成请求文件</h4>
-            <p>此步骤的目的是根据您的源数据和处理要求，在浏览器内存中生成一个符合Batch API格式的JSONL文件。</p>
-            <ol>
-                <li><strong>上传源数据：</strong> 上传包含大量专利数据的Excel文件。</li>
-                <li><strong>配置分析列和模板：</strong> 与"小批量异步"类似，配置需要分析的列和处理模板（包含System Prompt、User Prompt和JSON输出格式）。</li>
-                <li><strong>生成JSONL：</strong> 点击"生成JSONL文件"按钮，系统会为Excel中的每一行生成一条API请求，并预览前几条。此时，文件已在内存中准备就绪。</li>
-            </ol>
-            <div class="gif-placeholder">[此处插入动图：演示从上传Excel到配置模板，最终生成JSONL预览的过程]</div>
-
-            <h4>Step 2: 执行批处理</h4>
-            <p>这是与Batch API交互的核心环节。</p>
-            <ol>
-                <li><strong>上传请求文件：</strong> 点击按钮，将上一步在内存中生成的JSONL文件上传到智谱AI。</li>
-                <li><strong>创建Batch任务：</strong> 上传成功后，点击此按钮创建一个批处理任务。<strong>请务必复制并保管好返回的Batch ID</strong>，这是您找回任务的唯一凭证。</li>
-                <li><strong>检查状态：</strong> 创建任务后，系统会自动启动定时检查（每分钟一次）。您也可以手动点击检查。</li>
-                <li><strong>获取结果内容：</strong> 当任务状态变为"completed"时，此按钮将可用。点击后，系统会下载结果文件并加载到内存中，然后自动跳转到下一步。</li>
-            </ol>
-            <div class="warning">
-                <strong>断点续查：</strong> 如果流程中断，您可以在"断点续查"区域输入您之前保存的Batch ID，然后点击"恢复查询状态"来继续监控任务。
+                <h4>联网搜索</h4>
+                <p>点击输入框左侧的<strong>搜索🔍</strong>按钮，可以开启联网搜索功能。系统会使用智谱网络搜索API，在回答问题时参考最新的网络信息。</p>
             </div>
+        </div>
 
-            <h4>Step 3: 解析报告</h4>
-            <p>此步骤将AI返回的结果与您的原始数据合并，生成最终的分析报告。</p>
-            <ol>
-                <li><strong>准备数据源：</strong> 上传您在第一步使用的<strong>原始Excel文件</strong>。同时，系统会自动检测并加载上一步从Batch任务下载的结果数据。</li>
-                <li><strong>生成报告：</strong> 点击"解析并生成最终报告"，系统会将结果中的JSON数据解析出来，并作为新的列附加到原始数据的每一行后面。</li>
-                <li><strong>下载报告：</strong> 生成成功后，点击按钮即可下载包含所有原始数据和AI分析结果的最终Excel文件。</li>
-            </ol>
-        </section>
-
-        <section id="feature-local-lib">
-            <h2>功能四：本地专利库管理</h2>
-            <p>这是一个纯粹的、离线的Excel数据处理工具，专注于专利建库过程中常见的两个痛点：同族展开和新旧库合并。<strong>此功能不消耗任何API额度。</strong></p>
-
-            <h4>工作流程</h4>
-            <p>系统采用进度步进器引导您完成整个流程：</p>
-            <ol>
-                <li><strong>上传与展开 &rarr; </strong></li>
-                <li><strong>合并新旧库 &rarr; </strong></li>
-                <li><strong>下载最终结果</strong></li>
-            </ol>
-
-            <h4>Step 1: 上传与展开</h4>
-            <p>此功能用于处理包含同族专利号的字段。</p>
-            <ol>
-                <li><strong>上传文件：</strong> 上传您的原始专利库Excel文件。</li>
-                <li><strong>配置：</strong> 指定包含同族专利号的列名（如 <code>INPADOC 同族专利成员</code>）和分隔符（如 <code>|</code>）。</li>
-                <li><strong>展开：</strong> 点击"展开同族专利号"按钮。系统会读取指定列的所有内容，按分隔符拆分，然后生成一个去重后的、包含所有独立专利号的列表。</li>
-                <li><strong>导出：</strong> 您可以一键复制该列表，或将其下载为.txt文件，用于后续的数据库检索。</li>
-            </ol>
-            <div class="gif-placeholder">[此处插入动图：演示上传文件，指定列名和分隔符，然后生成去重后的专利号列表]</div>
-
-            <h4>Step 2: 合并新旧库</h4>
-            <p>当您从商业数据库下载了最新的数据，需要将其与您自己维护的、包含额外标注（如技术分类、评级等）的旧库合并时，此功能非常有用。</p>
-            <ol>
-                <li><strong>加载文件：</strong> 分别上传您的<strong>旧库（原始库）</strong>和从数据库下载的<strong>新库</strong>。</li>
-                <li><strong>配置匹配列：</strong> 为两个文件分别指定一个用于匹配的"主键"列，通常是"公开号"。</li>
-                <li><strong>选择补充列：</strong> 从旧库中勾选您希望补充到新库的列（例如您手动添加的"技术评级"、"备注"等字段）。</li>
-                <li><strong>开始合并：</strong> 点击按钮。系统会以新库为基础，遍历每一行数据，通过匹配列在旧库中查找对应的行。如果找到，就将您勾选的补充列的数据填充到新库的对应行中。</li>
-            </ol>
-            <div class="note">
-                <strong>合并逻辑：</strong> 新库的数据会被完整保留。如果新库中本身就存在与旧库补充列同名的列，则新库的数据优先，不会被覆盖。
+        <!-- 功能二：小批量异步 -->
+        <div class="content-card" id="feature-async-batch">
+            <div class="card-header">
+                <h2>功能二：小批量异步</h2>
             </div>
+            <div class="card-body">
+                <p>此功能适用于处理中等数量（几十到几百条）的独立任务，例如批量翻译、批量总结等。它通过异步API提交任务，无需等待即可继续操作，并在后台轮询结果。</p>
 
-            <h4>Step 3: 下载最终结果</h4>
-            <p>合并完成后，系统会自动跳转到此页面。</p>
-            <ul>
-                <li><strong>预览：</strong> 您可以预览合并后数据的前10行。表格的列宽可以手动拖动调整。</li>
-                <li><strong>下载：</strong> 点击按钮，即可下载包含新库所有数据以及从旧库补充的数据的最终Excel文件。</li>
-            </ul>
-        </section>
+                <h4>工作流程</h4>
+                <p>整个过程遵循顶部的四步进式导航：</p>
+                <ol>
+                    <li><strong>输入内容 &rarr; </strong></li>
+                    <li><strong>配置模板 &rarr; </strong></li>
+                    <li><strong>创建任务 &rarr; </strong></li>
+                    <li><strong>任务与结果</strong></li>
+                </ol>
 
-        <section id="feature-claims-comparison">
-            <h2>功能五：权利要求对比</h2>
-            <p>此功能用于智能对比不同专利的权利要求，自动识别语言、按需翻译，提供多种可视化展示方式，帮助您快速识别它们之间的相似性和差异。</p>
+                <h4>Step 1: 输入内容</h4>
+                <p>您有两种方式添加需要处理的源数据：</p>
+                <ul>
+                    <li><strong>Excel导入：</strong> 上传Excel文件，选择工作表(Sheet)，然后指定包含源数据的一列或多列。</li>
+                    <li><strong>手动添加：</strong> 在文本框中直接输入，每行代表一条独立的输入数据。</li>
+                </ul>
 
-            <h4>核心技术优势</h4>
-            <ul>
-                <li><strong>多模型支持：</strong> 提供多种模型选择（从配置文件动态加载），满足不同场景需求。</li>
-                <li><strong>灵活对比数量：</strong> 支持2-10个权利要求的同时对比，适应不同的对比分析需求。</li>
-                <li><strong>智能语言处理：</strong> 自动识别权利要求语言，支持中英文混合文本，按需提供翻译功能。</li>
-                <li><strong>多种可视化方式：</strong> 提供卡片视图、并排对比、矩阵视图三种展示方式，直观呈现对比结果。</li>
-                <li><strong>耦合对比分析：</strong> 支持选择多个权利要求进行耦合对比，分析它们之间的关联关系。</li>
-                <li><strong>实时统计分析：</strong> 自动计算并显示相同特征、差异特征和平均相似度，提供量化的对比结果。</li>
-            </ul>
+                <h4>Step 2: 配置模板</h4>
+                <p>模板定义了如何处理每一条输入数据。一个模板包含：</p>
+                <ul>
+                    <li><strong>模板名称：</strong> 为您的处理方式命名，方便复用。</li>
+                    <li><strong>模型与温度：</strong> 同即时对话。</li>
+                    <li><strong>系统提示：</strong> 定义AI的角色和总体指令。</li>
+                    <li><strong>用户提示模板：</strong> 核心部分，必须包含 <code>{{INPUT}}</code> 占位符。</li>
+                    <li><strong>输出格式(JSON)：</strong> 定义希望AI输出的JSON字段名和描述。</li>
+                </ul>
 
-            <h4>工作流程</h4>
-            <ol>
-                <li><strong>输入权利要求：</strong> 在输入框中输入专利的权利要求内容，点击"添加"按钮可增加更多权利要求（最多10个）。</li>
-                <li><strong>选择对比模型：</strong> 根据需求选择合适的对比模型。</li>
-                <li><strong>执行智能对比：</strong> 点击"开始全部对比分析"按钮，系统自动识别语言、计算相似度并生成对比结果。</li>
-                <li><strong>耦合对比分析（可选）：</strong> 在"耦合对比分析"区域选择多个权利要求，点击"开始耦合分析"进行深度关联分析。</li>
-                <li><strong>切换视图：</strong> 根据需要切换不同的可视化展示方式（卡片视图/并排对比/矩阵视图）。</li>
-                <li><strong>导出报告：</strong> 将对比结果导出为Excel或PDF文件，方便进一步分析和分享。</li>
-            </ol>
+                <h4>Step 3: 创建任务</h4>
+                <p>此步骤将"输入"和"模板"进行配对。您可以为每个模板指定要处理的输入数据序号范围。</p>
 
-            <h4>可视化视图说明</h4>
-            <ul>
-                <li><strong>卡片视图：</strong> 以卡片形式展示每个权利要求的核心特征和对比结果。</li>
-                <li><strong>并排对比：</strong> 将多个权利要求并排显示，便于逐条对比差异。</li>
-                <li><strong>矩阵视图：</strong> 以矩阵形式展示权利要求之间的相似度关系，适合多维度分析。</li>
-            </ul>
-
-            <h4>使用技巧</h4>
-            <ul>
-                <li>对于简单对比，建议使用轻量级模型，速度更快。</li>
-                <li>对于复杂技术领域的深度对比，建议使用高质量模型，结果更准确。</li>
-                <li>使用"并排对比"视图可以直观比较不同权利要求的差异。</li>
-                <li>使用"矩阵视图"可以快速了解多个权利要求之间的相似度关系。</li>
-                <li>通过"切换为译文"功能，可以查看不同语言权利要求的翻译结果。</li>
-                <li>耦合对比分析适合分析权利要求之间的引用关系和依赖关系。</li>
-            </ul>
-
-            <h4>应用场景</h4>
-            <ul>
-                <li>专利侵权分析：对比涉嫌侵权专利与现有专利的权利要求。</li>
-                <li>专利无效分析：对比目标专利与现有技术的权利要求差异。</li>
-                <li>技术演进分析：对比同一技术领域不同时期专利的权利要求变化。</li>
-                <li>专利布局分析：对比不同竞争对手的专利权利要求策略。</li>
-                <li>权利要求引用分析：通过耦合对比分析权利要求之间的引用关系。</li>
-            </ul>
-        </section>
-
-        <section id="feature-patent-batch">
-            <h2>功能六：批量专利解读</h2>
-            <p>此功能用于批量查询专利详情并提供AI解读功能，支持专利号列表输入、自动爬取专利信息、智能解读和结果导出，最多支持50个专利号。</p>
-
-            <h4>核心技术优势</h4>
-            <ul>
-                <li><strong>高效批量处理：</strong> 支持一次输入最多50个专利号，批量查询和解读，大幅提高工作效率。</li>
-                <li><strong>智能专利爬取：</strong> 自动从专利数据库获取专利详情，支持说明书内容爬取，为AI解读提供完整数据。</li>
-                <li><strong>灵活字段选择器：</strong> 提供详细的字段选择功能，可选择需要爬取的专利信息字段，平衡数据完整性和处理时间。</li>
-                <li><strong>解读模板管理：</strong> 支持多种解读模板（默认/技术分析/商业价值/法律分析），可自定义模板内容。</li>
-                <li><strong>实时数量统计：</strong> 自动统计输入的专利号数量，防止超过限制。</li>
-                <li><strong>一键批量解读：</strong> 支持对所有查询到的专利进行一键解读，操作便捷。</li>
-                <li><strong>结构化结果输出：</strong> 解读结果以结构化形式展示，便于分析和比较。</li>
-                <li><strong>Excel导出功能：</strong> 支持将解读结果导出为Excel文件，方便进一步分析和分享。</li>
-            </ul>
-
-            <h4>字段选择器说明</h4>
-            <p>系统提供详细的字段选择功能，分为以下几类：</p>
-            <ul>
-                <li><strong>基础字段（必选）：</strong> 专利号、标题、摘要、发明人、申请人、申请日期、公开日期、权利要求</li>
-                <li><strong>分类与领域：</strong> CPC分类、技术领域、优先权日期</li>
-                <li><strong>同族信息：</strong> 同族ID、同族申请、国家状态</li>
-                <li><strong>引用信息：</strong> 引用专利、被引用专利</li>
-                <li><strong>法律与事件：</strong> 事件时间轴、法律事件、相似文档</li>
-                <li><strong>附加内容：</strong> 说明书、附图、外部链接</li>
-            </ul>
-            <div class="note">
-                <strong>提示：</strong> 部分字段（如说明书、同族申请）标记为"耗时"，选择这些字段会增加爬取时间。建议根据实际需求选择字段。
+                <h4>Step 4: 任务与结果</h4>
+                <ol>
+                    <li><strong>提交任务：</strong> 点击"提交全部请求"，系统会将所有请求发送到异步处理队列。</li>
+                    <li><strong>查看结果：</strong> 提交后，下方的表格会实时更新每个请求的状态。</li>
+                    <li><strong>恢复任务：</strong> 如果您关闭了浏览器，可以点击"恢复上次任务"按钮。</li>
+                    <li><strong>导出Excel：</strong> 任务完成后，点击"导出为Excel"按钮。</li>
+                </ol>
             </div>
+        </div>
 
-            <h4>工作流程</h4>
-            <ol>
-                <li><strong>输入专利号列表：</strong> 在文本框中输入专利号，用换行符或空格分隔，最多50个。</li>
-                <li><strong>选择解读模板：</strong> 从下拉菜单中选择合适的解读模板，或点击"管理"自定义模板。</li>
-                <li><strong>配置爬取字段：</strong> 点击"选择爬取字段"按钮，勾选需要获取的专利信息字段。</li>
-                <li><strong>批量查询专利：</strong> 点击"批量查询专利"按钮，系统自动爬取专利详情。</li>
-                <li><strong>执行AI解读：</strong> 点击"批量解读"按钮，对所有查询到的专利进行AI解读。</li>
-                <li><strong>查看解读结果：</strong> 在结果列表中查看每个专利的解读内容，点击可查看详情。</li>
-                <li><strong>导出Excel报告：</strong> 将所有专利的解读结果导出为Excel文件。</li>
-            </ol>
-
-            <h4>使用技巧</h4>
-            <ul>
-                <li>专利号输入支持多种分隔方式，包括换行符、空格、逗号等。</li>
-                <li>对于需要深度分析的专利，建议选择"说明书"和"附图"字段，可获得更全面的解读结果。</li>
-                <li>对于仅需要基本信息的快速分析，建议只选择基础字段，处理速度更快。</li>
-                <li>解读模板可以自定义，根据分析需求调整解读角度（技术/商业/法律）。</li>
-                <li>解读结果中包含专利的技术领域、技术问题、技术方案和有益效果等关键信息。</li>
-                <li>导出的Excel文件包含所有专利的解读数据，方便进行进一步的统计分析。</li>
-            </ul>
-
-            <h4>应用场景</h4>
-            <ul>
-                <li>技术调研：快速了解多个相关专利的技术内容和创新点。</li>
-                <li>竞争对手分析：批量解读竞争对手的专利，了解其技术布局和发展方向。</li>
-                <li>专利挖掘：从大量专利中筛选出有价值的技术信息。</li>
-                <li>专利预警：定期批量解读相关领域的新专利，及时了解技术动态。</li>
-                <li>专利导航：为企业的技术研发和专利布局提供参考。</li>
-            </ul>
-        </section>
-
-        <section id="feature-claims-processor">
-            <h2>功能七：权利要求处理</h2>
-            <p>此功能用于处理专利权利要求，支持Excel批量分析和文本输入分析两种模式，能够自动解析、分类并提取权利要求信息，生成可视化的引用关系图。</p>
-
-            <h4>核心技术优势</h4>
-            <ul>
-                <li><strong>双模式支持：</strong> 提供Excel批量分析和文本输入分析两种模式，适应不同的使用场景。</li>
-                <li><strong>智能文本解析：</strong> 自动识别权利要求的编号、类型（独立/从属）、内容和引用关系。</li>
-                <li><strong>多语言支持：</strong> 支持中英文混合文本，自动识别权利要求语言。</li>
-                <li><strong>置信度评分：</strong> 为每条权利要求的解析结果提供置信度评分，帮助用户评估解析准确性。</li>
-                <li><strong>多种可视化方式：</strong> 提供树状图、网络图、径向图三种引用关系可视化方式，直观展示权利要求结构。</li>
-                <li><strong>交互式可视化控制：</strong> 支持缩放、拖拽、散开程度调节、高清截图等交互功能。</li>
-                <li><strong>公开号与独权合并：</strong> 提供公开号与独权合并视窗，方便查看每个公开号及其对应的独立权利要求。</li>
-                <li><strong>专利号查询功能：</strong> 支持根据专利号搜索和可视化特定专利的权利要求引用关系。</li>
-                <li><strong>多种导出格式：</strong> 支持将处理结果导出为Excel、JSON格式，方便进一步分析和应用。</li>
-                <li><strong>实时进度显示：</strong> 处理过程中显示实时进度条和百分比，让用户了解处理状态。</li>
-            </ul>
-
-            <h4>工作流程（Excel批量分析模式）</h4>
-            <ol>
-                <li><strong>上传Excel文件：</strong> 选择包含权利要求的Excel文件。</li>
-                <li><strong>选择工作表和列：</strong> 从下拉菜单中选择包含权利要求的工作表和列。</li>
-                <li><strong>开始处理：</strong> 点击"开始处理"按钮，系统自动解析权利要求信息。</li>
-                <li><strong>查看处理结果：</strong> 在表格中查看结构化的权利要求信息，包括类型、语言、引用关系和置信度。</li>
-                <li><strong>查看公开号与独权合并：</strong> 在合并视窗中查看每个公开号的独立权利要求内容。</li>
-                <li><strong>搜索专利号：</strong> 输入专利号片段搜索，定位到特定专利。</li>
-                <li><strong>生成可视化图表：</strong> 选择特定专利，生成权利要求引用关系图。</li>
-                <li><strong>导出结果：</strong> 将处理结果导出为Excel或JSON文件。</li>
-            </ol>
-
-            <h4>工作流程（文本输入分析模式）</h4>
-            <ol>
-                <li><strong>输入权利要求文本：</strong> 在文本框中输入权利要求内容，或使用"加载示例"查看示例格式。</li>
-                <li><strong>开始处理：</strong> 点击"开始分析"按钮，系统自动解析权利要求信息。</li>
-                <li><strong>查看分析结果：</strong> 系统会高亮显示独立权利要求（蓝色）和从属权利要求（灰色）。</li>
-                <li><strong>查看统计信息：</strong> 查看总权利要求数、独立权利要求数、从属权利要求数。</li>
-                <li><strong>生成可视化图表：</strong> 选择可视化样式（树状图/网络图/径向图），生成权利要求引用关系图。</li>
-                <li><strong>交互式操作：</strong> 使用缩放、拖拽、散开程度调节等功能查看图表细节。</li>
-            </ol>
-
-            <h4>可视化控制功能</h4>
-            <ul>
-                <li><strong>样式切换：</strong> 树状图（层次结构）、网络图（复杂关系）、径向图（中心辐射）</li>
-                <li><strong>散开程度调节：</strong> 树状图支持调节节点散开程度（0.5x-5.0x）</li>
-                <li><strong>缩放控制：</strong> 放大、缩小、重置、居中</li>
-                <li><strong>高清截图：</strong> 生成高清PNG图片保存</li>
-            </ul>
-
-            <h4>使用技巧</h4>
-            <ul>
-                <li>对于大量专利权利要求的处理，建议使用Excel批量分析模式，效率更高。</li>
-                <li>对于单条或少量权利要求的处理，建议使用文本输入分析模式，操作更便捷。</li>
-                <li>使用树状图可以清晰展示权利要求的层次结构，适合查看引用层级。</li>
-                <li>使用网络图可以直观展示权利要求之间的复杂引用关系。</li>
-                <li>使用径向图可以从中心向外展示权利要求的引用关系，适合展示复杂的权利要求网络。</li>
-                <li>通过公开号与独权合并视窗，可以快速了解每个公开号的核心技术内容。</li>
-                <li>利用专利号查询功能，可以快速定位和可视化特定专利的权利要求结构。</li>
-                <li>调节散开程度可以避免节点重叠，获得更清晰的可视化效果。</li>
-            </ul>
-
-            <h4>应用场景</h4>
-            <ul>
-                <li>专利申请：帮助专利代理人快速分析和整理权利要求，确保权利要求结构合理。</li>
-                <li>专利审查：帮助审查员快速理解专利的权利要求结构和引用关系。</li>
-                <li>专利侵权分析：通过可视化引用关系，快速识别侵权风险点。</li>
-                <li>技术分析：通过分析权利要求结构，了解技术的发展脉络和核心内容。</li>
-                <li>专利数据库建设：将非结构化的权利要求文本转换为结构化数据，便于后续分析和检索。</li>
-            </ul>
-        </section>
-
-        <section id="feature-drawing-marker">
-            <h2>功能八：专利附图标记</h2>
-            <p>此功能用于自动识别专利附图中的标记数字，并与说明书中的标记说明进行智能匹配，生成带有标注的附图，支持多图批量处理和交互式查看。</p>
-
-            <h4>核心技术优势</h4>
-            <ul>
-                <li><strong>OCR智能识别：</strong> 采用先进的OCR技术，自动识别附图中的数字和字母标记。</li>
-                <li><strong>AI辅助识别（可选）：</strong> 支持AI模式，利用大语言模型提升标记识别准确性，支持多语言说明书。</li>
-                <li><strong>AI处理控制面板：</strong> 可配置AI模式开关、选择模型、自定义提示词，灵活控制识别过程。</li>
-                <li><strong>智能匹配算法：</strong> 自动将附图标记与说明书中的标记说明进行匹配，建立完整的标记映射关系。</li>
-                <li><strong>多图批量处理：</strong> 支持同时上传和处理多张附图，提高工作效率。</li>
-                <li><strong>交互式多图查看器：</strong> 提供专业的多图查看界面，支持缩放、拖拽、标记高亮等交互操作。</li>
-                <li><strong>图片旋转功能：</strong> 支持对上传的图片进行90度旋转（顺时针/逆时针），确保附图方向正确。</li>
-                <li><strong>快速重新处理：</strong> 支持单独重新识别OCR或重新匹配说明书，无需完整重新处理。</li>
-                <li><strong>缓存机制：</strong> 智能缓存处理结果，支持页面刷新后恢复，避免重复处理。</li>
-                <li><strong>实时进度显示：</strong> 处理过程中显示详细进度状态，让用户了解当前处理阶段。</li>
-            </ul>
-
-            <h4>AI处理控制面板</h4>
-            <p>系统提供可选的AI处理控制功能：</p>
-            <ul>
-                <li><strong>AI模式开关：</strong> 开启后可使用大语言模型辅助识别</li>
-                <li><strong>模型选择：</strong> 选择适合的AI模型（如GLM-4-Flash等）</li>
-                <li><strong>自定义提示词：</strong> 可编辑AI识别提示词，优化识别效果</li>
-            </ul>
-            <div class="note">
-                <strong>提示：</strong> AI模式需要消耗API额度，但可以获得更准确的识别结果，特别适用于复杂附图或多语言说明书。
+        <!-- 功能三：大批量处理 -->
+        <div class="content-card" id="feature-large-batch">
+            <div class="card-header">
+                <h2>功能三：大批量处理</h2>
             </div>
+            <div class="card-body">
+                <p>专为大规模数据处理（数千至数万条）设计，基于智谱AI的官方Batch API。此功能完全在后端执行，即使关闭浏览器，任务也会继续运行。</p>
 
-            <h4>工作流程</h4>
-            <ol>
-                <li><strong>上传附图：</strong> 点击上传按钮选择专利附图文件，或直接粘贴图片。支持多张图片同时处理。</li>
-                <li><strong>图片预处理：</strong> 如需调整图片方向，可使用旋转功能（↶逆时针/↷顺时针）对单张图片进行90度旋转。</li>
-                <li><strong>输入说明书：</strong> 在文本框中输入或粘贴专利说明书内容，系统将从中提取标记说明。</li>
-                <li><strong>配置AI模式（可选）：</strong> 如需使用AI辅助识别，在AI处理控制面板开启AI模式并选择合适的模型。</li>
-                <li><strong>开始处理：</strong> 点击"开始处理"按钮，系统将自动进行OCR识别和说明书匹配。</li>
-                <li><strong>查看结果：</strong> 处理完成后，查看识别统计信息（OCR识别数、说明书匹配数、平均置信度）。</li>
-                <li><strong>交互式查看：</strong> 点击"打开多图查看器"进入交互式查看界面，详细查看每张附图的标记。</li>
-            </ol>
+                <h4>工作流程</h4>
+                <ol>
+                    <li><strong>生成请求文件 &rarr; </strong></li>
+                    <li><strong>执行批处理 &rarr; </strong></li>
+                    <li><strong>解析报告</strong></li>
+                </ol>
 
-            <h4>快速重新处理功能</h4>
-            <p>当需要调整处理时，系统提供智能的重新处理选项：</p>
-            <ul>
-                <li><strong>重新识别OCR（OCR按钮）：</strong> 当图片有旋转或需要重新识别标记时使用，会清除缓存重新进行OCR识别。</li>
-                <li><strong>重新匹配说明书（说明书按钮）：</strong> 当只修改了说明书内容时使用，会利用缓存的OCR结果快速重新匹配，速度提升50%以上。</li>
-            </ul>
-            <div class="note">
-                <strong>提示：</strong> 系统会自动检测图片和说明书的变化。当图片发生变化（上传、删除、旋转）时，会提示清除缓存；当只有说明书变化时，可以快速重新匹配。
+                <h4>Step 1: 生成请求文件</h4>
+                <p>根据您的源数据和处理要求，在浏览器内存中生成一个符合Batch API格式的JSONL文件。</p>
+
+                <h4>Step 2: 执行批处理</h4>
+                <ol>
+                    <li><strong>上传请求文件：</strong> 将生成的JSONL文件上传到智谱AI。</li>
+                    <li><strong>创建Batch任务：</strong> 上传成功后，创建批处理任务。<strong>请务必复制并保管好返回的Batch ID</strong>。</li>
+                    <li><strong>检查状态：</strong> 系统会自动启动定时检查（每分钟一次）。</li>
+                    <li><strong>获取结果内容：</strong> 当任务状态变为"completed"时，下载结果文件。</li>
+                </ol>
+                <div class="warning">
+                    <strong>断点续查：</strong> 如果流程中断，您可以在"断点续查"区域输入Batch ID，恢复对任务状态的监控。
+                </div>
+
+                <h4>Step 3: 解析报告</h4>
+                <p>将AI返回的结果与您的原始数据合并，生成最终的分析报告。</p>
             </div>
+        </div>
 
-            <h4>多图查看器功能</h4>
-            <ul>
-                <li><strong>缩略图导航：</strong> 左侧显示所有附图的缩略图，点击可快速切换。</li>
-                <li><strong>缩放与拖拽：</strong> 支持鼠标滚轮缩放和拖拽查看大图细节。</li>
-                <li><strong>标记高亮：</strong> 自动高亮显示识别到的标记，悬停可查看对应的说明书说明。</li>
-                <li><strong>标记列表：</strong> 右侧面板显示所有识别到的标记列表，点击可定位到对应位置。</li>
-                <li><strong>任务管理：</strong> 支持创建多个分析任务，方便对比不同批次的处理结果。</li>
-            </ul>
+        <!-- 功能四：本地专利库管理 -->
+        <div class="content-card" id="feature-local-lib">
+            <div class="card-header">
+                <h2>功能四：本地专利库管理</h2>
+            </div>
+            <div class="card-body">
+                <p>这是一个纯粹的、离线的Excel数据处理工具，专注于专利建库过程中常见的两个痛点：同族展开和新旧库合并。<strong>此功能不消耗任何API额度。</strong></p>
 
-            <h4>使用技巧</h4>
-            <ul>
-                <li>上传图片前，建议先检查图片清晰度，清晰的图片能获得更好的OCR识别效果。</li>
-                <li>如果附图方向不正确，先使用旋转功能调整方向再进行处理。</li>
-                <li>对于复杂的附图或说明书包含多种语言的情况，建议开启AI模式以获得更好的识别效果。</li>
-                <li>处理大量附图时，可以分批上传，系统支持多次添加图片。</li>
-                <li>使用"保存缓存"功能可以在页面刷新后快速恢复之前的处理结果。</li>
-                <li>在多图查看器中，可以使用鼠标滚轮缩放，按住鼠标拖拽查看大图细节。</li>
-                <li>如果某些标记未能正确识别，可以尝试调整图片质量或切换到AI模式重新处理。</li>
-                <li>修改说明书后，使用"重新匹配说明书"功能可以快速更新匹配结果，无需重新识别OCR。</li>
-            </ul>
+                <h4>工作流程</h4>
+                <ol>
+                    <li><strong>上传与展开 &rarr; </strong></li>
+                    <li><strong>合并新旧库 &rarr; </strong></li>
+                    <li><strong>下载最终结果</strong></li>
+                </ol>
 
-            <h4>应用场景</h4>
-            <ul>
-                <li>专利审查：快速理解附图中的标记含义，提高审查效率。</li>
-                <li>专利侵权分析：通过标记匹配，快速对比不同专利的附图技术特征。</li>
-                <li>技术方案理解：帮助技术人员快速理解专利附图的技术细节。</li>
-                <li>专利撰写辅助：检查附图标记与说明书的一致性，避免遗漏或错误。</li>
-                <li>专利教学培训：生成带标注的附图，用于专利知识的教学和培训。</li>
-                <li>专利数据库建设：将附图标记信息结构化，便于后续检索和分析。</li>
-            </ul>
+                <h4>Step 1: 上传与展开</h4>
+                <p>处理包含同族专利号的字段：</p>
+                <ol>
+                    <li><strong>上传文件：</strong> 上传您的原始专利库Excel文件。</li>
+                    <li><strong>配置：</strong> 指定包含同族专利号的列名和分隔符。</li>
+                    <li><strong>展开：</strong> 点击"展开同族专利号"按钮，生成去重后的专利号列表。</li>
+                </ol>
 
-            <h4>常见问题排查</h4>
-            <ul>
-                <li><strong>OCR未识别到标记：</strong> 检查图片清晰度，确保标记清晰可见；尝试调整图片方向；考虑使用AI模式。</li>
-                <li><strong>标记与说明书未匹配：</strong> 检查说明书内容是否完整；确认说明书语言与标记语言一致。</li>
-                <li><strong>处理超时：</strong> 对于大量图片或复杂图片，建议使用AI模式并耐心等待；或分批处理。</li>
-            </ul>
-        </section>
+                <h4>Step 2: 合并新旧库</h4>
+                <p>将商业数据库下载的最新数据与包含额外标注的旧库合并：</p>
+                <ol>
+                    <li><strong>加载文件：</strong> 分别上传旧库和新库。</li>
+                    <li><strong>配置匹配列：</strong> 为两个文件分别指定用于匹配的"主键"列。</li>
+                    <li><strong>选择补充列：</strong> 从旧库中勾选希望补充到新库的列。</li>
+                </ol>
+                <div class="note">
+                    <strong>合并逻辑：</strong> 新库的数据会被完整保留。如果新库中存在与旧库补充列同名的列，则新库的数据优先。
+                </div>
+            </div>
+        </div>
 
-        <section id="faq">
-            <h2>常见问题 (FAQ)</h2>
+        <!-- 功能五：权利要求对比 -->
+        <div class="content-card" id="feature-claims-comparison">
+            <div class="card-header">
+                <h2>功能五：权利要求对比</h2>
+            </div>
+            <div class="card-body">
+                <p>此功能用于智能对比不同专利的权利要求，自动识别语言、按需翻译，提供多种可视化展示方式。</p>
 
-            <h4>Q1: 为什么点击功能按钮后没有任何反应？</h4>
-            <p><strong>A:</strong> 最常见的原因是您没有设置API Key。请参照【入门指南】的第3步，正确配置并保存您的智谱AI API Key。如果已配置，请检查浏览器开发者工具(F12)的"控制台(Console)"和"网络(Network)"选项卡，查看是否有报错信息。</p>
+                <h4>核心技术优势</h4>
+                <ul>
+                    <li><strong>多模型支持：</strong> 提供多种模型选择，满足不同场景需求。</li>
+                    <li><strong>灵活对比数量：</strong> 支持2-10个权利要求的同时对比。</li>
+                    <li><strong>智能语言处理：</strong> 自动识别权利要求语言，支持中英文混合文本。</li>
+                    <li><strong>多种可视化方式：</strong> 提供卡片视图、并排对比、矩阵视图三种展示方式。</li>
+                    <li><strong>耦合对比分析：</strong> 支持选择多个权利要求进行耦合对比。</li>
+                </ul>
 
-            <h4>Q2: "小批量异步"和"大批量处理"有什么区别？我应该用哪个？</h4>
-            <p><strong>A:</strong></p>
-            <ul>
-                <li><strong>小批量异步：</strong> 适合几十到几百条任务，结果立等可取（几分钟到十几分钟）。任务在浏览器端轮询，关闭页面会中断（但可恢复）。</li>
-                <li><strong>大批量处理：</strong> 适合几千到几万条任务，是非实时的，通常需要几小时甚至一天。任务提交后完全在云端执行，您可以关闭浏览器。</li>
-            </ul>
-            <p>简单来说，任务量小于500条，用"小批量异步"；大于500条，或需要长时间处理，用"大批量处理"。</p>
+                <h4>工作流程</h4>
+                <ol>
+                    <li><strong>输入权利要求：</strong> 在输入框中输入专利的权利要求内容（最多10个）。</li>
+                    <li><strong>选择对比模型：</strong> 根据需求选择合适的对比模型。</li>
+                    <li><strong>执行智能对比：</strong> 点击"开始全部对比分析"按钮。</li>
+                    <li><strong>耦合对比分析（可选）：</strong> 选择多个权利要求，点击"开始耦合分析"。</li>
+                    <li><strong>切换视图：</strong> 根据需要切换不同的可视化展示方式。</li>
+                </ol>
 
-            <h4>Q3: 在"大批量处理"中，我不小心关闭了浏览器，任务还在吗？</h4>
-            <p><strong>A:</strong> 只要您已经成功点击"创建Batch任务"并获得了Batch ID，任务就在云端安全地执行。您只需重新打开页面，在"执行批处理"步骤的"断点续查"区域输入该Batch ID，即可恢复对任务状态的监控。</p>
+                <h4>可视化视图说明</h4>
+                <ul>
+                    <li><strong>卡片视图：</strong> 以卡片形式展示每个权利要求的核心特征。</li>
+                    <li><strong>并排对比：</strong> 将多个权利要求并排显示，便于逐条对比差异。</li>
+                    <li><strong>矩阵视图：</strong> 以矩阵形式展示权利要求之间的相似度关系。</li>
+                </ul>
+            </div>
+        </div>
 
-            <h4>Q4: 上传文件失败或文件处理失败怎么办？</h4>
-            <p><strong>A:</strong> 请检查：</p>
-            <ol>
-                <li>文件格式是否符合要求（如Excel文件应为.xlsx或.xls）。</li>
-                <li>文件内容是否正确，例如Excel文件的工作表(Sheet)中是否有数据。</li>
-                <li>网络连接是否正常。</li>
-                <li>如果问题持续，请联系管理员。</li>
-            </ol>
-        </section>
+        <!-- 功能六：批量专利解读 -->
+        <div class="content-card" id="feature-patent-batch">
+            <div class="card-header">
+                <h2>功能六：批量专利解读</h2>
+            </div>
+            <div class="card-body">
+                <p>此功能用于批量查询专利详情并提供AI解读功能，最多支持50个专利号。</p>
+
+                <h4>核心技术优势</h4>
+                <ul>
+                    <li><strong>高效批量处理：</strong> 支持一次输入最多50个专利号。</li>
+                    <li><strong>智能专利爬取：</strong> 自动从专利数据库获取专利详情。</li>
+                    <li><strong>灵活字段选择器：</strong> 可选择需要爬取的专利信息字段。</li>
+                    <li><strong>解读模板管理：</strong> 支持多种解读模板。</li>
+                </ul>
+
+                <h4>字段选择器说明</h4>
+                <ul>
+                    <li><strong>基础字段（必选）：</strong> 专利号、标题、摘要、发明人、申请人等</li>
+                    <li><strong>分类与领域：</strong> CPC分类、技术领域、优先权日期</li>
+                    <li><strong>同族信息：</strong> 同族ID、同族申请、国家状态</li>
+                    <li><strong>引用信息：</strong> 引用专利、被引用专利</li>
+                    <li><strong>法律与事件：</strong> 事件时间轴、法律事件、相似文档</li>
+                    <li><strong>附加内容：</strong> 说明书、附图、外部链接</li>
+                </ul>
+
+                <h4>工作流程</h4>
+                <ol>
+                    <li><strong>输入专利号列表：</strong> 在文本框中输入专利号，最多50个。</li>
+                    <li><strong>选择解读模板：</strong> 选择合适的解读模板。</li>
+                    <li><strong>配置爬取字段：</strong> 勾选需要获取的专利信息字段。</li>
+                    <li><strong>批量查询专利：</strong> 点击"批量查询专利"按钮。</li>
+                    <li><strong>执行AI解读：</strong> 点击"批量解读"按钮。</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- 功能七：权利要求处理 -->
+        <div class="content-card" id="feature-claims-processor">
+            <div class="card-header">
+                <h2>功能七：权利要求处理</h2>
+            </div>
+            <div class="card-body">
+                <p>此功能用于处理专利权利要求，支持Excel批量分析和文本输入分析两种模式，能够自动解析、分类并提取权利要求信息，生成可视化的引用关系图。</p>
+
+                <h4>核心技术优势</h4>
+                <ul>
+                    <li><strong>双模式支持：</strong> Excel批量分析和文本输入分析。</li>
+                    <li><strong>智能文本解析：</strong> 自动识别权利要求的编号、类型、内容和引用关系。</li>
+                    <li><strong>多种可视化方式：</strong> 树状图、网络图、径向图。</li>
+                    <li><strong>交互式可视化控制：</strong> 支持缩放、拖拽、散开程度调节。</li>
+                </ul>
+
+                <h4>可视化控制功能</h4>
+                <ul>
+                    <li><strong>样式切换：</strong> 树状图、网络图、径向图</li>
+                    <li><strong>散开程度调节：</strong> 树状图支持调节节点散开程度（0.5x-5.0x）</li>
+                    <li><strong>缩放控制：</strong> 放大、缩小、重置、居中</li>
+                    <li><strong>高清截图：</strong> 生成高清PNG图片保存</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 功能八：专利附图标记 -->
+        <div class="content-card" id="feature-drawing-marker">
+            <div class="card-header">
+                <h2>功能八：专利附图标记</h2>
+            </div>
+            <div class="card-body">
+                <p>此功能用于自动识别专利附图中的标记数字，并与说明书中的标记说明进行智能匹配，生成带有标注的附图。</p>
+
+                <h4>核心技术优势</h4>
+                <ul>
+                    <li><strong>OCR智能识别：</strong> 采用先进的OCR技术，自动识别附图中的数字和字母标记。</li>
+                    <li><strong>AI辅助识别（可选）：</strong> 支持AI模式，利用大语言模型提升识别准确性。</li>
+                    <li><strong>AI处理控制面板：</strong> 可配置AI模式开关、选择模型、自定义提示词。</li>
+                    <li><strong>多图批量处理：</strong> 支持同时上传和处理多张附图。</li>
+                    <li><strong>交互式多图查看器：</strong> 支持缩放、拖拽、标记高亮等交互操作。</li>
+                </ul>
+
+                <h4>AI处理控制面板</h4>
+                <ul>
+                    <li><strong>AI模式开关：</strong> 开启后可使用大语言模型辅助识别</li>
+                    <li><strong>模型选择：</strong> 选择适合的AI模型</li>
+                    <li><strong>自定义提示词：</strong> 可编辑AI识别提示词</li>
+                </ul>
+
+                <h4>快速重新处理功能</h4>
+                <ul>
+                    <li><strong>重新识别OCR：</strong> 当图片有旋转或需要重新识别标记时使用。</li>
+                    <li><strong>重新匹配说明书：</strong> 当只修改了说明书内容时使用，速度提升50%以上。</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 常见问题 -->
+        <div class="content-card" id="faq">
+            <div class="card-header">
+                <h2>常见问题 (FAQ)</h2>
+            </div>
+            <div class="card-body">
+                <h4>Q1: 为什么点击功能按钮后没有任何反应？</h4>
+                <p><strong>A:</strong> 最常见的原因是您没有设置API Key。请参照【入门指南】的第3步，正确配置并保存您的智谱AI API Key。</p>
+
+                <h4>Q2: "小批量异步"和"大批量处理"有什么区别？</h4>
+                <p><strong>A:</strong></p>
+                <ul>
+                    <li><strong>小批量异步：</strong> 适合几十到几百条任务，结果立等可取。</li>
+                    <li><strong>大批量处理：</strong> 适合几千到几万条任务，完全在云端执行。</li>
+                </ul>
+
+                <h4>Q3: 在"大批量处理"中，我不小心关闭了浏览器，任务还在吗？</h4>
+                <p><strong>A:</strong> 只要您已经成功点击"创建Batch任务"并获得了Batch ID，任务就在云端安全地执行。您可以在"断点续查"区域输入该Batch ID恢复监控。</p>
+
+                <h4>Q4: 上传文件失败或文件处理失败怎么办？</h4>
+                <p><strong>A:</strong> 请检查文件格式是否符合要求，文件内容是否正确，网络连接是否正常。</p>
+            </div>
+        </div>
     </main>
 </div>
 
@@ -879,148 +782,118 @@
             spacing: 18.00
         });
 
-        // --- 原有滚动监听逻辑 ---
-        const links = document.querySelectorAll('.sidebar-nav a');
-        const sections = document.querySelectorAll('.content-wrapper section');
+        // 导航切换功能
+        const navLinks = document.querySelectorAll('.sidebar-nav a');
+        const contentCards = document.querySelectorAll('.content-card');
 
-        const observer = new IntersectionObserver(entries => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    links.forEach(link => {
-                        link.classList.remove('active');
-                        if (link.getAttribute('href').substring(1) === entry.target.id) {
-                            link.classList.add('active');
-                        }
-                    });
-                }
-            });
-        }, { rootMargin: "-50% 0px -50% 0px" });
-
-        sections.forEach(section => {
-            observer.observe(section);
-        });
-
-        links.forEach(link => {
+        navLinks.forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
-                const targetId = this.getAttribute('href');
-                const targetElement = document.querySelector(targetId);
-                if (targetElement) {
-                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
+                
+                // 获取目标卡片ID
+                const targetId = this.getAttribute('data-target');
+                
+                // 更新导航激活状态
+                navLinks.forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+                
+                // 切换内容卡片
+                contentCards.forEach(card => {
+                    card.classList.remove('active');
+                    if (card.id === targetId) {
+                        card.classList.add('active');
+                    }
+                });
             });
         });
 
-        // --- 新增：关键词搜索逻辑 ---
-
-        // 1. 获取 DOM 元素
+        // 搜索功能
         const searchInput = document.getElementById('search-input');
         const prevBtn = document.getElementById('prev-btn');
         const nextBtn = document.getElementById('next-btn');
         const clearBtn = document.getElementById('clear-search-btn');
         const resultsInfo = document.getElementById('search-results-info');
-        const contentWrapper = document.querySelector('.content-wrapper');
 
-        // 2. 初始化状态变量
         let matches = [];
         let currentIndex = -1;
-        let originalNodes = new Map(); // 用于存储原始节点，以便恢复
 
-        // 3. 核心功能函数
-
-        /**
-         * 清除上一次的搜索结果和高亮
-         */
         function clearSearch() {
-            // 移除所有高亮
-            const highlighted = contentWrapper.querySelectorAll('.search-highlight');
+            const highlighted = document.querySelectorAll('.search-highlight');
             highlighted.forEach(span => {
                 const parent = span.parentNode;
-                // 用 span 里的文本内容替换掉 span 自身
                 if (span.firstChild) {
                    parent.replaceChild(span.firstChild, span);
                 } else {
-                   parent.removeChild(span); // 如果span是空的，直接移除
+                   parent.removeChild(span);
                 }
-                // 合并相邻的文本节点，保持 DOM 结构干净
-                parent.normalize(); 
+                parent.normalize();
             });
-
-            // 重置状态
             matches = [];
             currentIndex = -1;
             updateUI();
         }
-        
-        /**
-         * 执行搜索和高亮
-         */
+
         function performSearch() {
             clearSearch();
             const keyword = searchInput.value.trim();
+            if (keyword.length < 1) return;
 
-            if (keyword.length < 1) {
-                return;
-            }
-            
-            // 使用正则表达式进行全局、不区分大小写的匹配
             const regex = new RegExp(keyword, 'gi');
             
-            // 递归函数，用于遍历并高亮文本节点
-            function highlightText(node) {
-                if (node.nodeType === 3) { // 文本节点
-                    const text = node.textContent;
-                    const parent = node.parentNode;
-                    
-                    // 忽略 SCRIPT 和 STYLE 标签内的内容
-                    if (parent.tagName === 'SCRIPT' || parent.tagName === 'STYLE') return;
+            // 在所有卡片中搜索
+            contentCards.forEach(card => {
+                function highlightText(node) {
+                    if (node.nodeType === 3) {
+                        const text = node.textContent;
+                        const parent = node.parentNode;
+                        if (parent.tagName === 'SCRIPT' || parent.tagName === 'STYLE') return;
 
-                    let match;
-                    let lastIndex = 0;
-                    const fragment = document.createDocumentFragment();
+                        let match;
+                        let lastIndex = 0;
+                        const fragment = document.createDocumentFragment();
 
-                    while ((match = regex.exec(text)) !== null) {
-                        // 添加匹配项之前的部分
-                        if (match.index > lastIndex) {
-                            fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+                        while ((match = regex.exec(text)) !== null) {
+                            if (match.index > lastIndex) {
+                                fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+                            }
+                            const span = document.createElement('span');
+                            span.className = 'search-highlight';
+                            span.textContent = match[0];
+                            fragment.appendChild(span);
+                            lastIndex = regex.lastIndex;
                         }
-                        // 创建并添加高亮 span
-                        const span = document.createElement('span');
-                        span.className = 'search-highlight';
-                        span.textContent = match[0];
-                        fragment.appendChild(span);
-                        
-                        lastIndex = regex.lastIndex;
-                    }
 
-                    // 如果有匹配项，替换原始文本节点
-                    if (lastIndex > 0) {
-                        // 添加最后一个匹配项之后的部分
-                        if (lastIndex < text.length) {
-                            fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+                        if (lastIndex > 0) {
+                            if (lastIndex < text.length) {
+                                fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+                            }
+                            parent.replaceChild(fragment, node);
                         }
-                        parent.replaceChild(fragment, node);
+                    } else if (node.nodeType === 1 && node.childNodes && !/^(script|style)$/i.test(node.tagName)) {
+                        Array.from(node.childNodes).forEach(child => highlightText(child));
                     }
-                } else if (node.nodeType === 1 && node.childNodes && !/^(script|style)$/i.test(node.tagName)) { // 元素节点
-                    // 对子节点进行递归
-                    Array.from(node.childNodes).forEach(child => highlightText(child));
                 }
-            }
+                highlightText(card);
+            });
 
-            highlightText(contentWrapper);
-
-            matches = Array.from(contentWrapper.querySelectorAll('.search-highlight'));
+            matches = Array.from(document.querySelectorAll('.search-highlight'));
             if (matches.length > 0) {
                 currentIndex = 0;
+                // 切换到包含第一个匹配项的卡片
+                const firstMatchCard = matches[0].closest('.content-card');
+                if (firstMatchCard) {
+                    const cardId = firstMatchCard.id;
+                    navLinks.forEach(link => {
+                        if (link.getAttribute('data-target') === cardId) {
+                            link.click();
+                        }
+                    });
+                }
             }
             updateUI();
         }
 
-        /**
-         * 更新 UI（按钮状态、结果信息、当前高亮）
-         */
         function updateUI() {
-            // 更新结果信息
             if (searchInput.value.trim().length > 0) {
                 if (matches.length > 0) {
                     resultsInfo.textContent = `${currentIndex + 1} / ${matches.length}`;
@@ -1033,16 +906,13 @@
                 clearBtn.style.display = 'none';
             }
 
-            // 更新按钮状态
             prevBtn.disabled = matches.length <= 1;
             nextBtn.disabled = matches.length <= 1;
 
-            // 更新高亮样式
             matches.forEach((match, index) => {
                 match.classList.toggle('active-highlight', index === currentIndex);
             });
 
-            // 滚动到当前匹配项
             if (currentIndex !== -1 && matches[currentIndex]) {
                 matches[currentIndex].scrollIntoView({
                     behavior: 'smooth',
@@ -1050,19 +920,15 @@
                 });
             }
         }
-        
-        // 4. 绑定事件监听器
 
-        // 使用 debounce 避免用户输入过快时频繁触发搜索
         let searchTimeout;
         searchInput.addEventListener('input', () => {
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
                 performSearch();
-            }, 300); // 延迟300毫秒执行搜索
+            }, 300);
         });
 
-        // Enter 键触发搜索
         searchInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -1070,23 +936,42 @@
             }
         });
 
-        // "下一个" 按钮
         nextBtn.addEventListener('click', () => {
             if (matches.length > 0) {
                 currentIndex = (currentIndex + 1) % matches.length;
+                // 检查是否需要切换卡片
+                const nextMatch = matches[currentIndex];
+                const targetCard = nextMatch.closest('.content-card');
+                if (targetCard && !targetCard.classList.contains('active')) {
+                    const cardId = targetCard.id;
+                    navLinks.forEach(link => {
+                        if (link.getAttribute('data-target') === cardId) {
+                            link.click();
+                        }
+                    });
+                }
                 updateUI();
             }
         });
 
-        // "上一个" 按钮
         prevBtn.addEventListener('click', () => {
             if (matches.length > 0) {
                 currentIndex = (currentIndex - 1 + matches.length) % matches.length;
+                // 检查是否需要切换卡片
+                const prevMatch = matches[currentIndex];
+                const targetCard = prevMatch.closest('.content-card');
+                if (targetCard && !targetCard.classList.contains('active')) {
+                    const cardId = targetCard.id;
+                    navLinks.forEach(link => {
+                        if (link.getAttribute('data-target') === cardId) {
+                            link.click();
+                        }
+                    });
+                }
                 updateUI();
             }
         });
 
-        // 清除按钮
         clearBtn.addEventListener('click', () => {
             searchInput.value = '';
             clearSearch();
