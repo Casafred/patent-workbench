@@ -23,6 +23,14 @@ function initPatentBatchModule() {
         return false;
     }
     
+    // Initialize field selector
+    if (typeof window.initFieldSelector === 'function') {
+        window.initFieldSelector();
+        console.log('✅ Field selector initialized');
+    } else {
+        console.warn('⚠️ initFieldSelector function not found');
+    }
+    
     // Call the original initPatentBatch function from main.js
     if (typeof initPatentBatch === 'function') {
         initPatentBatch();
@@ -38,3 +46,4 @@ function initPatentBatchModule() {
 if (typeof window !== 'undefined') {
     window.initPatentBatchModule = initPatentBatchModule;
 }
+
