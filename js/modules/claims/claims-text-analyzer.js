@@ -180,7 +180,7 @@ async function analyzeClaimsTextWithAI(text, detectedLanguage, state, showMessag
                 showMessage(`成功识别 ${state.textAnalyzedData.length} 条权利要求`, 'success');
             }
             
-            displayResults();
+            displayResults(state);
         } else {
             showMessage('AI分析失败：' + (data.error || '未知错误'), 'error');
         }
@@ -199,7 +199,7 @@ function analyzeClaimsTextDirect(text, state, showMessage, displayResults) {
         return;
     }
     
-    displayResults();
+    displayResults(state);
     showMessage(`成功识别 ${state.textAnalyzedData.length} 条权利要求`, 'success');
 }
 
