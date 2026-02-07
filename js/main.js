@@ -969,7 +969,9 @@ window.openPatentDetailModal = function(result) {
     `;
 
     // 构建完整的专利信息HTML（不再包含patent-card-header）
-    let htmlContent = buildPatentDetailHTML(result);
+    // 获取当前选中的字段
+    const selectedFields = window.getSelectedFields ? window.getSelectedFields() : null;
+    let htmlContent = buildPatentDetailHTML(result, selectedFields);
 
     modalBody.innerHTML = htmlContent;
 
@@ -1243,13 +1245,62 @@ window.copySimilarDocumentNumbers = function(patentNumber, event) {
         .catch(() => alert('❌ 复制失败'));
 };
 
+// 字段映射关系：将字段选择器的值映射到数据字段
+const FIELD_MAPPING = {
+    'abstract': ['abstract'],
+    'claims': ['claims'],
+    'description': ['description'],
+    'classifications': ['classifications'],
+    'landscapes': ['landscapes'],
+    'family_id': ['family_id'],
+    'family_applications': ['family_applications'],
+    'country_status': ['country_status'],
+    'patent_citations': ['patent_citations'],
+    'cited_by': ['cited_by'],
+    'events_timeline': ['events_timeline'],
+    'legal_events': ['legal_events'],
+    'similar_documents': ['similar_documents'],
+    'drawings': ['drawings'],
+    'external_links': ['external_links']
+};
+
+// 检查是否应该显示某个字段
+function shouldShowField(fieldKey, selectedFields) {
+    // 如果没有提供selectedFields，显示所有字段
+    if (!selectedFields || selectedFields.length === 0) {
+        return true;
+    }
+    
+    // 基础字段始终显示
+    const baseFields = ['patent_number', 'title', 'applicant', 'inventor', 'filing_date', 'publication_date', 'priority_date', 'ipc_classification', 'url'];
+    if (baseFields.includes(fieldKey)) {
+        return true;
+    }
+    
+    // 检查字段是否在选中列表中
+    for (const selectedField of selectedFields) {
+        const mappedFields = FIELD_MAPPING[selectedField];
+        if (mappedFields && mappedFields.includes(fieldKey)) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
 // 构建专利详情HTML
-function buildPatentDetailHTML(result) {
+function buildPatentDetailHTML(result, selectedFields) {
     const data = result.data;
+    
+    // 如果没有提供selectedFields，尝试从全局获取
+    if (!selectedFields && window.getSelectedFields) {
+        selectedFields = window.getSelectedFields();
+    }
     
     // 直接开始构建基本信息，不再包含patent-card-header
     let htmlContent = `<div style="margin-bottom: 15px;">`;
     
+    // 基础字段（始终显示）
     const fields = [
         { label: '📄 摘要', value: data.abstract, type: 'text', key: 'abstract' },
         { label: '👤 发明人', value: data.inventors && data.inventors.length > 0 ? data.inventors.join(', ') : null, type: 'text', key: 'inventors' },
@@ -1260,7 +1311,7 @@ function buildPatentDetailHTML(result) {
     ];
     
     fields.forEach(field => {
-        if (field.value) {
+        if (field.value && shouldShowField(field.key, selectedFields)) {
             if (field.type === 'url') {
                 htmlContent += `
                     <p style="margin-bottom: 10px; font-family: 'Noto Sans SC', Arial, sans-serif;">
@@ -1351,7 +1402,7 @@ function buildPatentDetailHTML(result) {
     }
     
     // 权利要求
-    if (data.claims && data.claims.length > 0) {
+    if (data.claims && data.claims.length > 0 && shouldShowField('claims', selectedFields)) {
         htmlContent += `
             <div style="margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 5px;">
                 <div style="margin-bottom: 8px;">
@@ -1394,7 +1445,7 @@ function buildPatentDetailHTML(result) {
     }
     
     // 说明书
-    if (data.description) {
+    if (data.description && shouldShowField('description', selectedFields)) {
         htmlContent += `
             <div style="margin-top: 15px; padding: 10px; background-color: #f0f8ff; border-radius: 5px;">
                 <div style="margin-bottom: 8px;">
@@ -1411,7 +1462,7 @@ function buildPatentDetailHTML(result) {
     }
     
     // CPC分类信息
-    if (data.classifications && data.classifications.length > 0) {
+    if (data.classifications && data.classifications.length > 0 && shouldShowField('classifications', selectedFields)) {
         htmlContent += `
             <div style="margin-top: 15px; padding: 10px; background-color: #e3f2fd; border-radius: 5px;">
                 <div style="margin-bottom: 8px;">
@@ -1436,7 +1487,7 @@ function buildPatentDetailHTML(result) {
     }
     
     // 技术领域
-    if (data.landscapes && data.landscapes.length > 0) {
+    if (data.landscapes && data.landscapes.length > 0 && shouldShowField('landscapes', selectedFields)) {
         htmlContent += `
             <div style="margin-top: 15px; padding: 10px; background-color: #f3e5f5; border-radius: 5px;">
                 <div style="margin-bottom: 8px;">
@@ -1471,7 +1522,8 @@ function buildPatentDetailHTML(result) {
     }
     
     // 同族信息
-    if (data.family_id || (data.family_applications && data.family_applications.length > 0)) {
+    const showFamilyInfo = shouldShowField('family_id', selectedFields) || shouldShowField('family_applications', selectedFields);
+    if (showFamilyInfo && (data.family_id || (data.family_applications && data.family_applications.length > 0))) {
         htmlContent += `
             <div style="margin-top: 15px; padding: 10px; background-color: #fff3e0; border-radius: 5px;">
                 <div style="margin-bottom: 8px;">
@@ -1479,11 +1531,11 @@ function buildPatentDetailHTML(result) {
                 </div>
         `;
         
-        if (data.family_id) {
+        if (data.family_id && shouldShowField('family_id', selectedFields)) {
             htmlContent += `<p style="margin: 5px 0;"><strong>同族ID:</strong> ${data.family_id}</p>`;
         }
         
-        if (data.family_applications && data.family_applications.length > 0) {
+        if (data.family_applications && data.family_applications.length > 0 && shouldShowField('family_applications', selectedFields)) {
             htmlContent += `
                 <div style="margin-top: 10px;">
                     <strong>同族申请 (共${data.family_applications.length}条):</strong>
@@ -1524,7 +1576,7 @@ function buildPatentDetailHTML(result) {
     }
     
     // 外部链接
-    if (data.external_links && Object.keys(data.external_links).length > 0) {
+    if (data.external_links && Object.keys(data.external_links).length > 0 && shouldShowField('external_links', selectedFields)) {
         htmlContent += `
             <div style="margin-top: 15px; padding: 10px; background-color: #e8f5e9; border-radius: 5px;">
                 <div style="margin-bottom: 8px;">
@@ -1548,7 +1600,7 @@ function buildPatentDetailHTML(result) {
     }
     
     // 引用专利
-    if (data.patent_citations && data.patent_citations.length > 0) {
+    if (data.patent_citations && data.patent_citations.length > 0 && shouldShowField('patent_citations', selectedFields)) {
         htmlContent += `
             <div style="margin-top: 15px; padding: 10px; background-color: #e8f5e9; border-radius: 5px;">
                 <div style="margin-bottom: 8px;">
@@ -1589,7 +1641,7 @@ function buildPatentDetailHTML(result) {
     }
     
     // 被引用专利
-    if (data.cited_by && data.cited_by.length > 0) {
+    if (data.cited_by && data.cited_by.length > 0 && shouldShowField('cited_by', selectedFields)) {
         htmlContent += `
             <div style="margin-top: 15px; padding: 10px; background-color: #fff3e0; border-radius: 5px;">
                 <div style="margin-bottom: 8px;">
@@ -1627,7 +1679,7 @@ function buildPatentDetailHTML(result) {
     }
     
     // 事件时间轴（Events Timeline）
-    if (data.events_timeline && data.events_timeline.length > 0) {
+    if (data.events_timeline && data.events_timeline.length > 0 && shouldShowField('events_timeline', selectedFields)) {
         htmlContent += `
             <div style="margin-top: 15px;">
                 <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
@@ -1669,7 +1721,7 @@ function buildPatentDetailHTML(result) {
     }
     
     // 法律事件（Legal Events）- 表格样式
-    if (data.legal_events && data.legal_events.length > 0) {
+    if (data.legal_events && data.legal_events.length > 0 && shouldShowField('legal_events', selectedFields)) {
         htmlContent += `
             <div style="margin-top: 15px; padding: 10px; background-color: #fff3e0; border-radius: 5px;">
                 <div style="margin-bottom: 8px;">
@@ -1709,7 +1761,7 @@ function buildPatentDetailHTML(result) {
     }
     
     // 相似文档
-    if (data.similar_documents && data.similar_documents.length > 0) {
+    if (data.similar_documents && data.similar_documents.length > 0 && shouldShowField('similar_documents', selectedFields)) {
         htmlContent += `
             <div style="margin-top: 15px; padding: 10px; background-color: #e8f5e9; border-radius: 5px;">
                 <div style="margin-bottom: 8px;">
