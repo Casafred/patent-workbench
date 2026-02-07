@@ -99,7 +99,7 @@
 
 .modal-content {
     background-color: var(--surface-color);
-    position: absolute;
+    position: fixed;
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
@@ -111,14 +111,16 @@
     max-height: 90vh;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
     opacity: 0;
-    transition: opacity 0.2s ease;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
     overflow: hidden;
-    will-change: transform, opacity;
+    will-change: opacity;
     backface-visibility: hidden;
 }
 
 .modal.show .modal-content {
     opacity: 1;
+    visibility: visible;
 }
 
 .modal-header {

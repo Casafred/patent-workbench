@@ -378,62 +378,43 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
     color: var(--primary-color);
 }
 
-/* 全局悬浮球帮助按钮 */
-.floating-help-button {
+/* 帮助悬浮球按钮 */
+.help-fab {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 60px;
-    height: 60px;
-    background-color: var(--primary-color);
+    bottom: 24px;
+    right: 24px;
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color-dark) 100%);
     color: white;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     text-decoration: none;
-    font-size: 24px;
-    font-weight: bold;
-    box-shadow: 0 4px 12px var(--primary-color-glow);
-    transition: all 0.3s ease;
-    z-index: 9999; /* 确保在最上层 */
-    cursor: move; /* 添加拖动光标 */
-    user-select: none; /* 防止拖动时选中文本 */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 9999;
+    cursor: pointer;
 }
 
-.floating-help-button svg {
-    width: 30px;
-    height: 30px;
+.help-fab svg {
+    width: 28px;
+    height: 28px;
     stroke: white;
     fill: none;
-    pointer-events: none; /* 防止SVG干扰拖动 */
+    transition: transform 0.3s ease;
 }
 
-.floating-help-button:hover {
-    transform: scale(1.1);
-    box-shadow: 0 7px 20px var(--primary-color-glow);
-    background-color: var(--primary-color-dark);
+.help-fab:hover {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2), 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-.floating-help-button.dragging {
-    opacity: 0.9;
-    cursor: grabbing;
-    transform: scale(1.05);
-    box-shadow: 0 10px 30px rgba(34, 197, 94, 0.4);
-    transition: opacity 0.1s ease, transform 0.1s ease;
+.help-fab:hover svg {
+    transform: rotate(15deg);
 }
 
-/* 悬浮球选中状态 - 表示可以在全页面拖拽 */
-.floating-help-button.selected {
-    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.3), 0 4px 12px var(--primary-color-glow);
-    animation: pulse-selected 2s infinite;
-}
-
-@keyframes pulse-selected {
-    0%, 100% {
-        box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.3), 0 4px 12px var(--primary-color-glow);
-    }
-    50% {
-        box-shadow: 0 0 0 8px rgba(34, 197, 94, 0.15), 0 4px 12px var(--primary-color-glow);
-    }
+.help-fab:active {
+    transform: translateY(-2px) scale(0.98);
 }

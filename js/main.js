@@ -922,19 +922,40 @@ window.openPatentDetailModal = function(result) {
 
     modalBody.innerHTML = htmlContent;
 
+    // 记录当前打开的专利号
+    lastOpenedPatentNumber = result.patent_number;
+
     // 设置为flex显示，确保居中
     modal.style.display = 'flex';
 
     // 触发重排，然后添加show类以触发过渡效果
     setTimeout(() => {
         modal.classList.add('show');
+
+        // 恢复之前的滚动位置
+        const savedScrollTop = patentDetailScrollPositions[result.patent_number];
+        if (savedScrollTop !== undefined) {
+            modalBody.scrollTop = savedScrollTop;
+        } else {
+            modalBody.scrollTop = 0;
+        }
     }, 10);
 };
+
+// 存储专利详情弹窗滚动位置
+let patentDetailScrollPositions = {};
+let lastOpenedPatentNumber = null;
 
 // 关闭专利详情弹窗
 window.closePatentDetailModal = function() {
     const modal = document.getElementById('patent_detail_modal');
+    const modalBody = document.getElementById('patent_detail_body');
     if (modal) {
+        // 保存当前滚动位置
+        if (modalBody && lastOpenedPatentNumber) {
+            patentDetailScrollPositions[lastOpenedPatentNumber] = modalBody.scrollTop;
+        }
+
         // 移除show类，触发过渡效果
         modal.classList.remove('show');
 
@@ -964,14 +985,6 @@ window.navigatePatent = function(direction, currentPatentNumber) {
     const targetResult = window.patentResults[targetIndex];
     if (targetResult) {
         openPatentDetailModal(targetResult);
-        
-        // 滚动到弹窗顶部
-        setTimeout(() => {
-            const modalBody = document.getElementById('patent_detail_body');
-            if (modalBody) {
-                modalBody.scrollTop = 0;
-            }
-        }, 100);
     }
 };
 
@@ -1878,234 +1891,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 
-// =================================================================================
-// 帮助按钮拖动功能 (全页面拖拽版)
-// =================================================================================
-(function initDraggableHelpButton() {
-    const helpButton = document.querySelector('.floating-help-button');
-    if (!helpButton) {
-        console.warn('Help button not found, draggable functionality not initialized');
-        return;
-    }
 
-    // 调试信息：输出按钮初始状态
-    const rect = helpButton.getBoundingClientRect();
-    const computedStyle = window.getComputedStyle(helpButton);
-    console.log('🔍 Help button initial state:', {
-        found: true,
-        rect: { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom, width: rect.width, height: rect.height },
-        computed: {
-            display: computedStyle.display,
-            visibility: computedStyle.visibility,
-            opacity: computedStyle.opacity,
-            position: computedStyle.position,
-            zIndex: computedStyle.zIndex,
-            left: computedStyle.left,
-            right: computedStyle.right,
-            top: computedStyle.top,
-            bottom: computedStyle.bottom
-        }
-    });
-
-    let isDragging = false;
-    let startX, startY, startLeft, startBottom;
-
-    // 阻止默认的链接点击行为（仅在拖动时）
-    let hasMoved = false;
-
-    // 双击重置位置功能
-    helpButton.addEventListener('dblclick', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        // 清除保存的位置
-        localStorage.removeItem('helpButtonPosition');
-
-        // 重置为默认位置
-        helpButton.style.left = 'auto';
-        helpButton.style.right = '20px';
-        helpButton.style.bottom = '20px';
-        helpButton.style.top = 'auto';
-
-        // 添加重置动画效果
-        helpButton.style.transform = 'scale(1.2)';
-        setTimeout(() => {
-            helpButton.style.transform = '';
-        }, 200);
-
-        console.log('🔄 Help button position reset to default');
-
-        // 显示提示
-        showNotification('帮助按钮位置已重置', 'success');
-    });
-
-    // 检查点击是否在悬浮球上
-    function isClickOnHelpButton(e) {
-        return helpButton.contains(e.target);
-    }
-
-    // 检查是否应该开始拖拽（在悬浮球上，或者是已选中状态下在页面其他地方按下）
-    function shouldStartDrag(e) {
-        // 如果点击在悬浮球上，开始拖拽
-        if (isClickOnHelpButton(e)) {
-            return true;
-        }
-        // 如果悬浮球已经被选中（有选中样式），在全页面其他地方按下也可以拖拽
-        if (helpButton.classList.contains('selected')) {
-            return true;
-        }
-        return false;
-    }
-
-    // 全局 mousedown 事件监听（实现全页面可拖拽）
-    document.addEventListener('mousedown', function(e) {
-        // 只响应左键
-        if (e.button !== 0) return;
-
-        // 检查是否应该开始拖拽
-        if (!shouldStartDrag(e)) {
-            // 如果点击在页面其他地方，取消悬浮球的选中状态
-            helpButton.classList.remove('selected');
-            return;
-        }
-
-        isDragging = true;
-        hasMoved = false;
-
-        // 记录初始鼠标位置
-        startX = e.clientX;
-        startY = e.clientY;
-
-        // 获取悬浮球当前位置
-        const rect = helpButton.getBoundingClientRect();
-        startLeft = rect.left;
-        startBottom = window.innerHeight - rect.bottom;
-
-        // 禁用过渡效果，使拖动更流畅
-        helpButton.style.transition = 'none';
-
-        // 添加选中状态
-        helpButton.classList.add('selected');
-
-        // 如果点击在悬浮球上，防止文本选择
-        if (isClickOnHelpButton(e)) {
-            e.preventDefault();
-        }
-    });
-
-    document.addEventListener('mousemove', function(e) {
-        if (!isDragging) return;
-
-        const deltaX = e.clientX - startX;
-        const deltaY = e.clientY - startY;
-
-        // 如果移动超过10px，认为是拖动而不是点击（增加阈值，减少误触）
-        if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
-            if (!hasMoved) {
-                // 第一次识别为拖动时，添加拖动样式
-                helpButton.classList.add('dragging');
-                hasMoved = true;
-            }
-        }
-
-        if (hasMoved) {
-            // 计算新位置
-            let newLeft = startLeft + deltaX;
-            let newBottom = startBottom - deltaY;
-
-            // 边界检查（留出10px边距，避免贴边）
-            const buttonWidth = helpButton.offsetWidth;
-            const buttonHeight = helpButton.offsetHeight;
-            const margin = 10;
-
-            newLeft = Math.max(margin, Math.min(newLeft, window.innerWidth - buttonWidth - margin));
-            newBottom = Math.max(margin, Math.min(newBottom, window.innerHeight - buttonHeight - margin));
-
-            // 应用新位置
-            helpButton.style.left = newLeft + 'px';
-            helpButton.style.bottom = newBottom + 'px';
-            helpButton.style.right = 'auto'; // 清除right定位
-        }
-    });
-
-    document.addEventListener('mouseup', function(e) {
-        if (!isDragging) return;
-
-        isDragging = false;
-        helpButton.classList.remove('dragging');
-
-        // 延迟恢复过渡效果，避免拖动结束时的跳动
-        setTimeout(() => {
-            helpButton.style.transition = '';
-        }, 50);
-
-        // 如果发生了拖动，阻止链接打开
-        if (hasMoved) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            // 保存位置到localStorage
-            const rect = helpButton.getBoundingClientRect();
-            localStorage.setItem('helpButtonPosition', JSON.stringify({
-                left: rect.left,
-                bottom: window.innerHeight - rect.bottom
-            }));
-        }
-    });
-
-    // 阻止拖动时的链接点击
-    helpButton.addEventListener('click', function(e) {
-        if (hasMoved) {
-            e.preventDefault();
-            e.stopPropagation();
-            hasMoved = false; // 重置状态
-            return false;
-        }
-    });
-
-    // 点击页面其他地方时取消选中状态
-    document.addEventListener('click', function(e) {
-        if (!helpButton.contains(e.target)) {
-            helpButton.classList.remove('selected');
-        }
-    });
-
-    // 恢复保存的位置
-    try {
-        const savedPosition = localStorage.getItem('helpButtonPosition');
-        if (savedPosition) {
-            const pos = JSON.parse(savedPosition);
-
-            // 验证保存的位置是否在有效范围内
-            const buttonWidth = helpButton.offsetWidth || 60;
-            const buttonHeight = helpButton.offsetHeight || 60;
-            const margin = 10;
-
-            // 确保位置在屏幕范围内
-            const validLeft = Math.max(margin, Math.min(pos.left, window.innerWidth - buttonWidth - margin));
-            const validBottom = Math.max(margin, Math.min(pos.bottom, window.innerHeight - buttonHeight - margin));
-
-            // 强制重置所有定位属性，确保按钮可见
-            helpButton.style.position = 'fixed';
-            helpButton.style.left = validLeft + 'px';
-            helpButton.style.bottom = validBottom + 'px';
-            helpButton.style.right = 'auto';
-            helpButton.style.top = 'auto';
-            helpButton.style.display = 'flex';
-            helpButton.style.visibility = 'visible';
-            helpButton.style.opacity = '1';
-
-            console.log('✅ Help button position restored:', { left: validLeft, bottom: validBottom });
-        }
-    } catch (e) {
-        console.warn('Failed to restore help button position:', e);
-        // 如果恢复失败，清除保存的位置
-        localStorage.removeItem('helpButtonPosition');
-        // 重置为默认位置
-        helpButton.style.left = 'auto';
-        helpButton.style.right = '20px';
-        helpButton.style.bottom = '20px';
-    }
-
-    console.log('✅ Help button draggable functionality initialized (full page drag enabled)');
-})();
