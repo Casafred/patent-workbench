@@ -11,6 +11,12 @@ import { initTemplateManager, getCurrentConfig } from './template-manager.js';
 export function initLargeBatch() {
     console.log('🚀 初始化大批量处理功能...');
     
+    // 确保全局状态存在
+    if (typeof window.appState === 'undefined') {
+        console.log('⚠️ window.appState 不存在，创建新对象');
+        window.appState = {};
+    }
+    
     // 初始化状态
     if (!window.appState.largeBatch) {
         window.appState.largeBatch = {

@@ -100,6 +100,9 @@ export function initTemplateManager() {
     // 加载自定义模板
     loadCustomTemplates();
     
+    // 初始化模型选择器
+    initModelSelector();
+    
     // 初始化预设模板选择器
     initPresetTemplateSelector();
     
@@ -110,6 +113,33 @@ export function initTemplateManager() {
     renderTemplatesList();
     
     console.log('✅ 模板管理器初始化完成');
+}
+
+/**
+ * 初始化模型选择器
+ * 由于大批量处理组件是动态加载的，需要手动初始化
+ */
+function initModelSelector() {
+    const modelSelect = document.getElementById('api-model');
+    if (!modelSelect) {
+        console.warn('⚠️ 模型选择器不存在');
+        return;
+    }
+    
+    // 获取可用模型列表（从全局变量或默认值）
+    const models = window.AVAILABLE_MODELS || ["glm-4-flashX-250414", "glm-4-flash", "glm-4-long", "GLM-4.7-Flash"];
+    
+    const currentValue = modelSelect.value;
+    modelSelect.innerHTML = models.map(m => `<option value="${m}">${m}</option>`).join('');
+    
+    // 恢复之前的选择或设置默认值
+    if (currentValue && models.includes(currentValue)) {
+        modelSelect.value = currentValue;
+    } else {
+        modelSelect.value = models[0];
+    }
+    
+    console.log('✅ 大批量处理模型选择器已初始化');
 }
 
 /**
