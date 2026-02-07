@@ -1831,7 +1831,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 // =================================================================================
-// 帮助按钮拖动功能 (优化版)
+// 帮助按钮拖动功能 (全页面拖拽版)
 // =================================================================================
 (function initDraggableHelpButton() {
     const helpButton = document.querySelector('.floating-help-button');
@@ -1839,41 +1839,73 @@ document.addEventListener('DOMContentLoaded', function() {
         console.warn('Help button not found, draggable functionality not initialized');
         return;
     }
-    
+
     let isDragging = false;
     let startX, startY, startLeft, startBottom;
-    
+
     // 阻止默认的链接点击行为（仅在拖动时）
     let hasMoved = false;
-    
-    helpButton.addEventListener('mousedown', function(e) {
+
+    // 检查点击是否在悬浮球上
+    function isClickOnHelpButton(e) {
+        return helpButton.contains(e.target);
+    }
+
+    // 检查是否应该开始拖拽（在悬浮球上，或者是已选中状态下在页面其他地方按下）
+    function shouldStartDrag(e) {
+        // 如果点击在悬浮球上，开始拖拽
+        if (isClickOnHelpButton(e)) {
+            return true;
+        }
+        // 如果悬浮球已经被选中（有选中样式），在全页面其他地方按下也可以拖拽
+        if (helpButton.classList.contains('selected')) {
+            return true;
+        }
+        return false;
+    }
+
+    // 全局 mousedown 事件监听（实现全页面可拖拽）
+    document.addEventListener('mousedown', function(e) {
         // 只响应左键
         if (e.button !== 0) return;
-        
+
+        // 检查是否应该开始拖拽
+        if (!shouldStartDrag(e)) {
+            // 如果点击在页面其他地方，取消悬浮球的选中状态
+            helpButton.classList.remove('selected');
+            return;
+        }
+
         isDragging = true;
         hasMoved = false;
-        
-        // 记录初始位置
+
+        // 记录初始鼠标位置
         startX = e.clientX;
         startY = e.clientY;
-        
-        // 获取当前位置
+
+        // 获取悬浮球当前位置
         const rect = helpButton.getBoundingClientRect();
         startLeft = rect.left;
         startBottom = window.innerHeight - rect.bottom;
-        
+
         // 禁用过渡效果，使拖动更流畅
         helpButton.style.transition = 'none';
-        
-        e.preventDefault(); // 防止文本选择
+
+        // 添加选中状态
+        helpButton.classList.add('selected');
+
+        // 如果点击在悬浮球上，防止文本选择
+        if (isClickOnHelpButton(e)) {
+            e.preventDefault();
+        }
     });
-    
+
     document.addEventListener('mousemove', function(e) {
         if (!isDragging) return;
-        
+
         const deltaX = e.clientX - startX;
         const deltaY = e.clientY - startY;
-        
+
         // 如果移动超过10px，认为是拖动而不是点击（增加阈值，减少误触）
         if (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) {
             if (!hasMoved) {
@@ -1882,43 +1914,43 @@ document.addEventListener('DOMContentLoaded', function() {
                 hasMoved = true;
             }
         }
-        
+
         if (hasMoved) {
             // 计算新位置
             let newLeft = startLeft + deltaX;
             let newBottom = startBottom - deltaY;
-            
+
             // 边界检查（留出10px边距，避免贴边）
             const buttonWidth = helpButton.offsetWidth;
             const buttonHeight = helpButton.offsetHeight;
             const margin = 10;
-            
+
             newLeft = Math.max(margin, Math.min(newLeft, window.innerWidth - buttonWidth - margin));
             newBottom = Math.max(margin, Math.min(newBottom, window.innerHeight - buttonHeight - margin));
-            
+
             // 应用新位置
             helpButton.style.left = newLeft + 'px';
             helpButton.style.bottom = newBottom + 'px';
             helpButton.style.right = 'auto'; // 清除right定位
         }
     });
-    
+
     document.addEventListener('mouseup', function(e) {
         if (!isDragging) return;
-        
+
         isDragging = false;
         helpButton.classList.remove('dragging');
-        
+
         // 延迟恢复过渡效果，避免拖动结束时的跳动
         setTimeout(() => {
             helpButton.style.transition = '';
         }, 50);
-        
+
         // 如果发生了拖动，阻止链接打开
         if (hasMoved) {
             e.preventDefault();
             e.stopPropagation();
-            
+
             // 保存位置到localStorage
             const rect = helpButton.getBoundingClientRect();
             localStorage.setItem('helpButtonPosition', JSON.stringify({
@@ -1927,7 +1959,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }));
         }
     });
-    
+
     // 阻止拖动时的链接点击
     helpButton.addEventListener('click', function(e) {
         if (hasMoved) {
@@ -1937,26 +1969,33 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         }
     });
-    
+
+    // 点击页面其他地方时取消选中状态
+    document.addEventListener('click', function(e) {
+        if (!helpButton.contains(e.target)) {
+            helpButton.classList.remove('selected');
+        }
+    });
+
     // 恢复保存的位置
     try {
         const savedPosition = localStorage.getItem('helpButtonPosition');
         if (savedPosition) {
             const pos = JSON.parse(savedPosition);
-            
+
             // 验证保存的位置是否在有效范围内
             const buttonWidth = helpButton.offsetWidth || 60;
             const buttonHeight = helpButton.offsetHeight || 60;
             const margin = 10;
-            
+
             // 确保位置在屏幕范围内
             const validLeft = Math.max(margin, Math.min(pos.left, window.innerWidth - buttonWidth - margin));
             const validBottom = Math.max(margin, Math.min(pos.bottom, window.innerHeight - buttonHeight - margin));
-            
+
             helpButton.style.left = validLeft + 'px';
             helpButton.style.bottom = validBottom + 'px';
             helpButton.style.right = 'auto';
-            
+
             console.log('✅ Help button position restored:', { left: validLeft, bottom: validBottom });
         }
     } catch (e) {
@@ -1964,6 +2003,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // 如果恢复失败，清除保存的位置
         localStorage.removeItem('helpButtonPosition');
     }
-    
-    console.log('✅ Help button draggable functionality initialized');
+
+    console.log('✅ Help button draggable functionality initialized (full page drag enabled)');
 })();
