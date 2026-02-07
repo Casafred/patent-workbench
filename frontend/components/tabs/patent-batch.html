@@ -76,7 +76,6 @@
                 <!-- 操作按钮 -->
                 <div class="config-actions">
                     <button id="search_patents_btn" class="small-button primary-btn" style="display: none;">批量查询专利</button>
-                    <button id="analyze_all_btn" class="small-button primary-btn" disabled>批量解读</button>
                 </div>
             </div>
         </div>
@@ -286,6 +285,16 @@
                 </svg>
                 您选择了多个耗时字段，爬取时间可能较长
             </div>
+            
+            <!-- 开始获取按钮（选择性爬取模式下显示） -->
+            <div class="field-selector-actions" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
+                <button id="selective_crawl_start_btn" class="small-button primary-btn" style="width: 100%;" onclick="startSelectiveCrawl()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 6px;">
+                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                    </svg>
+                    开始获取
+                </button>
+            </div>
         </div>
         
         <!-- 模板编辑器（折叠） -->
@@ -318,7 +327,10 @@
         <div id="patent_results_container" style="margin-top: 20px; display: none;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <h4>查询结果</h4>
-                <button id="export_analysis_excel_btn" class="small-button" disabled>导出为Excel</button>
+                <div style="display: flex; gap: 10px;">
+                    <button id="analyze_all_btn" class="small-button primary-btn" disabled>批量解读</button>
+                    <button id="export_analysis_excel_btn" class="small-button" disabled>导出为Excel</button>
+                </div>
             </div>
             <div id="patent_results_list" class="patent-strip-list"></div>
         </div>

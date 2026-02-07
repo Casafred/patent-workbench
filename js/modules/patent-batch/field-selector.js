@@ -224,6 +224,53 @@ window.isFieldSelectorOpen = function() {
 };
 
 /**
+ * 选择性爬取 - 开始获取
+ * 在字段选择器展开时，根据勾选的字段开始爬取
+ */
+window.startSelectiveCrawl = function() {
+    const patentNumbersInput = document.getElementById('patent_numbers_input');
+    
+    if (!patentNumbersInput) {
+        console.error('❌ 专利号输入框不存在');
+        alert('页面加载异常，请刷新后重试');
+        return;
+    }
+    
+    const input = patentNumbersInput.value.trim();
+    if (!input) {
+        alert('请输入专利号');
+        return;
+    }
+    
+    // 处理专利号
+    const patentNumbers = input.replace(/\n/g, ' ').split(/\s+/).filter(num => num);
+    const uniquePatents = [...new Set(patentNumbers)];
+    
+    if (uniquePatents.length > 50) {
+        alert('最多支持50个专利号');
+        return;
+    }
+    
+    if (uniquePatents.length === 0) {
+        alert('请输入有效的专利号');
+        return;
+    }
+    
+    // 获取选中的字段
+    const selectedFields = getSelectedFields();
+    console.log('📋 选择性爬取 - 选中的字段:', selectedFields);
+    
+    // 触发批量查询按钮的点击事件
+    const searchPatentsBtn = document.getElementById('search_patents_btn');
+    if (searchPatentsBtn) {
+        searchPatentsBtn.click();
+    } else {
+        console.error('❌ 批量查询按钮不存在');
+        alert('页面加载异常，请刷新后重试');
+    }
+};
+
+/**
  * 初始化字段选择器
  * 这个函数会在组件加载后被调用
  */
