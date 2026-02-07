@@ -42,6 +42,8 @@ const claimsState = {
  * Initialize claims processor
  */
 export function initClaimsProcessor() {
+    console.log('Initializing Claims Processor...');
+    
     const fileInput = document.getElementById('claims_excel_file');
     const processBtn = document.getElementById('claims_process_btn');
     const exportExcelBtn = document.getElementById('claims_export_excel_btn');
@@ -57,119 +59,124 @@ export function initClaimsProcessor() {
     const zoomReset = document.getElementById('claims_zoom_reset');
     const centerView = document.getElementById('claims_center_view');
     
-    if (!fileInput) return;
-    
-    // File selection event
-    fileInput.addEventListener('change', (event) => handleClaimsFileSelect(event, claimsState));
-    
-    // Process button
-    if (processBtn) {
-        processBtn.addEventListener('click', () => handleClaimsProcess(claimsState));
-    }
-    
-    // Export buttons
-    if (exportExcelBtn) {
-        exportExcelBtn.addEventListener('click', () => exportClaimsResults('excel', claimsState));
-    }
-    
-    if (exportJsonBtn) {
-        exportJsonBtn.addEventListener('click', () => exportClaimsResults('json', claimsState));
-    }
-    
-    // Patent search event listeners
-    if (searchPatentBtn) {
-        searchPatentBtn.addEventListener('click', () => claimsSearchPatentNumbers(claimsState));
-    }
-    
-    if (patentSearchInput) {
-        patentSearchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                claimsSearchPatentNumbers(claimsState);
-            }
-        });
-    }
-    
-    if (visualizePatentBtn) {
-        visualizePatentBtn.addEventListener('click', () => claimsGenerateVisualization(claimsState));
-    }
-    
-    // Visualization controls
-    if (styleSelector) {
-        styleSelector.addEventListener('change', () => {
-            if (claimsState.visualizationRenderer && claimsState.visualizationRenderer.currentData) {
-                claimsState.visualizationRenderer.render(claimsState.visualizationRenderer.currentData, styleSelector.value);
-            }
-        });
-    }
-    
-    if (zoomIn) {
-        zoomIn.addEventListener('click', () => {
-            if (claimsState.visualizationRenderer) claimsState.visualizationRenderer.zoomIn();
-        });
-    }
-    
-    if (zoomOut) {
-        zoomOut.addEventListener('click', () => {
-            if (claimsState.visualizationRenderer) claimsState.visualizationRenderer.zoomOut();
-        });
-    }
-    
-    if (zoomReset) {
-        zoomReset.addEventListener('click', () => {
-            if (claimsState.visualizationRenderer) claimsState.visualizationRenderer.zoomReset();
-        });
-    }
-    
-    if (centerView) {
-        centerView.addEventListener('click', () => {
-            if (claimsState.visualizationRenderer) claimsState.visualizationRenderer.centerView();
-        });
-    }
-    
-    // Tree spread control
-    const treeSpreadSlider = document.getElementById('claims_tree_spread_slider');
-    const treeSpreadValue = document.getElementById('claims_tree_spread_value');
-    const treeSpreadControl = document.getElementById('claims_tree_spread_control');
-    
-    if (treeSpreadSlider && treeSpreadValue) {
-        treeSpreadSlider.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value);
-            treeSpreadValue.textContent = value.toFixed(1) + 'x';
-            if (claimsState.visualizationRenderer) {
-                claimsState.visualizationRenderer.setTreeSpreadFactor(value);
-            }
-        });
-    }
-    
-    // Show/hide tree spread control based on style
-    if (styleSelector && treeSpreadControl) {
-        styleSelector.addEventListener('change', () => {
-            if (styleSelector.value === 'tree') {
-                treeSpreadControl.style.display = 'flex';
-            } else {
-                treeSpreadControl.style.display = 'none';
-            }
-        });
-        treeSpreadControl.style.display = styleSelector.value === 'tree' ? 'flex' : 'none';
-    }
-    
-    // Screenshot button
-    const screenshotBtn = document.getElementById('claims_screenshot_btn');
-    if (screenshotBtn) {
-        screenshotBtn.addEventListener('click', () => {
-            if (claimsState.visualizationRenderer) {
-                const success = claimsState.visualizationRenderer.captureHighResScreenshot();
-                if (success) {
-                    showClaimsMessage('高清截图已保存！', 'success');
+    // Initialize Excel batch processing if elements exist
+    if (fileInput) {
+        console.log('Initializing Excel batch processing...');
+        
+        // File selection event
+        fileInput.addEventListener('change', (event) => handleClaimsFileSelect(event, claimsState));
+        
+        // Process button
+        if (processBtn) {
+            processBtn.addEventListener('click', () => handleClaimsProcess(claimsState));
+        }
+        
+        // Export buttons
+        if (exportExcelBtn) {
+            exportExcelBtn.addEventListener('click', () => exportClaimsResults('excel', claimsState));
+        }
+        
+        if (exportJsonBtn) {
+            exportJsonBtn.addEventListener('click', () => exportClaimsResults('json', claimsState));
+        }
+        
+        // Patent search event listeners
+        if (searchPatentBtn) {
+            searchPatentBtn.addEventListener('click', () => claimsSearchPatentNumbers(claimsState));
+        }
+        
+        if (patentSearchInput) {
+            patentSearchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    claimsSearchPatentNumbers(claimsState);
                 }
-            } else {
-                showClaimsMessage('请先生成可视化图表', 'error');
-            }
-        });
+            });
+        }
+        
+        if (visualizePatentBtn) {
+            visualizePatentBtn.addEventListener('click', () => claimsGenerateVisualization(claimsState));
+        }
+        
+        // Visualization controls
+        if (styleSelector) {
+            styleSelector.addEventListener('change', () => {
+                if (claimsState.visualizationRenderer && claimsState.visualizationRenderer.currentData) {
+                    claimsState.visualizationRenderer.render(claimsState.visualizationRenderer.currentData, styleSelector.value);
+                }
+            });
+        }
+        
+        if (zoomIn) {
+            zoomIn.addEventListener('click', () => {
+                if (claimsState.visualizationRenderer) claimsState.visualizationRenderer.zoomIn();
+            });
+        }
+        
+        if (zoomOut) {
+            zoomOut.addEventListener('click', () => {
+                if (claimsState.visualizationRenderer) claimsState.visualizationRenderer.zoomOut();
+            });
+        }
+        
+        if (zoomReset) {
+            zoomReset.addEventListener('click', () => {
+                if (claimsState.visualizationRenderer) claimsState.visualizationRenderer.zoomReset();
+            });
+        }
+        
+        if (centerView) {
+            centerView.addEventListener('click', () => {
+                if (claimsState.visualizationRenderer) claimsState.visualizationRenderer.centerView();
+            });
+        }
+        
+        // Tree spread control
+        const treeSpreadSlider = document.getElementById('claims_tree_spread_slider');
+        const treeSpreadValue = document.getElementById('claims_tree_spread_value');
+        const treeSpreadControl = document.getElementById('claims_tree_spread_control');
+        
+        if (treeSpreadSlider && treeSpreadValue) {
+            treeSpreadSlider.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                treeSpreadValue.textContent = value.toFixed(1) + 'x';
+                if (claimsState.visualizationRenderer) {
+                    claimsState.visualizationRenderer.setTreeSpreadFactor(value);
+                }
+            });
+        }
+        
+        // Show/hide tree spread control based on style
+        if (styleSelector && treeSpreadControl) {
+            styleSelector.addEventListener('change', () => {
+                if (styleSelector.value === 'tree') {
+                    treeSpreadControl.style.display = 'flex';
+                } else {
+                    treeSpreadControl.style.display = 'none';
+                }
+            });
+            treeSpreadControl.style.display = styleSelector.value === 'tree' ? 'flex' : 'none';
+        }
+        
+        // Screenshot button
+        const screenshotBtn = document.getElementById('claims_screenshot_btn');
+        if (screenshotBtn) {
+            screenshotBtn.addEventListener('click', () => {
+                if (claimsState.visualizationRenderer) {
+                    const success = claimsState.visualizationRenderer.captureHighResScreenshot();
+                    if (success) {
+                        showClaimsMessage('高清截图已保存！', 'success');
+                    }
+                } else {
+                    showClaimsMessage('请先生成可视化图表', 'error');
+                }
+            });
+        }
     }
     
-    // Initialize text analyzer
+    // Initialize text analyzer (always try to initialize, even if Excel elements don't exist)
+    console.log('Initializing text analyzer...');
     initClaimsTextAnalyzer(claimsState);
+    console.log('Claims Processor initialization completed');
 }
 
 /**
@@ -433,10 +440,7 @@ export function showClaimsMessage(message, type) {
 window.switchClaimsSubTab = switchClaimsSubTab;
 window.claimsSelectPatent = (patentNumber, rowIndex) => claimsSelectPatent(patentNumber, rowIndex, claimsState);
 window.claimsJumpToVisualization = (patentNumber, rowIndex) => claimsJumpToVisualization(patentNumber, rowIndex, claimsState);
+window.initClaimsProcessor = initClaimsProcessor;
 
-// Initialize on page load
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initClaimsProcessor);
-} else {
-    initClaimsProcessor();
-}
+// Note: Initialization is now handled by main.js after the component is loaded
+// to ensure DOM elements are available. Do not auto-initialize here.

@@ -163,9 +163,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Load Feature 7 (Claims Processor) component
     try {
-        await loadComponent('frontend/components/tabs/claims-processor.html', 'claims-processor-component');
-        console.log('✅ Feature 7 (Claims Processor) component loaded');
-        // Note: Claims Processor initialization is handled in the component itself
+        const loaded = await loadComponent('frontend/components/tabs/claims-processor.html', 'claims-processor-component', {
+            requiredElements: [
+                'claims_text_analyze_btn',
+                'claims_text_example_btn',
+                'claims_text_input'
+            ],
+            timeout: 5000
+        });
+
+        if (loaded) {
+            console.log('✅ Feature 7 (Claims Processor) component loaded');
+            // Wait for DOM to be ready
+            await new Promise(resolve => setTimeout(resolve, 100));
+            // Initialize Claims Processor
+            if (typeof initClaimsProcessor === 'function') {
+                initClaimsProcessor();
+                console.log('✅ Claims Processor initialized');
+            } else {
+                console.error('❌ initClaimsProcessor function not found');
+            }
+        } else {
+            console.error('❌ Feature 7 (Claims Processor) component failed to load');
+        }
     } catch (error) {
         console.error('❌ Failed to load Feature 7 (Claims Processor) component:', error);
     }

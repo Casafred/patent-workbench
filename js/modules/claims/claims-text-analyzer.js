@@ -605,10 +605,17 @@ export function initClaimsTextAnalyzer(state) {
         });
     }
     
-    const resetZoomBtn = document.getElementById('claims_text_reset_zoom');
+    const resetZoomBtn = document.getElementById('claims_text_zoom_reset');
     if (resetZoomBtn) {
         resetZoomBtn.addEventListener('click', () => {
             if (state.textVisualizationRenderer) state.textVisualizationRenderer.resetZoom();
+        });
+    }
+    
+    const centerBtn = document.getElementById('claims_text_center');
+    if (centerBtn) {
+        centerBtn.addEventListener('click', () => {
+            if (state.textVisualizationRenderer) state.textVisualizationRenderer.centerView();
         });
     }
     
