@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const loaded = await loadComponent('frontend/components/tabs/large-batch.html', 'large-batch-component', {
             requiredElements: [
                 'gen_file-input',
-                'large_batch_template_selector'
+                'api-model'
             ],
             timeout: 5000
         });
