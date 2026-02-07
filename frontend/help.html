@@ -40,38 +40,37 @@
             background-color: transparent;
             color: var(--text-color);
             position: relative;
-            zoom: 0.9;
-            -moz-transform: scale(0.9);
-            -moz-transform-origin: 0 0;
         }
 
-        /* Vanta.js 背景容器 - 撑满整个视口 */
+        /* Vanta.js 背景容器 - 完全铺满视口，不受任何缩放影响 */
         #vanta-bg {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100vw;
-            height: 100vh;
+            width: 100%;
+            height: 100%;
             z-index: -1;
             pointer-events: none;
         }
 
+        /* 主容器 - 铺满整个视口 */
         .help-container {
             display: flex;
             height: 100vh;
-            padding: 10px 20px;
-            gap: 20px;
+            width: 100vw;
+            padding: 0;
+            gap: 0;
         }
 
-        /* 左侧导航栏 - 固定不滚动 */
+        /* 左侧导航栏 - 固定不滚动，撑满高度 */
         .sidebar {
             width: var(--sidebar-width);
+            height: 100vh;
             flex-shrink: 0;
             background-color: var(--surface-color);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
+            border-right: 1px solid var(--border-color);
             padding: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            box-shadow: 4px 0 15px rgba(0,0,0,0.05);
             display: flex;
             flex-direction: column;
             backdrop-filter: blur(10px);
@@ -208,20 +207,22 @@
             font-weight: 700;
         }
 
-        /* 右侧内容区域 */
+        /* 右侧内容区域 - 撑满剩余空间 */
         .content-wrapper {
             flex-grow: 1;
+            height: 100vh;
             position: relative;
             overflow: hidden;
+            padding: 20px;
         }
 
-        /* 内容卡片 - 独立视图 */
+        /* 内容卡片 - 独立视图，有边距 */
         .content-card {
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            bottom: 20px;
             background-color: var(--surface-color);
             border-radius: 12px;
             border: 1px solid var(--border-color);
