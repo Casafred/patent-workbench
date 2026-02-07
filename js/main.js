@@ -262,6 +262,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 // =================================================================================
 // 批量专利解读功能
 // =================================================================================
+
+// 全局变量：存储解读结果
+let patentBatchAnalysisResults = [];
+
 function initPatentBatch() {
     // 初始化模板管理
     initPatentTemplate();
@@ -272,24 +276,13 @@ function initPatentBatch() {
     // 初始化模型选择器
     initPatentBatchModelSelector();
     
-    // 获取DOM元素
-    const patentNumbersInput = getEl('patent_numbers_input');
-    const patentCountDisplay = getEl('patent_count_display');
-    const clearPatentInputBtn = getEl('clear_patent_input_btn');
-    const copyPatentNumbersBtn = getEl('copy_patent_numbers_btn');
-    const searchPatentsBtn = getEl('search_patents_btn');
-    const analyzeAllBtn = getEl('analyze_all_btn');
-    const exportAnalysisExcelBtn = getEl('export_analysis_excel_btn');
-    const searchStatus = getEl('search_status');
-    const patentResultsContainer = getEl('patent_results_container');
-    const patentResultsList = getEl('patent_results_list');
-    const analysisResultsList = getEl('analysis_results_list');
+    // 初始化事件监听器
+    initPatentBatchEventListeners();
     
     // 存储专利查询结果（全局变量，供 patentDetailNewTab.js 使用）
     window.patentResults = [];
     
-    // 存储解读结果
-    let analysisResults = [];
+    console.log('✅ 功能六批量专利解读已初始化');
 }
 
 /**
@@ -316,6 +309,31 @@ function initPatentBatchModelSelector() {
     }
     
     console.log('✅ 功能六模型选择器已初始化');
+}
+
+/**
+ * 初始化功能六事件监听器
+ */
+function initPatentBatchEventListeners() {
+    // 获取DOM元素
+    const patentNumbersInput = getEl('patent_numbers_input');
+    const patentCountDisplay = getEl('patent_count_display');
+    const clearPatentInputBtn = getEl('clear_patent_input_btn');
+    const copyPatentNumbersBtn = getEl('copy_patent_numbers_btn');
+    const searchPatentsBtn = getEl('search_patents_btn');
+    const analyzeAllBtn = getEl('analyze_all_btn');
+    const exportAnalysisExcelBtn = getEl('export_analysis_excel_btn');
+    const searchStatus = getEl('search_status');
+    const patentResultsContainer = getEl('patent_results_container');
+    const patentResultsList = getEl('patent_results_list');
+    const analysisResultsList = getEl('analysis_results_list');
+    
+    if (!patentNumbersInput || !patentCountDisplay || !searchPatentsBtn) {
+        console.warn('⚠️ 功能六必要DOM元素不存在，跳过事件监听器初始化');
+        return;
+    }
+    
+    // 使用全局变量存储解读结果
     
     // 复制专利号按钮
     if (copyPatentNumbersBtn) {
@@ -359,24 +377,25 @@ function initPatentBatchModelSelector() {
     });
     
     // 清空输入按钮
-    clearPatentInputBtn.addEventListener('click', () => {
-        patentNumbersInput.value = '';
-        patentCountDisplay.textContent = '专利号数量：0/50';
-        patentCountDisplay.style.color = '';
-        searchPatentsBtn.disabled = false;
-        analyzeAllBtn.disabled = true;
-        if (exportAnalysisExcelBtn) {
-            exportAnalysisExcelBtn.disabled = true;
-        }
-        patentResultsContainer.style.display = 'none';
-        patentResultsList.innerHTML = '';
-        if (analysisResultsList) {
-            analysisResultsList.innerHTML = '';
-        }
-        searchStatus.style.display = 'none';
-        window.patentResults = [];
-        analysisResults = [];
-    });
+    if (clearPatentInputBtn) {
+        clearPatentInputBtn.addEventListener('click', () => {
+            patentNumbersInput.value = '';
+            patentCountDisplay.textContent = '专利号数量：0/50';
+            patentCountDisplay.style.color = '';
+            searchPatentsBtn.disabled = false;
+            if (analyzeAllBtn) analyzeAllBtn.disabled = true;
+            if (exportAnalysisExcelBtn) {
+                exportAnalysisExcelBtn.disabled = true;
+            }
+            if (patentResultsContainer) patentResultsContainer.style.display = 'none';
+            if (patentResultsList) patentResultsList.innerHTML = '';
+            if (analysisResultsList) {
+                analysisResultsList.innerHTML = '';
+            }
+            if (searchStatus) searchStatus.style.display = 'none';
+            window.patentResults = [];
+        });
+    }
     
     // 导出Excel按钮
     if (exportAnalysisExcelBtn) {
@@ -428,7 +447,7 @@ function initPatentBatchModelSelector() {
                     };
                     
                     // 尝试添加解读结果
-                    const analysisResult = analysisResults.find(item => item.patent_number === result.patent_number);
+                    const analysisResult = patentBatchAnalysisResults.find(item => item.patent_number === result.patent_number);
                     if (analysisResult) {
                         try {
                             // 尝试清理可能的markdown代码块标记
@@ -597,7 +616,7 @@ function initPatentBatchModelSelector() {
         if (analysisResultsList) {
             analysisResultsList.innerHTML = '';
         }
-        analysisResults = [];
+        patentBatchAnalysisResults = [];
         
         // 显示解读状态
         searchStatus.textContent = `正在使用"${template.name}"模板解读 ${successfulResults.length} 个专利...`;
@@ -709,10 +728,10 @@ function initPatentBatchModelSelector() {
             }
             
             // 按照用户输入的顺序重新组织 analysisResults 数组
-            analysisResults = [];
+            patentBatchAnalysisResults = [];
             window.patentResults.forEach(result => {
                 if (result.success && analysisResultsMap.has(result.patent_number)) {
-                    analysisResults.push(analysisResultsMap.get(result.patent_number));
+                    patentBatchAnalysisResults.push(analysisResultsMap.get(result.patent_number));
                 }
             });
             
@@ -1223,7 +1242,7 @@ function buildPatentDetailHTML(result) {
     });
     
     // 批量解读结果
-    const analysisResult = analysisResults.find(item => item.patent_number === result.patent_number);
+    const analysisResult = patentBatchAnalysisResults.find(item => item.patent_number === result.patent_number);
     if (analysisResult) {
         let analysisJson = {};
         let displayContent = '';
