@@ -102,7 +102,7 @@
     position: fixed;
     left: 50%;
     top: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%) scale(0.95);
     padding: 20px;
     border: 1px solid var(--border-color);
     border-radius: 12px;
@@ -112,15 +112,18 @@
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.2s ease, visibility 0.2s ease;
+    transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
     overflow: hidden;
-    will-change: opacity;
+    will-change: opacity, transform;
     backface-visibility: hidden;
+    pointer-events: none;
 }
 
 .modal.show .modal-content {
     opacity: 1;
     visibility: visible;
+    transform: translate(-50%, -50%) scale(1);
+    pointer-events: auto;
 }
 
 .modal-header {

@@ -102,17 +102,17 @@ function initChat() {
     // Initialize chat params modal
     if (chatParamsModal && chatParamsBtn && closeModalBtn) {
         chatParamsBtn.addEventListener('click', () => {
+            // 强制重排确保样式正确应用
             chatParamsModal.style.display = 'block';
-            setTimeout(() => {
-                chatParamsModal.classList.add('show');
-            }, 10);
+            void chatParamsModal.offsetHeight;
+            chatParamsModal.classList.add('show');
         });
 
         closeModalBtn.addEventListener('click', () => {
             chatParamsModal.classList.remove('show');
             setTimeout(() => {
                 chatParamsModal.style.display = 'none';
-            }, 300);
+            }, 200);
         });
 
         window.addEventListener('click', (event) => {

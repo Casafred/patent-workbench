@@ -1888,7 +1888,103 @@ document.addEventListener('DOMContentLoaded', function() {
             cb.closest('.field-option')?.classList.add('checked');
         }
     });
+
+    // 初始化帮助悬浮球拖拽功能
+    initHelpFabDrag();
 });
+
+// ====================================================================
+// 帮助悬浮球拖拽功能
+// ====================================================================
+function initHelpFabDrag() {
+    const helpFab = document.querySelector('.help-fab');
+    if (!helpFab) return;
+
+    let isDragging = false;
+    let startX, startY, startLeft, startTop;
+    let hasMoved = false;
+
+    // 恢复保存的位置
+    const savedPos = localStorage.getItem('helpFabPosition');
+    if (savedPos) {
+        try {
+            const pos = JSON.parse(savedPos);
+            helpFab.style.left = pos.left + 'px';
+            helpFab.style.top = pos.top + 'px';
+            helpFab.style.right = 'auto';
+            helpFab.style.bottom = 'auto';
+        } catch (e) {
+            console.warn('Failed to restore helpFab position:', e);
+        }
+    }
+
+    helpFab.addEventListener('mousedown', function(e) {
+        // 只响应左键
+        if (e.button !== 0) return;
+
+        isDragging = true;
+        hasMoved = false;
+        startX = e.clientX;
+        startY = e.clientY;
+
+        const rect = helpFab.getBoundingClientRect();
+        startLeft = rect.left;
+        startTop = rect.top;
+
+        helpFab.classList.add('dragging');
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', function(e) {
+        if (!isDragging) return;
+
+        const deltaX = e.clientX - startX;
+        const deltaY = e.clientY - startY;
+
+        // 判断是否移动了
+        if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) {
+            hasMoved = true;
+        }
+
+        let newLeft = startLeft + deltaX;
+        let newTop = startTop + deltaY;
+
+        // 边界限制
+        const fabSize = 56;
+        const margin = 10;
+        newLeft = Math.max(margin, Math.min(newLeft, window.innerWidth - fabSize - margin));
+        newTop = Math.max(margin, Math.min(newTop, window.innerHeight - fabSize - margin));
+
+        helpFab.style.left = newLeft + 'px';
+        helpFab.style.top = newTop + 'px';
+        helpFab.style.right = 'auto';
+        helpFab.style.bottom = 'auto';
+    });
+
+    document.addEventListener('mouseup', function(e) {
+        if (!isDragging) return;
+
+        isDragging = false;
+        helpFab.classList.remove('dragging');
+
+        if (hasMoved) {
+            // 保存位置
+            const rect = helpFab.getBoundingClientRect();
+            localStorage.setItem('helpFabPosition', JSON.stringify({
+                left: rect.left,
+                top: rect.top
+            }));
+        }
+    });
+
+    // 点击打开帮助页面（如果没有拖动）
+    helpFab.addEventListener('click', function(e) {
+        if (hasMoved) {
+            e.preventDefault();
+            hasMoved = false;
+        }
+    });
+}
 
 
 
