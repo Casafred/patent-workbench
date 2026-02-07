@@ -1883,7 +1883,7 @@ function initHelpFabDrag() {
     if (!helpFab) return;
 
     let isDragging = false;
-    let startX, startY, startLeft, startTop;
+    let startX, startY, startRight, startBottom;
     let hasMoved = false;
 
     // 恢复保存的位置
@@ -1891,10 +1891,10 @@ function initHelpFabDrag() {
     if (savedPos) {
         try {
             const pos = JSON.parse(savedPos);
-            helpFab.style.left = pos.left + 'px';
-            helpFab.style.top = pos.top + 'px';
-            helpFab.style.right = 'auto';
-            helpFab.style.bottom = 'auto';
+            helpFab.style.right = pos.right + 'px';
+            helpFab.style.bottom = pos.bottom + 'px';
+            helpFab.style.left = 'auto';
+            helpFab.style.top = 'auto';
         } catch (e) {
             console.warn('Failed to restore helpFab position:', e);
         }
@@ -1909,9 +1909,22 @@ function initHelpFabDrag() {
         startX = e.clientX;
         startY = e.clientY;
 
+        // 获取当前right/bottom值
         const rect = helpFab.getBoundingClientRect();
-        startLeft = rect.left;
-        startTop = rect.top;
+        const computedStyle = window.getComputedStyle(helpFab);
+        
+        // 如果当前使用left/top定位，转换为right/bottom
+        if (computedStyle.left !== 'auto') {
+            startRight = window.innerWidth - rect.right;
+            startBottom = window.innerHeight - rect.bottom;
+            helpFab.style.right = startRight + 'px';
+            helpFab.style.bottom = startBottom + 'px';
+            helpFab.style.left = 'auto';
+            helpFab.style.top = 'auto';
+        } else {
+            startRight = parseFloat(computedStyle.right) || (window.innerWidth - rect.right);
+            startBottom = parseFloat(computedStyle.bottom) || (window.innerHeight - rect.bottom);
+        }
 
         helpFab.classList.add('dragging');
         e.preventDefault();
@@ -1928,19 +1941,20 @@ function initHelpFabDrag() {
             hasMoved = true;
         }
 
-        let newLeft = startLeft + deltaX;
-        let newTop = startTop + deltaY;
+        // 使用right/bottom定位，移动方向与鼠标相反
+        let newRight = startRight - deltaX;
+        let newBottom = startBottom - deltaY;
 
         // 边界限制
         const fabSize = 56;
         const margin = 10;
-        newLeft = Math.max(margin, Math.min(newLeft, window.innerWidth - fabSize - margin));
-        newTop = Math.max(margin, Math.min(newTop, window.innerHeight - fabSize - margin));
+        newRight = Math.max(margin, Math.min(newRight, window.innerWidth - fabSize - margin));
+        newBottom = Math.max(margin, Math.min(newBottom, window.innerHeight - fabSize - margin));
 
-        helpFab.style.left = newLeft + 'px';
-        helpFab.style.top = newTop + 'px';
-        helpFab.style.right = 'auto';
-        helpFab.style.bottom = 'auto';
+        helpFab.style.right = newRight + 'px';
+        helpFab.style.bottom = newBottom + 'px';
+        helpFab.style.left = 'auto';
+        helpFab.style.top = 'auto';
     });
 
     document.addEventListener('mouseup', function(e) {
@@ -1951,10 +1965,10 @@ function initHelpFabDrag() {
 
         if (hasMoved) {
             // 保存位置
-            const rect = helpFab.getBoundingClientRect();
+            const computedStyle = window.getComputedStyle(helpFab);
             localStorage.setItem('helpFabPosition', JSON.stringify({
-                left: rect.left,
-                top: rect.top
+                right: parseFloat(computedStyle.right),
+                bottom: parseFloat(computedStyle.bottom)
             }));
         }
     });
@@ -1963,8 +1977,12 @@ function initHelpFabDrag() {
     helpFab.addEventListener('click', function(e) {
         if (hasMoved) {
             e.preventDefault();
-            hasMoved = false;
+            e.stopPropagation();
         }
+        // 重置hasMoved，为下次点击做准备
+        setTimeout(() => {
+            hasMoved = false;
+        }, 0);
     });
 }
 

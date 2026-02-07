@@ -398,6 +398,8 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
     cursor: move;
     user-select: none;
     touch-action: none;
+    pointer-events: auto;
+    will-change: transform;
 }
 
 .help-fab svg {
