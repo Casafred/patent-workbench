@@ -922,9 +922,6 @@ window.openPatentDetailModal = function(result) {
 
     modalBody.innerHTML = htmlContent;
 
-    // 记录当前打开的专利号
-    lastOpenedPatentNumber = result.patent_number;
-
     // 设置为flex显示，确保居中
     modal.style.display = 'flex';
 
@@ -932,30 +929,15 @@ window.openPatentDetailModal = function(result) {
     setTimeout(() => {
         modal.classList.add('show');
 
-        // 恢复之前的滚动位置
-        const savedScrollTop = patentDetailScrollPositions[result.patent_number];
-        if (savedScrollTop !== undefined) {
-            modalBody.scrollTop = savedScrollTop;
-        } else {
-            modalBody.scrollTop = 0;
-        }
+        // 滚动到弹窗顶部
+        modalBody.scrollTop = 0;
     }, 10);
 };
-
-// 存储专利详情弹窗滚动位置
-let patentDetailScrollPositions = {};
-let lastOpenedPatentNumber = null;
 
 // 关闭专利详情弹窗
 window.closePatentDetailModal = function() {
     const modal = document.getElementById('patent_detail_modal');
-    const modalBody = document.getElementById('patent_detail_body');
     if (modal) {
-        // 保存当前滚动位置
-        if (modalBody && lastOpenedPatentNumber) {
-            patentDetailScrollPositions[lastOpenedPatentNumber] = modalBody.scrollTop;
-        }
-
         // 移除show类，触发过渡效果
         modal.classList.remove('show');
 
