@@ -381,7 +381,7 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
 /* 右侧帮助标签按钮 */
 .help-tab-container {
     position: fixed;
-    right: 0;
+    right: -2px;
     top: 50%;
     transform: translateY(-50%);
     z-index: 2147483647;
@@ -395,11 +395,12 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
     color: white;
     text-decoration: none;
     border-radius: 8px 0 0 8px;
-    box-shadow: -2px 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: -4px 4px 16px rgba(0, 0, 0, 0.2);
     overflow: hidden;
-    height: 40px;
+    height: 80px;
     pointer-events: auto;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateX(2px);
 }
 
 .help-tab-text {
@@ -414,36 +415,40 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
     overflow: hidden;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     padding: 0;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    letter-spacing: 2px;
 }
 
 .help-tab-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 80px;
     flex-shrink: 0;
 }
 
 .help-tab-icon svg {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     stroke: white;
     fill: none;
 }
 
 /* 悬停展开效果 */
 .help-tab:hover {
-    box-shadow: -4px 8px 20px rgba(0, 0, 0, 0.2);
+    box-shadow: -6px 8px 24px rgba(0, 0, 0, 0.25);
+    transform: translateX(-4px);
 }
 
 .help-tab:hover .help-tab-text {
-    width: 50px;
+    width: 30px;
     opacity: 1;
-    padding-left: 12px;
+    padding: 8px 0;
 }
 
 /* 点击效果 */
 .help-tab:active {
-    transform: scale(0.98);
+    transform: translateX(0) scale(0.98);
 }
