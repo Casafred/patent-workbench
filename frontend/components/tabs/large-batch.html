@@ -31,13 +31,9 @@
                 </div>
                 
                 <div class="step">
-                    <div class="step-header">步骤 2: 配置 API 请求模板</div>
+                    <div class="step-header">步骤 2: 配置 API 请求参数</div>
                     <div class="template-config-grid">
                         <div class="template-config-main">
-                            <div class="config-item">
-                                <label for="large_batch_template_selector">选择预置模板或新建:</label>
-                                <select id="large_batch_template_selector"></select>
-                            </div>
                             <div class="model-temp-group">
                                 <div class="config-item">
                                     <label for="api-model">选择模型:</label>
@@ -55,13 +51,6 @@
                                 <textarea id="api-system-prompt" rows="3">你是一个高效的专利文本分析助手。</textarea>
                             </div>
                         </div>
-                    </div>
-                    <div class="template-actions" style="margin: 20px 0; display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
-                        <button id="save_template_btn" class="small-button">保存模板</button>
-                        <button id="import_template_btn" class="small-button">导入模板</button>
-                        <input type="file" id="template_file_input" accept=".json" style="display:none;">
-                        <button id="export_template_btn" class="small-button">导出模板</button>
-                        <button id="delete_template_btn" class="small-button delete-button">删除模板</button>
                     </div>
                     <hr style="margin: 25px 0 20px; border-color: var(--border-color);">
                     <div class="config-item">

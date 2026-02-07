@@ -1843,8 +1843,12 @@ document.addEventListener('DOMContentLoaded', function() {
     <script src="js/modules/init/init-async-batch.js?v=20260207d"></script>
     
     <!-- Feature 3: Large Batch -->
+    <!-- 新模块化架构 -->
+    <script type="module" src="js/modules/large-batch/template-manager.js?v=20260207f"></script>
+    <script type="module" src="js/modules/large-batch/large-batch-core.js?v=20260207f"></script>
+    <!-- 旧代码（暂时保留作为备份） -->
     <script src="js/largeBatch.js?v=20260207e"></script>
-    <script src="js/modules/init/init-large-batch.js?v=20260207"></script>
+    <script src="js/modules/init/init-large-batch.js?v=20260207f"></script>
     
     <!-- Feature 4: Local Patent Library -->
     <script src="js/localPatentLib.js?v=20260207"></script>
