@@ -77,6 +77,34 @@ function initClaimsComparison() {
     // 初始化输入区（默认2个）
     renderInputGroups();
     updateCouplingSelector();
+    
+    // 初始化模型选择器
+    initComparisonModelSelector();
+}
+
+/**
+ * 初始化模型选择器
+ */
+function initComparisonModelSelector() {
+    if (!comparisonModelSelect) return;
+    
+    // 获取可用模型列表（从全局变量或默认值）
+    const models = window.AVAILABLE_MODELS || ["glm-4-flash", "glm-4-long", "glm-4.7-flash"];
+    
+    const currentValue = comparisonModelSelect.value;
+    comparisonModelSelect.innerHTML = models.map(m => `<option value="${m}">${m}</option>`).join('');
+    
+    // 恢复之前的选择或设置默认值
+    if (currentValue && models.includes(currentValue)) {
+        comparisonModelSelect.value = currentValue;
+    } else {
+        comparisonModelSelect.value = models[0];
+    }
+    
+    // 触发一次模型说明更新
+    handleModelChange();
+    
+    console.log('✅ 功能五模型选择器已初始化');
 }
 
 /**

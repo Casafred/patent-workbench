@@ -396,7 +396,7 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
     font-weight: bold;
     box-shadow: 0 4px 12px var(--primary-color-glow);
     transition: all 0.3s ease;
-    z-index: 1000;
+    z-index: 9999; /* 确保在最上层 */
     cursor: move; /* 添加拖动光标 */
     user-select: none; /* 防止拖动时选中文本 */
 }

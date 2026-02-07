@@ -269,6 +269,9 @@ function initPatentBatch() {
     // 初始化对话功能
     initPatentChat();
     
+    // 初始化模型选择器
+    initPatentBatchModelSelector();
+    
     // 获取DOM元素
     const patentNumbersInput = getEl('patent_numbers_input');
     const patentCountDisplay = getEl('patent_count_display');
@@ -287,6 +290,32 @@ function initPatentBatch() {
     
     // 存储解读结果
     let analysisResults = [];
+}
+
+/**
+ * 初始化功能六模型选择器
+ */
+function initPatentBatchModelSelector() {
+    const modelSelect = document.getElementById('patent_batch_model_selector');
+    if (!modelSelect) {
+        console.warn('⚠️ 功能六模型选择器不存在');
+        return;
+    }
+    
+    // 获取可用模型列表（从全局变量或默认值）
+    const models = window.AVAILABLE_MODELS || ["glm-4-flash", "glm-4-long", "glm-4.7-flash"];
+    
+    const currentValue = modelSelect.value;
+    modelSelect.innerHTML = models.map(m => `<option value="${m}">${m}</option>`).join('');
+    
+    // 恢复之前的选择或设置默认值
+    if (currentValue && models.includes(currentValue)) {
+        modelSelect.value = currentValue;
+    } else {
+        modelSelect.value = models[0];
+    }
+    
+    console.log('✅ 功能六模型选择器已初始化');
     
     // 复制专利号按钮
     if (copyPatentNumbersBtn) {

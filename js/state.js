@@ -151,14 +151,35 @@ let ASYNC_MODELS = ["glm-4-flashX-250414", "glm-4-flash", "glm-4-long", "GLM-4.7
 // 从配置文件加载模型列表
 async function loadModelsConfig() {
     try {
-        // 使用正确的相对路径，基于页面URL位置
-        const response = await fetch('../config/models.json');
-        const config = await response.json();
-        if (config.models && Array.isArray(config.models)) {
+        // 尝试多个可能的路径（适配不同页面位置）
+        const possiblePaths = [
+            '../config/models.json',  // 从 frontend/ 子目录访问
+            'config/models.json',      // 从根目录访问
+            './config/models.json'     // 相对根目录访问
+        ];
+        
+        let config = null;
+        let lastError = null;
+        
+        for (const path of possiblePaths) {
+            try {
+                const response = await fetch(path);
+                if (response.ok) {
+                    config = await response.json();
+                    console.log(`✅ 模型配置已从 ${path} 加载`);
+                    break;
+                }
+            } catch (e) {
+                lastError = e;
+                continue;
+            }
+        }
+        
+        if (config && config.models && Array.isArray(config.models)) {
             AVAILABLE_MODELS = config.models;
             BATCH_MODELS = config.models;
             ASYNC_MODELS = config.models;
-            console.log('✅ 模型配置已从 config/models.json 加载:', config.models);
+            console.log('✅ 可用模型列表:', config.models);
             
             // 延迟更新所有模型选择器，确保DOM已准备好
             setTimeout(() => {
@@ -168,6 +189,8 @@ async function loadModelsConfig() {
                     detail: { models: AVAILABLE_MODELS } 
                 }));
             }, 100);
+        } else {
+            throw new Error('无法从任何路径加载模型配置');
         }
     } catch (error) {
         console.warn('⚠️ 无法加载模型配置文件，使用默认配置:', error);
