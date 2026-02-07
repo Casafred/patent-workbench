@@ -131,14 +131,11 @@ function checkPerformanceWarning() {
 }
 
 /**
- * 获取选中的字段列表（根据字段选择器面板状态决定）
- * 如果面板未展开，返回所有字段（全爬取模式）
- * 如果面板已展开，返回勾选的字段（选择性爬取模式）
+ * 获取选中的字段列表（根据全字段爬取勾选框状态决定）
+ * 如果勾选全字段爬取，返回所有字段
+ * 如果未勾选，根据字段选择器状态返回字段
  */
 window.getSelectedFields = function() {
-    const panel = document.getElementById('field_selector_panel');
-    const isPanelOpen = panel && panel.style.display === 'block';
-    
     // 基础字段（始终包含）
     const baseFields = [
         'patent_number',
@@ -150,35 +147,48 @@ window.getSelectedFields = function() {
         'priority_date',
         'ipc_classification'
     ];
-    
-    // 如果面板未展开，返回所有字段（全爬取模式）
-    if (!isPanelOpen) {
-        // 所有可选字段
-        const allOptionalFields = [
-            'classifications',
-            'landscapes',
-            'family_id',
-            'family_applications',
-            'country_status',
-            'patent_citations',
-            'cited_by',
-            'events_timeline',
-            'legal_events',
-            'similar_documents',
-            'description',
-            'drawings',
-            'external_links'
-        ];
-        console.log('📋 字段选择器未展开，使用全爬取模式（所有字段）');
+
+    // 所有可选字段
+    const allOptionalFields = [
+        'classifications',
+        'landscapes',
+        'family_id',
+        'family_applications',
+        'country_status',
+        'patent_citations',
+        'cited_by',
+        'events_timeline',
+        'legal_events',
+        'similar_documents',
+        'description',
+        'drawings',
+        'external_links'
+    ];
+
+    // 检查是否启用全字段爬取
+    const fullCrawlCheckbox = document.getElementById('full_crawl_checkbox');
+    const isFullCrawl = fullCrawlCheckbox ? fullCrawlCheckbox.checked : true;
+
+    if (isFullCrawl) {
+        console.log('📋 全字段爬取模式 - 爬取所有字段');
         return [...baseFields, ...allOptionalFields];
     }
-    
-    // 面板已展开，返回勾选的字段（选择性爬取模式）
-    const optionalCheckboxes = document.querySelectorAll('#field_selector_panel input[type="checkbox"]:checked');
-    const optionalFields = Array.from(optionalCheckboxes).map(cb => cb.value);
-    console.log('📋 字段选择器已展开，使用选择性爬取模式，勾选字段:', optionalFields);
-    
-    return [...baseFields, ...optionalFields];
+
+    // 选择性爬取模式
+    const panel = document.getElementById('field_selector_panel');
+    const isPanelOpen = panel && panel.style.display === 'block';
+
+    if (isPanelOpen) {
+        // 面板已展开，返回勾选的字段
+        const optionalCheckboxes = document.querySelectorAll('#field_selector_panel input[type="checkbox"]:checked');
+        const optionalFields = Array.from(optionalCheckboxes).map(cb => cb.value);
+        console.log('📋 选择性爬取模式 - 勾选字段:', optionalFields);
+        return [...baseFields, ...optionalFields];
+    } else {
+        // 面板未展开但处于选择性模式，返回默认字段（推荐配置）
+        console.log('📋 选择性爬取模式 - 使用默认字段');
+        return [...baseFields, ...allOptionalFields];
+    }
 };
 
 /**
@@ -224,49 +234,43 @@ window.isFieldSelectorOpen = function() {
 };
 
 /**
- * 选择性爬取 - 开始获取
- * 在字段选择器展开时，根据勾选的字段开始爬取
+ * 检查是否启用全字段爬取
  */
-window.startSelectiveCrawl = function() {
-    const patentNumbersInput = document.getElementById('patent_numbers_input');
+window.isFullCrawlEnabled = function() {
+    const fullCrawlCheckbox = document.getElementById('full_crawl_checkbox');
+    return fullCrawlCheckbox ? fullCrawlCheckbox.checked : true;
+};
+
+/**
+ * 更新字段选择器按钮状态
+ * 根据全字段爬取勾选框的状态启用或禁用按钮
+ */
+window.updateFieldSelectorButtonState = function() {
+    const fullCrawlCheckbox = document.getElementById('full_crawl_checkbox');
+    const toggleBtn = document.getElementById('toggle_field_selector_btn');
     
-    if (!patentNumbersInput) {
-        console.error('❌ 专利号输入框不存在');
-        alert('页面加载异常，请刷新后重试');
-        return;
-    }
+    if (!fullCrawlCheckbox || !toggleBtn) return;
     
-    const input = patentNumbersInput.value.trim();
-    if (!input) {
-        alert('请输入专利号');
-        return;
-    }
+    const isFullCrawl = fullCrawlCheckbox.checked;
     
-    // 处理专利号
-    const patentNumbers = input.replace(/\n/g, ' ').split(/\s+/).filter(num => num);
-    const uniquePatents = [...new Set(patentNumbers)];
-    
-    if (uniquePatents.length > 50) {
-        alert('最多支持50个专利号');
-        return;
-    }
-    
-    if (uniquePatents.length === 0) {
-        alert('请输入有效的专利号');
-        return;
-    }
-    
-    // 获取选中的字段
-    const selectedFields = getSelectedFields();
-    console.log('📋 选择性爬取 - 选中的字段:', selectedFields);
-    
-    // 触发批量查询按钮的点击事件
-    const searchPatentsBtn = document.getElementById('search_patents_btn');
-    if (searchPatentsBtn) {
-        searchPatentsBtn.click();
+    if (isFullCrawl) {
+        // 全字段爬取模式下，禁用字段选择器按钮
+        toggleBtn.disabled = true;
+        toggleBtn.style.opacity = '0.5';
+        toggleBtn.style.cursor = 'not-allowed';
+        toggleBtn.title = '全字段爬取模式下不可用，请取消勾选"开启全字段爬取"';
+        
+        // 关闭字段选择器面板
+        const panel = document.getElementById('field_selector_panel');
+        if (panel) {
+            panel.style.display = 'none';
+        }
     } else {
-        console.error('❌ 批量查询按钮不存在');
-        alert('页面加载异常，请刷新后重试');
+        // 选择性爬取模式下，启用字段选择器按钮
+        toggleBtn.disabled = false;
+        toggleBtn.style.opacity = '1';
+        toggleBtn.style.cursor = 'pointer';
+        toggleBtn.title = '展开字段选择器，选择特定字段';
     }
 };
 
@@ -276,7 +280,7 @@ window.startSelectiveCrawl = function() {
  */
 window.initFieldSelector = function() {
     console.log('🔧 Initializing field selector...');
-    
+
     // 绑定切换按钮
     const toggleBtn = document.getElementById('toggle_field_selector_btn');
     if (toggleBtn) {
@@ -288,27 +292,41 @@ window.initFieldSelector = function() {
     } else {
         console.warn('⚠️ Field selector toggle button not found');
     }
-    
+
+    // 绑定全字段爬取勾选框事件
+    const fullCrawlCheckbox = document.getElementById('full_crawl_checkbox');
+    if (fullCrawlCheckbox) {
+        fullCrawlCheckbox.addEventListener('change', function() {
+            updateFieldSelectorButtonState();
+            console.log(fullCrawlCheckbox.checked ? '📋 切换到全字段爬取模式' : '📋 切换到选择性爬取模式');
+        });
+        // 初始化按钮状态
+        updateFieldSelectorButtonState();
+        console.log('✅ Full crawl checkbox bound');
+    } else {
+        console.warn('⚠️ Full crawl checkbox not found');
+    }
+
     // 初始化字段计数
     updateFieldCount();
-    
+
     // 初始化性能警告
     checkPerformanceWarning();
-    
+
     // 为所有字段选项添加checked类（如果已选中）
     const checkboxes = document.querySelectorAll('#field_selector_panel input[type="checkbox"]');
     checkboxes.forEach(cb => {
         if (cb.checked) {
             cb.closest('.field-option')?.classList.add('checked');
         }
-        
+
         // 绑定change事件
         cb.addEventListener('change', function() {
             updateFieldCount();
             checkPerformanceWarning();
         });
     });
-    
+
     console.log('✅ Field selector initialized');
 };
 
