@@ -55,19 +55,27 @@
                     </select>
                 </div>
                 
-                <!-- 字段选择器 -->
+                <!-- 爬取模式选择 -->
                 <div class="config-item-compact">
-                    <button id="toggle_field_selector_btn" class="small-button" style="width: 100%;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 6px;">
-                            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
-                        </svg>
-                        选择爬取字段
-                    </button>
+                    <div class="crawl-mode-selector" style="display: flex; gap: 8px; margin-bottom: 10px;">
+                        <button id="quick_crawl_btn" class="small-button primary-btn" style="flex: 1;" title="快速爬取所有字段，不看字段选择器">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 4px;">
+                                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                            </svg>
+                            快速全爬取
+                        </button>
+                        <button id="toggle_field_selector_btn" class="small-button" style="flex: 1;" title="展开字段选择器，选择性爬取">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 4px;">
+                                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                            </svg>
+                            选择性爬取
+                        </button>
+                    </div>
                 </div>
                 
                 <!-- 操作按钮 -->
                 <div class="config-actions">
-                    <button id="search_patents_btn" class="small-button primary-btn">批量查询专利</button>
+                    <button id="search_patents_btn" class="small-button primary-btn" style="display: none;">批量查询专利</button>
                     <button id="analyze_all_btn" class="small-button primary-btn" disabled>批量解读</button>
                 </div>
             </div>

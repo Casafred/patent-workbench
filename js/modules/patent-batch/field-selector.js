@@ -131,9 +131,14 @@ function checkPerformanceWarning() {
 }
 
 /**
- * 获取选中的字段列表
+ * 获取选中的字段列表（根据字段选择器面板状态决定）
+ * 如果面板未展开，返回所有字段（全爬取模式）
+ * 如果面板已展开，返回勾选的字段（选择性爬取模式）
  */
 window.getSelectedFields = function() {
+    const panel = document.getElementById('field_selector_panel');
+    const isPanelOpen = panel && panel.style.display === 'block';
+    
     // 基础字段（始终包含）
     const baseFields = [
         'patent_number',
@@ -146,11 +151,76 @@ window.getSelectedFields = function() {
         'ipc_classification'
     ];
     
-    // 可选字段
+    // 如果面板未展开，返回所有字段（全爬取模式）
+    if (!isPanelOpen) {
+        // 所有可选字段
+        const allOptionalFields = [
+            'classifications',
+            'landscapes',
+            'family_id',
+            'family_applications',
+            'country_status',
+            'patent_citations',
+            'cited_by',
+            'events_timeline',
+            'legal_events',
+            'similar_documents',
+            'description',
+            'drawings',
+            'external_links'
+        ];
+        console.log('📋 字段选择器未展开，使用全爬取模式（所有字段）');
+        return [...baseFields, ...allOptionalFields];
+    }
+    
+    // 面板已展开，返回勾选的字段（选择性爬取模式）
     const optionalCheckboxes = document.querySelectorAll('#field_selector_panel input[type="checkbox"]:checked');
     const optionalFields = Array.from(optionalCheckboxes).map(cb => cb.value);
+    console.log('📋 字段选择器已展开，使用选择性爬取模式，勾选字段:', optionalFields);
     
     return [...baseFields, ...optionalFields];
+};
+
+/**
+ * 获取所有字段列表（用于全爬取模式）
+ */
+window.getAllFields = function() {
+    const baseFields = [
+        'patent_number',
+        'title',
+        'applicant',
+        'inventor',
+        'filing_date',
+        'publication_date',
+        'priority_date',
+        'ipc_classification'
+    ];
+    
+    const allOptionalFields = [
+        'classifications',
+        'landscapes',
+        'family_id',
+        'family_applications',
+        'country_status',
+        'patent_citations',
+        'cited_by',
+        'events_timeline',
+        'legal_events',
+        'similar_documents',
+        'description',
+        'drawings',
+        'external_links'
+    ];
+    
+    return [...baseFields, ...allOptionalFields];
+};
+
+/**
+ * 检查字段选择器是否处于展开状态
+ */
+window.isFieldSelectorOpen = function() {
+    const panel = document.getElementById('field_selector_panel');
+    return panel && panel.style.display === 'block';
 };
 
 /**

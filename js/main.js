@@ -321,6 +321,7 @@ function initPatentBatchEventListeners() {
     const clearPatentInputBtn = getEl('clear_patent_input_btn');
     const copyPatentNumbersBtn = getEl('copy_patent_numbers_btn');
     const searchPatentsBtn = getEl('search_patents_btn');
+    const quickCrawlBtn = getEl('quick_crawl_btn');
     const analyzeAllBtn = getEl('analyze_all_btn');
     const exportAnalysisExcelBtn = getEl('export_analysis_excel_btn');
     const searchStatus = getEl('search_status');
@@ -328,7 +329,7 @@ function initPatentBatchEventListeners() {
     const patentResultsList = getEl('patent_results_list');
     const analysisResultsList = getEl('analysis_results_list');
     
-    if (!patentNumbersInput || !patentCountDisplay || !searchPatentsBtn) {
+    if (!patentNumbersInput || !patentCountDisplay) {
         console.warn('⚠️ 功能六必要DOM元素不存在，跳过事件监听器初始化');
         return;
     }
@@ -369,10 +370,12 @@ function initPatentBatchEventListeners() {
         // 根据数量更新样式
         if (count > 50) {
             patentCountDisplay.style.color = 'red';
-            searchPatentsBtn.disabled = true;
+            if (searchPatentsBtn) searchPatentsBtn.disabled = true;
+            if (quickCrawlBtn) quickCrawlBtn.disabled = true;
         } else {
             patentCountDisplay.style.color = '';
-            searchPatentsBtn.disabled = false;
+            if (searchPatentsBtn) searchPatentsBtn.disabled = false;
+            if (quickCrawlBtn) quickCrawlBtn.disabled = false;
         }
     });
     
@@ -382,7 +385,8 @@ function initPatentBatchEventListeners() {
             patentNumbersInput.value = '';
             patentCountDisplay.textContent = '专利号数量：0/50';
             patentCountDisplay.style.color = '';
-            searchPatentsBtn.disabled = false;
+            if (searchPatentsBtn) searchPatentsBtn.disabled = false;
+            if (quickCrawlBtn) quickCrawlBtn.disabled = false;
             if (analyzeAllBtn) analyzeAllBtn.disabled = true;
             if (exportAnalysisExcelBtn) {
                 exportAnalysisExcelBtn.disabled = true;
@@ -394,6 +398,40 @@ function initPatentBatchEventListeners() {
             }
             if (searchStatus) searchStatus.style.display = 'none';
             window.patentResults = [];
+        });
+    }
+    
+    // 快速全爬取按钮
+    if (quickCrawlBtn) {
+        quickCrawlBtn.addEventListener('click', async () => {
+            const input = patentNumbersInput.value.trim();
+            if (!input) {
+                alert('请输入专利号');
+                return;
+            }
+            
+            // 处理专利号
+            const patentNumbers = input.replace(/\n/g, ' ').split(/\s+/).filter(num => num);
+            const uniquePatents = [...new Set(patentNumbers)];
+            
+            if (uniquePatents.length > 50) {
+                alert('最多支持50个专利号');
+                return;
+            }
+            
+            // 确保字段选择器是关闭状态（全爬取模式）
+            const fieldSelectorPanel = document.getElementById('field_selector_panel');
+            if (fieldSelectorPanel) {
+                fieldSelectorPanel.style.display = 'none';
+            }
+            
+            // 触发批量查询
+            if (searchPatentsBtn) {
+                searchPatentsBtn.click();
+            } else {
+                // 如果没有searchPatentsBtn，直接执行查询逻辑
+                await performPatentSearch(uniquePatents);
+            }
         });
     }
     
@@ -510,23 +548,8 @@ function initPatentBatchEventListeners() {
         });
     }
     
-    // 批量查询专利
-    searchPatentsBtn.addEventListener('click', async () => {
-        const input = patentNumbersInput.value.trim();
-        if (!input) {
-            alert('请输入专利号');
-            return;
-        }
-        
-        // 处理专利号
-        const patentNumbers = input.replace(/\n/g, ' ').split(/\s+/).filter(num => num);
-        const uniquePatents = [...new Set(patentNumbers)];
-        
-        if (uniquePatents.length > 50) {
-            alert('最多支持50个专利号');
-            return;
-        }
-        
+    // 定义批量查询专利的执行函数
+    async function performPatentSearch(patentNumbers) {
         // 首先检查后端版本
         try {
             const versionResponse = await apiCall('/patent/version', null, 'GET');
@@ -536,9 +559,19 @@ function initPatentBatchEventListeners() {
             console.warn('⚠️ 无法获取版本信息，可能是旧版本后端');
         }
         
-        // 总是启用爬取额外信息
-        const crawlSpecification = true; // 强制启用，确保获取所有额外信息
-        console.log('📋 crawl_specification:', crawlSpecification);
+        // 判断字段选择器是否展开，决定爬取模式
+        const isFieldSelectorOpen = window.isFieldSelectorOpen ? window.isFieldSelectorOpen() : false;
+        const crawlSpecification = true; // 始终启用爬取
+        
+        // 获取用户选择的字段（根据字段选择器状态自动判断）
+        const selectedFields = getSelectedFields();
+        
+        if (isFieldSelectorOpen) {
+            console.log('📋 选择性爬取模式 - 字段选择器已展开，根据勾选字段爬取');
+            console.log('📋 选中的字段:', selectedFields);
+        } else {
+            console.log('📋 全爬取模式 - 字段选择器未展开，爬取所有字段');
+        }
         
         // 清空之前的结果
         patentResultsList.innerHTML = '';
@@ -548,18 +581,14 @@ function initPatentBatchEventListeners() {
         analyzeAllBtn.disabled = true;
         
         // 显示查询状态
-        searchStatus.textContent = `正在查询 ${uniquePatents.length} 个专利...`;
+        searchStatus.textContent = `正在查询 ${patentNumbers.length} 个专利...`;
         searchStatus.style.display = 'block';
         
         try {
-            // 获取用户选择的字段
-            const selectedFields = getSelectedFields();
-            console.log('📋 用户选择的字段:', selectedFields);
-            
             // 调用API查询专利
-            console.log('🚀 开始查询专利，参数:', { patent_numbers: uniquePatents, crawl_specification: crawlSpecification, selected_fields: selectedFields });
+            console.log('🚀 开始查询专利，参数:', { patent_numbers: patentNumbers, crawl_specification: crawlSpecification, selected_fields: selectedFields });
             const results = await apiCall('/patent/search', {
-                patent_numbers: uniquePatents,
+                patent_numbers: patentNumbers,
                 crawl_specification: crawlSpecification,
                 selected_fields: selectedFields
             });
@@ -568,7 +597,7 @@ function initPatentBatchEventListeners() {
             
             // 按照用户输入的顺序重新排列结果
             const orderedResults = [];
-            for (const patentNumber of uniquePatents) {
+            for (const patentNumber of patentNumbers) {
                 const result = results.find(r => r.patent_number === patentNumber);
                 if (result) {
                     orderedResults.push(result);
@@ -592,7 +621,29 @@ function initPatentBatchEventListeners() {
             searchStatus.textContent = `查询失败: ${error.message}`;
             searchStatus.style.color = 'red';
         }
-    });
+    }
+    
+    // 批量查询专利按钮事件
+    if (searchPatentsBtn) {
+        searchPatentsBtn.addEventListener('click', async () => {
+            const input = patentNumbersInput.value.trim();
+            if (!input) {
+                alert('请输入专利号');
+                return;
+            }
+            
+            // 处理专利号
+            const patentNumbers = input.replace(/\n/g, ' ').split(/\s+/).filter(num => num);
+            const uniquePatents = [...new Set(patentNumbers)];
+            
+            if (uniquePatents.length > 50) {
+                alert('最多支持50个专利号');
+                return;
+            }
+            
+            await performPatentSearch(uniquePatents);
+        });
+    }
     
     // 一键解读全部
     analyzeAllBtn.addEventListener('click', async () => {
