@@ -1869,11 +1869,56 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
+    // 调试信息：输出按钮初始状态
+    const rect = helpButton.getBoundingClientRect();
+    const computedStyle = window.getComputedStyle(helpButton);
+    console.log('🔍 Help button initial state:', {
+        found: true,
+        rect: { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom, width: rect.width, height: rect.height },
+        computed: {
+            display: computedStyle.display,
+            visibility: computedStyle.visibility,
+            opacity: computedStyle.opacity,
+            position: computedStyle.position,
+            zIndex: computedStyle.zIndex,
+            left: computedStyle.left,
+            right: computedStyle.right,
+            top: computedStyle.top,
+            bottom: computedStyle.bottom
+        }
+    });
+
     let isDragging = false;
     let startX, startY, startLeft, startBottom;
 
     // 阻止默认的链接点击行为（仅在拖动时）
     let hasMoved = false;
+
+    // 双击重置位置功能
+    helpButton.addEventListener('dblclick', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // 清除保存的位置
+        localStorage.removeItem('helpButtonPosition');
+
+        // 重置为默认位置
+        helpButton.style.left = 'auto';
+        helpButton.style.right = '20px';
+        helpButton.style.bottom = '20px';
+        helpButton.style.top = 'auto';
+
+        // 添加重置动画效果
+        helpButton.style.transform = 'scale(1.2)';
+        setTimeout(() => {
+            helpButton.style.transform = '';
+        }, 200);
+
+        console.log('🔄 Help button position reset to default');
+
+        // 显示提示
+        showNotification('帮助按钮位置已重置', 'success');
+    });
 
     // 检查点击是否在悬浮球上
     function isClickOnHelpButton(e) {
@@ -2021,9 +2066,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const validLeft = Math.max(margin, Math.min(pos.left, window.innerWidth - buttonWidth - margin));
             const validBottom = Math.max(margin, Math.min(pos.bottom, window.innerHeight - buttonHeight - margin));
 
+            // 强制重置所有定位属性，确保按钮可见
+            helpButton.style.position = 'fixed';
             helpButton.style.left = validLeft + 'px';
             helpButton.style.bottom = validBottom + 'px';
             helpButton.style.right = 'auto';
+            helpButton.style.top = 'auto';
+            helpButton.style.display = 'flex';
+            helpButton.style.visibility = 'visible';
+            helpButton.style.opacity = '1';
 
             console.log('✅ Help button position restored:', { left: validLeft, bottom: validBottom });
         }
@@ -2031,6 +2082,10 @@ document.addEventListener('DOMContentLoaded', function() {
         console.warn('Failed to restore help button position:', e);
         // 如果恢复失败，清除保存的位置
         localStorage.removeItem('helpButtonPosition');
+        // 重置为默认位置
+        helpButton.style.left = 'auto';
+        helpButton.style.right = '20px';
+        helpButton.style.bottom = '20px';
     }
 
     console.log('✅ Help button draggable functionality initialized (full page drag enabled)');
