@@ -21,17 +21,17 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
     <!-- 模块化CSS文件 -->
-    <link rel="stylesheet" href="css/main.css?v=20260207d">
-    <link rel="stylesheet" href="css/pages/claims.css?v=20260207d">
+    <link rel="stylesheet" href="frontend/css/main.css?v=20260207d">
+    <link rel="stylesheet" href="frontend/css/pages/claims.css?v=20260207d">
     <!-- 功能六增强CSS -->
-    <link rel="stylesheet" href="css/components/patent-template.css">
-    <link rel="stylesheet" href="css/components/patent-chat.css">
-    <link rel="stylesheet" href="css/components/patent-config.css">
-    <link rel="stylesheet" href="css/components/patent-timeline.css">
-    <link rel="stylesheet" href="css/components/field-selector.css">
-    <link rel="stylesheet" href="css/components/buttons.css">
+    <link rel="stylesheet" href="frontend/css/components/patent-template.css">
+    <link rel="stylesheet" href="frontend/css/components/patent-chat.css">
+    <link rel="stylesheet" href="frontend/css/components/patent-config.css">
+    <link rel="stylesheet" href="frontend/css/components/patent-timeline.css">
+    <link rel="stylesheet" href="frontend/css/components/field-selector.css">
+    <link rel="stylesheet" href="frontend/css/components/buttons.css">
     <!-- AI说明书处理器CSS -->
-    <link rel="stylesheet" href="css/components/ai-description-processor.css">
+    <link rel="stylesheet" href="frontend/css/components/ai-description-processor.css">
 
         <style>
             /* Vanta.js 背景容器 */
@@ -1816,63 +1816,63 @@ document.addEventListener('DOMContentLoaded', function() {
     </a>
 
     <!-- Core modules - must load before main.js -->
-    <script src="../js/core/component-loader.js"></script>
-    <script src="../js/core/api.js"></script>
-    <script src="../js/modules/navigation/tab-navigation.js"></script>
+    <script src="js/core/component-loader.js"></script>
+    <script src="js/core/api.js"></script>
+    <script src="js/modules/navigation/tab-navigation.js"></script>
     
     <!-- Initialization fix - must load before other modules -->
-    <script src="../js/init-fix.js"></script>
+    <script src="js/init-fix.js"></script>
     
     <!-- DOM element references - must load before other modules -->
-    <script src="../js/dom.js"></script>
+    <script src="js/dom.js"></script>
     
     <!-- State management - must load before chat modules -->
-    <script src="../js/state.js?v=20260207e"></script>
+    <script src="js/state.js?v=20260207e"></script>
     
     <!-- Chat modules - load in dependency order -->
-    <script src="../js/modules/chat/chat-file-handler.js"></script>
-    <script src="../js/modules/chat/chat-conversation.js"></script>
-    <script src="../js/modules/chat/chat-message.js"></script>
-    <script src="../js/modules/chat/chat-persona.js"></script>
-    <script src="../js/modules/chat/chat-search.js"></script>
-    <script src="../js/modules/chat/chat-export.js"></script>
-    <script src="../js/modules/chat/chat-core.js"></script>
+    <script src="js/modules/chat/chat-file-handler.js"></script>
+    <script src="js/modules/chat/chat-conversation.js"></script>
+    <script src="js/modules/chat/chat-message.js"></script>
+    <script src="js/modules/chat/chat-persona.js"></script>
+    <script src="js/modules/chat/chat-search.js"></script>
+    <script src="js/modules/chat/chat-export.js"></script>
+    <script src="js/modules/chat/chat-core.js"></script>
     
     <!-- Feature 2: Async Batch -->
-    <script src="../js/asyncBatch.js?v=20260207d"></script>
-    <script src="../js/modules/init/init-async-batch.js?v=20260207d"></script>
+    <script src="js/asyncBatch.js?v=20260207d"></script>
+    <script src="js/modules/init/init-async-batch.js?v=20260207d"></script>
     
     <!-- Feature 3: Large Batch -->
-    <script src="../js/largeBatch.js?v=20260207e"></script>
-    <script src="../js/modules/init/init-large-batch.js?v=20260207"></script>
+    <script src="js/largeBatch.js?v=20260207e"></script>
+    <script src="js/modules/init/init-large-batch.js?v=20260207"></script>
     
     <!-- Feature 4: Local Patent Library -->
-    <script src="../js/localPatentLib.js?v=20260207"></script>
-    <script src="../js/modules/init/init-local-patent-lib.js?v=20260207"></script>
+    <script src="js/localPatentLib.js?v=20260207"></script>
+    <script src="js/modules/init/init-local-patent-lib.js?v=20260207"></script>
     
     <!-- Feature 5: Claims Comparison -->
-    <script src="../js/claimsComparison.js?v=20260207"></script>
-    <script src="../js/modules/init/init-claims-comparison.js?v=20260207"></script>
+    <script src="js/claimsComparison.js?v=20260207"></script>
+    <script src="js/modules/init/init-claims-comparison.js?v=20260207"></script>
     
     <!-- Feature 6: Patent Batch -->
-    <script src="../js/patentTemplate.js"></script>
-    <script src="../js/patentChat.js"></script>
-    <script src="../js/modules/init/init-patent-batch.js"></script>
+    <script src="js/patentTemplate.js"></script>
+    <script src="js/patentChat.js"></script>
+    <script src="js/modules/init/init-patent-batch.js"></script>
     
     <!-- Feature 7: Claims Processor - Modular Version -->
-    <script type="module" src="../js/modules/claims/claims-file-handler.js?v=20260207c"></script>
-    <script type="module" src="../js/modules/claims/claims-processor.js?v=20260207c"></script>
-    <script type="module" src="../js/modules/claims/claims-visualization.js?v=20260207c"></script>
-    <script type="module" src="../js/modules/claims/claims-text-analyzer.js?v=20260207c"></script>
-    <script type="module" src="../js/modules/claims/claims-patent-search.js?v=20260207c"></script>
-    <script type="module" src="../js/modules/claims/claims-core.js?v=20260207c"></script>
+    <script type="module" src="js/modules/claims/claims-file-handler.js?v=20260207c"></script>
+    <script type="module" src="js/modules/claims/claims-processor.js?v=20260207c"></script>
+    <script type="module" src="js/modules/claims/claims-visualization.js?v=20260207c"></script>
+    <script type="module" src="js/modules/claims/claims-text-analyzer.js?v=20260207c"></script>
+    <script type="module" src="js/modules/claims/claims-patent-search.js?v=20260207c"></script>
+    <script type="module" src="js/modules/claims/claims-core.js?v=20260207c"></script>
     
     <!-- Other feature scripts -->
-    <script src="../js/patentDetailNewTab.js"></script>
-    <script src="../js/aiDisclaimer.js"></script>
-    <script src="../js/fileParserHandler.js"></script>
+    <script src="js/patentDetailNewTab.js"></script>
+    <script src="js/aiDisclaimer.js"></script>
+    <script src="js/fileParserHandler.js"></script>
     
     <!-- Main initialization - must load last -->
-    <script src="../js/main.js?v=20260207e"></script>
+    <script src="js/main.js?v=20260207e"></script>
 </body>
 </html>
