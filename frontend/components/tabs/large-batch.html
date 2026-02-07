@@ -31,9 +31,17 @@
                 </div>
                 
                 <div class="step">
-                    <div class="step-header">步骤 2: 配置 API 请求参数</div>
+                    <div class="step-header">步骤 2: 配置 API 请求模板</div>
                     <div class="template-config-grid">
                         <div class="template-config-main">
+                            <div class="config-item">
+                                <label for="large_batch_preset_template_select">选择预置模板或新建:</label>
+                                <select id="large_batch_preset_template_select"></select>
+                            </div>
+                            <div class="config-item">
+                                <label for="large_batch_template_name">模板名称:</label>
+                                <input type="text" id="large_batch_template_name" placeholder="例如：自定义技术总结">
+                            </div>
                             <div class="model-temp-group">
                                 <div class="config-item">
                                     <label for="api-model">选择模型:</label>
@@ -51,6 +59,13 @@
                                 <textarea id="api-system-prompt" rows="3">你是一个高效的专利文本分析助手。</textarea>
                             </div>
                         </div>
+                    </div>
+                    <div class="template-actions" style="margin: 20px 0; display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <button id="large_batch_save_template_btn" class="small-button">保存模板</button>
+                        <button id="large_batch_import_template_btn" class="small-button">导入模板</button>
+                        <input type="file" id="large_batch_template_file_input" accept=".json" style="display:none;">
+                        <button id="large_batch_export_template_btn" class="small-button">导出模板</button>
+                        <button id="large_batch_delete_template_btn" class="small-button delete-button">删除模板</button>
                     </div>
                     <hr style="margin: 25px 0 20px; border-color: var(--border-color);">
                     <div class="config-item">
@@ -74,6 +89,9 @@
                             </div>
                         </div>
                     </div>
+                    <hr style="margin: 20px 0; border-color: var(--border-color);">
+                    <label><strong>已创建的模板 (点击删除):</strong></label>
+                    <div id="large_batch_templates_list" class="scrollable-list"></div>
                 </div>
                 <div class="step">
                     <div class="step-header">步骤 3: 生成并预览 JSONL 请求文件</div>

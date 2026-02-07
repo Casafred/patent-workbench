@@ -1,6 +1,6 @@
 /**
  * 大批量处理 - 核心模块
- * 协调配置管理、文件处理、批处理等功能
+ * 协调模板管理、文件处理、批处理等功能
  */
 
 import { initTemplateManager, getCurrentConfig } from './template-manager.js';
@@ -19,11 +19,13 @@ export function initLargeBatch() {
             columnConfig: [],
             generatedJsonl: null,
             batchId: null,
-            batchResult: null
+            batchResult: null,
+            customTemplates: [],
+            currentOutputFields: []
         };
     }
     
-    // 初始化配置管理器
+    // 初始化模板管理器
     initTemplateManager();
     
     // 初始化其他功能
@@ -116,43 +118,25 @@ function initOutputFields() {
     }
     
     addBtn.addEventListener('click', () => {
-        addOutputField();
+        // 使用全局函数添加字段
+        if (window.addLargeBatchOutputField) {
+            window.addLargeBatchOutputField();
+        } else {
+            console.error('❌ addLargeBatchOutputField 函数未找到');
+        }
     });
     
-    // 添加默认字段
-    addOutputField('summary', '分析摘要');
-    addOutputField('key_points', '关键要点');
-    
-    console.log('✅ 输出字段已初始化');
+    console.log('✅ 输出字段按钮已初始化');
 }
 
 /**
- * 添加输出字段
+ * 添加输出字段（保留给外部调用）
  */
 export function addOutputField(name = '', description = '') {
-    const container = document.getElementById('output-fields-container');
-    if (!container) {
-        console.warn('⚠️ 输出字段容器不存在');
-        return;
+    // 调用全局函数
+    if (window.addLargeBatchOutputField) {
+        window.addLargeBatchOutputField(name, description);
     }
-    
-    const fieldDiv = document.createElement('div');
-    fieldDiv.className = 'output-field-item';
-    fieldDiv.style.cssText = 'display: flex; gap: 10px; margin-bottom: 10px; align-items: center;';
-    
-    fieldDiv.innerHTML = `
-        <input type="text" class="field-name-input" placeholder="字段名（英文）" value="${name}" 
-               style="flex: 1; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px;">
-        <input type="text" class="field-desc-input" placeholder="字段描述（中文）" value="${description}"
-               style="flex: 2; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px;">
-        <button type="button" class="remove-field-btn small-button delete-button">删除</button>
-    `;
-    
-    // 绑定删除按钮
-    const removeBtn = fieldDiv.querySelector('.remove-field-btn');
-    removeBtn.addEventListener('click', () => fieldDiv.remove());
-    
-    container.appendChild(fieldDiv);
 }
 
 /**
