@@ -89,9 +89,16 @@ class MultiImageViewerV8 {
 
     constructor(images, options = {}) {
         // 每次创建新实例时清除所有旧缓存，确保使用最新的OCR结果
-        MultiImageViewerV8.clearAllImageCaches();
+        console.log('[MultiImageViewerV8] Constructor called, clearing all caches...');
+        const clearedCount = MultiImageViewerV8.clearAllImageCaches();
+        console.log(`[MultiImageViewerV8] Cleared ${clearedCount} caches`);
 
         // images: [{ url, detectedNumbers, referenceMap, title }]
+        console.log('[MultiImageViewerV8] Images data:', images.map(img => ({
+            title: img.title,
+            detectedNumbersCount: (img.detectedNumbers || []).length,
+            detectedNumbers: (img.detectedNumbers || []).map(d => ({ number: d.number, x: Math.round(d.x), y: Math.round(d.y) }))
+        })));
         this.images = images;
         this.currentIndex = 0;
         this.options = {
@@ -1030,15 +1037,22 @@ class MultiImageViewerV8 {
         const detectedNumbers = this.currentImageData.detectedNumbers || [];
         const referenceMap = this.currentImageData.referenceMap || {};
 
+        console.log('[initializeAnnotations] Starting...', {
+            imageTitle: this.currentImageData.title,
+            detectedCount: detectedNumbers.length
+        });
+
         // 尝试加载保存的标记
         const loadResult = this.loadSavedAnnotations();
+        console.log('[initializeAnnotations] Load result:', loadResult);
+        
         if (loadResult.hasData && loadResult.isSameAnalysis) {
-            console.log('Loaded saved annotations from same analysis, skipping initialization');
+            console.log('[initializeAnnotations] Same analysis - skipping initialization, using saved annotations');
             return;
         }
 
         if (loadResult.hasData && !loadResult.isSameAnalysis) {
-            console.log('New analysis detected, reinitializing with new OCR results');
+            console.log('[initializeAnnotations] Different analysis - will reinitialize with new OCR results');
         }
 
         // 没有保存的数据，或分析结果不同，使用OCR识别结果初始化
@@ -1046,11 +1060,11 @@ class MultiImageViewerV8 {
         const canvasHeight = this.modalCanvas.height;
         const offsetDistance = 60; // 标记文字距离识别点的固定偏移距离
 
-        console.log('Initializing annotations:', {
+        console.log('[initializeAnnotations] Initializing with canvas size:', {
             canvasWidth,
             canvasHeight,
             detectedCount: detectedNumbers.length,
-            detectedNumbers: detectedNumbers.map(d => ({ number: d.number, x: d.x, y: d.y }))
+            detectedNumbers: detectedNumbers.map(d => ({ number: d.number, x: Math.round(d.x), y: Math.round(d.y) }))
         });
 
         // 获取文本尺寸的辅助函数
@@ -1867,18 +1881,35 @@ class MultiImageViewerV8 {
     // 加载保存的标记
     // 返回 { hasData: boolean, isSameAnalysis: boolean }
     loadSavedAnnotations() {
-        if (!this.storageKey) return { hasData: false, isSameAnalysis: false };
+        if (!this.storageKey) {
+            console.log('[loadSavedAnnotations] No storageKey, returning false');
+            return { hasData: false, isSameAnalysis: false };
+        }
 
         try {
             const savedData = localStorage.getItem(this.storageKey);
-            if (!savedData) return { hasData: false, isSameAnalysis: false };
+            console.log(`[loadSavedAnnotations] storageKey: ${this.storageKey}, hasData: ${!!savedData}`);
+            
+            if (!savedData) {
+                console.log('[loadSavedAnnotations] No saved data found');
+                return { hasData: false, isSameAnalysis: false };
+            }
 
             const data = JSON.parse(savedData);
-            console.log('Loading saved annotations from:', this.storageKey);
+            console.log('[loadSavedAnnotations] Saved data:', {
+                ocrSignature: data.ocrSignature,
+                annotationsCount: (data.annotations || []).length
+            });
 
             // 生成当前OCR结果的标识
             const detectedNumbers = this.currentImageData.detectedNumbers || [];
             const currentOcrSignature = detectedNumbers.map(d => `${d.number}:${Math.round(d.x)},${Math.round(d.y)}`).join('|');
+            
+            console.log('[loadSavedAnnotations] Comparing signatures:', {
+                saved: data.ocrSignature,
+                current: currentOcrSignature,
+                match: data.ocrSignature === currentOcrSignature
+            });
 
             // 比较OCR标识，判断是否是同一次分析
             const isSameAnalysis = data.ocrSignature === currentOcrSignature;
@@ -1888,16 +1919,16 @@ class MultiImageViewerV8 {
                 this.annotations = data.annotations || [];
                 this.currentFontSize = data.currentFontSize || this.options.fontSize;
                 this.currentColor = data.currentColor || '#4CAF50';
-                console.log('Same analysis detected, loading saved annotations');
+                console.log('[loadSavedAnnotations] Same analysis - loading saved annotations');
             } else {
                 // 不同分析，清除旧缓存
-                console.log('Different analysis detected, clearing old cache');
+                console.log('[loadSavedAnnotations] Different analysis - clearing cache and will reinitialize');
                 localStorage.removeItem(this.storageKey);
             }
 
             return { hasData: true, isSameAnalysis: isSameAnalysis };
         } catch (e) {
-            console.error('Failed to load saved annotations:', e);
+            console.error('[loadSavedAnnotations] Failed to load saved annotations:', e);
             return { hasData: false, isSameAnalysis: false };
         }
     }
