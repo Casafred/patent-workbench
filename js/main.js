@@ -1272,7 +1272,7 @@ function shouldShowField(fieldKey, selectedFields) {
     }
     
     // 基础字段始终显示
-    const baseFields = ['patent_number', 'title', 'applicant', 'inventor', 'filing_date', 'publication_date', 'priority_date', 'ipc_classification', 'url'];
+    const baseFields = ['patent_number', 'title', 'abstract', 'applicant', 'inventor', 'filing_date', 'publication_date', 'priority_date', 'ipc_classification', 'url'];
     if (baseFields.includes(fieldKey)) {
         return true;
     }

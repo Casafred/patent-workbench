@@ -140,6 +140,7 @@ window.getSelectedFields = function() {
     const baseFields = [
         'patent_number',
         'title',
+        'abstract',
         'applicant',
         'inventor',
         'filing_date',
@@ -150,6 +151,8 @@ window.getSelectedFields = function() {
 
     // 所有可选字段
     const allOptionalFields = [
+        'claims',
+        'description',
         'classifications',
         'landscapes',
         'family_id',
@@ -160,7 +163,6 @@ window.getSelectedFields = function() {
         'events_timeline',
         'legal_events',
         'similar_documents',
-        'description',
         'drawings',
         'external_links'
     ];

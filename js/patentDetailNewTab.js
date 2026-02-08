@@ -11,6 +11,52 @@ window.openPatentDetailInNewTab = function(patentNumber) {
     
     const data = patentResult.data;
     
+    // 获取选中的字段
+    const selectedFields = window.getSelectedFields ? window.getSelectedFields() : null;
+    
+    // 字段映射关系
+    const FIELD_MAPPING = {
+        'abstract': ['abstract'],
+        'claims': ['claims'],
+        'description': ['description'],
+        'classifications': ['classifications'],
+        'landscapes': ['landscapes'],
+        'family_id': ['family_id'],
+        'family_applications': ['family_applications'],
+        'country_status': ['country_status'],
+        'patent_citations': ['patent_citations'],
+        'cited_by': ['cited_by'],
+        'events_timeline': ['events_timeline'],
+        'legal_events': ['legal_events'],
+        'similar_documents': ['similar_documents'],
+        'drawings': ['drawings'],
+        'external_links': ['external_links']
+    };
+    
+    // 检查是否应该显示某个字段
+    function shouldShowField(fieldKey) {
+        // 如果没有提供selectedFields，显示所有字段
+        if (!selectedFields || selectedFields.length === 0) {
+            return true;
+        }
+        
+        // 基础字段始终显示
+        const baseFields = ['patent_number', 'title', 'abstract', 'applicant', 'inventor', 'filing_date', 'publication_date', 'priority_date', 'ipc_classification', 'url'];
+        if (baseFields.includes(fieldKey)) {
+            return true;
+        }
+        
+        // 检查字段是否在选中列表中
+        for (const selectedField of selectedFields) {
+            const mappedFields = FIELD_MAPPING[selectedField];
+            if (mappedFields && mappedFields.includes(fieldKey)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
     // 构建完整的HTML页面 - 绿色主题 + 左侧导航
     const htmlContent = `
         <!DOCTYPE html>
@@ -568,7 +614,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 </div>
                 
                 <div class="content">
-                    ${data.abstract ? `
+                    ${data.abstract && shouldShowField('abstract') ? `
                     <div class="section collapsible-section" id="abstract" data-section-id="abstract">
                         <h2 class="section-title" onclick="toggleSection('abstract')">
                             <div class="section-title-content">
@@ -622,7 +668,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         </div>
                     </div>
                     
-                    ${data.classifications && data.classifications.length > 0 ? `
+                    ${data.classifications && data.classifications.length > 0 && shouldShowField('classifications') ? `
                     <div class="section" id="classifications">
                         <h2 class="section-title">
                             <span class="section-icon">🏷️</span>
@@ -639,7 +685,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     </div>
                     ` : ''}
                     
-                    ${data.landscapes && data.landscapes.length > 0 ? `
+                    ${data.landscapes && data.landscapes.length > 0 && shouldShowField('landscapes') ? `
                     <div class="section" id="landscapes">
                         <h2 class="section-title">
                             <span class="section-icon">🌐</span>
@@ -653,7 +699,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     </div>
                     ` : ''}
                     
-                    ${data.claims && data.claims.length > 0 ? `
+                    ${data.claims && data.claims.length > 0 && shouldShowField('claims') ? `
                     <div class="section collapsible-section collapsed" id="claims" data-section-id="claims">
                         <h2 class="section-title" onclick="toggleSection('claims')">
                             <div class="section-title-content">
@@ -701,7 +747,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     </div>
                     ` : ''}
                     
-                    ${data.events_timeline && data.events_timeline.length > 0 ? `
+                    ${data.events_timeline && data.events_timeline.length > 0 && shouldShowField('events_timeline') ? `
                     <div class="section" id="timeline">
                         <h2 class="section-title">
                             <span class="section-icon">📅</span>
@@ -719,7 +765,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     </div>
                     ` : ''}
                     
-                    ${data.legal_events && data.legal_events.length > 0 ? `
+                    ${data.legal_events && data.legal_events.length > 0 && shouldShowField('legal_events') ? `
                     <div class="section" id="legal-events">
                         <h2 class="section-title">
                             <span class="section-icon">⚖️</span>
@@ -746,14 +792,14 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     </div>
                     ` : ''}
                     
-                    ${data.family_id || (data.family_applications && data.family_applications.length > 0) ? `
+                    ${(data.family_id || (data.family_applications && data.family_applications.length > 0)) && (shouldShowField('family_id') || shouldShowField('family_applications')) ? `
                     <div class="section" id="family">
                         <h2 class="section-title">
                             <span class="section-icon">👨‍👩‍👧‍👦</span>
                             同族信息
                         </h2>
-                        ${data.family_id ? `<div class="info-card" style="margin-bottom: 20px;"><div class="info-label">同族ID</div><div class="info-value">${data.family_id}</div></div>` : ''}
-                        ${data.family_applications && data.family_applications.length > 0 ? `
+                        ${data.family_id && shouldShowField('family_id') ? `<div class="info-card" style="margin-bottom: 20px;"><div class="info-label">同族ID</div><div class="info-value">${data.family_id}</div></div>` : ''}
+                        ${data.family_applications && data.family_applications.length > 0 && shouldShowField('family_applications') ? `
                         <table class="data-table">
                             <thead>
                                 <tr>
@@ -776,7 +822,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     </div>
                     ` : ''}
                     
-                    ${data.external_links && Object.keys(data.external_links).length > 0 ? `
+                    ${data.external_links && Object.keys(data.external_links).length > 0 && shouldShowField('external_links') ? `
                     <div class="section" id="external-links">
                         <h2 class="section-title">
                             <span class="section-icon">🔗</span>
@@ -790,7 +836,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     </div>
                     ` : ''}
                     
-                    ${data.patent_citations && data.patent_citations.length > 0 ? `
+                    ${data.patent_citations && data.patent_citations.length > 0 && shouldShowField('patent_citations') ? `
                     <div class="section collapsible-section collapsed" id="citations" data-section-id="citations">
                         <h2 class="section-title" onclick="toggleSection('citations')">
                             <div class="section-title-content">
@@ -828,7 +874,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     </div>
                     ` : ''}
                     
-                    ${data.cited_by && data.cited_by.length > 0 ? `
+                    ${data.cited_by && data.cited_by.length > 0 && shouldShowField('cited_by') ? `
                     <div class="section collapsible-section collapsed" id="cited-by" data-section-id="cited-by">
                         <h2 class="section-title" onclick="toggleSection('cited-by')">
                             <div class="section-title-content">
@@ -864,7 +910,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     </div>
                     ` : ''}
                     
-                    ${data.similar_documents && data.similar_documents.length > 0 ? `
+                    ${data.similar_documents && data.similar_documents.length > 0 && shouldShowField('similar_documents') ? `
                     <div class="section collapsible-section collapsed" id="similar" data-section-id="similar">
                         <h2 class="section-title" onclick="toggleSection('similar')">
                             <div class="section-title-content">
@@ -902,7 +948,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     </div>
                     ` : ''}
                     
-                    ${data.description ? `
+                    ${data.description && shouldShowField('description') ? `
                     <div class="section collapsible-section collapsed" id="description" data-section-id="description">
                         <h2 class="section-title" onclick="toggleSection('description')">
                             <div class="section-title-content">
