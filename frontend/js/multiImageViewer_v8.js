@@ -88,6 +88,9 @@ class MultiImageViewerV8 {
     };
 
     constructor(images, options = {}) {
+        // 每次创建新实例时清除所有旧缓存，确保使用最新的OCR结果
+        MultiImageViewerV8.clearAllImageCaches();
+
         // images: [{ url, detectedNumbers, referenceMap, title }]
         this.images = images;
         this.currentIndex = 0;
@@ -1873,7 +1876,9 @@ class MultiImageViewerV8 {
                 this.currentColor = data.currentColor || '#4CAF50';
                 console.log('Same analysis detected, loading saved annotations');
             } else {
-                console.log('Different analysis detected, will reinitialize with new OCR results');
+                // 不同分析，清除旧缓存
+                console.log('Different analysis detected, clearing old cache');
+                localStorage.removeItem(this.storageKey);
             }
 
             return { hasData: true, isSameAnalysis: isSameAnalysis };
@@ -1881,6 +1886,28 @@ class MultiImageViewerV8 {
             console.error('Failed to load saved annotations:', e);
             return { hasData: false, isSameAnalysis: false };
         }
+    }
+
+    // 清除当前图片的标记缓存
+    clearCurrentImageCache() {
+        if (this.storageKey) {
+            localStorage.removeItem(this.storageKey);
+            console.log('Cleared cache for:', this.storageKey);
+        }
+    }
+
+    // 清除所有图片标记缓存
+    static clearAllImageCaches() {
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('patent_annotations_')) {
+                keysToRemove.push(key);
+            }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+        console.log(`Cleared ${keysToRemove.length} image annotation caches`);
+        return keysToRemove.length;
     }
 
     // 打开任务导出管理器
