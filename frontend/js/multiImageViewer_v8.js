@@ -1018,6 +1018,8 @@ class MultiImageViewerV8 {
         img.onload = () => {
             this.currentImage = img;
             this.currentImageData = imageData;
+            // 先设置canvas尺寸，再初始化标注，确保使用正确的坐标
+            this.setupCanvas();
             this.initializeAnnotations();
             if (callback) callback();
         };
@@ -1043,6 +1045,13 @@ class MultiImageViewerV8 {
         const canvasWidth = this.modalCanvas.width;
         const canvasHeight = this.modalCanvas.height;
         const offsetDistance = 60; // 标记文字距离识别点的固定偏移距离
+
+        console.log('Initializing annotations:', {
+            canvasWidth,
+            canvasHeight,
+            detectedCount: detectedNumbers.length,
+            detectedNumbers: detectedNumbers.map(d => ({ number: d.number, x: d.x, y: d.y }))
+        });
 
         // 获取文本尺寸的辅助函数
         const ctx = this.modalCanvas.getContext('2d');
@@ -1095,7 +1104,7 @@ class MultiImageViewerV8 {
             labelX = Math.max(textWidth / 2 + 10, Math.min(canvasWidth - textWidth / 2 - 10, labelX));
             labelY = Math.max(textHeight / 2 + 10, Math.min(canvasHeight - textHeight / 2 - 10, labelY));
 
-            return {
+            const annotation = {
                 id: `annotation_${index}`,
                 markerX: detected.x,
                 markerY: detected.y,
@@ -1111,7 +1120,11 @@ class MultiImageViewerV8 {
                 region: closestRegion,
                 userModified: false
             };
+            console.log(`Annotation ${index}:`, { number: detected.number, markerX: detected.x, markerY: detected.y, labelX, labelY, region: closestRegion });
+            return annotation;
         });
+
+        console.log(`Initialized ${this.annotations.length} annotations`);
 
         // 自动保存初始化的标记
         this.saveAnnotations();
@@ -1119,7 +1132,8 @@ class MultiImageViewerV8 {
     
     updateDisplay() {
         this.loadCurrentImage(() => {
-            this.setupCanvas();
+            // loadCurrentImage 中已经调用了 setupCanvas 和 initializeAnnotations
+            // 这里只需要渲染和更新列表
             this.renderCanvas();
             this.updateAnnotationList();
             this.updateImageInfo();
@@ -1129,9 +1143,9 @@ class MultiImageViewerV8 {
                 // 如果没有缓存数据，或OCR结果不同，都需要重新初始化
                 if (!loadResult.hasData || !loadResult.isSameAnalysis) {
                     this.initializeAnnotations();
+                    this.renderCanvas();
+                    this.updateAnnotationList();
                 }
-                this.renderCanvas();
-                this.updateAnnotationList();
             });
         });
     }
