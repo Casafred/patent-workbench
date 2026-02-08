@@ -1026,13 +1026,17 @@ class MultiImageViewerV8 {
         const referenceMap = this.currentImageData.referenceMap || {};
 
         // 尝试加载保存的标记
-        const hasSavedData = this.loadSavedAnnotations();
-        if (hasSavedData) {
-            console.log('Loaded saved annotations, skipping initialization');
+        const loadResult = this.loadSavedAnnotations();
+        if (loadResult.hasData && loadResult.isSameAnalysis) {
+            console.log('Loaded saved annotations from same analysis, skipping initialization');
             return;
         }
 
-        // 没有保存的数据，使用OCR识别结果初始化
+        if (loadResult.hasData && !loadResult.isSameAnalysis) {
+            console.log('New analysis detected, reinitializing with new OCR results');
+        }
+
+        // 没有保存的数据，或分析结果不同，使用OCR识别结果初始化
         const canvasWidth = this.modalCanvas.width;
         const canvasHeight = this.modalCanvas.height;
         const offsetDistance = 60; // 标记文字距离识别点的固定偏移距离
@@ -1118,8 +1122,9 @@ class MultiImageViewerV8 {
             this.updateImageInfo();
             // 切换图片时重新加载该图片的标记
             this.generateImageHash(this.images[this.currentIndex].url, () => {
-                const loaded = this.loadSavedAnnotations();
-                if (!loaded) {
+                const loadResult = this.loadSavedAnnotations();
+                // 如果没有缓存数据，或OCR结果不同，都需要重新初始化
+                if (!loadResult.hasData || !loadResult.isSameAnalysis) {
                     this.initializeAnnotations();
                 }
                 this.renderCanvas();
@@ -1802,9 +1807,14 @@ class MultiImageViewerV8 {
         if (!this.storageKey) return;
 
         try {
+            // 生成OCR结果的标识（用于判断是否是同一次分析）
+            const detectedNumbers = this.currentImageData.detectedNumbers || [];
+            const ocrSignature = detectedNumbers.map(d => `${d.number}:${Math.round(d.x)},${Math.round(d.y)}`).join('|');
+
             const data = {
                 timestamp: Date.now(),
                 imageTitle: this.currentImageData.title || '未命名图片',
+                ocrSignature: ocrSignature, // OCR结果标识
                 annotations: this.annotations.map(ann => ({
                     id: ann.id,
                     markerX: ann.markerX,
@@ -1838,25 +1848,38 @@ class MultiImageViewerV8 {
     }
 
     // 加载保存的标记
+    // 返回 { hasData: boolean, isSameAnalysis: boolean }
     loadSavedAnnotations() {
-        if (!this.storageKey) return false;
+        if (!this.storageKey) return { hasData: false, isSameAnalysis: false };
 
         try {
             const savedData = localStorage.getItem(this.storageKey);
-            if (!savedData) return false;
+            if (!savedData) return { hasData: false, isSameAnalysis: false };
 
             const data = JSON.parse(savedData);
             console.log('Loading saved annotations from:', this.storageKey);
 
-            // 恢复标记数据
-            this.annotations = data.annotations || [];
-            this.currentFontSize = data.currentFontSize || this.options.fontSize;
-            this.currentColor = data.currentColor || '#4CAF50';
+            // 生成当前OCR结果的标识
+            const detectedNumbers = this.currentImageData.detectedNumbers || [];
+            const currentOcrSignature = detectedNumbers.map(d => `${d.number}:${Math.round(d.x)},${Math.round(d.y)}`).join('|');
 
-            return true;
+            // 比较OCR标识，判断是否是同一次分析
+            const isSameAnalysis = data.ocrSignature === currentOcrSignature;
+
+            if (isSameAnalysis) {
+                // 是同一次分析，恢复标记数据
+                this.annotations = data.annotations || [];
+                this.currentFontSize = data.currentFontSize || this.options.fontSize;
+                this.currentColor = data.currentColor || '#4CAF50';
+                console.log('Same analysis detected, loading saved annotations');
+            } else {
+                console.log('Different analysis detected, will reinitialize with new OCR results');
+            }
+
+            return { hasData: true, isSameAnalysis: isSameAnalysis };
         } catch (e) {
             console.error('Failed to load saved annotations:', e);
-            return false;
+            return { hasData: false, isSameAnalysis: false };
         }
     }
 
