@@ -282,6 +282,12 @@ function initPatentBatch() {
     // 存储专利查询结果（全局变量，供 patentDetailNewTab.js 使用）
     window.patentResults = [];
     
+    // 监听模型配置加载完成事件，确保配置加载后能正确更新
+    window.addEventListener('modelsConfigLoaded', (event) => {
+        console.log('📡 功能六收到模型配置加载完成事件');
+        initPatentBatchModelSelector();
+    });
+    
     console.log('✅ 功能六批量专利解读已初始化');
 }
 

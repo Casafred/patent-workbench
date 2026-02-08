@@ -80,6 +80,12 @@ function initClaimsComparison() {
     
     // 初始化模型选择器
     initComparisonModelSelector();
+    
+    // 监听模型配置加载完成事件，确保配置加载后能正确更新
+    window.addEventListener('modelsConfigLoaded', (event) => {
+        console.log('📡 功能五收到模型配置加载完成事件');
+        initComparisonModelSelector();
+    });
 }
 
 /**

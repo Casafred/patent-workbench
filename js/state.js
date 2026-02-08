@@ -148,6 +148,11 @@ let AVAILABLE_MODELS = ["glm-4-flashX-250414", "glm-4-flash", "glm-4-long", "GLM
 let BATCH_MODELS = ["glm-4-flashX-250414", "glm-4-flash", "glm-4-long", "GLM-4.7-Flash"];
 let ASYNC_MODELS = ["glm-4-flashX-250414", "glm-4-flash", "glm-4-long", "GLM-4.7-Flash"];
 
+// 将模型列表挂载到 window 对象，供其他模块访问
+window.AVAILABLE_MODELS = AVAILABLE_MODELS;
+window.BATCH_MODELS = BATCH_MODELS;
+window.ASYNC_MODELS = ASYNC_MODELS;
+
 // 从配置文件加载模型列表
 async function loadModelsConfig() {
     try {
@@ -179,6 +184,10 @@ async function loadModelsConfig() {
             AVAILABLE_MODELS = config.models;
             BATCH_MODELS = config.models;
             ASYNC_MODELS = config.models;
+            // 同步更新 window 对象上的模型列表
+            window.AVAILABLE_MODELS = config.models;
+            window.BATCH_MODELS = config.models;
+            window.ASYNC_MODELS = config.models;
             console.log('✅ 可用模型列表:', config.models);
             
             // 延迟更新所有模型选择器，确保DOM已准备好
