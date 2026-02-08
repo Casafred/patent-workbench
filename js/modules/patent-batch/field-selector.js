@@ -181,9 +181,9 @@ window.getSelectedFields = function() {
     const isPanelOpen = panel && panel.style.display === 'block';
 
     if (isPanelOpen) {
-        // 面板已展开，返回勾选的字段
-        const optionalCheckboxes = document.querySelectorAll('#field_selector_panel input[type="checkbox"]:checked');
-        const optionalFields = Array.from(optionalCheckboxes).map(cb => cb.value);
+        // 面板已展开，返回勾选的字段（排除禁用的基础字段）
+        const optionalCheckboxes = document.querySelectorAll('#field_selector_panel input[type="checkbox"]:checked:not(:disabled)');
+        const optionalFields = Array.from(optionalCheckboxes).map(cb => cb.value).filter(v => v);
         console.log('📋 选择性爬取模式 - 勾选字段:', optionalFields);
         return [...baseFields, ...optionalFields];
     } else {
