@@ -287,7 +287,8 @@
             border: 1px solid var(--border-color);
         }
 
-        .gif-placeholder, .example-placeholder {
+        /* GIF占位符样式 */
+        .gif-placeholder {
             border: 2px dashed var(--border-color);
             background-color: rgba(250, 253, 251, 0.8);
             padding: 40px 20px;
@@ -296,6 +297,34 @@
             margin: 20px 0;
             color: var(--text-color-light);
             font-style: italic;
+            position: relative;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .gif-placeholder.has-gif {
+            border: none;
+            padding: 0;
+            background-color: transparent;
+        }
+
+        .gif-placeholder img {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .gif-label {
+            font-size: 0.85em;
+            color: var(--text-color-light);
+            margin-top: 10px;
+            background: var(--bg-color);
+            padding: 4px 12px;
+            border-radius: 4px;
+            display: inline-block;
         }
 
         .warning, .note {
@@ -345,6 +374,169 @@
         .card-body::-webkit-scrollbar-thumb:hover,
         .sidebar-nav::-webkit-scrollbar-thumb:hover {
             background: var(--primary-color);
+        }
+
+        /* GIF管理工具面板 */
+        .gif-manager-panel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            z-index: 1000;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .gif-manager-panel.active {
+            display: block;
+        }
+
+        .gif-manager-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            display: none;
+        }
+
+        .gif-manager-overlay.active {
+            display: block;
+        }
+
+        .gif-manager-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .gif-manager-header h3 {
+            margin: 0;
+            border: none;
+            padding: 0;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: var(--text-color-light);
+        }
+
+        .gif-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .gif-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: var(--bg-color);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .gif-item:hover {
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        .gif-item-preview {
+            width: 60px;
+            height: 40px;
+            background: #ddd;
+            border-radius: 4px;
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7em;
+            color: #666;
+            overflow: hidden;
+        }
+
+        .gif-item-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .gif-item-info {
+            flex-grow: 1;
+        }
+
+        .gif-item-name {
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        .gif-item-status {
+            font-size: 0.8em;
+            color: var(--text-color-light);
+        }
+
+        .gif-item-status.used {
+            color: var(--primary-color);
+        }
+
+        .open-gif-manager-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
+            transition: all 0.2s;
+            z-index: 100;
+        }
+
+        .open-gif-manager-btn:hover {
+            background: var(--primary-color-dark);
+            transform: translateY(-2px);
+        }
+
+        .gif-path-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        .apply-gif-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .apply-gif-btn:hover {
+            background: var(--primary-color-dark);
         }
     </style>
 </head>
@@ -402,7 +594,12 @@
 
                 <h3>1. 登录系统</h3>
                 <p>您需要使用管理员分配的用户名和密码进行登录。为保障安全，系统会记录并限制每个账户的登录IP地址数量（默认为5个）。如果您在新的设备或网络环境下登录，最早的登录记录可能会被自动移除。</p>
-                <div class="gif-placeholder">[此处插入动图：展示用户输入用户名、密码并成功登录的过程]</div>
+                
+                <!-- GIF: 登录演示 -->
+                <div class="gif-placeholder" data-gif-id="login-demo">
+                    <span>点击右侧"GIF管理"按钮插入：登录演示.gif</span>
+                    <span class="gif-label">占位符ID: login-demo</span>
+                </div>
 
                 <h3>2. 界面概览</h3>
                 <p>登录后，您将看到主工作界面，主要分为三个区域：</p>
@@ -411,7 +608,12 @@
                     <li><strong>功能页签区：</strong> 切换八个核心功能模块。</li>
                     <li><strong>主内容区：</strong> 显示当前选中功能模块的具体操作界面。</li>
                 </ul>
-                <div class="gif-placeholder">[此处插入图片：用箭头和文字标注主界面的各个区域]</div>
+                
+                <!-- GIF: 界面概览 -->
+                <div class="gif-placeholder" data-gif-id="interface-overview">
+                    <span>点击右侧"GIF管理"按钮插入：界面概览.gif</span>
+                    <span class="gif-label">占位符ID: interface-overview</span>
+                </div>
 
                 <h3>3. API Key 设置（最重要的一步！）</h3>
                 <p>本平台的所有AI功能都依赖于智谱AI提供的API服务。因此，在使用任何功能前，您<strong>必须</strong>配置自己的智谱AI API Key。</p>
@@ -423,10 +625,21 @@
                 <div class="warning">
                     <strong>注意：</strong>API Key是您的个人凭证，请妥善保管，切勿泄露。所有通过本平台发起的AI调用都将消耗您API Key对应的账户额度。
                 </div>
-                <div class="gif-placeholder">[此处插入动图：展示点击设置图标、粘贴API Key并保存的全过程]</div>
+                
+                <!-- GIF: API Key设置 -->
+                <div class="gif-placeholder" data-gif-id="apikey-setup">
+                    <span>点击右侧"GIF管理"按钮插入：API-Key设置.gif</span>
+                    <span class="gif-label">占位符ID: apikey-setup</span>
+                </div>
 
                 <h3>4. 登出系统</h3>
                 <p>在主界面右上角，您可以看到当前登录的用户名和一个"登出"按钮。点击"登出"将安全退出系统，并清除您的会话信息。</p>
+                
+                <!-- GIF: 登出系统 -->
+                <div class="gif-placeholder" data-gif-id="logout-demo">
+                    <span>点击右侧"GIF管理"按钮插入：登出系统.gif</span>
+                    <span class="gif-label">占位符ID: logout-demo</span>
+                </div>
             </div>
         </div>
 
@@ -440,6 +653,12 @@
 
                 <h4>核心交互</h4>
                 <p>在底部的输入框中输入您的问题，按回车或点击"发送"按钮即可与AI进行实时对话。AI的回复将以流式方式逐字显示。</p>
+                
+                <!-- GIF: 即时对话核心交互 -->
+                <div class="gif-placeholder" data-gif-id="chat-basic-interaction">
+                    <span>点击右侧"GIF管理"按钮插入：即时对话-核心交互.gif</span>
+                    <span class="gif-label">占位符ID: chat-basic-interaction</span>
+                </div>
 
                 <h4>对话管理</h4>
                 <ul>
@@ -448,7 +667,12 @@
                     <li><strong>切换对话：</strong> 在历史列表中点击任意对话，即可加载并继续该对话。</li>
                     <li><strong>重命名与删除：</strong> 将鼠标悬停在历史对话项上，会出现编辑和删除图标，方便您管理对话。您也可以直接点击主聊天窗口的标题进行修改。</li>
                 </ul>
-                <div class="gif-placeholder">[此处插入动图：展示新建、切换、重命名和删除对话的操作]</div>
+                
+                <!-- GIF: 对话管理 -->
+                <div class="gif-placeholder" data-gif-id="chat-conversation-management">
+                    <span>点击右侧"GIF管理"按钮插入：即时对话-对话管理.gif</span>
+                    <span class="gif-label">占位符ID: chat-conversation-management</span>
+                </div>
 
                 <h4>对话参数设置</h4>
                 <p>点击右上角的"对话参数设置"按钮，可以打开配置面板：</p>
@@ -458,6 +682,12 @@
                     <li><strong>上下文条数：</strong> 决定每次请求时携带多少轮历史对话作为上下文，影响对话的连贯性和费用。</li>
                     <li><strong>角色设置：</strong> 这是本功能的核心特色之一。您可以选择预设的"资深专利分析师"、"专业技术翻译"等角色，或自定义新角色。</li>
                 </ul>
+                
+                <!-- GIF: 对话参数设置 -->
+                <div class="gif-placeholder" data-gif-id="chat-parameter-settings">
+                    <span>点击右侧"GIF管理"按钮插入：即时对话-参数设置.gif</span>
+                    <span class="gif-label">占位符ID: chat-parameter-settings</span>
+                </div>
 
                 <h4>角色（Persona）管理</h4>
                 <p>在"对话参数设置"中，您可以：</p>
@@ -468,6 +698,12 @@
                 </ol>
                 <div class="note">
                     <strong>用户模板提示：</strong> 在用户模板中使用 <code>{{INPUT}}</code> 作为占位符，系统会自动将您在输入框中输入的内容替换到该位置。
+                </div>
+                
+                <!-- GIF: 角色管理 -->
+                <div class="gif-placeholder" data-gif-id="chat-persona-management">
+                    <span>点击右侧"GIF管理"按钮插入：即时对话-角色管理.gif</span>
+                    <span class="gif-label">占位符ID: chat-persona-management</span>
                 </div>
 
                 <h4>文件处理与管理</h4>
@@ -482,9 +718,21 @@
                         </ul>
                     </li>
                 </ul>
+                
+                <!-- GIF: 文件上传 -->
+                <div class="gif-placeholder" data-gif-id="chat-file-upload">
+                    <span>点击右侧"GIF管理"按钮插入：即时对话-文件上传.gif</span>
+                    <span class="gif-label">占位符ID: chat-file-upload</span>
+                </div>
 
                 <h4>联网搜索</h4>
                 <p>点击输入框左侧的<strong>搜索🔍</strong>按钮，可以开启联网搜索功能。系统会使用智谱网络搜索API，在回答问题时参考最新的网络信息。</p>
+                
+                <!-- GIF: 联网搜索 -->
+                <div class="gif-placeholder" data-gif-id="chat-web-search">
+                    <span>点击右侧"GIF管理"按钮插入：即时对话-联网搜索.gif</span>
+                    <span class="gif-label">占位符ID: chat-web-search</span>
+                </div>
             </div>
         </div>
 
@@ -504,6 +752,12 @@
                     <li><strong>创建任务 &rarr; </strong></li>
                     <li><strong>任务与结果</strong></li>
                 </ol>
+                
+                <!-- GIF: 工作流程概览 -->
+                <div class="gif-placeholder" data-gif-id="async-workflow-overview">
+                    <span>点击右侧"GIF管理"按钮插入：小批量异步-工作流程概览.gif</span>
+                    <span class="gif-label">占位符ID: async-workflow-overview</span>
+                </div>
 
                 <h4>Step 1: 输入内容</h4>
                 <p>您有两种方式添加需要处理的源数据：</p>
@@ -511,6 +765,12 @@
                     <li><strong>Excel导入：</strong> 上传Excel文件，选择工作表(Sheet)，然后指定包含源数据的一列或多列。</li>
                     <li><strong>手动添加：</strong> 在文本框中直接输入，每行代表一条独立的输入数据。</li>
                 </ul>
+                
+                <!-- GIF: 输入内容 -->
+                <div class="gif-placeholder" data-gif-id="async-input-content">
+                    <span>点击右侧"GIF管理"按钮插入：小批量异步-输入内容.gif</span>
+                    <span class="gif-label">占位符ID: async-input-content</span>
+                </div>
 
                 <h4>Step 2: 配置模板</h4>
                 <p>模板定义了如何处理每一条输入数据。一个模板包含：</p>
@@ -521,9 +781,21 @@
                     <li><strong>用户提示模板：</strong> 核心部分，必须包含 <code>{{INPUT}}</code> 占位符。</li>
                     <li><strong>输出格式(JSON)：</strong> 定义希望AI输出的JSON字段名和描述。</li>
                 </ul>
+                
+                <!-- GIF: 配置模板 -->
+                <div class="gif-placeholder" data-gif-id="async-config-template">
+                    <span>点击右侧"GIF管理"按钮插入：小批量异步-配置模板.gif</span>
+                    <span class="gif-label">占位符ID: async-config-template</span>
+                </div>
 
                 <h4>Step 3: 创建任务</h4>
                 <p>此步骤将"输入"和"模板"进行配对。您可以为每个模板指定要处理的输入数据序号范围。</p>
+                
+                <!-- GIF: 创建任务 -->
+                <div class="gif-placeholder" data-gif-id="async-create-task">
+                    <span>点击右侧"GIF管理"按钮插入：小批量异步-创建任务.gif</span>
+                    <span class="gif-label">占位符ID: async-create-task</span>
+                </div>
 
                 <h4>Step 4: 任务与结果</h4>
                 <ol>
@@ -532,6 +804,12 @@
                     <li><strong>恢复任务：</strong> 如果您关闭了浏览器，可以点击"恢复上次任务"按钮。</li>
                     <li><strong>导出Excel：</strong> 任务完成后，点击"导出为Excel"按钮。</li>
                 </ol>
+                
+                <!-- GIF: 任务与结果 -->
+                <div class="gif-placeholder" data-gif-id="async-task-results">
+                    <span>点击右侧"GIF管理"按钮插入：小批量异步-任务与结果.gif</span>
+                    <span class="gif-label">占位符ID: async-task-results</span>
+                </div>
             </div>
         </div>
 
@@ -549,9 +827,21 @@
                     <li><strong>执行批处理 &rarr; </strong></li>
                     <li><strong>解析报告</strong></li>
                 </ol>
+                
+                <!-- GIF: 工作流程概览 -->
+                <div class="gif-placeholder" data-gif-id="largebatch-workflow-overview">
+                    <span>点击右侧"GIF管理"按钮插入：大批量处理-工作流程概览.gif</span>
+                    <span class="gif-label">占位符ID: largebatch-workflow-overview</span>
+                </div>
 
                 <h4>Step 1: 生成请求文件</h4>
                 <p>根据您的源数据和处理要求，在浏览器内存中生成一个符合Batch API格式的JSONL文件。</p>
+                
+                <!-- GIF: 生成请求文件 -->
+                <div class="gif-placeholder" data-gif-id="largebatch-generate-request">
+                    <span>点击右侧"GIF管理"按钮插入：大批量处理-生成请求文件.gif</span>
+                    <span class="gif-label">占位符ID: largebatch-generate-request</span>
+                </div>
 
                 <h4>Step 2: 执行批处理</h4>
                 <ol>
@@ -563,9 +853,21 @@
                 <div class="warning">
                     <strong>断点续查：</strong> 如果流程中断，您可以在"断点续查"区域输入Batch ID，恢复对任务状态的监控。
                 </div>
+                
+                <!-- GIF: 执行批处理 -->
+                <div class="gif-placeholder" data-gif-id="largebatch-execute-batch">
+                    <span>点击右侧"GIF管理"按钮插入：大批量处理-执行批处理.gif</span>
+                    <span class="gif-label">占位符ID: largebatch-execute-batch</span>
+                </div>
 
                 <h4>Step 3: 解析报告</h4>
                 <p>将AI返回的结果与您的原始数据合并，生成最终的分析报告。</p>
+                
+                <!-- GIF: 解析报告 -->
+                <div class="gif-placeholder" data-gif-id="largebatch-parse-report">
+                    <span>点击右侧"GIF管理"按钮插入：大批量处理-解析报告.gif</span>
+                    <span class="gif-label">占位符ID: largebatch-parse-report</span>
+                </div>
             </div>
         </div>
 
@@ -583,6 +885,12 @@
                     <li><strong>合并新旧库 &rarr; </strong></li>
                     <li><strong>下载最终结果</strong></li>
                 </ol>
+                
+                <!-- GIF: 工作流程概览 -->
+                <div class="gif-placeholder" data-gif-id="locallib-workflow-overview">
+                    <span>点击右侧"GIF管理"按钮插入：本地专利库-工作流程概览.gif</span>
+                    <span class="gif-label">占位符ID: locallib-workflow-overview</span>
+                </div>
 
                 <h4>Step 1: 上传与展开</h4>
                 <p>处理包含同族专利号的字段：</p>
@@ -591,6 +899,12 @@
                     <li><strong>配置：</strong> 指定包含同族专利号的列名和分隔符。</li>
                     <li><strong>展开：</strong> 点击"展开同族专利号"按钮，生成去重后的专利号列表。</li>
                 </ol>
+                
+                <!-- GIF: 上传与展开 -->
+                <div class="gif-placeholder" data-gif-id="locallib-upload-expand">
+                    <span>点击右侧"GIF管理"按钮插入：本地专利库-上传与展开.gif</span>
+                    <span class="gif-label">占位符ID: locallib-upload-expand</span>
+                </div>
 
                 <h4>Step 2: 合并新旧库</h4>
                 <p>将商业数据库下载的最新数据与包含额外标注的旧库合并：</p>
@@ -601,6 +915,12 @@
                 </ol>
                 <div class="note">
                     <strong>合并逻辑：</strong> 新库的数据会被完整保留。如果新库中存在与旧库补充列同名的列，则新库的数据优先。
+                </div>
+                
+                <!-- GIF: 合并新旧库 -->
+                <div class="gif-placeholder" data-gif-id="locallib-merge-libraries">
+                    <span>点击右侧"GIF管理"按钮插入：本地专利库-合并新旧库.gif</span>
+                    <span class="gif-label">占位符ID: locallib-merge-libraries</span>
                 </div>
             </div>
         </div>
@@ -621,6 +941,12 @@
                     <li><strong>多种可视化方式：</strong> 提供卡片视图、并排对比、矩阵视图三种展示方式。</li>
                     <li><strong>耦合对比分析：</strong> 支持选择多个权利要求进行耦合对比。</li>
                 </ul>
+                
+                <!-- GIF: 功能介绍 -->
+                <div class="gif-placeholder" data-gif-id="claims-compare-intro">
+                    <span>点击右侧"GIF管理"按钮插入：权利要求对比-功能介绍.gif</span>
+                    <span class="gif-label">占位符ID: claims-compare-intro</span>
+                </div>
 
                 <h4>工作流程</h4>
                 <ol>
@@ -630,6 +956,12 @@
                     <li><strong>耦合对比分析（可选）：</strong> 选择多个权利要求，点击"开始耦合分析"。</li>
                     <li><strong>切换视图：</strong> 根据需要切换不同的可视化展示方式。</li>
                 </ol>
+                
+                <!-- GIF: 工作流程 -->
+                <div class="gif-placeholder" data-gif-id="claims-compare-workflow">
+                    <span>点击右侧"GIF管理"按钮插入：权利要求对比-工作流程.gif</span>
+                    <span class="gif-label">占位符ID: claims-compare-workflow</span>
+                </div>
 
                 <h4>可视化视图说明</h4>
                 <ul>
@@ -637,6 +969,12 @@
                     <li><strong>并排对比：</strong> 将多个权利要求并排显示，便于逐条对比差异。</li>
                     <li><strong>矩阵视图：</strong> 以矩阵形式展示权利要求之间的相似度关系。</li>
                 </ul>
+                
+                <!-- GIF: 可视化视图 -->
+                <div class="gif-placeholder" data-gif-id="claims-compare-visualization">
+                    <span>点击右侧"GIF管理"按钮插入：权利要求对比-可视化视图.gif</span>
+                    <span class="gif-label">占位符ID: claims-compare-visualization</span>
+                </div>
             </div>
         </div>
 
@@ -655,6 +993,12 @@
                     <li><strong>灵活字段选择器：</strong> 可选择需要爬取的专利信息字段。</li>
                     <li><strong>解读模板管理：</strong> 支持多种解读模板。</li>
                 </ul>
+                
+                <!-- GIF: 功能介绍 -->
+                <div class="gif-placeholder" data-gif-id="patent-batch-intro">
+                    <span>点击右侧"GIF管理"按钮插入：批量专利解读-功能介绍.gif</span>
+                    <span class="gif-label">占位符ID: patent-batch-intro</span>
+                </div>
 
                 <h4>字段选择器说明</h4>
                 <ul>
@@ -665,6 +1009,12 @@
                     <li><strong>法律与事件：</strong> 事件时间轴、法律事件、相似文档</li>
                     <li><strong>附加内容：</strong> 说明书、附图、外部链接</li>
                 </ul>
+                
+                <!-- GIF: 字段选择器 -->
+                <div class="gif-placeholder" data-gif-id="patent-batch-field-selector">
+                    <span>点击右侧"GIF管理"按钮插入：批量专利解读-字段选择器.gif</span>
+                    <span class="gif-label">占位符ID: patent-batch-field-selector</span>
+                </div>
 
                 <h4>工作流程</h4>
                 <ol>
@@ -674,6 +1024,12 @@
                     <li><strong>批量查询专利：</strong> 点击"批量查询专利"按钮。</li>
                     <li><strong>执行AI解读：</strong> 点击"批量解读"按钮。</li>
                 </ol>
+                
+                <!-- GIF: 工作流程 -->
+                <div class="gif-placeholder" data-gif-id="patent-batch-workflow">
+                    <span>点击右侧"GIF管理"按钮插入：批量专利解读-工作流程.gif</span>
+                    <span class="gif-label">占位符ID: patent-batch-workflow</span>
+                </div>
             </div>
         </div>
 
@@ -692,6 +1048,12 @@
                     <li><strong>多种可视化方式：</strong> 树状图、网络图、径向图。</li>
                     <li><strong>交互式可视化控制：</strong> 支持缩放、拖拽、散开程度调节。</li>
                 </ul>
+                
+                <!-- GIF: 功能介绍 -->
+                <div class="gif-placeholder" data-gif-id="claims-processor-intro">
+                    <span>点击右侧"GIF管理"按钮插入：权利要求处理-功能介绍.gif</span>
+                    <span class="gif-label">占位符ID: claims-processor-intro</span>
+                </div>
 
                 <h4>可视化控制功能</h4>
                 <ul>
@@ -700,6 +1062,12 @@
                     <li><strong>缩放控制：</strong> 放大、缩小、重置、居中</li>
                     <li><strong>高清截图：</strong> 生成高清PNG图片保存</li>
                 </ul>
+                
+                <!-- GIF: 可视化控制 -->
+                <div class="gif-placeholder" data-gif-id="claims-processor-visualization">
+                    <span>点击右侧"GIF管理"按钮插入：权利要求处理-可视化控制.gif</span>
+                    <span class="gif-label">占位符ID: claims-processor-visualization</span>
+                </div>
             </div>
         </div>
 
@@ -719,6 +1087,12 @@
                     <li><strong>多图批量处理：</strong> 支持同时上传和处理多张附图。</li>
                     <li><strong>交互式多图查看器：</strong> 支持缩放、拖拽、标记高亮等交互操作。</li>
                 </ul>
+                
+                <!-- GIF: 功能介绍 -->
+                <div class="gif-placeholder" data-gif-id="drawing-marker-intro">
+                    <span>点击右侧"GIF管理"按钮插入：专利附图标记-功能介绍.gif</span>
+                    <span class="gif-label">占位符ID: drawing-marker-intro</span>
+                </div>
 
                 <h4>AI处理控制面板</h4>
                 <ul>
@@ -726,12 +1100,24 @@
                     <li><strong>模型选择：</strong> 选择适合的AI模型</li>
                     <li><strong>自定义提示词：</strong> 可编辑AI识别提示词</li>
                 </ul>
+                
+                <!-- GIF: AI处理控制面板 -->
+                <div class="gif-placeholder" data-gif-id="drawing-marker-ai-panel">
+                    <span>点击右侧"GIF管理"按钮插入：专利附图标记-AI处理控制面板.gif</span>
+                    <span class="gif-label">占位符ID: drawing-marker-ai-panel</span>
+                </div>
 
                 <h4>快速重新处理功能</h4>
                 <ul>
                     <li><strong>重新识别OCR：</strong> 当图片有旋转或需要重新识别标记时使用。</li>
                     <li><strong>重新匹配说明书：</strong> 当只修改了说明书内容时使用，速度提升50%以上。</li>
                 </ul>
+                
+                <!-- GIF: 快速重新处理 -->
+                <div class="gif-placeholder" data-gif-id="drawing-marker-reprocess">
+                    <span>点击右侧"GIF管理"按钮插入：专利附图标记-快速重新处理.gif</span>
+                    <span class="gif-label">占位符ID: drawing-marker-reprocess</span>
+                </div>
             </div>
         </div>
 
@@ -761,8 +1147,137 @@
     </main>
 </div>
 
+<!-- GIF管理按钮（仅在开发模式下显示） -->
+<button class="open-gif-manager-btn" id="gifManagerBtn" onclick="openGifManager()" style="display: none;">🎬 GIF管理</button>
+
+<!-- GIF管理面板遮罩 -->
+<div class="gif-manager-overlay" id="gifManagerOverlay" onclick="closeGifManager()"></div>
+
+<!-- GIF管理面板 -->
+<div class="gif-manager-panel" id="gifManagerPanel">
+    <div class="gif-manager-header">
+        <h3>🎬 GIF 管理工具（开发模式）</h3>
+        <button class="close-btn" onclick="closeGifManager()">&times;</button>
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+        <p style="margin: 0 0 10px 0; color: var(--text-color-light);">
+            将GIF文件放置在 <code>frontend/help-gifs/</code> 文件夹中，然后点击下方列表快速插入。
+        </p>
+        <p style="margin: 0; font-size: 0.9em; color: var(--text-color-light);">
+            每个占位符都有唯一的ID，GIF会自动匹配到对应位置。
+        </p>
+    </div>
+
+    <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px; font-weight: 500;">手动输入GIF路径：</label>
+        <input type="text" class="gif-path-input" id="manualGifPath" placeholder="例如: help-gifs/demo.gif">
+        <button class="apply-gif-btn" onclick="applyManualGif()">应用</button>
+    </div>
+
+    <div class="gif-list" id="gifList">
+        <!-- GIF列表将在这里动态生成 -->
+    </div>
+</div>
+
 <script>
+    // GIF配置 - 定义所有占位符和对应的GIF文件名
+    const gifConfig = {
+        // 入门指南
+        'login-demo': '登录演示.gif',
+        'interface-overview': '界面概览.gif',
+        'apikey-setup': 'API-Key设置.gif',
+        'logout-demo': '登出系统.gif',
+        
+        // 功能一：即时对话
+        'chat-basic-interaction': '即时对话-核心交互.gif',
+        'chat-conversation-management': '即时对话-对话管理.gif',
+        'chat-parameter-settings': '即时对话-参数设置.gif',
+        'chat-persona-management': '即时对话-角色管理.gif',
+        'chat-file-upload': '即时对话-文件上传.gif',
+        'chat-web-search': '即时对话-联网搜索.gif',
+        
+        // 功能二：小批量异步
+        'async-workflow-overview': '小批量异步-工作流程概览.gif',
+        'async-input-content': '小批量异步-输入内容.gif',
+        'async-config-template': '小批量异步-配置模板.gif',
+        'async-create-task': '小批量异步-创建任务.gif',
+        'async-task-results': '小批量异步-任务与结果.gif',
+        
+        // 功能三：大批量处理
+        'largebatch-workflow-overview': '大批量处理-工作流程概览.gif',
+        'largebatch-generate-request': '大批量处理-生成请求文件.gif',
+        'largebatch-execute-batch': '大批量处理-执行批处理.gif',
+        'largebatch-parse-report': '大批量处理-解析报告.gif',
+        
+        // 功能四：本地专利库管理
+        'locallib-workflow-overview': '本地专利库-工作流程概览.gif',
+        'locallib-upload-expand': '本地专利库-上传与展开.gif',
+        'locallib-merge-libraries': '本地专利库-合并新旧库.gif',
+        
+        // 功能五：权利要求对比
+        'claims-compare-intro': '权利要求对比-功能介绍.gif',
+        'claims-compare-workflow': '权利要求对比-工作流程.gif',
+        'claims-compare-visualization': '权利要求对比-可视化视图.gif',
+        
+        // 功能六：批量专利解读
+        'patent-batch-intro': '批量专利解读-功能介绍.gif',
+        'patent-batch-field-selector': '批量专利解读-字段选择器.gif',
+        'patent-batch-workflow': '批量专利解读-工作流程.gif',
+        
+        // 功能七：权利要求处理
+        'claims-processor-intro': '权利要求处理-功能介绍.gif',
+        'claims-processor-visualization': '权利要求处理-可视化控制.gif',
+        
+        // 功能八：专利附图标记
+        'drawing-marker-intro': '专利附图标记-功能介绍.gif',
+        'drawing-marker-ai-panel': '专利附图标记-AI处理控制面板.gif',
+        'drawing-marker-reprocess': '专利附图标记-快速重新处理.gif'
+    };
+
+    // 已使用的GIF记录
+    let usedGifs = new Set();
+
+    // 开发模式检测 - 通过URL参数或localStorage启用
+    const isDevMode = () => {
+        // 方式1: URL参数 ?dev=1 或 ?developer=true
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('dev') === '1' || urlParams.get('developer') === 'true') {
+            return true;
+        }
+        // 方式2: localStorage设置
+        if (localStorage.getItem('help_dev_mode') === 'true') {
+            return true;
+        }
+        return false;
+    };
+
+    // 启用开发模式的方法（在控制台执行）
+    window.enableDevMode = () => {
+        localStorage.setItem('help_dev_mode', 'true');
+        location.reload();
+    };
+
+    // 禁用开发模式
+    window.disableDevMode = () => {
+        localStorage.removeItem('help_dev_mode');
+        location.reload();
+    };
+
     document.addEventListener('DOMContentLoaded', () => {
+        // 检查是否为开发模式
+        const devMode = isDevMode();
+        
+        // 开发模式下显示GIF管理按钮
+        if (devMode) {
+            const gifManagerBtn = document.getElementById('gifManagerBtn');
+            if (gifManagerBtn) {
+                gifManagerBtn.style.display = 'block';
+            }
+            console.log('🎬 帮助页面 - 开发模式已启用');
+            console.log('💡 提示: 在控制台执行 disableDevMode() 可退出开发模式');
+        }
+
         // 初始化 Vanta.js 背景
         VANTA.NET({
             el: "#vanta-bg",
@@ -788,14 +1303,11 @@
             link.addEventListener('click', function(e) {
                 e.preventDefault();
                 
-                // 获取目标卡片ID
                 const targetId = this.getAttribute('data-target');
                 
-                // 更新导航激活状态
                 navLinks.forEach(l => l.classList.remove('active'));
                 this.classList.add('active');
                 
-                // 切换内容卡片
                 contentCards.forEach(card => {
                     card.classList.remove('active');
                     if (card.id === targetId) {
@@ -838,7 +1350,6 @@
 
             const regex = new RegExp(keyword, 'gi');
             
-            // 在所有卡片中搜索
             contentCards.forEach(card => {
                 function highlightText(node) {
                     if (node.nodeType === 3) {
@@ -877,7 +1388,6 @@
             matches = Array.from(document.querySelectorAll('.search-highlight'));
             if (matches.length > 0) {
                 currentIndex = 0;
-                // 切换到包含第一个匹配项的卡片
                 const firstMatchCard = matches[0].closest('.content-card');
                 if (firstMatchCard) {
                     const cardId = firstMatchCard.id;
@@ -937,7 +1447,6 @@
         nextBtn.addEventListener('click', () => {
             if (matches.length > 0) {
                 currentIndex = (currentIndex + 1) % matches.length;
-                // 检查是否需要切换卡片
                 const nextMatch = matches[currentIndex];
                 const targetCard = nextMatch.closest('.content-card');
                 if (targetCard && !targetCard.classList.contains('active')) {
@@ -955,7 +1464,6 @@
         prevBtn.addEventListener('click', () => {
             if (matches.length > 0) {
                 currentIndex = (currentIndex - 1 + matches.length) % matches.length;
-                // 检查是否需要切换卡片
                 const prevMatch = matches[currentIndex];
                 const targetCard = prevMatch.closest('.content-card');
                 if (targetCard && !targetCard.classList.contains('active')) {
@@ -974,6 +1482,102 @@
             searchInput.value = '';
             clearSearch();
         });
+
+        // 初始化GIF管理器
+        initGifManager();
+    });
+
+    // GIF管理器功能
+    function initGifManager() {
+        const gifList = document.getElementById('gifList');
+        gifList.innerHTML = '';
+
+        // 生成GIF列表
+        Object.entries(gifConfig).forEach(([id, filename]) => {
+            const isUsed = usedGifs.has(id);
+            const item = document.createElement('div');
+            item.className = 'gif-item';
+            item.innerHTML = `
+                <div class="gif-item-preview">
+                    <span>GIF</span>
+                </div>
+                <div class="gif-item-info">
+                    <div class="gif-item-name">${filename}</div>
+                    <div class="gif-item-status ${isUsed ? 'used' : ''}">
+                        ${isUsed ? '✓ 已使用' : '未使用'} | ID: ${id}
+                    </div>
+                </div>
+            `;
+            item.onclick = () => insertGif(id, filename);
+            gifList.appendChild(item);
+        });
+    }
+
+    function openGifManager() {
+        document.getElementById('gifManagerOverlay').classList.add('active');
+        document.getElementById('gifManagerPanel').classList.add('active');
+        initGifManager();
+    }
+
+    function closeGifManager() {
+        document.getElementById('gifManagerOverlay').classList.remove('active');
+        document.getElementById('gifManagerPanel').classList.remove('active');
+    }
+
+    function insertGif(gifId, filename) {
+        const placeholder = document.querySelector(`[data-gif-id="${gifId}"]`);
+        if (placeholder) {
+            placeholder.classList.add('has-gif');
+            placeholder.innerHTML = `
+                <img src="help-gifs/${filename}" alt="${filename}" onerror="this.parentElement.innerHTML='<span>GIF加载失败: ${filename}</span><span class=\\'gif-label\\'>请确保文件存在于 help-gifs/ 文件夹中</span>'">
+                <span class="gif-label">${filename}</span>
+            `;
+            usedGifs.add(gifId);
+            initGifManager(); // 刷新列表状态
+        }
+    }
+
+    function applyManualGif() {
+        const path = document.getElementById('manualGifPath').value.trim();
+        if (!path) {
+            alert('请输入GIF路径');
+            return;
+        }
+
+        // 查找当前显示的卡片中的第一个空占位符
+        const activeCard = document.querySelector('.content-card.active');
+        if (activeCard) {
+            const emptyPlaceholder = activeCard.querySelector('.gif-placeholder:not(.has-gif)');
+            if (emptyPlaceholder) {
+                const gifId = emptyPlaceholder.getAttribute('data-gif-id');
+                emptyPlaceholder.classList.add('has-gif');
+                emptyPlaceholder.innerHTML = `
+                    <img src="${path}" alt="${path}" onerror="this.parentElement.innerHTML='<span>GIF加载失败: ${path}</span><span class=\\'gif-label\\'>请检查路径是否正确</span>'">
+                    <span class="gif-label">${path.split('/').pop()}</span>
+                `;
+                usedGifs.add(gifId);
+                document.getElementById('manualGifPath').value = '';
+                initGifManager();
+            } else {
+                alert('当前页面没有空的GIF占位符');
+            }
+        }
+    }
+
+    // 键盘快捷键（仅在开发模式下生效）
+    document.addEventListener('keydown', (e) => {
+        // 只在开发模式下响应快捷键
+        if (!isDevMode()) return;
+        
+        // Ctrl/Cmd + G 打开GIF管理器
+        if ((e.ctrlKey || e.metaKey) && e.key === 'g') {
+            e.preventDefault();
+            openGifManager();
+        }
+        // ESC 关闭GIF管理器
+        if (e.key === 'Escape') {
+            closeGifManager();
+        }
     });
 </script>
 
