@@ -1035,14 +1035,11 @@ class MultiImageViewerV8 {
         // 没有保存的数据，使用OCR识别结果初始化
         const canvasWidth = this.modalCanvas.width;
         const canvasHeight = this.modalCanvas.height;
-        const edgeMargin = 100; // 距离边缘距离
+        const offsetDistance = 60; // 标记文字距离识别点的固定偏移距离
 
         // 获取文本尺寸的辅助函数
         const ctx = this.modalCanvas.getContext('2d');
         ctx.font = `bold ${this.currentFontSize}px Arial, sans-serif`;
-
-        // 将标注分配到四个边缘
-        const regions = { top: [], right: [], bottom: [], left: [] };
 
         this.annotations = detectedNumbers.map((detected, index) => {
             const name = detected.name || referenceMap[detected.number] || '未知';
@@ -1062,45 +1059,36 @@ class MultiImageViewerV8 {
             let closestRegion = Object.keys(distances).reduce((a, b) => distances[a] < distances[b] ? a : b);
             let labelX, labelY;
 
-            // 🆕 新算法：标记文字框在识别标记旁边，然后向最近边界移动三分之一距离
-            const moveDistance = distances[closestRegion] / 3; // 向最近边界移动三分之一距离
-            
+            // 简单算法：标记文字放在识别点旁边，向远离最近边界的方向偏移
+            // 这样可以确保标记不会遮挡原图标记，同时保持在识别点附近
             switch (closestRegion) {
                 case 'top':
-                    // 从标记点向上移动三分之一距离
+                    // 识别点靠近顶部，标记文字放在下方
                     labelX = detected.x;
-                    labelY = detected.y - moveDistance;
-                    // 边界限制
-                    labelX = Math.max(textWidth / 2 + 10, Math.min(canvasWidth - textWidth / 2 - 10, labelX));
-                    labelY = Math.max(textHeight / 2 + 10, labelY);
+                    labelY = detected.y + offsetDistance;
                     break;
                 case 'right':
-                    // 从标记点向右移动三分之一距离
-                    labelX = detected.x + moveDistance;
+                    // 识别点靠近右侧，标记文字放在左侧
+                    labelX = detected.x - offsetDistance - textWidth / 2;
                     labelY = detected.y;
-                    // 边界限制
-                    labelX = Math.min(canvasWidth - textWidth / 2 - 10, labelX);
-                    labelY = Math.max(textHeight / 2 + 10, Math.min(canvasHeight - textHeight / 2 - 10, labelY));
                     break;
                 case 'bottom':
-                    // 从标记点向下移动三分之一距离
+                    // 识别点靠近底部，标记文字放在上方
                     labelX = detected.x;
-                    labelY = detected.y + moveDistance;
-                    // 边界限制
-                    labelX = Math.max(textWidth / 2 + 10, Math.min(canvasWidth - textWidth / 2 - 10, labelX));
-                    labelY = Math.min(canvasHeight - textHeight / 2 - 10, labelY);
+                    labelY = detected.y - offsetDistance;
                     break;
                 case 'left':
-                    // 从标记点向左移动三分之一距离
-                    labelX = detected.x - moveDistance;
+                    // 识别点靠近左侧，标记文字放在右侧
+                    labelX = detected.x + offsetDistance + textWidth / 2;
                     labelY = detected.y;
-                    // 边界限制
-                    labelX = Math.max(textWidth / 2 + 10, labelX);
-                    labelY = Math.max(textHeight / 2 + 10, Math.min(canvasHeight - textHeight / 2 - 10, labelY));
                     break;
             }
 
-            const annotation = {
+            // 边界限制，确保标记文字不超出画布
+            labelX = Math.max(textWidth / 2 + 10, Math.min(canvasWidth - textWidth / 2 - 10, labelX));
+            labelY = Math.max(textHeight / 2 + 10, Math.min(canvasHeight - textHeight / 2 - 10, labelY));
+
+            return {
                 id: `annotation_${index}`,
                 markerX: detected.x,
                 markerY: detected.y,
@@ -1116,38 +1104,6 @@ class MultiImageViewerV8 {
                 region: closestRegion,
                 userModified: false
             };
-
-            regions[closestRegion].push(annotation);
-            return annotation;
-        });
-
-        // 在每个边缘均匀分布
-        Object.keys(regions).forEach(regionName => {
-            const labels = regions[regionName];
-            if (labels.length === 0) return;
-
-            if (regionName === 'top' || regionName === 'bottom') {
-                labels.sort((a, b) => a.markerX - b.markerX);
-                const usableWidth = canvasWidth - 2 * edgeMargin;
-                const spacing = usableWidth / (labels.length + 1);
-                labels.forEach((label, i) => {
-                    const text = `${label.number}: ${label.name}`;
-                    const textWidth = ctx.measureText(text).width;
-                    const proposedX = edgeMargin + spacing * (i + 1);
-                    // 确保不超出边界
-                    label.labelX = Math.max(textWidth / 2 + 10, Math.min(canvasWidth - textWidth / 2 - 10, proposedX));
-                });
-            } else {
-                labels.sort((a, b) => a.markerY - b.markerY);
-                const usableHeight = canvasHeight - 2 * edgeMargin;
-                const spacing = usableHeight / (labels.length + 1);
-                labels.forEach((label, i) => {
-                    const textHeight = label.fontSize * 1.5;
-                    const proposedY = edgeMargin + spacing * (i + 1);
-                    // 确保不超出边界
-                    label.labelY = Math.max(textHeight / 2 + 10, Math.min(canvasHeight - textHeight / 2 - 10, proposedY));
-                });
-            }
         });
 
         // 自动保存初始化的标记
