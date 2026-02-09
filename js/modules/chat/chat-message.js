@@ -69,7 +69,17 @@ function addMessageToDOM(role, content, index, isStreaming = false, usage = null
         `;
     }
 
-    const renderedContent = isStreaming ? content : (window.marked ? window.marked.parse(content, { gfm: true, breaks: true }) : content.replace(/</g, "&lt;").replace(/>/g, "&gt;"));
+    let renderedContent = isStreaming ? content : (window.marked ? window.marked.parse(content, { gfm: true, breaks: true }) : content.replace(/</g, "&lt;").replace(/>/g, "&gt;"));
+
+    // 如果有搜索结果，将 [ref_x] 替换为可点击的链接
+    if (!isStreaming && webSearchResults && webSearchResults.length > 0) {
+        webSearchResults.forEach((result, index) => {
+            const refNumber = index + 1;
+            const refPattern = new RegExp(`\\[ref_${refNumber}\\]`, 'g');
+            const refLink = `<a href="${result.link}" target="_blank" rel="noopener noreferrer" class="ref-link" title="${result.title}">[${refNumber}]</a>`;
+            renderedContent = renderedContent.replace(refPattern, refLink);
+        });
+    }
 
     const tokenUsageHtml = (usage && usage.total_tokens) ? `<div class="message-token-usage">Tokens: ${usage.total_tokens}</div>` : `<div class="message-token-usage"></div>`;
 

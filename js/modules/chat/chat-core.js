@@ -440,7 +440,20 @@ async function handleStreamChatRequest() {
             }
         }
 
-        assistantContentEl.innerHTML = window.marked.parse(fullResponse, { gfm: true, breaks: true });
+        // 先渲染 Markdown
+        let renderedContent = window.marked.parse(fullResponse, { gfm: true, breaks: true });
+
+        // 如果有搜索结果，将 [ref_x] 替换为可点击的链接
+        if (webSearchResults && webSearchResults.length > 0) {
+            webSearchResults.forEach((result, index) => {
+                const refNumber = index + 1;
+                const refPattern = new RegExp(`\\[ref_${refNumber}\\]`, 'g');
+                const refLink = `<a href="${result.link}" target="_blank" rel="noopener noreferrer" class="ref-link" title="${result.title}">[${refNumber}]</a>`;
+                renderedContent = renderedContent.replace(refPattern, refLink);
+            });
+        }
+
+        assistantContentEl.innerHTML = renderedContent;
 
         // 添加搜索来源（如果有）
         if (webSearchResults && webSearchResults.length > 0) {
