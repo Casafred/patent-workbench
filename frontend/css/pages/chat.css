@@ -158,8 +158,16 @@
     display: flex;
     gap: 15px;
     align-items: flex-start;
-    max-width: 85%;
+    max-width: 95%;
     width: auto;
+}
+
+.user-message .message-main-content {
+    max-width: 95%;
+}
+
+.assistant-message .message-main-content {
+    max-width: 98%;
 }
 
 .assistant-message .message-main-content {
