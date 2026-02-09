@@ -74,20 +74,22 @@ def stream_chat():
             
             # Add web search tools if enabled
             if req_data.get('enable_web_search'):
-                # 使用正确的tools数组格式配置web_search
+                # 使用正确的tools数组格式配置web_search (根据智谱官方文档)
                 request_params['tools'] = [
                     {
                         "type": "web_search",
                         "web_search": {
-                            "enable": True,
+                            "enable": "True",
                             "search_engine": req_data.get('search_engine', 'search_pro'),
-                            "count": int(req_data.get('search_count', 5)),
+                            "search_result": "True",
+                            "search_prompt": req_data.get('search_prompt', '请基于网络搜索结果{search_result}回答用户问题，并在回答中引用来源链接。'),
+                            "count": str(req_data.get('search_count', 5)),
                             "content_size": req_data.get('content_size', 'medium')
                         }
                     }
                 ]
                 request_params['tool_choice'] = "auto"
-                
+
                 # 【调试信息】输出完整的搜索配置
                 print(f"🔍 [后端-联网搜索] 已启用！配置: tools={request_params['tools']}")
             else:
@@ -150,14 +152,16 @@ def simple_chat():
         
         # Add web search tools if enabled
         if req_data.get('enable_web_search'):
-            # 使用正确的tools数组格式配置web_search
+            # 使用正确的tools数组格式配置web_search (根据智谱官方文档)
             request_params['tools'] = [
                 {
                     "type": "web_search",
                     "web_search": {
-                        "enable": True,
+                        "enable": "True",
                         "search_engine": req_data.get('search_engine', 'search_pro'),
-                        "count": int(req_data.get('search_count', 5)),
+                        "search_result": "True",
+                        "search_prompt": req_data.get('search_prompt', '请基于网络搜索结果{search_result}回答用户问题，并在回答中引用来源链接。'),
+                        "count": str(req_data.get('search_count', 5)),
                         "content_size": req_data.get('content_size', 'medium')
                     }
                 }
