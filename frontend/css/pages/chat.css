@@ -169,10 +169,20 @@
 
 .user-message {
     justify-content: flex-end;
+    padding-right: 10px;
 }
 
 .user-message .message-main-content {
     flex-direction: row-reverse;
+    max-width: calc(100% - 70px);
+}
+
+.assistant-message {
+    padding-left: 10px;
+}
+
+.assistant-message .message-main-content {
+    max-width: calc(100% - 70px);
 }
 
 .chat-message .avatar { 
