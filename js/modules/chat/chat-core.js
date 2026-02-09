@@ -324,7 +324,7 @@ async function handleStreamChatRequest() {
     const tokenUsageEl = assistantMessageEl.querySelector('.message-token-usage');
     let fullResponse = "";
     let usageInfo = null;
-    let searchResults = null;
+    let webSearchResults = null;  // 存储联网搜索结果
     let isSearching = false;
     let contentStarted = false;
 
@@ -392,28 +392,13 @@ async function handleStreamChatRequest() {
                     const parsed = JSON.parse(data);
                     if (parsed.error) throw new Error(parsed.error.message || JSON.stringify(parsed.error));
                     if (parsed.usage) usageInfo = parsed.usage;
-                    
-                    // Check for tool calls (search results)
-                    const toolCalls = parsed.choices[0]?.delta?.tool_calls;
-                    if (toolCalls && toolCalls.length > 0) {
-                        toolCalls.forEach((toolCall) => {
-                            if (toolCall.type === 'web_search' && toolCall.web_search?.outputs) {
-                                searchResults = toolCall.web_search.outputs;
-                                console.log('🔍 [联网搜索] 成功获取搜索结果，共', searchResults.length, '条');
-                                
-                                assistantContentEl.innerHTML = `
-                                    <div class="search-complete">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
-                                        </svg>
-                                        <span>已找到 ${searchResults.length} 条相关信息，正在生成回答...</span>
-                                    </div>
-                                    <span class="blinking-cursor">|</span>
-                                `;
-                            }
-                        });
+
+                    // 捕获 web_search 数据（智谱联网搜索返回的搜索结果）
+                    if (parsed.web_search && parsed.web_search.length > 0) {
+                        webSearchResults = parsed.web_search;
+                        console.log('🔍 [联网搜索] 获取到搜索结果，共', webSearchResults.length, '条');
                     }
-                    
+
                     const delta = parsed.choices[0]?.delta?.content || "";
                     if (delta) {
                         if (!contentStarted) {
@@ -421,8 +406,9 @@ async function handleStreamChatRequest() {
                             isSearching = false;
                             assistantContentEl.innerHTML = '';
                             fullResponse = '';
+                            console.log('🔍 [联网搜索] 开始接收回答内容，搜索阶段完成');
                         }
-                        
+
                         fullResponse += delta;
                         assistantContentEl.innerHTML = window.marked.parse(fullResponse + '<span class="blinking-cursor">|</span>', { gfm: true, breaks: true });
                         chatWindow.scrollTop = chatWindow.scrollHeight;
@@ -455,9 +441,9 @@ async function handleStreamChatRequest() {
         }
 
         assistantContentEl.innerHTML = window.marked.parse(fullResponse, { gfm: true, breaks: true });
-        
-        // Add search sources if available
-        if (searchResults && searchResults.length > 0) {
+
+        // 添加搜索来源（如果有）
+        if (webSearchResults && webSearchResults.length > 0) {
             const sourcesDiv = document.createElement('div');
             sourcesDiv.className = 'search-sources';
             sourcesDiv.innerHTML = `
@@ -465,13 +451,13 @@ async function handleStreamChatRequest() {
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                         <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
                     </svg>
-                    <span>搜索来源 (${searchResults.length})</span>
+                    <span>搜索来源 (${webSearchResults.length})</span>
                 </div>
                 <div class="sources-list">
-                    ${searchResults.map((result, index) => `
+                    ${webSearchResults.map((result, index) => `
                         <div class="source-item">
                             <span class="source-number">[${index + 1}]</span>
-                            <a href="${result.link}" target="_blank" rel="noopener noreferrer" class="source-link">
+                            <a href="${result.link}" target="_blank" rel="noopener noreferrer" class="source-link" title="${result.media || ''}">
                                 ${result.title}
                             </a>
                             ${result.media ? `<span class="source-media">${result.media}</span>` : ''}
@@ -482,17 +468,17 @@ async function handleStreamChatRequest() {
             `;
             assistantContentEl.appendChild(sourcesDiv);
         }
-        
+
         // Add AI disclaimer
         const disclaimer = createAIDisclaimer('inline');
         assistantContentEl.appendChild(disclaimer);
-        
+
         const assistantMessageData = {
             role: 'assistant',
             content: fullResponse,
             timestamp: Date.now(),
-            searchResults: searchResults,
-            webSearchEnabled: conversationSearchMode.enabled
+            webSearchEnabled: conversationSearchMode.enabled,
+            webSearchResults: webSearchResults
         };
         if (usageInfo) {
             assistantMessageData.usage = usageInfo;

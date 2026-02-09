@@ -25,7 +25,7 @@ function renderCurrentChat() {
     
     convo.messages.forEach((msg, index) => {
         if (msg.role !== 'system') {
-            addMessageToDOM(msg.role, msg.content, index, false, msg.usage, msg.timestamp, msg, msg.searchResults, msg.webSearchEnabled);
+            addMessageToDOM(msg.role, msg.content, index, false, msg.usage, msg.timestamp, msg, msg.webSearchEnabled, msg.webSearchResults);
         }
     });
     
@@ -41,11 +41,11 @@ function renderCurrentChat() {
  * @param {Object} usage - Token usage info
  * @param {number} timestamp - Message timestamp
  * @param {Object} msg - Full message object
- * @param {Array} searchResults - Search results if any
  * @param {boolean} webSearchEnabled - Whether web search was enabled for this message
+ * @param {Array} webSearchResults - Web search results if any
  * @returns {string} Message element ID
  */
-function addMessageToDOM(role, content, index, isStreaming = false, usage = null, timestamp = null, msg = null, searchResults = null, webSearchEnabled = false) {
+function addMessageToDOM(role, content, index, isStreaming = false, usage = null, timestamp = null, msg = null, webSearchEnabled = false, webSearchResults = null) {
     const chatWindow = document.getElementById('chat_window');
     if (!chatWindow) return '';
     
@@ -119,9 +119,9 @@ function addMessageToDOM(role, content, index, isStreaming = false, usage = null
     if (isStreaming) footer.style.opacity = '0';
     
     chatWindow.appendChild(messageDiv);
-    
-    // Add search results if present
-    if (role === 'assistant' && !isStreaming && searchResults && searchResults.length > 0) {
+
+    // 添加搜索来源（如果有）
+    if (role === 'assistant' && !isStreaming && webSearchResults && webSearchResults.length > 0) {
         const contentEl = messageDiv.querySelector('.message-content');
         const sourcesDiv = document.createElement('div');
         sourcesDiv.className = 'search-sources';
@@ -130,13 +130,13 @@ function addMessageToDOM(role, content, index, isStreaming = false, usage = null
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                     <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
                 </svg>
-                <span>搜索来源 (${searchResults.length})</span>
+                <span>搜索来源 (${webSearchResults.length})</span>
             </div>
             <div class="sources-list">
-                ${searchResults.map((result, index) => `
+                ${webSearchResults.map((result, index) => `
                     <div class="source-item">
                         <span class="source-number">[${index + 1}]</span>
-                        <a href="${result.link}" target="_blank" rel="noopener noreferrer" class="source-link" title="${result.content || ''}">
+                        <a href="${result.link}" target="_blank" rel="noopener noreferrer" class="source-link" title="${result.media || ''}">
                             ${result.title}
                         </a>
                         ${result.media ? `<span class="source-media">${result.media}</span>` : ''}
@@ -147,7 +147,7 @@ function addMessageToDOM(role, content, index, isStreaming = false, usage = null
         `;
         contentEl.appendChild(sourcesDiv);
     }
-    
+
     chatWindow.scrollTop = chatWindow.scrollHeight;
     return messageId;
 }
