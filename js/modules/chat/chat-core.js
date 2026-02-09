@@ -483,11 +483,12 @@ async function handleStreamChatRequest() {
         const disclaimer = createAIDisclaimer('inline');
         assistantContentEl.appendChild(disclaimer);
         
-        const assistantMessageData = { 
-            role: 'assistant', 
-            content: fullResponse, 
+        const assistantMessageData = {
+            role: 'assistant',
+            content: fullResponse,
             timestamp: Date.now(),
-            searchResults: searchResults
+            searchResults: searchResults,
+            webSearchEnabled: appState.chat.searchMode.enabled
         };
         if (usageInfo) {
             assistantMessageData.usage = usageInfo;

@@ -274,10 +274,27 @@
     opacity: 1; 
 }
 
-.message-token-usage { 
-    font-size: 0.8em; 
-    color: var(--text-color-secondary); 
-    margin-left: auto; 
+.message-token-usage {
+    font-size: 0.8em;
+    color: var(--text-color-secondary);
+    margin-left: auto;
+}
+
+.web-search-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8em;
+    color: var(--primary-color);
+    background-color: rgba(33, 150, 243, 0.1);
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-right: 8px;
+    cursor: default;
+}
+
+.web-search-indicator svg {
+    fill: var(--primary-color);
 }
 
 .message-time { 

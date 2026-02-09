@@ -25,7 +25,7 @@ function renderCurrentChat() {
     
     convo.messages.forEach((msg, index) => {
         if (msg.role !== 'system') {
-            addMessageToDOM(msg.role, msg.content, index, false, msg.usage, msg.timestamp, msg, msg.searchResults);
+            addMessageToDOM(msg.role, msg.content, index, false, msg.usage, msg.timestamp, msg, msg.searchResults, msg.webSearchEnabled);
         }
     });
     
@@ -42,9 +42,10 @@ function renderCurrentChat() {
  * @param {number} timestamp - Message timestamp
  * @param {Object} msg - Full message object
  * @param {Array} searchResults - Search results if any
+ * @param {boolean} webSearchEnabled - Whether web search was enabled for this message
  * @returns {string} Message element ID
  */
-function addMessageToDOM(role, content, index, isStreaming = false, usage = null, timestamp = null, msg = null, searchResults = null) {
+function addMessageToDOM(role, content, index, isStreaming = false, usage = null, timestamp = null, msg = null, searchResults = null, webSearchEnabled = false) {
     const chatWindow = document.getElementById('chat_window');
     if (!chatWindow) return '';
     
@@ -72,6 +73,16 @@ function addMessageToDOM(role, content, index, isStreaming = false, usage = null
 
     const tokenUsageHtml = (usage && usage.total_tokens) ? `<div class="message-token-usage">Tokens: ${usage.total_tokens}</div>` : `<div class="message-token-usage"></div>`;
 
+    // Web search indicator
+    const webSearchHtml = (role === 'assistant' && webSearchEnabled) ? `
+        <div class="web-search-indicator" title="此回答使用了联网搜索">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+            </svg>
+            <span>联网搜索</span>
+        </div>
+    ` : '';
+
     let formattedTime = '';
     const dateObj = timestamp ? new Date(timestamp) : new Date();
     if (!isNaN(dateObj.getTime())) {
@@ -93,6 +104,7 @@ function addMessageToDOM(role, content, index, isStreaming = false, usage = null
                 <div class="message-content">${renderedContent}</div>
                 <div class="message-footer">
                     ${timeHtml}
+                    ${role === 'assistant' ? webSearchHtml : ''}
                     ${role === 'assistant' ? tokenUsageHtml : ''}
                     <button class="icon-button" title="复制" onclick="copyMessage(this)"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2Zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6Z M2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1H2Z"></path></svg></button>
                     <button class="icon-button" title="删除" onclick="deleteMessage(this)"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg></button>
