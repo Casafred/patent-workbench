@@ -1440,6 +1440,43 @@ function displayProcessingResult(data, isAIMode = false) {
         
         html += '</div>';
         
+        // 🆕 添加重新处理按钮区域
+        html += `
+            <div id="reprocessSection" style="margin-top: 30px; padding: 20px; background-color: #f8f9fa; border-radius: 12px; border-left: 4px solid #2196F3;">
+                <h4 style="color: #2196F3; margin: 0 0 10px 0; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
+                    <span>快速重新处理</span>
+                </h4>
+                <p style="color: #666; font-size: 13px; margin: 0 0 15px 0; line-height: 1.6;">
+                    已检测到缓存数据，可以单独更新说明书或图片，无需完整重新处理，大幅提升速度。
+                </p>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button id="reprocessSpecBtn" onclick="handleReprocessSpecification()" style="flex: 1; min-width: 200px; padding: 12px 20px; background-color: #2196F3; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        <span>重新处理说明书</span>
+                    </button>
+                    <button id="reprocessDrawingsBtn" onclick="handleReprocessDrawings()" style="flex: 1; min-width: 200px; padding: 12px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <span>重新识别图片标号</span>
+                    </button>
+                </div>
+                <div id="cacheInfoTip" style="margin-top: 12px; padding: 10px; background-color: #e3f2fd; border-radius: 6px; font-size: 12px; color: #1565C0; line-height: 1.6;">
+                    <strong>提示：</strong>
+                    <span id="cacheInfoText">已缓存 ${data.ocr_detected_count || 0} 个OCR识别结果和 ${Object.keys(data.reference_map || {}).length} 个说明书标记，可快速重新处理。</span>
+                </div>
+            </div>
+        `;
+        
         annotatedDrawingsContainer.innerHTML = html;
     }
     
@@ -1448,6 +1485,51 @@ function displayProcessingResult(data, isAIMode = false) {
         const specificationInput = document.getElementById('specification_input');
         const specificationText = specificationInput ? specificationInput.value.trim() : '';
         window.reprocessManager.updateState(data, specificationText, uploadedDrawings);
+    }
+}
+
+// 🆕 重新处理说明书（底部按钮 - 调用顶部智能按钮）
+async function handleReprocessSpecification() {
+    // 直接调用顶部的智能重新匹配说明书按钮
+    const reprocessSpecBtn = document.getElementById('reprocess_spec_btn');
+    if (reprocessSpecBtn) {
+        reprocessSpecBtn.click();
+    } else {
+        // 如果顶部按钮不存在，使用原有逻辑
+        reprocessSpecification();
+    }
+}
+
+// 🆕 重新识别图片标号（底部按钮 - 调用顶部智能按钮）
+async function handleReprocessDrawings() {
+    // 检查是否有图片旋转或变化
+    const hasRotation = uploadedDrawings.some(d => d.rotation && d.rotation !== 0);
+    
+    if (hasRotation) {
+        // 如果有旋转，提示用户使用顶部的OCR按钮
+        const useTopButton = confirm('检测到图片已旋转。\n\n建议使用顶部的"OCR"按钮重新识别（会使用当前旋转状态）。\n\n是否跳转到顶部按钮？');
+        if (useTopButton) {
+            const reprocessOcrBtn = document.getElementById('reprocess_ocr_btn');
+            if (reprocessOcrBtn) {
+                // 滚动到顶部按钮
+                reprocessOcrBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // 高亮按钮
+                reprocessOcrBtn.style.boxShadow = '0 0 0 3px rgba(33, 150, 243, 0.5)';
+                setTimeout(() => {
+                    reprocessOcrBtn.style.boxShadow = '';
+                }, 2000);
+            }
+        }
+        return;
+    }
+    
+    // 如果没有旋转，直接调用顶部的OCR按钮
+    const reprocessOcrBtn = document.getElementById('reprocess_ocr_btn');
+    if (reprocessOcrBtn) {
+        reprocessOcrBtn.click();
+    } else {
+        // 如果顶部按钮不存在，使用原有逻辑
+        reprocessOCR();
     }
 }
 
