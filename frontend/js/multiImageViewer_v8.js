@@ -177,7 +177,7 @@ class MultiImageViewerV8 {
         
         // 顶部关闭按钮
         const topCloseBtn = document.createElement('button');
-        topCloseBtn.innerHTML = '✕';
+        topCloseBtn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
         topCloseBtn.style.cssText = `
             position: absolute;
             top: 20px;
@@ -953,25 +953,29 @@ class MultiImageViewerV8 {
         sidebar.appendChild(this.annotationSection);
         
         // 显示/隐藏标记按钮
-        const toggleMarkersBtn = this.createButton('👁️ 隐藏标记', () => {
+        const eyeIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+        const eyeOffIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
+        const toggleMarkersBtn = this.createButton('隐藏标记', () => {
             this.markersVisible = !this.markersVisible;
-            toggleMarkersBtn.textContent = this.markersVisible ? '👁️ 隐藏标记' : '👁️ 显示标记';
+            toggleMarkersBtn.innerHTML = this.markersVisible ? `${eyeIcon}<span style="margin-left: 6px;">隐藏标记</span>` : `${eyeOffIcon}<span style="margin-left: 6px;">显示标记</span>`;
             this.renderCanvas();
-        });
+        }, eyeIcon);
         toggleMarkersBtn.style.cssText += 'background-color: #9C27B0; margin-top: 10px;';
         sidebar.appendChild(toggleMarkersBtn);
 
         // 调试面板
-        const debugBtn = this.createButton('🔧 调试面板', () => {
+        const debugIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>`;
+        const debugBtn = this.createButton('调试面板', () => {
             this.openDebugPanel();
-        });
+        }, debugIcon);
         debugBtn.style.cssText += 'background-color: #2196F3; margin-top: 10px;';
         sidebar.appendChild(debugBtn);
         
         // 关闭
-        const closeBtn = this.createButton('✕ 关闭', () => {
+        const closeIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+        const closeBtn = this.createButton('关闭', () => {
             this.modal.remove();
-        });
+        }, closeIcon);
         closeBtn.style.cssText += 'background-color: #f44336; margin-top: auto;';
         sidebar.appendChild(closeBtn);
         
@@ -998,11 +1002,16 @@ class MultiImageViewerV8 {
         return section;
     }
     
-    createButton(text, onClick) {
+    createButton(text, onClick, iconSvg = null) {
         const btn = document.createElement('button');
-        btn.textContent = text;
+        if (iconSvg) {
+            btn.innerHTML = `${iconSvg}<span style="margin-left: 6px;">${text}</span>`;
+        } else {
+            btn.textContent = text;
+        }
         btn.style.cssText = `
-            flex: 1;
+            width: 100%;
+            min-height: 36px;
             background-color: #4caf50;
             color: white;
             border: none;
@@ -1012,6 +1021,10 @@ class MultiImageViewerV8 {
             font-size: 12px;
             font-weight: bold;
             transition: opacity 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
         `;
         btn.addEventListener('click', onClick);
         btn.addEventListener('mouseenter', () => btn.style.opacity = '0.8');
@@ -1592,8 +1605,8 @@ class MultiImageViewerV8 {
             align-items: center;
         `;
         header.innerHTML = `
-            <span>🔧 调试面板 - ${this.currentImageData.title || '当前图片'}</span>
-            <button style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">✕</button>
+            <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>调试面板 - ${this.currentImageData.title || '当前图片'}</span>
+            <button style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
         `;
         header.querySelector('button').addEventListener('click', () => {
             debugModal.remove();
@@ -1624,7 +1637,7 @@ class MultiImageViewerV8 {
         `;
         
         const ocrTitle = document.createElement('h4');
-        ocrTitle.textContent = '📷 附图OCR识别结果';
+        ocrTitle.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>附图OCR识别结果';
         ocrTitle.style.cssText = `
             margin: 0 0 10px 0;
             color: #007bff;
@@ -1702,7 +1715,7 @@ class MultiImageViewerV8 {
         `;
         
         const specTitle = document.createElement('h4');
-        specTitle.textContent = '📝 说明书提取结果';
+        specTitle.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>说明书提取结果';
         specTitle.style.cssText = `
             margin: 0 0 10px 0;
             color: #28a745;
@@ -1759,7 +1772,7 @@ class MultiImageViewerV8 {
                 itemDiv.innerHTML = `
                     <div><strong>${number}:</strong> ${name}</div>
                     <div style="margin-top: 4px; font-size: 12px;">
-                        ${isDetected ? '✅ 已在附图中识别' : '❌ 未在附图中识别'}
+                        ${isDetected ? '<span style="color: #28a745;">已在附图中识别</span>' : '<span style="color: #dc3545;">未在附图中识别</span>'}
                     </div>
                 `;
                 specList.appendChild(itemDiv);
@@ -2151,7 +2164,7 @@ class MultiImageViewerV8 {
 
         // 显示成功提示
         const toast = document.createElement('div');
-        toast.textContent = `✓ ${selectedTasks.length} 个任务已导出`;
+        toast.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="vertical-align: middle; margin-right: 5px;"><polyline points="20 6 9 17 4 12"></polyline></svg>${selectedTasks.length} 个任务已导出`;
         toast.style.cssText = `
             position: fixed;
             bottom: 30px;
