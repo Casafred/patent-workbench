@@ -80,34 +80,7 @@
                             </button>
                         </div>
                         
-                        <!-- 第二行：重新处理按钮组 -->
-                        <div style="display: flex; gap: 8px; padding: 10px; background-color: #fff3e0; border-radius: 6px; border-left: 3px solid #ff9800;">
-                            <div style="flex-shrink: 0; display: flex; align-items: center; color: #e65100; font-size: 11px; font-weight: bold; padding: 0 6px; white-space: nowrap;">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 3px;">
-                                    <polyline points="23 4 23 10 17 10"></polyline>
-                                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                                </svg>
-                                重处理
-                            </div>
-                            <button id="reprocess_ocr_btn" class="action-button" style="flex: 1; padding: 8px 10px; font-size: 12px; font-weight: bold; background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%); border: none; color: white; border-radius: 4px; cursor: pointer; transition: all 0.3s; white-space: nowrap;" title="智能重新识别OCR：自动检测图片旋转，清除缓存后重新识别所有图片标记">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 3px;">
-                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                    <polyline points="21 15 16 10 5 21"></polyline>
-                                </svg>
-                                OCR
-                            </button>
-                            <button id="reprocess_spec_btn" class="action-button" style="flex: 1; padding: 8px 10px; font-size: 12px; font-weight: bold; background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%); border: none; color: white; border-radius: 4px; cursor: pointer; transition: all 0.3s; white-space: nowrap;" title="智能重新匹配说明书：使用已缓存的OCR结果，仅重新解析和匹配说明书内容（速度快50%+）">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 3px;">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                    <polyline points="14 2 14 8 20 8"></polyline>
-                                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                                    <polyline points="10 9 9 9 8 9"></polyline>
-                                </svg>
-                                说明书
-                            </button>
-                        </div>
+
                     </div>
                     <div id="processing_status" style="margin-top: 10px; font-size: 13px; font-weight: bold; color: #28a745; text-align: center;"></div>
                 </div>
