@@ -158,8 +158,8 @@
     display: flex;
     gap: 15px;
     align-items: flex-start;
-    max-width: 95%;
-    width: fit-content;
+    max-width: 85%;
+    width: auto;
 }
 
 .assistant-message .message-main-content {
@@ -189,10 +189,11 @@
 }
 
 .message-body { 
-    flex-grow: 1; 
+    flex: 1 1 auto;
     display: flex; 
     flex-direction: column; 
     min-width: 0;
+    max-width: 100%;
 }
 
 .message-content { 
@@ -201,6 +202,9 @@
     word-break: break-word; 
     position: relative;
     line-height: 1.6;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-wrap: break-word;
 }
 
 /* Markdown样式优化 */
@@ -482,6 +486,8 @@
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     border-radius: 8px;
     border-left: 4px solid var(--primary-color);
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .sources-header {
