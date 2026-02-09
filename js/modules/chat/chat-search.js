@@ -1,32 +1,65 @@
 // js/modules/chat/chat-search.js
 // Search functionality for web search integration
 
-// Initialize search state
-if (!appState.chat.searchMode) {
-    appState.chat.searchMode = {
-        enabled: false,
-        searchEngine: 'search_pro',
-        count: 5,
-        contentSize: 'medium'
-    };
+// Default search configuration
+const DEFAULT_SEARCH_CONFIG = {
+    enabled: false,
+    searchEngine: 'search_pro',
+    count: 5,
+    contentSize: 'medium'
+};
+
+/**
+ * Get current conversation's search mode config
+ * @returns {Object} Search mode config for current conversation
+ */
+function getCurrentConversationSearchMode() {
+    const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
+    if (!convo) return { ...DEFAULT_SEARCH_CONFIG };
+    
+    // Initialize searchMode if not exists
+    if (!convo.searchMode) {
+        convo.searchMode = { ...DEFAULT_SEARCH_CONFIG };
+    }
+    return convo.searchMode;
 }
 
 /**
- * Toggle search mode on/off
+ * Update current conversation's search mode config
+ * @param {Object} updates - Config updates
+ */
+function updateCurrentConversationSearchMode(updates) {
+    const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
+    if (!convo) return;
+    
+    if (!convo.searchMode) {
+        convo.searchMode = { ...DEFAULT_SEARCH_CONFIG };
+    }
+    
+    convo.searchMode = { ...convo.searchMode, ...updates };
+    saveConversations();
+}
+
+/**
+ * Toggle search mode on/off for current conversation
  */
 function toggleSearchMode() {
-    appState.chat.searchMode.enabled = !appState.chat.searchMode.enabled;
+    const currentMode = getCurrentConversationSearchMode();
+    const newEnabled = !currentMode.enabled;
+    
+    updateCurrentConversationSearchMode({ enabled: newEnabled });
     
     console.log('🔍 [联网搜索] 搜索模式切换:', {
-        enabled: appState.chat.searchMode.enabled,
-        searchEngine: appState.chat.searchMode.searchEngine,
-        count: appState.chat.searchMode.count,
-        contentSize: appState.chat.searchMode.contentSize
+        conversationId: appState.chat.currentConversationId,
+        enabled: newEnabled,
+        searchEngine: currentMode.searchEngine,
+        count: currentMode.count,
+        contentSize: currentMode.contentSize
     });
     
     updateSearchButtonState();
     
-    if (appState.chat.searchMode.enabled) {
+    if (newEnabled) {
         console.log('🔍 [联网搜索] 显示配置弹窗');
         showSearchConfig();
     } else {
@@ -35,55 +68,56 @@ function toggleSearchMode() {
 }
 
 /**
- * Update search button visual state
+ * Update search button visual state based on current conversation
  */
 function updateSearchButtonState() {
     const chatSearchBtn = document.getElementById('chat_search_btn');
     if (!chatSearchBtn) return;
     
-    if (appState.chat.searchMode.enabled) {
+    const searchMode = getCurrentConversationSearchMode();
+    
+    // Remove existing indicator
+    const existingIndicator = document.getElementById('search_indicator');
+    if (existingIndicator) {
+        existingIndicator.remove();
+    }
+    
+    if (searchMode.enabled) {
         chatSearchBtn.style.backgroundColor = 'var(--primary-color)';
         chatSearchBtn.style.color = 'white';
         chatSearchBtn.title = '联网搜索已启用 - 点击关闭';
         
-        if (!document.getElementById('search_indicator')) {
-            const indicator = document.createElement('div');
-            indicator.id = 'search_indicator';
-            indicator.style.cssText = `
-                position: absolute;
-                top: -25px;
-                left: 0;
-                background-color: var(--primary-color);
-                color: white;
-                padding: 4px 12px;
-                border-radius: 4px;
-                font-size: 12px;
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            `;
-            indicator.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
-                </svg>
-                <span>联网搜索已启用 (${appState.chat.searchMode.searchEngine})</span>
-            `;
-            const inputArea = document.querySelector('.chat-input-area');
-            if (inputArea) {
-                inputArea.style.position = 'relative';
-                inputArea.insertBefore(indicator, inputArea.firstChild);
-            }
+        const indicator = document.createElement('div');
+        indicator.id = 'search_indicator';
+        indicator.style.cssText = `
+            position: absolute;
+            top: -25px;
+            left: 0;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        `;
+        indicator.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+            </svg>
+            <span>联网搜索已启用 (${searchMode.searchEngine})</span>
+        `;
+        const inputArea = document.querySelector('.chat-input-area');
+        if (inputArea) {
+            inputArea.style.position = 'relative';
+            inputArea.insertBefore(indicator, inputArea.firstChild);
         }
     } else {
         chatSearchBtn.style.backgroundColor = '';
         chatSearchBtn.style.color = '';
         chatSearchBtn.title = '开启联网搜索 (使用智谱网络搜索API)';
-        
-        const indicator = document.getElementById('search_indicator');
-        if (indicator) {
-            indicator.remove();
-        }
     }
 }
 
@@ -98,6 +132,8 @@ function handleSearch() {
  * Show search configuration modal
  */
 function showSearchConfig() {
+    const searchMode = getCurrentConversationSearchMode();
+    
     const optionsModal = document.createElement('div');
     optionsModal.className = 'search-config-popup';
     optionsModal.style.cssText = `
@@ -194,7 +230,7 @@ function showSearchConfig() {
         optionEl.value = option.value;
         optionEl.textContent = option.text;
         optionEl.title = option.description;
-        if (option.value === appState.chat.searchMode.searchEngine) {
+        if (option.value === searchMode.searchEngine) {
             optionEl.selected = true;
         }
         engineSelect.appendChild(optionEl);
@@ -202,7 +238,7 @@ function showSearchConfig() {
     
     const engineDesc = document.createElement('div');
     engineDesc.style.cssText = `font-size: 12px; color: #666; margin-top: 4px;`;
-    engineDesc.textContent = engineOptions.find(o => o.value === appState.chat.searchMode.searchEngine)?.description || '';
+    engineDesc.textContent = engineOptions.find(o => o.value === searchMode.searchEngine)?.description || '';
     
     engineSelect.addEventListener('change', () => {
         const selectedOption = engineOptions.find(o => o.value === engineSelect.value);
@@ -231,7 +267,7 @@ function showSearchConfig() {
         const optionEl = document.createElement('option');
         optionEl.value = option;
         optionEl.textContent = option;
-        if (option === appState.chat.searchMode.count) {
+        if (option === searchMode.count) {
             optionEl.selected = true;
         }
         countSelect.appendChild(optionEl);
@@ -267,7 +303,7 @@ function showSearchConfig() {
         const optionEl = document.createElement('option');
         optionEl.value = option.value;
         optionEl.textContent = option.text;
-        if (option.value === appState.chat.searchMode.contentSize) {
+        if (option.value === searchMode.contentSize) {
             optionEl.selected = true;
         }
         contentSelect.appendChild(optionEl);
@@ -275,7 +311,7 @@ function showSearchConfig() {
     
     const contentDesc = document.createElement('div');
     contentDesc.style.cssText = `font-size: 12px; color: #666; margin-top: 4px;`;
-    contentDesc.textContent = contentOptions.find(o => o.value === appState.chat.searchMode.contentSize)?.description || '';
+    contentDesc.textContent = contentOptions.find(o => o.value === searchMode.contentSize)?.description || '';
     
     contentSelect.addEventListener('change', () => {
         const selectedOption = contentOptions.find(o => o.value === contentSelect.value);
@@ -313,9 +349,11 @@ function showSearchConfig() {
     `;
     saveBtn.textContent = '保存并启用';
     saveBtn.addEventListener('click', () => {
-        appState.chat.searchMode.searchEngine = engineSelect.value;
-        appState.chat.searchMode.count = parseInt(countSelect.value);
-        appState.chat.searchMode.contentSize = contentSelect.value;
+        updateCurrentConversationSearchMode({
+            searchEngine: engineSelect.value,
+            count: parseInt(countSelect.value),
+            contentSize: contentSelect.value
+        });
         
         updateSearchButtonState();
         document.body.removeChild(optionsModal);

@@ -338,22 +338,26 @@ async function handleStreamChatRequest() {
             messages: messagesToSend
         };
         
+        // 获取当前对话的联网搜索配置
+        const conversationSearchMode = getCurrentConversationSearchMode();
+
         console.log('🔍 [联网搜索] 准备发送请求，当前搜索模式状态:', {
-            enabled: appState.chat.searchMode.enabled,
-            searchEngine: appState.chat.searchMode.searchEngine,
-            count: appState.chat.searchMode.count,
-            contentSize: appState.chat.searchMode.contentSize
+            conversationId: appState.chat.currentConversationId,
+            enabled: conversationSearchMode.enabled,
+            searchEngine: conversationSearchMode.searchEngine,
+            count: conversationSearchMode.count,
+            contentSize: conversationSearchMode.contentSize
         });
-        
-        if (appState.chat.searchMode.enabled) {
+
+        if (conversationSearchMode.enabled) {
             requestPayload.enable_web_search = true;
-            requestPayload.search_engine = appState.chat.searchMode.searchEngine;
-            requestPayload.search_count = appState.chat.searchMode.count;
-            requestPayload.content_size = appState.chat.searchMode.contentSize;
+            requestPayload.search_engine = conversationSearchMode.searchEngine;
+            requestPayload.search_count = conversationSearchMode.count;
+            requestPayload.content_size = conversationSearchMode.contentSize;
             requestPayload.search_prompt = "你是一个专业的AI助手。请基于网络搜索结果{search_result}回答用户问题，并在回答中引用来源链接。确保信息准确、及时，并标注信息来源。";
-            
+
             console.log('🔍 [联网搜索] 已启用！请求参数:', requestPayload);
-            
+
             isSearching = true;
             assistantContentEl.innerHTML = `
                 <div class="search-progress">
@@ -488,7 +492,7 @@ async function handleStreamChatRequest() {
             content: fullResponse,
             timestamp: Date.now(),
             searchResults: searchResults,
-            webSearchEnabled: appState.chat.searchMode.enabled
+            webSearchEnabled: conversationSearchMode.enabled
         };
         if (usageInfo) {
             assistantMessageData.usage = usageInfo;

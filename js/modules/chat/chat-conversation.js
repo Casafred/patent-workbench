@@ -71,7 +71,10 @@ function switchConversation(id) {
     renderCurrentChat();
     renderChatHistoryList();
     toggleManagementMode(false);
-    updatePersonaEditor(); 
+    updatePersonaEditor();
+    
+    // 恢复当前对话的联网搜索配置
+    updateSearchButtonState();
 }
 
 /**
