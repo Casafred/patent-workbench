@@ -405,19 +405,46 @@ async function handleStreamChatRequest() {
         const reader = await apiCall('/stream_chat', requestPayload, 'POST', true);
         const decoder = new TextDecoder();
         let buffer = '';
-        
+        let lastChunkTime = Date.now();
+        const CHUNK_TIMEOUT = 60000; // 60秒没有收到数据则认为超时
+
         while (true) {
             // 检查是否被终止
             if (appState.chat.stopStreaming) {
                 console.log('🛑 流式输出被用户终止');
                 break;
             }
-            
-            const { value, done } = await reader.read();
-            if (value) {
-                buffer += decoder.decode(value, { stream: !done });
+
+            // 检查是否超时（长时间没有收到数据）
+            if (Date.now() - lastChunkTime > CHUNK_TIMEOUT) {
+                console.error('⏱️ 流式输出超时：超过60秒没有收到数据');
+                assistantContentEl.innerHTML += '<div style="color: #f59e0b; margin-top: 10px;">[系统提示：响应超时，输出可能不完整]</div>';
+                break;
             }
-            if (done) break;
+
+            try {
+                const { value, done } = await Promise.race([
+                    reader.read(),
+                    new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error('Read timeout')), CHUNK_TIMEOUT)
+                    )
+                ]);
+
+                if (value) {
+                    lastChunkTime = Date.now(); // 更新最后收到数据的时间
+                    buffer += decoder.decode(value, { stream: !done });
+                }
+                if (done) break;
+            } catch (readError) {
+                if (readError.message === 'Read timeout') {
+                    console.error('⏱️ 流式读取超时');
+                    assistantContentEl.innerHTML += '<div style="color: #f59e0b; margin-top: 10px;">[系统提示：读取响应超时，输出可能不完整]</div>';
+                } else {
+                    console.error('❌ 流式读取错误:', readError);
+                    assistantContentEl.innerHTML += '<div style="color: #ef4444; margin-top: 10px;">[错误：读取响应失败]</div>';
+                }
+                break;
+            }
             
             let lines = buffer.split('\n\n');
             buffer = lines.pop() || '';

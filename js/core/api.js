@@ -94,10 +94,11 @@ function initApiKeyConfig() {
  * @param {Object|FormData} body - 请求体数据
  * @param {string} method - HTTP方法 (默认'POST')
  * @param {boolean} isStream - 是否为流式响应 (默认false)
+ * @param {number} timeout - 超时时间(毫秒)，流式请求默认300秒
  * @returns {Promise<any>} - API响应数据或ReadableStreamDefaultReader
  * @throws {Error} - API调用失败时抛出错误
  */
-async function apiCall(endpoint, body, method = 'POST', isStream = false) {
+async function apiCall(endpoint, body, method = 'POST', isStream = false, timeout = null) {
     if (!appState.apiKey) {
         const errorMsg = "API Key 未配置。请点击右上角 ⚙️ 设置并保存您的 API Key。";
         alert(errorMsg);
@@ -116,11 +117,14 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false) {
 
     const fullUrl = `${window.location.origin}/api${endpoint}`;
 
+    // 设置超时：流式请求默认300秒，非流式请求默认60秒
+    const requestTimeout = timeout || (isStream ? 300000 : 60000);
+
     const fetchOptions = {
         method,
         headers,
     };
-    
+
     if (method !== 'GET' && method !== 'HEAD') {
         // 智能处理 Body
         if (body instanceof FormData) {
@@ -131,7 +135,13 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false) {
     }
 
     try {
+        // 使用 AbortController 实现超时控制
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), requestTimeout);
+        fetchOptions.signal = controller.signal;
+
         const response = await fetch(fullUrl, fetchOptions);
+        clearTimeout(timeoutId);
 
         if (isStream) {
             if (!response.ok) {

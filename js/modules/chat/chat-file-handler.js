@@ -18,6 +18,18 @@ async function handleChatFileUpload(event, fileFromReuse = null, skipCache = fal
     if (cachedFile && !skipCache) {
         console.log('✅ 文件已解析，直接复用缓存:', file.name);
 
+        // 检查缓存文件内容长度，如果较长则提示切换模型
+        const contentLength = cachedFile.content?.length || 0;
+        console.log(`[File Upload] 缓存文件内容长度: ${contentLength}`);
+
+        if (contentLength > 10000) {
+            const shouldProceed = await checkFileSizeAndShowModelDialog(file, contentLength);
+            if (!shouldProceed) {
+                console.log('[File Upload] 用户取消使用缓存文件');
+                return;
+            }
+        }
+
         appState.chat.activeFile = cachedFile;
 
         const chatFileStatusArea = document.getElementById('chat_file_status_area');
