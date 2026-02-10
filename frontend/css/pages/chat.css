@@ -494,11 +494,11 @@
 /* 搜索来源样式 */
 .search-sources {
     margin-top: 20px;
-    padding: 16px;
+    padding: 12px;
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     border-radius: 8px;
     border-left: 4px solid var(--primary-color);
-    max-width: 100%;
+    max-width: calc(100% - 20px);
     box-sizing: border-box;
 }
 
@@ -526,11 +526,11 @@
 .source-item {
     display: flex;
     align-items: flex-start;
-    gap: 8px;
-    padding: 8px 12px;
+    gap: 6px;
+    padding: 6px 8px;
     background: white;
     border-radius: 6px;
-    font-size: 13px;
+    font-size: 12px;
     transition: all 0.2s ease;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     flex-wrap: wrap;
@@ -565,7 +565,8 @@
     white-space: nowrap;
     transition: color 0.2s ease;
     min-width: 0;
-    max-width: 100%;
+    max-width: calc(100% - 80px);
+    font-size: 12px;
 }
 
 .source-link:hover {
