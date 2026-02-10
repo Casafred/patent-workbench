@@ -147,6 +147,148 @@ async function reprocessFile(filename) {
 /**
  * Start file upload after user selects service
  */
+/**
+ * Check if content is large and show model selection dialog
+ * @param {File} file - File object
+ * @param {number} contentLength - Parsed content length in characters
+ * @returns {Promise<boolean>} - Whether to proceed with upload
+ */
+function checkFileSizeAndShowModelDialog(file, contentLength) {
+    // 获取当前模型
+    const chatModelSelect = document.getElementById('chat_model_select');
+    const currentModel = chatModelSelect ? chatModelSelect.value : 'glm-4-flash';
+
+    // 检查当前模型是否支持长上下文
+    const longContextModels = ['glm-4', 'glm-4-plus', 'glm-4-air'];
+    const isLongContextModel = longContextModels.some(m => currentModel.includes(m));
+
+    if (isLongContextModel) {
+        console.log(`[File Upload] 当前模型 ${currentModel} 支持长上下文，继续上传`);
+        return Promise.resolve(true);
+    }
+
+    // 显示模型切换弹窗
+    return new Promise((resolve) => {
+        const estimatedTokens = Math.ceil(contentLength / 4); // 粗略估计：1 token ≈ 4 字符
+
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        `;
+
+        const content = document.createElement('div');
+        content.style.cssText = `
+            background-color: white;
+            border-radius: 12px;
+            padding: 28px;
+            max-width: 480px;
+            width: 90%;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        `;
+
+        content.innerHTML = `
+            <div style="display: flex; align-items: center; margin-bottom: 16px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#f59e0b" viewBox="0 0 16 16" style="margin-right: 12px;">
+                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                    <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"/>
+                </svg>
+                <h3 style="margin: 0; font-size: 1.2em; color: #1f2937;">解析内容较长，建议切换模型</h3>
+            </div>
+
+            <p style="margin: 0 0 16px 0; color: #4b5563; line-height: 1.6;">
+                文件 <strong>${file.name}</strong> 解析后共 <strong>${contentLength.toLocaleString()} 字符</strong>，
+                预估需要约 <strong>${estimatedTokens.toLocaleString()} tokens</strong> 的上下文。
+            </p>
+
+            <p style="margin: 0 0 20px 0; color: #6b7280; font-size: 0.9em;">
+                当前模型 <strong>${currentModel}</strong> 可能无法处理如此长的内容，建议切换到支持更长上下文的模型。
+            </p>
+
+            <div style="background-color: #f3f4f6; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151;">选择模型：</label>
+                <select id="model-selection-dialog-select" style="
+                    width: 100%;
+                    padding: 10px 12px;
+                    border: 1px solid #d1d5db;
+                    border-radius: 6px;
+                    font-size: 14px;
+                    background-color: white;
+                ">
+                    <option value="glm-4" ${currentModel === 'glm-4' ? 'selected' : ''}>GLM-4 (128K上下文)</option>
+                    <option value="glm-4-plus" ${currentModel === 'glm-4-plus' ? 'selected' : ''}>GLM-4-Plus (128K上下文)</option>
+                    <option value="glm-4-air" ${currentModel === 'glm-4-air' ? 'selected' : ''}>GLM-4-Air (128K上下文)</option>
+                    <option value="glm-4-flash" ${currentModel === 'glm-4-flash' ? 'selected' : ''}>GLM-4-Flash (免费，较短上下文)</option>
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                <button id="model-dialog-cancel" style="
+                    padding: 10px 20px;
+                    border: 1px solid #d1d5db;
+                    background-color: white;
+                    color: #374151;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-size: 14px;
+                ">取消上传</button>
+                <button id="model-dialog-confirm" style="
+                    padding: 10px 20px;
+                    border: none;
+                    background-color: var(--primary-color, #3b82f6);
+                    color: white;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-size: 14px;
+                ">确认并上传</button>
+            </div>
+        `;
+
+        modal.appendChild(content);
+        document.body.appendChild(modal);
+
+        // 绑定事件
+        const cancelBtn = content.querySelector('#model-dialog-cancel');
+        const confirmBtn = content.querySelector('#model-dialog-confirm');
+        const modelSelect = content.querySelector('#model-selection-dialog-select');
+
+        cancelBtn.addEventListener('click', () => {
+            modal.remove();
+            resolve(false);
+        });
+
+        confirmBtn.addEventListener('click', () => {
+            const selectedModel = modelSelect.value;
+
+            // 更新模型选择器
+            if (chatModelSelect) {
+                chatModelSelect.value = selectedModel;
+                console.log(`[File Upload] 用户切换模型为: ${selectedModel}`);
+            }
+
+            modal.remove();
+            resolve(true);
+        });
+
+        // 点击背景关闭
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+                resolve(false);
+            }
+        });
+    });
+}
+
 async function startFileUpload() {
     const file = appState.chat.pendingFile;
     const event = appState.chat.pendingFileEvent;
@@ -198,6 +340,19 @@ async function startFileUpload() {
         const result = await parser.handleFileUpload(file, toolType);
 
         console.log(`[File Upload] 文件解析成功，task_id: ${result.task_id}`);
+
+        // 检查解析后的内容长度，如果较长则提示切换模型
+        const contentLength = result.content?.length || 0;
+        console.log(`[File Upload] 解析内容长度: ${contentLength}`);
+
+        if (contentLength > 10000) { // 10000字符约2500 tokens
+            const shouldProceed = await checkFileSizeAndShowModelDialog(file, contentLength);
+            if (!shouldProceed) {
+                console.log('[File Upload] 用户取消上传');
+                removeActiveFile();
+                return;
+            }
+        }
 
         appState.chat.activeFile = {
             taskId: result.task_id,
