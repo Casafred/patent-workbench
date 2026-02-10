@@ -200,11 +200,11 @@
 }
 
 .message-body { 
-    flex: 1 1 auto;
+    flex: 0 0 calc(100% - 50px);
     display: flex; 
     flex-direction: column; 
     min-width: 0;
-    max-width: 100%;
+    max-width: calc(100% - 50px);
 }
 
 .message-content { 
@@ -214,7 +214,7 @@
     overflow-wrap: break-word;
     position: relative;
     line-height: 1.6;
-    max-width: 100%;
+    width: 100%;
     box-sizing: border-box;
     white-space: pre-wrap;
 }
