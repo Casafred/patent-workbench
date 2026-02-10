@@ -150,8 +150,12 @@ function initChat() {
     }
 
     // Chat core events
+    const chatStopBtn = document.getElementById('chat_stop_btn');
     if (chatSendBtn) {
         chatSendBtn.addEventListener('click', handleStreamChatRequest);
+    }
+    if (chatStopBtn) {
+        chatStopBtn.addEventListener('click', stopStreamChat);
     }
     if (chatInput) {
         chatInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleStreamChatRequest(); }});
@@ -254,6 +258,7 @@ async function handleStreamChatRequest() {
     // Get DOM elements
     const chatInput = document.getElementById('chat_input');
     const chatSendBtn = document.getElementById('chat_send_btn');
+    const chatStopBtn = document.getElementById('chat_stop_btn');
     const chatWindow = document.getElementById('chat_window');
     const chatModelSelect = document.getElementById('chat_model_select');
     const chatTempInput = document.getElementById('chat_temperature');
@@ -277,6 +282,9 @@ async function handleStreamChatRequest() {
 
     const convo = appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId);
     if (!convo) return;
+    
+    // 重置终止标志
+    appState.chat.stopStreaming = false;
 
     const persona = appState.chat.personas[convo.personaId];
     
@@ -317,6 +325,10 @@ async function handleStreamChatRequest() {
     if (appState.chat.activeFile) {
         removeActiveFile(); 
     }
+    
+    // 显示停止按钮，隐藏发送按钮
+    if (chatStopBtn) chatStopBtn.style.display = 'inline-block';
+    if (chatSendBtn) chatSendBtn.style.display = 'none';
     
     const assistantMessageId = addMessageToDOM('assistant', '<span class="blinking-cursor">|</span>', convo.messages.length, true);
     const assistantMessageEl = getEl(assistantMessageId);
@@ -382,6 +394,12 @@ async function handleStreamChatRequest() {
         let buffer = '';
         
         while (true) {
+            // 检查是否被终止
+            if (appState.chat.stopStreaming) {
+                console.log('🛑 流式输出被用户终止');
+                break;
+            }
+            
             const { value, done } = await reader.read();
             if (value) {
                 buffer += decoder.decode(value, { stream: !done });
@@ -530,5 +548,22 @@ async function handleStreamChatRequest() {
         chatSendBtn.disabled = false;
         chatInput.disabled = false;
         chatInput.focus();
+        
+        // 恢复按钮状态
+        if (chatStopBtn) chatStopBtn.style.display = 'none';
+        if (chatSendBtn) chatSendBtn.style.display = 'inline-block';
+        
+        // 重置终止标志
+        appState.chat.stopStreaming = false;
+    }
+}
+
+/**
+ * Stop streaming chat output
+ */
+function stopStreamChat() {
+    if (appState.chat) {
+        appState.chat.stopStreaming = true;
+        console.log('🛑 用户点击终止按钮');
     }
 }

@@ -131,7 +131,7 @@
 }
 
 .chat-window-management-mode .message-main-content {
-    max-width: calc(100% - 40px);
+    max-width: 90%;
 }
 
 /* 聊天消息 */
@@ -158,13 +158,14 @@
     display: flex;
     gap: 10px;
     align-items: flex-start;
-    max-width: calc(100% - 20px);
+    max-width: 95%;
     width: auto;
     box-sizing: border-box;
 }
 
 .assistant-message .message-main-content {
     align-self: flex-start;
+    max-width: 95%;
 }
 
 .user-message {
@@ -174,15 +175,11 @@
 
 .user-message .message-main-content {
     flex-direction: row-reverse;
-    max-width: calc(100% - 20px);
+    max-width: 85%;
 }
 
 .assistant-message {
     padding-left: 5px;
-}
-
-.assistant-message .message-main-content {
-    max-width: calc(100% - 20px);
 }
 
 .chat-message .avatar { 
@@ -200,11 +197,11 @@
 }
 
 .message-body { 
-    flex: 0 0 calc(100% - 50px);
+    flex: 1 1 auto;
     display: flex; 
     flex-direction: column; 
     min-width: 0;
-    max-width: calc(100% - 50px);
+    max-width: calc(100% - 60px);
 }
 
 .message-content { 
@@ -498,8 +495,9 @@
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     border-radius: 8px;
     border-left: 4px solid var(--primary-color);
-    max-width: calc(100% - 20px);
+    max-width: 100%;
     box-sizing: border-box;
+    overflow: hidden;
 }
 
 .sources-header {
@@ -565,7 +563,7 @@
     white-space: nowrap;
     transition: color 0.2s ease;
     min-width: 0;
-    max-width: calc(100% - 80px);
+    max-width: 100%;
     font-size: 12px;
 }
 

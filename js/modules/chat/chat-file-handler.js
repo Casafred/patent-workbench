@@ -37,7 +37,10 @@ async function handleChatFileUpload(event, fileFromReuse = null) {
             parserServiceSelector.style.display = 'none';
         }
         
-        chatInput.focus();
+        const chatInput = document.getElementById('chat_input');
+        if (chatInput) {
+            chatInput.focus();
+        }
         return;
     }
 
@@ -144,7 +147,10 @@ async function startFileUpload() {
         appState.chat.pendingFile = null;
         appState.chat.pendingFileEvent = null;
         
-        chatInput.focus();
+        const chatInput = document.getElementById('chat_input');
+        if (chatInput) {
+            chatInput.focus();
+        }
     } catch (error) {
         alert(`文件解析失败: ${error.message}`);
         removeActiveFile(); 
