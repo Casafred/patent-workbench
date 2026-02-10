@@ -330,7 +330,6 @@ async function handleStreamChatRequest() {
 
     // 检测用户是否手动滚动的标志
     let userScrolled = false;
-    const chatWindow = document.getElementById('chat_window');
     const handleUserScroll = () => {
         const isAtBottom = chatWindow.scrollHeight - chatWindow.scrollTop - chatWindow.clientHeight < 50;
         userScrolled = !isAtBottom;
