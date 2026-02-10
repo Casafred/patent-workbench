@@ -328,6 +328,15 @@ async function handleStreamChatRequest() {
     let isSearching = false;
     let contentStarted = false;
 
+    // 检测用户是否手动滚动的标志
+    let userScrolled = false;
+    const chatWindow = document.getElementById('chat_window');
+    const handleUserScroll = () => {
+        const isAtBottom = chatWindow.scrollHeight - chatWindow.scrollTop - chatWindow.clientHeight < 50;
+        userScrolled = !isAtBottom;
+    };
+    chatWindow.addEventListener('scroll', handleUserScroll, { passive: true });
+
     try {
         const contextCount = parseInt(chatContextCount.value, 10);
         const messagesToSend = buildMessagesForApi(convo, contextCount, finalPromptForModel);
@@ -411,7 +420,10 @@ async function handleStreamChatRequest() {
 
                         fullResponse += delta;
                         assistantContentEl.innerHTML = window.marked.parse(fullResponse + '<span class="blinking-cursor">|</span>', { gfm: true, breaks: true });
-                        chatWindow.scrollTop = chatWindow.scrollHeight;
+                        // 只有用户没有手动滚动时才自动滚动到底部
+                        if (!userScrolled) {
+                            chatWindow.scrollTop = chatWindow.scrollHeight;
+                        }
                     }
                 } catch(e) { /* Ignore stream parsing errors */ }
             }
@@ -504,12 +516,17 @@ async function handleStreamChatRequest() {
         
         setTimeout(() => generateConversationTitle(convo), 3000);
 
+        // 移除滚动事件监听器
+        chatWindow.removeEventListener('scroll', handleUserScroll);
+
     } catch (error) {
         assistantContentEl.innerHTML = `<div class="info error">请求失败: ${error.message}</div>`;
         convo.messages.push({ role: 'assistant', content: `[ERROR] ${error.message}` });
         assistantMessageEl.dataset.index = convo.messages.length - 1;
         assistantMessageEl.querySelector('.message-footer').style.opacity = '1';
         saveConversations();
+        // 确保在错误时也移除监听器
+        chatWindow.removeEventListener('scroll', handleUserScroll);
     } finally {
         chatSendBtn.disabled = false;
         chatInput.disabled = false;
