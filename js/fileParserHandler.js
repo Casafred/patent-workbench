@@ -216,9 +216,9 @@ class FileParserHandler {
      */
     showUploadProgress(filename) {
         console.log(`Uploading file: ${filename}`);
-        
+
         // Update UI if chatFileStatusArea exists
-        if (typeof chatFileStatusArea !== 'undefined') {
+        if (typeof chatFileStatusArea !== 'undefined' && chatFileStatusArea !== null) {
             chatFileStatusArea.style.display = 'flex';
             chatFileStatusArea.innerHTML = `
                 <div class="file-info">
@@ -239,9 +239,9 @@ class FileParserHandler {
         const percentage = Math.round((current / total) * 100);
         const displayMessage = message || `正在解析文件... ${percentage}%`;
         console.log(`Parsing progress: ${percentage}%`);
-        
+
         // Update UI if chatFileStatusArea exists
-        if (typeof chatFileStatusArea !== 'undefined') {
+        if (typeof chatFileStatusArea !== 'undefined' && chatFileStatusArea !== null) {
             chatFileStatusArea.innerHTML = `
                 <div class="file-info">
                     <div class="file-processing-spinner"></div>
@@ -259,9 +259,9 @@ class FileParserHandler {
     showParseComplete(filename, content) {
         console.log(`Parsing complete: ${filename}`);
         console.log(`Content length: ${content.length} characters`);
-        
+
         // Update UI if chatFileStatusArea exists
-        if (typeof chatFileStatusArea !== 'undefined') {
+        if (typeof chatFileStatusArea !== 'undefined' && chatFileStatusArea !== null) {
             chatFileStatusArea.innerHTML = `
                 <div class="file-info">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 8px; color: var(--primary-color);">
@@ -281,9 +281,9 @@ class FileParserHandler {
      */
     showError(message) {
         console.error(`File parser error: ${message}`);
-        
+
         // Update UI if chatFileStatusArea exists
-        if (typeof chatFileStatusArea !== 'undefined') {
+        if (typeof chatFileStatusArea !== 'undefined' && chatFileStatusArea !== null) {
             chatFileStatusArea.style.display = 'flex';
             chatFileStatusArea.innerHTML = `
                 <div class="file-info" style="color: var(--error-color, #dc3545);">
