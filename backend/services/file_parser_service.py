@@ -117,21 +117,25 @@ class FileParserService:
                 response.raise_for_status()
                 
                 result = response.json()
-                
+                logger.info(f"API response: {result}")
+
                 # 根据官方文档，响应格式为：
                 # {"message": "任务创建成功", "success": true, "task_id": "task_id"}
-                if not result.get('success'):
-                    error_msg = result.get('message', 'Unknown error')
-                    logger.error(f"API returned success=false: {error_msg}")
-                    raise ValueError(f"API调用失败: {error_msg}")
-                
+                # 注意：有时API返回success=false但消息是成功消息，需要同时检查task_id
                 task_id = result.get('task_id')
+
+                if not result.get('success') and not task_id:
+                    # 只有success=false且没有task_id时才认为是错误
+                    error_msg = result.get('message', 'Unknown error')
+                    logger.error(f"API returned success=false and no task_id: {error_msg}")
+                    raise ValueError(f"API调用失败: {error_msg}")
+
                 if not task_id:
                     logger.error(f"API response missing task_id: {result}")
                     raise ValueError("API返回的响应中缺少task_id")
-                
+
                 logger.info(f"Parser task created successfully: {task_id}")
-                
+
                 return {
                     "task_id": task_id,
                     "status": "processing"
