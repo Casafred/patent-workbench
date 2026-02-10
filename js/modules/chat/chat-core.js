@@ -233,12 +233,12 @@ function initChat() {
  */
 function buildMessagesForApi(conversation, contextCount, currentUserPrompt) {
     const messages = JSON.parse(JSON.stringify(conversation.messages));
-    messages.pop(); 
+    messages.pop();
     messages.push({ role: 'user', content: currentUserPrompt });
 
     const nonSystemMessages = messages.filter(m => m.role !== 'system');
     const systemMessage = messages.find(m => m.role === 'system');
-    
+
     const contextMessages = nonSystemMessages.slice(-(contextCount * 2));
 
     const messagesToSend = [];
@@ -246,6 +246,12 @@ function buildMessagesForApi(conversation, contextCount, currentUserPrompt) {
         messagesToSend.push(systemMessage);
     }
     messagesToSend.push(...contextMessages);
+
+    // 调试日志：检查最后一条用户消息的内容长度
+    const lastUserMessage = messagesToSend[messagesToSend.length - 1];
+    if (lastUserMessage && lastUserMessage.role === 'user') {
+        console.log(`[Chat] buildMessagesForApi - 最后一条用户消息长度: ${lastUserMessage.content?.length || 0}`);
+    }
 
     return messagesToSend;
 }
@@ -296,8 +302,10 @@ async function handleStreamChatRequest() {
     
     if (appState.chat.activeFile) {
         finalPromptForModel += `\n\n--- 参考附加文件: ${appState.chat.activeFile.filename} ---\n${appState.chat.activeFile.content}`;
+        console.log(`[Chat] 文件已附加到提示词: ${appState.chat.activeFile.filename}, 内容长度: ${appState.chat.activeFile.content?.length || 0}`);
+        console.log(`[Chat] 最终提示词总长度: ${finalPromptForModel.length}`);
     }
-    
+
     if (appState.chat.searchMode.enabled) {
         const searchConfig = appState.chat.searchMode;
         finalPromptForModel += `\n\n--- 搜索配置 ---\n您可以根据需要调用网络搜索API获取最新信息。搜索配置如下：\n搜索引擎: ${searchConfig.searchEngine}\n结果数量: ${searchConfig.count}\n内容长度: ${searchConfig.contentSize}`;
@@ -351,13 +359,18 @@ async function handleStreamChatRequest() {
     try {
         const contextCount = parseInt(chatContextCount.value, 10);
         const messagesToSend = buildMessagesForApi(convo, contextCount, finalPromptForModel);
-        
-        const requestPayload = { 
-            model: chatModelSelect.value, 
-            temperature: parseFloat(chatTempInput.value), 
+
+        const requestPayload = {
+            model: chatModelSelect.value,
+            temperature: parseFloat(chatTempInput.value),
             messages: messagesToSend
         };
-        
+
+        // 调试日志：检查发送的消息
+        const lastMessage = messagesToSend[messagesToSend.length - 1];
+        console.log(`[Chat] 发送请求 - 模型: ${requestPayload.model}, 消息数量: ${messagesToSend.length}`);
+        console.log(`[Chat] 最后一条消息角色: ${lastMessage?.role}, 内容长度: ${lastMessage?.content?.length || 0}`);
+
         // 获取当前对话的联网搜索配置
         const conversationSearchMode = getCurrentConversationSearchMode();
 
