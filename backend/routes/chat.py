@@ -97,7 +97,14 @@ def stream_chat():
             
             # 【调试信息】输出最终发送给API的参数
             print(f"🔍 [后端-联网搜索] 发送给智谱API的参数: model={request_params.get('model')}, tools={request_params.get('tools', 'None')}")
-            
+
+            # 【调试信息】输出消息内容长度
+            messages = request_params.get('messages', [])
+            if messages:
+                last_message = messages[-1]
+                print(f"🔍 [后端-联网搜索] 最后一条消息角色: {last_message.get('role')}, 内容长度: {len(last_message.get('content', ''))}")
+                print(f"🔍 [后端-联网搜索] 总消息数: {len(messages)}")
+
             response = client.chat.completions.create(**request_params)
             for chunk in response:
                 chunk_json = chunk.model_dump_json()

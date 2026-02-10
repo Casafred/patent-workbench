@@ -165,6 +165,25 @@ async function startFileUpload() {
     parserServiceSelector.style.display = 'none';
 
     const chatUploadFileBtn = document.getElementById('chat_upload_file_btn');
+    const chatFileStatusArea = document.getElementById('chat_file_status_area');
+
+    // 显示加载状态
+    if (chatFileStatusArea) {
+        chatFileStatusArea.innerHTML = `
+            <div class="file-info">
+                <div class="file-processing-spinner" style="
+                    width: 16px;
+                    height: 16px;
+                    border: 2px solid var(--primary-color);
+                    border-top-color: transparent;
+                    border-radius: 50%;
+                    animation: spin 1s linear infinite;
+                    margin-right: 8px;
+                "></div>
+                <span>正在解析文件: ${file.name}...</span>
+            </div>
+        `;
+    }
 
     appState.chat.fileProcessing = true;
     if (chatUploadFileBtn) {
