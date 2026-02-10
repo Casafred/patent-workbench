@@ -168,6 +168,11 @@
     max-width: 95%;
 }
 
+.assistant-message .message-body {
+    flex: 0 1 auto;
+    max-width: 100%;
+}
+
 .user-message {
     justify-content: flex-end;
     padding-right: 5px;
@@ -175,7 +180,12 @@
 
 .user-message .message-main-content {
     flex-direction: row-reverse;
-    max-width: 85%;
+    max-width: 80%;
+}
+
+.user-message .message-body {
+    flex: 0 1 auto;
+    max-width: 100%;
 }
 
 .assistant-message {
@@ -523,7 +533,7 @@
 
 .source-item {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 6px;
     padding: 6px 8px;
     background: white;
@@ -531,7 +541,7 @@
     font-size: 12px;
     transition: all 0.2s ease;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
 }
 
 .source-item:hover {
@@ -574,29 +584,19 @@
 
 /* 引用链接角标样式 */
 .ref-link {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 18px;
-    height: 18px;
-    padding: 0 4px;
-    background: var(--primary-color);
-    color: white;
-    border-radius: 3px;
-    font-size: 11px;
+    display: inline;
+    color: var(--primary-color);
+    font-size: 0.85em;
     font-weight: 600;
     text-decoration: none;
-    margin: 0 2px;
+    margin: 0 1px;
     vertical-align: super;
     line-height: 1;
-    transition: all 0.2s ease;
 }
 
 .ref-link:hover {
-    background: #1565c0;
-    transform: scale(1.1);
-    text-decoration: none;
-    color: white;
+    text-decoration: underline;
+    color: #1565c0;
 }
 
 .source-media {
