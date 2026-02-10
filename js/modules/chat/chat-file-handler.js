@@ -5,18 +5,21 @@
  * Handle file upload and reuse from cache
  * @param {Event} event - File input change event
  * @param {File} fileFromReuse - Optional file object from reuse
+ * @param {boolean} skipCache - Whether to skip cache and reprocess
  */
-async function handleChatFileUpload(event, fileFromReuse = null) {
+async function handleChatFileUpload(event, fileFromReuse = null, skipCache = false) {
     const file = fileFromReuse || (event.target ? event.target.files[0] : null);
     if (!file) return;
 
+    console.log(`[File Upload] 开始处理文件: ${file.name}, 跳过缓存: ${skipCache}`);
+
     // Check cache for already parsed files
     const cachedFile = appState.chat.parsedFilesCache[file.name];
-    if (cachedFile) {
+    if (cachedFile && !skipCache) {
         console.log('✅ 文件已解析，直接复用缓存:', file.name);
-        
+
         appState.chat.activeFile = cachedFile;
-        
+
         const chatFileStatusArea = document.getElementById('chat_file_status_area');
         chatFileStatusArea.style.display = 'flex';
         chatFileStatusArea.innerHTML = `
@@ -29,19 +32,26 @@ async function handleChatFileUpload(event, fileFromReuse = null) {
                 <span class="filename" title="${file.name}">${file.name}</span>
                 <span style="margin-left: 8px; color: #22c55e; font-size: 0.85em;">✓ 已缓存</span>
             </div>
-            <button class="file-remove-btn" onclick="removeActiveFile()" title="移除文件">&times;</button>
+            <div style="display: flex; gap: 8px;">
+                <button class="small-button" onclick="reprocessFile('${file.name}')" title="重新处理">重新处理</button>
+                <button class="file-remove-btn" onclick="removeActiveFile()" title="移除文件">&times;</button>
+            </div>
         `;
-        
+
         const parserServiceSelector = document.getElementById('chat_parser_service_selector');
         if (parserServiceSelector) {
             parserServiceSelector.style.display = 'none';
         }
-        
+
         const chatInput = document.getElementById('chat_input');
         if (chatInput) {
             chatInput.focus();
         }
         return;
+    }
+
+    if (cachedFile && skipCache) {
+        console.log('🔄 用户选择跳过缓存，重新处理文件:', file.name);
     }
 
     // Save pending file
@@ -97,38 +107,86 @@ async function handleChatFileUpload(event, fileFromReuse = null) {
 }
 
 /**
+ * Reprocess a file from cache (skip cache and re-upload)
+ * @param {string} filename - Filename to reprocess
+ */
+async function reprocessFile(filename) {
+    console.log(`[File Upload] 用户选择重新处理文件: ${filename}`);
+
+    // Remove from cache
+    delete appState.chat.parsedFilesCache[filename];
+    try {
+        localStorage.setItem('parsedFilesCache', JSON.stringify(appState.chat.parsedFilesCache));
+    } catch (e) {
+        console.warn('⚠️ 无法更新 localStorage:', e);
+    }
+
+    // Clear active file
+    appState.chat.activeFile = null;
+
+    // Show message to user
+    const chatFileStatusArea = document.getElementById('chat_file_status_area');
+    chatFileStatusArea.innerHTML = `
+        <div class="file-info" style="color: var(--primary-color);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 8px;">
+                <path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9z"/>
+                <path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5.002 5.002 0 0 0 8 3zM3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9H3.1z"/>
+            </svg>
+            <span>请重新选择文件进行上传</span>
+        </div>
+    `;
+
+    // Trigger file input click
+    const chatFileInput = document.getElementById('chat_file_input');
+    if (chatFileInput) {
+        chatFileInput.value = '';
+        chatFileInput.click();
+    }
+}
+
+/**
  * Start file upload after user selects service
  */
 async function startFileUpload() {
     const file = appState.chat.pendingFile;
     const event = appState.chat.pendingFileEvent;
-    
-    if (!file) return;
-    
+
+    if (!file) {
+        console.error('[File Upload] 没有待上传的文件');
+        return;
+    }
+
+    console.log(`[File Upload] 开始上传文件: ${file.name}`);
+
     const parserServiceSelect = document.getElementById('chat_parser_service_select');
     const toolType = parserServiceSelect.value;
-    
+
     const parserServiceSelector = document.getElementById('chat_parser_service_selector');
     parserServiceSelector.style.display = 'none';
-    
+
     const chatUploadFileBtn = document.getElementById('chat_upload_file_btn');
-    
+
     appState.chat.fileProcessing = true;
     if (chatUploadFileBtn) {
         chatUploadFileBtn.disabled = true;
     }
 
     try {
+        console.log(`[File Upload] 创建 FileParserHandler 实例，工具类型: ${toolType}`);
         const parser = new FileParserHandler();
+
+        console.log(`[File Upload] 调用 handleFileUpload...`);
         const result = await parser.handleFileUpload(file, toolType);
-        
+
+        console.log(`[File Upload] 文件解析成功，task_id: ${result.task_id}`);
+
         appState.chat.activeFile = {
             taskId: result.task_id,
             filename: file.name,
             content: result.content,
             toolType: toolType
         };
-        
+
         appState.chat.parsedFilesCache[file.name] = {
             taskId: result.task_id,
             filename: file.name,
@@ -136,31 +194,32 @@ async function startFileUpload() {
             toolType: toolType,
             timestamp: Date.now()
         };
-        
+
         try {
             localStorage.setItem('parsedFilesCache', JSON.stringify(appState.chat.parsedFilesCache));
             console.log('✅ 文件已保存到缓存:', file.name);
         } catch (e) {
             console.warn('⚠️ 无法保存缓存到 localStorage:', e);
         }
-        
+
         appState.chat.pendingFile = null;
         appState.chat.pendingFileEvent = null;
-        
+
         const chatInput = document.getElementById('chat_input');
         if (chatInput) {
             chatInput.focus();
         }
     } catch (error) {
+        console.error('[File Upload] 文件解析失败:', error);
         alert(`文件解析失败: ${error.message}`);
-        removeActiveFile(); 
+        removeActiveFile();
     } finally {
         appState.chat.fileProcessing = false;
         if (chatUploadFileBtn) {
             chatUploadFileBtn.disabled = false;
         }
         if (event && event.target) {
-            event.target.value = ''; 
+            event.target.value = '';
         }
     }
 }

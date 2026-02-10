@@ -46,25 +46,35 @@ class FileParserHandler {
      * @returns {Promise<Object>} Parsing result
      */
     async handleFileUpload(file, toolType = 'lite') {
+        console.log(`[FileParserHandler] 开始处理文件上传: ${file.name}, 工具类型: ${toolType}`);
+
         try {
             // 1. Validate file
+            console.log('[FileParserHandler] 1. 验证文件...');
             this.validateFile(file);
-            
+
             // 2. Show upload progress
+            console.log('[FileParserHandler] 2. 显示上传进度...');
             this.showUploadProgress(file.name);
-            
+
             // 3. Create parsing task
+            console.log('[FileParserHandler] 3. 创建解析任务...');
             const taskResult = await this.createParserTask(file, toolType);
-            
+            console.log(`[FileParserHandler] 任务创建成功: task_id=${taskResult.task_id}`);
+
             // 4. Poll for result
+            console.log('[FileParserHandler] 4. 开始轮询解析结果...');
             const parseResult = await this.pollParserResult(taskResult.task_id);
-            
+            console.log(`[FileParserHandler] 解析完成: status=${parseResult.status}, content长度=${parseResult.content?.length || 0}`);
+
             // 5. Show completion
+            console.log('[FileParserHandler] 5. 显示完成状态...');
             this.showParseComplete(file.name, parseResult.content);
-            
+
             return parseResult;
-            
+
         } catch (error) {
+            console.error('[FileParserHandler] 文件处理失败:', error);
             this.showError(error.message);
             throw error;
         }
