@@ -6,15 +6,52 @@
 // Note: getEl is defined in js/modules/navigation/tab-navigation.js which loads before this file
 
 // =================================================================================
+// 加载进度管理
+// =================================================================================
+window.LoadingManager = {
+    totalSteps: 10,
+    currentStep: 0,
+    progressElement: null,
+    overlayElement: null,
+    
+    init: function() {
+        this.progressElement = document.getElementById('loading-progress');
+        this.overlayElement = document.getElementById('loading-overlay');
+    },
+    
+    updateProgress: function(stepName) {
+        this.currentStep++;
+        const percentage = Math.round((this.currentStep / this.totalSteps) * 100);
+        if (this.progressElement) {
+            this.progressElement.textContent = `${stepName} (${percentage}%)`;
+        }
+        console.log(`📊 加载进度: ${stepName} (${percentage}%)`);
+    },
+    
+    complete: function() {
+        if (this.overlayElement) {
+            this.overlayElement.classList.add('hidden');
+            setTimeout(() => {
+                this.overlayElement.style.display = 'none';
+            }, 500);
+        }
+        console.log('✅ 所有模块加载完成');
+    }
+};
+
+// =================================================================================
 // 初始化
 // =================================================================================
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('开始初始化所有模块');
     
+    // 初始化加载管理器
+    LoadingManager.init();
+    
     // Load header component first
     try {
         await loadComponent('frontend/components/header.html', 'header-component');
-        console.log('✅ Header component loaded');
+        LoadingManager.updateProgress('加载头部组件');
     } catch (error) {
         console.error('❌ Failed to load header component:', error);
     }
@@ -22,7 +59,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Load tab navigation component
     try {
         await loadComponent('frontend/components/tab-navigation.html', 'tab-navigation-component');
-        console.log('✅ Tab navigation component loaded');
+        LoadingManager.updateProgress('加载导航组件');
     } catch (error) {
         console.error('❌ Failed to load tab navigation component:', error);
     }
@@ -30,11 +67,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Load instant chat component and initialize
     try {
         await loadComponent('frontend/components/tabs/instant-chat.html', 'instant-chat-component');
-        console.log('✅ Instant chat component loaded');
         // Wait for DOM to be ready
         await new Promise(resolve => setTimeout(resolve, 50));
         initChat();
-        console.log('✅ Chat initialized');
+        LoadingManager.updateProgress('初始化即时对话');
     } catch (error) {
         console.error('❌ Failed to load instant chat component:', error);
     }
@@ -52,16 +88,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         
         if (loaded) {
-            console.log('✅ Feature 2 (Async Batch) component loaded');
             // Wait for DOM to be ready
             await new Promise(resolve => setTimeout(resolve, 50));
             if (typeof initAsyncBatchModule === 'function') {
                 initAsyncBatchModule();
-            } else {
-                console.error('❌ initAsyncBatchModule function not found');
             }
-        } else {
-            console.error('❌ Feature 2 (Async Batch) component failed to load');
+            LoadingManager.updateProgress('初始化异步批处理');
         }
     } catch (error) {
         console.error('❌ Failed to load Feature 2 (Async Batch) component:', error);
@@ -78,16 +110,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         
         if (loaded) {
-            console.log('✅ Feature 3 (Large Batch) component loaded');
             // Wait for DOM to be ready
             await new Promise(resolve => setTimeout(resolve, 50));
             if (typeof initLargeBatchModule === 'function') {
                 initLargeBatchModule();
-            } else {
-                console.error('❌ initLargeBatchModule function not found');
             }
-        } else {
-            console.error('❌ Feature 3 (Large Batch) component failed to load');
+            LoadingManager.updateProgress('初始化大批量生成');
         }
     } catch (error) {
         console.error('❌ Failed to load Feature 3 (Large Batch) component:', error);
@@ -104,16 +132,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         
         if (loaded) {
-            console.log('✅ Feature 4 (Local Patent Library) component loaded');
             // Wait for DOM to be ready
             await new Promise(resolve => setTimeout(resolve, 50));
             if (typeof initLocalPatentLibModule === 'function') {
                 initLocalPatentLibModule();
-            } else {
-                console.error('❌ initLocalPatentLibModule function not found');
             }
-        } else {
-            console.error('❌ Feature 4 (Local Patent Library) component failed to load');
+            LoadingManager.updateProgress('初始化本地专利库');
         }
     } catch (error) {
         console.error('❌ Failed to load Feature 4 (Local Patent Library) component:', error);
@@ -131,16 +155,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         
         if (loaded) {
-            console.log('✅ Feature 5 (Claims Comparison) component loaded');
             // Wait for DOM to be ready
             await new Promise(resolve => setTimeout(resolve, 50));
             if (typeof initClaimsComparisonModule === 'function') {
                 initClaimsComparisonModule();
-            } else {
-                console.error('❌ initClaimsComparisonModule function not found');
             }
-        } else {
-            console.error('❌ Feature 5 (Claims Comparison) component failed to load');
+            LoadingManager.updateProgress('初始化权利要求对比');
         }
     } catch (error) {
         console.error('❌ Failed to load Feature 5 (Claims Comparison) component:', error);
@@ -149,14 +169,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Load Feature 6 (Patent Batch) component and initialize
     try {
         await loadComponent('frontend/components/tabs/patent-batch.html', 'patent-batch-component');
-        console.log('✅ Feature 6 (Patent Batch) component loaded');
         // Wait for DOM to be ready
         await new Promise(resolve => setTimeout(resolve, 50));
         if (typeof initPatentBatchModule === 'function') {
             initPatentBatchModule();
-        } else {
-            console.error('❌ initPatentBatchModule function not found');
         }
+        LoadingManager.updateProgress('初始化批量专利解读');
     } catch (error) {
         console.error('❌ Failed to load Feature 6 (Patent Batch) component:', error);
     }
@@ -173,18 +191,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         if (loaded) {
-            console.log('✅ Feature 7 (Claims Processor) component loaded');
             // Wait for DOM to be ready
             await new Promise(resolve => setTimeout(resolve, 100));
             // Initialize Claims Processor
             if (typeof initClaimsProcessor === 'function') {
                 initClaimsProcessor();
-                console.log('✅ Claims Processor initialized');
-            } else {
-                console.error('❌ initClaimsProcessor function not found');
             }
-        } else {
-            console.error('❌ Feature 7 (Claims Processor) component failed to load');
+            LoadingManager.updateProgress('初始化权利要求分析器');
         }
     } catch (error) {
         console.error('❌ Failed to load Feature 7 (Claims Processor) component:', error);
@@ -195,7 +208,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const loaded = await loadComponent('frontend/components/tabs/drawing-marker.html', 'drawing-marker-component', {
             requiredElements: [
                 'aiProcessingPanelContainer',
-                // Note: promptEditorContainer is created dynamically by ai_processing_panel.js
                 'drawing_upload_input',
                 'specification_input',
                 'start_processing_btn',
@@ -208,17 +220,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Initialize Drawing Marker
                 if (typeof initDrawingMarker === 'function') {
                     initDrawingMarker();
-                    console.log('✅ Drawing Marker initialized');
-                } else {
-                    console.error('❌ initDrawingMarker function not found');
                 }
             }
         });
         
         if (loaded) {
-            console.log('✅ Feature 8 (Drawing Marker) component loaded');
-        } else {
-            console.error('❌ Feature 8 (Drawing Marker) component failed to load');
+            LoadingManager.updateProgress('初始化附图标记');
         }
     } catch (error) {
         console.error('❌ Failed to load Feature 8 (Drawing Marker) component:', error);
@@ -226,7 +233,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Initialize API Key Config (global, not tied to a specific component)
     initApiKeyConfig();
-
+    LoadingManager.updateProgress('初始化API配置');
 
     // 默认激活第一个主页签
     switchTab('instant', document.querySelector('.main-tab-container .tab-button'));
@@ -238,8 +245,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const lplFirstStep = document.querySelector('#local_patent_lib-tab .step-item');
     if (lplFirstStep) switchLPLSubTab('expand', lplFirstStep);
     
-    // 注意：功能三的内部步骤激活需要在标签页显示后进行
-    // 现在只获取元素引用，不立即激活
+    // 完成加载，隐藏进度遮罩
+    LoadingManager.complete();
 });
 
 // =================================================================================
@@ -473,6 +480,18 @@ function initPatentBatchEventListeners() {
             if (window.patentResults.length === 0) {
                 alert('没有可导出的专利数据');
                 return;
+            }
+            
+            // 确保 XLSX 库已加载
+            if (typeof XLSX === 'undefined') {
+                searchStatus.textContent = '正在加载导出库，请稍候...';
+                searchStatus.style.display = 'block';
+                try {
+                    await window.ResourceLoader.ensureLibrary('xlsx');
+                } catch (err) {
+                    alert('导出库加载失败，请刷新页面后重试');
+                    return;
+                }
             }
             
             try {

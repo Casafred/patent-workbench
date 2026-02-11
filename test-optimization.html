@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加载优化测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 { color: #22c55e; }
+        .test-section {
+            background: #f0fdf4;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .status.success { background: #dcfce7; color: #166534; }
+        .status.warning { background: #fef3c7; color: #92400e; }
+        .status.error { background: #fee2e2; color: #991b1b; }
+        button {
+            padding: 10px 20px;
+            background: #22c55e;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #16a34a; }
+        #log {
+            background: #1e293b;
+            color: #4ade80;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 专利工作台加载优化测试</h1>
+    
+    <div class="test-section">
+        <h2>测试说明</h2>
+        <p>此页面用于验证加载优化是否影响功能。所有测试通过后才能确认优化安全。</p>
+    </div>
+
+    <div class="test-section">
+        <h2>1. 资源加载管理器测试</h2>
+        <button onclick="testResourceLoader()">测试 ResourceLoader</button>
+        <div id="resource-loader-status"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. 延迟加载库测试</h2>
+        <button onclick="testLibraryLoading('xlsx')">测试加载 XLSX</button>
+        <button onclick="testLibraryLoading('marked')">测试加载 marked</button>
+        <button onclick="testLibraryLoading('d3')">测试加载 D3</button>
+        <div id="library-status"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. 库可用性检查</h2>
+        <button onclick="checkAllLibraries()">检查所有库状态</button>
+        <div id="library-check-status"></div>
+    </div>
+
+    <div id="log"></div>
+
+    <!-- 引入优化后的 ResourceLoader -->
+    <script>
+        // 复制自 index.html 的 ResourceLoader
+        window.ResourceLoader = {
+            loadedScripts: new Map(),
+            loadingPromises: new Map(),
+            
+            loadScript: function(src, options = {}) {
+                if (this.loadingPromises.has(src)) {
+                    return this.loadingPromises.get(src);
+                }
+                if (this.loadedScripts.has(src)) {
+                    return Promise.resolve();
+                }
+                
+                const promise = new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = src;
+                    script.async = options.async !== false;
+                    script.onload = () => {
+                        this.loadedScripts.set(src, true);
+                        this.loadingPromises.delete(src);
+                        log(`✅ 加载成功: ${src}`);
+                        resolve();
+                    };
+                    script.onerror = (err) => {
+                        this.loadingPromises.delete(src);
+                        log(`❌ 加载失败: ${src}`);
+                        reject(err);
+                    };
+                    document.head.appendChild(script);
+                });
+                
+                this.loadingPromises.set(src, promise);
+                return promise;
+            },
+            
+            isLibraryAvailable: function(libName) {
+                switch(libName) {
+                    case 'xlsx': return typeof XLSX !== 'undefined';
+                    case 'html2canvas': return typeof html2canvas !== 'undefined';
+                    case 'jspdf': return typeof jspdf !== 'undefined';
+                    case 'd3': return typeof d3 !== 'undefined';
+                    case 'marked': return typeof marked !== 'undefined';
+                    default: return false;
+                }
+            },
+            
+            ensureLibrary: async function(libName) {
+                if (this.isLibraryAvailable(libName)) {
+                    return Promise.resolve();
+                }
+                
+                const libUrls = {
+                    'xlsx': 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
+                    'html2canvas': 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+                    'jspdf': 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+                    'd3': 'https://d3js.org/d3.v7.min.js',
+                    'marked': 'https://cdn.jsdelivr.net/npm/marked/marked.min.js'
+                };
+                
+                if (libUrls[libName]) {
+                    log(`🔄 正在按需加载: ${libName}`);
+                    return this.loadScript(libUrls[libName], { async: true });
+                }
+                return Promise.reject(new Error(`未知库: ${libName}`));
+            }
+        };
+
+        function log(message) {
+            const logEl = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            logEl.innerHTML += `[${time}] ${message}\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function showStatus(elementId, message, type) {
+            const el = document.getElementById(elementId);
+            el.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function testResourceLoader() {
+            log('=== 测试 ResourceLoader ===');
+            const tests = [
+                ['loadedScripts 存在', !!window.ResourceLoader.loadedScripts],
+                ['loadingPromises 存在', !!window.ResourceLoader.loadingPromises],
+                ['loadScript 方法存在', typeof window.ResourceLoader.loadScript === 'function'],
+                ['isLibraryAvailable 方法存在', typeof window.ResourceLoader.isLibraryAvailable === 'function'],
+                ['ensureLibrary 方法存在', typeof window.ResourceLoader.ensureLibrary === 'function']
+            ];
+            
+            const allPassed = tests.every(([name, result]) => result);
+            const details = tests.map(([name, result]) => `${result ? '✅' : '❌'} ${name}`).join('<br>');
+            
+            showStatus('resource-loader-status', details, allPassed ? 'success' : 'error');
+            log(`ResourceLoader 测试: ${allPassed ? '通过' : '失败'}`);
+        }
+
+        async function testLibraryLoading(libName) {
+            log(`=== 测试加载 ${libName} ===`);
+            const startTime = Date.now();
+            
+            try {
+                await window.ResourceLoader.ensureLibrary(libName);
+                const duration = Date.now() - startTime;
+                const isAvailable = window.ResourceLoader.isLibraryAvailable(libName);
+                
+                showStatus('library-status', 
+                    `✅ ${libName} 加载成功 (${duration}ms)<br>库可用: ${isAvailable ? '是' : '否'}`, 
+                    isAvailable ? 'success' : 'warning');
+                log(`${libName} 加载完成，耗时 ${duration}ms`);
+            } catch (err) {
+                showStatus('library-status', `❌ ${libName} 加载失败: ${err.message}`, 'error');
+                log(`${libName} 加载失败: ${err.message}`);
+            }
+        }
+
+        function checkAllLibraries() {
+            log('=== 检查所有库状态 ===');
+            const libs = ['xlsx', 'html2canvas', 'jspdf', 'd3', 'marked'];
+            const results = libs.map(lib => {
+                const available = window.ResourceLoader.isLibraryAvailable(lib);
+                return `${available ? '✅' : '⚠️'} ${lib}: ${available ? '已加载' : '未加载'}`;
+            });
+            
+            showStatus('library-check-status', results.join('<br>'), 'success');
+            results.forEach(r => log(r));
+        }
+
+        // 初始日志
+        log('页面加载完成，等待测试...');
+        log('ResourceLoader 已初始化');
+    </script>
+</body>
+</html>

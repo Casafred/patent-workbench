@@ -1,0 +1,1047 @@
+/* 
+ * Main CSS File - 优化合并版
+ * 专利分析智能工作台 v20
+ * 将所有 @import 合并为单个文件以减少 HTTP 请求
+ */
+
+/* ================================
+ * 基础样式 - base/variables.css
+ * ================================ */
+:root {
+    /* 主色调 */
+    --primary-color: #4ade80;
+    --primary-color-dark: #22c55e;
+    --primary-color-light: #86efac;
+    --primary-color-hover-bg: rgba(74, 222, 128, 0.1);
+    
+    /* 背景色 */
+    --bg-color: #f0fdf4;
+    --surface-color: #ffffff;
+    --bg-secondary: #f8fafc;
+    
+    /* 文字色 */
+    --text-color: #1e293b;
+    --text-color-secondary: #64748b;
+    --text-color-muted: #94a3b8;
+    
+    /* 边框 */
+    --border-color: #e2e8f0;
+    --border-color-light: #f1f5f9;
+    
+    /* 状态色 */
+    --success-color: #22c55e;
+    --warning-color: #f59e0b;
+    --error-color: #ef4444;
+    --info-color: #3b82f6;
+    
+    /* 阴影 */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    
+    /* 圆角 */
+    --radius-sm: 4px;
+    --radius: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-full: 9999px;
+    
+    /* 间距 */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+    
+    /* 字体 */
+    --font-sans: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'Fira Code', 'Consolas', monospace;
+    
+    /* 过渡 */
+    --transition-fast: 0.15s ease;
+    --transition: 0.2s ease;
+    --transition-slow: 0.3s ease;
+}
+
+/* ================================
+ * 基础样式 - base/reset.css
+ * ================================ */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    font-family: var(--font-sans);
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    color: var(--text-color);
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+a {
+    color: var(--primary-color-dark);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+a:hover {
+    color: var(--primary-color);
+}
+
+button {
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    background: none;
+}
+
+input, textarea, select {
+    font-family: inherit;
+    font-size: inherit;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* ================================
+ * 基础样式 - base/animations.css
+ * ================================ */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.animate-fadeIn {
+    animation: fadeIn var(--transition-slow);
+}
+
+.animate-fadeInUp {
+    animation: fadeInUp var(--transition-slow);
+}
+
+.animate-slideIn {
+    animation: slideIn var(--transition-slow);
+}
+
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* ================================
+ * 基础样式 - base/responsive.css
+ * ================================ */
+@media (max-width: 1200px) {
+    .container {
+        max-width: 100%;
+        padding: var(--space-4);
+    }
+}
+
+@media (max-width: 768px) {
+    html {
+        font-size: 14px;
+    }
+    
+    .container {
+        padding: var(--space-3);
+    }
+    
+    .main-content {
+        padding: var(--space-4);
+    }
+}
+
+@media (max-width: 480px) {
+    html {
+        font-size: 13px;
+    }
+    
+    .container {
+        padding: var(--space-2);
+    }
+}
+
+/* ================================
+ * 布局样式 - layout/container.css
+ * ================================ */
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--space-5);
+    position: relative;
+    z-index: 1;
+}
+
+.main-content {
+    background: var(--surface-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    padding: var(--space-6);
+    margin-top: var(--space-5);
+}
+
+.content-section {
+    margin-bottom: var(--space-6);
+}
+
+.content-section:last-child {
+    margin-bottom: 0;
+}
+
+/* ================================
+ * 布局样式 - layout/header.css
+ * ================================ */
+.main-header {
+    text-align: center;
+    margin-bottom: var(--space-6);
+    padding: var(--space-6) 0;
+}
+
+.main-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin-bottom: var(--space-2);
+    background: linear-gradient(135deg, var(--primary-color-dark) 0%, var(--primary-color) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.main-header .subtitle {
+    font-size: 1.1rem;
+    color: var(--text-color-secondary);
+    font-weight: 400;
+}
+
+/* ================================
+ * 布局样式 - layout/steps.css
+ * ================================ */
+.stepper {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: var(--space-6);
+    padding: var(--space-4);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+}
+
+.step-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    position: relative;
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.step-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 20px;
+    right: -50%;
+    width: 100%;
+    height: 2px;
+    background: var(--border-color);
+    z-index: 0;
+}
+
+.step-item.active:not(:last-child)::after,
+.step-item.completed:not(:last-child)::after {
+    background: var(--primary-color);
+}
+
+.step-number {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    background: var(--surface-color);
+    border: 2px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: var(--text-color-secondary);
+    z-index: 1;
+    transition: all var(--transition);
+}
+
+.step-item.active .step-number {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.step-item.completed .step-number {
+    background: var(--success-color);
+    border-color: var(--success-color);
+    color: white;
+}
+
+.step-label {
+    margin-top: var(--space-2);
+    font-size: 0.875rem;
+    color: var(--text-color-secondary);
+    font-weight: 500;
+}
+
+.step-item.active .step-label {
+    color: var(--primary-color-dark);
+}
+
+/* ================================
+ * 组件样式 - components/buttons.css
+ * ================================ */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-5);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    border-radius: var(--radius);
+    transition: all var(--transition);
+    cursor: pointer;
+    border: none;
+    outline: none;
+}
+
+.btn:focus-visible {
+    box-shadow: 0 0 0 3px var(--primary-color-hover-bg);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-color-dark) 0%, var(--primary-color) 100%);
+    color: white;
+    box-shadow: 0 4px 6px -1px rgba(74, 222, 128, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 8px -1px rgba(74, 222, 128, 0.4);
+}
+
+.btn-secondary {
+    background: var(--bg-secondary);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    background: var(--border-color-light);
+}
+
+.btn-danger {
+    background: var(--error-color);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+
+.btn-sm {
+    padding: var(--space-2) var(--space-3);
+    font-size: 0.875rem;
+}
+
+.btn-lg {
+    padding: var(--space-4) var(--space-6);
+    font-size: 1rem;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* ================================
+ * 组件样式 - components/forms.css
+ * ================================ */
+.form-group {
+    margin-bottom: var(--space-4);
+}
+
+.form-label {
+    display: block;
+    margin-bottom: var(--space-2);
+    font-weight: 500;
+    color: var(--text-color);
+    font-size: 0.9375rem;
+}
+
+.form-input,
+.form-textarea,
+.form-select {
+    width: 100%;
+    padding: var(--space-3);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    background: var(--surface-color);
+    color: var(--text-color);
+    font-size: 0.9375rem;
+    transition: all var(--transition-fast);
+}
+
+.form-input:focus,
+.form-textarea:focus,
+.form-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px var(--primary-color-hover-bg);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.form-hint {
+    margin-top: var(--space-1);
+    font-size: 0.8125rem;
+    color: var(--text-color-muted);
+}
+
+/* ================================
+ * 组件样式 - components/modals.css
+ * ================================ */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all var(--transition);
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background: var(--surface-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    max-width: 600px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    transform: scale(0.95);
+    transition: transform var(--transition);
+}
+
+.modal-overlay.active .modal-content {
+    transform: scale(1);
+}
+
+.modal-header {
+    padding: var(--space-5);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--text-color);
+}
+
+.modal-body {
+    padding: var(--space-5);
+}
+
+.modal-footer {
+    padding: var(--space-4) var(--space-5);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-3);
+}
+
+/* ================================
+ * 组件样式 - components/info-boxes.css
+ * ================================ */
+.info-box {
+    padding: var(--space-4);
+    border-radius: var(--radius);
+    border-left: 4px solid;
+    margin-bottom: var(--space-4);
+}
+
+.info-box-info {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: var(--info-color);
+    color: #1e40af;
+}
+
+.info-box-success {
+    background: rgba(34, 197, 94, 0.1);
+    border-color: var(--success-color);
+    color: #166534;
+}
+
+.info-box-warning {
+    background: rgba(245, 158, 11, 0.1);
+    border-color: var(--warning-color);
+    color: #92400e;
+}
+
+.info-box-error {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: var(--error-color);
+    color: #991b1b;
+}
+
+/* ================================
+ * 组件样式 - components/dropdowns.css
+ * ================================ */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.dropdown-toggle:hover {
+    border-color: var(--primary-color);
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 200px;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all var(--transition-fast);
+}
+
+.dropdown.active .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-item {
+    display: block;
+    padding: var(--space-3) var(--space-4);
+    color: var(--text-color);
+    transition: background var(--transition-fast);
+}
+
+.dropdown-item:hover {
+    background: var(--bg-secondary);
+}
+
+/* ================================
+ * 组件样式 - components/tabs.css
+ * ================================ */
+.tab-container {
+    display: flex;
+    gap: var(--space-1);
+    border-bottom: 2px solid var(--border-color);
+    margin-bottom: var(--space-5);
+}
+
+.tab-button {
+    padding: var(--space-3) var(--space-5);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--text-color-secondary);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.tab-button:hover {
+    color: var(--text-color);
+}
+
+.tab-button.active {
+    color: var(--primary-color-dark);
+    border-bottom-color: var(--primary-color);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+    animation: fadeIn var(--transition);
+}
+
+/* ================================
+ * 组件样式 - components/tables.css
+ * ================================ */
+.table-container {
+    overflow-x: auto;
+    border-radius: var(--radius);
+    border: 1px solid var(--border-color);
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9375rem;
+}
+
+.data-table th,
+.data-table td {
+    padding: var(--space-3) var(--space-4);
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.data-table th {
+    background: var(--bg-secondary);
+    font-weight: 600;
+    color: var(--text-color);
+    white-space: nowrap;
+}
+
+.data-table tbody tr:hover {
+    background: var(--primary-color-hover-bg);
+}
+
+.data-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* ================================
+ * 组件样式 - components/lists.css
+ * ================================ */
+.list-group {
+    list-style: none;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.list-item {
+    padding: var(--space-4);
+    background: var(--surface-color);
+    border-bottom: 1px solid var(--border-color);
+    transition: background var(--transition-fast);
+}
+
+.list-item:last-child {
+    border-bottom: none;
+}
+
+.list-item:hover {
+    background: var(--bg-secondary);
+}
+
+.list-item.active {
+    background: var(--primary-color-hover-bg);
+    border-left: 3px solid var(--primary-color);
+}
+
+/* ================================
+ * 页面特定样式 - pages/chat.css
+ * ================================ */
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 600px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-4);
+    background: var(--bg-secondary);
+}
+
+.chat-input-area {
+    display: flex;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    background: var(--surface-color);
+    border-top: 1px solid var(--border-color);
+}
+
+.chat-input {
+    flex: 1;
+    padding: var(--space-3);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    resize: none;
+    font-size: 0.9375rem;
+}
+
+.message {
+    max-width: 80%;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-3);
+}
+
+.message-user {
+    background: var(--primary-color);
+    color: white;
+    margin-left: auto;
+    border-bottom-right-radius: var(--space-1);
+}
+
+.message-assistant {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-bottom-left-radius: var(--space-1);
+}
+
+/* ================================
+ * 页面特定样式 - pages/claims.css
+ * ================================ */
+.claims-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-5);
+}
+
+@media (max-width: 968px) {
+    .claims-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+.claims-input-section,
+.claims-output-section {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+}
+
+.claims-textarea {
+    width: 100%;
+    min-height: 400px;
+    padding: var(--space-4);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    line-height: 1.6;
+    resize: vertical;
+}
+
+.claim-item {
+    padding: var(--space-4);
+    margin-bottom: var(--space-3);
+    border-radius: var(--radius);
+    border-left: 4px solid var(--border-color);
+    background: var(--bg-secondary);
+    transition: all var(--transition);
+}
+
+.claim-item.independent {
+    background: linear-gradient(90deg, rgba(74, 222, 128, 0.1), rgba(74, 222, 128, 0.05));
+    border-left-color: var(--primary-color);
+}
+
+.claim-item.dependent {
+    background: rgba(148, 163, 184, 0.1);
+    border-left-color: #94a3b8;
+}
+
+.claim-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-2);
+}
+
+.claim-number {
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.claim-badge {
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.claim-badge.independent {
+    background: var(--primary-color);
+    color: white;
+}
+
+.claim-badge.dependent {
+    background: #94a3b8;
+    color: white;
+}
+
+.claim-text {
+    line-height: 1.7;
+    color: var(--text-color);
+}
+
+.claim-references {
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--border-color);
+    font-size: 0.875rem;
+    color: var(--text-color-secondary);
+}
+
+/* ================================
+ * 其他组件样式
+ * ================================ */
+.search-result-item {
+    padding: var(--space-3);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    margin-bottom: var(--space-2);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    background: var(--surface-color);
+}
+
+.search-result-item:hover {
+    background: var(--primary-color-hover-bg);
+    border-color: var(--primary-color);
+}
+
+.search-result-item.selected {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color-dark);
+}
+
+.search-result-patent {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: var(--space-1);
+}
+
+.search-result-row {
+    font-size: 0.9rem;
+    color: var(--text-color-secondary);
+}
+
+.search-result-item.selected .search-result-row {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+#claims_visualization_container {
+    position: relative;
+    overflow: hidden;
+}
+
+#claims_visualization_container svg {
+    display: block;
+    margin: 0 auto;
+}
+
+.claims-tooltip {
+    font-size: 12px;
+    line-height: 1.4;
+    max-width: 200px;
+    word-wrap: break-word;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--border-color);
+    border-top: 4px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto var(--space-2);
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--text-color-secondary);
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all var(--transition-fast);
+}
+
+.close-btn:hover {
+    background: var(--error-color);
+    color: white;
+}
+
+.claim-info {
+    display: flex;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+    flex-wrap: wrap;
+}
+
+.claim-info .badge {
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.claim-info .badge.independent {
+    background: #4CAF50;
+    color: white;
+}
+
+.claim-info .badge.dependent {
+    background: #2196F3;
+    color: white;
+}
+
+.claim-dependencies {
+    margin-bottom: var(--space-3);
+    padding: var(--space-3);
+    background: var(--bg-color);
+    border-radius: var(--radius);
+}
+
+.node.independent {
+    fill: #4CAF50;
+}
+
+.node.dependent {
+    fill: #2196F3;
+}
+
+.link {
+    stroke: #999;
+    stroke-width: 2;
+    fill: none;
+}
+
+.node-label {
+    font-family: var(--font-sans);
+    font-weight: bold;
+    text-anchor: middle;
+    pointer-events: none;
+}
+
+/* 帮助标签 */
+.help-tab-container {
+    position: fixed;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 100;
+}
+
+.help-tab {
+    display: flex;
+    align-items: center;
+    background: var(--primary-color);
+    color: white;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius) 0 0 var(--radius);
+    box-shadow: var(--shadow-md);
+    transition: all var(--transition);
+    text-decoration: none;
+}
+
+.help-tab:hover {
+    background: var(--primary-color-dark);
+    padding-right: var(--space-5);
+}
+
+.help-tab-text {
+    font-weight: 500;
+    margin-right: var(--space-2);
+}

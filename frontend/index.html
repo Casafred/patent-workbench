@@ -7,29 +7,73 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>专利分析智能工作台 v20</title>
-    <!-- 引入的库 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <!-- Vanta.js Dependencies -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js"></script>
-    <!-- 字体 -->
+    
+    <!-- 预连接优化 -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    
+    <!-- 首屏关键CSS内联 -->
+    <style>
+        /* 关键渲染路径CSS - 最小化首屏样式 */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', sans-serif;
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            min-height: 100vh;
+            position: relative;
+        }
+        #vanta-bg { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            z-index: -1; pointer-events: none; 
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 50%, #d1fae5 100%);
+        }
+        .container { 
+            max-width: 1400px; margin: 0 auto; padding: 20px;
+            position: relative; z-index: 1;
+        }
+        .loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.95); z-index: 99999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 0.5s ease-out;
+        }
+        .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+        .loading-spinner {
+            width: 50px; height: 50px; border: 4px solid #e5e7eb;
+            border-top-color: #4ade80; border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { margin-top: 20px; color: #374151; font-size: 14px; }
+        .loading-progress { margin-top: 10px; color: #6b7280; font-size: 12px; }
+        
+        /* 骨架屏样式 */
+        .skeleton {
+            background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+            background-size: 200% 100%; animation: shimmer 1.5s infinite;
+            border-radius: 4px;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+    
+    <!-- 字体 -->
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <!-- 模块化CSS文件 -->
-    <link rel="stylesheet" href="frontend/css/main.css?v=20260207d">
-    <link rel="stylesheet" href="frontend/css/pages/claims.css?v=20260207d">
+    
+    <!-- 优化后的合并CSS文件 - 减少HTTP请求 -->
+    <link rel="stylesheet" href="frontend/css/main-optimized.css?v=20260211">
+    <!-- 页面特定样式 -->
+    <link rel="stylesheet" href="frontend/css/pages/claims.css?v=20260211">
     <!-- 功能六增强CSS -->
     <link rel="stylesheet" href="frontend/css/components/patent-template.css">
     <link rel="stylesheet" href="frontend/css/components/patent-chat.css">
     <link rel="stylesheet" href="frontend/css/components/patent-config.css">
     <link rel="stylesheet" href="frontend/css/components/patent-timeline.css">
     <link rel="stylesheet" href="frontend/css/components/field-selector.css">
-    <link rel="stylesheet" href="frontend/css/components/buttons.css">
     <!-- AI说明书处理器CSS -->
     <link rel="stylesheet" href="frontend/css/components/ai-description-processor.css">
 
@@ -140,6 +184,13 @@
 
 </head>
 <body>
+
+<!-- 加载进度遮罩 -->
+<div id="loading-overlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">正在加载专利工作台...</div>
+    <div id="loading-progress" class="loading-progress">初始化中</div>
+</div>
 
 <div id="vanta-bg"></div>
 
@@ -1887,5 +1938,165 @@ document.addEventListener('DOMContentLoaded', function() {
     
     <!-- Main initialization - must load last -->
     <script src="js/main.js?v=20260207e"></script>
+    
+    <!-- 延迟加载非关键库 -->
+    <script>
+    // 资源加载管理器
+    window.ResourceLoader = {
+        loadedScripts: new Map(),
+        loadingPromises: new Map(),
+        
+        // 延迟加载脚本
+        loadScript: function(src, options = {}) {
+            // 如果已经在加载中，返回现有的 Promise
+            if (this.loadingPromises.has(src)) {
+                return this.loadingPromises.get(src);
+            }
+            
+            // 如果已经加载完成，返回 resolved Promise
+            if (this.loadedScripts.has(src)) {
+                return Promise.resolve();
+            }
+            
+            const promise = new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.async = options.async !== false;
+                script.defer = options.defer === true;
+                
+                if (options.module) {
+                    script.type = 'module';
+                }
+                
+                script.onload = () => {
+                    this.loadedScripts.set(src, true);
+                    this.loadingPromises.delete(src);
+                    console.log(`✅ 脚本加载完成: ${src}`);
+                    resolve();
+                };
+                script.onerror = (err) => {
+                    this.loadingPromises.delete(src);
+                    console.warn(`⚠️ 脚本加载失败: ${src}`, err);
+                    reject(err);
+                };
+                
+                document.head.appendChild(script);
+            });
+            
+            this.loadingPromises.set(src, promise);
+            return promise;
+        },
+        
+        // 检查库是否可用
+        isLibraryAvailable: function(libName) {
+            switch(libName) {
+                case 'xlsx': return typeof XLSX !== 'undefined';
+                case 'html2canvas': return typeof html2canvas !== 'undefined';
+                case 'jspdf': return typeof jspdf !== 'undefined';
+                case 'd3': return typeof d3 !== 'undefined';
+                case 'marked': return typeof marked !== 'undefined';
+                case 'three': return typeof THREE !== 'undefined';
+                case 'vanta': return typeof VANTA !== 'undefined';
+                default: return false;
+            }
+        },
+        
+        // 确保库已加载（如果未加载则自动加载）
+        ensureLibrary: async function(libName) {
+            if (this.isLibraryAvailable(libName)) {
+                return Promise.resolve();
+            }
+            
+            const libUrls = {
+                'xlsx': 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
+                'html2canvas': 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+                'jspdf': 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+                'd3': 'https://d3js.org/d3.v7.min.js',
+                'marked': 'https://cdn.jsdelivr.net/npm/marked/marked.min.js',
+                'three': 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js',
+                'vanta': 'https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js'
+            };
+            
+            if (libUrls[libName]) {
+                console.log(`🔄 正在按需加载库: ${libName}`);
+                return this.loadScript(libUrls[libName], { async: true });
+            }
+            
+            return Promise.reject(new Error(`未知的库: ${libName}`));
+        },
+        
+        // 延迟加载非首屏库
+        loadDeferredLibraries: function() {
+            const deferredLibs = [
+                { src: 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', name: 'html2canvas' },
+                { src: 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', name: 'jspdf' },
+                { src: 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js', name: 'xlsx' },
+                { src: 'https://d3js.org/d3.v7.min.js', name: 'd3' },
+                { src: 'https://cdn.jsdelivr.net/npm/marked/marked.min.js', name: 'marked' },
+            ];
+            
+            const loadNext = (index) => {
+                if (index >= deferredLibs.length) return;
+                
+                const lib = deferredLibs[index];
+                this.loadScript(lib.src, { async: true }).then(() => {
+                    setTimeout(() => loadNext(index + 1), 100);
+                }).catch(err => {
+                    loadNext(index + 1);
+                });
+            };
+            
+            if (document.readyState === 'complete') {
+                setTimeout(() => loadNext(0), 1000);
+            } else {
+                window.addEventListener('load', () => {
+                    setTimeout(() => loadNext(0), 1000);
+                });
+            }
+        },
+        
+        // 按需加载背景动画库
+        loadBackgroundLibs: function() {
+            return Promise.all([
+                this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js', { async: true }),
+                this.loadScript('https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js', { async: true })
+            ]).then(() => {
+                if (typeof VANTA !== 'undefined' && VANTA.NET) {
+                    VANTA.NET({
+                        el: "#vanta-bg",
+                        mouseControls: true,
+                        touchControls: true,
+                        gyroControls: false,
+                        minHeight: 200.00,
+                        minWidth: 200.00,
+                        scale: 1.00,
+                        scaleMobile: 1.00,
+                        color: 0x4ade80,
+                        backgroundColor: 0xf0fdf4,
+                        points: 8.00,
+                        maxDistance: 18.00,
+                        spacing: 18.00,
+                        showDots: true
+                    });
+                }
+            });
+        }
+    };
+    
+    // 页面加载完成后执行
+    document.addEventListener('DOMContentLoaded', function() {
+        window.ResourceLoader.loadDeferredLibraries();
+        
+        if ('requestIdleCallback' in window) {
+            requestIdleCallback(() => {
+                window.ResourceLoader.loadBackgroundLibs();
+            }, { timeout: 3000 });
+        } else {
+            setTimeout(() => {
+                window.ResourceLoader.loadBackgroundLibs();
+            }, 2000);
+        }
+    });
+    </script>
 </body>
 </html>
