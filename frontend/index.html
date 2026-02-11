@@ -35,11 +35,15 @@
         }
         .loading-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.95); z-index: 99999;
+            background: rgba(255,255,255,0.98); z-index: 99999;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            transition: opacity 0.5s ease-out;
+            transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
         }
-        .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+        .loading-overlay.hidden { 
+            opacity: 0; 
+            visibility: hidden;
+            pointer-events: none; 
+        }
         .loading-spinner {
             width: 50px; height: 50px; border: 4px solid #e5e7eb;
             border-top-color: #4ade80; border-radius: 50%;
@@ -2056,12 +2060,24 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         
         // 按需加载背景动画库
-        loadBackgroundLibs: function() {
-            return Promise.all([
-                this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js', { async: true }),
-                this.loadScript('https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js', { async: true })
-            ]).then(() => {
-                if (typeof VANTA !== 'undefined' && VANTA.NET) {
+        loadBackgroundLibs: async function() {
+            try {
+                // 先加载 Three.js，确保它在 Vanta 之前加载完成
+                await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js', { async: false });
+                console.log('✅ Three.js 加载完成');
+                
+                // 等待一小段时间确保 Three.js 完全初始化
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                // 然后加载 Vanta.js
+                await this.loadScript('https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js', { async: false });
+                console.log('✅ Vanta.js 加载完成');
+                
+                // 再等待一小段时间确保 Vanta 完全初始化
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                // 初始化 Vanta.js
+                if (typeof VANTA !== 'undefined' && VANTA.NET && typeof THREE !== 'undefined') {
                     VANTA.NET({
                         el: "#vanta-bg",
                         mouseControls: true,
@@ -2078,23 +2094,30 @@ document.addEventListener('DOMContentLoaded', function() {
                         spacing: 18.00,
                         showDots: true
                     });
+                    console.log('✅ Vanta.js 初始化成功');
+                } else {
+                    console.warn('⚠️ Vanta 或 Three.js 未加载成功，跳过背景动画');
                 }
-            });
+            } catch (err) {
+                console.warn('⚠️ 背景动画加载失败:', err);
+            }
         }
     };
     
     // 页面加载完成后执行
     document.addEventListener('DOMContentLoaded', function() {
+        // 延迟加载非关键库
         window.ResourceLoader.loadDeferredLibraries();
         
+        // 延迟加载背景动画库（低优先级）
         if ('requestIdleCallback' in window) {
             requestIdleCallback(() => {
                 window.ResourceLoader.loadBackgroundLibs();
-            }, { timeout: 3000 });
+            }, { timeout: 5000 });
         } else {
             setTimeout(() => {
                 window.ResourceLoader.loadBackgroundLibs();
-            }, 2000);
+            }, 3000);
         }
     });
     </script>

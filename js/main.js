@@ -30,7 +30,10 @@ window.LoadingManager = {
     
     complete: function() {
         if (this.overlayElement) {
-            this.overlayElement.classList.add('hidden');
+            // 使用 visibility 而不是 display，避免影响布局
+            this.overlayElement.style.opacity = '0';
+            this.overlayElement.style.visibility = 'hidden';
+            this.overlayElement.style.pointerEvents = 'none';
             setTimeout(() => {
                 this.overlayElement.style.display = 'none';
             }, 500);
