@@ -441,6 +441,32 @@ function initPatentBatchEventListeners() {
         });
     }
     
+    // 缓存统计按钮
+    const viewCacheStatsBtn = getEl('view_cache_stats_btn');
+    if (viewCacheStatsBtn && window.PatentCache) {
+        viewCacheStatsBtn.addEventListener('click', () => {
+            const stats = PatentCache.getStats();
+            alert(`📊 专利缓存统计\n\n` +
+                  `缓存数量: ${stats.totalCount} 个\n` +
+                  `占用空间: ${stats.totalSize}\n` +
+                  `最早缓存: ${stats.oldestCache}\n` +
+                  `最新缓存: ${stats.newestCache}\n\n` +
+                  `缓存有效期: 30天\n` +
+                  `警告阈值: 7天`);
+        });
+    }
+    
+    // 清理缓存按钮
+    const clearCacheBtn = getEl('clear_cache_btn');
+    if (clearCacheBtn && window.PatentCache) {
+        clearCacheBtn.addEventListener('click', () => {
+            if (confirm('确定要清理所有专利缓存吗？此操作不可恢复。')) {
+                const count = PatentCache.clearAll();
+                alert(`✅ 已清理 ${count} 个专利缓存`);
+            }
+        });
+    }
+    
     // 导出Excel按钮
     if (exportAnalysisExcelBtn) {
         exportAnalysisExcelBtn.addEventListener('click', async () => {
@@ -554,8 +580,10 @@ function initPatentBatchEventListeners() {
         });
     }
     
-    // 定义批量查询专利的执行函数
-    async function performPatentSearch(patentNumbers) {
+    // 定义批量查询专利的执行函数（增强版：支持缓存、实时显示、自动解读）
+    async function performPatentSearch(patentNumbers, options = {}) {
+        const { skipCacheCheck = false, forceRefresh = false } = options;
+        
         // 首先检查后端版本
         try {
             const versionResponse = await apiCall('/patent/version', null, 'GET');
@@ -586,46 +614,255 @@ function initPatentBatchEventListeners() {
         }
         analyzeAllBtn.disabled = true;
         
+        // 更新状态
+        appState.patentBatch.isCrawling = true;
+        appState.patentBatch.crawlProgress = { current: 0, total: patentNumbers.length };
+        updateCrawlProgress();
+        
         // 显示查询状态
-        searchStatus.textContent = `正在查询 ${patentNumbers.length} 个专利...`;
+        searchStatus.textContent = `准备查询 ${patentNumbers.length} 个专利...`;
         searchStatus.style.display = 'block';
         
-        try {
-            // 调用API查询专利
-            console.log('🚀 开始查询专利，参数:', { patent_numbers: patentNumbers, crawl_specification: crawlSpecification, selected_fields: selectedFields });
-            const results = await apiCall('/patent/search', {
-                patent_numbers: patentNumbers,
-                crawl_specification: crawlSpecification,
-                selected_fields: selectedFields
-            });
+        // 检查缓存（如果不是强制刷新）
+        if (!skipCacheCheck && !forceRefresh && window.PatentCache) {
+            const cacheStatus = PatentCache.checkBatch(patentNumbers);
             
-            console.log('📦 查询结果:', results);
+            if (cacheStatus.cached.length > 0) {
+                // 显示缓存确认弹窗
+                return new Promise((resolve) => {
+                    CacheConfirmModal.show(cacheStatus, async (useCache, selectedPatents) => {
+                        await executePatentSearch(selectedPatents.useCache, selectedPatents.refresh, selectedFields);
+                        resolve();
+                    }, () => {
+                        // 取消操作
+                        searchStatus.textContent = '已取消查询';
+                        appState.patentBatch.isCrawling = false;
+                        updateCrawlProgress();
+                        resolve();
+                    });
+                });
+            }
+        }
+        
+        // 直接执行查询（无缓存或强制刷新）
+        await executePatentSearch([], patentNumbers, selectedFields);
+    }
+    
+    // 执行专利查询（内部函数）
+    async function executePatentSearch(cachedPatents, patentsToCrawl, selectedFields) {
+        const results = [];
+        const patentNumbers = [...cachedPatents, ...patentsToCrawl];
+        
+        // 显示结果容器
+        if (patentResultsContainer) {
+            patentResultsContainer.style.display = 'block';
+        }
+        
+        // 1. 首先加载缓存的专利（实时显示）
+        for (const patentNumber of cachedPatents) {
+            const cacheData = PatentCache.get(patentNumber);
+            if (cacheData) {
+                const result = {
+                    patent_number: patentNumber,
+                    success: true,
+                    data: cacheData.data,
+                    fromCache: true,
+                    cacheTime: cacheData.timestamp
+                };
+                results.push(result);
+                
+                // 实时显示
+                displayPatentResult(result, results.length - 1, patentNumbers.length);
+                
+                // 更新进度
+                appState.patentBatch.crawlProgress.current++;
+                updateCrawlProgress();
+                
+                searchStatus.textContent = `已从缓存加载 ${results.length}/${patentNumbers.length} 个专利`;
+            }
+        }
+        
+        // 2. 逐个爬取未缓存的专利（实时显示）
+        for (let i = 0; i < patentsToCrawl.length; i++) {
+            const patentNumber = patentsToCrawl[i];
             
-            // 按照用户输入的顺序重新排列结果
-            const orderedResults = [];
-            for (const patentNumber of patentNumbers) {
-                const result = results.find(r => r.patent_number === patentNumber);
-                if (result) {
-                    orderedResults.push(result);
+            try {
+                searchStatus.textContent = `正在爬取第 ${results.length + 1}/${patentNumbers.length} 个专利: ${patentNumber}...`;
+                
+                // 调用API查询单个专利
+                const apiResults = await apiCall('/patent/search', {
+                    patent_numbers: [patentNumber],
+                    crawl_specification: true,
+                    selected_fields: selectedFields
+                });
+                
+                if (apiResults && apiResults.length > 0) {
+                    const result = apiResults[0];
+                    results.push(result);
+                    
+                    // 如果成功，保存到缓存
+                    if (result.success && window.PatentCache) {
+                        PatentCache.save(patentNumber, result.data, selectedFields);
+                    }
+                    
+                    // 实时显示
+                    displayPatentResult(result, results.length - 1, patentNumbers.length);
                 }
+            } catch (error) {
+                console.error(`❌ 爬取专利 ${patentNumber} 失败:`, error);
+                const errorResult = {
+                    patent_number: patentNumber,
+                    success: false,
+                    error: error.message
+                };
+                results.push(errorResult);
+                displayPatentResult(errorResult, results.length - 1, patentNumbers.length);
             }
             
-            window.patentResults = orderedResults;
-            
-            // 显示查询结果
-            displayPatentResults(orderedResults);
-            
-            // 更新状态
-            searchStatus.textContent = `查询完成，成功 ${orderedResults.filter(r => r.success).length} 个，失败 ${orderedResults.filter(r => !r.success).length} 个`;
-            
-            // 如果有成功的结果，启用一键解读按钮
-            if (orderedResults.some(r => r.success)) {
-                analyzeAllBtn.disabled = false;
+            // 更新进度
+            appState.patentBatch.crawlProgress.current++;
+            updateCrawlProgress();
+        }
+        
+        // 按照用户输入的顺序重新排列结果
+        const orderedResults = [];
+        for (const patentNumber of patentNumbers) {
+            const result = results.find(r => r.patent_number.toUpperCase() === patentNumber.toUpperCase());
+            if (result) {
+                orderedResults.push(result);
             }
-        } catch (error) {
-            console.error('❌ 专利查询失败:', error);
-            searchStatus.textContent = `查询失败: ${error.message}`;
-            searchStatus.style.color = 'red';
+        }
+        
+        window.patentResults = orderedResults;
+        appState.patentBatch.patentResults = orderedResults;
+        
+        // 更新状态
+        const successCount = orderedResults.filter(r => r.success).length;
+        const failCount = orderedResults.filter(r => !r.success).length;
+        searchStatus.textContent = `爬取完成，成功 ${successCount} 个，失败 ${failCount} 个${cachedPatents.length > 0 ? `（其中 ${cachedPatents.length} 个来自缓存）` : ''}`;
+        
+        // 完成爬取
+        appState.patentBatch.isCrawling = false;
+        updateCrawlProgress();
+        
+        // 如果有成功的结果，启用一键解读按钮
+        if (successCount > 0) {
+            analyzeAllBtn.disabled = false;
+            
+            // 检查是否开启自动解读
+            const autoAnalyzeCheckbox = document.getElementById('auto_analyze_checkbox');
+            if (autoAnalyzeCheckbox && autoAnalyzeCheckbox.checked) {
+                console.log('🤖 自动解读已开启，开始批量解读...');
+                searchStatus.textContent += '，自动开始解读...';
+                
+                // 延迟一下让用户看到爬取完成的状态
+                setTimeout(() => {
+                    analyzeAllBtn.click();
+                }, 500);
+            }
+        }
+    }
+    
+    // 更新爬取进度条
+    function updateCrawlProgress() {
+        const container = document.getElementById('crawl_progress_container');
+        const text = document.getElementById('crawl_progress_text');
+        const count = document.getElementById('crawl_progress_count');
+        const bar = document.getElementById('crawl_progress_bar');
+        
+        if (!container || !text || !count || !bar) return;
+        
+        const { current, total } = appState.patentBatch.crawlProgress;
+        
+        if (appState.patentBatch.isCrawling || current > 0) {
+            container.style.display = 'block';
+            text.textContent = appState.patentBatch.isCrawling ? '正在爬取...' : '爬取完成';
+            count.textContent = `${current}/${total}`;
+            const percentage = total > 0 ? (current / total * 100) : 0;
+            bar.style.width = `${percentage}%`;
+        } else {
+            container.style.display = 'none';
+        }
+    }
+    
+    // 更新解读进度条
+    function updateAnalyzeProgress() {
+        const container = document.getElementById('analyze_progress_container');
+        const text = document.getElementById('analyze_progress_text');
+        const count = document.getElementById('analyze_progress_count');
+        const bar = document.getElementById('analyze_progress_bar');
+        
+        if (!container || !text || !count || !bar) return;
+        
+        const { current, total } = appState.patentBatch.analyzeProgress;
+        
+        if (appState.patentBatch.isAnalyzing || current > 0) {
+            container.style.display = 'block';
+            text.textContent = appState.patentBatch.isAnalyzing ? '正在解读...' : '解读完成';
+            count.textContent = `${current}/${total}`;
+            const percentage = total > 0 ? (current / total * 100) : 0;
+            bar.style.width = `${percentage}%`;
+        } else {
+            container.style.display = 'none';
+        }
+    }
+    
+    // 显示单个专利结果（实时显示）
+    function displayPatentResult(result, index, total) {
+        const stripItem = document.createElement('div');
+        stripItem.className = `patent-strip ${result.success ? 'success' : 'error'}`;
+        stripItem.id = `patent_strip_${result.patent_number}`;
+        
+        if (result.success) {
+            const data = result.data;
+            const titlePreview = data.title ? (data.title.length > 60 ? data.title.substring(0, 60) + '...' : data.title) : '无标题';
+            const cacheBadge = result.fromCache ? '<span style="background: #e3f2fd; color: #1976d2; padding: 2px 6px; border-radius: 3px; font-size: 11px; margin-left: 8px;">缓存</span>' : '';
+            
+            stripItem.innerHTML = `
+                <div class="patent-strip-icon">
+                    ✓
+                </div>
+                <div class="patent-strip-content">
+                    <div class="patent-strip-number">${result.patent_number}${cacheBadge}</div>
+                    <div class="patent-strip-title">${titlePreview}</div>
+                </div>
+                <div class="patent-strip-actions">
+                    <button class="patent-strip-copy-btn" onclick="copyPatentNumber('${result.patent_number}', event)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                            <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                        </svg>
+                        复制
+                    </button>
+                </div>
+            `;
+            
+            // 点击条带打开详情弹窗
+            stripItem.addEventListener('click', (e) => {
+                if (e.target.closest('.patent-strip-copy-btn')) {
+                    return;
+                }
+                e.stopPropagation();
+                openPatentDetailModal(result);
+            });
+        } else {
+            stripItem.innerHTML = `
+                <div class="patent-strip-icon">
+                    ✗
+                </div>
+                <div class="patent-strip-content">
+                    <div class="patent-strip-number">${result.patent_number}</div>
+                    <div class="patent-strip-error">查询失败: ${result.error}</div>
+                </div>
+            `;
+        }
+        
+        // 按顺序插入到列表中
+        const existingStrip = document.getElementById(`patent_strip_${result.patent_number}`);
+        if (existingStrip) {
+            existingStrip.replaceWith(stripItem);
+        } else {
+            patentResultsList.appendChild(stripItem);
         }
     }
     
@@ -651,7 +888,7 @@ function initPatentBatchEventListeners() {
         });
     }
     
-    // 一键解读全部
+    // 一键解读全部（增强版：支持实时显示和进度条）
     analyzeAllBtn.addEventListener('click', async () => {
         const successfulResults = window.patentResults.filter(r => r.success);
         if (successfulResults.length === 0) {
@@ -675,6 +912,11 @@ function initPatentBatchEventListeners() {
         }
         patentBatchAnalysisResults = [];
         
+        // 初始化进度
+        appState.patentBatch.isAnalyzing = true;
+        appState.patentBatch.analyzeProgress = { current: 0, total: successfulResults.length };
+        updateAnalyzeProgress();
+        
         // 显示解读状态
         searchStatus.textContent = `正在使用"${template.name}"模板解读 ${successfulResults.length} 个专利...`;
         searchStatus.style.display = 'block';
@@ -682,107 +924,178 @@ function initPatentBatchEventListeners() {
         // 创建一个Map来存储解读结果，key是专利号
         const analysisResultsMap = new Map();
         
+        // 显示结果容器
+        if (patentResultsContainer) {
+            patentResultsContainer.style.display = 'block';
+        }
+        
         try {
-            // 逐个解读专利
+            // 逐个解读专利（实时显示）
             for (let i = 0; i < successfulResults.length; i++) {
                 const patent = successfulResults[i];
                 
-                // 创建占位符（按用户输入顺序）
-                const placeholderId = `analysis_placeholder_${patent.patent_number}`;
-                if (!document.getElementById(placeholderId) && analysisResultsList) {
-                    const placeholder = document.createElement('div');
-                    placeholder.id = placeholderId;
-                    placeholder.className = 'result-item';
-                    placeholder.innerHTML = `<h5>正在解读专利：${patent.patent_number} (${i + 1}/${successfulResults.length})</h5>`;
-                    analysisResultsList.appendChild(placeholder);
+                // 更新进度
+                appState.patentBatch.analyzeProgress.current = i;
+                updateAnalyzeProgress();
+                searchStatus.textContent = `正在解读第 ${i + 1}/${successfulResults.length} 个专利: ${patent.patent_number}...`;
+                
+                // 创建结果容器（按用户输入顺序）
+                const resultId = `analysis_result_${patent.patent_number}`;
+                let resultContainer = document.getElementById(resultId);
+                if (!resultContainer && analysisResultsList) {
+                    resultContainer = document.createElement('div');
+                    resultContainer.id = resultId;
+                    resultContainer.className = 'result-item analysis-result-item';
+                    resultContainer.innerHTML = `
+                        <div class="analysis-result-header" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f5f5f5; border-radius: 6px 6px 0 0;">
+                            <h5 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                                <span>专利 ${patent.patent_number}</span>
+                                <span class="analysis-status" style="font-size: 12px; padding: 2px 8px; background: #e3f2fd; color: #1976d2; border-radius: 10px;">解读中...</span>
+                            </h5>
+                            <span style="font-size: 12px; color: #999;">${i + 1}/${successfulResults.length}</span>
+                        </div>
+                        <div class="analysis-result-content" style="padding: 15px;">
+                            <div style="display: flex; align-items: center; gap: 10px; color: #666;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" class="rotating">
+                                    <path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9z"/>
+                                    <path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5.002 5.002 0 0 0 8 3zM3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9H3.1z"/>
+                                </svg>
+                                <span>正在分析专利内容...</span>
+                            </div>
+                        </div>
+                    `;
+                    analysisResultsList.appendChild(resultContainer);
                 }
                 
-                // 使用模板构建提示词
-                const userPrompt = buildAnalysisPrompt(template, patent.data, includeSpecification);
-                
-                // 获取选择的模型
-                const selectedModel = getEl('patent_batch_model_selector')?.value || 'GLM-4-Flash';
-                
-                // 调用API解读专利
-                const analysisResult = await apiCall('/patent/analyze', {
-                    patent_data: patent.data,
-                    template: {
-                        fields: template.fields,
-                        system_prompt: template.systemPrompt
-                    },
-                    user_prompt: userPrompt,
-                    include_specification: includeSpecification,
-                    model: selectedModel
-                });
-                
-                // 更新解读结果
-                const analysisContent = analysisResult.choices[0]?.message?.content || '解读失败';
-                
-                // 尝试解析JSON格式的解读结果
-                let analysisJson = {};
-                let displayContent = '';
                 try {
-                    // 尝试清理可能的markdown代码块标记
-                    let cleanContent = analysisContent.trim();
-                    if (cleanContent.startsWith('```json')) {
-                        cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-                    } else if (cleanContent.startsWith('```')) {
-                        cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
-                    }
+                    // 使用模板构建提示词
+                    const userPrompt = buildAnalysisPrompt(template, patent.data, includeSpecification);
                     
-                    analysisJson = JSON.parse(cleanContent);
+                    // 获取选择的模型
+                    const selectedModel = getEl('patent_batch_model_selector')?.value || 'GLM-4-Flash';
                     
-                    // 动态生成表格内容（根据模板字段）
-                    let tableRows = '';
-                    template.fields.forEach(field => {
-                        const value = analysisJson[field.id] || '-';
-                        const displayValue = typeof value === 'string' ? value.replace(/\n/g, '<br>') : value;
-                        tableRows += `<tr><td style="border: 1px solid #ddd; padding: 8px;">${field.name}</td><td style="border: 1px solid #ddd; padding: 8px;">${displayValue}</td></tr>`;
+                    // 调用API解读专利
+                    const analysisResult = await apiCall('/patent/analyze', {
+                        patent_data: patent.data,
+                        template: {
+                            fields: template.fields,
+                            system_prompt: template.systemPrompt
+                        },
+                        user_prompt: userPrompt,
+                        include_specification: includeSpecification,
+                        model: selectedModel
                     });
                     
-                    displayContent = `
-                        <div class="analysis-content">
-                            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-                                <tr><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">字段</th><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">内容</th></tr>
-                                ${tableRows}
-                            </table>
-                        </div>
-                    `;
-                } catch (e) {
-                    console.error('JSON解析失败:', e);
-                    // 如果不是JSON格式，显示原始内容
-                    displayContent = `
-                        <div class="analysis-content">
-                            <div style="padding: 10px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; margin-bottom: 10px;">
-                                ⚠️ 解读结果未能解析为结构化格式，显示原始内容：
+                    // 更新解读结果
+                    const analysisContent = analysisResult.choices[0]?.message?.content || '解读失败';
+                    
+                    // 尝试解析JSON格式的解读结果
+                    let analysisJson = {};
+                    let displayContent = '';
+                    let parseSuccess = false;
+                    
+                    try {
+                        // 尝试清理可能的markdown代码块标记
+                        let cleanContent = analysisContent.trim();
+                        if (cleanContent.startsWith('```json')) {
+                            cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+                        } else if (cleanContent.startsWith('```')) {
+                            cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
+                        }
+                        
+                        analysisJson = JSON.parse(cleanContent);
+                        parseSuccess = true;
+                        
+                        // 动态生成表格内容（根据模板字段）
+                        let tableRows = '';
+                        template.fields.forEach(field => {
+                            const value = analysisJson[field.id] || '-';
+                            const displayValue = typeof value === 'string' ? value.replace(/\n/g, '<br>') : value;
+                            tableRows += `<tr><td style="border: 1px solid #ddd; padding: 8px; font-weight: 500;">${field.name}</td><td style="border: 1px solid #ddd; padding: 8px;">${displayValue}</td></tr>`;
+                        });
+                        
+                        displayContent = `
+                            <div class="analysis-content">
+                                <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                                    <tr><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">字段</th><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">内容</th></tr>
+                                    ${tableRows}
+                                </table>
                             </div>
-                            <div style="white-space: pre-wrap; font-family: monospace; background-color: #f5f5f5; padding: 10px; border-radius: 4px;">
-                                ${analysisContent}
+                        `;
+                    } catch (e) {
+                        console.error('JSON解析失败:', e);
+                        // 如果不是JSON格式，显示原始内容
+                        displayContent = `
+                            <div class="analysis-content">
+                                <div style="padding: 10px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; margin-bottom: 10px;">
+                                    ⚠️ 解读结果未能解析为结构化格式，显示原始内容：
+                                </div>
+                                <div style="white-space: pre-wrap; font-family: monospace; background-color: #f5f5f5; padding: 10px; border-radius: 4px;">
+                                    ${analysisContent}
+                                </div>
                             </div>
-                        </div>
-                    `;
+                        `;
+                    }
+                    
+                    // 实时更新结果容器
+                    if (resultContainer) {
+                        const statusBadge = resultContainer.querySelector('.analysis-status');
+                        if (statusBadge) {
+                            statusBadge.textContent = '已完成';
+                            statusBadge.style.background = '#d4edda';
+                            statusBadge.style.color = '#155724';
+                        }
+                        
+                        const contentDiv = resultContainer.querySelector('.analysis-result-content');
+                        if (contentDiv) {
+                            contentDiv.innerHTML = `
+                                <div class="ai-disclaimer compact" style="margin-bottom: 10px;">
+                                    <div class="ai-disclaimer-icon">AI</div>
+                                    <div class="ai-disclaimer-text"><strong>AI生成：</strong>以下解读由AI生成，仅供参考</div>
+                                </div>
+                                ${displayContent}
+                            `;
+                        }
+                    }
+                    
+                    // 存储解读结果到Map
+                    analysisResultsMap.set(patent.patent_number, {
+                        patent_number: patent.patent_number,
+                        patent_data: patent.data,
+                        analysis_content: analysisContent,
+                        parseSuccess: parseSuccess
+                    });
+                } catch (error) {
+                    console.error(`❌ 解读专利 ${patent.patent_number} 失败:`, error);
+                    
+                    // 显示错误状态
+                    if (resultContainer) {
+                        const statusBadge = resultContainer.querySelector('.analysis-status');
+                        if (statusBadge) {
+                            statusBadge.textContent = '失败';
+                            statusBadge.style.background = '#f8d7da';
+                            statusBadge.style.color = '#721c24';
+                        }
+                        
+                        const contentDiv = resultContainer.querySelector('.analysis-result-content');
+                        if (contentDiv) {
+                            contentDiv.innerHTML = `
+                                <div style="padding: 10px; background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; color: #721c24;">
+                                    <strong>解读失败:</strong> ${error.message}
+                                </div>
+                            `;
+                        }
+                    }
                 }
                 
-                // 更新占位符内容
-                const placeholder = document.getElementById(placeholderId);
-                if (placeholder) {
-                    placeholder.innerHTML = `
-                        <h5>专利 ${patent.patent_number} 解读结果</h5>
-                        <div class="ai-disclaimer compact">
-                            <div class="ai-disclaimer-icon">AI</div>
-                            <div class="ai-disclaimer-text"><strong>AI生成：</strong>以下解读由AI生成，仅供参考</div>
-                        </div>
-                        ${displayContent}
-                    `;
-                }
-                
-                // 存储解读结果到Map
-                analysisResultsMap.set(patent.patent_number, {
-                    patent_number: patent.patent_number,
-                    patent_data: patent.data,
-                    analysis_content: analysisContent
-                });
+                // 更新进度
+                appState.patentBatch.analyzeProgress.current = i + 1;
+                updateAnalyzeProgress();
             }
+            
+            // 完成解读
+            appState.patentBatch.isAnalyzing = false;
+            updateAnalyzeProgress();
             
             // 按照用户输入的顺序重新组织 analysisResults 数组
             patentBatchAnalysisResults = [];
@@ -793,7 +1106,8 @@ function initPatentBatchEventListeners() {
             });
             
             // 更新状态
-            searchStatus.textContent = `解读完成，共解读 ${successfulResults.length} 个专利`;
+            const completedCount = patentBatchAnalysisResults.length;
+            searchStatus.textContent = `解读完成，成功 ${completedCount}/${successfulResults.length} 个专利`;
             
             // 启用导出按钮
             if (exportAnalysisExcelBtn) {
@@ -803,6 +1117,9 @@ function initPatentBatchEventListeners() {
             console.error('专利解读失败:', error);
             searchStatus.textContent = `解读失败: ${error.message}`;
             searchStatus.style.color = 'red';
+            
+            appState.patentBatch.isAnalyzing = false;
+            updateAnalyzeProgress();
         }
     });
     
@@ -1684,12 +2001,15 @@ function buildPatentDetailHTML(result, selectedFields) {
         `;
     }
     
-    // 事件时间轴（Events Timeline）
+    // 事件时间轴（Events Timeline）- 按时间倒序显示，最新的在最前面
     if (data.events_timeline && data.events_timeline.length > 0 && shouldShowField('events_timeline', selectedFields)) {
+        // 复制并倒序排列事件
+        const sortedEvents = [...data.events_timeline].reverse();
+        
         htmlContent += `
             <div style="margin-top: 15px;">
                 <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
-                    <strong style="color: var(--primary-color);">📅 事件时间轴 (共${data.events_timeline.length}条):</strong>
+                    <strong style="color: var(--primary-color);">📅 事件时间轴 (共${sortedEvents.length}条):</strong>
                     <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'events_timeline', event)" title="复制事件时间轴">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg>
                     </button>
@@ -1697,10 +2017,10 @@ function buildPatentDetailHTML(result, selectedFields) {
                 <div class="patent-timeline-container">
                     <div class="patent-timeline">
         `;
-        
-        data.events_timeline.forEach((event, index) => {
+
+        sortedEvents.forEach((event, index) => {
             const isCritical = event.is_critical ? 'critical' : '';
-            
+
             htmlContent += `
                 <div class="timeline-event ${isCritical}">
                     <div class="timeline-event-node"></div>
@@ -1718,7 +2038,7 @@ function buildPatentDetailHTML(result, selectedFields) {
                 </div>
             `;
         });
-        
+
         htmlContent += `
                     </div>
                 </div>
@@ -1726,12 +2046,15 @@ function buildPatentDetailHTML(result, selectedFields) {
         `;
     }
     
-    // 法律事件（Legal Events）- 表格样式
+    // 法律事件（Legal Events）- 表格样式，按时间倒序显示，最新的在最前面
     if (data.legal_events && data.legal_events.length > 0 && shouldShowField('legal_events', selectedFields)) {
+        // 复制并倒序排列法律事件
+        const sortedLegalEvents = [...data.legal_events].reverse();
+
         htmlContent += `
             <div style="margin-top: 15px; padding: 10px; background-color: #fff3e0; border-radius: 5px;">
                 <div style="margin-bottom: 8px;">
-                    <strong style="color: var(--primary-color);">⚖️ 法律事件 (共${data.legal_events.length}条):</strong>
+                    <strong style="color: var(--primary-color);">⚖️ 法律事件 (共${sortedLegalEvents.length}条):</strong>
                     <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'legal_events', event)" title="复制法律事件">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg>
                     </button>
@@ -1747,8 +2070,8 @@ function buildPatentDetailHTML(result, selectedFields) {
                         </thead>
                         <tbody>
         `;
-        
-        data.legal_events.forEach(event => {
+
+        sortedLegalEvents.forEach(event => {
             htmlContent += `
                 <tr>
                     <td style="padding: 5px; border: 1px solid #ddd;">${event.date}</td>
@@ -1757,7 +2080,7 @@ function buildPatentDetailHTML(result, selectedFields) {
                 </tr>
             `;
         });
-        
+
         htmlContent += `
                         </tbody>
                     </table>

@@ -35,6 +35,20 @@
                     </div>
                 </div>
                 
+                <!-- 自动批量解读开关 -->
+                <div class="auto-analyze-toggle" style="margin-top: 10px; padding: 8px 12px; background: #e3f2fd; border-radius: 6px; display: flex; align-items: center; justify-content: space-between;">
+                    <label style="display: flex; align-items: center; cursor: pointer; flex: 1;">
+                        <input type="checkbox" id="auto_analyze_checkbox" checked style="margin-right: 8px; width: 16px; height: 16px; cursor: pointer;">
+                        <span style="font-weight: 500; color: #1976d2;">自动批量解读</span>
+                    </label>
+                    <span class="tooltip" title="开启后，爬取完成将自动开始解读" style="cursor: help; color: #666;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                            <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286zm1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94z"/>
+                        </svg>
+                    </span>
+                </div>
+                
                 <!-- 爬取按钮 -->
                 <div style="margin-top: 12px;">
                     <button id="search_patents_btn" class="small-button primary-btn" style="width: 100%;">
@@ -43,6 +57,27 @@
                         </svg>
                         批量查询专利
                     </button>
+                </div>
+                
+                <!-- 进度显示区域 -->
+                <div id="crawl_progress_container" style="margin-top: 12px; display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span id="crawl_progress_text" style="font-size: 13px; color: #666;">准备爬取...</span>
+                        <span id="crawl_progress_count" style="font-size: 13px; font-weight: 500; color: var(--primary-color);">0/0</span>
+                    </div>
+                    <div style="width: 100%; height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden;">
+                        <div id="crawl_progress_bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--primary-color), #4fc3f7); transition: width 0.3s ease; border-radius: 3px;"></div>
+                    </div>
+                </div>
+                
+                <div id="analyze_progress_container" style="margin-top: 10px; display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span id="analyze_progress_text" style="font-size: 13px; color: #666;">准备解读...</span>
+                        <span id="analyze_progress_count" style="font-size: 13px; font-weight: 500; color: #4caf50;">0/0</span>
+                    </div>
+                    <div style="width: 100%; height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden;">
+                        <div id="analyze_progress_bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #4caf50, #81c784); transition: width 0.3s ease; border-radius: 3px;"></div>
+                    </div>
                 </div>
             </div>
             
@@ -301,13 +336,26 @@
                 <input type="text" id="template_name" placeholder="模板名称">
                 <textarea id="template_description" placeholder="模板描述（可选）" rows="2"></textarea>
             </div>
-            
+
+            <div class="system-prompt-container" style="margin: 15px 0; padding: 15px; background-color: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef;">
+                <h5 style="margin: 0 0 10px 0; color: #495057; display: flex; align-items: center; gap: 8px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+                    </svg>
+                    系统提示词（System Prompt）
+                </h5>
+                <textarea id="template_system_prompt" placeholder="输入系统提示词，定义AI的角色和分析风格..." rows="4" style="width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 14px; line-height: 1.5; resize: vertical;"></textarea>
+                <div style="margin-top: 8px; font-size: 12px; color: #6c757d;">
+                    提示：系统提示词定义了AI的角色和回答风格，会影响解读结果的质量和方向。
+                </div>
+            </div>
+
             <div class="fields-container">
                 <h5>字段配置：</h5>
                 <div id="fields_list"></div>
                 <button class="small-button" id="add_field_btn">+ 添加字段</button>
             </div>
-            
+
             <div class="template-actions">
                 <button class="small-button" id="patent_save_template_btn">保存模板</button>
                 <button class="small-button" id="patent_new_template_btn">新建模板</button>
@@ -316,6 +364,24 @@
                 <button class="small-button" id="patent_import_template_btn">导入模板</button>
                 <button class="small-button" id="cancel_edit_btn">取消</button>
             </div>
+        </div>
+        
+        <!-- 缓存管理按钮 -->
+        <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
+            <button id="view_cache_stats_btn" class="small-button" style="font-size: 12px; padding: 4px 10px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 4px;">
+                    <path d="M8 16A8 8 0 1 1 8 0a8 8 0 0 1 0 16zm0-1A7 7 0 1 0 8 1a7 7 0 0 0 0 14z"/>
+                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                </svg>
+                缓存统计
+            </button>
+            <button id="clear_cache_btn" class="small-button delete-button" style="font-size: 12px; padding: 4px 10px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 4px;">
+                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                    <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                </svg>
+                清理缓存
+            </button>
         </div>
         
         <!-- 查询结果状态 -->

@@ -136,7 +136,12 @@ const appState = {
         isEditingTemplate: false, // 是否正在编辑模板
         patentResults: [], // 专利查询结果
         analysisResults: [], // 解读结果
-        patentChats: {} // 专利对话状态 { patentNumber: { patentNumber, patentData, messages, isOpen } }
+        patentChats: {}, // 专利对话状态 { patentNumber: { patentNumber, patentData, messages, isOpen } }
+        autoAnalyze: true, // 自动批量解读开关（默认开启）
+        isCrawling: false, // 是否正在爬取中
+        isAnalyzing: false, // 是否正在解读中
+        crawlProgress: { current: 0, total: 0 }, // 爬取进度
+        analyzeProgress: { current: 0, total: 0 } // 解读进度
     }
     // ▲▲▲ 新增结束 ▲▲▲
 };
