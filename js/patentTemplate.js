@@ -294,19 +294,21 @@ function loadTemplate(templateId) {
 function loadTemplateToEditor(template) {
     const nameInput = getEl('template_name');
     const descInput = getEl('template_description');
+    const systemPromptInput = getEl('template_system_prompt');
     const fieldsList = getEl('fields_list');
-    
+
     if (nameInput) nameInput.value = template.name;
     if (descInput) descInput.value = template.description || '';
-    
+    if (systemPromptInput) systemPromptInput.value = template.systemPrompt || '';
+
     if (fieldsList) {
         fieldsList.innerHTML = '';
         template.fields.forEach(field => {
             addFieldToEditor(field);
         });
     }
-    
-    // 预设模板不能删除
+
+    // 预设模板不能删除，但可以编辑提示词
     const deleteBtn = getEl('delete_template_btn');
     if (deleteBtn) {
         deleteBtn.disabled = template.isPreset;
@@ -344,31 +346,33 @@ function removeFieldFromEditor(fieldId) {
 function saveCurrentTemplate() {
     const nameInput = getEl('template_name');
     const descInput = getEl('template_description');
+    const systemPromptInput = getEl('template_system_prompt');
     const fieldsList = getEl('fields_list');
-    
+
     if (!nameInput || !descInput || !fieldsList) return;
-    
+
     const name = nameInput.value.trim();
     const description = descInput.value.trim();
-    
+    const systemPrompt = systemPromptInput ? systemPromptInput.value.trim() : '';
+
     if (!name) {
         alert('请输入模板名称');
         return;
     }
-    
+
     // 收集字段
     const fields = [];
     const fieldItems = fieldsList.querySelectorAll('.field-config-item');
-    
+
     for (const item of fieldItems) {
         const fieldName = item.querySelector('.field-name').value.trim();
         const fieldDesc = item.querySelector('.field-description').value.trim();
-        
+
         if (!fieldName || !fieldDesc) {
             alert('请填写所有字段的名称和描述');
             return;
         }
-        
+
         fields.push({
             id: item.dataset.fieldId,
             name: fieldName,
@@ -377,16 +381,20 @@ function saveCurrentTemplate() {
             required: true
         });
     }
-    
+
     if (fields.length === 0) {
         alert('请至少添加一个字段');
         return;
     }
-    
+
     // 检查是否是编辑现有模板
     const currentTemplate = appState.patentBatch.currentTemplate;
     let templateId;
-    
+
+    // 获取默认系统提示词（如果用户没有输入）
+    const defaultSystemPrompt = '你是一位资深的专利分析师，擅长从专利文本中提炼核心技术信息。';
+    const finalSystemPrompt = systemPrompt || defaultSystemPrompt;
+
     if (currentTemplate && !currentTemplate.isPreset) {
         // 编辑现有自定义模板
         templateId = currentTemplate.id;
@@ -398,28 +406,51 @@ function saveCurrentTemplate() {
                 description,
                 isPreset: false,
                 fields,
-                systemPrompt: '你是一位资深的专利分析师，擅长从专利文本中提炼核心技术信息。',
+                systemPrompt: finalSystemPrompt,
                 updatedAt: new Date().toISOString()
             };
         }
-    } else {
-        // 创建新模板
+    } else if (currentTemplate && currentTemplate.isPreset) {
+        // 基于预设模板创建新的自定义模板（因为预设模板不能直接修改）
         templateId = `custom_${Date.now()}`;
-        
+
         // 检查名称是否重复
         const allTemplates = [...PRESET_TEMPLATES, ...appState.patentBatch.customTemplates];
         if (allTemplates.some(t => t.name === name)) {
             alert('模板名称已存在，请使用其他名称');
             return;
         }
-        
+
         appState.patentBatch.customTemplates.push({
             id: templateId,
             name,
             description,
             isPreset: false,
             fields,
-            systemPrompt: '你是一位资深的专利分析师，擅长从专利文本中提炼核心技术信息。',
+            systemPrompt: finalSystemPrompt,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        });
+
+        alert('预设模板已另存为自定义模板，您可以继续编辑！');
+    } else {
+        // 创建新模板
+        templateId = `custom_${Date.now()}`;
+
+        // 检查名称是否重复
+        const allTemplates = [...PRESET_TEMPLATES, ...appState.patentBatch.customTemplates];
+        if (allTemplates.some(t => t.name === name)) {
+            alert('模板名称已存在，请使用其他名称');
+            return;
+        }
+
+        appState.patentBatch.customTemplates.push({
+            id: templateId,
+            name,
+            description,
+            isPreset: false,
+            fields,
+            systemPrompt: finalSystemPrompt,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
         });
@@ -447,18 +478,20 @@ function saveCurrentTemplate() {
 function createNewTemplate() {
     const nameInput = getEl('template_name');
     const descInput = getEl('template_description');
+    const systemPromptInput = getEl('template_system_prompt');
     const fieldsList = getEl('fields_list');
-    
+
     if (nameInput) nameInput.value = '';
     if (descInput) descInput.value = '';
+    if (systemPromptInput) systemPromptInput.value = '';
     if (fieldsList) fieldsList.innerHTML = '';
-    
+
     // 添加一个默认字段
     addFieldToEditor();
-    
+
     // 清空当前模板
     appState.patentBatch.currentTemplate = null;
-    
+
     // 启用删除按钮
     const deleteBtn = getEl('delete_template_btn');
     if (deleteBtn) deleteBtn.disabled = true;

@@ -202,21 +202,26 @@
 /* 连接线 - 更流畅的连接 */
 .timeline-event-connector {
     position: absolute;
-    left: 50%;
+    top: 50%;
     width: 60px;
     height: 3px;
     background: linear-gradient(90deg, #4a6cf7, #667eea);
     border-radius: 2px;
 }
 
+/* 奇数项：内容在左侧，连接线从节点向左延伸 */
 .timeline-event:nth-child(odd) .timeline-event-connector {
     right: 50%;
-    transform: translateX(9px);
+    left: auto;
+    transform: translateX(-9px);
+    background: linear-gradient(90deg, #667eea, #4a6cf7);
 }
 
+/* 偶数项：内容在右侧，连接线从节点向右延伸 */
 .timeline-event:nth-child(even) .timeline-event-connector {
     left: 50%;
-    transform: translateX(-9px);
+    right: auto;
+    transform: translateX(9px);
 }
 
 /* 响应式设计 - 移动端优化 */

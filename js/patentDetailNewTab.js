@@ -754,7 +754,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                             事件时间轴 (${data.events_timeline.length})
                         </h2>
                         <div class="timeline">
-                            ${data.events_timeline.map(event => `
+                            ${[...data.events_timeline].reverse().map(event => `
                             <div class="timeline-item">
                                 <div class="timeline-date">${event.date}</div>
                                 <div class="timeline-title">${event.title || event.description}</div>
@@ -780,7 +780,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 </tr>
                             </thead>
                             <tbody>
-                                ${data.legal_events.map(event => `
+                                ${[...data.legal_events].reverse().map(event => `
                                 <tr>
                                     <td>${event.date}</td>
                                     <td>${event.code || '-'}</td>
