@@ -622,26 +622,36 @@ function importTemplate(event) {
 // 构建解读提示词（基于模板）
 function buildAnalysisPrompt(template, patentData, includeSpecification) {
     const fields = template.fields;
-    
+
     // 构建字段说明
     const fieldDescriptions = fields.map(f => `- ${f.name}: ${f.description}`).join('\n');
-    
+
     // 构建JSON格式要求
     const jsonFields = fields.map(f => `  "${f.id}": "[${f.description}]"`).join(',\n');
-    
+
     // 构建专利内容
     let patentContent = `专利号：${patentData.patent_number || '未知'}\n`;
     patentContent += `标题：${patentData.title || '未知'}\n`;
     patentContent += `摘要：${patentData.abstract || '未知'}\n`;
-    
-    if (patentData.claims && patentData.claims.length > 0) {
-        patentContent += `\n权利要求：\n${patentData.claims.join('\n\n')}`;
+
+    // 处理权利要求 - 支持数组和字符串格式
+    if (patentData.claims) {
+        let claimsText = '';
+        if (Array.isArray(patentData.claims) && patentData.claims.length > 0) {
+            claimsText = patentData.claims.join('\n\n');
+        } else if (typeof patentData.claims === 'string' && patentData.claims.trim()) {
+            claimsText = patentData.claims;
+        }
+        if (claimsText) {
+            patentContent += `\n权利要求：\n${claimsText}`;
+        }
     }
-    
+
+    // 处理说明书
     if (includeSpecification && patentData.description) {
         patentContent += `\n\n说明书：\n${patentData.description}`;
     }
-    
+
     const prompt = `请根据以下专利信息，按照指定的字段进行深入分析和解读：
 
 ${patentContent}
@@ -655,7 +665,7 @@ ${jsonFields}
 ${fieldDescriptions}
 
 重要提示：所有分析结果必须使用中文输出，确保内容专业、准确、易懂。`;
-    
+
     return prompt;
 }
 

@@ -110,7 +110,18 @@
                         <option value="GLM-4-0520">GLM-4-0520（稳定版）</option>
                     </select>
                 </div>
-                
+
+                <!-- 解读时包含说明书 -->
+                <div class="config-item-compact" style="margin-top: 8px; padding: 8px; background-color: #f5f5f5; border-radius: 5px;">
+                    <label style="display: flex; align-items: center; cursor: pointer;">
+                        <input type="checkbox" id="include_specification_checkbox" style="margin-right: 8px; width: 16px; height: 16px;">
+                        <span style="font-weight: 500;">解读时包含说明书</span>
+                    </label>
+                    <div style="margin-top: 4px; font-size: 12px; color: #666; padding-left: 24px;">
+                        勾选后将说明书内容纳入AI解读（会增加token消耗）
+                    </div>
+                </div>
+
                 <!-- 字段选择器按钮 -->
                 <div class="config-item-compact">
                     <button id="toggle_field_selector_btn" class="small-button" style="width: 100%;" title="展开字段选择器，选择特定字段">

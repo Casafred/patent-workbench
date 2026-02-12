@@ -946,7 +946,7 @@ function initPatentBatchEventListeners() {
         }
         
         // 获取是否包含说明书的选项
-        const includeSpecification = document.getElementById('crawl_specification_checkbox')?.checked || false;
+        const includeSpecification = document.getElementById('include_specification_checkbox')?.checked || false;
         
         // 清空之前的解读结果
         if (analysisResultsList) {
