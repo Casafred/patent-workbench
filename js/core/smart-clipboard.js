@@ -508,8 +508,8 @@ class SmartClipboard {
             /* 悬浮球 */
             .sc-floating-ball {
                 position: fixed;
-                bottom: 30px;
-                right: 30px;
+                top: 100px;
+                right: 20px;
                 width: 56px;
                 height: 56px;
                 background: linear-gradient(135deg, #10b981 0%, #059669 100%);
@@ -817,8 +817,8 @@ class SmartClipboard {
             /* 复制提示 */
             .sc-copy-notification {
                 position: fixed;
-                bottom: 100px;
-                right: 30px;
+                top: 170px;
+                right: 20px;
                 display: flex;
                 align-items: center;
                 gap: 12px;
@@ -870,8 +870,8 @@ class SmartClipboard {
             /* 普通通知 */
             .sc-notification {
                 position: fixed;
-                bottom: 100px;
-                right: 30px;
+                top: 170px;
+                right: 20px;
                 padding: 12px 20px;
                 background: #374151;
                 color: white;
