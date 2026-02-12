@@ -1010,6 +1010,17 @@ function initPatentBatchEventListeners() {
                 }
                 
                 try {
+                    // 调试：检查 patent.data 的实际内容
+                    console.log('🔍 main.js - patent.data 调试:');
+                    console.log('  - patent 对象:', patent);
+                    console.log('  - patent.data:', patent.data);
+                    console.log('  - patent.data 的字段:', patent.data ? Object.keys(patent.data) : 'N/A');
+                    console.log('  - patent.data.patent_number:', patent.data?.patent_number);
+                    console.log('  - patent.data.title:', patent.data?.title);
+                    console.log('  - patent.data.abstract:', patent.data?.abstract ? patent.data.abstract.substring(0, 50) + '...' : 'N/A');
+                    console.log('  - patent.data.claims:', patent.data?.claims);
+                    console.log('  - patent.data.description 是否存在:', !!patent.data?.description);
+                    
                     // 使用模板构建提示词
                     const userPrompt = buildAnalysisPrompt(template, patent.data, includeSpecification);
                     
