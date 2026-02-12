@@ -432,6 +432,11 @@ function initPatentBatchEventListeners() {
             if (analysisResultsList) {
                 analysisResultsList.innerHTML = '';
             }
+            // 隐藏解读结果容器
+            const analysisResultsContainer = document.getElementById('analysis_results_container');
+            if (analysisResultsContainer) {
+                analysisResultsContainer.style.display = 'none';
+            }
             if (searchStatus) searchStatus.style.display = 'none';
             window.patentResults = [];
         });
@@ -937,50 +942,73 @@ function initPatentBatchEventListeners() {
             alert('没有可解读的专利');
             return;
         }
-        
+
         // 获取当前模板
         const template = appState.patentBatch.currentTemplate;
         if (!template) {
             alert('请先选择解读模板');
             return;
         }
-        
+
         // 获取是否包含说明书的选项
         const includeSpecification = document.getElementById('include_specification_checkbox')?.checked || false;
-        
+
+        // 获取解读结果容器
+        const analysisResultsContainer = document.getElementById('analysis_results_container');
+        const analysisProgressText = document.getElementById('analysis_progress_text');
+
         // 清空之前的解读结果
         if (analysisResultsList) {
             analysisResultsList.innerHTML = '';
         }
         patentBatchAnalysisResults = [];
-        
+
         // 初始化进度
         appState.patentBatch.isAnalyzing = true;
         appState.patentBatch.analyzeProgress = { current: 0, total: successfulResults.length };
         updateAnalyzeProgress();
-        
+
         // 显示解读状态
         searchStatus.textContent = `正在使用"${template.name}"模板解读 ${successfulResults.length} 个专利...`;
         searchStatus.style.display = 'block';
-        
+
         // 创建一个Map来存储解读结果，key是专利号
         const analysisResultsMap = new Map();
-        
+
         // 显示结果容器
         if (patentResultsContainer) {
             patentResultsContainer.style.display = 'block';
         }
+
+        // 显示解读结果区域
+        if (analysisResultsContainer) {
+            analysisResultsContainer.style.display = 'block';
+        }
         
         try {
+            // 显示所有已打开新标签页中的解读区域
+            successfulResults.forEach(patent => {
+                const tabAnalysisSection = document.getElementById(`batch-analysis-${patent.patent_number}`);
+                if (tabAnalysisSection) {
+                    tabAnalysisSection.style.display = 'block';
+                }
+                // 也尝试通过新标签页的window对象更新
+                const tabStatus = document.getElementById(`tab-analysis-status-${patent.patent_number}`);
+                if (tabStatus) {
+                    tabStatus.textContent = '解读中...';
+                    tabStatus.style.color = '#1976d2';
+                }
+            });
+
             // 逐个解读专利（实时显示）
             for (let i = 0; i < successfulResults.length; i++) {
                 const patent = successfulResults[i];
-                
+
                 // 更新进度
                 appState.patentBatch.analyzeProgress.current = i;
                 updateAnalyzeProgress();
                 searchStatus.textContent = `正在解读第 ${i + 1}/${successfulResults.length} 个专利: ${patent.patent_number}...`;
-                
+
                 // 创建结果容器（按用户输入顺序）
                 const resultId = `analysis_result_${patent.patent_number}`;
                 let resultContainer = document.getElementById(resultId);
@@ -1098,7 +1126,7 @@ function initPatentBatchEventListeners() {
                             statusBadge.style.background = '#d4edda';
                             statusBadge.style.color = '#155724';
                         }
-                        
+
                         const contentDiv = resultContainer.querySelector('.analysis-result-content');
                         if (contentDiv) {
                             contentDiv.innerHTML = `
@@ -1110,7 +1138,12 @@ function initPatentBatchEventListeners() {
                             `;
                         }
                     }
-                    
+
+                    // 更新进度文本
+                    if (analysisProgressText) {
+                        analysisProgressText.textContent = `已完成 ${i + 1}/${successfulResults.length}`;
+                    }
+
                     // 存储解读结果到Map
                     analysisResultsMap.set(patent.patent_number, {
                         patent_number: patent.patent_number,
@@ -1118,9 +1151,17 @@ function initPatentBatchEventListeners() {
                         analysis_content: analysisContent,
                         parseSuccess: parseSuccess
                     });
+
+                    // 滚动到新完成的结果（如果是第一个或每3个滚动一次，避免过度滚动）
+                    if (resultContainer && (i === 0 || (i + 1) % 3 === 0)) {
+                        resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+
+                    // 实时更新专利详情弹窗中的解读结果（如果弹窗已打开）
+                    updatePatentDetailAnalysis(patent.patent_number, analysisContent, parseSuccess, template);
                 } catch (error) {
                     console.error(`❌ 解读专利 ${patent.patent_number} 失败:`, error);
-                    
+
                     // 显示错误状态
                     if (resultContainer) {
                         const statusBadge = resultContainer.querySelector('.analysis-status');
@@ -1129,7 +1170,7 @@ function initPatentBatchEventListeners() {
                             statusBadge.style.background = '#f8d7da';
                             statusBadge.style.color = '#721c24';
                         }
-                        
+
                         const contentDiv = resultContainer.querySelector('.analysis-result-content');
                         if (contentDiv) {
                             contentDiv.innerHTML = `
@@ -1138,6 +1179,11 @@ function initPatentBatchEventListeners() {
                                 </div>
                             `;
                         }
+                    }
+
+                    // 更新进度文本（即使失败也更新）
+                    if (analysisProgressText) {
+                        analysisProgressText.textContent = `已完成 ${i + 1}/${successfulResults.length} (含失败)`;
                     }
                 }
                 
@@ -1149,7 +1195,7 @@ function initPatentBatchEventListeners() {
             // 完成解读
             appState.patentBatch.isAnalyzing = false;
             updateAnalyzeProgress();
-            
+
             // 按照用户输入的顺序重新组织 analysisResults 数组
             patentBatchAnalysisResults = [];
             window.patentResults.forEach(result => {
@@ -1157,11 +1203,17 @@ function initPatentBatchEventListeners() {
                     patentBatchAnalysisResults.push(analysisResultsMap.get(result.patent_number));
                 }
             });
-            
+
             // 更新状态
             const completedCount = patentBatchAnalysisResults.length;
             searchStatus.textContent = `解读完成，成功 ${completedCount}/${successfulResults.length} 个专利`;
-            
+
+            // 更新最终进度文本
+            if (analysisProgressText) {
+                analysisProgressText.textContent = `全部完成 (${completedCount}/${successfulResults.length})`;
+                analysisProgressText.style.color = '#28a745';
+            }
+
             // 启用导出按钮
             if (exportAnalysisExcelBtn) {
                 exportAnalysisExcelBtn.disabled = false;
@@ -1170,7 +1222,13 @@ function initPatentBatchEventListeners() {
             console.error('专利解读失败:', error);
             searchStatus.textContent = `解读失败: ${error.message}`;
             searchStatus.style.color = 'red';
-            
+
+            // 更新进度文本显示失败状态
+            if (analysisProgressText) {
+                analysisProgressText.textContent = '解读失败';
+                analysisProgressText.style.color = '#dc3545';
+            }
+
             appState.patentBatch.isAnalyzing = false;
             updateAnalyzeProgress();
         }
@@ -1830,13 +1888,16 @@ function buildPatentDetailHTML(result, selectedFields) {
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                     <div>
                         <strong style="color: var(--primary-color);">🤖 批量解读结果:</strong>
+                        <span id="modal-analysis-status-${result.patent_number}" style="margin-left: 10px; font-size: 12px; color: #666;">已完成</span>
                     </div>
                 </div>
-                <div class="ai-disclaimer compact">
-                    <div class="ai-disclaimer-icon">AI</div>
-                    <div class="ai-disclaimer-text"><strong>AI生成：</strong>以下解读由AI生成，仅供参考</div>
+                <div id="modal-analysis-result-${result.patent_number}">
+                    <div class="ai-disclaimer compact">
+                        <div class="ai-disclaimer-icon">AI</div>
+                        <div class="ai-disclaimer-text"><strong>AI生成：</strong>以下解读由AI生成，仅供参考</div>
+                    </div>
+                    ${displayContent}
                 </div>
-                ${displayContent}
             </div>
         `;
     }
@@ -2275,11 +2336,78 @@ function buildPatentDetailHTML(result, selectedFields) {
     }
     
     htmlContent += `</div>`;
-    
+
     return htmlContent;
 }}
 
+/**
+ * 实时更新专利详情弹窗中的解读结果
+ * @param {string} patentNumber - 专利号
+ * @param {string} analysisContent - 解读内容
+ * @param {boolean} parseSuccess - 是否解析成功
+ * @param {Object} template - 使用的模板
+ */
+function updatePatentDetailAnalysis(patentNumber, analysisContent, parseSuccess, template) {
+    // 更新弹窗中的解读结果（如果弹窗已打开）
+    const modalAnalysisResult = document.getElementById(`modal-analysis-result-${patentNumber}`);
+    if (modalAnalysisResult) {
+        let displayContent = analysisContent;
+        if (parseSuccess) {
+            try {
+                const analysisData = JSON.parse(analysisContent);
+                displayContent = formatAnalysisResult(analysisData, template);
+            } catch (e) {
+                displayContent = `<div style="white-space: pre-wrap; font-family: monospace; background-color: #f5f5f5; padding: 10px; border-radius: 4px;">${analysisContent}</div>`;
+            }
+        }
 
+        modalAnalysisResult.innerHTML = `
+            <div class="ai-disclaimer compact" style="margin-bottom: 10px;">
+                <div class="ai-disclaimer-icon">AI</div>
+                <div class="ai-disclaimer-text"><strong>AI生成：</strong>以下解读由AI生成，仅供参考</div>
+            </div>
+            ${displayContent}
+        `;
+        modalAnalysisResult.style.display = 'block';
+
+        // 更新状态文本
+        const modalAnalysisStatus = document.getElementById(`modal-analysis-status-${patentNumber}`);
+        if (modalAnalysisStatus) {
+            modalAnalysisStatus.textContent = '已完成';
+            modalAnalysisStatus.style.color = '#28a745';
+        }
+    }
+
+    // 更新新标签页中的解读结果（如果标签页已打开）
+    const tabAnalysisResult = document.getElementById(`tab-analysis-result-${patentNumber}`);
+    if (tabAnalysisResult) {
+        let displayContent = analysisContent;
+        if (parseSuccess) {
+            try {
+                const analysisData = JSON.parse(analysisContent);
+                displayContent = formatAnalysisResult(analysisData, template);
+            } catch (e) {
+                displayContent = `<div style="white-space: pre-wrap; font-family: monospace; background-color: #f5f5f5; padding: 10px; border-radius: 4px;">${analysisContent}</div>`;
+            }
+        }
+
+        tabAnalysisResult.innerHTML = `
+            <div class="ai-disclaimer compact" style="margin-bottom: 10px;">
+                <div class="ai-disclaimer-icon">AI</div>
+                <div class="ai-disclaimer-text"><strong>AI生成：</strong>以下解读由AI生成，仅供参考</div>
+            </div>
+            ${displayContent}
+        `;
+        tabAnalysisResult.style.display = 'block';
+
+        // 更新状态文本
+        const tabAnalysisStatus = document.getElementById(`tab-analysis-status-${patentNumber}`);
+        if (tabAnalysisStatus) {
+            tabAnalysisStatus.textContent = '已完成';
+            tabAnalysisStatus.style.color = '#28a745';
+        }
+    }
+}
 
 
 

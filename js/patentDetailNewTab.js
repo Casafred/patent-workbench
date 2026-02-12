@@ -638,6 +638,24 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 </div>
                 
                 <div class="content">
+                    <!-- 批量解读结果区域 -->
+                    <div class="section collapsible-section" id="batch-analysis-${patentNumber}" data-section-id="batch-analysis" style="display: none;">
+                        <h2 class="section-title" onclick="toggleSection('batch-analysis-${patentNumber}')">
+                            <div class="section-title-content">
+                                <span class="section-icon">🤖</span>
+                                批量解读结果
+                                <span id="tab-analysis-status-${patentNumber}" style="margin-left: 10px; font-size: 12px; color: #666;">等待解读...</span>
+                            </div>
+                        </h2>
+                        <div class="section-content">
+                            <div id="tab-analysis-result-${patentNumber}" style="padding: 15px; background-color: #f8f9fa; border-radius: 8px;">
+                                <div style="text-align: center; color: #666; padding: 20px;">
+                                    等待批量解读完成...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     ${data.abstract && shouldShowField('abstract') ? `
                     <div class="section collapsible-section" id="abstract" data-section-id="abstract">
                         <h2 class="section-title" onclick="toggleSection('abstract')">

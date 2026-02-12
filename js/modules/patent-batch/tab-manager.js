@@ -142,6 +142,12 @@ class PatentTabManager {
                     <span class="patent-count">共 ${tab.patentNumbers.length} 个专利</span>
                 </div>
                 <div class="source-actions">
+                    <button class="small-button primary-btn" onclick="patentTabManager.analyzeAllPatents('${tab.id}')" id="${tab.id}_analyze_btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                        </svg>
+                        批量解读
+                    </button>
                     <button class="small-button" onclick="patentTabManager.refreshTab('${tab.id}')">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                             <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
@@ -386,6 +392,182 @@ class PatentTabManager {
         // 触发重新爬取
         if (window.crawlRelationPatents) {
             window.crawlRelationPatents(tabId, tab.sourcePatent, tab.relationType, tab.patentNumbers);
+        }
+    }
+
+    /**
+     * 批量解读当前标签页的所有专利
+     * @param {string} tabId - 标签页ID
+     */
+    async analyzeAllPatents(tabId) {
+        const tab = this.tabs.find(t => t.id === tabId);
+        if (!tab) {
+            alert('标签页不存在');
+            return;
+        }
+
+        // 获取成功的结果
+        const successfulResults = tab.results.filter(r => r.success);
+        if (successfulResults.length === 0) {
+            alert('没有可解读的专利');
+            return;
+        }
+
+        // 获取当前模板
+        const template = window.appState?.patentBatch?.currentTemplate;
+        if (!template) {
+            alert('请先选择解读模板');
+            return;
+        }
+
+        // 获取是否包含说明书的选项
+        const includeSpecification = document.getElementById('include_specification_checkbox')?.checked || false;
+
+        // 禁用按钮
+        const analyzeBtn = document.getElementById(`${tabId}_analyze_btn`);
+        if (analyzeBtn) {
+            analyzeBtn.disabled = true;
+            analyzeBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" class="rotating">
+                    <path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9z"/>
+                    <path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5.002 5.002 0 0 0 8 3zM3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9H3.1z"/>
+                </svg>
+                解读中...
+            `;
+        }
+
+        // 显示解读状态
+        const resultsContainer = document.getElementById(`${tabId}_results`);
+        let statusDiv = document.getElementById(`${tabId}_analysis_status`);
+        if (!statusDiv) {
+            statusDiv = document.createElement('div');
+            statusDiv.id = `${tabId}_analysis_status`;
+            statusDiv.className = 'analysis-status-bar';
+            statusDiv.style.cssText = 'padding: 10px; background: #e3f2fd; border-radius: 6px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;';
+            resultsContainer.insertBefore(statusDiv, resultsContainer.firstChild);
+        }
+
+        // 逐个解读专利
+        for (let i = 0; i < successfulResults.length; i++) {
+            const result = successfulResults[i];
+            const patentNumber = result.patent_number;
+
+            // 更新状态
+            statusDiv.innerHTML = `
+                <span>正在解读: <strong>${patentNumber}</strong> (${i + 1}/${successfulResults.length})</span>
+                <span style="color: #666;">${Math.round((i / successfulResults.length) * 100)}%</span>
+            `;
+
+            try {
+                // 查找或创建专利条带的解读区域
+                const patentStrip = resultsContainer.querySelector(`[data-patent-number="${patentNumber}"]`);
+                if (patentStrip) {
+                    // 添加解读状态标记
+                    let analysisBadge = patentStrip.querySelector('.analysis-badge');
+                    if (!analysisBadge) {
+                        analysisBadge = document.createElement('span');
+                        analysisBadge.className = 'analysis-badge';
+                        analysisBadge.style.cssText = 'margin-left: 10px; padding: 2px 8px; background: #e3f2fd; color: #1976d2; border-radius: 10px; font-size: 12px;';
+                        const titleDiv = patentStrip.querySelector('.patent-strip-title');
+                        if (titleDiv) {
+                            titleDiv.appendChild(analysisBadge);
+                        }
+                    }
+                    analysisBadge.textContent = '解读中...';
+                }
+
+                // 调用解读API
+                const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/analyze_patent`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        patent_data: result.data,
+                        template: template,
+                        include_specification: includeSpecification
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`解读请求失败: ${response.status}`);
+                }
+
+                const analysisResult = await response.json();
+                const analysisContent = analysisResult.analysis || analysisResult.result || analysisResult.content || '无解读结果';
+
+                // 更新专利条带的解读结果
+                if (patentStrip) {
+                    const analysisBadge = patentStrip.querySelector('.analysis-badge');
+                    if (analysisBadge) {
+                        analysisBadge.textContent = '已解读';
+                        analysisBadge.style.background = '#d4edda';
+                        analysisBadge.style.color = '#155724';
+                    }
+
+                    // 添加或更新解读结果区域
+                    let analysisSection = patentStrip.querySelector('.patent-analysis-result');
+                    if (!analysisSection) {
+                        analysisSection = document.createElement('div');
+                        analysisSection.className = 'patent-analysis-result';
+                        analysisSection.style.cssText = 'margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #28a745;';
+                        patentStrip.appendChild(analysisSection);
+                    }
+
+                    // 格式化显示解读结果
+                    let displayContent = analysisContent;
+                    try {
+                        const analysisData = JSON.parse(analysisContent);
+                        displayContent = window.formatAnalysisResult ? window.formatAnalysisResult(analysisData, template) : `<pre>${JSON.stringify(analysisData, null, 2)}</pre>`;
+                    } catch (e) {
+                        displayContent = `<div style="white-space: pre-wrap;">${analysisContent}</div>`;
+                    }
+
+                    analysisSection.innerHTML = `
+                        <div style="font-size: 12px; color: #666; margin-bottom: 5px;">🤖 AI解读结果：</div>
+                        ${displayContent}
+                    `;
+                }
+
+                // 存储解读结果到tab
+                result.analysis = {
+                    content: analysisContent,
+                    template: template.name,
+                    timestamp: new Date().toISOString()
+                };
+
+            } catch (error) {
+                console.error(`解读专利 ${patentNumber} 失败:`, error);
+
+                // 更新错误状态
+                const patentStrip = resultsContainer.querySelector(`[data-patent-number="${patentNumber}"]`);
+                if (patentStrip) {
+                    const analysisBadge = patentStrip.querySelector('.analysis-badge');
+                    if (analysisBadge) {
+                        analysisBadge.textContent = '解读失败';
+                        analysisBadge.style.background = '#f8d7da';
+                        analysisBadge.style.color = '#721c24';
+                    }
+                }
+            }
+        }
+
+        // 完成解读
+        statusDiv.innerHTML = `
+            <span>✅ 解读完成 (${successfulResults.length} 个专利)</span>
+            <button class="small-button" onclick="this.parentElement.remove()">关闭</button>
+        `;
+        statusDiv.style.background = '#d4edda';
+
+        // 恢复按钮
+        if (analyzeBtn) {
+            analyzeBtn.disabled = false;
+            analyzeBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                </svg>
+                批量解读
+            `;
         }
     }
 
