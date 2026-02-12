@@ -197,15 +197,15 @@ def analyze_patent():
             prompt += '  "innovation_points": "创新点",\n'
             prompt += '  "technical_solution": "技术方案",\n'
             prompt += '  "application_scenarios": "应用场景",\n'
-            prompt += '  "market_value": "市场价值",\n'
             prompt += '  "advantages": "技术优势",\n'
-            prompt += '  "limitations": "局限性",\n'
             prompt += '  "summary": "总结"\n'
             prompt += "}\n"
-            prompt += "\n注意：直接返回JSON对象，不要使用```json```标记包裹。\n"
+            prompt += "\n注意：\n"
+            prompt += "1. 直接返回JSON对象，不要使用```json```标记包裹\n"
+            prompt += "2. 所有输出内容必须使用中文\n"
         
         # 使用自定义系统提示词或默认提示词
-        system_prompt = "你是一位专业的专利分析师。你必须严格按照要求的JSON格式返回结果，不要添加任何markdown标记（如```json），只返回纯JSON对象。"
+        system_prompt = "你是一位专业的专利分析师。你必须严格按照要求的JSON格式返回结果，不要添加任何markdown标记（如```json），只返回纯JSON对象。所有分析结果必须使用中文输出。"
         if template and template.get('system_prompt'):
             system_prompt = template['system_prompt']
         

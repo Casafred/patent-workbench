@@ -7,19 +7,17 @@ const PRESET_TEMPLATES = [
     {
         id: 'default',
         name: '默认模板',
-        description: '包含技术领域、创新点、技术方案等8个标准字段',
+        description: '包含技术领域、创新点、技术方案等6个标准字段',
         isPreset: true,
         fields: [
             { id: 'technical_field', name: '技术领域', description: '该专利所属的技术领域', type: 'text', required: true },
             { id: 'innovation_points', name: '创新点', description: '该专利的核心创新点和技术突破', type: 'text', required: true },
             { id: 'technical_solution', name: '技术方案', description: '该专利的技术实现方案和方法', type: 'text', required: true },
             { id: 'application_scenarios', name: '应用场景', description: '该专利的实际应用场景和用途', type: 'text', required: true },
-            { id: 'market_value', name: '市场价值', description: '该专利的商业价值和市场潜力', type: 'text', required: true },
             { id: 'advantages', name: '技术优势', description: '相比现有技术的优势和改进', type: 'text', required: true },
-            { id: 'limitations', name: '局限性', description: '该专利的技术局限性和不足', type: 'text', required: false },
             { id: 'summary', name: '解读总结', description: '对该专利的综合评价和总结', type: 'text', required: true }
         ],
-        systemPrompt: '你是一位资深的专利分析师，擅长从专利文本中提炼核心技术信息、分析技术价值和市场潜力。'
+        systemPrompt: '你是一位资深的专利分析师，擅长从专利文本中提炼核心技术信息、分析技术价值。你必须使用中文输出所有分析结果，确保内容专业、准确、易懂。'
     },
     {
         id: 'technical',
@@ -646,7 +644,9 @@ ${jsonFields}
 }
 
 字段说明：
-${fieldDescriptions}`;
+${fieldDescriptions}
+
+重要提示：所有分析结果必须使用中文输出，确保内容专业、准确、易懂。`;
     
     return prompt;
 }
