@@ -215,16 +215,16 @@
     max-width: 100%;
 }
 
-.message-content { 
-    padding: 12px 18px; 
-    border-radius: 12px; 
+.message-content {
+    padding: 12px 18px;
+    border-radius: 12px;
     word-break: normal;
     overflow-wrap: break-word;
     position: relative;
-    line-height: 1.5;
+    line-height: 1.6;
     width: 100%;
     box-sizing: border-box;
-    white-space: pre-wrap;
+    white-space: normal;
 }
 
 /* Markdown样式优化 */
