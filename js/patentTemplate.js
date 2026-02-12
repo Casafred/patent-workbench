@@ -623,6 +623,16 @@ function importTemplate(event) {
 function buildAnalysisPrompt(template, patentData, includeSpecification) {
     const fields = template.fields;
 
+    // 调试日志
+    console.log('🔍 buildAnalysisPrompt 调试信息:');
+    console.log('  - patent_number:', patentData.patent_number);
+    console.log('  - claims 类型:', typeof patentData.claims);
+    console.log('  - claims 是否为数组:', Array.isArray(patentData.claims));
+    console.log('  - claims 长度:', patentData.claims ? (Array.isArray(patentData.claims) ? patentData.claims.length : 'N/A') : 0);
+    console.log('  - claims 内容预览:', patentData.claims ? (Array.isArray(patentData.claims) ? patentData.claims.slice(0, 2) : patentData.claims.substring(0, 100)) : '无');
+    console.log('  - includeSpecification:', includeSpecification);
+    console.log('  - description 是否存在:', !!patentData.description);
+
     // 构建字段说明
     const fieldDescriptions = fields.map(f => `- ${f.name}: ${f.description}`).join('\n');
 
@@ -644,12 +654,18 @@ function buildAnalysisPrompt(template, patentData, includeSpecification) {
         }
         if (claimsText) {
             patentContent += `\n权利要求：\n${claimsText}`;
+            console.log('✅ 权利要求已添加到提示词，长度:', claimsText.length);
+        } else {
+            console.log('⚠️ 权利要求文本为空');
         }
+    } else {
+        console.log('⚠️ patentData.claims 不存在');
     }
 
     // 处理说明书
     if (includeSpecification && patentData.description) {
         patentContent += `\n\n说明书：\n${patentData.description}`;
+        console.log('✅ 说明书已添加到提示词');
     }
 
     const prompt = `请根据以下专利信息，按照指定的字段进行深入分析和解读：
@@ -665,6 +681,9 @@ ${jsonFields}
 ${fieldDescriptions}
 
 重要提示：所有分析结果必须使用中文输出，确保内容专业、准确、易懂。`;
+
+    console.log('📝 最终提示词长度:', prompt.length);
+    console.log('📝 提示词前500字符:', prompt.substring(0, 500));
 
     return prompt;
 }
