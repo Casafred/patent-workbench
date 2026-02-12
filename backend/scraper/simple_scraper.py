@@ -382,29 +382,29 @@ class SimplePatentScraper:
                         # Check if it's a dependent claim
                         is_dependent = 'claim-dependent' in li.get('class', [])
                         claim_type = 'dependent' if is_dependent else 'independent'
-                        
+
                         # Find the claim div inside the li
                         claim_div = li.find('div', {'class': 'claim'})
                         if claim_div:
                             claim_num = claim_div.get('num', '')
                             claim_texts = claim_div.find_all('div', {'class': 'claim-text'})
-                            
+
                             if claim_texts:
                                 full_claim_text = ' '.join([ct.get_text(strip=True) for ct in claim_texts])
                                 if full_claim_text and len(full_claim_text) > 10:
-                                    claims.append({
-                                        'number': claim_num,
-                                        'text': full_claim_text,
-                                        'type': claim_type
-                                    })
+                                    # Format as string with claim number and type indicator
+                                    prefix = f"[{claim_num}] "
+                                    if is_dependent:
+                                        prefix = f"[{claim_num}][从属] "
+                                    claims.append(prefix + full_claim_text)
                             else:
                                 claim_text = claim_div.get_text(separator=' ', strip=True)
                                 if claim_text and len(claim_text) > 10:
-                                    claims.append({
-                                        'number': claim_num,
-                                        'text': claim_text,
-                                        'type': claim_type
-                                    })
+                                    # Format as string with claim number and type indicator
+                                    prefix = f"[{claim_num}] "
+                                    if is_dependent:
+                                        prefix = f"[{claim_num}][从属] "
+                                    claims.append(prefix + claim_text)
                 else:
                     # Fallback: Find all claim divs with 'num' attribute (most reliable)
                     claim_elements = claims_section.find_all('div', {'num': True, 'class': 'claim'})
