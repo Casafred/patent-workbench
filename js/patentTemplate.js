@@ -659,6 +659,9 @@ function buildAnalysisPrompt(template, patentData, includeSpecification) {
     console.log('  - claims 内容预览:', patentData.claims ? (Array.isArray(patentData.claims) ? patentData.claims.slice(0, 2) : patentData.claims.substring(0, 100)) : '无');
     console.log('  - includeSpecification:', includeSpecification);
     console.log('  - description 是否存在:', !!patentData.description);
+    console.log('  - description 类型:', typeof patentData.description);
+    console.log('  - description 长度:', patentData.description ? (typeof patentData.description === 'string' ? patentData.description.length : JSON.stringify(patentData.description).length) : 0);
+    console.log('  - description 前200字符:', patentData.description ? (typeof patentData.description === 'string' ? patentData.description.substring(0, 200) : JSON.stringify(patentData.description).substring(0, 200)) : '无');
 
     // 构建字段说明
     const fieldDescriptions = fields.map(f => `- ${f.name}: ${f.description}`).join('\n');
@@ -670,7 +673,19 @@ function buildAnalysisPrompt(template, patentData, includeSpecification) {
     let claimsText = '';
     if (patentData.claims) {
         if (Array.isArray(patentData.claims) && patentData.claims.length > 0) {
-            claimsText = '权利要求：\n' + patentData.claims.join('\n\n');
+            // 处理对象数组格式 [{text, type}, ...]
+            const claimsArray = patentData.claims.map((claim, index) => {
+                if (typeof claim === 'string') {
+                    return `${index + 1}. ${claim}`;
+                } else if (claim && typeof claim === 'object') {
+                    const claimText = claim.text || claim.content || claim.claimText || JSON.stringify(claim);
+                    const claimType = claim.type || '';
+                    const typeLabel = claimType === 'independent' ? '【独立】' : claimType === 'dependent' ? '【从属】' : '';
+                    return `${index + 1}. ${typeLabel}${claimText}`;
+                }
+                return `${index + 1}. ${String(claim)}`;
+            });
+            claimsText = '权利要求：\n' + claimsArray.join('\n\n');
         } else if (typeof patentData.claims === 'string' && patentData.claims.trim()) {
             claimsText = '权利要求：\n' + patentData.claims;
         }
@@ -679,7 +694,33 @@ function buildAnalysisPrompt(template, patentData, includeSpecification) {
     // 处理说明书文本
     let descriptionText = '';
     if (includeSpecification && patentData.description) {
-        descriptionText = '\n\n说明书：\n' + patentData.description;
+        let descriptionContent = '';
+        
+        if (typeof patentData.description === 'string') {
+            descriptionContent = patentData.description;
+        } else if (typeof patentData.description === 'object') {
+            // 处理对象格式的说明书（如包含sections等结构）
+            if (patentData.description.fullText) {
+                descriptionContent = patentData.description.fullText;
+            } else if (patentData.description.text) {
+                descriptionContent = patentData.description.text;
+            } else if (patentData.description.content) {
+                descriptionContent = patentData.description.content;
+            } else {
+                // 尝试将所有字段合并
+                const sections = [];
+                for (const [key, value] of Object.entries(patentData.description)) {
+                    if (value && typeof value === 'string' && value.trim()) {
+                        sections.push(`[${key.toUpperCase().replace(/_/g, ' ')}]\n${value}`);
+                    }
+                }
+                descriptionContent = sections.join('\n\n');
+            }
+        }
+        
+        if (descriptionContent) {
+            descriptionText = '\n\n说明书：\n' + descriptionContent;
+        }
     }
 
     // 如果模板有自定义的userPromptTemplate，使用它

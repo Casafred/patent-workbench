@@ -171,7 +171,7 @@ function checkFileSizeAndShowModelDialog(file, contentLength) {
     const currentModel = chatModelSelect ? chatModelSelect.value : 'glm-4-flash';
 
     // 检查当前模型是否支持长上下文
-    const longContextModels = ['glm-4', 'glm-4-plus', 'glm-4-air'];
+    const longContextModels = ['glm-4', 'glm-4-plus', 'glm-4-air', 'glm-4-long', 'glm-4.7', 'glm-4.5'];
     const isLongContextModel = longContextModels.some(m => currentModel.includes(m));
 
     if (isLongContextModel) {
@@ -182,6 +182,18 @@ function checkFileSizeAndShowModelDialog(file, contentLength) {
     // 显示模型切换弹窗
     return new Promise((resolve) => {
         const estimatedTokens = Math.ceil(contentLength / 4); // 粗略估计：1 token ≈ 4 字符
+        
+        // 从全局获取模型列表，如果没有则使用默认列表
+        const models = window.AVAILABLE_MODELS || ["glm-4-flash", "glm-4-flashx-250414", "glm-4-flash-250414", "glm-4-long", "glm-4.7-flash", "glm-4.7-flashx", "glm-4.7", "glm-4.5-air", "glm-4.5-airx"];
+        
+        // 生成模型选项HTML
+        const modelOptions = models.map(model => {
+            // 为长上下文模型添加标记
+            const isLongContext = ['glm-4', 'glm-4-plus', 'glm-4-air', 'glm-4-long', 'glm-4.7', 'glm-4.5'].some(m => model.includes(m));
+            const label = isLongContext ? `${model} (推荐)` : model;
+            const selected = model === currentModel ? 'selected' : '';
+            return `<option value="${model}" ${selected}>${label}</option>`;
+        }).join('');
 
         const modal = document.createElement('div');
         modal.className = 'modal-overlay';
@@ -236,10 +248,7 @@ function checkFileSizeAndShowModelDialog(file, contentLength) {
                     font-size: 14px;
                     background-color: white;
                 ">
-                    <option value="glm-4" ${currentModel === 'glm-4' ? 'selected' : ''}>GLM-4 (128K上下文)</option>
-                    <option value="glm-4-plus" ${currentModel === 'glm-4-plus' ? 'selected' : ''}>GLM-4-Plus (128K上下文)</option>
-                    <option value="glm-4-air" ${currentModel === 'glm-4-air' ? 'selected' : ''}>GLM-4-Air (128K上下文)</option>
-                    <option value="glm-4-flash" ${currentModel === 'glm-4-flash' ? 'selected' : ''}>GLM-4-Flash (免费，较短上下文)</option>
+                    ${modelOptions}
                 </select>
             </div>
 
@@ -386,6 +395,20 @@ async function startFileUpload() {
             console.log('✅ 文件已保存到缓存:', file.name);
         } catch (e) {
             console.warn('⚠️ 无法保存缓存到 localStorage:', e);
+        }
+
+        // 更新UI显示完成状态
+        if (chatFileStatusArea) {
+            chatFileStatusArea.innerHTML = `
+                <div class="file-info">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 8px; color: var(--primary-color);">
+                        <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z"/>
+                    </svg>
+                    <span>已附加文件:</span>
+                    <span class="filename" title="${file.name}">${file.name}</span>
+                </div>
+                <button class="file-remove-btn" onclick="removeActiveFile()" title="移除文件">&times;</button>
+            `;
         }
 
         appState.chat.pendingFile = null;
