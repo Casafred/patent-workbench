@@ -1,6 +1,7 @@
 /**
- * 通用智能剪贴板系统 (Smart Clipboard)
+ * 通用智能剪贴板系统 (Smart Clipboard) - 悬浮球版本
  * 实现各功能模块间的无缝数据传递
+ * 绿色主题设计
  */
 
 class SmartClipboard {
@@ -9,33 +10,39 @@ class SmartClipboard {
         this.current = null;
         this.maxHistory = 10;
         this.panelVisible = false;
-        this.panelMinimized = false;
-        this.pasteButtons = new Map();
-        
-        // 等待 DOM 和规则加载完成
         this.initialized = false;
+        this.floatingBall = null;
+        this.panel = null;
+        
+        // 绿色主题配色
+        this.theme = {
+            primary: '#10b981',      // 主绿色
+            primaryDark: '#059669',  // 深绿色
+            primaryLight: '#34d399', // 浅绿色
+            bg: '#ecfdf5',           // 背景绿
+            text: '#065f46',         // 文字绿
+            border: '#6ee7b7'        // 边框绿
+        };
     }
 
     async init() {
         if (this.initialized) return;
         
-        // 确保规则已加载
         if (typeof ContentTypeRules === 'undefined') {
             console.warn('SmartClipboard: ContentTypeRules not loaded yet');
             return;
         }
         
         this.loadFromStorage();
-        this.createPanel();
         this.injectGlobalStyles();
+        this.createFloatingBall();
+        this.createPanel();
         this.bindEvents();
-        this.startAutoInject();
         
         this.initialized = true;
-        console.log('SmartClipboard initialized');
+        console.log('📋 SmartClipboard initialized (floating ball mode)');
     }
 
-    // 从 localStorage 加载历史
     loadFromStorage() {
         try {
             const saved = localStorage.getItem('smartClipboard_history');
@@ -45,13 +52,13 @@ class SmartClipboard {
             const current = localStorage.getItem('smartClipboard_current');
             if (current) {
                 this.current = JSON.parse(current);
+                this.updateFloatingBall();
             }
         } catch (e) {
             console.warn('SmartClipboard: Failed to load from storage', e);
         }
     }
 
-    // 保存到 localStorage
     saveToStorage() {
         try {
             localStorage.setItem('smartClipboard_history', JSON.stringify(this.history));
@@ -63,7 +70,6 @@ class SmartClipboard {
         }
     }
 
-    // 自动识别内容类型
     detectType(text) {
         if (!text || typeof text !== 'string') {
             return { type: 'plain-text', priority: 1, confidence: 0 };
@@ -82,7 +88,6 @@ class SmartClipboard {
             let totalPatterns = config.patterns.length;
 
             for (const pattern of config.patterns) {
-                // 重置正则表达式
                 pattern.lastIndex = 0;
                 if (pattern.test(trimmed)) {
                     matchCount++;
@@ -105,16 +110,13 @@ class SmartClipboard {
         return bestMatch || { type: 'plain-text', priority: 1, confidence: 1 };
     }
 
-    // 存储内容
     store(text, source = 'unknown', metadata = {}) {
         const detection = this.detectType(text);
         
-        // 保存当前到历史
         if (this.current) {
             this.addToHistory(this.current);
         }
 
-        // 提取额外数据
         let extractedData = null;
         if (detection.config && detection.config.extractMatches) {
             try {
@@ -139,34 +141,29 @@ class SmartClipboard {
         };
 
         this.saveToStorage();
+        this.updateFloatingBall();
         this.updatePanel();
-        this.updateAllPasteButtons();
         
-        // 显示通知
-        this.showNotification(`已复制: ${this.current.typeName}`, 'success');
+        // 显示复制成功提示
+        this.showCopyNotification();
 
         return this.current;
     }
 
-    // 添加到历史
     addToHistory(item) {
-        // 避免重复
         const exists = this.history.find(h => h.text === item.text);
         if (exists) {
             exists.timestamp = item.timestamp;
-            // 移到最前面
             this.history = this.history.filter(h => h.id !== item.id);
         }
         
         this.history.unshift(item);
         
-        // 限制历史数量
         if (this.history.length > this.maxHistory) {
             this.history = this.history.slice(0, this.maxHistory);
         }
     }
 
-    // 获取可用的粘贴目标
     getValidTargets(contentType) {
         if (!TargetMappings || !TargetMappings[contentType]) {
             return [];
@@ -178,7 +175,6 @@ class SmartClipboard {
         });
     }
 
-    // 检查元素是否可见
     isElementVisible(el) {
         if (!el) return false;
         const rect = el.getBoundingClientRect();
@@ -187,7 +183,6 @@ class SmartClipboard {
                window.getComputedStyle(el).visibility !== 'hidden';
     }
 
-    // 粘贴到目标
     pasteTo(targetSelector, content, action = 'replace') {
         const el = document.querySelector(targetSelector);
         if (!el) {
@@ -195,7 +190,6 @@ class SmartClipboard {
             return false;
         }
 
-        // 如果目标在隐藏的标签页中，先切换
         const tabContent = el.closest('.tab-content');
         if (tabContent && tabContent.classList.contains('hidden')) {
             const tabId = tabContent.id;
@@ -205,10 +199,8 @@ class SmartClipboard {
             }
         }
 
-        // 滚动到元素
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-        // 根据 action 执行粘贴
         setTimeout(() => {
             switch (action) {
                 case 'replace':
@@ -239,57 +231,24 @@ class SmartClipboard {
                         }
                     }
                     break;
-                
-                case 'file-simulate':
-                    // 对于文件输入，创建一个模拟的文件对象
-                    this.simulateFileInput(el, content);
-                    break;
-                
-                case 'info':
-                    // 仅显示信息，不实际粘贴
-                    this.showNotification(`检测到 ${content.length} 个专利号，请在功能四中使用`, 'info');
-                    return true;
             }
 
-            // 触发事件
             el.dispatchEvent(new Event('input', { bubbles: true }));
             el.dispatchEvent(new Event('change', { bubbles: true }));
             
-            // 高亮效果
             this.highlightElement(el);
-            
             this.showNotification('粘贴成功', 'success');
         }, 300);
 
         return true;
     }
 
-    // 模拟文件输入
-    simulateFileInput(input, content) {
-        // 创建一个 Blob 对象
-        const blob = new Blob([content], { type: 'text/plain' });
-        const file = new File([blob], 'clipboard-data.txt', { type: 'text/plain' });
-        
-        // 创建 DataTransfer 对象
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(file);
-        
-        // 设置 files 属性
-        input.files = dataTransfer.files;
-        
-        // 触发 change 事件
-        input.dispatchEvent(new Event('change', { bubbles: true }));
-        
-        this.showNotification('已将内容转换为文件上传', 'success');
-    }
-
-    // 高亮元素
     highlightElement(el) {
         const originalTransition = el.style.transition;
         const originalBoxShadow = el.style.boxShadow;
         
         el.style.transition = 'box-shadow 0.3s ease';
-        el.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.5)';
+        el.style.boxShadow = `0 0 0 3px ${this.theme.primary}80`;
         
         setTimeout(() => {
             el.style.boxShadow = originalBoxShadow;
@@ -297,33 +256,73 @@ class SmartClipboard {
         }, 1500);
     }
 
+    // 创建悬浮球
+    createFloatingBall() {
+        if (document.getElementById('sc-floating-ball')) return;
+
+        const ball = document.createElement('div');
+        ball.id = 'sc-floating-ball';
+        ball.className = 'sc-floating-ball';
+        ball.innerHTML = `
+            <div class="sc-ball-icon">📋</div>
+            <div class="sc-ball-badge" style="display: none;">0</div>
+        `;
+
+        document.body.appendChild(ball);
+        this.floatingBall = ball;
+
+        // 点击展开面板
+        ball.addEventListener('click', () => {
+            this.togglePanel();
+        });
+
+        // 使悬浮球可拖动
+        this.makeDraggable(ball);
+        
+        this.updateFloatingBall();
+    }
+
+    // 更新悬浮球状态
+    updateFloatingBall() {
+        if (!this.floatingBall) return;
+
+        const badge = this.floatingBall.querySelector('.sc-ball-badge');
+        
+        if (this.current) {
+            this.floatingBall.classList.add('has-data');
+            if (badge) {
+                badge.style.display = 'flex';
+                badge.textContent = this.history.length + 1;
+            }
+        } else {
+            this.floatingBall.classList.remove('has-data');
+            if (badge) {
+                badge.style.display = 'none';
+            }
+        }
+    }
+
     // 创建面板
     createPanel() {
-        // 检查是否已存在
-        if (document.getElementById('smart-clipboard-panel')) {
-            return;
-        }
+        if (document.getElementById('sc-panel')) return;
 
         const panel = document.createElement('div');
-        panel.id = 'smart-clipboard-panel';
-        panel.className = 'smart-clipboard-panel';
+        panel.id = 'sc-panel';
+        panel.className = 'sc-panel';
         panel.innerHTML = `
-            <div class="sc-header">
-                <span class="sc-title">📋 智能剪贴板</span>
-                <div class="sc-controls">
-                    <button class="sc-btn sc-minimize" title="最小化">−</button>
-                    <button class="sc-btn sc-close" title="关闭">×</button>
-                </div>
+            <div class="sc-panel-header">
+                <span class="sc-panel-title">📋 智能剪贴板</span>
+                <button class="sc-panel-close" title="关闭">×</button>
             </div>
-            <div class="sc-body">
+            <div class="sc-panel-body">
                 <div class="sc-current">
-                    <div class="sc-empty">暂无数据，复制内容以开始使用</div>
+                    <div class="sc-empty">暂无数据</div>
                 </div>
                 <div class="sc-targets"></div>
-                <div class="sc-history">
+                <div class="sc-history-section">
                     <div class="sc-history-header">
                         <span>历史记录</span>
-                        <button class="sc-clear-history">清空</button>
+                        <button class="sc-clear-btn">清空</button>
                     </div>
                     <div class="sc-history-list"></div>
                 </div>
@@ -331,16 +330,17 @@ class SmartClipboard {
         `;
 
         document.body.appendChild(panel);
-
-        // 绑定面板事件
-        panel.querySelector('.sc-minimize').addEventListener('click', () => this.toggleMinimize());
-        panel.querySelector('.sc-close').addEventListener('click', () => this.hidePanel());
-        panel.querySelector('.sc-clear-history').addEventListener('click', () => this.clearHistory());
-
-        // 使面板可拖动
-        this.makeDraggable(panel);
-
         this.panel = panel;
+
+        // 绑定事件
+        panel.querySelector('.sc-panel-close').addEventListener('click', () => {
+            this.hidePanel();
+        });
+
+        panel.querySelector('.sc-clear-btn').addEventListener('click', () => {
+            this.clearHistory();
+        });
+
         this.updatePanel();
     }
 
@@ -352,27 +352,25 @@ class SmartClipboard {
         const targetsDiv = this.panel.querySelector('.sc-targets');
         const historyList = this.panel.querySelector('.sc-history-list');
 
-        // 更新当前内容
         if (this.current) {
-            const preview = this.current.text.slice(0, 200) + (this.current.text.length > 200 ? '...' : '');
+            const preview = this.current.text.slice(0, 150) + (this.current.text.length > 150 ? '...' : '');
             currentDiv.innerHTML = `
                 <div class="sc-content-type">
-                    <span class="sc-icon">${this.current.typeIcon}</span>
+                    <span class="sc-type-icon">${this.current.typeIcon}</span>
                     <span class="sc-type-name">${this.current.typeName}</span>
-                    <span class="sc-confidence">置信度: ${Math.round(this.current.confidence * 100)}%</span>
+                    <span class="sc-confidence">${Math.round(this.current.confidence * 100)}%</span>
                 </div>
                 <div class="sc-preview">${this.escapeHtml(preview)}</div>
                 <div class="sc-meta">
-                    <span>来源: ${this.current.source}</span>
+                    <span>${this.current.source}</span>
                     <span>${this.formatTime(this.current.timestamp)}</span>
                 </div>
             `;
 
-            // 更新目标列表
             const targets = this.getValidTargets(this.current.type);
             if (targets.length > 0) {
                 targetsDiv.innerHTML = `
-                    <div class="sc-targets-title">推荐目标:</div>
+                    <div class="sc-section-title">推荐目标</div>
                     <div class="sc-targets-list">
                         ${targets.map(t => `
                             <button class="sc-target-btn" data-target="${t.target}" data-action="${t.action}">
@@ -383,31 +381,28 @@ class SmartClipboard {
                     </div>
                 `;
 
-                // 绑定目标按钮事件
                 targetsDiv.querySelectorAll('.sc-target-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
                         this.pasteTo(btn.dataset.target, this.current.text, btn.dataset.action);
                     });
                 });
             } else {
-                targetsDiv.innerHTML = '<div class="sc-no-targets">当前页面无可用目标位置</div>';
+                targetsDiv.innerHTML = '<div class="sc-no-targets">当前页面无可用目标</div>';
             }
         } else {
             currentDiv.innerHTML = '<div class="sc-empty">暂无数据，复制内容以开始使用</div>';
             targetsDiv.innerHTML = '';
         }
 
-        // 更新历史列表
         if (this.history.length > 0) {
             historyList.innerHTML = this.history.map(h => `
                 <div class="sc-history-item" data-id="${h.id}">
                     <span class="sc-history-icon">${h.typeIcon}</span>
-                    <span class="sc-history-text">${this.escapeHtml(h.text.slice(0, 50))}...</span>
+                    <span class="sc-history-text">${this.escapeHtml(h.text.slice(0, 40))}...</span>
                     <span class="sc-history-time">${this.formatTime(h.timestamp)}</span>
                 </div>
             `).join('');
 
-            // 绑定历史项点击事件
             historyList.querySelectorAll('.sc-history-item').forEach(item => {
                 item.addEventListener('click', () => {
                     const historyItem = this.history.find(h => h.id === item.dataset.id);
@@ -415,7 +410,7 @@ class SmartClipboard {
                         this.current = historyItem;
                         this.saveToStorage();
                         this.updatePanel();
-                        this.updateAllPasteButtons();
+                        this.updateFloatingBall();
                     }
                 });
             });
@@ -424,92 +419,186 @@ class SmartClipboard {
         }
     }
 
-    // 显示面板
+    togglePanel() {
+        if (this.panelVisible) {
+            this.hidePanel();
+        } else {
+            this.showPanel();
+        }
+    }
+
     showPanel() {
         if (!this.panel) this.createPanel();
         this.panelVisible = true;
-        this.panel.classList.remove('sc-hidden', 'sc-minimized');
+        this.panel.classList.add('show');
+        this.updatePanel();
+        
+        // 定位面板在悬浮球旁边
+        if (this.floatingBall) {
+            const ballRect = this.floatingBall.getBoundingClientRect();
+            this.panel.style.top = `${ballRect.top}px`;
+            this.panel.style.left = `${ballRect.left - 320}px`;
+        }
     }
 
-    // 隐藏面板
     hidePanel() {
         this.panelVisible = false;
         if (this.panel) {
-            this.panel.classList.add('sc-hidden');
+            this.panel.classList.remove('show');
         }
     }
 
-    // 切换最小化
-    toggleMinimize() {
-        this.panelMinimized = !this.panelMinimized;
-        if (this.panel) {
-            this.panel.classList.toggle('sc-minimized', this.panelMinimized);
-        }
-    }
-
-    // 清空历史
     clearHistory() {
         this.history = [];
         this.saveToStorage();
         this.updatePanel();
+        this.updateFloatingBall();
         this.showNotification('历史记录已清空', 'info');
     }
 
-    // 注入全局样式
+    // 显示复制成功提示
+    showCopyNotification() {
+        const notification = document.createElement('div');
+        notification.className = 'sc-copy-notification';
+        notification.innerHTML = `
+            <div class="sc-copy-icon">✓</div>
+            <div class="sc-copy-content">
+                <div class="sc-copy-title">已捕获到剪贴板</div>
+                <div class="sc-copy-type">${this.current.typeIcon} ${this.current.typeName}</div>
+            </div>
+        `;
+        document.body.appendChild(notification);
+
+        // 动画进入
+        requestAnimationFrame(() => {
+            notification.classList.add('show');
+        });
+
+        // 3秒后自动消失
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+
+    // 显示普通通知
+    showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `sc-notification ${type}`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+
+        requestAnimationFrame(() => {
+            notification.classList.add('show');
+        });
+
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+
+    // 注入全局样式 - 绿色主题
     injectGlobalStyles() {
         if (document.getElementById('smart-clipboard-styles')) return;
 
         const styles = document.createElement('style');
         styles.id = 'smart-clipboard-styles';
         styles.textContent = `
-            /* 智能剪贴板面板 */
-            .smart-clipboard-panel {
+            /* 悬浮球 */
+            .sc-floating-ball {
                 position: fixed;
-                top: 80px;
-                right: 20px;
-                width: 360px;
-                max-height: 80vh;
+                bottom: 30px;
+                right: 30px;
+                width: 56px;
+                height: 56px;
+                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                border-radius: 50%;
+                box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+                cursor: pointer;
+                z-index: 9999;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.3s ease;
+                user-select: none;
+            }
+
+            .sc-floating-ball:hover {
+                transform: scale(1.1);
+                box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+            }
+
+            .sc-floating-ball.has-data {
+                animation: sc-pulse 2s infinite;
+            }
+
+            @keyframes sc-pulse {
+                0%, 100% { box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); }
+                50% { box-shadow: 0 4px 25px rgba(16, 185, 129, 0.7); }
+            }
+
+            .sc-ball-icon {
+                font-size: 24px;
+                filter: grayscale(1) brightness(2);
+            }
+
+            .sc-ball-badge {
+                position: absolute;
+                top: -4px;
+                right: -4px;
+                width: 20px;
+                height: 20px;
+                background: #ef4444;
+                color: white;
+                font-size: 11px;
+                font-weight: bold;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 2px solid white;
+            }
+
+            /* 面板 */
+            .sc-panel {
+                position: fixed;
+                width: 320px;
+                max-height: 500px;
                 background: white;
                 border-radius: 12px;
-                box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-                z-index: 9999;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+                z-index: 9998;
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                 font-size: 13px;
                 overflow: hidden;
-                transition: transform 0.3s ease, opacity 0.3s ease;
-            }
-
-            .smart-clipboard-panel.sc-hidden {
-                transform: translateX(120%);
                 opacity: 0;
+                transform: scale(0.9) translateY(10px);
                 pointer-events: none;
+                transition: all 0.3s ease;
             }
 
-            .smart-clipboard-panel.sc-minimized .sc-body {
-                display: none;
+            .sc-panel.show {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+                pointer-events: auto;
             }
 
-            .sc-header {
+            .sc-panel-header {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
                 padding: 12px 16px;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
                 color: white;
-                cursor: move;
             }
 
-            .sc-title {
+            .sc-panel-title {
                 font-weight: 600;
                 font-size: 14px;
             }
 
-            .sc-controls {
-                display: flex;
-                gap: 4px;
-            }
-
-            .sc-btn {
+            .sc-panel-close {
                 width: 24px;
                 height: 24px;
                 border: none;
@@ -517,25 +606,29 @@ class SmartClipboard {
                 color: white;
                 border-radius: 4px;
                 cursor: pointer;
-                font-size: 16px;
+                font-size: 18px;
                 line-height: 1;
                 display: flex;
                 align-items: center;
                 justify-content: center;
             }
 
-            .sc-btn:hover {
+            .sc-panel-close:hover {
                 background: rgba(255,255,255,0.3);
             }
 
-            .sc-body {
-                max-height: calc(80vh - 50px);
+            .sc-panel-body {
+                max-height: 440px;
                 overflow-y: auto;
+                padding: 12px;
             }
 
             .sc-current {
-                padding: 16px;
-                border-bottom: 1px solid #e5e7eb;
+                background: #ecfdf5;
+                border: 1px solid #6ee7b7;
+                border-radius: 8px;
+                padding: 12px;
+                margin-bottom: 12px;
             }
 
             .sc-empty {
@@ -547,39 +640,40 @@ class SmartClipboard {
             .sc-content-type {
                 display: flex;
                 align-items: center;
-                gap: 8px;
+                gap: 6px;
                 margin-bottom: 8px;
             }
 
-            .sc-icon {
-                font-size: 18px;
+            .sc-type-icon {
+                font-size: 16px;
             }
 
             .sc-type-name {
                 font-weight: 600;
-                color: #374151;
+                color: #065f46;
+                flex: 1;
             }
 
             .sc-confidence {
-                margin-left: auto;
                 font-size: 11px;
-                color: #6b7280;
-                background: #f3f4f6;
+                color: #059669;
+                background: #d1fae5;
                 padding: 2px 6px;
                 border-radius: 10px;
             }
 
             .sc-preview {
-                background: #f9fafb;
-                padding: 10px;
-                border-radius: 6px;
+                background: white;
+                padding: 8px;
+                border-radius: 4px;
                 font-family: monospace;
-                font-size: 12px;
-                color: #4b5563;
-                max-height: 100px;
+                font-size: 11px;
+                color: #374151;
+                max-height: 80px;
                 overflow-y: auto;
                 white-space: pre-wrap;
                 word-break: break-all;
+                border: 1px solid #d1fae5;
             }
 
             .sc-meta {
@@ -587,18 +681,18 @@ class SmartClipboard {
                 justify-content: space-between;
                 margin-top: 8px;
                 font-size: 11px;
-                color: #9ca3af;
+                color: #6b7280;
+            }
+
+            .sc-section-title {
+                font-weight: 600;
+                color: #065f46;
+                margin-bottom: 8px;
+                font-size: 12px;
             }
 
             .sc-targets {
-                padding: 16px;
-                border-bottom: 1px solid #e5e7eb;
-            }
-
-            .sc-targets-title {
-                font-weight: 600;
-                color: #374151;
-                margin-bottom: 8px;
+                margin-bottom: 12px;
             }
 
             .sc-targets-list {
@@ -612,8 +706,8 @@ class SmartClipboard {
                 flex-direction: column;
                 align-items: flex-start;
                 padding: 10px 12px;
-                background: #f3f4f6;
-                border: 1px solid #e5e7eb;
+                background: #f0fdf4;
+                border: 1px solid #bbf7d0;
                 border-radius: 6px;
                 cursor: pointer;
                 transition: all 0.2s;
@@ -622,28 +716,31 @@ class SmartClipboard {
             }
 
             .sc-target-btn:hover {
-                background: #e5e7eb;
-                border-color: #d1d5db;
+                background: #dcfce7;
+                border-color: #86efac;
             }
 
             .sc-target-label {
                 font-weight: 500;
-                color: #374151;
+                color: #065f46;
+                font-size: 12px;
             }
 
             .sc-target-desc {
                 font-size: 11px;
-                color: #6b7280;
+                color: #10b981;
             }
 
             .sc-no-targets {
                 color: #9ca3af;
                 text-align: center;
                 padding: 12px;
+                font-size: 12px;
             }
 
-            .sc-history {
-                padding: 16px;
+            .sc-history-section {
+                border-top: 1px solid #e5e7eb;
+                padding-top: 12px;
             }
 
             .sc-history-header {
@@ -655,10 +752,11 @@ class SmartClipboard {
 
             .sc-history-header span {
                 font-weight: 600;
-                color: #374151;
+                color: #065f46;
+                font-size: 12px;
             }
 
-            .sc-clear-history {
+            .sc-clear-btn {
                 font-size: 11px;
                 color: #ef4444;
                 background: none;
@@ -666,7 +764,7 @@ class SmartClipboard {
                 cursor: pointer;
             }
 
-            .sc-clear-history:hover {
+            .sc-clear-btn:hover {
                 text-decoration: underline;
             }
 
@@ -688,7 +786,7 @@ class SmartClipboard {
             }
 
             .sc-history-item:hover {
-                background: #f3f4f6;
+                background: #f0fdf4;
             }
 
             .sc-history-icon {
@@ -701,10 +799,11 @@ class SmartClipboard {
                 overflow: hidden;
                 text-overflow: ellipsis;
                 white-space: nowrap;
+                font-size: 11px;
             }
 
             .sc-history-time {
-                font-size: 11px;
+                font-size: 10px;
                 color: #9ca3af;
             }
 
@@ -712,93 +811,81 @@ class SmartClipboard {
                 color: #9ca3af;
                 text-align: center;
                 padding: 12px;
-                font-size: 12px;
+                font-size: 11px;
             }
 
-            /* 智能粘贴按钮 */
-            .smart-paste-btn {
-                position: relative;
-                display: inline-flex;
+            /* 复制提示 */
+            .sc-copy-notification {
+                position: fixed;
+                bottom: 100px;
+                right: 30px;
+                display: flex;
                 align-items: center;
-                justify-content: center;
+                gap: 12px;
+                padding: 12px 16px;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+                z-index: 10000;
+                opacity: 0;
+                transform: translateY(20px);
+                transition: all 0.3s ease;
+                border-left: 4px solid #10b981;
+            }
+
+            .sc-copy-notification.show {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            .sc-copy-icon {
                 width: 32px;
                 height: 32px;
-                background: #f3f4f6;
-                border: 1px solid #e5e7eb;
-                border-radius: 6px;
-                cursor: pointer;
-                font-size: 16px;
-                transition: all 0.2s;
-            }
-
-            .smart-paste-btn:hover {
-                background: #e5e7eb;
-            }
-
-            .smart-paste-btn.has-data {
-                background: #dbeafe;
-                border-color: #3b82f6;
-            }
-
-            .paste-badge {
-                position: absolute;
-                top: -4px;
-                right: -4px;
-                width: 16px;
-                height: 16px;
-                background: #3b82f6;
+                background: #10b981;
                 color: white;
-                font-size: 10px;
                 border-radius: 50%;
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                font-size: 16px;
+                font-weight: bold;
             }
 
-            .smart-paste-menu {
-                position: absolute;
-                top: 100%;
-                right: 0;
-                margin-top: 4px;
-                background: white;
-                border: 1px solid #e5e7eb;
-                border-radius: 8px;
-                box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-                min-width: 200px;
-                z-index: 10000;
-                display: none;
+            .sc-copy-content {
+                display: flex;
+                flex-direction: column;
             }
 
-            .smart-paste-menu.show {
-                display: block;
+            .sc-copy-title {
+                font-weight: 600;
+                color: #065f46;
+                font-size: 13px;
             }
 
-            .paste-item {
-                padding: 10px 12px;
-                cursor: pointer;
-                border-bottom: 1px solid #f3f4f6;
+            .sc-copy-type {
+                color: #10b981;
+                font-size: 11px;
             }
 
-            .paste-item:last-child {
-                border-bottom: none;
-            }
-
-            .paste-item:hover {
-                background: #f9fafb;
-            }
-
-            /* 通知 */
+            /* 普通通知 */
             .sc-notification {
                 position: fixed;
-                bottom: 20px;
-                right: 20px;
+                bottom: 100px;
+                right: 30px;
                 padding: 12px 20px;
                 background: #374151;
                 color: white;
                 border-radius: 8px;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.15);
                 z-index: 10000;
-                animation: sc-slideIn 0.3s ease;
+                opacity: 0;
+                transform: translateY(20px);
+                transition: all 0.3s ease;
+            }
+
+            .sc-notification.show {
+                opacity: 1;
+                transform: translateY(0);
             }
 
             .sc-notification.success {
@@ -812,30 +899,6 @@ class SmartClipboard {
             .sc-notification.info {
                 background: #3b82f6;
             }
-
-            @keyframes sc-slideIn {
-                from {
-                    transform: translateX(100%);
-                    opacity: 0;
-                }
-                to {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-            }
-
-            /* 输入框包装器 */
-            .sc-input-wrapper {
-                position: relative;
-                display: flex;
-                align-items: flex-start;
-                gap: 8px;
-            }
-
-            .sc-input-wrapper textarea,
-            .sc-input-wrapper input {
-                flex: 1;
-            }
         `;
 
         document.head.appendChild(styles);
@@ -843,234 +906,87 @@ class SmartClipboard {
 
     // 绑定全局事件
     bindEvents() {
-        // 监听复制事件
+        // 拦截复制事件
         document.addEventListener('copy', (e) => {
             const selection = window.getSelection().toString();
-            if (selection) {
-                this.store(selection, 'user-selection');
+            if (selection && selection.trim()) {
+                // 延迟执行，让系统复制先完成
+                setTimeout(() => {
+                    this.store(selection, '用户复制');
+                }, 100);
+            }
+        });
+
+        // 拦截剪切事件
+        document.addEventListener('cut', (e) => {
+            const selection = window.getSelection().toString();
+            if (selection && selection.trim()) {
+                setTimeout(() => {
+                    this.store(selection, '用户剪切');
+                }, 100);
             }
         });
 
         // 监听自定义导出事件
         document.addEventListener('smart-clipboard-export', (e) => {
             if (e.detail && e.detail.text) {
-                this.store(e.detail.text, e.detail.source || 'export', e.detail.metadata);
+                this.store(e.detail.text, e.detail.source || '导出', e.detail.metadata);
             }
         });
 
-        // 键盘快捷键
-        document.addEventListener('keydown', (e) => {
-            // Ctrl/Cmd + Shift + V 打开面板
-            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'V') {
-                e.preventDefault();
-                this.showPanel();
+        // 点击外部关闭面板
+        document.addEventListener('click', (e) => {
+            if (this.panelVisible && 
+                this.panel && !this.panel.contains(e.target) && 
+                this.floatingBall && !this.floatingBall.contains(e.target)) {
+                this.hidePanel();
             }
         });
     }
 
-    // 使面板可拖动
-    makeDraggable(panel) {
-        const header = panel.querySelector('.sc-header');
+    // 使元素可拖动
+    makeDraggable(el) {
         let isDragging = false;
         let startX, startY, startLeft, startTop;
 
-        header.addEventListener('mousedown', (e) => {
+        el.addEventListener('mousedown', (e) => {
+            // 忽略点击事件，只响应拖动
+            if (e.target.closest('.sc-ball-badge')) return;
+            
             isDragging = true;
             startX = e.clientX;
             startY = e.clientY;
-            const rect = panel.getBoundingClientRect();
+            const rect = el.getBoundingClientRect();
             startLeft = rect.left;
             startTop = rect.top;
-            panel.style.transition = 'none';
+            el.style.transition = 'none';
         });
 
         document.addEventListener('mousemove', (e) => {
             if (!isDragging) return;
             const dx = e.clientX - startX;
             const dy = e.clientY - startY;
-            panel.style.left = `${startLeft + dx}px`;
-            panel.style.top = `${startTop + dy}px`;
-            panel.style.right = 'auto';
+            el.style.left = `${startLeft + dx}px`;
+            el.style.top = `${startTop + dy}px`;
+            el.style.right = 'auto';
+            el.style.bottom = 'auto';
         });
 
         document.addEventListener('mouseup', () => {
             if (isDragging) {
                 isDragging = false;
-                panel.style.transition = '';
+                el.style.transition = '';
             }
         });
     }
 
-    // 注入智能粘贴按钮
-    injectPasteButtons() {
-        // 为目标输入框添加粘贴按钮
-        const targetSelectors = [
-            '#patent_numbers_input',
-            '#claims_text_input',
-            '#chat_input',
-            '#async_manual_input',
-            '#lpl_family_col_name'
-        ];
-
-        targetSelectors.forEach(selector => {
-            const el = document.querySelector(selector);
-            if (el && !el.parentElement.classList.contains('sc-input-wrapper')) {
-                this.wrapInputWithPasteButton(el);
-            }
-        });
-    }
-
-    // 包装输入框并添加粘贴按钮
-    wrapInputWithPasteButton(input) {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'sc-input-wrapper';
-        
-        const parent = input.parentElement;
-        parent.insertBefore(wrapper, input);
-        wrapper.appendChild(input);
-
-        const btn = document.createElement('button');
-        btn.className = 'smart-paste-btn';
-        btn.innerHTML = '📋';
-        btn.title = '智能粘贴';
-        
-        wrapper.appendChild(btn);
-
-        // 存储引用
-        this.pasteButtons.set(input.id || input.name, { input, btn, wrapper });
-
-        // 绑定点击事件
-        btn.addEventListener('click', () => this.showPasteMenu(btn, input));
-
-        // 更新按钮状态
-        this.updatePasteButton(btn);
-    }
-
-    // 显示粘贴菜单
-    showPasteMenu(btn, input) {
-        // 移除已有的菜单
-        const existing = btn.parentElement.querySelector('.smart-paste-menu');
-        if (existing) {
-            existing.remove();
-            return;
-        }
-
-        const menu = document.createElement('div');
-        menu.className = 'smart-paste-menu';
-
-        if (this.current) {
-            // 当前内容
-            const currentItem = document.createElement('div');
-            currentItem.className = 'paste-item';
-            currentItem.innerHTML = `
-                <strong>当前: ${this.current.typeName}</strong><br>
-                <small>${this.current.text.slice(0, 50)}...</small>
-            `;
-            currentItem.addEventListener('click', () => {
-                this.pasteToTarget(input, this.current.text);
-                menu.remove();
-            });
-            menu.appendChild(currentItem);
-
-            // 历史记录
-            this.history.slice(0, 5).forEach(item => {
-                const historyItem = document.createElement('div');
-                historyItem.className = 'paste-item';
-                historyItem.innerHTML = `
-                    <span>${item.typeIcon} ${item.typeName}</span><br>
-                    <small>${item.text.slice(0, 40)}...</small>
-                `;
-                historyItem.addEventListener('click', () => {
-                    this.pasteToTarget(input, item.text);
-                    menu.remove();
-                });
-                menu.appendChild(historyItem);
-            });
-        } else {
-            menu.innerHTML = '<div class="paste-item"><em>暂无数据</em></div>';
-        }
-
-        btn.parentElement.appendChild(menu);
-        menu.classList.add('show');
-
-        // 点击外部关闭
-        setTimeout(() => {
-            const closeMenu = (e) => {
-                if (!menu.contains(e.target) && e.target !== btn) {
-                    menu.remove();
-                    document.removeEventListener('click', closeMenu);
-                }
-            };
-            document.addEventListener('click', closeMenu);
-        }, 0);
-    }
-
-    // 粘贴到目标
-    pasteToTarget(input, content) {
-        if (input.tagName === 'INPUT' || input.tagName === 'TEXTAREA') {
-            input.value = content;
-        } else {
-            input.textContent = content;
-        }
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        input.dispatchEvent(new Event('change', { bubbles: true }));
-        this.highlightElement(input);
-    }
-
-    // 更新所有粘贴按钮
-    updateAllPasteButtons() {
-        this.pasteButtons.forEach(({ btn }) => {
-            this.updatePasteButton(btn);
-        });
-    }
-
-    // 更新单个粘贴按钮
-    updatePasteButton(btn) {
-        if (this.current) {
-            btn.classList.add('has-data');
-            let badge = btn.querySelector('.paste-badge');
-            if (!badge) {
-                badge = document.createElement('span');
-                badge.className = 'paste-badge';
-                btn.appendChild(badge);
-            }
-            badge.textContent = this.history.length + 1;
-        } else {
-            btn.classList.remove('has-data');
-            const badge = btn.querySelector('.paste-badge');
-            if (badge) badge.remove();
-        }
-    }
-
-    // 开始自动注入
-    startAutoInject() {
-        // 定期检查新出现的输入框
-        setInterval(() => {
-            this.injectPasteButtons();
-        }, 2000);
-    }
-
-    // 显示通知
-    showNotification(message, type = 'info') {
-        const notification = document.createElement('div');
-        notification.className = `sc-notification ${type}`;
-        notification.textContent = message;
-        document.body.appendChild(notification);
-
-        setTimeout(() => {
-            notification.style.animation = 'sc-slideIn 0.3s ease reverse';
-            setTimeout(() => notification.remove(), 300);
-        }, 3000);
-    }
-
-    // 工具函数: HTML转义
+    // 工具函数
     escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
     }
 
-    // 工具函数: 格式化时间
     formatTime(timestamp) {
         const date = new Date(timestamp);
         const now = new Date();
@@ -1082,17 +998,15 @@ class SmartClipboard {
         return `${date.getMonth() + 1}/${date.getDate()}`;
     }
 
-    // 导出内容 (供其他模块调用)
+    // 公共API
     export(text, source, metadata = {}) {
         return this.store(text, source, metadata);
     }
 
-    // 获取当前内容
     getCurrent() {
         return this.current;
     }
 
-    // 获取历史
     getHistory() {
         return this.history;
     }
@@ -1104,7 +1018,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.smartClipboard.init();
 });
 
-// 如果 DOM 已加载，立即初始化
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
     window.smartClipboard = new SmartClipboard();
     window.smartClipboard.init();
