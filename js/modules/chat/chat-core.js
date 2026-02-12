@@ -607,3 +607,49 @@ function stopStreamChat() {
         console.log('🛑 用户点击终止按钮');
     }
 }
+
+/**
+ * Export message content to SmartClipboard
+ * @param {HTMLElement} buttonElement - The button element clicked
+ */
+function exportMessageToClipboard(buttonElement) {
+    const messageEl = buttonElement.closest('.chat-message');
+    if (!messageEl) return;
+    
+    const contentEl = messageEl.querySelector('.message-content');
+    if (!contentEl) return;
+    
+    // 获取纯文本内容（去除HTML标签）
+    let content = contentEl.innerText || contentEl.textContent;
+    
+    // 去除搜索来源部分
+    const sourcesIndex = content.indexOf('搜索来源');
+    if (sourcesIndex !== -1) {
+        content = content.substring(0, sourcesIndex).trim();
+    }
+    
+    // 使用 SmartClipboard 导出
+    if (window.smartClipboard) {
+        window.smartClipboard.export(content, '功能一-即时对话', {
+            timestamp: Date.now(),
+            messageId: messageEl.id
+        });
+        
+        // 显示成功提示
+        const originalTitle = buttonElement.title;
+        buttonElement.title = '已发送到剪贴板!';
+        buttonElement.style.color = '#10b981';
+        setTimeout(() => {
+            buttonElement.title = originalTitle;
+            buttonElement.style.color = '';
+        }, 1500);
+    } else {
+        // 如果 SmartClipboard 未加载，使用普通剪贴板
+        navigator.clipboard.writeText(content).then(() => {
+            alert('内容已复制到剪贴板');
+        }).catch(err => {
+            console.error('复制失败:', err);
+            alert('复制失败，请手动复制');
+        });
+    }
+}

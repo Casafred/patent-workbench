@@ -249,9 +249,17 @@ function toggleTemplateEditor() {
     const editor = getEl('template_editor');
     if (!editor) return;
     
-    if (editor.style.display === 'none') {
+    if (editor.style.display === 'none' || editor.style.display === '') {
         editor.style.display = 'block';
         appState.patentBatch.isEditingTemplate = true;
+        
+        // 打开编辑器时，加载当前选中的模板
+        const selector = getEl('patent_template_selector');
+        if (selector && selector.value) {
+            loadTemplate(selector.value);
+        } else if (appState.patentBatch.currentTemplate) {
+            loadTemplateToEditor(appState.patentBatch.currentTemplate);
+        }
     } else {
         editor.style.display = 'none';
         appState.patentBatch.isEditingTemplate = false;
