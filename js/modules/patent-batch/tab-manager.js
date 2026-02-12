@@ -286,4 +286,125 @@ class PatentTabManager {
 
         // 如果关闭的是当前活动标签页，切换到其他标签页
         if (this.activeTabId === tabId) {
-            if (this.tabs.length > 0)
+            if (this.tabs.length > 0) {
+                // 切换到相邻的标签页
+                const newIndex = Math.min(tabIndex, this.tabs.length - 1);
+                this.switchToTab(this.tabs[newIndex].id);
+            } else {
+                this.activeTabId = null;
+                // 如果没有标签页了，隐藏容器
+                if (this.container) {
+                    this.container.style.display = 'none';
+                }
+            }
+        }
+
+        console.log(`❌ 关闭标签页: ${tabId}`);
+    }
+
+    /**
+     * 更新标签页结果
+     */
+    updateTabResults(tabId, results) {
+        const tab = this.tabs.find(t => t.id === tabId);
+        if (!tab) return;
+
+        tab.results = results;
+        tab.isLoading = false;
+
+        const resultsContainer = document.getElementById(`${tabId}_results`);
+        if (resultsContainer) {
+            resultsContainer.innerHTML = this.generateResultsHTML(tab);
+        }
+
+        // 更新标题显示数量
+        const tabButton = this.headerContainer.querySelector(`[data-tab-id="${tabId}"] .tab-title`);
+        if (tabButton) {
+            const successCount = results.filter(r => r.success).length;
+            tabButton.textContent = `${tab.title} (${successCount})`;
+        }
+
+        console.log(`📊 更新标签页结果: ${tabId}, 成功: ${results.filter(r => r.success).length}/${results.length}`);
+    }
+
+    /**
+     * 更新标签页进度
+     */
+    updateTabProgress(tabId, current, total, message) {
+        const progressContainer = document.getElementById(`${tabId}_progress`);
+        if (!progressContainer) return;
+
+        const percentage = total > 0 ? (current / total * 100) : 0;
+        const progressFill = progressContainer.querySelector('.progress-fill');
+        const progressText = progressContainer.querySelector('.progress-text');
+
+        if (progressFill) progressFill.style.width = `${percentage}%`;
+        if (progressText) progressText.textContent = message || `${current}/${total}`;
+    }
+
+    /**
+     * 显示标签页容器
+     */
+    show() {
+        if (this.container) {
+            this.container.style.display = 'block';
+        }
+    }
+
+    /**
+     * 打开专利详情弹窗
+     */
+    openPatentDetail(patentNumber) {
+        // 查找专利数据
+        const tab = this.tabs.find(t => t.id === this.activeTabId);
+        if (!tab) return;
+
+        const result = tab.results.find(r => r.patent_number === patentNumber);
+        if (!result) return;
+
+        // 调用主页面的弹窗函数
+        if (window.openPatentDetailModal) {
+            window.openPatentDetailModal(result);
+        }
+    }
+
+    /**
+     * 刷新标签页（重新爬取）
+     */
+    refreshTab(tabId) {
+        const tab = this.tabs.find(t => t.id === tabId);
+        if (!tab) return;
+
+        tab.isLoading = true;
+        tab.results = [];
+
+        const resultsContainer = document.getElementById(`${tabId}_results`);
+        if (resultsContainer) {
+            resultsContainer.innerHTML = this.generateLoadingHTML(tab);
+        }
+
+        // 触发重新爬取
+        if (window.crawlRelationPatents) {
+            window.crawlRelationPatents(tabId, tab.sourcePatent, tab.relationType, tab.patentNumbers);
+        }
+    }
+
+    /**
+     * 获取所有标签页
+     */
+    getTabs() {
+        return this.tabs;
+    }
+
+    /**
+     * 获取当前活动标签页
+     */
+    getActiveTab() {
+        return this.tabs.find(t => t.id === this.activeTabId);
+    }
+}
+
+// 创建全局实例
+window.patentTabManager = new PatentTabManager();
+
+console.log('✅ 标签页管理器模块已加载');
