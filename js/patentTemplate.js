@@ -17,7 +17,22 @@ const PRESET_TEMPLATES = [
             { id: 'advantages', name: '技术优势', description: '相比现有技术的优势和改进', type: 'text', required: true },
             { id: 'summary', name: '解读总结', description: '对该专利的综合评价和总结', type: 'text', required: true }
         ],
-        systemPrompt: '你是一位资深的专利分析师，擅长从专利文本中提炼核心技术信息、分析技术价值。你必须使用中文输出所有分析结果，确保内容专业、准确、易懂。'
+        systemPrompt: '你是一位资深的专利分析师，擅长从专利文本中提炼核心技术信息、分析技术价值。你必须使用中文输出所有分析结果，确保内容专业、准确、易懂。',
+        userPromptTemplate: `请根据以下专利信息，按照指定的字段进行深入分析和解读：
+
+专利号：{{patent_number}}
+标题：{{title}}
+摘要：{{abstract}}
+{{claims}}
+{{description}}
+
+请严格按照以下JSON格式输出，不要添加任何其他说明或markdown标记：
+{{json_fields}}
+
+字段说明：
+{{field_descriptions}}
+
+重要提示：所有分析结果必须使用中文输出，确保内容专业、准确、易懂。`
     },
     {
         id: 'technical',
@@ -301,11 +316,13 @@ function loadTemplateToEditor(template) {
     const nameInput = getEl('template_name');
     const descInput = getEl('template_description');
     const systemPromptInput = getEl('template_system_prompt');
+    const userPromptInput = getEl('template_user_prompt');
     const fieldsList = getEl('fields_list');
 
     if (nameInput) nameInput.value = template.name;
     if (descInput) descInput.value = template.description || '';
     if (systemPromptInput) systemPromptInput.value = template.systemPrompt || '';
+    if (userPromptInput) userPromptInput.value = template.userPromptTemplate || '';
 
     if (fieldsList) {
         fieldsList.innerHTML = '';
@@ -353,6 +370,7 @@ function saveCurrentTemplate() {
     const nameInput = getEl('template_name');
     const descInput = getEl('template_description');
     const systemPromptInput = getEl('template_system_prompt');
+    const userPromptInput = getEl('template_user_prompt');
     const fieldsList = getEl('fields_list');
 
     if (!nameInput || !descInput || !fieldsList) return;
@@ -360,6 +378,7 @@ function saveCurrentTemplate() {
     const name = nameInput.value.trim();
     const description = descInput.value.trim();
     const systemPrompt = systemPromptInput ? systemPromptInput.value.trim() : '';
+    const userPromptTemplate = userPromptInput ? userPromptInput.value.trim() : '';
 
     if (!name) {
         alert('请输入模板名称');
@@ -413,6 +432,7 @@ function saveCurrentTemplate() {
                 isPreset: false,
                 fields,
                 systemPrompt: finalSystemPrompt,
+                userPromptTemplate: userPromptTemplate || undefined,
                 updatedAt: new Date().toISOString()
             };
         }
@@ -427,7 +447,7 @@ function saveCurrentTemplate() {
             return;
         }
 
-        appState.patentBatch.customTemplates.push({
+        const newTemplate = {
             id: templateId,
             name,
             description,
@@ -436,7 +456,14 @@ function saveCurrentTemplate() {
             systemPrompt: finalSystemPrompt,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
-        });
+        };
+        
+        // 只有当用户输入了自定义提示词模板时才保存
+        if (userPromptTemplate) {
+            newTemplate.userPromptTemplate = userPromptTemplate;
+        }
+        
+        appState.patentBatch.customTemplates.push(newTemplate);
 
         alert('预设模板已另存为自定义模板，您可以继续编辑！');
     } else {
@@ -639,32 +666,56 @@ function buildAnalysisPrompt(template, patentData, includeSpecification) {
     // 构建JSON格式要求
     const jsonFields = fields.map(f => `  "${f.id}": "[${f.description}]"`).join(',\n');
 
-    // 构建专利内容
+    // 处理权利要求文本
+    let claimsText = '';
+    if (patentData.claims) {
+        if (Array.isArray(patentData.claims) && patentData.claims.length > 0) {
+            claimsText = '权利要求：\n' + patentData.claims.join('\n\n');
+        } else if (typeof patentData.claims === 'string' && patentData.claims.trim()) {
+            claimsText = '权利要求：\n' + patentData.claims;
+        }
+    }
+
+    // 处理说明书文本
+    let descriptionText = '';
+    if (includeSpecification && patentData.description) {
+        descriptionText = '\n\n说明书：\n' + patentData.description;
+    }
+
+    // 如果模板有自定义的userPromptTemplate，使用它
+    if (template.userPromptTemplate) {
+        let prompt = template.userPromptTemplate;
+
+        // 替换占位符
+        prompt = prompt.replace(/\{\{patent_number\}\}/g, patentData.patent_number || '未知');
+        prompt = prompt.replace(/\{\{title\}\}/g, patentData.title || '未知');
+        prompt = prompt.replace(/\{\{abstract\}\}/g, patentData.abstract || '未知');
+        prompt = prompt.replace(/\{\{claims\}\}/g, claimsText);
+        prompt = prompt.replace(/\{\{description\}\}/g, descriptionText);
+        prompt = prompt.replace(/\{\{json_fields\}\}/g, jsonFields);
+        prompt = prompt.replace(/\{\{field_descriptions\}\}/g, fieldDescriptions);
+
+        console.log('✅ 使用模板自定义userPromptTemplate');
+        console.log('📝 最终提示词长度:', prompt.length);
+        console.log('📝 提示词前500字符:', prompt.substring(0, 500));
+
+        return prompt;
+    }
+
+    // 默认提示词构建（向后兼容）
     let patentContent = `专利号：${patentData.patent_number || '未知'}\n`;
     patentContent += `标题：${patentData.title || '未知'}\n`;
     patentContent += `摘要：${patentData.abstract || '未知'}\n`;
 
-    // 处理权利要求 - 支持数组和字符串格式
-    if (patentData.claims) {
-        let claimsText = '';
-        if (Array.isArray(patentData.claims) && patentData.claims.length > 0) {
-            claimsText = patentData.claims.join('\n\n');
-        } else if (typeof patentData.claims === 'string' && patentData.claims.trim()) {
-            claimsText = patentData.claims;
-        }
-        if (claimsText) {
-            patentContent += `\n权利要求：\n${claimsText}`;
-            console.log('✅ 权利要求已添加到提示词，长度:', claimsText.length);
-        } else {
-            console.log('⚠️ 权利要求文本为空');
-        }
+    if (claimsText) {
+        patentContent += '\n' + claimsText;
+        console.log('✅ 权利要求已添加到提示词');
     } else {
-        console.log('⚠️ patentData.claims 不存在');
+        console.log('⚠️ 权利要求文本为空');
     }
 
-    // 处理说明书
-    if (includeSpecification && patentData.description) {
-        patentContent += `\n\n说明书：\n${patentData.description}`;
+    if (descriptionText) {
+        patentContent += descriptionText;
         console.log('✅ 说明书已添加到提示词');
     }
 

@@ -361,6 +361,27 @@
                 </div>
             </div>
 
+            <div class="user-prompt-template-container" style="margin: 15px 0; padding: 15px; background-color: #f0f8ff; border-radius: 8px; border: 1px solid #b8daff;">
+                <h5 style="margin: 0 0 10px 0; color: #004085; display: flex; align-items: center; gap: 8px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/>
+                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                    </svg>
+                    用户提示词模板（User Prompt Template）
+                </h5>
+                <textarea id="template_user_prompt" placeholder="输入用户提示词模板，使用 {{patent_number}}, {{title}}, {{abstract}}, {{claims}}, {{description}}, {{json_fields}}, {{field_descriptions}} 作为占位符..." rows="8" style="width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 14px; line-height: 1.5; resize: vertical; font-family: monospace;"></textarea>
+                <div style="margin-top: 8px; font-size: 12px; color: #6c757d;">
+                    <strong>可用占位符：</strong>
+                    <code>{{patent_number}}</code> - 专利号,
+                    <code>{{title}}</code> - 标题,
+                    <code>{{abstract}}</code> - 摘要,
+                    <code>{{claims}}</code> - 权利要求,
+                    <code>{{description}}</code> - 说明书,
+                    <code>{{json_fields}}</code> - JSON字段格式,
+                    <code>{{field_descriptions}}</code> - 字段说明
+                </div>
+            </div>
+
             <div class="fields-container">
                 <h5>字段配置：</h5>
                 <div id="fields_list"></div>
