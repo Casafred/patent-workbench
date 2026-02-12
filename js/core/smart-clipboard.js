@@ -1,5 +1,5 @@
 /**
- * 通用智能剪贴板系统 (Smart Clipboard) - 悬浮球版本
+ * 通用智能剪贴板系统 (Smart Clipboard) - 实用版
  * 实现各功能模块间的无缝数据传递
  * 绿色主题设计
  */
@@ -16,12 +16,43 @@ class SmartClipboard {
         
         // 绿色主题配色
         this.theme = {
-            primary: '#10b981',      // 主绿色
-            primaryDark: '#059669',  // 深绿色
-            primaryLight: '#34d399', // 浅绿色
-            bg: '#ecfdf5',           // 背景绿
-            text: '#065f46',         // 文字绿
-            border: '#6ee7b7'        // 边框绿
+            primary: '#10b981',
+            primaryDark: '#059669',
+            primaryLight: '#34d399',
+            bg: '#ecfdf5',
+            text: '#065f46',
+            border: '#6ee7b7'
+        };
+        
+        // 定义所有可粘贴的输入框
+        this.inputTargets = {
+            'patent-numbers': [
+                { id: 'patent_numbers_input', name: '专利号输入框', module: 'patent-batch', placeholder: '输入专利号...' },
+                { id: 'lpl_family_col_name', name: '同族列名输入', module: 'local-patent-lib', placeholder: '列名...' },
+                { id: 'async_manual_input', name: '手动输入框', module: 'async-batch', placeholder: '每行一条...' },
+                { id: 'chat_input', name: '对话输入框', module: 'instant-chat', placeholder: '输入消息...' }
+            ],
+            'claims-text': [
+                { id: 'claims_text_input', name: '权利要求分析', module: 'claims-processor', placeholder: '粘贴权利要求...' },
+                { id: 'chat_input', name: '对话输入框', module: 'instant-chat', placeholder: '输入消息...' }
+            ],
+            'patent-table': [
+                { id: 'lpl_new_file_input', name: '新库文件', module: 'local-patent-lib', type: 'file' },
+                { id: 'gen_file-input', name: 'Excel上传', module: 'large-batch', type: 'file' },
+                { id: 'claims_excel_file', name: 'Excel分析', module: 'claims-processor', type: 'file' },
+                { id: 'async_excel_file', name: 'Excel上传', module: 'async-batch', type: 'file' }
+            ],
+            'ai-analysis': [
+                { id: 'chat_input', name: '对话输入框', module: 'instant-chat', placeholder: '输入消息...' },
+                { id: 'claims_text_input', name: '权利要求分析', module: 'claims-processor', placeholder: '粘贴分析...' },
+                { id: 'async_system_prompt', name: '系统提示词', module: 'async-batch', placeholder: 'System prompt...' },
+                { id: 'api-system-prompt', name: '系统提示词', module: 'large-batch', placeholder: 'System prompt...' }
+            ],
+            'plain-text': [
+                { id: 'chat_input', name: '对话输入框', module: 'instant-chat', placeholder: '输入消息...' },
+                { id: 'claims_text_input', name: '权利要求分析', module: 'claims-processor', placeholder: '粘贴文本...' },
+                { id: 'async_manual_input', name: '手动输入框', module: 'async-batch', placeholder: '每行一条...' }
+            ]
         };
     }
 
@@ -40,7 +71,7 @@ class SmartClipboard {
         this.bindEvents();
         
         this.initialized = true;
-        console.log('📋 SmartClipboard initialized (floating ball mode)');
+        console.log('📋 SmartClipboard initialized');
     }
 
     loadFromStorage() {
@@ -142,7 +173,6 @@ class SmartClipboard {
 
         this.saveToStorage();
         this.updateFloatingBall();
-        this.updatePanel();
         
         // 显示复制成功提示
         this.showCopyNotification();
@@ -164,15 +194,42 @@ class SmartClipboard {
         }
     }
 
-    getValidTargets(contentType) {
-        if (!TargetMappings || !TargetMappings[contentType]) {
-            return [];
-        }
-
-        return TargetMappings[contentType].filter(t => {
-            const el = document.querySelector(t.target);
-            return el && this.isElementVisible(el);
+    // 获取当前页面可用的输入框
+    getAvailableInputs() {
+        if (!this.current) return [];
+        
+        const targets = this.inputTargets[this.current.type] || this.inputTargets['plain-text'];
+        const available = [];
+        
+        targets.forEach(target => {
+            const el = document.getElementById(target.id);
+            if (el && this.isElementVisible(el)) {
+                available.push({
+                    ...target,
+                    element: el,
+                    isFile: target.type === 'file'
+                });
+            }
         });
+        
+        // 同时检测页面上所有可见的文本输入框
+        const allTextareas = document.querySelectorAll('textarea:not([readonly]):not([disabled])');
+        const allInputs = document.querySelectorAll('input[type="text"]:not([readonly]):not([disabled])');
+        
+        [...allTextareas, ...allInputs].forEach(el => {
+            // 排除已经在列表中的
+            if (!available.find(a => a.element === el) && this.isElementVisible(el)) {
+                const placeholder = el.placeholder || '文本输入框';
+                available.push({
+                    id: el.id || el.name || 'unnamed',
+                    name: placeholder.length > 15 ? placeholder.slice(0, 15) + '...' : placeholder,
+                    element: el,
+                    isGeneric: true
+                });
+            }
+        });
+        
+        return available;
     }
 
     isElementVisible(el) {
@@ -183,61 +240,39 @@ class SmartClipboard {
                window.getComputedStyle(el).visibility !== 'hidden';
     }
 
-    pasteTo(targetSelector, content, action = 'replace') {
-        const el = document.querySelector(targetSelector);
-        if (!el) {
-            this.showNotification('目标位置不存在', 'error');
+    pasteTo(element, content) {
+        if (!element) {
+            this.showNotification('目标不存在', 'error');
             return false;
         }
 
-        const tabContent = el.closest('.tab-content');
-        if (tabContent && tabContent.classList.contains('hidden')) {
-            const tabId = tabContent.id;
-            const tabBtn = document.querySelector(`[data-tab="${tabId}"]`);
-            if (tabBtn) {
-                tabBtn.click();
-            }
-        }
-
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // 滚动到元素
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
         setTimeout(() => {
-            switch (action) {
-                case 'replace':
-                    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-                        el.value = content;
-                    } else {
-                        el.textContent = content;
-                    }
-                    break;
-                
-                case 'append':
-                    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-                        el.value = el.value + '\n' + content;
-                    } else {
-                        el.textContent = el.textContent + '\n' + content;
-                    }
-                    break;
-                
-                case 'focus-paste':
-                    el.focus();
-                    if (document.execCommand) {
-                        document.execCommand('insertText', false, content);
-                    } else {
-                        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-                            const start = el.selectionStart;
-                            el.value = el.value.slice(0, start) + content + el.value.slice(el.selectionEnd);
-                            el.selectionStart = el.selectionEnd = start + content.length;
-                        }
-                    }
-                    break;
+            if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+                // 如果有选中文本，替换选中文本
+                if (element.selectionStart !== element.selectionEnd) {
+                    const start = element.selectionStart;
+                    const end = element.selectionEnd;
+                    element.value = element.value.slice(0, start) + content + element.value.slice(end);
+                    element.selectionStart = element.selectionEnd = start + content.length;
+                } else {
+                    // 在光标位置插入
+                    const start = element.selectionStart;
+                    element.value = element.value.slice(0, start) + content + element.value.slice(start);
+                    element.selectionStart = element.selectionEnd = start + content.length;
+                }
+            } else {
+                element.textContent = content;
             }
 
-            el.dispatchEvent(new Event('input', { bubbles: true }));
-            el.dispatchEvent(new Event('change', { bubbles: true }));
+            element.dispatchEvent(new Event('input', { bubbles: true }));
+            element.dispatchEvent(new Event('change', { bubbles: true }));
             
-            this.highlightElement(el);
-            this.showNotification('粘贴成功', 'success');
+            this.highlightElement(element);
+            this.showNotification('✓ 粘贴成功', 'success');
+            this.hidePanel();
         }, 300);
 
         return true;
@@ -271,18 +306,14 @@ class SmartClipboard {
         document.body.appendChild(ball);
         this.floatingBall = ball;
 
-        // 点击展开面板
         ball.addEventListener('click', () => {
             this.togglePanel();
         });
 
-        // 使悬浮球可拖动
         this.makeDraggable(ball);
-        
         this.updateFloatingBall();
     }
 
-    // 更新悬浮球状态
     updateFloatingBall() {
         if (!this.floatingBall) return;
 
@@ -316,9 +347,12 @@ class SmartClipboard {
             </div>
             <div class="sc-panel-body">
                 <div class="sc-current">
-                    <div class="sc-empty">暂无数据</div>
+                    <div class="sc-empty">暂无数据，复制内容开始使用</div>
                 </div>
-                <div class="sc-targets"></div>
+                <div class="sc-available-inputs">
+                    <div class="sc-section-title">可粘贴到当前页面:</div>
+                    <div class="sc-inputs-list"></div>
+                </div>
                 <div class="sc-history-section">
                     <div class="sc-history-header">
                         <span>历史记录</span>
@@ -332,7 +366,6 @@ class SmartClipboard {
         document.body.appendChild(panel);
         this.panel = panel;
 
-        // 绑定事件
         panel.querySelector('.sc-panel-close').addEventListener('click', () => {
             this.hidePanel();
         });
@@ -344,16 +377,15 @@ class SmartClipboard {
         this.updatePanel();
     }
 
-    // 更新面板内容
     updatePanel() {
         if (!this.panel) return;
 
         const currentDiv = this.panel.querySelector('.sc-current');
-        const targetsDiv = this.panel.querySelector('.sc-targets');
+        const inputsList = this.panel.querySelector('.sc-inputs-list');
         const historyList = this.panel.querySelector('.sc-history-list');
 
         if (this.current) {
-            const preview = this.current.text.slice(0, 150) + (this.current.text.length > 150 ? '...' : '');
+            const preview = this.current.text.slice(0, 100) + (this.current.text.length > 100 ? '...' : '');
             currentDiv.innerHTML = `
                 <div class="sc-content-type">
                     <span class="sc-type-icon">${this.current.typeIcon}</span>
@@ -361,44 +393,42 @@ class SmartClipboard {
                     <span class="sc-confidence">${Math.round(this.current.confidence * 100)}%</span>
                 </div>
                 <div class="sc-preview">${this.escapeHtml(preview)}</div>
-                <div class="sc-meta">
-                    <span>${this.current.source}</span>
-                    <span>${this.formatTime(this.current.timestamp)}</span>
-                </div>
             `;
 
-            const targets = this.getValidTargets(this.current.type);
-            if (targets.length > 0) {
-                targetsDiv.innerHTML = `
-                    <div class="sc-section-title">推荐目标</div>
-                    <div class="sc-targets-list">
-                        ${targets.map(t => `
-                            <button class="sc-target-btn" data-target="${t.target}" data-action="${t.action}">
-                                <span class="sc-target-label">${t.label}</span>
-                                <span class="sc-target-desc">${t.description}</span>
-                            </button>
-                        `).join('')}
-                    </div>
-                `;
+            // 更新可用输入框列表
+            const available = this.getAvailableInputs();
+            if (available.length > 0) {
+                inputsList.innerHTML = available.map(input => `
+                    <button class="sc-input-btn" data-input-id="${input.id}">
+                        <span class="sc-input-name">${input.name}</span>
+                        ${input.isFile ? '<span class="sc-input-tag">文件</span>' : ''}
+                        ${input.isGeneric ? '<span class="sc-input-tag generic">自动检测</span>' : ''}
+                    </button>
+                `).join('');
 
-                targetsDiv.querySelectorAll('.sc-target-btn').forEach(btn => {
+                inputsList.querySelectorAll('.sc-input-btn').forEach((btn, index) => {
                     btn.addEventListener('click', () => {
-                        this.pasteTo(btn.dataset.target, this.current.text, btn.dataset.action);
+                        this.pasteTo(available[index].element, this.current.text);
                     });
                 });
             } else {
-                targetsDiv.innerHTML = '<div class="sc-no-targets">当前页面无可用目标</div>';
+                inputsList.innerHTML = `
+                    <div class="sc-no-inputs">
+                        <div>当前页面没有可粘贴的输入框</div>
+                        <div class="sc-hint">切换到其他功能页面后再次打开</div>
+                    </div>
+                `;
             }
         } else {
-            currentDiv.innerHTML = '<div class="sc-empty">暂无数据，复制内容以开始使用</div>';
-            targetsDiv.innerHTML = '';
+            currentDiv.innerHTML = '<div class="sc-empty">暂无数据，复制内容开始使用</div>';
+            inputsList.innerHTML = '<div class="sc-no-inputs">请先复制内容</div>';
         }
 
         if (this.history.length > 0) {
             historyList.innerHTML = this.history.map(h => `
                 <div class="sc-history-item" data-id="${h.id}">
                     <span class="sc-history-icon">${h.typeIcon}</span>
-                    <span class="sc-history-text">${this.escapeHtml(h.text.slice(0, 40))}...</span>
+                    <span class="sc-history-text">${this.escapeHtml(h.text.slice(0, 30))}...</span>
                     <span class="sc-history-time">${this.formatTime(h.timestamp)}</span>
                 </div>
             `).join('');
@@ -433,11 +463,19 @@ class SmartClipboard {
         this.panel.classList.add('show');
         this.updatePanel();
         
-        // 定位面板在悬浮球旁边
         if (this.floatingBall) {
             const ballRect = this.floatingBall.getBoundingClientRect();
-            this.panel.style.top = `${ballRect.top}px`;
-            this.panel.style.left = `${ballRect.left - 320}px`;
+            const panelHeight = 400;
+            let top = ballRect.top;
+            
+            // 确保面板不超出视口顶部
+            if (top + panelHeight > window.innerHeight) {
+                top = window.innerHeight - panelHeight - 20;
+            }
+            if (top < 10) top = 10;
+            
+            this.panel.style.top = `${top}px`;
+            this.panel.style.left = `${ballRect.left - 340}px`;
         }
     }
 
@@ -456,7 +494,6 @@ class SmartClipboard {
         this.showNotification('历史记录已清空', 'info');
     }
 
-    // 显示复制成功提示
     showCopyNotification() {
         const notification = document.createElement('div');
         notification.className = 'sc-copy-notification';
@@ -469,19 +506,16 @@ class SmartClipboard {
         `;
         document.body.appendChild(notification);
 
-        // 动画进入
         requestAnimationFrame(() => {
             notification.classList.add('show');
         });
 
-        // 3秒后自动消失
         setTimeout(() => {
             notification.classList.remove('show');
             setTimeout(() => notification.remove(), 300);
-        }, 3000);
+        }, 2500);
     }
 
-    // 显示普通通知
     showNotification(message, type = 'info') {
         const notification = document.createElement('div');
         notification.className = `sc-notification ${type}`;
@@ -495,17 +529,15 @@ class SmartClipboard {
         setTimeout(() => {
             notification.classList.remove('show');
             setTimeout(() => notification.remove(), 300);
-        }, 3000);
+        }, 2500);
     }
 
-    // 注入全局样式 - 绿色主题
     injectGlobalStyles() {
         if (document.getElementById('smart-clipboard-styles')) return;
 
         const styles = document.createElement('style');
         styles.id = 'smart-clipboard-styles';
         styles.textContent = `
-            /* 悬浮球 */
             .sc-floating-ball {
                 position: fixed;
                 top: 100px;
@@ -560,11 +592,10 @@ class SmartClipboard {
                 border: 2px solid white;
             }
 
-            /* 面板 */
             .sc-panel {
                 position: fixed;
                 width: 320px;
-                max-height: 500px;
+                max-height: 450px;
                 background: white;
                 border-radius: 12px;
                 box-shadow: 0 10px 40px rgba(0,0,0,0.2);
@@ -618,7 +649,7 @@ class SmartClipboard {
             }
 
             .sc-panel-body {
-                max-height: 440px;
+                max-height: 400px;
                 overflow-y: auto;
                 padding: 12px;
             }
@@ -627,21 +658,22 @@ class SmartClipboard {
                 background: #ecfdf5;
                 border: 1px solid #6ee7b7;
                 border-radius: 8px;
-                padding: 12px;
+                padding: 10px;
                 margin-bottom: 12px;
             }
 
             .sc-empty {
                 color: #9ca3af;
                 text-align: center;
-                padding: 20px;
+                padding: 15px;
+                font-size: 12px;
             }
 
             .sc-content-type {
                 display: flex;
                 align-items: center;
                 gap: 6px;
-                margin-bottom: 8px;
+                margin-bottom: 6px;
             }
 
             .sc-type-icon {
@@ -652,6 +684,7 @@ class SmartClipboard {
                 font-weight: 600;
                 color: #065f46;
                 flex: 1;
+                font-size: 13px;
             }
 
             .sc-confidence {
@@ -669,19 +702,15 @@ class SmartClipboard {
                 font-family: monospace;
                 font-size: 11px;
                 color: #374151;
-                max-height: 80px;
+                max-height: 60px;
                 overflow-y: auto;
                 white-space: pre-wrap;
                 word-break: break-all;
                 border: 1px solid #d1fae5;
             }
 
-            .sc-meta {
-                display: flex;
-                justify-content: space-between;
-                margin-top: 8px;
-                font-size: 11px;
-                color: #6b7280;
+            .sc-available-inputs {
+                margin-bottom: 12px;
             }
 
             .sc-section-title {
@@ -689,22 +718,31 @@ class SmartClipboard {
                 color: #065f46;
                 margin-bottom: 8px;
                 font-size: 12px;
-            }
-
-            .sc-targets {
-                margin-bottom: 12px;
-            }
-
-            .sc-targets-list {
                 display: flex;
-                flex-direction: column;
+                align-items: center;
                 gap: 6px;
             }
 
-            .sc-target-btn {
+            .sc-section-title::before {
+                content: '';
+                width: 3px;
+                height: 14px;
+                background: #10b981;
+                border-radius: 2px;
+            }
+
+            .sc-inputs-list {
                 display: flex;
                 flex-direction: column;
-                align-items: flex-start;
+                gap: 6px;
+                max-height: 150px;
+                overflow-y: auto;
+            }
+
+            .sc-input-btn {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
                 padding: 10px 12px;
                 background: #f0fdf4;
                 border: 1px solid #bbf7d0;
@@ -715,27 +753,41 @@ class SmartClipboard {
                 width: 100%;
             }
 
-            .sc-target-btn:hover {
+            .sc-input-btn:hover {
                 background: #dcfce7;
-                border-color: #86efac;
+                border-color: #10b981;
             }
 
-            .sc-target-label {
+            .sc-input-name {
                 font-weight: 500;
                 color: #065f46;
                 font-size: 12px;
             }
 
-            .sc-target-desc {
-                font-size: 11px;
-                color: #10b981;
+            .sc-input-tag {
+                font-size: 10px;
+                color: #059669;
+                background: #d1fae5;
+                padding: 2px 6px;
+                border-radius: 4px;
             }
 
-            .sc-no-targets {
+            .sc-input-tag.generic {
+                color: #6b7280;
+                background: #f3f4f6;
+            }
+
+            .sc-no-inputs {
                 color: #9ca3af;
                 text-align: center;
-                padding: 12px;
+                padding: 15px;
                 font-size: 12px;
+            }
+
+            .sc-no-inputs .sc-hint {
+                color: #6b7280;
+                font-size: 11px;
+                margin-top: 5px;
             }
 
             .sc-history-section {
@@ -814,7 +866,6 @@ class SmartClipboard {
                 font-size: 11px;
             }
 
-            /* 复制提示 */
             .sc-copy-notification {
                 position: fixed;
                 top: 170px;
@@ -828,14 +879,14 @@ class SmartClipboard {
                 box-shadow: 0 4px 20px rgba(0,0,0,0.15);
                 z-index: 10000;
                 opacity: 0;
-                transform: translateY(20px);
+                transform: translateX(20px);
                 transition: all 0.3s ease;
                 border-left: 4px solid #10b981;
             }
 
             .sc-copy-notification.show {
                 opacity: 1;
-                transform: translateY(0);
+                transform: translateX(0);
             }
 
             .sc-copy-icon {
@@ -867,7 +918,6 @@ class SmartClipboard {
                 font-size: 11px;
             }
 
-            /* 普通通知 */
             .sc-notification {
                 position: fixed;
                 top: 170px;
@@ -879,13 +929,13 @@ class SmartClipboard {
                 box-shadow: 0 4px 12px rgba(0,0,0,0.15);
                 z-index: 10000;
                 opacity: 0;
-                transform: translateY(20px);
+                transform: translateX(20px);
                 transition: all 0.3s ease;
             }
 
             .sc-notification.show {
                 opacity: 1;
-                transform: translateY(0);
+                transform: translateX(0);
             }
 
             .sc-notification.success {
@@ -904,20 +954,16 @@ class SmartClipboard {
         document.head.appendChild(styles);
     }
 
-    // 绑定全局事件
     bindEvents() {
-        // 拦截复制事件
         document.addEventListener('copy', (e) => {
             const selection = window.getSelection().toString();
             if (selection && selection.trim()) {
-                // 延迟执行，让系统复制先完成
                 setTimeout(() => {
                     this.store(selection, '用户复制');
                 }, 100);
             }
         });
 
-        // 拦截剪切事件
         document.addEventListener('cut', (e) => {
             const selection = window.getSelection().toString();
             if (selection && selection.trim()) {
@@ -927,14 +973,12 @@ class SmartClipboard {
             }
         });
 
-        // 监听自定义导出事件
         document.addEventListener('smart-clipboard-export', (e) => {
             if (e.detail && e.detail.text) {
                 this.store(e.detail.text, e.detail.source || '导出', e.detail.metadata);
             }
         });
 
-        // 点击外部关闭面板
         document.addEventListener('click', (e) => {
             if (this.panelVisible && 
                 this.panel && !this.panel.contains(e.target) && 
@@ -944,13 +988,11 @@ class SmartClipboard {
         });
     }
 
-    // 使元素可拖动
     makeDraggable(el) {
         let isDragging = false;
         let startX, startY, startLeft, startTop;
 
         el.addEventListener('mousedown', (e) => {
-            // 忽略点击事件，只响应拖动
             if (e.target.closest('.sc-ball-badge')) return;
             
             isDragging = true;
@@ -969,7 +1011,6 @@ class SmartClipboard {
             el.style.left = `${startLeft + dx}px`;
             el.style.top = `${startTop + dy}px`;
             el.style.right = 'auto';
-            el.style.bottom = 'auto';
         });
 
         document.addEventListener('mouseup', () => {
@@ -980,7 +1021,6 @@ class SmartClipboard {
         });
     }
 
-    // 工具函数
     escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
@@ -998,7 +1038,6 @@ class SmartClipboard {
         return `${date.getMonth() + 1}/${date.getDate()}`;
     }
 
-    // 公共API
     export(text, source, metadata = {}) {
         return this.store(text, source, metadata);
     }
@@ -1012,7 +1051,6 @@ class SmartClipboard {
     }
 }
 
-// 初始化
 document.addEventListener('DOMContentLoaded', () => {
     window.smartClipboard = new SmartClipboard();
     window.smartClipboard.init();
