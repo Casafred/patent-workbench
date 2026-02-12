@@ -133,7 +133,11 @@ window.crawlRelationPatents = async function(tabId, sourcePatentNumber, relation
             // 检查缓存
             let patentData = null;
             if (window.PatentCache) {
-                patentData = window.PatentCache.get(patentNumber);
+                const cacheResult = window.PatentCache.get(patentNumber);
+                // PatentCache.get 返回的是包含 data 字段的对象
+                if (cacheResult && cacheResult.data) {
+                    patentData = cacheResult.data;
+                }
             }
 
             if (patentData) {
@@ -164,9 +168,9 @@ window.crawlRelationPatents = async function(tabId, sourcePatentNumber, relation
                     const result = data.data[0];
                     
                     if (result.success) {
-                        // 保存到缓存
-                        if (window.PatentCache) {
-                            window.PatentCache.set(patentNumber, result.data);
+                        // 保存到缓存 - 使用 save 方法
+                        if (window.PatentCache && window.PatentCache.save) {
+                            window.PatentCache.save(patentNumber, result.data, selectedFields);
                         }
 
                         results.push({

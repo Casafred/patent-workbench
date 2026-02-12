@@ -1152,18 +1152,23 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     if (table) {
                         const rows = table.querySelectorAll('tbody tr');
                         rows.forEach(row => {
-                            const patentNum = row.getAttribute('data-patent-number');
-                            if (patentNum) {
-                                if (relationType === 'family') {
+                            if (relationType === 'family') {
+                                // 同族表格：第3列是公开号
+                                const pubNumber = row.cells[2]?.textContent?.trim();
+                                if (pubNumber && pubNumber !== '-') {
                                     relationData.push({
-                                        publication_number: patentNum,
-                                        application_number: row.cells[0]?.textContent || patentNum,
-                                        status: row.cells[1]?.textContent || ''
+                                        publication_number: pubNumber,
+                                        application_number: row.cells[0]?.textContent?.trim() || pubNumber,
+                                        status: row.cells[1]?.textContent?.trim() || ''
                                     });
-                                } else {
+                                }
+                            } else {
+                                // 其他表格：从 data-patent-number 属性或第一列获取
+                                const patentNum = row.getAttribute('data-patent-number') || row.cells[0]?.textContent?.trim();
+                                if (patentNum) {
                                     relationData.push({
                                         patent_number: patentNum,
-                                        title: row.cells[1]?.textContent || ''
+                                        title: row.cells[1]?.textContent?.trim() || ''
                                     });
                                 }
                             }
