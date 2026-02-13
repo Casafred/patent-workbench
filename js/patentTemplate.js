@@ -783,5 +783,6 @@ ${fieldDescriptions}
 
 // 暴露到全局
 globalThis.initPatentTemplate = initPatentTemplate;
+globalThis.loadTemplate = loadTemplate;
 globalThis.removeFieldFromEditor = removeFieldFromEditor;
 globalThis.buildAnalysisPrompt = buildAnalysisPrompt;
