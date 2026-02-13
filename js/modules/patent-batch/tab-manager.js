@@ -439,11 +439,21 @@ class PatentTabManager {
             return;
         }
 
-        // 获取当前模板
-        const template = window.appState?.patentBatch?.currentTemplate;
+        // 获取当前模板，如果没有则尝试加载默认模板
+        let template = window.appState?.patentBatch?.currentTemplate;
         if (!template) {
-            alert('请先选择解读模板');
-            return;
+            // 尝试加载默认模板
+            if (typeof loadTemplate === 'function') {
+                console.log('🔄 没有当前模板，尝试加载默认模板...');
+                loadTemplate('default');
+                template = window.appState?.patentBatch?.currentTemplate;
+            }
+            
+            // 如果仍然没有模板，提示用户
+            if (!template) {
+                alert('请先选择解读模板');
+                return;
+            }
         }
 
         // 获取是否包含说明书的选项
