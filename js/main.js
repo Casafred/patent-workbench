@@ -1307,7 +1307,8 @@ function initPatentBatchEventListeners() {
         }
     });
     }
-    
+}
+
 // 显示专利查询结果 - 条带式展示
 function displayPatentResults(results) {
     // 保存到状态
