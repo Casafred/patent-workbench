@@ -308,7 +308,7 @@ async function exportToPNG(convo, conversationTitle, personaName, filename) {
 }
 
 /**
- * Copy message content to clipboard
+ * Copy message content to clipboard and sync with SmartClipboard
  * @param {HTMLElement} buttonElement - Copy button element
  */
 function copyMessage(buttonElement) {
@@ -317,6 +317,14 @@ function copyMessage(buttonElement) {
     const textContent = contentEl.textContent || contentEl.innerText;
     
     navigator.clipboard.writeText(textContent).then(() => {
+        // 同步到智能剪贴板
+        if (window.smartClipboard) {
+            window.smartClipboard.export(textContent, '功能一-即时对话', {
+                source: '快捷复制按钮',
+                timestamp: Date.now()
+            });
+        }
+        
         const originalHTML = buttonElement.innerHTML;
         buttonElement.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>';
         setTimeout(() => {
