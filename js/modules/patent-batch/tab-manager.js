@@ -90,6 +90,7 @@ class PatentTabManager {
      */
     getRelationTypeName(type) {
         const typeNames = {
+            'original': '原始结果',
             'family': '同族专利',
             'citations': '引用专利',
             'cited_by': '被引用专利',
@@ -126,6 +127,7 @@ class PatentTabManager {
      */
     generateTabContent(tab) {
         const relationTypeColors = {
+            'original': '#22C55E',
             'family': '#4caf50',
             'citations': '#2196f3',
             'cited_by': '#ff9800',
@@ -133,11 +135,26 @@ class PatentTabManager {
         };
         const color = relationTypeColors[tab.relationType] || '#666';
 
+        // 原始结果标签页不显示"来源专利"标签
+        const sourceLabel = tab.relationType === 'original' ? '' : '<span class="source-label">来源专利：</span>';
+        const sourcePatent = tab.relationType === 'original' ? '' : `<span class="source-patent">${tab.sourcePatent}</span>`;
+        
+        // 原始结果标签页显示导出Excel按钮
+        const exportButton = tab.relationType === 'original' ? `
+            <button class="small-button" onclick="exportPatentResultsToExcel()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                    <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                </svg>
+                导出Excel
+            </button>
+        ` : '';
+
         return `
             <div class="patent-tab-source-banner" style="background: linear-gradient(135deg, ${color}15 0%, ${color}08 100%); border-left: 4px solid ${color};">
                 <div class="source-info">
-                    <span class="source-label">来源专利：</span>
-                    <span class="source-patent">${tab.sourcePatent}</span>
+                    ${sourceLabel}
+                    ${sourcePatent}
                     <span class="relation-type-badge" style="background: ${color}; color: white;">${tab.relationTypeName}</span>
                     <span class="patent-count">共 ${tab.patentNumbers.length} 个专利</span>
                 </div>
@@ -148,6 +165,7 @@ class PatentTabManager {
                         </svg>
                         批量解读
                     </button>
+                    ${tab.relationType !== 'original' ? `
                     <button class="small-button" onclick="patentTabManager.refreshTab('${tab.id}')">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                             <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
@@ -155,6 +173,8 @@ class PatentTabManager {
                         </svg>
                         重新爬取
                     </button>
+                    ` : ''}
+                    ${exportButton}
                 </div>
             </div>
             <div class="patent-tab-results-container" id="${tab.id}_results">
@@ -207,14 +227,19 @@ class PatentTabManager {
     }
 
     /**
-     * 生成单个专利条带HTML
+     * 生成单个专利条带HTML - 使用统一样式
      */
     generatePatentStripHTML(result, index) {
         if (!result.success) {
             return `
-                <div class="patent-strip-item error" data-patent-number="${result.patent_number}">
-                    <div class="patent-strip-number">${result.patent_number}</div>
-                    <div class="patent-strip-error">查询失败: ${result.error}</div>
+                <div class="patent-strip error" data-patent-number="${result.patent_number}">
+                    <div class="patent-strip-image">
+                        <div class="no-image">查询失败</div>
+                    </div>
+                    <div class="patent-strip-content">
+                        <div class="patent-strip-number">${result.patent_number}</div>
+                        <div class="patent-strip-error">查询失败: ${result.error}</div>
+                    </div>
                 </div>
             `;
         }
@@ -222,14 +247,15 @@ class PatentTabManager {
         const data = result.data;
         const hasImages = data.images && data.images.length > 0;
         const firstImage = hasImages ? data.images[0] : null;
+        const cacheBadge = result.fromCache ? '<span class="cache-badge">缓存</span>' : '';
 
         return `
-            <div class="patent-strip-item" data-patent-number="${result.patent_number}">
+            <div class="patent-strip success" data-patent-number="${result.patent_number}">
                 <div class="patent-strip-image">
                     ${firstImage ? `<img src="${firstImage}" alt="专利附图" loading="lazy">` : '<div class="no-image">暂无附图</div>'}
                 </div>
                 <div class="patent-strip-content">
-                    <div class="patent-strip-number">${result.patent_number}</div>
+                    <div class="patent-strip-number">${result.patent_number}${cacheBadge}</div>
                     <div class="patent-strip-title">${data.title || '无标题'}</div>
                     <div class="patent-strip-meta">
                         <span>申请人: ${data.applicant || '-'}</span>
@@ -238,10 +264,10 @@ class PatentTabManager {
                     </div>
                 </div>
                 <div class="patent-strip-actions">
-                    <button class="small-button" onclick="patentTabManager.openPatentDetail('${result.patent_number}')">
+                    <button class="small-button" onclick="event.stopPropagation(); patentTabManager.openPatentDetail('${result.patent_number}')">
                         查看详情
                     </button>
-                    <button class="small-button" onclick="openPatentDetailInNewTab('${result.patent_number}')">
+                    <button class="small-button" onclick="event.stopPropagation(); openPatentDetailInNewTab('${result.patent_number}')">
                         新标签页
                     </button>
                 </div>

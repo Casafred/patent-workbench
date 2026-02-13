@@ -419,24 +419,11 @@
         <!-- 查询结果状态 -->
         <div id="search_status" class="info" style="margin-top: 15px; display: none;"></div>
         
-        <!-- 查询结果列表 - 简化为专利号条带 -->
-        <div id="patent_results_container" style="margin-top: 20px; display: none;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h4>查询结果</h4>
-                <div style="display: flex; gap: 10px;">
-                    <button id="analyze_all_btn" class="small-button primary-btn" disabled>批量解读</button>
-                    <button id="export_analysis_excel_btn" class="small-button" disabled>导出为Excel</button>
-                </div>
-            </div>
-            <div id="patent_results_list" class="patent-strip-list"></div>
-            
-            <!-- 解读结果区域 -->
-            <div id="analysis_results_container" style="margin-top: 30px; display: none;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h4>解读结果</h4>
-                    <span id="analysis_progress_text" style="font-size: 12px; color: #666;"></span>
-                </div>
-                <div id="analysis_results_list"></div>
+        <!-- 统一的结果展示标签页容器 - 原始结果和同族引用相似结果都使用此容器 -->
+        <div id="patent_batch_tabs_container" class="patent-batch-tabs-container" style="display: none; margin-top: 30px;">
+            <div class="patent-tabs-wrapper">
+                <div class="patent-tabs-header" id="patent_batch_tabs_container_header"></div>
+                <div class="patent-tabs-content" id="patent_batch_tabs_container_content"></div>
             </div>
         </div>
         
@@ -452,11 +439,11 @@
             </div>
         </div>
         
-        <!-- 关系专利分析标签页容器 -->
-        <div id="patent_batch_tabs_container" class="patent-batch-tabs-container" style="display: none; margin-top: 30px;">
-            <div class="patent-tabs-wrapper">
-                <div class="patent-tabs-header" id="patent_batch_tabs_container_header"></div>
-                <div class="patent-tabs-content" id="patent_batch_tabs_container_content"></div>
+        <!-- 保留旧的容器用于兼容，但内容会迁移到标签页中 -->
+        <div id="patent_results_container" style="display: none;">
+            <div id="patent_results_list" style="display: none;"></div>
+            <div id="analysis_results_container" style="display: none;">
+                <div id="analysis_results_list"></div>
             </div>
         </div>
     </div>

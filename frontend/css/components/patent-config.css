@@ -136,21 +136,22 @@
     gap: 10px;
 }
 
+/* 统一后的专利条带样式 - 与同族引用相似结果样式一致 */
 .patent-strip {
     display: flex;
     align-items: center;
-    padding: 12px 15px;
+    padding: 15px;
     background: white;
-    border: 1px solid #ddd;
-    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s;
+    margin-bottom: 10px;
 }
 
 .patent-strip:hover {
-    background: #f8f9fa;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     border-color: var(--primary-color);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .patent-strip.success {
@@ -164,19 +165,34 @@
 
 .patent-strip.error:hover {
     background: white;
-    border-color: #ddd;
+    border-color: #e0e0e0;
     box-shadow: none;
 }
 
-.patent-strip-icon {
+/* 专利条带图片区域 */
+.patent-strip-image {
+    width: 80px;
+    height: 80px;
     flex-shrink: 0;
-    width: 32px;
-    height: 32px;
+    margin-right: 15px;
+    background: #f5f5f5;
+    border-radius: 4px;
+    overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-right: 12px;
-    font-size: 1.2em;
+}
+
+.patent-strip-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.patent-strip-image .no-image {
+    font-size: 0.75em;
+    color: #999;
+    text-align: center;
 }
 
 .patent-strip-content {
@@ -192,11 +208,26 @@
 }
 
 .patent-strip-title {
-    color: #666;
-    font-size: 0.9em;
+    color: #333;
+    font-size: 0.95em;
+    margin-bottom: 6px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* 专利条带元信息 - 申请人、发明人、申请日等 */
+.patent-strip-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 0.85em;
+    color: #666;
+    flex-wrap: wrap;
+}
+
+.patent-strip-meta span {
+    display: inline-flex;
+    align-items: center;
 }
 
 .patent-strip-error {
@@ -226,6 +257,43 @@
 
 .patent-strip-copy-btn:hover {
     background: #218838;
+}
+
+/* 缓存标记 */
+.cache-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #e3f2fd;
+    color: #1976d2;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 500;
+    margin-left: 8px;
+}
+
+/* 解读状态标记 */
+.analysis-badge {
+    margin-left: 10px;
+    padding: 2px 8px;
+    background: #e3f2fd;
+    color: #1976d2;
+    border-radius: 10px;
+    font-size: 12px;
+}
+
+/* 解读结果区域 */
+.patent-analysis-result {
+    margin-top: 10px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border-left: 3px solid #28a745;
+}
+
+/* 原始结果标签页特殊样式 */
+.original-results-tab .patent-tab-source-banner {
+    background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%) !important;
+    border-left-color: var(--primary-color) !important;
 }
 
 /* 专利详情弹窗 - 无遮罩层版本 */
@@ -941,8 +1009,8 @@
     font-size: 1.1em;
 }
 
-/* 专利条带项（标签页内） */
-.patent-tab-results-container .patent-strip-item {
+/* 专利条带项（标签页内）- 使用统一样式 .patent-strip */
+.patent-tab-results-container .patent-strip {
     display: flex;
     align-items: center;
     padding: 15px;
@@ -953,51 +1021,18 @@
     transition: all 0.2s;
 }
 
-.patent-tab-results-container .patent-strip-item:hover {
+.patent-tab-results-container .patent-strip:hover {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     border-color: var(--primary-color);
 }
 
-.patent-tab-results-container .patent-strip-item.error {
+.patent-tab-results-container .patent-strip.success {
+    border-left: 4px solid #28a745;
+}
+
+.patent-tab-results-container .patent-strip.error {
     border-left: 4px solid #d32f2f;
     background: #ffebee;
-}
-
-.patent-tab-results-container .patent-strip-image {
-    width: 80px;
-    height: 80px;
-    flex-shrink: 0;
-    margin-right: 15px;
-    background: #f5f5f5;
-    border-radius: 4px;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.patent-tab-results-container .patent-strip-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-}
-
-.patent-tab-results-container .patent-strip-image .no-image {
-    font-size: 0.75em;
-    color: #999;
-    text-align: center;
-}
-
-.patent-tab-results-container .patent-strip-content {
-    flex: 1;
-    min-width: 0;
-}
-
-.patent-tab-results-container .patent-strip-number {
-    font-weight: 600;
-    color: var(--primary-color);
-    font-size: 1em;
-    margin-bottom: 4px;
 }
 
 .patent-tab-results-container .patent-strip-title {
@@ -1042,23 +1077,27 @@
         gap: 8px;
     }
     
-    .patent-tab-results-container .patent-strip-item {
+    .patent-tab-results-container .patent-strip,
+    .patent-strip {
         flex-direction: column;
         align-items: flex-start;
     }
     
-    .patent-tab-results-container .patent-strip-image {
+    .patent-tab-results-container .patent-strip-image,
+    .patent-strip-image {
         margin-right: 0;
         margin-bottom: 12px;
     }
     
-    .patent-tab-results-container .patent-strip-actions {
+    .patent-tab-results-container .patent-strip-actions,
+    .patent-strip-actions {
         margin-left: 0;
         margin-top: 12px;
         width: 100%;
     }
     
-    .patent-tab-results-container .patent-strip-actions button {
+    .patent-tab-results-container .patent-strip-actions button,
+    .patent-strip-actions button {
         flex: 1;
     }
 }

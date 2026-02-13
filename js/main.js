@@ -695,13 +695,28 @@ function initPatentBatchEventListeners() {
         await executePatentSearch([], patentNumbers, selectedFields);
     }
     
-    // 执行专利查询（内部函数）
+    // 执行专利查询（内部函数）- 使用标签页管理器显示结果
     async function executePatentSearch(cachedPatents, patentsToCrawl, selectedFields) {
         const results = [];
         const patentNumbers = [...cachedPatents, ...patentsToCrawl];
         
-        // 显示结果容器
-        if (patentResultsContainer) {
+        // 初始化标签页管理器并显示容器
+        const tabsContainer = document.getElementById('patent_batch_tabs_container');
+        if (tabsContainer && window.patentTabManager) {
+            tabsContainer.style.display = 'block';
+            if (!window.patentTabManager.container) {
+                window.patentTabManager.init('patent_batch_tabs_container');
+            }
+            
+            // 创建原始结果标签页
+            window.originalResultsTabId = window.patentTabManager.createTab({
+                title: '原始查询结果',
+                sourcePatent: '批量查询',
+                relationType: 'original',
+                patentNumbers: patentNumbers
+            });
+        } else if (patentResultsContainer) {
+            // 回退到旧容器显示
             patentResultsContainer.style.display = 'block';
         }
         
@@ -854,62 +869,107 @@ function initPatentBatchEventListeners() {
         }
     }
     
-    // 显示单个专利结果（实时显示）
-    function displayPatentResult(result, index, total) {
-        const stripItem = document.createElement('div');
-        stripItem.className = `patent-strip ${result.success ? 'success' : 'error'}`;
-        stripItem.id = `patent_strip_${result.patent_number}`;
+    // 生成专利条带HTML（统一样式）
+    function generatePatentStripHTML(result) {
+        if (!result.success) {
+            return `
+                <div class="patent-strip error" data-patent-number="${result.patent_number}">
+                    <div class="patent-strip-image">
+                        <div class="no-image">查询失败</div>
+                    </div>
+                    <div class="patent-strip-content">
+                        <div class="patent-strip-number">${result.patent_number}</div>
+                        <div class="patent-strip-error">查询失败: ${result.error}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        const data = result.data;
+        const titlePreview = data.title ? (data.title.length > 60 ? data.title.substring(0, 60) + '...' : data.title) : '无标题';
+        const cacheBadge = result.fromCache ? '<span class="cache-badge">缓存</span>' : '';
+        const hasImages = data.images && data.images.length > 0;
+        const firstImage = hasImages ? data.images[0] : null;
         
-        if (result.success) {
-            const data = result.data;
-            const titlePreview = data.title ? (data.title.length > 60 ? data.title.substring(0, 60) + '...' : data.title) : '无标题';
-            const cacheBadge = result.fromCache ? '<span style="background: #e3f2fd; color: #1976d2; padding: 2px 6px; border-radius: 3px; font-size: 11px; margin-left: 8px;">缓存</span>' : '';
-            
-            stripItem.innerHTML = `
-                <div class="patent-strip-icon">
-                    ✓
+        // 获取申请人、发明人、申请日信息
+        const applicant = data.applicant || data.assignee || '-';
+        const inventor = data.inventor || '-';
+        const filingDate = data.filing_date || data.priority_date || '-';
+
+        return `
+            <div class="patent-strip success" data-patent-number="${result.patent_number}">
+                <div class="patent-strip-image">
+                    ${firstImage ? `<img src="${firstImage}" alt="专利附图" loading="lazy">` : '<div class="no-image">暂无附图</div>'}
                 </div>
                 <div class="patent-strip-content">
                     <div class="patent-strip-number">${result.patent_number}${cacheBadge}</div>
                     <div class="patent-strip-title">${titlePreview}</div>
+                    <div class="patent-strip-meta">
+                        <span>申请人: ${applicant}</span>
+                        <span>发明人: ${inventor}</span>
+                        <span>申请日: ${filingDate}</span>
+                    </div>
                 </div>
                 <div class="patent-strip-actions">
-                    <button class="patent-strip-copy-btn" onclick="copyPatentNumber('${result.patent_number}', event)">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                            <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
-                            <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
-                        </svg>
-                        复制
+                    <button class="small-button" onclick="event.stopPropagation(); openPatentDetailModal(window.patentResults.find(r => r.patent_number === '${result.patent_number}'))">
+                        查看详情
+                    </button>
+                    <button class="small-button" onclick="event.stopPropagation(); openPatentDetailInNewTab('${result.patent_number}')">
+                        新标签页
                     </button>
                 </div>
-            `;
-            
-            // 点击条带打开详情弹窗
-            stripItem.addEventListener('click', (e) => {
-                if (e.target.closest('.patent-strip-copy-btn')) {
-                    return;
+            </div>
+        `;
+    }
+
+    // 显示单个专利结果（实时显示）- 使用统一样式，包含图片、申请人、申请日等信息
+    function displayPatentResult(result, index, total) {
+        const stripItem = document.createElement('div');
+        stripItem.innerHTML = generatePatentStripHTML(result);
+        const newStrip = stripItem.firstElementChild;
+        
+        // 点击条带打开详情弹窗
+        newStrip.addEventListener('click', (e) => {
+            if (e.target.closest('.patent-strip-actions')) {
+                return;
+            }
+            e.stopPropagation();
+            openPatentDetailModal(result);
+        });
+        
+        // 更新标签页中的结果
+        if (window.patentTabManager && window.originalResultsTabId) {
+            const tab = window.patentTabManager.tabs.find(t => t.id === window.originalResultsTabId);
+            if (tab) {
+                // 更新或添加结果
+                const existingIndex = tab.results.findIndex(r => r.patent_number === result.patent_number);
+                if (existingIndex >= 0) {
+                    tab.results[existingIndex] = result;
+                } else {
+                    tab.results.push(result);
                 }
-                e.stopPropagation();
-                openPatentDetailModal(result);
-            });
-        } else {
-            stripItem.innerHTML = `
-                <div class="patent-strip-icon">
-                    ✗
-                </div>
-                <div class="patent-strip-content">
-                    <div class="patent-strip-number">${result.patent_number}</div>
-                    <div class="patent-strip-error">查询失败: ${result.error}</div>
-                </div>
-            `;
+                
+                // 重新渲染标签页内容
+                const resultsContainer = document.getElementById(`${window.originalResultsTabId}_results`);
+                if (resultsContainer) {
+                    resultsContainer.innerHTML = window.patentTabManager.generateResultsHTML(tab);
+                }
+                
+                // 更新标签页标题显示数量
+                const successCount = tab.results.filter(r => r.success).length;
+                const tabButton = document.querySelector(`[data-tab-id="${window.originalResultsTabId}"] .tab-title`);
+                if (tabButton) {
+                    tabButton.textContent = `原始查询结果 (${successCount})`;
+                }
+            }
         }
         
-        // 按顺序插入到列表中
-        const existingStrip = document.getElementById(`patent_strip_${result.patent_number}`);
+        // 同时更新旧容器（兼容）
+        const existingStrip = document.querySelector(`#patent_results_list [data-patent-number="${result.patent_number}"]`);
         if (existingStrip) {
-            existingStrip.replaceWith(stripItem);
+            existingStrip.replaceWith(newStrip);
         } else {
-            patentResultsList.appendChild(stripItem);
+            patentResultsList.appendChild(newStrip);
         }
     }
     
@@ -1138,6 +1198,9 @@ function initPatentBatchEventListeners() {
                             `;
                         }
                     }
+
+                    // 更新标签页中的解读结果
+                    updateTabAnalysisResult(patent.patent_number, analysisContent, parseSuccess, template);
 
                     // 更新进度文本
                     if (analysisProgressText) {
@@ -2419,5 +2482,168 @@ function updatePatentDetailAnalysis(patentNumber, analysisContent, parseSuccess,
     }
 }
 
+// 更新标签页中的解读结果
+function updateTabAnalysisResult(patentNumber, analysisContent, parseSuccess, template) {
+    if (!window.patentTabManager || !window.originalResultsTabId) return;
+    
+    const tab = window.patentTabManager.tabs.find(t => t.id === window.originalResultsTabId);
+    if (!tab) return;
+    
+    // 查找专利条带
+    const resultsContainer = document.getElementById(`${window.originalResultsTabId}_results`);
+    if (!resultsContainer) return;
+    
+    const patentStrip = resultsContainer.querySelector(`[data-patent-number="${patentNumber}"]`);
+    if (!patentStrip) return;
+    
+    // 添加或更新解读状态标记
+    let analysisBadge = patentStrip.querySelector('.analysis-badge');
+    if (!analysisBadge) {
+        analysisBadge = document.createElement('span');
+        analysisBadge.className = 'analysis-badge';
+        const titleDiv = patentStrip.querySelector('.patent-strip-title');
+        if (titleDiv) {
+            titleDiv.appendChild(analysisBadge);
+        }
+    }
+    analysisBadge.textContent = '已解读';
+    analysisBadge.style.background = '#d4edda';
+    analysisBadge.style.color = '#155724';
+    
+    // 添加或更新解读结果区域
+    let analysisSection = patentStrip.querySelector('.patent-analysis-result');
+    if (!analysisSection) {
+        analysisSection = document.createElement('div');
+        analysisSection.className = 'patent-analysis-result';
+        patentStrip.appendChild(analysisSection);
+    }
+    
+    // 格式化显示解读结果
+    let displayContent = analysisContent;
+    if (parseSuccess) {
+        try {
+            const analysisData = JSON.parse(analysisContent);
+            displayContent = formatAnalysisResult(analysisData, template);
+        } catch (e) {
+            displayContent = `<div style="white-space: pre-wrap;">${analysisContent}</div>`;
+        }
+    } else {
+        displayContent = `<div style="white-space: pre-wrap;">${analysisContent}</div>`;
+    }
+    
+    analysisSection.innerHTML = `
+        <div style="font-size: 12px; color: #666; margin-bottom: 5px;">🤖 AI解读结果：</div>
+        ${displayContent}
+    `;
+    
+    // 存储解读结果到tab
+    const result = tab.results.find(r => r.patent_number === patentNumber);
+    if (result) {
+        result.analysis = {
+            content: analysisContent,
+            template: template.name,
+            timestamp: new Date().toISOString()
+        };
+    }
+}
+
+// 导出专利结果为Excel（全局函数，供标签页调用）
+window.exportPatentResultsToExcel = async function() {
+    const searchStatus = document.getElementById('search_status');
+    
+    if (!window.patentResults || window.patentResults.length === 0) {
+        alert('没有可导出的专利数据');
+        return;
+    }
+    
+    // 确保 XLSX 库已加载
+    if (typeof XLSX === 'undefined') {
+        if (searchStatus) {
+            searchStatus.textContent = '正在加载导出库，请稍候...';
+            searchStatus.style.display = 'block';
+        }
+        try {
+            if (window.ResourceLoader) {
+                await window.ResourceLoader.ensureLibrary('xlsx');
+            } else {
+                alert('导出库未加载，请刷新页面后重试');
+                return;
+            }
+        } catch (err) {
+            alert('导出库加载失败，请刷新页面后重试');
+            return;
+        }
+    }
+    
+    try {
+        if (searchStatus) {
+            searchStatus.textContent = '正在导出Excel文件...';
+            searchStatus.style.display = 'block';
+        }
+        
+        // 准备导出数据
+        const exportData = [];
+        window.patentResults.forEach(result => {
+            if (result.success) {
+                const data = result.data;
+                const row = {
+                    '专利号': result.patent_number,
+                    '标题': data.title || '',
+                    '申请人': data.applicant || data.assignee || '',
+                    '发明人': data.inventor || '',
+                    '申请日': data.filing_date || '',
+                    '公开日': data.publication_date || '',
+                    '摘要': data.abstract || ''
+                };
+                
+                // 如果有解读结果，也一并导出
+                if (result.analysis && result.analysis.content) {
+                    row['AI解读'] = result.analysis.content;
+                    row['解读模板'] = result.analysis.template || '';
+                }
+                
+                exportData.push(row);
+            }
+        });
+        
+        // 创建工作簿
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        
+        // 设置列宽
+        const colWidths = [
+            { wch: 15 }, // 专利号
+            { wch: 40 }, // 标题
+            { wch: 20 }, // 申请人
+            { wch: 20 }, // 发明人
+            { wch: 12 }, // 申请日
+            { wch: 12 }, // 公开日
+            { wch: 60 }, // 摘要
+            { wch: 60 }, // AI解读
+            { wch: 15 }  // 解读模板
+        ];
+        ws['!cols'] = colWidths;
+        
+        // 添加工作表到工作簿
+        XLSX.utils.book_append_sheet(wb, ws, '专利查询结果');
+        
+        // 生成文件名
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+        const filename = `专利查询结果_${timestamp}.xlsx`;
+        
+        // 下载文件
+        XLSX.writeFile(wb, filename);
+        
+        if (searchStatus) {
+            searchStatus.textContent = `已导出 ${exportData.length} 条专利数据到 ${filename}`;
+        }
+    } catch (error) {
+        console.error('导出失败:', error);
+        if (searchStatus) {
+            searchStatus.textContent = `导出失败: ${error.message}`;
+        }
+        alert('导出失败: ' + error.message);
+    }
+};
 
 
