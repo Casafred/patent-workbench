@@ -146,6 +146,9 @@ const appState = {
     // ▲▲▲ 新增结束 ▲▲▲
 };
 
+// 将 appState 挂载到 window 对象，供其他模块访问
+window.appState = appState;
+
 const BACKEND_URL = 'https://patent-workbench-backend.onrender.com';
 
 // ▼▼▼ 统一模型配置 - 从配置文件加载 ▼▼▼
