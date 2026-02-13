@@ -1319,6 +1319,46 @@ function initPatentBatchEventListeners() {
     }
 }
 
+// 更新标签页中的解读结果
+function updateTabAnalysisResult(patentNumber, analysisContent, parseSuccess, template) {
+    // 更新新标签页中的解读结果
+    const tabAnalysisResult = document.getElementById(`tab-analysis-result-${patentNumber}`);
+    const tabAnalysisSection = document.getElementById(`batch-analysis-${patentNumber}`);
+    const tabAnalysisStatus = document.getElementById(`tab-analysis-status-${patentNumber}`);
+    
+    if (tabAnalysisSection) {
+        tabAnalysisSection.style.display = 'block';
+    }
+    
+    if (tabAnalysisStatus) {
+        tabAnalysisStatus.textContent = '✅ 已完成';
+        tabAnalysisStatus.style.color = '#28a745';
+    }
+    
+    if (tabAnalysisResult) {
+        // 格式化显示解读结果
+        let displayContent = analysisContent;
+        if (parseSuccess) {
+            try {
+                const analysisData = JSON.parse(analysisContent);
+                displayContent = formatAnalysisResult(analysisData, template);
+            } catch (e) {
+                displayContent = `<div style="white-space: pre-wrap;">${analysisContent}</div>`;
+            }
+        } else {
+            displayContent = `<div style="white-space: pre-wrap;">${analysisContent}</div>`;
+        }
+        
+        tabAnalysisResult.innerHTML = `
+            <div class="ai-disclaimer compact" style="margin-bottom: 10px;">
+                <div class="ai-disclaimer-icon">AI</div>
+                <div class="ai-disclaimer-text"><strong>AI生成：</strong>以下解读由AI生成，仅供参考</div>
+            </div>
+            ${displayContent}
+        `;
+    }
+}
+
 // 显示专利查询结果 - 条带式展示
 function displayPatentResults(results) {
     // 保存到状态

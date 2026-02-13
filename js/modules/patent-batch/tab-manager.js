@@ -597,6 +597,11 @@ class PatentTabManager {
                     patent_data: result.data,
                     analysis_content: analysisContent
                 });
+                
+                // 更新新标签页中的解读结果
+                if (typeof updateTabAnalysisResult === 'function') {
+                    updateTabAnalysisResult(patentNumber, analysisContent, true, template);
+                }
 
             } catch (error) {
                 console.error(`解读专利 ${patentNumber} 失败:`, error);
