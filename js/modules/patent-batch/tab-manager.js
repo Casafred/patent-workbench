@@ -512,6 +512,9 @@ class PatentTabManager {
                     analysisBadge.textContent = '解读中...';
                 }
 
+                // 构建用户提示词
+                const userPrompt = buildAnalysisPrompt(template, result.data, includeSpecification);
+                
                 // 调用解读API（使用统一的apiCall函数）
                 const analysisResult = await apiCall('/patent/analyze', {
                     patent_data: result.data,
@@ -519,6 +522,7 @@ class PatentTabManager {
                         fields: template.fields,
                         system_prompt: template.systemPrompt
                     },
+                    user_prompt: userPrompt,
                     include_specification: includeSpecification
                 });
 
