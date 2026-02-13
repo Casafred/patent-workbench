@@ -459,6 +459,9 @@ class PatentTabManager {
         // 获取是否包含说明书的选项
         const includeSpecification = document.getElementById('include_specification_checkbox')?.checked || false;
 
+        // 获取选择的模型
+        const selectedModel = document.getElementById('patent_batch_model_selector')?.value || 'GLM-4-Flash';
+
         // 禁用按钮
         const analyzeBtn = document.getElementById(`${tabId}_analyze_btn`);
         if (analyzeBtn) {
@@ -523,7 +526,8 @@ class PatentTabManager {
                         system_prompt: template.systemPrompt
                     },
                     user_prompt: userPrompt,
-                    include_specification: includeSpecification
+                    include_specification: includeSpecification,
+                    model: selectedModel
                 });
 
                 // 解析解读结果
