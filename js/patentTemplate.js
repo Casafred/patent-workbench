@@ -84,17 +84,8 @@ const PRESET_TEMPLATES = [
 // 初始化模板管理
 function initPatentTemplate() {
     console.log('🔧 初始化专利解读模板管理...');
-    console.log('📍 检查DOM元素是否存在...');
     
-    const selector = getEl('patent_template_selector');
-    if (!selector) {
-        console.error('❌ 致命错误: patent_template_selector 元素不存在！');
-        console.log('💡 提示: 请确保在功能六标签页中存在 id="patent_template_selector" 的 select 元素');
-        return;
-    }
-    console.log('✅ patent_template_selector 元素已找到');
-    
-    // 初始化状态
+    // 初始化状态（无论DOM元素是否存在，都要初始化状态）
     if (!appState.patentBatch) {
         console.log('📦 创建 appState.patentBatch 对象');
         appState.patentBatch = {};
@@ -108,6 +99,20 @@ function initPatentTemplate() {
     console.log('📂 加载自定义模板...');
     loadCustomTemplates();
     
+    // 加载默认模板（无论DOM元素是否存在，都要加载默认模板到状态中）
+    console.log('📖 加载默认模板...');
+    loadTemplate('default');
+    
+    // 检查DOM元素
+    console.log('📍 检查DOM元素是否存在...');
+    const selector = getEl('patent_template_selector');
+    if (!selector) {
+        console.warn('⚠️ patent_template_selector 元素不存在，跳过UI初始化');
+        console.log('💡 提示: 请确保在功能六标签页中存在 id="patent_template_selector" 的 select 元素');
+        return;
+    }
+    console.log('✅ patent_template_selector 元素已找到');
+    
     // 初始化模板选择器
     console.log('🎨 初始化模板选择器...');
     updateTemplateSelector();
@@ -115,10 +120,6 @@ function initPatentTemplate() {
     // 绑定事件
     console.log('🔗 绑定事件监听器...');
     bindTemplateEvents();
-    
-    // 加载默认模板
-    console.log('📖 加载默认模板...');
-    loadTemplate('default');
     
     console.log('✅ 模板管理初始化完成，预设模板数量:', PRESET_TEMPLATES.length);
 }
