@@ -1779,8 +1779,8 @@ function shouldShowField(fieldKey, selectedFields) {
         return true;
     }
     
-    // 基础字段始终显示
-    const baseFields = ['patent_number', 'title', 'abstract', 'applicant', 'inventor', 'filing_date', 'publication_date', 'priority_date', 'ipc_classification', 'url'];
+    // 基础字段始终显示（包括单数和复数形式）
+    const baseFields = ['patent_number', 'title', 'abstract', 'applicant', 'inventor', 'assignees', 'inventors', 'application_date', 'publication_date', 'filing_date', 'priority_date', 'ipc_classification', 'url'];
     if (baseFields.includes(fieldKey)) {
         return true;
     }
