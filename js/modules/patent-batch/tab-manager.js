@@ -512,25 +512,18 @@ class PatentTabManager {
                     analysisBadge.textContent = '解读中...';
                 }
 
-                // 调用解读API
-                const response = await fetch(`${window.CONFIG.API_BASE_URL}/api/analyze_patent`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
+                // 调用解读API（使用统一的apiCall函数）
+                const analysisResult = await apiCall('/patent/analyze', {
+                    patent_data: result.data,
+                    template: {
+                        fields: template.fields,
+                        system_prompt: template.systemPrompt
                     },
-                    body: JSON.stringify({
-                        patent_data: result.data,
-                        template: template,
-                        include_specification: includeSpecification
-                    })
+                    include_specification: includeSpecification
                 });
 
-                if (!response.ok) {
-                    throw new Error(`解读请求失败: ${response.status}`);
-                }
-
-                const analysisResult = await response.json();
-                const analysisContent = analysisResult.analysis || analysisResult.result || analysisResult.content || '无解读结果';
+                // 解析解读结果
+                const analysisContent = analysisResult.choices?.[0]?.message?.content || analysisResult.analysis || analysisResult.result || '无解读结果';
 
                 // 更新专利条带的解读结果
                 if (patentStrip) {
