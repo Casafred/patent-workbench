@@ -659,7 +659,9 @@ function initPatentBatchEventListeners() {
         if (analysisResultsList) {
             analysisResultsList.innerHTML = '';
         }
-        analyzeAllBtn.disabled = true;
+        if (analyzeAllBtn) {
+            analyzeAllBtn.disabled = true;
+        }
         
         // 更新状态
         appState.patentBatch.isCrawling = true;
@@ -809,7 +811,9 @@ function initPatentBatchEventListeners() {
         
         // 如果有成功的结果，启用一键解读按钮
         if (successCount > 0) {
-            analyzeAllBtn.disabled = false;
+            if (analyzeAllBtn) {
+                analyzeAllBtn.disabled = false;
+            }
             
             // 检查是否开启自动解读
             const autoAnalyzeCheckbox = document.getElementById('auto_analyze_checkbox');
@@ -819,7 +823,12 @@ function initPatentBatchEventListeners() {
                 
                 // 延迟一下让用户看到爬取完成的状态
                 setTimeout(() => {
-                    analyzeAllBtn.click();
+                    // 触发标签页中的批量解读
+                    if (window.patentTabManager && window.originalResultsTabId) {
+                        window.patentTabManager.analyzeAllPatents(window.originalResultsTabId);
+                    } else if (analyzeAllBtn) {
+                        analyzeAllBtn.click();
+                    }
                 }, 500);
             }
         }
@@ -996,7 +1005,8 @@ function initPatentBatchEventListeners() {
     }
     
     // 一键解读全部（增强版：支持实时显示和进度条）
-    analyzeAllBtn.addEventListener('click', async () => {
+    if (analyzeAllBtn) {
+        analyzeAllBtn.addEventListener('click', async () => {
         const successfulResults = window.patentResults.filter(r => r.success);
         if (successfulResults.length === 0) {
             alert('没有可解读的专利');
@@ -1296,6 +1306,7 @@ function initPatentBatchEventListeners() {
             updateAnalyzeProgress();
         }
     });
+    }
     
 // 显示专利查询结果 - 条带式展示
 function displayPatentResults(results) {
