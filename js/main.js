@@ -564,7 +564,7 @@ function initPatentBatchEventListeners() {
                     };
                     
                     // 尝试添加解读结果
-                    const analysisResult = patentBatchAnalysisResults.find(item => item.patent_number === result.patent_number);
+                    const analysisResult = window.patentBatchAnalysisResults.find(item => item.patent_number === result.patent_number);
                     if (analysisResult) {
                         try {
                             // 尝试清理可能的markdown代码块标记
@@ -1013,11 +1013,21 @@ function initPatentBatchEventListeners() {
             return;
         }
 
-        // 获取当前模板
-        const template = appState.patentBatch.currentTemplate;
+        // 获取当前模板，如果没有则尝试加载默认模板
+        let template = window.appState?.patentBatch?.currentTemplate;
         if (!template) {
-            alert('请先选择解读模板');
-            return;
+            // 尝试加载默认模板
+            if (typeof loadTemplate === 'function') {
+                console.log('🔄 没有当前模板，尝试加载默认模板...');
+                loadTemplate('default');
+                template = window.appState?.patentBatch?.currentTemplate;
+            }
+            
+            // 如果仍然没有模板，提示用户
+            if (!template) {
+                alert('请先选择解读模板');
+                return;
+            }
         }
 
         // 获取是否包含说明书的选项
@@ -1031,7 +1041,7 @@ function initPatentBatchEventListeners() {
         if (analysisResultsList) {
             analysisResultsList.innerHTML = '';
         }
-        patentBatchAnalysisResults = [];
+        window.patentBatchAnalysisResults = [];
 
         // 初始化进度
         appState.patentBatch.isAnalyzing = true;
@@ -1270,15 +1280,15 @@ function initPatentBatchEventListeners() {
             updateAnalyzeProgress();
 
             // 按照用户输入的顺序重新组织 analysisResults 数组
-            patentBatchAnalysisResults = [];
+            window.patentBatchAnalysisResults = [];
             window.patentResults.forEach(result => {
                 if (result.success && analysisResultsMap.has(result.patent_number)) {
-                    patentBatchAnalysisResults.push(analysisResultsMap.get(result.patent_number));
+                    window.patentBatchAnalysisResults.push(analysisResultsMap.get(result.patent_number));
                 }
             });
 
             // 更新状态
-            const completedCount = patentBatchAnalysisResults.length;
+            const completedCount = window.patentBatchAnalysisResults.length;
             searchStatus.textContent = `解读完成，成功 ${completedCount}/${successfulResults.length} 个专利`;
 
             // 更新最终进度文本
