@@ -1,0 +1,5 @@
+fix: check for class definitions instead of instances in checkDependencies
+
+- Check if PDFOCRCore, PDFOCRViewer, etc. classes are defined
+- Use typeof check for functions instead of truthy check
+- Fix initialization error: "依赖模块未加载: pdfOCRCore"

@@ -734,5 +734,6 @@ class PDFOCRCore {
     }
 }
 
-// 不立即创建实例，而是在初始化时创建
+// 暴露类定义（供 pdf-ocr-init.js 使用）
+window.PDFOCRCore = PDFOCRCore;
 window.pdfOCRCore = null;

@@ -1,0 +1,5 @@
+fix: remove auto-initialization to prevent early init before component loads
+
+- Remove automatic init() call on DOMContentLoaded
+- Let main.js call init() after component is fully loaded
+- Fix issue where initialization happens before HTML component is ready

@@ -1,0 +1,6 @@
+fix: defer module instantiation until DOM is ready
+
+- Remove immediate instantiation of PDF-OCR modules
+- Create instances in pdf-ocr-init.js after DOM is ready
+- Follow the same pattern as Feature 8 (local-patent-lib)
+- Update script version to force cache refresh
