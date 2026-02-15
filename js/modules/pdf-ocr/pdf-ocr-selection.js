@@ -36,37 +36,60 @@ class PDFOCRSelection {
             selectionLayer: null
         };
         
-        // 创建选择层
-        this.createSelectionLayer();
+        // 延迟创建选择层，确保容器已准备好
+        setTimeout(() => {
+            this.createSelectionLayer();
+        }, 100);
     }
     
     /**
      * 创建选择层
      */
     createSelectionLayer() {
-        const container = this.elements.viewerContainer;
-        if (!container) return;
+        const container = document.getElementById('pdf-canvas');
+        if (!container) {
+            console.warn('[PDF-OCR] 无法找到pdf-canvas容器，延迟创建选择层');
+            // 如果容器不存在，稍后重试
+            setTimeout(() => this.createSelectionLayer(), 500);
+            return;
+        }
+        
+        this.elements.viewerContainer = container;
         
         // 检查是否已存在
         let selectionLayer = document.getElementById('ocr-selection-layer');
-        if (!selectionLayer) {
-            selectionLayer = document.createElement('div');
-            selectionLayer.id = 'ocr-selection-layer';
-            selectionLayer.className = 'ocr-selection-layer';
-            selectionLayer.style.cssText = `
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                z-index: 100;
-                cursor: text;
-                user-select: none;
-            `;
-            container.appendChild(selectionLayer);
+        if (selectionLayer) {
+            selectionLayer.remove();
         }
         
+        selectionLayer = document.createElement('div');
+        selectionLayer.id = 'ocr-selection-layer';
+        selectionLayer.className = 'ocr-selection-layer';
+        selectionLayer.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 100;
+            cursor: text;
+            user-select: none;
+        `;
+        container.appendChild(selectionLayer);
+        
         this.elements.selectionLayer = selectionLayer;
+        console.log('[PDF-OCR] 选择层已创建');
+        
+        // 重新绑定事件
+        this.bindEvents();
+    }
+    
+    /**
+     * 重新创建选择层（在PDF加载后调用）
+     */
+    recreateSelectionLayer() {
+        this.clearSelection();
+        this.createSelectionLayer();
     }
     
     /**

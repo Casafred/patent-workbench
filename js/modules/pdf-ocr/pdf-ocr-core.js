@@ -269,6 +269,11 @@ class PDFOCRCore {
             // 更新统计
             if (this.elements.statTotal) this.elements.statTotal.textContent = this.totalPages;
             
+            // PDF加载完成后，重新创建选择层
+            if (window.pdfOCRSelection) {
+                window.pdfOCRSelection.recreateSelectionLayer();
+            }
+            
         } catch (error) {
             console.error('[PDF-OCR] 加载PDF失败:', error);
             alert('PDF加载失败: ' + error.message);
@@ -338,6 +343,13 @@ class PDFOCRCore {
         
         // 更新统计
         if (this.elements.statTotal) this.elements.statTotal.textContent = 1;
+        
+        // 图片加载完成后，重新创建选择层
+        setTimeout(() => {
+            if (window.pdfOCRSelection) {
+                window.pdfOCRSelection.recreateSelectionLayer();
+            }
+        }, 100);
     }
     
     /**
