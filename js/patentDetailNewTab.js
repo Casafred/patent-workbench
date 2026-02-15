@@ -27,6 +27,79 @@ window.openPatentDetailInNewTab = function(patentNumber) {
     // 获取选中的字段
     const selectedFields = window.getSelectedFields ? window.getSelectedFields() : null;
     
+    // 查找该专利的解读结果
+    let analysisResultHTML = '';
+    const analysisResult = window.patentBatchAnalysisResults ? 
+        window.patentBatchAnalysisResults.find(item => item.patent_number === patentNumber) : null;
+    
+    if (analysisResult) {
+        let analysisJson = {};
+        let displayContent = '';
+        try {
+            // 尝试清理可能的markdown代码块标记
+            let cleanContent = analysisResult.analysis_content.trim();
+            if (cleanContent.startsWith('```json')) {
+                cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+            } else if (cleanContent.startsWith('```')) {
+                cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
+            }
+            
+            analysisJson = JSON.parse(cleanContent);
+            
+            // 动态生成表格内容
+            let tableRows = '';
+            Object.keys(analysisJson).forEach(key => {
+                const value = analysisJson[key];
+                const displayValue = typeof value === 'string' ? value.replace(/\n/g, '<br>') : value;
+                tableRows += `<tr><td style="border: 1px solid #ddd; padding: 12px; font-weight: 500; background-color: #f8f9fa; width: 30%;">${key}</td><td style="border: 1px solid #ddd; padding: 12px;">${displayValue}</td></tr>`;
+            });
+            
+            displayContent = `
+                <table style="width: 100%; border-collapse: collapse; margin-top: 10px; background: white;">
+                    <thead>
+                        <tr style="background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); color: white;">
+                            <th style="border: 1px solid #ddd; padding: 12px; text-align: left; width: 30%;">字段</th>
+                            <th style="border: 1px solid #ddd; padding: 12px; text-align: left;">内容</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRows}
+                    </tbody>
+                </table>
+            `;
+        } catch (e) {
+            // 如果不是JSON格式，显示原始内容
+            displayContent = `
+                <div style="padding: 15px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; margin-bottom: 15px;">
+                    ⚠️ 解读结果未能解析为结构化格式，显示原始内容：
+                </div>
+                <div style="white-space: pre-wrap; font-family: monospace; background-color: #f5f5f5; padding: 15px; border-radius: 4px; border: 1px solid #ddd;">
+                    ${analysisResult.analysis_content}
+                </div>
+            `;
+        }
+        
+        analysisResultHTML = `
+            <div class="section" id="analysis-result" data-section-id="analysis-result">
+                <h2 class="section-title" onclick="toggleSection('analysis-result')">
+                    <div class="section-title-content">
+                        <span class="section-icon">🤖</span>
+                        AI 解读结果
+                    </div>
+                </h2>
+                <div class="section-content">
+                    <div style="padding: 15px; background: linear-gradient(135deg, #e3f2fd 0%, #f5f5f5 100%); border-radius: 8px; border-left: 4px solid #2e7d32;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; padding: 10px; background: white; border-radius: 6px;">
+                            <span style="background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.8em; font-weight: bold;">AI</span>
+                            <span style="color: #666; font-size: 0.9em;">以下解读由AI生成，仅供参考</span>
+                        </div>
+                        ${displayContent}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
     // 字段映射关系
     const FIELD_MAPPING = {
         'abstract': ['abstract'],
@@ -622,6 +695,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     </svg>
                     顶部
                 </a>
+                ${analysisResult ? '<a href="#analysis-result" class="side-nav-item" data-section="analysis-result">🤖 AI解读</a>' : ''}
                 <a href="#abstract" class="side-nav-item" data-section="abstract">📄 摘要</a>
                 <a href="#basic-info" class="side-nav-item" data-section="basic-info">ℹ️ 基本信息</a>
                 <a href="#classifications" class="side-nav-item" data-section="classifications">🏷️ CPC分类</a>
@@ -641,17 +715,22 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 <div class="header">
                     <div class="header-top">
                         <div class="patent-number">专利号: ${patentNumber}</div>
+                        ${patentResult.url ? `
+                        <a href="${patentResult.url}" target="_blank" style="color: white; text-decoration: underline; font-size: 0.9em; opacity: 0.9;">🔗 查看 Google Patents 原文</a>
+                        ` : ''}
                     </div>
                     <h1 class="patent-title">${data.title || '专利详情'}</h1>
                     <div class="meta-info">
                         ${data.application_date ? `<span>📅 申请日期: ${data.application_date}</span>` : ''}
                         ${data.publication_date ? `<span>📅 公开日期: ${data.publication_date}</span>` : ''}
-                        <span>⏱️ 查询耗时: ${patentResult.processing_time?.toFixed(2) || 'N/A'}秒</span>
                     </div>
                 </div>
                 
                 <div class="content">
-                    <!-- 批量解读结果区域 -->
+                    <!-- 已完成的解读结果 -->
+                    ${analysisResultHTML}
+
+                    <!-- 批量解读结果区域（用于实时更新） -->
                     <div class="section collapsible-section" id="batch-analysis-${patentNumber}" data-section-id="batch-analysis" style="display: none;">
                         <h2 class="section-title" onclick="toggleSection('batch-analysis-${patentNumber}')">
                             <div class="section-title-content">

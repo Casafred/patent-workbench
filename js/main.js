@@ -1451,9 +1451,11 @@ window.openPatentDetailModal = function(result) {
             
             <div style="flex: 1; min-width: 0; padding-left: 40px;">
                 <h3 style="margin: 0; font-size: 1.2em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${result.patent_number} - ${data.title || '无标题'}</h3>
+                ${result.url ? `
                 <div style="font-size: 0.85em; color: #666; margin-top: 5px;">
-                    查询耗时: ${result.processing_time?.toFixed(2) || 'N/A'}秒
+                    <a href="${result.url}" target="_blank" style="color: var(--primary-color); text-decoration: underline;">🔗 查看 Google Patents 原文</a>
                 </div>
+                ` : ''}
             </div>
             <div style="display: flex; gap: 8px; align-items: flex-start; flex-shrink: 0;">
                 <!-- 上一条/下一条切换按钮 -->
