@@ -612,5 +612,5 @@ ${context}
     }
 }
 
-// 创建全局实例
-window.pdfOCRChat = new PDFOCRChat();
+// 不立即创建实例，而是在初始化时创建
+window.pdfOCRChat = null;

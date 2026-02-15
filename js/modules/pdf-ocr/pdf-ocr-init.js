@@ -109,29 +109,17 @@ class PDFOCRInit {
      * 初始化各个模块
      */
     initModules() {
+        // 创建模块实例（DOM已准备好）
+        window.pdfOCRCore = new PDFOCRCore();
+        window.pdfOCRViewer = new PDFOCRViewer();
+        window.pdfOCRParser = new PDFOCRParser();
+        window.pdfOCRChat = new PDFOCRChat();
+
         // 保存模块引用
         this.modules.core = window.pdfOCRCore;
         this.modules.viewer = window.pdfOCRViewer;
         this.modules.parser = window.pdfOCRParser;
         this.modules.chat = window.pdfOCRChat;
-
-        // 重新初始化元素引用（因为DOM可能是后来加载的）
-        if (this.modules.core) {
-            this.modules.core.initElements();
-            this.modules.core.bindEvents();
-        }
-        if (this.modules.viewer) {
-            this.modules.viewer.initElements();
-            this.modules.viewer.bindEvents();
-        }
-        if (this.modules.parser) {
-            this.modules.parser.initElements();
-            this.modules.parser.bindEvents();
-        }
-        if (this.modules.chat) {
-            this.modules.chat.initElements();
-            this.modules.chat.bindEvents();
-        }
 
         // 设置模块间的关联
         this.setupModuleConnections();

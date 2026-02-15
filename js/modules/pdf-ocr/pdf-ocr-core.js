@@ -734,5 +734,5 @@ class PDFOCRCore {
     }
 }
 
-// 创建全局实例
-window.pdfOCRCore = new PDFOCRCore();
+// 不立即创建实例，而是在初始化时创建
+window.pdfOCRCore = null;

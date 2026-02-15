@@ -1,0 +1,5 @@
+fix: re-initialize elements after DOM is loaded to fix file upload
+
+- Add initElements() method to all modules
+- Re-initialize elements and events in pdf-ocr-init.js after DOM is ready
+- Fix file upload click not working due to early element binding

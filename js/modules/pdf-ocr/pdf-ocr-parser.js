@@ -613,5 +613,5 @@ class PDFOCRParser {
     }
 }
 
-// 创建全局实例
-window.pdfOCRParser = new PDFOCRParser();
+// 不立即创建实例，而是在初始化时创建
+window.pdfOCRParser = null;

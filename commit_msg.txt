@@ -1,0 +1,10 @@
+feat: add feature 9 PDF OCR reader with GLM-OCR integration
+
+- Create PDF-OCR core module (pdf-ocr-core.js) - file upload, PDF.js integration, page navigation
+- Create PDF viewer module (pdf-ocr-viewer.js) - OCR block visualization, selection interaction
+- Create OCR parser module (pdf-ocr-parser.js) - GLM-OCR API integration, result processing
+- Create AI chat module (pdf-ocr-chat.js) - intelligent Q&A, translation
+- Create init module (pdf-ocr-init.js) - module integration, event binding
+- Create HTML component and CSS styles
+- Update navigation tabs, index.html, main.js, state.js
+- Fix component loading issues

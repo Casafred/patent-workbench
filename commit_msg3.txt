@@ -1,0 +1,5 @@
+fix: scope all CSS styles to pdf-ocr-container to prevent global conflicts
+
+- Add .pdf-ocr-container prefix to all CSS selectors
+- Prevent style conflicts with other features
+- Fix button styles, form styles, and layout styles

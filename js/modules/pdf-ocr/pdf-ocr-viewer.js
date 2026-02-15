@@ -814,5 +814,5 @@ class PDFOCRViewer {
     }
 }
 
-// 创建全局实例
-window.pdfOCRViewer = new PDFOCRViewer();
+// 不立即创建实例，而是在初始化时创建
+window.pdfOCRViewer = null;
