@@ -12,8 +12,24 @@ class PDFOCRChat {
     }
 
     init() {
+        this.initElements();
         this.bindEvents();
         this.loadChatHistory();
+    }
+
+    initElements() {
+        // 初始化元素引用（可在DOM加载后重新调用）
+        this.elements = {
+            sendBtn: document.getElementById('ocr-chat-send'),
+            input: document.getElementById('ocr-chat-input'),
+            clearBtn: document.getElementById('ocr-chat-clear'),
+            modelSelect: document.getElementById('ocr-chat-model'),
+            messagesContainer: document.getElementById('ocr-chat-messages'),
+            translateBtn: document.getElementById('ocr-translate-btn'),
+            translateSource: document.getElementById('ocr-translate-source'),
+            translateResult: document.getElementById('ocr-translate-result'),
+            translateTarget: document.getElementById('ocr-translate-target')
+        };
     }
 
     bindEvents() {

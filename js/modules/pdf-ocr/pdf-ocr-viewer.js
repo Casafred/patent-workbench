@@ -30,7 +30,20 @@ class PDFOCRViewer {
     }
 
     init() {
+        this.initElements();
         this.bindEvents();
+    }
+
+    initElements() {
+        // 初始化元素引用（可在DOM加载后重新调用）
+        this.elements = {
+            filterSelect: document.getElementById('ocr-block-filter'),
+            toggleBtn: document.getElementById('toggle-ocr-blocks'),
+            container: document.getElementById('pdf-ocr-container'),
+            blocksLayer: document.getElementById('ocr-blocks-layer'),
+            structuredContent: document.getElementById('ocr-structured-content'),
+            blockDetails: document.getElementById('ocr-block-details')
+        };
     }
 
     bindEvents() {

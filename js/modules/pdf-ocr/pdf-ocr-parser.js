@@ -12,7 +12,21 @@ class PDFOCRParser {
     }
 
     init() {
+        this.initElements();
         this.bindEvents();
+    }
+
+    initElements() {
+        // 初始化元素引用（可在DOM加载后重新调用）
+        this.elements = {
+            startBtn: document.getElementById('start-ocr-btn'),
+            parseMode: document.getElementById('ocr-parse-mode'),
+            recognizeFormula: document.getElementById('ocr-recognize-formula'),
+            recognizeTable: document.getElementById('ocr-recognize-table'),
+            progressBar: document.getElementById('ocr-progress-bar'),
+            progressText: document.getElementById('ocr-progress-text'),
+            progressContainer: document.getElementById('ocr-progress-container')
+        };
     }
 
     bindEvents() {
