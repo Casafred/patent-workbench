@@ -480,18 +480,17 @@ ${context}
      * 获取API密钥
      */
     async getAPIKey() {
-        let apiKey = localStorage.getItem('zhipu_api_key');
+        // 首先检查全局appState（其他功能使用的统一配置）
+        let apiKey = window.appState?.apiKey || '';
         
+        // 如果appState没有，检查localStorage中的全局API密钥
         if (!apiKey) {
-            try {
-                const response = await fetch('/api/config/zhipu-key');
-                if (response.ok) {
-                    const data = await response.json();
-                    apiKey = data.key;
-                }
-            } catch (e) {
-                console.log('无法从后端获取API密钥');
-            }
+            apiKey = localStorage.getItem('globalApiKey') || '';
+        }
+        
+        // 如果还没有，尝试旧的zhipu_api_key（向后兼容）
+        if (!apiKey) {
+            apiKey = localStorage.getItem('zhipu_api_key') || '';
         }
 
         return apiKey;

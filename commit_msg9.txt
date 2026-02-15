@@ -1,0 +1,8 @@
+feat: redesign PDF-OCR layout and fix button binding
+
+- Move right sidebar functions to bottom section
+- Change layout from 3-column to 2-column + bottom grid
+- Increase viewer min-height from 700px to 850px
+- Increase viewer container min-height from 500px to 650px
+- Re-init elements and events after module creation in pdf-ocr-init.js
+- Fix start OCR button not responding
