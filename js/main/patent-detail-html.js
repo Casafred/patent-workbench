@@ -185,7 +185,19 @@ function buildPatentDetailHTML(result, selectedFields) {
             let claimText, claimType;
             if (typeof claim === 'string') {
                 claimText = claim;
-                claimType = 'unknown'; // Backward compatibility
+                // 检测权利要求类型：
+                // 1. 如果包含 '[从属]' 标记，则为从属权利要求
+                // 2. 如果包含 '其特征在于' 或 '根据权利要求' 等关键词，则为从属权利要求
+                // 3. 否则为独立权利要求
+                if (claim.includes('[从属]') || 
+                    claim.includes('其特征在于') || 
+                    claim.includes('根据权利要求') ||
+                    claim.includes('如权利要求') ||
+                    claim.match(/^\s*\d+\.[\s\S]*?权利要求\s*\d+/)) {
+                    claimType = 'dependent';
+                } else {
+                    claimType = 'independent';
+                }
             } else {
                 claimText = claim.text;
                 claimType = claim.type || 'unknown';
@@ -201,7 +213,7 @@ function buildPatentDetailHTML(result, selectedFields) {
             
             htmlContent += `
                 <div class="${claimClass}" id="claim_${result.patent_number}_${index}">
-                    <strong>权利要求 ${index + 1}${claimType === 'independent' ? ' (独立权利要求)' : claimType === 'dependent' ? ' (从属权利要求)' : ''}:</strong><br/>
+                    <strong>权利要求 ${index + 1}${claimType === 'independent' ? ' <span style="color: #2e7d32;">(独立权利要求)</span>' : claimType === 'dependent' ? ' <span style="color: #1976d2;">(从属权利要求)</span>' : ''}:</strong><br/>
                     ${claimText}
                 </div>
             `;

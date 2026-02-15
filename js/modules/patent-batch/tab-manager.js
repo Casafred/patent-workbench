@@ -394,6 +394,9 @@ class PatentTabManager {
         const result = tab.results.find(r => r.patent_number === patentNumber);
         if (!result) return;
 
+        // 将当前标签页的结果设置到 window.patentResults，以便前后导航在当前列表中工作
+        window.patentResults = tab.results;
+
         // 调用主页面的弹窗函数
         if (window.openPatentDetailModal) {
             window.openPatentDetailModal(result);

@@ -3,7 +3,20 @@
 
 window.openPatentDetailInNewTab = function(patentNumber) {
     // 找到对应的专利结果
-    const patentResult = window.patentResults.find(result => result.patent_number === patentNumber);
+    // 首先尝试从 window.patentResults 中查找
+    let patentResult = window.patentResults ? window.patentResults.find(result => result.patent_number === patentNumber) : null;
+    
+    // 如果没有找到，尝试从标签页管理器中查找
+    if (!patentResult && window.patentTabManager) {
+        for (const tab of window.patentTabManager.tabs) {
+            const result = tab.results.find(r => r.patent_number === patentNumber);
+            if (result) {
+                patentResult = result;
+                break;
+            }
+        }
+    }
+    
     if (!patentResult || !patentResult.success) {
         alert('❌ 无法打开：专利数据不存在');
         return;
@@ -763,7 +776,19 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                     let claimText, claimType;
                                     if (typeof claim === 'string') {
                                         claimText = claim;
-                                        claimType = 'unknown';
+                                        // 检测权利要求类型：
+                                        // 1. 如果包含 '[从属]' 标记，则为从属权利要求
+                                        // 2. 如果包含 '其特征在于' 或 '根据权利要求' 等关键词，则为从属权利要求
+                                        // 3. 否则为独立权利要求
+                                        if (claim.includes('[从属]') || 
+                                            claim.includes('其特征在于') || 
+                                            claim.includes('根据权利要求') ||
+                                            claim.includes('如权利要求') ||
+                                            claim.match(/^\s*\d+\.[\s\S]*?权利要求\s*\d+/)) {
+                                            claimType = 'dependent';
+                                        } else {
+                                            claimType = 'independent';
+                                        }
                                     } else {
                                         claimText = claim.text;
                                         claimType = claim.type || 'unknown';
