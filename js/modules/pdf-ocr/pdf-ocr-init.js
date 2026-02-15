@@ -121,6 +121,16 @@ class PDFOCRInit {
         this.modules.parser = window.pdfOCRParser;
         this.modules.chat = window.pdfOCRChat;
 
+        // 重新初始化元素和事件（确保DOM元素已存在）
+        this.modules.core.initElements();
+        this.modules.core.bindEvents();
+        this.modules.viewer.initElements();
+        this.modules.viewer.bindEvents();
+        this.modules.parser.initElements();
+        this.modules.parser.bindEvents();
+        this.modules.chat.initElements();
+        this.modules.chat.bindEvents();
+
         // 设置模块间的关联
         this.setupModuleConnections();
     }

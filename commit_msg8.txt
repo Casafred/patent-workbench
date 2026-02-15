@@ -1,0 +1,7 @@
+fix: expose class definitions to window object for pdf-ocr-init.js
+
+- Add window.PDFOCRCore = PDFOCRCore in pdf-ocr-core.js
+- Add window.PDFOCRViewer = PDFOCRViewer in pdf-ocr-viewer.js
+- Add window.PDFOCRParser = PDFOCRParser in pdf-ocr-parser.js
+- Add window.PDFOCRChat = PDFOCRChat in pdf-ocr-chat.js
+- Update script version to force cache refresh

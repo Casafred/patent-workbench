@@ -210,156 +210,150 @@
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- 右侧栏：AI问答和翻译 -->
-            <div class="pdf-ocr-sidebar-right">
-                <!-- 区块详情 -->
-                <div class="pdf-ocr-section">
-                    <h4 class="section-title">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="3" y1="9" x2="21" y2="9"></line>
-                            <line x1="9" y1="21" x2="9" y2="9"></line>
-                        </svg>
-                        区块详情
-                    </h4>
-                    <div id="ocr-block-details" class="block-details">
-                        <div class="empty-state">
-                            <i class="fas fa-mouse-pointer"></i>
-                            <p>点击解析区块查看详情</p>
+        <!-- 下方功能区 -->
+        <div class="pdf-ocr-bottom-section">
+            <!-- 区块详情 -->
+            <div class="pdf-ocr-section">
+                <h4 class="section-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="3" y1="9" x2="21" y2="9"></line>
+                        <line x1="9" y1="21" x2="9" y2="9"></line>
+                    </svg>
+                    区块详情
+                </h4>
+                <div id="ocr-block-details" class="block-details">
+                    <div class="empty-state">
+                        <i class="fas fa-mouse-pointer"></i>
+                        <p>点击解析区块查看详情</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI问答区 -->
+            <div class="pdf-ocr-section chat-section">
+                <h4 class="section-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    AI问答
+                </h4>
+                <div id="ocr-chat-container" class="chat-container">
+                    <div id="ocr-chat-messages" class="chat-history">
+                        <div class="chat-welcome">
+                            <p>👋 欢迎使用AI问答</p>
+                            <p class="hint">上传文档并进行OCR解析后，您可以：</p>
+                            <ul>
+                                <li>询问文档内容相关问题</li>
+                                <li>选中特定段落进行提问</li>
+                                <li>请求总结或翻译</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="chat-input-area">
+                        <textarea id="ocr-chat-input" class="chat-input" placeholder="输入您的问题..." rows="2"></textarea>
+                        <div class="chat-actions">
+                            <button id="ocr-chat-clear" class="small-button">清空</button>
+                            <button id="ocr-chat-model" class="small-button" style="display:none;">glm-4-flash</button>
+                            <button id="ocr-chat-send" class="action-button small">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                </svg>
+                            </button>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- AI问答区 -->
-                <div class="pdf-ocr-section chat-section">
-                    <h4 class="section-title">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            <!-- 选中内容翻译 -->
+            <div class="pdf-ocr-section">
+                <h4 class="section-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 8l6 6"></path>
+                        <path d="M4 14l6-6 2-3"></path>
+                        <path d="M2 5h12"></path>
+                        <path d="M7 2h1"></path>
+                        <path d="M22 22l-5-10-5 10"></path>
+                        <path d="M14 18h6"></path>
+                    </svg>
+                    选中翻译
+                </h4>
+                <div id="ocr-translation-panel" class="selection-translation">
+                    <div class="translation-box">
+                        <label>原文</label>
+                        <textarea id="ocr-translate-source" class="text-box" placeholder="选中文字进行翻译" rows="3"></textarea>
+                    </div>
+                    <button id="ocr-translate-btn" class="small-button" style="margin: 10px 0;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <polyline points="19 12 12 19 5 12"></polyline>
                         </svg>
-                        AI问答
-                    </h4>
-                    <div id="ocr-chat-container" class="chat-container">
-                        <div id="ocr-chat-messages" class="chat-history">
-                            <div class="chat-welcome">
-                                <p>👋 欢迎使用AI问答</p>
-                                <p class="hint">上传文档并进行OCR解析后，您可以：</p>
-                                <ul>
-                                    <li>询问文档内容相关问题</li>
-                                    <li>选中特定段落进行提问</li>
-                                    <li>请求总结或翻译</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="chat-input-area">
-                            <textarea id="ocr-chat-input" class="chat-input" placeholder="输入您的问题..." rows="2"></textarea>
-                            <div class="chat-actions">
-                                <button id="ocr-chat-clear" class="small-button">清空</button>
-                                <button id="ocr-chat-model" class="small-button" style="display:none;">glm-4-flash</button>
-                                <button id="ocr-chat-send" class="action-button small">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <line x1="22" y1="2" x2="11" y2="13"></line>
-                                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
+                        翻译
+                    </button>
+                    <div class="translation-box">
+                        <label>译文</label>
+                        <div id="ocr-translate-result" class="text-box">-</div>
                     </div>
                 </div>
+            </div>
 
-                <!-- 选中内容翻译 -->
-                <div class="pdf-ocr-section">
-                    <h4 class="section-title">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M5 8l6 6"></path>
-                            <path d="M4 14l6-6 2-3"></path>
-                            <path d="M2 5h12"></path>
-                            <path d="M7 2h1"></path>
-                            <path d="M22 22l-5-10-5 10"></path>
-                            <path d="M14 18h6"></path>
-                        </svg>
-                        选中翻译
-                    </h4>
-                    <div id="ocr-translation-panel" class="selection-translation">
-                        <div class="translation-box">
-                            <label>原文</label>
-                            <textarea id="ocr-translate-source" class="text-box" placeholder="选中文字进行翻译" rows="3"></textarea>
-                        </div>
-                        <button id="ocr-translate-btn" class="small-button" style="margin: 10px 0;">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;">
-                                <line x1="12" y1="5" x2="12" y2="19"></line>
-                                <polyline points="19 12 12 19 5 12"></polyline>
-                            </svg>
-                            翻译
-                        </button>
-                        <div class="translation-box">
-                            <label>译文</label>
-                            <div id="ocr-translate-result" class="text-box">-</div>
-                        </div>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                            </svg>
-                            复制译文
-                        </button>
+            <!-- 解析统计 -->
+            <div class="pdf-ocr-section">
+                <h4="section-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    解析统计
+                </h4>
+                <div id="ocr-stats" class="ocr-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">总区块</span>
+                        <span id="ocr-stat-total" class="stat-value">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">文本块</span>
+                        <span id="ocr-stat-text" class="stat-value">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">表格</span>
+                        <span id="ocr-stat-table" class="stat-value">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">公式</span>
+                        <span id="ocr-stat-formula" class="stat-value">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">图片</span>
+                        <span id="ocr-stat-image" class="stat-value">-</span>
                     </div>
                 </div>
+            </div>
 
-                <!-- 解析统计 -->
-                <div class="pdf-ocr-section">
-                    <h4 class="section-title">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="18" y1="20" x2="18" y2="10"></line>
-                            <line x1="12" y1="20" x2="12" y2="4"></line>
-                            <line x1="6" y1="20" x2="6" y2="14"></line>
-                        </svg>
-                        解析统计
-                    </h4>
-                    <div id="ocr-stats" class="ocr-stats">
-                        <div class="stat-item">
-                            <span class="stat-label">总区块</span>
-                            <span id="ocr-stat-total" class="stat-value">-</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">文本块</span>
-                            <span id="ocr-stat-text" class="stat-value">-</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">表格</span>
-                            <span id="ocr-stat-table" class="stat-value">-</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">公式</span>
-                            <span id="ocr-stat-formula" class="stat-value">-</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">图片</span>
-                            <span id="ocr-stat-image" class="stat-value">-</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 导出功能 -->
-                <div class="pdf-ocr-section">
-                    <h4 class="section-title">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
-                        导出结果
-                    </h4>
-                    <div class="export-buttons">
-                        <button id="ocr-export-json" class="small-button" disabled>
-                            导出 JSON
-                        </button>
-                        <button id="ocr-export-markdown" class="small-button" disabled>
-                            导出 Markdown
-                        </button>
-                        <button id="ocr-export-text" class="small-button" disabled>
-                            导出 TXT
-                        </button>
-                    </div>
+            <!-- 导出功能 -->
+            <div class="pdf-ocr-section">
+                <h4 class="section-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    导出结果
+                </h4>
+                <div class="export-buttons">
+                    <button id="ocr-export-json" class="small-button" disabled>
+                        导出 JSON
+                    </button>
+                    <button id="ocr-export-markdown" class="small-button" disabled>
+                        导出 Markdown
+                    </button>
+                    <button id="ocr-export-text" class="small-button" disabled>
+                        导出 TXT
+                    </button>
                 </div>
             </div>
         </div>
