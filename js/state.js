@@ -142,6 +142,27 @@ const appState = {
         isAnalyzing: false, // 是否正在解读中
         crawlProgress: { current: 0, total: 0 }, // 爬取进度
         analyzeProgress: { current: 0, total: 0 } // 解读进度
+    },
+    // ▲▲▲ 新增结束 ▲▲▲
+    
+    // ▼▼▼ 新增：PDF-OCR阅读器状态 (v9.0) ▼▼▼
+    pdfOCRReader: {
+        currentFile: null, // 当前加载的文件
+        currentFileType: null, // 'pdf' 或 'image'
+        currentPage: 1, // 当前页码
+        totalPages: 0, // 总页数
+        zoomLevel: 1.0, // 缩放级别
+        ocrResult: null, // OCR解析结果
+        ocrSettings: {
+            mode: 'auto', // 'auto' 或 'page'
+            recognizeFormula: true, // 识别公式
+            recognizeTable: true // 识别表格
+        },
+        selectedBlock: null, // 当前选中的区块
+        isBlockMode: false, // 是否显示区块覆盖层
+        filterType: 'all', // 区块筛选类型
+        chatHistory: [], // AI问答历史
+        translateHistory: [] // 翻译历史
     }
     // ▲▲▲ 新增结束 ▲▲▲
 };

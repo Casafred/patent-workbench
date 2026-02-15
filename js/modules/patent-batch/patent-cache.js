@@ -23,15 +23,17 @@ const PatentCache = {
      * @param {string} patentNumber - 专利号
      * @param {Object} data - 专利数据
      * @param {Array} selectedFields - 选择的字段列表
+     * @param {string} url - Google Patents 链接
      */
-    save(patentNumber, data, selectedFields = []) {
+    save(patentNumber, data, selectedFields = [], url = null) {
         try {
             const cacheData = {
                 patentNumber: patentNumber.toUpperCase(),
                 data: data,
+                url: url || `https://patents.google.com/patent/${patentNumber}`,
                 timestamp: Date.now(),
                 selectedFields: selectedFields,
-                version: '1.0'
+                version: '1.1'
             };
             localStorage.setItem(this.getCacheKey(patentNumber), JSON.stringify(cacheData));
             console.log(`✅ 专利 ${patentNumber} 数据已缓存`);

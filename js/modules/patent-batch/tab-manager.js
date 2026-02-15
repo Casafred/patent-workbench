@@ -258,9 +258,8 @@ class PatentTabManager {
                     <div class="patent-strip-number">${result.patent_number}${cacheBadge}</div>
                     <div class="patent-strip-title">${data.title || '无标题'}</div>
                     <div class="patent-strip-meta">
-                        <span>申请人: ${data.applicant || '-'}</span>
-                        <span>发明人: ${data.inventor || '-'}</span>
-                        <span>申请日: ${data.filing_date || '-'}</span>
+                        <span>申请人: ${data.applicant || (data.assignees && data.assignees.length > 0 ? data.assignees.join(', ') : (data.assignee || '-'))}</span>
+                        <span>申请日: ${data.filing_date || data.application_date || data.priority_date || '-'}</span>
                     </div>
                 </div>
                 <div class="patent-strip-actions">

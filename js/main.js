@@ -254,6 +254,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('❌ Failed to load Feature 8 (Drawing Marker) component:', error);
     }
     
+    // Load Feature 9 (PDF OCR Reader) component and initialize
+    try {
+        const loaded = await loadComponent('frontend/components/tabs/pdf-ocr-reader.html', 'pdf-ocr-reader-component', {
+            requiredElements: [
+                'pdf-ocr-container',
+                'ocr-file-input',
+                'pdf-canvas',
+                'ocr-blocks-layer'
+            ],
+            timeout: 5000,
+            onReady: async () => {
+                // Wait a bit for scripts to load
+                await new Promise(resolve => setTimeout(resolve, 100));
+                // Initialize PDF OCR Reader
+                if (typeof window.pdfOCRInit !== 'undefined') {
+                    window.pdfOCRInit.init();
+                }
+            }
+        });
+        
+        if (loaded) {
+            LoadingManager.updateProgress('初始化PDF-OCR阅读器');
+        }
+    } catch (error) {
+        console.error('❌ Failed to load Feature 9 (PDF OCR Reader) component:', error);
+    }
+    
     // Initialize API Key Config (global, not tied to a specific component)
     initApiKeyConfig();
     LoadingManager.updateProgress('初始化API配置');
@@ -730,6 +757,7 @@ function initPatentBatchEventListeners() {
                     patent_number: patentNumber,
                     success: true,
                     data: cacheData.data,
+                    url: cacheData.url || `https://patents.google.com/patent/${patentNumber}`,
                     fromCache: true,
                     cacheTime: cacheData.timestamp
                 };
@@ -766,7 +794,7 @@ function initPatentBatchEventListeners() {
                     
                     // 如果成功，保存到缓存
                     if (result.success && window.PatentCache) {
-                        PatentCache.save(patentNumber, result.data, selectedFields);
+                        PatentCache.save(patentNumber, result.data, selectedFields, result.url);
                     }
                     
                     // 实时显示
@@ -900,10 +928,11 @@ function initPatentBatchEventListeners() {
         const hasImages = data.images && data.images.length > 0;
         const firstImage = hasImages ? data.images[0] : null;
         
-        // 获取申请人、发明人、申请日信息
-        const applicant = data.applicant || data.assignee || '-';
-        const inventor = data.inventor || '-';
-        const filingDate = data.filing_date || data.priority_date || '-';
+        // 获取申请人、申请日信息（去掉发明人）
+        // 后端返回的是 assignees 数组，需要取第一个或使用 join
+        const applicant = data.applicant || (data.assignees && data.assignees.length > 0 ? data.assignees.join(', ') : (data.assignee || '-'));
+        // 后端返回的是 application_date，但也可能有 filing_date
+        const filingDate = data.filing_date || data.application_date || data.priority_date || '-';
 
         return `
             <div class="patent-strip success" data-patent-number="${result.patent_number}">
@@ -915,7 +944,6 @@ function initPatentBatchEventListeners() {
                     <div class="patent-strip-title">${titlePreview}</div>
                     <div class="patent-strip-meta">
                         <span>申请人: ${applicant}</span>
-                        <span>发明人: ${inventor}</span>
                         <span>申请日: ${filingDate}</span>
                     </div>
                 </div>

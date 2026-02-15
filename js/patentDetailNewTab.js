@@ -389,15 +389,8 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 }
                 
                 .section-icon {
-                    width: 28px;
-                    height: 28px;
-                    background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%);
-                    border-radius: 6px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: white;
-                    font-size: 0.7em;
+                    font-size: 1.2em;
+                    line-height: 1;
                 }
                 
                 .info-grid {

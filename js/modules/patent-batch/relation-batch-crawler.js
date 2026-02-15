@@ -170,13 +170,14 @@ window.crawlRelationPatents = async function(tabId, sourcePatentNumber, relation
                     if (result.success) {
                         // 保存到缓存 - 使用 save 方法
                         if (window.PatentCache && window.PatentCache.save) {
-                            window.PatentCache.save(patentNumber, result.data, selectedFields);
+                            window.PatentCache.save(patentNumber, result.data, selectedFields, result.url);
                         }
 
                         results.push({
                             patent_number: patentNumber,
                             success: true,
                             data: result.data,
+                            url: result.url,
                             processing_time: result.processing_time
                         });
                     } else {
