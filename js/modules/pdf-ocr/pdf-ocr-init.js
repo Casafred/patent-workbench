@@ -386,14 +386,5 @@ class PDFOCRInit {
     }
 }
 
-// 创建全局实例
+// 创建全局实例（但不自动初始化，等待组件加载完成）
 window.pdfOCRInit = new PDFOCRInit();
-
-// 自动初始化（如果DOM已准备好）
-if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    window.pdfOCRInit.init();
-} else {
-    document.addEventListener('DOMContentLoaded', () => {
-        window.pdfOCRInit.init();
-    });
-}
