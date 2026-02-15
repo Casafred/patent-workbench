@@ -77,16 +77,16 @@ class PDFOCRInit {
             pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         }
 
-        // 检查其他依赖
+        // 检查类是否已定义（不是实例）
         const dependencies = [
-            { name: 'pdfOCRCore', global: 'pdfOCRCore' },
-            { name: 'pdfOCRViewer', global: 'pdfOCRViewer' },
-            { name: 'pdfOCRParser', global: 'pdfOCRParser' },
-            { name: 'pdfOCRChat', global: 'pdfOCRChat' }
+            { name: 'PDFOCRCore', global: 'PDFOCRCore' },
+            { name: 'PDFOCRViewer', global: 'PDFOCRViewer' },
+            { name: 'PDFOCRParser', global: 'PDFOCRParser' },
+            { name: 'PDFOCRChat', global: 'PDFOCRChat' }
         ];
 
         for (const dep of dependencies) {
-            if (!window[dep.global]) {
+            if (typeof window[dep.global] !== 'function') {
                 throw new Error(`依赖模块未加载: ${dep.name}`);
             }
         }
