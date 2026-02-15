@@ -10,7 +10,10 @@ class PDFOCRInit {
             core: null,
             viewer: null,
             parser: null,
-            chat: null
+            chat: null,
+            selection: null,
+            floatingToolbar: null,
+            floatingChat: null
         };
     }
 
@@ -82,7 +85,10 @@ class PDFOCRInit {
             { name: 'PDFOCRCore', global: 'PDFOCRCore' },
             { name: 'PDFOCRViewer', global: 'PDFOCRViewer' },
             { name: 'PDFOCRParser', global: 'PDFOCRParser' },
-            { name: 'PDFOCRChat', global: 'PDFOCRChat' }
+            { name: 'PDFOCRChat', global: 'PDFOCRChat' },
+            { name: 'PDFOCRSelection', global: 'PDFOCRSelection' },
+            { name: 'PDFOCRFloatingToolbar', global: 'PDFOCRFloatingToolbar' },
+            { name: 'PDFOCRFloatingChat', global: 'PDFOCRFloatingChat' }
         ];
 
         for (const dep of dependencies) {
@@ -114,12 +120,18 @@ class PDFOCRInit {
         window.pdfOCRViewer = new PDFOCRViewer();
         window.pdfOCRParser = new PDFOCRParser();
         window.pdfOCRChat = new PDFOCRChat();
+        window.pdfOCRSelection = new PDFOCRSelection();
+        window.pdfOCRFloatingToolbar = new PDFOCRFloatingToolbar();
+        window.pdfOCRFloatingChat = new PDFOCRFloatingChat();
 
         // 保存模块引用
         this.modules.core = window.pdfOCRCore;
         this.modules.viewer = window.pdfOCRViewer;
         this.modules.parser = window.pdfOCRParser;
         this.modules.chat = window.pdfOCRChat;
+        this.modules.selection = window.pdfOCRSelection;
+        this.modules.floatingToolbar = window.pdfOCRFloatingToolbar;
+        this.modules.floatingChat = window.pdfOCRFloatingChat;
 
         // 重新初始化元素和事件（确保DOM元素已存在）
         this.modules.core.initElements();
@@ -306,6 +318,8 @@ class PDFOCRInit {
         this.modules.viewer?.clear();
         this.modules.parser?.clear();
         this.modules.chat?.clear();
+        this.modules.selection?.clearSelection();
+        this.modules.floatingChat?.hide();
 
         // 清除状态
         if (window.state) {

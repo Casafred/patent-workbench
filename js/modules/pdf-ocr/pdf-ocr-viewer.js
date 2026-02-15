@@ -665,8 +665,11 @@ class PDFOCRViewer {
             <div class="menu-item" data-action="translate">
                 <i class="fas fa-language"></i> 翻译
             </div>
-            <div class="menu-item" data-action="ask">
-                <i class="fas fa-comment-dots"></i> 提问
+            <div class="menu-item" data-action="chat">
+                <i class="fas fa-comment-dots"></i> 对话
+            </div>
+            <div class="menu-item" data-action="quote">
+                <i class="fas fa-quote-right"></i> 引用
             </div>
             <div class="menu-divider"></div>
             <div class="menu-item" data-action="select">
@@ -684,8 +687,13 @@ class PDFOCRViewer {
             menu.remove();
         });
 
-        menu.querySelector('[data-action="ask"]').addEventListener('click', () => {
-            this.askAboutBlock(block);
+        menu.querySelector('[data-action="chat"]').addEventListener('click', () => {
+            this.chatAboutBlock(block);
+            menu.remove();
+        });
+
+        menu.querySelector('[data-action="quote"]').addEventListener('click', () => {
+            this.quoteBlock(block);
             menu.remove();
         });
 
@@ -704,6 +712,48 @@ class PDFOCRViewer {
             }
         };
         setTimeout(() => document.addEventListener('click', closeMenu), 0);
+    }
+
+    /**
+     * 对区块进行对话（使用悬浮窗口）
+     */
+    chatAboutBlock(block) {
+        const text = this.getBlockFullText(block);
+        
+        // 触发打开悬浮对话窗口事件
+        this.emit('openFloatingChat', {
+            context: text,
+            blocks: [block],
+            type: 'block'
+        });
+        
+        this.showToast('已打开对话窗口', 'success');
+    }
+
+    /**
+     * 引用区块
+     */
+    quoteBlock(block) {
+        const text = this.getBlockFullText(block);
+        
+        // 创建引用数据
+        const quote = {
+            id: Date.now(),
+            text: text,
+            page: block.pageIndex,
+            type: block.type,
+            timestamp: new Date().toLocaleString()
+        };
+        
+        // 保存到引用列表
+        let quotes = JSON.parse(localStorage.getItem('ocr_quotes') || '[]');
+        quotes.push(quote);
+        localStorage.setItem('ocr_quotes', JSON.stringify(quotes));
+        
+        this.showToast('已添加到引用列表', 'success');
+        
+        // 触发引用添加事件
+        this.emit('quoteAdded', quote);
     }
 
     /**

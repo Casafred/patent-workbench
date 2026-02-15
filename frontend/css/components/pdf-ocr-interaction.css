@@ -1,0 +1,516 @@
+/**
+ * PDF-OCR 交互功能样式
+ * 包含划词选中、悬浮工具栏、悬浮对话窗口的样式
+ */
+
+/* ==================== 划词选中层 ==================== */
+.ocr-selection-layer {
+    cursor: text;
+    user-select: none;
+}
+
+.ocr-selection-layer:active {
+    cursor: crosshair;
+}
+
+/* 选择框 */
+.ocr-selection-box {
+    position: absolute;
+    background-color: rgba(59, 130, 246, 0.1);
+    border: 1px dashed #3b82f6;
+    pointer-events: none;
+    z-index: 101;
+}
+
+/* 高亮覆盖层 */
+.ocr-highlight-overlay {
+    position: absolute;
+    background-color: rgba(59, 130, 246, 0.3);
+    border: 1px solid #3b82f6;
+    pointer-events: none;
+    z-index: 99;
+    transition: all 0.2s ease;
+}
+
+/* ==================== 悬浮工具栏 ==================== */
+.floating-toolbar {
+    display: flex;
+    align-items: center;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    padding: 6px;
+    gap: 4px;
+    z-index: 1000;
+    animation: toolbarAppear 0.2s ease;
+}
+
+@keyframes toolbarAppear {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-10px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0) scale(1);
+    }
+}
+
+.floating-toolbar .toolbar-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #374151;
+    transition: all 0.2s ease;
+}
+
+.floating-toolbar .toolbar-btn:hover {
+    background-color: #f3f4f6;
+    color: #111827;
+}
+
+.floating-toolbar .toolbar-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* ==================== 悬浮对话窗口 ==================== */
+.floating-chat-window {
+    display: flex;
+    flex-direction: column;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    z-index: 1001;
+}
+
+/* 标题栏 */
+.floating-chat-window .chat-window-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    cursor: move;
+    user-select: none;
+}
+
+.floating-chat-window .chat-window-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.floating-chat-window .chat-window-title svg {
+    width: 16px;
+    height: 16px;
+}
+
+.floating-chat-window .chat-window-controls {
+    display: flex;
+    gap: 4px;
+}
+
+.floating-chat-window .control-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    cursor: pointer;
+    color: white;
+    transition: all 0.2s ease;
+}
+
+.floating-chat-window .control-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.floating-chat-window .control-btn.close:hover {
+    background: rgba(239, 68, 68, 0.8);
+}
+
+/* 上下文栏 */
+.floating-chat-window .chat-context-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 12px;
+}
+
+.floating-chat-window .context-label {
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.floating-chat-window .context-preview {
+    flex: 1;
+    color: #374151;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.floating-chat-window .clear-context-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #9ca3af;
+    transition: all 0.2s ease;
+}
+
+.floating-chat-window .clear-context-btn:hover {
+    background: #f3f4f6;
+    color: #ef4444;
+}
+
+/* 消息区域 */
+.floating-chat-window .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    background: #f9fafb;
+}
+
+/* 欢迎消息 */
+.floating-chat-window .chat-welcome {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6b7280;
+}
+
+.floating-chat-window .welcome-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.floating-chat-window .welcome-text p {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    color: #374151;
+}
+
+.floating-chat-window .welcome-text .hint {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 12px;
+}
+
+.floating-chat-window .welcome-text ul {
+    text-align: left;
+    display: inline-block;
+    margin: 0;
+    padding-left: 20px;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.floating-chat-window .welcome-text li {
+    margin: 4px 0;
+}
+
+/* 消息样式 */
+.floating-chat-window .chat-message {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    animation: messageAppear 0.3s ease;
+}
+
+@keyframes messageAppear {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.floating-chat-window .chat-message.user {
+    flex-direction: row-reverse;
+}
+
+.floating-chat-window .message-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.floating-chat-window .chat-message.assistant .message-avatar {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.floating-chat-window .message-content {
+    max-width: calc(100% - 60px);
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.5;
+    word-wrap: break-word;
+}
+
+.floating-chat-window .chat-message.user .message-content {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.floating-chat-window .chat-message.assistant .message-content {
+    background: white;
+    color: #374151;
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.floating-chat-window .chat-message.system .message-content {
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 13px;
+    text-align: center;
+}
+
+.floating-chat-window .chat-message.error .message-content {
+    background: #fee2e2;
+    color: #991b1b;
+    font-size: 13px;
+}
+
+.floating-chat-window .chat-message.loading .message-content {
+    background: #f3f4f6;
+    color: #6b7280;
+    font-style: italic;
+}
+
+.floating-chat-window .message-text {
+    white-space: pre-wrap;
+}
+
+.floating-chat-window .message-text code {
+    background: rgba(0, 0, 0, 0.05);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.floating-chat-window .message-text pre {
+    background: #1f2937;
+    color: #f9fafb;
+    padding: 12px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 8px 0;
+}
+
+.floating-chat-window .message-text pre code {
+    background: transparent;
+    padding: 0;
+    color: inherit;
+}
+
+/* 加载动画 */
+.loading-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #e5e7eb;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* 输入区域 */
+.floating-chat-window .chat-input-area {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    background: white;
+    border-top: 1px solid #e5e7eb;
+}
+
+.floating-chat-window .chat-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    resize: none;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.floating-chat-window .chat-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.floating-chat-window .chat-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.floating-chat-window .action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.floating-chat-window .action-btn.clear-history {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.floating-chat-window .action-btn.clear-history:hover {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.floating-chat-window .action-btn.send {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.floating-chat-window .action-btn.send:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* 调整大小手柄 */
+.floating-chat-window .resize-handle {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 16px;
+    height: 16px;
+    cursor: se-resize;
+    background: linear-gradient(135deg, transparent 50%, rgba(0, 0, 0, 0.1) 50%);
+    border-bottom-right-radius: 12px;
+}
+
+/* ==================== 提示消息 ==================== */
+.ocr-toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    font-size: 14px;
+    z-index: 10000;
+    transition: transform 0.3s ease;
+}
+
+.ocr-toast.show {
+    transform: translateX(-50%) translateY(0);
+}
+
+.ocr-toast.success {
+    border-left: 4px solid #10b981;
+}
+
+.ocr-toast.error {
+    border-left: 4px solid #ef4444;
+}
+
+.ocr-toast.info {
+    border-left: 4px solid #3b82f6;
+}
+
+.ocr-toast i {
+    font-size: 18px;
+}
+
+.ocr-toast.success i {
+    color: #10b981;
+}
+
+.ocr-toast.error i {
+    color: #ef4444;
+}
+
+.ocr-toast.info i {
+    color: #3b82f6;
+}
+
+/* ==================== 滚动条样式 ==================== */
+.floating-chat-window .chat-messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.floating-chat-window .chat-messages::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.floating-chat-window .chat-messages::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 3px;
+}
+
+.floating-chat-window .chat-messages::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* ==================== 响应式适配 ==================== */
+@media (max-width: 640px) {
+    .floating-chat-window {
+        width: 100% !important;
+        height: 60vh !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        border-radius: 12px 12px 0 0;
+    }
+    
+    .floating-toolbar {
+        transform: translateX(-50%) scale(0.9);
+    }
+}
