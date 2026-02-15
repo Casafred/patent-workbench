@@ -1,6 +1,0 @@
-fix: 修复Google Patents链接、图标样式和条带显示问题
-
-- 修复Google Patents跳转链接缺失问题，缓存现在正确保存和恢复url字段
-- 新标签页区域图标去除绿色背景方格，直接使用emoji显示
-- 结果条带中去掉发明人项
-- 修复申请人和申请日信息显示缺失问题，正确处理assignees数组和application_date字段

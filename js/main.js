@@ -257,16 +257,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Load Feature 9 (PDF OCR Reader) component and initialize
     try {
         const loaded = await loadComponent('frontend/components/tabs/pdf-ocr-reader.html', 'pdf-ocr-reader-component', {
-            requiredElements: [
-                'pdf-ocr-container',
-                'ocr-file-input',
-                'pdf-canvas',
-                'ocr-blocks-layer'
-            ],
-            timeout: 5000,
+            retryCount: 3,
             onReady: async () => {
-                // Wait a bit for scripts to load
-                await new Promise(resolve => setTimeout(resolve, 100));
+                // Wait for DOM to be fully updated
+                await new Promise(resolve => setTimeout(resolve, 200));
                 // Initialize PDF OCR Reader
                 if (typeof window.pdfOCRInit !== 'undefined') {
                     window.pdfOCRInit.init();

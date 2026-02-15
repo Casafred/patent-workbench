@@ -30,24 +30,24 @@ class PDFOCRCore {
         this.elements = {
             // 文件上传
             dropzone: document.getElementById('pdf_upload_dropzone'),
-            fileInput: document.getElementById('pdf_file_input'),
+            fileInput: document.getElementById('ocr-file-input'),
             fileInfo: document.getElementById('pdf_file_info'),
             fileName: document.getElementById('pdf_file_name'),
             removeFileBtn: document.getElementById('pdf_remove_file_btn'),
             
             // OCR控制
-            ocrScopeSelect: document.getElementById('ocr_scope_select'),
-            ocrLanguageSelect: document.getElementById('ocr_language_select'),
-            startOcrBtn: document.getElementById('start_ocr_btn'),
-            progressContainer: document.getElementById('ocr_progress_container'),
-            progressBar: document.getElementById('ocr_progress_bar'),
-            progressText: document.getElementById('ocr_progress_text'),
+            ocrScopeSelect: document.getElementById('ocr-parse-mode'),
+            ocrLanguageSelect: document.getElementById('ocr-translate-target'),
+            startOcrBtn: document.getElementById('start-ocr-btn'),
+            progressContainer: document.getElementById('ocr-progress-container'),
+            progressBar: document.getElementById('ocr-progress-bar'),
+            progressText: document.getElementById('ocr-progress-text'),
             
             // 页面导航
             pageThumbnails: document.getElementById('page_thumbnails'),
             
             // 阅读器
-            viewerContainer: document.getElementById('pdf_viewer_container'),
+            viewerContainer: document.getElementById('pdf-canvas'),
             prevPageBtn: document.getElementById('viewer_prev_page'),
             nextPageBtn: document.getElementById('viewer_next_page'),
             pageInput: document.getElementById('viewer_page_input'),
@@ -55,31 +55,29 @@ class PDFOCRCore {
             zoomSelect: document.getElementById('viewer_zoom_select'),
             zoomOutBtn: document.getElementById('viewer_zoom_out'),
             zoomInBtn: document.getElementById('viewer_zoom_in'),
-            toggleBlocksBtn: document.getElementById('viewer_toggle_blocks'),
+            toggleBlocksBtn: document.getElementById('toggle-ocr-blocks'),
             
             // 内容标签页
             tabHeaders: document.querySelectorAll('.tab-header'),
             tabPanels: document.querySelectorAll('.tab-content-panel'),
-            originalContent: document.getElementById('original_content'),
-            structuredContent: document.getElementById('structured_content'),
-            translationContent: document.getElementById('translation_content'),
+            originalContent: document.getElementById('ocr-original-content'),
+            structuredContent: document.getElementById('ocr-structured-content'),
+            translationContent: document.getElementById('ocr-translation-content'),
             
-            // 过滤器
-            filterText: document.getElementById('filter_text'),
-            filterTable: document.getElementById('filter_table'),
-            filterFormula: document.getElementById('filter_formula'),
-            filterImage: document.getElementById('filter_image'),
+            // 过滤器 - 使用区块筛选器替代
+            blockFilter: document.getElementById('ocr-block-filter'),
             
             // 统计
-            statPages: document.getElementById('stat_pages'),
-            statTexts: document.getElementById('stat_texts'),
-            statTables: document.getElementById('stat_tables'),
-            statFormulas: document.getElementById('stat_formulas'),
+            statTotal: document.getElementById('ocr-stat-total'),
+            statText: document.getElementById('ocr-stat-text'),
+            statTable: document.getElementById('ocr-stat-table'),
+            statFormula: document.getElementById('ocr-stat-formula'),
+            statImage: document.getElementById('ocr-stat-image'),
             
             // 导出
-            exportJsonBtn: document.getElementById('export_json_btn'),
-            exportMarkdownBtn: document.getElementById('export_markdown_btn'),
-            exportTxtBtn: document.getElementById('export_txt_btn')
+            exportJsonBtn: document.getElementById('ocr-export-json'),
+            exportMarkdownBtn: document.getElementById('ocr-export-markdown'),
+            exportTxtBtn: document.getElementById('ocr-export-text')
         };
     }
     
@@ -175,13 +173,15 @@ class PDFOCRCore {
             });
         });
         
-        // 过滤器
-        [this.elements.filterText, this.elements.filterTable, this.elements.filterFormula, this.elements.filterImage]
-            .forEach(filter => {
-                if (filter) {
-                    filter.addEventListener('change', () => this.updateStructuredContent());
+        // 区块筛选器
+        if (this.elements.blockFilter) {
+            this.elements.blockFilter.addEventListener('change', () => {
+                if (window.pdfOCRViewer) {
+                    window.pdfOCRViewer.filterType = this.elements.blockFilter.value;
+                    window.pdfOCRViewer.updateBlockVisibility();
                 }
             });
+        }
         
         // 导出按钮
         if (this.elements.exportJsonBtn) {
@@ -267,7 +267,7 @@ class PDFOCRCore {
             await this.renderPage(1);
             
             // 更新统计
-            this.elements.statPages.textContent = this.totalPages;
+            if (this.elements.statTotal) this.elements.statTotal.textContent = this.totalPages;
             
         } catch (error) {
             console.error('[PDF-OCR] 加载PDF失败:', error);
@@ -337,7 +337,7 @@ class PDFOCRCore {
         this.bindThumbnailEvents();
         
         // 更新统计
-        this.elements.statPages.textContent = 1;
+        if (this.elements.statTotal) this.elements.statTotal.textContent = 1;
     }
     
     /**
@@ -553,18 +553,10 @@ class PDFOCRCore {
      * 更新结构化内容显示
      */
     updateStructuredContent() {
-        if (!window.pdfOCRParser || !window.pdfOCRParser.ocrResults) {
-            return;
+        // 结构化内容更新由 pdfOCRViewer 处理
+        if (window.pdfOCRViewer) {
+            window.pdfOCRViewer.updateStructuredContent();
         }
-        
-        const filters = {
-            text: this.elements.filterText?.checked ?? true,
-            table: this.elements.filterTable?.checked ?? true,
-            formula: this.elements.filterFormula?.checked ?? false,
-            image: this.elements.filterImage?.checked ?? false
-        };
-        
-        window.pdfOCRParser.renderStructuredContent(filters);
     }
     
     /**
@@ -597,10 +589,11 @@ class PDFOCRCore {
         this.elements.pageThumbnails.innerHTML = '<div class="empty-state">请先上传文件</div>';
         
         // 重置统计
-        this.elements.statPages.textContent = '-';
-        this.elements.statTexts.textContent = '-';
-        this.elements.statTables.textContent = '-';
-        this.elements.statFormulas.textContent = '-';
+        if (this.elements.statTotal) this.elements.statTotal.textContent = '-';
+        if (this.elements.statText) this.elements.statText.textContent = '-';
+        if (this.elements.statTable) this.elements.statTable.textContent = '-';
+        if (this.elements.statFormula) this.elements.statFormula.textContent = '-';
+        if (this.elements.statImage) this.elements.statImage.textContent = '-';
         
         // 重置内容
         this.elements.originalContent.textContent = '请先进行OCR解析';
