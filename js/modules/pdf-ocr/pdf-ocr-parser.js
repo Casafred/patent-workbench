@@ -400,7 +400,18 @@ class PDFOCRParser {
 
         const mdContent = result.md_results || result.markdown || '无Markdown内容';
         
-        // 简单渲染Markdown（可以使用marked.js如果有的话）
+        // 使用marked.js渲染Markdown
+        if (typeof marked !== 'undefined') {
+            try {
+                container.innerHTML = marked.parse(mdContent);
+                container.classList.add('markdown-body');
+                return;
+            } catch (e) {
+                console.warn('[PDF-OCR] Markdown渲染失败:', e);
+            }
+        }
+        
+        // 备用方案：简单渲染
         container.innerHTML = `<pre class="markdown-body">${this.escapeHtml(mdContent)}</pre>`;
     }
 

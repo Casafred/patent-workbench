@@ -127,6 +127,26 @@ class PDFOCRViewer {
             });
         }
 
+        // 全部原文折叠切换
+        const toggleFullText = panel.querySelector('#toggle-full-text');
+        if (toggleFullText) {
+            toggleFullText.addEventListener('click', () => {
+                const section = panel.querySelector('.full-text-section');
+                if (section) {
+                    section.classList.toggle('collapsed');
+                }
+            });
+        }
+
+        // 内容标签页切换
+        const contentTabBtns = panel.querySelectorAll('.full-text-section .tab-btn');
+        contentTabBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const tabName = e.target.dataset.tab;
+                this.switchContentTab(tabName);
+            });
+        });
+
         // 拖动功能
         const header = panel.querySelector('.panel-header');
         if (header) {
@@ -823,10 +843,18 @@ class PDFOCRViewer {
      */
     showBlockDetails(block) {
         const detailsPanel = document.getElementById('ocr-block-details');
-        if (!detailsPanel) return;
-
+        const currentBlockContent = document.getElementById('ocr-current-block');
+        
         const typeLabel = this.getBlockTypeLabel(block.type);
         const fullText = this.getBlockFullText(block);
+
+        // 更新当前选中区块内容（使用markdown渲染）
+        if (currentBlockContent) {
+            const renderedContent = this.renderMarkdown(fullText);
+            currentBlockContent.innerHTML = renderedContent;
+        }
+
+        if (!detailsPanel) return;
 
         detailsPanel.innerHTML = `
             <div class="block-details-header">
@@ -869,6 +897,70 @@ class PDFOCRViewer {
         detailsPanel.querySelector('[data-action="translate"]').addEventListener('click', () => {
             this.translateBlock(block);
         });
+    }
+
+    /**
+     * 渲染Markdown内容
+     */
+    renderMarkdown(text) {
+        if (!text) return '';
+        
+        // 检查是否有marked库
+        if (typeof marked !== 'undefined') {
+            try {
+                return marked.parse(text);
+            } catch (e) {
+                console.warn('[PDF-OCR] Markdown渲染失败:', e);
+            }
+        }
+        
+        // 简单的markdown渲染（备用方案）
+        return this.simpleMarkdownRender(text);
+    }
+
+    /**
+     * 简单的Markdown渲染（备用方案）
+     */
+    simpleMarkdownRender(text) {
+        if (!text) return '';
+        
+        let html = this.escapeHtml(text);
+        
+        // 表格渲染
+        html = html.replace(/\|(.+)\|/g, (match, content) => {
+            const cells = content.split('|').map(c => c.trim());
+            if (cells.length > 1) {
+                return '<tr>' + cells.map(c => `<td>${c}</td>`).join('') + '</tr>';
+            }
+            return match;
+        });
+        
+        // 包装表格行
+        if (html.includes('<tr>')) {
+            html = html.replace(/(<tr>.*<\/tr>)+/gs, '<table>$&</table>');
+        }
+        
+        // 代码块
+        html = html.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>');
+        html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+        
+        // 标题
+        html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+        html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+        html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+        
+        // 粗体和斜体
+        html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+        
+        // 列表
+        html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+        html = html.replace(/(<li>.*<\/li>)+/g, '<ul>$&</ul>');
+        
+        // 换行
+        html = html.replace(/\n/g, '<br>');
+        
+        return html;
     }
 
     /**

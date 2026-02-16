@@ -150,16 +150,34 @@
             </div>
         </div>
         <div class="panel-content">
-            <div class="content-tabs">
-                <button class="tab-btn active" data-tab="original">原文</button>
-                <button class="tab-btn" data-tab="markdown">Markdown</button>
-            </div>
-            <div class="content-body">
-                <div id="tab_original" class="ocr-text-tab active">
-                    <div id="ocr-original-content" class="text-content">请先进行OCR解析</div>
+            <!-- 当前选中区块 -->
+            <div class="current-block-section">
+                <div class="section-header">
+                    <span class="section-title">📍 当前选中</span>
                 </div>
-                <div id="tab_markdown" class="ocr-text-tab">
-                    <div id="ocr-markdown-content" class="text-content">请先进行OCR解析</div>
+                <div id="ocr-current-block" class="block-content markdown-body">
+                    <div class="empty-tip">点击识别结果查看内容</div>
+                </div>
+            </div>
+            <!-- 全部原文（可折叠） -->
+            <div class="full-text-section collapsed">
+                <div class="section-header clickable" id="toggle-full-text">
+                    <span class="section-title">📄 全部原文</span>
+                    <span class="toggle-icon">▶</span>
+                </div>
+                <div class="section-body" id="full-text-body">
+                    <div class="content-tabs">
+                        <button class="tab-btn active" data-tab="original">原文</button>
+                        <button class="tab-btn" data-tab="markdown">Markdown</button>
+                    </div>
+                    <div class="content-body">
+                        <div id="tab_original" class="ocr-text-tab active">
+                            <div id="ocr-original-content" class="text-content">请先进行OCR解析</div>
+                        </div>
+                        <div id="tab_markdown" class="ocr-text-tab">
+                            <div id="ocr-markdown-content" class="text-content markdown-body">请先进行OCR解析</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

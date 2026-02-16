@@ -147,10 +147,109 @@
     overflow: hidden;
 }
 
+/* 当前选中区块区域 */
+.floating-text-panel .current-block-section {
+    margin-bottom: 12px;
+    flex-shrink: 0;
+}
+
+.floating-text-panel .current-block-section .section-header {
+    margin-bottom: 8px;
+}
+
+.floating-text-panel .current-block-section .block-content {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 12px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* 全部原文区域（可折叠） */
+.floating-text-panel .full-text-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.floating-text-panel .full-text-section .section-header {
+    padding: 10px 12px;
+    background: #f8fafc;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+.floating-text-panel .full-text-section .section-header:hover {
+    background: #f1f5f9;
+}
+
+.floating-text-panel .full-text-section .toggle-icon {
+    font-size: 12px;
+    transition: transform 0.2s;
+}
+
+.floating-text-panel .full-text-section.collapsed .toggle-icon {
+    transform: rotate(0deg);
+}
+
+.floating-text-panel .full-text-section:not(.collapsed) .toggle-icon {
+    transform: rotate(90deg);
+}
+
+.floating-text-panel .full-text-section .section-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.floating-text-panel .full-text-section.collapsed .section-body {
+    display: none;
+}
+
+.floating-text-panel .content-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 8px 12px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0;
+}
+
+.floating-text-panel .tab-btn {
+    padding: 6px 12px;
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    color: #64748b;
+}
+
+.floating-text-panel .tab-btn.active {
+    background: #22c55e;
+    color: white;
+}
+
+.floating-text-panel .tab-btn:hover:not(.active) {
+    background: #e2e8f0;
+}
+
 .floating-text-panel .content-body {
     flex: 1;
     overflow-y: auto;
-    margin-top: 12px;
+    padding: 12px;
 }
 
 .floating-text-panel .ocr-text-tab {
@@ -159,6 +258,89 @@
 
 .floating-text-panel .ocr-text-tab.active {
     display: block;
+}
+
+.floating-text-panel .text-content {
+    font-size: 14px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+/* Markdown渲染样式 */
+.floating-text-panel .markdown-body {
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.floating-text-panel .markdown-body table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 8px 0;
+}
+
+.floating-text-panel .markdown-body table th,
+.floating-text-panel .markdown-body table td {
+    border: 1px solid #d1d5db;
+    padding: 8px 12px;
+    text-align: left;
+}
+
+.floating-text-panel .markdown-body table th {
+    background: #f3f4f6;
+    font-weight: 600;
+}
+
+.floating-text-panel .markdown-body table tr:nth-child(even) {
+    background: #f9fafb;
+}
+
+.floating-text-panel .markdown-body code {
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 13px;
+}
+
+.floating-text-panel .markdown-body pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 12px;
+    border-radius: 8px;
+    overflow-x: auto;
+}
+
+.floating-text-panel .markdown-body pre code {
+    background: transparent;
+    color: inherit;
+}
+
+.floating-text-panel .markdown-body blockquote {
+    border-left: 4px solid #22c55e;
+    padding-left: 12px;
+    margin: 8px 0;
+    color: #64748b;
+}
+
+.floating-text-panel .markdown-body h1,
+.floating-text-panel .markdown-body h2,
+.floating-text-panel .markdown-body h3 {
+    margin: 16px 0 8px 0;
+    font-weight: 600;
+}
+
+.floating-text-panel .markdown-body h1 { font-size: 18px; }
+.floating-text-panel .markdown-body h2 { font-size: 16px; }
+.floating-text-panel .markdown-body h3 { font-size: 15px; }
+
+.floating-text-panel .markdown-body ul,
+.floating-text-panel .markdown-body ol {
+    padding-left: 20px;
+    margin: 8px 0;
+}
+
+.floating-text-panel .markdown-body li {
+    margin: 4px 0;
 }
 
 /* 悬浮面板详情区 */
