@@ -301,18 +301,25 @@ class PDFOCRViewer {
         overlay.dataset.blockId = block.id;
         overlay.dataset.blockType = block.type;
 
-        // 设置位置和大小（相对于pdf-canvas容器）
+        // 设置位置和大小
         const pdfCanvas = document.getElementById('pdf-canvas');
+        const blocksLayer = document.getElementById('ocr-blocks-layer');
         const pdfImage = pdfCanvas ? pdfCanvas.querySelector('img, canvas') : null;
         
-        if (pdfImage && block.bbox) {
-            // 获取pdf-canvas的位置作为偏移基准
+        if (pdfImage && block.bbox && blocksLayer) {
+            // 获取viewer-wrap的滚动位置
+            const viewerWrap = document.querySelector('.viewer-wrap');
+            const scrollLeft = viewerWrap ? viewerWrap.scrollLeft : 0;
+            const scrollTop = viewerWrap ? viewerWrap.scrollTop : 0;
+            
+            // 获取各元素的位置
+            const viewerRect = viewerWrap ? viewerWrap.getBoundingClientRect() : { left: 0, top: 0 };
             const canvasRect = pdfCanvas.getBoundingClientRect();
             const imageRect = pdfImage.getBoundingClientRect();
             
-            // 计算图片在canvas内的偏移
-            const imageOffsetLeft = imageRect.left - canvasRect.left;
-            const imageOffsetTop = imageRect.top - canvasRect.top;
+            // 计算图片相对于viewer-wrap的偏移（考虑滚动）
+            const imageOffsetLeft = imageRect.left - viewerRect.left + scrollLeft;
+            const imageOffsetTop = imageRect.top - viewerRect.top + scrollTop;
             
             // 使用PDF图片的实际尺寸计算缩放比例
             const scaleX = pdfImage.offsetWidth / (block.bbox.page_width || pdfImage.offsetWidth);
