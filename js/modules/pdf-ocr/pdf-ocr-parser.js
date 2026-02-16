@@ -253,26 +253,139 @@ class PDFOCRParser {
 
     /**
      * 处理解析结果
+     * 将API返回的layout_details格式转换为内部使用的格式
      */
     handleParseResult(result) {
+        // 转换API响应格式为内部格式
+        const normalizedResult = this.normalizeResult(result);
+        
         // 存储结果
-        this.currentTask = result;
+        this.currentTask = normalizedResult;
 
         // 更新全局状态
         if (window.state) {
-            window.state.set('ocrResult', result);
+            window.state.set('ocrResult', normalizedResult);
         }
 
         // 更新视图
         if (window.pdfOCRViewer) {
-            window.pdfOCRViewer.setOCRResult(result);
+            window.pdfOCRViewer.setOCRResult(normalizedResult);
         }
 
         // 更新原始内容显示
-        this.updateOriginalContent(result);
+        this.updateOriginalContent(normalizedResult);
+        
+        // 更新Markdown内容显示
+        this.updateMarkdownContent(result);
 
         // 触发解析完成事件
-        this.emit('parseComplete', result);
+        this.emit('parseComplete', normalizedResult);
+    }
+
+    /**
+     * 将API响应格式转换为内部格式
+     * API返回: layout_details[pageIndex][blockIndex]
+     * 内部格式: pages[pageIndex].blocks[blockIndex]
+     */
+    normalizeResult(result) {
+        if (!result) return null;
+
+        // 如果已经是内部格式，直接返回
+        if (result.pages) {
+            return result;
+        }
+
+        // 转换API格式到内部格式
+        const normalized = {
+            id: result.id,
+            created: result.created,
+            model: result.model,
+            md_results: result.md_results,
+            request_id: result.request_id,
+            usage: result.usage,
+            data_info: result.data_info,
+            pages: []
+        };
+
+        // 处理layout_details: 二维数组 [page][blocks]
+        if (result.layout_details && Array.isArray(result.layout_details)) {
+            result.layout_details.forEach((pageBlocks, pageIndex) => {
+                const pageInfo = result.data_info?.pages?.[pageIndex] || {};
+                
+                const page = {
+                    pageIndex: pageIndex + 1,
+                    width: pageInfo.width || 1224,
+                    height: pageInfo.height || 1584,
+                    blocks: []
+                };
+
+                // 处理每个区块
+                if (Array.isArray(pageBlocks)) {
+                    pageBlocks.forEach((block, blockIndex) => {
+                        // 转换bbox_2d格式
+                        const bbox = block.bbox_2d;
+                        const convertedBlock = {
+                            index: block.index || blockIndex,
+                            type: this.mapLabelToType(block.label, block.native_label),
+                            label: block.label,
+                            native_label: block.native_label,
+                            text: block.content || '',
+                            content: block.content || '',
+                            bbox: {
+                                lt: [bbox[0], bbox[1]],
+                                rb: [bbox[2], bbox[3]],
+                                page_width: block.width || pageInfo.width,
+                                page_height: block.height || pageInfo.height
+                            },
+                            pageIndex: pageIndex + 1
+                        };
+                        page.blocks.push(convertedBlock);
+                    });
+                }
+
+                normalized.pages.push(page);
+            });
+        }
+
+        return normalized;
+    }
+
+    /**
+     * 将API的label映射到内部type
+     */
+    mapLabelToType(label, nativeLabel) {
+        const labelMap = {
+            'text': 'text',
+            'table': 'table',
+            'formula': 'formula',
+            'image': 'image'
+        };
+        
+        // 优先使用label，如果没有则使用native_label映射
+        if (labelMap[label]) {
+            return labelMap[label];
+        }
+        
+        // 根据native_label判断
+        if (nativeLabel?.includes('title')) return 'title';
+        if (nativeLabel?.includes('table')) return 'table';
+        if (nativeLabel?.includes('formula')) return 'formula';
+        if (nativeLabel?.includes('image')) return 'image';
+        
+        return 'text';
+    }
+
+    /**
+     * 更新Markdown内容显示
+     */
+    updateMarkdownContent(result) {
+        const container = document.getElementById('ocr-markdown-content');
+        if (!container) return;
+
+        const mdContent = result.md_results || result.markdown || '无Markdown内容';
+        
+        // 简单渲染Markdown（可以使用marked.js如果有的话）
+        container.innerHTML = `<pre class="markdown-body">${this.escapeHtml(mdContent)}</pre>`;
     }
 
     /**
@@ -307,6 +420,7 @@ class PDFOCRParser {
      */
     renderBlockContent(block) {
         const typeClass = `block-type-${block.type}`;
+        const content = block.text || block.content || '';
 
         switch (block.type) {
             case 'text':
@@ -314,21 +428,21 @@ class PDFOCRParser {
             case 'header':
             case 'footer':
             case 'reference':
-                return `<p class="${typeClass}">${this.escapeHtml(block.text)}</p>`;
+                return `<p class="${typeClass}">${this.escapeHtml(content)}</p>`;
 
             case 'table':
                 if (block.html) {
                     return `<div class="${typeClass}">${block.html}</div>`;
                 }
-                return `<pre class="${typeClass}">${this.escapeHtml(block.text)}</pre>`;
+                return `<pre class="${typeClass}">${this.escapeHtml(content)}</pre>`;
 
             case 'formula':
                 let formulaHtml = '';
                 if (block.latex) {
                     formulaHtml += `<div class="formula-latex">$$${block.latex}$$</div>`;
                 }
-                if (block.text) {
-                    formulaHtml += `<div class="formula-text">${this.escapeHtml(block.text)}</div>`;
+                if (content) {
+                    formulaHtml += `<div class="formula-text">${this.escapeHtml(content)}</div>`;
                 }
                 return `<div class="${typeClass}">${formulaHtml}</div>`;
 
@@ -343,7 +457,7 @@ class PDFOCRParser {
                 `;
 
             default:
-                return `<div class="${typeClass}">${this.escapeHtml(block.text || '')}</div>`;
+                return `<div class="${typeClass}">${this.escapeHtml(content)}</div>`;
         }
     }
 
