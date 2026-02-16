@@ -77,12 +77,23 @@ class PDFOCRViewer {
             });
         }
 
-        // 容器点击事件（取消选中）
-        const container = document.getElementById('pdf-ocr-container');
-        if (container) {
-            container.addEventListener('click', (e) => {
-                if (e.target === container || e.target.id === 'pdf-canvas') {
-                    this.deselectBlock();
+        // 查看器点击事件 - 根据点击位置找到最近的区块
+        const viewerWrap = document.querySelector('.viewer-wrap');
+        if (viewerWrap) {
+            viewerWrap.addEventListener('click', (e) => {
+                // 如果点击的是区块覆盖层，不处理（由区块自己的点击事件处理）
+                if (e.target.closest('.ocr-block-overlay')) return;
+                
+                // 如果没有OCR结果，不处理
+                if (this.ocrBlocks.length === 0) return;
+                
+                // 获取点击位置相对于图片的坐标
+                const result = this.getClickPositionOnImage(e, viewerWrap);
+                if (result) {
+                    const nearestBlock = this.findNearestBlock(result.x, result.y, result.pageIndex);
+                    if (nearestBlock) {
+                        this.selectBlock(nearestBlock);
+                    }
                 }
             });
         }
@@ -95,6 +106,76 @@ class PDFOCRViewer {
                 this.switchContentTab(tabName);
             });
         });
+    }
+
+    /**
+     * 获取点击位置相对于PDF图片的坐标
+     */
+    getClickPositionOnImage(e, viewerWrap) {
+        const pdfCanvas = document.getElementById('pdf-canvas');
+        const pdfImage = pdfCanvas ? pdfCanvas.querySelector('img, canvas') : null;
+        
+        if (!pdfImage) return null;
+        
+        const imageRect = pdfImage.getBoundingClientRect();
+        const viewerRect = viewerWrap.getBoundingClientRect();
+        
+        // 计算点击位置相对于图片的坐标
+        const clickX = e.clientX - imageRect.left;
+        const clickY = e.clientY - imageRect.top;
+        
+        // 计算图片相对于原始尺寸的缩放比例
+        const scaleX = pdfImage.naturalWidth ? pdfImage.naturalWidth / pdfImage.offsetWidth : 1;
+        const scaleY = pdfImage.naturalHeight ? pdfImage.naturalHeight / pdfImage.offsetHeight : 1;
+        
+        // 转换为原始坐标
+        const originalX = clickX * scaleX;
+        const originalY = clickY * scaleY;
+        
+        // 获取当前页码
+        const pageIndex = window.pdfOCRCore ? window.pdfOCRCore.currentPageIndex : 0;
+        
+        return {
+            x: originalX,
+            y: originalY,
+            pageIndex: pageIndex
+        };
+    }
+
+    /**
+     * 根据坐标找到最近的区块
+     */
+    findNearestBlock(x, y, pageIndex) {
+        if (this.ocrBlocks.length === 0) return null;
+        
+        let nearestBlock = null;
+        let minDistance = Infinity;
+        const threshold = 100; // 最大搜索距离（像素）
+        
+        // 筛选当前页的区块
+        const currentPageBlocks = this.ocrBlocks.filter(block => block.pageIndex === pageIndex);
+        
+        for (const block of currentPageBlocks) {
+            if (!block.bbox) continue;
+            
+            // 计算点击位置到区块中心的距离
+            const blockCenterX = (block.bbox.lt[0] + block.bbox.rb[0]) / 2;
+            const blockCenterY = (block.bbox.lt[1] + block.bbox.rb[1]) / 2;
+            const distance = Math.sqrt(Math.pow(x - blockCenterX, 2) + Math.pow(y - blockCenterY, 2));
+            
+            // 检查点击位置是否在区块范围内或附近
+            const inBlockX = x >= block.bbox.lt[0] - threshold && x <= block.bbox.rb[0] + threshold;
+            const inBlockY = y >= block.bbox.lt[1] - threshold && y <= block.bbox.rb[1] + threshold;
+            
+            if ((inBlockX && inBlockY) || distance < threshold) {
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestBlock = block;
+                }
+            }
+        }
+        
+        return nearestBlock;
     }
 
     /**
