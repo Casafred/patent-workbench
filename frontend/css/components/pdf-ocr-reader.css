@@ -172,13 +172,14 @@
 }
 
 .btn-small {
-    padding: 6px 12px;
+    padding: 5px 8px;
     background: #f1f5f9;
     border: 1px solid #e2e8f0;
     border-radius: 4px;
-    font-size: 12px;
+    font-size: 11px;
     color: #475569;
     cursor: pointer;
+    white-space: nowrap;
 }
 
 .btn-small:hover {
@@ -271,11 +272,13 @@
 /* 导出按钮 */
 .export-btns {
     display: flex;
-    gap: 8px;
+    gap: 6px;
+    justify-content: center;
 }
 
 .export-btns .btn-small {
-    flex: 1;
+    flex: 0 0 auto;
+    min-width: 50px;
 }
 
 /* 工具栏 */
