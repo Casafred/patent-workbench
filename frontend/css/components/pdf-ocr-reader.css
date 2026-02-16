@@ -6,10 +6,10 @@
     margin: 0 auto;
 }
 
-/* 主容器 - 三栏布局（加宽版） */
+/* 主容器 - 两栏布局（加宽版） */
 .pdf-ocr-container {
     display: grid;
-    grid-template-columns: 260px 1fr 280px;
+    grid-template-columns: 260px 1fr;
     gap: 16px;
     padding: 16px;
     background: #f8fafc;
@@ -28,48 +28,169 @@
     max-height: 100%;
     min-height: 0;
     padding-right: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.pdf-ocr-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.pdf-ocr-sidebar::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 3px;
+}
+
+.pdf-ocr-sidebar::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.pdf-ocr-sidebar::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
 }
 
 /* 左侧边栏中的面板 */
 .pdf-ocr-sidebar .ocr-panel {
     flex-shrink: 0;
-    min-height: 0;
 }
 
 /* 识别结果面板可以伸缩 */
 .pdf-ocr-sidebar .results-panel {
     flex: 1 1 auto;
-    min-height: 100px;
-    max-height: 40%;
+    min-height: 150px;
     overflow-y: auto;
     overflow-x: hidden;
 }
 
-/* 右侧面板 */
-.pdf-ocr-rightbar {
+/* 悬浮识别文本面板 */
+.floating-text-panel {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    width: 360px;
+    max-height: 70vh;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    overflow-y: auto;
-    overflow-x: hidden;
-    max-height: 100%;
-    min-height: 0;
-    padding-right: 4px;
+    overflow: hidden;
 }
 
-/* 右侧面板中的面板 */
-.pdf-ocr-rightbar .ocr-panel {
-    flex-shrink: 0;
-    min-height: 0;
+.floating-text-panel.minimized {
+    max-height: 52px;
 }
 
-/* 内容面板可以伸缩 */
-.pdf-ocr-rightbar .content-panel {
-    flex: 1 1 auto;
-    min-height: 200px;
-    max-height: 60%;
+.floating-text-panel.minimized .panel-content,
+.floating-text-panel.minimized .panel-details {
+    display: none;
+}
+
+/* 悬浮面板标题栏 */
+.floating-text-panel .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    cursor: move;
+    user-select: none;
+}
+
+.floating-text-panel .panel-title {
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.floating-text-panel .panel-controls {
+    display: flex;
+    gap: 4px;
+}
+
+.floating-text-panel .control-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    transition: all 0.2s;
+}
+
+.floating-text-panel .control-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.floating-text-panel .control-btn.close-btn:hover {
+    background: rgba(239, 68, 68, 0.8);
+}
+
+/* 悬浮面板内容区 */
+.floating-text-panel .panel-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    border-bottom: 1px solid #e5e7eb;
+    overflow: hidden;
+}
+
+.floating-text-panel .content-body {
+    flex: 1;
     overflow-y: auto;
-    overflow-x: hidden;
+    margin-top: 12px;
+}
+
+.floating-text-panel .ocr-text-tab {
+    display: none;
+}
+
+.floating-text-panel .ocr-text-tab.active {
+    display: block;
+}
+
+/* 悬浮面板详情区 */
+.floating-text-panel .panel-details {
+    padding: 16px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.floating-text-panel .details-title {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+/* 按钮样式修复 */
+.content-item-actions .btn-icon {
+    background: #f1f5f9 !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #475569 !important;
+}
+
+.content-item-actions .btn-icon:hover {
+    background: #3b82f6 !important;
+    color: white !important;
+    border-color: #3b82f6 !important;
+}
+
+.content-item-actions .btn-icon svg,
+.content-item-actions .btn-icon i {
+    color: inherit !important;
 }
 
 /* 中间主区域 */

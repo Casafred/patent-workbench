@@ -104,6 +104,9 @@
                     <button id="toggle-ocr-blocks" class="btn-toggle" title="显示/隐藏识别区块">
                         显示区块
                     </button>
+                    <button id="toggle-text-panel" class="btn-toggle" title="打开识别文本面板">
+                        📝 识别文本
+                    </button>
                 </div>
             </div>
 
@@ -138,30 +141,35 @@
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- 右侧边栏：内容预览 -->
-        <div class="pdf-ocr-rightbar">
-            <div class="ocr-panel content-panel">
-                <h4 class="panel-title">📝 识别文本</h4>
-                <div class="content-tabs">
-                    <button class="tab-btn active" data-tab="original">原文</button>
-                    <button class="tab-btn" data-tab="markdown">Markdown</button>
+    <!-- 悬浮识别文本面板 -->
+    <div id="floating-text-panel" class="floating-text-panel" style="display: none;">
+        <div class="panel-header">
+            <div class="panel-title">📝 识别文本</div>
+            <div class="panel-controls">
+                <button class="control-btn minimize-btn" title="最小化">−</button>
+                <button class="control-btn close-btn" title="关闭">×</button>
+            </div>
+        </div>
+        <div class="panel-content">
+            <div class="content-tabs">
+                <button class="tab-btn active" data-tab="original">原文</button>
+                <button class="tab-btn" data-tab="markdown">Markdown</button>
+            </div>
+            <div class="content-body">
+                <div id="tab_original" class="ocr-text-tab active">
+                    <div id="ocr-original-content" class="text-content">请先进行OCR解析</div>
                 </div>
-                <div class="content-body">
-                    <div id="tab_original" class="ocr-text-tab active">
-                        <div id="ocr-original-content" class="text-content">请先进行OCR解析</div>
-                    </div>
-                    <div id="tab_markdown" class="ocr-text-tab">
-                        <div id="ocr-markdown-content" class="text-content">请先进行OCR解析</div>
-                    </div>
+                <div id="tab_markdown" class="ocr-text-tab">
+                    <div id="ocr-markdown-content" class="text-content">请先进行OCR解析</div>
                 </div>
             </div>
-
-            <div class="ocr-panel">
-                <h4 class="panel-title">ℹ️ 区块详情</h4>
-                <div id="ocr-block-details" class="block-details">
-                    <div class="empty-tip">点击左侧识别结果查看详情</div>
-                </div>
+        </div>
+        <div class="panel-details">
+            <h4 class="details-title">ℹ️ 区块详情</h4>
+            <div id="ocr-block-details" class="block-details">
+                <div class="empty-tip">点击左侧识别结果查看详情</div>
             </div>
         </div>
     </div>

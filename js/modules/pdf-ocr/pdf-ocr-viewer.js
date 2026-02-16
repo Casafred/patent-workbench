@@ -32,6 +32,7 @@ class PDFOCRViewer {
     init() {
         this.initElements();
         this.bindEvents();
+        this.initFloatingPanel();
     }
 
     initElements() {
@@ -43,7 +44,9 @@ class PDFOCRViewer {
             blocksLayer: document.getElementById('ocr-blocks-layer'),
             structuredContent: document.getElementById('ocr-structured-content'),
             blockDetails: document.getElementById('ocr-block-details'),
-            viewerWrap: document.querySelector('.viewer-wrap')
+            viewerWrap: document.querySelector('.viewer-wrap'),
+            floatingPanel: document.getElementById('floating-text-panel'),
+            toggleTextPanelBtn: document.getElementById('toggle-text-panel')
         };
     }
 
@@ -65,6 +68,14 @@ class PDFOCRViewer {
             });
         }
 
+        // 打开/关闭识别文本面板
+        const toggleTextPanelBtn = document.getElementById('toggle-text-panel');
+        if (toggleTextPanelBtn) {
+            toggleTextPanelBtn.addEventListener('click', () => {
+                this.toggleFloatingPanel();
+            });
+        }
+
         // 容器点击事件（取消选中）
         const container = document.getElementById('pdf-ocr-container');
         if (container) {
@@ -74,6 +85,143 @@ class PDFOCRViewer {
                 }
             });
         }
+
+        // 内容标签页切换
+        const contentTabBtns = document.querySelectorAll('.floating-text-panel .tab-btn');
+        contentTabBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const tabName = e.target.dataset.tab;
+                this.switchContentTab(tabName);
+            });
+        });
+    }
+
+    /**
+     * 初始化悬浮面板
+     */
+    initFloatingPanel() {
+        const panel = this.elements.floatingPanel;
+        if (!panel) return;
+
+        // 关闭按钮
+        const closeBtn = panel.querySelector('.close-btn');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                this.hideFloatingPanel();
+            });
+        }
+
+        // 最小化按钮
+        const minimizeBtn = panel.querySelector('.minimize-btn');
+        if (minimizeBtn) {
+            minimizeBtn.addEventListener('click', () => {
+                this.toggleMinimizePanel();
+            });
+        }
+
+        // 拖动功能
+        const header = panel.querySelector('.panel-header');
+        if (header) {
+            let isDragging = false;
+            let startX, startY, startLeft, startTop;
+
+            header.addEventListener('mousedown', (e) => {
+                if (e.target.closest('.panel-controls')) return;
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                const rect = panel.getBoundingClientRect();
+                startLeft = rect.left;
+                startTop = rect.top;
+                panel.style.transition = 'none';
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                panel.style.left = `${startLeft + dx}px`;
+                panel.style.top = `${startTop + dy}px`;
+                panel.style.right = 'auto';
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    panel.style.transition = '';
+                }
+            });
+        }
+    }
+
+    /**
+     * 切换悬浮面板显示/隐藏
+     */
+    toggleFloatingPanel() {
+        const panel = this.elements.floatingPanel;
+        if (!panel) return;
+
+        if (panel.style.display === 'none' || !panel.style.display) {
+            this.showFloatingPanel();
+        } else {
+            this.hideFloatingPanel();
+        }
+    }
+
+    /**
+     * 显示悬浮面板
+     */
+    showFloatingPanel() {
+        const panel = this.elements.floatingPanel;
+        if (!panel) return;
+        panel.style.display = 'flex';
+        if (this.elements.toggleTextPanelBtn) {
+            this.elements.toggleTextPanelBtn.classList.add('active');
+        }
+    }
+
+    /**
+     * 隐藏悬浮面板
+     */
+    hideFloatingPanel() {
+        const panel = this.elements.floatingPanel;
+        if (!panel) return;
+        panel.style.display = 'none';
+        if (this.elements.toggleTextPanelBtn) {
+            this.elements.toggleTextPanelBtn.classList.remove('active');
+        }
+    }
+
+    /**
+     * 切换面板最小化
+     */
+    toggleMinimizePanel() {
+        const panel = this.elements.floatingPanel;
+        if (!panel) return;
+        panel.classList.toggle('minimized');
+        const minimizeBtn = panel.querySelector('.minimize-btn');
+        if (minimizeBtn) {
+            minimizeBtn.textContent = panel.classList.contains('minimized') ? '+' : '−';
+            minimizeBtn.title = panel.classList.contains('minimized') ? '还原' : '最小化';
+        }
+    }
+
+    /**
+     * 切换内容标签页
+     */
+    switchContentTab(tabName) {
+        const panel = this.elements.floatingPanel;
+        if (!panel) return;
+
+        // 更新标签按钮状态
+        panel.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tab === tabName);
+        });
+
+        // 更新内容区域显示
+        panel.querySelectorAll('.ocr-text-tab').forEach(tab => {
+            tab.classList.toggle('active', tab.id === `tab_${tabName}`);
+        });
     }
 
     /**
@@ -257,6 +405,12 @@ class PDFOCRViewer {
 
         // 显示区块详情
         this.showBlockDetails(block);
+
+        // 自动打开悬浮面板（如果已关闭）
+        const panel = this.elements.floatingPanel;
+        if (panel && (panel.style.display === 'none' || !panel.style.display)) {
+            this.showFloatingPanel();
+        }
 
         // 触发选中事件
         this.emit('blockSelected', block);
@@ -637,22 +791,15 @@ class PDFOCRViewer {
      */
     translateBlock(block) {
         const text = this.getBlockFullText(block);
-        const targetLang = document.getElementById('ocr-translate-target')?.value || 'zh';
-
+        
+        // 直接使用简单的翻译提示
+        this.showToast('翻译功能需要集成AI服务，已将内容复制到剪贴板', 'info');
+        this.copyBlockContent(block);
+        
         // 触发翻译事件
-        this.emit('translateBlock', { block, text, targetLang });
-
-        // 切换到翻译标签页
-        const translateTab = document.querySelector('[data-tab="translation"]');
-        if (translateTab) {
-            translateTab.click();
-        }
-
-        // 填充翻译输入
-        const sourceInput = document.getElementById('ocr-translate-source');
-        if (sourceInput) {
-            sourceInput.value = text;
-        }
+        this.emit('translateBlock', { block, text });
+        
+        console.log('[PDF-OCR] 翻译区块:', block);
     }
 
     /**
@@ -665,18 +812,15 @@ class PDFOCRViewer {
         // 触发提问事件
         this.emit('askAboutBlock', { block, context });
 
-        // 切换到AI问答标签页
-        const chatTab = document.querySelector('[data-tab="chat"]');
-        if (chatTab) {
-            chatTab.click();
+        // 打开悬浮对话窗口
+        if (window.pdfOCRFloatingChat) {
+            window.pdfOCRFloatingChat.openWithContext(context);
+        } else {
+            this.showToast('已将内容复制到剪贴板，可在AI对话中使用', 'info');
+            this.copyBlockContent(block);
         }
-
-        // 聚焦输入框
-        const chatInput = document.getElementById('ocr-chat-input');
-        if (chatInput) {
-            chatInput.value = context;
-            chatInput.focus();
-        }
+        
+        console.log('[PDF-OCR] 对区块提问:', block);
     }
 
     /**
