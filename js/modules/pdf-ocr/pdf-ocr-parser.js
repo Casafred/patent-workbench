@@ -213,6 +213,7 @@ class PDFOCRParser {
         
         // 构建请求体
         const requestBody = {
+            model: "glm-ocr",
             image: base64Data,
             recognize_formula: settings.recognizeFormula,
             recognize_table: settings.recognizeTable
