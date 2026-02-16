@@ -15,7 +15,7 @@ class PDFOCRSelection {
         
         // 配置
         this.config = {
-            minSelectionSize: 10, // 最小选择尺寸（像素）
+            minSelectionSize: 10,
             highlightColor: 'rgba(59, 130, 246, 0.3)',
             highlightBorderColor: '#3b82f6',
             selectionBoxColor: 'rgba(59, 130, 246, 0.1)',
@@ -27,16 +27,16 @@ class PDFOCRSelection {
     
     init() {
         this.initElements();
-        this.bindEvents();
+        this.bindGlobalEvents();
     }
     
     initElements() {
         this.elements = {
-            viewerContainer: document.getElementById('pdf-canvas'),
+            viewerWrap: document.querySelector('.viewer-wrap'),
             selectionLayer: null
         };
         
-        // 延迟创建选择层，确保容器已准备好
+        // 延迟创建选择层
         setTimeout(() => {
             this.createSelectionLayer();
         }, 100);
@@ -46,15 +46,14 @@ class PDFOCRSelection {
      * 创建选择层
      */
     createSelectionLayer() {
-        const container = document.getElementById('pdf-canvas');
+        const container = document.querySelector('.viewer-wrap');
         if (!container) {
-            console.warn('[PDF-OCR] 无法找到pdf-canvas容器，延迟创建选择层');
-            // 如果容器不存在，稍后重试
+            console.warn('[PDF-OCR] 无法找到viewer-wrap容器');
             setTimeout(() => this.createSelectionLayer(), 500);
             return;
         }
         
-        this.elements.viewerContainer = container;
+        this.elements.viewerWrap = container;
         
         // 检查是否已存在
         let selectionLayer = document.getElementById('ocr-selection-layer');
@@ -64,7 +63,7 @@ class PDFOCRSelection {
         
         selectionLayer = document.createElement('div');
         selectionLayer.id = 'ocr-selection-layer';
-        selectionLayer.className = 'ocr-selection-layer';
+        selectionLayer.className = 'selection-layer';
         selectionLayer.style.cssText = `
             position: absolute;
             top: 0;
@@ -74,46 +73,71 @@ class PDFOCRSelection {
             z-index: 100;
             cursor: text;
             user-select: none;
+            display: none;
         `;
         container.appendChild(selectionLayer);
         
         this.elements.selectionLayer = selectionLayer;
         console.log('[PDF-OCR] 选择层已创建');
         
-        // 重新绑定事件
-        this.bindEvents();
+        // 绑定事件
+        this.bindSelectionEvents();
     }
     
     /**
-     * 重新创建选择层（在PDF加载后调用）
+     * 显示选择层（当PDF加载后）
+     */
+    showSelectionLayer() {
+        if (this.elements.selectionLayer) {
+            this.elements.selectionLayer.style.display = 'block';
+        }
+    }
+    
+    /**
+     * 隐藏选择层
+     */
+    hideSelectionLayer() {
+        if (this.elements.selectionLayer) {
+            this.elements.selectionLayer.style.display = 'none';
+        }
+    }
+    
+    /**
+     * 重新创建选择层
      */
     recreateSelectionLayer() {
         this.clearSelection();
         this.createSelectionLayer();
+        this.showSelectionLayer();
     }
     
     /**
-     * 绑定事件
+     * 绑定选择层事件
      */
-    bindEvents() {
+    bindSelectionEvents() {
         const layer = this.elements.selectionLayer;
         if (!layer) return;
         
         // 鼠标按下 - 开始选择
         layer.addEventListener('mousedown', (e) => this.onMouseDown(e));
         
+        // 双击选中
+        layer.addEventListener('dblclick', (e) => this.onDoubleClick(e));
+    }
+    
+    /**
+     * 绑定全局事件
+     */
+    bindGlobalEvents() {
         // 鼠标移动 - 更新选择
         document.addEventListener('mousemove', (e) => this.onMouseMove(e));
         
         // 鼠标释放 - 结束选择
         document.addEventListener('mouseup', (e) => this.onMouseUp(e));
         
-        // 双击选中单词
-        layer.addEventListener('dblclick', (e) => this.onDoubleClick(e));
-        
         // 点击空白处取消选择
         document.addEventListener('click', (e) => {
-            if (!e.target.closest('.ocr-selection-layer') && 
+            if (!e.target.closest('.selection-layer') && 
                 !e.target.closest('.floating-toolbar') &&
                 !e.target.closest('.floating-chat-window')) {
                 this.clearSelection();
@@ -125,23 +149,22 @@ class PDFOCRSelection {
      * 鼠标按下处理
      */
     onMouseDown(e) {
-        // 只处理左键
         if (e.button !== 0) return;
         
         // 如果点击的是OCR区块，不启动选择
         if (e.target.closest('.ocr-block-overlay')) return;
         
+        const layer = this.elements.selectionLayer;
+        const rect = layer.getBoundingClientRect();
+        
         this.isSelecting = true;
         this.startPoint = {
-            x: e.offsetX,
-            y: e.offsetY
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
         };
         this.endPoint = { ...this.startPoint };
         
-        // 清除之前的选择
         this.clearSelection();
-        
-        // 创建选择框
         this.createSelectionBox();
         
         e.preventDefault();
@@ -162,10 +185,7 @@ class PDFOCRSelection {
             y: e.clientY - rect.top
         };
         
-        // 更新选择框
         this.updateSelectionBox();
-        
-        // 实时高亮选中的区块
         this.highlightSelectedBlocks();
     }
     
@@ -177,7 +197,6 @@ class PDFOCRSelection {
         
         this.isSelecting = false;
         
-        // 检查选择大小
         const selectionWidth = Math.abs(this.endPoint.x - this.startPoint.x);
         const selectionHeight = Math.abs(this.endPoint.y - this.startPoint.y);
         
@@ -187,10 +206,8 @@ class PDFOCRSelection {
             return;
         }
         
-        // 获取选中的区块
         this.updateSelectedBlocks();
         
-        // 如果有选中内容，显示工具栏
         if (this.selectedBlocks.length > 0 || this.selectedText) {
             this.showFloatingToolbar();
         } else {
@@ -199,18 +216,19 @@ class PDFOCRSelection {
     }
     
     /**
-     * 双击处理 - 选中单词
+     * 双击处理
      */
     onDoubleClick(e) {
+        const layer = this.elements.selectionLayer;
+        const rect = layer.getBoundingClientRect();
+        
         const clickPoint = {
-            x: e.offsetX,
-            y: e.offsetY
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
         };
         
-        // 查找点击位置对应的OCR区块
         const block = this.findBlockAtPoint(clickPoint);
         if (block) {
-            // 选中整个区块
             this.selectBlock(block);
         }
     }
@@ -233,7 +251,7 @@ class PDFOCRSelection {
     }
     
     /**
-     * 更新选择框位置和大小
+     * 更新选择框
      */
     updateSelectionBox() {
         if (!this.selectionBox) return;
@@ -253,16 +271,11 @@ class PDFOCRSelection {
      * 高亮选中的区块
      */
     highlightSelectedBlocks() {
-        // 清除之前的高亮
         this.clearHighlightOverlays();
         
-        // 获取选择区域
         const selectionRect = this.getSelectionRect();
-        
-        // 获取当前页的OCR区块
         const blocks = this.getCurrentPageBlocks();
         
-        // 找出与选择区域相交的区块
         blocks.forEach(block => {
             if (this.isBlockInSelection(block, selectionRect)) {
                 this.highlightBlock(block);
@@ -281,10 +294,8 @@ class PDFOCRSelection {
             this.isBlockInSelection(block, selectionRect)
         );
         
-        // 提取选中的文本
         this.selectedText = this.extractSelectedText();
         
-        // 更新高亮
         this.clearHighlightOverlays();
         this.selectedBlocks.forEach(block => this.highlightBlock(block));
     }
@@ -316,10 +327,8 @@ class PDFOCRSelection {
     isBlockInSelection(block, selectionRect) {
         if (!block.bbox) return false;
         
-        // 获取区块在视口中的位置
         const blockRect = this.getBlockRect(block);
         
-        // 检查是否相交
         return !(blockRect.right < selectionRect.left || 
                  blockRect.left > selectionRect.right || 
                  blockRect.bottom < selectionRect.top || 
@@ -330,14 +339,17 @@ class PDFOCRSelection {
      * 获取区块在视口中的矩形位置
      */
     getBlockRect(block) {
-        const container = this.elements.viewerContainer;
+        const container = document.querySelector('.viewer-wrap');
         if (!container || !block.bbox) {
             return { left: 0, top: 0, right: 0, bottom: 0 };
         }
         
-        // 获取容器尺寸
-        const containerWidth = container.offsetWidth;
-        const containerHeight = container.offsetHeight;
+        // 获取PDF图片实际尺寸
+        const pdfImage = container.querySelector('img, canvas');
+        if (!pdfImage) return { left: 0, top: 0, right: 0, bottom: 0 };
+        
+        const containerWidth = pdfImage.offsetWidth;
+        const containerHeight = pdfImage.offsetHeight;
         
         // 获取页面原始尺寸
         const pageWidth = block.bbox.page_width || containerWidth;
@@ -360,7 +372,7 @@ class PDFOCRSelection {
      * 高亮单个区块
      */
     highlightBlock(block) {
-        const container = this.elements.viewerContainer;
+        const container = document.querySelector('.viewer-wrap');
         if (!container) return;
         
         const blockRect = this.getBlockRect(block);
@@ -397,30 +409,17 @@ class PDFOCRSelection {
     extractSelectedText() {
         if (this.selectedBlocks.length === 0) return '';
         
-        // 按阅读顺序排序
         const sortedBlocks = [...this.selectedBlocks].sort((a, b) => {
             const rectA = this.getBlockRect(a);
             const rectB = this.getBlockRect(b);
             
-            // 先按行排序（y坐标）
             if (Math.abs(rectA.top - rectB.top) > 20) {
                 return rectA.top - rectB.top;
             }
-            // 同行按x坐标排序
             return rectA.left - rectB.left;
         });
         
-        // 提取文本
-        return sortedBlocks.map(block => {
-            switch (block.type) {
-                case 'formula':
-                    return block.latex || block.text || '';
-                case 'table':
-                    return block.text || '';
-                default:
-                    return block.text || '';
-            }
-        }).join('\n');
+        return sortedBlocks.map(block => block.content || block.text || '').join('\n');
     }
     
     /**
@@ -442,7 +441,7 @@ class PDFOCRSelection {
     selectBlock(block) {
         this.clearSelection();
         this.selectedBlocks = [block];
-        this.selectedText = this.extractSelectedText();
+        this.selectedText = block.content || block.text || '';
         this.highlightBlock(block);
         this.showFloatingToolbar();
     }
@@ -451,18 +450,17 @@ class PDFOCRSelection {
      * 显示悬浮工具栏
      */
     showFloatingToolbar() {
-        // 计算工具栏位置
         const selectionRect = this.getSelectionRect();
-        const toolbarX = (selectionRect.left + selectionRect.right) / 2;
-        const toolbarY = selectionRect.top - 50; // 在选择区域上方
+        const layer = this.elements.selectionLayer;
+        if (!layer) return;
         
-        // 触发显示工具栏事件
+        const layerRect = layer.getBoundingClientRect();
+        
         this.emit('showToolbar', {
-            x: toolbarX,
-            y: toolbarY,
+            x: layerRect.left + (selectionRect.left + selectionRect.right) / 2,
+            y: layerRect.top + selectionRect.top - 50,
             selectedText: this.selectedText,
-            selectedBlocks: this.selectedBlocks,
-            selectionRect: selectionRect
+            selectedBlocks: this.selectedBlocks
         });
     }
     
@@ -476,16 +474,13 @@ class PDFOCRSelection {
         this.selectedBlocks = [];
         this.selectedText = '';
         
-        // 移除选择框
         if (this.selectionBox) {
             this.selectionBox.remove();
             this.selectionBox = null;
         }
         
-        // 清除高亮
         this.clearHighlightOverlays();
         
-        // 触发清除事件
         this.emit('clearSelection');
     }
     
@@ -529,6 +524,5 @@ class PDFOCRSelection {
     }
 }
 
-// 暴露类定义
 window.PDFOCRSelection = PDFOCRSelection;
-window.pdfO
+window.pdfOCRSelection = null;

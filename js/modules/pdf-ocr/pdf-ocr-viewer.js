@@ -42,7 +42,8 @@ class PDFOCRViewer {
             container: document.getElementById('pdf-ocr-container'),
             blocksLayer: document.getElementById('ocr-blocks-layer'),
             structuredContent: document.getElementById('ocr-structured-content'),
-            blockDetails: document.getElementById('ocr-block-details')
+            blockDetails: document.getElementById('ocr-block-details'),
+            viewerWrap: document.querySelector('.viewer-wrap')
         };
     }
 
@@ -118,6 +119,9 @@ class PDFOCRViewer {
         const container = document.getElementById('ocr-blocks-layer');
         if (!container) return;
 
+        // 显示区块层
+        container.style.display = 'block';
+
         // 清空现有区块
         container.innerHTML = '';
         this.blockOverlays.clear();
@@ -136,6 +140,8 @@ class PDFOCRViewer {
 
         // 应用筛选
         this.updateBlockVisibility();
+
+        console.log(`[PDF-OCR] 渲染了 ${pageBlocks.length} 个区块`);
     }
 
     /**
@@ -147,11 +153,14 @@ class PDFOCRViewer {
         overlay.dataset.blockId = block.id;
         overlay.dataset.blockType = block.type;
 
-        // 设置位置和大小（相对于容器）
-        const container = document.getElementById('pdf-canvas');
-        if (container && block.bbox) {
-            const scaleX = container.offsetWidth / (block.bbox.page_width || container.offsetWidth);
-            const scaleY = container.offsetHeight / (block.bbox.page_height || container.offsetHeight);
+        // 设置位置和大小（相对于viewer-wrap容器）
+        const viewerWrap = document.querySelector('.viewer-wrap');
+        const pdfImage = viewerWrap ? viewerWrap.querySelector('img, canvas') : null;
+        
+        if (pdfImage && block.bbox) {
+            // 使用PDF图片的实际尺寸计算缩放比例
+            const scaleX = pdfImage.offsetWidth / (block.bbox.page_width || pdfImage.offsetWidth);
+            const scaleY = pdfImage.offsetHeight / (block.bbox.page_height || pdfImage.offsetHeight);
 
             const left = block.bbox.lt[0] * scaleX;
             const top = block.bbox.lt[1] * scaleY;
@@ -162,6 +171,10 @@ class PDFOCRViewer {
             overlay.style.top = `${top}px`;
             overlay.style.width = `${width}px`;
             overlay.style.height = `${height}px`;
+            
+            console.log(`[PDF-OCR] 创建区块 ${block.id}: left=${left.toFixed(1)}, top=${top.toFixed(1)}, width=${width.toFixed(1)}, height=${height.toFixed(1)}`);
+        } else {
+            console.warn(`[PDF-OCR] 无法计算区块位置:`, block);
         }
 
         // 设置颜色
@@ -318,14 +331,14 @@ class PDFOCRViewer {
 
         if (btn) {
             btn.classList.toggle('active', this.isBlockMode);
-            btn.innerHTML = this.isBlockMode 
-                ? '<i class="fas fa-eye-slash"></i> 隐藏解析区块'
-                : '<i class="fas fa-eye"></i> 显示解析区块';
+            btn.textContent = this.isBlockMode ? '隐藏区块' : '显示区块';
         }
 
         if (this.isBlockMode) {
             this.renderBlocks();
         }
+        
+        console.log(`[PDF-OCR] 区块显示模式: ${this.isBlockMode ? '开启' : '关闭'}`);
     }
 
     /**

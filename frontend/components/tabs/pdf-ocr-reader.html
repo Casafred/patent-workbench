@@ -1,293 +1,166 @@
 <!-- 功能九：PDF阅读与OCR解析 -->
 <div id="pdf_ocr_reader-tab" class="tab-content">
     <div id="pdf-ocr-container" class="pdf-ocr-container">
-        <!-- 功能说明头部 -->
-        <div class="pdf-ocr-header">
-            <h3 class="pdf-ocr-title">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                    <polyline points="10 9 9 9 8 9"></polyline>
-                </svg>
-                PDF阅读与OCR解析
-            </h3>
-            <p class="pdf-ocr-subtitle">上传PDF或图片，使用智谱GLM-OCR进行智能解析。划词选中内容可进行翻译、对话等操作</p>
-        </div>
-
-        <!-- 主内容区 -->
-        <div class="pdf-ocr-main">
-            <!-- 左侧栏：文件和页面导航 -->
-            <div class="pdf-ocr-sidebar-left">
-                <!-- 文件上传区 -->
-                <div class="pdf-ocr-section">
-                    <h4 class="section-title">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <!-- 左侧边栏：文件控制 -->
+        <div class="pdf-ocr-sidebar">
+            <!-- 文件上传 -->
+            <div class="ocr-panel">
+                <h4 class="panel-title">📄 文件上传</h4>
+                <div id="pdf_upload_dropzone" class="upload-zone">
+                    <input type="file" id="ocr-file-input" accept=".pdf,.png,.jpg,.jpeg,.bmp,.webp" style="display: none;">
+                    <div class="upload-placeholder">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                             <polyline points="17 8 12 3 7 8"></polyline>
                             <line x1="12" y1="3" x2="12" y2="15"></line>
                         </svg>
-                        文件上传
-                    </h4>
-                    <div id="pdf_upload_dropzone" class="pdf-upload-dropzone">
-                        <input type="file" id="ocr-file-input" accept=".pdf,.png,.jpg,.jpeg,.bmp,.webp" style="display: none;">
-                        <div class="dropzone-content">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="17 8 12 3 7 8"></polyline>
-                                <line x1="12" y1="3" x2="12" y2="15"></line>
-                            </svg>
-                            <p>点击或拖拽上传</p>
-                            <span class="file-types">支持 PDF、PNG、JPG、WEBP</span>
-                        </div>
-                    </div>
-                    <div id="pdf_file_info" class="pdf-file-info" style="display: none;">
-                        <div class="file-name" id="pdf_file_name"></div>
-                        <button class="small-button" id="pdf_remove_file_btn">移除</button>
+                        <p>点击或拖拽上传</p>
+                        <span class="hint">PDF、PNG、JPG，≤10MB</span>
                     </div>
                 </div>
-
-                <!-- OCR控制面板 -->
-                <div class="pdf-ocr-section">
-                    <h4 class="section-title">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <path d="m21 21-4.35-4.35"></path>
-                            <line x1="11" y1="8" x2="11" y2="14"></line>
-                            <line x1="8" y1="11" x2="14" y2="11"></line>
-                        </svg>
-                        OCR解析
-                    </h4>
-                    <div class="ocr-controls">
-                        <div class="control-group">
-                            <label>解析范围</label>
-                            <select id="ocr-parse-mode" class="form-select">
-                                <option value="auto">全部页面</option>
-                                <option value="page">当前页面</option>
-                            </select>
-                        </div>
-                        <div class="control-group checkbox-group">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="ocr-recognize-formula" checked> 识别公式
-                            </label>
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="ocr-recognize-table" checked> 识别表格
-                            </label>
-                        </div>
-                        <button id="start-ocr-btn" class="action-button" disabled>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                            </svg>
-                            开始OCR解析
-                        </button>
-                    </div>
-                    <div id="ocr-progress-container" class="ocr-progress-container" style="display: none;">
-                        <div class="progress-bar">
-                            <div id="ocr-progress-bar" class="progress-fill"></div>
-                        </div>
-                        <div id="ocr-progress-text" class="progress-text">准备中...</div>
-                    </div>
-                </div>
-
-                <!-- 页面缩略图 -->
-                <div class="pdf-ocr-section page-thumbnails-section">
-                    <h4 class="section-title">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="3" width="7" height="7"></rect>
-                            <rect x="14" y="3" width="7" height="7"></rect>
-                            <rect x="14" y="14" width="7" height="7"></rect>
-                            <rect x="3" y="14" width="7" height="7"></rect>
-                        </svg>
-                        页面导航
-                    </h4>
-                    <div id="page_thumbnails" class="page-thumbnails">
-                        <div class="empty-state">请先上传文件</div>
-                    </div>
+                <div id="pdf_file_info" class="file-info" style="display: none;">
+                    <span id="pdf_file_name"></span>
+                    <button class="btn-small" id="pdf_remove_file_btn">移除</button>
                 </div>
             </div>
 
-            <!-- 中间阅读区 -->
-            <div class="pdf-ocr-viewer">
-                <!-- 工具栏 -->
-                <div class="viewer-toolbar">
-                    <div class="toolbar-group">
-                        <button id="viewer_prev_page" class="toolbar-btn" title="上一页">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="15 18 9 12 15 6"></polyline>
-                            </svg>
-                        </button>
-                        <span class="page-indicator">
-                            <input type="number" id="viewer_page_input" class="page-input" value="1" min="1">
-                            <span>/</span>
-                            <span id="viewer_total_pages">1</span>
-                        </span>
-                        <button id="viewer_next_page" class="toolbar-btn" title="下一页">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="9 18 15 12 9 6"></polyline>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="toolbar-group">
-                        <button id="viewer_zoom_out" class="toolbar-btn" title="缩小">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                                <line x1="8" y1="11" x2="14" y2="11"></line>
-                            </svg>
-                        </button>
-                        <select id="viewer_zoom_select" class="zoom-select">
-                            <option value="0.5">50%</option>
-                            <option value="0.75">75%</option>
-                            <option value="1.0" selected>100%</option>
-                            <option value="1.25">125%</option>
-                            <option value="1.5">150%</option>
-                            <option value="2.0">200%</option>
-                            <option value="fit">适应宽度</option>
-                        </select>
-                        <button id="viewer_zoom_in" class="toolbar-btn" title="放大">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                                <line x1="11" y1="8" x2="11" y2="14"></line>
-                                <line x1="8" y1="11" x2="14" y2="11"></line>
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="toolbar-group">
-                        <button id="toggle-ocr-blocks" class="toolbar-btn" title="显示/隐藏识别区块">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                <line x1="3" y1="9" x2="21" y2="9"></line>
-                                <line x1="9" y1="21" x2="9" y2="9"></line>
-                            </svg>
-                        </button>
-                    </div>
+            <!-- OCR控制 -->
+            <div class="ocr-panel">
+                <h4 class="panel-title">🔍 OCR解析</h4>
+                <div class="control-group">
+                    <label>解析范围</label>
+                    <select id="ocr-parse-mode" class="form-select">
+                        <option value="page">当前页面</option>
+                        <option value="auto">全部页面</option>
+                    </select>
                 </div>
-
-                <!-- 文档渲染区 -->
-                <div id="pdf-canvas" class="viewer-container">
-                    <div id="ocr-blocks-layer" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none;"></div>
-                    <div class="empty-state">
-                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                            <line x1="16" y1="13" x2="8" y2="13"></line>
-                            <line x1="16" y1="17" x2="8" y2="17"></line>
-                            <polyline points="10 9 9 9 8 9"></polyline>
-                        </svg>
-                        <p>请上传PDF或图片文件开始阅读</p>
-                        <p class="hint">上传后可在文档上划词选中，进行翻译、对话等操作</p>
-                    </div>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" id="ocr-recognize-formula" checked> 识别公式</label>
+                    <label><input type="checkbox" id="ocr-recognize-table" checked> 识别表格</label>
                 </div>
+                <button id="start-ocr-btn" class="btn-primary" disabled>
+                    开始OCR解析
+                </button>
+                <div id="ocr-progress-container" class="progress-wrap" style="display: none;">
+                    <div class="progress-bar">
+                        <div id="ocr-progress-bar" class="progress-fill"></div>
+                    </div>
+                    <span id="ocr-progress-text">准备中...</span>
+                </div>
+            </div>
 
-                <!-- 结构化内容标签页 -->
-                <div class="content-tabs">
-                    <div class="tab-headers">
-                        <button class="tab-header active" data-tab="original">原文</button>
-                        <button class="tab-header" data-tab="structured">结构化</button>
-                        <button class="tab-header" data-tab="markdown">Markdown</button>
-                    </div>
-                    <div class="tab-contents">
-                        <div id="tab_original" class="tab-content-panel active">
-                            <div id="ocr-original-content" class="content-text">请先进行OCR解析</div>
-                        </div>
-                        <div id="tab_structured" class="tab-content-panel">
-                            <div class="filter-bar">
-                                <label>显示类型：</label>
-                                <select id="ocr-block-filter" class="form-select">
-                                    <option value="all">全部</option>
-                                    <option value="text">文本</option>
-                                    <option value="table">表格</option>
-                                    <option value="formula">公式</option>
-                                    <option value="image">图片</option>
-                                </select>
-                            </div>
-                            <div id="ocr-structured-content" class="structured-list">请先进行OCR解析</div>
-                        </div>
-                        <div id="tab_markdown" class="tab-content-panel">
-                            <div id="ocr-markdown-content" class="content-text markdown-content">请先进行OCR解析</div>
-                        </div>
-                    </div>
+            <!-- 识别结果列表 -->
+            <div class="ocr-panel results-panel">
+                <h4 class="panel-title">📋 识别结果</h4>
+                <div class="filter-bar">
+                    <select id="ocr-block-filter" class="form-select">
+                        <option value="all">全部类型</option>
+                        <option value="text">文本</option>
+                        <option value="table">表格</option>
+                        <option value="formula">公式</option>
+                        <option value="image">图片</option>
+                    </select>
+                </div>
+                <div id="ocr-structured-content" class="results-list">
+                    <div class="empty-tip">请先上传文件并解析</div>
+                </div>
+            </div>
+
+            <!-- 导出 -->
+            <div class="ocr-panel">
+                <h4 class="panel-title">💾 导出</h4>
+                <div class="export-btns">
+                    <button id="ocr-export-json" class="btn-small" disabled>JSON</button>
+                    <button id="ocr-export-markdown" class="btn-small" disabled>Markdown</button>
+                    <button id="ocr-export-text" class="btn-small" disabled>TXT</button>
                 </div>
             </div>
         </div>
 
-        <!-- 下方功能区 - 简化版 -->
-        <div class="pdf-ocr-bottom-section">
-            <!-- 区块详情 -->
-            <div class="pdf-ocr-section block-details-section">
-                <h4 class="section-title">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="3" y1="9" x2="21" y2="9"></line>
-                        <line x1="9" y1="21" x2="9" y2="9"></line>
-                    </svg>
-                    区块详情
-                </h4>
-                <div id="ocr-block-details" class="block-details">
+        <!-- 中间主区域：PDF查看器 -->
+        <div class="pdf-ocr-main">
+            <!-- 工具栏 -->
+            <div class="viewer-toolbar">
+                <div class="toolbar-left">
+                    <button id="viewer_prev_page" class="btn-icon" title="上一页">◀</button>
+                    <span class="page-info">
+                        <input type="number" id="viewer_page_input" value="1" min="1"> / <span id="viewer_total_pages">1</span>
+                    </span>
+                    <button id="viewer_next_page" class="btn-icon" title="下一页">▶</button>
+                </div>
+                <div class="toolbar-center">
+                    <button id="viewer_zoom_out" class="btn-icon" title="缩小">−</button>
+                    <select id="viewer_zoom_select">
+                        <option value="0.5">50%</option>
+                        <option value="0.75">75%</option>
+                        <option value="1.0" selected>100%</option>
+                        <option value="1.25">125%</option>
+                        <option value="1.5">150%</option>
+                        <option value="2.0">200%</option>
+                    </select>
+                    <button id="viewer_zoom_in" class="btn-icon" title="放大">+</button>
+                </div>
+                <div class="toolbar-right">
+                    <button id="toggle-ocr-blocks" class="btn-toggle" title="显示/隐藏识别区块">
+                        显示区块
+                    </button>
+                </div>
+            </div>
+
+            <!-- PDF渲染区 -->
+            <div class="viewer-wrap">
+                <div id="pdf-canvas" class="viewer-container">
                     <div class="empty-state">
-                        <i class="fas fa-mouse-pointer"></i>
-                        <p>点击解析区块查看详情</p>
-                        <p class="hint">或划词选中内容进行翻译、对话</p>
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        <p>请上传PDF或图片文件</p>
+                        <p class="hint">上传后可进行OCR识别，支持划词选中</p>
+                    </div>
+                </div>
+                <!-- OCR区块层 -->
+                <div id="ocr-blocks-layer" class="blocks-layer" style="display: none;"></div>
+                <!-- 划词选择层 -->
+                <div id="ocr-selection-layer" class="selection-layer" style="display: none;"></div>
+            </div>
+
+            <!-- 底部信息栏 -->
+            <div class="viewer-footer">
+                <div class="footer-left">
+                    <span id="ocr-status">就绪</span>
+                </div>
+                <div class="footer-right">
+                    <span>文本: <b id="stat-text">0</b></span>
+                    <span>表格: <b id="stat-table">0</b></span>
+                    <span>公式: <b id="stat-formula">0</b></span>
+                    <span>图片: <b id="stat-image">0</b></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧边栏：内容预览 -->
+        <div class="pdf-ocr-rightbar">
+            <div class="ocr-panel content-panel">
+                <h4 class="panel-title">📝 识别文本</h4>
+                <div class="content-tabs">
+                    <button class="tab-btn active" data-tab="original">原文</button>
+                    <button class="tab-btn" data-tab="markdown">Markdown</button>
+                </div>
+                <div class="content-body">
+                    <div id="tab_original" class="tab-content active">
+                        <div id="ocr-original-content" class="text-content">请先进行OCR解析</div>
+                    </div>
+                    <div id="tab_markdown" class="tab-content">
+                        <div id="ocr-markdown-content" class="text-content">请先进行OCR解析</div>
                     </div>
                 </div>
             </div>
 
-            <!-- 解析统计 -->
-            <div class="pdf-ocr-section stats-section">
-                <h4 class="section-title">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="20" x2="18" y2="10"></line>
-                        <line x1="12" y1="20" x2="12" y2="4"></line>
-                        <line x1="6" y1="20" x2="6" y2="14"></line>
-                    </svg>
-                    解析统计
-                </h4>
-                <div id="ocr-stats" class="ocr-stats">
-                    <div class="stat-item">
-                        <span class="stat-label">总区块</span>
-                        <span id="ocr-stat-total" class="stat-value">-</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">文本块</span>
-                        <span id="ocr-stat-text" class="stat-value">-</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">表格</span>
-                        <span id="ocr-stat-table" class="stat-value">-</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">公式</span>
-                        <span id="ocr-stat-formula" class="stat-value">-</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">图片</span>
-                        <span id="ocr-stat-image" class="stat-value">-</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 导出功能 -->
-            <div class="pdf-ocr-section export-section">
-                <h4 class="section-title">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="7 10 12 15 17 10"></polyline>
-                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                    </svg>
-                    导出结果
-                </h4>
-                <div class="export-buttons">
-                    <button id="ocr-export-json" class="small-button" disabled>
-                        导出 JSON
-                    </button>
-                    <button id="ocr-export-markdown" class="small-button" disabled>
-                        导出 Markdown
-                    </button>
-                    <button id="ocr-export-text" class="small-button" disabled>
-                        导出 TXT
-                    </button>
+            <div class="ocr-panel">
+                <h4 class="panel-title">ℹ️ 区块详情</h4>
+                <div id="ocr-block-details" class="block-details">
+                    <div class="empty-tip">点击左侧识别结果查看详情</div>
                 </div>
             </div>
         </div>
