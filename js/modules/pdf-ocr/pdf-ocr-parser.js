@@ -205,18 +205,16 @@ class PDFOCRParser {
 
     /**
      * 调用GLM-OCR API
-     * 使用Base64编码的图片数据，以JSON格式发送
+     * 根据文档使用application/json格式，file字段支持URL或Base64
      */
     async callGLMOCR(fileData, apiKey, settings) {
         // 将文件转换为Base64
         const base64Data = await this.fileToBase64(fileData.data);
         
-        // 构建请求体
+        // 构建请求体 - 根据API文档，使用file字段（不是image字段）
         const requestBody = {
             model: "glm-ocr",
-            image: base64Data,
-            recognize_formula: settings.recognizeFormula,
-            recognize_table: settings.recognizeTable
+            file: base64Data
         };
 
         // 发送请求
@@ -244,9 +242,9 @@ class PDFOCRParser {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => {
-                // 移除data:image/png;base64,前缀，只保留Base64数据
-                const base64 = reader.result.split(',')[1];
-                resolve(base64);
+                // 返回完整的Data URL格式，包含data:image/png;base64,前缀
+                // API文档说明file字段支持base64格式
+                resolve(reader.result);
             };
             reader.onerror = reject;
             reader.readAsDataURL(file);
