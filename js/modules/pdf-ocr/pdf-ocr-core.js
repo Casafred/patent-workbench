@@ -165,13 +165,15 @@ class PDFOCRCore {
             this.elements.toggleBlocksBtn.addEventListener('click', () => this.toggleBlocks());
         }
         
-        // 标签页切换
-        this.elements.tabHeaders.forEach(header => {
-            header.addEventListener('click', () => {
-                const tabName = header.dataset.tab;
-                this.switchTab(tabName);
+        // 标签页切换（如果存在）
+        if (this.elements.tabHeaders && this.elements.tabHeaders.length > 0) {
+            this.elements.tabHeaders.forEach(header => {
+                header.addEventListener('click', () => {
+                    const tabName = header.dataset.tab;
+                    this.switchTab(tabName);
+                });
             });
-        });
+        }
         
         // 区块筛选器
         if (this.elements.blockFilter) {
@@ -356,6 +358,12 @@ class PDFOCRCore {
      * 渲染页面缩略图
      */
     async renderPageThumbnails() {
+        // 如果页面中没有缩略图容器，则跳过
+        if (!this.elements.pageThumbnails) {
+            console.log('[PDF-OCR] 页面缩略图容器不存在，跳过渲染');
+            return;
+        }
+        
         this.elements.pageThumbnails.innerHTML = '';
         
         for (let i = 1; i <= this.totalPages; i++) {
@@ -405,6 +413,8 @@ class PDFOCRCore {
      * 绑定缩略图事件
      */
     bindThumbnailEvents() {
+        if (!this.elements.pageThumbnails) return;
+        
         const thumbnails = this.elements.pageThumbnails.querySelectorAll('.page-thumbnail');
         thumbnails.forEach(thumb => {
             thumb.addEventListener('click', () => {
@@ -545,15 +555,19 @@ class PDFOCRCore {
      * 切换标签页
      */
     switchTab(tabName) {
-        // 更新标签头
-        this.elements.tabHeaders.forEach(header => {
-            header.classList.toggle('active', header.dataset.tab === tabName);
-        });
+        // 更新标签头（如果存在）
+        if (this.elements.tabHeaders) {
+            this.elements.tabHeaders.forEach(header => {
+                header.classList.toggle('active', header.dataset.tab === tabName);
+            });
+        }
         
-        // 更新面板
-        this.elements.tabPanels.forEach(panel => {
-            panel.classList.remove('active');
-        });
+        // 更新面板（如果存在）
+        if (this.elements.tabPanels) {
+            this.elements.tabPanels.forEach(panel => {
+                panel.classList.remove('active');
+            });
+        }
         
         const targetPanel = document.getElementById(`tab_${tabName}`);
         if (targetPanel) {
@@ -607,10 +621,10 @@ class PDFOCRCore {
         if (this.elements.statFormula) this.elements.statFormula.textContent = '-';
         if (this.elements.statImage) this.elements.statImage.textContent = '-';
         
-        // 重置内容
-        this.elements.originalContent.textContent = '请先进行OCR解析';
-        this.elements.structuredContent.innerHTML = '请先进行OCR解析';
-        this.elements.translationContent.textContent = '请先进行OCR解析';
+        // 重置内容（如果元素存在）
+        if (this.elements.originalContent) this.elements.originalContent.textContent = '请先进行OCR解析';
+        if (this.elements.structuredContent) this.elements.structuredContent.innerHTML = '请先进行OCR解析';
+        if (this.elements.translationContent) this.elements.translationContent.textContent = '请先进行OCR解析';
         
         // 禁用导出
         this.elements.exportJsonBtn.disabled = true;
