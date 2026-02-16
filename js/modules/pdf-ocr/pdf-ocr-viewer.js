@@ -1162,7 +1162,7 @@ class PDFOCRViewer {
                 justify-content: space-between;
                 align-items: center;
                 padding: 12px 16px;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
                 color: white;
                 flex-shrink: 0;
             }
@@ -1220,7 +1220,7 @@ class PDFOCRViewer {
                 line-height: 1.5;
             }
             .ocr-chat-popup .chat-message.user .message-content {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
                 color: white;
             }
             .ocr-chat-popup .chat-message.assistant .message-content {
@@ -1244,11 +1244,11 @@ class PDFOCRViewer {
                 outline: none;
             }
             .ocr-chat-popup .popup-input textarea:focus {
-                border-color: #667eea;
+                border-color: #22c55e;
             }
             .ocr-chat-popup .send-btn {
                 padding: 10px 20px;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
                 color: white;
                 border: none;
                 border-radius: 8px;
