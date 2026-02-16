@@ -407,12 +407,27 @@ class PDFOCRViewer {
 
         this.selectedBlock = block;
 
+        // 确保区块层可见
+        const layer = document.getElementById('ocr-blocks-layer');
+        if (layer) {
+            layer.style.display = 'block';
+        }
+
+        // 如果区块还没有渲染，先渲染
+        if (!this.blockOverlays.has(block.id)) {
+            this.renderBlocks();
+        }
+
+        // 更新可见性（只显示选中的区块，如果不是全部显示模式）
+        this.updateBlockVisibility();
+
         // 高亮覆盖层
         const overlay = this.blockOverlays.get(block.id);
         if (overlay) {
             overlay.classList.add('selected');
             overlay.style.backgroundColor = this.colors.selected;
             overlay.style.borderColor = this.borderColors.selected;
+            overlay.style.display = 'block'; // 确保显示
         }
 
         // 高亮结构化内容列表中的对应项
@@ -450,6 +465,14 @@ class PDFOCRViewer {
         document.querySelectorAll('.ocr-content-item.selected').forEach(item => {
             item.classList.remove('selected');
         });
+
+        // 如果不是全部显示模式，隐藏区块层
+        if (!this.isBlockMode) {
+            const layer = document.getElementById('ocr-blocks-layer');
+            if (layer) {
+                layer.style.display = 'none';
+            }
+        }
     }
 
     /**
@@ -484,7 +507,19 @@ class PDFOCRViewer {
      * 更新区块可见性（根据筛选条件）
      */
     updateBlockVisibility() {
-        // 更新区块覆盖层
+        // 如果不是显示全部区块模式，只显示选中的区块
+        if (!this.isBlockMode) {
+            this.blockOverlays.forEach((overlay, blockId) => {
+                if (this.selectedBlock && blockId === this.selectedBlock.id) {
+                    overlay.style.display = 'block';
+                } else {
+                    overlay.style.display = 'none';
+                }
+            });
+            return;
+        }
+
+        // 显示全部区块模式
         this.blockOverlays.forEach((overlay, blockId) => {
             const blockType = overlay.dataset.blockType;
             if (this.filterType === 'all' || blockType === this.filterType) {
@@ -507,7 +542,7 @@ class PDFOCRViewer {
     }
 
     /**
-     * 切换区块显示模式
+     * 切换全部区块显示模式
      */
     toggleBlockMode() {
         this.isBlockMode = !this.isBlockMode;
@@ -515,21 +550,25 @@ class PDFOCRViewer {
         const btn = document.getElementById('toggle-ocr-blocks');
 
         if (layer) {
-            layer.style.display = this.isBlockMode ? 'block' : 'none';
+            layer.style.display = this.isBlockMode || this.selectedBlock ? 'block' : 'none';
         }
 
         if (btn) {
             btn.classList.toggle('active', this.isBlockMode);
-            btn.textContent = this.isBlockMode ? '隐藏区块' : '显示区块';
+            btn.textContent = this.isBlockMode ? '隐藏全部区块' : '显示全部区块';
         }
 
         if (this.isBlockMode) {
             this.renderBlocks();
+            this.updateBlockVisibility();
             // 自动打开悬浮面板显示识别文本
             this.showFloatingPanel();
+        } else {
+            // 隐藏全部区块，但如果有选中的区块，仍然显示
+            this.updateBlockVisibility();
         }
         
-        console.log(`[PDF-OCR] 区块显示模式: ${this.isBlockMode ? '开启' : '关闭'}`);
+        console.log(`[PDF-OCR] 全部区块显示模式: ${this.isBlockMode ? '开启' : '关闭'}`);
     }
 
     /**
