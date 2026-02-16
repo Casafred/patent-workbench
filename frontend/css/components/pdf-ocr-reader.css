@@ -15,7 +15,8 @@
     background: #f8fafc;
     min-height: calc(100vh - 80px);
     max-height: calc(100vh - 80px);
-    overflow: hidden;
+    overflow: visible;
+    position: relative;
 }
 
 /* 左侧面板 */
@@ -73,7 +74,7 @@
     background: white;
     border-radius: 12px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-    z-index: 1000;
+    z-index: 9999;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -175,22 +176,29 @@
     color: #1e293b;
 }
 
-/* 按钮样式修复 */
+/* 按钮样式修复 - 主题绿色背景白色字体 */
 .content-item-actions .btn-icon {
-    background: #f1f5f9 !important;
-    border: 1px solid #e2e8f0 !important;
-    color: #475569 !important;
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+    border: 1px solid #16a34a !important;
+    color: white !important;
+    box-shadow: 0 2px 4px rgba(34, 197, 94, 0.3);
 }
 
 .content-item-actions .btn-icon:hover {
-    background: #3b82f6 !important;
+    background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important;
     color: white !important;
-    border-color: #3b82f6 !important;
+    border-color: #15803d !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(34, 197, 94, 0.4);
+}
+
+.content-item-actions .btn-icon:active {
+    transform: translateY(0);
 }
 
 .content-item-actions .btn-icon svg,
 .content-item-actions .btn-icon i {
-    color: inherit !important;
+    color: white !important;
 }
 
 /* 中间主区域 */
@@ -446,6 +454,9 @@
     padding: 12px 16px;
     border-bottom: 1px solid #e2e8f0;
     background: #f8fafc;
+    position: relative;
+    z-index: 100;
+    flex-shrink: 0;
 }
 
 .toolbar-left, .toolbar-center, .toolbar-right {
@@ -518,10 +529,12 @@
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
     pointer-events: none;
     z-index: 50;
+}
+
+.blocks-layer .ocr-block-overlay {
+    pointer-events: auto;
 }
 
 /* 选择层 */

@@ -787,40 +787,509 @@ class PDFOCRViewer {
     }
 
     /**
-     * 翻译区块
+     * 翻译区块 - 一键调用AI翻译
      */
-    translateBlock(block) {
+    async translateBlock(block) {
         const text = this.getBlockFullText(block);
-        
-        // 直接使用简单的翻译提示
-        this.showToast('翻译功能需要集成AI服务，已将内容复制到剪贴板', 'info');
-        this.copyBlockContent(block);
-        
-        // 触发翻译事件
-        this.emit('translateBlock', { block, text });
-        
-        console.log('[PDF-OCR] 翻译区块:', block);
+        if (!text) {
+            this.showToast('没有可翻译的内容', 'error');
+            return;
+        }
+
+        // 获取API密钥
+        const apiKey = await this.getAPIKey();
+        if (!apiKey) {
+            this.showToast('请先配置智谱AI API密钥', 'error');
+            return;
+        }
+
+        // 显示翻译中状态
+        this.showToast('正在翻译...', 'info');
+
+        try {
+            const translated = await this.callTranslateAPI(text, apiKey);
+            
+            // 显示翻译结果
+            this.showTranslationResult(text, translated, block);
+            
+        } catch (error) {
+            console.error('[PDF-OCR] 翻译失败:', error);
+            this.showToast('翻译失败: ' + error.message, 'error');
+        }
     }
 
     /**
-     * 对区块提问
+     * 调用翻译API
      */
-    askAboutBlock(block) {
-        const text = this.getBlockFullText(block);
-        const context = `关于以下内容：\n\n${text}\n\n`;
+    async callTranslateAPI(text, apiKey) {
+        const url = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
 
-        // 触发提问事件
-        this.emit('askAboutBlock', { block, context });
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: 'glm-4-flash',
+                messages: [
+                    {
+                        role: 'system',
+                        content: '你是一个专业的翻译助手。请将用户提供的文本翻译成中文，只返回翻译结果，不要添加任何解释。如果原文已经是中文，请翻译成英文。'
+                    },
+                    {
+                        role: 'user',
+                        content: text
+                    }
+                ],
+                temperature: 0.3,
+                max_tokens: 2048
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error?.message || `API请求失败: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data.choices?.[0]?.message?.content || '';
+    }
+
+    /**
+     * 显示翻译结果弹窗
+     */
+    showTranslationResult(original, translated, block) {
+        // 移除已有的翻译弹窗
+        document.querySelectorAll('.ocr-translation-popup').forEach(p => p.remove());
+
+        const popup = document.createElement('div');
+        popup.className = 'ocr-translation-popup';
+        popup.innerHTML = `
+            <div class="popup-header">
+                <span class="popup-title">🌐 翻译结果</span>
+                <button class="popup-close">×</button>
+            </div>
+            <div class="popup-body">
+                <div class="translation-section">
+                    <div class="section-label">原文</div>
+                    <div class="section-content original">${this.escapeHtml(original.substring(0, 500))}${original.length > 500 ? '...' : ''}</div>
+                </div>
+                <div class="translation-section">
+                    <div class="section-label">译文</div>
+                    <div class="section-content translated">${this.escapeHtml(translated)}</div>
+                </div>
+            </div>
+            <div class="popup-footer">
+                <button class="popup-btn copy-btn">复制译文</button>
+                <button class="popup-btn close-btn">关闭</button>
+            </div>
+        `;
+
+        // 添加样式
+        popup.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            z-index: 10000;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        `;
+
+        // 添加内部样式
+        const style = document.createElement('style');
+        style.textContent = `
+            .ocr-translation-popup .popup-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 12px 16px;
+                background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+                color: white;
+            }
+            .ocr-translation-popup .popup-title {
+                font-weight: 600;
+                font-size: 14px;
+            }
+            .ocr-translation-popup .popup-close {
+                background: none;
+                border: none;
+                color: white;
+                font-size: 20px;
+                cursor: pointer;
+                opacity: 0.8;
+            }
+            .ocr-translation-popup .popup-close:hover {
+                opacity: 1;
+            }
+            .ocr-translation-popup .popup-body {
+                padding: 16px;
+                overflow-y: auto;
+                flex: 1;
+            }
+            .ocr-translation-popup .translation-section {
+                margin-bottom: 16px;
+            }
+            .ocr-translation-popup .section-label {
+                font-size: 12px;
+                color: #64748b;
+                margin-bottom: 4px;
+                font-weight: 500;
+            }
+            .ocr-translation-popup .section-content {
+                font-size: 14px;
+                line-height: 1.6;
+                color: #334155;
+                padding: 12px;
+                background: #f8fafc;
+                border-radius: 8px;
+                white-space: pre-wrap;
+            }
+            .ocr-translation-popup .section-content.translated {
+                background: #f0fdf4;
+                border: 1px solid #bbf7d0;
+            }
+            .ocr-translation-popup .popup-footer {
+                display: flex;
+                justify-content: flex-end;
+                gap: 8px;
+                padding: 12px 16px;
+                border-top: 1px solid #e2e8f0;
+            }
+            .ocr-translation-popup .popup-btn {
+                padding: 8px 16px;
+                border-radius: 6px;
+                font-size: 13px;
+                cursor: pointer;
+                border: none;
+            }
+            .ocr-translation-popup .copy-btn {
+                background: #22c55e;
+                color: white;
+            }
+            .ocr-translation-popup .copy-btn:hover {
+                background: #16a34a;
+            }
+            .ocr-translation-popup .close-btn {
+                background: #f1f5f9;
+                color: #475569;
+            }
+            .ocr-translation-popup .close-btn:hover {
+                background: #e2e8f0;
+            }
+        `;
+        popup.appendChild(style);
+
+        // 绑定事件
+        popup.querySelector('.popup-close').addEventListener('click', () => popup.remove());
+        popup.querySelector('.close-btn').addEventListener('click', () => popup.remove());
+        popup.querySelector('.copy-btn').addEventListener('click', async () => {
+            await navigator.clipboard.writeText(translated);
+            this.showToast('译文已复制到剪贴板', 'success');
+        });
+
+        // 点击背景关闭
+        popup.addEventListener('click', (e) => {
+            if (e.target === popup) popup.remove();
+        });
+
+        document.body.appendChild(popup);
+        this.showToast('翻译完成', 'success');
+    }
+
+    /**
+     * 对区块提问 - 一键调用AI
+     */
+    async askAboutBlock(block) {
+        const text = this.getBlockFullText(block);
+        if (!text) {
+            this.showToast('没有可提问的内容', 'error');
+            return;
+        }
+
+        // 获取API密钥
+        const apiKey = await this.getAPIKey();
+        if (!apiKey) {
+            this.showToast('请先配置智谱AI API密钥', 'error');
+            return;
+        }
 
         // 打开悬浮对话窗口
         if (window.pdfOCRFloatingChat) {
-            window.pdfOCRFloatingChat.openWithContext(context);
+            window.pdfOCRFloatingChat.openWithContext(text, apiKey);
         } else {
-            this.showToast('已将内容复制到剪贴板，可在AI对话中使用', 'info');
-            this.copyBlockContent(block);
+            // 如果没有悬浮对话窗口，创建一个简单的对话弹窗
+            this.showAIChatPopup(text, apiKey);
         }
-        
-        console.log('[PDF-OCR] 对区块提问:', block);
+    }
+
+    /**
+     * 显示AI对话弹窗
+     */
+    showAIChatPopup(context, apiKey) {
+        // 移除已有的对话弹窗
+        document.querySelectorAll('.ocr-chat-popup').forEach(p => p.remove());
+
+        const popup = document.createElement('div');
+        popup.className = 'ocr-chat-popup';
+        popup.innerHTML = `
+            <div class="popup-header">
+                <span class="popup-title">💬 AI问答</span>
+                <button class="popup-close">×</button>
+            </div>
+            <div class="popup-context">
+                <div class="context-label">选中内容：</div>
+                <div class="context-text">${this.escapeHtml(context.substring(0, 300))}${context.length > 300 ? '...' : ''}</div>
+            </div>
+            <div class="popup-messages" id="ocr-chat-messages"></div>
+            <div class="popup-input">
+                <textarea id="ocr-chat-input" placeholder="输入您的问题..."></textarea>
+                <button class="send-btn" id="ocr-chat-send">发送</button>
+            </div>
+        `;
+
+        // 添加样式
+        popup.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            z-index: 10000;
+            width: 450px;
+            max-width: 90%;
+            height: 500px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        `;
+
+        // 添加内部样式
+        const style = document.createElement('style');
+        style.textContent = `
+            .ocr-chat-popup .popup-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 12px 16px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                flex-shrink: 0;
+            }
+            .ocr-chat-popup .popup-title {
+                font-weight: 600;
+                font-size: 14px;
+            }
+            .ocr-chat-popup .popup-close {
+                background: none;
+                border: none;
+                color: white;
+                font-size: 20px;
+                cursor: pointer;
+                opacity: 0.8;
+            }
+            .ocr-chat-popup .popup-close:hover {
+                opacity: 1;
+            }
+            .ocr-chat-popup .popup-context {
+                padding: 12px 16px;
+                background: #f8fafc;
+                border-bottom: 1px solid #e2e8f0;
+                flex-shrink: 0;
+            }
+            .ocr-chat-popup .context-label {
+                font-size: 12px;
+                color: #64748b;
+                margin-bottom: 4px;
+            }
+            .ocr-chat-popup .context-text {
+                font-size: 13px;
+                color: #334155;
+                max-height: 60px;
+                overflow-y: auto;
+                white-space: pre-wrap;
+            }
+            .ocr-chat-popup .popup-messages {
+                flex: 1;
+                overflow-y: auto;
+                padding: 16px;
+            }
+            .ocr-chat-popup .chat-message {
+                margin-bottom: 12px;
+            }
+            .ocr-chat-popup .chat-message.user {
+                text-align: right;
+            }
+            .ocr-chat-popup .chat-message .message-content {
+                display: inline-block;
+                padding: 10px 14px;
+                border-radius: 12px;
+                max-width: 80%;
+                text-align: left;
+                font-size: 14px;
+                line-height: 1.5;
+            }
+            .ocr-chat-popup .chat-message.user .message-content {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+            }
+            .ocr-chat-popup .chat-message.assistant .message-content {
+                background: #f1f5f9;
+                color: #334155;
+            }
+            .ocr-chat-popup .popup-input {
+                display: flex;
+                gap: 8px;
+                padding: 12px 16px;
+                border-top: 1px solid #e2e8f0;
+                flex-shrink: 0;
+            }
+            .ocr-chat-popup .popup-input textarea {
+                flex: 1;
+                padding: 10px;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                resize: none;
+                font-size: 14px;
+                outline: none;
+            }
+            .ocr-chat-popup .popup-input textarea:focus {
+                border-color: #667eea;
+            }
+            .ocr-chat-popup .send-btn {
+                padding: 10px 20px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 14px;
+            }
+            .ocr-chat-popup .send-btn:hover {
+                opacity: 0.9;
+            }
+        `;
+        popup.appendChild(style);
+
+        // 绑定事件
+        popup.querySelector('.popup-close').addEventListener('click', () => popup.remove());
+
+        const input = popup.querySelector('#ocr-chat-input');
+        const sendBtn = popup.querySelector('#ocr-chat-send');
+        const messagesContainer = popup.querySelector('#ocr-chat-messages');
+
+        const sendMessage = async () => {
+            const message = input.value.trim();
+            if (!message) return;
+
+            // 添加用户消息
+            const userMsg = document.createElement('div');
+            userMsg.className = 'chat-message user';
+            userMsg.innerHTML = `<div class="message-content">${this.escapeHtml(message)}</div>`;
+            messagesContainer.appendChild(userMsg);
+            input.value = '';
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            // 调用AI
+            try {
+                const response = await this.callAIChat(context, message, apiKey);
+                
+                // 添加AI回复
+                const aiMsg = document.createElement('div');
+                aiMsg.className = 'chat-message assistant';
+                aiMsg.innerHTML = `<div class="message-content">${this.escapeHtml(response)}</div>`;
+                messagesContainer.appendChild(aiMsg);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            } catch (error) {
+                const errorMsg = document.createElement('div');
+                errorMsg.className = 'chat-message assistant';
+                errorMsg.innerHTML = `<div class="message-content" style="color: #ef4444;">请求失败: ${error.message}</div>`;
+                messagesContainer.appendChild(errorMsg);
+            }
+        };
+
+        sendBtn.addEventListener('click', sendMessage);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        document.body.appendChild(popup);
+        input.focus();
+    }
+
+    /**
+     * 调用AI对话API
+     */
+    async callAIChat(context, message, apiKey) {
+        const url = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: 'glm-4-flash',
+                messages: [
+                    {
+                        role: 'system',
+                        content: `你是一个专业的文档分析助手。用户选中了以下文档内容，请基于这个内容回答用户的问题。回答要准确、简洁、专业。\n\n选中内容：\n${context}`
+                    },
+                    {
+                        role: 'user',
+                        content: message
+                    }
+                ],
+                temperature: 0.7,
+                max_tokens: 2048
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error?.message || `API请求失败: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data.choices?.[0]?.message?.content || '抱歉，无法生成回复';
+    }
+
+    /**
+     * 获取API密钥
+     */
+    async getAPIKey() {
+        let apiKey = window.appState?.apiKey || '';
+        if (!apiKey) {
+            apiKey = localStorage.getItem('globalApiKey') || '';
+        }
+        if (!apiKey) {
+            apiKey = localStorage.getItem('zhipu_api_key') || '';
+        }
+        return apiKey;
+    }
+
+    /**
+     * HTML转义
+     */
+    escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
     /**
