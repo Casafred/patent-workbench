@@ -278,8 +278,24 @@ class PDFOCRParser {
         // 更新Markdown内容显示
         this.updateMarkdownContent(result);
 
+        // 启用导出按钮
+        this.enableExportButtons();
+
         // 触发解析完成事件
         this.emit('parseComplete', normalizedResult);
+    }
+
+    /**
+     * 启用导出按钮
+     */
+    enableExportButtons() {
+        const exportJsonBtn = document.getElementById('ocr-export-json');
+        const exportMarkdownBtn = document.getElementById('ocr-export-markdown');
+        const exportTxtBtn = document.getElementById('ocr-export-text');
+
+        if (exportJsonBtn) exportJsonBtn.disabled = false;
+        if (exportMarkdownBtn) exportMarkdownBtn.disabled = false;
+        if (exportTxtBtn) exportTxtBtn.disabled = false;
     }
 
     /**

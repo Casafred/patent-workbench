@@ -483,10 +483,12 @@ class PDFOCRCore {
         this.elements.nextPageBtn.disabled = pageNum === this.totalPages;
         
         // 更新缩略图高亮
-        const thumbnails = this.elements.pageThumbnails.querySelectorAll('.page-thumbnail');
-        thumbnails.forEach(thumb => {
-            thumb.classList.toggle('active', parseInt(thumb.dataset.page) === pageNum);
-        });
+        if (this.elements.pageThumbnails) {
+            const thumbnails = this.elements.pageThumbnails.querySelectorAll('.page-thumbnail');
+            thumbnails.forEach(thumb => {
+                thumb.classList.toggle('active', parseInt(thumb.dataset.page) === pageNum);
+            });
+        }
         
         // 渲染页面
         if (this.currentFileType === 'pdf') {

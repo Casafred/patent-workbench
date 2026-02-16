@@ -1,5 +1,9 @@
-fix: scope all CSS styles to pdf-ocr-container to prevent global conflicts
+fix: resolve multiple OCR viewer issues
 
-- Add .pdf-ocr-container prefix to all CSS selectors
-- Prevent style conflicts with other features
-- Fix button styles, form styles, and layout styles
+1. Fix OCR block overlay positioning - calculate offset relative to pdf-canvas
+2. Fix zoom level display - match zoom value with select options
+3. Fix right panel content display - use ocr-text-tab class to avoid CSS conflict
+4. Fix left sidebar layout - prevent export buttons from being pushed down
+5. Fix content item action buttons - add background and border for visibility
+6. Add title badge style for content-type-badge
+7. Add z-index to blocks-layer for proper layering

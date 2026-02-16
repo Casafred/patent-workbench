@@ -315,12 +315,24 @@ class PDFOCRViewer {
      * 更新区块可见性（根据筛选条件）
      */
     updateBlockVisibility() {
+        // 更新区块覆盖层
         this.blockOverlays.forEach((overlay, blockId) => {
             const blockType = overlay.dataset.blockType;
             if (this.filterType === 'all' || blockType === this.filterType) {
                 overlay.style.display = 'block';
             } else {
                 overlay.style.display = 'none';
+            }
+        });
+
+        // 更新左侧识别结果列表
+        const contentItems = document.querySelectorAll('.ocr-content-item');
+        contentItems.forEach(item => {
+            const itemType = item.className.match(/type-(\w+)/)?.[1];
+            if (this.filterType === 'all' || itemType === this.filterType) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
             }
         });
     }

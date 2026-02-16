@@ -332,14 +332,18 @@
     position: relative;
     overflow: auto;
     background: #f1f5f9;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 20px;
 }
 
 .viewer-container {
     position: relative;
-    min-height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
+    min-width: min-content;
 }
 
 .empty-state {
