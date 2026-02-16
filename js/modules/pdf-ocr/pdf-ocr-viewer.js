@@ -33,6 +33,7 @@ class PDFOCRViewer {
         this.initElements();
         this.bindEvents();
         this.initFloatingPanel();
+        this.setupResizeListener();
     }
 
     initElements() {
@@ -100,7 +101,14 @@ class PDFOCRViewer {
      * 初始化悬浮面板
      */
     initFloatingPanel() {
-        const panel = this.elements.floatingPanel;
+        let panel = this.elements.floatingPanel;
+        
+        // 将面板移动到body下，避免被container的overflow:hidden裁剪
+        if (panel && panel.parentElement !== document.body) {
+            document.body.appendChild(panel);
+            this.elements.floatingPanel = panel;
+        }
+        
         if (!panel) return;
 
         // 关闭按钮
@@ -517,9 +525,74 @@ class PDFOCRViewer {
 
         if (this.isBlockMode) {
             this.renderBlocks();
+            // 自动打开悬浮面板显示识别文本
+            this.showFloatingPanel();
         }
         
         console.log(`[PDF-OCR] 区块显示模式: ${this.isBlockMode ? '开启' : '关闭'}`);
+    }
+
+    /**
+     * 监听缩放和滚动事件，重新渲染区块
+     */
+    setupResizeListener() {
+        let resizeTimeout;
+        const viewerWrap = document.querySelector('.viewer-wrap');
+        
+        // 监听窗口大小变化
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                if (this.isBlockMode) {
+                    this.renderBlocks();
+                }
+            }, 200);
+        });
+
+        // 监听查看器滚动
+        if (viewerWrap) {
+            viewerWrap.addEventListener('scroll', () => {
+                if (this.isBlockMode) {
+                    this.renderBlocks();
+                }
+            });
+        }
+
+        // 监听缩放选择器变化
+        const zoomSelect = document.getElementById('viewer_zoom_select');
+        if (zoomSelect) {
+            zoomSelect.addEventListener('change', () => {
+                setTimeout(() => {
+                    if (this.isBlockMode) {
+                        this.renderBlocks();
+                    }
+                }, 100);
+            });
+        }
+
+        // 监听缩放按钮
+        const zoomInBtn = document.getElementById('viewer_zoom_in');
+        const zoomOutBtn = document.getElementById('viewer_zoom_out');
+        
+        if (zoomInBtn) {
+            zoomInBtn.addEventListener('click', () => {
+                setTimeout(() => {
+                    if (this.isBlockMode) {
+                        this.renderBlocks();
+                    }
+                }, 100);
+            });
+        }
+        
+        if (zoomOutBtn) {
+            zoomOutBtn.addEventListener('click', () => {
+                setTimeout(() => {
+                    if (this.isBlockMode) {
+                        this.renderBlocks();
+                    }
+                }, 100);
+            });
+        }
     }
 
     /**

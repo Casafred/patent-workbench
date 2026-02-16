@@ -178,10 +178,20 @@
 
 /* 按钮样式修复 - 主题绿色背景白色字体 */
 .content-item-actions .btn-icon {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
     border: 1px solid #16a34a !important;
+    border-radius: 4px;
     color: white !important;
     box-shadow: 0 2px 4px rgba(34, 197, 94, 0.3);
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 500;
+    transition: all 0.2s ease;
 }
 
 .content-item-actions .btn-icon:hover {
@@ -784,32 +794,4 @@
     margin-top: 8px;
     padding-top: 8px;
     border-top: 1px solid #f1f5f9;
-}
-
-.content-item-actions .btn-icon {
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
-    border: 1px solid #cbd5e1;
-    border-radius: 4px;
-    color: #475569;
-    cursor: pointer;
-    font-size: 11px;
-    font-weight: 500;
-    transition: all 0.2s ease;
-}
-
-.content-item-actions .btn-icon:hover {
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
-    color: white;
-    border-color: #2563eb;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
-}
-
-.content-item-actions .btn-icon:active {
-    transform: translateY(0);
 }
