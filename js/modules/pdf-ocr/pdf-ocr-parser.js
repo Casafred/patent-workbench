@@ -134,32 +134,38 @@ class PDFOCRParser {
 
     /**
      * 准备文件数据
+     * GLM-OCR API只支持图片格式，PDF需要先转换为图片
      */
     async prepareFileData(file) {
         const fileType = window.pdfOCRCore?.currentFileType;
 
         if (fileType === 'pdf') {
-            // PDF文件：提取当前页或所有页面
+            // PDF文件：必须转换为图片
             const mode = this.getSettings().mode;
             
             if (mode === 'page' && window.pdfOCRCore?.pdfDocument) {
                 // 仅当前页
                 const pageNum = window.pdfOCRCore.currentPage;
-                const imageData = await this.pdfPageToImage(pageNum);
+                const imageBlob = await this.pdfPageToImage(pageNum);
+                // 将Blob转换为File对象，保留原始文件名
+                const imageFile = new File([imageBlob], 'page.png', { type: 'image/png' });
                 return {
                     type: 'image',
-                    data: imageData
+                    data: imageFile
                 };
             } else {
-                // 整个PDF：转换为图片数组或上传PDF
-                // GLM-OCR支持PDF直接上传
+                // 整个PDF：默认解析第一页
+                // 注意：GLM-OCR API目前只支持单张图片
+                this.showToast('注意：GLM-OCR API只支持单张图片，将解析第一页', 'info');
+                const imageBlob = await this.pdfPageToImage(1);
+                const imageFile = new File([imageBlob], 'page.png', { type: 'image/png' });
                 return {
-                    type: 'pdf',
-                    data: file
+                    type: 'image',
+                    data: imageFile
                 };
             }
         } else {
-            // 图片文件
+            // 图片文件，直接使用
             return {
                 type: 'image',
                 data: file
@@ -199,31 +205,27 @@ class PDFOCRParser {
 
     /**
      * 调用GLM-OCR API
+     * 使用Base64编码的图片数据，以JSON格式发送
      */
     async callGLMOCR(fileData, apiKey, settings) {
-        const formData = new FormData();
-
-        // 添加文件
-        if (fileData.type === 'pdf') {
-            formData.append('file', fileData.data);
-        } else {
-            formData.append('image', fileData.data);
-        }
-
-        // 添加参数
-        const params = {
+        // 将文件转换为Base64
+        const base64Data = await this.fileToBase64(fileData.data);
+        
+        // 构建请求体
+        const requestBody = {
+            image: base64Data,
             recognize_formula: settings.recognizeFormula,
             recognize_table: settings.recognizeTable
         };
-        formData.append('params', JSON.stringify(params));
 
         // 发送请求
         const response = await fetch(this.apiUrl, {
             method: 'POST',
             headers: {
+                'Content-Type': 'application/json',
                 'Authorization': `Bearer ${apiKey}`
             },
-            body: formData
+            body: JSON.stringify(requestBody)
         });
 
         if (!response.ok) {
@@ -232,6 +234,22 @@ class PDFOCRParser {
         }
 
         return await response.json();
+    }
+
+    /**
+     * 将文件转换为Base64
+     */
+    async fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                // 移除data:image/png;base64,前缀，只保留Base64数据
+                const base64 = reader.result.split(',')[1];
+                resolve(base64);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
     }
 
     /**
