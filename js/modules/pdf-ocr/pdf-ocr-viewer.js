@@ -153,17 +153,25 @@ class PDFOCRViewer {
         overlay.dataset.blockId = block.id;
         overlay.dataset.blockType = block.type;
 
-        // 设置位置和大小（相对于viewer-wrap容器）
-        const viewerWrap = document.querySelector('.viewer-wrap');
-        const pdfImage = viewerWrap ? viewerWrap.querySelector('img, canvas') : null;
+        // 设置位置和大小（相对于pdf-canvas容器）
+        const pdfCanvas = document.getElementById('pdf-canvas');
+        const pdfImage = pdfCanvas ? pdfCanvas.querySelector('img, canvas') : null;
         
         if (pdfImage && block.bbox) {
+            // 获取pdf-canvas的位置作为偏移基准
+            const canvasRect = pdfCanvas.getBoundingClientRect();
+            const imageRect = pdfImage.getBoundingClientRect();
+            
+            // 计算图片在canvas内的偏移
+            const imageOffsetLeft = imageRect.left - canvasRect.left;
+            const imageOffsetTop = imageRect.top - canvasRect.top;
+            
             // 使用PDF图片的实际尺寸计算缩放比例
             const scaleX = pdfImage.offsetWidth / (block.bbox.page_width || pdfImage.offsetWidth);
             const scaleY = pdfImage.offsetHeight / (block.bbox.page_height || pdfImage.offsetHeight);
 
-            const left = block.bbox.lt[0] * scaleX;
-            const top = block.bbox.lt[1] * scaleY;
+            const left = imageOffsetLeft + (block.bbox.lt[0] * scaleX);
+            const top = imageOffsetTop + (block.bbox.lt[1] * scaleY);
             const width = (block.bbox.rb[0] - block.bbox.lt[0]) * scaleX;
             const height = (block.bbox.rb[1] - block.bbox.lt[1]) * scaleY;
 

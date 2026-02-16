@@ -1,0 +1,6 @@
+fix: 修复GLM-OCR API请求格式
+
+- 将application/json改回multipart/form-data格式
+- 使用'file'字段名上传文件
+- 添加model参数到formData
+- 移除手动设置的Content-Type，让浏览器自动处理

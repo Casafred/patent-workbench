@@ -1,10 +1,6 @@
-feat: add feature 9 PDF OCR reader with GLM-OCR integration
+feat: optimize pdf-ocr-reader container width
 
-- Create PDF-OCR core module (pdf-ocr-core.js) - file upload, PDF.js integration, page navigation
-- Create PDF viewer module (pdf-ocr-viewer.js) - OCR block visualization, selection interaction
-- Create OCR parser module (pdf-ocr-parser.js) - GLM-OCR API integration, result processing
-- Create AI chat module (pdf-ocr-chat.js) - intelligent Q&A, translation
-- Create init module (pdf-ocr-init.js) - module integration, event binding
-- Create HTML component and CSS styles
-- Update navigation tabs, index.html, main.js, state.js
-- Fix component loading issues
+- Extend feature 9 max-width to 1600px
+- Adjust 3-column layout: narrower sidebars, wider center
+- Increase global container from 1200px to 1400px
+- Update index.html inline container style to 1600px

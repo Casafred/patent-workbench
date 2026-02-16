@@ -1,0 +1,288 @@
+> ## Documentation Index
+> Fetch the complete documentation index at: https://docs.bigmodel.cn/llms.txt
+> Use this file to discover all available pages before exploring further.
+
+# 版面解析
+
+> 使用 [GLM-OCR](/cn/guide/models/vlm/glm-ocr) 模型解析文档和图片的布局并提取文本内容。支持图片和`PDF`文档的`OCR`识别，返回详细的布局信息和可视化结果。
+
+
+
+## OpenAPI
+
+````yaml openapi/openapi.json post /paas/v4/layout_parsing
+openapi: 3.0.1
+info:
+  title: ZHIPU AI API
+  description: ZHIPU AI 接口提供强大的 AI 能力，包括聊天对话、工具调用和视频生成。
+  license:
+    name: ZHIPU AI 开发者协议和政策
+    url: https://chat.z.ai/legal-agreement/terms-of-service
+  version: 1.0.0
+  contact:
+    name: Z.AI 开发者
+    url: https://chat.z.ai/legal-agreement/privacy-policy
+    email: user_feedback@z.ai
+servers:
+  - url: https://open.bigmodel.cn/api/
+    description: 开放平台服务
+security:
+  - bearerAuth: []
+tags:
+  - name: 模型 API
+    description: Chat API
+  - name: 工具 API
+    description: Web Search API
+  - name: Agent API
+    description: Agent API
+  - name: 文件 API
+    description: File API
+  - name: 知识库 API
+    description: Knowledge API
+  - name: 实时 API
+    description: Realtime API
+  - name: 批处理 API
+    description: Batch API
+  - name: 助理 API
+    description: Assistant API
+  - name: 智能体 API（旧）
+    description: QingLiu Agent API
+paths:
+  /paas/v4/layout_parsing:
+    post:
+      tags:
+        - 模型 API
+      summary: 版面解析
+      description: >-
+        使用 [GLM-OCR](/cn/guide/models/vlm/glm-ocr)
+        模型解析文档和图片的布局并提取文本内容。支持图片和`PDF`文档的`OCR`识别，返回详细的布局信息和可视化结果。
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LayoutParsingRequest'
+            examples:
+              布局解析示例:
+                value:
+                  model: glm-ocr
+                  file: https://cdn.bigmodel.cn/static/logo/introduction.png
+        required: true
+      responses:
+        '200':
+          description: 业务处理成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LayoutParsingResponse'
+        default:
+          description: 请求失败。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    LayoutParsingRequest:
+      type: object
+      required:
+        - model
+        - file
+      properties:
+        model:
+          type: string
+          description: 模型编码：`glm-ocr`
+          example: glm-ocr
+          enum:
+            - glm-ocr
+        file:
+          type: string
+          description: >-
+            需要识别的图片或者`pdf`文档，支持`url`和`base64`。支持图片格式：`PDF`、`JPG`、`PNG`。单图`≤10MB`，PDF`≤50MB`，最大支持`100页`
+          example: https://cdn.bigmodel.cn/static/logo/introduction.png
+        return_crop_images:
+          type: boolean
+          description: 是否需要截图信息
+          default: false
+        need_layout_visualization:
+          type: boolean
+          description: 是否需要详细布局图片结果信息
+          default: false
+        start_page_id:
+          type: integer
+          description: 传入`pdf`时，开始解析的页码
+          minimum: 1
+        end_page_id:
+          type: integer
+          description: 传入`pdf`时，结束解析的页码
+          minimum: 1
+        request_id:
+          type: string
+          description: 唯一请求标识符，如不提供则自动生成
+          example: req_123456789
+        user_id:
+          type: string
+          description: 终端用户ID，用于滥用监控。长度：6-128字符
+          minLength: 6
+          maxLength: 128
+          example: user_123456
+    LayoutParsingResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 任务 `ID`
+          example: task_123456789
+        created:
+          type: integer
+          format: int64
+          description: 请求创建时间，是以秒为单位的 `Unix` 时间戳
+          example: 1727156815
+        model:
+          type: string
+          description: 模型名称
+          example: GLM-OCR
+        md_results:
+          type: string
+          description: '`Markdown` 格式的识别结果'
+          example: |-
+            # 文档标题
+            这是文档内容...
+        layout_details:
+          type: array
+          description: 布局详细信息
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/LayoutDetail'
+        layout_visualization:
+          type: array
+          description: 识别结果图片`url`
+          items:
+            type: string
+        data_info:
+          $ref: '#/components/schemas/DataInfo'
+        usage:
+          type: object
+          description: 调用结束时返回的 `Token` 使用统计。
+          properties:
+            prompt_tokens:
+              type: number
+              description: 用户输入的 `Token` 数量。
+            completion_tokens:
+              type: number
+              description: 输出的 `Token` 数量
+            prompt_tokens_details:
+              type: object
+              properties:
+                cached_tokens:
+                  type: number
+                  description: 命中的缓存 `Token` 数量
+            total_tokens:
+              type: integer
+              description: '`Token` 总数'
+        request_id:
+          type: string
+          description: 请求`ID`
+          example: req_123456789
+      required:
+        - id
+        - created
+        - model
+    Error:
+      type: object
+      properties:
+        error:
+          required:
+            - code
+            - message
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+    LayoutDetail:
+      type: object
+      description: 布局详情元素
+      properties:
+        index:
+          type: integer
+          description: 元素序号
+          example: 1
+        label:
+          type: string
+          description: 元素类型：`image`表示图像，`text`表示文本内容，`formula`表示行间公式，`table`表示表格
+          enum:
+            - image
+            - text
+            - formula
+            - table
+          example: text
+        bbox_2d:
+          type: array
+          description: 归一化的元素坐标 `[x1,y1,x2,y2]`
+          items:
+            type: number
+            minimum: 0
+            maximum: 1
+          minItems: 4
+          maxItems: 4
+          example:
+            - 0.1
+            - 0.1
+            - 0.5
+            - 0.3
+        content:
+          type: string
+          description: 元素内容（文本 / 图片 URL / 表格 HTML）
+          example: 这是文本内容
+        height:
+          type: integer
+          description: 页面高度
+          example: 800
+        width:
+          type: integer
+          description: 页面宽度
+          example: 600
+      required:
+        - index
+        - label
+    DataInfo:
+      type: object
+      description: 文档基础信息
+      properties:
+        num_pages:
+          type: integer
+          description: 文档总页数
+          example: 5
+        pages:
+          type: array
+          description: 文档页面数量信息
+          items:
+            $ref: '#/components/schemas/PageInfo'
+      required:
+        - num_pages
+    PageInfo:
+      type: object
+      description: 页面尺寸信息
+      properties:
+        width:
+          type: integer
+          description: 页面宽度
+          example: 600
+        height:
+          type: integer
+          description: 页面高度
+          example: 800
+      required:
+        - width
+        - height
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: >-
+        使用以下格式进行身份验证：Bearer [<your api
+        key>](https://bigmodel.cn/usercenter/proj-mgmt/apikeys)
+
+````

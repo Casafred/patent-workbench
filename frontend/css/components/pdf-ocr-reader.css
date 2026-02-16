@@ -27,6 +27,18 @@
     max-height: 100%;
 }
 
+/* 左侧边栏中的面板 */
+.pdf-ocr-sidebar .ocr-panel {
+    flex-shrink: 0;
+}
+
+/* 识别结果面板可以伸缩 */
+.pdf-ocr-sidebar .results-panel {
+    flex: 1;
+    min-height: 150px;
+    overflow-y: auto;
+}
+
 /* 右侧面板 */
 .pdf-ocr-rightbar {
     display: flex;
@@ -360,6 +372,7 @@
     width: 100%;
     height: 100%;
     pointer-events: none;
+    z-index: 50;
 }
 
 /* 选择层 */
@@ -440,6 +453,15 @@
 }
 
 .tab-content.active {
+    display: block;
+}
+
+/* 功能九右侧内容区域标签页 */
+.pdf-ocr-rightbar .ocr-text-tab {
+    display: none;
+}
+
+.pdf-ocr-rightbar .ocr-text-tab.active {
     display: block;
 }
 
@@ -562,12 +584,14 @@
     border-radius: 4px;
     background: #e2e8f0;
     color: #475569;
+    font-weight: 500;
 }
 
 .content-type-badge.text { background: #dcfce7; color: #166534; }
 .content-type-badge.table { background: #dbeafe; color: #1e40af; }
 .content-type-badge.formula { background: #f3e8ff; color: #6b21a8; }
 .content-type-badge.image { background: #ffedd5; color: #9a3412; }
+.content-type-badge.title { background: #fef3c7; color: #92400e; }
 
 .content-page {
     font-size: 11px;
@@ -590,20 +614,22 @@
     border-top: 1px solid #f1f5f9;
 }
 
-.btn-icon {
+.content-item-actions .btn-icon {
     width: 28px;
     height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: none;
-    border: none;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
     border-radius: 4px;
     color: #64748b;
     cursor: pointer;
+    font-size: 12px;
 }
 
-.btn-icon:hover {
+.content-item-actions .btn-icon:hover {
     background: #f1f5f9;
     color: #3b82f6;
+    border-color: #3b82f6;
 }

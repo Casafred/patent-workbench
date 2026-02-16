@@ -512,7 +512,16 @@ class PDFOCRCore {
     
     setZoom(level) {
         this.zoomLevel = level;
-        this.elements.zoomSelect.value = level.toFixed(2);
+        // 将缩放级别转换为与option值匹配的格式
+        const zoomValue = level.toString();
+        // 尝试找到匹配的option值
+        const options = Array.from(this.elements.zoomSelect.options);
+        const matchedOption = options.find(opt => parseFloat(opt.value) === level);
+        if (matchedOption) {
+            this.elements.zoomSelect.value = matchedOption.value;
+        } else {
+            this.elements.zoomSelect.value = zoomValue;
+        }
         
         if (this.currentFileType === 'pdf') {
             this.renderPage(this.currentPage);
