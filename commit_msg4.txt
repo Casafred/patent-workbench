@@ -1,5 +1,7 @@
-fix: re-initialize elements after DOM is loaded to fix file upload
+fix: resolve OCR viewer critical bugs
 
-- Add initElements() method to all modules
-- Re-initialize elements and events in pdf-ocr-init.js after DOM is ready
-- Fix file upload click not working due to early element binding
+1. Fix pageThumbnails null error - add null check before querySelectorAll
+2. Fix viewer scroll and centering - update viewer-wrap and viewer-container CSS
+3. Fix export buttons not enabling - add enableExportButtons after OCR parse
+4. Fix block type filter - apply filter to both overlays and content list
+5. Update content-item-actions button styles with proper background and border
