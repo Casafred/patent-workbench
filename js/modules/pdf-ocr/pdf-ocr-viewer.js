@@ -617,20 +617,19 @@ class PDFOCRViewer {
                     overlay.style.display = 'none';
                 }
             });
-            return;
+        } else {
+            // 显示全部区块模式
+            this.blockOverlays.forEach((overlay, blockId) => {
+                const blockType = overlay.dataset.blockType;
+                if (this.filterType === 'all' || blockType === this.filterType) {
+                    overlay.style.display = 'block';
+                } else {
+                    overlay.style.display = 'none';
+                }
+            });
         }
 
-        // 显示全部区块模式
-        this.blockOverlays.forEach((overlay, blockId) => {
-            const blockType = overlay.dataset.blockType;
-            if (this.filterType === 'all' || blockType === this.filterType) {
-                overlay.style.display = 'block';
-            } else {
-                overlay.style.display = 'none';
-            }
-        });
-
-        // 更新左侧识别结果列表
+        // 始终更新左侧识别结果列表（无论是否全部显示模式）
         const contentItems = document.querySelectorAll('.ocr-content-item');
         contentItems.forEach(item => {
             const itemType = item.className.match(/type-(\w+)/)?.[1];

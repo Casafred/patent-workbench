@@ -427,6 +427,35 @@
     background: #f1f5f9;
     border-radius: 6px;
     font-size: 13px;
+    gap: 8px;
+}
+
+.file-name-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.remove-file-btn {
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 14px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+
+.remove-file-btn:hover {
+    background: #dc2626;
+    transform: scale(1.1);
 }
 
 /* 表单控件 */
@@ -628,13 +657,30 @@
 /* 导出按钮 */
 .export-btns {
     display: flex;
-    gap: 6px;
-    justify-content: center;
+    gap: 8px;
 }
 
-.export-btns .btn-small {
-    flex: 0 0 auto;
-    min-width: 50px;
+.btn-export {
+    flex: 1;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-export:hover:not(:disabled) {
+    background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+    transform: translateY(-1px);
+}
+
+.btn-export:disabled {
+    background: #cbd5e1;
+    cursor: not-allowed;
 }
 
 /* 工具栏 */

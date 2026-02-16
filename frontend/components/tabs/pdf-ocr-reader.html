@@ -19,8 +19,8 @@
                     </div>
                 </div>
                 <div id="pdf_file_info" class="file-info" style="display: none;">
-                    <span id="pdf_file_name"></span>
-                    <button class="btn-small" id="pdf_remove_file_btn">移除</button>
+                    <span id="pdf_file_name" class="file-name-text"></span>
+                    <button class="remove-file-btn" id="pdf_remove_file_btn" title="移除文件">×</button>
                 </div>
             </div>
 
@@ -70,9 +70,8 @@
             <div class="ocr-panel">
                 <h4 class="panel-title">💾 导出</h4>
                 <div class="export-btns">
-                    <button id="ocr-export-json" class="btn-small" disabled>JSON</button>
-                    <button id="ocr-export-markdown" class="btn-small" disabled>Markdown</button>
-                    <button id="ocr-export-text" class="btn-small" disabled>TXT</button>
+                    <button id="ocr-export-markdown" class="btn-export" disabled>Markdown</button>
+                    <button id="ocr-export-text" class="btn-export" disabled>TXT</button>
                 </div>
             </div>
         </div>
