@@ -85,14 +85,21 @@ class PDFOCRViewer {
                 if (e.target.closest('.ocr-block-overlay')) return;
                 
                 // 如果没有OCR结果，不处理
-                if (this.ocrBlocks.length === 0) return;
+                if (this.ocrBlocks.length === 0) {
+                    console.log('[PDF-OCR] 没有OCR区块数据');
+                    return;
+                }
                 
                 // 获取点击位置相对于图片的坐标
                 const result = this.getClickPositionOnImage(e, viewerWrap);
                 if (result) {
+                    console.log('[PDF-OCR] 点击坐标:', result);
                     const nearestBlock = this.findNearestBlock(result.x, result.y, result.pageIndex);
                     if (nearestBlock) {
+                        console.log('[PDF-OCR] 找到最近区块:', nearestBlock);
                         this.selectBlock(nearestBlock);
+                    } else {
+                        console.log('[PDF-OCR] 未找到附近区块');
                     }
                 }
             });
@@ -115,18 +122,33 @@ class PDFOCRViewer {
         const pdfCanvas = document.getElementById('pdf-canvas');
         const pdfImage = pdfCanvas ? pdfCanvas.querySelector('img, canvas') : null;
         
-        if (!pdfImage) return null;
+        if (!pdfImage) {
+            console.log('[PDF-OCR] 未找到PDF图片元素');
+            return null;
+        }
         
         const imageRect = pdfImage.getBoundingClientRect();
-        const viewerRect = viewerWrap.getBoundingClientRect();
         
         // 计算点击位置相对于图片的坐标
         const clickX = e.clientX - imageRect.left;
         const clickY = e.clientY - imageRect.top;
         
-        // 计算图片相对于原始尺寸的缩放比例
-        const scaleX = pdfImage.naturalWidth ? pdfImage.naturalWidth / pdfImage.offsetWidth : 1;
-        const scaleY = pdfImage.naturalHeight ? pdfImage.naturalHeight / pdfImage.offsetHeight : 1;
+        // 获取图片的原始尺寸
+        let naturalWidth, naturalHeight;
+        if (pdfImage.tagName === 'IMG') {
+            naturalWidth = pdfImage.naturalWidth;
+            naturalHeight = pdfImage.naturalHeight;
+        } else if (pdfImage.tagName === 'CANVAS') {
+            naturalWidth = pdfImage.width;
+            naturalHeight = pdfImage.height;
+        } else {
+            naturalWidth = pdfImage.offsetWidth;
+            naturalHeight = pdfImage.offsetHeight;
+        }
+        
+        // 计算缩放比例
+        const scaleX = naturalWidth / pdfImage.offsetWidth;
+        const scaleY = naturalHeight / pdfImage.offsetHeight;
         
         // 转换为原始坐标
         const originalX = clickX * scaleX;
@@ -134,6 +156,10 @@ class PDFOCRViewer {
         
         // 获取当前页码
         const pageIndex = window.pdfOCRCore ? window.pdfOCRCore.currentPageIndex : 0;
+        
+        console.log('[PDF-OCR] 图片尺寸: 显示=', pdfImage.offsetWidth, 'x', pdfImage.offsetHeight, ', 原始=', naturalWidth, 'x', naturalHeight);
+        console.log('[PDF-OCR] 缩放比例:', scaleX, scaleY);
+        console.log('[PDF-OCR] 点击位置: 屏幕=', clickX, clickY, ', 原始=', originalX, originalY);
         
         return {
             x: originalX,
@@ -150,12 +176,16 @@ class PDFOCRViewer {
         
         let nearestBlock = null;
         let minDistance = Infinity;
-        const threshold = 100; // 最大搜索距离（像素）
+        const threshold = 500; // 最大搜索距离（像素）- 增大以适应不同缩放
         
         // 筛选当前页的区块
         const currentPageBlocks = this.ocrBlocks.filter(block => block.pageIndex === pageIndex);
+        console.log('[PDF-OCR] 当前页区块数量:', currentPageBlocks.length, '页码:', pageIndex);
         
-        for (const block of currentPageBlocks) {
+        // 如果当前页没有区块，尝试使用所有区块
+        const searchBlocks = currentPageBlocks.length > 0 ? currentPageBlocks : this.ocrBlocks;
+        
+        for (const block of searchBlocks) {
             if (!block.bbox) continue;
             
             // 计算点击位置到区块中心的距离
@@ -167,15 +197,23 @@ class PDFOCRViewer {
             const inBlockX = x >= block.bbox.lt[0] - threshold && x <= block.bbox.rb[0] + threshold;
             const inBlockY = y >= block.bbox.lt[1] - threshold && y <= block.bbox.rb[1] + threshold;
             
-            if ((inBlockX && inBlockY) || distance < threshold) {
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    nearestBlock = block;
-                }
+            console.log('[PDF-OCR] 区块', block.id, '范围:', block.bbox.lt, '-', block.bbox.rb, '距离:', distance.toFixed(1), '在范围内:', inBlockX && inBlockY);
+            
+            // 始终记录最近的区块
+            if (distance < minDistance) {
+                minDistance = distance;
+                nearestBlock = block;
             }
         }
         
-        return nearestBlock;
+        // 如果最近的区块在阈值范围内，返回它
+        if (minDistance < threshold) {
+            console.log('[PDF-OCR] 找到最近区块，距离:', minDistance.toFixed(1));
+            return nearestBlock;
+        }
+        
+        console.log('[PDF-OCR] 最近区块距离超出阈值:', minDistance.toFixed(1));
+        return null;
     }
 
     /**
