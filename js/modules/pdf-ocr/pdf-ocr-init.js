@@ -133,15 +133,7 @@ class PDFOCRInit {
         this.modules.floatingToolbar = window.pdfOCRFloatingToolbar;
         this.modules.floatingChat = window.pdfOCRFloatingChat;
 
-        // 重新初始化元素和事件（确保DOM元素已存在）
-        this.modules.core.initElements();
-        this.modules.core.bindEvents();
-        this.modules.viewer.initElements();
-        this.modules.viewer.bindEvents();
-        this.modules.parser.initElements();
-        this.modules.parser.bindEvents();
-        this.modules.chat.initElements();
-        this.modules.chat.bindEvents();
+        // 注意：构造函数中已经调用了initElements和bindEvents，这里不需要重复调用
 
         // 设置模块间的关联
         this.setupModuleConnections();

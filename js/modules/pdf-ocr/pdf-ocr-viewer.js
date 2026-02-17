@@ -887,7 +887,7 @@ class PDFOCRViewer {
     }
 
     /**
-     * 更新结构化内容列表
+     * 更新结构化内容列表（只显示当前页）
      */
     updateStructuredContent() {
         const container = document.getElementById('ocr-structured-content');
@@ -895,22 +895,37 @@ class PDFOCRViewer {
 
         container.innerHTML = '';
 
-        if (this.ocrBlocks.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-layer-group"></i>
-                    <p>暂无结构化内容</p>
-                    <p class="sub">请先上传文件并进行OCR解析</p>
-                </div>
-            `;
+        // 获取当前页码
+        const currentPage = window.pdfOCRCore ? window.pdfOCRCore.currentPage : 1;
+
+        // 过滤当前页的区块
+        const currentPageBlocks = this.ocrBlocks.filter(block => block.pageIndex === currentPage);
+
+        if (currentPageBlocks.length === 0) {
+            // 检查是否有其他页已解析
+            const parsedPages = this.getParsedPages();
+            if (parsedPages.length > 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-file-alt"></i>
+                        <p>当前页暂无解析结果</p>
+                        <p class="sub">已解析页面: ${parsedPages.join(', ')}</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-layer-group"></i>
+                        <p>暂无结构化内容</p>
+                        <p class="sub">请先上传文件并进行OCR解析</p>
+                    </div>
+                `;
+            }
             return;
         }
 
-        // 按页码和位置排序
-        const sortedBlocks = [...this.ocrBlocks].sort((a, b) => {
-            if (a.pageIndex !== b.pageIndex) {
-                return a.pageIndex - b.pageIndex;
-            }
+        // 按位置排序
+        const sortedBlocks = [...currentPageBlocks].sort((a, b) => {
             return a.bbox?.lt[1] - b.bbox?.lt[1] || 0;
         });
 

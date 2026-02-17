@@ -561,6 +561,9 @@
 .content-item-actions .btn-icon {
     width: 28px;
     height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
     border: 1px solid #16a34a;
     border-radius: 4px;
@@ -584,12 +587,15 @@
     transform: translateY(0);
 }
 
-.content-item-actions .btn-icon svg,
 .content-item-actions .btn-icon i,
-.content-item-actions .btn-icon span,
 .content-item-actions .btn-icon .fas,
-.content-item-actions .btn-icon .fa {
+.content-item-actions .btn-icon .fa,
+.content-item-actions .btn-icon .fa-copy,
+.content-item-actions .btn-icon .fa-language,
+.content-item-actions .btn-icon .fa-comment-dots {
     color: white !important;
+    font-family: 'Font Awesome 5 Free' !important;
+    font-weight: 900 !important;
 }
 
 .btn-toggle {
