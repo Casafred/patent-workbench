@@ -658,6 +658,11 @@ class PDFOCRCore {
         if (window.pdfOCRParser) {
             window.pdfOCRParser.ocrResults = null;
         }
+        
+        // 清除viewer的多页缓存
+        if (window.pdfOCRViewer) {
+            window.pdfOCRViewer.clearAll();
+        }
     }
     
     /**

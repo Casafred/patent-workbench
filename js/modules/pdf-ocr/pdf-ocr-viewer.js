@@ -1925,11 +1925,44 @@ class PDFOCRViewer {
     }
 
     /**
-     * 清除所有数据
+     * 清除所有数据（保留多页缓存）
      */
     clear() {
-        this.ocrBlocks = [];
+        // 注意：不清空pageResults和ocrBlocks，保留多页解析结果
         this.selectedBlock = null;
+        this.selectedBlocks = [];
+        this.highlightedBlock = null;
+        this.blockOverlays.clear();
+
+        // 清空UI
+        const container = document.getElementById('ocr-blocks-layer');
+        if (container) container.innerHTML = '';
+
+        // 更新结构化内容列表（会显示当前页的结果）
+        this.updateStructuredContent();
+
+        const detailsPanel = document.getElementById('ocr-block-details');
+        if (detailsPanel) {
+            detailsPanel.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-mouse-pointer"></i>
+                    <p>点击解析区块查看详情</p>
+                </div>
+            `;
+        }
+
+        // 重置统计
+        this.updateStatistics();
+    }
+
+    /**
+     * 完全清除所有数据（包括多页缓存）
+     */
+    clearAll() {
+        this.ocrBlocks = [];
+        this.pageResults.clear();
+        this.selectedBlock = null;
+        this.selectedBlocks = [];
         this.highlightedBlock = null;
         this.blockOverlays.clear();
 
