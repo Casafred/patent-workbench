@@ -6,6 +6,7 @@
 class PDFOCRViewer {
     constructor() {
         this.ocrBlocks = [];
+        this.pageResults = new Map(); // 按页面存储OCR结果
         this.selectedBlock = null;
         this.selectedBlocks = []; // 多选区块
         this.highlightedBlock = null;
@@ -389,28 +390,47 @@ class PDFOCRViewer {
     }
 
     /**
-     * 设置OCR解析结果
+     * 设置OCR解析结果（支持增量添加多页面）
      */
-    setOCRResult(result) {
+    setOCRResult(result, appendMode = false) {
         if (!result || !result.pages) {
-            this.ocrBlocks = [];
+            if (!appendMode) {
+                this.ocrBlocks = [];
+                this.pageResults.clear();
+            }
             return;
         }
 
+        // 如果不是追加模式，清空现有数据
+        if (!appendMode) {
+            this.ocrBlocks = [];
+            this.pageResults.clear();
+        }
+
         // 提取所有页面的区块
-        this.ocrBlocks = [];
         result.pages.forEach((page, pageIndex) => {
+            const pageNum = pageIndex + 1;
+            
+            // 存储页面结果到Map
+            this.pageResults.set(pageNum, page);
+            
+            // 移除该页面的旧区块（如果存在）
+            this.ocrBlocks = this.ocrBlocks.filter(b => b.pageIndex !== pageNum);
+            
+            // 添加新区块
             if (page.blocks) {
                 page.blocks.forEach((block, blockIndex) => {
                     this.ocrBlocks.push({
                         ...block,
-                        pageIndex: pageIndex + 1,
+                        pageIndex: pageNum,
                         blockIndex: blockIndex,
-                        id: `block-${pageIndex}-${blockIndex}`
+                        id: `block-${pageNum}-${blockIndex}`
                     });
                 });
             }
         });
+
+        console.log('[PDF-OCR] OCR结果已更新，总区块数:', this.ocrBlocks.length, '已解析页面:', [...this.pageResults.keys()]);
 
         // 更新结构化内容列表
         this.updateStructuredContent();
@@ -418,10 +438,33 @@ class PDFOCRViewer {
         // 更新统计信息
         this.updateStatistics();
         
-        // 如果当前是区块模式，渲染区块
-        if (this.isBlockMode) {
-            this.renderBlocks();
-        }
+        // 渲染当前页的区块
+        this.renderBlocks();
+    }
+
+    /**
+     * 获取已解析的页面列表
+     */
+    getParsedPages() {
+        return [...this.pageResults.keys()].sort((a, b) => a - b);
+    }
+
+    /**
+     * 检查指定页面是否已解析
+     */
+    isPageParsed(pageNum) {
+        return this.pageResults.has(pageNum);
+    }
+
+    /**
+     * 清除指定页面的OCR结果
+     */
+    clearPageResult(pageNum) {
+        this.pageResults.delete(pageNum);
+        this.ocrBlocks = this.ocrBlocks.filter(b => b.pageIndex !== pageNum);
+        this.updateStructuredContent();
+        this.updateStatistics();
+        this.renderBlocks();
     }
 
     /**
@@ -431,6 +474,20 @@ class PDFOCRViewer {
         const container = document.getElementById('ocr-blocks-layer');
         if (!container) return;
 
+        // 获取当前页码
+        const currentPage = window.pdfOCRCore ? window.pdfOCRCore.currentPage : 1;
+        
+        // 检查当前页是否有OCR结果
+        const hasCurrentPageBlocks = this.ocrBlocks.some(block => block.pageIndex === currentPage);
+        
+        if (!hasCurrentPageBlocks) {
+            // 当前页没有OCR结果，隐藏区块层
+            container.style.display = 'none';
+            container.innerHTML = '';
+            this.blockOverlays.clear();
+            return;
+        }
+
         // 显示区块层
         container.style.display = 'block';
 
@@ -438,11 +495,10 @@ class PDFOCRViewer {
         container.innerHTML = '';
         this.blockOverlays.clear();
 
-        // 获取当前页码
-        const currentPage = window.pdfOCRCore ? window.pdfOCRCore.currentPage : 1;
-
         // 过滤当前页的区块
         const pageBlocks = this.ocrBlocks.filter(block => block.pageIndex === currentPage);
+
+        console.log('[PDF-OCR] 渲染页面', currentPage, '的区块，数量:', pageBlocks.length);
 
         pageBlocks.forEach(block => {
             const overlay = this.createBlockOverlay(block);

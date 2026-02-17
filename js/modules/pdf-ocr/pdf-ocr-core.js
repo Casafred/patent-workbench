@@ -499,6 +499,11 @@ class PDFOCRCore {
         if (window.appState && window.appState.pdfOCRReader) {
             window.appState.pdfOCRReader.currentPage = pageNum;
         }
+
+        // 触发页面切换事件，让viewer重新渲染区块
+        if (window.pdfOCRViewer) {
+            window.pdfOCRViewer.renderBlocks();
+        }
     }
     
     /**

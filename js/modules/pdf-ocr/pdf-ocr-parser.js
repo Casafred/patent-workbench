@@ -267,9 +267,13 @@ class PDFOCRParser {
             window.state.set('ocrResult', normalizedResult);
         }
 
+        // 判断是否使用追加模式（当前页模式时使用追加模式）
+        const mode = this.getSettings().mode;
+        const appendMode = mode === 'page';
+
         // 更新视图
         if (window.pdfOCRViewer) {
-            window.pdfOCRViewer.setOCRResult(normalizedResult);
+            window.pdfOCRViewer.setOCRResult(normalizedResult, appendMode);
         }
 
         // 更新原始内容显示
@@ -311,6 +315,9 @@ class PDFOCRParser {
             return result;
         }
 
+        // 获取当前解析的页码（用于单页模式）
+        const currentPageNum = window.pdfOCRCore?.currentPage || 1;
+
         // 转换API格式到内部格式
         const normalized = {
             id: result.id,
@@ -325,11 +332,14 @@ class PDFOCRParser {
 
         // 处理layout_details: 二维数组 [page][blocks]
         if (result.layout_details && Array.isArray(result.layout_details)) {
-            result.layout_details.forEach((pageBlocks, pageIndex) => {
-                const pageInfo = result.data_info?.pages?.[pageIndex] || {};
+            result.layout_details.forEach((pageBlocks, apiPageIndex) => {
+                const pageInfo = result.data_info?.pages?.[apiPageIndex] || {};
+                
+                // 使用当前页码作为pageIndex（单页模式时）
+                const actualPageNum = currentPageNum;
                 
                 const page = {
-                    pageIndex: pageIndex + 1,
+                    pageIndex: actualPageNum,
                     width: pageInfo.width || 1224,
                     height: pageInfo.height || 1584,
                     blocks: []
@@ -353,7 +363,7 @@ class PDFOCRParser {
                                 page_width: block.width || pageInfo.width,
                                 page_height: block.height || pageInfo.height
                             },
-                            pageIndex: pageIndex + 1
+                            pageIndex: actualPageNum
                         };
                         page.blocks.push(convertedBlock);
                     });
