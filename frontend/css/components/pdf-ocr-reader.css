@@ -1119,3 +1119,61 @@
     padding-top: 8px;
     border-top: 1px solid #f1f5f9;
 }
+
+/* AI对话弹窗样式 - 绿色主题 */
+.ocr-chat-popup {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.ocr-chat-popup .popup-header {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+}
+
+.ocr-chat-popup .popup-header *,
+.ocr-chat-popup .popup-title,
+.ocr-chat-popup .popup-close {
+    color: white !important;
+}
+
+.ocr-chat-popup .chat-message.user .message-content {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+    color: white !important;
+}
+
+.ocr-chat-popup .send-btn {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+    color: white !important;
+    font-weight: 500;
+}
+
+.ocr-chat-popup .send-btn:hover {
+    opacity: 0.9;
+}
+
+.ocr-chat-popup .send-btn * {
+    color: white !important;
+}
+
+/* 翻译结果弹窗样式 - 绿色主题 */
+.ocr-translate-popup {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.ocr-translate-popup .popup-header {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+}
+
+.ocr-translate-popup .popup-header *,
+.ocr-translate-popup .popup-title,
+.ocr-translate-popup .popup-close {
+    color: white !important;
+}
+
+.ocr-translate-popup .translate-btn {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+    color: white !important;
+}
+
+.ocr-translate-popup .translate-btn * {
+    color: white !important;
+}

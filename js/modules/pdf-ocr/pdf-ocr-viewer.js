@@ -1414,25 +1414,31 @@ class PDFOCRViewer {
         // 添加内部样式
         const style = document.createElement('style');
         style.textContent = `
+            .ocr-translation-popup {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            }
             .ocr-translation-popup .popup-header {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
                 padding: 12px 16px;
-                background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-                color: white;
+                background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+            }
+            .ocr-translation-popup .popup-header * {
+                color: white !important;
             }
             .ocr-translation-popup .popup-title {
                 font-weight: 600;
                 font-size: 14px;
+                color: white !important;
             }
             .ocr-translation-popup .popup-close {
                 background: none;
                 border: none;
-                color: white;
                 font-size: 20px;
                 cursor: pointer;
                 opacity: 0.8;
+                color: white !important;
             }
             .ocr-translation-popup .popup-close:hover {
                 opacity: 1;
@@ -1477,13 +1483,17 @@ class PDFOCRViewer {
                 font-size: 13px;
                 cursor: pointer;
                 border: none;
+                font-weight: 500;
             }
             .ocr-translation-popup .copy-btn {
-                background: #22c55e;
-                color: white;
+                background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+                color: white !important;
             }
             .ocr-translation-popup .copy-btn:hover {
-                background: #16a34a;
+                opacity: 0.9;
+            }
+            .ocr-translation-popup .copy-btn * {
+                color: white !important;
             }
             .ocr-translation-popup .close-btn {
                 background: #f1f5f9;
@@ -1584,26 +1594,32 @@ class PDFOCRViewer {
         // 添加内部样式
         const style = document.createElement('style');
         style.textContent = `
+            .ocr-chat-popup {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            }
             .ocr-chat-popup .popup-header {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
                 padding: 12px 16px;
                 background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-                color: white;
                 flex-shrink: 0;
+            }
+            .ocr-chat-popup .popup-header * {
+                color: white !important;
             }
             .ocr-chat-popup .popup-title {
                 font-weight: 600;
                 font-size: 14px;
+                color: white !important;
             }
             .ocr-chat-popup .popup-close {
                 background: none;
                 border: none;
-                color: white;
                 font-size: 20px;
                 cursor: pointer;
                 opacity: 0.8;
+                color: white !important;
             }
             .ocr-chat-popup .popup-close:hover {
                 opacity: 1;
@@ -1648,7 +1664,7 @@ class PDFOCRViewer {
             }
             .ocr-chat-popup .chat-message.user .message-content {
                 background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-                color: white;
+                color: white !important;
             }
             .ocr-chat-popup .chat-message.assistant .message-content {
                 background: #f1f5f9;
@@ -1669,21 +1685,26 @@ class PDFOCRViewer {
                 resize: none;
                 font-size: 14px;
                 outline: none;
+                color: #334155;
             }
             .ocr-chat-popup .popup-input textarea:focus {
                 border-color: #22c55e;
             }
             .ocr-chat-popup .send-btn {
                 padding: 10px 20px;
-                background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-                color: white;
+                background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
                 border: none;
                 border-radius: 8px;
                 cursor: pointer;
                 font-size: 14px;
+                font-weight: 500;
+                color: white !important;
             }
             .ocr-chat-popup .send-btn:hover {
                 opacity: 0.9;
+            }
+            .ocr-chat-popup .send-btn * {
+                color: white !important;
             }
         `;
         popup.appendChild(style);
