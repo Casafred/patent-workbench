@@ -315,8 +315,8 @@
 }
 
 .floating-chat-window .chat-message.user .message-content {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    color: white !important;
     border-bottom-right-radius: 4px;
 }
 
@@ -325,6 +325,14 @@
     color: #374151;
     border-bottom-left-radius: 4px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.floating-chat-window .chat-message.user .message-text {
+    color: white !important;
+}
+
+.floating-chat-window .chat-message.user .message-text * {
+    color: white !important;
 }
 
 .floating-chat-window .chat-message.system .message-content {
