@@ -879,6 +879,101 @@
     font-size: 13px;
 }
 
+.block-details-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.block-type-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.block-type-badge.text { background: #dcfce7; color: #16a34a; }
+.block-type-badge.table { background: #dbeafe; color: #2563eb; }
+.block-type-badge.formula { background: #f3e8ff; color: #9333ea; }
+.block-type-badge.image { background: #ffedd5; color: #ea580c; }
+.block-type-badge.multi { background: #fef3c7; color: #d97706; }
+
+.block-page {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.block-details-content {
+    margin-bottom: 12px;
+}
+
+.detail-section {
+    margin-bottom: 8px;
+}
+
+.detail-section label {
+    display: block;
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.detail-text {
+    padding: 8px;
+    background: #f8fafc;
+    border-radius: 4px;
+    font-size: 13px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    max-height: 100px;
+    overflow-y: auto;
+}
+
+.detail-code {
+    display: block;
+    padding: 8px;
+    background: #1e293b;
+    color: #e2e8f0;
+    border-radius: 4px;
+    font-size: 12px;
+    overflow-x: auto;
+}
+
+.block-details-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.block-details-actions .btn {
+    flex: 1;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.block-details-actions .btn-primary {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    color: white;
+}
+
+.block-details-actions .btn-primary:hover {
+    background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+}
+
+.block-details-actions .btn-secondary {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+.block-details-actions .btn-secondary:hover {
+    background: #e2e8f0;
+}
+
 /* OCR区块覆盖层 */
 .ocr-block-overlay {
     position: absolute;
