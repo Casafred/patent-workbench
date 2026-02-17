@@ -1373,23 +1373,23 @@ class PDFOCRViewer {
         const popup = document.createElement('div');
         popup.className = 'ocr-translation-popup';
         popup.innerHTML = `
-            <div class="popup-header">
-                <span class="popup-title">🌐 翻译结果</span>
-                <button class="popup-close">×</button>
+            <div class="popup-header" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);">
+                <span class="popup-title" style="font-weight: 600; font-size: 14px; color: white;">🌐 翻译结果</span>
+                <button class="popup-close" style="background: none; border: none; font-size: 20px; cursor: pointer; color: white; padding: 4px 8px; min-width: 32px;">×</button>
             </div>
-            <div class="popup-body">
-                <div class="translation-section">
-                    <div class="section-label">原文</div>
-                    <div class="section-content original">${this.escapeHtml(original.substring(0, 500))}${original.length > 500 ? '...' : ''}</div>
+            <div class="popup-body" style="padding: 16px; overflow-y: auto; flex: 1;">
+                <div class="translation-section" style="margin-bottom: 16px;">
+                    <div class="section-label" style="font-size: 12px; color: #64748b; margin-bottom: 4px; font-weight: 500;">原文</div>
+                    <div class="section-content original" style="font-size: 14px; line-height: 1.6; color: #334155; padding: 12px; background: #f8fafc; border-radius: 8px; white-space: pre-wrap;">${this.escapeHtml(original.substring(0, 500))}${original.length > 500 ? '...' : ''}</div>
                 </div>
-                <div class="translation-section">
-                    <div class="section-label">译文</div>
-                    <div class="section-content translated">${this.escapeHtml(translated)}</div>
+                <div class="translation-section" style="margin-bottom: 16px;">
+                    <div class="section-label" style="font-size: 12px; color: #64748b; margin-bottom: 4px; font-weight: 500;">译文</div>
+                    <div class="section-content translated" style="font-size: 14px; line-height: 1.6; color: #334155; padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; white-space: pre-wrap;">${this.escapeHtml(translated)}</div>
                 </div>
             </div>
-            <div class="popup-footer">
-                <button class="popup-btn copy-btn">复制译文</button>
-                <button class="popup-btn close-btn">关闭</button>
+            <div class="popup-footer" style="display: flex; justify-content: flex-end; gap: 8px; padding: 12px 16px; border-top: 1px solid #e2e8f0;">
+                <button class="popup-btn copy-btn" style="padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; border: none; font-weight: 500; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white;">复制译文</button>
+                <button class="popup-btn close-btn" style="padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; border: none; font-weight: 500; background: #f1f5f9; color: #475569;">关闭</button>
             </div>
         `;
 
@@ -1409,101 +1409,8 @@ class PDFOCRViewer {
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         `;
-
-        // 添加内部样式
-        const style = document.createElement('style');
-        style.textContent = `
-            .ocr-translation-popup {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            }
-            .ocr-translation-popup .popup-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 12px 16px;
-                background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
-            }
-            .ocr-translation-popup .popup-header * {
-                color: white !important;
-            }
-            .ocr-translation-popup .popup-title {
-                font-weight: 600;
-                font-size: 14px;
-                color: white !important;
-            }
-            .ocr-translation-popup .popup-close {
-                background: none;
-                border: none;
-                font-size: 20px;
-                cursor: pointer;
-                opacity: 0.8;
-                color: white !important;
-            }
-            .ocr-translation-popup .popup-close:hover {
-                opacity: 1;
-            }
-            .ocr-translation-popup .popup-body {
-                padding: 16px;
-                overflow-y: auto;
-                flex: 1;
-            }
-            .ocr-translation-popup .translation-section {
-                margin-bottom: 16px;
-            }
-            .ocr-translation-popup .section-label {
-                font-size: 12px;
-                color: #64748b;
-                margin-bottom: 4px;
-                font-weight: 500;
-            }
-            .ocr-translation-popup .section-content {
-                font-size: 14px;
-                line-height: 1.6;
-                color: #334155;
-                padding: 12px;
-                background: #f8fafc;
-                border-radius: 8px;
-                white-space: pre-wrap;
-            }
-            .ocr-translation-popup .section-content.translated {
-                background: #f0fdf4;
-                border: 1px solid #bbf7d0;
-            }
-            .ocr-translation-popup .popup-footer {
-                display: flex;
-                justify-content: flex-end;
-                gap: 8px;
-                padding: 12px 16px;
-                border-top: 1px solid #e2e8f0;
-            }
-            .ocr-translation-popup .popup-btn {
-                padding: 8px 16px;
-                border-radius: 6px;
-                font-size: 13px;
-                cursor: pointer;
-                border: none;
-                font-weight: 500;
-            }
-            .ocr-translation-popup .copy-btn {
-                background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
-                color: white !important;
-            }
-            .ocr-translation-popup .copy-btn:hover {
-                opacity: 0.9;
-            }
-            .ocr-translation-popup .copy-btn * {
-                color: white !important;
-            }
-            .ocr-translation-popup .close-btn {
-                background: #f1f5f9;
-                color: #475569;
-            }
-            .ocr-translation-popup .close-btn:hover {
-                background: #e2e8f0;
-            }
-        `;
-        popup.appendChild(style);
 
         // 绑定事件
         popup.querySelector('.popup-close').addEventListener('click', () => popup.remove());
@@ -1558,18 +1465,18 @@ class PDFOCRViewer {
         const popup = document.createElement('div');
         popup.className = 'ocr-chat-popup';
         popup.innerHTML = `
-            <div class="popup-header">
-                <span class="popup-title">💬 AI问答</span>
-                <button class="popup-close">×</button>
+            <div class="popup-header" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);">
+                <span class="popup-title" style="font-weight: 600; font-size: 14px; color: white;">💬 AI问答</span>
+                <button class="popup-close" style="background: none; border: none; font-size: 20px; cursor: pointer; color: white; padding: 4px 8px; min-width: 32px;">×</button>
             </div>
-            <div class="popup-context">
-                <div class="context-label">选中内容：</div>
-                <div class="context-text">${this.escapeHtml(context.substring(0, 300))}${context.length > 300 ? '...' : ''}</div>
+            <div class="popup-context" style="padding: 12px 16px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                <div class="context-label" style="font-size: 12px; color: #64748b; margin-bottom: 4px;">选中内容：</div>
+                <div class="context-text" style="font-size: 13px; color: #334155; max-height: 60px; overflow-y: auto; white-space: pre-wrap;">${this.escapeHtml(context.substring(0, 300))}${context.length > 300 ? '...' : ''}</div>
             </div>
-            <div class="popup-messages" id="ocr-chat-messages"></div>
-            <div class="popup-input">
-                <textarea id="ocr-chat-input" placeholder="输入您的问题..."></textarea>
-                <button class="send-btn" id="ocr-chat-send">发送</button>
+            <div class="popup-messages" id="ocr-chat-messages" style="flex: 1; overflow-y: auto; padding: 16px;"></div>
+            <div class="popup-input" style="display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid #e2e8f0;">
+                <textarea id="ocr-chat-input" placeholder="输入您的问题..." style="flex: 1; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; resize: none; font-size: 14px; outline: none; color: #334155;"></textarea>
+                <button class="send-btn" id="ocr-chat-send" style="padding: 10px 20px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;">发送</button>
             </div>
         `;
 
@@ -1589,64 +1496,12 @@ class PDFOCRViewer {
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         `;
 
-        // 添加内部样式
+        // 添加内部样式（用于动态内容）
         const style = document.createElement('style');
         style.textContent = `
-            .ocr-chat-popup {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            }
-            .ocr-chat-popup .popup-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 12px 16px;
-                background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-                flex-shrink: 0;
-            }
-            .ocr-chat-popup .popup-header * {
-                color: white !important;
-            }
-            .ocr-chat-popup .popup-title {
-                font-weight: 600;
-                font-size: 14px;
-                color: white !important;
-            }
-            .ocr-chat-popup .popup-close {
-                background: none;
-                border: none;
-                font-size: 20px;
-                cursor: pointer;
-                opacity: 0.8;
-                color: white !important;
-            }
-            .ocr-chat-popup .popup-close:hover {
-                opacity: 1;
-            }
-            .ocr-chat-popup .popup-context {
-                padding: 12px 16px;
-                background: #f8fafc;
-                border-bottom: 1px solid #e2e8f0;
-                flex-shrink: 0;
-            }
-            .ocr-chat-popup .context-label {
-                font-size: 12px;
-                color: #64748b;
-                margin-bottom: 4px;
-            }
-            .ocr-chat-popup .context-text {
-                font-size: 13px;
-                color: #334155;
-                max-height: 60px;
-                overflow-y: auto;
-                white-space: pre-wrap;
-            }
-            .ocr-chat-popup .popup-messages {
-                flex: 1;
-                overflow-y: auto;
-                padding: 16px;
-            }
             .ocr-chat-popup .chat-message {
                 margin-bottom: 12px;
             }
@@ -1670,41 +1525,11 @@ class PDFOCRViewer {
                 background: #f1f5f9;
                 color: #334155;
             }
-            .ocr-chat-popup .popup-input {
-                display: flex;
-                gap: 8px;
-                padding: 12px 16px;
-                border-top: 1px solid #e2e8f0;
-                flex-shrink: 0;
-            }
-            .ocr-chat-popup .popup-input textarea {
-                flex: 1;
-                padding: 10px;
-                border: 1px solid #e2e8f0;
-                border-radius: 8px;
-                resize: none;
-                font-size: 14px;
-                outline: none;
-                color: #334155;
-            }
             .ocr-chat-popup .popup-input textarea:focus {
                 border-color: #22c55e;
             }
-            .ocr-chat-popup .send-btn {
-                padding: 10px 20px;
-                background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
-                border: none;
-                border-radius: 8px;
-                cursor: pointer;
-                font-size: 14px;
-                font-weight: 500;
-                color: white !important;
-            }
             .ocr-chat-popup .send-btn:hover {
                 opacity: 0.9;
-            }
-            .ocr-chat-popup .send-btn * {
-                color: white !important;
             }
         `;
         popup.appendChild(style);
