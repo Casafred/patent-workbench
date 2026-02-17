@@ -408,8 +408,11 @@ class PDFOCRViewer {
         }
 
         // 提取所有页面的区块
-        result.pages.forEach((page, pageIndex) => {
-            const pageNum = pageIndex + 1;
+        result.pages.forEach((page, idx) => {
+            // 使用页面中的pageIndex字段（已在normalizeResult中正确设置）
+            const pageNum = page.pageIndex || (idx + 1);
+            
+            console.log('[PDF-OCR] 处理页面结果，页码:', pageNum, '区块数:', page.blocks?.length || 0);
             
             // 存储页面结果到Map
             this.pageResults.set(pageNum, page);
@@ -1074,20 +1077,18 @@ class PDFOCRViewer {
         // 如果区块不在当前页，先切换页面
         if (block.pageIndex !== window.pdfOCRCore?.currentPage) {
             window.pdfOCRCore?.goToPage(block.pageIndex);
+            // goToPage会自动调用renderBlocks，所以这里不需要再调用
         }
 
-        // 重新渲染区块（页面切换后）
+        // 高亮区块
         setTimeout(() => {
-            this.renderBlocks();
-
-            // 高亮区块
             const overlay = this.blockOverlays.get(blockId);
             if (overlay) {
                 overlay.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 overlay.classList.add('flash');
                 setTimeout(() => overlay.classList.remove('flash'), 1000);
             }
-        }, 100);
+        }, 200);
     }
 
     /**

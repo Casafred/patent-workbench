@@ -459,7 +459,7 @@ class PDFOCRCore {
             
             // 如果有OCR结果，渲染区块
             if (this.showBlocks && window.pdfOCRViewer) {
-                window.pdfOCRViewer.renderBlocks(pageNum);
+                window.pdfOCRViewer.renderBlocks();
             }
             
         } catch (error) {
@@ -559,7 +559,7 @@ class PDFOCRCore {
         this.elements.toggleBlocksBtn.classList.toggle('active', this.showBlocks);
         
         if (this.showBlocks && window.pdfOCRViewer) {
-            window.pdfOCRViewer.renderBlocks(this.currentPage);
+            window.pdfOCRViewer.renderBlocks();
         } else {
             // 移除区块覆盖层
             const overlays = this.elements.viewerContainer.querySelectorAll('.ocr-block-overlay');
