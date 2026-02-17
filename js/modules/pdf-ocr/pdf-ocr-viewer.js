@@ -393,6 +393,11 @@ class PDFOCRViewer {
      * 设置OCR解析结果（支持增量添加多页面）
      */
     setOCRResult(result, appendMode = false) {
+        console.log('[PDF-OCR-Viewer] setOCRResult调用:');
+        console.log('  - appendMode:', appendMode);
+        console.log('  - result.pages:', result?.pages?.length);
+        console.log('  - 当前pageResults keys:', [...this.pageResults.keys()]);
+        
         if (!result || !result.pages) {
             if (!appendMode) {
                 this.ocrBlocks = [];
@@ -412,7 +417,7 @@ class PDFOCRViewer {
             // 使用页面中的pageIndex字段（已在normalizeResult中正确设置）
             const pageNum = page.pageIndex || (idx + 1);
             
-            console.log('[PDF-OCR] 处理页面结果，页码:', pageNum, '区块数:', page.blocks?.length || 0);
+            console.log('[PDF-OCR-Viewer] 处理页面:', pageNum, '区块数:', page.blocks?.length || 0);
             
             // 存储页面结果到Map
             this.pageResults.set(pageNum, page);
@@ -433,7 +438,10 @@ class PDFOCRViewer {
             }
         });
 
-        console.log('[PDF-OCR] OCR结果已更新，总区块数:', this.ocrBlocks.length, '已解析页面:', [...this.pageResults.keys()]);
+        console.log('[PDF-OCR-Viewer] OCR结果已更新:');
+        console.log('  - 总区块数:', this.ocrBlocks.length);
+        console.log('  - 已解析页面:', [...this.pageResults.keys()]);
+        console.log('  - 各页区块数:', [...this.pageResults.entries()].map(([k, v]) => `第${k}页:${v.blocks?.length || 0}`));
 
         // 更新结构化内容列表
         this.updateStructuredContent();
@@ -958,14 +966,14 @@ class PDFOCRViewer {
                 ${previewText}
             </div>
             <div class="content-item-actions">
-                <button class="btn-icon" title="复制" data-action="copy">
-                    <i class="fas fa-copy"></i>
+                <button class="ocr-action-btn copy-btn" title="复制" data-action="copy">
+                    <span>复制</span>
                 </button>
-                <button class="btn-icon" title="翻译" data-action="translate">
-                    <i class="fas fa-language"></i>
+                <button class="ocr-action-btn translate-btn" title="翻译" data-action="translate">
+                    <span>翻译</span>
                 </button>
-                <button class="btn-icon" title="提问" data-action="ask">
-                    <i class="fas fa-comment-dots"></i>
+                <button class="ocr-action-btn ask-btn" title="提问" data-action="ask">
+                    <span>提问</span>
                 </button>
             </div>
         `;

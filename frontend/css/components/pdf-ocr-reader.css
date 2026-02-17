@@ -557,45 +557,55 @@
     border-color: #cbd5e1;
 }
 
-/* 识别结果操作按钮 - 绿色主题 */
-.content-item-actions .btn-icon {
-    width: 28px;
-    height: 28px;
+/* 识别结果操作按钮 - 绿色主题（重构版） */
+.content-item-actions {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
-    border: 1px solid #16a34a;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.ocr-action-btn {
+    padding: 4px 10px;
+    border: none;
     border-radius: 4px;
-    color: white !important;
-    box-shadow: 0 2px 4px rgba(34, 197, 94, 0.3);
     cursor: pointer;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 500;
     transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.content-item-actions .btn-icon:hover {
-    background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important;
-    color: white !important;
-    border-color: #15803d;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(34, 197, 94, 0.4);
+.ocr-action-btn span {
+    color: white;
 }
 
-.content-item-actions .btn-icon:active {
-    transform: translateY(0);
+.ocr-action-btn.copy-btn {
+    background: #22c55e;
+    color: white;
 }
 
-.content-item-actions .btn-icon i,
-.content-item-actions .btn-icon .fas,
-.content-item-actions .btn-icon .fa,
-.content-item-actions .btn-icon .fa-copy,
-.content-item-actions .btn-icon .fa-language,
-.content-item-actions .btn-icon .fa-comment-dots {
-    color: white !important;
-    font-family: 'Font Awesome 5 Free' !important;
-    font-weight: 900 !important;
+.ocr-action-btn.copy-btn:hover {
+    background: #16a34a;
+}
+
+.ocr-action-btn.translate-btn {
+    background: #3b82f6;
+    color: white;
+}
+
+.ocr-action-btn.translate-btn:hover {
+    background: #2563eb;
+}
+
+.ocr-action-btn.ask-btn {
+    background: #8b5cf6;
+    color: white;
+}
+
+.ocr-action-btn.ask-btn:hover {
+    background: #7c3aed;
 }
 
 .btn-toggle {

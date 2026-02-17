@@ -500,9 +500,10 @@ class PDFOCRCore {
             window.appState.pdfOCRReader.currentPage = pageNum;
         }
 
-        // 触发页面切换事件，让viewer重新渲染区块
+        // 触发页面切换事件，让viewer重新渲染区块和更新结果列表
         if (window.pdfOCRViewer) {
             window.pdfOCRViewer.renderBlocks();
+            window.pdfOCRViewer.updateStructuredContent();
         }
     }
     

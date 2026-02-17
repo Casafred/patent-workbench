@@ -259,6 +259,11 @@ class PDFOCRParser {
         // 转换API响应格式为内部格式
         const normalizedResult = this.normalizeResult(result);
         
+        console.log('[PDF-OCR-Parser] 解析结果处理:');
+        console.log('  - 当前页码:', window.pdfOCRCore?.currentPage);
+        console.log('  - 解析模式:', this.getSettings().mode);
+        console.log('  - normalizedResult.pages:', normalizedResult?.pages?.map(p => ({ pageIndex: p.pageIndex, blocksCount: p.blocks?.length })));
+        
         // 存储结果
         this.currentTask = normalizedResult;
 
@@ -270,6 +275,8 @@ class PDFOCRParser {
         // 判断是否使用追加模式（当前页模式时使用追加模式）
         const mode = this.getSettings().mode;
         const appendMode = mode === 'page';
+        
+        console.log('  - appendMode:', appendMode);
 
         // 更新视图
         if (window.pdfOCRViewer) {
