@@ -425,8 +425,8 @@
 .chat-actions button {
     padding: 6px 12px;
     font-size: 0.85em;
-    background: #6c757d;
-    color: white;
+    background: #6c757d !important;
+    color: white !important;
     border: none;
     border-radius: 5px;
     cursor: pointer;
@@ -434,7 +434,8 @@
 }
 
 .chat-actions button:hover {
-    background: #5a6268;
+    background: #5a6268 !important;
+    color: white !important;
 }
 
 /* 响应式设计 */
