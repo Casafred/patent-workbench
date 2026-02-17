@@ -171,19 +171,18 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 20px;
-    height: 20px;
+    padding: 4px 8px;
     border: none;
-    background: transparent;
+    background: #ef4444;
     border-radius: 4px;
     cursor: pointer;
-    color: #9ca3af;
+    color: white !important;
+    font-size: 12px;
     transition: all 0.2s ease;
 }
 
 .floating-chat-window .clear-context-btn:hover {
-    background: #f3f4f6;
-    color: #ef4444;
+    background: #dc2626;
 }
 
 /* 消息区域 */
