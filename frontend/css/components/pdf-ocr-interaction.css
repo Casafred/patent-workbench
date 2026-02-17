@@ -97,10 +97,11 @@
     align-items: center;
     justify-content: space-between;
     padding: 12px 16px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
     color: white;
     cursor: move;
     user-select: none;
+    flex-shrink: 0;
 }
 
 .floating-chat-window .chat-window-title {
@@ -143,6 +144,39 @@
     background: rgba(239, 68, 68, 0.8);
 }
 
+/* 模型选择栏 */
+.floating-chat-window .chat-model-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #f0fdf4;
+    border-bottom: 1px solid #bbf7d0;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.floating-chat-window .model-label {
+    color: #16a34a;
+    font-weight: 500;
+}
+
+.floating-chat-window .model-select {
+    flex: 1;
+    padding: 4px 8px;
+    border: 1px solid #bbf7d0;
+    border-radius: 4px;
+    font-size: 12px;
+    background: white;
+    color: #374151;
+    cursor: pointer;
+    outline: none;
+}
+
+.floating-chat-window .model-select:focus {
+    border-color: #22c55e;
+}
+
 /* 上下文栏 */
 .floating-chat-window .chat-context-bar {
     display: flex;
@@ -152,6 +186,7 @@
     background: #f9fafb;
     border-bottom: 1px solid #e5e7eb;
     font-size: 12px;
+    flex-shrink: 0;
 }
 
 .floating-chat-window .context-label {
@@ -313,13 +348,51 @@
 
 .floating-chat-window .message-text {
     white-space: pre-wrap;
+    line-height: 1.6;
+}
+
+.floating-chat-window .message-text p {
+    margin: 0 0 8px 0;
+}
+
+.floating-chat-window .message-text p:last-child {
+    margin-bottom: 0;
+}
+
+.floating-chat-window .message-text h2,
+.floating-chat-window .message-text h3,
+.floating-chat-window .message-text h4 {
+    margin: 12px 0 8px 0;
+    font-weight: 600;
+}
+
+.floating-chat-window .message-text h2 { font-size: 16px; }
+.floating-chat-window .message-text h3 { font-size: 15px; }
+.floating-chat-window .message-text h4 { font-size: 14px; }
+
+.floating-chat-window .message-text ul,
+.floating-chat-window .message-text ol {
+    margin: 8px 0;
+    padding-left: 20px;
+}
+
+.floating-chat-window .message-text li {
+    margin: 4px 0;
+}
+
+.floating-chat-window .message-text strong {
+    font-weight: 600;
+}
+
+.floating-chat-window .message-text em {
+    font-style: italic;
 }
 
 .floating-chat-window .message-text code {
     background: rgba(0, 0, 0, 0.05);
     padding: 2px 6px;
     border-radius: 4px;
-    font-family: monospace;
+    font-family: 'Consolas', 'Monaco', monospace;
     font-size: 12px;
 }
 

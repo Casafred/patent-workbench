@@ -12,6 +12,9 @@ class PDFOCRFloatingChat {
         this.currentContext = '';
         this.isDragging = false;
         this.dragOffset = { x: 0, y: 0 };
+        this.isResizing = false;
+        this.currentModel = 'glm-4-flash';
+        this.models = [];
         
         // 配置
         this.config = {
@@ -25,9 +28,26 @@ class PDFOCRFloatingChat {
         this.init();
     }
     
-    init() {
+    async init() {
+        await this.loadModels();
         this.createWindow();
         this.bindEvents();
+    }
+    
+    /**
+     * 加载模型列表
+     */
+    async loadModels() {
+        try {
+            const response = await fetch('config/models.json');
+            const data = await response.json();
+            this.models = data.models || ['glm-4-flash'];
+            this.currentModel = data.default_model || 'glm-4-flash';
+        } catch (error) {
+            console.error('加载模型列表失败:', error);
+            this.models = ['glm-4-flash'];
+            this.currentModel = 'glm-4-flash';
+        }
     }
     
     /**
@@ -81,6 +101,14 @@ class PDFOCRFloatingChat {
                         </svg>
                     </button>
                 </div>
+            </div>
+            
+            <!-- 模型选择 -->
+            <div class="chat-model-bar">
+                <span class="model-label">模型:</span>
+                <select class="model-select" id="ocr-chat-model-select">
+                    ${this.models.map(m => `<option value="${m}" ${m === this.currentModel ? 'selected' : ''}>${m}</option>`).join('')}
+                </select>
             </div>
             
             <!-- 上下文提示 -->
@@ -153,6 +181,7 @@ class PDFOCRFloatingChat {
         const clearHistoryBtn = this.window.querySelector('.action-btn.clear-history');
         const clearContextBtn = this.window.querySelector('.clear-context-btn');
         const resizeHandle = this.window.querySelector('.resize-handle');
+        const modelSelect = this.window.querySelector('#ocr-chat-model-select');
         
         // 拖动功能
         header.addEventListener('mousedown', (e) => this.startDrag(e));
@@ -182,6 +211,14 @@ class PDFOCRFloatingChat {
         
         // 调整大小
         resizeHandle.addEventListener('mousedown', (e) => this.startResize(e));
+        
+        // 模型选择
+        if (modelSelect) {
+            modelSelect.addEventListener('change', (e) => {
+                this.currentModel = e.target.value;
+                console.log('[PDF-OCR] 切换模型:', this.currentModel);
+            });
+        }
     }
     
     /**
@@ -405,7 +442,7 @@ class PDFOCRFloatingChat {
                     'Authorization': `Bearer ${apiKey}`
                 },
                 body: JSON.stringify({
-                    model: 'glm-4-flash',
+                    model: this.currentModel,
                     messages: messages,
                     stream: true
                 })
@@ -534,10 +571,13 @@ class PDFOCRFloatingChat {
                 break;
         }
         
+        // 渲染内容（assistant使用Markdown）
+        const renderedContent = role === 'assistant' ? this.renderMarkdown(content) : this.escapeHtml(content);
+        
         messageEl.innerHTML = `
             <div class="message-avatar">${icon}</div>
             <div class="message-content">
-                <div class="message-text">${this.escapeHtml(content)}</div>
+                <div class="message-text">${renderedContent}</div>
             </div>
         `;
         
@@ -548,6 +588,62 @@ class PDFOCRFloatingChat {
     }
     
     /**
+     * 渲染Markdown
+     */
+    renderMarkdown(text) {
+        if (!text) return '';
+        
+        // 使用marked库（如果可用）
+        if (typeof marked !== 'undefined') {
+            try {
+                return marked.parse(text);
+            } catch (e) {
+                console.error('Markdown渲染失败:', e);
+            }
+        }
+        
+        // 简单的Markdown渲染（备用）
+        return this.simpleMarkdownRender(text);
+    }
+    
+    /**
+     * 简单的Markdown渲染
+     */
+    simpleMarkdownRender(text) {
+        if (!text) return '';
+        
+        // 转义HTML
+        let html = this.escapeHtml(text);
+        
+        // 代码块
+        html = html.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>');
+        
+        // 行内代码
+        html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+        
+        // 粗体
+        html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        
+        // 斜体
+        html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+        
+        // 标题
+        html = html.replace(/^### (.+)$/gm, '<h4>$1</h4>');
+        html = html.replace(/^## (.+)$/gm, '<h3>$1</h3>');
+        html = html.replace(/^# (.+)$/gm, '<h2>$1</h2>');
+        
+        // 列表
+        html = html.replace(/^\- (.+)$/gm, '<li>$1</li>');
+        html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+        
+        // 段落
+        html = html.replace(/\n\n/g, '</p><p>');
+        html = '<p>' + html + '</p>';
+        
+        return html;
+    }
+    
+    /**
      * 更新消息内容
      */
     updateMessage(id, content) {
@@ -555,7 +651,8 @@ class PDFOCRFloatingChat {
         if (messageEl) {
             const textEl = messageEl.querySelector('.message-text');
             if (textEl) {
-                textEl.innerHTML = this.formatContent(content);
+                // 使用Markdown渲染
+                textEl.innerHTML = this.renderMarkdown(content);
             }
         }
         
