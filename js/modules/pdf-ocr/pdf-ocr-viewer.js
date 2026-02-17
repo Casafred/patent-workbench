@@ -955,22 +955,37 @@ class PDFOCRViewer {
         // 点击选中
         item.addEventListener('click', (e) => {
             if (!e.target.closest('.content-item-actions')) {
-                this.selectBlock(block);
+                this.selectBlock(block, e.ctrlKey || e.metaKey);
                 this.scrollToBlock(block.id);
             }
         });
 
         // 操作按钮
-        item.querySelector('[data-action="copy"]').addEventListener('click', () => {
-            this.copyBlockContent(block);
+        item.querySelector('[data-action="copy"]').addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (this.selectedBlocks.length > 1 && this.selectedBlocks.some(b => b.id === block.id)) {
+                this.copyMultipleBlocks(this.selectedBlocks);
+            } else {
+                this.copyBlockContent(block);
+            }
         });
 
-        item.querySelector('[data-action="translate"]').addEventListener('click', () => {
-            this.translateBlock(block);
+        item.querySelector('[data-action="translate"]').addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (this.selectedBlocks.length > 1 && this.selectedBlocks.some(b => b.id === block.id)) {
+                this.translateMultipleBlocks(this.selectedBlocks);
+            } else {
+                this.translateBlock(block);
+            }
         });
 
-        item.querySelector('[data-action="ask"]').addEventListener('click', () => {
-            this.askAboutBlock(block);
+        item.querySelector('[data-action="ask"]').addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (this.selectedBlocks.length > 1 && this.selectedBlocks.some(b => b.id === block.id)) {
+                this.askAboutMultipleBlocks(this.selectedBlocks);
+            } else {
+                this.askAboutBlock(block);
+            }
         });
 
         return item;
@@ -1346,7 +1361,12 @@ class PDFOCRViewer {
             return;
         }
 
-        this.showAIChatPopup(text, apiKey);
+        // 打开悬浮对话窗口
+        if (window.pdfOCRFloatingChat) {
+            window.pdfOCRFloatingChat.openWithContext({ context: text, apiKey: apiKey });
+        } else {
+            this.showAIChatPopup(text, apiKey);
+        }
     }
 
     /**
@@ -1504,7 +1524,7 @@ class PDFOCRViewer {
 
         // 打开悬浮对话窗口
         if (window.pdfOCRFloatingChat) {
-            window.pdfOCRFloatingChat.openWithContext(text, apiKey);
+            window.pdfOCRFloatingChat.openWithContext({ context: text, apiKey: apiKey });
         } else {
             // 如果没有悬浮对话窗口，创建一个简单的对话弹窗
             this.showAIChatPopup(text, apiKey);
