@@ -685,95 +685,36 @@ class PDFOCRCore {
      * 导出JSON
      */
     exportJSON() {
-        if (!window.pdfOCRParser || !window.pdfOCRParser.ocrResults) {
-            alert('没有可导出的OCR结果');
-            return;
+        // 调用parser的导出方法
+        if (window.pdfOCRParser) {
+            window.pdfOCRParser.exportJSON();
+        } else {
+            alert('导出功能未初始化');
         }
-        
-        const data = JSON.stringify(window.pdfOCRParser.ocrResults, null, 2);
-        const blob = new Blob([data], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `ocr-result-${Date.now()}.json`;
-        a.click();
-        
-        URL.revokeObjectURL(url);
     }
     
     /**
      * 导出Markdown
      */
     exportMarkdown() {
-        if (!window.pdfOCRParser || !window.pdfOCRParser.ocrResults) {
-            alert('没有可导出的OCR结果');
-            return;
+        // 调用parser的导出方法
+        if (window.pdfOCRParser) {
+            window.pdfOCRParser.exportMarkdown();
+        } else {
+            alert('导出功能未初始化');
         }
-        
-        let markdown = '# OCR解析结果\n\n';
-        const results = window.pdfOCRParser.ocrResults;
-        
-        if (results.pages) {
-            results.pages.forEach((page, index) => {
-                markdown += `## 第${index + 1}页\n\n`;
-                if (page.blocks) {
-                    page.blocks.forEach(block => {
-                        if (block.type === 'table') {
-                            markdown += block.content + '\n\n';
-                        } else if (block.type === 'formula') {
-                            markdown += `$$${block.content}$$\n\n`;
-                        } else {
-                            markdown += block.content + '\n\n';
-                        }
-                    });
-                }
-            });
-        }
-        
-        const blob = new Blob([markdown], { type: 'text/markdown' });
-        const url = URL.createObjectURL(blob);
-        
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `ocr-result-${Date.now()}.md`;
-        a.click();
-        
-        URL.revokeObjectURL(url);
     }
     
     /**
      * 导出TXT
      */
     exportTXT() {
-        if (!window.pdfOCRParser || !window.pdfOCRParser.ocrResults) {
-            alert('没有可导出的OCR结果');
-            return;
+        // 调用parser的导出方法
+        if (window.pdfOCRParser) {
+            window.pdfOCRParser.exportText();
+        } else {
+            alert('导出功能未初始化');
         }
-        
-        let text = 'OCR解析结果\n\n';
-        const results = window.pdfOCRParser.ocrResults;
-        
-        if (results.pages) {
-            results.pages.forEach((page, index) => {
-                text += `=== 第${index + 1}页 ===\n\n`;
-                if (page.blocks) {
-                    page.blocks.forEach(block => {
-                        text += block.content + '\n\n';
-                    });
-                }
-            });
-        }
-        
-        const blob = new Blob([text], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `ocr-result-${Date.now()}.txt`;
-        a.click();
-        
-        URL.revokeObjectURL(url);
     }
 }
 

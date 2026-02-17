@@ -610,28 +610,52 @@ class PDFOCRParser {
      * 导出Markdown
      */
     exportMarkdown() {
-        if (!this.currentTask) {
+        // 从viewer获取所有已解析的页面结果
+        const allPages = this.getAllParsedPages();
+        if (!allPages || allPages.length === 0) {
             this.showToast('暂无解析结果', 'error');
             return;
         }
 
         let markdown = '';
 
-        if (this.currentTask.pages) {
-            this.currentTask.pages.forEach((page, index) => {
-                markdown += `## 第 ${index + 1} 页\n\n`;
+        allPages.forEach((page, index) => {
+            markdown += `## 第 ${page.pageIndex} 页\n\n`;
 
-                if (page.blocks) {
-                    page.blocks.forEach(block => {
-                        markdown += this.blockToMarkdown(block);
-                    });
-                }
+            if (page.blocks) {
+                page.blocks.forEach(block => {
+                    markdown += this.blockToMarkdown(block);
+                });
+            }
 
-                markdown += '\n---\n\n';
-            });
-        }
+            markdown += '\n---\n\n';
+        });
 
         this.downloadFile(markdown, 'ocr-result.md', 'text/markdown');
+    }
+
+    /**
+     * 获取所有已解析的页面结果
+     */
+    getAllParsedPages() {
+        // 优先从viewer获取所有缓存的页面结果
+        if (window.pdfOCRViewer && window.pdfOCRViewer.pageResults) {
+            const pages = [];
+            const sortedKeys = [...window.pdfOCRViewer.pageResults.keys()].sort((a, b) => a - b);
+            sortedKeys.forEach(key => {
+                pages.push(window.pdfOCRViewer.pageResults.get(key));
+            });
+            if (pages.length > 0) {
+                return pages;
+            }
+        }
+        
+        // 备用：从currentTask获取
+        if (this.currentTask && this.currentTask.pages) {
+            return this.currentTask.pages;
+        }
+        
+        return null;
     }
 
     /**
@@ -669,26 +693,26 @@ class PDFOCRParser {
      * 导出纯文本
      */
     exportText() {
-        if (!this.currentTask) {
+        // 从viewer获取所有已解析的页面结果
+        const allPages = this.getAllParsedPages();
+        if (!allPages || allPages.length === 0) {
             this.showToast('暂无解析结果', 'error');
             return;
         }
 
         let text = '';
 
-        if (this.currentTask.pages) {
-            this.currentTask.pages.forEach((page, index) => {
-                text += `=== 第 ${index + 1} 页 ===\n\n`;
+        allPages.forEach((page, index) => {
+            text += `=== 第 ${page.pageIndex} 页 ===\n\n`;
 
-                if (page.blocks) {
-                    page.blocks.forEach(block => {
-                        text += this.blockToText(block);
-                    });
-                }
+            if (page.blocks) {
+                page.blocks.forEach(block => {
+                    text += this.blockToText(block);
+                });
+            }
 
-                text += '\n';
-            });
-        }
+            text += '\n';
+        });
 
         this.downloadFile(text, 'ocr-result.txt', 'text/plain');
     }
@@ -722,12 +746,20 @@ class PDFOCRParser {
      * 导出JSON
      */
     exportJSON() {
-        if (!this.currentTask) {
+        // 从viewer获取所有已解析的页面结果
+        const allPages = this.getAllParsedPages();
+        if (!allPages || allPages.length === 0) {
             this.showToast('暂无解析结果', 'error');
             return;
         }
 
-        const json = JSON.stringify(this.currentTask, null, 2);
+        const exportData = {
+            exportTime: new Date().toISOString(),
+            totalPages: allPages.length,
+            pages: allPages
+        };
+
+        const json = JSON.stringify(exportData, null, 2);
         this.downloadFile(json, 'ocr-result.json', 'application/json');
     }
 
