@@ -614,12 +614,23 @@ class PDFOCRCore {
         this.showBlocks = !this.showBlocks;
         this.elements.toggleBlocksBtn.classList.toggle('active', this.showBlocks);
         
+        const blocksLayer = document.getElementById('ocr-blocks-layer');
+        
         if (this.showBlocks && window.pdfOCRViewer) {
+            // 显示区块层
+            if (blocksLayer) {
+                blocksLayer.style.display = 'block';
+            }
             window.pdfOCRViewer.renderBlocks();
         } else {
-            // 移除区块覆盖层
-            const overlays = this.elements.viewerContainer.querySelectorAll('.ocr-block-overlay');
-            overlays.forEach(overlay => overlay.remove());
+            // 隐藏区块层
+            if (blocksLayer) {
+                blocksLayer.style.display = 'none';
+            }
+            // 清除viewer中的blockOverlays引用
+            if (window.pdfOCRViewer) {
+                window.pdfOCRViewer.blockOverlays.clear();
+            }
         }
     }
     

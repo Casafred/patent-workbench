@@ -541,6 +541,9 @@ class PDFOCRViewer {
 
         // 应用筛选
         this.updateBlockVisibility();
+        
+        // 恢复选中状态
+        this.updateAllSelectedStyles();
 
         console.log(`[PDF-OCR] 渲染了 ${pageBlocks.length} 个区块`);
     }
@@ -711,16 +714,29 @@ class PDFOCRViewer {
      * 更新所有选中区块的样式
      */
     updateAllSelectedStyles() {
-        // 先清除所有样式
+        // 遍历所有区块overlay
         this.blockOverlays.forEach((overlay, id) => {
             const isSelected = this.selectedBlocks.some(b => b.id === id);
-            overlay.classList.toggle('selected', isSelected);
+            
             if (isSelected) {
+                // 选中状态
+                overlay.classList.add('selected');
                 overlay.style.zIndex = '100';
-                overlay.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.2)';
+                overlay.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.5)';
+                overlay.style.backgroundColor = 'rgba(59, 130, 246, 0.4)';
+                overlay.style.borderColor = '#3b82f6';
+                overlay.style.display = 'block';
             } else {
+                // 非选中状态
+                overlay.classList.remove('selected');
                 overlay.style.zIndex = '';
                 overlay.style.boxShadow = '';
+                // 恢复原始颜色
+                const block = this.ocrBlocks.find(b => b.id === id);
+                if (block) {
+                    overlay.style.backgroundColor = this.colors[block.type] || this.colors.text;
+                    overlay.style.borderColor = this.borderColors[block.type] || this.borderColors.text;
+                }
             }
         });
     }

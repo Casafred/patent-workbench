@@ -746,12 +746,13 @@
     background: #f1f5f9;
     display: block;
     padding: 20px;
+    text-align: center;
 }
 
 .viewer-container {
     position: relative;
     display: inline-block;
-    margin: 0 auto;
+    text-align: left;
 }
 
 .viewer-container .pdf-page-canvas,
