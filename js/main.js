@@ -1700,6 +1700,13 @@ window.copyFieldContent = function(patentNumber, fieldKey, event) {
                 ).join('\n');
             }
             break;
+        case 'events_timeline':
+            if (data.events_timeline && data.events_timeline.length > 0) {
+                contentToCopy = data.events_timeline.map(event => 
+                    `${event.date}: ${event.title || event.description}`
+                ).join('\n');
+            }
+            break;
         default:
             contentToCopy = patentNumber;
     }
@@ -1846,6 +1853,16 @@ window.copyFamilyPublicationNumbers = function(patentNumber, event) {
     // 复制到剪贴板
     navigator.clipboard.writeText(contentToCopy)
         .then(() => {
+            // 同步到智能剪贴板
+            if (window.smartClipboard && contentToCopy) {
+                window.smartClipboard.export(contentToCopy, '功能六-专利详情', {
+                    source: '同族公开号复制按钮',
+                    patentNumber: patentNumber,
+                    fieldType: 'family_publication_numbers',
+                    timestamp: Date.now()
+                });
+            }
+            
             const btn = event?.target?.closest('button');
             if (btn) {
                 const originalHTML = btn.innerHTML;
@@ -1890,6 +1907,16 @@ window.copySimilarDocumentNumbers = function(patentNumber, event) {
     // 复制到剪贴板
     navigator.clipboard.writeText(contentToCopy)
         .then(() => {
+            // 同步到智能剪贴板
+            if (window.smartClipboard && contentToCopy) {
+                window.smartClipboard.export(contentToCopy, '功能六-专利详情', {
+                    source: '相似文档专利号复制按钮',
+                    patentNumber: patentNumber,
+                    fieldType: 'similar_document_numbers',
+                    timestamp: Date.now()
+                });
+            }
+            
             const btn = event?.target?.closest('button');
             if (btn) {
                 const originalHTML = btn.innerHTML;
