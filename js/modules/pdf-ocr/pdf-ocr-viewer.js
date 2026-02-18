@@ -12,6 +12,7 @@ class PDFOCRViewer {
         this.highlightedBlock = null;
         this.blockOverlays = new Map();
         this.isBlockMode = false;
+        this.isMultiSelectMode = false; // 多选模式（显示全部区块时启用）
         this.filterType = 'all';
         this.colors = {
             text: 'rgba(34, 197, 94, 0.3)',
@@ -650,7 +651,7 @@ class PDFOCRViewer {
     }
 
     /**
-     * 选中区块（支持Ctrl多选）
+     * 选中区块（支持多选模式）
      */
     selectBlock(block, isMultiSelect = false) {
         // 确保区块层可见
@@ -668,8 +669,11 @@ class PDFOCRViewer {
             }
         }
 
-        if (isMultiSelect) {
-            // Ctrl多选模式
+        // 判断是否使用多选模式：显式传入isMultiSelect或处于多选模式
+        const useMultiSelect = isMultiSelect || this.isMultiSelectMode;
+        
+        if (useMultiSelect) {
+            // 多选模式
             const existingIndex = this.selectedBlocks.findIndex(b => b.id === block.id);
             if (existingIndex >= 0) {
                 // 已选中，取消选中
@@ -690,7 +694,7 @@ class PDFOCRViewer {
             this.selectedBlocks = [block];
         }
 
-        // 更新所有选中区块的样式（单选和多选都需要）
+        // 更新所有选中区块的样式
         this.updateAllSelectedStyles();
 
         // 更新可见性

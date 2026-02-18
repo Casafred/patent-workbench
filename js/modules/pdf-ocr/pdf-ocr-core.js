@@ -608,24 +608,37 @@ class PDFOCRCore {
     }
     
     /**
-     * 切换区块显示
+     * 切换区块显示（同时切换多选模式）
      */
     toggleBlocks() {
         this.showBlocks = !this.showBlocks;
         this.elements.toggleBlocksBtn.classList.toggle('active', this.showBlocks);
         
+        // 更新按钮文本
+        if (this.elements.toggleBlocksBtn) {
+            this.elements.toggleBlocksBtn.textContent = this.showBlocks ? '退出多选' : '多选模式';
+        }
+        
         const blocksLayer = document.getElementById('ocr-blocks-layer');
         
         if (this.showBlocks && window.pdfOCRViewer) {
-            // 显示区块层
+            // 显示区块层并进入多选模式
             if (blocksLayer) {
                 blocksLayer.style.display = 'block';
             }
+            // 设置多选模式
+            window.pdfOCRViewer.isMultiSelectMode = true;
             window.pdfOCRViewer.renderBlocks();
         } else {
-            // 隐藏区块层（但不清空blockOverlays，保留选中能力）
+            // 隐藏区块层并退出多选模式
             if (blocksLayer) {
                 blocksLayer.style.display = 'none';
+            }
+            // 退出多选模式，清空选中
+            if (window.pdfOCRViewer) {
+                window.pdfOCRViewer.isMultiSelectMode = false;
+                window.pdfOCRViewer.selectedBlocks = [];
+                window.pdfOCRViewer.selectedBlock = null;
             }
         }
     }
