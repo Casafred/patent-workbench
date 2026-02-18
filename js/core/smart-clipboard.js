@@ -173,6 +173,7 @@ class SmartClipboard {
 
         this.saveToStorage();
         this.updateFloatingBall();
+        this.updatePanel();
         
         // 显示复制成功提示
         this.showCopyNotification();
