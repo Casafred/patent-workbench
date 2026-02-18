@@ -165,6 +165,13 @@ class PatentTabManager {
                         </svg>
                         批量解读
                     </button>
+                    <button class="small-button" onclick="patentTabManager.analyzeAllPatents('${tab.id}', true)" title="强制重新解读，忽略缓存" style="background: #ff9800; color: white;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                            <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                        </svg>
+                        刷新解读
+                    </button>
                     ${tab.relationType !== 'original' ? `
                     <button class="small-button" onclick="patentTabManager.refreshTab('${tab.id}')">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
@@ -427,7 +434,7 @@ class PatentTabManager {
      * 批量解读当前标签页的所有专利
      * @param {string} tabId - 标签页ID
      */
-    async analyzeAllPatents(tabId) {
+    async analyzeAllPatents(tabId, forceRefresh = false) {
         const tab = this.tabs.find(t => t.id === tabId);
         if (!tab) {
             alert('标签页不存在');
@@ -489,7 +496,8 @@ class PatentTabManager {
         // 显示解读状态
         const searchStatus = document.getElementById('search_status');
         if (searchStatus) {
-            searchStatus.textContent = `正在使用"${template.name}"模板解读 ${successfulResults.length} 个专利...`;
+            const refreshText = forceRefresh ? '（强制刷新）' : '';
+            searchStatus.textContent = `正在使用"${template.name}"模板解读 ${successfulResults.length} 个专利${refreshText}...`;
             searchStatus.style.display = 'block';
         }
         
@@ -517,11 +525,11 @@ class PatentTabManager {
             }
 
             try {
-                // 检查解读缓存
+                // 检查解读缓存（除非强制刷新）
                 let analysisContent = null;
                 let fromCache = false;
                 
-                if (window.PatentCache && window.PatentCache.hasAnalysis) {
+                if (!forceRefresh && window.PatentCache && window.PatentCache.hasAnalysis) {
                     const cachedAnalysis = window.PatentCache.getAnalysis(patentNumber);
                     if (cachedAnalysis) {
                         analysisContent = cachedAnalysis.content;
@@ -530,7 +538,7 @@ class PatentTabManager {
                     }
                 }
                 
-                // 如果没有缓存，调用API解读
+                // 如果没有缓存或强制刷新，调用API解读
                 if (!analysisContent) {
                     // 构建用户提示词
                     const userPrompt = buildAnalysisPrompt(template, result.data, includeSpecification);

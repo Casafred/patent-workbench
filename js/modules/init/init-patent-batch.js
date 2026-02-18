@@ -210,9 +210,9 @@ function renderHistoryList(searchKeyword = '') {
         
         html += `
             <div class="history-item" style="display: flex; align-items: center; padding: 10px 12px; border-bottom: 1px solid #eee;">
-                <input type="checkbox" class="history-item-checkbox" data-patent="${record.patentNumber}" style="margin-right: 10px;">
-                <div style="flex: 1; min-width: 0;">
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                <input type="checkbox" class="history-item-checkbox" data-patent="${record.patentNumber}" style="margin-right: 10px; flex-shrink: 0;">
+                <div style="flex: 1; min-width: 0; overflow: hidden;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap;">
                         <span style="font-weight: 500; color: #333;">${record.patentNumber}</span>
                         ${actionBadge}
                         ${cacheBadge}
@@ -225,14 +225,14 @@ function renderHistoryList(searchKeyword = '') {
                         ${window.PatentHistory.formatTime(record.timestamp)}
                     </div>
                 </div>
-                <div style="display: flex; gap: 4px; margin-left: 10px;">
-                    <button class="history-action-btn" data-action="crawl" data-patent="${record.patentNumber}" title="重新爬取" style="padding: 4px 8px; font-size: 11px; border: 1px solid #ddd; background: white; border-radius: 3px; cursor: pointer;">
+                <div style="display: flex; gap: 4px; margin-left: 10px; flex-shrink: 0;">
+                    <button class="history-action-btn" data-action="crawl" data-patent="${record.patentNumber}" title="重新爬取" style="padding: 4px 8px; font-size: 11px; border: 1px solid #1976d2; background: #1976d2; color: white; border-radius: 3px; cursor: pointer;">
                         爬取
                     </button>
-                    <button class="history-action-btn" data-action="analyze" data-patent="${record.patentNumber}" title="重新解读" style="padding: 4px 8px; font-size: 11px; border: 1px solid #ddd; background: white; border-radius: 3px; cursor: pointer;" ${!record.hasCache ? 'disabled' : ''}>
+                    <button class="history-action-btn" data-action="analyze" data-patent="${record.patentNumber}" title="重新解读" style="padding: 4px 8px; font-size: 11px; border: 1px solid #4caf50; background: #4caf50; color: white; border-radius: 3px; cursor: pointer;" ${!record.hasCache ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>
                         解读
                     </button>
-                    <button class="history-action-btn" data-action="delete" data-patent="${record.patentNumber}" title="删除记录" style="padding: 4px 8px; font-size: 11px; border: 1px solid #f5c6cb; background: #fff; color: #721c24; border-radius: 3px; cursor: pointer;">
+                    <button class="history-action-btn" data-action="delete" data-patent="${record.patentNumber}" title="删除记录" style="padding: 4px 8px; font-size: 11px; border: 1px solid #ef5350; background: #ffebee; color: #c62828; border-radius: 3px; cursor: pointer;">
                         删除
                     </button>
                 </div>

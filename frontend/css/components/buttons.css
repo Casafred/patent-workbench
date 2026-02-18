@@ -378,7 +378,7 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
     color: var(--primary-color);
 }
 
-/* 右侧帮助标签按钮 - 位于主容器外侧，边缘可见 */
+/* 右侧帮助标签按钮 - 位于主容器外侧，图标始终可见 */
 .help-tab-container {
     position: fixed;
     right: 0;
@@ -391,16 +391,16 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
 .help-tab {
     display: flex;
     align-items: center;
+    flex-direction: row-reverse;
     background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color-dark) 100%);
     color: white;
     text-decoration: none;
     border-radius: 8px 0 0 8px;
     box-shadow: -4px 4px 16px rgba(0, 0, 0, 0.2);
-    overflow: hidden;
+    overflow: visible;
     height: 80px;
     pointer-events: auto;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    transform: translateX(calc(100% - 6px));
 }
 
 .help-tab-text {
@@ -424,10 +424,12 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
+    width: 40px;
     height: 80px;
     flex-shrink: 0;
     border-left: 4px solid rgba(255, 255, 255, 0.5);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color-dark) 100%);
+    border-radius: 8px 0 0 8px;
 }
 
 .help-tab-icon svg {
@@ -437,10 +439,9 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
     fill: none;
 }
 
-/* 悬停展开效果 - 按钮滑出显示 */
+/* 悬停展开效果 - 文字区域展开 */
 .help-tab:hover {
     box-shadow: -6px 8px 24px rgba(0, 0, 0, 0.25);
-    transform: translateX(0);
 }
 
 .help-tab:hover .help-tab-text {
@@ -451,5 +452,5 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
 
 /* 点击效果 */
 .help-tab:active {
-    transform: translateX(0) scale(0.98);
+    transform: scale(0.98);
 }
