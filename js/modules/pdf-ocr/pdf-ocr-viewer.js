@@ -194,7 +194,7 @@ class PDFOCRViewer {
         
         let nearestBlock = null;
         let minDistance = Infinity;
-        const threshold = 500; // 最大搜索距离（像素）- 增大以适应不同缩放
+        const threshold = 1000; // 最大搜索距离（像素）- 增大以适应不同缩放
         
         // 筛选当前页的区块
         const currentPageBlocks = this.ocrBlocks.filter(block => block.pageIndex === pageIndex);
@@ -206,16 +206,32 @@ class PDFOCRViewer {
         for (const block of searchBlocks) {
             if (!block.bbox) continue;
             
-            // 计算点击位置到区块中心的距离
-            const blockCenterX = (block.bbox.lt[0] + block.bbox.rb[0]) / 2;
-            const blockCenterY = (block.bbox.lt[1] + block.bbox.rb[1]) / 2;
-            const distance = Math.sqrt(Math.pow(x - blockCenterX, 2) + Math.pow(y - blockCenterY, 2));
+            // 计算点击位置到区块边界的最近距离
+            const blockLeft = block.bbox.lt[0];
+            const blockTop = block.bbox.lt[1];
+            const blockRight = block.bbox.rb[0];
+            const blockBottom = block.bbox.rb[1];
             
-            // 检查点击位置是否在区块范围内或附近
-            const inBlockX = x >= block.bbox.lt[0] - threshold && x <= block.bbox.rb[0] + threshold;
-            const inBlockY = y >= block.bbox.lt[1] - threshold && y <= block.bbox.rb[1] + threshold;
+            // 扩展区块范围，增加容差
+            const tolerance = 50; // 容差像素
+            const extendedLeft = blockLeft - tolerance;
+            const extendedRight = blockRight + tolerance;
+            const extendedTop = blockTop - tolerance;
+            const extendedBottom = blockBottom + tolerance;
             
-            console.log('[PDF-OCR] 区块', block.id, '范围:', block.bbox.lt, '-', block.bbox.rb, '距离:', distance.toFixed(1), '在范围内:', inBlockX && inBlockY);
+            // 计算点到矩形的最短距离
+            let distance;
+            if (x >= extendedLeft && x <= extendedRight && y >= extendedTop && y <= extendedBottom) {
+                // 点在扩展后的区块范围内，距离为0
+                distance = 0;
+            } else {
+                // 计算到区块边界或扩展边界的最短距离
+                const dx = Math.max(extendedLeft - x, 0, x - extendedRight);
+                const dy = Math.max(extendedTop - y, 0, y - extendedBottom);
+                distance = Math.sqrt(dx * dx + dy * dy);
+            }
+            
+            console.log('[PDF-OCR] 区块', block.id, '距离:', distance.toFixed(1));
             
             // 始终记录最近的区块
             if (distance < minDistance) {
@@ -651,11 +667,9 @@ class PDFOCRViewer {
             if (existingIndex >= 0) {
                 // 已选中，取消选中
                 this.selectedBlocks.splice(existingIndex, 1);
-                this.updateBlockOverlayStyle(block, false);
             } else {
                 // 添加到选中列表
                 this.selectedBlocks.push(block);
-                this.updateBlockOverlayStyle(block, true);
             }
             // 更新主选中区块为最后一个
             if (this.selectedBlocks.length > 0) {
@@ -663,15 +677,14 @@ class PDFOCRViewer {
             } else {
                 this.selectedBlock = null;
             }
-            // 更新所有选中区块的样式
-            this.updateAllSelectedStyles();
         } else {
             // 单选模式：清除所有选中，只选中当前
-            this.clearAllSelections();
             this.selectedBlock = block;
             this.selectedBlocks = [block];
-            this.updateBlockOverlayStyle(block, true);
         }
+
+        // 更新所有选中区块的样式（单选和多选都需要）
+        this.updateAllSelectedStyles();
 
         // 更新可见性
         this.updateBlockVisibility();
