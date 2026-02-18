@@ -617,9 +617,172 @@ function buildPatentDetailHTML(result, selectedFields) {
     return htmlContent;
 }
 
+/**
+ * 实时更新弹窗中的解读结果
+ * @param {string} patentNumber - 专利号
+ * @param {string} analysisContent - 解读内容
+ * @param {boolean} parseSuccess - 是否成功解析
+ * @param {Object} template - 使用的模板
+ */
+function updatePatentDetailAnalysis(patentNumber, analysisContent, parseSuccess, template) {
+    const modalAnalysisResult = document.getElementById(`modal-analysis-result-${patentNumber}`);
+    const modalBody = document.getElementById('patent_detail_body');
+    
+    if (!modalAnalysisResult && modalBody) {
+        const existingAnalysisSection = modalBody.querySelector(`[data-analysis-section="${patentNumber}"]`);
+        if (existingAnalysisSection) {
+            updateAnalysisSection(existingAnalysisSection, analysisContent, parseSuccess, template, patentNumber);
+            return;
+        }
+        
+        const newSection = createAnalysisSection(patentNumber, analysisContent, parseSuccess, template);
+        const firstContent = modalBody.querySelector('div');
+        if (firstContent) {
+            firstContent.insertAdjacentHTML('beforeend', newSection);
+        } else {
+            modalBody.insertAdjacentHTML('beforeend', newSection);
+        }
+        return;
+    }
+    
+    if (modalAnalysisResult) {
+        updateAnalysisSection(modalAnalysisResult, analysisContent, parseSuccess, template, patentNumber);
+    }
+}
+
+/**
+ * 更新解读区域内容
+ */
+function updateAnalysisSection(element, analysisContent, parseSuccess, template, patentNumber) {
+    let displayContent = '';
+    
+    if (parseSuccess) {
+        try {
+            let cleanContent = analysisContent.trim();
+            if (cleanContent.startsWith('```json')) {
+                cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+            } else if (cleanContent.startsWith('```')) {
+                cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
+            }
+            
+            const analysisJson = JSON.parse(cleanContent);
+            
+            let tableRows = '';
+            Object.keys(analysisJson).forEach(key => {
+                const value = analysisJson[key];
+                const displayValue = typeof value === 'string' ? value.replace(/\n/g, '<br>') : value;
+                tableRows += `<tr><td style="border: 1px solid #ddd; padding: 8px;">${key}</td><td style="border: 1px solid #ddd; padding: 8px;">${displayValue}</td></tr>`;
+            });
+            
+            displayContent = `
+                <div class="analysis-content">
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                        <tr><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">字段</th><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">内容</th></tr>
+                        ${tableRows}
+                    </table>
+                </div>
+            `;
+        } catch (e) {
+            displayContent = `
+                <div class="analysis-content">
+                    <div style="white-space: pre-wrap; font-family: monospace; background-color: #f5f5f5; padding: 10px; border-radius: 4px;">
+                        ${analysisContent}
+                    </div>
+                </div>
+            `;
+        }
+    } else {
+        displayContent = `
+            <div class="analysis-content">
+                <div style="white-space: pre-wrap; font-family: monospace; background-color: #f5f5f5; padding: 10px; border-radius: 4px;">
+                    ${analysisContent}
+                </div>
+            </div>
+        `;
+    }
+    
+    element.innerHTML = `
+        <div class="ai-disclaimer compact">
+            <div class="ai-disclaimer-icon">AI</div>
+            <div class="ai-disclaimer-text"><strong>AI生成：</strong>以下解读由AI生成，仅供参考</div>
+        </div>
+        ${displayContent}
+    `;
+    element.style.display = 'block';
+    
+    const modalAnalysisStatus = document.getElementById(`modal-analysis-status-${patentNumber}`);
+    if (modalAnalysisStatus) {
+        modalAnalysisStatus.textContent = '已完成';
+        modalAnalysisStatus.style.color = '#28a745';
+    }
+}
+
+/**
+ * 创建新的解读区域
+ */
+function createAnalysisSection(patentNumber, analysisContent, parseSuccess, template) {
+    let displayContent = '';
+    
+    if (parseSuccess) {
+        try {
+            let cleanContent = analysisContent.trim();
+            if (cleanContent.startsWith('```json')) {
+                cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+            } else if (cleanContent.startsWith('```')) {
+                cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
+            }
+            
+            const analysisJson = JSON.parse(cleanContent);
+            
+            let tableRows = '';
+            Object.keys(analysisJson).forEach(key => {
+                const value = analysisJson[key];
+                const displayValue = typeof value === 'string' ? value.replace(/\n/g, '<br>') : value;
+                tableRows += `<tr><td style="border: 1px solid #ddd; padding: 8px;">${key}</td><td style="border: 1px solid #ddd; padding: 8px;">${displayValue}</td></tr>`;
+            });
+            
+            displayContent = `
+                <div class="analysis-content">
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                        <tr><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">字段</th><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">内容</th></tr>
+                        ${tableRows}
+                    </table>
+                </div>
+            `;
+        } catch (e) {
+            displayContent = `
+                <div class="analysis-content">
+                    <div style="white-space: pre-wrap; font-family: monospace; background-color: #f5f5f5; padding: 10px; border-radius: 4px;">
+                        ${analysisContent}
+                    </div>
+                </div>
+            `;
+        }
+    }
+    
+    return `
+        <div style="margin-top: 15px; padding: 10px; background-color: #e3f2fd; border-radius: 5px;" data-analysis-section="${patentNumber}">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div>
+                    <strong style="color: var(--primary-color);">🤖 批量解读结果:</strong>
+                    <span id="modal-analysis-status-${patentNumber}" style="margin-left: 10px; font-size: 12px; color: #28a745;">已完成</span>
+                </div>
+            </div>
+            <div id="modal-analysis-result-${patentNumber}">
+                <div class="ai-disclaimer compact">
+                    <div class="ai-disclaimer-icon">AI</div>
+                    <div class="ai-disclaimer-text"><strong>AI生成：</strong>以下解读由AI生成，仅供参考</div>
+                </div>
+                ${displayContent}
+            </div>
+        </div>
+    `;
+}
+
 // 导出到全局作用域
 window.FIELD_MAPPING = FIELD_MAPPING;
 window.shouldShowField = shouldShowField;
 window.buildPatentDetailHTML = buildPatentDetailHTML;
+window.updatePatentDetailAnalysis = updatePatentDetailAnalysis;
 
 console.log('✅ patent-detail-html.js 加载完成');
