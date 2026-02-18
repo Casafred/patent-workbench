@@ -663,6 +663,8 @@ class PDFOCRViewer {
             } else {
                 this.selectedBlock = null;
             }
+            // 更新所有选中区块的样式
+            this.updateAllSelectedStyles();
         } else {
             // 单选模式：清除所有选中，只选中当前
             this.clearAllSelections();
@@ -673,9 +675,6 @@ class PDFOCRViewer {
 
         // 更新可见性
         this.updateBlockVisibility();
-
-        // 高亮覆盖层
-        this.updateBlockOverlayStyle(block, true);
 
         // 高亮结构化内容列表中的对应项
         this.highlightStructuredItem(block.id);
@@ -693,6 +692,24 @@ class PDFOCRViewer {
         this.emit('blockSelected', block);
         
         console.log('[PDF-OCR] 选中区块:', block.id, '多选数量:', this.selectedBlocks.length);
+    }
+
+    /**
+     * 更新所有选中区块的样式
+     */
+    updateAllSelectedStyles() {
+        // 先清除所有样式
+        this.blockOverlays.forEach((overlay, id) => {
+            const isSelected = this.selectedBlocks.some(b => b.id === id);
+            overlay.classList.toggle('selected', isSelected);
+            if (isSelected) {
+                overlay.style.zIndex = '100';
+                overlay.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.2)';
+            } else {
+                overlay.style.zIndex = '';
+                overlay.style.boxShadow = '';
+            }
+        });
     }
 
     /**

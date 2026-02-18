@@ -744,18 +744,14 @@
     position: relative;
     overflow: auto;
     background: #f1f5f9;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
+    display: block;
     padding: 20px;
 }
 
 .viewer-container {
     position: relative;
-    display: inline-flex;
-    align-items: flex-start;
-    justify-content: flex-start;
-    min-width: min-content;
+    display: inline-block;
+    margin: 0 auto;
 }
 
 .viewer-container .pdf-page-canvas,
