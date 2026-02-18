@@ -517,23 +517,56 @@ class PatentTabManager {
             }
 
             try {
-                // 构建用户提示词
-                const userPrompt = buildAnalysisPrompt(template, result.data, includeSpecification);
+                // 检查解读缓存
+                let analysisContent = null;
+                let fromCache = false;
                 
-                // 调用解读API（使用统一的apiCall函数）
-                const analysisResult = await apiCall('/patent/analyze', {
-                    patent_data: result.data,
-                    template: {
-                        fields: template.fields,
-                        system_prompt: template.systemPrompt
-                    },
-                    user_prompt: userPrompt,
-                    include_specification: includeSpecification,
-                    model: selectedModel
-                });
+                if (window.PatentCache && window.PatentCache.hasAnalysis) {
+                    const cachedAnalysis = window.PatentCache.getAnalysis(patentNumber);
+                    if (cachedAnalysis) {
+                        analysisContent = cachedAnalysis.content;
+                        fromCache = true;
+                        console.log(`📦 使用解读缓存: ${patentNumber}`);
+                    }
+                }
+                
+                // 如果没有缓存，调用API解读
+                if (!analysisContent) {
+                    // 构建用户提示词
+                    const userPrompt = buildAnalysisPrompt(template, result.data, includeSpecification);
+                    
+                    // 调用解读API（使用统一的apiCall函数）
+                    const analysisResult = await apiCall('/patent/analyze', {
+                        patent_data: result.data,
+                        template: {
+                            fields: template.fields,
+                            system_prompt: template.systemPrompt
+                        },
+                        user_prompt: userPrompt,
+                        include_specification: includeSpecification,
+                        model: selectedModel
+                    });
 
-                // 解析解读结果
-                const analysisContent = analysisResult.choices?.[0]?.message?.content || analysisResult.analysis || analysisResult.result || '无解读结果';
+                    // 解析解读结果
+                    analysisContent = analysisResult.choices?.[0]?.message?.content || analysisResult.analysis || analysisResult.result || '无解读结果';
+                    
+                    // 保存解读结果到缓存
+                    if (window.PatentCache && window.PatentCache.saveAnalysis) {
+                        window.PatentCache.saveAnalysis(patentNumber, {
+                            content: analysisContent,
+                            template: template.name,
+                            templateId: template.id,
+                            model: selectedModel
+                        });
+                    }
+                    
+                    // 保存到历史记录
+                    if (window.PatentHistory) {
+                        window.PatentHistory.add(patentNumber, 'analyze', {
+                            title: result.data?.title || ''
+                        });
+                    }
+                }
                 
                 // 尝试解析JSON格式的解读结果
                 let analysisJson = {};
@@ -584,7 +617,7 @@ class PatentTabManager {
                 const placeholder = document.getElementById(placeholderId);
                 if (placeholder) {
                     placeholder.innerHTML = `
-                        <h5>专利 ${patentNumber} 解读结果</h5>
+                        <h5>专利 ${patentNumber} 解读结果 ${fromCache ? '<span style="color: #856404; font-size: 0.8em;">(来自缓存)</span>' : ''}</h5>
                         <div class="ai-disclaimer compact">
                             <div class="ai-disclaimer-icon">AI</div>
                             <div class="ai-disclaimer-text"><strong>AI生成：</strong>以下解读由AI生成，仅供参考</div>
@@ -597,8 +630,23 @@ class PatentTabManager {
                 analysisResultsMap.set(patentNumber, {
                     patent_number: patentNumber,
                     patent_data: result.data,
-                    analysis_content: analysisContent
+                    analysis_content: analysisContent,
+                    fromCache: fromCache
                 });
+                
+                // 即时更新专利详情弹窗中的解读结果
+                if (window.updatePatentDetailAnalysis) {
+                    window.updatePatentDetailAnalysis(patentNumber, analysisContent, true, template);
+                }
+                
+                // 触发解读完成事件（用于新标签页更新）
+                window.dispatchEvent(new CustomEvent('patentAnalysisCompleted', {
+                    detail: {
+                        patentNumber: patentNumber,
+                        analysisContent: analysisContent,
+                        template: template
+                    }
+                }));
 
             } catch (error) {
                 console.error(`解读专利 ${patentNumber} 失败:`, error);

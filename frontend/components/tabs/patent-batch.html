@@ -414,6 +414,63 @@
                 </svg>
                 清理缓存
             </button>
+            <button id="view_history_btn" class="small-button" style="font-size: 12px; padding: 4px 10px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 4px;">
+                    <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+                    <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+                </svg>
+                历史记录
+            </button>
+        </div>
+        
+        <!-- 历史记录面板 -->
+        <div id="history_panel" class="history-panel" style="display: none; margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef;">
+            <div class="history-panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h4 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+                        <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+                    </svg>
+                    爬取解读历史记录
+                </h4>
+                <div style="display: flex; gap: 8px;">
+                    <button id="refresh_history_btn" class="small-button" style="font-size: 11px; padding: 3px 8px;">刷新</button>
+                    <button id="clear_history_btn" class="small-button delete-button" style="font-size: 11px; padding: 3px 8px;">清空历史</button>
+                    <button id="close_history_btn" class="small-button" style="font-size: 11px; padding: 3px 8px;">关闭</button>
+                </div>
+            </div>
+            
+            <div class="history-stats" style="display: flex; gap: 15px; margin-bottom: 15px; padding: 10px; background: white; border-radius: 6px;">
+                <span style="font-size: 12px; color: #666;">总计: <strong id="history_total_count">0</strong> 条</span>
+                <span style="font-size: 12px; color: #666;">已缓存: <strong id="history_cached_count">0</strong> 条</span>
+                <span style="font-size: 12px; color: #666;">已解读: <strong id="history_analyzed_count">0</strong> 条</span>
+            </div>
+            
+            <div class="history-actions" style="display: flex; gap: 8px; margin-bottom: 15px;">
+                <button id="history_batch_crawl_btn" class="small-button primary-btn" style="font-size: 12px; padding: 4px 12px;" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 4px;">
+                        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                    </svg>
+                    批量爬取选中
+                </button>
+                <button id="history_batch_analyze_btn" class="small-button" style="font-size: 12px; padding: 4px 12px; background: #4caf50; color: white;" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 4px;">
+                        <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/>
+                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                    </svg>
+                    批量解读选中
+                </button>
+                <button id="history_select_all_btn" class="small-button" style="font-size: 12px; padding: 4px 12px;">全选</button>
+                <button id="history_deselect_all_btn" class="small-button" style="font-size: 12px; padding: 4px 12px;">取消全选</button>
+            </div>
+            
+            <div class="history-search" style="margin-bottom: 10px;">
+                <input type="text" id="history_search_input" placeholder="搜索专利号或标题..." style="width: 100%; padding: 8px 12px; border: 1px solid #ced4da; border-radius: 4px; font-size: 13px;">
+            </div>
+            
+            <div id="history_list" class="history-list" style="max-height: 300px; overflow-y: auto; background: white; border-radius: 6px; border: 1px solid #e9ecef;">
+                <div style="padding: 20px; text-align: center; color: #999;">暂无历史记录</div>
+            </div>
         </div>
         
         <!-- 查询结果状态 -->

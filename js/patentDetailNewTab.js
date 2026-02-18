@@ -1319,6 +1319,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     
                     // 检测哪些section有数据，标记缺失数据的导航项
                     const data = ${JSON.stringify(data)};
+                    const currentPatentNumber = '${patentNumber}';
                     const sectionDataMap = {
                         'abstract': data.abstract && data.abstract.length > 0,
                         'claims': data.claims && data.claims.length > 0,
@@ -1379,6 +1380,108 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     
                     window.addEventListener('scroll', highlightNav);
                     highlightNav(); // 初始化
+                    
+                    // 监听解读缓存更新事件（跨窗口通信）
+                    window.addEventListener('storage', function(e) {
+                        if (e.key === 'patent_analysis_update_signal') {
+                            try {
+                                const signal = JSON.parse(e.newValue);
+                                if (signal && signal.patentNumber === currentPatentNumber.toUpperCase()) {
+                                    console.log('📡 收到解读更新信号:', signal);
+                                    // 从主窗口获取解读结果
+                                    if (window.opener && window.opener.PatentCache) {
+                                        const cachedAnalysis = window.opener.PatentCache.getAnalysis(currentPatentNumber);
+                                        if (cachedAnalysis) {
+                                            updateAnalysisSection(cachedAnalysis.content);
+                                        }
+                                    }
+                                }
+                            } catch (err) {
+                                console.error('解析解读更新信号失败:', err);
+                            }
+                        }
+                    });
+                    
+                    // 更新解读区域的函数
+                    window.updateAnalysisSection = function(analysisContent) {
+                        let analysisJson = {};
+                        let displayContent = '';
+                        
+                        try {
+                            let cleanContent = analysisContent.trim();
+                            if (cleanContent.startsWith('\\\`\\\`\\\`json')) {
+                                cleanContent = cleanContent.replace(/^\\\`\\\`\\\`json\\s*/, '').replace(/\\s*\\\`\\\`\\\`$/, '');
+                            } else if (cleanContent.startsWith('\\\`\\\`\\\`')) {
+                                cleanContent = cleanContent.replace(/^\\\`\\\`\\\`\\s*/, '').replace(/\\s*\\\`\\\`\\\`$/, '');
+                            }
+                            
+                            analysisJson = JSON.parse(cleanContent);
+                            
+                            let tableRows = '';
+                            Object.keys(analysisJson).forEach(key => {
+                                const value = analysisJson[key];
+                                const displayValue = typeof value === 'string' ? value.replace(/\\n/g, '<br>') : value;
+                                tableRows += '<tr><td style="border: 1px solid #ddd; padding: 12px; font-weight: 500; background-color: #f8f9fa; width: 30%;">' + key + '</td><td style="border: 1px solid #ddd; padding: 12px;">' + displayValue + '</td></tr>';
+                            });
+                            
+                            displayContent = '<table style="width: 100%; border-collapse: collapse; margin-top: 10px; background: white;"><thead><tr style="background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); color: white;"><th style="border: 1px solid #ddd; padding: 12px; text-align: left; width: 30%;">字段</th><th style="border: 1px solid #ddd; padding: 12px; text-align: left;">内容</th></tr></thead><tbody>' + tableRows + '</tbody></table>';
+                        } catch (e) {
+                            displayContent = '<div style="padding: 15px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; margin-bottom: 15px;">⚠️ 解读结果未能解析为结构化格式，显示原始内容：</div><div style="white-space: pre-wrap; font-family: monospace; background-color: #f5f5f5; padding: 15px; border-radius: 4px; border: 1px solid #ddd;">' + analysisContent + '</div>';
+                        }
+                        
+                        // 查找或创建解读结果区域
+                        let analysisSection = document.getElementById('analysis-result');
+                        if (!analysisSection) {
+                            // 创建解读结果区域
+                            const container = document.querySelector('.content');
+                            if (container) {
+                                const newSection = document.createElement('div');
+                                newSection.className = 'section';
+                                newSection.id = 'analysis-result';
+                                newSection.setAttribute('data-section-id', 'analysis-result');
+                                newSection.innerHTML = '<h2 class="section-title" onclick="toggleSection(\\'analysis-result\\')"><div class="section-title-content"><span class="section-icon">🤖</span>AI 解读结果</div></h2><div class="section-content"><div style="padding: 15px; background: linear-gradient(135deg, #e3f2fd 0%, #f5f5f5 100%); border-radius: 8px; border-left: 4px solid #2e7d32;"><div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; padding: 10px; background: white; border-radius: 6px;"><span style="background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.8em; font-weight: bold;">AI</span><span style="color: #666; font-size: 0.9em;">以下解读由AI生成，仅供参考</span></div>' + displayContent + '</div></div>';
+                                container.insertBefore(newSection, container.firstChild);
+                                
+                                // 更新左侧导航
+                                const sideNav = document.getElementById('sideNav');
+                                if (sideNav) {
+                                    const navItem = document.createElement('a');
+                                    navItem.href = '#analysis-result';
+                                    navItem.className = 'side-nav-item';
+                                    navItem.setAttribute('data-section', 'analysis-result');
+                                    navItem.textContent = '🤖 AI解读';
+                                    sideNav.insertBefore(navItem, sideNav.children[1]);
+                                }
+                            }
+                        } else {
+                            // 更新现有解读区域
+                            const contentDiv = analysisSection.querySelector('.section-content > div');
+                            if (contentDiv) {
+                                const aiContentDiv = contentDiv.querySelector('div:last-child');
+                                if (aiContentDiv) {
+                                    aiContentDiv.innerHTML = displayContent;
+                                }
+                            }
+                        }
+                        
+                        // 显示提示
+                        const statusDiv = document.getElementById('tab-analysis-status-' + currentPatentNumber);
+                        if (statusDiv) {
+                            statusDiv.textContent = '已更新';
+                            statusDiv.style.color = '#28a745';
+                        }
+                    };
+                    
+                    // 初始检查是否有解读缓存
+                    if (window.opener && window.opener.PatentCache) {
+                        const cachedAnalysis = window.opener.PatentCache.getAnalysis(currentPatentNumber);
+                        if (cachedAnalysis) {
+                            console.log('📦 发现解读缓存，正在加载...');
+                            setTimeout(function() {
+                                updateAnalysisSection(cachedAnalysis.content);
+                            }, 500);
+                        }
+                    }
                 });
             </script>
         </body>

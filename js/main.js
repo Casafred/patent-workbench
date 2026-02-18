@@ -791,6 +791,13 @@ function initPatentBatchEventListeners() {
                         PatentCache.save(patentNumber, result.data, selectedFields, result.url);
                     }
                     
+                    // 保存到历史记录
+                    if (window.PatentHistory) {
+                        window.PatentHistory.add(patentNumber, 'crawl', {
+                            title: result.data?.title || ''
+                        });
+                    }
+                    
                     // 实时显示
                     displayPatentResult(result, results.length - 1, patentNumbers.length);
                 }
@@ -1140,37 +1147,70 @@ function initPatentBatchEventListeners() {
                 }
                 
                 try {
-                    // 调试：检查 patent.data 的实际内容
-                    console.log('🔍 main.js - patent.data 调试:');
-                    console.log('  - patent 对象:', patent);
-                    console.log('  - patent.data:', patent.data);
-                    console.log('  - patent.data 的字段:', patent.data ? Object.keys(patent.data) : 'N/A');
-                    console.log('  - patent.data.patent_number:', patent.data?.patent_number);
-                    console.log('  - patent.data.title:', patent.data?.title);
-                    console.log('  - patent.data.abstract:', patent.data?.abstract ? patent.data.abstract.substring(0, 50) + '...' : 'N/A');
-                    console.log('  - patent.data.claims:', patent.data?.claims);
-                    console.log('  - patent.data.description 是否存在:', !!patent.data?.description);
-                    
-                    // 使用模板构建提示词
-                    const userPrompt = buildAnalysisPrompt(template, patent.data, includeSpecification);
-                    
                     // 获取选择的模型
                     const selectedModel = getEl('patent_batch_model_selector')?.value || 'GLM-4-Flash';
                     
-                    // 调用API解读专利
-                    const analysisResult = await apiCall('/patent/analyze', {
-                        patent_data: patent.data,
-                        template: {
-                            fields: template.fields,
-                            system_prompt: template.systemPrompt
-                        },
-                        user_prompt: userPrompt,
-                        include_specification: includeSpecification,
-                        model: selectedModel
-                    });
+                    // 检查解读缓存
+                    let analysisContent = null;
+                    let fromCache = false;
                     
-                    // 更新解读结果
-                    const analysisContent = analysisResult.choices[0]?.message?.content || '解读失败';
+                    if (window.PatentCache && window.PatentCache.hasAnalysis) {
+                        const cachedAnalysis = window.PatentCache.getAnalysis(patent.patent_number);
+                        if (cachedAnalysis) {
+                            analysisContent = cachedAnalysis.content;
+                            fromCache = true;
+                            console.log(`📦 使用解读缓存: ${patent.patent_number}`);
+                        }
+                    }
+                    
+                    // 如果没有缓存，调用API解读
+                    if (!analysisContent) {
+                        // 调试：检查 patent.data 的实际内容
+                        console.log('🔍 main.js - patent.data 调试:');
+                        console.log('  - patent 对象:', patent);
+                        console.log('  - patent.data:', patent.data);
+                        console.log('  - patent.data 的字段:', patent.data ? Object.keys(patent.data) : 'N/A');
+                        console.log('  - patent.data.patent_number:', patent.data?.patent_number);
+                        console.log('  - patent.data.title:', patent.data?.title);
+                        console.log('  - patent.data.abstract:', patent.data?.abstract ? patent.data.abstract.substring(0, 50) + '...' : 'N/A');
+                        console.log('  - patent.data.claims:', patent.data?.claims);
+                        console.log('  - patent.data.description 是否存在:', !!patent.data?.description);
+                        
+                        // 使用模板构建提示词
+                        const userPrompt = buildAnalysisPrompt(template, patent.data, includeSpecification);
+                        
+                        // 调用API解读专利
+                        const analysisResult = await apiCall('/patent/analyze', {
+                            patent_data: patent.data,
+                            template: {
+                                fields: template.fields,
+                                system_prompt: template.systemPrompt
+                            },
+                            user_prompt: userPrompt,
+                            include_specification: includeSpecification,
+                            model: selectedModel
+                        });
+                        
+                        // 更新解读结果
+                        analysisContent = analysisResult.choices[0]?.message?.content || '解读失败';
+                        
+                        // 保存解读结果到缓存
+                        if (window.PatentCache && window.PatentCache.saveAnalysis) {
+                            window.PatentCache.saveAnalysis(patent.patent_number, {
+                                content: analysisContent,
+                                template: template.name,
+                                templateId: template.id,
+                                model: selectedModel
+                            });
+                        }
+                        
+                        // 保存到历史记录
+                        if (window.PatentHistory) {
+                            window.PatentHistory.add(patent.patent_number, 'analyze', {
+                                title: patent.data?.title || ''
+                            });
+                        }
+                    }
                     
                     // 尝试解析JSON格式的解读结果
                     let analysisJson = {};
@@ -1224,9 +1264,9 @@ function initPatentBatchEventListeners() {
                     if (resultContainer) {
                         const statusBadge = resultContainer.querySelector('.analysis-status');
                         if (statusBadge) {
-                            statusBadge.textContent = '已完成';
-                            statusBadge.style.background = '#d4edda';
-                            statusBadge.style.color = '#155724';
+                            statusBadge.textContent = fromCache ? '已缓存' : '已完成';
+                            statusBadge.style.background = fromCache ? '#fff3cd' : '#d4edda';
+                            statusBadge.style.color = fromCache ? '#856404' : '#155724';
                         }
 
                         const contentDiv = resultContainer.querySelector('.analysis-result-content');
@@ -1234,7 +1274,7 @@ function initPatentBatchEventListeners() {
                             contentDiv.innerHTML = `
                                 <div class="ai-disclaimer compact" style="margin-bottom: 10px;">
                                     <div class="ai-disclaimer-icon">AI</div>
-                                    <div class="ai-disclaimer-text"><strong>AI生成：</strong>以下解读由AI生成，仅供参考</div>
+                                    <div class="ai-disclaimer-text"><strong>AI生成：</strong>以下解读由AI生成，仅供参考${fromCache ? '（来自缓存）' : ''}</div>
                                 </div>
                                 ${displayContent}
                             `;
