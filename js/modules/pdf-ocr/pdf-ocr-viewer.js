@@ -293,13 +293,21 @@ class PDFOCRViewer {
         }
 
         // 内容标签页切换
-        const contentTabBtns = panel.querySelectorAll('.full-text-section .tab-btn');
+        const contentTabBtns = panel.querySelectorAll('.full-text-section .tab-btn[data-tab]');
         contentTabBtns.forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const tabName = e.target.dataset.tab;
                 this.switchContentTab(tabName);
             });
         });
+
+        // 全部原文提问按钮
+        const askFullTextBtn = panel.querySelector('#ask-full-text-btn');
+        if (askFullTextBtn) {
+            askFullTextBtn.addEventListener('click', () => {
+                this.askAboutFullText();
+            });
+        }
 
         // 拖动功能
         const header = panel.querySelector('.panel-header');
@@ -739,12 +747,12 @@ class PDFOCRViewer {
             const isSelected = this.selectedBlocks.some(b => b.id === id);
             
             if (isSelected) {
-                // 选中状态
+                // 选中状态 - 使用橙色
                 overlay.classList.add('selected');
                 overlay.style.zIndex = '100';
-                overlay.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.5)';
-                overlay.style.backgroundColor = 'rgba(59, 130, 246, 0.4)';
-                overlay.style.borderColor = '#3b82f6';
+                overlay.style.boxShadow = '0 0 0 4px rgba(249, 115, 22, 0.6)';
+                overlay.style.backgroundColor = 'rgba(249, 115, 22, 0.4)';
+                overlay.style.borderColor = '#f97316';
                 overlay.style.display = 'block';
             } else {
                 // 非选中状态
@@ -1652,6 +1660,45 @@ class PDFOCRViewer {
         } else {
             // 如果没有悬浮对话窗口，创建一个简单的对话弹窗
             this.showAIChatPopup(text, apiKey);
+        }
+    }
+
+    /**
+     * 对全部原文提问
+     */
+    async askAboutFullText() {
+        // 获取当前页的所有文本
+        const currentPage = window.pdfOCRCore ? window.pdfOCRCore.currentPage : 1;
+        const currentPageBlocks = this.ocrBlocks.filter(b => b.pageIndex === currentPage);
+        
+        if (currentPageBlocks.length === 0) {
+            this.showToast('当前页面没有识别内容', 'error');
+            return;
+        }
+        
+        // 合并所有文本
+        const fullText = currentPageBlocks.map(b => this.getBlockFullText(b)).join('\n\n');
+        
+        if (!fullText || fullText.trim().length === 0) {
+            this.showToast('没有可提问的内容', 'error');
+            return;
+        }
+
+        // 获取API密钥
+        const apiKey = await this.getAPIKey();
+        if (!apiKey) {
+            this.showToast('请先配置智谱AI API密钥', 'error');
+            return;
+        }
+
+        // 打开悬浮对话窗口
+        if (window.pdfOCRFloatingChat) {
+            window.pdfOCRFloatingChat.openWithContext({ 
+                context: `【第${currentPage}页全部内容】\n${fullText}`, 
+                apiKey: apiKey 
+            });
+        } else {
+            this.showAIChatPopup(fullText, apiKey);
         }
     }
 

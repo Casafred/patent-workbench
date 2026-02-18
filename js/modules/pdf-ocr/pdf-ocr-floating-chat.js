@@ -115,12 +115,6 @@ class PDFOCRFloatingChat {
             <div class="chat-context-bar">
                 <span class="context-label">上下文:</span>
                 <span class="context-preview">未选择内容</span>
-                <button class="clear-context-btn" title="清除上下文">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
             </div>
             
             <!-- 消息区域 -->
@@ -179,7 +173,6 @@ class PDFOCRFloatingChat {
         const sendBtn = this.window.querySelector('.action-btn.send');
         const input = this.window.querySelector('.chat-input');
         const clearHistoryBtn = this.window.querySelector('.action-btn.clear-history');
-        const clearContextBtn = this.window.querySelector('.clear-context-btn');
         const resizeHandle = this.window.querySelector('.resize-handle');
         const modelSelect = this.window.querySelector('#ocr-chat-model-select');
         
@@ -205,9 +198,6 @@ class PDFOCRFloatingChat {
         
         // 清空历史
         clearHistoryBtn.addEventListener('click', () => this.clearHistory());
-        
-        // 清除上下文
-        clearContextBtn.addEventListener('click', () => this.clearContext());
         
         // 调整大小
         resizeHandle.addEventListener('mousedown', (e) => this.startResize(e));
