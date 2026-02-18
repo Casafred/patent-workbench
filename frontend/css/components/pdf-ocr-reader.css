@@ -762,6 +762,8 @@
 .viewer-container .pdf-image-display {
     display: block;
     max-width: none;
+    position: relative;
+    z-index: 1;
 }
 
 .empty-state {

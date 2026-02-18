@@ -544,23 +544,32 @@ class PDFOCRViewer {
         const pdfImage = pdfCanvas ? pdfCanvas.querySelector('img, canvas') : null;
         
         if (pdfImage && block.bbox && blocksLayer) {
-            // 直接使用canvas的实际尺寸计算缩放比例
-            const canvasWidth = pdfImage.offsetWidth;
-            const canvasHeight = pdfImage.offsetHeight;
+            // 获取缩放级别
+            const zoomLevel = window.pdfOCRCore?.zoomLevel || 1;
+            
+            // 获取图片原始尺寸
+            let naturalWidth, naturalHeight;
+            if (pdfImage.tagName === 'IMG') {
+                naturalWidth = pdfImage.naturalWidth;
+                naturalHeight = pdfImage.naturalHeight;
+            } else {
+                naturalWidth = pdfImage.width;
+                naturalHeight = pdfImage.height;
+            }
             
             // OCR结果的页面尺寸
-            const pageWidth = block.bbox.page_width || canvasWidth;
-            const pageHeight = block.bbox.page_height || canvasHeight;
+            const pageWidth = block.bbox.page_width || naturalWidth;
+            const pageHeight = block.bbox.page_height || naturalHeight;
             
-            // 计算缩放比例
-            const scaleX = canvasWidth / pageWidth;
-            const scaleY = canvasHeight / pageHeight;
+            // 计算缩放比例（图片显示尺寸 / OCR原始尺寸）
+            const scaleX = naturalWidth / pageWidth;
+            const scaleY = naturalHeight / pageHeight;
             
-            // 计算区块位置（相对于canvas）
-            const left = block.bbox.lt[0] * scaleX;
-            const top = block.bbox.lt[1] * scaleY;
-            const width = (block.bbox.rb[0] - block.bbox.lt[0]) * scaleX;
-            const height = (block.bbox.rb[1] - block.bbox.lt[1]) * scaleY;
+            // 计算区块位置
+            const left = block.bbox.lt[0] * scaleX * zoomLevel;
+            const top = block.bbox.lt[1] * scaleY * zoomLevel;
+            const width = (block.bbox.rb[0] - block.bbox.lt[0]) * scaleX * zoomLevel;
+            const height = (block.bbox.rb[1] - block.bbox.lt[1]) * scaleY * zoomLevel;
 
             overlay.style.left = `${left}px`;
             overlay.style.top = `${top}px`;
