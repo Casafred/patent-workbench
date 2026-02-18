@@ -69,7 +69,10 @@
     top: 100px;
     right: 20px;
     width: 450px;
-    max-height: 70vh;
+    min-width: 300px;
+    min-height: 200px;
+    max-width: 90vw;
+    max-height: 90vh;
     background: white;
     border-radius: 12px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
@@ -77,10 +80,12 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    resize: both;
 }
 
 .floating-text-panel.minimized {
     max-height: 52px;
+    resize: none;
 }
 
 .floating-text-panel.minimized .panel-content,

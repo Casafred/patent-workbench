@@ -296,13 +296,33 @@ class PDFOCRFloatingChat {
      * 打开窗口并设置上下文
      */
     openWithContext(data) {
+        // 重置状态（新的对话）
+        this.messages = [];
         this.currentContext = data.context || '';
+        
+        // 清空消息容器
+        const messagesContainer = this.window.querySelector('.chat-messages');
+        if (messagesContainer) {
+            messagesContainer.innerHTML = '';
+        }
         
         // 更新上下文显示
         this.updateContextPreview();
         
-        // 如果有上下文，添加系统提示
-        if (this.currentContext && this.messages.length === 0) {
+        // 如果是最小化状态，恢复
+        if (this.isMinimized) {
+            this.isMinimized = false;
+            const messages = this.window.querySelector('.chat-messages');
+            const inputArea = this.window.querySelector('.chat-input-area');
+            const contextBar = this.window.querySelector('.chat-context-bar');
+            if (messages) messages.style.display = 'block';
+            if (inputArea) inputArea.style.display = 'flex';
+            if (contextBar) contextBar.style.display = 'flex';
+            this.window.style.height = `${this.config.height}px`;
+        }
+        
+        // 添加系统提示
+        if (this.currentContext) {
             this.addMessage('system', `已加载选中的内容作为上下文。您可以询问关于这段内容的任何问题。`);
         }
         

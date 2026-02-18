@@ -1305,6 +1305,9 @@ class PDFOCRViewer {
                 <button class="btn btn-sm btn-secondary" data-action="translate">
                     <i class="fas fa-language"></i> 翻译
                 </button>
+                <button class="btn btn-sm btn-secondary" data-action="ask">
+                    <i class="fas fa-comment-dots"></i> 提问
+                </button>
             </div>
         `;
 
@@ -1315,6 +1318,10 @@ class PDFOCRViewer {
 
         detailsPanel.querySelector('[data-action="translate"]').addEventListener('click', () => {
             this.translateBlock(block);
+        });
+
+        detailsPanel.querySelector('[data-action="ask"]').addEventListener('click', () => {
+            this.askAboutBlock(block);
         });
     }
 
