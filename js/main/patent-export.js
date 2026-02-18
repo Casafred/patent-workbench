@@ -258,4 +258,4 @@ function formatExternalLinks(links) {
     }).join('; ');
 }
 
-console.log('✅ patent-export.js 加载完成');
+console.log('[OK] patent-export.js 加载完成');
