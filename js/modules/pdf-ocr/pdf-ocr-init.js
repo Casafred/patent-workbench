@@ -144,9 +144,10 @@ class PDFOCRInit {
      */
     setupModuleConnections() {
         // 监听解析完成事件，更新视图
-        this.modules.parser.on('parseComplete', (result) => {
-            this.modules.viewer.setOCRResult(result);
-        });
+        // 注意：parser.handleParseResult 已经调用了 setOCRResult，这里不需要重复调用
+        // this.modules.parser.on('parseComplete', (result) => {
+        //     this.modules.viewer.setOCRResult(result);
+        // });
 
         // 监听区块选择事件
         this.modules.viewer.on('blockSelected', (block) => {
@@ -275,7 +276,8 @@ class PDFOCRInit {
         // 加载OCR结果
         const result = window.state.get('ocrResult');
         if (result) {
-            this.modules.viewer?.setOCRResult(result);
+            // 使用追加模式加载已保存的结果
+            this.modules.viewer?.setOCRResult(result, true);
             this.modules.parser?.handleParseResult(result);
         }
     }

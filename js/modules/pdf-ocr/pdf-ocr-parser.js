@@ -127,7 +127,8 @@ class PDFOCRParser {
      * 获取解析设置
      */
     getSettings() {
-        const mode = document.getElementById('ocr-parse-mode')?.value || 'auto';
+        const modeElement = document.getElementById('ocr-parse-mode');
+        const mode = modeElement?.value || 'page';  // 默认使用'page'模式（当前页面）
         const recognizeFormula = document.getElementById('ocr-recognize-formula')?.checked ?? true;
         const recognizeTable = document.getElementById('ocr-recognize-table')?.checked ?? true;
 
