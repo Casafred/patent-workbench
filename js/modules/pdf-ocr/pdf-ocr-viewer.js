@@ -905,9 +905,16 @@ class PDFOCRViewer {
 
         // 获取当前页码
         const currentPage = window.pdfOCRCore ? window.pdfOCRCore.currentPage : 1;
+        
+        console.log('[PDF-OCR-Viewer] updateStructuredContent:');
+        console.log('  - currentPage:', currentPage);
+        console.log('  - ocrBlocks总数:', this.ocrBlocks.length);
+        console.log('  - pageResults keys:', [...this.pageResults.keys()]);
 
         // 过滤当前页的区块
         const currentPageBlocks = this.ocrBlocks.filter(block => block.pageIndex === currentPage);
+        
+        console.log('  - currentPageBlocks数量:', currentPageBlocks.length);
 
         if (currentPageBlocks.length === 0) {
             // 检查是否有其他页已解析
@@ -954,17 +961,10 @@ class PDFOCRViewer {
         const typeIcon = this.getBlockTypeIcon(block.type);
         const typeLabel = this.getBlockTypeLabel(block.type);
         const previewText = this.getBlockPreviewText(block);
-
-        item.innerHTML = `
-            <div class="content-item-header">
-                <span class="content-type-badge ${block.type}">
-                    <i class="${typeIcon}"></i> ${typeLabel}
-                </span>
-                <span class="content-page">第${block.pageIndex}页</span>
-            </div>
-            <div class="content-item-body">
-                ${previewText}
-            </div>
+        
+        // 图片类型不显示操作按钮
+        const isImage = block.type === 'image';
+        const actionButtons = isImage ? '' : `
             <div class="content-item-actions">
                 <button class="ocr-action-btn copy-btn" title="复制" data-action="copy">
                     <span>复制</span>
@@ -978,6 +978,19 @@ class PDFOCRViewer {
             </div>
         `;
 
+        item.innerHTML = `
+            <div class="content-item-header">
+                <span class="content-type-badge ${block.type}">
+                    <i class="${typeIcon}"></i> ${typeLabel}
+                </span>
+                <span class="content-page">第${block.pageIndex}页</span>
+            </div>
+            <div class="content-item-body">
+                ${previewText}
+            </div>
+            ${actionButtons}
+        `;
+
         // 点击选中
         item.addEventListener('click', (e) => {
             if (!e.target.closest('.content-item-actions')) {
@@ -985,6 +998,9 @@ class PDFOCRViewer {
                 this.scrollToBlock(block.id);
             }
         });
+
+        // 图片类型没有操作按钮，跳过事件绑定
+        if (isImage) return item;
 
         // 操作按钮
         item.querySelector('[data-action="copy"]').addEventListener('click', (e) => {

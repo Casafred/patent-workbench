@@ -475,6 +475,8 @@ class PDFOCRCore {
             return;
         }
         
+        console.log('[PDF-OCR-Core] goToPage:', pageNum);
+        
         this.currentPage = pageNum;
         
         // 更新UI
@@ -500,8 +502,12 @@ class PDFOCRCore {
             window.appState.pdfOCRReader.currentPage = pageNum;
         }
 
+        console.log('[PDF-OCR-Core] goToPage完成，调用viewer更新');
+        
         // 触发页面切换事件，让viewer重新渲染区块和更新结果列表
         if (window.pdfOCRViewer) {
+            console.log('[PDF-OCR-Core] viewer.ocrBlocks数量:', window.pdfOCRViewer.ocrBlocks.length);
+            console.log('[PDF-OCR-Core] viewer.pageResults keys:', [...window.pdfOCRViewer.pageResults.keys()]);
             window.pdfOCRViewer.renderBlocks();
             window.pdfOCRViewer.updateStructuredContent();
         }
