@@ -577,6 +577,7 @@
                 <li><a data-target="feature-patent-batch">功能六：批量专利解读</a></li>
                 <li><a data-target="feature-claims-processor">功能七：权利要求处理</a></li>
                 <li><a data-target="feature-drawing-marker">功能八：专利附图标记</a></li>
+                <li><a data-target="feature-pdf-ocr">功能九：PDF阅读与OCR</a></li>
                 <li><a data-target="faq">常见问题 (FAQ)</a></li>
             </ul>
         </nav>
@@ -639,6 +640,40 @@
                 <div class="gif-placeholder" data-gif-id="logout-demo">
                     <span>点击右侧"GIF管理"按钮插入：登出系统.gif</span>
                     <span class="gif-label">占位符ID: logout-demo</span>
+                </div>
+
+                <h3>5. 全局智能剪贴板</h3>
+                <p>智能剪贴板是一个强大的跨功能数据传递工具，可以在不同功能模块之间无缝传递数据。</p>
+                
+                <h4>功能特点</h4>
+                <ul>
+                    <li><strong>智能类型识别：</strong> 自动识别复制内容的类型（专利号、权利要求文本、AI分析结果等）</li>
+                    <li><strong>跨功能传递：</strong> 在一个功能复制内容，可在其他功能中快速粘贴</li>
+                    <li><strong>历史记录：</strong> 保存最近10条复制记录，随时调用</li>
+                    <li><strong>悬浮球操作：</strong> 右侧悬浮球显示当前剪贴板状态，点击打开操作面板</li>
+                </ul>
+                
+                <h4>使用方法</h4>
+                <ol>
+                    <li><strong>复制内容：</strong> 在任意位置复制文本（Ctrl+C），系统自动捕获并识别类型</li>
+                    <li><strong>打开面板：</strong> 点击右侧绿色悬浮球，打开智能剪贴板面板</li>
+                    <li><strong>查看识别结果：</strong> 面板显示内容类型、置信度和预览</li>
+                    <li><strong>快速粘贴：</strong> 点击"可粘贴到当前页面"列表中的目标输入框，自动粘贴</li>
+                    <li><strong>历史记录：</strong> 在面板底部查看和选择历史复制内容</li>
+                </ol>
+                
+                <h4>支持的内容类型</h4>
+                <ul>
+                    <li><strong>专利号：</strong> 自动识别专利号格式，可粘贴到功能六批量查询</li>
+                    <li><strong>权利要求文本：</strong> 可粘贴到功能七权利要求处理</li>
+                    <li><strong>AI分析结果：</strong> 可粘贴到即时对话继续讨论</li>
+                    <li><strong>普通文本：</strong> 可粘贴到任意文本输入框</li>
+                </ul>
+                
+                <!-- GIF: 智能剪贴板 -->
+                <div class="gif-placeholder" data-gif-id="smart-clipboard-intro">
+                    <span>点击右侧"GIF管理"按钮插入：智能剪贴板-功能介绍.gif</span>
+                    <span class="gif-label">占位符ID: smart-clipboard-intro</span>
                 </div>
             </div>
         </div>
@@ -984,14 +1019,17 @@
                 <h2>功能六：批量专利解读</h2>
             </div>
             <div class="card-body">
-                <p>此功能用于批量查询专利详情并提供AI解读功能，最多支持50个专利号。</p>
+                <p>此功能用于批量查询专利详情并提供AI解读功能，最多支持50个专利号。支持智能缓存、历史记录管理、标签页模式展示等高级功能。</p>
 
                 <h4>核心技术优势</h4>
                 <ul>
                     <li><strong>高效批量处理：</strong> 支持一次输入最多50个专利号。</li>
-                    <li><strong>智能专利爬取：</strong> 自动从专利数据库获取专利详情。</li>
+                    <li><strong>智能专利爬取：</strong> 自动从Google Patents获取专利详情。</li>
                     <li><strong>灵活字段选择器：</strong> 可选择需要爬取的专利信息字段。</li>
-                    <li><strong>解读模板管理：</strong> 支持多种解读模板。</li>
+                    <li><strong>解读模板管理：</strong> 支持多种解读模板，可自定义系统提示词和用户模板。</li>
+                    <li><strong>智能缓存系统：</strong> 自动缓存已爬取的专利数据，避免重复请求。</li>
+                    <li><strong>历史记录管理：</strong> 保存爬取和解读历史，支持批量操作。</li>
+                    <li><strong>标签页模式展示：</strong> 每个专利独立标签页，方便查看和对比。</li>
                 </ul>
                 
                 <!-- GIF: 功能介绍 -->
@@ -1000,15 +1038,47 @@
                     <span class="gif-label">占位符ID: patent-batch-intro</span>
                 </div>
 
-                <h4>字段选择器说明</h4>
+                <h4>配置选项说明</h4>
                 <ul>
-                    <li><strong>基础字段（必选）：</strong> 专利号、标题、摘要、发明人、申请人等</li>
+                    <li><strong>全字段爬取开关：</strong> 
+                        <ul>
+                            <li>开启（推荐）：爬取所有可用字段，获取完整专利信息</li>
+                            <li>关闭：可展开字段选择器，按需选择特定字段</li>
+                        </ul>
+                    </li>
+                    <li><strong>自动批量解读开关：</strong> 
+                        <ul>
+                            <li>开启：爬取完成后自动开始AI解读</li>
+                            <li>关闭：需手动点击解读按钮</li>
+                        </ul>
+                    </li>
+                    <li><strong>解读时包含说明书：</strong> 
+                        <ul>
+                            <li>开启：将说明书内容纳入AI解读（会增加token消耗）</li>
+                            <li>关闭：仅基于摘要和权利要求进行解读</li>
+                        </ul>
+                    </li>
+                </ul>
+                
+                <!-- GIF: 配置选项 -->
+                <div class="gif-placeholder" data-gif-id="patent-batch-config">
+                    <span>点击右侧"GIF管理"按钮插入：批量专利解读-配置选项.gif</span>
+                    <span class="gif-label">占位符ID: patent-batch-config</span>
+                </div>
+
+                <h4>字段选择器说明</h4>
+                <p>关闭"全字段爬取"后可展开字段选择器，按需选择：</p>
+                <ul>
+                    <li><strong>基础字段（必选）：</strong> 专利号、标题、摘要、发明人、申请人、申请日期、公开日期、权利要求</li>
                     <li><strong>分类与领域：</strong> CPC分类、技术领域、优先权日期</li>
-                    <li><strong>同族信息：</strong> 同族ID、同族申请、国家状态</li>
+                    <li><strong>同族信息：</strong> 同族ID、同族申请、国家状态（标注"耗时"的字段会增加爬取时间）</li>
                     <li><strong>引用信息：</strong> 引用专利、被引用专利</li>
                     <li><strong>法律与事件：</strong> 事件时间轴、法律事件、相似文档</li>
                     <li><strong>附加内容：</strong> 说明书、附图、外部链接</li>
                 </ul>
+                <div class="note">
+                    <strong>提示：</strong> 字段选择器提供"全选可选"、"取消全选"、"推荐配置"三个快捷按钮，方便快速配置。
+                </div>
                 
                 <!-- GIF: 字段选择器 -->
                 <div class="gif-placeholder" data-gif-id="patent-batch-field-selector">
@@ -1016,13 +1086,54 @@
                     <span class="gif-label">占位符ID: patent-batch-field-selector</span>
                 </div>
 
+                <h4>解读模板管理</h4>
+                <p>支持预设模板和自定义模板：</p>
+                <ul>
+                    <li><strong>预设模板：</strong> 默认模板、技术分析模板、商业价值模板、法律分析模板</li>
+                    <li><strong>自定义模板：</strong> 
+                        <ul>
+                            <li>系统提示词（System Prompt）：定义AI角色和分析风格</li>
+                            <li>用户提示词模板：使用占位符如 <code>{{patent_number}}</code>、<code>{{title}}</code>、<code>{{abstract}}</code>、<code>{{claims}}</code>、<code>{{description}}</code> 等</li>
+                        </ul>
+                    </li>
+                    <li><strong>模板操作：</strong> 保存、新建、删除、导出、导入</li>
+                </ul>
+                
+                <!-- GIF: 模板管理 -->
+                <div class="gif-placeholder" data-gif-id="patent-batch-template">
+                    <span>点击右侧"GIF管理"按钮插入：批量专利解读-模板管理.gif</span>
+                    <span class="gif-label">占位符ID: patent-batch-template</span>
+                </div>
+
+                <h4>缓存与历史记录</h4>
+                <ul>
+                    <li><strong>缓存统计：</strong> 查看已缓存的专利数据数量</li>
+                    <li><strong>清理缓存：</strong> 清除所有缓存的专利数据</li>
+                    <li><strong>历史记录：</strong> 
+                        <ul>
+                            <li>查看所有爬取和解读历史</li>
+                            <li>支持搜索专利号或标题</li>
+                            <li>批量选择后可重新爬取或解读</li>
+                            <li>显示缓存状态和解读状态</li>
+                        </ul>
+                    </li>
+                </ul>
+                
+                <!-- GIF: 缓存与历史 -->
+                <div class="gif-placeholder" data-gif-id="patent-batch-cache">
+                    <span>点击右侧"GIF管理"按钮插入：批量专利解读-缓存与历史.gif</span>
+                    <span class="gif-label">占位符ID: patent-batch-cache</span>
+                </div>
+
                 <h4>工作流程</h4>
                 <ol>
-                    <li><strong>输入专利号列表：</strong> 在文本框中输入专利号，最多50个。</li>
-                    <li><strong>选择解读模板：</strong> 选择合适的解读模板。</li>
-                    <li><strong>配置爬取字段：</strong> 勾选需要获取的专利信息字段。</li>
-                    <li><strong>批量查询专利：</strong> 点击"批量查询专利"按钮。</li>
-                    <li><strong>执行AI解读：</strong> 点击"批量解读"按钮。</li>
+                    <li><strong>输入专利号列表：</strong> 在文本框中输入专利号，用换行符或空格分隔，最多50个。</li>
+                    <li><strong>配置选项：</strong> 设置全字段爬取、自动解读、包含说明书等选项。</li>
+                    <li><strong>选择解读模板：</strong> 从下拉菜单选择预设模板或自定义模板。</li>
+                    <li><strong>配置爬取字段：</strong> 如需特定字段，关闭全字段爬取后展开字段选择器。</li>
+                    <li><strong>批量查询专利：</strong> 点击"批量查询专利"按钮，等待爬取完成。</li>
+                    <li><strong>查看结果：</strong> 在标签页中查看每个专利的详情和解读结果。</li>
+                    <li><strong>导出Excel：</strong> 点击导出按钮将结果保存为Excel文件。</li>
                 </ol>
                 
                 <!-- GIF: 工作流程 -->
@@ -1030,6 +1141,17 @@
                     <span>点击右侧"GIF管理"按钮插入：批量专利解读-工作流程.gif</span>
                     <span class="gif-label">占位符ID: patent-batch-workflow</span>
                 </div>
+
+                <h4>标签页模式展示</h4>
+                <p>查询结果以标签页形式展示，每个专利一个标签页：</p>
+                <ul>
+                    <li><strong>专利基本信息：</strong> 标题、专利号、申请日期、公开日期等</li>
+                    <li><strong>技术信息：</strong> 摘要、权利要求、说明书（如已爬取）</li>
+                    <li><strong>引用关系：</strong> 引用专利、被引用专利列表</li>
+                    <li><strong>法律事件：</strong> 事件时间轴、法律事件记录</li>
+                    <li><strong>AI解读结果：</strong> 结构化的解读内容</li>
+                    <li><strong>快捷操作：</strong> 复制专利号、查看原文、重新解读等</li>
+                </ul>
             </div>
         </div>
 
@@ -1117,6 +1239,129 @@
                 <div class="gif-placeholder" data-gif-id="drawing-marker-reprocess">
                     <span>点击右侧"GIF管理"按钮插入：专利附图标记-快速重新处理.gif</span>
                     <span class="gif-label">占位符ID: drawing-marker-reprocess</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 功能九：PDF阅读与OCR -->
+        <div class="content-card" id="feature-pdf-ocr">
+            <div class="card-header">
+                <h2>功能九：PDF阅读与OCR</h2>
+            </div>
+            <div class="card-body">
+                <p>此功能集成了PDF阅读器与智能OCR识别，支持PDF和图片文件的文字识别、结构化解析、划词选择和AI对话功能。</p>
+
+                <h4>核心技术优势</h4>
+                <ul>
+                    <li><strong>多格式支持：</strong> 支持PDF、PNG、JPG、JPEG、BMP、WEBP等常见格式。</li>
+                    <li><strong>智能OCR识别：</strong> 采用智谱GLM-4V视觉模型，精准识别文字、表格、公式。</li>
+                    <li><strong>结构化解析：</strong> 自动区分文本、表格、公式、图片等不同内容类型。</li>
+                    <li><strong>划词选择：</strong> 支持鼠标划选识别区块，快速定位和复制内容。</li>
+                    <li><strong>AI对话集成：</strong> 可直接对识别内容进行AI提问和分析。</li>
+                    <li><strong>多选模式：</strong> 支持批量选择多个识别区块进行统一操作。</li>
+                </ul>
+                
+                <!-- GIF: 功能介绍 -->
+                <div class="gif-placeholder" data-gif-id="pdf-ocr-intro">
+                    <span>点击右侧"GIF管理"按钮插入：PDF阅读与OCR-功能介绍.gif</span>
+                    <span class="gif-label">占位符ID: pdf-ocr-intro</span>
+                </div>
+
+                <h4>界面布局</h4>
+                <p>功能界面分为三个主要区域：</p>
+                <ul>
+                    <li><strong>左侧边栏：</strong> 文件上传、OCR控制、识别结果列表、导出功能。</li>
+                    <li><strong>中间主区域：</strong> PDF/图片查看器，支持缩放、翻页、区块显示。</li>
+                    <li><strong>右侧悬浮面板：</strong> 显示当前选中内容、全部原文、区块详情。</li>
+                </ul>
+                
+                <!-- GIF: 界面布局 -->
+                <div class="gif-placeholder" data-gif-id="pdf-ocr-interface">
+                    <span>点击右侧"GIF管理"按钮插入：PDF阅读与OCR-界面布局.gif</span>
+                    <span class="gif-label">占位符ID: pdf-ocr-interface</span>
+                </div>
+
+                <h4>工作流程</h4>
+                <ol>
+                    <li><strong>上传文件：</strong> 点击或拖拽上传PDF或图片文件（≤10MB）。</li>
+                    <li><strong>配置OCR：</strong> 选择解析范围（当前页面/全部页面），勾选是否识别公式和表格。</li>
+                    <li><strong>开始解析：</strong> 点击"开始OCR解析"，等待识别完成。</li>
+                    <li><strong>查看结果：</strong> 在左侧结果列表或右侧面板查看识别内容。</li>
+                    <li><strong>交互操作：</strong> 点击区块查看详情，或进入多选模式批量操作。</li>
+                    <li><strong>导出内容：</strong> 支持导出为Markdown或TXT格式。</li>
+                </ol>
+                
+                <!-- GIF: 工作流程 -->
+                <div class="gif-placeholder" data-gif-id="pdf-ocr-workflow">
+                    <span>点击右侧"GIF管理"按钮插入：PDF阅读与OCR-工作流程.gif</span>
+                    <span class="gif-label">占位符ID: pdf-ocr-workflow</span>
+                </div>
+
+                <h4>OCR解析设置</h4>
+                <ul>
+                    <li><strong>解析范围：</strong>
+                        <ul>
+                            <li>当前页面：仅解析当前显示的页面</li>
+                            <li>全部页面：自动解析PDF所有页面</li>
+                        </ul>
+                    </li>
+                    <li><strong>识别公式：</strong> 开启后可识别数学公式并转换为LaTeX格式</li>
+                    <li><strong>识别表格：</strong> 开启后可识别表格结构并转换为Markdown表格</li>
+                </ul>
+                
+                <!-- GIF: OCR设置 -->
+                <div class="gif-placeholder" data-gif-id="pdf-ocr-settings">
+                    <span>点击右侧"GIF管理"按钮插入：PDF阅读与OCR-OCR设置.gif</span>
+                    <span class="gif-label">占位符ID: pdf-ocr-settings</span>
+                </div>
+
+                <h4>查看器工具栏</h4>
+                <ul>
+                    <li><strong>翻页控制：</strong> 上一页/下一页按钮，或直接输入页码跳转</li>
+                    <li><strong>缩放控制：</strong> 支持50%-200%缩放，或选择预设比例</li>
+                    <li><strong>多选模式：</strong> 点击后显示全部识别区块，支持批量选择</li>
+                </ul>
+                
+                <!-- GIF: 查看器工具栏 -->
+                <div class="gif-placeholder" data-gif-id="pdf-ocr-toolbar">
+                    <span>点击右侧"GIF管理"按钮插入：PDF阅读与OCR-查看器工具栏.gif</span>
+                    <span class="gif-label">占位符ID: pdf-ocr-toolbar</span>
+                </div>
+
+                <h4>识别结果筛选</h4>
+                <p>左侧结果列表支持按类型筛选：</p>
+                <ul>
+                    <li><strong>全部类型：</strong> 显示所有识别结果</li>
+                    <li><strong>文本：</strong> 仅显示文本区块</li>
+                    <li><strong>表格：</strong> 仅显示表格区块</li>
+                    <li><strong>公式：</strong> 仅显示公式区块</li>
+                    <li><strong>图片：</strong> 仅显示图片区块</li>
+                </ul>
+
+                <h4>AI对话功能</h4>
+                <p>在右侧悬浮面板中，点击"💬 提问"按钮可以对识别内容进行AI分析：</p>
+                <ul>
+                    <li>自动将当前识别内容作为上下文</li>
+                    <li>支持针对特定内容提问</li>
+                    <li>可用于内容总结、翻译、分析等场景</li>
+                </ul>
+                
+                <!-- GIF: AI对话 -->
+                <div class="gif-placeholder" data-gif-id="pdf-ocr-ai-chat">
+                    <span>点击右侧"GIF管理"按钮插入：PDF阅读与OCR-AI对话.gif</span>
+                    <span class="gif-label">占位符ID: pdf-ocr-ai-chat</span>
+                </div>
+
+                <h4>导出功能</h4>
+                <ul>
+                    <li><strong>Markdown导出：</strong> 保留格式和结构，适合技术文档</li>
+                    <li><strong>TXT导出：</strong> 纯文本格式，适合简单复制</li>
+                </ul>
+                
+                <!-- GIF: 导出功能 -->
+                <div class="gif-placeholder" data-gif-id="pdf-ocr-export">
+                    <span>点击右侧"GIF管理"按钮插入：PDF阅读与OCR-导出功能.gif</span>
+                    <span class="gif-label">占位符ID: pdf-ocr-export</span>
                 </div>
             </div>
         </div>
@@ -1341,6 +1586,139 @@
                     <li><strong>Safari：</strong> 推荐版本 14+</li>
                 </ul>
                 <p>不支持Internet Explorer浏览器。如遇到显示异常，请尝试清除浏览器缓存或更换浏览器。</p>
+
+                <h4>Q31: PDF阅读与OCR功能支持哪些文件格式？</h4>
+                <p><strong>A:</strong> 功能九支持以下文件格式：</p>
+                <ul>
+                    <li><strong>PDF文档：</strong> 支持标准PDF文件，包括扫描版和文字版</li>
+                    <li><strong>图片格式：</strong> PNG、JPG、JPEG、BMP、WEBP</li>
+                    <li><strong>文件大小限制：</strong> 单个文件最大10MB</li>
+                    <li><strong>建议：</strong> 对于扫描版PDF，建议提高扫描分辨率（300DPI以上）以获得更好的识别效果</li>
+                </ul>
+
+                <h4>Q32: PDF阅读与OCR的识别范围如何选择？</h4>
+                <p><strong>A:</strong> OCR解析范围有两种选择：</p>
+                <ul>
+                    <li><strong>当前页面：</strong> 仅解析PDF当前显示的页面，适合快速查看单页内容</li>
+                    <li><strong>全部页面：</strong> 自动解析PDF所有页面，适合需要完整提取文档内容的场景</li>
+                    <li><strong>注意：</strong> 全部页面解析会消耗更多API额度，建议根据实际需求选择</li>
+                </ul>
+
+                <h4>Q33: 如何使用PDF阅读与OCR的多选模式？</h4>
+                <p><strong>A:</strong> 多选模式用于批量选择识别区块：</p>
+                <ul>
+                    <li>点击工具栏右侧的"多选模式"按钮进入多选状态</li>
+                    <li>所有识别区块会在PDF查看器中显示为可点击的方框</li>
+                    <li>点击区块可选中或取消选中，支持多选</li>
+                    <li>选中后可进行批量复制、导出等操作</li>
+                    <li>再次点击"多选模式"按钮可退出多选状态</li>
+                </ul>
+
+                <h4>Q34: PDF阅读与OCR识别表格和公式效果如何？</h4>
+                <p><strong>A:</strong> 表格和公式识别说明：</p>
+                <ul>
+                    <li><strong>表格识别：</strong> 开启后会识别表格结构并转换为Markdown表格格式，适合结构化数据提取</li>
+                    <li><strong>公式识别：</strong> 开启后会识别数学公式并转换为LaTeX格式，适合学术论文和技术文档</li>
+                    <li><strong>识别效果：</strong> 清晰的表格和公式识别准确率较高，模糊或手写内容效果可能不佳</li>
+                    <li><strong>建议：</strong> 对于复杂表格，建议识别后人工校验和调整</li>
+                </ul>
+
+                <h4>Q35: PDF阅读与OCR的AI对话功能如何使用？</h4>
+                <p><strong>A:</strong> AI对话功能使用方法：</p>
+                <ul>
+                    <li>完成OCR解析后，在右侧悬浮面板点击"💬 提问"按钮</li>
+                    <li>系统会自动将当前识别内容作为上下文</li>
+                    <li>可以针对识别内容进行提问、总结、翻译等操作</li>
+                    <li>AI会结合识别内容给出针对性回答</li>
+                    <li>适合快速理解文档内容、提取关键信息等场景</li>
+                </ul>
+
+                <h4>Q36: PDF阅读与OCR导出的格式有什么区别？</h4>
+                <p><strong>A:</strong> 导出格式说明：</p>
+                <ul>
+                    <li><strong>Markdown格式：</strong> 保留文档结构和格式，包括标题、列表、表格、公式等，适合技术文档和笔记</li>
+                    <li><strong>TXT格式：</strong> 纯文本格式，仅保留文字内容，适合简单复制和编辑</li>
+                    <li><strong>建议：</strong> 需要保留格式时选择Markdown，仅需文字内容时选择TXT</li>
+                </ul>
+
+                <h4>Q37: 功能六的缓存系统有什么作用？</h4>
+                <p><strong>A:</strong> 缓存系统的作用和使用方法：</p>
+                <ul>
+                    <li><strong>自动缓存：</strong> 爬取的专利数据会自动缓存到本地，避免重复请求</li>
+                    <li><strong>加速查询：</strong> 再次查询相同专利号时，直接从缓存读取，速度大幅提升</li>
+                    <li><strong>节省额度：</strong> 减少对专利数据库的请求次数</li>
+                    <li><strong>缓存管理：</strong> 点击"缓存统计"查看缓存数量，点击"清理缓存"清除所有缓存</li>
+                    <li><strong>注意：</strong> 清理缓存后需要重新爬取专利数据</li>
+                </ul>
+
+                <h4>Q38: 功能六的历史记录功能如何使用？</h4>
+                <p><strong>A:</strong> 历史记录功能说明：</p>
+                <ul>
+                    <li><strong>查看历史：</strong> 点击"历史记录"按钮查看所有爬取和解读历史</li>
+                    <li><strong>搜索功能：</strong> 在搜索框输入专利号或标题快速定位</li>
+                    <li><strong>批量操作：</strong> 勾选多条记录后可批量重新爬取或解读</li>
+                    <li><strong>状态显示：</strong> 显示每条记录的缓存状态和解读状态</li>
+                    <li><strong>清空历史：</strong> 点击"清空历史"可删除所有历史记录（不影响缓存）</li>
+                </ul>
+
+                <h4>Q39: 功能六的解读模板如何自定义？</h4>
+                <p><strong>A:</strong> 自定义解读模板的方法：</p>
+                <ul>
+                    <li><strong>打开编辑器：</strong> 点击模板选择器旁边的"管理"按钮</li>
+                    <li><strong>系统提示词：</strong> 定义AI的角色和分析风格，如"你是专利技术分析专家..."</li>
+                    <li><strong>用户模板：</strong> 使用占位符构建提示词：
+                        <ul>
+                            <li><code>{{patent_number}}</code> - 专利号</li>
+                            <li><code>{{title}}</code> - 标题</li>
+                            <li><code>{{abstract}}</code> - 摘要</li>
+                            <li><code>{{claims}}</code> - 权利要求</li>
+                            <li><code>{{description}}</code> - 说明书</li>
+                        </ul>
+                    </li>
+                    <li><strong>保存模板：</strong> 编辑完成后点击"保存模板"</li>
+                    <li><strong>导入导出：</strong> 支持模板的导入和导出，方便分享</li>
+                </ul>
+
+                <h4>Q40: 智能剪贴板如何使用？</h4>
+                <p><strong>A:</strong> 智能剪贴板使用方法：</p>
+                <ul>
+                    <li><strong>自动捕获：</strong> 在任意位置复制文本（Ctrl+C），系统自动捕获并识别类型</li>
+                    <li><strong>悬浮球：</strong> 页面右侧绿色悬浮球显示剪贴板状态，有数据时会显示数量角标</li>
+                    <li><strong>打开面板：</strong> 点击悬浮球打开智能剪贴板面板</li>
+                    <li><strong>类型识别：</strong> 系统自动识别内容类型（专利号、权利要求、AI分析等）并显示置信度</li>
+                    <li><strong>快速粘贴：</strong> 面板显示当前页面可粘贴的输入框列表，点击即可粘贴</li>
+                    <li><strong>历史记录：</strong> 面板底部显示最近10条复制历史，可随时切换使用</li>
+                </ul>
+
+                <h4>Q41: 智能剪贴板支持哪些内容类型？</h4>
+                <p><strong>A:</strong> 智能剪贴板支持的内容类型：</p>
+                <ul>
+                    <li><strong>专利号：</strong> 自动识别专利号格式（如CN123456789A），可粘贴到功能六批量查询</li>
+                    <li><strong>权利要求文本：</strong> 识别权利要求格式，可粘贴到功能七权利要求处理</li>
+                    <li><strong>专利表格数据：</strong> 识别Excel格式的专利数据</li>
+                    <li><strong>AI分析结果：</strong> 识别AI生成的分析内容，可粘贴到即时对话继续讨论</li>
+                    <li><strong>普通文本：</strong> 其他文本内容，可粘贴到任意文本输入框</li>
+                </ul>
+
+                <h4>Q42: 功能六的"解读时包含说明书"选项有什么影响？</h4>
+                <p><strong>A:</strong> 该选项的影响：</p>
+                <ul>
+                    <li><strong>开启时：</strong> 
+                        <ul>
+                            <li>AI解读会参考说明书内容，分析更全面深入</li>
+                            <li>适合需要详细技术分析的场景</li>
+                            <li>会增加token消耗和处理时间</li>
+                        </ul>
+                    </li>
+                    <li><strong>关闭时：</strong> 
+                        <ul>
+                            <li>仅基于摘要和权利要求进行解读</li>
+                            <li>处理速度更快，消耗更少</li>
+                            <li>适合快速了解专利概况的场景</li>
+                        </ul>
+                    </li>
+                    <li><strong>建议：</strong> 需要深度分析时开启，快速浏览时关闭</li>
+                </ul>
             </div>
         </div>
     </main>
@@ -1387,6 +1765,7 @@
         'interface-overview': '界面概览.gif',
         'apikey-setup': 'API-Key设置.gif',
         'logout-demo': '登出系统.gif',
+        'smart-clipboard-intro': '智能剪贴板-功能介绍.gif',
         
         // 功能一：即时对话
         'chat-basic-interaction': '即时对话-核心交互.gif',
@@ -1421,7 +1800,10 @@
         
         // 功能六：批量专利解读
         'patent-batch-intro': '批量专利解读-功能介绍.gif',
+        'patent-batch-config': '批量专利解读-配置选项.gif',
         'patent-batch-field-selector': '批量专利解读-字段选择器.gif',
+        'patent-batch-template': '批量专利解读-模板管理.gif',
+        'patent-batch-cache': '批量专利解读-缓存与历史.gif',
         'patent-batch-workflow': '批量专利解读-工作流程.gif',
         
         // 功能七：权利要求处理
@@ -1431,7 +1813,16 @@
         // 功能八：专利附图标记
         'drawing-marker-intro': '专利附图标记-功能介绍.gif',
         'drawing-marker-ai-panel': '专利附图标记-AI处理控制面板.gif',
-        'drawing-marker-reprocess': '专利附图标记-快速重新处理.gif'
+        'drawing-marker-reprocess': '专利附图标记-快速重新处理.gif',
+        
+        // 功能九：PDF阅读与OCR
+        'pdf-ocr-intro': 'PDF阅读与OCR-功能介绍.gif',
+        'pdf-ocr-interface': 'PDF阅读与OCR-界面布局.gif',
+        'pdf-ocr-workflow': 'PDF阅读与OCR-工作流程.gif',
+        'pdf-ocr-settings': 'PDF阅读与OCR-OCR设置.gif',
+        'pdf-ocr-toolbar': 'PDF阅读与OCR-查看器工具栏.gif',
+        'pdf-ocr-ai-chat': 'PDF阅读与OCR-AI对话.gif',
+        'pdf-ocr-export': 'PDF阅读与OCR-导出功能.gif'
     };
 
     // 已使用的GIF记录
