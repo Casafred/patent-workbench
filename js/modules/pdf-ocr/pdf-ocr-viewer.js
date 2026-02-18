@@ -397,9 +397,12 @@ class PDFOCRViewer {
         console.log('  - appendMode:', appendMode);
         console.log('  - result.pages:', result?.pages?.length);
         console.log('  - 当前pageResults keys:', [...this.pageResults.keys()]);
+        console.log('  - 当前ocrBlocks数量:', this.ocrBlocks.length);
         
         if (!result || !result.pages) {
+            console.log('  - 结果为空，appendMode:', appendMode);
             if (!appendMode) {
+                console.log('  - 清空数据（非追加模式）');
                 this.ocrBlocks = [];
                 this.pageResults.clear();
             }
@@ -408,8 +411,11 @@ class PDFOCRViewer {
 
         // 如果不是追加模式，清空现有数据
         if (!appendMode) {
+            console.log('  - 清空数据（非追加模式）');
             this.ocrBlocks = [];
             this.pageResults.clear();
+        } else {
+            console.log('  - 追加模式，保留现有数据');
         }
 
         // 提取所有页面的区块

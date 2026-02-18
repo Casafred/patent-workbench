@@ -72,6 +72,12 @@ class PDFOCRParser {
 
         // 获取解析设置
         const settings = this.getSettings();
+        
+        console.log('[PDF-OCR-Parser] startOCR:');
+        console.log('  - settings.mode:', settings.mode);
+        console.log('  - 当前页码:', window.pdfOCRCore?.currentPage);
+        console.log('  - 解析前viewer.ocrBlocks数量:', window.pdfOCRViewer?.ocrBlocks?.length);
+        console.log('  - 解析前viewer.pageResults keys:', [...(window.pdfOCRViewer?.pageResults?.keys() || [])]);
 
         try {
             this.isParsing = true;
