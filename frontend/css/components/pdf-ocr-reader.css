@@ -780,7 +780,7 @@
     color: #94a3b8;
 }
 
-/* 区块层 */
+/* 区块层 - 相对于viewer-container定位 */
 .blocks-layer {
     position: absolute;
     top: 0;
@@ -791,6 +791,7 @@
 
 .blocks-layer .ocr-block-overlay {
     pointer-events: auto;
+    position: absolute;
 }
 
 /* 选择层 */

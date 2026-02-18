@@ -457,8 +457,8 @@ class PDFOCRCore {
             // 缓存canvas
             this.pageCanvases.set(pageNum, canvas);
             
-            // 如果有OCR结果，渲染区块
-            if (this.showBlocks && window.pdfOCRViewer) {
+            // 如果有OCR结果，渲染区块（无论showBlocks状态如何都要渲染）
+            if (window.pdfOCRViewer) {
                 window.pdfOCRViewer.renderBlocks();
             }
             

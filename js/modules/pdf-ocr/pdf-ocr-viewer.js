@@ -544,26 +544,21 @@ class PDFOCRViewer {
         const pdfImage = pdfCanvas ? pdfCanvas.querySelector('img, canvas') : null;
         
         if (pdfImage && block.bbox && blocksLayer) {
-            // 获取viewer-wrap的滚动位置
-            const viewerWrap = document.querySelector('.viewer-wrap');
-            const scrollLeft = viewerWrap ? viewerWrap.scrollLeft : 0;
-            const scrollTop = viewerWrap ? viewerWrap.scrollTop : 0;
+            // 直接使用canvas的实际尺寸计算缩放比例
+            const canvasWidth = pdfImage.offsetWidth;
+            const canvasHeight = pdfImage.offsetHeight;
             
-            // 获取各元素的位置
-            const viewerRect = viewerWrap ? viewerWrap.getBoundingClientRect() : { left: 0, top: 0 };
-            const canvasRect = pdfCanvas.getBoundingClientRect();
-            const imageRect = pdfImage.getBoundingClientRect();
+            // OCR结果的页面尺寸
+            const pageWidth = block.bbox.page_width || canvasWidth;
+            const pageHeight = block.bbox.page_height || canvasHeight;
             
-            // 计算图片相对于viewer-wrap的偏移（考虑滚动）
-            const imageOffsetLeft = imageRect.left - viewerRect.left + scrollLeft;
-            const imageOffsetTop = imageRect.top - viewerRect.top + scrollTop;
+            // 计算缩放比例
+            const scaleX = canvasWidth / pageWidth;
+            const scaleY = canvasHeight / pageHeight;
             
-            // 使用PDF图片的实际尺寸计算缩放比例
-            const scaleX = pdfImage.offsetWidth / (block.bbox.page_width || pdfImage.offsetWidth);
-            const scaleY = pdfImage.offsetHeight / (block.bbox.page_height || pdfImage.offsetHeight);
-
-            const left = imageOffsetLeft + (block.bbox.lt[0] * scaleX);
-            const top = imageOffsetTop + (block.bbox.lt[1] * scaleY);
+            // 计算区块位置（相对于canvas）
+            const left = block.bbox.lt[0] * scaleX;
+            const top = block.bbox.lt[1] * scaleY;
             const width = (block.bbox.rb[0] - block.bbox.lt[0]) * scaleX;
             const height = (block.bbox.rb[1] - block.bbox.lt[1]) * scaleY;
 
@@ -571,8 +566,6 @@ class PDFOCRViewer {
             overlay.style.top = `${top}px`;
             overlay.style.width = `${width}px`;
             overlay.style.height = `${height}px`;
-            
-            console.log(`[PDF-OCR] 创建区块 ${block.id}: left=${left.toFixed(1)}, top=${top.toFixed(1)}, width=${width.toFixed(1)}, height=${height.toFixed(1)}`);
         } else {
             console.warn(`[PDF-OCR] 无法计算区块位置:`, block);
         }
