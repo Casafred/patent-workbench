@@ -194,53 +194,62 @@ function renderHistoryList(searchKeyword = '') {
         return;
     }
     
-    let html = '';
+    let html = '<table style="width: 100%; border-collapse: collapse; font-size: 13px;">';
+    html += '<thead><tr style="background: #f5f5f5; border-bottom: 2px solid #ddd;">';
+    html += '<th style="padding: 8px; text-align: center; width: 30px;"><input type="checkbox" id="history_select_all_checkbox"></th>';
+    html += '<th style="padding: 8px; text-align: left; width: 120px;">专利号</th>';
+    html += '<th style="padding: 8px; text-align: left;">标题</th>';
+    html += '<th style="padding: 8px; text-align: center; width: 140px;">状态</th>';
+    html += '<th style="padding: 8px; text-align: center; width: 80px;">时间</th>';
+    html += '<th style="padding: 8px; text-align: center; width: 150px;">操作</th>';
+    html += '</tr></thead><tbody>';
+    
     history.forEach((record, index) => {
         const cacheBadge = record.hasCache ? 
             '<span style="background: #d4edda; color: #155724; padding: 2px 6px; border-radius: 3px; font-size: 10px;">已缓存</span>' : 
             '<span style="background: #f8d7da; color: #721c24; padding: 2px 6px; border-radius: 3px; font-size: 10px;">未缓存</span>';
         
         const analysisBadge = record.hasAnalysis ? 
-            '<span style="background: #cce5ff; color: #004085; padding: 2px 6px; border-radius: 3px; font-size: 10px;">已解读</span>' : 
+            '<span style="background: #cce5ff; color: #004085; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 4px;">已解读</span>' : 
             '';
         
         const actionBadge = record.action === 'analyze' ? 
-            '<span style="background: #e2e3e5; color: #383d41; padding: 2px 6px; border-radius: 3px; font-size: 10px;">解读</span>' : 
-            '<span style="background: #e2e3e5; color: #383d41; padding: 2px 6px; border-radius: 3px; font-size: 10px;">爬取</span>';
+            '<span style="background: #e2e3e5; color: #383d41; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 4px;">解读</span>' : 
+            '<span style="background: #e2e3e5; color: #383d41; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 4px;">爬取</span>';
         
-        html += `
-            <div class="history-item" style="display: flex; align-items: center; padding: 10px 12px; border-bottom: 1px solid #eee;">
-                <input type="checkbox" class="history-item-checkbox" data-patent="${record.patentNumber}" style="margin-right: 10px; flex-shrink: 0;">
-                <div style="flex: 1; min-width: 0; overflow: hidden;">
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap;">
-                        <span style="font-weight: 500; color: #333;">${record.patentNumber}</span>
-                        ${actionBadge}
-                        ${cacheBadge}
-                        ${analysisBadge}
-                    </div>
-                    <div style="font-size: 12px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                        ${record.title || '无标题'}
-                    </div>
-                    <div style="font-size: 11px; color: #999; margin-top: 2px;">
-                        ${window.PatentHistory.formatTime(record.timestamp)}
-                    </div>
-                </div>
-                <div style="display: flex; gap: 4px; margin-left: 10px; flex-shrink: 0;">
-                    <button class="history-action-btn" data-action="crawl" data-patent="${record.patentNumber}" title="重新爬取" style="padding: 4px 8px; font-size: 11px; border: 1px solid #1976d2; background: #1976d2; color: white; border-radius: 3px; cursor: pointer;">
-                        爬取
-                    </button>
-                    <button class="history-action-btn" data-action="analyze" data-patent="${record.patentNumber}" title="重新解读" style="padding: 4px 8px; font-size: 11px; border: 1px solid #4caf50; background: #4caf50; color: white; border-radius: 3px; cursor: pointer;" ${!record.hasCache ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>
-                        解读
-                    </button>
-                    <button class="history-action-btn" data-action="delete" data-patent="${record.patentNumber}" title="删除记录" style="padding: 4px 8px; font-size: 11px; border: 1px solid #ef5350; background: #ffebee; color: #c62828; border-radius: 3px; cursor: pointer;">
-                        删除
-                    </button>
-                </div>
-            </div>
-        `;
+        const bgColor = index % 2 === 0 ? '#fff' : '#fafafa';
+        
+        html += `<tr style="background: ${bgColor}; border-bottom: 1px solid #eee;">`;
+        html += `<td style="padding: 8px; text-align: center;"><input type="checkbox" class="history-item-checkbox" data-patent="${record.patentNumber}"></td>`;
+        html += `<td style="padding: 8px; font-weight: 500; color: #1976d2;">${record.patentNumber}</td>`;
+        html += `<td style="padding: 8px; color: #333; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${record.title || ''}">${record.title || '<span style="color:#999">无标题</span>'}</td>`;
+        html += `<td style="padding: 8px; text-align: center;">${cacheBadge}${analysisBadge}${actionBadge}</td>`;
+        html += `<td style="padding: 8px; text-align: center; color: #666; font-size: 11px;">${window.PatentHistory.formatTime(record.timestamp)}</td>`;
+        html += `<td style="padding: 8px; text-align: center; white-space: nowrap;">`;
+        html += `<button class="history-action-btn" data-action="crawl" data-patent="${record.patentNumber}" style="padding: 3px 8px; font-size: 11px; border: none; background: #1976d2; color: white; border-radius: 3px; cursor: pointer; margin: 2px;">爬取</button>`;
+        if (record.hasCache) {
+            html += `<button class="history-action-btn" data-action="analyze" data-patent="${record.patentNumber}" style="padding: 3px 8px; font-size: 11px; border: none; background: #4caf50; color: white; border-radius: 3px; cursor: pointer; margin: 2px;">解读</button>`;
+        } else {
+            html += `<button class="history-action-btn" data-action="analyze" data-patent="${record.patentNumber}" disabled style="padding: 3px 8px; font-size: 11px; border: none; background: #ccc; color: #666; border-radius: 3px; cursor: not-allowed; margin: 2px;">解读</button>`;
+        }
+        html += `<button class="history-action-btn" data-action="delete" data-patent="${record.patentNumber}" style="padding: 3px 8px; font-size: 11px; border: none; background: #ef5350; color: white; border-radius: 3px; cursor: pointer; margin: 2px;">删除</button>`;
+        html += `</td>`;
+        html += '</tr>';
     });
     
+    html += '</tbody></table>';
+    
     historyList.innerHTML = html;
+    
+    // Add event listener to select all checkbox
+    const selectAllCheckbox = document.getElementById('history_select_all_checkbox');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', (e) => {
+            const checkboxes = historyList.querySelectorAll('.history-item-checkbox');
+            checkboxes.forEach(cb => cb.checked = e.target.checked);
+            updateHistoryBatchButtons();
+        });
+    }
     
     // Add event listeners to action buttons
     historyList.querySelectorAll('.history-action-btn').forEach(btn => {
