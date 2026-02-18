@@ -319,6 +319,9 @@ class PDFOCRCore {
         this.elements.prevPageBtn.disabled = true;
         this.elements.nextPageBtn.disabled = true;
         
+        // 保存区块层引用
+        const blocksLayer = document.getElementById('ocr-blocks-layer');
+        
         // 清空容器
         this.elements.viewerContainer.innerHTML = '';
         
@@ -328,9 +331,18 @@ class PDFOCRCore {
         img.className = 'pdf-image-display';
         img.onload = () => {
             URL.revokeObjectURL(url);
+            // 图片加载完成后渲染区块
+            if (window.pdfOCRViewer) {
+                window.pdfOCRViewer.renderBlocks();
+            }
         };
         
         this.elements.viewerContainer.appendChild(img);
+        
+        // 重新添加区块层
+        if (blocksLayer) {
+            this.elements.viewerContainer.appendChild(blocksLayer);
+        }
         
         // 更新缩略图
         this.elements.pageThumbnails.innerHTML = `

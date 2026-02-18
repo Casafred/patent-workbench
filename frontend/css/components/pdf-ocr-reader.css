@@ -758,6 +758,12 @@
     min-width: min-content;
 }
 
+.viewer-container .pdf-page-canvas,
+.viewer-container .pdf-image-display {
+    display: block;
+    max-width: none;
+}
+
 .empty-state {
     text-align: center;
     padding: 48px;
