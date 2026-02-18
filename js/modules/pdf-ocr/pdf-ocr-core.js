@@ -444,9 +444,17 @@ class PDFOCRCore {
             
             const context = canvas.getContext('2d');
             
+            // 保存区块层引用
+            const blocksLayer = document.getElementById('ocr-blocks-layer');
+            
             // 清空容器并添加canvas
             this.elements.viewerContainer.innerHTML = '';
             this.elements.viewerContainer.appendChild(canvas);
+            
+            // 重新添加区块层
+            if (blocksLayer) {
+                this.elements.viewerContainer.appendChild(blocksLayer);
+            }
             
             // 渲染页面
             await page.render({
@@ -457,7 +465,7 @@ class PDFOCRCore {
             // 缓存canvas
             this.pageCanvases.set(pageNum, canvas);
             
-            // 如果有OCR结果，渲染区块（无论showBlocks状态如何都要渲染）
+            // 如果有OCR结果，渲染区块
             if (window.pdfOCRViewer) {
                 window.pdfOCRViewer.renderBlocks();
             }
