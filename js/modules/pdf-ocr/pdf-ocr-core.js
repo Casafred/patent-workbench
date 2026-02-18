@@ -623,13 +623,9 @@ class PDFOCRCore {
             }
             window.pdfOCRViewer.renderBlocks();
         } else {
-            // 隐藏区块层
+            // 隐藏区块层（但不清空blockOverlays，保留选中能力）
             if (blocksLayer) {
                 blocksLayer.style.display = 'none';
-            }
-            // 清除viewer中的blockOverlays引用
-            if (window.pdfOCRViewer) {
-                window.pdfOCRViewer.blockOverlays.clear();
             }
         }
     }

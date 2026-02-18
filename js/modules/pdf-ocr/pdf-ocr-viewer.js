@@ -659,9 +659,13 @@ class PDFOCRViewer {
             layer.style.display = 'block';
         }
 
-        // 如果区块还没有渲染，先渲染
+        // 如果区块还没有渲染，创建它
         if (!this.blockOverlays.has(block.id)) {
-            this.renderBlocks();
+            const overlay = this.createBlockOverlay(block);
+            if (layer && overlay) {
+                layer.appendChild(overlay);
+                this.blockOverlays.set(block.id, overlay);
+            }
         }
 
         if (isMultiSelect) {
@@ -714,6 +718,18 @@ class PDFOCRViewer {
      * 更新所有选中区块的样式
      */
     updateAllSelectedStyles() {
+        // 先确保所有选中的区块都有overlay
+        const layer = document.getElementById('ocr-blocks-layer');
+        this.selectedBlocks.forEach(block => {
+            if (!this.blockOverlays.has(block.id)) {
+                const overlay = this.createBlockOverlay(block);
+                if (layer && overlay) {
+                    layer.appendChild(overlay);
+                    this.blockOverlays.set(block.id, overlay);
+                }
+            }
+        });
+        
         // 遍历所有区块overlay
         this.blockOverlays.forEach((overlay, id) => {
             const isSelected = this.selectedBlocks.some(b => b.id === id);
@@ -739,6 +755,8 @@ class PDFOCRViewer {
                 }
             }
         });
+        
+        console.log('[PDF-OCR] 更新选中样式，选中数量:', this.selectedBlocks.length);
     }
 
     /**
