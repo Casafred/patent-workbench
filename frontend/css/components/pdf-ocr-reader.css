@@ -752,9 +752,9 @@
 
 .viewer-container {
     position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: inline-flex;
+    align-items: flex-start;
+    justify-content: flex-start;
     min-width: min-content;
 }
 

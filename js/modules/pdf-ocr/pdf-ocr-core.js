@@ -582,9 +582,12 @@ class PDFOCRCore {
         const img = this.elements.viewerContainer.querySelector('.pdf-image-display');
         if (!img) return;
         
-        // 应用缩放
-        img.style.transform = `scale(${this.zoomLevel})`;
-        img.style.transformOrigin = 'top left';
+        // 应用缩放 - 使用width/height而不是transform，避免定位问题
+        const naturalWidth = img.naturalWidth;
+        const naturalHeight = img.naturalHeight;
+        img.style.width = `${naturalWidth * this.zoomLevel}px`;
+        img.style.height = `${naturalHeight * this.zoomLevel}px`;
+        img.style.transform = 'none';
         
         // 渲染区块
         if (window.pdfOCRViewer) {

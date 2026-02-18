@@ -544,8 +544,9 @@ class PDFOCRViewer {
         const pdfImage = pdfCanvas ? pdfCanvas.querySelector('img, canvas') : null;
         
         if (pdfImage && block.bbox && blocksLayer) {
-            // 获取缩放级别
-            const zoomLevel = window.pdfOCRCore?.zoomLevel || 1;
+            // 获取图片的显示尺寸（已经考虑缩放）
+            const displayWidth = pdfImage.offsetWidth;
+            const displayHeight = pdfImage.offsetHeight;
             
             // 获取图片原始尺寸
             let naturalWidth, naturalHeight;
@@ -553,23 +554,23 @@ class PDFOCRViewer {
                 naturalWidth = pdfImage.naturalWidth;
                 naturalHeight = pdfImage.naturalHeight;
             } else {
-                naturalWidth = pdfImage.width;
-                naturalHeight = pdfImage.height;
+                naturalWidth = pdfImage.width / (window.pdfOCRCore?.zoomLevel || 1);
+                naturalHeight = pdfImage.height / (window.pdfOCRCore?.zoomLevel || 1);
             }
             
             // OCR结果的页面尺寸
             const pageWidth = block.bbox.page_width || naturalWidth;
             const pageHeight = block.bbox.page_height || naturalHeight;
             
-            // 计算缩放比例（图片显示尺寸 / OCR原始尺寸）
-            const scaleX = naturalWidth / pageWidth;
-            const scaleY = naturalHeight / pageHeight;
+            // 计算缩放比例（显示尺寸 / OCR原始尺寸）
+            const scaleX = displayWidth / pageWidth;
+            const scaleY = displayHeight / pageHeight;
             
             // 计算区块位置
-            const left = block.bbox.lt[0] * scaleX * zoomLevel;
-            const top = block.bbox.lt[1] * scaleY * zoomLevel;
-            const width = (block.bbox.rb[0] - block.bbox.lt[0]) * scaleX * zoomLevel;
-            const height = (block.bbox.rb[1] - block.bbox.lt[1]) * scaleY * zoomLevel;
+            const left = block.bbox.lt[0] * scaleX;
+            const top = block.bbox.lt[1] * scaleY;
+            const width = (block.bbox.rb[0] - block.bbox.lt[0]) * scaleX;
+            const height = (block.bbox.rb[1] - block.bbox.lt[1]) * scaleY;
 
             overlay.style.left = `${left}px`;
             overlay.style.top = `${top}px`;
@@ -1883,21 +1884,25 @@ class PDFOCRViewer {
      * 更新统计信息
      */
     updateStatistics() {
+        // 统计当前页的区块
+        const currentPage = window.pdfOCRCore ? window.pdfOCRCore.currentPage : 1;
+        const currentPageBlocks = this.ocrBlocks.filter(b => b.pageIndex === currentPage);
+        
         const stats = {
-            total: this.ocrBlocks.length,
-            text: this.ocrBlocks.filter(b => b.type === 'text').length,
-            table: this.ocrBlocks.filter(b => b.type === 'table').length,
-            formula: this.ocrBlocks.filter(b => b.type === 'formula').length,
-            image: this.ocrBlocks.filter(b => b.type === 'image').length
+            total: currentPageBlocks.length,
+            text: currentPageBlocks.filter(b => b.type === 'text').length,
+            table: currentPageBlocks.filter(b => b.type === 'table').length,
+            formula: currentPageBlocks.filter(b => b.type === 'formula').length,
+            image: currentPageBlocks.filter(b => b.type === 'image').length
         };
 
-        // 更新UI
+        // 更新UI - 使用正确的元素ID
         const elements = {
-            'ocr-stat-total': stats.total,
-            'ocr-stat-text': stats.text,
-            'ocr-stat-table': stats.table,
-            'ocr-stat-formula': stats.formula,
-            'ocr-stat-image': stats.image
+            'stat-total': stats.total,
+            'stat-text': stats.text,
+            'stat-table': stats.table,
+            'stat-formula': stats.formula,
+            'stat-image': stats.image
         };
 
         Object.entries(elements).forEach(([id, value]) => {
