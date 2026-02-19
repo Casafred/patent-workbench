@@ -53,9 +53,9 @@ window.showExportFieldSelector = function() {
                     <button onclick="closeExportFieldSelector()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: white; opacity: 0.8;">&times;</button>
                 </div>
                 <div class="export-modal-actions" style="padding: 12px 20px; border-bottom: 1px solid #e0e0e0; display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button onclick="selectAllExportFields()" style="padding: 6px 12px; font-size: 12px; background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; border-radius: 4px; cursor: pointer;">全选</button>
-                    <button onclick="deselectAllExportFields()" style="padding: 6px 12px; font-size: 12px; background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; border-radius: 4px; cursor: pointer;">取消全选</button>
-                    <button onclick="resetExportFieldsOrder()" style="padding: 6px 12px; font-size: 12px; background: #f3e5f5; color: #7b1fa2; border: 1px solid #ce93d8; border-radius: 4px; cursor: pointer;">重置顺序</button>
+                    <button onclick="selectAllExportFields()" style="padding: 6px 14px; font-size: 12px; background: #43a047; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">全选</button>
+                    <button onclick="deselectAllExportFields()" style="padding: 6px 14px; font-size: 12px; background: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">取消全选</button>
+                    <button onclick="resetExportFieldsOrder()" style="padding: 6px 14px; font-size: 12px; background: #9c27b0; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">重置顺序</button>
                 </div>
                 <div class="export-modal-tip" style="padding: 8px 20px; background: #e8f5e9; font-size: 12px; color: #2e7d32;">
                     💡 拖拽字段可调整列顺序，勾选字段决定是否导出
@@ -65,7 +65,7 @@ window.showExportFieldSelector = function() {
                 <div class="export-modal-footer" style="padding: 16px 20px; border-top: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center;">
                     <span id="export_field_count" style="font-size: 13px; color: #666;">已选择 0 个字段</span>
                     <div style="display: flex; gap: 10px;">
-                        <button onclick="closeExportFieldSelector()" style="padding: 8px 20px; font-size: 14px; background: #f5f5f5; color: #333; border: 1px solid #ddd; border-radius: 6px; cursor: pointer;">取消</button>
+                        <button onclick="closeExportFieldSelector()" style="padding: 8px 20px; font-size: 14px; background: #757575; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">取消</button>
                         <button onclick="executeExport()" style="padding: 8px 20px; font-size: 14px; background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;">导出Excel</button>
                     </div>
                 </div>
