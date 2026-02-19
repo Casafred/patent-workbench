@@ -1779,8 +1779,12 @@ window.copyFieldContent = function(patentNumber, fieldKey, event) {
     // 复制到剪贴板
     navigator.clipboard.writeText(contentToCopy)
         .then(() => {
+            console.log('📋 copyFieldContent - contentToCopy:', contentToCopy?.substring(0, 100));
+            console.log('📋 copyFieldContent - smartClipboard exists:', !!window.smartClipboard);
+            
             // 同步到智能剪贴板
             if (window.smartClipboard && contentToCopy) {
+                console.log('📋 copyFieldContent - calling export');
                 window.smartClipboard.export(contentToCopy, '功能六-专利详情', {
                     source: '快捷复制按钮',
                     patentNumber: patentNumber,

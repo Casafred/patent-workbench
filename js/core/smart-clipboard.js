@@ -142,6 +142,8 @@ class SmartClipboard {
     }
 
     store(text, source = 'unknown', metadata = {}) {
+        console.log('📋 SmartClipboard.store called:', { text: text?.substring(0, 50), source, metadata });
+        
         const detection = this.detectType(text);
         
         if (this.current) {
@@ -170,6 +172,8 @@ class SmartClipboard {
             metadata,
             extractedData
         };
+        
+        console.log('📋 SmartClipboard.current set:', this.current);
 
         this.saveToStorage();
         this.updateFloatingBall();
@@ -959,8 +963,15 @@ class SmartClipboard {
         document.addEventListener('copy', (e) => {
             const selection = window.getSelection().toString();
             if (selection && selection.trim()) {
+                const capturedSelection = selection.trim();
+                const captureTime = Date.now();
                 setTimeout(() => {
-                    this.store(selection, '用户复制');
+                    // 只有当没有更新的内容被存储时，才存储选中内容
+                    // 防止被 export 方法存储的正确内容覆盖
+                    if (this.current && this.current.timestamp > captureTime) {
+                        return;
+                    }
+                    this.store(capturedSelection, '用户复制');
                 }, 100);
             }
         });
@@ -968,8 +979,13 @@ class SmartClipboard {
         document.addEventListener('cut', (e) => {
             const selection = window.getSelection().toString();
             if (selection && selection.trim()) {
+                const capturedSelection = selection.trim();
+                const captureTime = Date.now();
                 setTimeout(() => {
-                    this.store(selection, '用户剪切');
+                    if (this.current && this.current.timestamp > captureTime) {
+                        return;
+                    }
+                    this.store(capturedSelection, '用户剪切');
                 }, 100);
             }
         });
