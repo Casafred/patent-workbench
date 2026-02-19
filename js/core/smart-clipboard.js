@@ -13,6 +13,7 @@ class SmartClipboard {
         this.initialized = false;
         this.floatingBall = null;
         this.panel = null;
+        this.lastExportTime = 0; // 记录最后一次 export 的时间戳
         
         // 绿色主题配色
         this.theme = {
@@ -159,8 +160,9 @@ class SmartClipboard {
             }
         }
 
+        const now = Date.now();
         this.current = {
-            id: Date.now().toString(),
+            id: now.toString(),
             text: text.trim(),
             type: detection.type,
             typeName: detection.config ? detection.config.name : '普通文本',
@@ -168,10 +170,15 @@ class SmartClipboard {
             priority: detection.priority,
             confidence: detection.confidence,
             source,
-            timestamp: Date.now(),
+            timestamp: now,
             metadata,
             extractedData
         };
+        
+        // 记录 export 时间，防止 copy 事件覆盖
+        if (source !== '用户复制' && source !== '用户剪切') {
+            this.lastExportTime = now;
+        }
         
         console.log('📋 SmartClipboard.current set:', this.current);
 
@@ -966,8 +973,12 @@ class SmartClipboard {
                 const capturedSelection = selection.trim();
                 const captureTime = Date.now();
                 setTimeout(() => {
+                    // 如果 export 在 copy 之后执行了，不覆盖
+                    if (this.lastExportTime > captureTime) {
+                        console.log('📋 SmartClipboard: skipping copy event, export happened after copy');
+                        return;
+                    }
                     // 只有当没有更新的内容被存储时，才存储选中内容
-                    // 防止被 export 方法存储的正确内容覆盖
                     if (this.current && this.current.timestamp > captureTime) {
                         return;
                     }
@@ -982,6 +993,11 @@ class SmartClipboard {
                 const capturedSelection = selection.trim();
                 const captureTime = Date.now();
                 setTimeout(() => {
+                    // 如果 export 在 cut 之后执行了，不覆盖
+                    if (this.lastExportTime > captureTime) {
+                        console.log('📋 SmartClipboard: skipping cut event, export happened after cut');
+                        return;
+                    }
                     if (this.current && this.current.timestamp > captureTime) {
                         return;
                     }
