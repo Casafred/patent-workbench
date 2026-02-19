@@ -109,7 +109,7 @@ function updateSearchButtonState() {
             </svg>
             <span>联网搜索已启用 (${searchMode.searchEngine})</span>
         `;
-        const inputArea = document.querySelector('.chat-input-area');
+        const inputArea = document.getElementById('chat_input_area');
         if (inputArea) {
             inputArea.style.position = 'relative';
             inputArea.insertBefore(indicator, inputArea.firstChild);
