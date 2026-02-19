@@ -347,7 +347,11 @@ class SmartClipboard {
 
     // 创建面板
     createPanel() {
-        if (document.getElementById('sc-panel')) return;
+        const existingPanel = document.getElementById('sc-panel');
+        if (existingPanel) {
+            this.panel = existingPanel;
+            return;
+        }
 
         const panel = document.createElement('div');
         panel.id = 'sc-panel';
@@ -390,9 +394,8 @@ class SmartClipboard {
     }
 
     updatePanel() {
+        console.log('📋 updatePanel called, this.panel exists:', !!this.panel, 'this.current:', this.current?.text?.substring(0, 50));
         if (!this.panel) return;
-        
-        console.log('📋 updatePanel called, this.current:', this.current?.text?.substring(0, 50));
 
         const currentDiv = this.panel.querySelector('.sc-current');
         const inputsList = this.panel.querySelector('.sc-inputs-list');
