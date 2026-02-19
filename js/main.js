@@ -33,31 +33,91 @@ window.LoadingManager = {
     currentStep: 0,
     progressElement: null,
     overlayElement: null,
+    progressBarElement: null,
+    loadingTextElement: null,
     
     init: function() {
         this.progressElement = document.getElementById('loading-progress');
         this.overlayElement = document.getElementById('loading-overlay');
+        this.progressBarElement = document.getElementById('tech-loading-progress');
+        this.loadingTextElement = document.getElementById('loading-text');
+        
+        this.startWelcomeAnimation();
+    },
+    
+    startWelcomeAnimation: function() {
+        const welcomeTextCN = '欢迎使用专利工作台';
+        const welcomeTextEN = 'PATENT ANALYSIS WORKBENCH';
+        const cnElement = document.getElementById('welcome-text-cn');
+        const enElement = document.getElementById('welcome-text-en');
+        
+        if (!cnElement || !enElement) return;
+        
+        let cnIndex = 0;
+        let enIndex = 0;
+        
+        const typeCN = () => {
+            if (cnIndex < welcomeTextCN.length) {
+                cnElement.textContent += welcomeTextCN[cnIndex];
+                cnIndex++;
+                setTimeout(typeCN, 100);
+            } else {
+                setTimeout(typeEN, 300);
+            }
+        };
+        
+        const typeEN = () => {
+            if (enIndex < welcomeTextEN.length) {
+                enElement.textContent += welcomeTextEN[enIndex];
+                enIndex++;
+                setTimeout(typeEN, 40);
+            }
+        };
+        
+        setTimeout(typeCN, 500);
     },
     
     updateProgress: function(stepName) {
         this.currentStep++;
         const percentage = Math.round((this.currentStep / this.totalSteps) * 100);
+        
         if (this.progressElement) {
             this.progressElement.textContent = `${stepName} (${percentage}%)`;
         }
+        
+        if (this.progressBarElement) {
+            this.progressBarElement.style.width = `${percentage}%`;
+        }
+        
+        if (this.loadingTextElement) {
+            this.loadingTextElement.textContent = stepName;
+        }
+        
         console.log(`📊 加载进度: ${stepName} (${percentage}%)`);
     },
     
     complete: function() {
-        if (this.overlayElement) {
-            // 使用 visibility 而不是 display，避免影响布局
-            this.overlayElement.style.opacity = '0';
-            this.overlayElement.style.visibility = 'hidden';
-            this.overlayElement.style.pointerEvents = 'none';
-            setTimeout(() => {
-                this.overlayElement.style.display = 'none';
-            }, 500);
+        if (this.progressBarElement) {
+            this.progressBarElement.style.width = '100%';
         }
+        
+        if (this.loadingTextElement) {
+            this.loadingTextElement.textContent = '加载完成';
+        }
+        
+        if (this.progressElement) {
+            this.progressElement.textContent = '系统就绪 (100%)';
+        }
+        
+        setTimeout(() => {
+            if (this.overlayElement) {
+                this.overlayElement.classList.add('hidden');
+                setTimeout(() => {
+                    this.overlayElement.style.display = 'none';
+                }, 800);
+            }
+        }, 500);
+        
         console.log('✅ 所有模块加载完成');
     }
 };
