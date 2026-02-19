@@ -1703,6 +1703,11 @@ window.copyFieldContent = function(patentNumber, fieldKey, event) {
         event.preventDefault();
     }
     
+    // 清除页面选中内容，防止智能剪贴板错误捕获
+    if (window.getSelection) {
+        window.getSelection().removeAllRanges();
+    }
+    
     // 找到对应的专利结果
     const patentResult = window.patentResults.find(result => result.patent_number === patentNumber);
     if (!patentResult || !patentResult.success) {
@@ -1888,6 +1893,11 @@ window.copyFamilyPublicationNumbers = function(patentNumber, event) {
         event.preventDefault();
     }
     
+    // 清除页面选中内容，防止智能剪贴板错误捕获
+    if (window.getSelection) {
+        window.getSelection().removeAllRanges();
+    }
+    
     // 找到对应的专利结果
     const patentResult = window.patentResults.find(result => result.patent_number === patentNumber);
     if (!patentResult || !patentResult.success) {
@@ -1940,6 +1950,11 @@ window.copySimilarDocumentNumbers = function(patentNumber, event) {
     if (event) {
         event.stopPropagation();
         event.preventDefault();
+    }
+    
+    // 清除页面选中内容，防止智能剪贴板错误捕获
+    if (window.getSelection) {
+        window.getSelection().removeAllRanges();
     }
     
     // 找到对应的专利结果
