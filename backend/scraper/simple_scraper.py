@@ -28,6 +28,7 @@ class SimplePatentData:
     description: str = ""
     url: str = ""
     drawings: List[str] = None
+    pdf_link: str = ""
     # 进阶字段
     patent_citations: List[Dict[str, str]] = None  # 引用的专利
     cited_by: List[Dict[str, str]] = None  # 被引用的专利
@@ -529,6 +530,17 @@ class SimplePatentScraper:
         else:
             patent_data.description = ''
         
+        # Extract PDF link (专利原文PDF链接)
+        try:
+            pdf_link_elem = soup.find('a', {'itemprop': 'pdfLink'})
+            if pdf_link_elem:
+                patent_data.pdf_link = pdf_link_elem.get('href', '')
+                logger.info(f"提取到PDF链接: {patent_data.pdf_link}")
+            else:
+                logger.info(f"未找到PDF链接 for {patent_number}")
+        except Exception as e:
+            logger.warning(f"Error extracting PDF link for {patent_number}: {e}")
+        
         # Extract drawings using multiple strategies
         # 始终尝试提取附图，不受crawl_specification限制
         # 注意：Google Patents使用JavaScript动态加载图片，静态HTML中可能没有图片标签
@@ -540,10 +552,15 @@ class SimplePatentScraper:
                 
                 # Strategy 1: Extract from PDF link (convert to image URLs)
                 # Google Patents stores images at: https://patentimages.storage.googleapis.com/{hash}/{patent_number}-{page}.png
-                pdf_link = soup.find('a', {'itemprop': 'pdfLink'})
-                if pdf_link:
-                    pdf_url = pdf_link.get('href', '')
-                    logger.info(f"找到PDF链接: {pdf_url}")
+                # 使用已提取的pdf_link或重新查找
+                pdf_url = patent_data.pdf_link
+                if not pdf_url:
+                    pdf_link = soup.find('a', {'itemprop': 'pdfLink'})
+                    if pdf_link:
+                        pdf_url = pdf_link.get('href', '')
+                
+                if pdf_url:
+                    logger.info(f"使用PDF链接构造图片: {pdf_url}")
                     
                     # Extract the hash from PDF URL
                     # Format: https://patentimages.storage.googleapis.com/c6/87/f6/62f66c32ba2f4e/CN104154208B.pdf

@@ -116,6 +116,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
         'legal_events': ['legal_events'],
         'similar_documents': ['similar_documents'],
         'drawings': ['drawings'],
+        'pdf_link': ['pdf_link'],
         'external_links': ['external_links']
     };
     
@@ -708,9 +709,17 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 <div class="header">
                     <div class="header-top">
                         <div class="patent-number">专利号: ${patentNumber}</div>
-                        ${patentResult.url ? `
-                        <a href="${patentResult.url}" target="_blank" style="color: white; text-decoration: underline; font-size: 0.9em; opacity: 0.9;">🔗 查看 Google Patents 原文</a>
-                        ` : ''}
+                        <div style="display: flex; gap: 15px; align-items: center;">
+                            ${data.pdf_link ? `
+                            <a href="${data.pdf_link}" target="_blank" style="color: white; text-decoration: none; font-size: 0.9em; opacity: 0.9; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/></svg>
+                                下载PDF原文
+                            </a>
+                            ` : ''}
+                            ${patentResult.url ? `
+                            <a href="${patentResult.url}" target="_blank" style="color: white; text-decoration: underline; font-size: 0.9em; opacity: 0.9;">🔗 Google Patents</a>
+                            ` : ''}
+                        </div>
                     </div>
                     <h1 class="patent-title">${data.title || '专利详情'}</h1>
                     <div class="meta-info">
@@ -784,6 +793,12 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                             <div class="info-card">
                                 <div class="info-label">优先权日期</div>
                                 <div class="info-value">${data.priority_date}</div>
+                            </div>
+                            ` : ''}
+                            ${data.pdf_link ? `
+                            <div class="info-card">
+                                <div class="info-label">PDF原文</div>
+                                <div class="info-value"><a href="${data.pdf_link}" target="_blank" style="color: #2e7d32; font-weight: 500;">📥 下载PDF</a></div>
                             </div>
                             ` : ''}
                             ${patentResult.url ? `

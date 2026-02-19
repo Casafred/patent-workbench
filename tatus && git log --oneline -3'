@@ -1,0 +1,30 @@
+[33m0a7e232[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m fix-add-updateTabAnalysisResult-function-for-new-tab
+[33m35bba5e[m fix-analyzeAllPatents-use-analysisResultsList-container-correctly
+[33m53e1dfb[m fix-analyzeAllPatents-use-analysisResultsList-container
+[33m47cc226[m fix-tab-manager-add-model-parameter
+[33mace2281[m fix-tab-manager-add-user-prompt-to-api-call
+[33me3ae86e[m fix-tab-manager-use-apiCall-instead-of-fetch
+[33me9fcc66[m fix-expose-appState-to-window
+[33m8c447fb[m fix-expose-loadTemplate-to-global
+[33m35ac82a[m fix-analyzeAllPatents-auto-load-default-template
+[33meb8427f[m fix-initPatentTemplate-load-default-template-even-without-DOM
+[33m050c049[m fix-syntax-error-missing-brace-in-main-js
+[33m377a3a7[m refactor-split-main-js-into-modules
+[33m0f5b397[m docs-add-main-js-refactoring-plan
+[33m5a2a36b[m 修复默认模板无法识别的问题
+[33m7203047[m 修复analyzeAllBtn空值错误
+[33me202152[m 优化批量解读界面：统一原始结果和同族引用相似结果的分页展示样式
+[33ma553caf[m fix
+[33m420e1d3[m feat:sync-copy-buttons-with-smart-clipboard
+[33maad8ef2[m feat:update-smart-clipboard
+[33mcf11120[m 添加批量解读实时显示和关系专利标签页解读功能
+[33m923dfe4[m 优化AI消息气泡行间距：将white-space从pre-wrap改为normal，避免多余空白字符导致的间距过大问题
+[33m1961628[m 修复文件上传解析状态问题和专利解读提示词构建问题
+[33m25b0147[m debug
+[33m6b6492f[m userPromptTemplate
+[33md224884[m debug
+[33m34d36e5[m fix: 修复权利要求作为对象而非字符串返回的问题
+[33m62a0978[m fix: 修复提示词构建中权利要求和说明书未纳入的问题
+[33m8353da1[m style: 调整智能剪贴板悬浮球位置
+[33mfe77652[m fix: 修复关系专利分析功能的多个问题
+[33mc9edf21[m feat: 重构智能剪贴板系统为全局悬浮球形式

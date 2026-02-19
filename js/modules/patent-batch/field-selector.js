@@ -164,6 +164,7 @@ window.getSelectedFields = function() {
         'legal_events',
         'similar_documents',
         'drawings',
+        'pdf_link',
         'external_links'
     ];
 
@@ -221,6 +222,7 @@ window.getAllFields = function() {
         'similar_documents',
         'description',
         'drawings',
+        'pdf_link',
         'external_links'
     ];
     
