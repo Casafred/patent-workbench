@@ -391,6 +391,8 @@ class SmartClipboard {
 
     updatePanel() {
         if (!this.panel) return;
+        
+        console.log('📋 updatePanel called, this.current:', this.current?.text?.substring(0, 50));
 
         const currentDiv = this.panel.querySelector('.sc-current');
         const inputsList = this.panel.querySelector('.sc-inputs-list');
@@ -398,6 +400,7 @@ class SmartClipboard {
 
         if (this.current) {
             const preview = this.current.text.slice(0, 100) + (this.current.text.length > 100 ? '...' : '');
+            console.log('📋 updatePanel - preview:', preview);
             currentDiv.innerHTML = `
                 <div class="sc-content-type">
                     <span class="sc-type-icon">${this.current.typeIcon}</span>
@@ -969,10 +972,12 @@ class SmartClipboard {
     bindEvents() {
         document.addEventListener('copy', (e) => {
             const selection = window.getSelection().toString();
+            console.log('📋 copy event triggered, selection:', selection?.substring(0, 50));
             if (selection && selection.trim()) {
                 const capturedSelection = selection.trim();
                 const captureTime = Date.now();
                 setTimeout(() => {
+                    console.log('📋 copy event timeout, lastExportTime:', this.lastExportTime, 'captureTime:', captureTime);
                     // 如果 export 在 copy 之后执行了，不覆盖
                     if (this.lastExportTime > captureTime) {
                         console.log('📋 SmartClipboard: skipping copy event, export happened after copy');
