@@ -46,8 +46,8 @@ window.LoadingManager = {
     },
     
     startWelcomeAnimation: function() {
-        const welcomeTextCN = '欢迎使用专利工作台';
-        const welcomeTextEN = 'PATENT ANALYSIS WORKBENCH';
+        const welcomeTextCN = 'ALFRED X IP';
+        const welcomeTextEN = 'INTELLIGENT PATENT WORKBENCH';
         const cnElement = document.getElementById('welcome-text-cn');
         const enElement = document.getElementById('welcome-text-en');
         
@@ -60,7 +60,7 @@ window.LoadingManager = {
             if (cnIndex < welcomeTextCN.length) {
                 cnElement.textContent += welcomeTextCN[cnIndex];
                 cnIndex++;
-                setTimeout(typeCN, 100);
+                setTimeout(typeCN, 120);
             } else {
                 setTimeout(typeEN, 300);
             }
@@ -70,7 +70,7 @@ window.LoadingManager = {
             if (enIndex < welcomeTextEN.length) {
                 enElement.textContent += welcomeTextEN[enIndex];
                 enIndex++;
-                setTimeout(typeEN, 40);
+                setTimeout(typeEN, 35);
             }
         };
         
