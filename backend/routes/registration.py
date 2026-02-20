@@ -272,8 +272,7 @@ REGISTER_PAGE_HTML = """
 """
 
 
-ADMIN_PAGE_HTML = """{% raw %}
-<!DOCTYPE html>
+ADMIN_PAGE_HTML = """<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -957,7 +956,6 @@ ADMIN_PAGE_HTML = """{% raw %}
     </script>
 </body>
 </html>
-{% endraw %}
 """
 
 
@@ -992,7 +990,8 @@ def submit_application():
 
 @registration_bp.route('/admin', methods=['GET'])
 def admin_page():
-    return render_template_string(ADMIN_PAGE_HTML)
+    from flask import Response
+    return Response(ADMIN_PAGE_HTML, mimetype='text/html')
 
 
 @registration_bp.route('/admin/login', methods=['POST'])
