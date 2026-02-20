@@ -272,7 +272,7 @@ REGISTER_PAGE_HTML = """
 """
 
 
-ADMIN_PAGE_HTML = """
+ADMIN_PAGE_HTML = """{% raw %}
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -637,7 +637,6 @@ ADMIN_PAGE_HTML = """
         </div>
     </div>
 
-    {% raw %}
     <script>
         let currentTab = 'users';
         let isLoggedIn = false;
@@ -956,9 +955,9 @@ ADMIN_PAGE_HTML = """
 
         checkLogin();
     </script>
-    {% endraw %}
 </body>
 </html>
+{% endraw %}
 """
 
 
