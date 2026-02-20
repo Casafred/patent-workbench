@@ -257,9 +257,14 @@ LOGIN_PAGE_HTML = """
         .get-account-btn:hover {
             text-decoration: underline;
         }
+        .login-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
         .side-qr-container {
-            position: fixed;
-            right: 0;
+            position: absolute;
+            right: -50px;
             top: 50%;
             transform: translateY(-50%);
             z-index: 100;
@@ -270,13 +275,13 @@ LOGIN_PAGE_HTML = """
             width: 40px;
             height: 80px;
             background: linear-gradient(135deg, #22C55E, #16A34A);
-            border-radius: 8px 0 0 8px;
+            border-radius: 8px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            box-shadow: -2px 0 15px rgba(34, 197, 94, 0.3);
+            box-shadow: 2px 0 15px rgba(34, 197, 94, 0.3);
             transition: all 0.3s ease;
             writing-mode: vertical-rl;
             color: white;
@@ -287,7 +292,7 @@ LOGIN_PAGE_HTML = """
         }
         .side-qr-toggle:hover {
             width: 45px;
-            box-shadow: -4px 0 20px rgba(34, 197, 94, 0.4);
+            box-shadow: 4px 0 20px rgba(34, 197, 94, 0.4);
         }
         .side-qr-toggle svg {
             width: 18px;
@@ -295,21 +300,23 @@ LOGIN_PAGE_HTML = """
         }
         .side-qr-panel {
             position: absolute;
-            right: -200px;
+            right: -230px;
             top: 50%;
             transform: translateY(-50%);
             background: white;
-            border-radius: 12px 0 0 12px;
-            box-shadow: -5px 0 25px rgba(0,0,0,0.15);
+            border-radius: 12px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.15);
             padding: 20px;
             text-align: center;
-            transition: right 0.3s ease;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
             border: 1px solid rgba(34, 197, 94, 0.2);
-            border-right: none;
         }
-        .side-qr-container:hover .side-qr-panel,
-        .side-qr-container.active .side-qr-panel {
-            right: 40px;
+        .side-qr-container:hover .side-qr-panel {
+            right: -235px;
+            opacity: 1;
+            visibility: visible;
         }
         .side-qr-panel img {
             width: 130px;
@@ -335,7 +342,7 @@ LOGIN_PAGE_HTML = """
             padding-top: 8px;
             border-top: 1px solid #f0f0f0;
         }
-        @media (max-width: 768px) {
+        @media (max-width: 900px) {
             .side-qr-container {
                 display: none;
             }
@@ -351,87 +358,86 @@ LOGIN_PAGE_HTML = """
 </head>
 <body>
     <div id="vanta-bg"></div>
-    <div class="login-container">
-        <div class="logo-container">
-            <h1 class="logo-text">ALFRED X IP</h1>
-            <p style="margin: 5px 0 0; color: #777;">专利分析智能工作台</p>
+    <div class="login-wrapper">
+        <div class="login-container">
+            <div class="logo-container">
+                <h1 class="logo-text">ALFRED X IP</h1>
+                <p style="margin: 5px 0 0; color: #777;">专利分析智能工作台</p>
+            </div>
+            
+            <div id="error-box" class="error-box{% if error %} show{% endif %}">
+                <strong>登录失败</strong><br>
+                <span id="error-message">{{ error|default('', true) }}</span>
+            </div>
+
+            <form id="login-form" method="post">
+                <div class="input-group">
+                    <input type="text" name="username" placeholder="用户名" required autocomplete="username">
+                </div>
+                <div class="input-group">
+                    <input type="password" id="password" name="password" placeholder="密码" required autocomplete="current-password">
+                    <button type="button" id="password-toggle" class="password-toggle" title="显示/隐藏密码">
+                        <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        <svg id="eye-off-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                            <line x1="1" y1="1" x2="23" y2="23"></line>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="input-group">
+                    <div style="margin-bottom: 8px; text-align: left; font-size: 14px; color: var(--text-color);">
+                        <label for="captcha">验证：{{ captcha_question }}</label>
+                    </div>
+                    <input type="number" id="captcha" name="captcha" placeholder="请输入计算结果" required>
+                </div>
+                
+                <div class="agreement-section">
+                    <label class="agreement-checkbox">
+                        <input type="checkbox" id="agreement-check" name="agreement" required>
+                        <span class="checkmark"></span>
+                        <span class="agreement-text">
+                            我已阅读并同意
+                            <a href="/frontend/user-agreement.html" target="_blank">《用户协议》</a>、
+                            <a href="/frontend/privacy.html" target="_blank">《隐私政策》</a>和
+                            <a href="/frontend/disclaimer.html" target="_blank">《免责声明》</a>
+                        </span>
+                    </label>
+                </div>
+                
+                <button id="login-btn" type="submit" class="login-btn">
+                    <span id="btn-text">登 录</span>
+                    <div id="spinner" class="spinner"></div>
+                </button>
+            </form>
+
+            <div class="links">
+                忘记密码? 
+                <a href="javascript:void(0);" onclick="alert('请联系管理员邮箱：freecasafred@outlook.com'); return false;">联系管理员</a>
+                <br>
+                <a href="/api/register/apply" id="get-account-btn" class="get-account-btn">获取账号</a>
+            </div>
         </div>
         
-        <div id="error-box" class="error-box{% if error %} show{% endif %}">
-            <strong>登录失败</strong><br>
-            <span id="error-message">{{ error|default('', true) }}</span>
-        </div>
-
-        <form id="login-form" method="post">
-            <div class="input-group">
-                <input type="text" name="username" placeholder="用户名" required autocomplete="username">
+        <div class="side-qr-container">
+            <div class="side-qr-toggle">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                <span>公众号</span>
             </div>
-            <div class="input-group">
-                <input type="password" id="password" name="password" placeholder="密码" required autocomplete="current-password">
-                <button type="button" id="password-toggle" class="password-toggle" title="显示/隐藏密码">
-                    <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                    </svg>
-                    <svg id="eye-off-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
-                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                        <line x1="1" y1="1" x2="23" y2="23"></line>
-                    </svg>
-                </button>
+            <div class="side-qr-panel">
+                <img src="/frontend/images/QRcode.jpg" alt="公众号二维码">
+                <div class="qr-title">关注公众号</div>
+                <p class="qr-name">IP智友</p>
+                <p class="qr-tip">获取帮助 · 反馈问题</p>
             </div>
-            
-            <!-- 防机器人验证 -->
-            <div class="input-group">
-                <div style="margin-bottom: 8px; text-align: left; font-size: 14px; color: var(--text-color);">
-                    <label for="captcha">验证：{{ captcha_question }}</label>
-                </div>
-                <input type="number" id="captcha" name="captcha" placeholder="请输入计算结果" required>
-            </div>
-            
-            <!-- 协议勾选区域 -->
-            <div class="agreement-section">
-                <label class="agreement-checkbox">
-                    <input type="checkbox" id="agreement-check" name="agreement" required>
-                    <span class="checkmark"></span>
-                    <span class="agreement-text">
-                        我已阅读并同意
-                        <a href="/frontend/user-agreement.html" target="_blank">《用户协议》</a>、
-                        <a href="/frontend/privacy.html" target="_blank">《隐私政策》</a>和
-                        <a href="/frontend/disclaimer.html" target="_blank">《免责声明》</a>
-                    </span>
-                </label>
-            </div>
-            
-            <button id="login-btn" type="submit" class="login-btn">
-                <span id="btn-text">登 录</span>
-                <div id="spinner" class="spinner"></div>
-            </button>
-        </form>
-
-        <div class="links">
-            忘记密码? 
-            <a href="javascript:void(0);" onclick="alert('请联系管理员邮箱：freecasafred@outlook.com'); return false;">联系管理员</a>
-            <br>
-            <a href="/api/register/apply" id="get-account-btn" class="get-account-btn">获取账号</a>
-        </div>
-    </div>
-
-    <!-- 侧边栏二维码 -->
-    <div class="side-qr-container">
-        <div class="side-qr-toggle">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="7" height="7"></rect>
-                <rect x="14" y="3" width="7" height="7"></rect>
-                <rect x="14" y="14" width="7" height="7"></rect>
-                <rect x="3" y="14" width="7" height="7"></rect>
-            </svg>
-            <span>公众号</span>
-        </div>
-        <div class="side-qr-panel">
-            <img src="/frontend/images/QRcode.jpg" alt="公众号二维码">
-            <div class="qr-title">关注公众号</div>
-            <p class="qr-name">IP智友</p>
-            <p class="qr-tip">获取帮助 · 反馈问题</p>
         </div>
     </div>
 
