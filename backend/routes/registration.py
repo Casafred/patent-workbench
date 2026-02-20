@@ -637,6 +637,7 @@ ADMIN_PAGE_HTML = """
         </div>
     </div>
 
+    {% raw %}
     <script>
         let currentTab = 'users';
         let isLoggedIn = false;
@@ -955,6 +956,7 @@ ADMIN_PAGE_HTML = """
 
         checkLogin();
     </script>
+    {% endraw %}
 </body>
 </html>
 """
