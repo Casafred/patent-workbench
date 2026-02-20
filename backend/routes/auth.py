@@ -641,15 +641,15 @@ def serve_app():
             z-index: 1000;
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 10px;
             background: rgba(255,255,255,0.95);
-            padding: 8px 16px;
+            padding: 6px 12px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }}
         .user-display {{
             color: #14532D;
-            font-size: 14px;
+            font-size: 13px;
         }}
         .user-display strong {{
             color: #16A34A;
@@ -657,8 +657,8 @@ def serve_app():
         .change-pwd-btn, .logout-btn {{
             color: #16A34A;
             text-decoration: none;
-            font-size: 14px;
-            padding: 4px 12px;
+            font-size: 13px;
+            padding: 2px 8px;
             border-radius: 4px;
             transition: all 0.2s;
         }}
@@ -771,18 +771,18 @@ def serve_app():
     <div id="change-password-modal" class="cp-modal">
         <div class="cp-modal-content">
             <h3>修改密码</h3>
-            <form id="change-password-form">
+            <form id="change-password-form" autocomplete="off">
                 <div class="form-group">
                     <label>旧密码</label>
-                    <input type="password" id="old-password" required>
+                    <input type="password" id="old-password" required autocomplete="current-password">
                 </div>
                 <div class="form-group">
                     <label>新密码</label>
-                    <input type="password" id="new-password" required minlength="6" placeholder="至少6位">
+                    <input type="password" id="new-password" required minlength="6" placeholder="至少6位" autocomplete="new-password">
                 </div>
                 <div class="form-group">
                     <label>确认新密码</label>
-                    <input type="password" id="confirm-password" required minlength="6">
+                    <input type="password" id="confirm-password" required minlength="6" autocomplete="new-password">
                 </div>
                 <div id="change-pwd-message" class="cp-message"></div>
                 <div class="cp-buttons">
