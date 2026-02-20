@@ -166,15 +166,26 @@ REGISTER_PAGE_HTML = """
             </div>
             <div class="form-group">
                 <label>邮箱 <span class="required">*</span></label>
-                <input type="email" name="email" required placeholder="用于接收审核结果">
+                <input type="email" name="email" required placeholder="用于接收审核结果和账号信息">
             </div>
             <div class="form-group">
-                <label>手机号 <span class="required">*</span></label>
-                <input type="tel" name="phone" required placeholder="请输入手机号">
+                <label>手机号</label>
+                <input type="tel" name="phone" placeholder="选填">
             </div>
             <div class="form-group">
                 <label>单位/公司</label>
                 <input type="text" name="company" placeholder="选填">
+            </div>
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="followed_wechat" id="followed-wechat" style="width: 18px; height: 18px;">
+                    <span>我已关注公众号「IP智友」</span>
+                </label>
+            </div>
+            <div class="form-group" id="wechat-nickname-group" style="display: none;">
+                <label>微信昵称 <span class="required">*</span></label>
+                <input type="text" name="wechat_nickname" placeholder="请填写您的微信昵称，方便我们在后台找到您">
+                <small style="color: #666; font-size: 12px; margin-top: 4px; display: block;">仅用于在公众号后台识别用户，不作他用</small>
             </div>
             <div class="form-group">
                 <label>申请理由</label>
@@ -192,6 +203,17 @@ REGISTER_PAGE_HTML = """
         const form = document.getElementById('register-form');
         const messageEl = document.getElementById('message');
         const submitBtn = document.getElementById('submit-btn');
+        const followedWechat = document.getElementById('followed-wechat');
+        const wechatNicknameGroup = document.getElementById('wechat-nickname-group');
+        const wechatNicknameInput = document.querySelector('input[name="wechat_nickname"]');
+
+        followedWechat.addEventListener('change', function() {
+            wechatNicknameGroup.style.display = this.checked ? 'block' : 'none';
+            wechatNicknameInput.required = this.checked;
+            if (!this.checked) {
+                wechatNicknameInput.value = '';
+            }
+        });
 
         function showMessage(text, type) {
             messageEl.textContent = text;
@@ -201,6 +223,11 @@ REGISTER_PAGE_HTML = """
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
             
+            if (followedWechat.checked && !wechatNicknameInput.value.trim()) {
+                showMessage('请填写微信昵称', 'error');
+                return;
+            }
+            
             submitBtn.disabled = true;
             submitBtn.textContent = '提交中...';
             
@@ -208,8 +235,10 @@ REGISTER_PAGE_HTML = """
             const data = {
                 name: formData.get('name'),
                 email: formData.get('email'),
-                phone: formData.get('phone'),
+                phone: formData.get('phone') || '',
                 company: formData.get('company') || '',
+                followed_wechat: followedWechat.checked,
+                wechat_nickname: formData.get('wechat_nickname') || '',
                 reason: formData.get('reason') || ''
             };
 
@@ -225,6 +254,7 @@ REGISTER_PAGE_HTML = """
                 if (result.success) {
                     showMessage(result.message, 'success');
                     form.reset();
+                    wechatNicknameGroup.style.display = 'none';
                 } else {
                     showMessage(result.message, 'error');
                 }
@@ -617,7 +647,7 @@ ADMIN_PAGE_HTML = """
                             </div>
                             <div class="info-item">
                                 <label>手机号</label>
-                                <span>${app.phone}</span>
+                                <span>${app.phone || '-'}</span>
                             </div>
                             <div class="info-item">
                                 <label>单位</label>
@@ -626,6 +656,10 @@ ADMIN_PAGE_HTML = """
                             <div class="info-item">
                                 <label>申请时间</label>
                                 <span>${app.created_at}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>关注公众号</label>
+                                <span>${app.followed_wechat ? '是 (' + (app.wechat_nickname || '-') + ')' : '否'}</span>
                             </div>
                             ${app.reason ? `
                             <div class="info-item" style="grid-column: 1 / -1;">
@@ -732,12 +766,19 @@ def submit_application():
     email = data.get('email', '').strip()
     phone = data.get('phone', '').strip()
     company = data.get('company', '').strip()
+    followed_wechat = data.get('followed_wechat', False)
+    wechat_nickname = data.get('wechat_nickname', '').strip()
     reason = data.get('reason', '').strip()
     
-    if not name or not email or not phone:
+    if not name or not email:
         return jsonify({'success': False, 'message': '请填写必填项'})
     
-    result = registration_service.submit_application(name, email, phone, company, reason)
+    if followed_wechat and not wechat_nickname:
+        return jsonify({'success': False, 'message': '请填写微信昵称'})
+    
+    result = registration_service.submit_application(
+        name, email, phone, company, followed_wechat, wechat_nickname, reason
+    )
     return jsonify(result)
 
 
