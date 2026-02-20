@@ -257,83 +257,38 @@ LOGIN_PAGE_HTML = """
         .get-account-btn:hover {
             text-decoration: underline;
         }
-        .qr-modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            animation: fadeIn 0.3s;
-        }
-        .qr-modal-content {
-            position: relative;
-            background-color: white;
-            margin: 10% auto;
-            padding: 30px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 400px;
-            text-align: center;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            animation: slideDown 0.3s;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        @keyframes slideDown {
-            from { transform: translateY(-50px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        .qr-modal-close {
+        .qr-section {
             position: absolute;
-            right: 15px;
-            top: 15px;
-            font-size: 28px;
-            font-weight: bold;
-            color: #999;
-            cursor: pointer;
-            background: none;
-            border: none;
-            padding: 0;
-            width: 30px;
-            height: 30px;
-            line-height: 30px;
+            right: -140px;
+            top: 50%;
+            transform: translateY(-50%);
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 1px solid rgba(34, 197, 94, 0.2);
         }
-        .qr-modal-close:hover {
-            color: #333;
-        }
-        .qr-modal h3 {
-            color: var(--primary-color-dark);
-            margin-bottom: 15px;
-            font-size: 1.3em;
-        }
-        .qr-modal p {
-            color: #666;
-            margin-bottom: 20px;
-            line-height: 1.6;
-        }
-        .qr-code-image {
-            width: 200px;
-            height: 200px;
-            margin: 0 auto 20px;
-            border: 2px solid #eee;
+        .qr-section img {
+            width: 120px;
+            height: 120px;
             border-radius: 8px;
-            padding: 10px;
-            background: white;
         }
-        .qr-code-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
+        .qr-section p {
+            margin: 8px 0 0;
+            font-size: 12px;
+            color: #666;
         }
-        .qr-tips {
-            font-size: 14px;
-            color: #999;
-            margin-top: 15px;
+        .qr-section .qr-title {
+            font-size: 13px;
+            color: var(--primary-color-dark);
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        @media (max-width: 900px) {
+            .qr-section {
+                display: none;
+            }
         }
         .footer {
             position: absolute;
@@ -346,7 +301,7 @@ LOGIN_PAGE_HTML = """
 </head>
 <body>
     <div id="vanta-bg"></div>
-    <div class="login-container">
+    <div class="login-container" style="position: relative;">
         <div class="logo-container">
             <h1 class="logo-text">ALFRED X IP</h1>
             <p style="margin: 5px 0 0; color: #777;">专利分析智能工作台</p>
@@ -407,20 +362,13 @@ LOGIN_PAGE_HTML = """
             忘记密码? 
             <a href="javascript:void(0);" onclick="alert('请联系管理员邮箱：freecasafred@outlook.com'); return false;">联系管理员</a>
             <br>
-            <a href="javascript:void(0);" id="get-account-btn" class="get-account-btn">获取账号</a>
+            <a href="/api/register/apply" id="get-account-btn" class="get-account-btn">获取账号</a>
         </div>
-    </div>
-
-    <!-- 获取账号二维码弹窗 -->
-    <div id="qr-modal" class="qr-modal">
-        <div class="qr-modal-content">
-            <button class="qr-modal-close" id="qr-modal-close">&times;</button>
-            <h3>获取免费使用账号</h3>
-            <p>请关注公众号：<strong>IP智友</strong><br>后台私信联系获取免费使用账号</p>
-            <div class="qr-code-image">
-                <img src="/frontend/images/QRcode.jpg" alt="IP智友公众号二维码">
-            </div>
-            <p class="qr-tips">扫描二维码关注公众号</p>
+        
+        <div class="qr-section">
+            <div class="qr-title">关注公众号</div>
+            <img src="/frontend/images/QRcode.jpg" alt="IP智友公众号二维码">
+            <p>IP智友</p>
         </div>
     </div>
 
@@ -490,30 +438,6 @@ LOGIN_PAGE_HTML = """
                 btnText.style.display = 'none';
                 spinner.style.display = 'block';
             });
-
-            // 获取账号按钮和弹窗控制
-            const getAccountBtn = document.getElementById('get-account-btn');
-            const qrModal = document.getElementById('qr-modal');
-            const qrModalClose = document.getElementById('qr-modal-close');
-
-            // 打开弹窗
-            getAccountBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                qrModal.style.display = 'block';
-            });
-
-            // 关闭弹窗
-            qrModalClose.addEventListener('click', function() {
-                qrModal.style.display = 'none';
-            });
-
-            // 点击弹窗外部关闭
-            window.addEventListener('click', function(e) {
-                if (e.target === qrModal) {
-                    qrModal.style.display = 'none';
-                }
-            });
-        });
     </script>
 </body>
 </html>
