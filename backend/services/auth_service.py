@@ -223,10 +223,42 @@ class AuthService:
             with open(USERS_FILE, 'w', encoding='utf-8') as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
             
+            AuthService._clear_application_password(username)
+            
             return True, "密码修改成功"
         except Exception as e:
             print(f"密码修改失败: {e}")
             return False, "密码修改失败，请稍后重试"
+    
+    @staticmethod
+    def _clear_application_password(username):
+        """
+        Clear password in applications.json after user changes password.
+        
+        Args:
+            username: Username
+        """
+        applications_file = os.path.join(BASE_DIR, 'backend', 'user_management', 'applications.json')
+        try:
+            if not os.path.exists(applications_file):
+                return
+            
+            with open(applications_file, 'r', encoding='utf-8') as f:
+                applications = json.load(f)
+            
+            updated = False
+            for app in applications:
+                if app.get('username') == username:
+                    app['password'] = '[用户已修改]'
+                    app['password_changed'] = True
+                    updated = True
+            
+            if updated:
+                with open(applications_file, 'w', encoding='utf-8') as f:
+                    json.dump(applications, f, ensure_ascii=False, indent=2)
+                print(f"已清除 applications.json 中 {username} 的明文密码")
+        except Exception as e:
+            print(f"更新 applications.json 失败: {e}")
     
     @staticmethod
     def get_user_email(username):
@@ -396,3 +428,88 @@ class AuthService:
         except Exception as e:
             print(f"密码重置失败: {e}")
             return False, "密码重置失败，请稍后重试"
+    
+    @staticmethod
+    def change_username(old_username, new_username, password):
+        """
+        Change username.
+        
+        Args:
+            old_username: Current username
+            new_username: New username
+            password: Password for verification
+        
+        Returns:
+            tuple: (success: bool, message: str)
+        """
+        if not AuthService.verify_credentials(old_username, password):
+            return False, "密码不正确"
+        
+        if new_username == old_username:
+            return False, "新用户名不能与当前用户名相同"
+        
+        if len(new_username) < 3 or len(new_username) > 20:
+            return False, "用户名长度需在3-20个字符之间"
+        
+        if not new_username.isalnum() and '_' not in new_username:
+            return False, "用户名只能包含字母、数字和下划线"
+        
+        try:
+            with open(USERS_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            if isinstance(data, dict) and 'users' in data:
+                users = data['users']
+            else:
+                users = data
+            
+            if new_username in users:
+                return False, "该用户名已被使用"
+            
+            password_hash = users.pop(old_username)
+            users[new_username] = password_hash
+            
+            if isinstance(data, dict) and 'users' in data:
+                data['users'] = users
+            else:
+                data = users
+            
+            with open(USERS_FILE, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            
+            AuthService._update_application_username(old_username, new_username)
+            
+            return True, "用户名修改成功"
+        except Exception as e:
+            print(f"用户名修改失败: {e}")
+            return False, "用户名修改失败，请稍后重试"
+    
+    @staticmethod
+    def _update_application_username(old_username, new_username):
+        """
+        Update username in applications.json.
+        
+        Args:
+            old_username: Old username
+            new_username: New username
+        """
+        applications_file = os.path.join(BASE_DIR, 'backend', 'user_management', 'applications.json')
+        try:
+            if not os.path.exists(applications_file):
+                return
+            
+            with open(applications_file, 'r', encoding='utf-8') as f:
+                applications = json.load(f)
+            
+            updated = False
+            for app in applications:
+                if app.get('username') == old_username:
+                    app['username'] = new_username
+                    updated = True
+            
+            if updated:
+                with open(applications_file, 'w', encoding='utf-8') as f:
+                    json.dump(applications, f, ensure_ascii=False, indent=2)
+                print(f"已同步更新 applications.json 中的用户名: {old_username} -> {new_username}")
+        except Exception as e:
+            print(f"更新 applications.json 失败: {e}")

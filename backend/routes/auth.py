@@ -764,9 +764,30 @@ def serve_app():
         }}
     </style>
     <div class="user-actions">
-        <span class="user-display">当前用户: <strong>{username}</strong></span>
-        <a href="javascript:void(0);" onclick="showChangePasswordModal()" class="change-pwd-btn">修改密码</a>
+        <span class="user-display">当前用户: <strong id="current-username">{username}</strong></span>
+        <a href="javascript:void(0);" onclick="showChangeUsernameModal()" class="change-pwd-btn">改用户名</a>
+        <a href="javascript:void(0);" onclick="showChangePasswordModal()" class="change-pwd-btn">改密码</a>
         <a href="{url_for('auth.logout')}" class="logout-btn">登出</a>
+    </div>
+    <div id="change-username-modal" class="cp-modal">
+        <div class="cp-modal-content">
+            <h3>修改用户名</h3>
+            <form id="change-username-form" autocomplete="off">
+                <div class="form-group">
+                    <label>新用户名</label>
+                    <input type="text" id="new-username" required minlength="3" maxlength="20" placeholder="3-20位字母数字下划线">
+                </div>
+                <div class="form-group">
+                    <label>密码确认</label>
+                    <input type="password" id="username-password" required placeholder="请输入密码确认身份">
+                </div>
+                <div id="change-username-message" class="cp-message"></div>
+                <div class="cp-buttons">
+                    <button type="button" class="cp-btn cp-btn-cancel" onclick="hideChangeUsernameModal()">取消</button>
+                    <button type="submit" id="change-username-btn" class="cp-btn cp-btn-submit">确认修改</button>
+                </div>
+            </form>
+        </div>
     </div>
     <div id="change-password-modal" class="cp-modal">
         <div class="cp-modal-content">
@@ -793,6 +814,58 @@ def serve_app():
         </div>
     </div>
     <script>
+    function showChangeUsernameModal() {{
+        document.getElementById('change-username-modal').classList.add('show');
+    }}
+    function hideChangeUsernameModal() {{
+        var modal = document.getElementById('change-username-modal');
+        modal.classList.remove('show');
+        document.getElementById('change-username-form').reset();
+        var msg = document.getElementById('change-username-message');
+        msg.className = 'cp-message';
+        msg.textContent = '';
+    }}
+    document.getElementById('change-username-form').addEventListener('submit', async function(e) {{
+        e.preventDefault();
+        var newUsername = document.getElementById('new-username').value.trim();
+        var password = document.getElementById('username-password').value;
+        var msgEl = document.getElementById('change-username-message');
+        var btn = document.getElementById('change-username-btn');
+        
+        if (!/^[a-zA-Z0-9_]+$/.test(newUsername)) {{
+            msgEl.textContent = '用户名只能包含字母、数字和下划线';
+            msgEl.className = 'cp-message error';
+            return;
+        }}
+        
+        btn.disabled = true;
+        btn.textContent = '处理中...';
+        
+        try {{
+            var response = await fetch('/api/user/change-username', {{
+                method: 'POST',
+                headers: {{'Content-Type': 'application/json'}},
+                body: JSON.stringify({{new_username: newUsername, password: password}})
+            }});
+            var result = await response.json();
+            
+            if (result.success) {{
+                msgEl.textContent = result.message;
+                msgEl.className = 'cp-message success';
+                document.getElementById('current-username').textContent = newUsername;
+                setTimeout(function() {{ hideChangeUsernameModal(); }}, 1500);
+            }} else {{
+                msgEl.textContent = result.message;
+                msgEl.className = 'cp-message error';
+            }}
+        }} catch (err) {{
+            msgEl.textContent = '操作失败，请稍后重试';
+            msgEl.className = 'cp-message error';
+        }}
+        
+        btn.disabled = false;
+        btn.textContent = '确认修改';
+    }});
     function showChangePasswordModal() {{
         document.getElementById('change-password-modal').classList.add('show');
     }}
@@ -1332,4 +1405,29 @@ def change_password():
     
     username = session.get('user')
     success, message = AuthService.change_password(username, old_password, new_password)
+    return {'success': success, 'message': message}
+
+
+@auth_bp.route('/api/user/change-username', methods=['POST'])
+@login_required
+def change_username():
+    """
+    Change username (for logged-in users).
+    
+    Returns:
+        JSON response with success status and message
+    """
+    data = request.get_json()
+    new_username = data.get('new_username', '').strip()
+    password = data.get('password', '')
+    
+    if not new_username or not password:
+        return {'success': False, 'message': '参数错误'}
+    
+    old_username = session.get('user')
+    success, message = AuthService.change_username(old_username, new_username, password)
+    
+    if success:
+        session['user'] = new_username
+    
     return {'success': success, 'message': message}
