@@ -633,43 +633,176 @@ def serve_app():
     
     username = session.get('user', '用户')
     user_actions_html = f"""
+    <style>
+        .user-actions {{
+            position: fixed;
+            top: 10px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255,255,255,0.95);
+            padding: 8px 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }}
+        .user-display {{
+            color: #14532D;
+            font-size: 14px;
+        }}
+        .user-display strong {{
+            color: #16A34A;
+        }}
+        .change-pwd-btn, .logout-btn {{
+            color: #16A34A;
+            text-decoration: none;
+            font-size: 14px;
+            padding: 4px 12px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }}
+        .change-pwd-btn:hover, .logout-btn:hover {{
+            background: #F0FDF4;
+        }}
+        .logout-btn {{
+            color: #EF4444;
+        }}
+        .cp-modal {{
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 99999;
+            justify-content: center;
+            align-items: center;
+        }}
+        .cp-modal.show {{
+            display: flex;
+        }}
+        .cp-modal-content {{
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 360px;
+            max-width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            position: relative;
+        }}
+        .cp-modal-content h3 {{
+            margin: 0 0 20px;
+            color: #14532D;
+            font-size: 18px;
+        }}
+        .cp-modal-content label {{
+            display: block;
+            margin-bottom: 5px;
+            color: #14532D;
+            font-size: 14px;
+        }}
+        .cp-modal-content input {{
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }}
+        .cp-modal-content input:focus {{
+            outline: none;
+            border-color: #22C55E;
+        }}
+        .cp-modal-content .form-group {{
+            margin-bottom: 15px;
+        }}
+        .cp-message {{
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 14px;
+            display: none;
+        }}
+        .cp-message.success {{
+            background: #DCFCE7;
+            color: #166534;
+            display: block;
+        }}
+        .cp-message.error {{
+            background: #FEE2E2;
+            color: #991B1B;
+            display: block;
+        }}
+        .cp-buttons {{
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }}
+        .cp-btn {{
+            flex: 1;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }}
+        .cp-btn-cancel {{
+            background: white;
+            border: 1px solid #ddd;
+            color: #666;
+        }}
+        .cp-btn-submit {{
+            background: linear-gradient(45deg, #16A34A, #22C55E);
+            border: none;
+            color: white;
+            font-weight: 500;
+        }}
+        .cp-btn-submit:disabled {{
+            opacity: 0.6;
+            cursor: not-allowed;
+        }}
+    </style>
     <div class="user-actions">
         <span class="user-display">当前用户: <strong>{username}</strong></span>
         <a href="javascript:void(0);" onclick="showChangePasswordModal()" class="change-pwd-btn">修改密码</a>
         <a href="{url_for('auth.logout')}" class="logout-btn">登出</a>
     </div>
-    <div id="change-password-modal" class="modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;justify-content:center;align-items:center;">
-        <div class="modal-content" style="background:white;padding:30px;border-radius:12px;width:360px;max-width:90%;">
-            <h3 style="margin:0 0 20px;color:#14532D;">修改密码</h3>
+    <div id="change-password-modal" class="cp-modal">
+        <div class="cp-modal-content">
+            <h3>修改密码</h3>
             <form id="change-password-form">
-                <div style="margin-bottom:15px;">
-                    <label style="display:block;margin-bottom:5px;color:#14532D;font-size:14px;">旧密码</label>
-                    <input type="password" id="old-password" required style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;">
+                <div class="form-group">
+                    <label>旧密码</label>
+                    <input type="password" id="old-password" required>
                 </div>
-                <div style="margin-bottom:15px;">
-                    <label style="display:block;margin-bottom:5px;color:#14532D;font-size:14px;">新密码</label>
-                    <input type="password" id="new-password" required minlength="6" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;">
+                <div class="form-group">
+                    <label>新密码</label>
+                    <input type="password" id="new-password" required minlength="6" placeholder="至少6位">
                 </div>
-                <div style="margin-bottom:20px;">
-                    <label style="display:block;margin-bottom:5px;color:#14532D;font-size:14px;">确认新密码</label>
-                    <input type="password" id="confirm-password" required minlength="6" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;">
+                <div class="form-group">
+                    <label>确认新密码</label>
+                    <input type="password" id="confirm-password" required minlength="6">
                 </div>
-                <div id="change-pwd-message" style="margin-bottom:15px;padding:10px;border-radius:6px;display:none;font-size:14px;"></div>
-                <div style="display:flex;gap:10px;">
-                    <button type="button" onclick="hideChangePasswordModal()" style="flex:1;padding:10px;border:1px solid #ddd;background:white;border-radius:6px;cursor:pointer;">取消</button>
-                    <button type="submit" id="change-pwd-btn" style="flex:1;padding:10px;border:none;background:linear-gradient(45deg,#16A34A,#22C55E);color:white;border-radius:6px;cursor:pointer;">确认修改</button>
+                <div id="change-pwd-message" class="cp-message"></div>
+                <div class="cp-buttons">
+                    <button type="button" class="cp-btn cp-btn-cancel" onclick="hideChangePasswordModal()">取消</button>
+                    <button type="submit" id="change-pwd-btn" class="cp-btn cp-btn-submit">确认修改</button>
                 </div>
             </form>
         </div>
     </div>
     <script>
     function showChangePasswordModal() {{
-        document.getElementById('change-password-modal').style.display = 'flex';
+        document.getElementById('change-password-modal').classList.add('show');
     }}
     function hideChangePasswordModal() {{
-        document.getElementById('change-password-modal').style.display = 'none';
+        var modal = document.getElementById('change-password-modal');
+        modal.classList.remove('show');
         document.getElementById('change-password-form').reset();
-        document.getElementById('change-pwd-message').style.display = 'none';
+        var msg = document.getElementById('change-pwd-message');
+        msg.className = 'cp-message';
+        msg.textContent = '';
     }}
     document.getElementById('change-password-form').addEventListener('submit', async function(e) {{
         e.preventDefault();
@@ -681,9 +814,7 @@ def serve_app():
         
         if (newPwd !== confirmPwd) {{
             msgEl.textContent = '两次输入的新密码不一致';
-            msgEl.style.background = '#FEE2E2';
-            msgEl.style.color = '#991B1B';
-            msgEl.style.display = 'block';
+            msgEl.className = 'cp-message error';
             return;
         }}
         
@@ -700,21 +831,15 @@ def serve_app():
             
             if (result.success) {{
                 msgEl.textContent = result.message;
-                msgEl.style.background = '#DCFCE7';
-                msgEl.style.color = '#166534';
-                msgEl.style.display = 'block';
+                msgEl.className = 'cp-message success';
                 setTimeout(function() {{ hideChangePasswordModal(); }}, 1500);
             }} else {{
                 msgEl.textContent = result.message;
-                msgEl.style.background = '#FEE2E2';
-                msgEl.style.color = '#991B1B';
-                msgEl.style.display = 'block';
+                msgEl.className = 'cp-message error';
             }}
         }} catch (err) {{
             msgEl.textContent = '操作失败，请稍后重试';
-            msgEl.style.background = '#FEE2E2';
-            msgEl.style.color = '#991B1B';
-            msgEl.style.display = 'block';
+            msgEl.className = 'cp-message error';
         }}
         
         btn.disabled = false;
