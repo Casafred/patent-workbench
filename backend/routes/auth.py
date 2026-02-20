@@ -259,83 +259,85 @@ LOGIN_PAGE_HTML = """
         }
         .login-wrapper {
             position: relative;
-            display: flex;
-            align-items: center;
+            display: inline-block;
         }
-        .side-qr-container {
+        .paper-corner {
             position: absolute;
-            right: -50px;
-            top: 50%;
-            transform: translateY(-50%);
-            z-index: 100;
-            display: flex;
-            align-items: center;
-        }
-        .side-qr-toggle {
-            width: 40px;
-            height: 80px;
-            background: linear-gradient(135deg, #22C55E, #16A34A);
-            border-radius: 8px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            top: -5px;
+            right: -5px;
+            width: 50px;
+            height: 50px;
+            z-index: 10;
             cursor: pointer;
-            box-shadow: 2px 0 15px rgba(34, 197, 94, 0.3);
-            transition: all 0.3s ease;
-            writing-mode: vertical-rl;
-            color: white;
-            font-size: 12px;
-            font-weight: 500;
-            letter-spacing: 2px;
-            gap: 6px;
         }
-        .side-qr-toggle:hover {
-            width: 45px;
-            box-shadow: 4px 0 20px rgba(34, 197, 94, 0.4);
-        }
-        .side-qr-toggle svg {
-            width: 18px;
-            height: 18px;
-        }
-        .side-qr-panel {
+        .paper-corner::before {
+            content: '';
             position: absolute;
-            right: -230px;
-            top: 50%;
-            transform: translateY(-50%);
+            top: 0;
+            right: 0;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 0 50px 50px 0;
+            border-color: transparent #22C55E transparent transparent;
+            transition: all 0.3s ease;
+        }
+        .paper-corner:hover::before {
+            border-width: 0 55px 55px 0;
+        }
+        .paper-corner-icon {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 24px;
+            height: 24px;
+            color: white;
+            transition: all 0.3s ease;
+            z-index: 2;
+        }
+        .paper-corner:hover .paper-corner-icon {
+            transform: scale(1.1);
+        }
+        .qr-popup {
+            position: absolute;
+            top: 55px;
+            right: 0;
             background: white;
             border-radius: 12px;
-            box-shadow: 0 5px 25px rgba(0,0,0,0.15);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
             padding: 20px;
             text-align: center;
             opacity: 0;
             visibility: hidden;
+            transform: translateY(-10px);
             transition: all 0.3s ease;
-            border: 1px solid rgba(34, 197, 94, 0.2);
+            z-index: 100;
+            min-width: 180px;
         }
-        .side-qr-container:hover .side-qr-panel {
-            right: -235px;
+        .paper-corner:hover .qr-popup,
+        .qr-popup:hover {
             opacity: 1;
             visibility: visible;
+            transform: translateY(0);
         }
-        .side-qr-panel img {
-            width: 130px;
-            height: 130px;
+        .qr-popup img {
+            width: 120px;
+            height: 120px;
             border-radius: 8px;
             border: 1px solid #e5e7eb;
         }
-        .side-qr-panel .qr-title {
+        .qr-popup .qr-title {
             font-size: 14px;
             color: #166534;
             font-weight: 600;
             margin: 12px 0 4px;
         }
-        .side-qr-panel .qr-name {
+        .qr-popup .qr-name {
             font-size: 13px;
             color: #666;
             margin: 0;
         }
-        .side-qr-panel .qr-tip {
+        .qr-popup .qr-tip {
             font-size: 11px;
             color: #999;
             margin: 8px 0 0;
@@ -343,7 +345,7 @@ LOGIN_PAGE_HTML = """
             border-top: 1px solid #f0f0f0;
         }
         @media (max-width: 900px) {
-            .side-qr-container {
+            .paper-corner {
                 display: none;
             }
         }
@@ -359,6 +361,20 @@ LOGIN_PAGE_HTML = """
 <body>
     <div id="vanta-bg"></div>
     <div class="login-wrapper">
+        <div class="paper-corner">
+            <svg class="paper-corner-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            <div class="qr-popup">
+                <img src="/frontend/images/QRcode.jpg" alt="公众号二维码">
+                <div class="qr-title">关注公众号</div>
+                <p class="qr-name">IP智友</p>
+                <p class="qr-tip">获取帮助 · 反馈问题</p>
+            </div>
+        </div>
         <div class="login-container">
             <div class="logo-container">
                 <h1 class="logo-text">ALFRED X IP</h1>
@@ -419,24 +435,6 @@ LOGIN_PAGE_HTML = """
                 <a href="javascript:void(0);" onclick="alert('请联系管理员邮箱：freecasafred@outlook.com'); return false;">联系管理员</a>
                 <br>
                 <a href="/api/register/apply" id="get-account-btn" class="get-account-btn">获取账号</a>
-            </div>
-        </div>
-        
-        <div class="side-qr-container">
-            <div class="side-qr-toggle">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="14" width="7" height="7"></rect>
-                    <rect x="3" y="14" width="7" height="7"></rect>
-                </svg>
-                <span>公众号</span>
-            </div>
-            <div class="side-qr-panel">
-                <img src="/frontend/images/QRcode.jpg" alt="公众号二维码">
-                <div class="qr-title">关注公众号</div>
-                <p class="qr-name">IP智友</p>
-                <p class="qr-tip">获取帮助 · 反馈问题</p>
             </div>
         </div>
     </div>
@@ -507,6 +505,7 @@ LOGIN_PAGE_HTML = """
                 btnText.style.display = 'none';
                 spinner.style.display = 'block';
             });
+        });
     </script>
 </body>
 </html>
