@@ -546,7 +546,7 @@ ADMIN_PAGE_HTML = """
         let isLoggedIn = false;
 
         function checkLogin() {
-            fetch('/api/admin/check')
+            fetch('/api/register/admin/check')
                 .then(r => r.json())
                 .then(data => {
                     if (data.logged_in) {
@@ -560,7 +560,7 @@ ADMIN_PAGE_HTML = """
             const password = document.getElementById('admin-password').value;
             const errorEl = document.getElementById('login-error');
             
-            fetch('/api/admin/login', {
+            fetch('/api/register/admin/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ password })
@@ -578,7 +578,7 @@ ADMIN_PAGE_HTML = """
         }
 
         function logout() {
-            fetch('/api/admin/logout', { method: 'POST' })
+            fetch('/api/register/admin/logout', { method: 'POST' })
                 .then(() => {
                     isLoggedIn = false;
                     document.getElementById('login-page').classList.remove('hidden');
@@ -601,7 +601,7 @@ ADMIN_PAGE_HTML = """
         }
 
         function loadApplications() {
-            fetch('/api/admin/applications')
+            fetch('/api/register/admin/applications')
                 .then(r => r.json())
                 .then(data => {
                     const apps = data.applications || [];
@@ -698,7 +698,7 @@ ADMIN_PAGE_HTML = """
         function approve(id) {
             if (!confirm('确定通过该申请？将自动生成账号。')) return;
             
-            fetch(`/api/admin/approve/${id}`, { method: 'POST' })
+            fetch(`/api/register/admin/approve/${id}`, { method: 'POST' })
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
@@ -713,7 +713,7 @@ ADMIN_PAGE_HTML = """
         function reject(id) {
             if (!confirm('确定拒绝该申请？')) return;
             
-            fetch(`/api/admin/reject/${id}`, { method: 'POST' })
+            fetch(`/api/register/admin/reject/${id}`, { method: 'POST' })
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
@@ -728,7 +728,7 @@ ADMIN_PAGE_HTML = """
         function deleteApp(id) {
             if (!confirm('确定删除该记录？')) return;
             
-            fetch(`/api/admin/delete/${id}`, { method: 'POST' })
+            fetch(`/api/register/admin/delete/${id}`, { method: 'POST' })
                 .then(r => r.json())
                 .then(data => {
                     loadApplications();
