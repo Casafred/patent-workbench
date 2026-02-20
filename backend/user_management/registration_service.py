@@ -259,3 +259,173 @@ def delete_application(application_id):
     applications = [app for app in applications if app['id'] != application_id]
     save_applications(applications)
     return {'success': True, 'message': '已删除申请记录'}
+
+
+def send_verification_code_email(email, code):
+    """
+    Send verification code email to user for password reset.
+    
+    Args:
+        email: User email address
+        code: 6-digit verification code
+    
+    Returns:
+        bool: True if successful
+    """
+    if not ADMIN_EMAIL or not EMAIL_PASSWORD:
+        print('邮件通知未配置，跳过发送')
+        return False
+    
+    try:
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = '【专利分析智能工作台】密码重置验证码'
+        msg['From'] = ADMIN_EMAIL
+        msg['To'] = email
+        
+        text_content = f"""
+您正在进行密码重置操作
+
+验证码：{code}
+
+验证码有效期为10分钟，请尽快完成验证。
+如果您没有进行此操作，请忽略此邮件。
+
+此邮件由系统自动发送，请勿回复。
+"""
+        
+        html_content = f"""
+<html>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <div style="max-width: 500px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #16A34A; border-bottom: 2px solid #22C55E; padding-bottom: 10px;">
+            密码重置验证码
+        </h2>
+        <p>您正在进行密码重置操作，请使用以下验证码完成验证：</p>
+        <div style="background: #F0FDF4; padding: 20px; text-align: center; margin: 20px 0; border-radius: 8px;">
+            <span style="font-size: 32px; font-weight: bold; color: #16A34A; letter-spacing: 8px;">{code}</span>
+        </div>
+        <p style="color: #666; font-size: 14px;">验证码有效期为10分钟，请尽快完成验证。</p>
+        <p style="color: #999; font-size: 12px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+            如果您没有进行此操作，请忽略此邮件。<br>
+            此邮件由系统自动发送，请勿回复。
+        </p>
+    </div>
+</body>
+</html>
+"""
+        
+        msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
+        msg.attach(MIMEText(html_content, 'html', 'utf-8'))
+        
+        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
+            server.login(ADMIN_EMAIL, EMAIL_PASSWORD)
+            server.sendmail(ADMIN_EMAIL, email, msg.as_string())
+        
+        print(f'验证码邮件已发送至 {email}')
+        return True
+        
+    except Exception as e:
+        print(f'验证码邮件发送失败: {e}')
+        return False
+
+
+def send_account_to_user(email, name, username, password):
+    """
+    Send account information email to user after approval.
+    
+    Args:
+        email: User email address
+        name: User nickname
+        username: Generated username
+        password: Generated password
+    
+    Returns:
+        bool: True if successful
+    """
+    if not ADMIN_EMAIL or not EMAIL_PASSWORD:
+        print('邮件通知未配置，跳过发送')
+        return False
+    
+    site_url = os.environ.get('SITE_URL', 'http://localhost:5000')
+    
+    try:
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = '【专利分析智能工作台】您的账号已开通'
+        msg['From'] = ADMIN_EMAIL
+        msg['To'] = email
+        
+        text_content = f"""
+尊敬的{name}：
+
+您好！您的使用申请已审核通过，账号信息如下：
+
+账号：{username}
+密码：{password}
+
+登录地址：{site_url}/login
+
+建议您首次登录后及时修改密码。
+
+祝使用愉快！
+
+此邮件由系统自动发送，请勿回复。
+"""
+        
+        html_content = f"""
+<html>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <div style="max-width: 500px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #16A34A; border-bottom: 2px solid #22C55E; padding-bottom: 10px;">
+            账号开通通知
+        </h2>
+        <p>尊敬的 <strong>{name}</strong>：</p>
+        <p>您好！您的使用申请已审核通过，账号信息如下：</p>
+        
+        <div style="background: #F0FDF4; padding: 20px; margin: 20px 0; border-radius: 8px;">
+            <table style="width: 100%;">
+                <tr>
+                    <td style="padding: 8px 0; color: #666;">账号</td>
+                    <td style="padding: 8px 0; font-weight: bold; color: #14532D;">{username}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; color: #666;">密码</td>
+                    <td style="padding: 8px 0; font-weight: bold; color: #14532D;">{password}</td>
+                </tr>
+            </table>
+        </div>
+        
+        <div style="text-align: center; margin: 25px 0;">
+            <a href="{site_url}/login" 
+               style="display: inline-block; padding: 12px 30px; background: linear-gradient(45deg, #16A34A, #22C55E); 
+                      color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">
+                立即登录
+            </a>
+        </div>
+        
+        <p style="color: #D97706; font-size: 14px; background: #FEF3C7; padding: 10px; border-radius: 6px;">
+            ⚠️ 建议您首次登录后及时修改密码
+        </p>
+        
+        <p style="color: #666; margin-top: 20px;">祝使用愉快！</p>
+        
+        <p style="color: #999; font-size: 12px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+            此邮件由系统自动发送，请勿回复。
+        </p>
+    </div>
+</body>
+</html>
+"""
+        
+        msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
+        msg.attach(MIMEText(html_content, 'html', 'utf-8'))
+        
+        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
+            server.login(ADMIN_EMAIL, EMAIL_PASSWORD)
+            server.sendmail(ADMIN_EMAIL, email, msg.as_string())
+        
+        print(f'账号信息邮件已发送至 {email}')
+        return True
+        
+    except Exception as e:
+        print(f'账号信息邮件发送失败: {e}')
+        return False

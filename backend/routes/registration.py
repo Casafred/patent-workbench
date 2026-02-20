@@ -161,8 +161,9 @@ REGISTER_PAGE_HTML = """
         
         <form id="register-form">
             <div class="form-group">
-                <label>姓名 <span class="required">*</span></label>
-                <input type="text" name="name" required placeholder="请输入您的姓名">
+                <label>昵称 <span class="required">*</span></label>
+                <input type="text" name="name" required placeholder="仅用于方便沟通交流称呼用">
+                <small style="color: #666; font-size: 12px; margin-top: 4px; display: block;">仅用于方便沟通交流称呼用</small>
             </div>
             <div class="form-group">
                 <label>邮箱 <span class="required">*</span></label>
@@ -424,6 +425,33 @@ ADMIN_PAGE_HTML = """
             color: white;
         }
         .btn-delete:hover { background: #6B7280; }
+        .btn-email {
+            background: #3B82F6;
+            color: white;
+        }
+        .btn-email:hover { background: #2563EB; }
+        .btn-email-sent {
+            background: #10B981;
+            color: white;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            padding: 12px;
+            background: #F0FDF4;
+            border-radius: 8px;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+        .checkbox-group label {
+            font-size: 14px;
+            color: var(--text-color);
+            cursor: pointer;
+        }
         .account-info {
             background: #F0FDF4;
             border: 1px solid #86EFAC;
@@ -675,12 +703,19 @@ ADMIN_PAGE_HTML = """
                             <p>用户名: <code>${app.username}</code></p>
                             <p>密码: <code>${app.password}</code></p>
                             <p style="color: #6B7280; font-size: 12px;">审核时间: ${app.processed_at}</p>
+                            <div style="margin-top: 12px;">
+                                <button class="btn btn-email" onclick="sendEmailToUser('${app.id}')" id="email-btn-${app.id}">发送账号到邮箱</button>
+                            </div>
                         </div>
                         ` : ''}
                         
                         ${app.status === 'pending' ? `
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="send-email-${app.id}" checked>
+                            <label for="send-email-${app.id}">审核通过后自动发送账号信息到用户邮箱</label>
+                        </div>
                         <div class="actions">
-                            <button class="btn btn-approve" onclick="approve('${app.id}')">通过并发送账号</button>
+                            <button class="btn btn-approve" onclick="approve('${app.id}')">通过申请</button>
                             <button class="btn btn-reject" onclick="reject('${app.id}')">拒绝</button>
                         </div>
                         ` : ''}
@@ -698,15 +733,53 @@ ADMIN_PAGE_HTML = """
         function approve(id) {
             if (!confirm('确定通过该申请？将自动生成账号。')) return;
             
-            fetch(`/api/register/admin/approve/${id}`, { method: 'POST' })
+            const sendEmail = document.getElementById('send-email-' + id).checked;
+            
+            fetch(`/api/register/admin/approve/${id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ send_email: sendEmail })
+            })
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
-                        alert(`审核通过！\\n用户名: ${data.username}\\n密码: ${data.password}\\n\\n请将账号信息发送给申请人: ${data.email}`);
+                        let msg = `审核通过！\\n用户名: ${data.username}\\n密码: ${data.password}\\n\\n申请人邮箱: ${data.email}`;
+                        if (data.email_sent) {
+                            msg += '\\n\\n✅ 账号信息已发送到用户邮箱';
+                        } else if (sendEmail) {
+                            msg += '\\n\\n⚠️ 邮件发送失败，请手动联系用户';
+                        }
+                        alert(msg);
                         loadApplications();
                     } else {
                         alert(data.message);
                     }
+                });
+        }
+
+        function sendEmailToUser(id) {
+            const btn = document.getElementById('email-btn-' + id);
+            btn.disabled = true;
+            btn.textContent = '发送中...';
+            
+            fetch(`/api/register/admin/send-email/${id}`, { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        btn.textContent = '已发送 ✓';
+                        btn.className = 'btn btn-email-sent';
+                        btn.disabled = true;
+                        alert('账号信息已发送到用户邮箱');
+                    } else {
+                        btn.textContent = '发送账号到邮箱';
+                        btn.disabled = false;
+                        alert('发送失败: ' + data.message);
+                    }
+                })
+                .catch(() => {
+                    btn.textContent = '发送账号到邮箱';
+                    btn.disabled = false;
+                    alert('发送失败，请稍后重试');
                 });
         }
 
@@ -825,7 +898,47 @@ def approve(application_id):
         return jsonify({'success': False, 'message': '未登录'}), 401
     
     result = registration_service.approve_application(application_id)
+    
+    data = request.get_json() or {}
+    send_email = data.get('send_email', False)
+    
+    if result.get('success') and send_email:
+        email_sent = registration_service.send_account_to_user(
+            result['email'],
+            result['name'],
+            result['username'],
+            result['password']
+        )
+        result['email_sent'] = email_sent
+    
     return jsonify(result)
+
+
+@registration_bp.route('/admin/send-email/<application_id>', methods=['POST'])
+def send_email_to_user(application_id):
+    if not session.get('admin_logged_in'):
+        return jsonify({'success': False, 'message': '未登录'}), 401
+    
+    applications = registration_service.load_applications()
+    
+    for app in applications:
+        if app['id'] == application_id and app.get('status') == 'approved':
+            if not app.get('username') or not app.get('password'):
+                return jsonify({'success': False, 'message': '该申请未生成账号'})
+            
+            email_sent = registration_service.send_account_to_user(
+                app['email'],
+                app['name'],
+                app['username'],
+                app['password']
+            )
+            
+            if email_sent:
+                return jsonify({'success': True, 'message': '邮件发送成功'})
+            else:
+                return jsonify({'success': False, 'message': '邮件发送失败，请检查邮箱配置'})
+    
+    return jsonify({'success': False, 'message': '申请不存在或未通过审核'})
 
 
 @registration_bp.route('/admin/reject/<application_id>', methods=['POST'])

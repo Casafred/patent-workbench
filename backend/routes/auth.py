@@ -432,7 +432,7 @@ LOGIN_PAGE_HTML = """
 
             <div class="links">
                 忘记密码? 
-                <a href="javascript:void(0);" onclick="alert('请联系管理员邮箱：freecasafred@outlook.com'); return false;">联系管理员</a>
+                <a href="/forgot-password">找回密码</a>
                 <br>
                 <a href="/api/register/apply" id="get-account-btn" class="get-account-btn">获取账号</a>
             </div>
@@ -635,11 +635,576 @@ def serve_app():
     user_actions_html = f"""
     <div class="user-actions">
         <span class="user-display">当前用户: <strong>{username}</strong></span>
+        <a href="javascript:void(0);" onclick="showChangePasswordModal()" class="change-pwd-btn">修改密码</a>
         <a href="{url_for('auth.logout')}" class="logout-btn">登出</a>
     </div>
+    <div id="change-password-modal" class="modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;justify-content:center;align-items:center;">
+        <div class="modal-content" style="background:white;padding:30px;border-radius:12px;width:360px;max-width:90%;">
+            <h3 style="margin:0 0 20px;color:#14532D;">修改密码</h3>
+            <form id="change-password-form">
+                <div style="margin-bottom:15px;">
+                    <label style="display:block;margin-bottom:5px;color:#14532D;font-size:14px;">旧密码</label>
+                    <input type="password" id="old-password" required style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;">
+                </div>
+                <div style="margin-bottom:15px;">
+                    <label style="display:block;margin-bottom:5px;color:#14532D;font-size:14px;">新密码</label>
+                    <input type="password" id="new-password" required minlength="6" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;">
+                </div>
+                <div style="margin-bottom:20px;">
+                    <label style="display:block;margin-bottom:5px;color:#14532D;font-size:14px;">确认新密码</label>
+                    <input type="password" id="confirm-password" required minlength="6" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;">
+                </div>
+                <div id="change-pwd-message" style="margin-bottom:15px;padding:10px;border-radius:6px;display:none;font-size:14px;"></div>
+                <div style="display:flex;gap:10px;">
+                    <button type="button" onclick="hideChangePasswordModal()" style="flex:1;padding:10px;border:1px solid #ddd;background:white;border-radius:6px;cursor:pointer;">取消</button>
+                    <button type="submit" id="change-pwd-btn" style="flex:1;padding:10px;border:none;background:linear-gradient(45deg,#16A34A,#22C55E);color:white;border-radius:6px;cursor:pointer;">确认修改</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script>
+    function showChangePasswordModal() {{
+        document.getElementById('change-password-modal').style.display = 'flex';
+    }}
+    function hideChangePasswordModal() {{
+        document.getElementById('change-password-modal').style.display = 'none';
+        document.getElementById('change-password-form').reset();
+        document.getElementById('change-pwd-message').style.display = 'none';
+    }}
+    document.getElementById('change-password-form').addEventListener('submit', async function(e) {{
+        e.preventDefault();
+        var oldPwd = document.getElementById('old-password').value;
+        var newPwd = document.getElementById('new-password').value;
+        var confirmPwd = document.getElementById('confirm-password').value;
+        var msgEl = document.getElementById('change-pwd-message');
+        var btn = document.getElementById('change-pwd-btn');
+        
+        if (newPwd !== confirmPwd) {{
+            msgEl.textContent = '两次输入的新密码不一致';
+            msgEl.style.background = '#FEE2E2';
+            msgEl.style.color = '#991B1B';
+            msgEl.style.display = 'block';
+            return;
+        }}
+        
+        btn.disabled = true;
+        btn.textContent = '处理中...';
+        
+        try {{
+            var response = await fetch('/api/user/change-password', {{
+                method: 'POST',
+                headers: {{'Content-Type': 'application/json'}},
+                body: JSON.stringify({{old_password: oldPwd, new_password: newPwd}})
+            }});
+            var result = await response.json();
+            
+            if (result.success) {{
+                msgEl.textContent = result.message;
+                msgEl.style.background = '#DCFCE7';
+                msgEl.style.color = '#166534';
+                msgEl.style.display = 'block';
+                setTimeout(function() {{ hideChangePasswordModal(); }}, 1500);
+            }} else {{
+                msgEl.textContent = result.message;
+                msgEl.style.background = '#FEE2E2';
+                msgEl.style.color = '#991B1B';
+                msgEl.style.display = 'block';
+            }}
+        }} catch (err) {{
+            msgEl.textContent = '操作失败，请稍后重试';
+            msgEl.style.background = '#FEE2E2';
+            msgEl.style.color = '#991B1B';
+            msgEl.style.display = 'block';
+        }}
+        
+        btn.disabled = false;
+        btn.textContent = '确认修改';
+    }});
+    </script>
     """
     
     if '<body>' in html_content:
         html_content = html_content.replace('<body>', f'<body>{user_actions_html}', 1)
     
     return Response(html_content, mimetype='text/html')
+
+
+FORGOT_PASSWORD_PAGE_HTML = """
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>找回密码 - 专利分析智能工作台</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #22C55E;
+            --primary-color-dark: #16A34A;
+            --bg-color: #F0FDF4;
+            --text-color: #14532D;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: var(--primary-color-dark);
+            font-size: 1.6rem;
+            margin-bottom: 8px;
+        }
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--text-color);
+            font-weight: 500;
+            font-size: 14px;
+        }
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #E5E7EB;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+        }
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(45deg, var(--primary-color-dark), var(--primary-color));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(34, 197, 94, 0.3);
+        }
+        .btn:disabled {
+            background: #9CA3AF;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-secondary {
+            background: white;
+            color: var(--primary-color-dark);
+            border: 2px solid var(--primary-color);
+        }
+        .btn-secondary:hover:not(:disabled) {
+            background: #F0FDF4;
+        }
+        .message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+        .message.success {
+            background: #DCFCE7;
+            color: #166534;
+            border: 1px solid #86EFAC;
+        }
+        .message.error {
+            background: #FEE2E2;
+            color: #991B1B;
+            border: 1px solid #FCA5A5;
+        }
+        .message.show { display: block; }
+        .back-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .back-link a {
+            color: var(--primary-color-dark);
+            text-decoration: none;
+        }
+        .back-link a:hover { text-decoration: underline; }
+        .step { display: none; }
+        .step.active { display: block; }
+        .code-input-group {
+            display: flex;
+            gap: 10px;
+        }
+        .code-input-group input {
+            flex: 1;
+        }
+        .code-input-group button {
+            width: 120px;
+            padding: 12px;
+            background: white;
+            color: var(--primary-color-dark);
+            border: 2px solid var(--primary-color);
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .code-input-group button:hover:not(:disabled) {
+            background: #F0FDF4;
+        }
+        .code-input-group button:disabled {
+            color: #9CA3AF;
+            border-color: #E5E7EB;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>找回密码</h1>
+            <p>请输入您的注册邮箱，我们将发送验证码</p>
+        </div>
+        
+        <div id="message" class="message"></div>
+        
+        <div id="step1" class="step active">
+            <form id="email-form">
+                <div class="form-group">
+                    <label>注册邮箱</label>
+                    <input type="email" id="email" required placeholder="请输入您注册时使用的邮箱">
+                </div>
+                <button type="submit" class="btn" id="send-code-btn">发送验证码</button>
+            </form>
+        </div>
+        
+        <div id="step2" class="step">
+            <form id="verify-form">
+                <div class="form-group">
+                    <label>验证码（已发送到您的邮箱）</label>
+                    <div class="code-input-group">
+                        <input type="text" id="code" required maxlength="6" placeholder="请输入6位验证码">
+                        <button type="button" id="resend-btn">重新发送</button>
+                    </div>
+                </div>
+                <button type="submit" class="btn" id="verify-btn">验证</button>
+            </form>
+        </div>
+        
+        <div id="step3" class="step">
+            <form id="reset-form">
+                <div class="form-group">
+                    <label>新密码</label>
+                    <input type="password" id="new-password" required minlength="6" placeholder="请输入新密码（至少6位）">
+                </div>
+                <div class="form-group">
+                    <label>确认新密码</label>
+                    <input type="password" id="confirm-password" required minlength="6" placeholder="请再次输入新密码">
+                </div>
+                <button type="submit" class="btn" id="reset-btn">重置密码</button>
+            </form>
+        </div>
+        
+        <div class="back-link">
+            <a href="/login">返回登录页</a>
+        </div>
+    </div>
+
+    <script>
+        var currentEmail = '';
+        var messageEl = document.getElementById('message');
+        
+        function showMessage(text, type) {
+            messageEl.textContent = text;
+            messageEl.className = 'message ' + type + ' show';
+        }
+        
+        function showStep(stepNum) {
+            document.querySelectorAll('.step').forEach(function(s) { s.classList.remove('active'); });
+            document.getElementById('step' + stepNum).classList.add('active');
+        }
+        
+        document.getElementById('email-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            var email = document.getElementById('email').value.trim();
+            var btn = document.getElementById('send-code-btn');
+            
+            btn.disabled = true;
+            btn.textContent = '发送中...';
+            
+            try {
+                var response = await fetch('/api/forgot-password', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({email: email})
+                });
+                var result = await response.json();
+                
+                if (result.success) {
+                    currentEmail = email;
+                    showMessage(result.message, 'success');
+                    showStep(2);
+                    startCountdown();
+                } else {
+                    showMessage(result.message, 'error');
+                }
+            } catch (err) {
+                showMessage('发送失败，请稍后重试', 'error');
+            }
+            
+            btn.disabled = false;
+            btn.textContent = '发送验证码';
+        });
+        
+        var countdownTimer = null;
+        function startCountdown() {
+            var btn = document.getElementById('resend-btn');
+            var seconds = 60;
+            btn.disabled = true;
+            
+            countdownTimer = setInterval(function() {
+                seconds--;
+                btn.textContent = seconds + '秒后重发';
+                if (seconds <= 0) {
+                    clearInterval(countdownTimer);
+                    btn.disabled = false;
+                    btn.textContent = '重新发送';
+                }
+            }, 1000);
+        }
+        
+        document.getElementById('resend-btn').addEventListener('click', async function() {
+            var btn = this;
+            btn.disabled = true;
+            btn.textContent = '发送中...';
+            
+            try {
+                var response = await fetch('/api/forgot-password', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({email: currentEmail})
+                });
+                var result = await response.json();
+                
+                if (result.success) {
+                    showMessage('验证码已重新发送', 'success');
+                    startCountdown();
+                } else {
+                    showMessage(result.message, 'error');
+                    btn.disabled = false;
+                    btn.textContent = '重新发送';
+                }
+            } catch (err) {
+                showMessage('发送失败，请稍后重试', 'error');
+                btn.disabled = false;
+                btn.textContent = '重新发送';
+            }
+        });
+        
+        document.getElementById('verify-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            var code = document.getElementById('code').value.trim();
+            var btn = document.getElementById('verify-btn');
+            
+            if (code.length !== 6) {
+                showMessage('请输入6位验证码', 'error');
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.textContent = '验证中...';
+            
+            try {
+                var response = await fetch('/api/verify-reset-code', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({email: currentEmail, code: code})
+                });
+                var result = await response.json();
+                
+                if (result.success) {
+                    showMessage(result.message, 'success');
+                    showStep(3);
+                } else {
+                    showMessage(result.message, 'error');
+                }
+            } catch (err) {
+                showMessage('验证失败，请稍后重试', 'error');
+            }
+            
+            btn.disabled = false;
+            btn.textContent = '验证';
+        });
+        
+        document.getElementById('reset-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            var newPwd = document.getElementById('new-password').value;
+            var confirmPwd = document.getElementById('confirm-password').value;
+            var btn = document.getElementById('reset-btn');
+            
+            if (newPwd !== confirmPwd) {
+                showMessage('两次输入的密码不一致', 'error');
+                return;
+            }
+            
+            if (newPwd.length < 6) {
+                showMessage('密码长度至少6位', 'error');
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.textContent = '重置中...';
+            
+            try {
+                var response = await fetch('/api/reset-password', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({email: currentEmail, new_password: newPwd})
+                });
+                var result = await response.json();
+                
+                if (result.success) {
+                    showMessage(result.message + '，即将跳转到登录页...', 'success');
+                    setTimeout(function() {
+                        window.location.href = '/login';
+                    }, 2000);
+                } else {
+                    showMessage(result.message, 'error');
+                }
+            } catch (err) {
+                showMessage('重置失败，请稍后重试', 'error');
+            }
+            
+            btn.disabled = false;
+            btn.textContent = '重置密码';
+        });
+    </script>
+</body>
+</html>
+"""
+
+
+@auth_bp.route('/forgot-password', methods=['GET'])
+def forgot_password_page():
+    """Display forgot password page."""
+    return render_template_string(FORGOT_PASSWORD_PAGE_HTML)
+
+
+@auth_bp.route('/api/forgot-password', methods=['POST'])
+def forgot_password():
+    """
+    Send verification code to user email.
+    
+    Returns:
+        JSON response with success status and message
+    """
+    from backend.user_management.registration_service import send_verification_code_email
+    
+    data = request.get_json()
+    email = data.get('email', '').strip()
+    
+    if not email:
+        return {'success': False, 'message': '请输入邮箱地址'}
+    
+    username = AuthService.get_username_by_email(email)
+    if not username:
+        return {'success': False, 'message': '该邮箱未注册或未通过审核'}
+    
+    code = AuthService.generate_verification_code()
+    if not AuthService.save_reset_code(email, code):
+        return {'success': False, 'message': '验证码保存失败，请稍后重试'}
+    
+    if not send_verification_code_email(email, code):
+        return {'success': False, 'message': '验证码发送失败，请检查邮箱配置'}
+    
+    return {'success': True, 'message': '验证码已发送到您的邮箱，有效期10分钟'}
+
+
+@auth_bp.route('/api/verify-reset-code', methods=['POST'])
+def verify_reset_code():
+    """
+    Verify the reset code.
+    
+    Returns:
+        JSON response with success status and message
+    """
+    data = request.get_json()
+    email = data.get('email', '').strip()
+    code = data.get('code', '').strip()
+    
+    if not email or not code:
+        return {'success': False, 'message': '参数错误'}
+    
+    success, message = AuthService.verify_reset_code(email, code)
+    return {'success': success, 'message': message}
+
+
+@auth_bp.route('/api/reset-password', methods=['POST'])
+def reset_password():
+    """
+    Reset user password.
+    
+    Returns:
+        JSON response with success status and message
+    """
+    data = request.get_json()
+    email = data.get('email', '').strip()
+    new_password = data.get('new_password', '')
+    
+    if not email or not new_password:
+        return {'success': False, 'message': '参数错误'}
+    
+    if len(new_password) < 6:
+        return {'success': False, 'message': '密码长度至少6位'}
+    
+    success, message = AuthService.reset_password_by_email(email, new_password)
+    return {'success': success, 'message': message}
+
+
+@auth_bp.route('/api/user/change-password', methods=['POST'])
+@login_required
+def change_password():
+    """
+    Change user password (for logged-in users).
+    
+    Returns:
+        JSON response with success status and message
+    """
+    data = request.get_json()
+    old_password = data.get('old_password', '')
+    new_password = data.get('new_password', '')
+    
+    if not old_password or not new_password:
+        return {'success': False, 'message': '参数错误'}
+    
+    if len(new_password) < 6:
+        return {'success': False, 'message': '新密码长度至少6位'}
+    
+    username = session.get('user')
+    success, message = AuthService.change_password(username, old_password, new_password)
+    return {'success': success, 'message': message}

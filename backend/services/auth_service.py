@@ -5,10 +5,16 @@ This module handles user authentication and IP management.
 """
 
 import json
+import os
+import random
+import string
+import time
 from flask import request, session
-from werkzeug.security import check_password_hash
-from backend.config import USERS_FILE, MAX_IPS_PER_USER
+from werkzeug.security import check_password_hash, generate_password_hash
+from backend.config import USERS_FILE, MAX_IPS_PER_USER, BASE_DIR
 from backend.extensions import get_db_pool
+
+PASSWORD_RESET_FILE = os.path.join(BASE_DIR, 'backend', 'user_management', 'password_reset.json')
 
 
 class AuthService:
@@ -177,7 +183,7 @@ class AuthService:
                         id SERIAL PRIMARY KEY,
                         username VARCHAR(255) NOT NULL,
                         ip_address VARCHAR(45) NOT NULL,
-                        first_seen TIMESTAMPTZ DEFAULT NOW(),
+                        first_seen TIMESTAMZ DEFAULT NOW(),
                         UNIQUE (username, ip_address)
                     );
                 """)
@@ -188,3 +194,205 @@ class AuthService:
         finally:
             if conn:
                 db_pool.putconn(conn)
+    
+    @staticmethod
+    def change_password(username, old_password, new_password):
+        """
+        Change user password.
+        
+        Args:
+            username: Username
+            old_password: Current password
+            new_password: New password
+        
+        Returns:
+            tuple: (success: bool, message: str)
+        """
+        if not AuthService.verify_credentials(username, old_password):
+            return False, "旧密码不正确"
+        
+        try:
+            with open(USERS_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            if isinstance(data, dict) and 'users' in data:
+                data['users'][username] = generate_password_hash(new_password)
+            else:
+                data[username] = generate_password_hash(new_password)
+            
+            with open(USERS_FILE, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            
+            return True, "密码修改成功"
+        except Exception as e:
+            print(f"密码修改失败: {e}")
+            return False, "密码修改失败，请稍后重试"
+    
+    @staticmethod
+    def get_user_email(username):
+        """
+        Get user email from applications data.
+        
+        Args:
+            username: Username
+        
+        Returns:
+            str or None: User email if found
+        """
+        applications_file = os.path.join(BASE_DIR, 'backend', 'user_management', 'applications.json')
+        try:
+            with open(applications_file, 'r', encoding='utf-8') as f:
+                applications = json.load(f)
+            
+            for app in applications:
+                if app.get('username') == username and app.get('email'):
+                    return app['email']
+        except Exception as e:
+            print(f"获取用户邮箱失败: {e}")
+        return None
+    
+    @staticmethod
+    def get_username_by_email(email):
+        """
+        Get username by email.
+        
+        Args:
+            email: User email
+        
+        Returns:
+            str or None: Username if found
+        """
+        applications_file = os.path.join(BASE_DIR, 'backend', 'user_management', 'applications.json')
+        try:
+            with open(applications_file, 'r', encoding='utf-8') as f:
+                applications = json.load(f)
+            
+            for app in applications:
+                if app.get('email') == email and app.get('username'):
+                    return app['username']
+        except Exception as e:
+            print(f"获取用户名失败: {e}")
+        return None
+    
+    @staticmethod
+    def generate_verification_code():
+        """Generate 6-digit verification code."""
+        return ''.join(random.choices(string.digits, k=6))
+    
+    @staticmethod
+    def save_reset_code(email, code):
+        """
+        Save password reset code.
+        
+        Args:
+            email: User email
+            code: Verification code
+        
+        Returns:
+            bool: True if successful
+        """
+        try:
+            os.makedirs(os.path.dirname(PASSWORD_RESET_FILE), exist_ok=True)
+            
+            reset_data = {}
+            if os.path.exists(PASSWORD_RESET_FILE):
+                with open(PASSWORD_RESET_FILE, 'r', encoding='utf-8') as f:
+                    reset_data = json.load(f)
+            
+            reset_data[email] = {
+                'code': code,
+                'expires_at': time.time() + 600,
+                'attempts': 0
+            }
+            
+            with open(PASSWORD_RESET_FILE, 'w', encoding='utf-8') as f:
+                json.dump(reset_data, f, ensure_ascii=False, indent=2)
+            
+            return True
+        except Exception as e:
+            print(f"保存验证码失败: {e}")
+            return False
+    
+    @staticmethod
+    def verify_reset_code(email, code):
+        """
+        Verify password reset code.
+        
+        Args:
+            email: User email
+            code: Verification code
+        
+        Returns:
+            tuple: (success: bool, message: str)
+        """
+        try:
+            if not os.path.exists(PASSWORD_RESET_FILE):
+                return False, "验证码已过期，请重新获取"
+            
+            with open(PASSWORD_RESET_FILE, 'r', encoding='utf-8') as f:
+                reset_data = json.load(f)
+            
+            if email not in reset_data:
+                return False, "验证码已过期，请重新获取"
+            
+            record = reset_data[email]
+            
+            if time.time() > record['expires_at']:
+                del reset_data[email]
+                with open(PASSWORD_RESET_FILE, 'w', encoding='utf-8') as f:
+                    json.dump(reset_data, f, ensure_ascii=False, indent=2)
+                return False, "验证码已过期，请重新获取"
+            
+            if record['attempts'] >= 5:
+                del reset_data[email]
+                with open(PASSWORD_RESET_FILE, 'w', encoding='utf-8') as f:
+                    json.dump(reset_data, f, ensure_ascii=False, indent=2)
+                return False, "验证码尝试次数过多，请重新获取"
+            
+            if record['code'] != code:
+                record['attempts'] += 1
+                with open(PASSWORD_RESET_FILE, 'w', encoding='utf-8') as f:
+                    json.dump(reset_data, f, ensure_ascii=False, indent=2)
+                return False, f"验证码不正确，剩余尝试次数: {5 - record['attempts']}"
+            
+            del reset_data[email]
+            with open(PASSWORD_RESET_FILE, 'w', encoding='utf-8') as f:
+                json.dump(reset_data, f, ensure_ascii=False, indent=2)
+            
+            return True, "验证成功"
+        except Exception as e:
+            print(f"验证码验证失败: {e}")
+            return False, "验证失败，请稍后重试"
+    
+    @staticmethod
+    def reset_password_by_email(email, new_password):
+        """
+        Reset user password by email.
+        
+        Args:
+            email: User email
+            new_password: New password
+        
+        Returns:
+            tuple: (success: bool, message: str)
+        """
+        username = AuthService.get_username_by_email(email)
+        if not username:
+            return False, "未找到与该邮箱关联的账号"
+        
+        try:
+            with open(USERS_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            if isinstance(data, dict) and 'users' in data:
+                data['users'][username] = generate_password_hash(new_password)
+            else:
+                data[username] = generate_password_hash(new_password)
+            
+            with open(USERS_FILE, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            
+            return True, "密码重置成功"
+        except Exception as e:
+            print(f"密码重置失败: {e}")
+            return False, "密码重置失败，请稍后重试"
