@@ -71,7 +71,215 @@ class AuthService:
             bool: True if credentials are valid, False otherwise
         """
         users = AuthService.load_users()
-        return username in users and check_password_hash(users.get(username, ""), password)
+        if username not in users:
+            return False
+        
+        if AuthService.is_user_disabled(username):
+            return False
+        
+        return check_password_hash(users.get(username, ""), password)
+    
+    @staticmethod
+    def load_users_data():
+        """
+        Load full users data including metadata.
+        
+        Returns:
+            dict: Full users data
+        """
+        try:
+            with open(USERS_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            print(f"警告：加载用户数据失败: {e}")
+            return {}
+    
+    @staticmethod
+    def save_users_data(data):
+        """
+        Save full users data.
+        
+        Args:
+            data: Users data to save
+        """
+        with open(USERS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    
+    @staticmethod
+    def is_user_disabled(username):
+        """
+        Check if user is disabled.
+        
+        Args:
+            username: Username to check
+        
+        Returns:
+            bool: True if disabled
+        """
+        data = AuthService.load_users_data()
+        if isinstance(data, dict) and 'metadata' in data:
+            metadata = data['metadata'].get(username, {})
+            return metadata.get('disabled', False)
+        return False
+    
+    @staticmethod
+    def get_all_users():
+        """
+        Get all users with their status.
+        
+        Returns:
+            list: List of user info dicts
+        """
+        data = AuthService.load_users_data()
+        users_list = []
+        
+        if isinstance(data, dict) and 'users' in data:
+            users = data.get('users', {})
+            metadata = data.get('metadata', {})
+        else:
+            users = data
+            metadata = {}
+        
+        for username in users.keys():
+            user_meta = metadata.get(username, {})
+            users_list.append({
+                'username': username,
+                'disabled': user_meta.get('disabled', False),
+                'created_at': user_meta.get('created_at'),
+                'email': user_meta.get('email'),
+                'nickname': user_meta.get('nickname')
+            })
+        
+        return users_list
+    
+    @staticmethod
+    def toggle_user_status(username):
+        """
+        Toggle user disabled status.
+        
+        Args:
+            username: Username to toggle
+        
+        Returns:
+            tuple: (success: bool, message: str, new_status: bool)
+        """
+        data = AuthService.load_users_data()
+        
+        if isinstance(data, dict) and 'users' in data:
+            users = data.get('users', {})
+            metadata = data.get('metadata', {})
+        else:
+            users = data
+            metadata = {}
+        
+        if username not in users:
+            return False, "用户不存在", False
+        
+        if username not in metadata:
+            metadata[username] = {}
+        
+        current_status = metadata[username].get('disabled', False)
+        new_status = not current_status
+        metadata[username]['disabled'] = new_status
+        
+        if isinstance(data, dict) and 'users' in data:
+            data['metadata'] = metadata
+        else:
+            data = {'users': users, 'metadata': metadata}
+        
+        AuthService.save_users_data(data)
+        
+        status_text = "已停用" if new_status else "已启用"
+        return True, f"用户{status_text}", new_status
+    
+    @staticmethod
+    def create_user(username, password, email=None, nickname=None):
+        """
+        Create a new user.
+        
+        Args:
+            username: Username
+            password: Password
+            email: Email (optional)
+            nickname: Nickname (optional)
+        
+        Returns:
+            tuple: (success: bool, message: str)
+        """
+        if len(username) < 3 or len(username) > 20:
+            return False, "用户名长度需在3-20个字符之间"
+        
+        if not username.replace('_', '').isalnum():
+            return False, "用户名只能包含字母、数字和下划线"
+        
+        if len(password) < 6:
+            return False, "密码长度至少6位"
+        
+        data = AuthService.load_users_data()
+        
+        if isinstance(data, dict) and 'users' in data:
+            users = data.get('users', {})
+            metadata = data.get('metadata', {})
+        else:
+            users = data
+            metadata = {}
+        
+        if username in users:
+            return False, "用户名已存在"
+        
+        users[username] = generate_password_hash(password)
+        metadata[username] = {
+            'created_at': time.strftime('%Y-%m-%d %H:%M:%S'),
+            'email': email,
+            'nickname': nickname,
+            'disabled': False,
+            'created_by_admin': True
+        }
+        
+        if isinstance(data, dict) and 'users' in data:
+            data['users'] = users
+            data['metadata'] = metadata
+        else:
+            data = {'users': users, 'metadata': metadata}
+        
+        AuthService.save_users_data(data)
+        return True, "用户创建成功"
+    
+    @staticmethod
+    def delete_user(username):
+        """
+        Delete a user.
+        
+        Args:
+            username: Username to delete
+        
+        Returns:
+            tuple: (success: bool, message: str)
+        """
+        data = AuthService.load_users_data()
+        
+        if isinstance(data, dict) and 'users' in data:
+            users = data.get('users', {})
+            metadata = data.get('metadata', {})
+        else:
+            users = data
+            metadata = {}
+        
+        if username not in users:
+            return False, "用户不存在"
+        
+        del users[username]
+        if username in metadata:
+            del metadata[username]
+        
+        if isinstance(data, dict) and 'users' in data:
+            data['users'] = users
+            data['metadata'] = metadata
+        else:
+            data = {'users': users, 'metadata': metadata}
+        
+        AuthService.save_users_data(data)
+        return True, "用户已删除"
     
     @staticmethod
     def manage_user_ip(username, client_ip):

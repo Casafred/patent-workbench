@@ -278,7 +278,7 @@ ADMIN_PAGE_HTML = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>用户申请管理 - 专利分析智能工作台</title>
+    <title>用户管理中心 - 专利分析智能工作台</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -312,10 +312,6 @@ ADMIN_PAGE_HTML = """
             gap: 12px;
             align-items: center;
         }
-        .user-info {
-            color: #666;
-            font-size: 14px;
-        }
         .logout-btn {
             padding: 8px 16px;
             background: #EF4444;
@@ -326,7 +322,7 @@ ADMIN_PAGE_HTML = """
             font-size: 14px;
         }
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 24px;
         }
@@ -334,6 +330,7 @@ ADMIN_PAGE_HTML = """
             display: flex;
             gap: 8px;
             margin-bottom: 20px;
+            flex-wrap: wrap;
         }
         .tab {
             padding: 10px 20px;
@@ -373,7 +370,7 @@ ADMIN_PAGE_HTML = """
         .card-body { padding: 20px; }
         .info-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 12px;
         }
         .info-item label {
@@ -396,44 +393,34 @@ ADMIN_PAGE_HTML = """
         .status-pending { background: #FEF3C7; color: #92400E; }
         .status-approved { background: #DCFCE7; color: #166534; }
         .status-rejected { background: #FEE2E2; color: #991B1B; }
+        .status-active { background: #DCFCE7; color: #166534; }
+        .status-disabled { background: #FEE2E2; color: #991B1B; }
         .actions {
             display: flex;
             gap: 8px;
             margin-top: 16px;
+            flex-wrap: wrap;
         }
         .btn {
-            padding: 10px 20px;
+            padding: 8px 16px;
             border: none;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 500;
             transition: all 0.3s;
         }
-        .btn-approve {
-            background: var(--primary-color);
-            color: white;
-        }
-        .btn-approve:hover { background: var(--primary-color-dark); }
-        .btn-reject {
-            background: #EF4444;
-            color: white;
-        }
-        .btn-reject:hover { background: #DC2626; }
-        .btn-delete {
-            background: #9CA3AF;
-            color: white;
-        }
-        .btn-delete:hover { background: #6B7280; }
-        .btn-email {
-            background: #3B82F6;
-            color: white;
-        }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+        .btn-primary { background: var(--primary-color); color: white; }
+        .btn-primary:hover { background: var(--primary-color-dark); }
+        .btn-danger { background: #EF4444; color: white; }
+        .btn-danger:hover { background: #DC2626; }
+        .btn-secondary { background: #6B7280; color: white; }
+        .btn-secondary:hover { background: #4B5563; }
+        .btn-warning { background: #F59E0B; color: white; }
+        .btn-warning:hover { background: #D97706; }
+        .btn-email { background: #3B82F6; color: white; }
         .btn-email:hover { background: #2563EB; }
-        .btn-email-sent {
-            background: #10B981;
-            color: white;
-        }
         .checkbox-group {
             display: flex;
             align-items: center;
@@ -443,15 +430,8 @@ ADMIN_PAGE_HTML = """
             background: #F0FDF4;
             border-radius: 8px;
         }
-        .checkbox-group input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-        }
-        .checkbox-group label {
-            font-size: 14px;
-            color: var(--text-color);
-            cursor: pointer;
-        }
+        .checkbox-group input[type="checkbox"] { width: 18px; height: 18px; }
+        .checkbox-group label { font-size: 14px; color: var(--text-color); cursor: pointer; }
         .account-info {
             background: #F0FDF4;
             border: 1px solid #86EFAC;
@@ -459,14 +439,8 @@ ADMIN_PAGE_HTML = """
             padding: 16px;
             margin-top: 16px;
         }
-        .account-info h4 {
-            color: var(--primary-color-dark);
-            margin-bottom: 12px;
-        }
-        .account-info p {
-            margin: 8px 0;
-            font-size: 14px;
-        }
+        .account-info h4 { color: var(--primary-color-dark); margin-bottom: 12px; }
+        .account-info p { margin: 8px 0; font-size: 14px; }
         .account-info code {
             background: white;
             padding: 2px 8px;
@@ -484,11 +458,7 @@ ADMIN_PAGE_HTML = """
             font-size: 12px;
             margin-left: 8px;
         }
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: #6B7280;
-        }
+        .empty-state { text-align: center; padding: 40px; color: #6B7280; }
         .login-container {
             max-width: 400px;
             margin: 100px auto;
@@ -497,11 +467,7 @@ ADMIN_PAGE_HTML = """
             border-radius: 12px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.1);
         }
-        .login-container h2 {
-            text-align: center;
-            color: var(--primary-color-dark);
-            margin-bottom: 24px;
-        }
+        .login-container h2 { text-align: center; color: var(--primary-color-dark); margin-bottom: 24px; }
         .login-container input {
             width: 100%;
             padding: 12px 16px;
@@ -510,10 +476,7 @@ ADMIN_PAGE_HTML = """
             font-size: 15px;
             margin-bottom: 16px;
         }
-        .login-container input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-        }
+        .login-container input:focus { outline: none; border-color: var(--primary-color); }
         .login-btn {
             width: 100%;
             padding: 14px;
@@ -526,13 +489,75 @@ ADMIN_PAGE_HTML = """
             cursor: pointer;
         }
         .login-btn:hover { background: var(--primary-color-dark); }
-        .login-error {
-            color: var(--error-color);
-            text-align: center;
-            margin-bottom: 16px;
+        .login-error { color: var(--error-color); text-align: center; margin-bottom: 16px; font-size: 14px; }
+        .hidden { display: none; }
+        .add-user-form {
+            background: #F0FDF4;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .add-user-form h3 { color: var(--primary-color-dark); margin-bottom: 16px; }
+        .form-row { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+        .form-row input, .form-row select {
+            flex: 1;
+            min-width: 150px;
+            padding: 10px 14px;
+            border: 1px solid #E5E7EB;
+            border-radius: 6px;
             font-size: 14px;
         }
-        .hidden { display: none; }
+        .form-row input:focus, .form-row select:focus { outline: none; border-color: var(--primary-color); }
+        .user-table { width: 100%; border-collapse: collapse; }
+        .user-table th, .user-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #E5E7EB;
+        }
+        .user-table th { background: #F9FAFB; font-weight: 600; color: #374151; }
+        .user-table tr:hover { background: #F9FAFB; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            width: 400px;
+            max-width: 90%;
+        }
+        .modal-content h3 { margin-bottom: 16px; color: var(--text-color); }
+        .modal-content .form-group { margin-bottom: 16px; }
+        .modal-content label { display: block; margin-bottom: 6px; font-size: 14px; color: #374151; }
+        .modal-content input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #E5E7EB;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .modal-content input:focus { outline: none; border-color: var(--primary-color); }
+        .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
+        .stats-row { display: flex; gap: 16px; margin-bottom: 20px; }
+        .stat-card {
+            background: white;
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .stat-card .number { font-size: 28px; font-weight: bold; color: var(--primary-color-dark); }
+        .stat-card .label { font-size: 13px; color: #6B7280; margin-top: 4px; }
     </style>
 </head>
 <body>
@@ -545,7 +570,7 @@ ADMIN_PAGE_HTML = """
 
     <div id="admin-page" class="hidden">
         <div class="header">
-            <h1>用户申请管理</h1>
+            <h1>用户管理中心</h1>
             <div class="header-actions">
                 <span class="user-info">管理员</span>
                 <button class="logout-btn" onclick="logout()">退出</button>
@@ -553,24 +578,67 @@ ADMIN_PAGE_HTML = """
         </div>
         
         <div class="container">
-            <div class="tabs">
-                <div class="tab active" data-status="pending" onclick="switchTab('pending')">
-                    待审核 (<span id="pending-count">0</span>)
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div class="number" id="stat-users">0</div>
+                    <div class="label">总用户数</div>
                 </div>
-                <div class="tab" data-status="approved" onclick="switchTab('approved')">
-                    已通过 (<span id="approved-count">0</span>)
+                <div class="stat-card">
+                    <div class="number" id="stat-active">0</div>
+                    <div class="label">活跃用户</div>
                 </div>
-                <div class="tab" data-status="rejected" onclick="switchTab('rejected')">
-                    已拒绝 (<span id="rejected-count">0</span>)
+                <div class="stat-card">
+                    <div class="number" id="stat-disabled">0</div>
+                    <div class="label">已停用</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number" id="stat-pending">0</div>
+                    <div class="label">待审核</div>
                 </div>
             </div>
             
-            <div id="applications-list"></div>
+            <div class="tabs">
+                <div class="tab active" data-tab="users" onclick="switchTab('users')">用户管理</div>
+                <div class="tab" data-tab="pending" onclick="switchTab('pending')">待审核申请</div>
+                <div class="tab" data-tab="approved" onclick="switchTab('approved')">已通过申请</div>
+                <div class="tab" data-tab="rejected" onclick="switchTab('rejected')">已拒绝申请</div>
+            </div>
+            
+            <div id="tab-content"></div>
+        </div>
+    </div>
+
+    <div id="add-user-modal" class="modal">
+        <div class="modal-content">
+            <h3>添加新用户</h3>
+            <form id="add-user-form">
+                <div class="form-group">
+                    <label>用户名</label>
+                    <input type="text" id="new-username" required minlength="3" maxlength="20" placeholder="3-20位字母数字下划线">
+                </div>
+                <div class="form-group">
+                    <label>密码</label>
+                    <input type="text" id="new-password" required minlength="6" placeholder="至少6位">
+                </div>
+                <div class="form-group">
+                    <label>邮箱（选填）</label>
+                    <input type="email" id="new-email" placeholder="用于找回密码">
+                </div>
+                <div class="form-group">
+                    <label>昵称（选填）</label>
+                    <input type="text" id="new-nickname" placeholder="显示名称">
+                </div>
+                <div id="add-user-message" style="margin-bottom:12px;padding:10px;border-radius:6px;display:none;"></div>
+                <div class="modal-buttons">
+                    <button type="button" class="btn btn-secondary" onclick="hideAddUserModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">创建用户</button>
+                </div>
+            </form>
         </div>
     </div>
 
     <script>
-        let currentTab = 'pending';
+        let currentTab = 'users';
         let isLoggedIn = false;
 
         function checkLogin() {
@@ -617,15 +685,33 @@ ADMIN_PAGE_HTML = """
         function showAdminPage() {
             document.getElementById('login-page').classList.add('hidden');
             document.getElementById('admin-page').classList.remove('hidden');
+            loadAllData();
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => {
+                t.classList.toggle('active', t.dataset.tab === tab);
+            });
+            loadAllData();
+        }
+
+        function loadAllData() {
+            loadUsers();
             loadApplications();
         }
 
-        function switchTab(status) {
-            currentTab = status;
-            document.querySelectorAll('.tab').forEach(t => {
-                t.classList.toggle('active', t.dataset.status === status);
-            });
-            loadApplications();
+        function loadUsers() {
+            fetch('/api/register/admin/users')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        updateStats(data.users);
+                        if (currentTab === 'users') {
+                            renderUsers(data.users);
+                        }
+                    }
+                });
         }
 
         function loadApplications() {
@@ -633,26 +719,62 @@ ADMIN_PAGE_HTML = """
                 .then(r => r.json())
                 .then(data => {
                     const apps = data.applications || [];
-                    
                     const pending = apps.filter(a => a.status === 'pending');
                     const approved = apps.filter(a => a.status === 'approved');
                     const rejected = apps.filter(a => a.status === 'rejected');
                     
-                    document.getElementById('pending-count').textContent = pending.length;
-                    document.getElementById('approved-count').textContent = approved.length;
-                    document.getElementById('rejected-count').textContent = rejected.length;
+                    document.getElementById('stat-pending').textContent = pending.length;
                     
-                    let list = [];
-                    if (currentTab === 'pending') list = pending;
-                    else if (currentTab === 'approved') list = approved;
-                    else list = rejected;
-                    
-                    renderApplications(list);
+                    if (currentTab === 'pending') renderApplications(pending, 'pending');
+                    else if (currentTab === 'approved') renderApplications(approved, 'approved');
+                    else if (currentTab === 'rejected') renderApplications(rejected, 'rejected');
                 });
         }
 
-        function renderApplications(applications) {
-            const container = document.getElementById('applications-list');
+        function updateStats(users) {
+            const total = users.length;
+            const active = users.filter(u => !u.disabled).length;
+            const disabled = users.filter(u => u.disabled).length;
+            
+            document.getElementById('stat-users').textContent = total;
+            document.getElementById('stat-active').textContent = active;
+            document.getElementById('stat-disabled').textContent = disabled;
+        }
+
+        function renderUsers(users) {
+            const container = document.getElementById('tab-content');
+            
+            if (users.length === 0) {
+                container.innerHTML = '<div class="card"><div class="empty-state">暂无用户</div></div>';
+                return;
+            }
+            
+            let html = '<div class="card"><div class="card-header"><span class="card-title">用户列表</span>';
+            html += '<button class="btn btn-primary btn-sm" onclick="showAddUserModal()">+ 添加用户</button></div>';
+            html += '<table class="user-table"><thead><tr>';
+            html += '<th>用户名</th><th>状态</th><th>创建时间</th><th>邮箱</th><th>操作</th>';
+            html += '</tr></thead><tbody>';
+            
+            users.forEach(user => {
+                const statusClass = user.disabled ? 'status-disabled' : 'status-active';
+                const statusText = user.disabled ? '已停用' : '正常';
+                html += '<tr>';
+                html += '<td><strong>' + user.username + '</strong></td>';
+                html += '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>';
+                html += '<td>' + (user.created_at || '-') + '</td>';
+                html += '<td>' + (user.email || '-') + '</td>';
+                html += '<td>';
+                html += '<button class="btn btn-sm ' + (user.disabled ? 'btn-primary' : 'btn-warning') + '" onclick="toggleUser(\'' + user.username + '\')">' + (user.disabled ? '启用' : '停用') + '</button> ';
+                html += '<button class="btn btn-sm btn-danger" onclick="deleteUser(\'' + user.username + '\')">删除</button>';
+                html += '</td></tr>';
+            });
+            
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        function renderApplications(applications, status) {
+            const container = document.getElementById('tab-content');
             
             if (applications.length === 0) {
                 container.innerHTML = '<div class="card"><div class="empty-state">暂无数据</div></div>';
@@ -662,67 +784,40 @@ ADMIN_PAGE_HTML = """
             container.innerHTML = applications.map(app => `
                 <div class="card">
                     <div class="card-header">
-                        <span class="card-title">${app.name}</span>
-                        <span class="status-badge status-${app.status}">
-                            ${app.status === 'pending' ? '待审核' : app.status === 'approved' ? '已通过' : '已拒绝'}
-                        </span>
+                        <span class="card-title">${app.name || app.username}</span>
+                        <span class="status-badge status-${app.status}">${
+                            app.status === 'pending' ? '待审核' : 
+                            app.status === 'approved' ? '已通过' : '已拒绝'
+                        }</span>
                     </div>
                     <div class="card-body">
                         <div class="info-grid">
-                            <div class="info-item">
-                                <label>邮箱</label>
-                                <span>${app.email}</span>
-                            </div>
-                            <div class="info-item">
-                                <label>手机号</label>
-                                <span>${app.phone || '-'}</span>
-                            </div>
-                            <div class="info-item">
-                                <label>单位</label>
-                                <span>${app.company || '-'}</span>
-                            </div>
-                            <div class="info-item">
-                                <label>申请时间</label>
-                                <span>${app.created_at}</span>
-                            </div>
-                            <div class="info-item">
-                                <label>关注公众号</label>
-                                <span>${app.followed_wechat ? '是 (' + (app.wechat_nickname || '-') + ')' : '否'}</span>
-                            </div>
-                            ${app.reason ? `
-                            <div class="info-item" style="grid-column: 1 / -1;">
-                                <label>申请理由</label>
-                                <span>${app.reason}</span>
-                            </div>
-                            ` : ''}
+                            <div class="info-item"><label>邮箱</label><span>${app.email || '-'}</span></div>
+                            <div class="info-item"><label>手机号</label><span>${app.phone || '-'}</span></div>
+                            <div class="info-item"><label>单位</label><span>${app.company || '-'}</span></div>
+                            <div class="info-item"><label>申请时间</label><span>${app.created_at}</span></div>
                         </div>
-                        
                         ${app.status === 'approved' && app.username ? `
                         <div class="account-info">
-                            <h4>账号信息 <button class="copy-btn" onclick="copyAccount('${app.username}', '${app.password}')">复制账号密码</button></h4>
+                            <h4>账号信息 <button class="copy-btn" onclick="copyAccount('${app.username}', '${app.password || ''}')">复制</button></h4>
                             <p>用户名: <code>${app.username}</code></p>
-                            <p>密码: <code>${app.password}</code></p>
-                            <p style="color: #6B7280; font-size: 12px;">审核时间: ${app.processed_at}</p>
-                            <div style="margin-top: 12px;">
-                                <button class="btn btn-email" onclick="sendEmailToUser('${app.id}')" id="email-btn-${app.id}">发送账号到邮箱</button>
-                            </div>
+                            <p>密码: <code>${app.password || '[用户已修改]'}</code></p>
+                            ${app.password_changed ? '<p style="color:#F59E0B;font-size:12px;">用户已自行修改密码</p>' : ''}
                         </div>
                         ` : ''}
-                        
                         ${app.status === 'pending' ? `
                         <div class="checkbox-group">
                             <input type="checkbox" id="send-email-${app.id}" checked>
-                            <label for="send-email-${app.id}">审核通过后自动发送账号信息到用户邮箱</label>
+                            <label for="send-email-${app.id}">审核通过后发送账号到邮箱</label>
                         </div>
                         <div class="actions">
-                            <button class="btn btn-approve" onclick="approve('${app.id}')">通过申请</button>
-                            <button class="btn btn-reject" onclick="reject('${app.id}')">拒绝</button>
+                            <button class="btn btn-primary" onclick="approve('${app.id}')">通过</button>
+                            <button class="btn btn-danger" onclick="reject('${app.id}')">拒绝</button>
                         </div>
                         ` : ''}
-                        
                         ${app.status !== 'pending' ? `
                         <div class="actions">
-                            <button class="btn btn-delete" onclick="deleteApp('${app.id}')">删除记录</button>
+                            <button class="btn btn-secondary" onclick="deleteApp('${app.id}')">删除记录</button>
                         </div>
                         ` : ''}
                     </div>
@@ -730,67 +825,112 @@ ADMIN_PAGE_HTML = """
             `).join('');
         }
 
-        function approve(id) {
-            if (!confirm('确定通过该申请？将自动生成账号。')) return;
+        function showAddUserModal() {
+            document.getElementById('add-user-modal').classList.add('show');
+        }
+
+        function hideAddUserModal() {
+            document.getElementById('add-user-modal').classList.remove('show');
+            document.getElementById('add-user-form').reset();
+            document.getElementById('add-user-message').style.display = 'none';
+        }
+
+        document.getElementById('add-user-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const username = document.getElementById('new-username').value.trim();
+            const password = document.getElementById('new-password').value;
+            const email = document.getElementById('new-email').value.trim();
+            const nickname = document.getElementById('new-nickname').value.trim();
+            const msgEl = document.getElementById('add-user-message');
             
-            const sendEmail = document.getElementById('send-email-' + id).checked;
+            try {
+                const response = await fetch('/api/register/admin/create-user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password, email, nickname })
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    msgEl.textContent = result.message;
+                    msgEl.style.background = '#DCFCE7';
+                    msgEl.style.color = '#166534';
+                    msgEl.style.display = 'block';
+                    setTimeout(() => { hideAddUserModal(); loadUsers(); }, 1000);
+                } else {
+                    msgEl.textContent = result.message;
+                    msgEl.style.background = '#FEE2E2';
+                    msgEl.style.color = '#991B1B';
+                    msgEl.style.display = 'block';
+                }
+            } catch (err) {
+                msgEl.textContent = '创建失败';
+                msgEl.style.background = '#FEE2E2';
+                msgEl.style.color = '#991B1B';
+                msgEl.style.display = 'block';
+            }
+        });
+
+        function toggleUser(username) {
+            const action = confirm('确定要切换该用户的状态吗？');
+            if (!action) return;
             
-            fetch(`/api/register/admin/approve/${id}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ send_email: sendEmail })
-            })
+            fetch('/api/register/admin/toggle-user/' + username, { method: 'POST' })
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
-                        let msg = `审核通过！\\n用户名: ${data.username}\\n密码: ${data.password}\\n\\n申请人邮箱: ${data.email}`;
-                        if (data.email_sent) {
-                            msg += '\\n\\n✅ 账号信息已发送到用户邮箱';
-                        } else if (sendEmail) {
-                            msg += '\\n\\n⚠️ 邮件发送失败，请手动联系用户';
-                        }
-                        alert(msg);
-                        loadApplications();
+                        alert(data.message);
+                        loadUsers();
                     } else {
                         alert(data.message);
                     }
                 });
         }
 
-        function sendEmailToUser(id) {
-            const btn = document.getElementById('email-btn-' + id);
-            btn.disabled = true;
-            btn.textContent = '发送中...';
+        function deleteUser(username) {
+            if (!confirm('确定要删除用户 ' + username + ' 吗？此操作不可恢复！')) return;
             
-            fetch(`/api/register/admin/send-email/${id}`, { method: 'POST' })
+            fetch('/api/register/admin/delete-user/' + username, { method: 'POST' })
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
-                        btn.textContent = '已发送 ✓';
-                        btn.className = 'btn btn-email-sent';
-                        btn.disabled = true;
-                        alert('账号信息已发送到用户邮箱');
+                        alert(data.message);
+                        loadUsers();
                     } else {
-                        btn.textContent = '发送账号到邮箱';
-                        btn.disabled = false;
-                        alert('发送失败: ' + data.message);
+                        alert(data.message);
                     }
-                })
-                .catch(() => {
-                    btn.textContent = '发送账号到邮箱';
-                    btn.disabled = false;
-                    alert('发送失败，请稍后重试');
                 });
+        }
+
+        function approve(id) {
+            if (!confirm('确定通过该申请？')) return;
+            const sendEmail = document.getElementById('send-email-' + id).checked;
+            
+            fetch('/api/register/admin/approve/' + id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ send_email: sendEmail })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    let msg = '审核通过！\\n用户名: ' + data.username + '\\n密码: ' + data.password;
+                    if (data.email_sent) msg += '\\n\\n账号已发送到用户邮箱';
+                    alert(msg);
+                    loadAllData();
+                } else {
+                    alert(data.message);
+                }
+            });
         }
 
         function reject(id) {
             if (!confirm('确定拒绝该申请？')) return;
-            
-            fetch(`/api/register/admin/reject/${id}`, { method: 'POST' })
+            fetch('/api/register/admin/reject/' + id, { method: 'POST' })
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
-                        alert('已拒绝申请');
+                        alert('已拒绝');
                         loadApplications();
                     } else {
                         alert(data.message);
@@ -800,19 +940,13 @@ ADMIN_PAGE_HTML = """
 
         function deleteApp(id) {
             if (!confirm('确定删除该记录？')) return;
-            
-            fetch(`/api/register/admin/delete/${id}`, { method: 'POST' })
-                .then(r => r.json())
-                .then(data => {
-                    loadApplications();
-                });
+            fetch('/api/register/admin/delete/' + id, { method: 'POST' })
+                .then(() => loadApplications());
         }
 
         function copyAccount(username, password) {
-            const text = `用户名: ${username}\\n密码: ${password}\\n登录地址: ${window.location.origin}/login`;
-            navigator.clipboard.writeText(text).then(() => {
-                alert('已复制到剪贴板');
-            });
+            const text = '用户名: ' + username + '\\n密码: ' + password;
+            navigator.clipboard.writeText(text).then(() => alert('已复制'));
         }
 
         document.getElementById('admin-password').addEventListener('keypress', function(e) {
@@ -957,3 +1091,50 @@ def delete_application(application_id):
     
     result = registration_service.delete_application(application_id)
     return jsonify(result)
+
+
+@registration_bp.route('/admin/users', methods=['GET'])
+def get_users():
+    if not session.get('admin_logged_in'):
+        return jsonify({'success': False, 'message': '未登录'}), 401
+    
+    from backend.services.auth_service import AuthService
+    users = AuthService.get_all_users()
+    return jsonify({'success': True, 'users': users})
+
+
+@registration_bp.route('/admin/toggle-user/<username>', methods=['POST'])
+def toggle_user(username):
+    if not session.get('admin_logged_in'):
+        return jsonify({'success': False, 'message': '未登录'}), 401
+    
+    from backend.services.auth_service import AuthService
+    success, message, new_status = AuthService.toggle_user_status(username)
+    return jsonify({'success': success, 'message': message, 'disabled': new_status})
+
+
+@registration_bp.route('/admin/create-user', methods=['POST'])
+def create_user():
+    if not session.get('admin_logged_in'):
+        return jsonify({'success': False, 'message': '未登录'}), 401
+    
+    from backend.services.auth_service import AuthService
+    
+    data = request.get_json()
+    username = data.get('username', '').strip()
+    password = data.get('password', '')
+    email = data.get('email', '').strip() or None
+    nickname = data.get('nickname', '').strip() or None
+    
+    success, message = AuthService.create_user(username, password, email, nickname)
+    return jsonify({'success': success, 'message': message})
+
+
+@registration_bp.route('/admin/delete-user/<username>', methods=['POST'])
+def delete_user(username):
+    if not session.get('admin_logged_in'):
+        return jsonify({'success': False, 'message': '未登录'}), 401
+    
+    from backend.services.auth_service import AuthService
+    success, message = AuthService.delete_user(username)
+    return jsonify({'success': success, 'message': message})

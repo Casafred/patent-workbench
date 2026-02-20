@@ -636,42 +636,57 @@ def serve_app():
     <style>
         .user-actions {{
             position: fixed;
-            top: 10px;
-            right: 20px;
+            top: 12px;
+            right: 16px;
             z-index: 1000;
             display: flex;
             flex-direction: column;
             align-items: flex-end;
-            gap: 4px;
-            background: rgba(255,255,255,0.95);
-            padding: 6px 10px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            gap: 6px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(240,253,244,0.95) 100%);
+            padding: 8px 12px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(22, 163, 74, 0.15), 0 1px 3px rgba(0,0,0,0.08);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            backdrop-filter: blur(10px);
         }}
         .user-display {{
             color: #14532D;
             font-size: 12px;
+            font-weight: 500;
+            padding-bottom: 4px;
+            border-bottom: 1px solid rgba(34, 197, 94, 0.15);
+            width: 100%;
+            text-align: right;
         }}
         .user-display strong {{
             color: #16A34A;
+            font-weight: 600;
         }}
         .user-btns {{
             display: flex;
-            gap: 6px;
+            gap: 4px;
         }}
-        .change-pwd-btn, .logout-btn {{
+        .user-btn {{
             color: #16A34A;
             text-decoration: none;
-            font-size: 12px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            transition: all 0.2s;
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 5px;
+            transition: all 0.2s ease;
+            background: transparent;
+            border: 1px solid transparent;
         }}
-        .change-pwd-btn:hover, .logout-btn:hover {{
-            background: #F0FDF4;
+        .user-btn:hover {{
+            background: rgba(34, 197, 94, 0.1);
+            border-color: rgba(34, 197, 94, 0.3);
         }}
-        .logout-btn {{
-            color: #EF4444;
+        .user-btn.logout {{
+            color: #DC2626;
+        }}
+        .user-btn.logout:hover {{
+            background: rgba(220, 38, 38, 0.1);
+            border-color: rgba(220, 38, 38, 0.3);
         }}
         .cp-modal {{
             display: none;
@@ -771,9 +786,9 @@ def serve_app():
     <div class="user-actions">
         <span class="user-display">当前用户: <strong id="current-username">{username}</strong></span>
         <div class="user-btns">
-            <a href="javascript:void(0);" onclick="showChangeUsernameModal()" class="change-pwd-btn">改用户名</a>
-            <a href="javascript:void(0);" onclick="showChangePasswordModal()" class="change-pwd-btn">改密码</a>
-            <a href="{url_for('auth.logout')}" class="logout-btn">登出</a>
+            <a href="javascript:void(0);" onclick="showChangeUsernameModal()" class="user-btn">改用户名</a>
+            <a href="javascript:void(0);" onclick="showChangePasswordModal()" class="user-btn">改密码</a>
+            <a href="{url_for('auth.logout')}" class="user-btn logout">登出</a>
         </div>
     </div>
     <div id="change-username-modal" class="cp-modal">
