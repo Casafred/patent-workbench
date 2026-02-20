@@ -657,7 +657,7 @@ def serve_app():
             padding-bottom: 4px;
             border-bottom: 1px solid rgba(34, 197, 94, 0.15);
             width: 100%;
-            text-align: right;
+            text-align: center;
         }}
         .user-display strong {{
             color: #16A34A;
