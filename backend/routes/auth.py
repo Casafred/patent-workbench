@@ -640,25 +640,30 @@ def serve_app():
             right: 20px;
             z-index: 1000;
             display: flex;
-            align-items: center;
-            gap: 10px;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
             background: rgba(255,255,255,0.95);
-            padding: 6px 12px;
+            padding: 6px 10px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }}
         .user-display {{
             color: #14532D;
-            font-size: 13px;
+            font-size: 12px;
         }}
         .user-display strong {{
             color: #16A34A;
         }}
+        .user-btns {{
+            display: flex;
+            gap: 6px;
+        }}
         .change-pwd-btn, .logout-btn {{
             color: #16A34A;
             text-decoration: none;
-            font-size: 13px;
-            padding: 2px 8px;
+            font-size: 12px;
+            padding: 2px 6px;
             border-radius: 4px;
             transition: all 0.2s;
         }}
@@ -765,9 +770,11 @@ def serve_app():
     </style>
     <div class="user-actions">
         <span class="user-display">当前用户: <strong id="current-username">{username}</strong></span>
-        <a href="javascript:void(0);" onclick="showChangeUsernameModal()" class="change-pwd-btn">改用户名</a>
-        <a href="javascript:void(0);" onclick="showChangePasswordModal()" class="change-pwd-btn">改密码</a>
-        <a href="{url_for('auth.logout')}" class="logout-btn">登出</a>
+        <div class="user-btns">
+            <a href="javascript:void(0);" onclick="showChangeUsernameModal()" class="change-pwd-btn">改用户名</a>
+            <a href="javascript:void(0);" onclick="showChangePasswordModal()" class="change-pwd-btn">改密码</a>
+            <a href="{url_for('auth.logout')}" class="logout-btn">登出</a>
+        </div>
     </div>
     <div id="change-username-modal" class="cp-modal">
         <div class="cp-modal-content">
