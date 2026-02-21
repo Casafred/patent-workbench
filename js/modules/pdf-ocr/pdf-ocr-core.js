@@ -234,6 +234,11 @@ class PDFOCRCore {
             await this.loadImage(file);
         }
         
+        // 更新缓存状态显示
+        if (window.pdfOCRParser) {
+            window.pdfOCRParser.updateCacheStatus();
+        }
+        
         console.log('[PDF-OCR] 文件已加载:', file.name);
     }
     
@@ -537,6 +542,11 @@ class PDFOCRCore {
             console.log('[PDF-OCR-Core] viewer.pageResults keys:', [...window.pdfOCRViewer.pageResults.keys()]);
             window.pdfOCRViewer.renderBlocks();
             window.pdfOCRViewer.updateStructuredContent();
+        }
+        
+        // 更新缓存状态显示
+        if (window.pdfOCRParser) {
+            window.pdfOCRParser.updateCacheStatus();
         }
     }
     

@@ -13,7 +13,8 @@ class PDFOCRInit {
             chat: null,
             selection: null,
             floatingToolbar: null,
-            floatingChat: null
+            floatingChat: null,
+            cache: null
         };
     }
 
@@ -82,6 +83,7 @@ class PDFOCRInit {
 
         // 检查类是否已定义（不是实例）
         const dependencies = [
+            { name: 'PDFOCRCache', global: 'PDFOCRCache' },
             { name: 'PDFOCRCore', global: 'PDFOCRCore' },
             { name: 'PDFOCRViewer', global: 'PDFOCRViewer' },
             { name: 'PDFOCRParser', global: 'PDFOCRParser' },
@@ -116,6 +118,7 @@ class PDFOCRInit {
      */
     initModules() {
         // 创建模块实例（DOM已准备好）
+        window.pdfOCRCache = new PDFOCRCache();
         window.pdfOCRCore = new PDFOCRCore();
         window.pdfOCRViewer = new PDFOCRViewer();
         window.pdfOCRParser = new PDFOCRParser();
@@ -125,6 +128,7 @@ class PDFOCRInit {
         window.pdfOCRFloatingChat = new PDFOCRFloatingChat();
 
         // 保存模块引用
+        this.modules.cache = window.pdfOCRCache;
         this.modules.core = window.pdfOCRCore;
         this.modules.viewer = window.pdfOCRViewer;
         this.modules.parser = window.pdfOCRParser;
@@ -267,10 +271,12 @@ class PDFOCRInit {
             const modeSelect = document.getElementById('ocr-parse-mode');
             const formulaCheck = document.getElementById('ocr-recognize-formula');
             const tableCheck = document.getElementById('ocr-recognize-table');
+            const useCacheCheck = document.getElementById('ocr-use-cache');
 
-            if (modeSelect) modeSelect.value = settings.mode || 'auto';
+            if (modeSelect) modeSelect.value = settings.mode || 'page';
             if (formulaCheck) formulaCheck.checked = settings.recognizeFormula ?? true;
             if (tableCheck) tableCheck.checked = settings.recognizeTable ?? true;
+            if (useCacheCheck) useCacheCheck.checked = settings.useCache ?? true;
         }
 
         // 加载OCR结果
@@ -290,7 +296,9 @@ class PDFOCRInit {
 
         // 保存设置
         const settings = {
-            mode: document.getElementById('ocr-parse-mode')?.value || 'auto',
+            mode: document.getElementById('ocr-parse-mode')?.value || 'page',
+            pageRange: document.getElementById('ocr-page-range-input')?.value || '',
+            useCache: document.getElementById('ocr-use-cache')?.checked ?? true,
             recognizeFormula: document.getElementById('ocr-recognize-formula')?.checked ?? true,
             recognizeTable: document.getElementById('ocr-recognize-table')?.checked ?? true
         };
