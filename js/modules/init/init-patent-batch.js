@@ -61,7 +61,6 @@ function initHistoryPanel() {
     const historySelectAllBtn = document.getElementById('history_select_all_btn');
     const historyDeselectAllBtn = document.getElementById('history_deselect_all_btn');
     const historyBatchCrawlBtn = document.getElementById('history_batch_crawl_btn');
-    const historyBatchAnalyzeBtn = document.getElementById('history_batch_analyze_btn');
     
     if (viewHistoryBtn && historyPanel) {
         viewHistoryBtn.addEventListener('click', () => {
@@ -125,6 +124,9 @@ function initHistoryPanel() {
         historyBatchCrawlBtn.addEventListener('click', () => {
             const selected = getSelectedHistoryPatents();
             if (selected.length > 0) {
+                const historyAutoAnalyzeCheckbox = document.getElementById('history_auto_analyze_checkbox');
+                const shouldAnalyze = historyAutoAnalyzeCheckbox ? historyAutoAnalyzeCheckbox.checked : false;
+                
                 const input = document.getElementById('patent_numbers_input');
                 if (input) {
                     input.value = selected.join('\n');
@@ -132,33 +134,14 @@ function initHistoryPanel() {
                 }
                 historyPanel.style.display = 'none';
                 
-                // 自动触发爬取
+                const autoAnalyzeMainCheckbox = document.getElementById('auto_analyze_checkbox');
+                if (autoAnalyzeMainCheckbox) {
+                    autoAnalyzeMainCheckbox.checked = shouldAnalyze;
+                }
+                
                 const crawlBtn = document.getElementById('search_patents_btn');
                 if (crawlBtn) {
                     crawlBtn.click();
-                }
-            }
-        });
-    }
-    
-    if (historyBatchAnalyzeBtn) {
-        historyBatchAnalyzeBtn.addEventListener('click', () => {
-            const selected = getSelectedHistoryPatents();
-            if (selected.length > 0) {
-                // 检查缓存状态
-                const cachedPatents = selected.filter(num => 
-                    window.PatentCache && window.PatentCache.has(num)
-                );
-                
-                if (cachedPatents.length === 0) {
-                    alert('选中的专利都没有缓存数据，请先爬取');
-                    return;
-                }
-                
-                // 触发解读
-                if (window.TabManager && window.TabManager.analyzeAllPatents) {
-                    historyPanel.style.display = 'none';
-                    window.TabManager.analyzeAllPatents(cachedPatents);
                 }
             }
         });
@@ -227,11 +210,7 @@ function renderHistoryList(searchKeyword = '') {
         html += `<td style="padding: 8px; text-align: center; color: #666; font-size: 11px;">${window.PatentHistory.formatTime(record.timestamp)}</td>`;
         html += `<td style="padding: 8px; text-align: center; white-space: nowrap;">`;
         html += `<button class="history-action-btn" data-action="crawl" data-patent="${record.patentNumber}" style="padding: 3px 8px; font-size: 11px; border: none; background: #1976d2; color: white; border-radius: 3px; cursor: pointer; margin: 2px;">爬取</button>`;
-        if (record.hasCache) {
-            html += `<button class="history-action-btn" data-action="analyze" data-patent="${record.patentNumber}" style="padding: 3px 8px; font-size: 11px; border: none; background: #4caf50; color: white; border-radius: 3px; cursor: pointer; margin: 2px;">解读</button>`;
-        } else {
-            html += `<button class="history-action-btn" data-action="analyze" data-patent="${record.patentNumber}" disabled style="padding: 3px 8px; font-size: 11px; border: none; background: #ccc; color: #666; border-radius: 3px; cursor: not-allowed; margin: 2px;">解读</button>`;
-        }
+        html += `<label style="display: inline-flex; align-items: center; cursor: pointer; font-size: 11px; color: #333; margin: 0 2px;"><input type="checkbox" class="history-item-auto-analyze" data-patent="${record.patentNumber}" checked style="margin-right: 2px; width: 12px; height: 12px;">解读</label>`;
         html += `<button class="history-action-btn" data-action="delete" data-patent="${record.patentNumber}" style="padding: 3px 8px; font-size: 11px; border: none; background: #ef5350; color: white; border-radius: 3px; cursor: pointer; margin: 2px;">删除</button>`;
         html += `</td>`;
         html += '</tr>';
@@ -273,6 +252,9 @@ function handleHistoryAction(e) {
     const patentNumber = btn.dataset.patent;
     
     if (action === 'crawl') {
+        const autoAnalyzeCheckbox = btn.closest('tr').querySelector('.history-item-auto-analyze');
+        const shouldAnalyze = autoAnalyzeCheckbox ? autoAnalyzeCheckbox.checked : false;
+        
         const input = document.getElementById('patent_numbers_input');
         if (input) {
             input.value = patentNumber;
@@ -284,29 +266,22 @@ function handleHistoryAction(e) {
             historyPanel.style.display = 'none';
         }
         
+        const autoAnalyzeMainCheckbox = document.getElementById('auto_analyze_checkbox');
+        if (autoAnalyzeMainCheckbox) {
+            autoAnalyzeMainCheckbox.checked = shouldAnalyze;
+        }
+        
         const crawlBtn = document.getElementById('search_patents_btn');
         if (crawlBtn) {
             crawlBtn.click();
         }
-    } else if (action === 'analyze') {
-        if (!window.PatentCache || !window.PatentCache.has(patentNumber)) {
-            alert('该专利没有缓存数据，请先爬取');
-            return;
-        }
-        
-        const historyPanel = document.getElementById('history_panel');
-        if (historyPanel) {
-            historyPanel.style.display = 'none';
-        }
-        
-        if (window.TabManager && window.TabManager.analyzeAllPatents) {
-            window.TabManager.analyzeAllPatents([patentNumber]);
-        }
     } else if (action === 'delete') {
-        if (window.PatentHistory) {
-            window.PatentHistory.remove(patentNumber);
+        if (confirm(`确定要删除 ${patentNumber} 的历史记录吗？`)) {
+            if (window.PatentHistory) {
+                window.PatentHistory.remove(patentNumber);
+                renderHistoryList();
+            }
         }
-        renderHistoryList();
     }
 }
 
@@ -327,17 +302,9 @@ function getSelectedHistoryPatents() {
 function updateHistoryBatchButtons() {
     const selected = getSelectedHistoryPatents();
     const historyBatchCrawlBtn = document.getElementById('history_batch_crawl_btn');
-    const historyBatchAnalyzeBtn = document.getElementById('history_batch_analyze_btn');
     
     if (historyBatchCrawlBtn) {
         historyBatchCrawlBtn.disabled = selected.length === 0;
-    }
-    
-    if (historyBatchAnalyzeBtn) {
-        const hasCached = selected.some(num => 
-            window.PatentCache && window.PatentCache.has(num)
-        );
-        historyBatchAnalyzeBtn.disabled = selected.length === 0 || !hasCached;
     }
 }
 
