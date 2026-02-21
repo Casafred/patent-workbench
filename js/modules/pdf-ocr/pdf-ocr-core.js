@@ -699,22 +699,26 @@ class PDFOCRCore {
         this.pageCanvases.clear();
         
         // 重置UI
-        this.elements.fileInfo.style.display = 'none';
-        this.elements.fileInput.value = '';
-        this.elements.startOcrBtn.disabled = true;
-        this.elements.viewerContainer.innerHTML = `
-            <div class="empty-state">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                    <polyline points="10 9 9 9 8 9"></polyline>
-                </svg>
-                <p>请上传PDF或图片文件开始阅读</p>
-            </div>
-        `;
-        this.elements.pageThumbnails.innerHTML = '<div class="empty-state">请先上传文件</div>';
+        if (this.elements.fileInfo) this.elements.fileInfo.style.display = 'none';
+        if (this.elements.fileInput) this.elements.fileInput.value = '';
+        if (this.elements.startOcrBtn) this.elements.startOcrBtn.disabled = true;
+        if (this.elements.viewerContainer) {
+            this.elements.viewerContainer.innerHTML = `
+                <div class="empty-state">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    <p>请上传PDF或图片文件开始阅读</p>
+                </div>
+            `;
+        }
+        if (this.elements.pageThumbnails) {
+            this.elements.pageThumbnails.innerHTML = '<div class="empty-state">请先上传文件</div>';
+        }
         
         // 重置统计
         if (this.elements.statTotal) this.elements.statTotal.textContent = '-';
@@ -729,9 +733,9 @@ class PDFOCRCore {
         if (this.elements.translationContent) this.elements.translationContent.textContent = '请先进行OCR解析';
         
         // 禁用导出
-        this.elements.exportJsonBtn.disabled = true;
-        this.elements.exportMarkdownBtn.disabled = true;
-        this.elements.exportTxtBtn.disabled = true;
+        if (this.elements.exportJsonBtn) this.elements.exportJsonBtn.disabled = true;
+        if (this.elements.exportMarkdownBtn) this.elements.exportMarkdownBtn.disabled = true;
+        if (this.elements.exportTxtBtn) this.elements.exportTxtBtn.disabled = true;
         
         // 清除状态
         if (window.appState && window.appState.pdfOCRReader) {

@@ -522,6 +522,8 @@ class PDFOCRViewer {
         // 检查当前页是否有OCR结果
         const hasCurrentPageBlocks = this.ocrBlocks.some(block => block.pageIndex === currentPage);
         
+        console.log('[PDF-OCR] renderBlocks - currentPage:', currentPage, 'hasBlocks:', hasCurrentPageBlocks, 'isBlockMode:', this.isBlockMode);
+        
         if (!hasCurrentPageBlocks) {
             // 当前页没有OCR结果，隐藏区块层
             container.style.display = 'none';
@@ -529,9 +531,6 @@ class PDFOCRViewer {
             this.blockOverlays.clear();
             return;
         }
-
-        // 显示区块层
-        container.style.display = 'block';
 
         // 清空现有区块
         container.innerHTML = '';
@@ -547,6 +546,11 @@ class PDFOCRViewer {
             container.appendChild(overlay);
             this.blockOverlays.set(block.id, overlay);
         });
+
+        // 显示区块层（在多选模式或有选中区块时显示）
+        if (this.isBlockMode || this.selectedBlocks.length > 0 || this.selectedBlock) {
+            container.style.display = 'block';
+        }
 
         // 应用筛选
         this.updateBlockVisibility();
@@ -856,7 +860,9 @@ class PDFOCRViewer {
         // 如果不是显示全部区块模式，只显示选中的区块
         if (!this.isBlockMode) {
             this.blockOverlays.forEach((overlay, blockId) => {
-                if (this.selectedBlock && blockId === this.selectedBlock.id) {
+                const isSelected = this.selectedBlocks.some(b => b.id === blockId) || 
+                                   (this.selectedBlock && blockId === this.selectedBlock.id);
+                if (isSelected) {
                     overlay.style.display = 'block';
                 } else {
                     overlay.style.display = 'none';
@@ -894,23 +900,27 @@ class PDFOCRViewer {
         const layer = document.getElementById('ocr-blocks-layer');
         const btn = document.getElementById('toggle-ocr-blocks');
 
-        if (layer) {
-            layer.style.display = this.isBlockMode || this.selectedBlock ? 'block' : 'none';
-        }
-
         if (btn) {
             btn.classList.toggle('active', this.isBlockMode);
             btn.textContent = this.isBlockMode ? '隐藏全部区块' : '显示全部区块';
         }
 
         if (this.isBlockMode) {
+            // 开启多选模式
+            if (layer) {
+                layer.style.display = 'block';
+            }
             this.renderBlocks();
             this.updateBlockVisibility();
             // 自动打开悬浮面板显示识别文本
             this.showFloatingPanel();
         } else {
-            // 隐藏全部区块，但如果有选中的区块，仍然显示
+            // 关闭多选模式
             this.updateBlockVisibility();
+            // 如果没有选中的区块，隐藏区块层
+            if (layer && this.selectedBlocks.length === 0 && !this.selectedBlock) {
+                layer.style.display = 'none';
+            }
         }
         
         console.log(`[PDF-OCR] 全部区块显示模式: ${this.isBlockMode ? '开启' : '关闭'}`);
