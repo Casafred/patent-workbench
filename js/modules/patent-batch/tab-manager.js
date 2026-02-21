@@ -493,6 +493,12 @@ class PatentTabManager {
         // 清空之前的解读结果
         window.patentBatchAnalysisResults = [];
         
+        // 初始化正在解读的专利集合（用于弹窗实时显示）
+        window.patentBatchAnalyzing = new Set();
+        successfulResults.forEach(result => {
+            window.patentBatchAnalyzing.add(result.patent_number);
+        });
+        
         // 显示解读状态
         const searchStatus = document.getElementById('search_status');
         if (searchStatus) {
@@ -642,6 +648,35 @@ class PatentTabManager {
                     fromCache: fromCache
                 });
                 
+                // 立即添加到全局结果数组（用于弹窗实时显示）
+                if (!window.patentBatchAnalysisResults) {
+                    window.patentBatchAnalysisResults = [];
+                }
+                // 检查是否已存在，避免重复添加
+                const existingIndex = window.patentBatchAnalysisResults.findIndex(
+                    r => r.patent_number === patentNumber
+                );
+                if (existingIndex >= 0) {
+                    window.patentBatchAnalysisResults[existingIndex] = {
+                        patent_number: patentNumber,
+                        patent_data: result.data,
+                        analysis_content: analysisContent,
+                        fromCache: fromCache
+                    };
+                } else {
+                    window.patentBatchAnalysisResults.push({
+                        patent_number: patentNumber,
+                        patent_data: result.data,
+                        analysis_content: analysisContent,
+                        fromCache: fromCache
+                    });
+                }
+                
+                // 从正在解读的集合中移除（表示该专利解读完成）
+                if (window.patentBatchAnalyzing) {
+                    window.patentBatchAnalyzing.delete(patentNumber);
+                }
+                
                 // 即时更新专利详情弹窗中的解读结果
                 if (window.updatePatentDetailAnalysis) {
                     window.updatePatentDetailAnalysis(patentNumber, analysisContent, true, template);
@@ -658,6 +693,11 @@ class PatentTabManager {
 
             } catch (error) {
                 console.error(`解读专利 ${patentNumber} 失败:`, error);
+                
+                // 从正在解读的集合中移除
+                if (window.patentBatchAnalyzing) {
+                    window.patentBatchAnalyzing.delete(patentNumber);
+                }
                 
                 // 更新占位符显示错误
                 const placeholder = document.getElementById(placeholderId);

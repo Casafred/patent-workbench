@@ -55,6 +55,8 @@ def search_patents():
     
     Request body:
         - patent_numbers: List of patent numbers or string with space/newline separated numbers
+        - crawl_specification: Whether to crawl specification fields
+        - selected_fields: List of fields to crawl (if None, crawl all fields)
     
     Returns:
         List of patent search results
@@ -67,6 +69,11 @@ def search_patents():
         req_data = request.get_json()
         patent_numbers = req_data.get('patent_numbers', [])
         crawl_specification = req_data.get('crawl_specification', False)
+        selected_fields = req_data.get('selected_fields', None)
+        
+        print(f"[API] 收到爬取请求: {len(patent_numbers)} 个专利")
+        print(f"[API] crawl_specification: {crawl_specification}")
+        print(f"[API] selected_fields: {selected_fields}")
         
         # Handle string input
         if not isinstance(patent_numbers, list):
@@ -98,7 +105,11 @@ def search_patents():
         # Use simple scraper
         try:
             scraper = get_scraper_instance()
-            results = scraper.scrape_patents_batch(patent_numbers, crawl_specification=crawl_specification)
+            results = scraper.scrape_patents_batch(
+                patent_numbers, 
+                crawl_specification=crawl_specification,
+                selected_fields=selected_fields
+            )
             
             # Convert results to API format
             api_results = [result.to_dict() for result in results]

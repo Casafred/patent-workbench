@@ -104,12 +104,15 @@ function buildPatentDetailHTML(result, selectedFields) {
     });
     
     // 批量解读结果
-    const analysisResult = window.patentBatchAnalysisResults.find(item => item.patent_number === result.patent_number);
+    const analysisResult = window.patentBatchAnalysisResults && window.patentBatchAnalysisResults.find(item => item.patent_number === result.patent_number);
+    
+    // 检查是否正在解读中
+    const isAnalyzing = window.patentBatchAnalyzing && window.patentBatchAnalyzing.has(result.patent_number);
+    
     if (analysisResult) {
         let analysisJson = {};
         let displayContent = '';
         try {
-            // 尝试清理可能的markdown代码块标记
             let cleanContent = analysisResult.analysis_content.trim();
             if (cleanContent.startsWith('```json')) {
                 cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
@@ -155,15 +158,38 @@ function buildPatentDetailHTML(result, selectedFields) {
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                     <div>
                         <strong style="color: var(--primary-color);"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M7 2.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0 4a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0 4a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-2.5-4a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg> 批量解读结果:</strong>
-                        <span id="modal-analysis-status-${result.patent_number}" style="margin-left: 10px; font-size: 12px; color: #666;">已完成</span>
+                        <span id="modal-analysis-status-${result.patent_number}" style="margin-left: 10px; font-size: 12px; color: #28a745;">已完成</span>
                     </div>
                 </div>
-                <div id="modal-analysis-result-${result.patent_number}">
+                <div id="modal-analysis-result-${result.patent_number}" data-analysis-section="${result.patent_number}">
                     <div class="ai-disclaimer compact">
                         <div class="ai-disclaimer-icon">AI</div>
                         <div class="ai-disclaimer-text"><strong>AI生成：</strong>以下解读由AI生成，仅供参考</div>
                     </div>
                     ${displayContent}
+                </div>
+            </div>
+        `;
+    } else if (isAnalyzing) {
+        // 正在解读中，显示加载状态
+        htmlContent += `
+            <div style="margin-top: 15px; padding: 10px; background-color: #e3f2fd; border-radius: 5px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div>
+                        <strong style="color: var(--primary-color);"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M7 2.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0 4a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0 4a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-2.5-4a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg> 批量解读结果:</strong>
+                        <span id="modal-analysis-status-${result.patent_number}" style="margin-left: 10px; font-size: 12px; color: #ff9800;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="animation: spin 1s linear infinite; vertical-align: middle;">
+                                <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                            </svg>
+                            解读中...
+                        </span>
+                    </div>
+                </div>
+                <div id="modal-analysis-result-${result.patent_number}" data-analysis-section="${result.patent_number}" style="display: none;">
+                    <div class="ai-disclaimer compact">
+                        <div class="ai-disclaimer-icon">AI</div>
+                        <div class="ai-disclaimer-text"><strong>AI生成：</strong>以下解读由AI生成，仅供参考</div>
+                    </div>
                 </div>
             </div>
         `;

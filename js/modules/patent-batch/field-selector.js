@@ -177,7 +177,15 @@ window.getSelectedFields = function() {
         return [...baseFields, ...allOptionalFields];
     }
 
-    // 选择性爬取模式
+    // 选择性爬取模式 - 使用保存的字段选择或当前勾选的字段
+    const savedFields = loadFieldSelection();
+    
+    if (savedFields && savedFields.length > 0) {
+        console.log('📋 选择性爬取模式 - 使用保存的字段:', savedFields);
+        return [...baseFields, ...savedFields];
+    }
+
+    // 如果没有保存的字段，检查当前面板状态
     const panel = document.getElementById('field_selector_panel');
     const isPanelOpen = panel && panel.style.display === 'block';
 
@@ -193,6 +201,90 @@ window.getSelectedFields = function() {
         return [...baseFields, ...allOptionalFields];
     }
 };
+
+/**
+ * 保存字段选择到 localStorage
+ */
+window.saveFieldSelection = function() {
+    const optionalCheckboxes = document.querySelectorAll('#field_selector_panel input[type="checkbox"]:checked:not(:disabled)');
+    const selectedFields = Array.from(optionalCheckboxes).map(cb => cb.value).filter(v => v);
+    
+    try {
+        localStorage.setItem('patent_field_selection', JSON.stringify(selectedFields));
+        console.log('✅ 字段选择已保存:', selectedFields);
+        
+        // 显示保存成功提示
+        const btn = document.getElementById('save_field_selection_btn');
+        if (btn) {
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 6px;">
+                    <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
+                </svg>
+                已保存
+            `;
+            btn.style.background = '#4caf50';
+            
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.style.background = '';
+            }, 2000);
+        }
+        
+        // 更新字段计数
+        updateFieldCount();
+        
+    } catch (e) {
+        console.error('保存字段选择失败:', e);
+        alert('保存失败，请重试');
+    }
+};
+
+/**
+ * 从 localStorage 加载字段选择
+ */
+function loadFieldSelection() {
+    try {
+        const saved = localStorage.getItem('patent_field_selection');
+        if (saved) {
+            return JSON.parse(saved);
+        }
+    } catch (e) {
+        console.error('加载字段选择失败:', e);
+    }
+    return null;
+}
+
+/**
+ * 恢复保存的字段选择到UI
+ */
+function restoreFieldSelection() {
+    const savedFields = loadFieldSelection();
+    if (!savedFields || savedFields.length === 0) {
+        return;
+    }
+    
+    console.log('📋 恢复保存的字段选择:', savedFields);
+    
+    // 先取消所有可选字段
+    const allCheckboxes = document.querySelectorAll('#field_selector_panel input[type="checkbox"]:not(:disabled)');
+    allCheckboxes.forEach(cb => {
+        cb.checked = false;
+        cb.closest('.field-option')?.classList.remove('checked');
+    });
+    
+    // 勾选保存的字段
+    savedFields.forEach(fieldName => {
+        const checkbox = document.querySelector(`#field_selector_panel input[type="checkbox"][value="${fieldName}"]`);
+        if (checkbox) {
+            checkbox.checked = true;
+            checkbox.closest('.field-option')?.classList.add('checked');
+        }
+    });
+    
+    // 更新字段计数
+    updateFieldCount();
+}
 
 /**
  * 获取所有字段列表（用于全爬取模式）
@@ -313,6 +405,9 @@ window.initFieldSelector = function() {
 
     // 初始化字段计数
     updateFieldCount();
+
+    // 恢复保存的字段选择
+    restoreFieldSelection();
 
     // 初始化性能警告
     checkPerformanceWarning();

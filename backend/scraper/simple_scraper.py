@@ -134,7 +134,7 @@ class SimplePatentScraper:
             'Sec-Fetch-User': '?1'
         })
     
-    def scrape_patent(self, patent_number: str, crawl_specification: bool = False, crawl_full_drawings: bool = False) -> SimplePatentResult:
+    def scrape_patent(self, patent_number: str, crawl_specification: bool = False, crawl_full_drawings: bool = False, selected_fields: List[str] = None) -> SimplePatentResult:
         """
         Scrape a single patent.
         
@@ -142,12 +142,13 @@ class SimplePatentScraper:
             patent_number: Patent number to scrape
             crawl_specification: Whether to crawl specification fields (claims and description)
             crawl_full_drawings: Whether to crawl all drawings or just the first one
+            selected_fields: List of fields to crawl (if None, crawl all fields)
             
         Returns:
             SimplePatentResult with scraped data
         """
         start_time = time.time()
-        logger.info(f"开始爬取专利: {patent_number}, crawl_specification={crawl_specification}, crawl_full_drawings={crawl_full_drawings}")
+        logger.info(f"开始爬取专利: {patent_number}, crawl_specification={crawl_specification}, crawl_full_drawings={crawl_full_drawings}, selected_fields={selected_fields}")
         
         try:
             url = f'https://patents.google.com/patent/{patent_number}'
@@ -163,7 +164,7 @@ class SimplePatentScraper:
             soup = BeautifulSoup(response.text, 'lxml')
             
             # Extract data
-            patent_data = self._extract_patent_data(soup, patent_number, url, crawl_specification=crawl_specification, crawl_full_drawings=crawl_full_drawings)
+            patent_data = self._extract_patent_data(soup, patent_number, url, crawl_specification=crawl_specification, crawl_full_drawings=crawl_full_drawings, selected_fields=selected_fields)
             
             # 添加调试日志
             logger.info(f"专利 {patent_number} 提取结果:")
@@ -210,9 +211,24 @@ class SimplePatentScraper:
                 processing_time=processing_time
             )
     
-    def _extract_patent_data(self, soup: BeautifulSoup, patent_number: str, url: str, crawl_specification: bool = False, crawl_full_drawings: bool = False) -> Optional[SimplePatentData]:
-        """Extract patent data from HTML."""
+    def _extract_patent_data(self, soup: BeautifulSoup, patent_number: str, url: str, crawl_specification: bool = False, crawl_full_drawings: bool = False, selected_fields: List[str] = None) -> Optional[SimplePatentData]:
+        """Extract patent data from HTML.
+        
+        Args:
+            soup: BeautifulSoup object
+            patent_number: Patent number
+            url: Patent URL
+            crawl_specification: Whether to crawl specification fields
+            crawl_full_drawings: Whether to crawl all drawings
+            selected_fields: List of fields to crawl (if None, crawl all fields)
+        """
         patent_data = SimplePatentData(patent_number=patent_number, url=url)
+        
+        # Helper function to check if a field should be crawled
+        def should_crawl_field(field_name: str) -> bool:
+            if selected_fields is None or len(selected_fields) == 0:
+                return True
+            return field_name in selected_fields
         
         # Try JSON-LD first (most reliable)
         try:
@@ -465,7 +481,7 @@ class SimplePatentScraper:
             patent_data.claims = []
         
         # Extract description
-        if crawl_specification:
+        if crawl_specification and should_crawl_field('description'):
             try:
                 description = ''
                 description_section = soup.find('section', {'itemprop': 'description'})
@@ -649,7 +665,7 @@ class SimplePatentScraper:
             logger.warning(f"⚠️ No drawings found for {patent_number}. Google Patents loads images dynamically with JavaScript.")
         
         # Extract Patent Citations (引用的专利)
-        if crawl_specification:
+        if crawl_specification and should_crawl_field('patent_citations'):
             try:
                 citations = []
                 
@@ -755,7 +771,7 @@ class SimplePatentScraper:
                 patent_data.patent_citations = []
         
         # Extract Cited By (被引用的专利)
-        if crawl_specification:
+        if crawl_specification and should_crawl_field('cited_by'):
             try:
                 cited_by = []
                 cited_by_h3 = soup.find('h3', {'id': 'citedBy'})
@@ -788,7 +804,7 @@ class SimplePatentScraper:
                 patent_data.cited_by = []
         
         # Extract Events Timeline (事件时间轴 - 申请、公开、授权等关键事件)
-        if crawl_specification:
+        if crawl_specification and should_crawl_field('events_timeline'):
             try:
                 events_timeline = []
                 
@@ -846,7 +862,7 @@ class SimplePatentScraper:
                 patent_data.events_timeline = []
         
         # Extract Legal Events (法律事件 - USPTO法律状态代码)
-        if crawl_specification:
+        if crawl_specification and should_crawl_field('legal_events'):
             try:
                 legal_events = []
                 
@@ -935,8 +951,8 @@ class SimplePatentScraper:
                 logger.warning(f"Error extracting legal events for {patent_number}: {e}")
                 patent_data.legal_events = []
         
-        # Extract Similar Documents (相似文档)
-        if crawl_specification:
+        # Extract SimilarDocuments (相似文档)
+        if crawl_specification and should_crawl_field('similar_documents'):
             try:
                 similar_documents = []
                 # 查找带有similarDocuments属性的tr元素
@@ -975,158 +991,162 @@ class SimplePatentScraper:
                 logger.warning(f"Error extracting similar documents for {patent_number}: {e}")
                 patent_data.similar_documents = []
         
-        # Extract CPC Classifications (CPC分类信息) - 始终提取
-        try:
-            classifications = []
-            
-            # 查找分类部分
-            classifications_section = soup.find('section')
-            if classifications_section:
-                # 查找所有带有itemprop='classifications'的ul元素
-                classification_lists = soup.find_all('ul', {'itemprop': 'classifications'})
+        # Extract CPC Classifications (CPC分类信息)
+        if should_crawl_field('classifications'):
+            try:
+                classifications = []
                 
-                for ul in classification_lists:
-                    # 每个ul代表一个完整的分类路径
-                    classification_items = ul.find_all('li', {'itemprop': 'classifications'})
+                # 查找分类部分
+                classifications_section = soup.find('section')
+                if classifications_section:
+                    # 查找所有带有itemprop='classifications'的ul元素
+                    classification_lists = soup.find_all('ul', {'itemprop': 'classifications'})
                     
-                    if classification_items:
-                        # 构建完整的分类路径
-                        codes = []
-                        descriptions = []
-                        is_cpc = False
-                        is_leaf = False
+                    for ul in classification_lists:
+                        # 每个ul代表一个完整的分类路径
+                        classification_items = ul.find_all('li', {'itemprop': 'classifications'})
                         
-                        for item in classification_items:
-                            code_elem = item.find('span', {'itemprop': 'Code'})
-                            desc_elem = item.find('span', {'itemprop': 'Description'})
+                        if classification_items:
+                            # 构建完整的分类路径
+                            codes = []
+                            descriptions = []
+                            is_cpc = False
+                            is_leaf = False
                             
-                            if code_elem:
-                                codes.append(code_elem.get_text().strip())
-                            if desc_elem:
-                                descriptions.append(desc_elem.get_text().strip())
-                            
-                            # 检查是否为CPC分类
-                            is_cpc_meta = item.find('meta', {'itemprop': 'IsCPC'})
-                            if is_cpc_meta and is_cpc_meta.get('content') == 'true':
-                                is_cpc = True
-                            
-                            # 检查是否为叶子节点
-                            is_leaf_meta = item.find('meta', {'itemprop': 'Leaf'})
-                            if is_leaf_meta and is_leaf_meta.get('content') == 'true':
-                                is_leaf = True
-                        
-                        if codes:
-                            classifications.append({
-                                'code': ' → '.join(codes),  # 完整分类路径
-                                'description': ' → '.join(descriptions),
-                                'leaf_code': codes[-1] if codes else '',  # 最终分类代码
-                                'leaf_description': descriptions[-1] if descriptions else '',
-                                'is_cpc': is_cpc,
-                                'is_leaf': is_leaf
-                            })
-            
-            patent_data.classifications = classifications[:20]  # 限制前20条
-            logger.info(f"提取到 {len(classifications)} 个分类信息")
-        except Exception as e:
-            logger.warning(f"Error extracting classifications for {patent_number}: {e}")
-            patent_data.classifications = []
-        
-        # Extract Landscapes (技术领域) - 始终提取
-        try:
-            landscapes = []
-            
-            # 查找技术领域部分
-            landscapes_section = None
-            for section in soup.find_all('section'):
-                h2 = section.find('h2')
-                if h2 and 'Landscapes' in h2.get_text():
-                    landscapes_section = section
-                    break
-            
-            if landscapes_section:
-                landscape_items = landscapes_section.find_all('li', {'itemprop': 'landscapes'})
-                
-                for item in landscape_items:
-                    name_elem = item.find('span', {'itemprop': 'name'})
-                    type_elem = item.find('span', {'itemprop': 'type'})
-                    
-                    if name_elem:
-                        landscapes.append({
-                            'name': name_elem.get_text().strip(),
-                            'type': type_elem.get_text().strip() if type_elem else ''
-                        })
-            
-            patent_data.landscapes = landscapes
-            logger.info(f"提取到 {len(landscapes)} 个技术领域")
-        except Exception as e:
-            logger.warning(f"Error extracting landscapes for {patent_number}: {e}")
-            patent_data.landscapes = []
-        
-        # Extract Priority Date (优先权日期) - 始终提取
-        try:
-            if not patent_data.priority_date:
-                priority_date_elem = soup.find('time', {'itemprop': 'priorityDate'})
-                if priority_date_elem:
-                    patent_data.priority_date = priority_date_elem.get('datetime', '') or priority_date_elem.get_text().strip()
-                    logger.info(f"提取到优先权日期: {patent_data.priority_date}")
-        except Exception as e:
-            logger.warning(f"Error extracting priority date for {patent_number}: {e}")
-        
-        # Extract External Links (外部链接) - 始终提取
-        try:
-            external_links = {}
-            
-            # 方法1: 直接查找所有带有itemprop='links'的li元素
-            link_items = soup.find_all('li', {'itemprop': 'links'})
-            
-            if link_items:
-                for item in link_items:
-                    id_elem = item.find('meta', {'itemprop': 'id'})
-                    url_elem = item.find('a', {'itemprop': 'url'})
-                    text_elem = item.find('span', {'itemprop': 'text'})
-                    
-                    if id_elem and url_elem:
-                        link_id = id_elem.get('content', '')
-                        link_url = url_elem.get('href', '')
-                        link_text = text_elem.get_text().strip() if text_elem else link_id
-                        
-                        if link_id and link_url:
-                            external_links[link_id] = {
-                                'text': link_text,
-                                'url': link_url
-                            }
-            else:
-                # 方法2: 查找Links标题后的ul
-                for h2 in soup.find_all('h2'):
-                    if 'Links' in h2.get_text():
-                        links_ul = h2.find_next('ul')
-                        if links_ul:
-                            link_items = links_ul.find_all('li')
-                            for item in link_items:
-                                id_elem = item.find('meta', {'itemprop': 'id'})
-                                url_elem = item.find('a')
-                                text_elem = item.find('span', {'itemprop': 'text'})
+                            for item in classification_items:
+                                code_elem = item.find('span', {'itemprop': 'Code'})
+                                desc_elem = item.find('span', {'itemprop': 'Description'})
                                 
-                                if id_elem and url_elem:
-                                    link_id = id_elem.get('content', '')
-                                    link_url = url_elem.get('href', '')
-                                    link_text = text_elem.get_text().strip() if text_elem else link_id
-                                    
-                                    if link_id and link_url:
-                                        external_links[link_id] = {
-                                            'text': link_text,
-                                            'url': link_url
-                                        }
-                        break
-            
-            patent_data.external_links = external_links
-            logger.info(f"提取到 {len(external_links)} 个外部链接")
-        except Exception as e:
-            logger.warning(f"Error extracting external links for {patent_number}: {e}")
-            patent_data.external_links = {}
+                                if code_elem:
+                                    codes.append(code_elem.get_text().strip())
+                                if desc_elem:
+                                    descriptions.append(desc_elem.get_text().strip())
+                                
+                                # 检查是否为CPC分类
+                                is_cpc_meta = item.find('meta', {'itemprop': 'IsCPC'})
+                                if is_cpc_meta and is_cpc_meta.get('content') == 'true':
+                                    is_cpc = True
+                                
+                                # 检查是否为叶子节点
+                                is_leaf_meta = item.find('meta', {'itemprop': 'Leaf'})
+                                if is_leaf_meta and is_leaf_meta.get('content') == 'true':
+                                    is_leaf = True
+                            
+                            if codes:
+                                classifications.append({
+                                    'code': ' → '.join(codes),  # 完整分类路径
+                                    'description': ' → '.join(descriptions),
+                                    'leaf_code': codes[-1] if codes else '',  # 最终分类代码
+                                    'leaf_description': descriptions[-1] if descriptions else '',
+                                    'is_cpc': is_cpc,
+                                    'is_leaf': is_leaf
+                                })
+                
+                patent_data.classifications = classifications[:20]  # 限制前20条
+                logger.info(f"提取到 {len(classifications)} 个分类信息")
+            except Exception as e:
+                logger.warning(f"Error extracting classifications for {patent_number}: {e}")
+                patent_data.classifications = []
         
-        # Extract Family Information (同族信息) - 当crawl_specification=True时提取
-        if crawl_specification:
+        # Extract Landscapes (技术领域)
+        if should_crawl_field('landscapes'):
+            try:
+                landscapes = []
+                
+                # 查找技术领域部分
+                landscapes_section = None
+                for section in soup.find_all('section'):
+                    h2 = section.find('h2')
+                    if h2 and 'Landscapes' in h2.get_text():
+                        landscapes_section = section
+                        break
+                
+                if landscapes_section:
+                    landscape_items = landscapes_section.find_all('li', {'itemprop': 'landscapes'})
+                    
+                    for item in landscape_items:
+                        name_elem = item.find('span', {'itemprop': 'name'})
+                        type_elem = item.find('span', {'itemprop': 'type'})
+                        
+                        if name_elem:
+                            landscapes.append({
+                                'name': name_elem.get_text().strip(),
+                                'type': type_elem.get_text().strip() if type_elem else ''
+                            })
+                
+                patent_data.landscapes = landscapes
+                logger.info(f"提取到 {len(landscapes)} 个技术领域")
+            except Exception as e:
+                logger.warning(f"Error extracting landscapes for {patent_number}: {e}")
+                patent_data.landscapes = []
+        
+        # Extract Priority Date (优先权日期)
+        if should_crawl_field('priority_date'):
+            try:
+                if not patent_data.priority_date:
+                    priority_date_elem = soup.find('time', {'itemprop': 'priorityDate'})
+                    if priority_date_elem:
+                        patent_data.priority_date = priority_date_elem.get('datetime', '') or priority_date_elem.get_text().strip()
+                        logger.info(f"提取到优先权日期: {patent_data.priority_date}")
+            except Exception as e:
+                logger.warning(f"Error extracting priority date for {patent_number}: {e}")
+        
+        # Extract External Links (外部链接)
+        if should_crawl_field('external_links'):
+            try:
+                external_links = {}
+                
+                # 方法1: 直接查找所有带有itemprop='links'的li元素
+                link_items = soup.find_all('li', {'itemprop': 'links'})
+                
+                if link_items:
+                    for item in link_items:
+                        id_elem = item.find('meta', {'itemprop': 'id'})
+                        url_elem = item.find('a', {'itemprop': 'url'})
+                        text_elem = item.find('span', {'itemprop': 'text'})
+                        
+                        if id_elem and url_elem:
+                            link_id = id_elem.get('content', '')
+                            link_url = url_elem.get('href', '')
+                            link_text = text_elem.get_text().strip() if text_elem else link_id
+                            
+                            if link_id and link_url:
+                                external_links[link_id] = {
+                                    'text': link_text,
+                                    'url': link_url
+                                }
+                else:
+                    # 方法2: 查找Links标题后的ul
+                    for h2 in soup.find_all('h2'):
+                        if 'Links' in h2.get_text():
+                            links_ul = h2.find_next('ul')
+                            if links_ul:
+                                link_items = links_ul.find_all('li')
+                                for item in link_items:
+                                    id_elem = item.find('meta', {'itemprop': 'id'})
+                                    url_elem = item.find('a')
+                                    text_elem = item.find('span', {'itemprop': 'text'})
+                                    
+                                    if id_elem and url_elem:
+                                        link_id = id_elem.get('content', '')
+                                        link_url = url_elem.get('href', '')
+                                        link_text = text_elem.get_text().strip() if text_elem else link_id
+                                        
+                                        if link_id and link_url:
+                                            external_links[link_id] = {
+                                                'text': link_text,
+                                                'url': link_url
+                                            }
+                            break
+                
+                patent_data.external_links = external_links
+                logger.info(f"提取到 {len(external_links)} 个外部链接")
+            except Exception as e:
+                logger.warning(f"Error extracting external links for {patent_number}: {e}")
+                patent_data.external_links = {}
+        
+        # Extract Family Information (同族信息)
+        if crawl_specification and (should_crawl_field('family_id') or should_crawl_field('family_applications') or should_crawl_field('country_status')):
             try:
                 # Extract Family ID
                 family_section = soup.find('section', {'itemprop': 'family'})
@@ -1277,7 +1297,7 @@ class SimplePatentScraper:
                 patent_data.country_status = []
         
         # Improve Cited By extraction (改进被引用专利提取)
-        if crawl_specification:
+        if crawl_specification and should_crawl_field('cited_by'):
             try:
                 cited_by = []
                 
@@ -1340,7 +1360,7 @@ class SimplePatentScraper:
         
         return patent_data
     
-    def scrape_patents_batch(self, patent_numbers: List[str], crawl_specification: bool = False, crawl_full_drawings: bool = False) -> List[SimplePatentResult]:
+    def scrape_patents_batch(self, patent_numbers: List[str], crawl_specification: bool = False, crawl_full_drawings: bool = False, selected_fields: List[str] = None) -> List[SimplePatentResult]:
         """
         Scrape multiple patents.
         
@@ -1348,6 +1368,7 @@ class SimplePatentScraper:
             patent_numbers: List of patent numbers to scrape
             crawl_specification: Whether to crawl specification fields (claims and description)
             crawl_full_drawings: Whether to crawl all drawings or just the first one for each patent
+            selected_fields: List of fields to crawl (if None, crawl all fields)
             
         Returns:
             List of SimplePatentResult objects
@@ -1357,7 +1378,7 @@ class SimplePatentScraper:
         for i, patent_number in enumerate(patent_numbers):
             logger.info(f"Scraping patent {i+1}/{len(patent_numbers)}: {patent_number}")
             
-            result = self.scrape_patent(patent_number, crawl_specification=crawl_specification, crawl_full_drawings=crawl_full_drawings)
+            result = self.scrape_patent(patent_number, crawl_specification=crawl_specification, crawl_full_drawings=crawl_full_drawings, selected_fields=selected_fields)
             results.append(result)
             
             # Add delay between requests (except for last one)
