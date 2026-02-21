@@ -304,9 +304,23 @@ class UserCacheImporter {
         let saved = 0;
         let failed = 0;
 
+        const dataTypes = window.userCacheManager.getDataTypes();
+        const rawStringKeys = new Set();
+        Object.values(dataTypes).forEach(type => {
+            if (type.isRawString) {
+                rawStringKeys.add(type.key);
+            }
+        });
+
         Object.entries(mergedData).forEach(([category, categoryData]) => {
             Object.entries(categoryData).forEach(([key, value]) => {
-                if (window.userCacheManager.setJSON(key, value)) {
+                let success;
+                if (rawStringKeys.has(key)) {
+                    success = window.userCacheManager.set(key, value);
+                } else {
+                    success = window.userCacheManager.setJSON(key, value);
+                }
+                if (success) {
                     saved++;
                 } else {
                     failed++;

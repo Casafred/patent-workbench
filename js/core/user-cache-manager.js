@@ -30,7 +30,8 @@ class UserCacheManager {
                 name: '当前对话ID',
                 category: 'chat',
                 exportable: true,
-                hasTimestamp: false
+                hasTimestamp: false,
+                isRawString: true
             },
             CHAT_FILE_CACHE: {
                 key: 'parsedFilesCache',
@@ -224,6 +225,9 @@ class UserCacheManager {
 
         if (type.isPrefix) {
             return this.getStorage().getDataByPrefix(type.key);
+        } else if (type.isRawString) {
+            const data = this.get(type.key);
+            return data !== null ? { [type.key]: data } : null;
         } else {
             const data = this.getJSON(type.key);
             return data !== null ? { [type.key]: data } : null;
