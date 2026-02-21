@@ -144,6 +144,55 @@ window.openPatentDetailInNewTab = function(patentNumber) {
         return false;
     }
     
+    // 字段到导航项的映射
+    const fieldToNavMap = {
+        'classifications': 'classifications',
+        'landscapes': 'landscapes',
+        'claims': 'claims',
+        'events_timeline': 'timeline',
+        'legal_events': 'legal-events',
+        'family_id': 'family',
+        'family_applications': 'family',
+        'country_status': 'family',
+        'external_links': 'external-links',
+        'patent_citations': 'citations',
+        'cited_by': 'cited-by',
+        'similar_documents': 'similar',
+        'description': 'description'
+    };
+    
+    // 检查导航项对应的字段是否被选中
+    function isNavFieldSelected(navId) {
+        if (!selectedFields || selectedFields.length === 0) {
+            return true;
+        }
+        
+        // 基础字段始终可选
+        const baseNavIds = ['abstract', 'basic-info'];
+        if (baseNavIds.includes(navId)) {
+            return true;
+        }
+        
+        // 找到导航ID对应的字段
+        for (const [field, nav] of Object.entries(fieldToNavMap)) {
+            if (nav === navId) {
+                return selectedFields.includes(field);
+            }
+        }
+        
+        return true;
+    }
+    
+    // 生成导航项HTML
+    function buildNavItem(navId, icon, label) {
+        const isSelected = isNavFieldSelected(navId);
+        if (isSelected) {
+            return `<a href="#${navId}" class="side-nav-item" data-section="${navId}">${icon} ${label}</a>`;
+        } else {
+            return `<a href="#" class="side-nav-item disabled" data-section="${navId}" onclick="event.preventDefault(); return false;" title="该字段未被爬取" style="color: #ccc; cursor: not-allowed;">${icon} <span style="text-decoration: line-through;">${label}</span></a>`;
+        }
+    }
+    
     // 构建完整的HTML页面 - 绿色主题 + 左侧导航
     const htmlContent = `
         <!DOCTYPE html>
@@ -211,6 +260,18 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%);
                     color: white;
                     font-weight: 600;
+                }
+                
+                .side-nav-item.disabled {
+                    color: #ccc;
+                    cursor: not-allowed;
+                    opacity: 0.6;
+                }
+                
+                .side-nav-item.disabled:hover {
+                    background: transparent;
+                    color: #ccc;
+                    transform: none;
                 }
                 
                 .side-nav::-webkit-scrollbar {
@@ -690,19 +751,19 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     顶部
                 </a>
                 ${analysisResult ? '<a href="#analysis-result" class="side-nav-item" data-section="analysis-result">🤖 AI解读</a>' : ''}
-                <a href="#abstract" class="side-nav-item" data-section="abstract">📄 摘要</a>
-                <a href="#basic-info" class="side-nav-item" data-section="basic-info">ℹ️ 基本信息</a>
-                <a href="#classifications" class="side-nav-item" data-section="classifications">🏷️ CPC分类</a>
-                <a href="#landscapes" class="side-nav-item" data-section="landscapes">🌐 技术领域</a>
-                <a href="#claims" class="side-nav-item" data-section="claims">⚖️ 权利要求</a>
-                <a href="#timeline" class="side-nav-item" data-section="timeline">📅 事件时间轴</a>
-                <a href="#legal-events" class="side-nav-item" data-section="legal-events">⚖️ 法律事件</a>
-                <a href="#family" class="side-nav-item" data-section="family">👨‍👩‍👧‍👦 同族信息</a>
-                <a href="#external-links" class="side-nav-item" data-section="external-links">🔗 外部链接</a>
-                <a href="#citations" class="side-nav-item" data-section="citations">📚 引用专利</a>
-                <a href="#cited-by" class="side-nav-item" data-section="cited-by">🔗 被引用</a>
-                <a href="#similar" class="side-nav-item" data-section="similar">📋 相似文档</a>
-                <a href="#description" class="side-nav-item" data-section="description">📝 说明书</a>
+                ${buildNavItem('abstract', '📄', '摘要')}
+                ${buildNavItem('basic-info', 'ℹ️', '基本信息')}
+                ${buildNavItem('classifications', '🏷️', 'CPC分类')}
+                ${buildNavItem('landscapes', '🌐', '技术领域')}
+                ${buildNavItem('claims', '⚖️', '权利要求')}
+                ${buildNavItem('timeline', '📅', '事件时间轴')}
+                ${buildNavItem('legal-events', '⚖️', '法律事件')}
+                ${buildNavItem('family', '👨‍👩‍👧‍👦', '同族信息')}
+                ${buildNavItem('external-links', '🔗', '外部链接')}
+                ${buildNavItem('citations', '📚', '引用专利')}
+                ${buildNavItem('cited-by', '🔗', '被引用')}
+                ${buildNavItem('similar', '📋', '相似文档')}
+                ${buildNavItem('description', '📝', '说明书')}
             </nav>
             
             <div class="container">
