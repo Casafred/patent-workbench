@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>申请使用 - 专利分析智能工作台</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #22C55E;
+            --primary-color-dark: #16A34A;
+            --bg-color: #F0FDF4;
+            --surface-color: #FFFFFF;
+            --text-color: #14532D;
+            --error-color: #EF4444;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 480px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: var(--primary-color-dark);
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--text-color);
+            font-weight: 500;
+            font-size: 14px;
+        }
+        .form-group label .required {
+            color: var(--error-color);
+        }
+        input, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #E5E7EB;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+        }
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(45deg, var(--primary-color-dark), var(--primary-color));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(34, 197, 94, 0.3);
+        }
+        .submit-btn:disabled {
+            background: #9CA3AF;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+        .message.success {
+            background: #DCFCE7;
+            color: #166534;
+            border: 1px solid #86EFAC;
+        }
+        .message.error {
+            background: #FEE2E2;
+            color: #991B1B;
+            border: 1px solid #FCA5A5;
+        }
+        .message.show { display: block; }
+        .back-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .back-link a {
+            color: var(--primary-color-dark);
+            text-decoration: none;
+        }
+        .back-link a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>申请使用账号</h1>
+            <p>请填写以下信息，审核通过后将获得使用账号</p>
+        </div>
+        
+        <div id="message" class="message"></div>
+        
+        <form id="register-form">
+            <div class="form-group">
+                <label>昵称 <span class="required">*</span></label>
+                <input type="text" name="name" required placeholder="仅用于方便沟通交流称呼用">
+                <small style="color: #666; font-size: 12px; margin-top: 4px; display: block;">仅用于方便沟通交流称呼用</small>
+            </div>
+            <div class="form-group">
+                <label>邮箱 <span class="required">*</span></label>
+                <input type="email" name="email" required placeholder="用于接收审核结果和账号信息">
+            </div>
+            <div class="form-group">
+                <label>手机号</label>
+                <input type="tel" name="phone" placeholder="选填">
+            </div>
+            <div class="form-group">
+                <label>单位/公司</label>
+                <input type="text" name="company" placeholder="选填">
+            </div>
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="followed_wechat" id="followed-wechat" style="width: 18px; height: 18px;">
+                    <span>我已关注公众号「IP智友」</span>
+                </label>
+            </div>
+            <div class="form-group" id="wechat-nickname-group" style="display: none;">
+                <label>微信昵称 <span class="required">*</span></label>
+                <input type="text" name="wechat_nickname" placeholder="请填写您的微信昵称，方便我们在后台找到您">
+                <small style="color: #666; font-size: 12px; margin-top: 4px; display: block;">仅用于在公众号后台识别用户，不作他用</small>
+            </div>
+            <div class="form-group">
+                <label>申请理由</label>
+                <textarea name="reason" placeholder="请简要说明您的使用需求（选填）"></textarea>
+            </div>
+            <button type="submit" class="submit-btn" id="submit-btn">提交申请</button>
+        </form>
+        
+        <div class="back-link">
+            <a href="/login">返回登录页</a>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('register-form');
+        const messageEl = document.getElementById('message');
+        const submitBtn = document.getElementById('submit-btn');
+        const followedWechat = document.getElementById('followed-wechat');
+        const wechatNicknameGroup = document.getElementById('wechat-nickname-group');
+        const wechatNicknameInput = document.querySelector('input[name="wechat_nickname"]');
+
+        followedWechat.addEventListener('change', function() {
+            wechatNicknameGroup.style.display = this.checked ? 'block' : 'none';
+            wechatNicknameInput.required = this.checked;
+            if (!this.checked) {
+                wechatNicknameInput.value = '';
+            }
+        });
+
+        function showMessage(text, type) {
+            messageEl.textContent = text;
+            messageEl.className = 'message ' + type + ' show';
+        }
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (followedWechat.checked && !wechatNicknameInput.value.trim()) {
+                showMessage('请填写微信昵称', 'error');
+                return;
+            }
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = '提交中...';
+            
+            const formData = new FormData(form);
+            const data = {
+                name: formData.get('name'),
+                email: formData.get('email'),
+                phone: formData.get('phone') || '',
+                company: formData.get('company') || '',
+                followed_wechat: followedWechat.checked,
+                wechat_nickname: formData.get('wechat_nickname') || '',
+                reason: formData.get('reason') || ''
+            };
+
+            try {
+                const response = await fetch('/api/register/apply', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage(result.message, 'success');
+                    form.reset();
+                    wechatNicknameGroup.style.display = 'none';
+                } else {
+                    showMessage(result.message, 'error');
+                }
+            } catch (error) {
+                showMessage('提交失败，请稍后重试', 'error');
+            }
+            
+            submitBtn.disabled = false;
+            submitBtn.textContent = '提交申请';
+        });
+    </script>
+</body>
+</html>

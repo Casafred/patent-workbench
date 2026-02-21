@@ -34,7 +34,8 @@ def create_app(config_class=Config):
     # Create Flask app
     app = Flask(__name__, 
                 static_folder=Config.STATIC_FOLDER,
-                static_url_path=Config.STATIC_URL_PATH)
+                static_url_path=Config.STATIC_URL_PATH,
+                template_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates'))
     
     # Load configuration
     app.config.from_object(config_class)
