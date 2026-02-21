@@ -20,7 +20,7 @@ class UserDataModal {
 
         const overlay = document.createElement('div');
         overlay.id = 'user-data-modal-overlay';
-        overlay.className = 'user-data-modal-overlay';
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:100000;';
         overlay.onclick = () => this.closeModal();
 
         const modal = document.createElement('div');
@@ -308,7 +308,7 @@ class UserDataModal {
 
         const overlay = document.createElement('div');
         overlay.id = 'user-data-modal-overlay';
-        overlay.className = 'user-data-modal-overlay';
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:100000;';
         overlay.onclick = () => this.closeModal();
 
         const modal = document.createElement('div');

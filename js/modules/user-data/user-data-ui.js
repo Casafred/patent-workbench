@@ -71,7 +71,7 @@ class UserDataUI {
 
         const overlay = document.createElement('div');
         overlay.id = 'user-data-overlay';
-        overlay.className = 'user-data-overlay';
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:99998;';
         overlay.onclick = () => this.hideDataPanel();
 
         const panel = document.createElement('div');
