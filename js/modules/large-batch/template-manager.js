@@ -177,13 +177,13 @@ function initPresetTemplateSelector() {
 }
 
 /**
- * 加载自定义模板
+ * 加载自定义模板 (用户隔离)
  */
 function loadCustomTemplates() {
     try {
-        const stored = localStorage.getItem('large_batch_custom_templates');
+        const stored = window.userCacheStorage.getJSON('large_batch_custom_templates');
         if (stored) {
-            window.appState.largeBatch.customTemplates = JSON.parse(stored);
+            window.appState.largeBatch.customTemplates = stored;
             console.log(`📂 加载了 ${window.appState.largeBatch.customTemplates.length} 个自定义模板`);
         }
     } catch (e) {
@@ -193,13 +193,13 @@ function loadCustomTemplates() {
 }
 
 /**
- * 保存自定义模板到 localStorage
+ * 保存自定义模板到 localStorage (用户隔离)
  */
 function saveCustomTemplates() {
     try {
-        localStorage.setItem(
+        window.userCacheStorage.setJSON(
             'large_batch_custom_templates',
-            JSON.stringify(window.appState.largeBatch.customTemplates)
+            window.appState.largeBatch.customTemplates
         );
         console.log('✅ 自定义模板已保存');
     } catch (e) {

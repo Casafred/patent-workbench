@@ -1,5 +1,5 @@
 /**
- * Drawing OCR Cache Manager (Frontend)
+ * Drawing OCR Cache Manager (Frontend) - 用户隔离版
  * 
  * Manages OCR result caching on the frontend and provides
  * cache update confirmation dialogs.
@@ -12,20 +12,25 @@ class DrawingCacheManager {
     }
 
     /**
+     * 获取用户隔离存储实例
+     */
+    _getStorage() {
+        return window.userCacheStorage;
+    }
+
+    /**
      * Generate cache key from image data
      * @param {string} imageData - Base64 image data
      * @param {string} fileName - File name
      * @returns {string} Cache key
      */
     generateCacheKey(imageData, fileName) {
-        // Use a simple hash based on file name and data length
-        // For better hashing, consider using crypto.subtle.digest
         const dataHash = this._simpleHash(imageData);
         return `${fileName}_${dataHash}`;
     }
 
     /**
-     * Check if cache exists for given key
+     * Check if cache exists for given key (用户隔离)
      * @param {string} cacheKey - Cache key
      * @returns {Object|null} Cached data or null
      */
@@ -38,7 +43,6 @@ class DrawingCacheManager {
                 return null;
             }
 
-            // Check if expired
             const age = Date.now() - cached.timestamp;
             if (age > this.maxCacheAge) {
                 this.clearCache(cacheKey);
@@ -53,7 +57,7 @@ class DrawingCacheManager {
     }
 
     /**
-     * Save OCR result to cache
+     * Save OCR result to cache (用户隔离)
      * @param {string} cacheKey - Cache key
      * @param {Object} data - OCR result data
      */
@@ -71,7 +75,7 @@ class DrawingCacheManager {
     }
 
     /**
-     * Clear specific cache or all cache
+     * Clear specific cache or all cache (用户隔离)
      * @param {string|null} cacheKey - Cache key (null = clear all)
      */
     clearCache(cacheKey = null) {
@@ -81,7 +85,7 @@ class DrawingCacheManager {
                 delete allCache[cacheKey];
                 this._saveAllCache(allCache);
             } else {
-                localStorage.removeItem(this.cacheKey);
+                this._getStorage().remove(this.cacheKey);
             }
         } catch (e) {
             console.error('Failed to clear cache:', e);
@@ -89,7 +93,7 @@ class DrawingCacheManager {
     }
 
     /**
-     * Cleanup expired cache entries
+     * Cleanup expired cache entries (用户隔离)
      * @returns {number} Number of entries removed
      */
     cleanupExpired() {
@@ -272,13 +276,12 @@ class DrawingCacheManager {
     }
 
     /**
-     * Load all cache from localStorage
+     * Load all cache from localStorage (用户隔离)
      * @private
      */
     _loadAllCache() {
         try {
-            const data = localStorage.getItem(this.cacheKey);
-            return data ? JSON.parse(data) : {};
+            return this._getStorage().getJSON(this.cacheKey, {});
         } catch (e) {
             console.error('Failed to load cache:', e);
             return {};
@@ -286,12 +289,12 @@ class DrawingCacheManager {
     }
 
     /**
-     * Save all cache to localStorage
+     * Save all cache to localStorage (用户隔离)
      * @private
      */
     _saveAllCache(cache) {
         try {
-            localStorage.setItem(this.cacheKey, JSON.stringify(cache));
+            this._getStorage().setJSON(this.cacheKey, cache);
         } catch (e) {
             console.error('Failed to save cache:', e);
         }

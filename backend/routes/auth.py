@@ -940,6 +940,13 @@ def serve_app():
         btn.disabled = false;
         btn.textContent = '确认修改';
     }});
+    
+    // 初始化用户缓存管理器
+    window.CURRENT_USERNAME = '{username}';
+    if (window.userCacheManager) {{
+        window.userCacheManager.init('{username}');
+        console.log('[Auth] 用户缓存管理器已初始化:', '{username}');
+    }}
     </script>
     """
     

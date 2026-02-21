@@ -2,23 +2,22 @@
 // Conversation management and history functionality
 
 /**
- * Load conversations from localStorage
+ * Load conversations from localStorage (user-isolated)
  */
 function loadConversations() {
-    const savedConvos = JSON.parse(localStorage.getItem('chatConversations') || '[]');
+    const storage = window.userCacheStorage;
+    const savedConvos = storage.getJSON('chatConversations', []);
     appState.chat.conversations = savedConvos;
-    appState.chat.currentConversationId = localStorage.getItem('currentConversationId');
+    appState.chat.currentConversationId = storage.get('currentConversationId');
     if (savedConvos.length > 0 && (!appState.chat.currentConversationId || !savedConvos.find(c => c.id === appState.chat.currentConversationId))) {
         appState.chat.currentConversationId = savedConvos.sort((a,b) => b.lastUpdate - a.lastUpdate)[0].id;
     }
     
     // Load file cache
     try {
-        const savedCache = localStorage.getItem('parsedFilesCache');
-        if (savedCache) {
-            appState.chat.parsedFilesCache = JSON.parse(savedCache);
-            console.log('✅ 已加载文件缓存，共', Object.keys(appState.chat.parsedFilesCache).length, '个文件');
-        }
+        const savedCache = storage.getJSON('parsedFilesCache', {});
+        appState.chat.parsedFilesCache = savedCache;
+        console.log('✅ 已加载文件缓存，共', Object.keys(appState.chat.parsedFilesCache).length, '个文件');
     } catch (e) {
         console.warn('⚠️ 无法加载文件缓存:', e);
         appState.chat.parsedFilesCache = {};
@@ -26,10 +25,10 @@ function loadConversations() {
 }
 
 /**
- * Save conversations to localStorage
+ * Save conversations to localStorage (user-isolated)
  */
 function saveConversations() {
-    localStorage.setItem('chatConversations', JSON.stringify(appState.chat.conversations));
+    window.userCacheStorage.setJSON('chatConversations', appState.chat.conversations);
 }
 
 /**
@@ -67,7 +66,7 @@ function startNewChat(shouldSwitch = false) {
 function switchConversation(id) {
     removeActiveFile();
     appState.chat.currentConversationId = id;
-    localStorage.setItem('currentConversationId', id);
+    window.userCacheStorage.set('currentConversationId', id);
     renderCurrentChat();
     renderChatHistoryList();
     toggleManagementMode(false);

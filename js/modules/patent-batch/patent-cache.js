@@ -1,5 +1,5 @@
 // js/modules/patent-batch/patent-cache.js
-// 专利数据缓存管理模块
+// 专利数据缓存管理模块 (用户隔离版)
 
 const PatentCache = {
     // 缓存键前缀
@@ -12,6 +12,14 @@ const PatentCache = {
     CACHE_WARNING_THRESHOLD: 7 * 24 * 60 * 60 * 1000,
 
     /**
+     * 获取用户隔离存储实例
+     * @returns {Object} 存储实例
+     */
+    _getStorage() {
+        return window.userCacheStorage;
+    },
+
+    /**
      * 获取缓存键
      * @param {string} patentNumber - 专利号
      * @returns {string} 缓存键
@@ -21,7 +29,7 @@ const PatentCache = {
     },
 
     /**
-     * 保存专利数据到缓存
+     * 保存专利数据到缓存 (用户隔离)
      * @param {string} patentNumber - 专利号
      * @param {Object} data - 专利数据
      * @param {Array} selectedFields - 选择的字段列表
@@ -37,32 +45,28 @@ const PatentCache = {
                 selectedFields: selectedFields,
                 version: '1.1'
             };
-            localStorage.setItem(this.getCacheKey(patentNumber), JSON.stringify(cacheData));
+            this._getStorage().setJSON(this.getCacheKey(patentNumber), cacheData);
             console.log(`✅ 专利 ${patentNumber} 数据已缓存`);
         } catch (error) {
             console.error(`❌ 缓存专利 ${patentNumber} 数据失败:`, error);
-            // 如果存储失败（可能是空间不足），尝试清理旧缓存
             this.cleanExpiredCache();
         }
     },
 
     /**
-     * 从缓存获取专利数据
+     * 从缓存获取专利数据 (用户隔离)
      * @param {string} patentNumber - 专利号
      * @returns {Object|null} 缓存数据或null
      */
     get(patentNumber) {
         try {
             const cacheKey = this.getCacheKey(patentNumber);
-            const cached = localStorage.getItem(cacheKey);
-            if (!cached) return null;
-
-            const cacheData = JSON.parse(cached);
+            const cacheData = this._getStorage().getJSON(cacheKey);
+            if (!cacheData) return null;
             
-            // 检查是否过期
             if (Date.now() - cacheData.timestamp > this.CACHE_EXPIRY) {
                 console.log(`🗑️ 专利 ${patentNumber} 缓存已过期，自动清理`);
-                localStorage.removeItem(cacheKey);
+                this._getStorage().remove(cacheKey);
                 return null;
             }
 
@@ -124,12 +128,12 @@ const PatentCache = {
     },
 
     /**
-     * 删除指定专利的缓存
+     * 删除指定专利的缓存 (用户隔离)
      * @param {string} patentNumber - 专利号
      */
     remove(patentNumber) {
         try {
-            localStorage.removeItem(this.getCacheKey(patentNumber));
+            this._getStorage().remove(this.getCacheKey(patentNumber));
             console.log(`🗑️ 专利 ${patentNumber} 缓存已删除`);
         } catch (error) {
             console.error(`❌ 删除专利 ${patentNumber} 缓存失败:`, error);
@@ -137,30 +141,28 @@ const PatentCache = {
     },
 
     /**
-     * 清理所有过期的缓存
+     * 清理所有过期的缓存 (用户隔离)
      * @returns {number} 清理的缓存数量
      */
     cleanExpiredCache() {
         let cleanedCount = 0;
         const now = Date.now();
+        const storage = this._getStorage();
         
         try {
-            for (let i = localStorage.length - 1; i >= 0; i--) {
-                const key = localStorage.key(i);
-                if (key && key.startsWith(this.CACHE_KEY_PREFIX)) {
-                    try {
-                        const cached = JSON.parse(localStorage.getItem(key));
-                        if (now - cached.timestamp > this.CACHE_EXPIRY) {
-                            localStorage.removeItem(key);
-                            cleanedCount++;
-                        }
-                    } catch (e) {
-                        // 如果解析失败，删除这个键
-                        localStorage.removeItem(key);
+            const keys = storage.getKeysByPrefix(this.CACHE_KEY_PREFIX);
+            keys.forEach(key => {
+                try {
+                    const cached = storage.getJSON(key);
+                    if (cached && now - cached.timestamp > this.CACHE_EXPIRY) {
+                        storage.remove(key);
                         cleanedCount++;
                     }
+                } catch (e) {
+                    storage.remove(key);
+                    cleanedCount++;
                 }
-            }
+            });
         } catch (error) {
             console.error('❌ 清理过期缓存失败:', error);
         }
@@ -172,30 +174,18 @@ const PatentCache = {
     },
 
     /**
-     * 清理所有专利缓存
+     * 清理所有专利缓存 (用户隔离)
      * @returns {number} 清理的缓存数量
      */
     clearAll() {
-        let clearedCount = 0;
-        
-        try {
-            for (let i = localStorage.length - 1; i >= 0; i--) {
-                const key = localStorage.key(i);
-                if (key && key.startsWith(this.CACHE_KEY_PREFIX)) {
-                    localStorage.removeItem(key);
-                    clearedCount++;
-                }
-            }
-        } catch (error) {
-            console.error('❌ 清理所有缓存失败:', error);
-        }
-
+        const storage = this._getStorage();
+        const clearedCount = storage.removeByPrefix(this.CACHE_KEY_PREFIX);
         console.log(`🧹 已清理 ${clearedCount} 个专利缓存`);
         return clearedCount;
     },
 
     /**
-     * 获取缓存统计信息
+     * 获取缓存统计信息 (用户隔离)
      * @returns {Object} 统计信息
      */
     getStats() {
@@ -203,14 +193,15 @@ const PatentCache = {
         let totalSize = 0;
         let oldestTimestamp = Date.now();
         let newestTimestamp = 0;
+        const storage = this._getStorage();
 
         try {
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && key.startsWith(this.CACHE_KEY_PREFIX)) {
-                    const value = localStorage.getItem(key);
+            const keys = storage.getKeysByPrefix(this.CACHE_KEY_PREFIX);
+            keys.forEach(key => {
+                const value = storage.get(key);
+                if (value) {
                     totalCount++;
-                    totalSize += value.length * 2; // UTF-16 编码，每个字符2字节
+                    totalSize += value.length * 2;
                     
                     try {
                         const cached = JSON.parse(value);
@@ -220,11 +211,9 @@ const PatentCache = {
                         if (cached.timestamp > newestTimestamp) {
                             newestTimestamp = cached.timestamp;
                         }
-                    } catch (e) {
-                        // 忽略解析错误
-                    }
+                    } catch (e) {}
                 }
-            }
+            });
         } catch (error) {
             console.error('❌ 获取缓存统计失败:', error);
         }
@@ -274,7 +263,7 @@ const PatentCache = {
     },
 
     /**
-     * 保存解读结果到缓存
+     * 保存解读结果到缓存 (用户隔离)
      * @param {string} patentNumber - 专利号
      * @param {Object} analysisData - 解读数据
      * @param {string} analysisData.content - 解读内容
@@ -292,7 +281,7 @@ const PatentCache = {
                 timestamp: Date.now(),
                 version: '1.0'
             };
-            localStorage.setItem(this.getAnalysisCacheKey(patentNumber), JSON.stringify(cacheData));
+            this._getStorage().setJSON(this.getAnalysisCacheKey(patentNumber), cacheData);
             console.log(`✅ 专利 ${patentNumber} 解读结果已缓存`);
             
             this.dispatchAnalysisUpdate(patentNumber, cacheData);
@@ -305,21 +294,19 @@ const PatentCache = {
     },
 
     /**
-     * 从缓存获取解读结果
+     * 从缓存获取解读结果 (用户隔离)
      * @param {string} patentNumber - 专利号
      * @returns {Object|null} 缓存数据或null
      */
     getAnalysis(patentNumber) {
         try {
             const cacheKey = this.getAnalysisCacheKey(patentNumber);
-            const cached = localStorage.getItem(cacheKey);
-            if (!cached) return null;
-
-            const cacheData = JSON.parse(cached);
+            const cacheData = this._getStorage().getJSON(cacheKey);
+            if (!cacheData) return null;
             
             if (Date.now() - cacheData.timestamp > this.CACHE_EXPIRY) {
                 console.log(`🗑️ 专利 ${patentNumber} 解读缓存已过期，自动清理`);
-                localStorage.removeItem(cacheKey);
+                this._getStorage().remove(cacheKey);
                 return null;
             }
 
@@ -340,12 +327,12 @@ const PatentCache = {
     },
 
     /**
-     * 删除指定专利的解读缓存
+     * 删除指定专利的解读缓存 (用户隔离)
      * @param {string} patentNumber - 专利号
      */
     removeAnalysis(patentNumber) {
         try {
-            localStorage.removeItem(this.getAnalysisCacheKey(patentNumber));
+            this._getStorage().remove(this.getAnalysisCacheKey(patentNumber));
             console.log(`🗑️ 专利 ${patentNumber} 解读缓存已删除`);
         } catch (error) {
             console.error(`❌ 删除专利 ${patentNumber} 解读缓存失败:`, error);
@@ -389,24 +376,12 @@ const PatentCache = {
     },
 
     /**
-     * 清理所有解读缓存
+     * 清理所有解读缓存 (用户隔离)
      * @returns {number} 清理的缓存数量
      */
     clearAllAnalysis() {
-        let clearedCount = 0;
-        
-        try {
-            for (let i = localStorage.length - 1; i >= 0; i--) {
-                const key = localStorage.key(i);
-                if (key && key.startsWith(this.ANALYSIS_CACHE_KEY_PREFIX)) {
-                    localStorage.removeItem(key);
-                    clearedCount++;
-                }
-            }
-        } catch (error) {
-            console.error('❌ 清理解读缓存失败:', error);
-        }
-
+        const storage = this._getStorage();
+        const clearedCount = storage.removeByPrefix(this.ANALYSIS_CACHE_KEY_PREFIX);
         console.log(`🧹 已清理 ${clearedCount} 个解读缓存`);
         return clearedCount;
     },

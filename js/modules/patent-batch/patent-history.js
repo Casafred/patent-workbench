@@ -1,5 +1,5 @@
 /**
- * 专利爬取解读历史记录模块
+ * 专利爬取解读历史记录模块 (用户隔离版)
  * 记录用户历史爬取过的专利号，支持一键再次爬取或解读
  */
 
@@ -10,14 +10,19 @@ const PatentHistory = {
     MAX_HISTORY: 100,
     
     /**
-     * 获取所有历史记录
+     * 获取用户隔离存储实例
+     */
+    _getStorage() {
+        return window.userCacheStorage;
+    },
+    
+    /**
+     * 获取所有历史记录 (用户隔离)
      * @returns {Array} 历史记录列表
      */
     getAll() {
         try {
-            const historyStr = localStorage.getItem(this.HISTORY_KEY);
-            if (!historyStr) return [];
-            return JSON.parse(historyStr);
+            return this._getStorage().getJSON(this.HISTORY_KEY, []);
         } catch (error) {
             console.error('❌ 读取历史记录失败:', error);
             return [];
@@ -25,7 +30,7 @@ const PatentHistory = {
     },
     
     /**
-     * 添加历史记录
+     * 添加历史记录 (用户隔离)
      * @param {string} patentNumber - 专利号
      * @param {string} action - 操作类型 ('crawl' | 'analyze')
      * @param {Object} options - 附加选项
@@ -35,7 +40,6 @@ const PatentHistory = {
             const history = this.getAll();
             const upperNumber = patentNumber.toUpperCase();
             
-            // 检查是否已存在，如果存在则更新
             const existingIndex = history.findIndex(h => h.patentNumber === upperNumber);
             
             const record = {
@@ -54,15 +58,13 @@ const PatentHistory = {
                 history.unshift(record);
             }
             
-            // 限制最大记录数
             if (history.length > this.MAX_HISTORY) {
                 history.splice(this.MAX_HISTORY);
             }
             
-            localStorage.setItem(this.HISTORY_KEY, JSON.stringify(history));
+            this._getStorage().setJSON(this.HISTORY_KEY, history);
             console.log(`✅ 已添加历史记录: ${upperNumber}`);
             
-            // 触发更新事件
             this.dispatchHistoryUpdate();
         } catch (error) {
             console.error('❌ 添加历史记录失败:', error);
@@ -81,7 +83,7 @@ const PatentHistory = {
     },
     
     /**
-     * 删除指定历史记录
+     * 删除指定历史记录 (用户隔离)
      * @param {string} patentNumber - 专利号
      */
     remove(patentNumber) {
@@ -89,7 +91,7 @@ const PatentHistory = {
             const history = this.getAll();
             const upperNumber = patentNumber.toUpperCase();
             const filtered = history.filter(h => h.patentNumber !== upperNumber);
-            localStorage.setItem(this.HISTORY_KEY, JSON.stringify(filtered));
+            this._getStorage().setJSON(this.HISTORY_KEY, filtered);
             this.dispatchHistoryUpdate();
             console.log(`🗑️ 已删除历史记录: ${upperNumber}`);
         } catch (error) {
@@ -98,11 +100,11 @@ const PatentHistory = {
     },
     
     /**
-     * 清空所有历史记录
+     * 清空所有历史记录 (用户隔离)
      */
     clear() {
         try {
-            localStorage.removeItem(this.HISTORY_KEY);
+            this._getStorage().remove(this.HISTORY_KEY);
             this.dispatchHistoryUpdate();
             console.log('🧹 已清空所有历史记录');
         } catch (error) {
@@ -145,7 +147,7 @@ const PatentHistory = {
     },
     
     /**
-     * 更新记录的缓存状态
+     * 更新记录的缓存状态 (用户隔离)
      */
     refreshCacheStatus() {
         try {
@@ -164,7 +166,7 @@ const PatentHistory = {
             });
             
             if (updated) {
-                localStorage.setItem(this.HISTORY_KEY, JSON.stringify(history));
+                this._getStorage().setJSON(this.HISTORY_KEY, history);
                 this.dispatchHistoryUpdate();
             }
         } catch (error) {

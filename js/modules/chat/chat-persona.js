@@ -2,10 +2,11 @@
 // Persona management functionality
 
 /**
- * Load personas from localStorage
+ * Load personas from localStorage (user-isolated)
  */
 function loadPersonas() {
-    const savedPersonas = JSON.parse(localStorage.getItem('chatPersonas'));
+    const storage = window.userCacheStorage;
+    const savedPersonas = storage.getJSON('chatPersonas');
     if (savedPersonas && Object.keys(savedPersonas).length > 0) {
         appState.chat.personas = savedPersonas;
     } else {
@@ -20,10 +21,10 @@ function loadPersonas() {
 }
 
 /**
- * Save personas to localStorage
+ * Save personas to localStorage (user-isolated)
  */
 function savePersonas() {
-    localStorage.setItem('chatPersonas', JSON.stringify(appState.chat.personas));
+    window.userCacheStorage.setJSON('chatPersonas', appState.chat.personas);
 }
 
 /**

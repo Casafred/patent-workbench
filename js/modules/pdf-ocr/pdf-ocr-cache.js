@@ -1,5 +1,5 @@
 /**
- * PDF-OCR 缓存管理模块
+ * PDF-OCR 缓存管理模块 (用户隔离版)
  * 处理OCR结果的智能缓存，避免重复提交分析请求
  */
 
@@ -10,6 +10,13 @@ class PDFOCRCache {
         this.maxAgeDays = 7;
         this.maxCacheSize = 100;
         this.init();
+    }
+
+    /**
+     * 获取用户隔离存储实例
+     */
+    _getStorage() {
+        return window.userCacheStorage;
     }
 
     init() {
@@ -43,42 +50,45 @@ class PDFOCRCache {
 
     hasCache(fileHash, pageRange) {
         const key = this.generateCacheKey(fileHash, pageRange);
-        const cached = localStorage.getItem(key);
+        const storage = this._getStorage();
+        const cached = storage.get(key);
         if (!cached) return false;
 
         try {
             const data = JSON.parse(cached);
             if (this.isExpired(data.timestamp)) {
-                localStorage.removeItem(key);
+                storage.remove(key);
                 return false;
             }
             return true;
         } catch (e) {
-            localStorage.removeItem(key);
+            storage.remove(key);
             return false;
         }
     }
 
     getCache(fileHash, pageRange) {
         const key = this.generateCacheKey(fileHash, pageRange);
-        const cached = localStorage.getItem(key);
+        const storage = this._getStorage();
+        const cached = storage.get(key);
         if (!cached) return null;
 
         try {
             const data = JSON.parse(cached);
             if (this.isExpired(data.timestamp)) {
-                localStorage.removeItem(key);
+                storage.remove(key);
                 return null;
             }
             return data.result;
         } catch (e) {
-            localStorage.removeItem(key);
+            storage.remove(key);
             return null;
         }
     }
 
     setCache(fileHash, pageRange, result) {
         const key = this.generateCacheKey(fileHash, pageRange);
+        const storage = this._getStorage();
         const data = {
             result: result,
             timestamp: Date.now(),
@@ -87,14 +97,14 @@ class PDFOCRCache {
         };
 
         try {
-            localStorage.setItem(key, JSON.stringify(data));
+            storage.set(key, JSON.stringify(data));
             this.updateMeta(fileHash, pageRange);
             this.checkCacheSize();
         } catch (e) {
             console.warn('[PDF-OCR-Cache] 缓存存储失败，可能已满:', e);
             this.clearOldest();
             try {
-                localStorage.setItem(key, JSON.stringify(data));
+                storage.set(key, JSON.stringify(data));
             } catch (e2) {
                 console.error('[PDF-OCR-Cache] 缓存存储仍然失败:', e2);
             }
@@ -102,25 +112,16 @@ class PDFOCRCache {
     }
 
     clearCache(fileHash, pageRange) {
+        const storage = this._getStorage();
         if (fileHash && pageRange) {
             const key = this.generateCacheKey(fileHash, pageRange);
-            localStorage.removeItem(key);
+            storage.remove(key);
         } else if (fileHash) {
-            const keysToRemove = [];
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && key.startsWith(this.cachePrefix + fileHash)) {
-                    keysToRemove.push(key);
-                }
-            }
-            keysToRemove.forEach(key => localStorage.removeItem(key));
+            const keysToRemove = storage.getKeysByPrefix(this.cachePrefix + fileHash);
+            keysToRemove.forEach(key => storage.remove(key));
         } else {
-            for (let i = localStorage.length - 1; i >= 0; i--) {
-                const key = localStorage.key(i);
-                if (key && key.startsWith(this.cachePrefix)) {
-                    localStorage.removeItem(key);
-                }
-            }
+            const keysToRemove = storage.getKeysByPrefix(this.cachePrefix);
+            keysToRemove.forEach(key => storage.remove(key));
         }
     }
 
@@ -181,8 +182,9 @@ class PDFOCRCache {
     }
 
     updateMeta(fileHash, pageRange) {
+        const storage = this._getStorage();
         try {
-            let meta = JSON.parse(localStorage.getItem(this.metaKey) || '{}');
+            let meta = storage.getJSON(this.metaKey, {});
             if (!meta[fileHash]) {
                 meta[fileHash] = { pages: [], lastAccess: Date.now() };
             }
@@ -192,85 +194,80 @@ class PDFOCRCache {
                 }
             }
             meta[fileHash].lastAccess = Date.now();
-            localStorage.setItem(this.metaKey, JSON.stringify(meta));
+            storage.setJSON(this.metaKey, meta);
         } catch (e) {
             console.warn('[PDF-OCR-Cache] 更新元数据失败:', e);
         }
     }
 
     checkCacheSize() {
-        let count = 0;
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && key.startsWith(this.cachePrefix)) {
-                count++;
-            }
-        }
-        if (count > this.maxCacheSize) {
+        const storage = this._getStorage();
+        const keys = storage.getKeysByPrefix(this.cachePrefix);
+        if (keys.length > this.maxCacheSize) {
             this.clearOldest();
         }
     }
 
     clearOldest() {
+        const storage = this._getStorage();
+        const keys = storage.getKeysByPrefix(this.cachePrefix);
         const entries = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && key.startsWith(this.cachePrefix)) {
-                try {
-                    const data = JSON.parse(localStorage.getItem(key));
-                    entries.push({ key, timestamp: data.timestamp || 0 });
-                } catch (e) {
-                    entries.push({ key, timestamp: 0 });
-                }
+
+        keys.forEach(key => {
+            try {
+                const data = storage.getJSON(key);
+                entries.push({ key, timestamp: data?.timestamp || 0 });
+            } catch (e) {
+                entries.push({ key, timestamp: 0 });
             }
-        }
+        });
 
         entries.sort((a, b) => a.timestamp - b.timestamp);
         const toRemove = entries.slice(0, Math.floor(entries.length / 2));
-        toRemove.forEach(entry => localStorage.removeItem(entry.key));
+        toRemove.forEach(entry => storage.remove(entry.key));
     }
 
     cleanupExpired() {
+        const storage = this._getStorage();
+        const keys = storage.getKeysByPrefix(this.cachePrefix);
         const keysToRemove = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && key.startsWith(this.cachePrefix)) {
-                try {
-                    const data = JSON.parse(localStorage.getItem(key));
-                    if (this.isExpired(data.timestamp)) {
-                        keysToRemove.push(key);
-                    }
-                } catch (e) {
+
+        keys.forEach(key => {
+            try {
+                const data = storage.getJSON(key);
+                if (this.isExpired(data.timestamp)) {
                     keysToRemove.push(key);
                 }
+            } catch (e) {
+                keysToRemove.push(key);
             }
-        }
-        keysToRemove.forEach(key => localStorage.removeItem(key));
+        });
+
+        keysToRemove.forEach(key => storage.remove(key));
     }
 
     getCacheInfo(fileHash) {
+        const storage = this._getStorage();
+        const keys = storage.getKeysByPrefix(this.cachePrefix + fileHash);
         const info = {
             totalEntries: 0,
             cachedPages: [],
             totalSize: 0
         };
 
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && key.startsWith(this.cachePrefix + fileHash)) {
-                info.totalEntries++;
-                const data = localStorage.getItem(key);
-                if (data) {
-                    info.totalSize += data.length;
-                    try {
-                        const parsed = JSON.parse(data);
-                        if (typeof parsed.pageRange === 'number') {
-                            info.cachedPages.push(parsed.pageRange);
-                        }
-                    } catch (e) {}
-                }
+        keys.forEach(key => {
+            info.totalEntries++;
+            const data = storage.get(key);
+            if (data) {
+                info.totalSize += data.length;
+                try {
+                    const parsed = JSON.parse(data);
+                    if (typeof parsed.pageRange === 'number') {
+                        info.cachedPages.push(parsed.pageRange);
+                    }
+                } catch (e) {}
             }
-        }
+        });
 
         info.cachedPages.sort((a, b) => a - b);
         info.totalSizeKB = Math.round(info.totalSize / 1024);
