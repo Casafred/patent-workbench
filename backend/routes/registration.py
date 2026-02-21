@@ -780,48 +780,55 @@ ADMIN_PAGE_HTML = """<!DOCTYPE html>
                 return;
             }
             
-            container.innerHTML = applications.map(app => `
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-title">${app.name || app.username}</span>
-                        <span class="status-badge status-${app.status}">${
-                            app.status === 'pending' ? '待审核' : 
-                            app.status === 'approved' ? '已通过' : '已拒绝'
-                        }</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="info-grid">
-                            <div class="info-item"><label>邮箱</label><span>${app.email || '-'}</span></div>
-                            <div class="info-item"><label>手机号</label><span>${app.phone || '-'}</span></div>
-                            <div class="info-item"><label>单位</label><span>${app.company || '-'}</span></div>
-                            <div class="info-item"><label>申请时间</label><span>${app.created_at}</span></div>
-                        </div>
-                        ${app.status === 'approved' && app.username ? `
-                        <div class="account-info">
-                            <h4>账号信息 <button class="copy-btn" onclick="copyAccount('${app.username}', '${app.password || ''}')">复制</button></h4>
-                            <p>用户名: <code>${app.username}</code></p>
-                            <p>密码: <code>${app.password || '[用户已修改]'}</code></p>
-                            ${app.password_changed ? '<p style="color:#F59E0B;font-size:12px;">用户已自行修改密码</p>' : ''}
-                        </div>
-                        ` : ''}
-                        ${app.status === 'pending' ? `
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="send-email-${app.id}" checked>
-                            <label for="send-email-${app.id}">审核通过后发送账号到邮箱</label>
-                        </div>
-                        <div class="actions">
-                            <button class="btn btn-primary" onclick="approve('${app.id}')">通过</button>
-                            <button class="btn btn-danger" onclick="reject('${app.id}')">拒绝</button>
-                        </div>
-                        ` : ''}
-                        ${app.status !== 'pending' ? `
-                        <div class="actions">
-                            <button class="btn btn-secondary" onclick="deleteApp('${app.id}')">删除记录</button>
-                        </div>
-                        ` : ''}
-                    </div>
-                </div>
-            `).join('');
+            let html = '';
+            for (let i = 0; i < applications.length; i++) {
+                const app = applications[i];
+                let statusText = app.status === 'pending' ? '待审核' : (app.status === 'approved' ? '已通过' : '已拒绝');
+                
+                html += '<div class="card">';
+                html += '<div class="card-header">';
+                html += '<span class="card-title">' + (app.name || app.username) + '</span>';
+                html += '<span class="status-badge status-' + app.status + '">' + statusText + '</span>';
+                html += '</div>';
+                html += '<div class="card-body">';
+                html += '<div class="info-grid">';
+                html += '<div class="info-item"><label>邮箱</label><span>' + (app.email || '-') + '</span></div>';
+                html += '<div class="info-item"><label>手机号</label><span>' + (app.phone || '-') + '</span></div>';
+                html += '<div class="info-item"><label>单位</label><span>' + (app.company || '-') + '</span></div>';
+                html += '<div class="info-item"><label>申请时间</label><span>' + app.created_at + '</span></div>';
+                html += '</div>';
+                
+                if (app.status === 'approved' && app.username) {
+                    html += '<div class="account-info">';
+                    html += '<h4>账号信息 <button class="copy-btn" onclick="copyAccount(\'' + app.username + '\', \'' + (app.password || '') + '\')">复制</button></h4>';
+                    html += '<p>用户名: <code>' + app.username + '</code></p>';
+                    html += '<p>密码: <code>' + (app.password || '[用户已修改]') + '</code></p>';
+                    if (app.password_changed) {
+                        html += '<p style="color:#F59E0B;font-size:12px;">用户已自行修改密码</p>';
+                    }
+                    html += '</div>';
+                }
+                
+                if (app.status === 'pending') {
+                    html += '<div class="checkbox-group">';
+                    html += '<input type="checkbox" id="send-email-' + app.id + '" checked>';
+                    html += '<label for="send-email-' + app.id + '">审核通过后发送账号到邮箱</label>';
+                    html += '</div>';
+                    html += '<div class="actions">';
+                    html += '<button class="btn btn-primary" onclick="approve(\'' + app.id + '\')">通过</button>';
+                    html += '<button class="btn btn-danger" onclick="reject(\'' + app.id + '\')">拒绝</button>';
+                    html += '</div>';
+                } else {
+                    html += '<div class="actions">';
+                    html += '<button class="btn btn-secondary" onclick="deleteApp(\'' + app.id + '\')">删除记录</button>';
+                    html += '</div>';
+                }
+                
+                html += '</div>';
+                html += '</div>';
+            }
+            
+            container.innerHTML = html;
         }
 
         function showAddUserModal() {
@@ -855,7 +862,7 @@ ADMIN_PAGE_HTML = """<!DOCTYPE html>
                     msgEl.style.background = '#DCFCE7';
                     msgEl.style.color = '#166534';
                     msgEl.style.display = 'block';
-                    setTimeout(() => { hideAddUserModal(); loadUsers(); }, 1000);
+                    setTimeout(function() { hideAddUserModal(); loadUsers(); }, 1000);
                 } else {
                     msgEl.textContent = result.message;
                     msgEl.style.background = '#FEE2E2';
