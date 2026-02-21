@@ -9,13 +9,9 @@ class UserDataUI {
         this.isInitialized = false;
     }
 
-    /**
-     * 初始化UI
-     */
     init() {
         if (this.isInitialized) return;
 
-        // 等待DOM加载完成
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => this._setup());
         } else {
@@ -25,40 +21,32 @@ class UserDataUI {
         this.isInitialized = true;
     }
 
-    /**
-     * 设置UI
-     * @private
-     */
     _setup() {
-        // 创建数据管理按钮
         this._createDataManageButton();
-
-        // 监听用户操作区域变化
         this._observeUserActions();
-
         console.log('[UserDataUI] UI已初始化');
     }
 
-    /**
-     * 创建数据管理按钮
-     * @private
-     */
     _createDataManageButton() {
         const userBtns = document.querySelector('.user-btns');
         if (!userBtns) return;
 
-        // 检查是否已存在
         if (document.getElementById('user-data-manage-btn')) return;
 
-        // 创建数据管理按钮
         const dataBtn = document.createElement('a');
         dataBtn.href = 'javascript:void(0);';
         dataBtn.id = 'user-data-manage-btn';
         dataBtn.className = 'user-btn';
-        dataBtn.innerHTML = '📦 数据';
+        dataBtn.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 2px;">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+            </svg>
+            数据
+        `;
         dataBtn.onclick = () => this.showDataPanel();
 
-        // 插入到登出按钮之前
         const logoutBtn = userBtns.querySelector('.logout');
         if (logoutBtn) {
             userBtns.insertBefore(dataBtn, logoutBtn);
@@ -67,10 +55,6 @@ class UserDataUI {
         }
     }
 
-    /**
-     * 监听用户操作区域变化
-     * @private
-     */
     _observeUserActions() {
         const observer = new MutationObserver(() => {
             this._createDataManageButton();
@@ -82,44 +66,44 @@ class UserDataUI {
         }
     }
 
-    /**
-     * 显示数据管理面板
-     */
     showDataPanel() {
-        // 移除已存在的面板
         this.hideDataPanel();
 
-        // 创建面板
+        const overlay = document.createElement('div');
+        overlay.id = 'user-data-overlay';
+        overlay.className = 'user-data-overlay';
+        overlay.onclick = () => this.hideDataPanel();
+
         const panel = document.createElement('div');
         panel.id = 'user-data-panel';
         panel.innerHTML = this._getPanelHTML();
 
+        document.body.appendChild(overlay);
         document.body.appendChild(panel);
 
-        // 绑定事件
         this._bindPanelEvents();
-
-        // 加载统计数据
         this._loadStats();
     }
 
-    /**
-     * 隐藏数据管理面板
-     */
     hideDataPanel() {
+        const overlay = document.getElementById('user-data-overlay');
         const panel = document.getElementById('user-data-panel');
-        if (panel) {
-            panel.remove();
-        }
+        if (overlay) overlay.remove();
+        if (panel) panel.remove();
     }
 
-    /**
-     * 获取面板HTML
-     * @private
-     */
     _getPanelHTML() {
         return `
             <style>
+                .user-data-overlay {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0,0,0,0.5);
+                    z-index: 99998;
+                }
                 #user-data-panel {
                     position: fixed;
                     top: 50%;
@@ -147,6 +131,9 @@ class UserDataUI {
                     margin: 0;
                     font-size: 18px;
                     font-weight: 600;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
                 }
                 #user-data-panel .close-btn {
                     background: rgba(255,255,255,0.2);
@@ -156,7 +143,6 @@ class UserDataUI {
                     height: 32px;
                     border-radius: 50%;
                     cursor: pointer;
-                    font-size: 18px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
@@ -260,16 +246,8 @@ class UserDataUI {
                     color: white;
                 }
                 #user-data-panel .action-btn .icon {
-                    font-size: 20px;
-                }
-                #user-data-panel .overlay {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background: rgba(0,0,0,0.5);
-                    z-index: 99998;
+                    width: 20px;
+                    height: 20px;
                 }
                 #user-data-panel .loading {
                     text-align: center;
@@ -277,11 +255,22 @@ class UserDataUI {
                     color: #666;
                 }
             </style>
-            <div class="overlay" onclick="window.userDataUI.hideDataPanel()"></div>
             <div class="panel-content">
                 <div class="panel-header">
-                    <h2>📦 数据管理</h2>
-                    <button class="close-btn" onclick="window.userDataUI.hideDataPanel()">✕</button>
+                    <h2>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                        </svg>
+                        数据管理
+                    </h2>
+                    <button class="close-btn" onclick="window.userDataUI.hideDataPanel()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
                 </div>
                 <div class="panel-body">
                     <div class="stats-section">
@@ -299,15 +288,28 @@ class UserDataUI {
                     <div class="action-section">
                         <div class="action-buttons">
                             <button class="action-btn export" onclick="window.userDataUI.showExportModal()">
-                                <span class="icon">📤</span>
+                                <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
                                 <span>导出数据</span>
                             </button>
                             <button class="action-btn import" onclick="window.userDataUI.showImportModal()">
-                                <span class="icon">📥</span>
+                                <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
                                 <span>导入数据</span>
                             </button>
                             <button class="action-btn clear" onclick="window.userDataUI.confirmClear()">
-                                <span class="icon">🗑️</span>
+                                <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                                </svg>
                                 <span>清除缓存</span>
                             </button>
                         </div>
@@ -317,12 +319,7 @@ class UserDataUI {
         `;
     }
 
-    /**
-     * 绑定面板事件
-     * @private
-     */
     _bindPanelEvents() {
-        // ESC键关闭
         const handleEsc = (e) => {
             if (e.key === 'Escape') {
                 this.hideDataPanel();
@@ -332,10 +329,6 @@ class UserDataUI {
         document.addEventListener('keydown', handleEsc);
     }
 
-    /**
-     * 加载统计数据
-     * @private
-     */
     _loadStats() {
         if (!window.userCacheManager.isInitialized()) {
             document.getElementById('stats-grid').innerHTML = '<div class="stat-item">缓存管理器未初始化</div>';
@@ -345,7 +338,6 @@ class UserDataUI {
         const stats = window.userCacheManager.getStats();
         const categoryStats = window.userCacheManager.getCategoryStats();
 
-        // 更新统计网格
         document.getElementById('stats-grid').innerHTML = `
             <div class="stat-item">
                 <div class="value">${stats.totalItems}</div>
@@ -357,7 +349,6 @@ class UserDataUI {
             </div>
         `;
 
-        // 更新分类列表
         const categoryHTML = Object.entries(categoryStats)
             .filter(([_, cat]) => cat.items > 0)
             .map(([key, cat]) => `
@@ -370,23 +361,14 @@ class UserDataUI {
         document.getElementById('category-list').innerHTML = categoryHTML || '<div class="stat-item">暂无数据</div>';
     }
 
-    /**
-     * 显示导出弹窗
-     */
     showExportModal() {
         window.userDataModal.showExportModal();
     }
 
-    /**
-     * 显示导入弹窗
-     */
     showImportModal() {
         window.userDataModal.showImportModal();
     }
 
-    /**
-     * 确认清除缓存
-     */
     confirmClear() {
         if (!confirm('确定要清除所有缓存数据吗？此操作不可撤销！\n\n建议先导出数据备份。')) {
             return;
@@ -395,15 +377,12 @@ class UserDataUI {
         const count = window.userCacheManager.clearAllData();
         alert(`已清除 ${count} 条数据`);
 
-        // 刷新统计
         this._loadStats();
     }
 }
 
-// 创建全局单例
 const userDataUI = new UserDataUI();
 
-// 导出
 window.UserDataUI = UserDataUI;
 window.userDataUI = userDataUI;
 

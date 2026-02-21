@@ -6,11 +6,9 @@
 class UserDataModal {
     constructor() {
         this.activeModal = null;
+        this.activeOverlay = null;
     }
 
-    /**
-     * 显示导出弹窗
-     */
     showExportModal() {
         this._closeActiveModal();
 
@@ -20,47 +18,46 @@ class UserDataModal {
             return;
         }
 
+        const overlay = document.createElement('div');
+        overlay.id = 'user-data-modal-overlay';
+        overlay.className = 'user-data-modal-overlay';
+        overlay.onclick = () => this.closeModal();
+
         const modal = document.createElement('div');
         modal.id = 'user-data-export-modal';
         modal.innerHTML = this._getExportModalHTML(preview.preview);
 
+        document.body.appendChild(overlay);
         document.body.appendChild(modal);
+        this.activeOverlay = overlay;
         this.activeModal = modal;
 
         this._bindExportModalEvents();
     }
 
-    /**
-     * 获取导出弹窗HTML
-     * @private
-     */
     _getExportModalHTML(preview) {
         const exportOptions = window.userCacheExporter.getExportOptions();
 
         return `
             <style>
-                #user-data-export-modal {
+                .user-data-modal-overlay {
                     position: fixed;
                     top: 0;
                     left: 0;
                     width: 100%;
                     height: 100%;
+                    background: rgba(0,0,0,0.5);
                     z-index: 100000;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
+                }
+                #user-data-export-modal {
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    z-index: 100001;
                     font-family: 'Noto Sans SC', sans-serif;
                 }
-                #user-data-export-modal .overlay {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background: rgba(0,0,0,0.5);
-                }
                 #user-data-export-modal .modal-content {
-                    position: relative;
                     background: white;
                     border-radius: 16px;
                     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
@@ -80,6 +77,9 @@ class UserDataModal {
                 #user-data-export-modal .modal-header h2 {
                     margin: 0;
                     font-size: 18px;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
                 }
                 #user-data-export-modal .close-btn {
                     background: rgba(255,255,255,0.2);
@@ -89,7 +89,9 @@ class UserDataModal {
                     height: 28px;
                     border-radius: 50%;
                     cursor: pointer;
-                    font-size: 16px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
                 }
                 #user-data-export-modal .modal-body {
                     padding: 20px;
@@ -107,7 +109,7 @@ class UserDataModal {
                 #user-data-export-modal .option-group {
                     margin-bottom: 16px;
                 }
-                #user-data-export-modal .option-group label {
+                #user-data-export-modal .option-group > label {
                     display: block;
                     font-weight: 500;
                     margin-bottom: 8px;
@@ -177,6 +179,9 @@ class UserDataModal {
                     font-size: 14px;
                     font-weight: 500;
                     transition: all 0.2s;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
                 }
                 #user-data-export-modal .btn-cancel {
                     background: #f0f0f0;
@@ -190,12 +195,27 @@ class UserDataModal {
                     transform: translateY(-1px);
                     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
                 }
+                #user-data-export-modal .btn .icon {
+                    width: 16px;
+                    height: 16px;
+                }
             </style>
-            <div class="overlay" onclick="window.userDataModal.closeModal()"></div>
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2>📤 导出数据</h2>
-                    <button class="close-btn" onclick="window.userDataModal.closeModal()">✕</button>
+                    <h2>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        导出数据
+                    </h2>
+                    <button class="close-btn" onclick="window.userDataModal.closeModal()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
                 </div>
                 <div class="modal-body">
                     <div class="preview-info">
@@ -223,23 +243,25 @@ class UserDataModal {
                     </div>
                     
                     <div class="warning-box">
-                        ⚠️ 提示: API密钥等敏感信息不会导出
+                        提示: API密钥等敏感信息不会导出
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-cancel" onclick="window.userDataModal.closeModal()">取消</button>
-                    <button class="btn btn-export" onclick="window.userDataModal.executeExport()">📥 导出</button>
+                    <button class="btn btn-export" onclick="window.userDataModal.executeExport()">
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        导出
+                    </button>
                 </div>
             </div>
         `;
     }
 
-    /**
-     * 绑定导出弹窗事件
-     * @private
-     */
     _bindExportModalEvents() {
-        // ESC关闭
         const handleEsc = (e) => {
             if (e.key === 'Escape') {
                 this.closeModal();
@@ -249,9 +271,6 @@ class UserDataModal {
         document.addEventListener('keydown', handleEsc);
     }
 
-    /**
-     * 选择导出选项
-     */
     selectExportOption(optionId) {
         const radios = document.querySelectorAll('input[name="export-option"]');
         radios.forEach(radio => {
@@ -259,9 +278,6 @@ class UserDataModal {
         });
     }
 
-    /**
-     * 执行导出
-     */
     executeExport() {
         const selectedOption = document.querySelector('input[name="export-option"]:checked')?.value || 'all';
         const includeLargeCache = document.getElementById('include-large-cache')?.checked ?? true;
@@ -277,10 +293,6 @@ class UserDataModal {
         }
     }
 
-    /**
-     * 获取导出选项
-     * @private
-     */
     _getExportOptions(optionId, includeLargeCache) {
         const exportOptions = window.userCacheExporter.getExportOptions();
         const option = exportOptions.find(o => o.id === optionId);
@@ -291,53 +303,49 @@ class UserDataModal {
         };
     }
 
-    /**
-     * 显示导入弹窗
-     */
     showImportModal() {
         this._closeActiveModal();
+
+        const overlay = document.createElement('div');
+        overlay.id = 'user-data-modal-overlay';
+        overlay.className = 'user-data-modal-overlay';
+        overlay.onclick = () => this.closeModal();
 
         const modal = document.createElement('div');
         modal.id = 'user-data-import-modal';
         modal.innerHTML = this._getImportModalHTML();
 
+        document.body.appendChild(overlay);
         document.body.appendChild(modal);
+        this.activeOverlay = overlay;
         this.activeModal = modal;
 
         this._bindImportModalEvents();
     }
 
-    /**
-     * 获取导入弹窗HTML
-     * @private
-     */
     _getImportModalHTML() {
         const strategies = window.userCacheMerger.getStrategies();
 
         return `
             <style>
-                #user-data-import-modal {
+                .user-data-modal-overlay {
                     position: fixed;
                     top: 0;
                     left: 0;
                     width: 100%;
                     height: 100%;
+                    background: rgba(0,0,0,0.5);
                     z-index: 100000;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
+                }
+                #user-data-import-modal {
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    z-index: 100001;
                     font-family: 'Noto Sans SC', sans-serif;
                 }
-                #user-data-import-modal .overlay {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background: rgba(0,0,0,0.5);
-                }
                 #user-data-import-modal .modal-content {
-                    position: relative;
                     background: white;
                     border-radius: 16px;
                     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
@@ -357,6 +365,9 @@ class UserDataModal {
                 #user-data-import-modal .modal-header h2 {
                     margin: 0;
                     font-size: 18px;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
                 }
                 #user-data-import-modal .close-btn {
                     background: rgba(255,255,255,0.2);
@@ -366,7 +377,9 @@ class UserDataModal {
                     height: 28px;
                     border-radius: 50%;
                     cursor: pointer;
-                    font-size: 16px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
                 }
                 #user-data-import-modal .modal-body {
                     padding: 20px;
@@ -391,8 +404,10 @@ class UserDataModal {
                     background: #d1fae5;
                 }
                 #user-data-import-modal .file-drop .icon {
-                    font-size: 40px;
+                    width: 40px;
+                    height: 40px;
                     margin-bottom: 10px;
+                    color: #666;
                 }
                 #user-data-import-modal .file-drop .text {
                     color: #666;
@@ -428,7 +443,7 @@ class UserDataModal {
                 #user-data-import-modal .strategy-group {
                     margin-bottom: 16px;
                 }
-                #user-data-import-modal .strategy-group label {
+                #user-data-import-modal .strategy-group > label {
                     display: block;
                     font-weight: 500;
                     margin-bottom: 8px;
@@ -536,6 +551,9 @@ class UserDataModal {
                     font-size: 14px;
                     font-weight: 500;
                     transition: all 0.2s;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
                 }
                 #user-data-import-modal .btn-cancel {
                     background: #f0f0f0;
@@ -553,16 +571,36 @@ class UserDataModal {
                     transform: translateY(-1px);
                     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
                 }
+                #user-data-import-modal .btn .icon {
+                    width: 16px;
+                    height: 16px;
+                }
             </style>
-            <div class="overlay" onclick="window.userDataModal.closeModal()"></div>
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2>📥 导入数据</h2>
-                    <button class="close-btn" onclick="window.userDataModal.closeModal()">✕</button>
+                    <h2>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        导入数据
+                    </h2>
+                    <button class="close-btn" onclick="window.userDataModal.closeModal()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
                 </div>
                 <div class="modal-body">
                     <div class="file-drop" id="import-file-drop" onclick="document.getElementById('import-file-input').click()">
-                        <div class="icon">📁</div>
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="12" y1="18" x2="12" y2="12"></line>
+                            <line x1="9" y1="15" x2="15" y2="15"></line>
+                        </svg>
                         <div class="text">点击选择文件或拖拽文件到此处</div>
                         <div class="hint">支持 .json 格式，最大 50MB</div>
                     </div>
@@ -598,28 +636,29 @@ class UserDataModal {
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-cancel" onclick="window.userDataModal.closeModal()">取消</button>
-                    <button class="btn btn-import" id="import-btn" onclick="window.userDataModal.executeImport()" disabled>📥 导入</button>
+                    <button class="btn btn-import" id="import-btn" onclick="window.userDataModal.executeImport()" disabled>
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        导入
+                    </button>
                 </div>
             </div>
         `;
     }
 
-    /**
-     * 绑定导入弹窗事件
-     * @private
-     */
     _bindImportModalEvents() {
         const fileInput = document.getElementById('import-file-input');
         const fileDrop = document.getElementById('import-file-drop');
 
-        // 文件选择
         fileInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
                 this._handleFileSelect(e.target.files[0]);
             }
         });
 
-        // 拖拽事件
         fileDrop.addEventListener('dragover', (e) => {
             e.preventDefault();
             fileDrop.classList.add('dragover');
@@ -638,10 +677,6 @@ class UserDataModal {
         });
     }
 
-    /**
-     * 处理文件选择
-     * @private
-     */
     async _handleFileSelect(file) {
         const fileInfo = document.getElementById('import-file-info');
         const filename = document.getElementById('import-filename');
@@ -650,12 +685,10 @@ class UserDataModal {
         const diffContent = document.getElementById('diff-content');
         const importBtn = document.getElementById('import-btn');
 
-        // 显示文件信息
         fileInfo.classList.add('show');
         filename.textContent = file.name;
         fileMeta.textContent = `大小: ${(file.size / 1024).toFixed(2)} KB`;
 
-        // 预览文件
         const preview = await window.userCacheImporter.preview(file);
 
         if (!preview.success) {
@@ -665,14 +698,13 @@ class UserDataModal {
             return;
         }
 
-        // 显示差异预览
         diffPreview.classList.add('show');
         const analysis = preview.preview.analysis;
 
         diffContent.innerHTML = `
             <div class="diff-item">
                 <span class="label">导出用户:</span>
-                <span class="value">${preview.preview.exportUsername} ${preview.preview.usernameMatch ? '✓' : '⚠️ 不匹配'}</span>
+                <span class="value">${preview.preview.exportUsername} ${preview.preview.usernameMatch ? '匹配' : '不匹配'}</span>
             </div>
             <div class="diff-item">
                 <span class="label">导出时间:</span>
@@ -688,16 +720,10 @@ class UserDataModal {
             </div>
         `;
 
-        // 启用导入按钮
         importBtn.disabled = false;
-
-        // 保存文件引用
         this._selectedFile = file;
     }
 
-    /**
-     * 选择合并策略
-     */
     selectStrategy(strategyId) {
         const radios = document.querySelectorAll('input[name="merge-strategy"]');
         radios.forEach(radio => {
@@ -705,9 +731,6 @@ class UserDataModal {
         });
     }
 
-    /**
-     * 执行导入
-     */
     async executeImport() {
         if (!this._selectedFile) {
             alert('请先选择文件');
@@ -720,7 +743,6 @@ class UserDataModal {
         const progressText = document.getElementById('import-progress-text');
         const importBtn = document.getElementById('import-btn');
 
-        // 显示进度
         progressBar.classList.add('show');
         progressText.classList.add('show');
         importBtn.disabled = true;
@@ -741,7 +763,6 @@ class UserDataModal {
                 this.closeModal();
                 alert(`导入成功！\n\n新增: ${result.stats.added}\n更新: ${result.stats.updated}\n跳过: ${result.stats.skipped}\n保存: ${result.stats.saved}`);
 
-                // 刷新UI
                 if (window.userDataUI) {
                     window.userDataUI._loadStats();
                 }
@@ -753,18 +774,15 @@ class UserDataModal {
         }
     }
 
-    /**
-     * 关闭当前弹窗
-     */
     closeModal() {
         this._closeActiveModal();
     }
 
-    /**
-     * 关闭活动弹窗
-     * @private
-     */
     _closeActiveModal() {
+        if (this.activeOverlay) {
+            this.activeOverlay.remove();
+            this.activeOverlay = null;
+        }
         if (this.activeModal) {
             this.activeModal.remove();
             this.activeModal = null;
@@ -773,10 +791,8 @@ class UserDataModal {
     }
 }
 
-// 创建全局单例
 const userDataModal = new UserDataModal();
 
-// 导出
 window.UserDataModal = UserDataModal;
 window.userDataModal = userDataModal;
 
