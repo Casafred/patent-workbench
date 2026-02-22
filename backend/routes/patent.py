@@ -8,17 +8,19 @@ Uses improved scraper for better reliability.
 import json
 import time
 import traceback
-from flask import Blueprint, request, jsonify
+from datetime import datetime, timedelta
+from flask import Blueprint, request, jsonify, session
 from backend.middleware import validate_api_request
 from backend.services import get_zhipu_client
 from backend.utils import create_response
 from backend.scraper.simple_scraper import SimplePatentScraper
 
-# Create blueprint
 patent_bp = Blueprint('patent', __name__)
 
-# Global scraper instance
 _scraper_instance = None
+
+GUEST_PATENT_SEARCH_LIMIT = 5
+GUEST_PATENT_SEARCH_WINDOW_HOURS = 1
 
 
 def get_scraper_instance() -> SimplePatentScraper:
@@ -29,6 +31,59 @@ def get_scraper_instance() -> SimplePatentScraper:
         _scraper_instance = SimplePatentScraper(delay=2.0)
     
     return _scraper_instance
+
+
+def check_guest_patent_limit(patent_count):
+    """
+    Check if guest user has exceeded patent search limit.
+    
+    Returns:
+        tuple: (is_allowed, error_message)
+    """
+    if not session.get('is_guest'):
+        return True, None
+    
+    now = datetime.now()
+    window_start = now - timedelta(hours=GUEST_PATENT_SEARCH_WINDOW_HOURS)
+    
+    search_history = session.get('guest_patent_searches', [])
+    search_history = [t for t in search_history if datetime.fromisoformat(t) > window_start]
+    
+    total_searched = sum(session.get('guest_patent_search_count', {}).get(str(i), 0) 
+                         for i in range(len(search_history)))
+    
+    if total_searched + patent_count > GUEST_PATENT_SEARCH_LIMIT:
+        remaining = GUEST_PATENT_SEARCH_LIMIT - total_searched
+        if remaining <= 0:
+            oldest = min(search_history) if search_history else now.isoformat()
+            oldest_time = datetime.fromisoformat(oldest)
+            reset_minutes = int((oldest_time + timedelta(hours=1) - now).total_seconds() / 60) + 1
+            return False, f"游客模式限制：每小时仅能查询 {GUEST_PATENT_SEARCH_LIMIT} 篇专利，请 {reset_minutes} 分钟后再试"
+        else:
+            return False, f"游客模式限制：每小时仅能查询 {GUEST_PATENT_SEARCH_LIMIT} 篇专利，剩余额度 {remaining} 篇"
+    
+    return True, None
+
+
+def record_guest_patent_search(count):
+    """Record patent search count for guest user."""
+    if not session.get('is_guest'):
+        return
+    
+    now = datetime.now()
+    window_start = now - timedelta(hours=GUEST_PATENT_SEARCH_WINDOW_HOURS)
+    
+    search_history = session.get('guest_patent_searches', [])
+    search_history = [t for t in search_history if datetime.fromisoformat(t) > window_start]
+    
+    search_history.append(now.isoformat())
+    
+    search_count = session.get('guest_patent_search_count', {})
+    search_count[str(len(search_history) - 1)] = count
+    
+    session['guest_patent_searches'] = search_history
+    session['guest_patent_search_count'] = search_count
+    session.modified = True
 
 
 @patent_bp.route('/patent/version', methods=['GET'])
@@ -75,7 +130,6 @@ def search_patents():
         print(f"[API] crawl_specification: {crawl_specification}")
         print(f"[API] selected_fields: {selected_fields}")
         
-        # Handle string input
         if not isinstance(patent_numbers, list):
             if isinstance(patent_numbers, str):
                 patent_numbers = patent_numbers.replace('\n', ' ').split()
@@ -85,14 +139,6 @@ def search_patents():
                     status_code=400
                 )
         
-        # Limit to 50 patents
-        if len(patent_numbers) > 50:
-            return create_response(
-                error="Maximum 50 patent numbers allowed",
-                status_code=400
-            )
-        
-        # Remove duplicates and empty strings
         patent_numbers = [p.strip() for p in patent_numbers if p.strip()]
         patent_numbers = list(set(patent_numbers))
         
@@ -102,7 +148,16 @@ def search_patents():
                 status_code=400
             )
         
-        # Use simple scraper
+        is_allowed, error_msg = check_guest_patent_limit(len(patent_numbers))
+        if not is_allowed:
+            return create_response(error=error_msg, status_code=403)
+        
+        if session.get('is_guest') and len(patent_numbers) > GUEST_PATENT_SEARCH_LIMIT:
+            return create_response(
+                error=f"游客模式每次最多查询 {GUEST_PATENT_SEARCH_LIMIT} 篇专利",
+                status_code=403
+            )
+        
         try:
             scraper = get_scraper_instance()
             results = scraper.scrape_patents_batch(
@@ -111,7 +166,8 @@ def search_patents():
                 selected_fields=selected_fields
             )
             
-            # Convert results to API format
+            record_guest_patent_search(len(patent_numbers))
+            
             api_results = [result.to_dict() for result in results]
             
             return create_response(data=api_results)
