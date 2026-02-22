@@ -186,16 +186,12 @@ class PDFOCRParser {
             const scopeSelect = document.getElementById('ocr-parse-mode');
             const scope = scopeSelect?.value || 'page';
             
-            if (scope === 'all' || scope === 'range') {
+            if (scope !== 'page') {
                 this.showToast('游客模式仅支持当前页面解析', 'error');
                 return;
             }
             
-            if (!window.guestModeRestrictions.canUsePDFParse()) {
-                const remaining = window.guestModeRestrictions.getTimeUntilReset(
-                    window.guestModeRestrictions.limits.pdfParse.parsedPages[0]
-                );
-                this.showToast(`游客模式：每小时仅限1页解析，剩余等待 ${remaining}`, 'error');
+            if (!window.guestModeRestrictions.checkPDFParse()) {
                 return;
             }
         }
@@ -208,7 +204,7 @@ class PDFOCRParser {
         }
 
         const settings = this.getSettings();
-        const useCache = document.getElementById('ocr-use-cache')?.checked ?? true;
+        const useCache = window.IS_GUEST_MODE ? false : (document.getElementById('ocr-use-cache')?.checked ?? true);
         
         if (!window.pdfOCRCache) {
             console.warn('[PDF-OCR-Parser] 缓存管理器未初始化');
@@ -229,8 +225,16 @@ class PDFOCRParser {
             if (settings.mode === 'page') {
                 await this.parseCurrentPage(file, apiKey, fileHash, useCache, forceRefresh);
             } else if (settings.mode === 'range') {
+                if (window.IS_GUEST_MODE) {
+                    this.showToast('游客模式不支持自定义范围解析', 'error');
+                    return;
+                }
                 await this.parsePageRange(file, apiKey, fileHash, useCache, forceRefresh, settings.pageRange);
             } else {
+                if (window.IS_GUEST_MODE) {
+                    this.showToast('游客模式不支持全部页面解析', 'error');
+                    return;
+                }
                 await this.parseAllPages(file, apiKey, fileHash, useCache, forceRefresh);
             }
 
@@ -266,14 +270,9 @@ class PDFOCRParser {
         const result = await this.callGLMOCR(fileData, apiKey, {});
         const normalizedResult = this.normalizeResult(result, pageNum);
         
-        if (useCache && window.pdfOCRCache) {
+        if (useCache && window.pdfOCRCache && !window.IS_GUEST_MODE) {
             window.pdfOCRCache.setCache(fileHash, pageNum, normalizedResult);
             console.log(`[PDF-OCR-Parser] 已缓存: 第${pageNum}页`);
-        }
-        
-        if (window.IS_GUEST_MODE && window.guestModeRestrictions) {
-            window.guestModeRestrictions.limits.pdfParse.parsedPages.push(Date.now());
-            window.guestModeRestrictions.saveUsageData();
         }
         
         this.handleParseResult(normalizedResult, true);

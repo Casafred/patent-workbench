@@ -20,38 +20,71 @@ class GuestModeRestrictions {
         };
         
         if (this.isGuest) {
+            this.clearAllGuestData();
             this.loadUsageData();
             this.applyAllRestrictions();
+            this.setupBeforeUnload();
         }
+    }
+    
+    clearAllGuestData() {
+        console.log('[GuestMode] 清空所有游客缓存数据...');
+        
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key) {
+                const lowerKey = key.toLowerCase();
+                if (lowerKey.includes('guest') || 
+                    lowerKey.includes('cache') ||
+                    lowerKey.includes('ocr') ||
+                    lowerKey.includes('chat') ||
+                    lowerKey.includes('patent') ||
+                    lowerKey.includes('conversation') ||
+                    lowerKey.includes('persona') ||
+                    lowerKey.includes('template') ||
+                    lowerKey.includes('history') ||
+                    lowerKey.includes('setting') ||
+                    lowerKey.includes('config') ||
+                    lowerKey.includes('user_')) {
+                    keysToRemove.push(key);
+                }
+            }
+        }
+        
+        keysToRemove.forEach(key => {
+            try {
+                localStorage.removeItem(key);
+            } catch (e) {}
+        });
+        
+        console.log(`[GuestMode] 已清空 ${keysToRemove.length} 项缓存数据`);
+        
+        if (window.sessionStorage) {
+            sessionStorage.clear();
+            console.log('[GuestMode] 已清空 sessionStorage');
+        }
+    }
+    
+    setupBeforeUnload() {
+        window.addEventListener('beforeunload', () => {
+            this.clearAllGuestData();
+        });
+        
+        window.addEventListener('pagehide', () => {
+            this.clearAllGuestData();
+        });
     }
     
     loadUsageData() {
-        try {
-            const data = localStorage.getItem('guest_usage_data');
-            if (data) {
-                const parsed = JSON.parse(data);
-                this.limits.imageUpload.uploads = this.filterExpiredTimestamps(parsed.imageUploads || []);
-                this.limits.pdfParse.parsedPages = this.filterExpiredTimestamps(parsed.pdfParsedPages || []);
-            }
-        } catch (e) {
-            console.error('[GuestMode] 加载使用数据失败:', e);
-        }
+        // 不从localStorage加载，每次都重新开始
+        this.limits.imageUpload.uploads = [];
+        this.limits.pdfParse.parsedPages = [];
     }
     
     saveUsageData() {
-        try {
-            localStorage.setItem('guest_usage_data', JSON.stringify({
-                imageUploads: this.limits.imageUpload.uploads,
-                pdfParsedPages: this.limits.pdfParse.parsedPages
-            }));
-        } catch (e) {
-            console.error('[GuestMode] 保存使用数据失败:', e);
-        }
-    }
-    
-    filterExpiredTimestamps(timestamps) {
-        const oneHourAgo = Date.now() - (60 * 60 * 1000);
-        return timestamps.filter(t => t > oneHourAgo);
+        // 游客模式不保存使用数据到localStorage
+        // 使用内存中的数据，页面关闭后自动清空
     }
     
     applyAllRestrictions() {
@@ -63,8 +96,12 @@ class GuestModeRestrictions {
             this.disableChatFileUpload();
             this.disableChatSearch();
             this.restrictModelSelectors();
-            this.setupPDFOCRRestrictions();
+            this.restrictPDFOCRParseMode();
         }, 500);
+        
+        setTimeout(() => {
+            this.restrictPDFOCRParseMode();
+        }, 2000);
     }
     
     disableChatFileUpload() {
@@ -130,101 +167,51 @@ class GuestModeRestrictions {
         console.log('[GuestMode] 已限制模型选择器');
     }
     
-    setupPDFOCRRestrictions() {
-        const dropzone = document.getElementById('pdf_upload_dropzone');
-        const fileInput = document.getElementById('ocr-file-input');
-        const startOcrBtn = document.getElementById('start-ocr-btn');
-        const ocrScopeSelect = document.getElementById('ocr-parse-mode');
+    restrictPDFOCRParseMode() {
+        const parseModeSelect = document.getElementById('ocr-parse-mode');
+        const pageRangeGroup = document.getElementById('ocr-page-range-group');
         
-        if (dropzone) {
-            const originalClick = dropzone.onclick;
-            dropzone.onclick = (e) => {
-                if (!this.checkAndHandleFileUpload(e)) {
-                    return;
-                }
-                if (originalClick) originalClick.call(dropzone, e);
-            };
+        if (parseModeSelect) {
+            parseModeSelect.innerHTML = '<option value="page">当前页面</option>';
+            parseModeSelect.value = 'page';
+            parseModeSelect.disabled = true;
+            parseModeSelect.style.cursor = 'not-allowed';
+            parseModeSelect.style.opacity = '0.7';
+            parseModeSelect.title = '游客模式仅支持当前页面解析';
+            console.log('[GuestMode] 已限制PDF解析模式为当前页面');
         }
         
-        if (fileInput) {
-            fileInput.addEventListener('change', (e) => {
-                if (!this.checkAndHandleFileUpload(e)) {
-                    e.target.value = '';
-                    return;
-                }
-            });
+        if (pageRangeGroup) {
+            pageRangeGroup.style.display = 'none';
         }
         
-        if (startOcrBtn) {
-            const originalClick = startOcrBtn.onclick;
-            startOcrBtn.addEventListener('click', (e) => {
-                if (!this.checkAndHandleOCRStart(e)) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    return;
-                }
-            }, true);
+        const useCacheCheckbox = document.getElementById('ocr-use-cache');
+        if (useCacheCheckbox) {
+            useCacheCheckbox.checked = false;
+            useCacheCheckbox.disabled = true;
+            useCacheCheckbox.parentElement.style.opacity = '0.5';
         }
-        
-        if (ocrScopeSelect) {
-            const options = ocrScopeSelect.querySelectorAll('option');
-            options.forEach(opt => {
-                if (opt.value === 'all') {
-                    opt.disabled = true;
-                    opt.textContent = opt.textContent + ' (游客不可用)';
-                }
-            });
-        }
-        
-        console.log('[GuestMode] 已设置PDF OCR限制');
     }
     
-    checkAndHandleFileUpload(e) {
-        const fileInput = document.getElementById('ocr-file-input');
-        const file = fileInput?.files?.[0];
-        
-        if (file) {
-            const isImage = /\.(png|jpg|jpeg|bmp|webp)$/i.test(file.name);
-            const isPDF = /\.pdf$/i.test(file.name);
-            
-            if (isImage) {
-                const count = this.limits.imageUpload.uploads.length;
-                if (count >= this.limits.imageUpload.maxPerHour) {
-                    const remaining = this.getTimeUntilReset(this.limits.imageUpload.uploads[0]);
-                    alert(`游客模式限制\n\n图片上传：每小时仅限 ${this.limits.imageUpload.maxPerHour} 张\n\n剩余等待时间：${remaining}`);
-                    return false;
-                }
-                this.limits.imageUpload.uploads.push(Date.now());
-                this.saveUsageData();
-                return true;
-            }
-            
-            if (isPDF) {
-                return true;
-            }
+    checkImageUpload() {
+        const count = this.limits.imageUpload.uploads.length;
+        if (count >= this.limits.imageUpload.maxPerHour) {
+            const remaining = this.getTimeUntilReset(this.limits.imageUpload.uploads[0]);
+            alert(`游客模式限制\n\n图片上传：每小时仅限 ${this.limits.imageUpload.maxPerHour} 张\n\n剩余等待时间：${remaining}`);
+            return false;
         }
-        
+        this.limits.imageUpload.uploads.push(Date.now());
         return true;
     }
     
-    checkAndHandleOCRStart(e) {
-        const scopeSelect = document.getElementById('ocr-parse-mode');
-        const scope = scopeSelect?.value || 'current';
-        
-        if (scope === 'all') {
-            alert('游客模式限制\n\nPDF全文档解析不可用\n仅支持当前页面解析');
-            return false;
-        }
-        
+    checkPDFParse() {
         const count = this.limits.pdfParse.parsedPages.length;
         if (count >= this.limits.pdfParse.maxPagesPerHour) {
             const remaining = this.getTimeUntilReset(this.limits.pdfParse.parsedPages[0]);
             alert(`游客模式限制\n\nPDF解析：每小时仅限 ${this.limits.pdfParse.maxPagesPerHour} 页\n\n剩余等待时间：${remaining}`);
             return false;
         }
-        
         this.limits.pdfParse.parsedPages.push(Date.now());
-        this.saveUsageData();
         return true;
     }
     
@@ -249,6 +236,10 @@ class GuestModeRestrictions {
     
     getRemainingPDFParses() {
         return Math.max(0, this.limits.pdfParse.maxPagesPerHour - this.limits.pdfParse.parsedPages.length);
+    }
+    
+    recordPDFParse() {
+        this.limits.pdfParse.parsedPages.push(Date.now());
     }
 }
 
