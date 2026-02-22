@@ -4,28 +4,172 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>隐私政策 - 专利分析工作台</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #22C55E;
+            --primary-color-dark: #16A34A;
+            --primary-color-light: #86EFAC;
+            --bg-color: #F0FDF4;
+            --surface-color: #FFFFFF;
+            --text-color: #14532D;
+            --text-secondary: #166534;
+            --border-color: #BBF7D0;
+            --warning-bg: #FEF3C7;
+            --warning-border: #F59E0B;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Noto Sans SC', sans-serif; line-height: 1.8; color: #333; background: #f5f5f5; }
-        .container { max-width: 900px; margin: 40px auto; padding: 40px; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h1 { color: #2c3e50; margin-bottom: 30px; font-size: 2em; border-bottom: 3px solid #4a6cf7; padding-bottom: 15px; }
-        h2 { color: #34495e; margin-top: 30px; margin-bottom: 15px; font-size: 1.5em; }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            line-height: 1.8;
+            color: var(--text-color);
+            background: linear-gradient(135deg, var(--bg-color) 0%, #DCFCE7 50%, #D1FAE5 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(34, 197, 94, 0.15);
+            border: 1px solid var(--border-color);
+        }
+        h1 {
+            color: var(--primary-color-dark);
+            margin-bottom: 10px;
+            font-size: 2em;
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        h1::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 32px;
+            background: linear-gradient(180deg, var(--primary-color), var(--primary-color-dark));
+            border-radius: 4px;
+        }
+        h2 {
+            color: var(--primary-color-dark);
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        h2::before {
+            content: '●';
+            color: var(--primary-color);
+            font-size: 0.6em;
+        }
+        h3 {
+            color: var(--text-secondary);
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
         p { margin-bottom: 15px; text-align: justify; }
         ul { margin-left: 30px; margin-bottom: 15px; }
         li { margin-bottom: 8px; }
-        .update-date { color: #7f8c8d; font-size: 0.9em; margin-bottom: 30px; }
-        .highlight { background: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin: 20px 0; }
-        .back-link { display: inline-block; margin-top: 30px; color: #4a6cf7; text-decoration: none; }
-        .back-link:hover { text-decoration: underline; }
+        .update-date {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            margin-bottom: 30px;
+            padding: 8px 16px;
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
+            border-radius: 8px;
+            display: inline-block;
+        }
+        .highlight {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05));
+            padding: 16px 20px;
+            border-left: 4px solid var(--primary-color);
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .highlight strong { color: var(--primary-color-dark); }
+        .warning {
+            background: linear-gradient(135deg, var(--warning-bg), #FDE68A);
+            padding: 16px 20px;
+            border-left: 4px solid var(--warning-border);
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+            color: #92400E;
+        }
+        .info-box {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
+            padding: 16px 20px;
+            border-left: 4px solid var(--primary-color);
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 30px;
+            color: var(--primary-color-dark);
+            text-decoration: none;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+        .back-link:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateX(-5px);
+        }
+        .check-icon {
+            color: var(--primary-color);
+            margin-right: 4px;
+        }
+        .cross-icon {
+            color: #DC2626;
+            margin-right: 4px;
+        }
+        .data-flow {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+            align-items: center;
+        }
+        .flow-item {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05));
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            font-size: 14px;
+        }
+        .flow-arrow {
+            color: var(--primary-color);
+            font-size: 18px;
+        }
+        @media (max-width: 768px) {
+            .container { margin: 20px; padding: 25px; }
+            h1 { font-size: 1.6em; }
+            h2 { font-size: 1.2em; }
+            .data-flow { flex-direction: column; align-items: flex-start; }
+            .flow-arrow { transform: rotate(90deg); }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>隐私政策</h1>
-        <p class="update-date">最后更新日期：2025年1月21日</p>
+        <p class="update-date">📅 最后更新日期：2026年2月22日</p>
 
         <div class="highlight">
-            <strong>核心承诺：</strong>我们不存储您上传的专利数据。所有数据仅在分析过程中临时使用，处理完成后立即删除。
+            <strong>🔒 核心承诺：</strong>我们不存储您上传的专利数据。所有数据仅在分析过程中临时使用，处理完成后立即删除。
         </div>
 
         <h2>1. 信息收集</h2>
@@ -46,22 +190,10 @@
 
         <h3>1.3 不收集的信息</h3>
         <ul>
-            <li>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
-                您上传的专利文档内容
-            </li>
-            <li>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
-                分析结果数据
-            </li>
-            <li>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
-                个人敏感信息
-            </li>
-            <li>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
-                第三方账号信息
-            </li>
+            <li><span class="cross-icon">❌</span> 您上传的专利文档内容</li>
+            <li><span class="cross-icon">❌</span> 分析结果数据</li>
+            <li><span class="cross-icon">❌</span> 个人敏感信息</li>
+            <li><span class="cross-icon">❌</span> 第三方账号信息</li>
         </ul>
 
         <h2>2. 信息使用</h2>
@@ -76,8 +208,17 @@
 
         <h2>3. 数据处理说明</h2>
         
-        <h3>3.1 临时处理</h3>
+        <h3>3.1 临时处理流程</h3>
         <p>当您上传专利文档进行分析时：</p>
+        <div class="data-flow">
+            <span class="flow-item">📤 上传文件</span>
+            <span class="flow-arrow">→</span>
+            <span class="flow-item">⚡ 内存处理</span>
+            <span class="flow-arrow">→</span>
+            <span class="flow-item">📊 返回结果</span>
+            <span class="flow-arrow">→</span>
+            <span class="flow-item">🗑️ 立即删除</span>
+        </div>
         <ul>
             <li>文件被临时存储在服务器内存中</li>
             <li>分析完成后立即从内存中删除</li>
@@ -91,17 +232,18 @@
             <li>用户偏好设置</li>
             <li>界面配置</li>
             <li>临时会话数据</li>
+            <li>用户缓存数据（仅存储在用户本地浏览器）</li>
         </ul>
         <p>这些数据仅存储在您的浏览器中，我们无法访问。</p>
 
         <h2>4. 数据安全</h2>
         <p>我们采取以下措施保护您的信息安全：</p>
         <ul>
-            <li>使用 HTTPS 加密传输</li>
-            <li>密码采用加密算法存储</li>
-            <li>限制数据访问权限</li>
-            <li>定期安全审计</li>
-            <li>及时更新安全补丁</li>
+            <li><span class="check-icon">✅</span> 使用 HTTPS 加密传输</li>
+            <li><span class="check-icon">✅</span> 密码采用加密算法存储</li>
+            <li><span class="check-icon">✅</span> 限制数据访问权限</li>
+            <li><span class="check-icon">✅</span> 定期安全审计</li>
+            <li><span class="check-icon">✅</span> 及时更新安全补丁</li>
         </ul>
 
         <h2>5. 信息共享</h2>
@@ -125,35 +267,42 @@
         <p>本工具可能使用以下第三方服务：</p>
         
         <h3>7.1 智谱AI</h3>
-        <ul>
-            <li>用途：数据分析辅助功能</li>
-            <li>使用方式：您需自行在智谱AI官网申请并配置 API Key</li>
-            <li>数据处理：您的数据将通过API发送到智谱AI进行处理</li>
-            <li>责任说明：智谱AI已完成ICP备案和算法备案，服务合规性由智谱AI负责</li>
-            <li>隐私政策：https://www.zhipuai.cn/privacy</li>
-        </ul>
+        <div class="info-box">
+            <ul style="margin-left: 0; list-style: none;">
+                <li><strong>用途：</strong>数据分析辅助功能</li>
+                <li><strong>使用方式：</strong>您需自行在智谱AI官网申请并配置 API Key</li>
+                <li><strong>数据处理：</strong>您的数据将通过API发送到智谱AI进行处理</li>
+                <li><strong>责任说明：</strong>智谱AI已完成ICP备案和算法备案，服务合规性由智谱AI负责</li>
+                <li><strong>隐私政策：</strong><a href="https://www.zhipuai.cn/privacy" target="_blank" style="color: var(--primary-color-dark);">https://www.zhipuai.cn/privacy</a></li>
+            </ul>
+        </div>
         
         <h3>7.2 Google Patents</h3>
-        <ul>
-            <li>用途：专利数据查询</li>
-            <li>使用方式：通过公开API查询专利信息</li>
-            <li>数据来源：公开数据源</li>
-        </ul>
+        <div class="info-box">
+            <ul style="margin-left: 0; list-style: none;">
+                <li><strong>用途：</strong>专利数据查询</li>
+                <li><strong>使用方式：</strong>通过公开API查询专利信息</li>
+                <li><strong>数据来源：</strong>公开数据源</li>
+            </ul>
+        </div>
         
-        <p><strong>重要说明：</strong></p>
-        <ul>
-            <li>我们不存储您的第三方服务API Key</li>
-            <li>第三方服务的使用完全由您自己控制</li>
-            <li>第三方服务有各自的隐私政策和服务条款</li>
-            <li>我们不对第三方服务的行为负责</li>
-        </ul>
+        <div class="warning">
+            <strong>⚠️ 重要说明：</strong>
+            <ul style="margin-top: 10px;">
+                <li>我们不存储您的第三方服务API Key</li>
+                <li>第三方服务的使用完全由您自己控制</li>
+                <li>第三方服务有各自的隐私政策和服务条款</li>
+                <li>我们不对第三方服务的行为负责</li>
+            </ul>
+        </div>
 
         <h2>8. 数据保留</h2>
         <ul>
-            <li>账号信息：账号存续期间</li>
-            <li>登录日志：保留 30 天</li>
-            <li>上传文件：<strong>不保留</strong>（处理后立即删除）</li>
-            <li>分析结果：<strong>不保留</strong>（由用户自行导出）</li>
+            <li><strong>账号信息：</strong>账号存续期间</li>
+            <li><strong>登录日志：</strong>保留 30 天</li>
+            <li><strong>上传文件：</strong><span style="color: #DC2626; font-weight: bold;">不保留</span>（处理后立即删除）</li>
+            <li><strong>分析结果：</strong><span style="color: #DC2626; font-weight: bold;">不保留</span>（由用户自行导出）</li>
+            <li><strong>用户缓存：</strong>存储在用户本地浏览器，用户可自行清除</li>
         </ul>
 
         <h2>9. 您的权利</h2>
@@ -164,6 +313,7 @@
             <li>删除您的账号</li>
             <li>导出您的数据</li>
             <li>拒绝特定数据处理</li>
+            <li>清除本地缓存数据</li>
         </ul>
 
         <h2>10. 儿童隐私</h2>
@@ -173,10 +323,15 @@
         <p>我们可能不时更新本隐私政策。更新后的政策将在网站上公布，并注明更新日期。继续使用服务即表示您接受更新后的政策。</p>
 
         <h2>12. 联系我们</h2>
-        <p>如对本隐私政策有任何疑问或建议，请联系：</p>
-        <p>邮箱：freecasafred@outlook.com</p>
+        <div class="info-box">
+            <p>如对本隐私政策有任何疑问或建议，请联系：</p>
+            <p>📧 邮箱：freecasafred@outlook.com</p>
+        </div>
 
-        <a href="/" class="back-link">← 返回首页</a>
+        <a href="/" class="back-link">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            返回首页
+        </a>
     </div>
 </body>
 </html>

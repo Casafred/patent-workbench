@@ -4,45 +4,156 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>免责声明 - 专利分析工作台</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #22C55E;
+            --primary-color-dark: #16A34A;
+            --primary-color-light: #86EFAC;
+            --bg-color: #F0FDF4;
+            --surface-color: #FFFFFF;
+            --text-color: #14532D;
+            --text-secondary: #166534;
+            --border-color: #BBF7D0;
+            --warning-bg: #FEF3C7;
+            --warning-border: #F59E0B;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Noto Sans SC', sans-serif; line-height: 1.8; color: #333; background: #f5f5f5; }
-        .container { max-width: 900px; margin: 40px auto; padding: 40px; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h1 { color: #2c3e50; margin-bottom: 30px; font-size: 2em; border-bottom: 3px solid #4a6cf7; padding-bottom: 15px; }
-        h2 { color: #34495e; margin-top: 30px; margin-bottom: 15px; font-size: 1.5em; }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            line-height: 1.8;
+            color: var(--text-color);
+            background: linear-gradient(135deg, var(--bg-color) 0%, #DCFCE7 50%, #D1FAE5 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(34, 197, 94, 0.15);
+            border: 1px solid var(--border-color);
+        }
+        h1 {
+            color: var(--primary-color-dark);
+            margin-bottom: 10px;
+            font-size: 2em;
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        h1::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 32px;
+            background: linear-gradient(180deg, var(--primary-color), var(--primary-color-dark));
+            border-radius: 4px;
+        }
+        h2 {
+            color: var(--primary-color-dark);
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        h2::before {
+            content: '●';
+            color: var(--primary-color);
+            font-size: 0.6em;
+        }
         p { margin-bottom: 15px; text-align: justify; }
         ul { margin-left: 30px; margin-bottom: 15px; }
         li { margin-bottom: 8px; }
-        .update-date { color: #7f8c8d; font-size: 0.9em; margin-bottom: 30px; }
-        .warning { background: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin: 20px 0; }
-        .back-link { display: inline-block; margin-top: 30px; color: #4a6cf7; text-decoration: none; }
-        .back-link:hover { text-decoration: underline; }
+        .update-date {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            margin-bottom: 30px;
+            padding: 8px 16px;
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
+            border-radius: 8px;
+            display: inline-block;
+        }
+        .warning {
+            background: linear-gradient(135deg, var(--warning-bg), #FDE68A);
+            padding: 16px 20px;
+            border-left: 4px solid var(--warning-border);
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+            color: #92400E;
+        }
+        .warning strong { color: #B45309; }
+        .info-box {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
+            padding: 16px 20px;
+            border-left: 4px solid var(--primary-color);
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 30px;
+            color: var(--primary-color-dark);
+            text-decoration: none;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+        .back-link:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateX(-5px);
+        }
+        .check-icon {
+            color: var(--primary-color);
+            margin-right: 4px;
+        }
+        .cross-icon {
+            color: #DC2626;
+            margin-right: 4px;
+        }
+        @media (max-width: 768px) {
+            .container { margin: 20px; padding: 25px; }
+            h1 { font-size: 1.6em; }
+            h2 { font-size: 1.2em; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>免责声明</h1>
-        <p class="update-date">最后更新日期：2025年1月21日</p>
+        <p class="update-date">📅 最后更新日期：2026年2月22日</p>
 
         <div class="warning">
-            <strong>重要提示：</strong>本工具仅作为数据分析辅助工具使用，不提供任何法律咨询或专业建议。使用本工具产生的任何后果由用户自行承担。
+            <strong>⚠️ 重要提示：</strong>本工具仅作为数据分析辅助工具使用，不提供任何法律咨询或专业建议。使用本工具产生的任何后果由用户自行承担。
         </div>
 
         <h2>1. 工具性质说明</h2>
         <p>专利分析工作台是一个数据分析工具，用于帮助用户整理和分析专利文献数据。本工具：</p>
         <ul>
-            <li>✅ 提供数据处理和分析功能</li>
-            <li>✅ 提供可视化展示功能</li>
-            <li>✅ 提供结果导出功能</li>
-            <li>❌ 不提供专利申请服务</li>
-            <li>❌ 不提供专利代理服务</li>
-            <li>❌ 不提供法律咨询服务</li>
-            <li>❌ 不提供专利评估服务</li>
+            <li><span class="check-icon">✅</span> 提供数据处理和分析功能</li>
+            <li><span class="check-icon">✅</span> 提供可视化展示功能</li>
+            <li><span class="check-icon">✅</span> 提供结果导出功能</li>
+            <li><span class="cross-icon">❌</span> 不提供专利申请服务</li>
+            <li><span class="cross-icon">❌</span> 不提供专利代理服务</li>
+            <li><span class="cross-icon">❌</span> 不提供法律咨询服务</li>
+            <li><span class="cross-icon">❌</span> 不提供专利评估服务</li>
         </ul>
 
         <h2>2. 费用说明</h2>
         <div class="warning">
-            <strong>重要提示：</strong>
+            <strong>💰 重要提示：</strong>
             <ul style="margin-top: 10px;">
                 <li><strong>本平台不收取任何费用。</strong>本平台作为工具免费提供给用户使用，不向用户收取任何形式的费用。</li>
                 <li><strong>AI模型调用费用由模型服务提供方收取。</strong>您使用本平台AI功能时产生的费用，由智谱AI（模型服务提供方）按照其官方定价标准收取，费用从您配置的API Key关联账户中扣除。</li>
@@ -110,7 +221,7 @@
         <h2>7. 知识产权免责</h2>
         <p>用户上传的数据及生成的分析结果的知识产权归用户所有。如因用户上传的数据侵犯第三方知识产权而产生的纠纷，由用户自行承担全部责任。</p>
 
-        <h2>7. 法律责任免责</h2>
+        <h2>8. 法律责任免责</h2>
         <p>用户使用本工具从事的任何活动，包括但不限于：</p>
         <ul>
             <li>专利申请决策</li>
@@ -130,7 +241,7 @@
         </ul>
         <p>我们不承担任何赔偿责任。</p>
 
-        <h2>9. 用户行为免责</h2>
+        <h2>10. 用户行为免责</h2>
         <p>用户在使用本工具过程中的任何违法违规行为，由用户自行承担全部法律责任，包括但不限于：</p>
         <ul>
             <li>上传非法内容</li>
@@ -139,7 +250,7 @@
             <li>攻击系统</li>
         </ul>
 
-        <h2>10. 链接免责</h2>
+        <h2>11. 链接免责</h2>
         <p>本工具可能包含指向第三方网站的链接。这些链接仅为方便用户提供，我们：</p>
         <ul>
             <li>不对链接网站的内容负责</li>
@@ -147,21 +258,26 @@
             <li>不对链接网站的隐私政策负责</li>
         </ul>
 
-        <h2>11. 免责声明的修改</h2>
+        <h2>12. 免责声明的修改</h2>
         <p>我们保留随时修改本免责声明的权利。修改后的声明将在网站上公布，继续使用本工具即表示您接受修改后的声明。</p>
 
-        <h2>12. 法律适用</h2>
+        <h2>13. 法律适用</h2>
         <p>本免责声明适用中华人民共和国法律。如有争议，由本工具运营方所在地人民法院管辖。</p>
 
-        <h2>13. 联系我们</h2>
-        <p>如对本免责声明有任何疑问，请联系：</p>
-        <p>邮箱：freecasafred@outlook.com</p>
-
-        <div class="warning" style="margin-top: 30px;">
-            <strong>最后提醒：</strong>使用本工具即表示您已阅读、理解并同意本免责声明的全部内容。如不同意，请立即停止使用。
+        <h2>14. 联系我们</h2>
+        <div class="info-box">
+            <p>如对本免责声明有任何疑问，请联系：</p>
+            <p>📧 邮箱：freecasafred@outlook.com</p>
         </div>
 
-        <a href="/" class="back-link">← 返回首页</a>
+        <div class="warning" style="margin-top: 30px;">
+            <strong>🔔 最后提醒：</strong>使用本工具即表示您已阅读、理解并同意本免责声明的全部内容。如不同意，请立即停止使用。
+        </div>
+
+        <a href="/" class="back-link">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            返回首页
+        </a>
     </div>
 </body>
 </html>

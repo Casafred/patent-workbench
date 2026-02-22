@@ -4,37 +4,202 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>服务条款 - 专利分析工作台</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #22C55E;
+            --primary-color-dark: #16A34A;
+            --primary-color-light: #86EFAC;
+            --bg-color: #F0FDF4;
+            --surface-color: #FFFFFF;
+            --text-color: #14532D;
+            --text-secondary: #166534;
+            --border-color: #BBF7D0;
+            --warning-bg: #FEF3C7;
+            --warning-border: #F59E0B;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Noto Sans SC', sans-serif; line-height: 1.8; color: #333; background: #f5f5f5; }
-        .container { max-width: 900px; margin: 40px auto; padding: 40px; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h1 { color: #2c3e50; margin-bottom: 30px; font-size: 2em; border-bottom: 3px solid #4a6cf7; padding-bottom: 15px; }
-        h2 { color: #34495e; margin-top: 30px; margin-bottom: 15px; font-size: 1.5em; }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            line-height: 1.8;
+            color: var(--text-color);
+            background: linear-gradient(135deg, var(--bg-color) 0%, #DCFCE7 50%, #D1FAE5 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(34, 197, 94, 0.15);
+            border: 1px solid var(--border-color);
+        }
+        h1 {
+            color: var(--primary-color-dark);
+            margin-bottom: 10px;
+            font-size: 2em;
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        h1::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 32px;
+            background: linear-gradient(180deg, var(--primary-color), var(--primary-color-dark));
+            border-radius: 4px;
+        }
+        h2 {
+            color: var(--primary-color-dark);
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        h2::before {
+            content: '●';
+            color: var(--primary-color);
+            font-size: 0.6em;
+        }
         p { margin-bottom: 15px; text-align: justify; }
         ul { margin-left: 30px; margin-bottom: 15px; }
         li { margin-bottom: 8px; }
-        .update-date { color: #7f8c8d; font-size: 0.9em; margin-bottom: 30px; }
-        .back-link { display: inline-block; margin-top: 30px; color: #4a6cf7; text-decoration: none; }
-        .back-link:hover { text-decoration: underline; }
+        .update-date {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            margin-bottom: 30px;
+            padding: 8px 16px;
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
+            border-radius: 8px;
+            display: inline-block;
+        }
+        .warning {
+            background: linear-gradient(135deg, var(--warning-bg), #FDE68A);
+            padding: 16px 20px;
+            border-left: 4px solid var(--warning-border);
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+            color: #92400E;
+        }
+        .warning strong { color: #B45309; }
+        .info-box {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
+            padding: 16px 20px;
+            border-left: 4px solid var(--primary-color);
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+            margin: 15px 0;
+        }
+        .feature-item {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(34, 197, 94, 0.02));
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+        .feature-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15);
+        }
+        .feature-num {
+            background: var(--primary-color);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 30px;
+            color: var(--primary-color-dark);
+            text-decoration: none;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+        .back-link:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateX(-5px);
+        }
+        @media (max-width: 768px) {
+            .container { margin: 20px; padding: 25px; }
+            h1 { font-size: 1.6em; }
+            h2 { font-size: 1.2em; }
+            .feature-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>服务条款</h1>
-        <p class="update-date">最后更新日期：2025年1月21日</p>
+        <p class="update-date">📅 最后更新日期：2026年2月22日</p>
 
         <h2>1. 服务说明</h2>
         <p>欢迎使用专利分析工作台（以下简称"本工具"）。本工具是一个专利文献数据分析工具，为用户提供专利数据的整理、分析和可视化服务。</p>
         
         <h2>2. 服务范围</h2>
-        <p>本工具提供以下功能：</p>
-        <ul>
-            <li>专利文献上传和管理</li>
-            <li>专利权利要求分析</li>
-            <li>专利数据批量处理</li>
-            <li>分析结果导出</li>
-            <li>数据查询辅助功能</li>
-        </ul>
+        <p>本工具提供以下八大核心功能：</p>
+        <div class="feature-grid">
+            <div class="feature-item">
+                <span class="feature-num">1</span>
+                <span>AI智能体对话</span>
+            </div>
+            <div class="feature-item">
+                <span class="feature-num">2</span>
+                <span>文本批量智能分析</span>
+            </div>
+            <div class="feature-item">
+                <span class="feature-num">3</span>
+                <span>本地数据表管理</span>
+            </div>
+            <div class="feature-item">
+                <span class="feature-num">4</span>
+                <span>权利要求智能比对</span>
+            </div>
+            <div class="feature-item">
+                <span class="feature-num">5</span>
+                <span>批量专利检索与解读</span>
+            </div>
+            <div class="feature-item">
+                <span class="feature-num">6</span>
+                <span>独从权识别与可视化</span>
+            </div>
+            <div class="feature-item">
+                <span class="feature-num">7</span>
+                <span>专利附图智能标记</span>
+            </div>
+            <div class="feature-item">
+                <span class="feature-num">8</span>
+                <span>文档OCR与智能分析</span>
+            </div>
+        </div>
 
         <h2>3. 用户责任</h2>
         <p>使用本工具时，您需要：</p>
@@ -47,12 +212,19 @@
         </ul>
 
         <h2>4. 数据处理说明</h2>
-        <p><strong>重要：</strong>本工具不存储用户上传的专利数据。所有数据仅在处理过程中临时使用，处理完成后即被删除。我们不会将您的数据用于其他用途或提供给第三方。</p>
+        <div class="info-box">
+            <strong>🔐 重要：</strong>本工具不存储用户上传的专利数据。所有数据仅在处理过程中临时使用，处理完成后即被删除。我们不会将您的数据用于其他用途或提供给第三方。
+        </div>
 
         <h2>5. 费用说明</h2>
-        <p><strong>本平台不收取任何费用。</strong>本平台作为工具免费提供给用户使用，不向用户收取任何形式的费用。</p>
-        <p><strong>AI模型调用费用由模型服务提供方收取。</strong>您使用本平台AI功能时产生的费用，由智谱AI（模型服务提供方）按照其官方定价标准收取，费用从您配置的API Key关联账户中扣除。</p>
-        <p><strong>API账号由用户自行管理。</strong>API Key的申请、充值、查询余额、消费记录等操作，均需您自行在智谱AI开放平台完成，本平台不参与任何API账号相关的管理工作。</p>
+        <div class="warning">
+            <strong>💰 费用说明：</strong>
+            <ul style="margin-top: 10px;">
+                <li><strong>本平台不收取任何费用。</strong>本平台作为工具免费提供给用户使用，不向用户收取任何形式的费用。</li>
+                <li><strong>AI模型调用费用由模型服务提供方收取。</strong>您使用本平台AI功能时产生的费用，由智谱AI（模型服务提供方）按照其官方定价标准收取，费用从您配置的API Key关联账户中扣除。</li>
+                <li><strong>API账号由用户自行管理。</strong>API Key的申请、充值、查询余额、消费记录等操作，均需您自行在智谱AI开放平台完成，本平台不参与任何API账号相关的管理工作。</li>
+            </ul>
+        </div>
 
         <h2>6. 知识产权</h2>
         <p>本工具的所有代码、设计、界面等知识产权归开发者所有。用户上传的数据及分析结果的知识产权归用户所有。</p>
@@ -75,10 +247,15 @@
         <p>本服务条款适用中华人民共和国法律。因本服务条款产生的争议，由本工具运营方所在地人民法院管辖。</p>
 
         <h2>11. 联系我们</h2>
-        <p>如对本服务条款有任何疑问，请联系：</p>
-        <p>邮箱：freecasafred@outlook.com</p>
+        <div class="info-box">
+            <p>如对本服务条款有任何疑问，请联系：</p>
+            <p>📧 邮箱：freecasafred@outlook.com</p>
+        </div>
 
-        <a href="/" class="back-link">← 返回首页</a>
+        <a href="/" class="back-link">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            返回首页
+        </a>
     </div>
 </body>
 </html>

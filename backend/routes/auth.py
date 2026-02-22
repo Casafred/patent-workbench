@@ -444,7 +444,7 @@ LOGIN_PAGE_HTML = """
     </div>
 
     <div class="footer">
-        © 2025 ALFRED X IP. All Rights Reserved.
+        © 2026 ALFRED X IP. All Rights Reserved.
     </div>
 
     <script>
