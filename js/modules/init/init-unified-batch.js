@@ -64,20 +64,34 @@ function populateUnifiedModelSelect() {
     const select = document.getElementById('unified_template_model_select');
     if (!select) return;
 
-    const models = [
-        { id: 'GLM-4.7-Flash', name: 'GLM-4.7-Flash (推荐)' },
-        { id: 'GLM-4-Flash', name: 'GLM-4-Flash' },
-        { id: 'GLM-4-Plus', name: 'GLM-4-Plus' },
-        { id: 'GLM-4-Air', name: 'GLM-4-Air' }
-    ];
-
     select.innerHTML = '';
-    models.forEach(function(model) {
-        const option = document.createElement('option');
-        option.value = model.id;
-        option.textContent = model.name;
-        select.appendChild(option);
-    });
+
+    if (typeof AVAILABLE_MODELS !== 'undefined' && AVAILABLE_MODELS.length > 0) {
+        AVAILABLE_MODELS.forEach(function(modelId) {
+            var option = document.createElement('option');
+            option.value = modelId;
+            option.textContent = modelId;
+            if (modelId === 'GLM-4.7-Flash' || modelId === 'GLM-4-Flash') {
+                option.textContent = modelId + ' (推荐)';
+            }
+            select.appendChild(option);
+        });
+    } else {
+        var defaultModels = [
+            'GLM-4.7-Flash',
+            'GLM-4-Flash',
+            'GLM-4-Plus',
+            'GLM-4-Air',
+            'GLM-4-0520',
+            'GLM-4'
+        ];
+        defaultModels.forEach(function(modelId) {
+            var option = document.createElement('option');
+            option.value = modelId;
+            option.textContent = modelId;
+            select.appendChild(option);
+        });
+    }
 }
 
 function renderUnifiedTemplatesList() {

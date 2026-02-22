@@ -286,6 +286,20 @@ function updateAllModelSelectors(retryCount = 0) {
         allFound = false;
     }
     
+    // 功能二/三：统一批量处理（合并后）
+    const unifiedTemplateModelSelect = document.getElementById('unified_template_model_select');
+    if (unifiedTemplateModelSelect) {
+        const currentValue = unifiedTemplateModelSelect.value;
+        unifiedTemplateModelSelect.innerHTML = modelOptions;
+        if (AVAILABLE_MODELS.includes(currentValue)) {
+            unifiedTemplateModelSelect.value = currentValue;
+        }
+        console.log('✅ 统一批量处理模型选择器已更新');
+    } else {
+        console.warn('⚠️ unified_template_model_select 未找到');
+        allFound = false;
+    }
+    
     // 功能五：权利要求对比
     const comparisonModelSelect = document.getElementById('comparison_model_select');
     if (comparisonModelSelect) {
