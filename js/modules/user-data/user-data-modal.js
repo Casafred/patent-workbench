@@ -46,9 +46,8 @@ class UserDataModal {
                 justify-content: space-between;
                 align-items: center;
                 color: white;
+                background: linear-gradient(135deg, #16A34A 0%, #22C55E 100%);
             }
-            .udm-header.export { background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%); }
-            .udm-header.import { background: linear-gradient(135deg, #10B981 0%, #34D399 100%); }
             .udm-header h2 {
                 margin: 0;
                 font-size: 18px;
@@ -68,6 +67,7 @@ class UserDataModal {
                 align-items: center;
                 justify-content: center;
                 font-size: 18px;
+                flex-shrink: 0;
             }
             .udm-close:hover { background: rgba(255, 255, 255, 0.3); }
             .udm-body {
@@ -76,12 +76,13 @@ class UserDataModal {
                 overflow-y: auto;
             }
             .udm-preview {
-                background: #f0f9ff;
+                background: #f0fdf4;
                 border-radius: 8px;
                 padding: 12px;
                 margin-bottom: 16px;
                 font-size: 13px;
-                color: #0369a1;
+                color: #166534;
+                border: 1px solid #bbf7d0;
             }
             .udm-option-group { margin-bottom: 16px; }
             .udm-option-group > label {
@@ -92,35 +93,60 @@ class UserDataModal {
             }
             .udm-option-item {
                 display: flex;
+                flex-direction: row;
                 align-items: flex-start;
-                padding: 10px;
+                padding: 12px;
                 background: #f9f9f9;
                 border-radius: 8px;
                 margin-bottom: 8px;
                 cursor: pointer;
                 transition: background 0.2s;
+                text-align: left;
             }
-            .udm-option-item:hover { background: #f0f0f0; }
-            .udm-option-item input { margin-right: 10px; margin-top: 3px; }
-            .udm-option-text { flex: 1; }
-            .udm-option-name { font-weight: 500; color: #333; }
-            .udm-option-desc { font-size: 12px; color: #666; margin-top: 2px; }
+            .udm-option-item:hover { background: #f0fdf4; border: 1px solid #bbf7d0; }
+            .udm-option-item input[type="radio"] {
+                margin-right: 12px;
+                margin-top: 3px;
+                flex-shrink: 0;
+                accent-color: #16A34A;
+            }
+            .udm-option-text {
+                flex: 1;
+                min-width: 0;
+                text-align: left;
+            }
+            .udm-option-name {
+                font-weight: 500;
+                color: #333;
+                display: block;
+            }
+            .udm-option-desc {
+                font-size: 12px;
+                color: #666;
+                margin-top: 4px;
+                display: block;
+            }
             .udm-checkbox { margin: 16px 0; }
             .udm-checkbox label {
                 display: flex;
+                flex-direction: row;
                 align-items: center;
                 padding: 8px 0;
                 cursor: pointer;
+                text-align: left;
             }
-            .udm-checkbox input { margin-right: 8px; }
+            .udm-checkbox input[type="checkbox"] {
+                margin-right: 10px;
+                accent-color: #16A34A;
+            }
             .udm-warning {
-                background: #fff3cd;
-                border: 1px solid #ffc107;
+                background: #fef3c7;
+                border: 1px solid #fcd34d;
                 border-radius: 8px;
                 padding: 10px;
                 margin-top: 16px;
                 font-size: 12px;
-                color: #856404;
+                color: #92400e;
             }
             .udm-footer {
                 padding: 16px 20px;
@@ -137,7 +163,7 @@ class UserDataModal {
                 font-size: 14px;
                 font-weight: 500;
                 transition: all 0.2s;
-                display: flex;
+                display: inline-flex;
                 align-items: center;
                 gap: 6px;
             }
@@ -145,18 +171,15 @@ class UserDataModal {
                 background: #f0f0f0;
                 color: #666;
             }
-            .udm-btn-export {
-                background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
-                color: white;
-            }
-            .udm-btn-import {
-                background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+            .udm-btn-cancel:hover { background: #e5e5e5; }
+            .udm-btn-primary {
+                background: linear-gradient(135deg, #16A34A 0%, #22C55E 100%);
                 color: white;
             }
             .udm-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
             .udm-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
             .udm-file-drop {
-                border: 2px dashed #ccc;
+                border: 2px dashed #d1d5db;
                 border-radius: 12px;
                 padding: 30px;
                 text-align: center;
@@ -164,9 +187,9 @@ class UserDataModal {
                 transition: all 0.2s;
                 margin-bottom: 16px;
             }
-            .udm-file-drop:hover { border-color: #10B981; background: #f0fdf4; }
-            .udm-file-drop.dragover { border-color: #10B981; background: #d1fae5; }
-            .udm-file-drop-icon { width: 40px; height: 40px; margin-bottom: 10px; color: #666; }
+            .udm-file-drop:hover { border-color: #16A34A; background: #f0fdf4; }
+            .udm-file-drop.dragover { border-color: #16A34A; background: #dcfce7; }
+            .udm-file-drop-icon { width: 40px; height: 40px; margin: 0 auto 10px; color: #666; display: block; }
             .udm-file-drop-text { color: #666; font-size: 14px; }
             .udm-file-drop-hint { color: #999; font-size: 12px; margin-top: 8px; }
             .udm-file-input { display: none; }
@@ -175,14 +198,16 @@ class UserDataModal {
                 border-radius: 8px;
                 padding: 12px;
                 margin-bottom: 16px;
+                border: 1px solid #bbf7d0;
             }
-            .udm-filename { font-weight: 500; color: #0369a1; }
+            .udm-filename { font-weight: 500; color: #166534; }
             .udm-file-meta { font-size: 12px; color: #666; margin-top: 4px; }
             .udm-diff {
-                background: #f9f9f9;
+                background: #f9fafb;
                 border-radius: 8px;
                 padding: 12px;
                 margin-bottom: 16px;
+                border: 1px solid #e5e7eb;
             }
             .udm-diff h4 { margin: 0 0 8px; font-size: 14px; color: #333; }
             .udm-diff-item {
@@ -193,8 +218,8 @@ class UserDataModal {
             }
             .udm-diff-label { color: #666; }
             .udm-diff-value { font-weight: 500; }
-            .udm-diff-value.added { color: #10B981; }
-            .udm-diff-value.updated { color: #3B82F6; }
+            .udm-diff-value.added { color: #16A34A; }
+            .udm-diff-value.updated { color: #2563eb; }
             .udm-progress {
                 height: 4px;
                 background: #e5e7eb;
@@ -204,7 +229,7 @@ class UserDataModal {
             }
             .udm-progress-bar {
                 height: 100%;
-                background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+                background: linear-gradient(135deg, #16A34A 0%, #22C55E 100%);
                 transition: width 0.3s;
                 width: 0%;
             }
@@ -250,7 +275,7 @@ class UserDataModal {
     _getExportModalHTML(preview) {
         const exportOptions = window.userCacheExporter.getExportOptions();
         return `
-            <div class="udm-header export">
+            <div class="udm-header">
                 <h2>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -271,8 +296,8 @@ class UserDataModal {
                         <div class="udm-option-item" data-option="${opt.id}">
                             <input type="radio" name="export-option" value="${opt.id}" ${index === 0 ? 'checked' : ''}>
                             <div class="udm-option-text">
-                                <div class="udm-option-name">${opt.name}</div>
-                                <div class="udm-option-desc">${opt.description}</div>
+                                <span class="udm-option-name">${opt.name}</span>
+                                <span class="udm-option-desc">${opt.description}</span>
                             </div>
                         </div>
                     `).join('')}
@@ -280,7 +305,7 @@ class UserDataModal {
                 <div class="udm-checkbox">
                     <label>
                         <input type="checkbox" id="include-large-cache" checked>
-                        包含大型缓存数据（专利缓存、OCR结果等）
+                        <span>包含大型缓存数据（专利缓存、OCR结果等）</span>
                     </label>
                 </div>
                 <div class="udm-warning">
@@ -289,7 +314,7 @@ class UserDataModal {
             </div>
             <div class="udm-footer">
                 <button class="udm-btn udm-btn-cancel" data-action="close">取消</button>
-                <button class="udm-btn udm-btn-export" data-action="export">
+                <button class="udm-btn udm-btn-primary" data-action="export">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="17 8 12 3 7 8"></polyline>
@@ -375,7 +400,7 @@ class UserDataModal {
     _getImportModalHTML() {
         const strategies = window.userCacheMerger.getStrategies();
         return `
-            <div class="udm-header import">
+            <div class="udm-header">
                 <h2>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -415,8 +440,8 @@ class UserDataModal {
                         <div class="udm-option-item" data-strategy="${s.id}">
                             <input type="radio" name="merge-strategy" value="${s.id}" ${index === 0 ? 'checked' : ''}>
                             <div class="udm-option-text">
-                                <div class="udm-option-name">${s.name}</div>
-                                <div class="udm-option-desc">${s.description}</div>
+                                <span class="udm-option-name">${s.name}</span>
+                                <span class="udm-option-desc">${s.description}</span>
                             </div>
                         </div>
                     `).join('')}
@@ -429,7 +454,7 @@ class UserDataModal {
             </div>
             <div class="udm-footer">
                 <button class="udm-btn udm-btn-cancel" data-action="close">取消</button>
-                <button class="udm-btn udm-btn-import" id="import-btn" data-action="import" disabled>
+                <button class="udm-btn udm-btn-primary" id="import-btn" data-action="import" disabled>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="7 10 12 15 17 10"></polyline>
