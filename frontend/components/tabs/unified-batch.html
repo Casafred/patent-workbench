@@ -1,0 +1,277 @@
+<!-- 统一批量处理：文本批量智能分析 -->
+<div id="unified_batch-tab" class="tab-content">
+    <div class="progress-stepper" id="unified-stepper">
+        <div class="step-item active" onclick="switchUnifiedSubTab('input', this)">
+            <div class="step-number">1</div>
+            <div class="step-title">输入数据</div>
+        </div>
+        <div class="step-item" onclick="switchUnifiedSubTab('template', this)">
+            <div class="step-number">2</div>
+            <div class="step-title">配置模板</div>
+        </div>
+        <div class="step-item" onclick="switchUnifiedSubTab('mode', this)">
+            <div class="step-number">3</div>
+            <div class="step-title">选择模式</div>
+        </div>
+        <div class="step-item" onclick="switchUnifiedSubTab('process', this)">
+            <div class="step-number">4</div>
+            <div class="step-title">处理结果</div>
+        </div>
+        <div class="progress-bar"></div>
+    </div>
+
+    <!-- 步骤1: 输入数据 -->
+    <div id="unified-sub-tab-input" class="sub-tab-content active">
+        <div class="step">
+            <div class="step-header">步骤 1: 添加输入数据</div>
+            <div class="sub-tab-container" style="border-bottom:none; margin-bottom: 20px;">
+                <button class="sub-tab-button active" onclick="switchUnifiedInput(event, 'excel')">Excel导入</button>
+                <button class="sub-tab-button" onclick="switchUnifiedInput(event, 'manual')">手动添加</button>
+            </div>
+            
+            <div id="unified-input-excel" class="sub-tab-content active">
+                <div class="config-item">
+                    <label for="unified_excel_file">上传Excel文件:</label>
+                    <input type="file" id="unified_excel_file" accept=".xlsx, .xls">
+                </div>
+                <div class="config-item">
+                    <label for="unified_excel_sheet">选择Sheet:</label>
+                    <select id="unified_excel_sheet" disabled></select>
+                </div>
+                <div id="unified_column_config_container" style="display:none;">
+                    <div class="config-item row-flex">
+                        <label for="unified_excel_column_count">选择输入列数量:</label>
+                        <input type="number" id="unified_excel_column_count" value="1" min="1" max="10" style="width: 100px;">
+                    </div>
+                    <div id="unified_excel_column_config_area"></div>
+                </div>
+                <button id="unified_load_excel_btn" class="small-button" disabled>从Excel加载输入</button>
+            </div>
+
+            <div id="unified-input-manual" class="sub-tab-content">
+                <div class="config-item">
+                    <label for="unified_manual_input">新输入 (每行一条):</label>
+                    <textarea id="unified_manual_input" rows="5" placeholder="请输入需要处理的内容..."></textarea>
+                </div>
+                <button id="unified_add_input_btn" class="small-button">添加输入</button>
+            </div>
+
+            <hr style="margin: 20px 0; border-color: var(--border-color);">
+            <label><strong>已添加的输入 (<span id="unified_inputs_count">0</span>):</strong></label>
+            <div id="unified_inputs_management">
+                <button id="unified_inputs_select_all_btn" class="small-button">全选</button>
+                <button id="unified_inputs_delete_selected_btn" class="small-button delete-button">删除选中</button>
+            </div>
+            <div id="unified_inputs_list" class="scrollable-list"></div>
+        </div>
+    </div>
+
+    <!-- 步骤2: 配置模板 -->
+    <div id="unified-sub-tab-template" class="sub-tab-content">
+        <div class="step">
+            <div class="step-header">步骤 2: 配置处理模板</div>
+            <div class="template-config-grid">
+                <div class="template-config-main">
+                    <div class="config-item">
+                        <label for="unified_preset_template_select">选择预置模板或新建:</label>
+                        <select id="unified_preset_template_select"></select>
+                    </div>
+                    <div class="config-item">
+                        <label for="unified_template_name">模板名称:</label>
+                        <input type="text" id="unified_template_name" placeholder="例如：自定义技术总结">
+                    </div>
+                    <div class="model-temp-group">
+                        <div class="config-item">
+                            <label for="unified_template_model_select">选择模型:</label>
+                            <select id="unified_template_model_select"></select>
+                        </div>
+                        <div class="config-item">
+                            <label for="unified_template_temperature">温度:</label>
+                            <input type="number" id="unified_template_temperature" min="0" max="1" step="0.1" value="0.1">
+                        </div>
+                    </div>
+                </div>
+                <div class="template-config-prompts">
+                    <div class="config-item">
+                        <label for="unified_system_prompt">系统提示 (System Prompt):</label>
+                        <textarea id="unified_system_prompt" rows="3">你是一个高效的专利文本分析助手。</textarea>
+                    </div>
+                    <div class="config-item">
+                        <div class="help-tooltip-wrapper">
+                            <label for="unified_user_prompt">用户提示模板:</label>
+                            <div class="help-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"></path></svg>
+                                <span class="tooltip-text">请务必使用 {{INPUT}} 作为占位符。当从Excel导入多列时，系统会自动将多列内容及列名填充到 {{INPUT}} 的位置。</span>
+                            </div>
+                        </div>
+                        <textarea id="unified_user_prompt" rows="4">请根据以下文本，总结其核心技术点：
+
+{{INPUT}}</textarea>
+                    </div>
+                </div>
+            </div>
+            <hr style="margin: 25px 0 20px; border-color: var(--border-color);">
+            <div class="config-item">
+                <div class="help-tooltip-wrapper">
+                    <label>输出格式 (JSON):</label>
+                    <div class="help-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"></path></svg>
+                        <span class="tooltip-text">系统将自动把您在此处定义的字段包装成严格的JSON格式要求，并附加到用户提示的末尾，以指导模型输出。</span>
+                    </div>
+                </div>
+                <div id="unified_output_fields_container"></div>
+                <button id="unified_add_output_field_btn" class="small-button" type="button">添加输出字段</button>
+            </div>
+            <div style="text-align: right; margin-top: 20px;">
+                <button id="unified_add_template_btn" class="small-button">保存模板</button>
+            </div>
+            <hr style="margin: 20px 0; border-color: var(--border-color);">
+            <label><strong>已创建的模板 (点击删除):</strong></label>
+            <div id="unified_templates_list" class="scrollable-list"></div>
+        </div>
+    </div>
+
+    <!-- 步骤3: 选择模式 -->
+    <div id="unified-sub-tab-mode" class="sub-tab-content">
+        <div class="step">
+            <div class="step-header">步骤 3: 选择处理模式</div>
+            
+            <div id="unified_mode_recommendation" class="info success" style="margin-bottom: 20px; padding: 15px; border-radius: 8px;">
+                <div style="font-weight: bold; margin-bottom: 10px;">系统推荐</div>
+                <div id="unified_recommendation_text">请先添加输入数据...</div>
+            </div>
+
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <div class="mode-card" id="unified_mode_async_card" onclick="selectUnifiedMode('async')" style="flex: 1; min-width: 280px; border: 2px solid var(--border-color); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.3s;">
+                    <div style="font-size: 1.2em; font-weight: bold; margin-bottom: 10px; color: var(--primary-color);">小批量异步模式</div>
+                    <div style="color: var(--text-color-secondary); margin-bottom: 15px;">实时处理，逐条获取结果</div>
+                    <ul style="margin: 0; padding-left: 20px; color: var(--text-color-secondary); font-size: 0.9em;">
+                        <li>实时API调用，快速响应</li>
+                        <li>逐条显示处理结果</li>
+                        <li>支持中途导出</li>
+                        <li>5秒轮询状态更新</li>
+                    </ul>
+                    <div style="margin-top: 15px; font-size: 0.85em; color: var(--text-color-tertiary);">适合: 少于50条数据</div>
+                </div>
+
+                <div class="mode-card" id="unified_mode_batch_card" onclick="selectUnifiedMode('batch')" style="flex: 1; min-width: 280px; border: 2px solid var(--border-color); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.3s;">
+                    <div style="font-size: 1.2em; font-weight: bold; margin-bottom: 10px; color: var(--primary-color);">大批量延时模式</div>
+                    <div style="color: var(--text-color-secondary); margin-bottom: 15px;">高效批处理，完成后统一获取</div>
+                    <ul style="margin: 0; padding-left: 20px; color: var(--text-color-secondary); font-size: 0.9em;">
+                        <li>智谱Batch API批处理</li>
+                        <li>整体进度显示</li>
+                        <li>支持断点续查</li>
+                        <li>60秒轮询状态更新</li>
+                    </ul>
+                    <div style="margin-top: 15px; font-size: 0.85em; color: var(--text-color-tertiary);">适合: 50条以上数据</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; text-align: center;">
+                <label style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <input type="checkbox" id="unified_auto_mode_checkbox" checked>
+                    <span>自动选择模式（根据数据量）</span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- 步骤4: 处理结果 -->
+    <div id="unified-sub-tab-process" class="sub-tab-content">
+        <!-- 小批量异步模式进度UI -->
+        <div id="unified_async_progress_panel" style="display:none;">
+            <div class="step">
+                <div class="step-header">小批量异步处理</div>
+                <div style="text-align: center; margin-bottom: 25px;">
+                    <button id="unified_async_submit_btn">提交全部请求</button>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <div id="unified_async_progress_info" class="info" style="text-align:center; flex-grow: 1;">等待提交任务...</div>
+                    <div style="display:flex; gap:10px;">
+                        <button id="unified_async_recover_btn" class="small-button" style="background: var(--warning-color); color: #fff;" disabled>恢复上次任务</button>
+                        <button id="unified_async_export_btn" class="small-button" disabled>导出为Excel</button>
+                    </div>
+                </div>
+                <div style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px;">
+                    <div style="overflow-x:auto;">
+                        <table id="unified_async_results_table">
+                            <thead>
+                                <tr>
+                                    <th>请求ID</th>
+                                    <th>输入预览</th>
+                                    <th>使用模板</th>
+                                    <th>状态</th>
+                                    <th>消耗Tokens</th>
+                                    <th>结果 / 错误</th>
+                                </tr>
+                            </thead>
+                            <tbody id="unified_async_results_tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 大批量延时模式进度UI -->
+        <div id="unified_batch_progress_panel" style="display:none;">
+            <div class="step">
+                <div class="step-header">大批量批处理</div>
+                <p>请按照1-3的顺序执行。点击步骤2后将启动自动状态检查。</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px; justify-content: center;">
+                    <button id="unified_batch_step1_upload" class="action-button">1. 上传请求文件</button>
+                    <button id="unified_batch_step2_create" class="action-button" disabled>2. 创建Batch任务</button>
+                    <button id="unified_batch_step3_download" class="action-button" disabled>3. 获取结果内容</button>
+                </div>
+                <div id="unified_batch_id_reminder" class="info" style="display: none; margin-top: 20px; text-align: center;"></div>
+
+                <div id="unified_auto_check_container" style="display:none; margin-top: 20px; text-align: center;">
+                    <span id="unified_auto_check_status" style="margin-right: 15px; color: var(--primary-color-dark); font-weight: bold;"></span>
+                    <button id="unified_batch_stop_check_btn" class="small-button" style="background: var(--warning-color); color: #fff;">停止自动检查</button>
+                </div>
+            </div>
+            
+            <details open>
+                <summary>断点续查 / 任务恢复</summary>
+                <div class="step" style="border-top: none; margin-top: 0;">
+                    <p class="info warning">如果您因关闭浏览器等原因中断了流程，但已记录下 Batch ID，可在此恢复任务状态。</p>
+                    <div class="config-item row-flex">
+                        <label for="unified_recover_batch_id_input">Batch ID:</label>
+                        <input type="text" id="unified_recover_batch_id_input" placeholder="粘贴您记录的 Batch ID">
+                    </div>
+                    <button id="unified_recover_state_btn">恢复查询状态</button>
+                </div>
+            </details>
+
+            <div class="step">
+                <div class="step-header">执行日志</div>
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+                    <button id="unified_batch_manual_check_btn" class="small-button">手动检查状态</button>
+                </div>
+                <div id="unified_batch_log" class="preview-output">等待操作...</div>
+            </div>
+
+            <div class="step">
+                <div class="step-header">解析报告</div>
+                <div class="reporter-uploads">
+                    <div>
+                        <p><strong>A. 上传原始 Excel 文件</strong> (用于数据匹配)</p>
+                        <input type="file" id="unified_rep_excel_input" accept=".xlsx, .xls">
+                        <select id="unified_rep_sheet_selector" style="display:none; margin-top: 10px;"></select>
+                    </div>
+                    <div style="margin-top:20px;">
+                        <p><strong>B. 加载 Batch 任务结果文件</strong></p>
+                        <input type="file" id="unified_rep_jsonl_input" accept=".jsonl">
+                        <div class="info success" id="unified_reporter_info_box" style="display:none;">
+                            检测到来自批处理的结果文件已在内存中，将优先使用此数据。
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 20px;">
+                    <button id="unified_generate_report_btn" disabled>解析并生成最终报告</button>
+                </div>
+                <div class="preview-output" id="unified_rep_output_preview" style="display:none;"></div>
+                <button id="unified_download_report_btn" style="display:none; margin-top: 15px;">下载最终报告 (Excel)</button>
+            </div>
+        </div>
+    </div>
+</div>

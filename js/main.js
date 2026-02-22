@@ -158,14 +158,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('❌ Failed to load instant chat component:', error);
     }
     
-    // Load Feature 2 (Async Batch) component and initialize
+    // Load Feature 2 (Unified Batch - 合并了原功能二和功能三) component and initialize
     try {
-        const loaded = await loadComponent('frontend/components/tabs/async-batch.html', 'async-batch-component', {
+        const loaded = await loadComponent('frontend/components/tabs/unified-batch.html', 'unified-batch-component', {
             requiredElements: [
-                'async_add_output_field_btn',
-                'async_output_fields_container',
-                'async_preset_template_select',
-                'async_excel_column_count'
+                'unified_excel_file',
+                'unified_preset_template_select',
+                'unified_add_output_field_btn'
             ],
             timeout: 5000
         });
@@ -173,35 +172,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (loaded) {
             // Wait for DOM to be ready
             await new Promise(resolve => setTimeout(resolve, 50));
-            if (typeof initAsyncBatchModule === 'function') {
-                initAsyncBatchModule();
+            if (typeof initUnifiedBatchModule === 'function') {
+                initUnifiedBatchModule();
             }
-            LoadingManager.updateProgress('初始化异步批处理');
+            LoadingManager.updateProgress('初始化文本批量智能分析');
         }
     } catch (error) {
-        console.error('❌ Failed to load Feature 2 (Async Batch) component:', error);
-    }
-    
-    // Load Feature 3 (Large Batch) component and initialize
-    try {
-        const loaded = await loadComponent('frontend/components/tabs/large-batch.html', 'large-batch-component', {
-            requiredElements: [
-                'gen_file-input',
-                'api-model'
-            ],
-            timeout: 5000
-        });
-        
-        if (loaded) {
-            // Wait for DOM to be ready
-            await new Promise(resolve => setTimeout(resolve, 50));
-            if (typeof initLargeBatchModule === 'function') {
-                initLargeBatchModule();
-            }
-            LoadingManager.updateProgress('初始化大批量生成');
-        }
-    } catch (error) {
-        console.error('❌ Failed to load Feature 3 (Large Batch) component:', error);
+        console.error('❌ Failed to load Feature 2 (Unified Batch) component:', error);
     }
     
     // Load Feature 4 (Local Patent Library) component and initialize
@@ -343,8 +320,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     switchTab('instant', document.querySelector('.main-tab-container .tab-button'));
     
     // 默认激活各个功能内部的第一个步骤
-    const asyncFirstStep = document.querySelector('#async_batch-tab .step-item');
-    if (asyncFirstStep) switchAsyncSubTab('input', asyncFirstStep);
+    const unifiedFirstStep = document.querySelector('#unified_batch-tab .step-item');
+    if (unifiedFirstStep) switchUnifiedSubTab('input', unifiedFirstStep);
     
     const lplFirstStep = document.querySelector('#local_patent_lib-tab .step-item');
     if (lplFirstStep) switchLPLSubTab('expand', lplFirstStep);

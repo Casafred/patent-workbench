@@ -2226,17 +2226,17 @@ initPatentDrawings();
     <script src="js/modules/chat/chat-export.js"></script>
     <script src="js/modules/chat/chat-core.js"></script>
     
-    <!-- Feature 2: Async Batch -->
-    <script src="js/asyncBatch.js?v=20260207d"></script>
-    <script src="js/modules/init/init-async-batch.js?v=20260207d"></script>
-    
-    <!-- Feature 3: Large Batch -->
-    <!-- 新模块化架构 -->
-    <script type="module" src="js/modules/large-batch/template-manager.js?v=20260207f"></script>
-    <script type="module" src="js/modules/large-batch/large-batch-core.js?v=20260207f"></script>
-    <!-- 旧代码（暂时保留作为备份） -->
-    <script src="js/largeBatch.js?v=20260207e"></script>
-    <script src="js/modules/init/init-large-batch.js?v=20260207f"></script>
+    <!-- Feature 2: Unified Batch (合并了原功能二和功能三) -->
+    <script type="module" src="js/modules/unified-batch/config.js?v=20260222"></script>
+    <script type="module" src="js/modules/unified-batch/state.js?v=20260222"></script>
+    <script type="module" src="js/modules/unified-batch/router.js?v=20260222"></script>
+    <script type="module" src="js/modules/unified-batch/input-handler.js?v=20260222"></script>
+    <script type="module" src="js/modules/unified-batch/template-manager.js?v=20260222"></script>
+    <script type="module" src="js/modules/unified-batch/output-handler.js?v=20260222"></script>
+    <script type="module" src="js/modules/unified-batch/engines/async-engine.js?v=20260222"></script>
+    <script type="module" src="js/modules/unified-batch/engines/batch-engine.js?v=20260222"></script>
+    <script type="module" src="js/modules/unified-batch/index.js?v=20260222"></script>
+    <script src="js/modules/init/init-unified-batch.js?v=20260222"></script>
     
     <!-- Feature 4: Local Patent Library -->
     <script src="js/localPatentLib.js?v=20260207"></script>
