@@ -569,6 +569,7 @@
         <nav class="sidebar-nav">
             <ul>
                 <li><a data-target="getting-started" class="active">入门指南</a></li>
+                <li><a data-target="zhipu-apikey-guide">智谱API Key获取指南</a></li>
                 <li><a data-target="feature-instant-chat">功能一：AI智能体对话</a></li>
                 <li><a data-target="feature-async-batch">功能二：批量智能分析I</a></li>
                 <li><a data-target="feature-large-batch">功能三：批量智能分析II</a></li>
@@ -675,6 +676,333 @@
                     <span>点击右侧"GIF管理"按钮插入：智能剪贴板-功能介绍.gif</span>
                     <span class="gif-label">占位符ID: smart-clipboard-intro</span>
                 </div>
+            </div>
+        </div>
+
+        <!-- 智谱API Key获取指南 -->
+        <div class="content-card" id="zhipu-apikey-guide">
+            <div class="card-header">
+                <h2>智谱API Key获取指南</h2>
+            </div>
+            <div class="card-body">
+                <p>本节将详细介绍如何获取智谱AI的API Key，以及模型API的基本概念和费用说明。</p>
+
+                <h3>一、什么是模型API？</h3>
+                <p><strong>API（Application Programming Interface）</strong>即应用程序编程接口，是一种允许不同软件系统之间进行通信的协议。在大语言模型领域，API提供了一种便捷的方式，让开发者可以通过网络请求调用强大的AI模型能力，而无需在本地部署复杂的模型。</p>
+                
+                <h4>Token计费方式</h4>
+                <p>智谱AI的模型服务采用<strong>Token计费</strong>方式：</p>
+                <ul>
+                    <li><strong>Token是什么：</strong>Token是模型处理文本的最小单位，通常一个英文单词约等于1个Token，一个汉字约等于1.5-2个Token</li>
+                    <li><strong>换算比例：</strong>GLM系列模型中，Token与汉字的换算比例约为 <strong>1 Token ≈ 1.6个汉字</strong></li>
+                    <li><strong>计费单位：</strong>通常以"每百万Tokens"为单位计费</li>
+                    <li><strong>输入与输出：</strong>输入（您发送给AI的内容）和输出（AI回复的内容）分别计费，通常输出价格高于输入价格</li>
+                </ul>
+                
+                <div class="gif-placeholder" data-gif-id="apikey-token-explain">
+                    <span>点击右侧"GIF管理"按钮插入：Token计费说明示意图</span>
+                    <span class="gif-label">占位符ID: apikey-token-explain</span>
+                </div>
+
+                <h3>二、API Key的作用</h3>
+                <p><strong>API Key</strong>是您访问智谱AI服务的身份凭证，类似于一把"钥匙"，具有以下重要作用：</p>
+                
+                <h4>1. 身份验证</h4>
+                <p>API Key用于验证您的身份，确保只有授权用户才能调用模型服务。每次API请求都需要携带您的API Key。</p>
+                
+                <h4>2. 费用归属</h4>
+                <p>所有通过您的API Key发起的请求，其费用都会计入您的账户。您可以在智谱AI开放平台查看详细的消费记录。</p>
+                
+                <h4>3. 在本平台中的作用</h4>
+                <p>在本工作台的各个功能模块中，API Key发挥着核心作用：</p>
+                <ul>
+                    <li><strong>功能一（AI智能体对话）：</strong>每次对话都需要调用智谱AI的模型，消耗相应Token</li>
+                    <li><strong>功能二（批量智能分析I）：</strong>批量处理任务时，每条数据都会调用模型进行分析</li>
+                    <li><strong>功能三（大批量处理）：</strong>使用Batch API进行大规模处理，费用为正常调用的50%</li>
+                    <li><strong>功能五（权利要求智能比对）：</strong>对比分析需要调用模型进行智能解读</li>
+                    <li><strong>功能六（批量专利解读）：</strong>专利解读功能需要调用模型生成分析报告</li>
+                    <li><strong>功能八（专利附图标记）：</strong>AI辅助识别功能需要调用视觉模型</li>
+                    <li><strong>功能九（文档OCR与智能分析）：</strong>OCR识别和AI对话都需要消耗Token</li>
+                </ul>
+                
+                <div class="warning">
+                    <strong>安全提示：</strong>API Key是您的个人凭证，请妥善保管，切勿泄露给他人。如果发现API Key泄露，请立即在智谱AI开放平台重新生成新的Key。
+                </div>
+
+                <h3>三、如何获取API Key</h3>
+                <p>获取智谱AI的API Key非常简单，只需以下几个步骤：</p>
+                
+                <h4>步骤1：注册账号</h4>
+                <ol>
+                    <li>访问智谱AI开放平台：<a href="https://bigmodel.cn" target="_blank">https://bigmodel.cn</a></li>
+                    <li>点击右上角"注册/登录"按钮</li>
+                    <li>可以使用手机号注册，或通过微信扫码快速登录</li>
+                </ol>
+                
+                <div class="gif-placeholder" data-gif-id="apikey-step1-register">
+                    <span>点击右侧"GIF管理"按钮插入：注册账号演示.gif</span>
+                    <span class="gif-label">占位符ID: apikey-step1-register</span>
+                </div>
+                
+                <h4>步骤2：完成实名认证</h4>
+                <ol>
+                    <li>登录后，进入"个人中心"或"账户设置"</li>
+                    <li>找到"实名认证"选项，按要求填写真实姓名和身份证号</li>
+                    <li>完成实名认证后，即可获得API调用权限</li>
+                </ol>
+                <div class="note">
+                    <strong>提示：</strong>新注册用户通常会获得一定的免费额度，可以用于体验各项功能。
+                </div>
+                
+                <div class="gif-placeholder" data-gif-id="apikey-step2-verify">
+                    <span>点击右侧"GIF管理"按钮插入：实名认证演示.gif</span>
+                    <span class="gif-label">占位符ID: apikey-step2-verify</span>
+                </div>
+                
+                <h4>步骤3：创建API Key</h4>
+                <ol>
+                    <li>进入"API密钥管理"页面</li>
+                    <li>点击"创建新的API Key"按钮</li>
+                    <li>为您的API Key命名（如"专利工作台专用"）</li>
+                    <li>复制生成的API Key并妥善保存</li>
+                </ol>
+                <div class="warning">
+                    <strong>重要：</strong>API Key只在创建时显示一次，请务必复制保存。如果忘记，只能重新创建新的Key。
+                </div>
+                
+                <div class="gif-placeholder" data-gif-id="apikey-step3-create">
+                    <span>点击右侧"GIF管理"按钮插入：创建API Key演示.gif</span>
+                    <span class="gif-label">占位符ID: apikey-step3-create</span>
+                </div>
+                
+                <h4>步骤4：在本平台配置API Key</h4>
+                <ol>
+                    <li>登录本工作台</li>
+                    <li>点击右上角的 <strong>⚙️</strong> 图标</li>
+                    <li>将复制的API Key粘贴到输入框中</li>
+                    <li>点击"保存"按钮完成配置</li>
+                </ol>
+
+                <h3>四、支持的智谱模型系列</h3>
+                <p>本工作台支持智谱AI的多个模型系列，您可以根据任务需求选择合适的模型：</p>
+                
+                <h4>GLM-5 系列（旗舰模型）</h4>
+                <p>智谱最新一代旗舰模型，专为Coding与Agent场景优化，在复杂系统工程与长程任务中表现卓越。</p>
+                <ul>
+                    <li><strong>GLM-5：</strong>旗舰通用模型，适合复杂推理、代码生成等高难度任务</li>
+                    <li><strong>GLM-5-Code：</strong>代码专用模型，编程能力接近Claude Opus级别</li>
+                </ul>
+                
+                <h4>GLM-4.7 系列</h4>
+                <p>平衡性能与成本的优选系列，适合大多数日常任务。</p>
+                <ul>
+                    <li><strong>GLM-4.7：</strong>标准版，性能与成本平衡</li>
+                    <li><strong>GLM-4.7-Flash：</strong>快速版，响应速度更快</li>
+                    <li><strong>GLM-4.7-FlashX：</strong>极速版，200K上下文，高速低价</li>
+                </ul>
+                
+                <h4>GLM-4.5 系列</h4>
+                <p>高性价比系列，适合大规模批量处理。</p>
+                <ul>
+                    <li><strong>GLM-4.5-Air：</strong>高性价比首选，128K上下文</li>
+                    <li><strong>GLM-4.5-AirX：</strong>极速推理版，响应更快</li>
+                </ul>
+                
+                <h4>GLM-4 系列</h4>
+                <p>成熟稳定的基础系列，覆盖多种场景需求。</p>
+                <ul>
+                    <li><strong>GLM-4-Flash：</strong>免费模型，适合体验和轻量任务</li>
+                    <li><strong>GLM-4-FlashX：</strong>高速低价，适合大规模调用</li>
+                    <li><strong>GLM-4-Long：</strong>超长上下文（1M tokens），适合长文档处理</li>
+                    <li><strong>GLM-4-Plus：</strong>高智能旗舰版，适合复杂任务</li>
+                </ul>
+                
+                <h4>GLM-Z1 系列（推理模型）</h4>
+                <p>专为复杂推理任务设计的模型系列。</p>
+                <ul>
+                    <li><strong>GLM-Z1-Air：</strong>高性价比推理模型</li>
+                    <li><strong>GLM-Z1-AirX：</strong>极速推理模型</li>
+                    <li><strong>GLM-Z1-Flash：</strong>免费推理模型</li>
+                    <li><strong>GLM-Z1-FlashX：</strong>高速低价推理模型</li>
+                </ul>
+
+                <h3>五、模型费用说明</h3>
+                <p>以下是常用模型的费用对照表（价格单位：元/百万Tokens）：</p>
+                
+                <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em;">
+                    <thead>
+                        <tr style="background-color: var(--primary-color); color: white;">
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: left;">模型名称</th>
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: center;">上下文长度</th>
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: center;">输入价格</th>
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: center;">输出价格</th>
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: left;">特点说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background-color: rgba(34, 197, 94, 0.1);">
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>GLM-4-Flash</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">128K</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center; color: var(--primary-color-dark);"><strong>免费</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">不支持</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">免费体验，适合入门</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>GLM-Z1-Flash</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">128K</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center; color: var(--primary-color-dark);"><strong>免费</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">不支持</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">免费推理模型</td>
+                        </tr>
+                        <tr style="background-color: rgba(34, 197, 94, 0.05);">
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>GLM-4-FlashX</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">128K</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">0.5元</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">0.25元</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">高速低价，性价比高</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>GLM-Z1-FlashX</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">128K</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">0.1元</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">不支持</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">高速低价推理模型</td>
+                        </tr>
+                        <tr style="background-color: rgba(34, 197, 94, 0.05);">
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>GLM-4.5-Air</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">128K</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">0.8-1.2元</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">2-8元</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">高性价比，日常首选</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>GLM-4-Long</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">1M</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">1元</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">0.5元</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">超长上下文，适合长文档</td>
+                        </tr>
+                        <tr style="background-color: rgba(34, 197, 94, 0.05);">
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>GLM-4.7</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">128K</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">2-4元</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">8-16元</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">性能与成本平衡</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>GLM-4-Plus</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">128K</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">5元</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">2.5元</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">高智能旗舰版</td>
+                        </tr>
+                        <tr style="background-color: rgba(34, 197, 94, 0.05);">
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>GLM-5</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">128K</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">4-6元</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">18-22元</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">最新旗舰，能力最强</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="note">
+                    <strong>说明：</strong>以上价格为参考价格，实际价格请以智谱AI开放平台官网为准。部分模型根据输入输出长度不同有阶梯定价。
+                </div>
+
+                <h3>六、费用计算举例</h3>
+                <p>为了帮助您更好地理解费用计算方式，以下是几个实际场景的费用估算：</p>
+                
+                <h4>示例1：分析一篇专利摘要</h4>
+                <p>假设您需要使用AI分析一篇专利摘要：</p>
+                <ul>
+                    <li><strong>输入内容：</strong>专利摘要约500字 ≈ 312 Tokens</li>
+                    <li><strong>AI回复：</strong>分析报告约800字 ≈ 500 Tokens</li>
+                    <li><strong>使用模型：</strong>GLM-4-FlashX（输入0.5元/百万，输出0.25元/百万）</li>
+                </ul>
+                <p><strong>费用计算：</strong></p>
+                <ul>
+                    <li>输入费用：312 ÷ 1,000,000 × 0.5 = <strong>0.000156元</strong></li>
+                    <li>输出费用：500 ÷ 1,000,000 × 0.25 = <strong>0.000125元</strong></li>
+                    <li>总费用：<strong>约0.0003元</strong>（不到一分钱）</li>
+                </ul>
+                
+                <h4>示例2：批量处理100条专利数据</h4>
+                <p>假设您需要批量处理100条专利数据，每条包含摘要和权利要求：</p>
+                <ul>
+                    <li><strong>每条输入：</strong>约2000字 ≈ 1250 Tokens</li>
+                    <li><strong>每条输出：</strong>约1000字 ≈ 625 Tokens</li>
+                    <li><strong>使用模型：</strong>GLM-4.5-Air（输入1元/百万，输出6元/百万）</li>
+                </ul>
+                <p><strong>费用计算：</strong></p>
+                <ul>
+                    <li>总输入Tokens：1250 × 100 = 125,000 Tokens</li>
+                    <li>总输出Tokens：625 × 100 = 62,500 Tokens</li>
+                    <li>输入费用：125,000 ÷ 1,000,000 × 1 = <strong>0.125元</strong></li>
+                    <li>输出费用：62,500 ÷ 1,000,000 × 6 = <strong>0.375元</strong></li>
+                    <li>总费用：<strong>约0.5元</strong></li>
+                </ul>
+                
+                <h4>示例3：大批量处理（使用Batch API）</h4>
+                <p>如果您有10,000条数据需要处理，建议使用功能三的Batch API：</p>
+                <ul>
+                    <li>Batch API费用为正常调用的<strong>50%</strong></li>
+                    <li>按示例2的单条费用计算，正常调用约需50元</li>
+                    <li>使用Batch API仅需<strong>约25元</strong></li>
+                </ul>
+                
+                <div class="warning">
+                    <strong>费用控制建议：</strong>
+                    <ol>
+                        <li>测试阶段使用免费模型（GLM-4-Flash）或低价模型</li>
+                        <li>大批量处理优先选择Batch API，可节省50%费用</li>
+                        <li>定期在智谱AI开放平台查看消费记录，合理控制预算</li>
+                        <li>根据任务复杂度选择合适的模型，避免"大材小用"</li>
+                    </ol>
+                </div>
+                
+                <h4>模型选择建议</h4>
+                <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em;">
+                    <thead>
+                        <tr style="background-color: var(--primary-color); color: white;">
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: left;">使用场景</th>
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: left;">推荐模型</th>
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: left;">原因</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">体验测试、学习使用</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">GLM-4-Flash</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">免费，无成本压力</td>
+                        </tr>
+                        <tr style="background-color: rgba(34, 197, 94, 0.05);">
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">日常对话、简单分析</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">GLM-4-FlashX</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">高速低价，性价比高</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">批量处理、大规模任务</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">GLM-4.5-Air</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">高性价比，适合批量</td>
+                        </tr>
+                        <tr style="background-color: rgba(34, 197, 94, 0.05);">
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">长文档分析</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">GLM-4-Long</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">1M超长上下文</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">复杂推理、深度分析</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">GLM-4.7 / GLM-4-Plus</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">智能程度高</td>
+                        </tr>
+                        <tr style="background-color: rgba(34, 197, 94, 0.05);">
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">代码生成、复杂工程</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">GLM-5 / GLM-5-Code</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">旗舰性能，编程最强</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -1766,6 +2094,12 @@
         'apikey-setup': 'API-Key设置.gif',
         'logout-demo': '登出系统.gif',
         'smart-clipboard-intro': '智能剪贴板-功能介绍.gif',
+        
+        // 智谱API Key获取指南
+        'apikey-token-explain': 'Token计费说明示意图.gif',
+        'apikey-step1-register': '注册账号演示.gif',
+        'apikey-step2-verify': '实名认证演示.gif',
+        'apikey-step3-create': '创建API Key演示.gif',
         
         // 功能一：即时对话
         'chat-basic-interaction': '即时对话-核心交互.gif',

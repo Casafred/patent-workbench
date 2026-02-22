@@ -4,14 +4,145 @@
     "glm-4-flashx-250414",
     "glm-4-flash-250414",
     "glm-4-long",
+    "glm-4-plus",
+    "glm-4-air-250414",
+    "glm-4-airx",
+    "glm-4.5-air",
+    "glm-4.5-airx",
     "glm-4.7-flash",
     "glm-4.7-flashx",
     "glm-4.7",
-    "glm-4.5-air",
-    "glm-4.5-airx"
+    "glm-z1-flash",
+    "glm-z1-flashx",
+    "glm-z1-air",
+    "glm-z1-airx",
+    "glm-5"
   ],
+  "model_details": {
+    "glm-4-flash": {
+      "name": "GLM-4-Flash",
+      "context": "128K",
+      "input_price": "免费",
+      "output_price": "不支持",
+      "description": "免费模型，适合体验和轻量任务"
+    },
+    "glm-4-flashx-250414": {
+      "name": "GLM-4-FlashX",
+      "context": "128K",
+      "input_price": "0.5元/百万tokens",
+      "output_price": "0.25元/百万tokens",
+      "description": "高速低价，适合大规模调用"
+    },
+    "glm-4-flash-250414": {
+      "name": "GLM-4-Flash",
+      "context": "128K",
+      "input_price": "免费",
+      "output_price": "不支持",
+      "description": "免费语言模型"
+    },
+    "glm-4-long": {
+      "name": "GLM-4-Long",
+      "context": "1M",
+      "input_price": "1元/百万tokens",
+      "output_price": "0.5元/百万tokens",
+      "description": "超长上下文，适合长文档处理"
+    },
+    "glm-4-plus": {
+      "name": "GLM-4-Plus",
+      "context": "128K",
+      "input_price": "5元/百万tokens",
+      "output_price": "2.5元/百万tokens",
+      "description": "高智能旗舰版，适合复杂任务"
+    },
+    "glm-4-air-250414": {
+      "name": "GLM-4-Air",
+      "context": "128K",
+      "input_price": "0.5元/百万tokens",
+      "output_price": "0.25元/百万tokens",
+      "description": "高性价比"
+    },
+    "glm-4-airx": {
+      "name": "GLM-4-AirX",
+      "context": "8K",
+      "input_price": "10元/百万tokens",
+      "output_price": "不支持",
+      "description": "极速推理"
+    },
+    "glm-4.5-air": {
+      "name": "GLM-4.5-Air",
+      "context": "128K",
+      "input_price": "0.8-1.2元/百万tokens",
+      "output_price": "2-8元/百万tokens",
+      "description": "高性价比，日常首选"
+    },
+    "glm-4.5-airx": {
+      "name": "GLM-4.5-AirX",
+      "context": "128K",
+      "input_price": "按官网定价",
+      "output_price": "按官网定价",
+      "description": "极速推理版"
+    },
+    "glm-4.7-flash": {
+      "name": "GLM-4.7-Flash",
+      "context": "128K",
+      "input_price": "按官网定价",
+      "output_price": "按官网定价",
+      "description": "快速版"
+    },
+    "glm-4.7-flashx": {
+      "name": "GLM-4.7-FlashX",
+      "context": "200K",
+      "input_price": "0.5元/百万tokens",
+      "output_price": "0.1元/百万tokens",
+      "description": "极速版，200K上下文"
+    },
+    "glm-4.7": {
+      "name": "GLM-4.7",
+      "context": "128K",
+      "input_price": "2-4元/百万tokens",
+      "output_price": "8-16元/百万tokens",
+      "description": "性能与成本平衡"
+    },
+    "glm-z1-flash": {
+      "name": "GLM-Z1-Flash",
+      "context": "128K",
+      "input_price": "免费",
+      "output_price": "不支持",
+      "description": "免费推理模型"
+    },
+    "glm-z1-flashx": {
+      "name": "GLM-Z1-FlashX",
+      "context": "128K",
+      "input_price": "0.1元/百万tokens",
+      "output_price": "不支持",
+      "description": "高速低价推理模型"
+    },
+    "glm-z1-air": {
+      "name": "GLM-Z1-Air",
+      "context": "128K",
+      "input_price": "0.5元/百万tokens",
+      "output_price": "不支持",
+      "description": "高性价比推理模型"
+    },
+    "glm-z1-airx": {
+      "name": "GLM-Z1-AirX",
+      "context": "32K",
+      "input_price": "5元/百万tokens",
+      "output_price": "不支持",
+      "description": "极速推理模型"
+    },
+    "glm-5": {
+      "name": "GLM-5",
+      "context": "128K",
+      "input_price": "4-6元/百万tokens",
+      "output_price": "18-22元/百万tokens",
+      "description": "最新旗舰，能力最强"
+    }
+  },
   "description": "统一的模型配置文件，所有功能的模型选择列表都从这里读取。模型名称严格按照智谱AI官方API文档",
   "default_model": "glm-4-flash",
-  "note": "模型名称来源：https://docs.bigmodel.cn 官方API文档 ChatCompletionTextRequest.model 枚举值",
-  "reference": "官方文档示例使用 glm-4-flash 作为默认模型"
+  "free_models": ["glm-4-flash", "glm-4-flash-250414", "glm-z1-flash"],
+  "note": "模型名称来源：https://docs.bigmodel.cn 官方API文档 ChatCompletionTextRequest.model 枚举值。价格仅供参考，以官网为准。",
+  "reference": "官方文档示例使用 glm-4-flash 作为默认模型",
+  "pricing_url": "https://bigmodel.cn/pricing"
 }
