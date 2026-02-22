@@ -6,41 +6,74 @@
     <title>用户协议 - 专利分析智能工作台</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #22C55E;
+            --primary-color-dark: #16A34A;
+            --primary-color-light: #86EFAC;
+            --bg-color: #F0FDF4;
+            --surface-color: #FFFFFF;
+            --text-color: #14532D;
+            --text-secondary: #166534;
+            --border-color: #BBF7D0;
+            --warning-bg: #FEF3C7;
+            --warning-border: #F59E0B;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
             font-family: 'Noto Sans SC', sans-serif; 
             line-height: 1.8; 
-            color: #333; 
-            background: #f5f5f5; 
+            color: var(--text-color);
+            background: linear-gradient(135deg, var(--bg-color) 0%, #DCFCE7 50%, #D1FAE5 100%);
+            min-height: 100vh;
         }
         .container { 
             max-width: 900px; 
             margin: 40px auto; 
             padding: 40px; 
-            background: white; 
-            border-radius: 8px; 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(34, 197, 94, 0.15);
+            border: 1px solid var(--border-color);
         }
         h1 { 
-            color: #2c3e50; 
-            margin-bottom: 30px; 
+            color: var(--primary-color-dark);
+            margin-bottom: 10px; 
             font-size: 2em; 
-            border-bottom: 3px solid #22C55E; 
-            padding-bottom: 15px; 
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        h1::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 32px;
+            background: linear-gradient(180deg, var(--primary-color), var(--primary-color-dark));
+            border-radius: 4px;
         }
         h2 { 
-            color: #34495e; 
+            color: var(--primary-color-dark);
             margin-top: 30px; 
             margin-bottom: 15px; 
-            font-size: 1.5em; 
+            font-size: 1.4em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        h2::before {
+            content: '●';
+            color: var(--primary-color);
+            font-size: 0.6em;
         }
         h3 {
-            color: #555;
+            color: var(--text-secondary);
             margin-top: 20px;
             margin-bottom: 10px;
-            font-size: 1.2em;
+            font-size: 1.1em;
         }
         p { 
             margin-bottom: 15px; 
@@ -54,50 +87,100 @@
             margin-bottom: 8px; 
         }
         .update-date { 
-            color: #7f8c8d; 
+            color: var(--text-secondary);
             font-size: 0.9em; 
-            margin-bottom: 30px; 
+            margin-bottom: 30px;
+            padding: 8px 16px;
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
+            border-radius: 8px;
+            display: inline-block;
         }
-        .highlight-box { 
-            background: #fff3cd; 
-            padding: 15px; 
-            border-left: 4px solid #ffc107; 
-            margin: 20px 0; 
-        }
-        .important-box {
-            background: #ffebee;
-            padding: 15px;
-            border-left: 4px solid #f44336;
+        .warning { 
+            background: linear-gradient(135deg, var(--warning-bg), #FDE68A);
+            padding: 16px 20px; 
+            border-left: 4px solid var(--warning-border);
             margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+            color: #92400E;
         }
+        .warning strong { color: #B45309; }
         .info-box {
-            background: #e3f2fd;
-            padding: 15px;
-            border-left: 4px solid #2196f3;
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
+            padding: 16px 20px;
+            border-left: 4px solid var(--primary-color);
             margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+            margin: 15px 0;
+        }
+        .feature-item {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(34, 197, 94, 0.02));
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+        .feature-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15);
+        }
+        .feature-num {
+            background: var(--primary-color);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            flex-shrink: 0;
         }
         .back-link { 
-            display: inline-block; 
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
             margin-top: 30px; 
-            color: #22C55E; 
+            color: var(--primary-color-dark);
             text-decoration: none;
-            font-weight: 500;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
         }
         .back-link:hover { 
-            text-decoration: underline; 
+            background: var(--primary-color);
+            color: white;
+            transform: translateX(-5px);
         }
-        strong {
-            color: #2c3e50;
+        .check-icon { color: var(--primary-color); margin-right: 4px; }
+        .cross-icon { color: #DC2626; margin-right: 4px; }
+        a { color: var(--primary-color-dark); }
+        a:hover { text-decoration: underline; }
+        @media (max-width: 768px) {
+            .container { margin: 20px; padding: 25px; }
+            h1 { font-size: 1.6em; }
+            h2 { font-size: 1.2em; }
+            .feature-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>专利分析智能工作台用户协议</h1>
-        <p class="update-date">最后更新日期：2026年1月26日</p>
+        <p class="update-date">📅 最后更新日期：2026年2月22日</p>
 
-        <div class="important-box">
-            <strong>重要提示：</strong>在使用本平台前，请您务必仔细阅读并充分理解本协议的全部内容。一旦您勾选"我已阅读并同意用户协议、隐私政策和免责声明"并登录使用，即表示您已完全理解并同意接受本协议的全部条款。
+        <div class="warning">
+            <strong>⚠️ 重要提示：</strong>在使用本平台前，请您务必仔细阅读并充分理解本协议的全部内容。一旦您勾选"我已阅读并同意用户协议、隐私政策和免责声明"并登录使用，即表示您已完全理解并同意接受本协议的全部条款。
         </div>
 
         <h2>一、协议的接受与修改</h2>
@@ -112,33 +195,57 @@
 
         <h3>2.2 功能范围</h3>
         <p>本平台提供以下八大核心功能：</p>
-        <ul>
-            <li><strong>功能一：即时对话</strong> - 提供AI辅助的专利技术咨询和问答服务</li>
-            <li><strong>功能二：小批量异步</strong> - 支持小批量专利数据的异步处理和分析</li>
-            <li><strong>功能三：大批量处理</strong> - 支持大规模专利数据的批量处理</li>
-            <li><strong>功能四：本地专利库管理</strong> - 提供专利库的管理和维护工具</li>
-            <li><strong>功能五：权利要求对比</strong> - 支持多个权利要求的智能对比分析</li>
-            <li><strong>功能六：批量专利解读</strong> - 批量获取和解读专利信息</li>
-            <li><strong>功能七：权利要求处理</strong> - 分析权利要求结构和引用关系</li>
-            <li><strong>功能八：专利附图标记</strong> - 提供专利附图的OCR识别和标记功能</li>
-        </ul>
+        <div class="feature-grid">
+            <div class="feature-item">
+                <span class="feature-num">1</span>
+                <span>AI智能体对话</span>
+            </div>
+            <div class="feature-item">
+                <span class="feature-num">2</span>
+                <span>文本批量智能分析</span>
+            </div>
+            <div class="feature-item">
+                <span class="feature-num">3</span>
+                <span>本地数据表管理</span>
+            </div>
+            <div class="feature-item">
+                <span class="feature-num">4</span>
+                <span>权利要求智能比对</span>
+            </div>
+            <div class="feature-item">
+                <span class="feature-num">5</span>
+                <span>批量专利检索与解读</span>
+            </div>
+            <div class="feature-item">
+                <span class="feature-num">6</span>
+                <span>独从权识别与可视化</span>
+            </div>
+            <div class="feature-item">
+                <span class="feature-num">7</span>
+                <span>专利附图智能标记</span>
+            </div>
+            <div class="feature-item">
+                <span class="feature-num">8</span>
+                <span>文档OCR与智能分析</span>
+            </div>
+        </div>
 
         <h3>2.3 服务性质</h3>
-        <div class="highlight-box">
+        <div class="warning">
             <p><strong>本平台仅作为数据分析辅助工具，不提供以下服务：</strong></p>
-            <ul>
-                <li>❌ 专利申请代理服务</li>
-                <li>❌ 法律咨询服务</li>
-                <li>❌ 专利价值评估服务</li>
-                <li>❌ 专利侵权判定服务</li>
-                <li>❌ 任何形式的法律建议</li>
+            <ul style="margin-top: 10px;">
+                <li><span class="cross-icon">❌</span> 专利申请代理服务</li>
+                <li><span class="cross-icon">❌</span> 法律咨询服务</li>
+                <li><span class="cross-icon">❌</span> 专利价值评估服务</li>
+                <li><span class="cross-icon">❌</span> 专利侵权判定服务</li>
+                <li><span class="cross-icon">❌</span> 任何形式的法律建议</li>
             </ul>
         </div>
 
         <h3>2.4 费用说明</h3>
         <div class="info-box">
-            <p><strong>重要提示：</strong></p>
-            <ul>
+            <p><strong>💰 重要提示：</strong></p>
+            <ul style="margin-top: 10px; margin-left: 0; list-style: none;">
                 <li><strong>本平台不收取任何费用。</strong>本平台作为工具免费提供给用户使用，不向用户收取任何形式的费用。</li>
                 <li><strong>AI模型调用费用由模型服务提供方收取。</strong>您使用本平台AI功能时产生的费用，由智谱AI（模型服务提供方）按照其官方定价标准收取，费用从您配置的API Key关联账户中扣除。</li>
                 <li><strong>API账号由用户自行管理。</strong>API Key的申请、充值、查询余额、消费记录等操作，均需您自行在智谱AI开放平台完成，本平台不参与任何API账号相关的管理工作。</li>
@@ -183,12 +290,12 @@
         
         <h3>5.1 数据处理原则</h3>
         <div class="info-box">
-            <p><strong>核心承诺：我们不存储您上传的专利数据。</strong></p>
-            <ul>
-                <li>✓ 所有上传的专利文档仅在分析过程中临时使用</li>
-                <li>✓ 处理完成后立即从服务器内存中删除</li>
-                <li>✓ 不会保存到硬盘或数据库</li>
-                <li>✓ 不会进行备份或归档</li>
+            <p><strong>🔒 核心承诺：我们不存储您上传的专利数据。</strong></p>
+            <ul style="margin-top: 10px;">
+                <li><span class="check-icon">✅</span> 所有上传的专利文档仅在分析过程中临时使用</li>
+                <li><span class="check-icon">✅</span> 处理完成后立即从服务器内存中删除</li>
+                <li><span class="check-icon">✅</span> 不会保存到硬盘或数据库</li>
+                <li><span class="check-icon">✅</span> 不会进行备份或归档</li>
             </ul>
         </div>
 
@@ -207,10 +314,10 @@
 
         <h3>5.3 我们不收集的信息</h3>
         <ul>
-            <li>您上传的专利文档内容</li>
-            <li>分析结果数据</li>
-            <li>个人敏感信息</li>
-            <li>第三方账号信息</li>
+            <li><span class="cross-icon">❌</span> 您上传的专利文档内容</li>
+            <li><span class="cross-icon">❌</span> 分析结果数据</li>
+            <li><span class="cross-icon">❌</span> 个人敏感信息</li>
+            <li><span class="cross-icon">❌</span> 第三方账号信息</li>
         </ul>
 
         <h3>5.4 第三方服务</h3>
@@ -244,9 +351,9 @@
         <h2>七、免责声明</h2>
         
         <h3>7.1 分析结果免责</h3>
-        <div class="important-box">
+        <div class="warning">
             <p><strong>本平台提供的分析结果：</strong></p>
-            <ul>
+            <ul style="margin-top: 10px;">
                 <li>仅供参考，不构成任何专业建议</li>
                 <li>可能存在错误、遗漏或不准确之处</li>
                 <li>不保证完整性、准确性、及时性</li>
@@ -310,15 +417,20 @@
 
         <h2>十二、联系我们</h2>
         
-        <p>如您对本协议有任何疑问、意见或建议，请通过以下方式联系我们：</p>
-        <p><strong>邮箱：</strong>freecasafred@outlook.com</p>
+        <div class="info-box">
+            <p>如您对本协议有任何疑问、意见或建议，请通过以下方式联系我们：</p>
+            <p>📧 邮箱：freecasafred@outlook.com</p>
+        </div>
 
-        <div class="highlight-box" style="margin-top: 40px;">
-            <p><strong>再次提醒：</strong></p>
+        <div class="warning" style="margin-top: 40px;">
+            <p><strong>🔔 再次提醒：</strong></p>
             <p>使用本平台即表示您已阅读、理解并同意本用户协议、<a href="/frontend/privacy.html" target="_blank">隐私政策</a>和<a href="/frontend/disclaimer.html" target="_blank">免责声明</a>的全部内容。如不同意，请立即停止使用。</p>
         </div>
 
-        <a href="/login" class="back-link">← 返回登录页面</a>
+        <a href="/login" class="back-link">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            返回登录页面
+        </a>
     </div>
 </body>
 </html>
