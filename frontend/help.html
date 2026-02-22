@@ -571,14 +571,13 @@
                 <li><a data-target="getting-started" class="active">入门指南</a></li>
                 <li><a data-target="zhipu-apikey-guide">智谱API Key获取指南</a></li>
                 <li><a data-target="feature-instant-chat">功能一：AI智能体对话</a></li>
-                <li><a data-target="feature-async-batch">功能二：批量智能分析I</a></li>
-                <li><a data-target="feature-large-batch">功能三：批量智能分析II</a></li>
-                <li><a data-target="feature-local-lib">功能四：本地数据表管理</a></li>
-                <li><a data-target="feature-claims-comparison">功能五：权利要求智能比对</a></li>
-                <li><a data-target="feature-patent-batch">功能六：批量专利检索与解读</a></li>
-                <li><a data-target="feature-claims-processor">功能七：独从权识别与可视化</a></li>
-                <li><a data-target="feature-drawing-marker">功能八：专利附图智能标记</a></li>
-                <li><a data-target="feature-pdf-ocr">功能九：文档OCR与智能分析</a></li>
+                <li><a data-target="feature-unified-batch">功能二：文本批量智能分析</a></li>
+                <li><a data-target="feature-local-lib">功能三：本地数据表管理</a></li>
+                <li><a data-target="feature-claims-comparison">功能四：权利要求智能比对</a></li>
+                <li><a data-target="feature-patent-batch">功能五：批量专利检索与解读</a></li>
+                <li><a data-target="feature-claims-processor">功能六：独从权识别与可视化</a></li>
+                <li><a data-target="feature-drawing-marker">功能七：专利附图智能标记</a></li>
+                <li><a data-target="feature-pdf-ocr">功能八：文档OCR与智能分析</a></li>
                 <li><a data-target="faq">常见问题 (FAQ)</a></li>
             </ul>
         </nav>
@@ -594,8 +593,34 @@
             <div class="card-body">
                 <p>欢迎使用 <strong>ALFRED X IP 专利分析智能工作台</strong>！本手册将引导您快速上手，充分利用本平台的强大功能。</p>
 
-                <h3>1. 登录系统</h3>
+                <h3>1. 登录系统与游客模式</h3>
+                <p>本平台支持两种访问方式：</p>
+                
+                <h4>正式用户登录</h4>
                 <p>您需要使用管理员分配的用户名和密码进行登录。为保障安全，系统会记录并限制每个账户的登录IP地址数量（默认为5个）。如果您在新的设备或网络环境下登录，最早的登录记录可能会被自动移除。</p>
+                
+                <h4>游客模式体验</h4>
+                <p>如果您还没有账号，可以选择<strong>游客模式</strong>体验平台功能：</p>
+                <ul>
+                    <li><strong>免登录体验：</strong> 无需注册账号即可使用基本AI对话功能</li>
+                    <li><strong>免费模型：</strong> 游客模式使用免费模型（GLM-4-Flash），无需提供API Key</li>
+                    <li><strong>功能限制：</strong> 部分高级功能在游客模式下不可用或有限制</li>
+                </ul>
+                
+                <div class="note">
+                    <strong>游客模式限制说明：</strong>
+                    <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+                        <li>文件上传功能不可用</li>
+                        <li>联网搜索功能不可用</li>
+                        <li>图片上传每小时限1次</li>
+                        <li>PDF解析每小时限1页</li>
+                        <li>仅能使用免费模型，无法切换其他模型</li>
+                    </ul>
+                </div>
+                
+                <div class="warning">
+                    <strong>提示：</strong>游客模式仅供体验使用，建议注册正式账号以获得完整功能和更好的使用体验。
+                </div>
                 
                 <!-- GIF: 登录演示 -->
                 <div class="gif-placeholder" data-gif-id="login-demo">
@@ -665,8 +690,8 @@
                 
                 <h4>支持的内容类型</h4>
                 <ul>
-                    <li><strong>专利号：</strong> 自动识别专利号格式，可粘贴到功能六批量查询</li>
-                    <li><strong>权利要求文本：</strong> 可粘贴到功能七权利要求处理</li>
+                    <li><strong>专利号：</strong> 自动识别专利号格式，可粘贴到功能五批量查询</li>
+                    <li><strong>权利要求文本：</strong> 可粘贴到功能六权利要求处理</li>
                     <li><strong>AI分析结果：</strong> 可粘贴到即时对话继续讨论</li>
                     <li><strong>普通文本：</strong> 可粘贴到任意文本输入框</li>
                 </ul>
@@ -717,12 +742,11 @@
                 <p>在本工作台的各个功能模块中，API Key发挥着核心作用：</p>
                 <ul>
                     <li><strong>功能一（AI智能体对话）：</strong>每次对话都需要调用智谱AI的模型，消耗相应Token</li>
-                    <li><strong>功能二（批量智能分析I）：</strong>批量处理任务时，每条数据都会调用模型进行分析</li>
-                    <li><strong>功能三（大批量处理）：</strong>使用Batch API进行大规模处理，费用为正常调用的50%</li>
-                    <li><strong>功能五（权利要求智能比对）：</strong>对比分析需要调用模型进行智能解读</li>
-                    <li><strong>功能六（批量专利解读）：</strong>专利解读功能需要调用模型生成分析报告</li>
-                    <li><strong>功能八（专利附图标记）：</strong>AI辅助识别功能需要调用视觉模型</li>
-                    <li><strong>功能九（文档OCR与智能分析）：</strong>OCR识别和AI对话都需要消耗Token</li>
+                    <li><strong>功能二（文本批量智能分析）：</strong>支持小批量异步和大批量延时两种处理模式</li>
+                    <li><strong>功能四（权利要求智能比对）：</strong>对比分析需要调用模型进行智能解读</li>
+                    <li><strong>功能五（批量专利检索与解读）：</strong>专利解读功能需要调用模型生成分析报告</li>
+                    <li><strong>功能七（专利附图标记）：</strong>AI辅助识别功能需要调用视觉模型</li>
+                    <li><strong>功能八（文档OCR与智能分析）：</strong>OCR识别和AI对话都需要消耗Token</li>
                 </ul>
                 
                 <div class="warning">
@@ -1099,145 +1123,172 @@
             </div>
         </div>
 
-        <!-- 功能二：批量智能分析I -->
-        <div class="content-card" id="feature-async-batch">
+        <!-- 功能二：文本批量智能分析 -->
+        <div class="content-card" id="feature-unified-batch">
             <div class="card-header">
-                <h2>功能二：批量智能分析I</h2>
+                <h2>功能二：文本批量智能分析</h2>
             </div>
             <div class="card-body">
-                <p>此功能适用于处理中等数量（几十到几百条）的独立任务，例如批量翻译、批量总结等。它通过异步API提交任务，无需等待即可继续操作，并在后台轮询结果。</p>
+                <p>本功能将原有的"小批量异步"和"大批量处理"整合为统一的工作流程，系统会根据数据量自动推荐最优处理模式，让您无需关心技术细节，专注于业务本身。</p>
+
+                <h4>核心特点</h4>
+                <ul>
+                    <li><strong>统一工作流：</strong> 四步完成批量处理，从输入到结果一站式操作</li>
+                    <li><strong>智能模式推荐：</strong> 系统根据数据量自动推荐最优处理模式</li>
+                    <li><strong>双模式支持：</strong> 小批量异步模式（实时）和大批量延时模式（高效）</li>
+                    <li><strong>断点续查：</strong> 大批量模式支持通过Batch ID恢复任务状态</li>
+                    <li><strong>模板管理：</strong> 支持保存和复用处理模板</li>
+                </ul>
+                
+                <!-- GIF: 功能介绍 -->
+                <div class="gif-placeholder" data-gif-id="unified-batch-intro">
+                    <span>点击右侧"GIF管理"按钮插入：文本批量分析-功能介绍.gif</span>
+                    <span class="gif-label">占位符ID: unified-batch-intro</span>
+                </div>
 
                 <h4>工作流程</h4>
                 <p>整个过程遵循顶部的四步进式导航：</p>
                 <ol>
-                    <li><strong>输入内容 &rarr; </strong></li>
+                    <li><strong>输入数据 &rarr; </strong></li>
                     <li><strong>配置模板 &rarr; </strong></li>
-                    <li><strong>创建任务 &rarr; </strong></li>
-                    <li><strong>任务与结果</strong></li>
+                    <li><strong>选择模式 &rarr; </strong></li>
+                    <li><strong>处理结果</strong></li>
                 </ol>
                 
                 <!-- GIF: 工作流程概览 -->
-                <div class="gif-placeholder" data-gif-id="async-workflow-overview">
-                    <span>点击右侧"GIF管理"按钮插入：小批量异步-工作流程概览.gif</span>
-                    <span class="gif-label">占位符ID: async-workflow-overview</span>
+                <div class="gif-placeholder" data-gif-id="unified-batch-workflow">
+                    <span>点击右侧"GIF管理"按钮插入：文本批量分析-工作流程.gif</span>
+                    <span class="gif-label">占位符ID: unified-batch-workflow</span>
                 </div>
 
-                <h4>Step 1: 输入内容</h4>
+                <h4>Step 1: 输入数据</h4>
                 <p>您有两种方式添加需要处理的源数据：</p>
                 <ul>
-                    <li><strong>Excel导入：</strong> 上传Excel文件，选择工作表(Sheet)，然后指定包含源数据的一列或多列。</li>
+                    <li><strong>Excel导入：</strong> 上传Excel文件，选择工作表(Sheet)，然后指定包含源数据的一列或多列。支持多列合并输入。</li>
                     <li><strong>手动添加：</strong> 在文本框中直接输入，每行代表一条独立的输入数据。</li>
                 </ul>
+                <div class="note">
+                    <strong>多列输入提示：</strong> 当从Excel导入多列时，系统会自动将多列内容及列名填充到用户提示模板的 <code>{{INPUT}}</code> 位置。
+                </div>
                 
                 <!-- GIF: 输入内容 -->
-                <div class="gif-placeholder" data-gif-id="async-input-content">
-                    <span>点击右侧"GIF管理"按钮插入：小批量异步-输入内容.gif</span>
-                    <span class="gif-label">占位符ID: async-input-content</span>
+                <div class="gif-placeholder" data-gif-id="unified-batch-input">
+                    <span>点击右侧"GIF管理"按钮插入：文本批量分析-输入数据.gif</span>
+                    <span class="gif-label">占位符ID: unified-batch-input</span>
                 </div>
 
                 <h4>Step 2: 配置模板</h4>
                 <p>模板定义了如何处理每一条输入数据。一个模板包含：</p>
                 <ul>
                     <li><strong>模板名称：</strong> 为您的处理方式命名，方便复用。</li>
-                    <li><strong>模型与温度：</strong> 同即时对话。</li>
+                    <li><strong>模型选择：</strong> 选择不同的AI模型以应对不同复杂度的任务。</li>
+                    <li><strong>温度（Temperature）：</strong> 控制回复的创造性。值越高回复越随机，值越低回复越确定。</li>
                     <li><strong>系统提示：</strong> 定义AI的角色和总体指令。</li>
                     <li><strong>用户提示模板：</strong> 核心部分，必须包含 <code>{{INPUT}}</code> 占位符。</li>
-                    <li><strong>输出格式(JSON)：</strong> 定义希望AI输出的JSON字段名和描述。</li>
+                    <li><strong>输出格式(JSON)：</strong> 定义希望AI输出的JSON字段名和描述，系统会自动包装成严格的JSON格式要求。</li>
                 </ul>
                 
                 <!-- GIF: 配置模板 -->
-                <div class="gif-placeholder" data-gif-id="async-config-template">
-                    <span>点击右侧"GIF管理"按钮插入：小批量异步-配置模板.gif</span>
-                    <span class="gif-label">占位符ID: async-config-template</span>
+                <div class="gif-placeholder" data-gif-id="unified-batch-template">
+                    <span>点击右侧"GIF管理"按钮插入：文本批量分析-配置模板.gif</span>
+                    <span class="gif-label">占位符ID: unified-batch-template</span>
                 </div>
 
-                <h4>Step 3: 创建任务</h4>
-                <p>此步骤将"输入"和"模板"进行配对。您可以为每个模板指定要处理的输入数据序号范围。</p>
+                <h4>Step 3: 选择模式</h4>
+                <p>系统会根据您的数据量自动推荐最优处理模式：</p>
                 
-                <!-- GIF: 创建任务 -->
-                <div class="gif-placeholder" data-gif-id="async-create-task">
-                    <span>点击右侧"GIF管理"按钮插入：小批量异步-创建任务.gif</span>
-                    <span class="gif-label">占位符ID: async-create-task</span>
+                <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em;">
+                    <thead>
+                        <tr style="background-color: var(--primary-color); color: white;">
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: left;">处理模式</th>
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: left;">适用场景</th>
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: left;">特点</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background-color: rgba(34, 197, 94, 0.05);">
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>小批量异步模式</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">少于50条数据</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">
+                                <ul style="margin: 0; padding-left: 15px;">
+                                    <li>实时API调用，快速响应</li>
+                                    <li>逐条显示处理结果</li>
+                                    <li>支持中途导出</li>
+                                    <li>5秒轮询状态更新</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>大批量延时模式</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">50条以上数据</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">
+                                <ul style="margin: 0; padding-left: 15px;">
+                                    <li>智谱Batch API批处理</li>
+                                    <li>整体进度显示</li>
+                                    <li>支持断点续查</li>
+                                    <li>60秒轮询状态更新</li>
+                                    <li>费用为正常调用的50%</li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="note">
+                    <strong>自动选择：</strong> 默认开启"自动选择模式"，系统会根据数据量自动切换处理模式。您也可以手动选择。
+                </div>
+                
+                <!-- GIF: 选择模式 -->
+                <div class="gif-placeholder" data-gif-id="unified-batch-mode">
+                    <span>点击右侧"GIF管理"按钮插入：文本批量分析-选择模式.gif</span>
+                    <span class="gif-label">占位符ID: unified-batch-mode</span>
                 </div>
 
-                <h4>Step 4: 任务与结果</h4>
+                <h4>Step 4: 处理结果</h4>
+                <p>根据选择的模式，处理结果界面有所不同：</p>
+                
+                <h5>小批量异步模式</h5>
                 <ol>
                     <li><strong>提交任务：</strong> 点击"提交全部请求"，系统会将所有请求发送到异步处理队列。</li>
-                    <li><strong>查看结果：</strong> 提交后，下方的表格会实时更新每个请求的状态。</li>
+                    <li><strong>查看结果：</strong> 提交后，下方的表格会实时更新每个请求的状态（5秒轮询）。</li>
                     <li><strong>恢复任务：</strong> 如果您关闭了浏览器，可以点击"恢复上次任务"按钮。</li>
-                    <li><strong>导出Excel：</strong> 任务完成后，点击"导出为Excel"按钮。</li>
+                    <li><strong>导出Excel：</strong> 任务完成后，点击"导出为Excel"按钮保存结果。</li>
                 </ol>
                 
-                <!-- GIF: 任务与结果 -->
-                <div class="gif-placeholder" data-gif-id="async-task-results">
-                    <span>点击右侧"GIF管理"按钮插入：小批量异步-任务与结果.gif</span>
-                    <span class="gif-label">占位符ID: async-task-results</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- 功能三：大批量处理 -->
-        <div class="content-card" id="feature-large-batch">
-            <div class="card-header">
-                <h2>功能三：大批量处理</h2>
-            </div>
-            <div class="card-body">
-                <p>专为大规模数据处理（数千至数万条）设计，基于智谱AI的官方Batch API。此功能完全在后端执行，即使关闭浏览器，任务也会继续运行。</p>
-
-                <h4>工作流程</h4>
+                <h5>大批量延时模式</h5>
                 <ol>
-                    <li><strong>生成请求文件 &rarr; </strong></li>
-                    <li><strong>执行批处理 &rarr; </strong></li>
-                    <li><strong>解析报告</strong></li>
-                </ol>
-                
-                <!-- GIF: 工作流程概览 -->
-                <div class="gif-placeholder" data-gif-id="largebatch-workflow-overview">
-                    <span>点击右侧"GIF管理"按钮插入：大批量处理-工作流程概览.gif</span>
-                    <span class="gif-label">占位符ID: largebatch-workflow-overview</span>
-                </div>
-
-                <h4>Step 1: 生成请求文件</h4>
-                <p>根据您的源数据和处理要求，在浏览器内存中生成一个符合Batch API格式的JSONL文件。</p>
-                
-                <!-- GIF: 生成请求文件 -->
-                <div class="gif-placeholder" data-gif-id="largebatch-generate-request">
-                    <span>点击右侧"GIF管理"按钮插入：大批量处理-生成请求文件.gif</span>
-                    <span class="gif-label">占位符ID: largebatch-generate-request</span>
-                </div>
-
-                <h4>Step 2: 执行批处理</h4>
-                <ol>
-                    <li><strong>上传请求文件：</strong> 将生成的JSONL文件上传到智谱AI。</li>
+                    <li><strong>上传请求文件：</strong> 系统自动生成符合Batch API格式的JSONL文件并上传到智谱AI。</li>
                     <li><strong>创建Batch任务：</strong> 上传成功后，创建批处理任务。<strong>请务必复制并保管好返回的Batch ID</strong>。</li>
-                    <li><strong>检查状态：</strong> 系统会自动启动定时检查（每分钟一次）。</li>
+                    <li><strong>检查状态：</strong> 系统会自动启动定时检查（每60秒一次）。</li>
                     <li><strong>获取结果内容：</strong> 当任务状态变为"completed"时，下载结果文件。</li>
+                    <li><strong>解析报告：</strong> 将AI返回的结果与原始Excel数据合并，生成最终的分析报告。</li>
                 </ol>
+                
                 <div class="warning">
                     <strong>断点续查：</strong> 如果流程中断，您可以在"断点续查"区域输入Batch ID，恢复对任务状态的监控。
                 </div>
                 
-                <!-- GIF: 执行批处理 -->
-                <div class="gif-placeholder" data-gif-id="largebatch-execute-batch">
-                    <span>点击右侧"GIF管理"按钮插入：大批量处理-执行批处理.gif</span>
-                    <span class="gif-label">占位符ID: largebatch-execute-batch</span>
+                <!-- GIF: 处理结果 -->
+                <div class="gif-placeholder" data-gif-id="unified-batch-results">
+                    <span>点击右侧"GIF管理"按钮插入：文本批量分析-处理结果.gif</span>
+                    <span class="gif-label">占位符ID: unified-batch-results</span>
                 </div>
 
-                <h4>Step 3: 解析报告</h4>
-                <p>将AI返回的结果与您的原始数据合并，生成最终的分析报告。</p>
-                
-                <!-- GIF: 解析报告 -->
-                <div class="gif-placeholder" data-gif-id="largebatch-parse-report">
-                    <span>点击右侧"GIF管理"按钮插入：大批量处理-解析报告.gif</span>
-                    <span class="gif-label">占位符ID: largebatch-parse-report</span>
+                <h4>费用说明</h4>
+                <ul>
+                    <li><strong>小批量异步模式：</strong> 按正常API价格计费</li>
+                    <li><strong>大批量延时模式：</strong> 使用Batch API，费用为正常调用的<strong>50%</strong></li>
+                </ul>
+                <div class="note">
+                    <strong>建议：</strong> 对于大批量数据处理（如数千条），强烈推荐使用大批量延时模式，可显著降低成本。
                 </div>
             </div>
         </div>
 
-        <!-- 功能四：本地数据表管理 -->
+        <!-- 功能三：本地数据表管理 -->
         <div class="content-card" id="feature-local-lib">
             <div class="card-header">
-                <h2>功能四：本地数据表管理</h2>
+                <h2>功能三：本地数据表管理</h2>
             </div>
             <div class="card-body">
                 <p>这是一个纯粹的、离线的Excel数据处理工具，专注于专利建库过程中常见的两个痛点：同族展开和新旧库合并。<strong>此功能不消耗任何API额度。</strong></p>
@@ -1288,10 +1339,10 @@
             </div>
         </div>
 
-        <!-- 功能五：权利要求智能比对 -->
+        <!-- 功能四：权利要求智能比对 -->
         <div class="content-card" id="feature-claims-comparison">
             <div class="card-header">
-                <h2>功能五：权利要求智能比对</h2>
+                <h2>功能四：权利要求智能比对</h2>
             </div>
             <div class="card-body">
                 <p>此功能用于智能对比不同专利的权利要求，自动识别语言、按需翻译，提供多种可视化展示方式。</p>
@@ -1341,10 +1392,10 @@
             </div>
         </div>
 
-        <!-- 功能六：批量专利解读 -->
+        <!-- 功能五：批量专利解读 -->
         <div class="content-card" id="feature-patent-batch">
             <div class="card-header">
-                <h2>功能六：批量专利解读</h2>
+                <h2>功能五：批量专利检索与解读</h2>
             </div>
             <div class="card-body">
                 <p>此功能用于批量查询专利详情并提供AI解读功能，最多支持50个专利号。支持智能缓存、历史记录管理、标签页模式展示等高级功能。</p>
@@ -1483,10 +1534,10 @@
             </div>
         </div>
 
-        <!-- 功能七：权利要求处理 -->
+        <!-- 功能六：权利要求处理 -->
         <div class="content-card" id="feature-claims-processor">
             <div class="card-header">
-                <h2>功能七：权利要求处理</h2>
+                <h2>功能六：独从权识别与可视化</h2>
             </div>
             <div class="card-body">
                 <p>此功能用于处理专利权利要求，支持Excel批量分析和文本输入分析两种模式，能够自动解析、分类并提取权利要求信息，生成可视化的引用关系图。</p>
@@ -1521,10 +1572,10 @@
             </div>
         </div>
 
-        <!-- 功能八：专利附图标记 -->
+        <!-- 功能七：专利附图标记 -->
         <div class="content-card" id="feature-drawing-marker">
             <div class="card-header">
-                <h2>功能八：专利附图标记</h2>
+                <h2>功能七：专利附图智能标记</h2>
             </div>
             <div class="card-body">
                 <p>此功能用于自动识别专利附图中的标记数字，并与说明书中的标记说明进行智能匹配，生成带有标注的附图。</p>
@@ -1571,10 +1622,10 @@
             </div>
         </div>
 
-        <!-- 功能九：文档OCR与智能分析 -->
+        <!-- 功能八：文档OCR与智能分析 -->
         <div class="content-card" id="feature-pdf-ocr">
             <div class="card-header">
-                <h2>功能九：文档OCR与智能分析</h2>
+                <h2>功能八：文档OCR与智能分析</h2>
             </div>
             <div class="card-body">
                 <p>此功能集成了PDF阅读器与智能OCR识别，支持PDF和图片文件的文字识别、结构化解析、划词选择和AI对话功能。</p>
@@ -1916,7 +1967,7 @@
                 <p>不支持Internet Explorer浏览器。如遇到显示异常，请尝试清除浏览器缓存或更换浏览器。</p>
 
                 <h4>Q31: PDF阅读与OCR功能支持哪些文件格式？</h4>
-                <p><strong>A:</strong> 功能九支持以下文件格式：</p>
+                <p><strong>A:</strong> 功能八支持以下文件格式：</p>
                 <ul>
                     <li><strong>PDF文档：</strong> 支持标准PDF文件，包括扫描版和文字版</li>
                     <li><strong>图片格式：</strong> PNG、JPG、JPEG、BMP、WEBP</li>
@@ -1969,7 +2020,7 @@
                     <li><strong>建议：</strong> 需要保留格式时选择Markdown，仅需文字内容时选择TXT</li>
                 </ul>
 
-                <h4>Q37: 功能六的缓存系统有什么作用？</h4>
+                <h4>Q37: 功能五的缓存系统有什么作用？</h4>
                 <p><strong>A:</strong> 缓存系统的作用和使用方法：</p>
                 <ul>
                     <li><strong>自动缓存：</strong> 爬取的专利数据会自动缓存到本地，避免重复请求</li>
@@ -1979,7 +2030,7 @@
                     <li><strong>注意：</strong> 清理缓存后需要重新爬取专利数据</li>
                 </ul>
 
-                <h4>Q38: 功能六的历史记录功能如何使用？</h4>
+                <h4>Q38: 功能五的历史记录功能如何使用？</h4>
                 <p><strong>A:</strong> 历史记录功能说明：</p>
                 <ul>
                     <li><strong>查看历史：</strong> 点击"历史记录"按钮查看所有爬取和解读历史</li>
@@ -1989,7 +2040,7 @@
                     <li><strong>清空历史：</strong> 点击"清空历史"可删除所有历史记录（不影响缓存）</li>
                 </ul>
 
-                <h4>Q39: 功能六的解读模板如何自定义？</h4>
+                <h4>Q39: 功能五的解读模板如何自定义？</h4>
                 <p><strong>A:</strong> 自定义解读模板的方法：</p>
                 <ul>
                     <li><strong>打开编辑器：</strong> 点击模板选择器旁边的"管理"按钮</li>
@@ -2021,14 +2072,14 @@
                 <h4>Q41: 智能剪贴板支持哪些内容类型？</h4>
                 <p><strong>A:</strong> 智能剪贴板支持的内容类型：</p>
                 <ul>
-                    <li><strong>专利号：</strong> 自动识别专利号格式（如CN123456789A），可粘贴到功能六批量查询</li>
-                    <li><strong>权利要求文本：</strong> 识别权利要求格式，可粘贴到功能七权利要求处理</li>
+                    <li><strong>专利号：</strong> 自动识别专利号格式（如CN123456789A），可粘贴到功能五批量查询</li>
+                    <li><strong>权利要求文本：</strong> 识别权利要求格式，可粘贴到功能六权利要求处理</li>
                     <li><strong>专利表格数据：</strong> 识别Excel格式的专利数据</li>
                     <li><strong>AI分析结果：</strong> 识别AI生成的分析内容，可粘贴到即时对话继续讨论</li>
                     <li><strong>普通文本：</strong> 其他文本内容，可粘贴到任意文本输入框</li>
                 </ul>
 
-                <h4>Q42: 功能六的"解读时包含说明书"选项有什么影响？</h4>
+                <h4>Q42: 功能五的"解读时包含说明书"选项有什么影响？</h4>
                 <p><strong>A:</strong> 该选项的影响：</p>
                 <ul>
                     <li><strong>开启时：</strong> 
@@ -2109,30 +2160,25 @@
         'chat-file-upload': '即时对话-文件上传.gif',
         'chat-web-search': '即时对话-联网搜索.gif',
         
-        // 功能二：小批量异步
-        'async-workflow-overview': '小批量异步-工作流程概览.gif',
-        'async-input-content': '小批量异步-输入内容.gif',
-        'async-config-template': '小批量异步-配置模板.gif',
-        'async-create-task': '小批量异步-创建任务.gif',
-        'async-task-results': '小批量异步-任务与结果.gif',
+        // 功能二：文本批量智能分析
+        'unified-batch-intro': '文本批量分析-功能介绍.gif',
+        'unified-batch-workflow': '文本批量分析-工作流程.gif',
+        'unified-batch-input': '文本批量分析-输入数据.gif',
+        'unified-batch-template': '文本批量分析-配置模板.gif',
+        'unified-batch-mode': '文本批量分析-选择模式.gif',
+        'unified-batch-results': '文本批量分析-处理结果.gif',
         
-        // 功能三：大批量处理
-        'largebatch-workflow-overview': '大批量处理-工作流程概览.gif',
-        'largebatch-generate-request': '大批量处理-生成请求文件.gif',
-        'largebatch-execute-batch': '大批量处理-执行批处理.gif',
-        'largebatch-parse-report': '大批量处理-解析报告.gif',
-        
-        // 功能四：本地专利库管理
+        // 功能三：本地专利库管理
         'locallib-workflow-overview': '本地专利库-工作流程概览.gif',
         'locallib-upload-expand': '本地专利库-上传与展开.gif',
         'locallib-merge-libraries': '本地专利库-合并新旧库.gif',
         
-        // 功能五：权利要求对比
+        // 功能四：权利要求对比
         'claims-compare-intro': '权利要求对比-功能介绍.gif',
         'claims-compare-workflow': '权利要求对比-工作流程.gif',
         'claims-compare-visualization': '权利要求对比-可视化视图.gif',
         
-        // 功能六：批量专利解读
+        // 功能五：批量专利解读
         'patent-batch-intro': '批量专利解读-功能介绍.gif',
         'patent-batch-config': '批量专利解读-配置选项.gif',
         'patent-batch-field-selector': '批量专利解读-字段选择器.gif',
@@ -2140,16 +2186,16 @@
         'patent-batch-cache': '批量专利解读-缓存与历史.gif',
         'patent-batch-workflow': '批量专利解读-工作流程.gif',
         
-        // 功能七：权利要求处理
+        // 功能六：权利要求处理
         'claims-processor-intro': '权利要求处理-功能介绍.gif',
         'claims-processor-visualization': '权利要求处理-可视化控制.gif',
         
-        // 功能八：专利附图标记
+        // 功能七：专利附图标记
         'drawing-marker-intro': '专利附图标记-功能介绍.gif',
         'drawing-marker-ai-panel': '专利附图标记-AI处理控制面板.gif',
         'drawing-marker-reprocess': '专利附图标记-快速重新处理.gif',
         
-        // 功能九：PDF阅读与OCR
+        // 功能八：PDF阅读与OCR
         'pdf-ocr-intro': 'PDF阅读与OCR-功能介绍.gif',
         'pdf-ocr-interface': 'PDF阅读与OCR-界面布局.gif',
         'pdf-ocr-workflow': 'PDF阅读与OCR-工作流程.gif',
