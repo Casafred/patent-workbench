@@ -143,17 +143,26 @@ class AIProcessingPanel {
             
             this.models = config.models || [];
             
-            // Update model selector
             const modelSelector = document.getElementById('modelSelector');
             if (modelSelector && this.models.length > 0) {
-                modelSelector.innerHTML = this.models.map(model => 
-                    `<option value="${model}" ${model === this.selectedModel ? 'selected' : ''}>${model}</option>`
-                ).join('');
+                const isGuest = window.IS_GUEST_MODE || false;
+                const guestModel = window.GUEST_MODEL || 'glm-4-flash';
                 
-                // Set default model if none selected
-                if (!this.selectedModel && this.models.length > 0) {
-                    this.selectedModel = this.models[0];
-                    this.saveState();
+                if (isGuest) {
+                    modelSelector.innerHTML = `<option value="${guestModel}">${guestModel}</option>`;
+                    this.selectedModel = guestModel;
+                    modelSelector.disabled = true;
+                    modelSelector.style.cursor = 'not-allowed';
+                    modelSelector.style.opacity = '0.7';
+                } else {
+                    modelSelector.innerHTML = this.models.map(model => 
+                        `<option value="${model}" ${model === this.selectedModel ? 'selected' : ''}>${model}</option>`
+                    ).join('');
+                    
+                    if (!this.selectedModel && this.models.length > 0) {
+                        this.selectedModel = this.models[0];
+                        this.saveState();
+                    }
                 }
             }
         } catch (e) {

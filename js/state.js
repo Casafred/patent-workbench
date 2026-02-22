@@ -379,6 +379,24 @@ if (document.readyState === 'loading') {
 } else {
     loadModelsConfig();
 }
+
+// 加载游客模式限制模块
+function loadGuestRestrictions() {
+    if (window.IS_GUEST_MODE) {
+        const script = document.createElement('script');
+        script.src = '/js/core/guest-mode-restrictions.js';
+        script.onload = () => {
+            console.log('[State] 游客模式限制模块已加载');
+        };
+        document.head.appendChild(script);
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadGuestRestrictions);
+} else {
+    loadGuestRestrictions();
+}
 // ▲▲▲ 统一模型配置结束 ▲▲▲
 
 // ▼▼▼ 用户缓存管理器初始化 ▼▼▼

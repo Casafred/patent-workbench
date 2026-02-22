@@ -181,6 +181,24 @@ class PDFOCRParser {
             this.showToast('请先上传PDF文件或图片', 'error');
             return;
         }
+        
+        if (window.IS_GUEST_MODE && window.guestModeRestrictions) {
+            const scopeSelect = document.getElementById('ocr-parse-mode');
+            const scope = scopeSelect?.value || 'page';
+            
+            if (scope === 'all' || scope === 'range') {
+                this.showToast('游客模式仅支持当前页面解析', 'error');
+                return;
+            }
+            
+            if (!window.guestModeRestrictions.canUsePDFParse()) {
+                const remaining = window.guestModeRestrictions.getTimeUntilReset(
+                    window.guestModeRestrictions.limits.pdfParse.parsedPages[0]
+                );
+                this.showToast(`游客模式：每小时仅限1页解析，剩余等待 ${remaining}`, 'error');
+                return;
+            }
+        }
 
         const apiKey = await this.getAPIKey();
         if (!apiKey) {
@@ -251,6 +269,11 @@ class PDFOCRParser {
         if (useCache && window.pdfOCRCache) {
             window.pdfOCRCache.setCache(fileHash, pageNum, normalizedResult);
             console.log(`[PDF-OCR-Parser] 已缓存: 第${pageNum}页`);
+        }
+        
+        if (window.IS_GUEST_MODE && window.guestModeRestrictions) {
+            window.guestModeRestrictions.limits.pdfParse.parsedPages.push(Date.now());
+            window.guestModeRestrictions.saveUsageData();
         }
         
         this.handleParseResult(normalizedResult, true);
