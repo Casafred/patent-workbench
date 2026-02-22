@@ -3,6 +3,8 @@
 // =================================================================================
 const appState = {
     apiKey: '',
+    isGuestMode: false,
+    guestModel: 'glm-4-flash',
     chat: {
         personas: {},
         conversations: [], // { id, title, personaId, messages, lastUpdate }
@@ -241,7 +243,15 @@ async function loadModelsConfig() {
 
 // 更新所有功能的模型选择器
 function updateAllModelSelectors(retryCount = 0) {
-    const modelOptions = AVAILABLE_MODELS.map(m => `<option value="${m}">${m}</option>`).join('');
+    const isGuest = window.IS_GUEST_MODE || appState.isGuestMode;
+    const guestModel = window.GUEST_MODEL || appState.guestModel || 'glm-4-flash';
+    
+    let modelsToShow = AVAILABLE_MODELS;
+    if (isGuest) {
+        modelsToShow = [guestModel];
+    }
+    
+    const modelOptions = modelsToShow.map(m => `<option value="${m}">${m}</option>`).join('');
     let allFound = true;
     
     // 功能一：即时对话
@@ -249,7 +259,11 @@ function updateAllModelSelectors(retryCount = 0) {
     if (chatModelSelect) {
         const currentValue = chatModelSelect.value;
         chatModelSelect.innerHTML = modelOptions;
-        if (AVAILABLE_MODELS.includes(currentValue)) {
+        if (isGuest) {
+            chatModelSelect.value = guestModel;
+            chatModelSelect.disabled = true;
+            chatModelSelect.style.cursor = 'not-allowed';
+        } else if (AVAILABLE_MODELS.includes(currentValue)) {
             chatModelSelect.value = currentValue;
         }
         console.log('✅ 功能一模型选择器已更新');
@@ -263,7 +277,11 @@ function updateAllModelSelectors(retryCount = 0) {
     if (asyncTemplateModelSelect) {
         const currentValue = asyncTemplateModelSelect.value;
         asyncTemplateModelSelect.innerHTML = modelOptions;
-        if (AVAILABLE_MODELS.includes(currentValue)) {
+        if (isGuest) {
+            asyncTemplateModelSelect.value = guestModel;
+            asyncTemplateModelSelect.disabled = true;
+            asyncTemplateModelSelect.style.cursor = 'not-allowed';
+        } else if (AVAILABLE_MODELS.includes(currentValue)) {
             asyncTemplateModelSelect.value = currentValue;
         }
         console.log('✅ 功能二模型选择器已更新');
@@ -277,7 +295,11 @@ function updateAllModelSelectors(retryCount = 0) {
     if (apiModelSelect) {
         const currentValue = apiModelSelect.value;
         apiModelSelect.innerHTML = modelOptions;
-        if (AVAILABLE_MODELS.includes(currentValue)) {
+        if (isGuest) {
+            apiModelSelect.value = guestModel;
+            apiModelSelect.disabled = true;
+            apiModelSelect.style.cursor = 'not-allowed';
+        } else if (AVAILABLE_MODELS.includes(currentValue)) {
             apiModelSelect.value = currentValue;
         }
         console.log('✅ 功能三模型选择器已更新');
@@ -291,7 +313,11 @@ function updateAllModelSelectors(retryCount = 0) {
     if (unifiedTemplateModelSelect) {
         const currentValue = unifiedTemplateModelSelect.value;
         unifiedTemplateModelSelect.innerHTML = modelOptions;
-        if (AVAILABLE_MODELS.includes(currentValue)) {
+        if (isGuest) {
+            unifiedTemplateModelSelect.value = guestModel;
+            unifiedTemplateModelSelect.disabled = true;
+            unifiedTemplateModelSelect.style.cursor = 'not-allowed';
+        } else if (AVAILABLE_MODELS.includes(currentValue)) {
             unifiedTemplateModelSelect.value = currentValue;
         }
         console.log('✅ 统一批量处理模型选择器已更新');
@@ -305,7 +331,11 @@ function updateAllModelSelectors(retryCount = 0) {
     if (comparisonModelSelect) {
         const currentValue = comparisonModelSelect.value;
         comparisonModelSelect.innerHTML = modelOptions;
-        if (AVAILABLE_MODELS.includes(currentValue)) {
+        if (isGuest) {
+            comparisonModelSelect.value = guestModel;
+            comparisonModelSelect.disabled = true;
+            comparisonModelSelect.style.cursor = 'not-allowed';
+        } else if (AVAILABLE_MODELS.includes(currentValue)) {
             comparisonModelSelect.value = currentValue;
         }
         console.log('✅ 功能五模型选择器已更新');
@@ -319,7 +349,11 @@ function updateAllModelSelectors(retryCount = 0) {
     if (patentBatchModelSelector) {
         const currentValue = patentBatchModelSelector.value;
         patentBatchModelSelector.innerHTML = modelOptions;
-        if (AVAILABLE_MODELS.includes(currentValue)) {
+        if (isGuest) {
+            patentBatchModelSelector.value = guestModel;
+            patentBatchModelSelector.disabled = true;
+            patentBatchModelSelector.style.cursor = 'not-allowed';
+        } else if (AVAILABLE_MODELS.includes(currentValue)) {
             patentBatchModelSelector.value = currentValue;
         }
         console.log('✅ 功能六模型选择器已更新');

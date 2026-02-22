@@ -76,6 +76,9 @@ tasks/*.json
 users.json
 backend/user_management/users.json
 
+# Guest mode configuration (contains API key)
+config/guest_config.json
+
 # User management documentation (private)
 docs/USER_MANAGEMENT_GUIDE.md
 docs/USER_MANAGEMENT_QUICK_REFERENCE.md

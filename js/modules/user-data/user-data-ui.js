@@ -12,6 +12,11 @@ class UserDataUI {
 
     init() {
         if (this.isInitialized) return;
+        
+        if (window.IS_GUEST_MODE) {
+            console.log('[UserDataUI] 游客模式: UI不初始化');
+            return;
+        }
 
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => this._setup());
@@ -167,6 +172,11 @@ class UserDataUI {
     }
 
     _createDataManageButton() {
+        if (window.IS_GUEST_MODE) {
+            console.log('[UserDataUI] 游客模式: 不创建数据管理按钮');
+            return;
+        }
+        
         const userBtns = document.querySelector('.user-btns');
         if (!userBtns) return;
 

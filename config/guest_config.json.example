@@ -1,0 +1,7 @@
+{
+    "description": "游客模式配置文件模板",
+    "note": "请将此文件复制为 guest_config.json 并填入您的智谱AI API Key",
+    "guest_api_key": "YOUR_ZHIPUAI_API_KEY_HERE",
+    "guest_model": "glm-4-flash",
+    "guest_session_lifetime_hours": 2
+}

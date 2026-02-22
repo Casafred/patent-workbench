@@ -7,6 +7,7 @@ This module provides decorators and functions for authentication.
 from functools import wraps
 from flask import session, request, redirect, url_for, make_response, jsonify
 from backend.services.auth_service import AuthService
+from backend.config import GUEST_MODE_ENABLED
 
 
 def validate_api_request():
@@ -27,8 +28,10 @@ def validate_api_request():
             401
         )
     
-    # Verify IP if database is available
-    username = session['user']
+    if session.get('is_guest'):
+        return True, None
+    
+    username = session.get('user')
     client_ip = AuthService.get_client_ip()
     
     if not AuthService.verify_user_ip(username, client_ip):
@@ -65,14 +68,50 @@ def login_required(f):
         is_valid, response = validate_api_request()
         
         if not is_valid:
-            # For API routes, return JSON error
             if request.path.startswith('/api/'):
                 return response
             
-            # For page routes, redirect to login
             error_message = response.get_json().get('error')
             return redirect(url_for('auth.login', error=error_message))
         
         return f(*args, **kwargs)
     
     return decorated_function
+
+
+def guest_mode_required(f):
+    """
+    Decorator for routes that require guest mode to be enabled.
+    
+    Args:
+        f: Function to decorate
+    
+    Returns:
+        Decorated function that checks guest mode availability
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not GUEST_MODE_ENABLED:
+            if request.path.startswith('/api/'):
+                return make_response(
+                    jsonify({
+                        "success": False,
+                        "error": "Guest mode is not available."
+                    }),
+                    403
+                )
+            return redirect(url_for('auth.login'))
+        
+        return f(*args, **kwargs)
+    
+    return decorated_function
+
+
+def is_guest_session():
+    """
+    Check if current session is a guest session.
+    
+    Returns:
+        bool: True if guest session, False otherwise
+    """
+    return session.get('is_guest', False)

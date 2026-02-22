@@ -8,8 +8,8 @@ class UserCacheManager {
         this._initialized = false;
         this._username = null;
         this._eventListeners = {};
+        this._isGuest = false;
         
-        // 数据类型定义
         this.DATA_TYPES = {
             CHAT_CONVERSATIONS: {
                 key: 'chatConversations',
@@ -113,19 +113,31 @@ class UserCacheManager {
         }
 
         this._username = username;
+        this._isGuest = window.IS_GUEST_MODE || false;
         
-        // 初始化存储层
+        if (this._isGuest) {
+            console.log('[UserCacheManager] 游客模式: 缓存管理器不初始化');
+            this._initialized = false;
+            return false;
+        }
+
         if (!window.userCacheStorage.init(username)) {
             return false;
         }
 
         this._initialized = true;
         
-        // 触发初始化事件
         this._emit('initialized', { username });
-        
+
         console.log(`[UserCacheManager] 已初始化，用户: ${username}`);
         return true;
+    }
+
+    /**
+     * 检查是否为游客模式
+     */
+    isGuestMode() {
+        return this._isGuest || window.IS_GUEST_MODE || false;
     }
 
     /**

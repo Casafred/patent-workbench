@@ -8,8 +8,8 @@ import os
 import random
 from flask import Blueprint, request, session, redirect, url_for, render_template_string, Response
 from backend.services.auth_service import AuthService
-from backend.middleware.auth_middleware import login_required
-from backend.config import BASE_DIR
+from backend.middleware.auth_middleware import login_required, guest_mode_required
+from backend.config import BASE_DIR, GUEST_MODE_ENABLED, GUEST_MODEL
 
 # Create blueprint
 auth_bp = Blueprint('auth', __name__)
@@ -435,6 +435,10 @@ LOGIN_PAGE_HTML = """
                 <a href="/forgot-password">找回密码</a>
                 <br>
                 <a href="/api/register/apply" id="get-account-btn" class="get-account-btn">获取账号</a>
+                <span id="guest-mode-container" style="display: none;">
+                    <span style="color: #999; margin: 0 8px;">|</span>
+                    <a href="/guest-login" id="guest-mode-btn" class="get-account-btn" style="color: #059669;">游客模式</a>
+                </span>
             </div>
         </div>
     </div>
@@ -473,6 +477,16 @@ LOGIN_PAGE_HTML = """
             const loginBtn = document.getElementById('login-btn');
             const btnText = document.getElementById('btn-text');
             const spinner = document.getElementById('spinner');
+
+            // 检查游客模式是否启用
+            fetch('/api/guest-status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.enabled) {
+                        document.getElementById('guest-mode-container').style.display = 'inline';
+                    }
+                })
+                .catch(() => {});
 
             // 密码显示/隐藏切换
             passwordToggle.addEventListener('click', function(e) {
@@ -612,6 +626,29 @@ def logout():
     return redirect(url_for('auth.login'))
 
 
+@auth_bp.route('/api/guest-status')
+def guest_status():
+    """Return guest mode availability status."""
+    return {'enabled': GUEST_MODE_ENABLED}
+
+
+@auth_bp.route('/guest-login')
+@guest_mode_required
+def guest_login():
+    """
+    Handle guest mode login.
+    
+    Creates a guest session without requiring credentials.
+    Guest sessions have limited functionality and use built-in API key.
+    """
+    session.clear()
+    session['user'] = 'guest'
+    session['is_guest'] = True
+    session.permanent = False
+    
+    return redirect(url_for('auth.serve_app'))
+
+
 @auth_bp.route('/')
 def index():
     """Redirect root to app."""
@@ -632,6 +669,44 @@ def serve_app():
         html_content = f.read()
     
     username = session.get('user', '用户')
+    is_guest = session.get('is_guest', False)
+    guest_model = GUEST_MODEL
+    
+    guest_banner = ""
+    if is_guest:
+        guest_banner = f"""
+    <div class="guest-banner" style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+        border-bottom: 1px solid #F59E0B;
+        padding: 8px 16px;
+        text-align: center;
+        font-size: 13px;
+        color: #92400E;
+        z-index: 1001;
+        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+    ">
+        <span style="font-weight: 600;">游客模式</span> - 
+        缓存数据不保留，模型仅限 <strong>{guest_model}</strong>，API Key已预置
+    </div>
+    <style>
+        body {{ padding-top: 40px !important; }}
+        .user-actions {{ top: 52px !important; }}
+    </style>
+    """
+    
+    user_btns_html = ""
+    if not is_guest:
+        user_btns_html = """
+            <a href="javascript:void(0);" onclick="showChangeUsernameModal()" class="user-btn">改用户名</a>
+            <a href="javascript:void(0);" onclick="showChangePasswordModal()" class="user-btn">改密码</a>
+        """
+    
+    user_display = "游客用户" if is_guest else username
+    
     user_actions_html = f"""
     <style>
         .user-actions {{
@@ -662,6 +737,9 @@ def serve_app():
         .user-display strong {{
             color: #16A34A;
             font-weight: 600;
+        }}
+        .user-display.guest strong {{
+            color: #D97706;
         }}
         .user-btns {{
             display: flex;
@@ -783,14 +861,18 @@ def serve_app():
             cursor: not-allowed;
         }}
     </style>
+    {guest_banner}
     <div class="user-actions">
-        <span class="user-display">当前用户: <strong id="current-username">{username}</strong></span>
+        <span class="user-display {'guest' if is_guest else ''}">{'游客模式' if is_guest else '当前用户'}: <strong id="current-username">{user_display}</strong></span>
         <div class="user-btns">
-            <a href="javascript:void(0);" onclick="showChangeUsernameModal()" class="user-btn">改用户名</a>
-            <a href="javascript:void(0);" onclick="showChangePasswordModal()" class="user-btn">改密码</a>
-            <a href="{url_for('auth.logout')}" class="user-btn logout">登出</a>
+            {user_btns_html}
+            <a href="{url_for('auth.logout')}" class="user-btn logout">{'退出' if is_guest else '登出'}</a>
         </div>
     </div>
+    """
+    
+    if not is_guest:
+        user_actions_html += """
     <div id="change-username-modal" class="cp-modal">
         <div class="cp-modal-content">
             <h3>修改用户名</h3>
@@ -836,70 +918,70 @@ def serve_app():
         </div>
     </div>
     <script>
-    function showChangeUsernameModal() {{
+    function showChangeUsernameModal() {
         document.getElementById('change-username-modal').classList.add('show');
-    }}
-    function hideChangeUsernameModal() {{
+    }
+    function hideChangeUsernameModal() {
         var modal = document.getElementById('change-username-modal');
         modal.classList.remove('show');
         document.getElementById('change-username-form').reset();
         var msg = document.getElementById('change-username-message');
         msg.className = 'cp-message';
         msg.textContent = '';
-    }}
-    document.getElementById('change-username-form').addEventListener('submit', async function(e) {{
+    }
+    document.getElementById('change-username-form').addEventListener('submit', async function(e) {
         e.preventDefault();
         var newUsername = document.getElementById('new-username').value.trim();
         var password = document.getElementById('username-password').value;
         var msgEl = document.getElementById('change-username-message');
         var btn = document.getElementById('change-username-btn');
         
-        if (!/^[a-zA-Z0-9_]+$/.test(newUsername)) {{
+        if (!/^[a-zA-Z0-9_]+$/.test(newUsername)) {
             msgEl.textContent = '用户名只能包含字母、数字和下划线';
             msgEl.className = 'cp-message error';
             return;
-        }}
+        }
         
         btn.disabled = true;
         btn.textContent = '处理中...';
         
-        try {{
-            var response = await fetch('/api/user/change-username', {{
+        try {
+            var response = await fetch('/api/user/change-username', {
                 method: 'POST',
-                headers: {{'Content-Type': 'application/json'}},
-                body: JSON.stringify({{new_username: newUsername, password: password}})
-            }});
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({new_username: newUsername, password: password})
+            });
             var result = await response.json();
             
-            if (result.success) {{
+            if (result.success) {
                 msgEl.textContent = result.message;
                 msgEl.className = 'cp-message success';
                 document.getElementById('current-username').textContent = newUsername;
-                setTimeout(function() {{ hideChangeUsernameModal(); }}, 1500);
-            }} else {{
+                setTimeout(function() { hideChangeUsernameModal(); }, 1500);
+            } else {
                 msgEl.textContent = result.message;
                 msgEl.className = 'cp-message error';
-            }}
-        }} catch (err) {{
+            }
+        } catch (err) {
             msgEl.textContent = '操作失败，请稍后重试';
             msgEl.className = 'cp-message error';
-        }}
+        }
         
         btn.disabled = false;
         btn.textContent = '确认修改';
-    }});
-    function showChangePasswordModal() {{
+    });
+    function showChangePasswordModal() {
         document.getElementById('change-password-modal').classList.add('show');
-    }}
-    function hideChangePasswordModal() {{
+    }
+    function hideChangePasswordModal() {
         var modal = document.getElementById('change-password-modal');
         modal.classList.remove('show');
         document.getElementById('change-password-form').reset();
         var msg = document.getElementById('change-pwd-message');
         msg.className = 'cp-message';
         msg.textContent = '';
-    }}
-    document.getElementById('change-password-form').addEventListener('submit', async function(e) {{
+    }
+    document.getElementById('change-password-form').addEventListener('submit', async function(e) {
         e.preventDefault();
         var oldPwd = document.getElementById('old-password').value;
         var newPwd = document.getElementById('new-password').value;
@@ -907,47 +989,92 @@ def serve_app():
         var msgEl = document.getElementById('change-pwd-message');
         var btn = document.getElementById('change-pwd-btn');
         
-        if (newPwd !== confirmPwd) {{
+        if (newPwd !== confirmPwd) {
             msgEl.textContent = '两次输入的新密码不一致';
             msgEl.className = 'cp-message error';
             return;
-        }}
+        }
         
         btn.disabled = true;
         btn.textContent = '处理中...';
         
-        try {{
-            var response = await fetch('/api/user/change-password', {{
+        try {
+            var response = await fetch('/api/user/change-password', {
                 method: 'POST',
-                headers: {{'Content-Type': 'application/json'}},
-                body: JSON.stringify({{old_password: oldPwd, new_password: newPwd}})
-            }});
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({old_password: oldPwd, new_password: newPwd})
+            });
             var result = await response.json();
             
-            if (result.success) {{
+            if (result.success) {
                 msgEl.textContent = result.message;
                 msgEl.className = 'cp-message success';
-                setTimeout(function() {{ hideChangePasswordModal(); }}, 1500);
-            }} else {{
+                setTimeout(function() { hideChangePasswordModal(); }, 1500);
+            } else {
                 msgEl.textContent = result.message;
                 msgEl.className = 'cp-message error';
-            }}
-        }} catch (err) {{
+            }
+        } catch (err) {
             msgEl.textContent = '操作失败，请稍后重试';
             msgEl.className = 'cp-message error';
-        }}
+        }
         
         btn.disabled = false;
         btn.textContent = '确认修改';
-    }});
+    });
+    </script>
+    """
     
+    guest_script = ""
+    if is_guest:
+        guest_script = f"""
+    <script>
+    window.IS_GUEST_MODE = true;
+    window.GUEST_MODEL = '{guest_model}';
+    window.appState = window.appState || {{}};
+    window.appState.apiKey = 'GUEST_MODE';
+    window.appState.isGuestMode = true;
+    
+    // 清空游客缓存
+    (function() {{
+        var keysToRemove = [];
+        for (var i = 0; i < localStorage.length; i++) {{
+            var key = localStorage.key(i);
+            if (key && key.startsWith('guest_')) {{
+                keysToRemove.push(key);
+            }}
+        }}
+        keysToRemove.forEach(function(key) {{
+            localStorage.removeItem(key);
+        }});
+        console.log('[Guest] 已清空游客缓存，共', keysToRemove.length, '项');
+    }})();
+    
+    // 游客模式提示
+    setTimeout(function() {{
+        alert('【游客模式提示】\\n\\n• 缓存数据不会保留，关闭浏览器后清空\\n• 模型仅限使用 {guest_model}\\n• API Key 已预置，无需配置\\n\\n如需完整功能，请注册账号使用。');
+    }}, 1000);
+    </script>
+    """
+    else:
+        guest_script = """
+    <script>
+    window.IS_GUEST_MODE = false;
+    window.GUEST_MODEL = null;
+    </script>
+    """
+    
+    user_actions_html += f"""
+    <script>
     // 初始化用户缓存管理器
     window.CURRENT_USERNAME = '{username}';
-    if (window.userCacheManager) {{
+    window.IS_GUEST_MODE = {str(is_guest).lower()};
+    if (window.userCacheManager && !window.IS_GUEST_MODE) {{
         window.userCacheManager.init('{username}');
         console.log('[Auth] 用户缓存管理器已初始化:', '{username}');
     }}
     </script>
+    {guest_script}
     """
     
     if '<body>' in html_content:

@@ -6,9 +6,11 @@ This module centralizes all configuration settings including:
 - Session configuration
 - File upload configuration
 - API configuration
+- Guest mode configuration
 """
 
 import os
+import json
 from datetime import timedelta
 
 # --- 基础配置 ---
@@ -35,6 +37,32 @@ DB_POOL_MAX_CONN = 5
 
 # --- IP限制配置 ---
 MAX_IPS_PER_USER = int(os.environ.get('MAX_IPS_PER_USER', 5))
+
+# --- 游客模式配置 ---
+def _load_guest_config():
+    """加载游客模式配置"""
+    config_paths = [
+        os.path.join(BASE_DIR, 'config', 'guest_config.json'),
+        '/etc/secrets/guest_config.json',
+    ]
+    
+    for path in config_paths:
+        if os.path.exists(path):
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except Exception as e:
+                print(f"[Config] 加载游客配置失败 ({path}): {e}")
+    return None
+
+_guest_config = _load_guest_config()
+
+GUEST_MODE_ENABLED = _guest_config is not None
+GUEST_API_KEY = _guest_config.get('guest_api_key', '') if _guest_config else ''
+GUEST_MODEL = _guest_config.get('guest_model', 'glm-4-flash') if _guest_config else 'glm-4-flash'
+GUEST_SESSION_LIFETIME = timedelta(
+    hours=_guest_config.get('guest_session_lifetime_hours', 2) if _guest_config else 2
+)
 
 # --- 文件上传配置 ---
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
@@ -72,6 +100,11 @@ class Config:
     
     # Security
     MAX_IPS_PER_USER = MAX_IPS_PER_USER
+    
+    # Guest Mode
+    GUEST_MODE_ENABLED = GUEST_MODE_ENABLED
+    GUEST_MODEL = GUEST_MODEL
+    GUEST_SESSION_LIFETIME = GUEST_SESSION_LIFETIME
     
     # Files
     UPLOAD_FOLDER = UPLOAD_FOLDER
