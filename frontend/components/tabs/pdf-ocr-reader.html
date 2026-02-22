@@ -1,5 +1,20 @@
 <!-- 功能九：PDF阅读与OCR解析 -->
 <div id="pdf_ocr_reader-tab" class="tab-content">
+    <!-- 游客模式限制提示 -->
+    <div id="guest-ocr-limit-notice" class="guest-limit-notice" style="display: none; margin-bottom: 12px; padding: 10px 14px; background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); border: 1px solid #F59E0B; border-radius: 8px; color: #92400E;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+            </svg>
+            <span style="font-weight: 600;">游客模式限制</span>
+        </div>
+        <div style="margin-top: 6px; font-size: 13px;">
+            • 图片上传：每小时仅限 <strong>1 张</strong><br>
+            • PDF解析：仅支持当前页面，每小时仅限 <strong>1 页</strong><br>
+            • 不支持缓存功能
+        </div>
+    </div>
+    
     <div id="pdf-ocr-container" class="pdf-ocr-container">
         <!-- 左侧边栏：文件控制 -->
         <div class="pdf-ocr-sidebar">

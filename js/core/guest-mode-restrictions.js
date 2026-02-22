@@ -97,11 +97,42 @@ class GuestModeRestrictions {
             this.disableChatSearch();
             this.restrictModelSelectors();
             this.restrictPDFOCRParseMode();
+            this.showGuestLimitNotices();
         }, 500);
         
         setTimeout(() => {
             this.restrictPDFOCRParseMode();
+            this.showGuestLimitNotices();
         }, 2000);
+    }
+    
+    showGuestLimitNotices() {
+        const patentNotice = document.getElementById('guest-patent-limit-notice');
+        if (patentNotice) {
+            patentNotice.style.display = 'block';
+        }
+        
+        const ocrNotice = document.getElementById('guest-ocr-limit-notice');
+        if (ocrNotice) {
+            ocrNotice.style.display = 'block';
+        }
+        
+        const patentLimitText = document.getElementById('patent-limit-text');
+        if (patentLimitText) {
+            patentLimitText.innerHTML = '游客模式每小时最多查询 <strong>5 篇</strong>专利。';
+        }
+        
+        const patentCountDisplay = document.getElementById('patent_count_display');
+        if (patentCountDisplay) {
+            patentCountDisplay.textContent = '专利号数量：0/5 (游客模式)';
+        }
+        
+        const patentInput = document.getElementById('patent_numbers_input');
+        if (patentInput) {
+            patentInput.placeholder = '请输入专利号（游客模式最多5个）';
+        }
+        
+        console.log('[GuestMode] 已显示游客限制提示');
     }
     
     disableChatFileUpload() {

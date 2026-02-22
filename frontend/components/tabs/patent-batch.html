@@ -1,9 +1,23 @@
 <!-- 功能六：批量专利解读 -->
 <!-- ====================================================================== -->
 <div id="patent_batch-tab" class="tab-content">
+    <!-- 游客模式限制提示 -->
+    <div id="guest-patent-limit-notice" class="guest-limit-notice" style="display: none; margin-bottom: 12px; padding: 10px 14px; background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); border: 1px solid #F59E0B; border-radius: 8px; color: #92400E;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+            </svg>
+            <span style="font-weight: 600;">游客模式限制</span>
+        </div>
+        <div style="margin-top: 6px; font-size: 13px;">
+            • 每小时最多查询 <strong>5 篇</strong>专利<br>
+            • 单次最多查询 <strong>5 篇</strong>专利
+        </div>
+    </div>
+    
     <div class="step">
         <div class="step-header">批量专利查询与解读</div>
-        <p class="info">输入专利号列表（支持换行符或空格分隔），系统将批量查询专利详情并提供AI解读功能。最多支持50个专利号。</p>
+        <p class="info">输入专利号列表（支持换行符或空格分隔），系统将批量查询专利详情并提供AI解读功能。<span id="patent-limit-text">最多支持50个专利号。</span></p>
         
         <!-- 专利号输入和配置区域 - 新布局 -->
         <div class="patent-batch-config-grid">
