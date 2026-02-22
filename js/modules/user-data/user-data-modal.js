@@ -25,7 +25,10 @@ class UserDataModal {
 
         const modal = document.createElement('div');
         modal.id = 'user-data-export-modal';
-        modal.innerHTML = this._getExportModalHTML(preview.preview);
+        modal.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:100001;font-family:\'Noto Sans SC\',sans-serif;';
+        
+        this._injectExportModalStyles();
+        modal.innerHTML = this._getExportModalContent(preview.preview);
 
         document.body.appendChild(overlay);
         document.body.appendChild(modal);
@@ -35,171 +38,42 @@ class UserDataModal {
         this._bindExportModalEvents();
     }
 
-    _getExportModalHTML(preview) {
-        const exportOptions = window.userCacheExporter.getExportOptions();
+    _injectExportModalStyles() {
+        if (document.getElementById('user-data-export-modal-styles')) return;
+        const style = document.createElement('style');
+        style.id = 'user-data-export-modal-styles';
+        style.textContent = `
+            #user-data-export-modal .modal-content { background: white; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); width: 450px; max-width: 90vw; max-height: 80vh; overflow: hidden; }
+            #user-data-export-modal .modal-header { background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+            #user-data-export-modal .modal-header h2 { margin: 0; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+            #user-data-export-modal .close-btn { background: rgba(255,255,255,0.2); border: none; color: white; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+            #user-data-export-modal .modal-body { padding: 20px; max-height: 60vh; overflow-y: auto; }
+            #user-data-export-modal .preview-info { background: #f0f9ff; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; color: #0369a1; }
+            #user-data-export-modal .option-group { margin-bottom: 16px; }
+            #user-data-export-modal .option-group > label { display: block; font-weight: 500; margin-bottom: 8px; color: #333; }
+            #user-data-export-modal .option-item { display: flex; align-items: flex-start; padding: 10px; background: #f9f9f9; border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: background 0.2s; }
+            #user-data-export-modal .option-item:hover { background: #f0f0f0; }
+            #user-data-export-modal .option-item input { margin-right: 10px; margin-top: 3px; }
+            #user-data-export-modal .option-item .option-text { flex: 1; }
+            #user-data-export-modal .option-item .option-name { font-weight: 500; color: #333; }
+            #user-data-export-modal .option-item .option-desc { font-size: 12px; color: #666; margin-top: 2px; }
+            #user-data-export-modal .checkbox-group { margin: 16px 0; }
+            #user-data-export-modal .checkbox-item { display: flex; align-items: center; padding: 8px 0; }
+            #user-data-export-modal .checkbox-item input { margin-right: 8px; }
+            #user-data-export-modal .warning-box { background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 10px; margin-top: 16px; font-size: 12px; color: #856404; }
+            #user-data-export-modal .modal-footer { padding: 16px 20px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end; }
+            #user-data-export-modal .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+            #user-data-export-modal .btn-cancel { background: #f0f0f0; color: #666; }
+            #user-data-export-modal .btn-export { background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%); color: white; }
+            #user-data-export-modal .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+            #user-data-export-modal .btn .icon { width: 16px; height: 16px; }
+        `;
+        document.head.appendChild(style);
+    }
 
+    _getExportModalContent(preview) {
+        const exportOptions = window.userCacheExporter.getExportOptions();
         return `
-            <style>
-                .user-data-modal-overlay {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background: rgba(0,0,0,0.5);
-                    z-index: 100000;
-                }
-                #user-data-export-modal {
-                    position: fixed;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    z-index: 100001;
-                    font-family: 'Noto Sans SC', sans-serif;
-                }
-                #user-data-export-modal .modal-content {
-                    background: white;
-                    border-radius: 16px;
-                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-                    width: 450px;
-                    max-width: 90vw;
-                    max-height: 80vh;
-                    overflow: hidden;
-                }
-                #user-data-export-modal .modal-header {
-                    background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
-                    color: white;
-                    padding: 20px;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                }
-                #user-data-export-modal .modal-header h2 {
-                    margin: 0;
-                    font-size: 18px;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                }
-                #user-data-export-modal .close-btn {
-                    background: rgba(255,255,255,0.2);
-                    border: none;
-                    color: white;
-                    width: 28px;
-                    height: 28px;
-                    border-radius: 50%;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                }
-                #user-data-export-modal .modal-body {
-                    padding: 20px;
-                    max-height: 60vh;
-                    overflow-y: auto;
-                }
-                #user-data-export-modal .preview-info {
-                    background: #f0f9ff;
-                    border-radius: 8px;
-                    padding: 12px;
-                    margin-bottom: 16px;
-                    font-size: 13px;
-                    color: #0369a1;
-                }
-                #user-data-export-modal .option-group {
-                    margin-bottom: 16px;
-                }
-                #user-data-export-modal .option-group > label {
-                    display: block;
-                    font-weight: 500;
-                    margin-bottom: 8px;
-                    color: #333;
-                }
-                #user-data-export-modal .option-item {
-                    display: flex;
-                    align-items: flex-start;
-                    padding: 10px;
-                    background: #f9f9f9;
-                    border-radius: 8px;
-                    margin-bottom: 8px;
-                    cursor: pointer;
-                    transition: background 0.2s;
-                }
-                #user-data-export-modal .option-item:hover {
-                    background: #f0f0f0;
-                }
-                #user-data-export-modal .option-item input {
-                    margin-right: 10px;
-                    margin-top: 3px;
-                }
-                #user-data-export-modal .option-item .option-text {
-                    flex: 1;
-                }
-                #user-data-export-modal .option-item .option-name {
-                    font-weight: 500;
-                    color: #333;
-                }
-                #user-data-export-modal .option-item .option-desc {
-                    font-size: 12px;
-                    color: #666;
-                    margin-top: 2px;
-                }
-                #user-data-export-modal .checkbox-group {
-                    margin: 16px 0;
-                }
-                #user-data-export-modal .checkbox-item {
-                    display: flex;
-                    align-items: center;
-                    padding: 8px 0;
-                }
-                #user-data-export-modal .checkbox-item input {
-                    margin-right: 8px;
-                }
-                #user-data-export-modal .warning-box {
-                    background: #fff3cd;
-                    border: 1px solid #ffc107;
-                    border-radius: 8px;
-                    padding: 10px;
-                    margin-top: 16px;
-                    font-size: 12px;
-                    color: #856404;
-                }
-                #user-data-export-modal .modal-footer {
-                    padding: 16px 20px;
-                    border-top: 1px solid #eee;
-                    display: flex;
-                    gap: 10px;
-                    justify-content: flex-end;
-                }
-                #user-data-export-modal .btn {
-                    padding: 10px 20px;
-                    border: none;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    font-size: 14px;
-                    font-weight: 500;
-                    transition: all 0.2s;
-                    display: flex;
-                    align-items: center;
-                    gap: 6px;
-                }
-                #user-data-export-modal .btn-cancel {
-                    background: #f0f0f0;
-                    color: #666;
-                }
-                #user-data-export-modal .btn-export {
-                    background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
-                    color: white;
-                }
-                #user-data-export-modal .btn:hover {
-                    transform: translateY(-1px);
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                }
-                #user-data-export-modal .btn .icon {
-                    width: 16px;
-                    height: 16px;
-                }
-            </style>
             <div class="modal-content">
                 <div class="modal-header">
                     <h2>
@@ -313,7 +187,10 @@ class UserDataModal {
 
         const modal = document.createElement('div');
         modal.id = 'user-data-import-modal';
-        modal.innerHTML = this._getImportModalHTML();
+        modal.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:100001;font-family:\'Noto Sans SC\',sans-serif;';
+        
+        this._injectImportModalStyles();
+        modal.innerHTML = this._getImportModalContent();
 
         document.body.appendChild(overlay);
         document.body.appendChild(modal);
@@ -323,259 +200,62 @@ class UserDataModal {
         this._bindImportModalEvents();
     }
 
-    _getImportModalHTML() {
-        const strategies = window.userCacheMerger.getStrategies();
+    _injectImportModalStyles() {
+        if (document.getElementById('user-data-import-modal-styles')) return;
+        const style = document.createElement('style');
+        style.id = 'user-data-import-modal-styles';
+        style.textContent = `
+            #user-data-import-modal .modal-content { background: white; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); width: 450px; max-width: 90vw; max-height: 80vh; overflow: hidden; }
+            #user-data-import-modal .modal-header { background: linear-gradient(135deg, #10B981 0%, #34D399 100%); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+            #user-data-import-modal .modal-header h2 { margin: 0; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+            #user-data-import-modal .close-btn { background: rgba(255,255,255,0.2); border: none; color: white; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+            #user-data-import-modal .modal-body { padding: 20px; max-height: 60vh; overflow-y: auto; }
+            #user-data-import-modal .file-drop { border: 2px dashed #ccc; border-radius: 12px; padding: 30px; text-align: center; cursor: pointer; transition: all 0.2s; margin-bottom: 16px; }
+            #user-data-import-modal .file-drop:hover { border-color: #10B981; background: #f0fdf4; }
+            #user-data-import-modal .file-drop.dragover { border-color: #10B981; background: #d1fae5; }
+            #user-data-import-modal .file-drop .icon { width: 40px; height: 40px; margin-bottom: 10px; color: #666; }
+            #user-data-import-modal .file-drop .text { color: #666; font-size: 14px; }
+            #user-data-import-modal .file-drop .hint { color: #999; font-size: 12px; margin-top: 8px; }
+            #user-data-import-modal .file-input { display: none; }
+            #user-data-import-modal .file-info { background: #f0fdf4; border-radius: 8px; padding: 12px; margin-bottom: 16px; display: none; }
+            #user-data-import-modal .file-info.show { display: block; }
+            #user-data-import-modal .file-info .filename { font-weight: 500; color: #0369a1; }
+            #user-data-import-modal .file-info .file-meta { font-size: 12px; color: #666; margin-top: 4px; }
+            #user-data-import-modal .strategy-group { margin-bottom: 16px; }
+            #user-data-import-modal .strategy-group > label { display: block; font-weight: 500; margin-bottom: 8px; color: #333; }
+            #user-data-import-modal .strategy-item { display: flex; align-items: flex-start; padding: 10px; background: #f9f9f9; border-radius: 8px; margin-bottom: 8px; cursor: pointer; }
+            #user-data-import-modal .strategy-item:hover { background: #f0f0f0; }
+            #user-data-import-modal .strategy-item input { margin-right: 10px; margin-top: 3px; }
+            #user-data-import-modal .strategy-item .strategy-text { flex: 1; }
+            #user-data-import-modal .strategy-item .strategy-name { font-weight: 500; color: #333; }
+            #user-data-import-modal .strategy-item .strategy-desc { font-size: 12px; color: #666; margin-top: 2px; }
+            #user-data-import-modal .diff-preview { background: #f9f9f9; border-radius: 8px; padding: 12px; margin-bottom: 16px; display: none; }
+            #user-data-import-modal .diff-preview.show { display: block; }
+            #user-data-import-modal .diff-preview h4 { margin: 0 0 8px; font-size: 14px; color: #333; }
+            #user-data-import-modal .diff-item { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }
+            #user-data-import-modal .diff-item .label { color: #666; }
+            #user-data-import-modal .diff-item .value { font-weight: 500; }
+            #user-data-import-modal .diff-item .value.added { color: #10B981; }
+            #user-data-import-modal .diff-item .value.updated { color: #3B82F6; }
+            #user-data-import-modal .progress-bar { height: 4px; background: #e5e7eb; border-radius: 2px; overflow: hidden; margin-top: 16px; display: none; }
+            #user-data-import-modal .progress-bar.show { display: block; }
+            #user-data-import-modal .progress-bar .progress { height: 100%; background: linear-gradient(135deg, #10B981 0%, #34D399 100%); transition: width 0.3s; }
+            #user-data-import-modal .progress-text { font-size: 12px; color: #666; text-align: center; margin-top: 8px; display: none; }
+            #user-data-import-modal .progress-text.show { display: block; }
+            #user-data-import-modal .modal-footer { padding: 16px 20px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end; }
+            #user-data-import-modal .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+            #user-data-import-modal .btn-cancel { background: #f0f0f0; color: #666; }
+            #user-data-import-modal .btn-import { background: linear-gradient(135deg, #10B981 0%, #34D399 100%); color: white; }
+            #user-data-import-modal .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+            #user-data-import-modal .btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+            #user-data-import-modal .btn .icon { width: 16px; height: 16px; }
+        `;
+        document.head.appendChild(style);
+    }
 
+    _getImportModalContent() {
+        const strategies = window.userCacheMerger.getStrategies();
         return `
-            <style>
-                .user-data-modal-overlay {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background: rgba(0,0,0,0.5);
-                    z-index: 100000;
-                }
-                #user-data-import-modal {
-                    position: fixed;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    z-index: 100001;
-                    font-family: 'Noto Sans SC', sans-serif;
-                }
-                #user-data-import-modal .modal-content {
-                    background: white;
-                    border-radius: 16px;
-                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-                    width: 450px;
-                    max-width: 90vw;
-                    max-height: 80vh;
-                    overflow: hidden;
-                }
-                #user-data-import-modal .modal-header {
-                    background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
-                    color: white;
-                    padding: 20px;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                }
-                #user-data-import-modal .modal-header h2 {
-                    margin: 0;
-                    font-size: 18px;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                }
-                #user-data-import-modal .close-btn {
-                    background: rgba(255,255,255,0.2);
-                    border: none;
-                    color: white;
-                    width: 28px;
-                    height: 28px;
-                    border-radius: 50%;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                }
-                #user-data-import-modal .modal-body {
-                    padding: 20px;
-                    max-height: 60vh;
-                    overflow-y: auto;
-                }
-                #user-data-import-modal .file-drop {
-                    border: 2px dashed #ccc;
-                    border-radius: 12px;
-                    padding: 30px;
-                    text-align: center;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                    margin-bottom: 16px;
-                }
-                #user-data-import-modal .file-drop:hover {
-                    border-color: #10B981;
-                    background: #f0fdf4;
-                }
-                #user-data-import-modal .file-drop.dragover {
-                    border-color: #10B981;
-                    background: #d1fae5;
-                }
-                #user-data-import-modal .file-drop .icon {
-                    width: 40px;
-                    height: 40px;
-                    margin-bottom: 10px;
-                    color: #666;
-                }
-                #user-data-import-modal .file-drop .text {
-                    color: #666;
-                    font-size: 14px;
-                }
-                #user-data-import-modal .file-drop .hint {
-                    color: #999;
-                    font-size: 12px;
-                    margin-top: 8px;
-                }
-                #user-data-import-modal .file-input {
-                    display: none;
-                }
-                #user-data-import-modal .file-info {
-                    background: #f0fdf4;
-                    border-radius: 8px;
-                    padding: 12px;
-                    margin-bottom: 16px;
-                    display: none;
-                }
-                #user-data-import-modal .file-info.show {
-                    display: block;
-                }
-                #user-data-import-modal .file-info .filename {
-                    font-weight: 500;
-                    color: #0369a1;
-                }
-                #user-data-import-modal .file-info .file-meta {
-                    font-size: 12px;
-                    color: #666;
-                    margin-top: 4px;
-                }
-                #user-data-import-modal .strategy-group {
-                    margin-bottom: 16px;
-                }
-                #user-data-import-modal .strategy-group > label {
-                    display: block;
-                    font-weight: 500;
-                    margin-bottom: 8px;
-                    color: #333;
-                }
-                #user-data-import-modal .strategy-item {
-                    display: flex;
-                    align-items: flex-start;
-                    padding: 10px;
-                    background: #f9f9f9;
-                    border-radius: 8px;
-                    margin-bottom: 8px;
-                    cursor: pointer;
-                }
-                #user-data-import-modal .strategy-item:hover {
-                    background: #f0f0f0;
-                }
-                #user-data-import-modal .strategy-item input {
-                    margin-right: 10px;
-                    margin-top: 3px;
-                }
-                #user-data-import-modal .strategy-item .strategy-text {
-                    flex: 1;
-                }
-                #user-data-import-modal .strategy-item .strategy-name {
-                    font-weight: 500;
-                    color: #333;
-                }
-                #user-data-import-modal .strategy-item .strategy-desc {
-                    font-size: 12px;
-                    color: #666;
-                    margin-top: 2px;
-                }
-                #user-data-import-modal .diff-preview {
-                    background: #f9f9f9;
-                    border-radius: 8px;
-                    padding: 12px;
-                    margin-bottom: 16px;
-                    display: none;
-                }
-                #user-data-import-modal .diff-preview.show {
-                    display: block;
-                }
-                #user-data-import-modal .diff-preview h4 {
-                    margin: 0 0 8px;
-                    font-size: 14px;
-                    color: #333;
-                }
-                #user-data-import-modal .diff-item {
-                    display: flex;
-                    justify-content: space-between;
-                    padding: 4px 0;
-                    font-size: 13px;
-                }
-                #user-data-import-modal .diff-item .label {
-                    color: #666;
-                }
-                #user-data-import-modal .diff-item .value {
-                    font-weight: 500;
-                }
-                #user-data-import-modal .diff-item .value.added {
-                    color: #10B981;
-                }
-                #user-data-import-modal .diff-item .value.updated {
-                    color: #3B82F6;
-                }
-                #user-data-import-modal .progress-bar {
-                    height: 4px;
-                    background: #e5e7eb;
-                    border-radius: 2px;
-                    overflow: hidden;
-                    margin-top: 16px;
-                    display: none;
-                }
-                #user-data-import-modal .progress-bar.show {
-                    display: block;
-                }
-                #user-data-import-modal .progress-bar .progress {
-                    height: 100%;
-                    background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
-                    transition: width 0.3s;
-                }
-                #user-data-import-modal .progress-text {
-                    font-size: 12px;
-                    color: #666;
-                    text-align: center;
-                    margin-top: 8px;
-                    display: none;
-                }
-                #user-data-import-modal .progress-text.show {
-                    display: block;
-                }
-                #user-data-import-modal .modal-footer {
-                    padding: 16px 20px;
-                    border-top: 1px solid #eee;
-                    display: flex;
-                    gap: 10px;
-                    justify-content: flex-end;
-                }
-                #user-data-import-modal .btn {
-                    padding: 10px 20px;
-                    border: none;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    font-size: 14px;
-                    font-weight: 500;
-                    transition: all 0.2s;
-                    display: flex;
-                    align-items: center;
-                    gap: 6px;
-                }
-                #user-data-import-modal .btn-cancel {
-                    background: #f0f0f0;
-                    color: #666;
-                }
-                #user-data-import-modal .btn-import {
-                    background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
-                    color: white;
-                }
-                #user-data-import-modal .btn:disabled {
-                    opacity: 0.5;
-                    cursor: not-allowed;
-                }
-                #user-data-import-modal .btn:hover:not(:disabled) {
-                    transform: translateY(-1px);
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                }
-                #user-data-import-modal .btn .icon {
-                    width: 16px;
-                    height: 16px;
-                }
-            </style>
             <div class="modal-content">
                 <div class="modal-header">
                     <h2>

@@ -76,7 +76,10 @@ class UserDataUI {
 
         const panel = document.createElement('div');
         panel.id = 'user-data-panel';
-        panel.innerHTML = this._getPanelHTML();
+        panel.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,0.3);z-index:99999;width:500px;max-width:90vw;max-height:80vh;overflow:hidden;font-family:\'Noto Sans SC\',sans-serif;';
+        
+        this._injectPanelStyles();
+        panel.innerHTML = this._getPanelContent();
 
         document.body.appendChild(overlay);
         document.body.appendChild(panel);
@@ -92,169 +95,41 @@ class UserDataUI {
         if (panel) panel.remove();
     }
 
-    _getPanelHTML() {
+    _injectPanelStyles() {
+        if (document.getElementById('user-data-panel-styles')) return;
+        const style = document.createElement('style');
+        style.id = 'user-data-panel-styles';
+        style.textContent = `
+            #user-data-panel .panel-header { background: linear-gradient(135deg, #16A34A 0%, #22C55E 100%); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+            #user-data-panel .panel-header h2 { margin: 0; font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+            #user-data-panel .close-btn { background: rgba(255,255,255,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+            #user-data-panel .close-btn:hover { background: rgba(255,255,255,0.3); }
+            #user-data-panel .panel-body { padding: 20px; max-height: 60vh; overflow-y: auto; }
+            #user-data-panel .stats-section { margin-bottom: 20px; }
+            #user-data-panel .stats-section h3 { font-size: 14px; color: #666; margin: 0 0 10px; font-weight: 500; }
+            #user-data-panel .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            #user-data-panel .stat-item { background: #f5f5f5; border-radius: 8px; padding: 12px; text-align: center; }
+            #user-data-panel .stat-item .value { font-size: 20px; font-weight: 600; color: #16A34A; }
+            #user-data-panel .stat-item .label { font-size: 12px; color: #666; margin-top: 4px; }
+            #user-data-panel .category-list { margin-top: 10px; }
+            #user-data-panel .category-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #f9f9f9; border-radius: 8px; margin-bottom: 8px; }
+            #user-data-panel .category-item .name { font-weight: 500; color: #333; }
+            #user-data-panel .category-item .info { font-size: 12px; color: #888; }
+            #user-data-panel .action-section { border-top: 1px solid #eee; padding-top: 20px; margin-top: 10px; }
+            #user-data-panel .action-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+            #user-data-panel .action-btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: all 0.2s; }
+            #user-data-panel .action-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+            #user-data-panel .action-btn.export { background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%); color: white; }
+            #user-data-panel .action-btn.import { background: linear-gradient(135deg, #10B981 0%, #34D399 100%); color: white; }
+            #user-data-panel .action-btn.clear { background: linear-gradient(135deg, #EF4444 0%, #F87171 100%); color: white; }
+            #user-data-panel .action-btn .icon { width: 20px; height: 20px; }
+            #user-data-panel .loading { text-align: center; padding: 20px; color: #666; }
+        `;
+        document.head.appendChild(style);
+    }
+
+    _getPanelContent() {
         return `
-            <style>
-                .user-data-overlay {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background: rgba(0,0,0,0.5);
-                    z-index: 99998;
-                }
-                #user-data-panel {
-                    position: fixed;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    background: white;
-                    border-radius: 16px;
-                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-                    z-index: 99999;
-                    width: 500px;
-                    max-width: 90vw;
-                    max-height: 80vh;
-                    overflow: hidden;
-                    font-family: 'Noto Sans SC', sans-serif;
-                }
-                #user-data-panel .panel-header {
-                    background: linear-gradient(135deg, #16A34A 0%, #22C55E 100%);
-                    color: white;
-                    padding: 20px;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                }
-                #user-data-panel .panel-header h2 {
-                    margin: 0;
-                    font-size: 18px;
-                    font-weight: 600;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                }
-                #user-data-panel .close-btn {
-                    background: rgba(255,255,255,0.2);
-                    border: none;
-                    color: white;
-                    width: 32px;
-                    height: 32px;
-                    border-radius: 50%;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    transition: background 0.2s;
-                }
-                #user-data-panel .close-btn:hover {
-                    background: rgba(255,255,255,0.3);
-                }
-                #user-data-panel .panel-body {
-                    padding: 20px;
-                    max-height: 60vh;
-                    overflow-y: auto;
-                }
-                #user-data-panel .stats-section {
-                    margin-bottom: 20px;
-                }
-                #user-data-panel .stats-section h3 {
-                    font-size: 14px;
-                    color: #666;
-                    margin: 0 0 10px;
-                    font-weight: 500;
-                }
-                #user-data-panel .stats-grid {
-                    display: grid;
-                    grid-template-columns: repeat(2, 1fr);
-                    gap: 10px;
-                }
-                #user-data-panel .stat-item {
-                    background: #f5f5f5;
-                    border-radius: 8px;
-                    padding: 12px;
-                    text-align: center;
-                }
-                #user-data-panel .stat-item .value {
-                    font-size: 20px;
-                    font-weight: 600;
-                    color: #16A34A;
-                }
-                #user-data-panel .stat-item .label {
-                    font-size: 12px;
-                    color: #666;
-                    margin-top: 4px;
-                }
-                #user-data-panel .category-list {
-                    margin-top: 10px;
-                }
-                #user-data-panel .category-item {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    padding: 10px 12px;
-                    background: #f9f9f9;
-                    border-radius: 8px;
-                    margin-bottom: 8px;
-                }
-                #user-data-panel .category-item .name {
-                    font-weight: 500;
-                    color: #333;
-                }
-                #user-data-panel .category-item .info {
-                    font-size: 12px;
-                    color: #888;
-                }
-                #user-data-panel .action-section {
-                    border-top: 1px solid #eee;
-                    padding-top: 20px;
-                    margin-top: 10px;
-                }
-                #user-data-panel .action-buttons {
-                    display: grid;
-                    grid-template-columns: repeat(3, 1fr);
-                    gap: 10px;
-                }
-                #user-data-panel .action-btn {
-                    padding: 12px;
-                    border: none;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    font-size: 14px;
-                    font-weight: 500;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    gap: 6px;
-                    transition: all 0.2s;
-                }
-                #user-data-panel .action-btn:hover {
-                    transform: translateY(-2px);
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                }
-                #user-data-panel .action-btn.export {
-                    background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
-                    color: white;
-                }
-                #user-data-panel .action-btn.import {
-                    background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
-                    color: white;
-                }
-                #user-data-panel .action-btn.clear {
-                    background: linear-gradient(135deg, #EF4444 0%, #F87171 100%);
-                    color: white;
-                }
-                #user-data-panel .action-btn .icon {
-                    width: 20px;
-                    height: 20px;
-                }
-                #user-data-panel .loading {
-                    text-align: center;
-                    padding: 20px;
-                    color: #666;
-                }
-            </style>
             <div class="panel-content">
                 <div class="panel-header">
                     <h2>
