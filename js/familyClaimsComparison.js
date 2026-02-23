@@ -321,6 +321,7 @@ async function compareFamilyClaims() {
             headers: {
                 'Content-Type': 'application/json'
             },
+            credentials: 'include',
             body: JSON.stringify({
                 patent_numbers: patentNumbers,
                 model: model
