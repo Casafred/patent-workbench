@@ -120,16 +120,19 @@ async function fetchFamilyPatents() {
             throw new Error(`获取同族列表失败: ${response.status}`);
         }
 
-        const data = await response.json();
+        const result = await response.json();
 
-        if (data.error) {
-            throw new Error(data.error);
+        if (result.error) {
+            throw new Error(result.error);
         }
+
+        // API返回的数据在 result.data 中
+        const data = result.data || {};
 
         // 保存同族专利数据到状态
         appState.familyClaimsComparison = {
             basePatent: data.basePatent,
-            familyPatents: data.familyPatents,
+            familyPatents: data.familyPatents || [],
             selectedPatents: [],
             analysisResult: null,
             viewMode: 'card',
@@ -139,7 +142,7 @@ async function fetchFamilyPatents() {
         };
 
         // 渲染同族专利列表
-        renderFamilyPatentsGrid(data.familyPatents);
+        renderFamilyPatentsGrid(data.familyPatents || []);
 
         // 显示列表容器
         familyListContainer.style.display = 'block';
