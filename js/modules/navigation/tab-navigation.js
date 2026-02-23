@@ -170,32 +170,39 @@ function switchLPLSubTab(subTabId, clickedElement) {
 
 /**
  * 切换功能五(权利要求对比)的子标签页
- * 
+ *
  * @param {string} subTabId - 子标签页ID (manual 或 family)
  * @param {HTMLElement} clickedButton - 被点击的子标签按钮
  */
 function switchClaimsComparisonSubTab(subTabId, clickedButton) {
     const parent = getEl('claims_comparison-tab');
-    
+
     // 切换子标签按钮状态
     parent.querySelectorAll('.sub-tab-button').forEach(btn => btn.classList.remove('active'));
     if (clickedButton) {
         clickedButton.classList.add('active');
     }
-    
+
     // 切换子标签内容
     parent.querySelectorAll('.sub-tab-content').forEach(el => el.classList.remove('active'));
     const targetContent = getEl(`${subTabId}-sub-tab`);
     if (targetContent) {
         targetContent.classList.add('active');
     }
-    
-    // 如果切换到同族专利对比子标签页，初始化该功能
-    if (subTabId === 'family' && typeof initFamilyClaimsComparison === 'function') {
-        setTimeout(() => {
-            initFamilyClaimsComparison();
-            console.log('✅ 同族权利要求对比功能已初始化');
-        }, 50);
+
+    // 如果切换到同族专利对比子标签页，先加载HTML再初始化
+    if (subTabId === 'family') {
+        // 使用全局的loadFamilyComparisonHTML函数（如果存在）
+        if (typeof loadFamilyComparisonHTML === 'function') {
+            loadFamilyComparisonHTML();
+        } else {
+            // 如果加载函数不存在，直接尝试初始化（HTML可能已经内嵌）
+            setTimeout(() => {
+                if (typeof initFamilyClaimsComparison === 'function') {
+                    initFamilyClaimsComparison();
+                }
+            }, 100);
+        }
     }
 }
 

@@ -65,20 +65,34 @@ function initClaimsComparisonSubTabs() {
  */
 async function loadFamilyComparisonHTML() {
     const familySubTab = document.getElementById('family-sub-tab');
-    
+
     // Check if content is already loaded
     if (familySubTab && familySubTab.children.length > 0) {
         console.log('✅ Family comparison HTML already loaded');
+        // 确保初始化函数被调用
+        if (typeof initFamilyClaimsComparison === 'function') {
+            setTimeout(() => {
+                initFamilyClaimsComparison();
+            }, 100);
+        }
         return;
     }
-    
+
     try {
         const response = await fetch('frontend/components/tabs/family-claims-comparison.html');
         const html = await response.text();
-        
+
         if (familySubTab) {
             familySubTab.innerHTML = html;
             console.log('✅ Family comparison HTML loaded successfully');
+
+            // HTML加载完成后，延迟初始化功能
+            setTimeout(() => {
+                if (typeof initFamilyClaimsComparison === 'function') {
+                    initFamilyClaimsComparison();
+                    console.log('✅ 同族权利要求对比功能已初始化');
+                }
+            }, 100);
         }
     } catch (error) {
         console.error('❌ Failed to load family comparison HTML:', error);
