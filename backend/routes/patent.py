@@ -431,15 +431,23 @@ def get_patent_family(patent_number):
             selected_fields=['family_applications', 'country_status']
         )
         
-        if not base_patent_result:
+        if not base_patent_result or not base_patent_result.success:
             return create_response(
                 error=f"未找到专利: {patent_number}",
                 status_code=404
             )
         
+        # 获取实际的专利数据
+        base_patent_data = base_patent_result.data
+        if not base_patent_data:
+            return create_response(
+                error=f"无法获取专利数据: {patent_number}",
+                status_code=404
+            )
+        
         # 提取同族专利列表
-        family_applications = base_patent_result.family_applications or []
-        country_status = base_patent_result.country_status or []
+        family_applications = base_patent_data.family_applications or []
+        country_status = base_patent_data.country_status or []
         
         # 合并同族申请和国家状态，去重
         family_patents = []
@@ -447,14 +455,14 @@ def get_patent_family(patent_number):
         
         # 添加基础专利
         base_patent = {
-            'patent_number': base_patent_result.patent_number,
-            'title': base_patent_result.title,
-            'publication_date': base_patent_result.publication_date,
+            'patent_number': base_patent_data.patent_number,
+            'title': base_patent_data.title,
+            'publication_date': base_patent_data.publication_date,
             'language': 'en',
             'is_base': True
         }
         family_patents.append(base_patent)
-        seen_numbers.add(base_patent_result.patent_number)
+        seen_numbers.add(base_patent_data.patent_number)
         
         # 添加同族申请
         for app in family_applications:
