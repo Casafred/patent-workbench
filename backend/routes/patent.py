@@ -553,18 +553,21 @@ def compare_family_claims():
             try:
                 result = scraper.scrape_patent(
                     patent_number,
-                    crawl_specification=False,
+                    crawl_specification=True,
                     selected_fields=['claims']
                 )
-                
-                if result and result.claims:
-                    # 只取前3条权利要求（通常是独立权利要求）
-                    claims_text = result.claims[:3] if isinstance(result.claims, list) else [str(result.claims)]
-                    patent_claims[patent_number] = {
-                        'patent_number': patent_number,
-                        'title': result.title,
-                        'claims': claims_text
-                    }
+
+                # scrape_patent 返回 SimplePatentResult 对象，实际数据在 result.data 中
+                if result and result.success and result.data:
+                    patent_data = result.data
+                    if patent_data.claims:
+                        # 只取前3条权利要求（通常是独立权利要求）
+                        claims_text = patent_data.claims[:3] if isinstance(patent_data.claims, list) else [str(patent_data.claims)]
+                        patent_claims[patent_number] = {
+                            'patent_number': patent_number,
+                            'title': patent_data.title,
+                            'claims': claims_text
+                        }
             except Exception as e:
                 print(f"爬取专利 {patent_number} 权利要求失败: {e}")
                 continue
