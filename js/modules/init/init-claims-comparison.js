@@ -64,10 +64,16 @@ function initClaimsComparisonSubTabs() {
  * Load family comparison HTML content
  */
 async function loadFamilyComparisonHTML() {
+    console.log('🔄 开始加载同族权利要求对比HTML...');
     const familySubTab = document.getElementById('family-sub-tab');
 
+    if (!familySubTab) {
+        console.error('❌ family-sub-tab 元素未找到');
+        return;
+    }
+
     // Check if content is already loaded
-    if (familySubTab && familySubTab.children.length > 0) {
+    if (familySubTab.children.length > 0) {
         console.log('✅ Family comparison HTML already loaded');
         // 确保初始化函数被调用
         if (typeof initFamilyClaimsComparison === 'function') {
@@ -79,30 +85,37 @@ async function loadFamilyComparisonHTML() {
     }
 
     try {
+        console.log('📡 Fetching family-claims-comparison.html...');
         const response = await fetch('frontend/components/tabs/family-claims-comparison.html');
-        const html = await response.text();
+        console.log('📡 Response status:', response.status);
 
-        if (familySubTab) {
-            familySubTab.innerHTML = html;
-            console.log('✅ Family comparison HTML loaded successfully');
-
-            // HTML加载完成后，延迟初始化功能
-            setTimeout(() => {
-                if (typeof initFamilyClaimsComparison === 'function') {
-                    initFamilyClaimsComparison();
-                    console.log('✅ 同族权利要求对比功能已初始化');
-                }
-            }, 100);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
+
+        const html = await response.text();
+        console.log('📡 HTML content length:', html.length);
+
+        familySubTab.innerHTML = html;
+        console.log('✅ Family comparison HTML loaded successfully');
+
+        // HTML加载完成后，延迟初始化功能
+        setTimeout(() => {
+            if (typeof initFamilyClaimsComparison === 'function') {
+                initFamilyClaimsComparison();
+                console.log('✅ 同族权利要求对比功能已初始化');
+            } else {
+                console.error('❌ initFamilyClaimsComparison 函数未找到');
+            }
+        }, 100);
     } catch (error) {
         console.error('❌ Failed to load family comparison HTML:', error);
-        if (familySubTab) {
-            familySubTab.innerHTML = '<div class="error">加载同族权利要求对比内容失败</div>';
-        }
+        familySubTab.innerHTML = '<div class="error">加载同族权利要求对比内容失败: ' + error.message + '</div>';
     }
 }
 
 // Export for use in main.js
 if (typeof window !== 'undefined') {
     window.initClaimsComparisonModule = initClaimsComparisonModule;
+    window.loadFamilyComparisonHTML = loadFamilyComparisonHTML;
 }
