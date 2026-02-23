@@ -1,106 +1,120 @@
 <!-- 功能五：权利要求对比 (v3.0 - 全面优化) -->
 <!-- ====================================================================== -->
 <div id="claims_comparison-tab" class="tab-content">
-    <div class="step">
-        <div class="step-header">权利要求对比分析 (v3.0)</div>
-        <p class="info">
-            支持2-4个权利要求的智能对比，自动识别语言、按需翻译，提供多种可视化展示方式。
-        </p>
+    <!-- 子标签页导航 -->
+    <div class="sub-tab-container">
+        <button class="sub-tab-button active" data-sub-tab="manual">手动输入对比</button>
+        <button class="sub-tab-button" data-sub-tab="family">同族专利对比</button>
+    </div>
 
-        <!-- 配置区 -->
-        <div class="comparison-config-area">
-            <div class="config-row">
-                <div class="config-item">
-                    <label for="comparison_model_select">对比模型：</label>
-                    <select id="comparison_model_select">
-                        <!-- 模型选项将从 config/models.json 动态加载 -->
-                    </select>
-                    <span class="model-description" id="model_description">模型将从配置文件加载</span>
-                </div>
-                <div class="config-item">
-                    <label>权利要求数量：</label>
-                    <div class="comparison-count-selector">
-                        <span id="claims_count_display">当前：2个</span>
-                        <button class="add-claim-btn" id="add_claim_btn">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="12" y1="5" x2="12" y2="19"></line>
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                            </svg>
-                            添加
-                        </button>
+    <!-- 手动输入对比子标签页 -->
+    <div id="manual-sub-tab" class="sub-tab-content active">
+        <div class="step">
+            <div class="step-header">权利要求对比分析 (v3.0)</div>
+            <p class="info">
+                支持2-4个权利要求的智能对比，自动识别语言、按需翻译，提供多种可视化展示方式。
+            </p>
+
+            <!-- 配置区 -->
+            <div class="comparison-config-area">
+                <div class="config-row">
+                    <div class="config-item">
+                        <label for="comparison_model_select">对比模型：</label>
+                        <select id="comparison_model_select">
+                            <!-- 模型选项将从 config/models.json 动态加载 -->
+                        </select>
+                        <span class="model-description" id="model_description">模型将从配置文件加载</span>
                     </div>
-                    <span class="model-description">最多支持10个权利要求对比</span>
+                    <div class="config-item">
+                        <label>权利要求数量：</label>
+                        <div class="comparison-count-selector">
+                            <span id="claims_count_display">当前：2个</span>
+                            <button class="add-claim-btn" id="add_claim_btn">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                添加
+                            </button>
+                        </div>
+                        <span class="model-description">最多支持10个权利要求对比</span>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- 动态输入区 -->
-        <div id="claims_input_container" class="claims-input-grid">
-            <!-- 动态生成输入组 -->
-        </div>
-        
-        <!-- 耦合对比区域 -->
-        <div class="coupling-comparison-area">
-            <h3>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="3"></circle>
-                    <path d="M12 1v6m0 6v6m-5.2-9.8l4.2 4.2m0 0l4.2 4.2m-8.4 0l4.2-4.2m0 0l4.2-4.2"></path>
-                </svg>
-                耦合对比分析
-            </h3>
-            <p class="info" style="margin-bottom: 15px;">选择多个权利要求进行耦合对比分析，例如：分析第1、4、5号权利要求之间的关系</p>
-            <div class="coupling-selector" id="coupling_selector">
-                <!-- 动态生成复选框 -->
-            </div>
-            <button class="coupling-analyze-btn" id="coupling_analyze_btn" disabled>开始耦合分析</button>
-        </div>
-        
-        <div style="text-align: center; margin: 25px 0;">
-            <button id="claims_analyze_btn">开始全部对比分析</button>
-        </div>
-
-        <!-- 结果展示区 -->
-        <div class="step" style="margin-top: 20px;">
-            <div class="step-header" style="display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 15px;">
-                <span>对比分析结果</span>
-                <div class="result-controls">
-                    <div class="view-mode-selector">
-                        <button class="view-btn active" data-view="card" title="卡片视图">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-                        </button>
-                        <button class="view-btn" data-view="sideBySide" title="并排对比">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-                        </button>
-                        <button class="view-btn" data-view="matrix" title="矩阵视图">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
-                        </button>
-                    </div>
-                    <button id="toggle_language_btn" class="small-button" style="display: none;">切换为译文</button>
-                    <button id="export_comparison_btn" class="small-button" style="display: none;">导出报告</button>
-                </div>
+            <!-- 动态输入区 -->
+            <div id="claims_input_container" class="claims-input-grid">
+                <!-- 动态生成输入组 -->
             </div>
             
-            <!-- 差异统计面板 -->
-            <div id="comparison_stats_panel" class="stats-panel" style="display: none;">
-                <div class="stat-item">
-                    <span class="stat-label">相同特征</span>
-                    <span class="stat-value" id="stat_similar">0</span>
+            <!-- 耦合对比区域 -->
+            <div class="coupling-comparison-area">
+                <h3>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 1v6m0 6v6m-5.2-9.8l4.2 4.2m0 0l4.2 4.2m-8.4 0l4.2-4.2m0 0l4.2-4.2"></path>
+                    </svg>
+                    耦合对比分析
+                </h3>
+                <p class="info" style="margin-bottom: 15px;">选择多个权利要求进行耦合对比分析，例如：分析第1、4、5号权利要求之间的关系</p>
+                <div class="coupling-selector" id="coupling_selector">
+                    <!-- 动态生成复选框 -->
                 </div>
-                <div class="stat-item">
-                    <span class="stat-label">差异特征</span>
-                    <span class="stat-value" id="stat_different">0</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">平均相似度</span>
-                    <span class="stat-value" id="stat_similarity">0%</span>
-                </div>
+                <button class="coupling-analyze-btn" id="coupling_analyze_btn" disabled>开始耦合分析</button>
+            </div>
+            
+            <div style="text-align: center; margin: 25px 0;">
+                <button id="claims_analyze_btn">开始全部对比分析</button>
             </div>
 
-            <!-- 结果容器 -->
-            <div id="comparison_result_container_refactored" class="preview-output">
-                <div class="info">等待输入并开始分析...</div>
+            <!-- 结果展示区 -->
+            <div class="step" style="margin-top: 20px;">
+                <div class="step-header" style="display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <span>对比分析结果</span>
+                    <div class="result-controls">
+                        <div class="view-mode-selector">
+                            <button class="view-btn active" data-view="card" title="卡片视图">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                            </button>
+                            <button class="view-btn" data-view="sideBySide" title="并排对比">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                            </button>
+                            <button class="view-btn" data-view="matrix" title="矩阵视图">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
+                            </button>
+                        </div>
+                        <button id="toggle_language_btn" class="small-button" style="display: none;">切换为译文</button>
+                        <button id="export_comparison_btn" class="small-button" style="display: none;">导出报告</button>
+                    </div>
+                </div>
+                
+                <!-- 差异统计面板 -->
+                <div id="comparison_stats_panel" class="stats-panel" style="display: none;">
+                    <div class="stat-item">
+                        <span class="stat-label">相同特征</span>
+                        <span class="stat-value" id="stat_similar">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">差异特征</span>
+                        <span class="stat-value" id="stat_different">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">平均相似度</span>
+                        <span class="stat-value" id="stat_similarity">0%</span>
+                    </div>
+                </div>
+
+                <!-- 结果容器 -->
+                <div id="comparison_result_container_refactored" class="preview-output">
+                    <div class="info">等待输入并开始分析...</div>
+                </div>
             </div>
         </div>
+    </div>
+
+    <!-- 同族专利对比子标签页 -->
+    <div id="family-sub-tab" class="sub-tab-content">
+        <!-- 同族权利要求对比内容将通过动态加载 family-claims-comparison.html -->
     </div>
 </div>
 

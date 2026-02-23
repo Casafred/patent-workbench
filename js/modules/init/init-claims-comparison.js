@@ -26,10 +26,65 @@ function initClaimsComparisonModule() {
     if (typeof initClaimsComparison === 'function') {
         initClaimsComparison();
         console.log('✅ Claims Comparison module initialized successfully');
+        
+        // Initialize sub-tab switching for claims comparison
+        initClaimsComparisonSubTabs();
+        
         return true;
     } else {
         console.error('❌ initClaimsComparison function not found');
         return false;
+    }
+}
+
+/**
+ * Initialize sub-tab switching for claims comparison
+ */
+function initClaimsComparisonSubTabs() {
+    const subTabButtons = document.querySelectorAll('#claims_comparison-tab .sub-tab-button');
+    
+    subTabButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            const subTabId = e.target.dataset.subTab;
+            if (subTabId && typeof switchClaimsComparisonSubTab === 'function') {
+                switchClaimsComparisonSubTab(subTabId, e.target);
+                
+                // If switching to family sub-tab, load the family comparison HTML
+                if (subTabId === 'family') {
+                    loadFamilyComparisonHTML();
+                }
+            }
+        });
+    });
+    
+    console.log('✅ Claims Comparison sub-tabs initialized');
+}
+
+/**
+ * Load family comparison HTML content
+ */
+async function loadFamilyComparisonHTML() {
+    const familySubTab = document.getElementById('family-sub-tab');
+    
+    // Check if content is already loaded
+    if (familySubTab && familySubTab.children.length > 0) {
+        console.log('✅ Family comparison HTML already loaded');
+        return;
+    }
+    
+    try {
+        const response = await fetch('frontend/components/tabs/family-claims-comparison.html');
+        const html = await response.text();
+        
+        if (familySubTab) {
+            familySubTab.innerHTML = html;
+            console.log('✅ Family comparison HTML loaded successfully');
+        }
+    } catch (error) {
+        console.error('❌ Failed to load family comparison HTML:', error);
+        if (familySubTab) {
+            familySubTab.innerHTML = '<div class="error">加载同族权利要求对比内容失败</div>';
+        }
     }
 }
 

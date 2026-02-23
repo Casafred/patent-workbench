@@ -403,3 +403,249 @@ def patent_chat():
             }
         }
         return jsonify(error_payload), 500
+
+
+@patent_bp.route('/patent/family/<patent_number>', methods=['GET'])
+def get_patent_family(patent_number):
+    """
+    Get family patents for a given patent number.
+    
+    Args:
+        patent_number: The base patent number
+    
+    Returns:
+        Family patents list with basic information
+    """
+    is_valid, error_response = validate_api_request()
+    if not is_valid:
+        return error_response
+    
+    try:
+        print(f"[API] 获取同族专利列表: {patent_number}")
+        
+        # 爬取基础专利信息（包含同族信息）
+        scraper = get_scraper_instance()
+        base_patent_result = scraper.scrape_patent(
+            patent_number, 
+            crawl_specification=False,
+            selected_fields=['family_applications', 'country_status']
+        )
+        
+        if not base_patent_result:
+            return create_response(
+                error=f"未找到专利: {patent_number}",
+                status_code=404
+            )
+        
+        # 提取同族专利列表
+        family_applications = base_patent_result.family_applications or []
+        country_status = base_patent_result.country_status or []
+        
+        # 合并同族申请和国家状态，去重
+        family_patents = []
+        seen_numbers = set()
+        
+        # 添加基础专利
+        base_patent = {
+            'patent_number': base_patent_result.patent_number,
+            'title': base_patent_result.title,
+            'publication_date': base_patent_result.publication_date,
+            'language': 'en',
+            'is_base': True
+        }
+        family_patents.append(base_patent)
+        seen_numbers.add(base_patent_result.patent_number)
+        
+        # 添加同族申请
+        for app in family_applications:
+            pub_num = app.get('publication_number', '')
+            if pub_num and pub_num not in seen_numbers:
+                family_patent = {
+                    'patent_number': pub_num,
+                    'title': app.get('title', ''),
+                    'publication_date': app.get('publication_date', ''),
+                    'language': app.get('language', ''),
+                    'status': app.get('status', ''),
+                    'is_base': False
+                }
+                family_patents.append(family_patent)
+                seen_numbers.add(pub_num)
+        
+        # 添加国家状态中的专利
+        for status in country_status:
+            pub_num = status.get('publication_number', '')
+            if pub_num and pub_num not in seen_numbers:
+                family_patent = {
+                    'patent_number': pub_num,
+                    'title': '',
+                    'publication_date': '',
+                    'language': status.get('language', ''),
+                    'country_code': status.get('country_code', ''),
+                    'is_base': False
+                }
+                family_patents.append(family_patent)
+                seen_numbers.add(pub_num)
+        
+        # 限制返回数量（最多30个）
+        family_patents = family_patents[:30]
+        
+        return create_response(data={
+            'basePatent': base_patent,
+            'familyPatents': family_patents,
+            'total': len(family_patents)
+        })
+        
+    except Exception as e:
+        print(f"Error in get_patent_family: {traceback.format_exc()}")
+        return create_response(
+            error=f"获取同族专利列表失败: {str(e)}",
+            status_code=500
+        )
+
+
+@patent_bp.route('/patent/family/compare', methods=['POST'])
+def compare_family_claims():
+    """
+    Compare claims of multiple family patents.
+    
+    Request body:
+        - patent_numbers: List of patent numbers to compare
+        - model: AI model to use (default: 'GLM-4.7-Flash')
+    
+    Returns:
+        Comparison result with similarity matrix and analysis
+    """
+    is_valid, error_response = validate_api_request()
+    if not is_valid:
+        return error_response
+    
+    client, error_response = get_zhipu_client()
+    if error_response:
+        return error_response
+    
+    try:
+        req_data = request.get_json()
+        patent_numbers = req_data.get('patent_numbers', [])
+        model = req_data.get('model', 'GLM-4.7-Flash')
+        
+        if not patent_numbers or len(patent_numbers) < 2:
+            return create_response(
+                error="至少需要2个专利号进行对比",
+                status_code=400
+            )
+        
+        print(f"[API] 对比同族专利权利要求: {len(patent_numbers)} 个专利")
+        
+        # 爬取所有专利的权利要求
+        scraper = get_scraper_instance()
+        patent_claims = {}
+        
+        for patent_number in patent_numbers:
+            try:
+                result = scraper.scrape_patent(
+                    patent_number,
+                    crawl_specification=False,
+                    selected_fields=['claims']
+                )
+                
+                if result and result.claims:
+                    # 只取前3条权利要求（通常是独立权利要求）
+                    claims_text = result.claims[:3] if isinstance(result.claims, list) else [str(result.claims)]
+                    patent_claims[patent_number] = {
+                        'patent_number': patent_number,
+                        'title': result.title,
+                        'claims': claims_text
+                    }
+            except Exception as e:
+                print(f"爬取专利 {patent_number} 权利要求失败: {e}")
+                continue
+        
+        if len(patent_claims) < 2:
+            return create_response(
+                error="成功获取的权利要求数量不足，无法进行对比",
+                status_code=400
+            )
+        
+        # 构建对比提示词
+        claims_list = list(patent_claims.values())
+        user_prompt = f"""
+<TASK>
+Compare the following {len(claims_list)} patents' claims and output a JSON object with pairwise comparisons.
+</TASK>
+
+<PATENTS>
+{json.dumps(claims_list, ensure_ascii=False, indent=2)}
+</PATENTS>
+
+<OUTPUT_SCHEMA>
+{{
+  "comparison_matrix": [
+    {{
+      "claim_pair": ["专利号1", "专利号2"],
+      "similarity_score": 0.75,
+      "similar_features": [{{"feature": "共同特征描述"}}],
+      "different_features": [{{
+        "claim_1_feature": "专利号1的特征",
+        "claim_2_feature": "专利号2的特征",
+        "analysis": "差异分析（中文）"
+      }}]
+    }}
+  ],
+  "overall_summary": "整体对比总结（中文）"
+}}
+</OUTPUT_SCHEMA>
+
+<REQUIREMENTS>
+1. similarity_score should be a float between 0 and 1
+2. Provide at least 3 similar features for each pair
+3. Provide at least 2 different features with analysis for each pair
+4. All analysis text must be in Chinese
+5. Output only valid JSON, no markdown code blocks
+</REQUIREMENTS>
+"""
+        
+        messages = [
+            {
+                "role": "system",
+                "content": "你是一位专业的专利权利要求分析专家。请严格按照要求的JSON格式返回对比结果，不要添加任何markdown标记（如```json），只返回纯JSON对象。所有分析结果必须使用中文输出。"
+            },
+            {
+                "role": "user",
+                "content": user_prompt
+            }
+        ]
+        
+        # 调用AI API
+        response_from_sdk = client.chat.completions.create(
+            model=model,
+            messages=messages,
+            stream=False,
+            temperature=0.4
+        )
+        
+        # 解析响应
+        response_text = response_from_sdk.choices[0].message.content
+        
+        # 尝试提取JSON（去除可能的markdown标记）
+        import re
+        json_match = re.search(r'\{[\s\S]*\}', response_text)
+        if json_match:
+            response_text = json_match.group()
+        
+        try:
+            result = json.loads(response_text)
+        except json.JSONDecodeError:
+            # 如果解析失败，返回原始文本
+            result = {
+                "error": "AI响应解析失败",
+                "raw_response": response_text
+            }
+        
+        return create_response(data={'result': result})
+        
+    except Exception as e:
+        print(f"Error in compare_family_claims: {traceback.format_exc()}")
+        return create_response(
+            error=f"对比同族专利权利要求失败: {str(e)}",
+            status_code=500
+        )

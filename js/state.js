@@ -106,6 +106,19 @@ const appState = {
     },
     // ▲▲▲ 新增结束 ▲▲▲
     
+    // ▼▼▼ 同族权利要求对比功能的状态 (v1.0) ▼▼▼
+    familyClaimsComparison: {
+        basePatent: null, // 基础专利信息
+        familyPatents: [], // 同族专利列表
+        selectedPatents: [], // 用户选择的专利
+        analysisResult: null, // 对比分析结果
+        viewMode: 'card', // card, sideBySide, matrix
+        displayLang: 'translated', // 'original' 或 'translated'
+        isLoading: false,
+        error: null
+    },
+    // ▲▲▲ 新增结束 ▲▲▲
+    
     lpl: { // Local Patent Library
         originalFile: {
             name: null,
