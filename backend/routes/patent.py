@@ -424,10 +424,11 @@ def get_patent_family(patent_number):
         print(f"[API] 获取同族专利列表: {patent_number}")
         
         # 爬取基础专利信息（包含同族信息）
+        # 注意：crawl_specification 必须为 True 才能爬取同族信息
         scraper = get_scraper_instance()
         base_patent_result = scraper.scrape_patent(
             patent_number, 
-            crawl_specification=False,
+            crawl_specification=True,
             selected_fields=['family_applications', 'country_status']
         )
         
