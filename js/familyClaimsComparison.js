@@ -112,7 +112,7 @@ function initFamilyClaimsComparison() {
             selectedPatents: [],
             analysisResult: null,
             viewMode: 'card',
-            displayLang: 'translated',
+            displayLang: 'original',  // 默认显示原文，可切换到译文
             isLoading: false,
             error: null,
             inputMode: 'auto'  // 'auto' 或 'manual'
@@ -960,21 +960,31 @@ function handleFamilyViewModeChange(viewMode) {
 
 /**
  * 切换显示语言
- * 注意：当前权利要求数据来自Google Patents，主要为英文
- * 此功能用于在并排对比视图中标记当前显示状态
+ * 在原文（英文）和译文（中文）之间切换
  */
 function toggleFamilyDisplayLanguage() {
     const currentLang = appState.familyClaimsComparison.displayLang;
-    const newLang = currentLang === 'translated' ? 'original' : 'translated';
+    const newLang = currentLang === 'original' ? 'translated' : 'original';
     appState.familyClaimsComparison.displayLang = newLang;
 
     // 更新按钮文字
     familyToggleLanguageBtn.textContent = newLang === 'translated' ? '切换为原文' : '切换为译文';
 
+    // 检查是否有翻译数据
+    const patentClaims = appState.familyClaimsComparison.analysisResult?.patent_claims || {};
+    const hasTranslation = Object.values(patentClaims).some(p => p.claims_translated && p.claims_translated.length > 0);
+
     // 显示提示
-    const message = newLang === 'translated'
-        ? '已切换为中文对照模式（注：权利要求原文为英文，建议参考卡片视图中的中文分析）'
-        : '已切换为原文模式（英文）';
+    let message;
+    if (newLang === 'translated') {
+        if (hasTranslation) {
+            message = '已切换为中文译文模式';
+        } else {
+            message = '暂无中文翻译数据，请重新进行对比分析';
+        }
+    } else {
+        message = '已切换为原文模式（英文）';
+    }
 
     // 创建提示元素
     const toast = document.createElement('div');
@@ -993,7 +1003,7 @@ function toggleFamilyDisplayLanguage() {
 }
 
 /**
- * 导出对比报告
+ * 导出对比报告为Word文档
  */
 function exportFamilyComparisonReport() {
     const result = appState.familyClaimsComparison.analysisResult;
@@ -1003,50 +1013,109 @@ function exportFamilyComparisonReport() {
         return;
     }
 
-    let markdown = '# 同族权利要求对比报告\n\n';
+    // 生成Word文档（使用HTML格式，Word可以打开）
+    let html = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>同族权利要求对比报告</title>
+    <style>
+        body { font-family: 'Microsoft YaHei', SimSun, Arial, sans-serif; line-height: 1.8; padding: 20px; }
+        h1 { color: #2e7d32; border-bottom: 2px solid #2e7d32; padding-bottom: 10px; }
+        h2 { color: #43a047; margin-top: 30px; }
+        h3 { color: #666; border-left: 4px solid #43a047; padding-left: 10px; }
+        h4 { color: #333; margin-top: 15px; }
+        table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #43a047; color: white; }
+        .similarity { background: #e8f5e9; padding: 5px 15px; border-radius: 15px; display: inline-block; margin: 10px 0; }
+        .similar-feature { background: rgba(34, 197, 94, 0.1); padding: 8px; margin: 5px 0; border-radius: 4px; }
+        .different-feature { background: rgba(239, 68, 68, 0.05); padding: 10px; margin: 10px 0; border-radius: 4px; border-left: 3px solid #ef5350; }
+        .analysis { background: rgba(59, 130, 246, 0.1); padding: 8px; margin-top: 5px; border-radius: 4px; font-style: italic; }
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <h1>同族权利要求对比报告</h1>
+    <p style="color: #666;">生成时间：${new Date().toLocaleString('zh-CN')}</p>
+`;
 
+    // 添加整体总结
     if (result.overall_summary) {
-        markdown += `## 整体总结\n\n${result.overall_summary}\n\n`;
+        html += `
+    <h2>一、整体总结</h2>
+    <p>${result.overall_summary}</p>
+`;
     }
 
-    if (result.comparison_matrix) {
-        markdown += '## 详细对比\n\n';
+    // 添加详细对比
+    if (result.comparison_matrix && result.comparison_matrix.length > 0) {
+        html += `
+    <h2>二、详细对比分析</h2>
+`;
 
         result.comparison_matrix.forEach((item, index) => {
             const [claim1, claim2] = item.claim_pair;
-            markdown += `### ${claim1} vs ${claim2}\n\n`;
-            markdown += `**相似度**: ${(item.similarity_score * 100).toFixed(0)}%\n\n`;
+            const similarityPercent = Math.round(item.similarity_score * 100);
 
-            markdown += '#### 相同特征\n\n';
-            if (item.similar_features?.length > 0) {
+            html += `
+    <h3>${index + 1}. ${claim1} vs ${claim2}</h3>
+    <p class="similarity"><strong>相似度：${similarityPercent}%</strong></p>
+
+    <h4>相同特征</h4>
+`;
+
+            if (item.similar_features && item.similar_features.length > 0) {
+                html += '<ul>';
                 item.similar_features.forEach(f => {
-                    markdown += `- ${f.feature}\n`;
+                    html += `<li class="similar-feature">${f.feature}</li>`;
                 });
+                html += '</ul>';
             } else {
-                markdown += '无\n';
+                html += '<p style="color: #666;">无完全相同的技术特征</p>';
             }
-            markdown += '\n';
 
-            markdown += '#### 差异特征\n\n';
-            if (item.different_features?.length > 0) {
+            html += `
+    <h4>差异特征</h4>
+`;
+
+            if (item.different_features && item.different_features.length > 0) {
+                html += '<table><thead><tr><th width="30%">' + claim1 + '</th><th width="30%">' + claim2 + '</th><th width="40%">差异分析</th></tr></thead><tbody>';
                 item.different_features.forEach(f => {
-                    markdown += `- **${claim1}**: ${f.claim_1_feature}\n`;
-                    markdown += `- **${claim2}**: ${f.claim_2_feature}\n`;
-                    markdown += `- **分析**: ${f.analysis}\n\n`;
+                    html += `<tr>
+                        <td>${f.claim_1_feature}</td>
+                        <td>${f.claim_2_feature}</td>
+                        <td>${f.analysis}</td>
+                    </tr>`;
                 });
+                html += '</tbody></table>';
             } else {
-                markdown += '无\n\n';
+                html += '<p style="color: #666;">未发现显著差异</p>';
             }
         });
     }
 
-    const blob = new Blob([markdown], { type: 'text/markdown' });
+    // 添加页脚
+    html += `
+    <div class="footer">
+        <p>本报告由专利工作台自动生成，仅供参考。</p>
+        <p>AI生成内容声明：以上对比分析由AI生成，请结合实际情况判断使用。</p>
+    </div>
+</body>
+</html>
+`;
+
+    // 创建Blob并下载
+    const blob = new Blob(['\ufeff' + html], { type: 'application/msword' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = '同族权利要求对比报告.md';
+    a.download = `同族权利要求对比报告_${new Date().toISOString().slice(0, 10)}.doc`;
     a.click();
     URL.revokeObjectURL(url);
+
+    console.log('✅ Word文档已导出');
 }
 
 /**
@@ -1082,3 +1151,109 @@ function showFamilyLoading(text) {
 function hideFamilyLoading() {
     familyLoadingOverlay.style.display = 'none';
 }
+
+/**
+ * 从外部启动同族权利要求对比（供新标签页调用）
+ * @param {string} basePatentNumber - 基础专利号
+ * @param {Array<string>} familyPatentNumbers - 同族专利公开号列表
+ */
+window.startFamilyClaimsComparison = async function(basePatentNumber, familyPatentNumbers) {
+    console.log('🚀 启动同族权利要求对比:', basePatentNumber, familyPatentNumbers);
+    
+    // 1. 切换到功能四标签页
+    if (typeof switchTab === 'function') {
+        const claimsTabBtn = document.querySelector('.tab-button[onclick*="claims_comparison"]');
+        if (claimsTabBtn) {
+            switchTab('claims_comparison', claimsTabBtn);
+        }
+    }
+    
+    // 2. 等待标签页切换完成后，切换到同族专利对比子标签页
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    if (typeof switchClaimsComparisonSubTab === 'function') {
+        const familySubBtn = document.querySelector('.sub-tab-button[data-sub-tab="family"]');
+        if (familySubBtn) {
+            switchClaimsComparisonSubTab('family', familySubBtn);
+        }
+    }
+    
+    // 3. 等待子标签页加载完成
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // 4. 初始化状态（如果尚未初始化）
+    if (!appState.familyClaimsComparison) {
+        appState.familyClaimsComparison = {
+            basePatent: null,
+            familyPatents: [],
+            selectedPatents: [],
+            analysisResult: null,
+            viewMode: 'card',
+            displayLang: 'translated',
+            isLoading: false,
+            error: null,
+            inputMode: 'manual'
+        };
+    }
+    
+    // 5. 切换到手动输入模式
+    if (typeof switchFamilyInputMode === 'function') {
+        switchFamilyInputMode('manual');
+    }
+    
+    // 6. 构建同族专利数据
+    const familyPatents = familyPatentNumbers.map(num => ({
+        patent_number: num,
+        title: '同族专利',
+        publication_date: '',
+        language: 'unknown',
+        is_manual: true
+    }));
+    
+    // 7. 保存到状态
+    appState.familyClaimsComparison.familyPatents = familyPatents;
+    appState.familyClaimsComparison.selectedPatents = [...familyPatents];
+    
+    // 8. 渲染同族专利列表
+    if (typeof renderFamilyPatentsGrid === 'function') {
+        renderFamilyPatentsGrid(familyPatents);
+    }
+    
+    // 9. 显示列表容器
+    if (familyListContainer) {
+        familyListContainer.style.display = 'block';
+    }
+    
+    // 10. 自动选中所有专利
+    setTimeout(() => {
+        const checkboxes = document.querySelectorAll('.family-patent-checkbox');
+        checkboxes.forEach(cb => {
+            cb.checked = true;
+        });
+        
+        // 11. 更新对比按钮状态
+        if (typeof updateFamilyCompareButton === 'function') {
+            updateFamilyCompareButton();
+        }
+        
+        // 12. 清空之前的对比结果
+        if (typeof clearFamilyComparisonResult === 'function') {
+            clearFamilyComparisonResult();
+        }
+        
+        // 13. 滚动到对比区域
+        if (familyListContainer) {
+            familyListContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        
+        // 14. 提示用户
+        const toast = document.createElement('div');
+        toast.innerHTML = `✅ 已自动填入 ${familyPatentNumbers.length} 个同族专利，请点击"开始对比分析"按钮`;
+        toast.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #9c27b0 0%, #673ab7 100%); color: white; padding: 12px 24px; border-radius: 8px; z-index: 10000; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); max-width: 90%; text-align: center;';
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.remove();
+        }, 4000);
+    }, 100);
+};

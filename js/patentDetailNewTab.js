@@ -909,13 +909,22 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 <span class="section-icon">⚖️</span>
                                 权利要求 (${data.claims.length})
                             </div>
-                            <button class="copy-section-btn" onclick="copyClaimsWithNumbers(event)">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
-                                    <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
-                                </svg>
-                                复制
-                            </button>
+                            <div class="section-actions">
+                                <button class="copy-section-btn translate-btn" onclick="showTranslateDialog(event, 'claims')" style="background: linear-gradient(135deg, #00bcd4 0%, #009688 100%) !important;" title="对照翻译">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M4.545 6.714 4.11 8H3l1.862-5h1.284L8 8H6.833l-.435-1.286H4.545zm1.634-.736L5.5 3.956h-.049l-.679 2.022H6.18z"/>
+                                        <path d="M0 2a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v3h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-3H2a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H2zm7.138 9.995c.193.301.402.583.63.846-.748.575-1.673 1.001-2.768 1.292.178.217.451.635.555.867 1.125-.359 2.08-.844 2.886-1.494.777.665 1.739 1.165 2.93 1.472.133-.254.414-.673.629-.89-1.125-.253-2.057-.694-2.82-1.284.681-.747 1.222-1.651 1.621-2.757H14V8h-3.5v.992h.838c-.405.848-.931 1.565-1.586 2.153a6.36 6.36 0 0 1-.614-.85zm-.545-1.493v-.002c0-.011.003-.022.003-.033h.003V5.5H10v6.002h1.003z"/>
+                                    </svg>
+                                    对照翻译
+                                </button>
+                                <button class="copy-section-btn" onclick="copyClaimsWithNumbers(event)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                        <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                                    </svg>
+                                    复制
+                                </button>
+                            </div>
                         </h2>
                         <div class="section-content">
                             <div class="claims-list" data-section-content="claims">
@@ -1014,14 +1023,25 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 <span class="section-icon">👨‍👩‍👧‍👦</span>
                                 同族信息 ${data.family_applications ? '(' + data.family_applications.length + ')' : ''}
                             </div>
-                            ${data.family_applications && data.family_applications.length > 0 ? `
-                            <button class="copy-section-btn analyze-btn" onclick="analyzeRelationPatents(event, '${patentNumber}', 'family')">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
-                                </svg>
-                                分析同族专利
-                            </button>
-                            ` : ''}
+                            <div class="section-actions">
+                                ${data.family_applications && data.family_applications.length > 1 ? `
+                                <button class="copy-section-btn family-compare-btn" onclick="jumpToFamilyClaimsComparison(event, '${patentNumber}')" style="background: linear-gradient(135deg, #9c27b0 0%, #673ab7 100%) !important;" title="跳转到功能四进行同族权利要求对比分析">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M9.5 1.5a.5.5 0 0 1 0 1H5.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L5.707 1.5H9.5z"/>
+                                        <path d="M6.5 14.5a.5.5 0 0 1 0-1h3.793l-2.147-2.146a.5.5 0 0 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 14.5H6.5z"/>
+                                    </svg>
+                                    同族权利要求对比分析
+                                </button>
+                                ` : ''}
+                                ${data.family_applications && data.family_applications.length > 0 ? `
+                                <button class="copy-section-btn analyze-btn" onclick="analyzeRelationPatents(event, '${patentNumber}', 'family')">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                                    </svg>
+                                    分析同族专利
+                                </button>
+                                ` : ''}
+                            </div>
                         </h2>
                         ${data.family_id && shouldShowField('family_id') ? `<div class="info-card" style="margin-bottom: 20px;"><div class="info-label">同族ID</div><div class="info-value">${data.family_id}</div></div>` : ''}
                         ${data.family_applications && data.family_applications.length > 0 && shouldShowField('family_applications') ? `
@@ -1204,13 +1224,22 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 <span class="section-icon">📝</span>
                                 说明书
                             </div>
-                            <button class="copy-section-btn" onclick="copySectionContent(event, 'description', '说明书')">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
-                                    <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
-                                </svg>
-                                复制
-                            </button>
+                            <div class="section-actions">
+                                <button class="copy-section-btn translate-btn" onclick="showTranslateDialog(event, 'description')" style="background: linear-gradient(135deg, #00bcd4 0%, #009688 100%) !important;" title="对照翻译">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M4.545 6.714 4.11 8H3l1.862-5h1.284L8 8H6.833l-.435-1.286H4.545zm1.634-.736L5.5 3.956h-.049l-.679 2.022H6.18z"/>
+                                        <path d="M0 2a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v3h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-3H2a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H2zm7.138 9.995c.193.301.402.583.63.846-.748.575-1.673 1.001-2.768 1.292.178.217.451.635.555.867 1.125-.359 2.08-.844 2.886-1.494.777.665 1.739 1.165 2.93 1.472.133-.254.414-.673.629-.89-1.125-.253-2.057-.694-2.82-1.284.681-.747 1.222-1.651 1.621-2.757H14V8h-3.5v.992h.838c-.405.848-.931 1.565-1.586 2.153a6.36 6.36 0 0 1-.614-.85zm-.545-1.493v-.002c0-.011.003-.022.003-.033h.003V5.5H10v6.002h1.003z"/>
+                                    </svg>
+                                    对照翻译
+                                </button>
+                                <button class="copy-section-btn" onclick="copySectionContent(event, 'description', '说明书')">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                        <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                                    </svg>
+                                    复制
+                                </button>
+                            </div>
                         </h2>
                         <div class="section-content">
                             <div class="abstract-box" style="white-space: pre-wrap; line-height: 1.8;" data-section-content="description">
@@ -1324,6 +1353,47 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     });
                 }
 
+                // 跳转到功能四同族权利要求对比分析
+                function jumpToFamilyClaimsComparison(event, patentNumber) {
+                    event.stopPropagation();
+                    
+                    // 获取同族专利公开号列表
+                    const familyTable = document.getElementById('family-table');
+                    let familyPatentNumbers = [];
+                    
+                    if (familyTable) {
+                        const rows = familyTable.querySelectorAll('tbody tr');
+                        rows.forEach(row => {
+                            const pubNumber = row.cells[2]?.textContent?.trim();
+                            if (pubNumber && pubNumber !== '-') {
+                                familyPatentNumbers.push(pubNumber);
+                            }
+                        });
+                    }
+                    
+                    if (familyPatentNumbers.length < 2) {
+                        alert('同族专利数量不足，需要至少2个同族专利才能进行对比分析');
+                        return;
+                    }
+                    
+                    // 调用主窗口的跳转函数
+                    if (window.opener && window.opener.startFamilyClaimsComparison) {
+                        window.opener.startFamilyClaimsComparison(patentNumber, familyPatentNumbers);
+                        
+                        // 显示成功提示
+                        const btn = event.target.closest('.family-compare-btn');
+                        if (btn) {
+                            const originalHTML = btn.innerHTML;
+                            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/></svg> 已跳转';
+                            setTimeout(() => {
+                                btn.innerHTML = originalHTML;
+                            }, 2000);
+                        }
+                    } else {
+                        alert('无法连接到主窗口，请确保从主页面打开此详情页');
+                    }
+                }
+                
                 // 分析关系专利 - 在新标签页中打开
                 function analyzeRelationPatents(event, patentNumber, relationType) {
                     event.stopPropagation(); // 阻止触发折叠/展开
@@ -1386,6 +1456,200 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     } else {
                         alert('无法连接到主窗口，请确保从主页面打开此详情页');
                     }
+                }
+                
+                // 显示翻译模型选择对话框
+                function showTranslateDialog(event, textType) {
+                    event.stopPropagation();
+                    
+                    // 获取可用的模型列表
+                    const models = ['glm-4-flash', 'glm-4-long', 'glm-4.7-flash'];
+                    
+                    // 创建对话框
+                    const dialog = document.createElement('div');
+                    dialog.id = 'translate-dialog';
+                    dialog.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 10000;';
+                    
+                    dialog.innerHTML = `
+                        <div style="background: white; border-radius: 12px; padding: 24px; max-width: 400px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+                            <h3 style="margin: 0 0 16px 0; color: #2e7d32; display: flex; align-items: center; gap: 8px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M4.545 6.714 4.11 8H3l1.862-5h1.284L8 8H6.833l-.435-1.286H4.545zm1.634-.736L5.5 3.956h-.049l-.679 2.022H6.18z"/>
+                                    <path d="M0 2a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v3h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-3H2a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H2z"/>
+                                </svg>
+                                选择翻译模型
+                            </h3>
+                            <p style="margin: 0 0 16px 0; color: #666; font-size: 14px;">请选择用于翻译${textType === 'claims' ? '权利要求' : '说明书'}的AI模型：</p>
+                            <select id="translate-model-select" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; margin-bottom: 16px;">
+                                ${models.map(m => `<option value="${m}">${m}</option>`).join('')}
+                            </select>
+                            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                                <button onclick="document.getElementById('translate-dialog').remove()" style="padding: 8px 20px; border: 1px solid #ddd; background: white; border-radius: 6px; cursor: pointer;">取消</button>
+                                <button id="start-translate-btn" style="padding: 8px 20px; border: none; background: linear-gradient(135deg, #00bcd4 0%, #009688 100%); color: white; border-radius: 6px; cursor: pointer; font-weight: 500;">开始翻译</button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.body.appendChild(dialog);
+                    
+                    // 绑定开始翻译按钮
+                    document.getElementById('start-translate-btn').onclick = function() {
+                        const model = document.getElementById('translate-model-select').value;
+                        dialog.remove();
+                        startTranslation(textType, model);
+                    };
+                    
+                    // 点击背景关闭
+                    dialog.onclick = function(e) {
+                        if (e.target === dialog) {
+                            dialog.remove();
+                        }
+                    };
+                }
+                
+                // 开始翻译
+                async function startTranslation(textType, model) {
+                    // 显示加载状态
+                    const loadingDiv = document.createElement('div');
+                    loadingDiv.id = 'translate-loading';
+                    loadingDiv.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 10000;';
+                    loadingDiv.innerHTML = `
+                        <div style="background: white; border-radius: 12px; padding: 32px; text-align: center;">
+                            <div style="width: 40px; height: 40px; border: 3px solid #e0e0e0; border-top-color: #009688; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px;"></div>
+                            <p style="margin: 0; color: #333;">正在翻译中，请稍候...</p>
+                            <p style="margin: 8px 0 0 0; color: #999; font-size: 12px;">使用模型: ${model}</p>
+                        </div>
+                        <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+                    `;
+                    document.body.appendChild(loadingDiv);
+                    
+                    try {
+                        // 获取文本内容
+                        let textContent;
+                        if (textType === 'claims') {
+                            const claimItems = document.querySelectorAll('.claim-item');
+                            textContent = Array.from(claimItems).map(item => item.getAttribute('data-claim-text'));
+                        } else {
+                            const descDiv = document.querySelector('[data-section-content="description"]');
+                            textContent = descDiv ? descDiv.textContent : '';
+                        }
+                        
+                        // 调用主窗口的翻译API
+                        if (window.opener && window.opener.translatePatentText) {
+                            const result = await window.opener.translatePatentText(textContent, textType, model);
+                            loadingDiv.remove();
+                            showTranslationResult(result, textType);
+                        } else {
+                            // 直接调用API
+                            const apiKey = window.opener?.appState?.apiKey || localStorage.getItem('api_key') || '';
+                            
+                            const response = await fetch('/api/patent/translate', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${apiKey}`
+                                },
+                                credentials: 'include',
+                                body: JSON.stringify({
+                                    text: textContent,
+                                    text_type: textType,
+                                    model: model,
+                                    source_lang: 'en'
+                                })
+                            });
+                            
+                            const result = await response.json();
+                            loadingDiv.remove();
+                            
+                            if (result.error) {
+                                throw new Error(result.error);
+                            }
+                            
+                            showTranslationResult(result.data, textType);
+                        }
+                    } catch (error) {
+                        loadingDiv.remove();
+                        alert('翻译失败: ' + error.message);
+                    }
+                }
+                
+                // 显示翻译结果
+                function showTranslationResult(result, textType) {
+                    const translations = result.translations || [];
+                    
+                    // 创建对照显示弹窗
+                    const resultDiv = document.createElement('div');
+                    resultDiv.id = 'translate-result';
+                    resultDiv.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 10000;';
+                    
+                    let contentHtml = '';
+                    if (textType === 'claims') {
+                        translations.forEach(item => {
+                            contentHtml += `
+                                <div style="border-bottom: 1px solid #e0e0e0; padding: 16px 0;">
+                                    <div style="font-weight: 600; color: #2e7d32; margin-bottom: 8px;">权利要求 ${item.index}</div>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                                        <div style="background: #f5f5f5; padding: 12px; border-radius: 6px; font-size: 13px; line-height: 1.6;">
+                                            <div style="color: #999; font-size: 11px; margin-bottom: 4px;">原文 (英文)</div>
+                                            ${item.original}
+                                        </div>
+                                        <div style="background: #e8f5e9; padding: 12px; border-radius: 6px; font-size: 13px; line-height: 1.6;">
+                                            <div style="color: #2e7d32; font-size: 11px; margin-bottom: 4px;">译文 (中文)</div>
+                                            ${item.translated}
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    } else {
+                        translations.forEach((item, index) => {
+                            contentHtml += `
+                                <div style="border-bottom: 1px solid #e0e0e0; padding: 16px 0;">
+                                    <div style="font-weight: 600; color: #2e7d32; margin-bottom: 8px;">段落 ${index + 1}</div>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                                        <div style="background: #f5f5f5; padding: 12px; border-radius: 6px; font-size: 13px; line-height: 1.6; max-height: 200px; overflow-y: auto;">
+                                            <div style="color: #999; font-size: 11px; margin-bottom: 4px;">原文 (英文)</div>
+                                            ${item.original.replace(/\n/g, '<br>')}
+                                        </div>
+                                        <div style="background: #e8f5e9; padding: 12px; border-radius: 6px; font-size: 13px; line-height: 1.6; max-height: 200px; overflow-y: auto;">
+                                            <div style="color: #2e7d32; font-size: 11px; margin-bottom: 4px;">译文 (中文)</div>
+                                            ${item.translated.replace(/\n/g, '<br>')}
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    }
+                    
+                    resultDiv.innerHTML = `
+                        <div style="background: white; border-radius: 12px; width: 90%; max-width: 1000px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+                            <div style="padding: 16px 24px; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center;">
+                                <h3 style="margin: 0; color: #2e7d32; display: flex; align-items: center; gap: 8px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M4.545 6.714 4.11 8H3l1.862-5h1.284L8 8H6.833l-.435-1.286H4.545zm1.634-.736L5.5 3.956h-.049l-.679 2.022H6.18z"/>
+                                        <path d="M0 2a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v3h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-3H2a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H2z"/>
+                                    </svg>
+                                    ${textType === 'claims' ? '权利要求' : '说明书'}对照翻译
+                                </h3>
+                                <button onclick="document.getElementById('translate-result').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">&times;</button>
+                            </div>
+                            <div style="padding: 16px 24px; overflow-y: auto; flex: 1;">
+                                ${contentHtml}
+                            </div>
+                            <div style="padding: 12px 24px; border-top: 1px solid #e0e0e0; display: flex; justify-content: flex-end; gap: 12px;">
+                                <button onclick="document.getElementById('translate-result').remove()" style="padding: 8px 20px; border: 1px solid #ddd; background: white; border-radius: 6px; cursor: pointer;">关闭</button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.body.appendChild(resultDiv);
+                    
+                    // 点击背景关闭
+                    resultDiv.onclick = function(e) {
+                        if (e.target === resultDiv) {
+                            resultDiv.remove();
+                        }
+                    };
                 }
                 
                 // 平滑滚动和导航高亮（移除自动展开/折叠逻辑）

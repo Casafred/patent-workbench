@@ -566,7 +566,8 @@ def compare_family_claims():
                         patent_claims[patent_number] = {
                             'patent_number': patent_number,
                             'title': patent_data.title,
-                            'claims': claims_text
+                            'claims': claims_text,
+                            'claims_translated': None  # 将在后面填充翻译结果
                         }
             except Exception as e:
                 print(f"爬取专利 {patent_number} 权利要求失败: {e}")
@@ -577,6 +578,59 @@ def compare_family_claims():
                 error="成功获取的权利要求数量不足，无法进行对比",
                 status_code=400
             )
+        
+        # 并行翻译权利要求
+        print(f"[API] 开始翻译 {len(patent_claims)} 个专利的权利要求...")
+        translation_tasks = []
+        for patent_number, data in patent_claims.items():
+            claims_text = '\n\n'.join(data['claims']) if isinstance(data['claims'], list) else str(data['claims'])
+            translation_tasks.append((patent_number, claims_text))
+        
+        # 使用线程池并行翻译
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        
+        def translate_claims(patent_number, claims_text):
+            try:
+                translation_prompt = f"""请将以下专利权利要求翻译成中文。保持专业术语的准确性，使用专利领域的标准翻译。
+
+专利号：{patent_number}
+
+权利要求原文：
+{claims_text}
+
+请直接输出翻译后的中文内容，不要添加任何解释或说明。"""
+
+                translation_response = client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {"role": "system", "content": "你是一位专业的专利翻译专家，精通中英文专利文献翻译。"},
+                        {"role": "user", "content": translation_prompt}
+                    ],
+                    stream=False,
+                    temperature=0.3
+                )
+                
+                translated_text = translation_response.choices[0].message.content.strip()
+                # 将翻译结果分割成列表（与原始claims对应）
+                translated_claims = translated_text.split('\n\n')
+                return patent_number, translated_claims
+            except Exception as e:
+                print(f"翻译专利 {patent_number} 权利要求失败: {e}")
+                return patent_number, None
+        
+        # 并行执行翻译
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            futures = {executor.submit(translate_claims, pn, ct): pn for pn, ct in translation_tasks}
+            for future in as_completed(futures):
+                try:
+                    patent_number, translated_claims = future.result()
+                    if translated_claims and patent_number in patent_claims:
+                        patent_claims[patent_number]['claims_translated'] = translated_claims
+                        print(f"[API] 翻译完成: {patent_number}")
+                except Exception as e:
+                    print(f"翻译任务执行失败: {e}")
+        
+        print(f"[API] 翻译完成，开始对比分析...")
         
         # 构建对比提示词
         claims_list = list(patent_claims.values())
@@ -665,5 +719,137 @@ Compare the following {len(claims_list)} patents' claims and output a JSON objec
         print(f"Error in compare_family_claims: {traceback.format_exc()}")
         return create_response(
             error=f"对比同族专利权利要求失败: {str(e)}",
+            status_code=500
+        )
+
+
+@patent_bp.route('/patent/translate', methods=['POST'])
+@validate_api_request
+def translate_patent_text():
+    """
+    Translate patent text (claims or description) to Chinese.
+    
+    Request body:
+        - text: Text content to translate (string or array of strings)
+        - text_type: Type of text ('claims' or 'description')
+        - model: AI model to use for translation
+        - source_lang: Source language code (default: 'en')
+    """
+    try:
+        data = request.get_json()
+        
+        text = data.get('text', '')
+        text_type = data.get('text_type', 'description')
+        model = data.get('model', 'glm-4-flash')
+        source_lang = data.get('source_lang', 'en')
+        
+        if not text:
+            return create_response(
+                error="缺少要翻译的文本内容",
+                status_code=400
+            )
+        
+        # 获取智谱AI客户端
+        client = get_zhipu_client()
+        if not client:
+            return create_response(
+                error="翻译服务不可用，请检查API配置",
+                status_code=503
+            )
+        
+        # 导入翻译服务
+        from backend.services.ai_description.translation_service import TranslationService
+        translation_service = TranslationService()
+        
+        # 处理权利要求（可能是数组）
+        if text_type == 'claims' and isinstance(text, list):
+            translated_claims = []
+            for i, claim_text in enumerate(text):
+                if claim_text and len(claim_text.strip()) > 0:
+                    try:
+                        translated = translation_service.translate_to_chinese(
+                            text=claim_text,
+                            source_lang=source_lang,
+                            client=client,
+                            model_name=model
+                        )
+                        translated_claims.append({
+                            'original': claim_text,
+                            'translated': translated,
+                            'index': i + 1
+                        })
+                    except Exception as e:
+                        translated_claims.append({
+                            'original': claim_text,
+                            'translated': f'[翻译失败: {str(e)}]',
+                            'index': i + 1
+                        })
+            
+            return create_response(data={
+                'text_type': 'claims',
+                'translations': translated_claims,
+                'source_lang': source_lang,
+                'model': model
+            })
+        
+        # 处理说明书（单个长文本）
+        if isinstance(text, list):
+            text = '\n\n'.join(text)
+        
+        # 对于长文本，分段翻译
+        max_chunk_size = 4000
+        if len(text) > max_chunk_size:
+            # 按段落分割
+            paragraphs = text.split('\n\n')
+            translated_paragraphs = []
+            
+            for para in paragraphs:
+                if para.strip():
+                    try:
+                        translated = translation_service.translate_to_chinese(
+                            text=para,
+                            source_lang=source_lang,
+                            client=client,
+                            model_name=model
+                        )
+                        translated_paragraphs.append({
+                            'original': para,
+                            'translated': translated
+                        })
+                    except Exception as e:
+                        translated_paragraphs.append({
+                            'original': para,
+                            'translated': f'[翻译失败: {str(e)}]'
+                        })
+            
+            return create_response(data={
+                'text_type': 'description',
+                'translations': translated_paragraphs,
+                'source_lang': source_lang,
+                'model': model
+            })
+        else:
+            # 短文本直接翻译
+            translated = translation_service.translate_to_chinese(
+                text=text,
+                source_lang=source_lang,
+                client=client,
+                model_name=model
+            )
+            
+            return create_response(data={
+                'text_type': text_type,
+                'translations': [{
+                    'original': text,
+                    'translated': translated
+                }],
+                'source_lang': source_lang,
+                'model': model
+            })
+            
+    except Exception as e:
+        print(f"Error in translate_patent_text: {traceback.format_exc()}")
+        return create_response(
+            error=f"翻译失败: {str(e)}",
             status_code=500
         )

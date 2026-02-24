@@ -1846,6 +1846,238 @@ window.analyzeRelationFromModal = function(patentNumber, relationType) {
     }
 };
 
+// 从弹窗跳转到同族权利要求对比分析
+window.jumpToFamilyComparisonFromModal = function(patentNumber) {
+    // 找到对应的专利结果
+    const patentResult = window.patentResults.find(result => result.patent_number === patentNumber);
+    if (!patentResult || !patentResult.success) {
+        alert('❌ 无法分析：专利数据不存在');
+        return;
+    }
+
+    const data = patentResult.data;
+    
+    // 获取同族专利公开号列表
+    let familyPatentNumbers = [];
+    if (data.family_applications && data.family_applications.length > 0) {
+        familyPatentNumbers = data.family_applications
+            .map(app => app.publication_number)
+            .filter(num => num && num !== '-');
+    }
+    
+    if (familyPatentNumbers.length < 2) {
+        alert('同族专利数量不足，需要至少2个同族专利才能进行对比分析');
+        return;
+    }
+    
+    // 关闭弹窗
+    closePatentDetailModal();
+    
+    // 调用跳转函数
+    if (window.startFamilyClaimsComparison) {
+        window.startFamilyClaimsComparison(patentNumber, familyPatentNumbers);
+    } else {
+        alert('同族对比功能未加载，请刷新页面后重试');
+    }
+};
+
+// 弹窗中显示翻译对话框
+window.showTranslateModal = function(patentNumber, textType, event) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    
+    // 获取可用的模型列表
+    const models = window.AVAILABLE_MODELS || ['glm-4-flash', 'glm-4-long', 'glm-4.7-flash'];
+    
+    // 创建对话框
+    const dialog = document.createElement('div');
+    dialog.id = 'translate-modal-dialog';
+    dialog.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 10001;';
+    
+    dialog.innerHTML = `
+        <div style="background: white; border-radius: 12px; padding: 24px; max-width: 400px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+            <h3 style="margin: 0 0 16px 0; color: var(--primary-color); display: flex; align-items: center; gap: 8px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M4.545 6.714 4.11 8H3l1.862-5h1.284L8 8H6.833l-.435-1.286H4.545zm1.634-.736L5.5 3.956h-.049l-.679 2.022H6.18z"/>
+                    <path d="M0 2a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v3h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-3H2a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H2z"/>
+                </svg>
+                选择翻译模型
+            </h3>
+            <p style="margin: 0 0 16px 0; color: #666; font-size: 14px;">请选择用于翻译${textType === 'claims' ? '权利要求' : '说明书'}的AI模型：</p>
+            <select id="translate-modal-model-select" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; margin-bottom: 16px;">
+                ${models.map(m => `<option value="${m}">${m}</option>`).join('')}
+            </select>
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                <button onclick="document.getElementById('translate-modal-dialog').remove()" style="padding: 8px 20px; border: 1px solid #ddd; background: white; border-radius: 6px; cursor: pointer;">取消</button>
+                <button id="start-translate-modal-btn" style="padding: 8px 20px; border: none; background: linear-gradient(135deg, #00bcd4 0%, #009688 100%); color: white; border-radius: 6px; cursor: pointer; font-weight: 500;">开始翻译</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(dialog);
+    
+    // 绑定开始翻译按钮
+    document.getElementById('start-translate-modal-btn').onclick = function() {
+        const model = document.getElementById('translate-modal-model-select').value;
+        dialog.remove();
+        startModalTranslation(patentNumber, textType, model);
+    };
+    
+    // 点击背景关闭
+    dialog.onclick = function(e) {
+        if (e.target === dialog) {
+            dialog.remove();
+        }
+    };
+};
+
+// 开始弹窗翻译
+async function startModalTranslation(patentNumber, textType, model) {
+    // 显示加载状态
+    const loadingDiv = document.createElement('div');
+    loadingDiv.id = 'translate-modal-loading';
+    loadingDiv.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 10001;';
+    loadingDiv.innerHTML = `
+        <div style="background: white; border-radius: 12px; padding: 32px; text-align: center;">
+            <div style="width: 40px; height: 40px; border: 3px solid #e0e0e0; border-top-color: #009688; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px;"></div>
+            <p style="margin: 0; color: #333;">正在翻译中，请稍候...</p>
+            <p style="margin: 8px 0 0 0; color: #999; font-size: 12px;">使用模型: ${model}</p>
+        </div>
+        <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+    `;
+    document.body.appendChild(loadingDiv);
+    
+    try {
+        // 找到对应的专利结果
+        const patentResult = window.patentResults.find(result => result.patent_number === patentNumber);
+        if (!patentResult || !patentResult.success) {
+            throw new Error('专利数据不存在');
+        }
+        
+        const data = patentResult.data;
+        
+        // 获取文本内容
+        let textContent;
+        if (textType === 'claims') {
+            textContent = data.claims || [];
+        } else {
+            textContent = data.description || '';
+        }
+        
+        // 获取API Key
+        const apiKey = appState.apiKey || localStorage.getItem('api_key') || '';
+        
+        const response = await fetch('/api/patent/translate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                text: textContent,
+                text_type: textType,
+                model: model,
+                source_lang: 'en'
+            })
+        });
+        
+        const result = await response.json();
+        loadingDiv.remove();
+        
+        if (result.error) {
+            throw new Error(result.error);
+        }
+        
+        showModalTranslationResult(result.data, textType);
+        
+    } catch (error) {
+        loadingDiv.remove();
+        alert('翻译失败: ' + error.message);
+    }
+}
+
+// 显示弹窗翻译结果
+function showModalTranslationResult(result, textType) {
+    const translations = result.translations || [];
+    
+    // 创建对照显示弹窗
+    const resultDiv = document.createElement('div');
+    resultDiv.id = 'translate-modal-result';
+    resultDiv.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 10001;';
+    
+    let contentHtml = '';
+    if (textType === 'claims') {
+        translations.forEach(item => {
+            contentHtml += `
+                <div style="border-bottom: 1px solid #e0e0e0; padding: 16px 0;">
+                    <div style="font-weight: 600; color: var(--primary-color); margin-bottom: 8px;">权利要求 ${item.index}</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div style="background: #f5f5f5; padding: 12px; border-radius: 6px; font-size: 13px; line-height: 1.6;">
+                            <div style="color: #999; font-size: 11px; margin-bottom: 4px;">原文 (英文)</div>
+                            ${item.original}
+                        </div>
+                        <div style="background: #e8f5e9; padding: 12px; border-radius: 6px; font-size: 13px; line-height: 1.6;">
+                            <div style="color: var(--primary-color); font-size: 11px; margin-bottom: 4px;">译文 (中文)</div>
+                            ${item.translated}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    } else {
+        translations.forEach((item, index) => {
+            contentHtml += `
+                <div style="border-bottom: 1px solid #e0e0e0; padding: 16px 0;">
+                    <div style="font-weight: 600; color: var(--primary-color); margin-bottom: 8px;">段落 ${index + 1}</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div style="background: #f5f5f5; padding: 12px; border-radius: 6px; font-size: 13px; line-height: 1.6; max-height: 200px; overflow-y: auto;">
+                            <div style="color: #999; font-size: 11px; margin-bottom: 4px;">原文 (英文)</div>
+                            ${item.original.replace(/\n/g, '<br>')}
+                        </div>
+                        <div style="background: #e8f5e9; padding: 12px; border-radius: 6px; font-size: 13px; line-height: 1.6; max-height: 200px; overflow-y: auto;">
+                            <div style="color: var(--primary-color); font-size: 11px; margin-bottom: 4px;">译文 (中文)</div>
+                            ${item.translated.replace(/\n/g, '<br>')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+    
+    resultDiv.innerHTML = `
+        <div style="background: white; border-radius: 12px; width: 90%; max-width: 1000px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
+            <div style="padding: 16px 24px; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; color: var(--primary-color); display: flex; align-items: center; gap: 8px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M4.545 6.714 4.11 8H3l1.862-5h1.284L8 8H6.833l-.435-1.286H4.545zm1.634-.736L5.5 3.956h-.049l-.679 2.022H6.18z"/>
+                        <path d="M0 2a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v3h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-3H2a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H2z"/>
+                    </svg>
+                    ${textType === 'claims' ? '权利要求' : '说明书'}对照翻译
+                </h3>
+                <button onclick="document.getElementById('translate-modal-result').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">&times;</button>
+            </div>
+            <div style="padding: 16px 24px; overflow-y: auto; flex: 1;">
+                ${contentHtml}
+            </div>
+            <div style="padding: 12px 24px; border-top: 1px solid #e0e0e0; display: flex; justify-content: flex-end; gap: 12px;">
+                <button onclick="document.getElementById('translate-modal-result').remove()" style="padding: 8px 20px; border: 1px solid #ddd; background: white; border-radius: 6px; cursor: pointer;">关闭</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(resultDiv);
+    
+    // 点击背景关闭
+    resultDiv.onclick = function(e) {
+        if (e.target === resultDiv) {
+            resultDiv.remove();
+        }
+    };
+}
+
 // 复制专利号
 window.copyPatentNumber = function(patentNumber, event) {
     if (event) {
