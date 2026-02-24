@@ -336,17 +336,21 @@ async function compareFamilyClaims() {
             throw new Error(`对比失败: ${response.status}`);
         }
 
-        const data = await response.json();
+        const result = await response.json();
 
-        if (data.error) {
-            throw new Error(data.error);
+        if (result.error) {
+            throw new Error(result.error);
         }
 
+        // API返回的数据在 result.data 中
+        const data = result.data || {};
+        const analysisResult = data.result || {};
+
         // 保存对比结果
-        appState.familyClaimsComparison.analysisResult = data.result;
+        appState.familyClaimsComparison.analysisResult = analysisResult;
 
         // 渲染对比结果
-        renderFamilyComparisonResult(data.result);
+        renderFamilyComparisonResult(analysisResult);
 
         // 显示控制按钮
         familyToggleLanguageBtn.style.display = 'inline-block';
