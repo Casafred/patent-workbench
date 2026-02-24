@@ -1463,38 +1463,33 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     event.stopPropagation();
                     
                     // 获取可用的模型列表
-                    const models = ['glm-4-flash', 'glm-4-long', 'glm-4.7-flash'];
+                    var models = ['glm-4-flash', 'glm-4-long', 'glm-4.7-flash'];
+                    var textTypeName = textType === 'claims' ? '权利要求' : '说明书';
+                    var modelOptions = models.map(function(m) { return '<option value="' + m + '">' + m + '</option>'; }).join('');
                     
                     // 创建对话框
-                    const dialog = document.createElement('div');
+                    var dialog = document.createElement('div');
                     dialog.id = 'translate-dialog';
                     dialog.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 10000;';
                     
-                    dialog.innerHTML = `
-                        <div style="background: white; border-radius: 12px; padding: 24px; max-width: 400px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
-                            <h3 style="margin: 0 0 16px 0; color: #2e7d32; display: flex; align-items: center; gap: 8px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M4.545 6.714 4.11 8H3l1.862-5h1.284L8 8H6.833l-.435-1.286H4.545zm1.634-.736L5.5 3.956h-.049l-.679 2.022H6.18z"/>
-                                    <path d="M0 2a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v3h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-3H2a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H2z"/>
-                                </svg>
-                                选择翻译模型
-                            </h3>
-                            <p style="margin: 0 0 16px 0; color: #666; font-size: 14px;">请选择用于翻译${textType === 'claims' ? '权利要求' : '说明书'}的AI模型：</p>
-                            <select id="translate-model-select" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; margin-bottom: 16px;">
-                                ${models.map(m => `<option value="${m}">${m}</option>`).join('')}
-                            </select>
-                            <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                                <button onclick="document.getElementById('translate-dialog').remove()" style="padding: 8px 20px; border: 1px solid #ddd; background: white; border-radius: 6px; cursor: pointer;">取消</button>
-                                <button id="start-translate-btn" style="padding: 8px 20px; border: none; background: linear-gradient(135deg, #00bcd4 0%, #009688 100%); color: white; border-radius: 6px; cursor: pointer; font-weight: 500;">开始翻译</button>
-                            </div>
-                        </div>
-                    `;
+                    dialog.innerHTML = '<div style="background: white; border-radius: 12px; padding: 24px; max-width: 400px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.2);">' +
+                        '<h3 style="margin: 0 0 16px 0; color: #2e7d32; display: flex; align-items: center; gap: 8px;">' +
+                            '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">' +
+                                '<path d="M4.545 6.714 4.11 8H3l1.862-5h1.284L8 8H6.833l-.435-1.286H4.545zm1.634-.736L5.5 3.956h-.049l-.679 2.022H6.18z"/>' +
+                                '<path d="M0 2a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v3h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-3H2a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H2z"/>' +
+                            '</svg>选择翻译模型</h3>' +
+                        '<p style="margin: 0 0 16px 0; color: #666; font-size: 14px;">请选择用于翻译' + textTypeName + '的AI模型：</p>' +
+                        '<select id="translate-model-select" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; margin-bottom: 16px;">' + modelOptions + '</select>' +
+                        '<div style="display: flex; gap: 12px; justify-content: flex-end;">' +
+                            '<button onclick="document.getElementById(\'translate-dialog\').remove()" style="padding: 8px 20px; border: 1px solid #ddd; background: white; border-radius: 6px; cursor: pointer;">取消</button>' +
+                            '<button id="start-translate-btn" style="padding: 8px 20px; border: none; background: linear-gradient(135deg, #00bcd4 0%, #009688 100%); color: white; border-radius: 6px; cursor: pointer; font-weight: 500;">开始翻译</button>' +
+                        '</div></div>';
                     
                     document.body.appendChild(dialog);
                     
                     // 绑定开始翻译按钮
                     document.getElementById('start-translate-btn').onclick = function() {
-                        const model = document.getElementById('translate-model-select').value;
+                        var model = document.getElementById('translate-model-select').value;
                         dialog.remove();
                         startTranslation(textType, model);
                     };
@@ -1510,44 +1505,41 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 // 开始翻译
                 async function startTranslation(textType, model) {
                     // 显示加载状态
-                    const loadingDiv = document.createElement('div');
+                    var loadingDiv = document.createElement('div');
                     loadingDiv.id = 'translate-loading';
                     loadingDiv.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 10000;';
-                    loadingDiv.innerHTML = `
-                        <div style="background: white; border-radius: 12px; padding: 32px; text-align: center;">
-                            <div style="width: 40px; height: 40px; border: 3px solid #e0e0e0; border-top-color: #009688; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px;"></div>
-                            <p style="margin: 0; color: #333;">正在翻译中，请稍候...</p>
-                            <p style="margin: 8px 0 0 0; color: #999; font-size: 12px;">使用模型: ${model}</p>
-                        </div>
-                        <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
-                    `;
+                    loadingDiv.innerHTML = '<div style="background: white; border-radius: 12px; padding: 32px; text-align: center;">' +
+                        '<div style="width: 40px; height: 40px; border: 3px solid #e0e0e0; border-top-color: #009688; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px;"></div>' +
+                        '<p style="margin: 0; color: #333;">正在翻译中，请稍候...</p>' +
+                        '<p style="margin: 8px 0 0 0; color: #999; font-size: 12px;">使用模型: ' + model + '</p></div>' +
+                        '<style>@keyframes spin { to { transform: rotate(360deg); } }</style>';
                     document.body.appendChild(loadingDiv);
                     
                     try {
                         // 获取文本内容
-                        let textContent;
+                        var textContent;
                         if (textType === 'claims') {
-                            const claimItems = document.querySelectorAll('.claim-item');
-                            textContent = Array.from(claimItems).map(item => item.getAttribute('data-claim-text'));
+                            var claimItems = document.querySelectorAll('.claim-item');
+                            textContent = Array.from(claimItems).map(function(item) { return item.getAttribute('data-claim-text'); });
                         } else {
-                            const descDiv = document.querySelector('[data-section-content="description"]');
+                            var descDiv = document.querySelector('[data-section-content="description"]');
                             textContent = descDiv ? descDiv.textContent : '';
                         }
                         
                         // 调用主窗口的翻译API
                         if (window.opener && window.opener.translatePatentText) {
-                            const result = await window.opener.translatePatentText(textContent, textType, model);
+                            var result = await window.opener.translatePatentText(textContent, textType, model);
                             loadingDiv.remove();
                             showTranslationResult(result, textType);
                         } else {
                             // 直接调用API
-                            const apiKey = window.opener?.appState?.apiKey || localStorage.getItem('api_key') || '';
+                            var apiKey = (window.opener && window.opener.appState && window.opener.appState.apiKey) || localStorage.getItem('api_key') || '';
                             
-                            const response = await fetch('/api/patent/translate', {
+                            var response = await fetch('/api/patent/translate', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${apiKey}`
+                                    'Authorization': 'Bearer ' + apiKey
                                 },
                                 credentials: 'include',
                                 body: JSON.stringify({
@@ -1558,7 +1550,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 })
                             });
                             
-                            const result = await response.json();
+                            var result = await response.json();
                             loadingDiv.remove();
                             
                             if (result.error) {
@@ -1575,72 +1567,54 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 
                 // 显示翻译结果
                 function showTranslationResult(result, textType) {
-                    const translations = result.translations || [];
+                    var translations = result.translations || [];
+                    var textTypeName = textType === 'claims' ? '权利要求' : '说明书';
                     
                     // 创建对照显示弹窗
-                    const resultDiv = document.createElement('div');
+                    var resultDiv = document.createElement('div');
                     resultDiv.id = 'translate-result';
                     resultDiv.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 10000;';
                     
-                    let contentHtml = '';
+                    var contentHtml = '';
                     if (textType === 'claims') {
-                        translations.forEach(item => {
-                            contentHtml += `
-                                <div style="border-bottom: 1px solid #e0e0e0; padding: 16px 0;">
-                                    <div style="font-weight: 600; color: #2e7d32; margin-bottom: 8px;">权利要求 ${item.index}</div>
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                                        <div style="background: #f5f5f5; padding: 12px; border-radius: 6px; font-size: 13px; line-height: 1.6;">
-                                            <div style="color: #999; font-size: 11px; margin-bottom: 4px;">原文 (英文)</div>
-                                            ${item.original}
-                                        </div>
-                                        <div style="background: #e8f5e9; padding: 12px; border-radius: 6px; font-size: 13px; line-height: 1.6;">
-                                            <div style="color: #2e7d32; font-size: 11px; margin-bottom: 4px;">译文 (中文)</div>
-                                            ${item.translated}
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
+                        translations.forEach(function(item) {
+                            contentHtml += '<div style="border-bottom: 1px solid #e0e0e0; padding: 16px 0;">' +
+                                '<div style="font-weight: 600; color: #2e7d32; margin-bottom: 8px;">权利要求 ' + item.index + '</div>' +
+                                '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">' +
+                                    '<div style="background: #f5f5f5; padding: 12px; border-radius: 6px; font-size: 13px; line-height: 1.6;">' +
+                                        '<div style="color: #999; font-size: 11px; margin-bottom: 4px;">原文 (英文)</div>' + item.original + '</div>' +
+                                    '<div style="background: #e8f5e9; padding: 12px; border-radius: 6px; font-size: 13px; line-height: 1.6;">' +
+                                        '<div style="color: #2e7d32; font-size: 11px; margin-bottom: 4px;">译文 (中文)</div>' + item.translated + '</div>' +
+                                '</div></div>';
                         });
                     } else {
-                        translations.forEach((item, index) => {
-                            contentHtml += `
-                                <div style="border-bottom: 1px solid #e0e0e0; padding: 16px 0;">
-                                    <div style="font-weight: 600; color: #2e7d32; margin-bottom: 8px;">段落 ${index + 1}</div>
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                                        <div style="background: #f5f5f5; padding: 12px; border-radius: 6px; font-size: 13px; line-height: 1.6; max-height: 200px; overflow-y: auto;">
-                                            <div style="color: #999; font-size: 11px; margin-bottom: 4px;">原文 (英文)</div>
-                                            ${item.original.replace(/\n/g, '<br>')}
-                                        </div>
-                                        <div style="background: #e8f5e9; padding: 12px; border-radius: 6px; font-size: 13px; line-height: 1.6; max-height: 200px; overflow-y: auto;">
-                                            <div style="color: #2e7d32; font-size: 11px; margin-bottom: 4px;">译文 (中文)</div>
-                                            ${item.translated.replace(/\n/g, '<br>')}
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
+                        translations.forEach(function(item, index) {
+                            var origText = item.original.replace(/\\n/g, '<br>');
+                            var transText = item.translated.replace(/\\n/g, '<br>');
+                            contentHtml += '<div style="border-bottom: 1px solid #e0e0e0; padding: 16px 0;">' +
+                                '<div style="font-weight: 600; color: #2e7d32; margin-bottom: 8px;">段落 ' + (index + 1) + '</div>' +
+                                '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">' +
+                                    '<div style="background: #f5f5f5; padding: 12px; border-radius: 6px; font-size: 13px; line-height: 1.6; max-height: 200px; overflow-y: auto;">' +
+                                        '<div style="color: #999; font-size: 11px; margin-bottom: 4px;">原文 (英文)</div>' + origText + '</div>' +
+                                    '<div style="background: #e8f5e9; padding: 12px; border-radius: 6px; font-size: 13px; line-height: 1.6; max-height: 200px; overflow-y: auto;">' +
+                                        '<div style="color: #2e7d32; font-size: 11px; margin-bottom: 4px;">译文 (中文)</div>' + transText + '</div>' +
+                                '</div></div>';
                         });
                     }
                     
-                    resultDiv.innerHTML = `
-                        <div style="background: white; border-radius: 12px; width: 90%; max-width: 1000px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 8px 32px rgba(0,0,0,0.2);">
-                            <div style="padding: 16px 24px; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center;">
-                                <h3 style="margin: 0; color: #2e7d32; display: flex; align-items: center; gap: 8px;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-                                        <path d="M4.545 6.714 4.11 8H3l1.862-5h1.284L8 8H6.833l-.435-1.286H4.545zm1.634-.736L5.5 3.956h-.049l-.679 2.022H6.18z"/>
-                                        <path d="M0 2a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v3h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-3H2a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H2z"/>
-                                    </svg>
-                                    ${textType === 'claims' ? '权利要求' : '说明书'}对照翻译
-                                </h3>
-                                <button onclick="document.getElementById('translate-result').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">&times;</button>
-                            </div>
-                            <div style="padding: 16px 24px; overflow-y: auto; flex: 1;">
-                                ${contentHtml}
-                            </div>
-                            <div style="padding: 12px 24px; border-top: 1px solid #e0e0e0; display: flex; justify-content: flex-end; gap: 12px;">
-                                <button onclick="document.getElementById('translate-result').remove()" style="padding: 8px 20px; border: 1px solid #ddd; background: white; border-radius: 6px; cursor: pointer;">关闭</button>
-                            </div>
-                        </div>
-                    `;
+                    resultDiv.innerHTML = '<div style="background: white; border-radius: 12px; width: 90%; max-width: 1000px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 8px 32px rgba(0,0,0,0.2);">' +
+                        '<div style="padding: 16px 24px; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center;">' +
+                            '<h3 style="margin: 0; color: #2e7d32; display: flex; align-items: center; gap: 8px;">' +
+                                '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">' +
+                                    '<path d="M4.545 6.714 4.11 8H3l1.862-5h1.284L8 8H6.833l-.435-1.286H4.545zm1.634-.736L5.5 3.956h-.049l-.679 2.022H6.18z"/>' +
+                                    '<path d="M0 2a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v3h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-3H2a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H2z"/>' +
+                                '</svg>' + textTypeName + '对照翻译</h3>' +
+                            '<button onclick="document.getElementById(\'translate-result\').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">&times;</button>' +
+                        '</div>' +
+                        '<div style="padding: 16px 24px; overflow-y: auto; flex: 1;">' + contentHtml + '</div>' +
+                        '<div style="padding: 12px 24px; border-top: 1px solid #e0e0e0; display: flex; justify-content: flex-end; gap: 12px;">' +
+                            '<button onclick="document.getElementById(\'translate-result\').remove()" style="padding: 8px 20px; border: 1px solid #ddd; background: white; border-radius: 6px; cursor: pointer;">关闭</button>' +
+                        '</div></div>';
                     
                     document.body.appendChild(resultDiv);
                     
