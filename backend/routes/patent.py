@@ -739,6 +739,7 @@ def translate_patent_text():
         return error_response
     
     try:
+        import asyncio
         data = request.get_json()
         
         text = data.get('text', '')
@@ -764,29 +765,35 @@ def translate_patent_text():
         from backend.services.ai_description.translation_service import TranslationService
         translation_service = TranslationService()
         
+        # 同步翻译函数
+        def sync_translate(text_content):
+            try:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                result = loop.run_until_complete(
+                    translation_service.translate_to_chinese(
+                        text=text_content,
+                        source_lang=source_lang,
+                        client=client,
+                        model_name=model
+                    )
+                )
+                loop.close()
+                return result
+            except Exception as e:
+                return f'[翻译失败: {str(e)}]'
+        
         # 处理权利要求（可能是数组）
         if text_type == 'claims' and isinstance(text, list):
             translated_claims = []
             for i, claim_text in enumerate(text):
-                if claim_text and len(claim_text.strip()) > 0:
-                    try:
-                        translated = translation_service.translate_to_chinese(
-                            text=claim_text,
-                            source_lang=source_lang,
-                            client=client,
-                            model_name=model
-                        )
-                        translated_claims.append({
-                            'original': claim_text,
-                            'translated': translated,
-                            'index': i + 1
-                        })
-                    except Exception as e:
-                        translated_claims.append({
-                            'original': claim_text,
-                            'translated': f'[翻译失败: {str(e)}]',
-                            'index': i + 1
-                        })
+                if claim_text and len(str(claim_text).strip()) > 0:
+                    translated = sync_translate(claim_text)
+                    translated_claims.append({
+                        'original': claim_text,
+                        'translated': translated,
+                        'index': i + 1
+                    })
             
             return create_response(data={
                 'text_type': 'claims',
@@ -797,7 +804,7 @@ def translate_patent_text():
         
         # 处理说明书（单个长文本）
         if isinstance(text, list):
-            text = '\n\n'.join(text)
+            text = '\n\n'.join([str(t) for t in text])
         
         # 对于长文本，分段翻译
         max_chunk_size = 4000
@@ -808,22 +815,11 @@ def translate_patent_text():
             
             for para in paragraphs:
                 if para.strip():
-                    try:
-                        translated = translation_service.translate_to_chinese(
-                            text=para,
-                            source_lang=source_lang,
-                            client=client,
-                            model_name=model
-                        )
-                        translated_paragraphs.append({
-                            'original': para,
-                            'translated': translated
-                        })
-                    except Exception as e:
-                        translated_paragraphs.append({
-                            'original': para,
-                            'translated': f'[翻译失败: {str(e)}]'
-                        })
+                    translated = sync_translate(para)
+                    translated_paragraphs.append({
+                        'original': para,
+                        'translated': translated
+                    })
             
             return create_response(data={
                 'text_type': 'description',
@@ -833,12 +829,7 @@ def translate_patent_text():
             })
         else:
             # 短文本直接翻译
-            translated = translation_service.translate_to_chinese(
-                text=text,
-                source_lang=source_lang,
-                client=client,
-                model_name=model
-            )
+            translated = sync_translate(text)
             
             return create_response(data={
                 'text_type': text_type,
