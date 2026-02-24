@@ -129,6 +129,15 @@
                     <button id="toggle-ocr-blocks" class="btn-toggle" title="显示全部区块并进入多选模式">
                         多选模式
                     </button>
+                    <button id="select-all-blocks-btn" class="btn-toggle" title="全选当前页所有区块" style="display: none; background: #22c55e; color: white; border-color: #22c55e;">
+                        全选
+                    </button>
+                    <button id="deselect-all-blocks-btn" class="btn-toggle" title="取消所有选中" style="display: none; background: #ef4444; color: white; border-color: #ef4444;">
+                        取消全选
+                    </button>
+                    <button id="multi-page-concat-btn" class="btn-toggle" title="拼接多个已解析页面的内容" style="background: #8b5cf6; color: white; border-color: #8b5cf6;">
+                        📑 多页拼接
+                    </button>
                 </div>
             </div>
 
@@ -195,6 +204,7 @@
                     <div class="content-tabs">
                         <button class="tab-btn active" data-tab="original">原文</button>
                         <button class="tab-btn" data-tab="markdown">Markdown</button>
+                        <button class="tab-btn" id="translate-full-text-btn" style="background: #3b82f6; color: white;">🌐 翻译</button>
                         <button class="tab-btn" id="ask-full-text-btn" style="margin-left: auto; background: #22c55e; color: white;">💬 提问</button>
                     </div>
                     <div class="content-body">
@@ -213,6 +223,37 @@
             <div id="ocr-block-details" class="block-details">
                 <div class="empty-tip">点击左侧识别结果查看详情</div>
             </div>
+        </div>
+    </div>
+
+    <!-- 多页拼接弹窗 -->
+    <div id="multi-page-concat-popup" class="multi-page-concat-popup" style="display: none;">
+        <div class="popup-header">
+            <span class="popup-title">📑 多页拼接</span>
+            <button class="popup-close">×</button>
+        </div>
+        <div class="popup-body">
+            <div class="page-select-section">
+                <div class="section-label">选择要拼接的页面：</div>
+                <div id="concat-page-list" class="concat-page-list">
+                    <div class="empty-tip">暂无已解析的页面</div>
+                </div>
+                <div class="select-actions">
+                    <button id="concat-select-all-btn" class="btn-small">全选</button>
+                    <button id="concat-deselect-all-btn" class="btn-small">取消全选</button>
+                </div>
+            </div>
+            <div class="concat-preview-section">
+                <div class="section-label">拼接预览：</div>
+                <div id="concat-preview-content" class="concat-preview-content">
+                    <div class="empty-tip">请选择要拼接的页面</div>
+                </div>
+            </div>
+        </div>
+        <div class="popup-footer">
+            <button id="concat-view-btn" class="btn-action" disabled>👁️ 查看拼接</button>
+            <button id="concat-translate-btn" class="btn-action" disabled>🌐 翻译拼接</button>
+            <button id="concat-ask-btn" class="btn-action" disabled>💬 提问拼接</button>
         </div>
     </div>
 </div>

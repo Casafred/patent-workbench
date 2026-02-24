@@ -72,6 +72,22 @@ class PDFOCRViewer {
             });
         }
 
+        // 全选区块按钮
+        const selectAllBtn = document.getElementById('select-all-blocks-btn');
+        if (selectAllBtn) {
+            selectAllBtn.addEventListener('click', () => {
+                this.selectAllBlocksInPage();
+            });
+        }
+
+        // 取消全选区块按钮
+        const deselectAllBtn = document.getElementById('deselect-all-blocks-btn');
+        if (deselectAllBtn) {
+            deselectAllBtn.addEventListener('click', () => {
+                this.deselectAllBlocks();
+            });
+        }
+
         // 打开/关闭识别文本面板
         const toggleTextPanelBtn = document.getElementById('toggle-text-panel');
         if (toggleTextPanelBtn) {
@@ -116,6 +132,14 @@ class PDFOCRViewer {
                 this.switchContentTab(tabName);
             });
         });
+
+        // 多页拼接按钮
+        const multiPageConcatBtn = document.getElementById('multi-page-concat-btn');
+        if (multiPageConcatBtn) {
+            multiPageConcatBtn.addEventListener('click', () => {
+                this.openMultiPageConcatPopup();
+            });
+        }
     }
 
     /**
@@ -300,6 +324,14 @@ class PDFOCRViewer {
                 this.switchContentTab(tabName);
             });
         });
+
+        // 全部原文翻译按钮
+        const translateFullTextBtn = panel.querySelector('#translate-full-text-btn');
+        if (translateFullTextBtn) {
+            translateFullTextBtn.addEventListener('click', () => {
+                this.translateFullText();
+            });
+        }
 
         // 全部原文提问按钮
         const askFullTextBtn = panel.querySelector('#ask-full-text-btn');
@@ -516,27 +548,24 @@ class PDFOCRViewer {
         const container = document.getElementById('ocr-blocks-layer');
         if (!container) return;
 
-        // 获取当前页码
         const currentPage = window.pdfOCRCore ? window.pdfOCRCore.currentPage : 1;
         
-        // 检查当前页是否有OCR结果
         const hasCurrentPageBlocks = this.ocrBlocks.some(block => block.pageIndex === currentPage);
         
         console.log('[PDF-OCR] renderBlocks - currentPage:', currentPage, 'hasBlocks:', hasCurrentPageBlocks, 'isBlockMode:', this.isBlockMode);
         
         if (!hasCurrentPageBlocks) {
-            // 当前页没有OCR结果，隐藏区块层
             container.style.display = 'none';
             container.innerHTML = '';
             this.blockOverlays.clear();
+            
+            this.clearCurrentPageState();
             return;
         }
 
-        // 清空现有区块
         container.innerHTML = '';
         this.blockOverlays.clear();
 
-        // 过滤当前页的区块
         const pageBlocks = this.ocrBlocks.filter(block => block.pageIndex === currentPage);
 
         console.log('[PDF-OCR] 渲染页面', currentPage, '的区块，数量:', pageBlocks.length);
@@ -547,18 +576,60 @@ class PDFOCRViewer {
             this.blockOverlays.set(block.id, overlay);
         });
 
-        // 显示区块层（在多选模式或有选中区块时显示）
         if (this.isBlockMode || this.selectedBlocks.length > 0 || this.selectedBlock) {
             container.style.display = 'block';
         }
 
-        // 应用筛选
         this.updateBlockVisibility();
         
-        // 恢复选中状态
         this.updateAllSelectedStyles();
 
         console.log(`[PDF-OCR] 渲染了 ${pageBlocks.length} 个区块`);
+    }
+
+    /**
+     * 清理当前页面状态（当页面未解析时）
+     */
+    clearCurrentPageState() {
+        const currentPage = window.pdfOCRCore ? window.pdfOCRCore.currentPage : 1;
+        
+        const hasSelectedBlocksInOtherPages = this.selectedBlocks.some(b => b.pageIndex !== currentPage);
+        const hasSelectedBlockInOtherPages = this.selectedBlock && this.selectedBlock.pageIndex !== currentPage;
+        
+        if (hasSelectedBlocksInOtherPages || hasSelectedBlockInOtherPages) {
+            this.selectedBlocks = [];
+            this.selectedBlock = null;
+            
+            document.querySelectorAll('.ocr-content-item.selected').forEach(item => {
+                item.classList.remove('selected');
+            });
+        }
+        
+        const currentBlockContent = document.getElementById('ocr-current-block');
+        if (currentBlockContent) {
+            currentBlockContent.innerHTML = '<div class="empty-tip">当前页暂无识别内容</div>';
+        }
+        
+        const detailsPanel = document.getElementById('ocr-block-details');
+        if (detailsPanel) {
+            const parsedPages = this.getParsedPages();
+            if (parsedPages.length > 0) {
+                detailsPanel.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-file-alt"></i>
+                        <p>当前页暂无解析结果</p>
+                        <p class="sub">已解析页面: ${parsedPages.join(', ')}</p>
+                    </div>
+                `;
+            } else {
+                detailsPanel.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-mouse-pointer"></i>
+                        <p>点击解析区块查看详情</p>
+                    </div>
+                `;
+            }
+        }
     }
 
     /**
@@ -899,31 +970,110 @@ class PDFOCRViewer {
         this.isBlockMode = !this.isBlockMode;
         const layer = document.getElementById('ocr-blocks-layer');
         const btn = document.getElementById('toggle-ocr-blocks');
+        const selectAllBtn = document.getElementById('select-all-blocks-btn');
+        const deselectAllBtn = document.getElementById('deselect-all-blocks-btn');
 
         if (btn) {
             btn.classList.toggle('active', this.isBlockMode);
-            btn.textContent = this.isBlockMode ? '隐藏全部区块' : '显示全部区块';
+            btn.textContent = this.isBlockMode ? '退出多选' : '多选模式';
         }
 
         if (this.isBlockMode) {
-            // 开启多选模式
             if (layer) {
                 layer.style.display = 'block';
             }
             this.renderBlocks();
             this.updateBlockVisibility();
-            // 自动打开悬浮面板显示识别文本
             this.showFloatingPanel();
+            
+            if (selectAllBtn) selectAllBtn.style.display = 'inline-block';
+            if (deselectAllBtn) deselectAllBtn.style.display = 'inline-block';
         } else {
-            // 关闭多选模式
             this.updateBlockVisibility();
-            // 如果没有选中的区块，隐藏区块层
             if (layer && this.selectedBlocks.length === 0 && !this.selectedBlock) {
                 layer.style.display = 'none';
             }
+            
+            if (selectAllBtn) selectAllBtn.style.display = 'none';
+            if (deselectAllBtn) deselectAllBtn.style.display = 'none';
         }
         
         console.log(`[PDF-OCR] 全部区块显示模式: ${this.isBlockMode ? '开启' : '关闭'}`);
+    }
+
+    /**
+     * 全选当前页所有区块
+     */
+    selectAllBlocksInPage() {
+        const currentPage = window.pdfOCRCore ? window.pdfOCRCore.currentPage : 1;
+        const currentPageBlocks = this.ocrBlocks.filter(block => block.pageIndex === currentPage);
+        
+        if (currentPageBlocks.length === 0) {
+            this.showToast('当前页没有可选择的区块', 'error');
+            return;
+        }
+
+        currentPageBlocks.forEach(block => {
+            if (!this.selectedBlocks.some(b => b.id === block.id)) {
+                this.selectedBlocks.push(block);
+            }
+        });
+
+        if (this.selectedBlocks.length > 0) {
+            this.selectedBlock = this.selectedBlocks[this.selectedBlocks.length - 1];
+        }
+
+        this.updateAllSelectedStyles();
+        this.updateBlockVisibility();
+        
+        if (this.selectedBlocks.length > 1) {
+            this.showBlockDetails(this.selectedBlock);
+        }
+
+        this.showToast(`已选中 ${currentPageBlocks.length} 个区块`, 'success');
+        console.log('[PDF-OCR] 全选当前页区块:', currentPageBlocks.length);
+    }
+
+    /**
+     * 取消所有选中
+     */
+    deselectAllBlocks() {
+        const count = this.selectedBlocks.length;
+        this.selectedBlocks = [];
+        this.selectedBlock = null;
+
+        this.blockOverlays.forEach((overlay, id) => {
+            overlay.classList.remove('selected');
+            overlay.style.zIndex = '';
+            overlay.style.boxShadow = '';
+            const block = this.ocrBlocks.find(b => b.id === id);
+            if (block) {
+                overlay.style.backgroundColor = this.colors[block.type] || this.colors.text;
+                overlay.style.borderColor = this.borderColors[block.type] || this.borderColors.text;
+            }
+        });
+
+        document.querySelectorAll('.ocr-content-item.selected').forEach(item => {
+            item.classList.remove('selected');
+        });
+
+        const currentBlockContent = document.getElementById('ocr-current-block');
+        if (currentBlockContent) {
+            currentBlockContent.innerHTML = '<div class="empty-tip">点击识别结果查看内容</div>';
+        }
+
+        const detailsPanel = document.getElementById('ocr-block-details');
+        if (detailsPanel) {
+            detailsPanel.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-mouse-pointer"></i>
+                    <p>点击解析区块查看详情</p>
+                </div>
+            `;
+        }
+
+        this.showToast(`已取消选中 ${count} 个区块`, 'success');
+        console.log('[PDF-OCR] 取消所有选中');
     }
 
     /**
@@ -1677,7 +1827,6 @@ class PDFOCRViewer {
      * 对全部原文提问
      */
     async askAboutFullText() {
-        // 获取当前页的所有文本
         const currentPage = window.pdfOCRCore ? window.pdfOCRCore.currentPage : 1;
         const currentPageBlocks = this.ocrBlocks.filter(b => b.pageIndex === currentPage);
         
@@ -1686,7 +1835,6 @@ class PDFOCRViewer {
             return;
         }
         
-        // 合并所有文本
         const fullText = currentPageBlocks.map(b => this.getBlockFullText(b)).join('\n\n');
         
         if (!fullText || fullText.trim().length === 0) {
@@ -1694,14 +1842,12 @@ class PDFOCRViewer {
             return;
         }
 
-        // 获取API密钥
         const apiKey = await this.getAPIKey();
         if (!apiKey) {
             this.showToast('请先配置智谱AI API密钥', 'error');
             return;
         }
 
-        // 打开悬浮对话窗口
         if (window.pdfOCRFloatingChat) {
             window.pdfOCRFloatingChat.openWithContext({ 
                 context: `【第${currentPage}页全部内容】\n${fullText}`, 
@@ -1709,6 +1855,397 @@ class PDFOCRViewer {
             });
         } else {
             this.showAIChatPopup(fullText, apiKey);
+        }
+    }
+
+    /**
+     * 翻译全部原文（直接替换原文内容）
+     */
+    async translateFullText() {
+        const currentPage = window.pdfOCRCore ? window.pdfOCRCore.currentPage : 1;
+        const currentPageBlocks = this.ocrBlocks.filter(b => b.pageIndex === currentPage);
+        
+        if (currentPageBlocks.length === 0) {
+            this.showToast('当前页面没有识别内容', 'error');
+            return;
+        }
+        
+        const fullText = currentPageBlocks.map(b => this.getBlockFullText(b)).join('\n\n');
+        
+        if (!fullText || fullText.trim().length === 0) {
+            this.showToast('没有可翻译的内容', 'error');
+            return;
+        }
+
+        const apiKey = await this.getAPIKey();
+        if (!apiKey) {
+            this.showToast('请先配置智谱AI API密钥', 'error');
+            return;
+        }
+
+        const originalContentEl = document.getElementById('ocr-original-content');
+        const translateBtn = document.getElementById('translate-full-text-btn');
+        
+        if (!originalContentEl) {
+            this.showToast('找不到原文内容区域', 'error');
+            return;
+        }
+
+        if (!this._originalTextBackup) {
+            this._originalTextBackup = {};
+        }
+        
+        if (!this._originalTextBackup[currentPage]) {
+            this._originalTextBackup[currentPage] = originalContentEl.innerHTML;
+        }
+
+        if (translateBtn) {
+            translateBtn.disabled = true;
+            translateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 翻译中...';
+        }
+
+        this.showToast('正在翻译...', 'info');
+
+        try {
+            const translated = await this.callTranslateAPI(fullText, apiKey);
+            
+            originalContentEl.innerHTML = `<div class="translated-content">${this.escapeHtml(translated)}</div>`;
+            
+            const restoreBtn = document.createElement('button');
+            restoreBtn.className = 'tab-btn restore-btn';
+            restoreBtn.style.cssText = 'background: #f97316; color: white; margin-left: 8px;';
+            restoreBtn.innerHTML = '↩️ 恢复原文';
+            restoreBtn.onclick = () => this.restoreOriginalText(currentPage);
+            
+            const contentTabs = originalContentEl.closest('.full-text-section')?.querySelector('.content-tabs');
+            if (contentTabs && !contentTabs.querySelector('.restore-btn')) {
+                contentTabs.appendChild(restoreBtn);
+            }
+            
+            this.showToast('翻译完成', 'success');
+            
+        } catch (error) {
+            console.error('[PDF-OCR] 翻译失败:', error);
+            this.showToast('翻译失败: ' + error.message, 'error');
+        } finally {
+            if (translateBtn) {
+                translateBtn.disabled = false;
+                translateBtn.innerHTML = '🌐 翻译';
+            }
+        }
+    }
+
+    /**
+     * 恢复原文内容
+     */
+    restoreOriginalText(pageNum) {
+        const originalContentEl = document.getElementById('ocr-original-content');
+        if (!originalContentEl) return;
+
+        if (this._originalTextBackup && this._originalTextBackup[pageNum]) {
+            originalContentEl.innerHTML = this._originalTextBackup[pageNum];
+            delete this._originalTextBackup[pageNum];
+        }
+
+        const contentTabs = originalContentEl.closest('.full-text-section')?.querySelector('.content-tabs');
+        if (contentTabs) {
+            const restoreBtn = contentTabs.querySelector('.restore-btn');
+            if (restoreBtn) {
+                restoreBtn.remove();
+            }
+        }
+
+        this.showToast('已恢复原文', 'success');
+    }
+
+    /**
+     * 打开多页拼接弹窗
+     */
+    openMultiPageConcatPopup() {
+        const popup = document.getElementById('multi-page-concat-popup');
+        if (!popup) return;
+
+        this._selectedConcatPages = [];
+        this.updateConcatPageList();
+
+        popup.style.display = 'flex';
+
+        const closeBtn = popup.querySelector('.popup-close');
+        if (closeBtn) {
+            closeBtn.onclick = () => {
+                popup.style.display = 'none';
+            };
+        }
+
+        const selectAllBtn = document.getElementById('concat-select-all-btn');
+        if (selectAllBtn) {
+            selectAllBtn.onclick = () => this.concatSelectAll();
+        }
+
+        const deselectAllBtn = document.getElementById('concat-deselect-all-btn');
+        if (deselectAllBtn) {
+            deselectAllBtn.onclick = () => this.concatDeselectAll();
+        }
+
+        const viewBtn = document.getElementById('concat-view-btn');
+        if (viewBtn) {
+            viewBtn.onclick = () => this.viewConcatContent();
+        }
+
+        const translateBtn = document.getElementById('concat-translate-btn');
+        if (translateBtn) {
+            translateBtn.onclick = () => this.translateConcatContent();
+        }
+
+        const askBtn = document.getElementById('concat-ask-btn');
+        if (askBtn) {
+            askBtn.onclick = () => this.askAboutConcatContent();
+        }
+
+        popup.onclick = (e) => {
+            if (e.target === popup) {
+                popup.style.display = 'none';
+            }
+        };
+    }
+
+    /**
+     * 更新拼接页面列表
+     */
+    updateConcatPageList() {
+        const pageListEl = document.getElementById('concat-page-list');
+        if (!pageListEl) return;
+
+        const parsedPages = this.getParsedPages();
+        
+        if (parsedPages.length === 0) {
+            pageListEl.innerHTML = '<div class="empty-tip">暂无已解析的页面，请先进行OCR解析</div>';
+            this.updateConcatPreview();
+            return;
+        }
+
+        pageListEl.innerHTML = parsedPages.map(pageNum => {
+            const pageData = this.pageResults.get(pageNum);
+            const blockCount = pageData?.blocks?.length || 0;
+            const isSelected = this._selectedConcatPages?.includes(pageNum);
+            return `
+                <label class="concat-page-item ${isSelected ? 'selected' : ''}">
+                    <input type="checkbox" data-page="${pageNum}" ${isSelected ? 'checked' : ''}>
+                    <span class="page-label">第 ${pageNum} 页</span>
+                    <span class="page-info">(${blockCount} 个区块)</span>
+                </label>
+            `;
+        }).join('');
+
+        pageListEl.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            cb.addEventListener('change', (e) => {
+                const pageNum = parseInt(e.target.dataset.page);
+                if (e.target.checked) {
+                    if (!this._selectedConcatPages.includes(pageNum)) {
+                        this._selectedConcatPages.push(pageNum);
+                    }
+                } else {
+                    this._selectedConcatPages = this._selectedConcatPages.filter(p => p !== pageNum);
+                }
+                this._selectedConcatPages.sort((a, b) => a - b);
+                this.updateConcatPreview();
+                this.updateConcatPageList();
+            });
+        });
+
+        this.updateConcatPreview();
+    }
+
+    /**
+     * 全选拼接页面
+     */
+    concatSelectAll() {
+        const parsedPages = this.getParsedPages();
+        this._selectedConcatPages = [...parsedPages];
+        this.updateConcatPageList();
+    }
+
+    /**
+     * 取消全选拼接页面
+     */
+    concatDeselectAll() {
+        this._selectedConcatPages = [];
+        this.updateConcatPageList();
+    }
+
+    /**
+     * 更新拼接预览
+     */
+    updateConcatPreview() {
+        const previewEl = document.getElementById('concat-preview-content');
+        const viewBtn = document.getElementById('concat-view-btn');
+        const translateBtn = document.getElementById('concat-translate-btn');
+        const askBtn = document.getElementById('concat-ask-btn');
+
+        if (!previewEl) return;
+
+        const hasSelection = this._selectedConcatPages && this._selectedConcatPages.length > 0;
+
+        if (viewBtn) viewBtn.disabled = !hasSelection;
+        if (translateBtn) translateBtn.disabled = !hasSelection;
+        if (askBtn) askBtn.disabled = !hasSelection;
+
+        if (!hasSelection) {
+            previewEl.innerHTML = '<div class="empty-tip">请选择要拼接的页面</div>';
+            return;
+        }
+
+        const previewText = this.getConcatText();
+        const truncated = previewText.length > 500 ? previewText.substring(0, 500) + '...' : previewText;
+        previewEl.innerHTML = `<div class="preview-text">${this.escapeHtml(truncated)}</div>`;
+    }
+
+    /**
+     * 获取拼接文本内容
+     */
+    getConcatText() {
+        if (!this._selectedConcatPages || this._selectedConcatPages.length === 0) {
+            return '';
+        }
+
+        const parts = [];
+        this._selectedConcatPages.forEach(pageNum => {
+            const pageData = this.pageResults.get(pageNum);
+            if (pageData && pageData.blocks) {
+                const pageText = pageData.blocks
+                    .map(b => this.getBlockFullText(b))
+                    .filter(t => t && t.trim())
+                    .join('\n\n');
+                if (pageText) {
+                    parts.push(`【第${pageNum}页】\n${pageText}`);
+                }
+            }
+        });
+
+        return parts.join('\n\n---\n\n');
+    }
+
+    /**
+     * 查看拼接内容
+     */
+    viewConcatContent() {
+        const text = this.getConcatText();
+        if (!text) {
+            this.showToast('没有可查看的内容', 'error');
+            return;
+        }
+
+        const popup = document.createElement('div');
+        popup.className = 'ocr-concat-view-popup';
+        popup.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            z-index: 10001;
+            width: 600px;
+            max-width: 90%;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        `;
+
+        popup.innerHTML = `
+            <div class="popup-header" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
+                <span class="popup-title" style="font-weight: 600; font-size: 14px; color: white;">📑 拼接内容 (${this._selectedConcatPages.length}页)</span>
+                <button class="popup-close" style="background: none; border: none; font-size: 20px; cursor: pointer; color: white; padding: 4px 8px;">×</button>
+            </div>
+            <div class="popup-body" style="padding: 16px; overflow-y: auto; flex: 1;">
+                <div class="concat-content" style="font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${this.escapeHtml(text)}</div>
+            </div>
+            <div class="popup-footer" style="display: flex; justify-content: flex-end; gap: 8px; padding: 12px 16px; border-top: 1px solid #e2e8f0;">
+                <button class="popup-btn copy-btn" style="padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; border: none; font-weight: 500; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white;">复制内容</button>
+                <button class="popup-btn close-btn" style="padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; border: none; font-weight: 500; background: #f1f5f9; color: #475569;">关闭</button>
+            </div>
+        `;
+
+        popup.querySelector('.popup-close').addEventListener('click', () => popup.remove());
+        popup.querySelector('.close-btn').addEventListener('click', () => popup.remove());
+        popup.querySelector('.copy-btn').addEventListener('click', async () => {
+            await navigator.clipboard.writeText(text);
+            this.showToast('内容已复制到剪贴板', 'success');
+        });
+
+        popup.addEventListener('click', (e) => {
+            if (e.target === popup) popup.remove();
+        });
+
+        document.body.appendChild(popup);
+    }
+
+    /**
+     * 翻译拼接内容
+     */
+    async translateConcatContent() {
+        const text = this.getConcatText();
+        if (!text) {
+            this.showToast('没有可翻译的内容', 'error');
+            return;
+        }
+
+        const apiKey = await this.getAPIKey();
+        if (!apiKey) {
+            this.showToast('请先配置智谱AI API密钥', 'error');
+            return;
+        }
+
+        const translateBtn = document.getElementById('concat-translate-btn');
+        if (translateBtn) {
+            translateBtn.disabled = true;
+            translateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 翻译中...';
+        }
+
+        this.showToast('正在翻译...', 'info');
+
+        try {
+            const translated = await this.callTranslateAPI(text, apiKey);
+            this.showTranslationResult(text, translated, null);
+        } catch (error) {
+            console.error('[PDF-OCR] 翻译失败:', error);
+            this.showToast('翻译失败: ' + error.message, 'error');
+        } finally {
+            if (translateBtn) {
+                translateBtn.disabled = false;
+                translateBtn.innerHTML = '🌐 翻译拼接';
+            }
+        }
+    }
+
+    /**
+     * 对拼接内容提问
+     */
+    async askAboutConcatContent() {
+        const text = this.getConcatText();
+        if (!text) {
+            this.showToast('没有可提问的内容', 'error');
+            return;
+        }
+
+        const apiKey = await this.getAPIKey();
+        if (!apiKey) {
+            this.showToast('请先配置智谱AI API密钥', 'error');
+            return;
+        }
+
+        const pageList = this._selectedConcatPages.map(p => `第${p}页`).join('、');
+        const context = `【拼接内容 (${pageList})】\n${text}`;
+
+        if (window.pdfOCRFloatingChat) {
+            window.pdfOCRFloatingChat.openWithContext({ 
+                context: context, 
+                apiKey: apiKey 
+            });
+        } else {
+            this.showAIChatPopup(text, apiKey);
         }
     }
 
