@@ -512,109 +512,224 @@ function renderFamilyCardView(result) {
 
 /**
  * 渲染并排对比视图
+ * 与手动输入对比的并排视图保持一致：显示原始权利要求文本
  */
 function renderFamilySideBySideView(result) {
-    const container = document.createElement('div');
-    container.className = 'side-by-side-view';
+    const selectedPatents = appState.familyClaimsComparison.selectedPatents;
 
-    if (result.comparison_matrix) {
-        result.comparison_matrix.forEach((item, index) => {
-            const row = document.createElement('div');
-            row.className = 'side-by-side-row';
-
-            const [claim1, claim2] = item.claim_pair;
-
-            row.innerHTML = `
-                <div class="side-by-side-col">
-                    <h4>${claim1}</h4>
-                    <ul>
-                        ${item.similar_features?.map(f => `<li>${f.feature}</li>`).join('') || ''}
-                    </ul>
-                </div>
-                <div class="side-by-side-col">
-                    <h4>${claim2}</h4>
-                    <ul>
-                        ${item.similar_features?.map(f => `<li>${f.feature}</li>`).join('') || ''}
-                    </ul>
-                </div>
-            `;
-
-            container.appendChild(row);
-        });
+    if (!selectedPatents || selectedPatents.length < 2) {
+        familyComparisonResultContainer.innerHTML = '<div class="info error">请至少选择2个专利进行对比</div>';
+        return;
     }
 
-    familyComparisonResultContainer.appendChild(container);
+    // 添加AI生成声明
+    const disclaimer = document.createElement('div');
+    disclaimer.className = 'ai-disclaimer';
+    disclaimer.innerHTML = '<strong>AI生成内容：</strong>以下对比分析由AI生成，仅供参考，请结合实际情况判断使用。';
+    disclaimer.style.cssText = 'background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; font-size: 14px; color: #856404;';
+
+    familyComparisonResultContainer.innerHTML = '';
+    familyComparisonResultContainer.appendChild(disclaimer);
+
+    // 构建并排视图HTML - 与手动输入对比保持一致
+    let html = '<div class="side-by-side-view" style="border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden;">';
+
+    // 头部：显示专利号
+    html += '<div class="side-by-side-header" style="display: grid; grid-template-columns: repeat(' + selectedPatents.length + ', 1fr); background: var(--primary-color); color: white;">';
+    selectedPatents.forEach(patent => {
+        html += `<div class="claim-label" style="padding: 15px; text-align: center; font-weight: 600; border-right: 1px solid rgba(255,255,255,0.3);">${patent.patent_number}</div>`;
+    });
+    html += '</div>';
+
+    // 主体：显示权利要求文本
+    html += '<div class="side-by-side-body" id="family-side-by-side-container" style="display: grid; grid-template-columns: repeat(' + selectedPatents.length + ', 1fr); max-height: 600px; overflow: hidden;">';
+    selectedPatents.forEach((patent, index) => {
+        const claimsText = patent.claims ? patent.claims.join('\n\n') : '暂无权利要求数据';
+        const formattedText = formatFamilyClaimTextForDisplay(claimsText);
+        html += `<div class="claim-text-column" data-column="${index}" style="padding: 20px; border-right: 1px solid var(--border-color); overflow-y: auto; max-height: 600px; line-height: 1.8; white-space: pre-wrap;">${formattedText}</div>`;
+    });
+    html += '</div>';
+    html += '</div>';
+
+    const contentDiv = document.createElement('div');
+    contentDiv.innerHTML = html;
+    familyComparisonResultContainer.appendChild(contentDiv);
+
+    // 添加同步滚动功能
+    setupFamilySyncScroll();
+}
+
+/**
+ * 设置同步滚动
+ */
+function setupFamilySyncScroll() {
+    const container = document.getElementById('family-side-by-side-container');
+    if (!container) return;
+
+    const columns = container.querySelectorAll('.claim-text-column');
+    if (columns.length === 0) return;
+
+    let isScrolling = false;
+
+    columns.forEach(column => {
+        column.addEventListener('scroll', function() {
+            if (isScrolling) return;
+
+            isScrolling = true;
+            const scrollPercentage = this.scrollTop / (this.scrollHeight - this.clientHeight);
+
+            columns.forEach(otherColumn => {
+                if (otherColumn !== this) {
+                    const targetScroll = scrollPercentage * (otherColumn.scrollHeight - otherColumn.clientHeight);
+                    otherColumn.scrollTop = targetScroll;
+                }
+            });
+
+            setTimeout(() => {
+                isScrolling = false;
+            }, 50);
+        });
+    });
+}
+
+/**
+ * 格式化权利要求文本以便于对照阅读
+ */
+function formatFamilyClaimTextForDisplay(text) {
+    if (!text) return '';
+
+    // 按权利要求分隔符分割
+    const sections = text.split(/\n*---\n*/);
+
+    let formattedSections = sections.map(section => {
+        let formatted = section.trim();
+
+        // 如果文本不是以序号开头，直接返回
+        if (!/^\d+\s*[.、．]/.test(formatted)) {
+            return formatted;
+        }
+
+        // 将长段落按句子分割，便于阅读
+        formatted = formatted.replace(/([；;：:])/g, '$1\n');
+
+        // 在关键词后换行
+        formatted = formatted.replace(/(其特征在于[，,]?|包括[：:]?|comprising[：:]?|characterized in that[，,]?)/gi, '$1\n');
+
+        return formatted;
+    }).join('\n\n---\n\n');
+
+    return formattedSections;
 }
 
 /**
  * 渲染矩阵视图
+ * 与手动输入对比的矩阵视图保持一致：显示相似度矩阵，支持点击跳转到卡片视图
  */
 function renderFamilyMatrixView(result) {
-    const container = document.createElement('div');
-    container.className = 'matrix-view';
+    const selectedPatents = appState.familyClaimsComparison.selectedPatents;
 
-    if (result.comparison_matrix) {
-        const table = document.createElement('table');
-        table.className = 'matrix-table';
-
-        const thead = document.createElement('thead');
-        const headerRow = document.createElement('tr');
-        headerRow.innerHTML = '<th></th>';
-
-        const uniqueClaims = [...new Set(result.comparison_matrix.flatMap(item => item.claim_pair))];
-        uniqueClaims.forEach(claim => {
-            const th = document.createElement('th');
-            th.textContent = claim;
-            headerRow.appendChild(th);
-        });
-
-        thead.appendChild(headerRow);
-        table.appendChild(thead);
-
-        const tbody = document.createElement('tbody');
-
-        uniqueClaims.forEach((rowClaim, rowIndex) => {
-            const tr = document.createElement('tr');
-            const th = document.createElement('th');
-            th.textContent = rowClaim;
-            tr.appendChild(th);
-
-            uniqueClaims.forEach((colClaim, colIndex) => {
-                if (rowIndex === colIndex) {
-                    const td = document.createElement('td');
-                    td.className = 'matrix-cell-diagonal';
-                    td.textContent = '-';
-                    tr.appendChild(td);
-                } else if (rowIndex < colIndex) {
-                    const item = result.comparison_matrix.find(
-                        m => m.claim_pair.includes(rowClaim) && m.claim_pair.includes(colClaim)
-                    );
-
-                    const td = document.createElement('td');
-                    if (item) {
-                        const score = item.similarity_score || 0;
-                        td.className = `matrix-cell-${getMatrixCellClass(score)}`;
-                        td.textContent = `${(score * 100).toFixed(0)}%`;
-                    } else {
-                        td.textContent = '-';
-                    }
-                    tr.appendChild(td);
-                } else {
-                    const td = document.createElement('td');
-                    td.className = 'matrix-cell-empty';
-                    td.textContent = '';
-                    tr.appendChild(td);
-                }
-            });
-
-            tbody.appendChild(tr);
-        });
-
-        table.appendChild(tbody);
-        container.appendChild(table);
+    if (!result || !result.comparison_matrix || !selectedPatents || selectedPatents.length < 2) {
+        familyComparisonResultContainer.innerHTML = '<div class="info error">无对比数据</div>';
+        return;
     }
 
-    familyComparisonResultContainer.appendChild(container);
+    // 添加AI生成声明
+    const disclaimer = document.createElement('div');
+    disclaimer.className = 'ai-disclaimer';
+    disclaimer.innerHTML = '<strong>AI生成内容：</strong>以下对比分析由AI生成，仅供参考，请结合实际情况判断使用。';
+    disclaimer.style.cssText = 'background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; font-size: 14px; color: #856404;';
+
+    familyComparisonResultContainer.innerHTML = '';
+    familyComparisonResultContainer.appendChild(disclaimer);
+
+    // 构建相似度矩阵 - 与手动输入对比保持一致
+    const matrix = {};
+    result.comparison_matrix.forEach(pair => {
+        const key = `${pair.claim_pair[0]}-${pair.claim_pair[1]}`;
+        matrix[key] = {
+            score: pair.similarity_score,
+            data: pair
+        };
+    });
+
+    // 构建矩阵表格HTML
+    let html = '<div class="matrix-view" style="overflow-x: auto;"><table class="matrix-table" style="width: 100%; border-collapse: collapse; background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden;">';
+
+    // 表头
+    html += '<thead><tr><th style="padding: 12px; text-align: center; border: 1px solid var(--border-color); background: var(--primary-color); color: white; font-weight: 600;"></th>';
+    selectedPatents.forEach(patent => {
+        html += `<th style="padding: 12px; text-align: center; border: 1px solid var(--border-color); background: var(--primary-color); color: white; font-weight: 600;">${patent.patent_number}</th>`;
+    });
+    html += '</tr></thead><tbody>';
+
+    // 表格主体
+    selectedPatents.forEach((patent1, i) => {
+        html += `<tr><th style="padding: 12px; text-align: center; border: 1px solid var(--border-color); background: var(--primary-color); color: white; font-weight: 600;">${patent1.patent_number}</th>`;
+        selectedPatents.forEach((patent2, j) => {
+            if (i === j) {
+                // 对角线显示"-"
+                html += '<td style="padding: 12px; text-align: center; border: 1px solid var(--border-color); background: #f3f4f6; color: #9ca3af;">-</td>';
+            } else {
+                // 查找相似度数据
+                const key1 = `${patent1.patent_number}-${patent2.patent_number}`;
+                const key2 = `${patent2.patent_number}-${patent1.patent_number}`;
+                const matrixData = matrix[key1] || matrix[key2];
+                const score = matrixData ? matrixData.score : 0;
+                const percent = Math.round(score * 100);
+
+                // 根据相似度设置单元格样式
+                let cellStyle = 'padding: 12px; text-align: center; border: 1px solid var(--border-color); font-weight: 600; cursor: pointer; transition: all 0.2s;';
+                if (score > 0.7) {
+                    cellStyle += ' background: rgba(34, 197, 94, 0.2); color: #166534;';
+                } else if (score > 0.4) {
+                    cellStyle += ' background: rgba(234, 179, 8, 0.2); color: #854d0e;';
+                } else {
+                    cellStyle += ' background: rgba(239, 68, 68, 0.2); color: #991b1b;';
+                }
+
+                html += `<td style="${cellStyle}" onclick="jumpToFamilyCardView('${key1}')">${percent}%</td>`;
+            }
+        });
+        html += '</tr>';
+    });
+
+    html += '</tbody></table></div>';
+
+    const contentDiv = document.createElement('div');
+    contentDiv.innerHTML = html;
+    familyComparisonResultContainer.appendChild(contentDiv);
+}
+
+/**
+ * 从矩阵视图跳转到卡片视图的对应对比
+ */
+function jumpToFamilyCardView(pairKey) {
+    // 切换到卡片视图
+    appState.familyClaimsComparison.viewMode = 'card';
+    familyViewModeBtns.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.view === 'card');
+    });
+
+    // 渲染卡片视图
+    renderFamilyComparisonResult(appState.familyClaimsComparison.analysisResult);
+
+    // 滚动到对应的卡片
+    setTimeout(() => {
+        const cards = familyComparisonResultContainer.querySelectorAll('.comparison-card');
+        for (let card of cards) {
+            const header = card.querySelector('.comparison-card-header h3');
+            if (header && (header.textContent.includes(pairKey.replace('-', ' vs ')) ||
+                header.textContent.includes(pairKey.split('-').reverse().join(' vs ')))) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // 高亮显示
+                card.style.boxShadow = '0 0 20px rgba(74, 108, 247, 0.5)';
+                setTimeout(() => {
+                    card.style.boxShadow = '';
+                }, 2000);
+                break;
+            }
+        }
+    }, 100);
 }
 
 /**
