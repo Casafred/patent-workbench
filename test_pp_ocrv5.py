@@ -1,9 +1,6 @@
 """
 PP-OCRv5 API 测试脚本
 测试百度PP-OCRv5对专利附图标记的识别能力
-
-注意：PP-OCRv5和PaddleOCR-VL是不同的服务，需要不同的API URL
-请访问 https://aistudio.baidu.com/paddleocr/task 获取PP-OCRv5的API URL
 """
 
 import base64
@@ -12,17 +9,20 @@ import json
 import re
 from pathlib import Path
 
+API_URL = "https://x9pal7t2e9t4lff3.aistudio-app.com/ocr"
+TOKEN = "70b270c8275606a7a97f8c4e8617cdeb935ed74c"
+
 
 def image_to_base64(image_path: str) -> str:
     with open(image_path, 'rb') as f:
         return base64.b64encode(f.read()).decode('ascii')
 
 
-def call_pp_ocrv5(image_path: str, api_url: str, token: str) -> dict:
+def call_pp_ocrv5(image_path: str) -> dict:
     image_data = image_to_base64(image_path)
     
     headers = {
-        "Authorization": f"token {token}",
+        "Authorization": f"token {TOKEN}",
         "Content-Type": "application/json"
     }
     
@@ -42,9 +42,9 @@ def call_pp_ocrv5(image_path: str, api_url: str, token: str) -> dict:
     
     print(f"[INFO] Calling PP-OCRv5 API...")
     print(f"[INFO] Image: {image_path}")
-    print(f"[INFO] API URL: {api_url}")
+    print(f"[INFO] API URL: {API_URL}")
     
-    response = requests.post(api_url, json=payload, headers=headers, timeout=120)
+    response = requests.post(API_URL, json=payload, headers=headers, timeout=120)
     
     if response.status_code != 200:
         print(f"[ERROR] API call failed: {response.status_code}")
@@ -62,7 +62,6 @@ def extract_text_with_coords(result: dict) -> list:
     
     if not ocr_results:
         print("[WARN] No ocrResults found")
-        print(f"[DEBUG] Available keys in result: {result.get('result', {}).keys()}")
         return []
     
     all_texts = []
@@ -70,22 +69,21 @@ def extract_text_with_coords(result: dict) -> list:
     for page_result in ocr_results:
         pruned_result = page_result.get('prunedResult', {})
         
-        print(f"\n[DEBUG] prunedResult keys: {pruned_result.keys() if pruned_result else 'None'}")
-        
         if not pruned_result:
             continue
         
-        dt_boxes = pruned_result.get('dt_boxes', [])
+        dt_polys = pruned_result.get('dt_polys', [])
         rec_texts = pruned_result.get('rec_texts', [])
         rec_scores = pruned_result.get('rec_scores', [])
         
-        print(f"[DEBUG] dt_boxes count: {len(dt_boxes)}")
+        print(f"[DEBUG] dt_polys count: {len(dt_polys)}")
         print(f"[DEBUG] rec_texts count: {len(rec_texts)}")
+        print(f"[DEBUG] rec_texts: {rec_texts}")
         
-        for i, (box, text, score) in enumerate(zip(dt_boxes, rec_texts, rec_scores)):
-            if len(box) >= 4:
-                xs = [p[0] for p in box]
-                ys = [p[1] for p in box]
+        for i, (poly, text, score) in enumerate(zip(dt_polys, rec_texts, rec_scores)):
+            if len(poly) >= 4:
+                xs = [p[0] for p in poly]
+                ys = [p[1] for p in poly]
                 x_min, x_max = min(xs), max(xs)
                 y_min, y_max = min(ys), max(ys)
                 
@@ -135,28 +133,21 @@ def test_pp_ocrv5():
     print("PP-OCRv5 API Test for Patent Drawing Markers")
     print("=" * 70)
     print()
-    print("请访问 https://aistudio.baidu.com/paddleocr/task 获取PP-OCRv5的API信息")
-    print("注意：PP-OCRv5和PaddleOCR-VL是不同的服务！")
-    print()
     
-    api_url = input("请输入 PP-OCRv5 API URL (例如: https://xxx.aistudio-app.com/ocr): ").strip()
-    token = input("请输入 TOKEN: ").strip()
-    
-    if not api_url or not token:
-        print("[ERROR] API URL和TOKEN不能为空")
-        return
-    
-    response = call_pp_ocrv5(str(test_image), api_url, token)
+    response = call_pp_ocrv5(str(test_image))
     
     if not response:
         print("[ERROR] Failed to get response from PP-OCRv5 API")
         return
     
-    print("\n[INFO] Raw API Response:")
+    print("\n[INFO] Raw API Response (prunedResult):")
     print("-" * 40)
-    print(json.dumps(response, indent=2, ensure_ascii=False)[:3000])
-    if len(json.dumps(response)) > 3000:
-        print("... (truncated)")
+    if 'result' in response and 'ocrResults' in response['result']:
+        pruned = response['result']['ocrResults'][0].get('prunedResult', {})
+        print(f"Keys: {pruned.keys()}")
+        print(f"rec_texts: {pruned.get('rec_texts', [])}")
+        print(f"rec_scores: {pruned.get('rec_scores', [])}")
+        print(f"dt_polys count: {len(pruned.get('dt_polys', []))}")
     
     all_texts = extract_text_with_coords(response)
     print(f"\n[INFO] Extracted text regions: {len(all_texts)} items")
@@ -164,10 +155,8 @@ def test_pp_ocrv5():
     if all_texts:
         print("\n[RESULT] All detected texts:")
         print("-" * 40)
-        for item in all_texts[:30]:
+        for item in all_texts:
             print(f"  '{item['number']:10s}' | pos: ({item['x']:4d}, {item['y']:4d}) | size: {item['width']}x{item['height']} | conf: {item['confidence']:.1f}%")
-        if len(all_texts) > 30:
-            print(f"  ... and {len(all_texts) - 30} more")
     
     filtered = filter_alphanumeric_markers(all_texts)
     print(f"\n[INFO] Filtered alphanumeric markers: {len(filtered)} items")

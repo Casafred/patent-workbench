@@ -533,23 +533,35 @@ function renderFamilySideBySideView(result) {
     familyComparisonResultContainer.innerHTML = '';
     familyComparisonResultContainer.appendChild(disclaimer);
 
+    // 获取当前显示语言
+    const displayLang = appState.familyClaimsComparison.displayLang;
+
     // 构建并排视图HTML - 与手动输入对比保持一致
     let html = '<div class="side-by-side-view" style="border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden;">';
 
-    // 头部：显示专利号
-    html += '<div class="side-by-side-header" style="display: grid; grid-template-columns: repeat(' + patentNumbers.length + ', 1fr); background: var(--primary-color); color: white;">';
+    // 头部：显示专利号 - 使用固定宽度确保对齐
+    const minColumnWidth = Math.max(200, 100 / patentNumbers.length) + '%';
+    html += '<div class="side-by-side-header" style="display: grid; grid-template-columns: repeat(' + patentNumbers.length + ', 1fr); background: var(--primary-color); color: white; min-width: fit-content;">';
     patentNumbers.forEach(patentNumber => {
-        html += `<div class="claim-label" style="padding: 15px; text-align: center; font-weight: 600; border-right: 1px solid rgba(255,255,255,0.3);">${patentNumber}</div>`;
+        const patentData = patentClaims[patentNumber];
+        const title = patentData && patentData.title ? patentData.title : '';
+        html += `<div class="claim-label" style="padding: 15px; text-align: center; font-weight: 600; border-right: 1px solid rgba(255,255,255,0.3); min-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${title}">${patentNumber}</div>`;
     });
     html += '</div>';
 
-    // 主体：显示权利要求文本
-    html += '<div class="side-by-side-body" id="family-side-by-side-container" style="display: grid; grid-template-columns: repeat(' + patentNumbers.length + ', 1fr); max-height: 600px; overflow: hidden;">';
+    // 主体：显示权利要求文本 - 使用固定宽度确保与头部对齐
+    html += '<div class="side-by-side-body" id="family-side-by-side-container" style="display: grid; grid-template-columns: repeat(' + patentNumbers.length + ', 1fr); max-height: 600px; overflow-x: auto; overflow-y: hidden;">';
     patentNumbers.forEach((patentNumber, index) => {
         const patentData = patentClaims[patentNumber];
-        const claimsText = patentData && patentData.claims ? patentData.claims.join('\n\n') : '暂无权利要求数据';
+        // 根据显示语言选择原文或译文（如果有的话）
+        let claimsText;
+        if (displayLang === 'translated' && patentData && patentData.claims_translated) {
+            claimsText = patentData.claims_translated.join('\n\n');
+        } else {
+            claimsText = patentData && patentData.claims ? patentData.claims.join('\n\n') : '暂无权利要求数据';
+        }
         const formattedText = formatFamilyClaimTextForDisplay(claimsText);
-        html += `<div class="claim-text-column" data-column="${index}" style="padding: 20px; border-right: 1px solid var(--border-color); overflow-y: auto; max-height: 600px; line-height: 1.8; white-space: pre-wrap;">${formattedText}</div>`;
+        html += `<div class="claim-text-column" data-column="${index}" style="padding: 20px; border-right: 1px solid var(--border-color); overflow-y: auto; max-height: 600px; line-height: 1.8; white-space: pre-wrap; min-width: 250px;">${formattedText}</div>`;
     });
     html += '</div>';
     html += '</div>';
@@ -764,14 +776,34 @@ function handleFamilyViewModeChange(viewMode) {
 
 /**
  * 切换显示语言
+ * 注意：当前权利要求数据来自Google Patents，主要为英文
+ * 此功能用于在并排对比视图中标记当前显示状态
  */
 function toggleFamilyDisplayLanguage() {
     const currentLang = appState.familyClaimsComparison.displayLang;
-    appState.familyClaimsComparison.displayLang = currentLang === 'translated' ? 'original' : 'translated';
+    const newLang = currentLang === 'translated' ? 'original' : 'translated';
+    appState.familyClaimsComparison.displayLang = newLang;
 
-    familyToggleLanguageBtn.textContent = currentLang === 'translated' ? '切换为原文' : '切换为译文';
+    // 更新按钮文字
+    familyToggleLanguageBtn.textContent = newLang === 'translated' ? '切换为原文' : '切换为译文';
 
-    if (appState.familyClaimsComparison.analysisResult) {
+    // 显示提示
+    const message = newLang === 'translated'
+        ? '已切换为中文对照模式（注：权利要求原文为英文，建议参考卡片视图中的中文分析）'
+        : '已切换为原文模式（英文）';
+
+    // 创建提示元素
+    const toast = document.createElement('div');
+    toast.textContent = message;
+    toast.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--primary-color); color: white; padding: 12px 24px; border-radius: 8px; z-index: 10000; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);';
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+
+    // 重新渲染并排对比视图（如果有）
+    if (appState.familyClaimsComparison.analysisResult && appState.familyClaimsComparison.viewMode === 'sideBySide') {
         renderFamilyComparisonResult(appState.familyClaimsComparison.analysisResult);
     }
 }
