@@ -728,7 +728,7 @@ function renderFamilySideBySideView(result) {
     patentNumbers.forEach(patentNumber => {
         const patentData = patentClaims[patentNumber];
         const title = patentData && patentData.title ? patentData.title : '';
-        html += `<div class="claim-label" style="padding: 15px; text-align: center; font-weight: 600; border-right: 1px solid rgba(255,255,255,0.3); min-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px;" title="${title}">${patentNumber}</div>`;
+        html += `<div class="claim-label" style="padding: 15px !important; text-align: center; font-weight: 600; border-right: 1px solid rgba(255,255,255,0.3); min-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; background: transparent !important; color: white !important;" title="${title}">${patentNumber}</div>`;
     });
     html += '</div>';
 
