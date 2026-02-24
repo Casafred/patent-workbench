@@ -4,16 +4,19 @@
 window.openPatentDetailInNewTab = function(patentNumber) {
     // 找到对应的专利结果
     // 首先尝试从 window.patentResults 中查找
-    let patentResult = window.patentResults ? window.patentResults.find(result => result.patent_number === patentNumber) : null;
+    var patentResult = window.patentResults ? window.patentResults.find(function(result) { return result.patent_number === patentNumber; }) : null;
     
     // 如果没有找到，尝试从标签页管理器中查找
     if (!patentResult && window.patentTabManager) {
-        for (const tab of window.patentTabManager.tabs) {
-            const result = tab.results.find(r => r.patent_number === patentNumber);
-            if (result) {
-                patentResult = result;
-                break;
+        for (var i = 0; i < window.patentTabManager.tabs.length; i++) {
+            var tab = window.patentTabManager.tabs[i];
+            for (var j = 0; j < tab.results.length; j++) {
+                if (tab.results[j].patent_number === patentNumber) {
+                    patentResult = tab.results[j];
+                    break;
+                }
             }
+            if (patentResult) break;
         }
     }
     
@@ -25,19 +28,19 @@ window.openPatentDetailInNewTab = function(patentNumber) {
     const data = patentResult.data;
     
     // 获取选中的字段
-    const selectedFields = window.getSelectedFields ? window.getSelectedFields() : null;
+    var selectedFields = window.getSelectedFields ? window.getSelectedFields() : null;
     
     // 查找该专利的解读结果
-    let analysisResultHTML = '';
-    const analysisResult = window.patentBatchAnalysisResults ? 
-        window.patentBatchAnalysisResults.find(item => item.patent_number === patentNumber) : null;
+    var analysisResultHTML = '';
+    var analysisResult = window.patentBatchAnalysisResults ? 
+        window.patentBatchAnalysisResults.find(function(item) { return item.patent_number === patentNumber; }) : null;
     
     if (analysisResult) {
-        let analysisJson = {};
-        let displayContent = '';
+        var analysisJson = {};
+        var displayContent = '';
         try {
             // 尝试清理可能的markdown代码块标记
-            let cleanContent = analysisResult.analysis_content.trim();
+            var cleanContent = analysisResult.analysis_content.trim();
             if (cleanContent.startsWith('```json')) {
                 cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
             } else if (cleanContent.startsWith('```')) {
@@ -47,11 +50,11 @@ window.openPatentDetailInNewTab = function(patentNumber) {
             analysisJson = JSON.parse(cleanContent);
             
             // 动态生成表格内容
-            let tableRows = '';
-            Object.keys(analysisJson).forEach(key => {
-                const value = analysisJson[key];
-                const displayValue = typeof value === 'string' ? value.replace(/\n/g, '<br>') : value;
-                tableRows += `<tr><td style="border: 1px solid #ddd; padding: 12px; font-weight: 500; background-color: #f8f9fa; width: 30%;">${key}</td><td style="border: 1px solid #ddd; padding: 12px;">${displayValue}</td></tr>`;
+            var tableRows = '';
+            Object.keys(analysisJson).forEach(function(key) {
+                var value = analysisJson[key];
+                var displayValue = typeof value === 'string' ? value.replace(/\n/g, '<br>') : value;
+                tableRows += '<tr><td style="border: 1px solid #ddd; padding: 12px; font-weight: 500; background-color: #f8f9fa; width: 30%;">' + key + '</td><td style="border: 1px solid #ddd; padding: 12px;">' + displayValue + '</td></tr>';
             });
             
             displayContent = `
@@ -878,12 +881,12 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                             CPC分类 (${data.classifications.length})
                         </h2>
                         <div class="cpc-grid">
-                            ${data.classifications.map(cls => `
+                            ${data.classifications.map(function(cls) { return `
                             <div class="cpc-card">
                                 <div class="cpc-code">${cls.leaf_code || cls.code}</div>
                                 <div class="cpc-desc">${cls.leaf_description || cls.description}</div>
                             </div>
-                            `).join('')}
+                            `; }).join('')}
                         </div>
                     </div>
                     ` : ''}
@@ -895,9 +898,9 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                             技术领域
                         </h2>
                         <div class="tag-list">
-                            ${data.landscapes.map(landscape => `
+                            ${data.landscapes.map(function(landscape) { return `
                             <span class="tag">${landscape.name}</span>
-                            `).join('')}
+                            `; }).join('')}
                         </div>
                     </div>
                     ` : ''}
@@ -928,9 +931,9 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         </h2>
                         <div class="section-content">
                             <div class="claims-list" data-section-content="claims">
-                                ${data.claims.map((claim, index) => {
+                                ${data.claims.map(function(claim, index) {
                                     // Support both string format (old) and object format (new with type)
-                                    let claimText, claimType;
+                                    var claimText, claimType;
                                     if (typeof claim === 'string') {
                                         claimText = claim;
                                         // 检测权利要求类型：
@@ -952,7 +955,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                     }
                                     
                                     // Add CSS class based on claim type
-                                    let claimClass = 'claim-item';
+                                    var claimClass = 'claim-item';
                                     if (claimType === 'independent') {
                                         claimClass += ' claim-independent';
                                     } else if (claimType === 'dependent') {
@@ -978,13 +981,13 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                             事件时间轴 (${data.events_timeline.length})
                         </h2>
                         <div class="timeline">
-                            ${[...data.events_timeline].reverse().map(event => `
+                            ${data.events_timeline.slice().reverse().map(function(event) { return `
                             <div class="timeline-item">
                                 <div class="timeline-date">${event.date}</div>
                                 <div class="timeline-title">${event.title || event.description}</div>
                                 ${event.type ? `<div class="timeline-type">${event.type}</div>` : ''}
                             </div>
-                            `).join('')}
+                            `; }).join('')}
                         </div>
                     </div>
                     ` : ''}
@@ -1004,13 +1007,13 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 </tr>
                             </thead>
                             <tbody>
-                                ${[...data.legal_events].reverse().map(event => `
+                                ${data.legal_events.slice().reverse().map(function(event) { return `
                                 <tr>
                                     <td>${event.date}</td>
                                     <td>${event.code || '-'}</td>
                                     <td>${event.description || event.title || '-'}</td>
                                 </tr>
-                                `).join('')}
+                                `; }).join('')}
                             </tbody>
                         </table>
                     </div>
@@ -1054,13 +1057,13 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 </tr>
                             </thead>
                             <tbody>
-                                ${data.family_applications.map(app => `
+                                ${data.family_applications.map(function(app) { return `
                                 <tr>
                                     <td>${app.application_number}</td>
                                     <td>${app.status || '-'}</td>
                                     <td>${app.publication_number || '-'}</td>
                                 </tr>
-                                `).join('')}
+                                `; }).join('')}
                             </tbody>
                         </table>
                         ` : ''}
@@ -1074,9 +1077,9 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                             外部链接
                         </h2>
                         <div class="link-grid">
-                            ${Object.entries(data.external_links).map(([id, link]) => `
+                            ${Object.keys(data.external_links).map(function(id) { var link = data.external_links[id]; return `
                             <a href="${link.url}" target="_blank" class="link-card">${link.text}</a>
-                            `).join('')}
+                            `; }).join('')}
                         </div>
                     </div>
                     ` : ''}
@@ -1114,13 +1117,13 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${data.patent_citations.map(citation => `
+                                    ${data.patent_citations.map(function(citation) { return `
                                     <tr data-patent-number="${citation.patent_number}">
                                         <td>${citation.patent_number}${citation.examiner_cited ? ' <span style="color: #d32f2f; font-weight: bold;">*</span>' : ''}</td>
                                         <td>${citation.title || '-'}</td>
                                         <td>${citation.examiner_cited ? '<span style="color: #d32f2f; font-weight: bold;">✓ 审查员引用</span>' : '-'}</td>
                                     </tr>
-                                    `).join('')}
+                                    `; }).join('')}
                                 </tbody>
                             </table>
                         </div>
@@ -1159,12 +1162,12 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${data.cited_by.map(citation => `
+                                    ${data.cited_by.map(function(citation) { return `
                                     <tr data-patent-number="${citation.patent_number}">
                                         <td>${citation.patent_number}</td>
                                         <td>${citation.title || '-'}</td>
                                     </tr>
-                                    `).join('')}
+                                    `; }).join('')}
                                 </tbody>
                             </table>
                         </div>
@@ -1204,13 +1207,13 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${data.similar_documents.map(doc => `
+                                    ${data.similar_documents.map(function(doc) { return `
                                     <tr data-patent-number="${doc.patent_number}">
                                         <td>${doc.patent_number}</td>
                                         <td>${doc.language || '-'}</td>
                                         <td><a href="${doc.link}" target="_blank" style="color: #2e7d32;">查看</a></td>
                                     </tr>
-                                    `).join('')}
+                                    `; }).join('')}
                                 </tbody>
                             </table>
                         </div>
@@ -1274,8 +1277,8 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     if (!section) return;
                     
                     // 从表格中提取所有专利号
-                    const rows = section.querySelectorAll('tbody tr[data-patent-number]');
-                    const patentNumbers = Array.from(rows).map(row => row.getAttribute('data-patent-number'));
+                    var rows = section.querySelectorAll('tbody tr[data-patent-number]');
+                    var patentNumbers = Array.from(rows).map(function(row) { return row.getAttribute('data-patent-number'); });
                     
                     if (patentNumbers.length === 0) {
                         alert('没有可复制的专利号');
