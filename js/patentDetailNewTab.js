@@ -1285,7 +1285,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         return;
                     }
                     
-                    var textToCopy = patentNumbers.join('\n');
+                    var textToCopy = patentNumbers.join(String.fromCharCode(10));
                     
                     navigator.clipboard.writeText(textToCopy).then(function() {
                         var btn = event.target.closest('.copy-section-btn');
@@ -1337,7 +1337,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     claimItems.forEach(function(item) {
                         var claimNumber = item.getAttribute('data-claim-number');
                         var claimText = item.getAttribute('data-claim-text');
-                        textToCopy += claimNumber + '. ' + claimText + '\n\n';
+                        textToCopy += claimNumber + '. ' + claimText + String.fromCharCode(10) + String.fromCharCode(10);
                     });
                     
                     navigator.clipboard.writeText(textToCopy.trim()).then(function() {
@@ -1584,9 +1584,9 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 '<div style="font-weight: 600; color: #2e7d32; margin-bottom: 8px;">权利要求 ' + item.index + '</div>' +
                                 '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">' +
                                     '<div style="background: #f5f5f5; padding: 12px; border-radius: 6px; font-size: 13px; line-height: 1.6;">' +
-                                        '<div style="color: #999; font-size: 11px; margin-bottom: 4px;">原文 (英文)</div>' + item.original + '</div>' +
+                                        '<div style="color: #999; font-size: 11px; margin-bottom: 4px;">原文 (英文)</div>' + item.original.replace(/\n/g, '<br>') + '</div>' +
                                     '<div style="background: #e8f5e9; padding: 12px; border-radius: 6px; font-size: 13px; line-height: 1.6;">' +
-                                        '<div style="color: #2e7d32; font-size: 11px; margin-bottom: 4px;">译文 (中文)</div>' + item.translated + '</div>' +
+                                        '<div style="color: #2e7d32; font-size: 11px; margin-bottom: 4px;">译文 (中文)</div>' + item.translated.replace(/\n/g, '<br>') + '</div>' +
                                 '</div></div>';
                         });
                     } else {
@@ -1634,8 +1634,8 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     const sections = document.querySelectorAll('.section');
                     
                     // 检测哪些section有数据，标记缺失数据的导航项
-                    const data = ${JSON.stringify(data)};
-                    const currentPatentNumber = '${patentNumber}';
+                    const data = ${JSON.stringify(data).replace(/\\u2028/g, '\\u2028').replace(/\\u2029/g, '\\u2029').replace(/\\n/g, '\\n').replace(/\\r/g, '\\r').replace(/\\t/g, '\\t')};
+                    const currentPatentNumber = '${patentNumber.replace(/\\'/g, "\\'").replace(/\\n/g, '\\n').replace(/\\r/g, '\\r')}';
                     const sectionDataMap = {
                         'abstract': data.abstract && data.abstract.length > 0,
                         'claims': data.claims && data.claims.length > 0,
@@ -1742,7 +1742,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                             
                             displayContent = '<table style="width: 100%; border-collapse: collapse; margin-top: 10px; background: white;"><thead><tr style="background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); color: white;"><th style="border: 1px solid #ddd; padding: 12px; text-align: left; width: 30%;">字段</th><th style="border: 1px solid #ddd; padding: 12px; text-align: left;">内容</th></tr></thead><tbody>' + tableRows + '</tbody></table>';
                         } catch (e) {
-                            displayContent = '<div style="padding: 15px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; margin-bottom: 15px;">⚠️ 解读结果未能解析为结构化格式，显示原始内容：</div><div style="white-space: pre-wrap; font-family: monospace; background-color: #f5f5f5; padding: 15px; border-radius: 4px; border: 1px solid #ddd;">' + analysisContent + '</div>';
+                            displayContent = '<div style="padding: 15px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; margin-bottom: 15px;">⚠️ 解读结果未能解析为结构化格式，显示原始内容：</div><div style="white-space: pre-wrap; font-family: monospace; background-color: #f5f5f5; padding: 15px; border-radius: 4px; border: 1px solid #ddd;">' + analysisContent.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>';
                         }
                         
                         // 查找或创建解读结果区域

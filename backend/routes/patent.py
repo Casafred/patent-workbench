@@ -6,6 +6,7 @@ Uses improved scraper for better reliability.
 """
 
 import json
+import logging
 import time
 import traceback
 from datetime import datetime, timedelta
@@ -14,6 +15,8 @@ from backend.middleware import validate_api_request
 from backend.services import get_zhipu_client
 from backend.utils import create_response
 from backend.scraper.simple_scraper import SimplePatentScraper
+
+logger = logging.getLogger(__name__)
 
 patent_bp = Blueprint('patent', __name__)
 
@@ -767,7 +770,7 @@ def translate_patent_text():
         from backend.services.ai_description.translation_service import TranslationService
         translation_service = TranslationService()
         
-        # 同步翻译函数
+        # 同步翻译函数（用于单条文本）
         def sync_translate(text_content):
             try:
                 loop = asyncio.new_event_loop()
@@ -785,17 +788,45 @@ def translate_patent_text():
             except Exception as e:
                 return f'[翻译失败: {str(e)}]'
         
-        # 处理权利要求（可能是数组）
+        # 批量翻译权利要求（一次性API调用）
+        def sync_translate_claims_batch(claims_list):
+            try:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                result = loop.run_until_complete(
+                    translation_service.translate_claims_batch(
+                        claims=claims_list,
+                        source_lang=source_lang,
+                        client=client,
+                        model_name=model
+                    )
+                )
+                loop.close()
+                return result
+            except Exception as e:
+                # Fallback to individual translations
+                logger.error(f"Batch translation failed, falling back to individual: {str(e)}")
+                results = []
+                for i, claim_text in enumerate(claims_list):
+                    if claim_text and len(str(claim_text).strip()) > 0:
+                        translated = sync_translate(claim_text)
+                        results.append({
+                            'original': claim_text,
+                            'translated': translated,
+                            'index': i + 1
+                        })
+                return results
+        
+        # 处理权利要求（可能是数组）- 使用批量翻译
         if text_type == 'claims' and isinstance(text, list):
-            translated_claims = []
-            for i, claim_text in enumerate(text):
-                if claim_text and len(str(claim_text).strip()) > 0:
-                    translated = sync_translate(claim_text)
-                    translated_claims.append({
-                        'original': claim_text,
-                        'translated': translated,
-                        'index': i + 1
-                    })
+            # 过滤掉空文本
+            valid_claims = [claim for claim in text if claim and len(str(claim).strip()) > 0]
+            
+            if valid_claims:
+                # 使用批量翻译，一次性翻译所有权利要求
+                translated_claims = sync_translate_claims_batch(valid_claims)
+            else:
+                translated_claims = []
             
             return create_response(data={
                 'text_type': 'claims',
