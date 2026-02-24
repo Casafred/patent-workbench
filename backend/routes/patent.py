@@ -724,7 +724,6 @@ Compare the following {len(claims_list)} patents' claims and output a JSON objec
 
 
 @patent_bp.route('/patent/translate', methods=['POST'])
-@validate_api_request
 def translate_patent_text():
     """
     Translate patent text (claims or description) to Chinese.
@@ -735,6 +734,10 @@ def translate_patent_text():
         - model: AI model to use for translation
         - source_lang: Source language code (default: 'en')
     """
+    is_valid, error_response = validate_api_request()
+    if not is_valid:
+        return error_response
+    
     try:
         data = request.get_json()
         
