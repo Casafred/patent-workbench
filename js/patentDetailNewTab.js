@@ -1282,18 +1282,18 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         return;
                     }
                     
-                    const textToCopy = patentNumbers.join('\\n');
+                    var textToCopy = patentNumbers.join('\n');
                     
-                    navigator.clipboard.writeText(textToCopy).then(() => {
-                        const btn = event.target.closest('.copy-section-btn');
+                    navigator.clipboard.writeText(textToCopy).then(function() {
+                        var btn = event.target.closest('.copy-section-btn');
                         if (btn) {
-                            const originalHTML = btn.innerHTML;
+                            var originalHTML = btn.innerHTML;
                             btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" style="width:14px;height:14px"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/></svg> 已复制 ' + patentNumbers.length + ' 个';
-                            setTimeout(() => {
+                            setTimeout(function() {
                                 btn.innerHTML = originalHTML;
                             }, 2000);
                         }
-                    }).catch(err => {
+                    }).catch(function(err) {
                         console.error('复制失败:', err);
                         alert('复制失败，请手动复制');
                     });
@@ -1328,26 +1328,26 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 function copyClaimsWithNumbers(event) {
                     event.stopPropagation(); // 阻止触发折叠/展开
                     
-                    const claimItems = document.querySelectorAll('.claim-item');
+                    var claimItems = document.querySelectorAll('.claim-item');
                     if (!claimItems || claimItems.length === 0) return;
                     
-                    let textToCopy = '';
-                    claimItems.forEach((item) => {
-                        const claimNumber = item.getAttribute('data-claim-number');
-                        const claimText = item.getAttribute('data-claim-text');
-                        textToCopy += claimNumber + '. ' + claimText + '\\n\\n';
+                    var textToCopy = '';
+                    claimItems.forEach(function(item) {
+                        var claimNumber = item.getAttribute('data-claim-number');
+                        var claimText = item.getAttribute('data-claim-text');
+                        textToCopy += claimNumber + '. ' + claimText + '\n\n';
                     });
                     
-                    navigator.clipboard.writeText(textToCopy.trim()).then(() => {
-                        const btn = event.target.closest('.copy-section-btn');
+                    navigator.clipboard.writeText(textToCopy.trim()).then(function() {
+                        var btn = event.target.closest('.copy-section-btn');
                         if (btn) {
-                            const originalHTML = btn.innerHTML;
+                            var originalHTML = btn.innerHTML;
                             btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" style="width:14px;height:14px"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/></svg> 已复制';
-                            setTimeout(() => {
+                            setTimeout(function() {
                                 btn.innerHTML = originalHTML;
                             }, 2000);
                         }
-                    }).catch(err => {
+                    }).catch(function(err) {
                         console.error('复制失败:', err);
                         alert('复制失败，请手动复制');
                     });
@@ -1358,13 +1358,13 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     event.stopPropagation();
                     
                     // 获取同族专利公开号列表
-                    const familyTable = document.getElementById('family-table');
-                    let familyPatentNumbers = [];
+                    var familyTable = document.getElementById('family-table');
+                    var familyPatentNumbers = [];
                     
                     if (familyTable) {
-                        const rows = familyTable.querySelectorAll('tbody tr');
-                        rows.forEach(row => {
-                            const pubNumber = row.cells[2]?.textContent?.trim();
+                        var rows = familyTable.querySelectorAll('tbody tr');
+                        rows.forEach(function(row) {
+                            var pubNumber = row.cells[2] && row.cells[2].textContent && row.cells[2].textContent.trim();
                             if (pubNumber && pubNumber !== '-') {
                                 familyPatentNumbers.push(pubNumber);
                             }
@@ -1381,11 +1381,11 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         window.opener.startFamilyClaimsComparison(patentNumber, familyPatentNumbers);
                         
                         // 显示成功提示
-                        const btn = event.target.closest('.family-compare-btn');
+                        var btn = event.target.closest('.family-compare-btn');
                         if (btn) {
-                            const originalHTML = btn.innerHTML;
+                            var originalHTML = btn.innerHTML;
                             btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/></svg> 已跳转';
-                            setTimeout(() => {
+                            setTimeout(function() {
                                 btn.innerHTML = originalHTML;
                             }, 2000);
                         }
@@ -1399,37 +1399,37 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     event.stopPropagation(); // 阻止触发折叠/展开
                     
                     // 获取关系数据
-                    let relationData = [];
-                    const sectionMap = {
+                    var relationData = [];
+                    var sectionMap = {
                         'family': 'family-table',
                         'citations': 'citations-table',
                         'cited_by': 'cited-by-table',
                         'similar': 'similar-table'
                     };
                     
-                    const tableId = sectionMap[relationType];
-                    const table = document.getElementById(tableId);
+                    var tableId = sectionMap[relationType];
+                    var table = document.getElementById(tableId);
                     
                     if (table) {
-                        const rows = table.querySelectorAll('tbody tr');
-                        rows.forEach(row => {
+                        var rows = table.querySelectorAll('tbody tr');
+                        rows.forEach(function(row) {
                             if (relationType === 'family') {
                                 // 同族表格：第3列是公开号
-                                const pubNumber = row.cells[2]?.textContent?.trim();
+                                var pubNumber = row.cells[2] && row.cells[2].textContent && row.cells[2].textContent.trim();
                                 if (pubNumber && pubNumber !== '-') {
                                     relationData.push({
                                         publication_number: pubNumber,
-                                        application_number: row.cells[0]?.textContent?.trim() || pubNumber,
-                                        status: row.cells[1]?.textContent?.trim() || ''
+                                        application_number: row.cells[0] && row.cells[0].textContent && row.cells[0].textContent.trim() || pubNumber,
+                                        status: row.cells[1] && row.cells[1].textContent && row.cells[1].textContent.trim() || ''
                                     });
                                 }
                             } else {
                                 // 其他表格：从 data-patent-number 属性或第一列获取
-                                const patentNum = row.getAttribute('data-patent-number') || row.cells[0]?.textContent?.trim();
+                                var patentNum = row.getAttribute('data-patent-number') || (row.cells[0] && row.cells[0].textContent && row.cells[0].textContent.trim());
                                 if (patentNum) {
                                     relationData.push({
                                         patent_number: patentNum,
-                                        title: row.cells[1]?.textContent?.trim() || ''
+                                        title: row.cells[1] && row.cells[1].textContent && row.cells[1].textContent.trim() || ''
                                     });
                                 }
                             }
@@ -1445,11 +1445,11 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     if (window.opener && window.opener.openRelationAnalysisTab) {
                         window.opener.openRelationAnalysisTab(patentNumber, relationType, relationData);
                         // 可选：提示用户
-                        const btn = event.target.closest('.analyze-btn');
+                        var btn = event.target.closest('.analyze-btn');
                         if (btn) {
-                            const originalHTML = btn.innerHTML;
+                            var originalHTML = btn.innerHTML;
                             btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/></svg> 已发送';
-                            setTimeout(() => {
+                            setTimeout(function() {
                                 btn.innerHTML = originalHTML;
                             }, 2000);
                         }
@@ -1718,23 +1718,23 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     
                     // 更新解读区域的函数
                     window.updateAnalysisSection = function(analysisContent) {
-                        let analysisJson = {};
-                        let displayContent = '';
+                        var analysisJson = {};
+                        var displayContent = '';
                         
                         try {
-                            let cleanContent = analysisContent.trim();
-                            if (cleanContent.startsWith('\\\`\\\`\\\`json')) {
-                                cleanContent = cleanContent.replace(/^\\\`\\\`\\\`json\\s*/, '').replace(/\\s*\\\`\\\`\\\`$/, '');
-                            } else if (cleanContent.startsWith('\\\`\\\`\\\`')) {
-                                cleanContent = cleanContent.replace(/^\\\`\\\`\\\`\\s*/, '').replace(/\\s*\\\`\\\`\\\`$/, '');
+                            var cleanContent = analysisContent.trim();
+                            if (cleanContent.startsWith('```json')) {
+                                cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+                            } else if (cleanContent.startsWith('```')) {
+                                cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
                             }
                             
                             analysisJson = JSON.parse(cleanContent);
                             
-                            let tableRows = '';
-                            Object.keys(analysisJson).forEach(key => {
-                                const value = analysisJson[key];
-                                const displayValue = typeof value === 'string' ? value.replace(/\\n/g, '<br>') : value;
+                            var tableRows = '';
+                            Object.keys(analysisJson).forEach(function(key) {
+                                var value = analysisJson[key];
+                                var displayValue = typeof value === 'string' ? value.replace(/\n/g, '<br>') : value;
                                 tableRows += '<tr><td style="border: 1px solid #ddd; padding: 12px; font-weight: 500; background-color: #f8f9fa; width: 30%;">' + key + '</td><td style="border: 1px solid #ddd; padding: 12px;">' + displayValue + '</td></tr>';
                             });
                             
@@ -1744,22 +1744,22 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         }
                         
                         // 查找或创建解读结果区域
-                        let analysisSection = document.getElementById('analysis-result');
+                        var analysisSection = document.getElementById('analysis-result');
                         if (!analysisSection) {
                             // 创建解读结果区域
-                            const container = document.querySelector('.content');
+                            var container = document.querySelector('.content');
                             if (container) {
-                                const newSection = document.createElement('div');
+                                var newSection = document.createElement('div');
                                 newSection.className = 'section';
                                 newSection.id = 'analysis-result';
                                 newSection.setAttribute('data-section-id', 'analysis-result');
-                                newSection.innerHTML = '<h2 class="section-title" onclick="toggleSection(\\'analysis-result\\')"><div class="section-title-content"><span class="section-icon">🤖</span>AI 解读结果</div></h2><div class="section-content"><div style="padding: 15px; background: linear-gradient(135deg, #e3f2fd 0%, #f5f5f5 100%); border-radius: 8px; border-left: 4px solid #2e7d32;"><div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; padding: 10px; background: white; border-radius: 6px;"><span style="background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.8em; font-weight: bold;">AI</span><span style="color: #666; font-size: 0.9em;">以下解读由AI生成，仅供参考</span></div>' + displayContent + '</div></div>';
+                                newSection.innerHTML = '<h2 class="section-title" onclick="toggleSection(\'analysis-result\')"><div class="section-title-content"><span class="section-icon">🤖</span>AI 解读结果</div></h2><div class="section-content"><div style="padding: 15px; background: linear-gradient(135deg, #e3f2fd 0%, #f5f5f5 100%); border-radius: 8px; border-left: 4px solid #2e7d32;"><div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; padding: 10px; background: white; border-radius: 6px;"><span style="background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.8em; font-weight: bold;">AI</span><span style="color: #666; font-size: 0.9em;">以下解读由AI生成，仅供参考</span></div>' + displayContent + '</div></div>';
                                 container.insertBefore(newSection, container.firstChild);
                                 
                                 // 更新左侧导航
-                                const sideNav = document.getElementById('sideNav');
+                                var sideNav = document.getElementById('sideNav');
                                 if (sideNav) {
-                                    const navItem = document.createElement('a');
+                                    var navItem = document.createElement('a');
                                     navItem.href = '#analysis-result';
                                     navItem.className = 'side-nav-item';
                                     navItem.setAttribute('data-section', 'analysis-result');
@@ -1769,9 +1769,9 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                             }
                         } else {
                             // 更新现有解读区域
-                            const contentDiv = analysisSection.querySelector('.section-content > div');
+                            var contentDiv = analysisSection.querySelector('.section-content > div');
                             if (contentDiv) {
-                                const aiContentDiv = contentDiv.querySelector('div:last-child');
+                                var aiContentDiv = contentDiv.querySelector('div:last-child');
                                 if (aiContentDiv) {
                                     aiContentDiv.innerHTML = displayContent;
                                 }
@@ -1779,7 +1779,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         }
                         
                         // 显示提示
-                        const statusDiv = document.getElementById('tab-analysis-status-' + currentPatentNumber);
+                        var statusDiv = document.getElementById('tab-analysis-status-' + currentPatentNumber);
                         if (statusDiv) {
                             statusDiv.textContent = '已更新';
                             statusDiv.style.color = '#28a745';
@@ -1788,7 +1788,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     
                     // 初始检查是否有解读缓存
                     if (window.opener && window.opener.PatentCache) {
-                        const cachedAnalysis = window.opener.PatentCache.getAnalysis(currentPatentNumber);
+                        var cachedAnalysis = window.opener.PatentCache.getAnalysis(currentPatentNumber);
                         if (cachedAnalysis) {
                             console.log('📦 发现解读缓存，正在加载...');
                             setTimeout(function() {
