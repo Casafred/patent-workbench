@@ -721,20 +721,19 @@ function renderFamilySideBySideView(result) {
     const displayLang = appState.familyClaimsComparison.displayLang;
 
     // 构建并排视图HTML - 与手动输入对比保持一致
-    let html = '<div class="side-by-side-view" style="border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden;">';
+    let html = '<div class="side-by-side-view" style="border: 1px solid #ddd; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">';
 
-    // 头部：显示专利号 - 使用固定宽度确保对齐
-    const minColumnWidth = Math.max(200, 100 / patentNumbers.length) + '%';
-    html += '<div class="side-by-side-header" style="display: grid; grid-template-columns: repeat(' + patentNumbers.length + ', 1fr); background: var(--primary-color); color: white; min-width: fit-content;">';
+    // 头部：显示专利号 - 使用固定宽度确保对齐，直接使用绿色背景
+    html += '<div class="side-by-side-header" style="display: grid; grid-template-columns: repeat(' + patentNumbers.length + ', 1fr); background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); color: white; min-width: fit-content;">';
     patentNumbers.forEach(patentNumber => {
         const patentData = patentClaims[patentNumber];
         const title = patentData && patentData.title ? patentData.title : '';
-        html += `<div class="claim-label" style="padding: 15px; text-align: center; font-weight: 600; border-right: 1px solid rgba(255,255,255,0.3); min-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${title}">${patentNumber}</div>`;
+        html += `<div class="claim-label" style="padding: 15px; text-align: center; font-weight: 600; border-right: 1px solid rgba(255,255,255,0.3); min-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px;" title="${title}">${patentNumber}</div>`;
     });
     html += '</div>';
 
     // 主体：显示权利要求文本 - 使用固定宽度确保与头部对齐
-    html += '<div class="side-by-side-body" id="family-side-by-side-container" style="display: grid; grid-template-columns: repeat(' + patentNumbers.length + ', 1fr); max-height: 600px; overflow-x: auto; overflow-y: hidden;">';
+    html += '<div class="side-by-side-body" id="family-side-by-side-container" style="display: grid; grid-template-columns: repeat(' + patentNumbers.length + ', 1fr); max-height: 600px; overflow-x: auto; overflow-y: hidden; background: #fafafa;">';
     patentNumbers.forEach((patentNumber, index) => {
         const patentData = patentClaims[patentNumber];
         // 根据显示语言选择原文或译文（如果有的话）
@@ -745,7 +744,7 @@ function renderFamilySideBySideView(result) {
             claimsText = patentData && patentData.claims ? patentData.claims.join('\n\n') : '暂无权利要求数据';
         }
         const formattedText = formatFamilyClaimTextForDisplay(claimsText);
-        html += `<div class="claim-text-column" data-column="${index}" style="padding: 20px; border-right: 1px solid var(--border-color); overflow-y: auto; max-height: 600px; line-height: 1.8; white-space: pre-wrap; min-width: 250px;">${formattedText}</div>`;
+        html += `<div class="claim-text-column" data-column="${index}" style="padding: 20px; border-right: 1px solid #e0e0e0; overflow-y: auto; max-height: 600px; line-height: 1.8; white-space: pre-wrap; min-width: 250px; background: white;">${formattedText}</div>`;
     });
     html += '</div>';
     html += '</div>';
