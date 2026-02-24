@@ -421,72 +421,93 @@ function updateFamilyStatsPanel(result) {
  * 渲染卡片视图
  */
 function renderFamilyCardView(result) {
-    const container = document.createElement('div');
-    container.className = 'comparison-cards-container';
-
-    if (result.comparison_matrix) {
-        result.comparison_matrix.forEach((item, index) => {
-            const card = createFamilyComparisonCard(item, index);
-            container.appendChild(card);
-        });
+    if (!result || !result.comparison_matrix) {
+        familyComparisonResultContainer.innerHTML = '<div class="info error">无对比数据</div>';
+        return;
     }
 
-    if (result.overall_summary) {
-        const summaryCard = document.createElement('div');
-        summaryCard.className = 'comparison-card';
-        summaryCard.innerHTML = `
-            <div class="card-header">
-                <h4>整体对比总结</h4>
-            </div>
-            <div class="card-content">
-                <p>${result.overall_summary}</p>
+    // 添加AI生成声明
+    const disclaimer = document.createElement('div');
+    disclaimer.className = 'ai-disclaimer';
+    disclaimer.innerHTML = '<strong>AI生成内容：</strong>以下对比分析由AI生成，仅供参考，请结合实际情况判断使用。';
+    disclaimer.style.cssText = 'background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; font-size: 14px; color: #856404;';
+
+    familyComparisonResultContainer.innerHTML = '';
+    familyComparisonResultContainer.appendChild(disclaimer);
+
+    let html = '';
+
+    result.comparison_matrix.forEach(pair => {
+        const similarityPercent = Math.round(pair.similarity_score * 100);
+        const [claim1, claim2] = pair.claim_pair;
+
+        html += `
+            <div class="comparison-card" style="background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);">
+                <div class="comparison-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid var(--border-color);">
+                    <h3 style="margin: 0; font-size: 18px; color: var(--text-color);">${claim1} vs ${claim2}</h3>
+                    <span class="similarity-badge" style="background: var(--primary-color); color: white; padding: 6px 12px; border-radius: 20px; font-weight: 600; font-size: 14px;">相似度: ${similarityPercent}%</span>
+                </div>
+                <div class="comparison-card-body">
+                    <div class="comparison-section-v2" style="margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 12px 0; font-size: 16px; color: var(--text-color);"><span class="icon-match" style="margin-right: 8px;">✅</span> 相同特征</h4>
+                        <table class="features-table" style="width: 100%; border-collapse: collapse;">
+                            <tbody>
+                                ${pair.similar_features && pair.similar_features.length > 0 ?
+                                  pair.similar_features.map(item => `
+                                    <tr class="similar-row" style="background: rgba(34, 197, 94, 0.1);">
+                                        <td style="padding: 10px; border: 1px solid var(--border-color); border-radius: 4px;">${item.feature}</td>
+                                    </tr>
+                                  `).join('') :
+                                  '<tr><td class="no-data" style="padding: 10px; text-align: center; color: #666; font-style: italic;">无完全相同的技术特征</td></tr>'
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="comparison-section-v2">
+                        <h4 style="margin: 0 0 12px 0; font-size: 16px; color: var(--text-color);"><span class="icon-diff" style="margin-right: 8px;">⚠️</span> 差异特征</h4>
+                        <table class="features-table diff-table" style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: var(--primary-color); color: white;">
+                                    <th style="padding: 10px; text-align: left; border: 1px solid var(--border-color);">${claim1}</th>
+                                    <th style="padding: 10px; text-align: left; border: 1px solid var(--border-color);">${claim2}</th>
+                                    <th style="padding: 10px; text-align: left; border: 1px solid var(--border-color);">差异分析</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${pair.different_features && pair.different_features.length > 0 ?
+                                  pair.different_features.map(item => `
+                                    <tr class="different-row" style="background: rgba(239, 68, 68, 0.05);">
+                                        <td style="padding: 10px; border: 1px solid var(--border-color); vertical-align: top;">${item.claim_1_feature}</td>
+                                        <td style="padding: 10px; border: 1px solid var(--border-color); vertical-align: top;">${item.claim_2_feature}</td>
+                                        <td class="analysis-cell" style="padding: 10px; border: 1px solid var(--border-color); vertical-align: top; background: rgba(59, 130, 246, 0.05);">${item.analysis}</td>
+                                    </tr>
+                                  `).join('') :
+                                  '<tr><td colspan="3" class="no-data" style="padding: 10px; text-align: center; color: #666; font-style: italic;">未发现显著差异</td></tr>'
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         `;
-        container.appendChild(summaryCard);
+    });
+
+    if (result.overall_summary) {
+        html += `
+            <div class="comparison-card" style="background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);">
+                <div class="comparison-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid var(--border-color);">
+                    <h3 style="margin: 0; font-size: 18px; color: var(--text-color);">整体对比总结</h3>
+                </div>
+                <div class="comparison-card-body">
+                    <p style="line-height: 1.6; margin: 0;">${result.overall_summary}</p>
+                </div>
+            </div>
+        `;
     }
 
-    familyComparisonResultContainer.appendChild(container);
-}
-
-/**
- * 创建同族对比卡片
- */
-function createFamilyComparisonCard(item, index) {
-    const card = document.createElement('div');
-    card.className = 'comparison-card';
-
-    const [claim1, claim2] = item.claim_pair;
-
-    card.innerHTML = `
-        <div class="card-header">
-            <h4>${claim1} vs ${claim2}</h4>
-            <div class="similarity-score">
-                相似度: ${(item.similarity_score * 100).toFixed(0)}%
-            </div>
-        </div>
-        <div class="card-content">
-            <div class="features-section">
-                <h5>相同特征</h5>
-                <ul>
-                    ${item.similar_features?.map(f => `<li>${f.feature}</li>`).join('') || '<li>无</li>'}
-                </ul>
-            </div>
-            <div class="features-section">
-                <h5>差异特征</h5>
-                <ul>
-                    ${item.different_features?.map(f => `
-                        <li>
-                            <strong>${claim1}:</strong> ${f.claim_1_feature}<br>
-                            <strong>${claim2}:</strong> ${f.claim_2_feature}<br>
-                            <em>${f.analysis}</em>
-                        </li>
-                    `).join('') || '<li>无</li>'}
-                </ul>
-            </div>
-        </div>
-    `;
-
-    return card;
+    const contentDiv = document.createElement('div');
+    contentDiv.innerHTML = html;
+    familyComparisonResultContainer.appendChild(contentDiv);
 }
 
 /**
