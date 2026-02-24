@@ -652,8 +652,14 @@ Compare the following {len(claims_list)} patents' claims and output a JSON objec
                 "error": "AI响应解析失败",
                 "raw_response": response_text
             }
-        
-        return create_response(data={'result': result})
+
+        # 构建完整的响应，包含AI分析结果和原始权利要求数据
+        full_result = {
+            **result,
+            'patent_claims': patent_claims  # 包含原始权利要求数据，用于并排对比视图
+        }
+
+        return create_response(data={'result': full_result})
         
     except Exception as e:
         print(f"Error in compare_family_claims: {traceback.format_exc()}")

@@ -515,10 +515,12 @@ function renderFamilyCardView(result) {
  * 与手动输入对比的并排视图保持一致：显示原始权利要求文本
  */
 function renderFamilySideBySideView(result) {
-    const selectedPatents = appState.familyClaimsComparison.selectedPatents;
+    // 从结果中获取原始权利要求数据
+    const patentClaims = result.patent_claims || {};
+    const patentNumbers = Object.keys(patentClaims);
 
-    if (!selectedPatents || selectedPatents.length < 2) {
-        familyComparisonResultContainer.innerHTML = '<div class="info error">请至少选择2个专利进行对比</div>';
+    if (patentNumbers.length < 2) {
+        familyComparisonResultContainer.innerHTML = '<div class="info error">暂无权利要求数据，无法进行并排对比</div>';
         return;
     }
 
@@ -535,16 +537,17 @@ function renderFamilySideBySideView(result) {
     let html = '<div class="side-by-side-view" style="border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden;">';
 
     // 头部：显示专利号
-    html += '<div class="side-by-side-header" style="display: grid; grid-template-columns: repeat(' + selectedPatents.length + ', 1fr); background: var(--primary-color); color: white;">';
-    selectedPatents.forEach(patent => {
-        html += `<div class="claim-label" style="padding: 15px; text-align: center; font-weight: 600; border-right: 1px solid rgba(255,255,255,0.3);">${patent.patent_number}</div>`;
+    html += '<div class="side-by-side-header" style="display: grid; grid-template-columns: repeat(' + patentNumbers.length + ', 1fr); background: var(--primary-color); color: white;">';
+    patentNumbers.forEach(patentNumber => {
+        html += `<div class="claim-label" style="padding: 15px; text-align: center; font-weight: 600; border-right: 1px solid rgba(255,255,255,0.3);">${patentNumber}</div>`;
     });
     html += '</div>';
 
     // 主体：显示权利要求文本
-    html += '<div class="side-by-side-body" id="family-side-by-side-container" style="display: grid; grid-template-columns: repeat(' + selectedPatents.length + ', 1fr); max-height: 600px; overflow: hidden;">';
-    selectedPatents.forEach((patent, index) => {
-        const claimsText = patent.claims ? patent.claims.join('\n\n') : '暂无权利要求数据';
+    html += '<div class="side-by-side-body" id="family-side-by-side-container" style="display: grid; grid-template-columns: repeat(' + patentNumbers.length + ', 1fr); max-height: 600px; overflow: hidden;">';
+    patentNumbers.forEach((patentNumber, index) => {
+        const patentData = patentClaims[patentNumber];
+        const claimsText = patentData && patentData.claims ? patentData.claims.join('\n\n') : '暂无权利要求数据';
         const formattedText = formatFamilyClaimTextForDisplay(claimsText);
         html += `<div class="claim-text-column" data-column="${index}" style="padding: 20px; border-right: 1px solid var(--border-color); overflow-y: auto; max-height: 600px; line-height: 1.8; white-space: pre-wrap;">${formattedText}</div>`;
     });
@@ -662,15 +665,15 @@ function renderFamilyMatrixView(result) {
     });
     html += '</tr></thead><tbody>';
 
-    // 表格主体
+    // 表格主体 - 只显示上三角部分（i < j），避免重复
     selectedPatents.forEach((patent1, i) => {
         html += `<tr><th style="padding: 12px; text-align: center; border: 1px solid var(--border-color); background: var(--primary-color); color: white; font-weight: 600;">${patent1.patent_number}</th>`;
         selectedPatents.forEach((patent2, j) => {
             if (i === j) {
                 // 对角线显示"-"
                 html += '<td style="padding: 12px; text-align: center; border: 1px solid var(--border-color); background: #f3f4f6; color: #9ca3af;">-</td>';
-            } else {
-                // 查找相似度数据
+            } else if (i < j) {
+                // 上三角：显示相似度数据
                 const key1 = `${patent1.patent_number}-${patent2.patent_number}`;
                 const key2 = `${patent2.patent_number}-${patent1.patent_number}`;
                 const matrixData = matrix[key1] || matrix[key2];
@@ -688,6 +691,9 @@ function renderFamilyMatrixView(result) {
                 }
 
                 html += `<td style="${cellStyle}" onclick="jumpToFamilyCardView('${key1}')">${percent}%</td>`;
+            } else {
+                // 下三角：显示为空
+                html += '<td style="padding: 12px; text-align: center; border: 1px solid var(--border-color); background: #f9fafb;"></td>';
             }
         });
         html += '</tr>';
