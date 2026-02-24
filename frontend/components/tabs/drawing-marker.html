@@ -60,9 +60,13 @@
                         <select id="ocr_mode_select" style="width: 100%; padding: 10px; border: 1px solid #dee2e6; border-radius: 6px; font-size: 13px; background-color: white; cursor: pointer;">
                             <option value="rapidocr">RapidOCR (内置，免费)</option>
                             <option value="glm_ocr">GLM OCR API (需API Key)</option>
+                            <option value="paddle_ocr">PP-OCRv5 (百度，需Token)</option>
                         </select>
+                        <div id="paddle_token_input_container" style="display: none; margin-top: 8px;">
+                            <input type="text" id="paddle_token_input" placeholder="输入百度AI Studio Token" style="width: 100%; padding: 8px; border: 1px solid #dee2e6; border-radius: 4px; font-size: 12px;">
+                        </div>
                         <p id="ocr_mode_hint" style="margin: 5px 0 0 0; font-size: 11px; color: #6c757d;">
-                            💡 内置RapidOCR无需联网，GLM OCR可能更精准但需消耗API额度
+                            💡 内置RapidOCR无需联网，云端OCR可能更精准但需配置密钥
                         </p>
                     </div>
 

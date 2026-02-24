@@ -116,6 +116,8 @@ def process_drawing_marker():
         cache_info = {}
 
         glm_api_key = None
+        paddle_token = None
+        
         if ocr_mode == 'glm_ocr':
             client, error = get_zhipu_client()
             if error:
@@ -126,6 +128,14 @@ def process_drawing_marker():
             if not glm_api_key:
                 return create_response(
                     error="GLM OCR mode requires API key in Authorization header",
+                    status_code=401
+                )
+        
+        if ocr_mode == 'paddle_ocr':
+            paddle_token = req_data.get('paddle_token') or request.headers.get('X-Paddle-Token')
+            if not paddle_token:
+                return create_response(
+                    error="PP-OCRv5 mode requires token (paddle_token in body or X-Paddle-Token header)",
                     status_code=401
                 )
 
@@ -169,6 +179,17 @@ def process_drawing_marker():
                             print(f"[DEBUG] GLM OCR detected {len(all_detected_numbers)} items")
                         except Exception as e:
                             print(f"[WARN] GLM OCR failed, falling back to RapidOCR: {str(e)}")
+                            all_detected_numbers = perform_ocr(image_data)
+                    elif ocr_mode == 'paddle_ocr':
+                        from backend.utils.paddle_ocr_utils import perform_pp_ocr
+                        try:
+                            all_detected_numbers = perform_pp_ocr(
+                                image_data,
+                                paddle_token
+                            )
+                            print(f"[DEBUG] PP-OCRv5 detected {len(all_detected_numbers)} items")
+                        except Exception as e:
+                            print(f"[WARN] PP-OCRv5 failed, falling back to RapidOCR: {str(e)}")
                             all_detected_numbers = perform_ocr(image_data)
                     else:
                         all_detected_numbers = perform_ocr(image_data)
@@ -293,19 +314,25 @@ def process_drawing_marker():
             print(f"[DEBUG] Extracted reference_map: {reference_map}")
             print(f"[DEBUG] Total markers in specification: {len(reference_map)}")
 
-        # 🚀 STEP 3: 将OCR结果与reference_map匹配
-        print(f"[DEBUG] Step 3: Matching OCR results with reference_map...")
+        # 🚀 STEP 3: 应用智能分割并匹配OCR结果
+        print(f"[DEBUG] Step 3: Applying smart split and matching OCR results...")
+        
+        from backend.utils.smart_split_utils import smart_split_ocr_results
+        
+        spec_markers = list(reference_map.keys())
 
         for drawing_result in processed_results:
             if 'error' in drawing_result:
                 continue
 
             try:
-                # 获取该图片的OCR结果
                 ocr_results = drawing_result.pop('ocr_results', [])
                 raw_ocr_results = drawing_result.pop('raw_ocr_results', [])
+                
+                if ocr_mode in ['glm_ocr', 'paddle_ocr']:
+                    ocr_results = smart_split_ocr_results(ocr_results, spec_markers, enable_split=True)
+                    print(f"[DEBUG] After smart split: {len(ocr_results)} markers")
 
-                # 匹配识别结果与reference_map
                 detected_numbers, unknown, missing = match_with_reference_map(
                     ocr_results,
                     reference_map
@@ -384,7 +411,11 @@ def process_drawing_marker():
         total_matched = sum(d.get('matched_count', 0) for d in processed_results)
         total_unmatched = sum(d.get('unmatched_count', 0) for d in processed_results)
         
-        ocr_mode_display = 'GLM OCR API' if ocr_mode == 'glm_ocr' else 'RapidOCR (内置)'
+        ocr_mode_display = {
+            'rapidocr': 'RapidOCR (内置)',
+            'glm_ocr': 'GLM OCR API',
+            'paddle_ocr': 'PP-OCRv5 (百度)'
+        }.get(ocr_mode, 'RapidOCR (内置)')
         
         if total_ocr_detected > 0:
             if total_matched > 0:

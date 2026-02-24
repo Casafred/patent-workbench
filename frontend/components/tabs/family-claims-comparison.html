@@ -4,24 +4,66 @@
 <div class="step">
     <div class="step-header">同族权利要求对比分析</div>
     <p class="info">
-        输入一个专利号，自动获取其同族专利列表，勾选需要对比的专利后进行权利要求对比分析。
+        支持两种方式获取同族专利：自动获取（输入一个专利号爬取同族）或手动输入（直接输入多个专利号）。
     </p>
 
-    <!-- 专利号输入区 -->
-    <div class="family-input-area">
-        <div class="config-row">
-            <div class="config-item">
-                <label for="family_patent_number">专利号：</label>
-                <input type="text" id="family_patent_number" placeholder="例如：US1234567B2" />
+    <!-- 输入模式切换标签页 -->
+    <div class="family-input-mode-tabs">
+        <button class="family-mode-tab active" data-mode="auto">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            自动获取
+        </button>
+        <button class="family-mode-tab" data-mode="manual">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            手动输入
+        </button>
+    </div>
+
+    <!-- 自动获取模式 -->
+    <div id="family_auto_mode" class="family-input-mode-content active">
+        <div class="family-input-area">
+            <div class="config-row">
+                <div class="config-item">
+                    <label for="family_patent_number">专利号：</label>
+                    <input type="text" id="family_patent_number" placeholder="例如：US1234567B2" />
+                </div>
+                <div class="config-item">
+                    <button id="fetch_family_btn" class="primary-button">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        获取同族列表
+                    </button>
+                </div>
             </div>
-            <div class="config-item">
-                <button id="fetch_family_btn" class="primary-button">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                    </svg>
-                    获取同族列表
-                </button>
+        </div>
+    </div>
+
+    <!-- 手动输入模式 -->
+    <div id="family_manual_mode" class="family-input-mode-content">
+        <div class="family-input-area">
+            <div class="config-row" style="flex-direction: column; align-items: stretch;">
+                <label for="manual_patent_numbers">请输入专利号（每行一个，或用逗号/分号分隔）：</label>
+                <textarea id="manual_patent_numbers" rows="5" placeholder="例如：&#10;US1234567B2&#10;EP9876543A1&#10;CN202310000000A&#10;&#10;或：US1234567B2, EP9876543A1, CN202310000000A" style="width: 100%; margin-top: 10px; padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 14px; font-family: inherit; resize: vertical;"></textarea>
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button id="add_manual_patents_btn" class="primary-button">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        添加到列表
+                    </button>
+                    <button id="clear_manual_input_btn" class="small-button">
+                        清空输入
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -36,11 +78,12 @@
                     <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                     <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                 </svg>
-                同族专利列表
+                待对比专利列表
             </h3>
             <div class="family-list-actions">
                 <button id="select_all_family_btn" class="small-button">全选</button>
                 <button id="deselect_all_family_btn" class="small-button">取消全选</button>
+                <button id="clear_family_list_btn" class="small-button" style="background: #ef4444; color: white;">清空列表</button>
             </div>
         </div>
         
@@ -118,7 +161,7 @@
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
-                <p>请输入专利号并获取同族列表，然后勾选需要对比的专利</p>
+                <p>请选择输入模式，获取或输入专利号后进行对比分析</p>
             </div>
         </div>
     </div>

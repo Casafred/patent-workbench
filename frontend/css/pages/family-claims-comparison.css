@@ -1,5 +1,55 @@
 /* 同族权利要求对比分析样式 */
 
+/* 输入模式切换标签页 */
+.family-input-mode-tabs {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 15px;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 0;
+}
+
+.family-mode-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-color-secondary);
+    transition: all 0.2s;
+    margin-bottom: -2px;
+}
+
+.family-mode-tab:hover {
+    color: var(--primary-color);
+    background: rgba(34, 197, 94, 0.05);
+}
+
+.family-mode-tab.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+    background: rgba(34, 197, 94, 0.1);
+}
+
+.family-mode-tab svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* 输入模式内容区 */
+.family-input-mode-content {
+    display: none;
+}
+
+.family-input-mode-content.active {
+    display: block;
+}
+
 /* 专利号输入区 */
 .family-input-area {
     background: var(--surface-color);

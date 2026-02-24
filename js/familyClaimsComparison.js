@@ -1,8 +1,9 @@
-// js/familyClaimsComparison.js (v1.0 - 同族权利要求对比分析)
+// js/familyClaimsComparison.js (v1.1 - 同族权利要求对比分析)
 
 /**
  * 功能四子标签页：同族权利要求对比分析
  * 融合功能四的多权利要求对比功能和功能五的专利同族信息爬取功能
+ * v1.1: 新增手动输入专利号功能
  */
 
 // DOM元素引用
@@ -11,6 +12,10 @@ let selectAllFamilyBtn, deselectAllFamilyBtn, familyCompareBtn, familyComparison
 let familyLoadingOverlay, familyLoadingText, familyComparisonResultContainer;
 let familyViewModeBtns, familyToggleLanguageBtn, familyExportComparisonBtn;
 let familyComparisonStatsPanel, familyStatSimilar, familyStatDifferent, familyStatSimilarity;
+// 手动输入模式相关元素
+let manualPatentNumbersTextarea, addManualPatentsBtn, clearManualInputBtn, clearFamilyListBtn;
+// 输入模式标签
+let familyModeTabs;
 
 /**
  * 初始化同族权利要求对比功能
@@ -38,17 +43,44 @@ function initFamilyClaimsComparison() {
     familyStatDifferent = document.getElementById('family_stat_different');
     familyStatSimilarity = document.getElementById('family_stat_similarity');
 
+    // 手动输入模式元素
+    manualPatentNumbersTextarea = document.getElementById('manual_patent_numbers');
+    addManualPatentsBtn = document.getElementById('add_manual_patents_btn');
+    clearManualInputBtn = document.getElementById('clear_manual_input_btn');
+    clearFamilyListBtn = document.getElementById('clear_family_list_btn');
+    familyModeTabs = document.querySelectorAll('.family-mode-tab');
+
     // 检查必需元素
-    if (!familyPatentNumberInput || !fetchFamilyBtn || !familyListContainer) {
+    if (!familyListContainer) {
         console.error('❌ 同族权利要求对比功能必需元素未找到');
         return;
     }
 
-    // 绑定事件
-    fetchFamilyBtn.addEventListener('click', fetchFamilyPatents);
+    // 绑定事件 - 自动获取模式
+    if (fetchFamilyBtn) {
+        fetchFamilyBtn.addEventListener('click', fetchFamilyPatents);
+    }
+
+    // 绑定事件 - 手动输入模式
+    if (addManualPatentsBtn) {
+        addManualPatentsBtn.addEventListener('click', addManualPatents);
+    }
+    if (clearManualInputBtn) {
+        clearManualInputBtn.addEventListener('click', clearManualInput);
+    }
+    if (clearFamilyListBtn) {
+        clearFamilyListBtn.addEventListener('click', clearFamilyList);
+    }
+
+    // 绑定事件 - 列表操作
     selectAllFamilyBtn.addEventListener('click', selectAllFamilyPatents);
     deselectAllFamilyBtn.addEventListener('click', deselectAllFamilyPatents);
     familyCompareBtn.addEventListener('click', compareFamilyClaims);
+
+    // 绑定事件 - 输入模式切换
+    familyModeTabs.forEach(tab => {
+        tab.addEventListener('click', () => switchFamilyInputMode(tab.dataset.mode));
+    });
 
     // 视图模式切换
     familyViewModeBtns.forEach(btn => {
@@ -72,7 +104,159 @@ function initFamilyClaimsComparison() {
         initFamilyComparisonModelSelector();
     });
 
+    // 初始化状态
+    if (!appState.familyClaimsComparison) {
+        appState.familyClaimsComparison = {
+            basePatent: null,
+            familyPatents: [],
+            selectedPatents: [],
+            analysisResult: null,
+            viewMode: 'card',
+            displayLang: 'translated',
+            isLoading: false,
+            error: null,
+            inputMode: 'auto'  // 'auto' 或 'manual'
+        };
+    }
+
     console.log('✅ 同族权利要求对比功能初始化完成');
+}
+
+/**
+ * 切换输入模式（自动获取/手动输入）
+ */
+function switchFamilyInputMode(mode) {
+    appState.familyClaimsComparison.inputMode = mode;
+
+    // 更新标签按钮状态
+    familyModeTabs.forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.mode === mode);
+    });
+
+    // 切换内容显示
+    const autoMode = document.getElementById('family_auto_mode');
+    const manualMode = document.getElementById('family_manual_mode');
+
+    if (autoMode && manualMode) {
+        autoMode.classList.toggle('active', mode === 'auto');
+        manualMode.classList.toggle('active', mode === 'manual');
+    }
+
+    console.log(`🔄 切换到${mode === 'auto' ? '自动获取' : '手动输入'}模式`);
+}
+
+/**
+ * 添加手动输入的专利号到列表
+ */
+function addManualPatents() {
+    const inputText = manualPatentNumbersTextarea.value.trim();
+
+    if (!inputText) {
+        alert('请输入专利号');
+        return;
+    }
+
+    // 解析专利号（支持换行、逗号、分号分隔）
+    const patentNumbers = parsePatentNumbers(inputText);
+
+    if (patentNumbers.length === 0) {
+        alert('未识别到有效的专利号');
+        return;
+    }
+
+    console.log(`📝 解析到 ${patentNumbers.length} 个专利号:`, patentNumbers);
+
+    // 初始化状态（如果还没有）
+    if (!appState.familyClaimsComparison.familyPatents) {
+        appState.familyClaimsComparison.familyPatents = [];
+    }
+
+    // 添加专利号到列表（去重）
+    const existingNumbers = new Set(
+        appState.familyClaimsComparison.familyPatents.map(p => p.patent_number)
+    );
+
+    let addedCount = 0;
+    patentNumbers.forEach(number => {
+        if (!existingNumbers.has(number)) {
+            appState.familyClaimsComparison.familyPatents.push({
+                patent_number: number,
+                title: '手动添加',
+                publication_date: '',
+                language: 'unknown',
+                is_manual: true
+            });
+            existingNumbers.add(number);
+            addedCount++;
+        }
+    });
+
+    if (addedCount === 0) {
+        alert('所有输入的专利号都已存在于列表中');
+        return;
+    }
+
+    // 渲染列表
+    renderFamilyPatentsGrid(appState.familyClaimsComparison.familyPatents);
+
+    // 显示列表容器
+    familyListContainer.style.display = 'block';
+
+    // 清空输入框
+    manualPatentNumbersTextarea.value = '';
+
+    // 提示用户
+    alert(`已添加 ${addedCount} 个专利号到列表`);
+
+    // 清空之前的结果
+    clearFamilyComparisonResult();
+}
+
+/**
+ * 解析专利号字符串
+ * 支持格式：
+ * - 每行一个专利号
+ * - 逗号分隔
+ * - 分号分隔
+ * - 混合格式
+ */
+function parsePatentNumbers(text) {
+    // 统一分隔符为换行
+    let normalized = text
+        .replace(/[,，;；\s]+/g, '\n')  // 将逗号、分号、空格替换为换行
+        .split('\n')
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
+
+    // 去重
+    return [...new Set(normalized)];
+}
+
+/**
+ * 清空手动输入框
+ */
+function clearManualInput() {
+    manualPatentNumbersTextarea.value = '';
+}
+
+/**
+ * 清空专利列表
+ */
+function clearFamilyList() {
+    if (!confirm('确定要清空专利列表吗？')) {
+        return;
+    }
+
+    appState.familyClaimsComparison.familyPatents = [];
+    appState.familyClaimsComparison.selectedPatents = [];
+
+    familyPatentsGrid.innerHTML = '';
+    familyListContainer.style.display = 'none';
+
+    updateFamilyCompareButton();
+    clearFamilyComparisonResult();
+
+    console.log('🗑️ 专利列表已清空');
 }
 
 /**

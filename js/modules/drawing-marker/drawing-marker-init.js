@@ -168,6 +168,7 @@ function initSpecificationInput() {
 function initOCRModeSelect() {
     const ocrModeSelect = document.getElementById('ocr_mode_select');
     const ocrModeHint = document.getElementById('ocr_mode_hint');
+    const paddleTokenContainer = document.getElementById('paddle_token_input_container');
     
     if (!ocrModeSelect) {
         console.warn('⚠️ ocr_mode_select not found');
@@ -178,12 +179,19 @@ function initOCRModeSelect() {
         ocrModeSelect.addEventListener('change', function() {
             const selectedMode = this.value;
             
+            if (paddleTokenContainer) {
+                paddleTokenContainer.style.display = selectedMode === 'paddle_ocr' ? 'block' : 'none';
+            }
+            
             if (ocrModeHint) {
                 if (selectedMode === 'glm_ocr') {
                     ocrModeHint.innerHTML = '💡 GLM OCR API需要API Key，可能更精准但会消耗API额度';
                     ocrModeHint.style.color = '#856404';
+                } else if (selectedMode === 'paddle_ocr') {
+                    ocrModeHint.innerHTML = '💡 PP-OCRv5需要百度AI Studio Token，请在下方输入';
+                    ocrModeHint.style.color = '#856404';
                 } else {
-                    ocrModeHint.innerHTML = '💡 内置RapidOCR无需联网，GLM OCR可能更精准但需消耗API额度';
+                    ocrModeHint.innerHTML = '💡 内置RapidOCR无需联网，云端OCR可能更精准但需配置密钥';
                     ocrModeHint.style.color = '#6c757d';
                 }
             }
