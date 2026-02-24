@@ -30,7 +30,7 @@ function initFamilyClaimsComparison() {
     familyLoadingOverlay = document.getElementById('family_loading_overlay');
     familyLoadingText = document.getElementById('family_loading_text');
     familyComparisonResultContainer = document.getElementById('family_comparison_result_container');
-    familyViewModeBtns = document.querySelectorAll('#family_claims_comparison-tab .view-btn');
+    familyViewModeBtns = document.querySelectorAll('#family_comparison_result_container .view-btn, .result-controls .view-btn');
     familyToggleLanguageBtn = document.getElementById('family_toggle_language_btn');
     familyExportComparisonBtn = document.getElementById('family_export_comparison_btn');
     familyComparisonStatsPanel = document.getElementById('family_comparison_stats_panel');

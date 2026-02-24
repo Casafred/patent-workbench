@@ -15,25 +15,13 @@ function initDrawingMarker() {
     console.log('🎨 Initializing Drawing Marker...');
     
     try {
-        // 1. Initialize AI Processing Panel
         initAIProcessingPanel();
-        
-        // 2. Initialize Prompt Editor
         initPromptEditor();
-        
-        // 3. Initialize image upload handlers
         initImageUpload();
-        
-        // 4. Initialize specification input
         initSpecificationInput();
-        
-        // 5. Initialize processing buttons
+        initOCRModeSelect();
         initProcessingButtons();
-        
-        // 6. Initialize result display
         initResultDisplay();
-        
-        // 7. Initialize reprocess manager
         initReprocessManager();
         
         console.log('✅ Drawing Marker initialized successfully');
@@ -162,9 +150,6 @@ function initImageUpload() {
     }
 }
 
-/**
- * Initialize specification input
- */
 function initSpecificationInput() {
     const specInput = document.getElementById('specification_input');
     
@@ -174,16 +159,44 @@ function initSpecificationInput() {
     }
     
     try {
-        // Add any specification input event listeners here if needed
         console.log('✅ Specification input initialized');
     } catch (error) {
         console.error('❌ Failed to initialize specification input:', error);
     }
 }
 
-/**
- * Initialize processing buttons
- */
+function initOCRModeSelect() {
+    const ocrModeSelect = document.getElementById('ocr_mode_select');
+    const ocrModeHint = document.getElementById('ocr_mode_hint');
+    
+    if (!ocrModeSelect) {
+        console.warn('⚠️ ocr_mode_select not found');
+        return;
+    }
+    
+    try {
+        ocrModeSelect.addEventListener('change', function() {
+            const selectedMode = this.value;
+            
+            if (ocrModeHint) {
+                if (selectedMode === 'glm_ocr') {
+                    ocrModeHint.innerHTML = '💡 GLM OCR API需要API Key，可能更精准但会消耗API额度';
+                    ocrModeHint.style.color = '#856404';
+                } else {
+                    ocrModeHint.innerHTML = '💡 内置RapidOCR无需联网，GLM OCR可能更精准但需消耗API额度';
+                    ocrModeHint.style.color = '#6c757d';
+                }
+            }
+            
+            console.log(`OCR mode changed to: ${selectedMode}`);
+        });
+        
+        console.log('✅ OCR mode select initialized');
+    } catch (error) {
+        console.error('❌ Failed to initialize OCR mode select:', error);
+    }
+}
+
 function initProcessingButtons() {
     const startBtn = document.getElementById('start_processing_btn');
     const clearBtn = document.getElementById('clear_all_btn');

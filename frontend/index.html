@@ -1170,9 +1170,11 @@ function startProcessing() {
     }
     
     // 准备数据
+    const ocrModeSelect = document.getElementById('ocr_mode_select');
+    const ocrMode = ocrModeSelect ? ocrModeSelect.value : 'rapidocr';
+    
     const processingData = {
         drawings: uploadedDrawings.map(drawing => {
-            // 移除data URL前缀，只保留base64数据
             const base64Data = drawing.dataUrl.split(',')[1];
             return {
                 name: drawing.name,
@@ -1182,10 +1184,10 @@ function startProcessing() {
             };
         }),
         specification: specificationInput.value.trim(),
-        // 添加AI模式配置
         ai_mode: aiConfig.aiMode,
         model_name: aiConfig.model,
-        custom_prompt: aiConfig.prompt
+        custom_prompt: aiConfig.prompt,
+        ocr_mode: ocrMode
     };
     
     // 设置超时时间(AI模式60秒,规则模式30秒)
@@ -1212,27 +1214,23 @@ function startProcessing() {
         }
     }, timeoutMs);
     
-    // 获取API Key（AI模式需要）
     const apiKey = appState?.apiKey || localStorage.getItem('zhipuai_api_key') || '';
     
-    // 准备请求头
     const headers = {
         'Content-Type': 'application/json'
     };
     
-    // 如果是AI模式，必须添加Authorization header
-    if (aiConfig.aiMode) {
+    if (aiConfig.aiMode || ocrMode === 'glm_ocr') {
         if (!apiKey) {
             if (processingStatus) {
                 processingStatus.innerHTML = `
                     <div style="color: #721c24; background-color: #f8d7da; padding: 10px; border-radius: 4px; border: 1px solid #f5c6cb;">
-                        ❌ AI模式需要API Key
+                        ❌ ${aiConfig.aiMode ? 'AI模式' : 'GLM OCR模式'}需要API Key
                     </div>
                 `;
             }
-            alert('AI模式需要配置API Key。请点击右上角⚙️设置并保存您的智谱AI API Key。');
+            alert(`${aiConfig.aiMode ? 'AI模式' : 'GLM OCR模式'}需要配置API Key。请点击右上角⚙️设置并保存您的智谱AI API Key。`);
             
-            // 重新启用按钮
             if (startBtn) {
                 startBtn.disabled = false;
                 startBtn.style.opacity = '1';

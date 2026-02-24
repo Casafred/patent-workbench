@@ -92,7 +92,8 @@ def process_drawing_marker():
         ai_mode = req_data.get('ai_mode', False)
         model_name = req_data.get('model_name')
         custom_prompt = req_data.get('custom_prompt')
-        force_refresh = req_data.get('force_refresh', False)  # 是否强制刷新缓存
+        force_refresh = req_data.get('force_refresh', False)
+        ocr_mode = req_data.get('ocr_mode', 'rapidocr')
         
         if not drawings or not isinstance(drawings, list) or len(drawings) == 0:
             return create_response(error="drawings is required and must be a non-empty list", status_code=400)
@@ -100,25 +101,35 @@ def process_drawing_marker():
         if not specification or not isinstance(specification, str) or specification.strip() == '':
             return create_response(error="specification is required and must be a non-empty string", status_code=400)
         
-        # 导入必要的模块
         import base64
         import hashlib
         from backend.utils.ocr_utils import perform_ocr
         from backend.utils.component_extractor import extract_reference_markers
         from backend.utils.text_preprocessor import TextPreprocessor
 
-        # 缓存管理
         from backend.utils.drawing_cache import DrawingCacheManager
         cache_manager = DrawingCacheManager()
 
-        # 处理结果数据
         processed_results = []
         total_numbers = 0
-        all_ocr_markers = set()  # 收集所有OCR检测到的标记
-        cache_info = {}  # 缓存信息
+        all_ocr_markers = set()
+        cache_info = {}
 
-        # 🚀 STEP 1: 先处理所有图片，进行OCR识别
-        print(f"[DEBUG] Step 1: Processing {len(drawings)} drawings with OCR...")
+        glm_api_key = None
+        if ocr_mode == 'glm_ocr':
+            client, error = get_zhipu_client()
+            if error:
+                return error
+            auth_header = request.headers.get('Authorization')
+            if auth_header and auth_header.startswith('Bearer '):
+                glm_api_key = auth_header.split(' ')[1]
+            if not glm_api_key:
+                return create_response(
+                    error="GLM OCR mode requires API key in Authorization header",
+                    status_code=401
+                )
+
+        print(f"[DEBUG] Step 1: Processing {len(drawings)} drawings with OCR (mode: {ocr_mode})...")
 
         for drawing in drawings:
             try:
@@ -127,11 +138,9 @@ def process_drawing_marker():
                 # 解析base64图片数据
                 image_data = base64.b64decode(drawing['data'])
                 
-                # 生成缓存键（基于图片内容的哈希）
                 image_hash = hashlib.md5(image_data).hexdigest()
-                cache_key = f"{drawing['name']}_{image_hash}"
+                cache_key = f"{ocr_mode}_{drawing['name']}_{image_hash}"
                 
-                # 检查缓存（如果不是强制刷新）
                 cached_result = None
                 if not force_refresh:
                     cached_result = cache_manager.get_cache(cache_key)
@@ -140,29 +149,43 @@ def process_drawing_marker():
                         cache_info[drawing['name']] = {
                             'has_cache': True,
                             'cache_key': cache_key,
-                            'cached_at': cached_result.get('timestamp')
+                            'cached_at': cached_result.get('timestamp'),
+                            'ocr_mode': cached_result.get('ocr_mode', 'rapidocr')
                         }
 
-                # 如果有缓存且不强制刷新，使用缓存结果
                 if cached_result and not force_refresh:
                     all_detected_numbers = cached_result['ocr_results']
                     print(f"[DEBUG] Using cached OCR results: {len(all_detected_numbers)} markers")
                 else:
-                    # 使用RapidOCR进行识别
-                    all_detected_numbers = perform_ocr(image_data)
+                    if ocr_mode == 'glm_ocr':
+                        from backend.utils.glm_ocr_utils import perform_glm_ocr
+                        try:
+                            all_detected_numbers = perform_glm_ocr(
+                                image_data,
+                                glm_api_key,
+                                ocr_type="handwriting",
+                                language_type="CHN_ENG"
+                            )
+                            print(f"[DEBUG] GLM OCR detected {len(all_detected_numbers)} items")
+                        except Exception as e:
+                            print(f"[WARN] GLM OCR failed, falling back to RapidOCR: {str(e)}")
+                            all_detected_numbers = perform_ocr(image_data)
+                    else:
+                        all_detected_numbers = perform_ocr(image_data)
                     
-                    # 保存到缓存
                     cache_manager.set_cache(cache_key, {
                         'drawing_name': drawing['name'],
                         'ocr_results': all_detected_numbers,
-                        'image_hash': image_hash
+                        'image_hash': image_hash,
+                        'ocr_mode': ocr_mode
                     })
                     print(f"[DEBUG] Cached OCR results for {drawing['name']}")
                     
                     cache_info[drawing['name']] = {
                         'has_cache': False,
                         'cache_key': cache_key,
-                        'cached_at': None
+                        'cached_at': None,
+                        'ocr_mode': ocr_mode
                     }
 
                 print(f"[DEBUG] OCR detected {len(all_detected_numbers)} markers")
@@ -357,41 +380,43 @@ def process_drawing_marker():
                 if detected['number'] not in reference_map and detected['number'] not in unknown_markers:
                     unknown_markers.append(detected['number'])
         
-        # 🔥 优化：计算OCR识别总数和匹配统计
         total_ocr_detected = sum(d.get('ocr_detected_count', 0) for d in processed_results)
         total_matched = sum(d.get('matched_count', 0) for d in processed_results)
         total_unmatched = sum(d.get('unmatched_count', 0) for d in processed_results)
         
-        # 生成更详细的消息
+        ocr_mode_display = 'GLM OCR API' if ocr_mode == 'glm_ocr' else 'RapidOCR (内置)'
+        
         if total_ocr_detected > 0:
             if total_matched > 0:
-                message = f"✅ OCR识别: {total_ocr_detected}个标记 | 说明书匹配: {total_matched}个 | 未匹配: {total_unmatched}个"
+                message = f"✅ [{ocr_mode_display}] 识别: {total_ocr_detected}个标记 | 匹配: {total_matched}个 | 未匹配: {total_unmatched}个"
             else:
-                message = f"⚠️ OCR识别: {total_ocr_detected}个标记 | 说明书匹配: 0个 (请检查说明书内容或使用AI模式)"
+                message = f"⚠️ [{ocr_mode_display}] 识别: {total_ocr_detected}个标记 | 匹配: 0个 (请检查说明书内容或使用AI模式)"
         else:
-            message = f"❌ 未识别到任何标记，请检查图片清晰度"
+            message = f"❌ [{ocr_mode_display}] 未识别到任何标记，请检查图片清晰度"
         
-        # 返回处理结果（包含调试信息和缓存信息）
         return create_response(data={
             'drawings': processed_results,
             'reference_map': reference_map,
             'total_numbers': total_numbers,
             'matched_count': total_matched,
-            'ocr_detected_count': total_ocr_detected,  # 新增：OCR识别总数
-            'unmatched_count': total_unmatched,        # 新增：未匹配数
+            'ocr_detected_count': total_ocr_detected,
+            'unmatched_count': total_unmatched,
             'match_rate': stats['match_rate'],
             'avg_confidence': stats['avg_confidence'],
             'unknown_markers': unknown_markers,
             'missing_markers': missing_markers,
             'suggestions': stats['suggestions'],
             'message': message,
-            'cache_info': cache_info,  # 新增：缓存信息
+            'cache_info': cache_info,
+            'ocr_mode': ocr_mode,
+            'ocr_mode_display': ocr_mode_display,
             'debug_info': {
                 'total_markers_in_spec': len(reference_map),
                 'reference_map': reference_map,
                 'extraction_method': 'AI智能抽取' if ai_mode else 'jieba分词',
-                'has_ocr_results': total_ocr_detected > 0,  # 标记是否有OCR结果
-                'has_matched_results': total_matched > 0     # 标记是否有匹配结果
+                'ocr_mode': ocr_mode,
+                'has_ocr_results': total_ocr_detected > 0,
+                'has_matched_results': total_matched > 0
             }
         })
     

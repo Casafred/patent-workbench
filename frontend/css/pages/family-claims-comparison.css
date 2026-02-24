@@ -304,6 +304,227 @@
     margin: 0;
 }
 
+/* 结果控制区 */
+.result-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.view-mode-selector {
+    display: flex;
+    gap: 5px;
+}
+
+.view-btn {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    background: var(--surface-color);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.view-btn:hover {
+    background: var(--border-color);
+}
+
+.view-btn.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+/* 统计面板 */
+.stats-panel {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    padding: 15px;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-color-secondary);
+    margin-bottom: 5px;
+}
+
+.stat-value {
+    display: block;
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+/* 对比卡片容器 */
+.comparison-cards-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 20px;
+}
+
+/* 对比卡片 */
+.comparison-card {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.card-header h4 {
+    margin: 0;
+    font-size: 16px;
+    color: var(--text-color);
+}
+
+.similarity-score {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.card-content {
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.features-section {
+    margin-bottom: 15px;
+}
+
+.features-section h5 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.features-section ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.features-section li {
+    margin-bottom: 8px;
+}
+
+/* 并排视图 */
+.side-by-side-view {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.side-by-side-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.side-by-side-col {
+    padding: 15px;
+}
+
+.side-by-side-col h4 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 8px;
+}
+
+.side-by-side-col ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.side-by-side-col li {
+    margin-bottom: 5px;
+    font-size: 14px;
+}
+
+/* 矩阵视图 */
+.matrix-view {
+    overflow-x: auto;
+}
+
+.matrix-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.matrix-table th,
+.matrix-table td {
+    padding: 12px;
+    text-align: center;
+    border: 1px solid var(--border-color);
+}
+
+.matrix-table th {
+    background: var(--primary-color);
+    color: white;
+    font-weight: 600;
+}
+
+.matrix-table td {
+    font-size: 14px;
+}
+
+.matrix-cell-high {
+    background: rgba(34, 197, 94, 0.2);
+    color: #166534;
+    font-weight: 600;
+}
+
+.matrix-cell-medium {
+    background: rgba(234, 179, 8, 0.2);
+    color: #854d0e;
+    font-weight: 600;
+}
+
+.matrix-cell-low {
+    background: rgba(239, 68, 68, 0.2);
+    color: #991b1b;
+    font-weight: 600;
+}
+
+.matrix-cell-diagonal {
+    background: #f3f4f6;
+    color: #9ca3af;
+}
+
+.matrix-cell-empty {
+    background: #f9fafb;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
     .family-patents-grid {
