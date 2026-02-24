@@ -1308,17 +1308,16 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     
                     let textToCopy = section.textContent.trim();
                     
-                    navigator.clipboard.writeText(textToCopy).then(() => {
-                        // 找到对应的复制按钮并显示成功提示
-                        const btn = event.target.closest('.copy-section-btn');
+                    navigator.clipboard.writeText(textToCopy).then(function() {
+                        var btn = event.target.closest('.copy-section-btn');
                         if (btn) {
-                            const originalHTML = btn.innerHTML;
+                            var originalHTML = btn.innerHTML;
                             btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" style="width:14px;height:14px"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/></svg> 已复制';
-                            setTimeout(() => {
+                            setTimeout(function() {
                                 btn.innerHTML = originalHTML;
                             }, 2000);
                         }
-                    }).catch(err => {
+                    }).catch(function(err) {
                         console.error('复制失败:', err);
                         alert('复制失败，请手动复制');
                     });
@@ -1644,8 +1643,8 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     };
                     
                     // 标记缺失数据的导航项
-                    navItems.forEach(item => {
-                        const sectionId = item.getAttribute('data-section');
+                    navItems.forEach(function(item) {
+                        var sectionId = item.getAttribute('data-section');
                         if (sectionId && sectionDataMap.hasOwnProperty(sectionId) && !sectionDataMap[sectionId]) {
                             item.style.color = '#d32f2f';
                             item.style.opacity = '0.6';
@@ -1656,11 +1655,11 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     });
                     
                     // 点击导航项平滑滚动并展开对应section
-                    navItems.forEach(item => {
+                    navItems.forEach(function(item) {
                         item.addEventListener('click', function(e) {
                             e.preventDefault();
-                            const targetId = this.getAttribute('href').substring(1);
-                            const targetSection = document.getElementById(targetId);
+                            var targetId = this.getAttribute('href').substring(1);
+                            var targetSection = document.getElementById(targetId);
                             if (targetSection) {
                                 // 如果是可折叠的section，展开它
                                 if (targetSection.classList.contains('collapsible-section')) {
@@ -1673,18 +1672,18 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     
                     // 滚动时高亮当前section（不自动展开/折叠）
                     function highlightNav() {
-                        let current = '';
+                        var current = '';
                         
-                        sections.forEach(section => {
-                            const sectionTop = section.offsetTop;
-                            const sectionHeight = section.clientHeight;
+                        sections.forEach(function(section) {
+                            var sectionTop = section.offsetTop;
+                            var sectionHeight = section.clientHeight;
                             if (window.pageYOffset >= sectionTop - 100) {
                                 current = section.getAttribute('id');
                             }
                         });
                         
                         // 更新导航高亮
-                        navItems.forEach(item => {
+                        navItems.forEach(function(item) {
                             item.classList.remove('active');
                             if (item.getAttribute('href') === '#' + current) {
                                 item.classList.add('active');
@@ -1699,12 +1698,12 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     window.addEventListener('storage', function(e) {
                         if (e.key === 'patent_analysis_update_signal') {
                             try {
-                                const signal = JSON.parse(e.newValue);
+                                var signal = JSON.parse(e.newValue);
                                 if (signal && signal.patentNumber === currentPatentNumber.toUpperCase()) {
                                     console.log('📡 收到解读更新信号:', signal);
                                     // 从主窗口获取解读结果
                                     if (window.opener && window.opener.PatentCache) {
-                                        const cachedAnalysis = window.opener.PatentCache.getAnalysis(currentPatentNumber);
+                                        var cachedAnalysis = window.opener.PatentCache.getAnalysis(currentPatentNumber);
                                         if (cachedAnalysis) {
                                             updateAnalysisSection(cachedAnalysis.content);
                                         }

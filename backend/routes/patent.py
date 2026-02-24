@@ -754,7 +754,9 @@ def translate_patent_text():
             )
         
         # 获取智谱AI客户端
-        client = get_zhipu_client()
+        client, client_error = get_zhipu_client()
+        if client_error:
+            return client_error
         if not client:
             return create_response(
                 error="翻译服务不可用，请检查API配置",
