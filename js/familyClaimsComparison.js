@@ -316,10 +316,14 @@ async function compareFamilyClaims() {
         const model = familyComparisonModelSelect.value;
         const patentNumbers = selectedPatents.map(p => p.patent_number);
 
+        // 从 appState 获取 API Key
+        const apiKey = appState.apiKey || localStorage.getItem('api_key') || '';
+
         const response = await fetch('/api/patent/family/compare', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
             },
             credentials: 'include',
             body: JSON.stringify({
