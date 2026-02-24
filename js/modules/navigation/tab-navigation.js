@@ -50,7 +50,7 @@ function switchTab(tabId, clickedButton) {
     document.querySelectorAll(".tab-button").forEach(el => el.classList.remove("active"));
     getEl(`${tabId}-tab`).classList.add("active");
     if (clickedButton) clickedButton.classList.add("active");
-    
+
     // 当切换到功能三标签页时，确保模板选择器能够正确初始化
     if (tabId === 'large_batch') {
         setTimeout(() => {
@@ -60,11 +60,34 @@ function switchTab(tabId, clickedButton) {
                 switchSubTab('generator', largeBatchFirstStep);
                 console.log('✅ 功能三内部步骤已激活');
             }
-            
+
             // 然后初始化功能三独立的模板选择器
             if (typeof updateTemplateSelector === 'function') {
                 updateTemplateSelector();
                 console.log('✅ 功能三标签页切换，独立模板选择器已重新初始化');
+            }
+        }, 100);
+    }
+
+    // 当切换到功能四(权利要求对比)标签页时，确保默认激活"手动输入对比"子标签页
+    if (tabId === 'claims_comparison') {
+        setTimeout(() => {
+            const manualSubTab = document.getElementById('manual-sub-tab');
+            const familySubTab = document.getElementById('family-sub-tab');
+            const manualButton = document.querySelector('#claims_comparison-tab .sub-tab-button[data-sub-tab="manual"]');
+
+            if (manualSubTab && familySubTab) {
+                // 激活手动输入对比子标签页
+                manualSubTab.classList.add('active');
+                familySubTab.classList.remove('active');
+
+                // 激活手动输入对比按钮
+                if (manualButton) {
+                    document.querySelectorAll('#claims_comparison-tab .sub-tab-button').forEach(btn => btn.classList.remove('active'));
+                    manualButton.classList.add('active');
+                }
+
+                console.log('✅ 功能四默认子标签页已激活: 手动输入对比');
             }
         }, 100);
     }
