@@ -1725,10 +1725,10 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         
                         try {
                             var cleanContent = analysisContent.trim();
-                            if (cleanContent.startsWith('```json')) {
-                                cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-                            } else if (cleanContent.startsWith('```')) {
-                                cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
+                            if (cleanContent.startsWith('\`\`\`json')) {
+                                cleanContent = cleanContent.replace(/^\`\`\`json\s*/, '').replace(/\s*\`\`\`$/, '');
+                            } else if (cleanContent.startsWith('\`\`\`')) {
+                                cleanContent = cleanContent.replace(/^\`\`\`\s*/, '').replace(/\s*\`\`\`$/, '');
                             }
                             
                             analysisJson = JSON.parse(cleanContent);
