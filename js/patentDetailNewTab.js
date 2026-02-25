@@ -196,6 +196,24 @@ window.openPatentDetailInNewTab = function(patentNumber) {
         }
     }
     
+    // 在构建模板之前，先转义 data 中的 ${ 字符串，防止模板解析错误
+    function escapeTemplateStrings(obj) {
+        if (typeof obj === 'string') {
+            return obj.replace(/\$\{/g, '\\${');
+        } else if (Array.isArray(obj)) {
+            return obj.map(escapeTemplateStrings);
+        } else if (obj && typeof obj === 'object') {
+            const result = {};
+            for (const key in obj) {
+                result[key] = escapeTemplateStrings(obj[key]);
+            }
+            return result;
+        }
+        return obj;
+    }
+    
+    const escapedData = escapeTemplateStrings(data);
+    
     // 构建完整的HTML页面 - 绿色主题 + 左侧导航
     const htmlContent = `
         <!DOCTYPE html>
