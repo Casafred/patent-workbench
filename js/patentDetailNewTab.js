@@ -186,13 +186,29 @@ window.openPatentDetailInNewTab = function(patentNumber) {
         return true;
     }
     
+    // 数据访问辅助函数 - 从window对象获取专利数据
+    function getPatentData() {
+        if (typeof window.__patentData !== 'undefined') {
+            return window.__patentData;
+        }
+        var el = document.getElementById('patent-data');
+        if (el) {
+            try {
+                return JSON.parse(el.textContent);
+            } catch (e) {
+                console.error('Failed to parse patent data:', e);
+            }
+        }
+        return {};
+    }
+    
     // 生成导航项HTML
     function buildNavItem(navId, icon, label) {
         const isSelected = isNavFieldSelected(navId);
         if (isSelected) {
-            return `<a href="#${navId}" class="side-nav-item" data-section="${navId}">${icon} ${label}</a>`;
+            return '<a href="#' + navId + '" class="side-nav-item" data-section="' + navId + '">' + icon + ' ' + label + '</a>';
         } else {
-            return `<a href="#" class="side-nav-item disabled" data-section="${navId}" onclick="event.preventDefault(); return false;" title="该字段未被爬取" style="color: #ccc; cursor: not-allowed;">${icon} <span style="text-decoration: line-through;">${label}</span></a>`;
+            return '<a href="#" class="side-nav-item disabled" data-section="' + navId + '" onclick="event.preventDefault(); return false;" title="该字段未被爬取" style="color: #ccc; cursor: not-allowed;">' + icon + ' <span style="text-decoration: line-through;">' + label + '</span></a>';
         }
     }
     
@@ -1807,10 +1823,9 @@ window.openPatentDetailInNewTab = function(patentNumber) {
     // 创建一个新窗口
     const newWindow = window.open('', '_blank');
     if (newWindow) {
-        // 先设置数据到新窗口的 window 对象
-        newWindow.__patentData = data;
-        newWindow.__patentNumber = patentNumber;
-        // 写入HTML内容
+        // 先定义变量
+        var dataJson = JSON.stringify(data).replace(/</g, "<\\/script>");
+        newWindow.document.write('<script>var __patentData = ' + dataJson + '; var __patentNumber = ' + JSON.stringify(patentNumber) + ';</script>');
         newWindow.document.write(htmlContent);
         newWindow.document.close();
     }
