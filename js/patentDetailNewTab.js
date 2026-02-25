@@ -1634,8 +1634,8 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     const sections = document.querySelectorAll('.section');
                     
                     // 检测哪些section有数据，标记缺失数据的导航项
-                    const data = ${JSON.stringify(data).replace(/\\u2028/g, '\\u2028').replace(/\\u2029/g, '\\u2029').replace(/\\n/g, '\\n').replace(/\\r/g, '\\r').replace(/\\t/g, '\\t')};
-                    const currentPatentNumber = '${patentNumber.replace(/\\'/g, "\\'").replace(/\\n/g, '\\n').replace(/\\r/g, '\\r')}';
+                    const data = ${JSON.stringify(data).replace(/</g, '\\u003c').replace(/>/g, '\\u003e')};
+                    const currentPatentNumber = '${patentNumber.replace(/\\'/g, "\\'").replace(/</g, '\\u003c').replace(/>/g, '\\u003e')}';
                     const sectionDataMap = {
                         'abstract': data.abstract && data.abstract.length > 0,
                         'claims': data.claims && data.claims.length > 0,
