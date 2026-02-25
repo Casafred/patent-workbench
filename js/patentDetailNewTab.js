@@ -1253,7 +1253,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     ` : ''}
                 </div>
             </div>
-            
+
             <script>
                 // 回到顶部
                 function scrollToTop(event) {
@@ -1634,8 +1634,8 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     const sections = document.querySelectorAll('.section');
                     
                     // 检测哪些section有数据，标记缺失数据的导航项
-                    const data = ${JSON.stringify(data).replace(/</g, '\\u003c').replace(/>/g, '\\u003e')};
-                    const currentPatentNumber = '${patentNumber.replace(/\\'/g, "\\'").replace(/</g, '\\u003c').replace(/>/g, '\\u003e')}';
+                    var data = window.__patentData || {};
+                    var currentPatentNumber = window.__patentNumber || '';
                     const sectionDataMap = {
                         'abstract': data.abstract && data.abstract.length > 0,
                         'claims': data.claims && data.claims.length > 0,
@@ -1807,6 +1807,9 @@ window.openPatentDetailInNewTab = function(patentNumber) {
     // 创建一个新窗口
     const newWindow = window.open('', '_blank');
     if (newWindow) {
+        // 先设置数据到新窗口的 window 对象
+        newWindow.__patentData = data;
+        newWindow.__patentNumber = patentNumber;
         // 写入HTML内容
         newWindow.document.write(htmlContent);
         newWindow.document.close();
