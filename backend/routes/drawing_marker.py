@@ -908,3 +908,358 @@ def reprocess_drawings():
             error=f"处理失败: {str(e)}",
             status_code=500
         )
+
+
+@drawing_marker_bp.route('/drawing-marker/process-staged', methods=['POST'])
+def process_drawing_marker_staged():
+    """
+    Process patent drawings in stages with real-time status feedback.
+    
+    This endpoint processes drawings in three stages:
+    1. OCR recognition - detect reference numbers in images
+    2. Text extraction - extract relevant segments from specification
+    3. AI processing - match numbers with component names
+    
+    Request body:
+    {
+        "drawings": [...],
+        "specification": "...",
+        "ai_mode": true/false,
+        "model_name": "...",
+        "custom_prompt": "...",
+        "ocr_mode": "rapidocr"/"glm_ocr"/"paddle_ocr",
+        "paddle_token": "...",
+        "stage": "ocr"/"extract"/"ai"/"all"
+    }
+    
+    Response varies by stage:
+    - Stage "ocr": Returns OCR results with detected numbers
+    - Stage "extract": Returns extracted text segments
+    - Stage "ai": Returns final matched results
+    - Stage "all": Returns complete results (backward compatible)
+    """
+    is_valid, error_response = validate_api_request()
+    if not is_valid:
+        return error_response
+    
+    try:
+        req_data = request.get_json()
+        drawings = req_data.get('drawings')
+        specification = req_data.get('specification')
+        ai_mode = req_data.get('ai_mode', False)
+        model_name = req_data.get('model_name')
+        custom_prompt = req_data.get('custom_prompt')
+        force_refresh = req_data.get('force_refresh', False)
+        ocr_mode = req_data.get('ocr_mode', 'rapidocr')
+        paddle_token = req_data.get('paddle_token') or request.headers.get('X-Paddle-Token')
+        stage = req_data.get('stage', 'all')
+        ocr_results_from_client = req_data.get('ocr_results')
+        
+        if not drawings or not isinstance(drawings, list) or len(drawings) == 0:
+            return create_response(error="drawings is required and must be a non-empty list", status_code=400)
+        
+        if not specification or not isinstance(specification, str) or specification.strip() == '':
+            return create_response(error="specification is required and must be a non-empty string", status_code=400)
+        
+        import base64
+        import hashlib
+        from backend.utils.ocr_utils import perform_ocr, deduplicate_results, filter_by_confidence, match_with_reference_map, calculate_statistics
+        from backend.utils.drawing_cache import DrawingCacheManager
+        from backend.utils.text_segment_extractor import extract_relevant_segments
+        from backend.utils.component_extractor import extract_reference_markers
+        
+        cache_manager = DrawingCacheManager()
+        
+        glm_api_key = None
+        if ocr_mode == 'glm_ocr':
+            client, error = get_zhipu_client()
+            if error:
+                return error
+            auth_header = request.headers.get('Authorization')
+            if auth_header and auth_header.startswith('Bearer '):
+                glm_api_key = auth_header.split(' ')[1]
+            if not glm_api_key:
+                return create_response(
+                    error="GLM OCR mode requires API key in Authorization header",
+                    status_code=401
+                )
+        
+        if ocr_mode == 'paddle_ocr' and not paddle_token:
+            return create_response(
+                error="PP-OCRv5 mode requires token",
+                status_code=401
+            )
+        
+        all_ocr_markers = set()
+        processed_results = []
+        cache_info = {}
+        
+        print(f"[STAGED] Stage: {stage}, Processing {len(drawings)} drawings...")
+        
+        if stage in ['ocr', 'all'] and not ocr_results_from_client:
+            print(f"[STAGED] Step 1: OCR recognition (mode: {ocr_mode})...")
+            
+            for drawing in drawings:
+                try:
+                    image_data = base64.b64decode(drawing['data'])
+                    image_hash = hashlib.md5(image_data).hexdigest()
+                    cache_key = f"{ocr_mode}_{drawing['name']}_{image_hash}"
+                    
+                    cached_result = None
+                    if not force_refresh:
+                        cached_result = cache_manager.get_cache(cache_key)
+                    
+                    if cached_result and not force_refresh:
+                        all_detected_numbers = cached_result['ocr_results']
+                        cache_info[drawing['name']] = {'has_cache': True, 'cache_key': cache_key}
+                    else:
+                        if ocr_mode == 'glm_ocr':
+                            from backend.utils.glm_ocr_utils import perform_glm_ocr
+                            try:
+                                all_detected_numbers = perform_glm_ocr(image_data, glm_api_key, ocr_type="handwriting", language_type="CHN_ENG")
+                            except Exception as e:
+                                print(f"[WARN] GLM OCR failed, falling back: {str(e)}")
+                                all_detected_numbers = perform_ocr(image_data)
+                        elif ocr_mode == 'paddle_ocr':
+                            from backend.utils.paddle_ocr_utils import perform_pp_ocr
+                            try:
+                                all_detected_numbers = perform_pp_ocr(image_data, paddle_token)
+                            except Exception as e:
+                                print(f"[WARN] PP-OCRv5 failed, falling back: {str(e)}")
+                                all_detected_numbers = perform_ocr(image_data)
+                        else:
+                            all_detected_numbers = perform_ocr(image_data)
+                        
+                        cache_manager.set_cache(cache_key, {
+                            'drawing_name': drawing['name'],
+                            'ocr_results': all_detected_numbers,
+                            'image_hash': image_hash,
+                            'ocr_mode': ocr_mode
+                        })
+                        cache_info[drawing['name']] = {'has_cache': False, 'cache_key': cache_key}
+                    
+                    all_detected_numbers = deduplicate_results(all_detected_numbers, position_threshold=25)
+                    all_detected_numbers = filter_by_confidence(all_detected_numbers, min_confidence=30)
+                    
+                    for detection in all_detected_numbers:
+                        all_ocr_markers.add(detection['number'])
+                    
+                    processed_results.append({
+                        'name': drawing['name'],
+                        'type': drawing['type'],
+                        'size': drawing['size'],
+                        'ocr_results': all_detected_numbers
+                    })
+                    
+                except Exception as e:
+                    print(f"Error processing drawing {drawing['name']}: {traceback.format_exc()}")
+                    processed_results.append({
+                        'name': drawing['name'],
+                        'type': drawing['type'],
+                        'size': drawing['size'],
+                        'ocr_results': [],
+                        'error': str(e)
+                    })
+            
+            print(f"[STAGED] OCR complete: {len(all_ocr_markers)} unique markers detected: {all_ocr_markers}")
+            
+            if stage == 'ocr':
+                return create_response(data={
+                    'stage': 'ocr',
+                    'ocr_markers': list(all_ocr_markers),
+                    'drawings': processed_results,
+                    'cache_info': cache_info,
+                    'message': f"OCR识别完成，共识别出 {len(all_ocr_markers)} 个序号"
+                })
+        
+        elif stage in ['extract', 'ai'] and ocr_results_from_client:
+            all_ocr_markers = set(ocr_results_from_client)
+            print(f"[STAGED] Using client-provided OCR markers: {all_ocr_markers}")
+        
+        if stage in ['extract', 'all']:
+            print(f"[STAGED] Step 2: Extracting relevant text segments...")
+            
+            extraction_result = extract_relevant_segments(
+                specification=specification,
+                ocr_markers=all_ocr_markers,
+                context_sentences=1,
+                max_total_length=8000
+            )
+            
+            extracted_text = extraction_result['extracted_text']
+            found_markers = extraction_result['found_markers']
+            not_found_markers = extraction_result['not_found_markers']
+            
+            print(f"[STAGED] Extraction complete: {extraction_result['original_length']} -> {extraction_result['extracted_length']} chars")
+            print(f"[STAGED] Found markers: {found_markers}, Not found: {not_found_markers}")
+            
+            if stage == 'extract':
+                return create_response(data={
+                    'stage': 'extract',
+                    'ocr_markers': list(all_ocr_markers),
+                    'found_markers': list(found_markers),
+                    'not_found_markers': list(not_found_markers),
+                    'extracted_text': extracted_text,
+                    'original_length': extraction_result['original_length'],
+                    'extracted_length': extraction_result['extracted_length'],
+                    'segment_count': extraction_result['segment_count'],
+                    'message': f"文本提取完成，从 {extraction_result['original_length']} 字符缩减到 {extraction_result['extracted_length']} 字符"
+                })
+        
+        if stage in ['ai', 'all']:
+            print(f"[STAGED] Step 3: AI processing...")
+            
+            if stage == 'ai' and not processed_results:
+                print(f"[STAGED] Stage 'ai': Need to get OCR results first...")
+                for drawing in drawings:
+                    try:
+                        image_data = base64.b64decode(drawing['data'])
+                        image_hash = hashlib.md5(image_data).hexdigest()
+                        cache_key = f"{ocr_mode}_{drawing['name']}_{image_hash}"
+                        
+                        cached_result = cache_manager.get_cache(cache_key)
+                        if cached_result:
+                            all_detected_numbers = cached_result['ocr_results']
+                            all_detected_numbers = deduplicate_results(all_detected_numbers, position_threshold=25)
+                            all_detected_numbers = filter_by_confidence(all_detected_numbers, min_confidence=30)
+                            
+                            for detection in all_detected_numbers:
+                                all_ocr_markers.add(detection['number'])
+                            
+                            processed_results.append({
+                                'name': drawing['name'],
+                                'type': drawing['type'],
+                                'size': drawing['size'],
+                                'ocr_results': all_detected_numbers
+                            })
+                            cache_info[drawing['name']] = {'has_cache': True, 'cache_key': cache_key}
+                    except Exception as e:
+                        print(f"Error loading cached OCR for {drawing['name']}: {str(e)}")
+                        processed_results.append({
+                            'name': drawing['name'],
+                            'type': drawing['type'],
+                            'size': drawing['size'],
+                            'ocr_results': [],
+                            'error': str(e)
+                        })
+                
+                if not all_ocr_markers and ocr_results_from_client:
+                    all_ocr_markers = set(ocr_results_from_client)
+            
+            if ai_mode:
+                if not model_name:
+                    return create_response(error="model_name is required when ai_mode is true", status_code=400)
+                
+                client, error = get_zhipu_client()
+                if error:
+                    return error
+                
+                from backend.services.ai_description.ai_description_processor import AIDescriptionProcessor
+                processor = AIDescriptionProcessor()
+                
+                text_to_process = specification
+                if 'extracted_text' in locals():
+                    text_to_process = extracted_text
+                elif stage == 'ai':
+                    extraction_result = extract_relevant_segments(specification, all_ocr_markers, 1, 8000)
+                    text_to_process = extraction_result['extracted_text']
+                
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    ai_result = loop.run_until_complete(
+                        processor.process(text_to_process, model_name, client, custom_prompt)
+                    )
+                finally:
+                    loop.close()
+                
+                if not ai_result.get('success'):
+                    return create_response(error=ai_result.get('error', 'AI processing failed'), status_code=500)
+                
+                components = ai_result['data'].get('components', [])
+                reference_map = {comp['marker']: comp['name'] for comp in components}
+                print(f"[STAGED] AI extracted reference_map: {reference_map}")
+            else:
+                reference_map = extract_reference_markers(specification)
+                print(f"[STAGED] Rule-based extracted reference_map: {reference_map}")
+            
+            from backend.utils.smart_split_utils import smart_split_ocr_results
+            spec_markers = list(reference_map.keys())
+            
+            total_numbers = 0
+            for drawing_result in processed_results:
+                if 'error' in drawing_result:
+                    continue
+                
+                ocr_results = drawing_result.pop('ocr_results', [])
+                
+                if ocr_mode in ['glm_ocr', 'paddle_ocr']:
+                    ocr_results = smart_split_ocr_results(ocr_results, spec_markers, enable_split=True)
+                
+                detected_numbers, unknown, missing = match_with_reference_map(ocr_results, reference_map)
+                total_numbers += len(detected_numbers)
+                
+                unmatched_ocr = []
+                for ocr_item in ocr_results:
+                    if ocr_item['number'] not in reference_map:
+                        unmatched_ocr.append({**ocr_item, 'name': '(说明书未匹配)', 'is_matched': False})
+                
+                for item in detected_numbers:
+                    item['is_matched'] = True
+                
+                all_detected = detected_numbers + unmatched_ocr
+                
+                drawing_result['detected_numbers'] = all_detected
+                drawing_result['ocr_detected_count'] = len(ocr_results)
+                drawing_result['matched_count'] = len(detected_numbers)
+                drawing_result['unmatched_count'] = len(unmatched_ocr)
+            
+            all_detected_numbers = []
+            for drawing_result in processed_results:
+                all_detected_numbers.extend(drawing_result.get('detected_numbers', []))
+            
+            stats = calculate_statistics(
+                matched_count=total_numbers,
+                total_markers=len(reference_map),
+                detected_numbers=all_detected_numbers
+            )
+            
+            total_ocr_detected = sum(d.get('ocr_detected_count', 0) for d in processed_results)
+            total_matched = sum(d.get('matched_count', 0) for d in processed_results)
+            total_unmatched = sum(d.get('unmatched_count', 0) for d in processed_results)
+            
+            ocr_mode_display = {
+                'rapidocr': 'RapidOCR (内置)',
+                'glm_ocr': 'GLM OCR API',
+                'paddle_ocr': 'PP-OCRv5 (百度)'
+            }.get(ocr_mode, 'RapidOCR (内置)')
+            
+            if total_ocr_detected > 0:
+                message = f"✅ [{ocr_mode_display}] 识别: {total_ocr_detected}个 | 匹配: {total_matched}个 | 未匹配: {total_unmatched}个"
+            else:
+                message = f"❌ [{ocr_mode_display}] 未识别到任何标记"
+            
+            return create_response(data={
+                'stage': 'complete',
+                'drawings': processed_results,
+                'reference_map': reference_map,
+                'total_numbers': total_numbers,
+                'matched_count': total_matched,
+                'ocr_detected_count': total_ocr_detected,
+                'unmatched_count': total_unmatched,
+                'match_rate': stats['match_rate'],
+                'avg_confidence': stats['avg_confidence'],
+                'message': message,
+                'cache_info': cache_info,
+                'ocr_mode': ocr_mode,
+                'ocr_mode_display': ocr_mode_display,
+                'extraction_info': {
+                    'original_length': extraction_result.get('original_length', len(specification)),
+                    'extracted_length': extraction_result.get('extracted_length', len(specification)),
+                    'segment_count': extraction_result.get('segment_count', 0)
+                } if 'extraction_result' in locals() else None
+            })
+    
+    except Exception as e:
+        print(f"Error in process_drawing_marker_staged: {traceback.format_exc()}")
+        return create_response(error=f"处理失败: {str(e)}", status_code=500)

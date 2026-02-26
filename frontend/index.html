@@ -1078,8 +1078,37 @@ function generateProcessingCacheKey(drawings, specification) {
     }
 }
 
-// 开始处理
-function startProcessing() {
+// 更新进度显示的辅助函数
+function updateProgressStatus(stage, message) {
+    const processingStatus = document.getElementById('processing_status');
+    if (!processingStatus) return;
+    
+    const stageColors = {
+        'ocr': '#17a2b8',
+        'extract': '#ffc107', 
+        'ai': '#28a745',
+        'complete': '#28a745',
+        'error': '#dc3545'
+    };
+    
+    const color = stageColors[stage] || '#28a745';
+    
+    processingStatus.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+            <div class="spinner" style="width: 16px; height: 16px; border: 2px solid #f3f3f3; border-top: 2px solid ${color}; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            <span id="progress_text" style="color: ${color};">${message}</span>
+        </div>
+        <style>
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        </style>
+    `;
+}
+
+// 开始处理 - 分阶段处理版本
+async function startProcessing() {
     // 表单验证
     if (uploadedDrawings.length === 0) {
         alert('请先上传或粘贴专利附图。');
@@ -1092,19 +1121,15 @@ function startProcessing() {
         return;
     }
     
-    // 🔥 修改：不再自动清除缓存，而是在输入变化时清除
-    console.log('开始处理，使用当前输入...');
+    console.log('开始分阶段处理...');
     
-    // 获取AI处理配置
     const aiConfig = window.aiProcessingPanel ? window.aiProcessingPanel.getConfig() : { aiMode: false };
     
-    // 如果启用AI模式但未选择模型,提示用户
     if (aiConfig.aiMode && !aiConfig.model) {
         alert('请选择AI模型。');
         return;
     }
     
-    // 禁用开始处理按钮,防止重复提交
     const startBtn = document.getElementById('start_processing_btn');
     if (startBtn) {
         startBtn.disabled = true;
@@ -1112,111 +1137,11 @@ function startProcessing() {
         startBtn.style.cursor = 'not-allowed';
     }
     
-    // 显示进度反馈
-    const processingStatus = document.getElementById('processing_status');
-    if (processingStatus) {
-        if (aiConfig.aiMode) {
-            // AI模式显示详细进度
-            processingStatus.innerHTML = `
-                <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
-                    <div class="spinner" style="width: 16px; height: 16px; border: 2px solid #f3f3f3; border-top: 2px solid #28a745; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-                    <span id="progress_text">正在检测语言...</span>
-                </div>
-                <style>
-                    @keyframes spin {
-                        0% { transform: rotate(0deg); }
-                        100% { transform: rotate(360deg); }
-                    }
-                </style>
-            `;
-            
-            // 优化进度更新逻辑，更频繁地更新状态
-            let progressStep = 0;
-            const progressTexts = [
-                '正在处理数据...',
-                '正在分析附图...',
-                '正在AI识别标记...',
-                '正在生成结果...'
-            ];
-            
-            const progressInterval = setInterval(() => {
-                progressStep++;
-                if (progressStep < progressTexts.length) {
-                    const progressText = document.getElementById('progress_text');
-                    if (progressText) {
-                        progressText.textContent = progressTexts[progressStep];
-                    }
-                } else {
-                    // 循环显示进度，让用户感觉处理在持续进行
-                    progressStep = 0;
-                    const progressText = document.getElementById('progress_text');
-                    if (progressText) {
-                        progressText.textContent = progressTexts[progressStep];
-                    }
-                }
-            }, 1000); // 每1秒更新一次进度文本，提高用户感知
-            
-            // 保存interval ID以便后续清除
-            window.currentProgressInterval = progressInterval;
-        } else {
-            // 规则模式显示简单进度
-            processingStatus.innerHTML = `
-                <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
-                    <div class="spinner" style="width: 16px; height: 16px; border: 2px solid #f3f3f3; border-top: 2px solid #28a745; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-                    <span>正在处理...</span>
-                </div>
-            `;
-        }
-    }
-    
-    // 准备数据
     const ocrModeSelect = document.getElementById('ocr_mode_select');
     const ocrMode = ocrModeSelect ? ocrModeSelect.value : 'rapidocr';
     
     const paddleTokenInput = document.getElementById('paddle_token_input');
     const paddleToken = paddleTokenInput ? paddleTokenInput.value.trim() : '';
-    
-    const processingData = {
-        drawings: uploadedDrawings.map(drawing => {
-            const base64Data = drawing.dataUrl.split(',')[1];
-            return {
-                name: drawing.name,
-                type: drawing.type,
-                size: drawing.size,
-                data: base64Data
-            };
-        }),
-        specification: specificationInput.value.trim(),
-        ai_mode: aiConfig.aiMode,
-        model_name: aiConfig.model,
-        custom_prompt: aiConfig.prompt,
-        ocr_mode: ocrMode,
-        paddle_token: paddleToken
-    };
-    
-    // 设置超时时间(AI模式60秒,规则模式30秒)
-    const timeoutMs = aiConfig.aiMode ? 60000 : 30000;
-    const timeoutId = setTimeout(() => {
-        // 超时处理
-        if (window.currentProgressInterval) {
-            clearInterval(window.currentProgressInterval);
-        }
-        
-        if (processingStatus) {
-            processingStatus.innerHTML = `
-                <div style="color: #856404; background-color: #fff3cd; padding: 10px; border-radius: 4px; border: 1px solid #ffeaa7;">
-                    ⚠️ 处理超时,请重试或缩短说明书长度
-                </div>
-            `;
-        }
-        
-        // 重新启用按钮
-        if (startBtn) {
-            startBtn.disabled = false;
-            startBtn.style.opacity = '1';
-            startBtn.style.cursor = 'pointer';
-        }
-    }, timeoutMs);
     
     const apiKey = appState?.apiKey || localStorage.getItem('zhipuai_api_key') || '';
     
@@ -1226,15 +1151,8 @@ function startProcessing() {
     
     if (aiConfig.aiMode || ocrMode === 'glm_ocr') {
         if (!apiKey) {
-            if (processingStatus) {
-                processingStatus.innerHTML = `
-                    <div style="color: #721c24; background-color: #f8d7da; padding: 10px; border-radius: 4px; border: 1px solid #f5c6cb;">
-                        ❌ ${aiConfig.aiMode ? 'AI模式' : 'GLM OCR模式'}需要API Key
-                    </div>
-                `;
-            }
-            alert(`${aiConfig.aiMode ? 'AI模式' : 'GLM OCR模式'}需要配置API Key。请点击右上角⚙️设置并保存您的智谱AI API Key。`);
-            
+            updateProgressStatus('error', '❌ AI模式需要API Key');
+            alert('AI模式需要配置API Key。请点击右上角⚙️设置并保存您的智谱AI API Key。');
             if (startBtn) {
                 startBtn.disabled = false;
                 startBtn.style.opacity = '1';
@@ -1246,15 +1164,8 @@ function startProcessing() {
     }
     
     if (ocrMode === 'paddle_ocr' && !paddleToken) {
-        if (processingStatus) {
-            processingStatus.innerHTML = `
-                <div style="color: #721c24; background-color: #f8d7da; padding: 10px; border-radius: 4px; border: 1px solid #f5c6cb;">
-                    ❌ PP-OCRv5模式需要百度AI Studio Token
-                </div>
-            `;
-        }
-        alert('PP-OCRv5模式需要输入百度AI Studio Token。请在OCR模式选择下方输入Token。');
-        
+        updateProgressStatus('error', '❌ PP-OCRv5模式需要Token');
+        alert('PP-OCRv5模式需要输入百度AI Studio Token。');
         if (startBtn) {
             startBtn.disabled = false;
             startBtn.style.opacity = '1';
@@ -1263,76 +1174,170 @@ function startProcessing() {
         return;
     }
     
-    // 调用后端API进行处理
-    fetch('/api/drawing-marker/process', {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify(processingData)
-    })
-    .then(response => {
-        clearTimeout(timeoutId); // 清除超时定时器
-        if (window.currentProgressInterval) {
-            clearInterval(window.currentProgressInterval); // 清除进度更新定时器
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success && data.data) {
-            displayProcessingResult(data.data, aiConfig.aiMode);
-        } else {
-            // 处理失败
-            if (processingStatus) {
-                processingStatus.innerHTML = `
-                    <div style="color: #721c24; background-color: #f8d7da; padding: 10px; border-radius: 4px; border: 1px solid #f5c6cb;">
-                        ❌ 处理失败
-                    </div>
-                `;
-            }
-            
-            const processingResult = document.getElementById('processing_result');
-            if (processingResult) {
-                processingResult.innerHTML = `
-                    <div style="padding: 15px; background-color: rgba(220, 53, 69, 0.1); border-radius: 8px; border: 1px solid rgba(220, 53, 69, 0.3);">
-                        <h4 style="color: var(--error-color); margin-bottom: 10px;">❌ 处理失败</h4>
-                        <p>${data.error || '未知错误'}</p>
-                    </div>
-                `;
-            }
-        }
-    })
-    .catch(error => {
-        clearTimeout(timeoutId); // 清除超时定时器
-        if (window.currentProgressInterval) {
-            clearInterval(window.currentProgressInterval); // 清除进度更新定时器
+    const drawingsData = uploadedDrawings.map(drawing => {
+        const base64Data = drawing.dataUrl.split(',')[1];
+        return {
+            name: drawing.name,
+            type: drawing.type,
+            size: drawing.size,
+            data: base64Data
+        };
+    });
+    
+    const specification = specificationInput.value.trim();
+    
+    try {
+        // 阶段1: OCR识别
+        updateProgressStatus('ocr', '📷 正在识别图片中的序号...');
+        
+        const ocrStartTime = Date.now();
+        const ocrResponse = await fetchWithTimeout('/api/drawing-marker/process-staged', {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({
+                drawings: drawingsData,
+                specification: specification,
+                ocr_mode: ocrMode,
+                paddle_token: paddleToken,
+                stage: 'ocr'
+            })
+        }, 30000);
+        
+        const ocrResult = await ocrResponse.json();
+        
+        if (!ocrResult.success) {
+            throw new Error(ocrResult.error || 'OCR识别失败');
         }
         
-        console.error('处理失败:', error);
-        if (processingStatus) {
-            processingStatus.innerHTML = `
-                <div style="color: #721c24; background-color: #f8d7da; padding: 10px; border-radius: 4px; border: 1px solid #f5c6cb;">
-                    ❌ 网络错误
-                </div>
-            `;
+        const ocrMarkers = ocrResult.data.ocr_markers;
+        const ocrTime = ((Date.now() - ocrStartTime) / 1000).toFixed(1);
+        console.log(`OCR识别完成: ${ocrMarkers.length} 个序号, 耗时 ${ocrTime}秒`);
+        
+        if (ocrMarkers.length === 0) {
+            updateProgressStatus('error', '❌ 未识别到任何序号，请检查图片');
+            if (startBtn) {
+                startBtn.disabled = false;
+                startBtn.style.opacity = '1';
+                startBtn.style.cursor = 'pointer';
+            }
+            return;
         }
+        
+        // 阶段2: 提取相关文本
+        updateProgressStatus('extract', `📝 已识别 ${ocrMarkers.length} 个序号，正在提取说明书相关内容...`);
+        
+        const extractStartTime = Date.now();
+        const extractResponse = await fetchWithTimeout('/api/drawing-marker/process-staged', {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({
+                drawings: drawingsData,
+                specification: specification,
+                ocr_mode: ocrMode,
+                ocr_results: ocrMarkers,
+                stage: 'extract'
+            })
+        }, 10000);
+        
+        const extractResult = await extractResponse.json();
+        
+        if (!extractResult.success) {
+            throw new Error(extractResult.error || '文本提取失败');
+        }
+        
+        const extractTime = ((Date.now() - extractStartTime) / 1000).toFixed(1);
+        const extractInfo = extractResult.data;
+        console.log(`文本提取完成: ${extractInfo.original_length} -> ${extractInfo.extracted_length} 字符, 耗时 ${extractTime}秒`);
+        
+        // 阶段3: AI处理
+        if (aiConfig.aiMode) {
+            updateProgressStatus('ai', `🤖 已提取 ${extractInfo.segment_count} 个相关段落，正在AI智能匹配...`);
+        } else {
+            updateProgressStatus('ai', `⚙️ 已提取 ${extractInfo.segment_count} 个相关段落，正在规则匹配...`);
+        }
+        
+        const aiStartTime = Date.now();
+        const aiResponse = await fetchWithTimeout('/api/drawing-marker/process-staged', {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({
+                drawings: drawingsData,
+                specification: specification,
+                ai_mode: aiConfig.aiMode,
+                model_name: aiConfig.model,
+                custom_prompt: aiConfig.prompt,
+                ocr_mode: ocrMode,
+                ocr_results: ocrMarkers,
+                stage: 'ai'
+            })
+        }, 120000);
+        
+        const aiResult = await aiResponse.json();
+        
+        if (!aiResult.success) {
+            throw new Error(aiResult.error || 'AI处理失败');
+        }
+        
+        const aiTime = ((Date.now() - aiStartTime) / 1000).toFixed(1);
+        const totalTime = ((Date.now() - ocrStartTime) / 1000).toFixed(1);
+        console.log(`AI处理完成，耗时 ${aiTime}秒，总耗时 ${totalTime}秒`);
+        
+        // 显示结果
+        updateProgressStatus('complete', `✅ 处理完成！OCR: ${ocrTime}s | 提取: ${extractTime}s | ${aiConfig.aiMode ? 'AI' : '规则'}: ${aiTime}s`);
+        
+        displayProcessingResult(aiResult.data, aiConfig.aiMode);
+        
+    } catch (error) {
+        console.error('处理失败:', error);
+        
+        let errorMessage = '处理失败';
+        if (error.name === 'TimeoutError') {
+            errorMessage = '⏱️ 处理超时，请重试或缩短说明书长度';
+        } else if (error.message) {
+            errorMessage = `❌ ${error.message}`;
+        }
+        
+        updateProgressStatus('error', errorMessage);
         
         const processingResult = document.getElementById('processing_result');
         if (processingResult) {
             processingResult.innerHTML = `
                 <div style="padding: 15px; background-color: rgba(220, 53, 69, 0.1); border-radius: 8px; border: 1px solid rgba(220, 53, 69, 0.3);">
                     <h4 style="color: var(--error-color); margin-bottom: 10px;">❌ 处理失败</h4>
-                    <p>网络错误或服务器问题，请重试。</p>
+                    <p>${error.message || '未知错误'}</p>
                 </div>
             `;
         }
-    })
-    .finally(() => {
-        // 重新启用按钮
+    } finally {
         if (startBtn) {
             startBtn.disabled = false;
             startBtn.style.opacity = '1';
             startBtn.style.cursor = 'pointer';
         }
-    });
+    }
+}
+
+// 带超时的fetch封装
+async function fetchWithTimeout(url, options, timeout = 30000) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    
+    try {
+        const response = await fetch(url, {
+            ...options,
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        return response;
+    } catch (error) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+            const timeoutError = new Error('请求超时');
+            timeoutError.name = 'TimeoutError';
+            throw timeoutError;
+        }
+        throw error;
+    }
 }
 
 // 🆕 智能重新处理OCR（检测图片变化，自动选择处理模式）
