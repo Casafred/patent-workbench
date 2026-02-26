@@ -1888,10 +1888,17 @@ window.showTranslateModal = function(patentNumber, textType, event) {
         event.preventDefault();
     }
     
-    // 获取可用的模型列表
     const models = window.AVAILABLE_MODELS || ['glm-4-flash', 'glm-4-long', 'glm-4.7-flash'];
     
-    // 创建对话框
+    const cacheKeyPrefix = `translation_${patentNumber}_${textType}_`;
+    let cachedModel = null;
+    for (const m of models) {
+        if (getTranslationCache(cacheKeyPrefix + m)) {
+            cachedModel = m;
+            break;
+        }
+    }
+    
     const dialog = document.createElement('div');
     dialog.id = 'translate-modal-dialog';
     dialog.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 10001;';
@@ -1905,9 +1912,10 @@ window.showTranslateModal = function(patentNumber, textType, event) {
                 </svg>
                 选择翻译模型
             </h3>
+            ${cachedModel ? `<p style="margin: 0 0 8px 0; color: #28a745; font-size: 13px;">✅ 已有缓存 (模型: ${cachedModel})</p>` : ''}
             <p style="margin: 0 0 16px 0; color: #666; font-size: 14px;">请选择用于翻译${textType === 'claims' ? '权利要求' : '说明书'}的AI模型：</p>
             <select id="translate-modal-model-select" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; margin-bottom: 16px;">
-                ${models.map(m => `<option value="${m}">${m}</option>`).join('')}
+                ${models.map(m => `<option value="${m}" ${m === cachedModel ? 'selected' : ''}>${m}</option>`).join('')}
             </select>
             <div style="display: flex; gap: 12px; justify-content: flex-end;">
                 <button onclick="document.getElementById('translate-modal-dialog').remove()" style="padding: 8px 20px; border: 1px solid #ddd; background: white; border-radius: 6px; cursor: pointer;">取消</button>
@@ -1918,14 +1926,12 @@ window.showTranslateModal = function(patentNumber, textType, event) {
     
     document.body.appendChild(dialog);
     
-    // 绑定开始翻译按钮
     document.getElementById('start-translate-modal-btn').onclick = function() {
         const model = document.getElementById('translate-modal-model-select').value;
         dialog.remove();
         startModalTranslation(patentNumber, textType, model);
     };
     
-    // 点击背景关闭
     dialog.onclick = function(e) {
         if (e.target === dialog) {
             dialog.remove();
@@ -1935,18 +1941,21 @@ window.showTranslateModal = function(patentNumber, textType, event) {
 
 // 开始弹窗翻译 - 直接调用智谱AI API（参考功能八实现）
 async function startModalTranslation(patentNumber, textType, model) {
-    const loadingDiv = document.createElement('div');
-    loadingDiv.id = 'translate-modal-loading';
-    loadingDiv.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 10001;';
-    loadingDiv.innerHTML = `
-        <div style="background: white; border-radius: 12px; padding: 32px; text-align: center;">
-            <div style="width: 40px; height: 40px; border: 3px solid #e0e0e0; border-top-color: #009688; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px;"></div>
-            <p style="margin: 0; color: #333;">正在翻译中，请稍候...</p>
-            <p style="margin: 8px 0 0 0; color: #999; font-size: 12px;">使用模型: ${model}</p>
-        </div>
-        <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
-    `;
-    document.body.appendChild(loadingDiv);
+    const btn = document.querySelector(`[data-translate-patent="${patentNumber}"][data-translate-type="${textType}"]`);
+    
+    const cacheKey = `translation_${patentNumber}_${textType}_${model}`;
+    const cachedTranslation = getTranslationCache(cacheKey);
+    
+    if (cachedTranslation) {
+        console.log(`发现翻译缓存: ${cacheKey}`);
+        showModalTranslationResult({ translations: cachedTranslation, fromCache: true }, textType);
+        return;
+    }
+    
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span style="animation: spin 1s linear infinite; display: inline-block;">⏳</span> 翻译中...';
+    }
     
     try {
         const patentResult = window.patentResults.find(result => result.patent_number === patentNumber);
@@ -1977,13 +1986,53 @@ async function startModalTranslation(patentNumber, textType, model) {
             translations = await translateDescriptionDirect(description, model, apiKey);
         }
         
-        loadingDiv.remove();
+        saveTranslationCache(cacheKey, translations);
+        
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '🌐 翻译';
+        }
+        
         showModalTranslationResult({ translations }, textType);
         
     } catch (error) {
-        loadingDiv.remove();
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '🌐 翻译';
+        }
         alert('翻译失败: ' + error.message);
         console.error('翻译错误:', error);
+    }
+}
+
+function getTranslationCache(cacheKey) {
+    try {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+            const data = JSON.parse(cached);
+            const CACHE_EXPIRY = 7 * 24 * 60 * 60 * 1000;
+            if (Date.now() - data.timestamp < CACHE_EXPIRY) {
+                return data.translations;
+            } else {
+                localStorage.removeItem(cacheKey);
+            }
+        }
+    } catch (e) {
+        console.error('读取翻译缓存失败:', e);
+    }
+    return null;
+}
+
+function saveTranslationCache(cacheKey, translations) {
+    try {
+        const data = {
+            translations: translations,
+            timestamp: Date.now()
+        };
+        localStorage.setItem(cacheKey, JSON.stringify(data));
+        console.log(`翻译结果已缓存: ${cacheKey}`);
+    } catch (e) {
+        console.error('保存翻译缓存失败:', e);
     }
 }
 

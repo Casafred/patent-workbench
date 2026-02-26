@@ -909,13 +909,18 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 <span class="section-icon">⚖️</span>
                                 权利要求 (${data.claims.length})
                             </div>
-                            <button class="copy-section-btn" onclick="copyClaimsWithNumbers(event)">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
-                                    <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
-                                </svg>
-                                复制
-                            </button>
+                            <div style="display: flex; gap: 6px;">
+                                <button class="copy-section-btn translate-btn" onclick="showTranslateDialogNewTab(event, 'claims')" title="快捷翻译" style="background: linear-gradient(135deg, #00bcd4 0%, #009688 100%) !important;">
+                                    🌐 翻译
+                                </button>
+                                <button class="copy-section-btn" onclick="copyClaimsWithNumbers(event)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                        <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                                    </svg>
+                                    复制
+                                </button>
+                            </div>
                         </h2>
                         <div class="section-content">
                             <div class="claims-list" data-section-content="claims">
@@ -1204,13 +1209,18 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 <span class="section-icon">📝</span>
                                 说明书
                             </div>
-                            <button class="copy-section-btn" onclick="copySectionContent(event, 'description', '说明书')">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
-                                    <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
-                                </svg>
-                                复制
-                            </button>
+                            <div style="display: flex; gap: 6px;">
+                                <button class="copy-section-btn translate-btn" onclick="showTranslateDialogNewTab(event, 'description')" title="快捷翻译" style="background: linear-gradient(135deg, #00bcd4 0%, #009688 100%) !important;">
+                                    🌐 翻译
+                                </button>
+                                <button class="copy-section-btn" onclick="copySectionContent(event, 'description', '说明书')">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                        <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                                    </svg>
+                                    复制
+                                </button>
+                            </div>
                         </h2>
                         <div class="section-content">
                             <div class="abstract-box" style="white-space: pre-wrap; line-height: 1.8;" data-section-content="description">
@@ -1558,6 +1568,243 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                             }, 500);
                         }
                     }
+                    
+                    // 翻译功能
+                    window.showTranslateDialogNewTab = function(event, textType) {
+                        event.stopPropagation();
+                        
+                        const models = ['glm-4-flash', 'glm-4-long', 'glm-4.7-flash'];
+                        const cacheKeyPrefix = 'translation_' + currentPatentNumber + '_' + textType + '_';
+                        let cachedModel = null;
+                        for (const m of models) {
+                            const cached = localStorage.getItem(cacheKeyPrefix + m);
+                            if (cached) {
+                                try {
+                                    const data = JSON.parse(cached);
+                                    if (Date.now() - data.timestamp < 7 * 24 * 60 * 60 * 1000) {
+                                        cachedModel = m;
+                                        break;
+                                    }
+                                } catch(e) {}
+                            }
+                        }
+                        
+                        const dialog = document.createElement('div');
+                        dialog.id = 'translate-dialog-newtab';
+                        dialog.style.cssText = 'position: fixed; top: 20px; right: 20px; background: white; border-radius: 12px; padding: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); z-index: 10000; min-width: 300px;';
+                        
+                        dialog.innerHTML = \`
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                                <h4 style="margin: 0; color: #009688;">🌐 选择翻译模型</h4>
+                                <button onclick="document.getElementById('translate-dialog-newtab').remove()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #999;">&times;</button>
+                            </div>
+                            \${cachedModel ? '<p style="margin: 0 0 8px 0; color: #28a745; font-size: 12px;">✅ 已有缓存 (模型: ' + cachedModel + ')</p>' : ''}
+                            <select id="translate-model-select" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 12px;">
+                                \${models.map(m => '<option value="' + m + '"' + (m === cachedModel ? ' selected' : '') + '>' + m + '</option>').join('')}
+                            </select>
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="document.getElementById('translate-dialog-newtab').remove()" style="flex: 1; padding: 8px; border: 1px solid #ddd; background: white; border-radius: 6px; cursor: pointer;">取消</button>
+                                <button id="start-translate-btn" style="flex: 1; padding: 8px; border: none; background: linear-gradient(135deg, #00bcd4 0%, #009688 100%); color: white; border-radius: 6px; cursor: pointer; font-weight: 500;">开始翻译</button>
+                            </div>
+                        \`;
+                        
+                        document.body.appendChild(dialog);
+                        
+                        document.getElementById('start-translate-btn').onclick = function() {
+                            const model = document.getElementById('translate-model-select').value;
+                            dialog.remove();
+                            startTranslationNewTab(textType, model);
+                        };
+                    };
+                    
+                    window.startTranslationNewTab = async function(textType, model) {
+                        const btn = document.querySelector('.translate-btn');
+                        if (btn) {
+                            btn.disabled = true;
+                            btn.innerHTML = '<span style="animation: spin 1s linear infinite; display: inline-block;">⏳</span> 翻译中...';
+                        }
+                        
+                        const cacheKey = 'translation_' + currentPatentNumber + '_' + textType + '_' + model;
+                        const cached = localStorage.getItem(cacheKey);
+                        if (cached) {
+                            try {
+                                const data = JSON.parse(cached);
+                                if (Date.now() - data.timestamp < 7 * 24 * 60 * 60 * 1000) {
+                                    console.log('发现翻译缓存:', cacheKey);
+                                    showTranslationResultNewTab(data.translations, textType);
+                                    if (btn) {
+                                        btn.disabled = false;
+                                        btn.innerHTML = '🌐 翻译';
+                                    }
+                                    return;
+                                }
+                            } catch(e) {}
+                        }
+                        
+                        try {
+                            const apiKey = window.opener && window.opener.appState ? window.opener.appState.apiKey : localStorage.getItem('api_key');
+                            if (!apiKey) {
+                                throw new Error('请先配置API Key');
+                            }
+                            
+                            let translations = [];
+                            const url = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
+                            
+                            if (textType === 'claims') {
+                                const claims = data.claims || [];
+                                if (claims.length === 0) throw new Error('没有可翻译的权利要求');
+                                
+                                const formattedClaims = claims.map((claim, i) => {
+                                    const text = typeof claim === 'string' ? claim : claim.text || '';
+                                    return '权利要求 ' + (i + 1) + ': ' + text;
+                                }).join('\\n\\n');
+                                
+                                const response = await fetch(url, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': 'Bearer ' + apiKey
+                                    },
+                                    body: JSON.stringify({
+                                        model: model,
+                                        messages: [
+                                            { role: 'system', content: '你是一位专业的专利文献翻译专家。请将以下英文专利权利要求翻译为中文。保持专利术语的准确性，保留所有数字标记，翻译要流畅自然。保持权利要求的编号和格式。只返回翻译结果，不要添加任何解释。请按照以下格式返回：权利要求 1: [翻译内容]' },
+                                            { role: 'user', content: formattedClaims }
+                                        ],
+                                        temperature: 0.3,
+                                        max_tokens: 4096
+                                    })
+                                });
+                                
+                                if (!response.ok) {
+                                    const errorData = await response.json().catch(() => ({}));
+                                    throw new Error(errorData.error?.message || 'API请求失败: ' + response.status);
+                                }
+                                
+                                const result = await response.json();
+                                const translatedText = result.choices?.[0]?.message?.content || '';
+                                
+                                const pattern = /权利要求\\s*(\\d+)[:：]\\s*(.*?)(?=权利要求\\s*\\d+[:：]|$)/gs;
+                                const matches = [...translatedText.matchAll(pattern)];
+                                
+                                if (matches.length > 0) {
+                                    const translatedMap = {};
+                                    matches.forEach(match => {
+                                        translatedMap[parseInt(match[1])] = match[2].trim();
+                                    });
+                                    
+                                    claims.forEach((claim, i) => {
+                                        const claimText = typeof claim === 'string' ? claim : claim.text || '';
+                                        translations.push({
+                                            original: claimText,
+                                            translated: translatedMap[i + 1] || '[翻译解析失败]',
+                                            index: i + 1
+                                        });
+                                    });
+                                } else {
+                                    const lines = translatedText.split('\\n').filter(l => l.trim());
+                                    claims.forEach((claim, i) => {
+                                        const claimText = typeof claim === 'string' ? claim : claim.text || '';
+                                        translations.push({
+                                            original: claimText,
+                                            translated: lines[i] || translatedText,
+                                            index: i + 1
+                                        });
+                                    });
+                                }
+                            } else {
+                                const description = data.description || '';
+                                if (!description) throw new Error('没有可翻译的说明书内容');
+                                
+                                const response = await fetch(url, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': 'Bearer ' + apiKey
+                                    },
+                                    body: JSON.stringify({
+                                        model: model,
+                                        messages: [
+                                            { role: 'system', content: '你是一位专业的专利文献翻译专家。请将以下英文专利说明书翻译为中文。保持专利术语的准确性，保留所有数字标记，翻译要流畅自然。只返回翻译结果，不要添加任何解释。' },
+                                            { role: 'user', content: description.substring(0, 4000) }
+                                        ],
+                                        temperature: 0.3,
+                                        max_tokens: 4096
+                                    })
+                                });
+                                
+                                if (!response.ok) {
+                                    const errorData = await response.json().catch(() => ({}));
+                                    throw new Error(errorData.error?.message || 'API请求失败: ' + response.status);
+                                }
+                                
+                                const result = await response.json();
+                                translations.push({
+                                    original: description.substring(0, 500) + '...',
+                                    translated: result.choices?.[0]?.message?.content || ''
+                                });
+                            }
+                            
+                            localStorage.setItem(cacheKey, JSON.stringify({ translations: translations, timestamp: Date.now() }));
+                            console.log('翻译结果已缓存:', cacheKey);
+                            
+                            showTranslationResultNewTab(translations, textType);
+                            
+                        } catch (error) {
+                            alert('翻译失败: ' + error.message);
+                            console.error('翻译错误:', error);
+                        }
+                        
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.innerHTML = '🌐 翻译';
+                        }
+                    };
+                    
+                    window.showTranslationResultNewTab = function(translations, textType) {
+                        const existingResult = document.getElementById('translation-result-panel');
+                        if (existingResult) existingResult.remove();
+                        
+                        const panel = document.createElement('div');
+                        panel.id = 'translation-result-panel';
+                        panel.style.cssText = 'position: fixed; top: 80px; right: 20px; width: 450px; max-height: 70vh; background: white; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); z-index: 9999; overflow: hidden;';
+                        
+                        let content = '';
+                        if (textType === 'claims' && translations[0]?.index) {
+                            translations.forEach(t => {
+                                content += \`
+                                    <div style="padding: 12px; border-bottom: 1px solid #eee;">
+                                        <div style="font-weight: 600; color: #009688; margin-bottom: 6px;">权利要求 \${t.index}</div>
+                                        <div style="font-size: 12px; color: #666; margin-bottom: 4px;">原文:</div>
+                                        <div style="font-size: 13px; color: #333; margin-bottom: 8px; padding: 8px; background: #f5f5f5; border-radius: 4px;">\${t.original}</div>
+                                        <div style="font-size: 12px; color: #666; margin-bottom: 4px;">译文:</div>
+                                        <div style="font-size: 13px; color: #2e7d32; padding: 8px; background: #e8f5e9; border-radius: 4px;">\${t.translated}</div>
+                                    </div>
+                                \`;
+                            });
+                        } else {
+                            translations.forEach((t, i) => {
+                                content += \`
+                                    <div style="padding: 12px; border-bottom: 1px solid #eee;">
+                                        <div style="font-weight: 600; color: #009688; margin-bottom: 6px;">段落 \${i + 1}</div>
+                                        <div style="font-size: 13px; color: #2e7d32; padding: 8px; background: #e8f5e9; border-radius: 4px; white-space: pre-wrap;">\${t.translated}</div>
+                                    </div>
+                                \`;
+                            });
+                        }
+                        
+                        panel.innerHTML = \`
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: linear-gradient(135deg, #00bcd4 0%, #009688 100%); color: white;">
+                                <h4 style="margin: 0;">🌐 翻译结果 - \${textType === 'claims' ? '权利要求' : '说明书'}</h4>
+                                <button onclick="document.getElementById('translation-result-panel').remove()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: white;">&times;</button>
+                            </div>
+                            <div style="max-height: calc(70vh - 60px); overflow-y: auto;">
+                                \${content}
+                            </div>
+                        \`;
+                        
+                        document.body.appendChild(panel);
+                    };
                 });
             </script>
         </body>
