@@ -1933,9 +1933,8 @@ window.showTranslateModal = function(patentNumber, textType, event) {
     };
 };
 
-// 开始弹窗翻译
+// 开始弹窗翻译 - 直接调用智谱AI API（参考功能八实现）
 async function startModalTranslation(patentNumber, textType, model) {
-    // 显示加载状态
     const loadingDiv = document.createElement('div');
     loadingDiv.id = 'translate-modal-loading';
     loadingDiv.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 10001;';
@@ -1950,53 +1949,214 @@ async function startModalTranslation(patentNumber, textType, model) {
     document.body.appendChild(loadingDiv);
     
     try {
-        // 找到对应的专利结果
         const patentResult = window.patentResults.find(result => result.patent_number === patentNumber);
         if (!patentResult || !patentResult.success) {
             throw new Error('专利数据不存在');
         }
         
         const data = patentResult.data;
-        
-        // 获取文本内容
-        let textContent;
-        if (textType === 'claims') {
-            textContent = data.claims || [];
-        } else {
-            textContent = data.description || '';
-        }
-        
-        // 获取API Key
         const apiKey = appState.apiKey || localStorage.getItem('api_key') || '';
         
-        const response = await fetch('/api/patent/translate', {
+        if (!apiKey) {
+            throw new Error('请先配置API Key');
+        }
+        
+        let translations = [];
+        
+        if (textType === 'claims') {
+            const claims = data.claims || [];
+            if (claims.length === 0) {
+                throw new Error('没有可翻译的权利要求');
+            }
+            translations = await translateClaimsDirect(claims, model, apiKey);
+        } else {
+            const description = data.description || '';
+            if (!description) {
+                throw new Error('没有可翻译的说明书内容');
+            }
+            translations = await translateDescriptionDirect(description, model, apiKey);
+        }
+        
+        loadingDiv.remove();
+        showModalTranslationResult({ translations }, textType);
+        
+    } catch (error) {
+        loadingDiv.remove();
+        alert('翻译失败: ' + error.message);
+        console.error('翻译错误:', error);
+    }
+}
+
+// 直接调用智谱AI API翻译权利要求
+async function translateClaimsDirect(claims, model, apiKey) {
+    const url = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
+    const translations = [];
+    
+    const formattedClaims = claims.map((claim, i) => 
+        `权利要求 ${i + 1}: ${typeof claim === 'string' ? claim : claim.text || ''}`
+    ).join('\n\n');
+    
+    const systemPrompt = `你是一位专业的专利文献翻译专家。请将以下英文专利权利要求翻译为中文。
+
+要求:
+1. 保持专利术语的准确性
+2. 保留所有数字标记(如10、20、图1等)
+3. 翻译要流畅自然,符合中文专利文献的表达习惯
+4. 保持权利要求的编号和格式
+5. 不要添加任何解释或注释,只返回翻译结果
+
+请按照以下格式返回翻译结果，每条权利要求单独一行，以"权利要求 X:"开头：
+权利要求 1: [翻译内容]
+权利要求 2: [翻译内容]`;
+
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+            model: model,
+            messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: formattedClaims }
+            ],
+            temperature: 0.3,
+            max_tokens: 4096
+        })
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `API请求失败: ${response.status}`);
+    }
+
+    const result = await response.json();
+    const translatedText = result.choices?.[0]?.message?.content || '';
+    
+    const pattern = /权利要求\s*(\d+)[:：]\s*(.*?)(?=权利要求\s*\d+[:：]|$)/gs;
+    const matches = [...translatedText.matchAll(pattern)];
+    
+    if (matches.length > 0) {
+        const translatedMap = {};
+        matches.forEach(match => {
+            const idx = parseInt(match[1]);
+            translatedMap[idx] = match[2].trim();
+        });
+        
+        claims.forEach((claim, i) => {
+            const claimText = typeof claim === 'string' ? claim : claim.text || '';
+            translations.push({
+                original: claimText,
+                translated: translatedMap[i + 1] || '[翻译解析失败]',
+                index: i + 1
+            });
+        });
+    } else {
+        const lines = translatedText.split('\n').filter(l => l.trim());
+        claims.forEach((claim, i) => {
+            const claimText = typeof claim === 'string' ? claim : claim.text || '';
+            translations.push({
+                original: claimText,
+                translated: lines[i] || translatedText,
+                index: i + 1
+            });
+        });
+    }
+    
+    return translations;
+}
+
+// 直接调用智谱AI API翻译说明书
+async function translateDescriptionDirect(description, model, apiKey) {
+    const url = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
+    const translations = [];
+    
+    const maxChunkSize = 4000;
+    
+    if (description.length > maxChunkSize) {
+        const paragraphs = description.split(/\n\n+/).filter(p => p.trim());
+        
+        for (let i = 0; i < paragraphs.length; i++) {
+            const para = paragraphs[i];
+            if (!para.trim()) continue;
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: model,
+                        messages: [
+                            {
+                                role: 'system',
+                                content: '你是一位专业的专利文献翻译专家。请将以下英文专利说明书段落翻译为中文。保持专利术语的准确性，保留所有数字标记，翻译要流畅自然。只返回翻译结果，不要添加任何解释。'
+                            },
+                            { role: 'user', content: para }
+                        ],
+                        temperature: 0.3,
+                        max_tokens: 4096
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error?.message || `API请求失败: ${response.status}`);
+                }
+
+                const result = await response.json();
+                const translated = result.choices?.[0]?.message?.content || '';
+                
+                translations.push({
+                    original: para,
+                    translated: translated
+                });
+            } catch (e) {
+                translations.push({
+                    original: para,
+                    translated: `[翻译失败: ${e.message}]`
+                });
+            }
+        }
+    } else {
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${apiKey}`
             },
-            credentials: 'include',
             body: JSON.stringify({
-                text: textContent,
-                text_type: textType,
                 model: model,
-                source_lang: 'en'
+                messages: [
+                    {
+                        role: 'system',
+                        content: '你是一位专业的专利文献翻译专家。请将以下英文专利说明书翻译为中文。保持专利术语的准确性，保留所有数字标记，翻译要流畅自然。只返回翻译结果，不要添加任何解释。'
+                    },
+                    { role: 'user', content: description }
+                ],
+                temperature: 0.3,
+                max_tokens: 4096
             })
         });
-        
-        const result = await response.json();
-        loadingDiv.remove();
-        
-        if (result.error) {
-            throw new Error(result.error);
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error?.message || `API请求失败: ${response.status}`);
         }
+
+        const result = await response.json();
+        const translated = result.choices?.[0]?.message?.content || '';
         
-        showModalTranslationResult(result.data, textType);
-        
-    } catch (error) {
-        loadingDiv.remove();
-        alert('翻译失败: ' + error.message);
+        translations.push({
+            original: description,
+            translated: translated
+        });
     }
+    
+    return translations;
 }
 
 // 显示弹窗翻译结果
