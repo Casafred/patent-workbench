@@ -968,7 +968,7 @@ class MultiImageViewerV8 {
         const debugBtn = this.createButton('调试面板', () => {
             this.openDebugPanel();
         }, debugIcon);
-        debugBtn.style.cssText += 'background-color: #2196F3; margin-top: 10px;';
+        debugBtn.style.cssText += 'background-color: #28a745; margin-top: 10px;';
         sidebar.appendChild(debugBtn);
         
         // 关闭
@@ -1595,7 +1595,7 @@ class MultiImageViewerV8 {
         
         const header = document.createElement('div');
         header.style.cssText = `
-            background-color: #2196F3;
+            background-color: #28a745;
             color: white;
             padding: 15px;
             font-weight: bold;
@@ -1640,7 +1640,7 @@ class MultiImageViewerV8 {
         ocrTitle.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>附图OCR识别结果';
         ocrTitle.style.cssText = `
             margin: 0 0 10px 0;
-            color: #007bff;
+            color: #28a745;
             font-size: 16px;
         `;
         leftColumn.appendChild(ocrTitle);
@@ -1648,7 +1648,7 @@ class MultiImageViewerV8 {
         // OCR统计信息
         const ocrStats = document.createElement('div');
         ocrStats.style.cssText = `
-            background-color: #e7f3ff;
+            background-color: #d4edda;
             padding: 10px;
             border-radius: 4px;
             margin-bottom: 10px;
