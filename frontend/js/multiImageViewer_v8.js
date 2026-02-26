@@ -177,14 +177,14 @@ class MultiImageViewerV8 {
         
         // 顶部关闭按钮
         const topCloseBtn = document.createElement('button');
-        topCloseBtn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+        topCloseBtn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
         topCloseBtn.style.cssText = `
             position: absolute;
             top: 20px;
             left: 20px;
             width: 50px;
             height: 50px;
-            background-color: rgba(244, 67, 54, 0.9);
+            background-color: #dc3545;
             color: white;
             border: none;
             border-radius: 50%;
@@ -202,11 +202,11 @@ class MultiImageViewerV8 {
             modal.remove();
         });
         topCloseBtn.addEventListener('mouseenter', () => {
-            topCloseBtn.style.backgroundColor = 'rgba(244, 67, 54, 1)';
+            topCloseBtn.style.backgroundColor = '#c82333';
             topCloseBtn.style.transform = 'scale(1.1)';
         });
         topCloseBtn.addEventListener('mouseleave', () => {
-            topCloseBtn.style.backgroundColor = 'rgba(244, 67, 54, 0.9)';
+            topCloseBtn.style.backgroundColor = '#dc3545';
             topCloseBtn.style.transform = 'scale(1)';
         });
         
