@@ -484,7 +484,7 @@ function updateFamilyCompareButton() {
 }
 
 /**
- * 对比同族专利的权利要求
+ * 对比同族专利的权利要求 - 第一步：获取并显示原文
  */
 async function compareFamilyClaims() {
     const selectedPatents = appState.familyClaimsComparison.selectedPatents;
@@ -495,12 +495,143 @@ async function compareFamilyClaims() {
     }
 
     try {
-        showFamilyLoading('正在对比同族专利权利要求...');
+        showFamilyLoading('正在获取各专利的权利要求原文...');
 
-        const model = familyComparisonModelSelect.value;
         const patentNumbers = selectedPatents.map(p => p.patent_number);
 
-        // 从 appState 获取 API Key
+        const apiKey = appState.apiKey || localStorage.getItem('api_key') || '';
+
+        const response = await fetch('/api/patent/family/claims-preview', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                patent_numbers: patentNumbers
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`获取权利要求失败: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (result.error) {
+            throw new Error(result.error);
+        }
+
+        const data = result.data || {};
+        const patentClaims = data.patent_claims || {};
+
+        if (Object.keys(patentClaims).length < 2) {
+            throw new Error('成功获取的权利要求数量不足，无法进行对比');
+        }
+
+        appState.familyClaimsComparison.originalClaims = patentClaims;
+
+        renderOriginalClaimsPreview(patentClaims);
+
+    } catch (error) {
+        console.error('获取权利要求原文失败:', error);
+        alert(`获取失败: ${error.message}`);
+    } finally {
+        hideFamilyLoading();
+    }
+}
+
+/**
+ * 渲染权利要求原文预览界面
+ */
+function renderOriginalClaimsPreview(patentClaims) {
+    familyComparisonResultContainer.innerHTML = '';
+
+    const patentNumbers = Object.keys(patentClaims);
+
+    const infoBox = document.createElement('div');
+    infoBox.className = 'original-claims-info';
+    infoBox.innerHTML = `
+        <div style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border: 1px solid #90caf9; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1976d2" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                <span style="font-weight: 600; color: #1565c0; font-size: 16px;">权利要求原文预览</span>
+            </div>
+            <p style="margin: 0; color: #1976d2; font-size: 14px; line-height: 1.6;">
+                以下显示的是各同族专利的权利要求原文（前3条）。请确认内容后，点击下方按钮开始AI对比分析。
+            </p>
+        </div>
+    `;
+    familyComparisonResultContainer.appendChild(infoBox);
+
+    let html = '<div class="original-claims-preview" style="border: 1px solid #ddd; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">';
+
+    html += '<div class="side-by-side-header" style="display: grid; grid-template-columns: repeat(' + patentNumbers.length + ', 1fr); background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); color: white; min-width: fit-content;">';
+    patentNumbers.forEach(patentNumber => {
+        const patentData = patentClaims[patentNumber];
+        const title = patentData && patentData.title ? patentData.title : '';
+        html += `<div class="claim-label" style="padding: 15px !important; text-align: center; font-weight: 600; border-right: 1px solid rgba(255,255,255,0.3); min-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; background: transparent !important; color: white !important;" title="${title}">${patentNumber}</div>`;
+    });
+    html += '</div>';
+
+    html += '<div class="side-by-side-body" style="display: grid; grid-template-columns: repeat(' + patentNumbers.length + ', 1fr); max-height: 500px; overflow-x: auto; overflow-y: hidden; background: #fafafa;">';
+    patentNumbers.forEach((patentNumber, index) => {
+        const patentData = patentClaims[patentNumber];
+        const claimsText = patentData && patentData.claims ? patentData.claims.join('\n\n---\n\n') : '暂无权利要求数据';
+        const formattedText = formatFamilyClaimTextForDisplay(claimsText);
+        html += `<div class="claim-text-column" style="padding: 20px; border-right: 1px solid #e0e0e0; overflow-y: auto; max-height: 500px; line-height: 1.8; white-space: pre-wrap; min-width: 250px; background: white;">${formattedText}</div>`;
+    });
+    html += '</div>';
+    html += '</div>';
+
+    const contentDiv = document.createElement('div');
+    contentDiv.innerHTML = html;
+    familyComparisonResultContainer.appendChild(contentDiv);
+
+    const actionDiv = document.createElement('div');
+    actionDiv.className = 'ai-comparison-action';
+    actionDiv.style.cssText = 'display: flex; justify-content: center; gap: 15px; margin-top: 25px; padding: 20px; background: linear-gradient(135deg, #f5f5f5 0%, #eeeeee 100%); border-radius: 8px;';
+    actionDiv.innerHTML = `
+        <button id="start_ai_comparison_btn" class="primary-button" style="background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); padding: 14px 32px; font-size: 16px; font-weight: 600;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            开始AI对比分析
+        </button>
+        <button id="cancel_comparison_btn" class="small-button" style="padding: 14px 24px; font-size: 14px;">
+            取消
+        </button>
+    `;
+    familyComparisonResultContainer.appendChild(actionDiv);
+
+    document.getElementById('start_ai_comparison_btn').addEventListener('click', startAIComparison);
+    document.getElementById('cancel_comparison_btn').addEventListener('click', () => {
+        clearFamilyComparisonResult();
+    });
+}
+
+/**
+ * 开始AI对比分析 - 第二步
+ */
+async function startAIComparison() {
+    const patentClaims = appState.familyClaimsComparison.originalClaims;
+
+    if (!patentClaims || Object.keys(patentClaims).length < 2) {
+        alert('请先获取权利要求原文');
+        return;
+    }
+
+    try {
+        showFamilyLoading('正在进行AI对比分析...');
+
+        const model = familyComparisonModelSelect.value;
+        const patentNumbers = Object.keys(patentClaims);
+
         const apiKey = appState.apiKey || localStorage.getItem('api_key') || '';
 
         const response = await fetch('/api/patent/family/compare', {
@@ -512,7 +643,8 @@ async function compareFamilyClaims() {
             credentials: 'include',
             body: JSON.stringify({
                 patent_numbers: patentNumbers,
-                model: model
+                model: model,
+                patent_claims: patentClaims
             })
         });
 
@@ -526,22 +658,18 @@ async function compareFamilyClaims() {
             throw new Error(result.error);
         }
 
-        // API返回的数据在 result.data 中
         const data = result.data || {};
         const analysisResult = data.result || {};
 
-        // 保存对比结果
         appState.familyClaimsComparison.analysisResult = analysisResult;
 
-        // 渲染对比结果
         renderFamilyComparisonResult(analysisResult);
 
-        // 显示控制按钮
         familyToggleLanguageBtn.style.display = 'inline-block';
         familyExportComparisonBtn.style.display = 'inline-block';
 
     } catch (error) {
-        console.error('对比同族专利权利要求失败:', error);
+        console.error('AI对比分析失败:', error);
         alert(`对比失败: ${error.message}`);
     } finally {
         hideFamilyLoading();

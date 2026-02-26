@@ -515,6 +515,74 @@ def get_patent_family(patent_number):
         )
 
 
+@patent_bp.route('/patent/family/claims-preview', methods=['POST'])
+def get_family_claims_preview():
+    """
+    Get claims preview for multiple patents before AI comparison.
+    
+    Request body:
+        - patent_numbers: List of patent numbers to get claims for
+    
+    Returns:
+        Dictionary of patent claims for preview
+    """
+    is_valid, error_response = validate_api_request()
+    if not is_valid:
+        return error_response
+    
+    try:
+        req_data = request.get_json()
+        patent_numbers = req_data.get('patent_numbers', [])
+        
+        if not patent_numbers or len(patent_numbers) < 2:
+            return create_response(
+                error="至少需要2个专利号进行对比",
+                status_code=400
+            )
+        
+        print(f"[API] 获取权利要求原文预览: {len(patent_numbers)} 个专利")
+        
+        scraper = get_scraper_instance()
+        patent_claims = {}
+        
+        for patent_number in patent_numbers:
+            try:
+                result = scraper.scrape_patent(
+                    patent_number,
+                    crawl_specification=True,
+                    selected_fields=['claims']
+                )
+
+                if result and result.success and result.data:
+                    patent_data = result.data
+                    if patent_data.claims:
+                        claims_text = patent_data.claims[:3] if isinstance(patent_data.claims, list) else [str(patent_data.claims)]
+                        patent_claims[patent_number] = {
+                            'patent_number': patent_number,
+                            'title': patent_data.title,
+                            'claims': claims_text
+                        }
+                        print(f"[API] 获取成功: {patent_number}")
+            except Exception as e:
+                print(f"爬取专利 {patent_number} 权利要求失败: {e}")
+                continue
+        
+        if len(patent_claims) < 2:
+            return create_response(
+                error="成功获取的权利要求数量不足，无法进行对比",
+                status_code=400
+            )
+        
+        return create_response(data={'patent_claims': patent_claims})
+        
+    except Exception as e:
+        print(f"Error in get_family_claims_preview: {traceback.format_exc()}")
+        return create_response(
+            error=f"获取权利要求原文失败: {str(e)}",
+            status_code=500
+        )
+
+
 @patent_bp.route('/patent/family/compare', methods=['POST'])
 def compare_family_claims():
     """
@@ -523,6 +591,7 @@ def compare_family_claims():
     Request body:
         - patent_numbers: List of patent numbers to compare
         - model: AI model to use (default: 'GLM-4.7-Flash')
+        - patent_claims: Optional pre-fetched patent claims data
     
     Returns:
         Comparison result with similarity matrix and analysis
@@ -539,6 +608,7 @@ def compare_family_claims():
         req_data = request.get_json()
         patent_numbers = req_data.get('patent_numbers', [])
         model = req_data.get('model', 'GLM-4.7-Flash')
+        pre_fetched_claims = req_data.get('patent_claims', None)
         
         if not patent_numbers or len(patent_numbers) < 2:
             return create_response(
@@ -548,33 +618,37 @@ def compare_family_claims():
         
         print(f"[API] 对比同族专利权利要求: {len(patent_numbers)} 个专利")
         
-        # 爬取所有专利的权利要求
-        scraper = get_scraper_instance()
-        patent_claims = {}
-        
-        for patent_number in patent_numbers:
-            try:
-                result = scraper.scrape_patent(
-                    patent_number,
-                    crawl_specification=True,
-                    selected_fields=['claims']
-                )
+        if pre_fetched_claims and len(pre_fetched_claims) >= 2:
+            patent_claims = pre_fetched_claims
+            for patent_number in patent_claims:
+                if 'claims_translated' not in patent_claims[patent_number]:
+                    patent_claims[patent_number]['claims_translated'] = None
+            print(f"[API] 使用预获取的权利要求数据，跳过爬取步骤")
+        else:
+            scraper = get_scraper_instance()
+            patent_claims = {}
+            
+            for patent_number in patent_numbers:
+                try:
+                    result = scraper.scrape_patent(
+                        patent_number,
+                        crawl_specification=True,
+                        selected_fields=['claims']
+                    )
 
-                # scrape_patent 返回 SimplePatentResult 对象，实际数据在 result.data 中
-                if result and result.success and result.data:
-                    patent_data = result.data
-                    if patent_data.claims:
-                        # 只取前3条权利要求（通常是独立权利要求）
-                        claims_text = patent_data.claims[:3] if isinstance(patent_data.claims, list) else [str(patent_data.claims)]
-                        patent_claims[patent_number] = {
-                            'patent_number': patent_number,
-                            'title': patent_data.title,
-                            'claims': claims_text,
-                            'claims_translated': None  # 将在后面填充翻译结果
-                        }
-            except Exception as e:
-                print(f"爬取专利 {patent_number} 权利要求失败: {e}")
-                continue
+                    if result and result.success and result.data:
+                        patent_data = result.data
+                        if patent_data.claims:
+                            claims_text = patent_data.claims[:3] if isinstance(patent_data.claims, list) else [str(patent_data.claims)]
+                            patent_claims[patent_number] = {
+                                'patent_number': patent_number,
+                                'title': patent_data.title,
+                                'claims': claims_text,
+                                'claims_translated': None
+                            }
+                except Exception as e:
+                    print(f"爬取专利 {patent_number} 权利要求失败: {e}")
+                    continue
         
         if len(patent_claims) < 2:
             return create_response(

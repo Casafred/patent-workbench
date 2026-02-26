@@ -74,6 +74,29 @@
     box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
 }
 
+.family-input-area .config-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: nowrap;
+}
+
+.family-input-area .config-row .config-item {
+    flex: 0 0 auto;
+    min-width: auto;
+}
+
+.family-input-area .config-row .config-item:first-child {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.family-input-area .config-row .config-item:first-child label {
+    white-space: nowrap;
+}
+
 .primary-button {
     display: inline-flex;
     align-items: center;
@@ -87,6 +110,25 @@
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.primary-button svg {
+    flex-shrink: 0;
+}
+
+#fetch_family_btn {
+    padding: 8px 16px;
+    font-size: 13px;
+    gap: 6px;
+    height: auto;
+    min-height: 36px;
+}
+
+#fetch_family_btn svg {
+    width: 14px;
+    height: 14px;
 }
 
 .primary-button:hover {
