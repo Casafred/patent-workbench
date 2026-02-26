@@ -1734,9 +1734,13 @@ class PDFOCRViewer {
     /**
      * 显示翻译结果弹窗
      */
-    showTranslationResult(original, translated, block) {
+    showTranslationResult(original, translated, block, fullText = false) {
         // 移除已有的翻译弹窗
         document.querySelectorAll('.ocr-translation-popup').forEach(p => p.remove());
+
+        // 对于全文翻译显示完整原文，否则截断
+        const displayOriginal = fullText ? original : (original.substring(0, 500) + (original.length > 500 ? '...' : ''));
+        const popupWidth = fullText ? '700px' : '500px';
 
         const popup = document.createElement('div');
         popup.className = 'ocr-translation-popup';
@@ -1748,7 +1752,7 @@ class PDFOCRViewer {
             <div class="popup-body" style="padding: 16px; overflow-y: auto; flex: 1;">
                 <div class="translation-section" style="margin-bottom: 16px;">
                     <div class="section-label" style="font-size: 12px; color: #64748b; margin-bottom: 4px; font-weight: 500;">原文</div>
-                    <div class="section-content original" style="font-size: 14px; line-height: 1.6; color: #334155; padding: 12px; background: #f8fafc; border-radius: 8px; white-space: pre-wrap;">${this.escapeHtml(original.substring(0, 500))}${original.length > 500 ? '...' : ''}</div>
+                    <div class="section-content original" style="font-size: 14px; line-height: 1.6; color: #334155; padding: 12px; background: #f8fafc; border-radius: 8px; white-space: pre-wrap; max-height: 300px; overflow-y: auto;">${this.escapeHtml(displayOriginal)}</div>
                 </div>
                 <div class="translation-section" style="margin-bottom: 16px;">
                     <div class="section-label" style="font-size: 12px; color: #64748b; margin-bottom: 4px; font-weight: 500;">译文</div>
@@ -1771,7 +1775,7 @@ class PDFOCRViewer {
             border-radius: 12px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
             z-index: 10000;
-            max-width: 500px;
+            max-width: ${popupWidth};
             width: 90%;
             max-height: 80vh;
             display: flex;
@@ -1859,7 +1863,7 @@ class PDFOCRViewer {
     }
 
     /**
-     * 翻译全部原文（直接替换原文内容）
+     * 翻译全部原文（弹窗显示原文和译文对照）
      */
     async translateFullText() {
         const currentPage = window.pdfOCRCore ? window.pdfOCRCore.currentPage : 1;
@@ -1883,22 +1887,8 @@ class PDFOCRViewer {
             return;
         }
 
-        const originalContentEl = document.getElementById('ocr-original-content');
         const translateBtn = document.getElementById('translate-full-text-btn');
         
-        if (!originalContentEl) {
-            this.showToast('找不到原文内容区域', 'error');
-            return;
-        }
-
-        if (!this._originalTextBackup) {
-            this._originalTextBackup = {};
-        }
-        
-        if (!this._originalTextBackup[currentPage]) {
-            this._originalTextBackup[currentPage] = originalContentEl.innerHTML;
-        }
-
         if (translateBtn) {
             translateBtn.disabled = true;
             translateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 翻译中...';
@@ -1909,23 +1899,8 @@ class PDFOCRViewer {
         try {
             const translated = await this.callTranslateAPI(fullText, apiKey);
             
-            originalContentEl.innerHTML = `<div class="translated-content">${this.escapeHtml(translated)}</div>`;
-            
-            // 切换到原文标签页显示翻译内容
-            this.switchContentTab('original');
-            
-            const restoreBtn = document.createElement('button');
-            restoreBtn.className = 'tab-btn restore-btn';
-            restoreBtn.style.cssText = 'background: #f97316; color: white; margin-left: 8px;';
-            restoreBtn.innerHTML = '↩️ 恢复原文';
-            restoreBtn.onclick = () => this.restoreOriginalText(currentPage);
-            
-            const contentTabs = originalContentEl.closest('.full-text-section')?.querySelector('.content-tabs');
-            if (contentTabs && !contentTabs.querySelector('.restore-btn')) {
-                contentTabs.appendChild(restoreBtn);
-            }
-            
-            this.showToast('翻译完成', 'success');
+            // 使用弹窗显示原文和译文对照
+            this.showTranslationResult(fullText, translated, null, true);
             
         } catch (error) {
             console.error('[PDF-OCR] 翻译失败:', error);
@@ -1936,29 +1911,6 @@ class PDFOCRViewer {
                 translateBtn.innerHTML = '🌐 翻译';
             }
         }
-    }
-
-    /**
-     * 恢复原文内容
-     */
-    restoreOriginalText(pageNum) {
-        const originalContentEl = document.getElementById('ocr-original-content');
-        if (!originalContentEl) return;
-
-        if (this._originalTextBackup && this._originalTextBackup[pageNum]) {
-            originalContentEl.innerHTML = this._originalTextBackup[pageNum];
-            delete this._originalTextBackup[pageNum];
-        }
-
-        const contentTabs = originalContentEl.closest('.full-text-section')?.querySelector('.content-tabs');
-        if (contentTabs) {
-            const restoreBtn = contentTabs.querySelector('.restore-btn');
-            if (restoreBtn) {
-                restoreBtn.remove();
-            }
-        }
-
-        this.showToast('已恢复原文', 'success');
     }
 
     /**
