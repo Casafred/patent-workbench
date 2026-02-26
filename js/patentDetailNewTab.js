@@ -1017,6 +1017,11 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 <span class="section-icon">👨‍👩‍👧‍👦</span>
                                 同族信息 ${data.family_applications ? '(' + data.family_applications.length + ')' : ''}
                             </div>
+                            ${data.family_applications && data.family_applications.length > 1 ? `
+                            <button class="copy-section-btn" onclick="jumpToFamilyComparisonFromNewTab(event, '${patentNumber}')" title="跳转到功能四进行同族权利要求对比分析" style="background: linear-gradient(135deg, #9c27b0 0%, #673ab7 100%) !important;">
+                                同族对比
+                            </button>
+                            ` : ''}
                             ${data.family_applications && data.family_applications.length > 0 ? `
                             <button class="copy-section-btn analyze-btn" onclick="analyzeRelationPatents(event, '${patentNumber}', 'family')">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
@@ -1391,6 +1396,36 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         }
                     } else {
                         alert('无法连接到主窗口，请确保从主页面打开此详情页');
+                    }
+                }
+                
+                // 从新标签页跳转到同族权利要求对比分析
+                window.jumpToFamilyComparisonFromNewTab = function(event, patentNumber) {
+                    event.stopPropagation();
+                    
+                    const familyApps = data.family_applications || [];
+                    let familyPatentNumbers = familyApps
+                        .map(app => app.publication_number)
+                        .filter(num => num && num !== '-');
+                    
+                    if (familyPatentNumbers.length < 2) {
+                        alert('同族专利数量不足，需要至少2个同族专利才能进行对比分析');
+                        return;
+                    }
+                    
+                    if (window.opener && window.opener.startFamilyClaimsComparison) {
+                        window.opener.startFamilyClaimsComparison(patentNumber, familyPatentNumbers);
+                        const btn = event.target.closest('.copy-section-btn');
+                        if (btn) {
+                            const originalHTML = btn.innerHTML;
+                            btn.innerHTML = '✓ 已发送';
+                            setTimeout(() => {
+                                btn.innerHTML = originalHTML;
+                            }, 2000);
+                        }
+                        alert('已跳转到主页面功能四同族对比分析界面，请在主页面查看');
+                    } else {
+                        alert('无法连接到主窗口的同族对比功能，请确保从主页面打开此详情页，并刷新主页面后重试');
                     }
                 }
                 
