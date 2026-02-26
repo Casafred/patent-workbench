@@ -1911,6 +1911,9 @@ class PDFOCRViewer {
             
             originalContentEl.innerHTML = `<div class="translated-content">${this.escapeHtml(translated)}</div>`;
             
+            // 切换到原文标签页显示翻译内容
+            this.switchContentTab('original');
+            
             const restoreBtn = document.createElement('button');
             restoreBtn.className = 'tab-btn restore-btn';
             restoreBtn.style.cssText = 'background: #f97316; color: white; margin-left: 8px;';
