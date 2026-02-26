@@ -186,6 +186,22 @@ window.openPatentDetailInNewTab = function(patentNumber) {
         return true;
     }
     
+    // 数据访问辅助函数 - 从window对象获取专利数据
+    function getPatentData() {
+        if (typeof window.__patentData !== 'undefined') {
+            return window.__patentData;
+        }
+        var el = document.getElementById('patent-data');
+        if (el) {
+            try {
+                return JSON.parse(el.textContent);
+            } catch (e) {
+                console.error('Failed to parse patent data:', e);
+            }
+        }
+        return {};
+    }
+    
     // 生成导航项HTML
     function buildNavItem(navId, icon, label) {
         const isSelected = isNavFieldSelected(navId);
@@ -195,24 +211,6 @@ window.openPatentDetailInNewTab = function(patentNumber) {
             return '<a href="#" class="side-nav-item disabled" data-section="' + navId + '" onclick="event.preventDefault(); return false;" title="该字段未被爬取" style="color: #ccc; cursor: not-allowed;">' + icon + ' <span style="text-decoration: line-through;">' + label + '</span></a>';
         }
     }
-    
-    // 在构建模板之前，先转义 data 中的 ${ 字符串，防止模板解析错误
-    function escapeTemplateStrings(obj) {
-        if (typeof obj === 'string') {
-            return obj.replace(/\$\{/g, '\\${');
-        } else if (Array.isArray(obj)) {
-            return obj.map(escapeTemplateStrings);
-        } else if (obj && typeof obj === 'object') {
-            const result = {};
-            for (const key in obj) {
-                result[key] = escapeTemplateStrings(obj[key]);
-            }
-            return result;
-        }
-        return obj;
-    }
-    
-    const escapedData = escapeTemplateStrings(data);
     
     // 构建完整的HTML页面 - 绿色主题 + 左侧导航
     const htmlContent = `
@@ -1652,8 +1650,8 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     const sections = document.querySelectorAll('.section');
                     
                     // 检测哪些section有数据，标记缺失数据的导航项
-                    const data = ${JSON.stringify(data)};
-                    const currentPatentNumber = '${patentNumber}';
+                    var data = window.__patentData || {};
+                    var currentPatentNumber = window.__patentNumber || '';
                     const sectionDataMap = {
                         'abstract': data.abstract && data.abstract.length > 0,
                         'claims': data.claims && data.claims.length > 0,
@@ -1825,6 +1823,9 @@ window.openPatentDetailInNewTab = function(patentNumber) {
     // 创建一个新窗口
     const newWindow = window.open('', '_blank');
     if (newWindow) {
+        newWindow.document.open();
+        var dataJson = JSON.stringify(data).replace(/</g, "<\\/script>");
+        newWindow.document.write('<script>var __patentData = ' + dataJson + '; var __patentNumber = ' + JSON.stringify(patentNumber) + ';<\/script>');
         newWindow.document.write(htmlContent);
         newWindow.document.close();
     }
