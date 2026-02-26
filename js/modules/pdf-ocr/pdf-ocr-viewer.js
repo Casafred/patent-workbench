@@ -1756,7 +1756,7 @@ class PDFOCRViewer {
                 </div>
                 <div class="translation-section" style="margin-bottom: 16px;">
                     <div class="section-label" style="font-size: 12px; color: #64748b; margin-bottom: 4px; font-weight: 500;">译文</div>
-                    <div class="section-content translated" style="font-size: 14px; line-height: 1.6; color: #334155; padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; white-space: pre-wrap;">${this.escapeHtml(translated)}</div>
+                    <div class="section-content translated markdown-body" style="font-size: 14px; line-height: 1.6; color: #334155; padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; white-space: pre-wrap;">${this.renderMarkdown(translated)}</div>
                 </div>
             </div>
             <div class="popup-footer" style="display: flex; justify-content: flex-end; gap: 8px; padding: 12px 16px; border-top: 1px solid #e2e8f0;">
