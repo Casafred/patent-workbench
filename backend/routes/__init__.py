@@ -24,6 +24,7 @@ def register_blueprints(app: Flask):
     from .excel_upload import excel_upload_bp
     from .drawing_marker import drawing_marker_bp
     from .registration import registration_bp
+    from .feature_lock import feature_lock_bp
     from backend.user_management.user_management import user_management_bp
     
     # Register blueprints with appropriate URL prefixes
@@ -38,6 +39,7 @@ def register_blueprints(app: Flask):
     app.register_blueprint(drawing_marker_bp, url_prefix='/api')
     app.register_blueprint(user_management_bp)
     app.register_blueprint(registration_bp, url_prefix='/api/register')
+    app.register_blueprint(feature_lock_bp, url_prefix='/api/feature-lock')
     
     print("✓ All blueprints registered successfully")
     

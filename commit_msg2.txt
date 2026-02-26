@@ -1,8 +1,0 @@
-fix: compact export buttons layout
-
-- Reduce btn-small padding from 6px 12px to 5px 8px
-- Reduce font-size from 12px to 11px
-- Add white-space: nowrap to prevent wrapping
-- Change export-btns gap from 8px to 6px
-- Center align export buttons
-- Set flex to 0 0 auto with min-width 50px

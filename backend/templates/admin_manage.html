@@ -74,6 +74,15 @@
         .tab:hover:not(.active) {
             border-color: var(--primary-color);
         }
+        .tab.lock-tab {
+            background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+            color: white;
+            border-color: #8B5CF6;
+        }
+        .tab.lock-tab.active {
+            background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%);
+            border-color: #7C3AED;
+        }
         .card {
             background: white;
             border-radius: 12px;
@@ -120,6 +129,8 @@
         .status-rejected { background: #FEE2E2; color: #991B1B; }
         .status-active { background: #DCFCE7; color: #166534; }
         .status-disabled { background: #FEE2E2; color: #991B1B; }
+        .status-locked { background: #FEE2E2; color: #991B1B; }
+        .status-unlocked { background: #DCFCE7; color: #166534; }
         .actions {
             display: flex;
             gap: 8px;
@@ -146,6 +157,8 @@
         .btn-warning:hover { background: #D97706; }
         .btn-email { background: #3B82F6; color: white; }
         .btn-email:hover { background: #2563EB; }
+        .btn-purple { background: #8B5CF6; color: white; }
+        .btn-purple:hover { background: #7C3AED; }
         .checkbox-group {
             display: flex;
             align-items: center;
@@ -283,6 +296,147 @@
         }
         .stat-card .number { font-size: 28px; font-weight: bold; color: var(--primary-color-dark); }
         .stat-card .label { font-size: 13px; color: #6B7280; margin-top: 4px; }
+        
+        .feature-lock-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid #E5E7EB;
+            transition: background 0.2s;
+        }
+        .feature-lock-item:last-child { border-bottom: none; }
+        .feature-lock-item:hover { background: #F9FAFB; }
+        .feature-lock-item .feature-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .feature-lock-item .feature-name {
+            font-weight: 500;
+            color: #374151;
+        }
+        .feature-lock-item .feature-id {
+            font-size: 12px;
+            color: #9CA3AF;
+            font-family: monospace;
+        }
+        .lock-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .lock-toggle-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        .lock-toggle-btn.lock {
+            background: #FEE2E2;
+            color: #991B1B;
+        }
+        .lock-toggle-btn.lock:hover {
+            background: #FECACA;
+        }
+        .lock-toggle-btn.unlock {
+            background: #DCFCE7;
+            color: #166534;
+        }
+        .lock-toggle-btn.unlock:hover {
+            background: #BBF7D0;
+        }
+        .super-admin-login {
+            background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        .super-admin-login h3 {
+            color: white;
+            margin-bottom: 12px;
+        }
+        .super-admin-login p {
+            color: rgba(255,255,255,0.8);
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+        .super-admin-login input {
+            padding: 10px 14px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            width: 250px;
+        }
+        .super-admin-login button {
+            padding: 10px 20px;
+            background: white;
+            color: #7C3AED;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .super-admin-login button:hover {
+            background: #F3E8FF;
+        }
+        .lock-message-section {
+            background: #FEF3C7;
+            border: 1px solid #FCD34D;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        .lock-message-section h4 {
+            color: #92400E;
+            margin-bottom: 10px;
+        }
+        .lock-message-section textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #E5E7EB;
+            border-radius: 6px;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 80px;
+        }
+        .lock-message-section .save-btn {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: #F59E0B;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .lock-stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .lock-stat-card {
+            background: white;
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+            flex: 1;
+        }
+        .lock-stat-card .number {
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .lock-stat-card .number.locked { color: #EF4444; }
+        .lock-stat-card .number.unlocked { color: #22C55E; }
+        .lock-stat-card .label {
+            font-size: 13px;
+            color: #6B7280;
+            margin-top: 4px;
+        }
     </style>
 </head>
 <body>
@@ -327,6 +481,7 @@
                 <div class="tab" data-tab="pending" onclick="switchTab('pending')">待审核申请</div>
                 <div class="tab" data-tab="approved" onclick="switchTab('approved')">已通过申请</div>
                 <div class="tab" data-tab="rejected" onclick="switchTab('rejected')">已拒绝申请</div>
+                <div class="tab lock-tab" data-tab="feature-lock" onclick="switchTab('feature-lock')">🔒 功能锁定</div>
             </div>
             
             <div id="tab-content"></div>
@@ -365,6 +520,7 @@
     <script>
         let currentTab = 'users';
         let isLoggedIn = false;
+        let isSuperAdmin = false;
 
         function checkLogin() {
             fetch('/api/register/admin/check')
@@ -402,6 +558,7 @@
             fetch('/api/register/admin/logout', { method: 'POST' })
                 .then(() => {
                     isLoggedIn = false;
+                    isSuperAdmin = false;
                     document.getElementById('login-page').classList.remove('hidden');
                     document.getElementById('admin-page').classList.add('hidden');
                 });
@@ -411,6 +568,15 @@
             document.getElementById('login-page').classList.add('hidden');
             document.getElementById('admin-page').classList.remove('hidden');
             loadAllData();
+            checkSuperAdmin();
+        }
+
+        function checkSuperAdmin() {
+            fetch('/api/feature-lock/admin/check')
+                .then(r => r.json())
+                .then(data => {
+                    isSuperAdmin = data.logged_in;
+                });
         }
 
         function switchTab(tab) {
@@ -424,6 +590,9 @@
         function loadAllData() {
             loadUsers();
             loadApplications();
+            if (currentTab === 'feature-lock') {
+                loadFeatureLocks();
+            }
         }
 
         function loadUsers() {
@@ -555,6 +724,138 @@
             }
             
             container.innerHTML = html;
+        }
+
+        function loadFeatureLocks() {
+            const container = document.getElementById('tab-content');
+            
+            if (!isSuperAdmin) {
+                container.innerHTML = `
+                    <div class="super-admin-login">
+                        <h3>🔒 超级管理员验证</h3>
+                        <p>功能锁定管理需要超级管理员权限，请输入超级管理员密码：</p>
+                        <div style="display: flex; align-items: center;">
+                            <input type="password" id="super-admin-password" placeholder="请输入超级管理员密码">
+                            <button onclick="superAdminLogin()">验证</button>
+                        </div>
+                        <div id="super-admin-error" style="color: #FEE2E2; margin-top: 10px; display: none;"></div>
+                    </div>
+                `;
+                return;
+            }
+            
+            fetch('/api/feature-lock/admin/list')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        renderFeatureLocks(data.features, data.lock_message, data.last_updated);
+                    }
+                });
+        }
+
+        function superAdminLogin() {
+            const password = document.getElementById('super-admin-password').value;
+            const errorEl = document.getElementById('super-admin-error');
+            
+            fetch('/api/feature-lock/admin/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    isSuperAdmin = true;
+                    loadFeatureLocks();
+                } else {
+                    errorEl.textContent = data.message;
+                    errorEl.style.display = 'block';
+                }
+            });
+        }
+
+        function renderFeatureLocks(features, lockMessage, lastUpdated) {
+            const container = document.getElementById('tab-content');
+            const lockedCount = features.filter(f => f.locked).length;
+            const unlockedCount = features.filter(f => !f.locked).length;
+            
+            let html = `
+                <div class="lock-stats">
+                    <div class="lock-stat-card">
+                        <div class="number locked">${lockedCount}</div>
+                        <div class="label">已锁定功能</div>
+                    </div>
+                    <div class="lock-stat-card">
+                        <div class="number unlocked">${unlockedCount}</div>
+                        <div class="label">正常功能</div>
+                    </div>
+                </div>
+                
+                <div class="lock-message-section">
+                    <h4>📝 锁定提示信息</h4>
+                    <textarea id="lock-message-input">${lockMessage || '功能优化升级中，暂不开放使用，如有需求请在公众号联系'}</textarea>
+                    <button class="save-btn" onclick="saveLockMessage()">保存提示信息</button>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">功能锁定管理</span>
+                        <span style="font-size: 12px; color: #6B7280;">最后更新: ${lastUpdated || '从未更新'}</span>
+                    </div>
+            `;
+            
+            features.forEach(feature => {
+                html += `
+                    <div class="feature-lock-item">
+                        <div class="feature-info">
+                            <span class="feature-name">${feature.name}</span>
+                            <span class="feature-id">(${feature.id})</span>
+                        </div>
+                        <div class="lock-toggle">
+                            <span class="status-badge ${feature.locked ? 'status-locked' : 'status-unlocked'}">${feature.locked ? '已锁定' : '正常'}</span>
+                            <button class="lock-toggle-btn ${feature.locked ? 'unlock' : 'lock'}" onclick="toggleFeatureLock('${feature.id}', ${!feature.locked})">
+                                ${feature.locked ? '🔓 解锁' : '🔒 锁定'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function toggleFeatureLock(featureId, lock) {
+            fetch('/api/feature-lock/admin/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ feature_id: featureId, locked: lock })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    loadFeatureLocks();
+                } else {
+                    alert(data.message);
+                }
+            });
+        }
+
+        function saveLockMessage() {
+            const message = document.getElementById('lock-message-input').value;
+            fetch('/api/feature-lock/admin/message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('提示信息已保存');
+                } else {
+                    alert(data.message);
+                }
+            });
         }
 
         function showAddUserModal() {

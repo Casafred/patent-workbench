@@ -1,0 +1,12 @@
+{
+    "tabs": [
+        {"id": "instant", "name": "功能一：AI智能体对话"},
+        {"id": "unified_batch", "name": "功能二：文本批量智能分析"},
+        {"id": "local_patent_lib", "name": "功能三：本地数据表管理"},
+        {"id": "claims_comparison", "name": "功能四：权利要求智能比对"},
+        {"id": "patent_batch", "name": "功能五：批量专利检索与解读"},
+        {"id": "claims_processor", "name": "功能六：独从权识别与可视化"},
+        {"id": "drawing_marker", "name": "功能七：专利附图智能标记"},
+        {"id": "pdf_ocr_reader", "name": "功能八：文档OCR与智能分析"}
+    ]
+}

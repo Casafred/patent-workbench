@@ -1,0 +1,32 @@
+[33md8fb773[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m refactor: pass patent data via script tag to avoid template string issues
+[33m5738351[m fix: pass patent data via window object to avoid HTML escaping issues
+[33m9b02e59[m fix: escape HTML characters in JSON.stringify output to prevent syntax errors
+[33m72301d1[m fix: fix newline escaping issues in patentDetailNewTab.js template strings
+[33m50b56c1[m fix: escape backticks in template string for patentDetailNewTab.js
+[33m3fd640c[m fix
+[33md9fa92a[m fix
+[33ma70fb05[m fix: 使用!important覆盖CSS类样式，确保头部显示正确
+[33m8333163[m fix
+[33m8a6ef81[m fix
+[33m567a1a7[m fix
+[33mb0f8c87[m fix: 修复并排对比视图头部样式问题
+[33m9a8cdbe[m fix
+[33m17a0b59[m fix
+[33m43181ba[m update
+[33mb95e23a[m feat:pdf_ocr_improvements
+[33m31e3a90[m feat: 新增手动输入同族专利号功能
+[33m8583081[m fix: 修复并排对比视图头部显示和语言切换功能
+[33m2fbb769[m fix: 修复矩阵表格重复显示和并排对比视图数据问题
+[33mb01bb68[m style: 统一并排对比和矩阵视图的展示方式与手动输入对比一致
+[33mcommit 43181baee769730d663634236dcbeabf4a529af2[m
+Author: Casafred <alfred99729@gmail.com>
+Date:   Tue Feb 24 21:29:47 2026 +0800
+
+    update
+
+ backend/routes/patent.py      | 188 [32m+++++++++++++++++++++++++[m[31m-[m
+ js/familyClaimsComparison.js  | 233 [32m++++++++++++++++++++++++++++[m[31m----[m
+ js/main.js                    | 232 [32m+++++++++++++++++++++++++++++++[m
+ js/main/patent-detail-html.js |  50 [32m+++++[m[31m--[m
+ js/patentDetailNewTab.js      | 308 [32m+++++++++++++++++++++++++++++++++++++++[m[31m---[m
+ 5 files changed, 944 insertions(+), 67 deletions(-)

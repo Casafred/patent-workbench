@@ -1,6 +1,5 @@
-feat: optimize pdf-ocr-reader container width
+修复多图查看器关闭按钮显示问题
 
-- Extend feature 9 max-width to 1600px
-- Adjust 3-column layout: narrower sidebars, wider center
-- Increase global container from 1200px to 1400px
-- Update index.html inline container style to 1600px
+- 将SVG stroke从currentColor改为明确的white颜色
+- 增加stroke-width从2到3使叉号更明显
+- 统一使用标准颜色值#dc3545

@@ -29,7 +29,7 @@
 // 加载进度管理
 // =================================================================================
 window.LoadingManager = {
-    totalSteps: 10,
+    totalSteps: 11,
     currentStep: 0,
     progressElement: null,
     overlayElement: null,
@@ -315,6 +315,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize API Key Config (global, not tied to a specific component)
     initApiKeyConfig();
     LoadingManager.updateProgress('初始化API配置');
+    
+    // Initialize Feature Lock Manager
+    if (window.FeatureLockManager) {
+        await window.FeatureLockManager.init();
+    }
+    LoadingManager.updateProgress('初始化功能锁定');
 
     // 默认激活第一个主页签
     switchTab('instant', document.querySelector('.main-tab-container .tab-button'));
