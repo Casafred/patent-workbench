@@ -1212,6 +1212,9 @@ async function startProcessing() {
         const ocrMarkers = ocrResult.data.ocr_markers;
         const ocrTime = ((Date.now() - ocrStartTime) / 1000).toFixed(1);
         console.log(`OCR识别完成: ${ocrMarkers.length} 个序号, 耗时 ${ocrTime}秒`);
+        console.log('[OCR阶段] ocr_markers:', ocrMarkers);
+        console.log('[OCR阶段] drawings:', ocrResult.data.drawings);
+        console.log('[OCR阶段] drawings[0]示例:', ocrResult.data.drawings?.[0]);
         
         if (ocrMarkers.length === 0) {
             updateProgressStatus('error', '❌ 未识别到任何序号，请检查图片');
@@ -1268,15 +1271,23 @@ async function startProcessing() {
                 custom_prompt: aiConfig.prompt,
                 ocr_mode: ocrMode,
                 ocr_results: ocrMarkers,
+                ocr_drawings: ocrResult.data.drawings,
                 stage: 'ai'
             })
         }, 120000);
         
         const aiResult = await aiResponse.json();
         
+        console.log('[AI阶段] 返回结果:', JSON.stringify(aiResult, null, 2));
+        
         if (!aiResult.success) {
             throw new Error(aiResult.error || 'AI处理失败');
         }
+        
+        console.log('[AI阶段] drawings数量:', aiResult.data.drawings?.length);
+        console.log('[AI阶段] matched_count:', aiResult.data.matched_count);
+        console.log('[AI阶段] ocr_detected_count:', aiResult.data.ocr_detected_count);
+        console.log('[AI阶段] reference_map:', aiResult.data.reference_map);
         
         const aiTime = ((Date.now() - aiStartTime) / 1000).toFixed(1);
         const totalTime = ((Date.now() - ocrStartTime) / 1000).toFixed(1);

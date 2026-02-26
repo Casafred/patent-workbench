@@ -954,6 +954,7 @@ def process_drawing_marker_staged():
         paddle_token = req_data.get('paddle_token') or request.headers.get('X-Paddle-Token')
         stage = req_data.get('stage', 'all')
         ocr_results_from_client = req_data.get('ocr_results')
+        ocr_drawings_from_client = req_data.get('ocr_drawings')
         
         if not drawings or not isinstance(drawings, list) or len(drawings) == 0:
             return create_response(error="drawings is required and must be a non-empty list", status_code=400)
@@ -1110,41 +1111,59 @@ def process_drawing_marker_staged():
             print(f"[STAGED] Step 3: AI processing...")
             
             if stage == 'ai' and not processed_results:
-                print(f"[STAGED] Stage 'ai': Need to get OCR results first...")
-                for drawing in drawings:
-                    try:
-                        image_data = base64.b64decode(drawing['data'])
-                        image_hash = hashlib.md5(image_data).hexdigest()
-                        cache_key = f"{ocr_mode}_{drawing['name']}_{image_hash}"
+                print(f"[STAGED] Stage 'ai': Using OCR results from client...")
+                
+                if ocr_drawings_from_client:
+                    for drawing_data in ocr_drawings_from_client:
+                        ocr_results = drawing_data.get('ocr_results', [])
+                        for detection in ocr_results:
+                            all_ocr_markers.add(detection['number'])
                         
-                        cached_result = cache_manager.get_cache(cache_key)
-                        if cached_result:
-                            all_detected_numbers = cached_result['ocr_results']
-                            all_detected_numbers = deduplicate_results(all_detected_numbers, position_threshold=25)
-                            all_detected_numbers = filter_by_confidence(all_detected_numbers, min_confidence=30)
+                        processed_results.append({
+                            'name': drawing_data['name'],
+                            'type': drawing_data.get('type', ''),
+                            'size': drawing_data.get('size', 0),
+                            'ocr_results': ocr_results
+                        })
+                    print(f"[STAGED] Loaded {len(processed_results)} drawings from client OCR results")
+                else:
+                    print(f"[STAGED] No OCR drawings from client, trying cache...")
+                    for drawing in drawings:
+                        try:
+                            image_data = base64.b64decode(drawing['data'])
+                            image_hash = hashlib.md5(image_data).hexdigest()
+                            cache_key = f"{ocr_mode}_{drawing['name']}_{image_hash}"
                             
-                            for detection in all_detected_numbers:
-                                all_ocr_markers.add(detection['number'])
-                            
+                            cached_result = cache_manager.get_cache(cache_key)
+                            if cached_result:
+                                all_detected_numbers = cached_result['ocr_results']
+                                all_detected_numbers = deduplicate_results(all_detected_numbers, position_threshold=25)
+                                all_detected_numbers = filter_by_confidence(all_detected_numbers, min_confidence=30)
+                                
+                                for detection in all_detected_numbers:
+                                    all_ocr_markers.add(detection['number'])
+                                
+                                processed_results.append({
+                                    'name': drawing['name'],
+                                    'type': drawing['type'],
+                                    'size': drawing['size'],
+                                    'ocr_results': all_detected_numbers
+                                })
+                                cache_info[drawing['name']] = {'has_cache': True, 'cache_key': cache_key}
+                        except Exception as e:
+                            print(f"Error loading cached OCR for {drawing['name']}: {str(e)}")
                             processed_results.append({
                                 'name': drawing['name'],
                                 'type': drawing['type'],
                                 'size': drawing['size'],
-                                'ocr_results': all_detected_numbers
+                                'ocr_results': [],
+                                'error': str(e)
                             })
-                            cache_info[drawing['name']] = {'has_cache': True, 'cache_key': cache_key}
-                    except Exception as e:
-                        print(f"Error loading cached OCR for {drawing['name']}: {str(e)}")
-                        processed_results.append({
-                            'name': drawing['name'],
-                            'type': drawing['type'],
-                            'size': drawing['size'],
-                            'ocr_results': [],
-                            'error': str(e)
-                        })
                 
                 if not all_ocr_markers and ocr_results_from_client:
                     all_ocr_markers = set(ocr_results_from_client)
+                
+                print(f"[STAGED] Total OCR markers: {len(all_ocr_markers)}, processed_results: {len(processed_results)}")
             
             if ai_mode:
                 if not model_name:
@@ -1186,17 +1205,23 @@ def process_drawing_marker_staged():
             from backend.utils.smart_split_utils import smart_split_ocr_results
             spec_markers = list(reference_map.keys())
             
+            print(f"[STAGED] spec_markers from reference_map: {spec_markers[:20]}..." if len(spec_markers) > 20 else f"[STAGED] spec_markers: {spec_markers}")
+            print(f"[STAGED] processed_results count: {len(processed_results)}")
+            
             total_numbers = 0
             for drawing_result in processed_results:
                 if 'error' in drawing_result:
+                    print(f"[STAGED] Skipping drawing with error: {drawing_result['name']}")
                     continue
                 
                 ocr_results = drawing_result.pop('ocr_results', [])
+                print(f"[STAGED] Drawing {drawing_result['name']}: {len(ocr_results)} OCR results")
                 
                 if ocr_mode in ['glm_ocr', 'paddle_ocr']:
                     ocr_results = smart_split_ocr_results(ocr_results, spec_markers, enable_split=True)
                 
                 detected_numbers, unknown, missing = match_with_reference_map(ocr_results, reference_map)
+                print(f"[STAGED] Matched {len(detected_numbers)} numbers for {drawing_result['name']}")
                 total_numbers += len(detected_numbers)
                 
                 unmatched_ocr = []
@@ -1238,6 +1263,11 @@ def process_drawing_marker_staged():
                 message = f"✅ [{ocr_mode_display}] 识别: {total_ocr_detected}个 | 匹配: {total_matched}个 | 未匹配: {total_unmatched}个"
             else:
                 message = f"❌ [{ocr_mode_display}] 未识别到任何标记"
+            
+            print(f"[STAGED] Final results: total_ocr_detected={total_ocr_detected}, total_matched={total_matched}, total_unmatched={total_unmatched}")
+            print(f"[STAGED] processed_results count: {len(processed_results)}")
+            for i, dr in enumerate(processed_results):
+                print(f"[STAGED] Drawing {i}: {dr.get('name')} - detected_numbers: {len(dr.get('detected_numbers', []))}")
             
             return create_response(data={
                 'stage': 'complete',
