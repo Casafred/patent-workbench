@@ -1417,6 +1417,12 @@ function reprocessOCR() {
     }
     
     // 准备数据
+    const ocrModeSelect = document.getElementById('ocr_mode_select');
+    const ocrMode = ocrModeSelect ? ocrModeSelect.value : 'rapidocr';
+    
+    const paddleTokenInput = document.getElementById('paddle_token_input');
+    const paddleToken = paddleTokenInput ? paddleTokenInput.value.trim() : '';
+    
     const processingData = {
         drawings: uploadedDrawings.map(drawing => {
             const base64Data = drawing.dataUrl.split(',')[1];
@@ -1431,7 +1437,10 @@ function reprocessOCR() {
         specification: specificationInput.value.trim(),
         ai_mode: aiConfig.aiMode,
         model_name: aiConfig.model,
-        custom_prompt: aiConfig.prompt
+        custom_prompt: aiConfig.prompt,
+        ocr_mode: ocrMode,
+        paddle_token: paddleToken,
+        force_refresh: true
     };
     
     console.log(`[刷新] 智能重新识别OCR：${uploadedDrawings.length} 张图片`);
@@ -1475,6 +1484,22 @@ function reprocessOCR() {
             return;
         }
         headers['Authorization'] = `Bearer ${apiKey}`;
+    }
+    
+    if (ocrMode === 'paddle_ocr' && !paddleToken) {
+        alert('PP-OCRv5模式需要配置PaddleOCR Token。');
+        [reprocessOcrBtn, reprocessSpecBtn, startBtn].forEach(btn => {
+            if (btn) {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            }
+        });
+        return;
+    }
+    
+    if (ocrMode === 'paddle_ocr') {
+        headers['X-Paddle-Token'] = paddleToken;
     }
     
     fetch('/api/drawing-marker/process', {

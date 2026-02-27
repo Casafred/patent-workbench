@@ -223,9 +223,9 @@ def process_drawing_marker():
                     for d in all_detected_numbers
                 ]
 
-                # 应用去重和置信度过滤（降低阈值以提高检测率）
+                # 应用去重和置信度过滤（提高阈值以过滤低置信度结果）
                 all_detected_numbers = deduplicate_results(all_detected_numbers, position_threshold=25)
-                all_detected_numbers = filter_by_confidence(all_detected_numbers, min_confidence=30)
+                all_detected_numbers = filter_by_confidence(all_detected_numbers, min_confidence=80)
                 print(f"[DEBUG] After filtering: {len(all_detected_numbers)} detections remain")
 
                 # 收集OCR检测到的所有标记（用于预处理说明书）
@@ -838,7 +838,7 @@ def reprocess_drawings():
                 
                 # Apply filtering
                 all_detected_numbers = deduplicate_results(all_detected_numbers, position_threshold=25)
-                all_detected_numbers = filter_by_confidence(all_detected_numbers, min_confidence=30)
+                all_detected_numbers = filter_by_confidence(all_detected_numbers, min_confidence=80)
                 
                 total_ocr_detected += len(all_detected_numbers)
                 
@@ -1040,7 +1040,7 @@ def process_drawing_marker_staged():
                         cache_info[drawing['name']] = {'has_cache': False, 'cache_key': cache_key}
                     
                     all_detected_numbers = deduplicate_results(all_detected_numbers, position_threshold=25)
-                    all_detected_numbers = filter_by_confidence(all_detected_numbers, min_confidence=30)
+                    all_detected_numbers = filter_by_confidence(all_detected_numbers, min_confidence=80)
                     
                     for detection in all_detected_numbers:
                         all_ocr_markers.add(detection['number'])
@@ -1138,7 +1138,7 @@ def process_drawing_marker_staged():
                             if cached_result:
                                 all_detected_numbers = cached_result['ocr_results']
                                 all_detected_numbers = deduplicate_results(all_detected_numbers, position_threshold=25)
-                                all_detected_numbers = filter_by_confidence(all_detected_numbers, min_confidence=30)
+                                all_detected_numbers = filter_by_confidence(all_detected_numbers, min_confidence=80)
                                 
                                 for detection in all_detected_numbers:
                                     all_ocr_markers.add(detection['number'])

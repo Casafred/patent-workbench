@@ -1695,7 +1695,7 @@ class MultiImageViewerV8 {
                 itemDiv.innerHTML = `
                     <div><strong>标号:</strong> ${item.number}</div>
                     <div><strong>位置:</strong> (${Math.round(item.x)}, ${Math.round(item.y)})</div>
-                    <div><strong>置信度:</strong> ${Math.round((item.confidence || 0) * 100)}%</div>
+                    <div><strong>置信度:</strong> ${(item.confidence || 0).toFixed(2)}%</div>
                     <div><strong>状态:</strong> ${isMatched ? '✅ 已匹配 → ' + referenceMap[item.number] : '⚠️ 未匹配'}</div>
                 `;
                 ocrList.appendChild(itemDiv);
