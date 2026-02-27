@@ -46,8 +46,20 @@
 
             this.updateVantaBackground(theme);
             this.updateToggleButtonIcon();
+            this.updateLogo(theme);
             
             console.log('[ThemeManager] 应用主题:', theme);
+        },
+
+        updateLogo: function(theme) {
+            const logoImg = document.querySelector('.image-logo');
+            if (logoImg) {
+                if (theme === THEMES.DARK) {
+                    logoImg.src = 'frontend/images/dark_logo.webp';
+                } else {
+                    logoImg.src = 'frontend/images/ALFRED X IP LOGO.webp';
+                }
+            }
         },
 
         updateVantaBackground: function(theme) {
@@ -140,6 +152,7 @@
     function initAfterHeaderLoaded() {
         ThemeManager.bindToggleButton();
         ThemeManager.updateToggleButtonIcon();
+        ThemeManager.updateLogo(currentTheme);
     }
 
     if (document.readyState === 'loading') {
