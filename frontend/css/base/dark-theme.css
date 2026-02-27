@@ -1487,3 +1487,314 @@
     border-color: #d97706 !important;
     color: #fcd34d !important;
 }
+
+/* ========================================
+   36. 小按钮暗黑模式覆盖
+   ======================================== */
+
+[data-theme="dark"] .small-button {
+    background: linear-gradient(135deg, #065f46 0%, #047857 100%) !important;
+    box-shadow: 0 2px 6px rgba(74, 222, 128, 0.2) !important;
+}
+
+[data-theme="dark"] .small-button:hover {
+    background: linear-gradient(135deg, #047857 0%, #059669 100%) !important;
+    box-shadow: 0 4px 12px rgba(74, 222, 128, 0.3) !important;
+}
+
+[data-theme="dark"] .small-button:disabled {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
+    color: #64748b !important;
+    box-shadow: none !important;
+}
+
+[data-theme="dark"] .small-button.delete-button {
+    background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%) !important;
+}
+
+[data-theme="dark"] .small-button.delete-button:hover {
+    background: linear-gradient(135deg, #b91c1c 0%, #ef4444 100%) !important;
+}
+
+/* ========================================
+   37. 操作按钮暗黑模式覆盖
+   ======================================== */
+
+[data-theme="dark"] .action-button {
+    background: linear-gradient(135deg, #065f46 0%, #047857 100%) !important;
+    box-shadow: 0 4px 12px rgba(74, 222, 128, 0.2) !important;
+}
+
+[data-theme="dark"] .action-button:hover {
+    background: linear-gradient(135deg, #047857 0%, #059669 100%) !important;
+    box-shadow: 0 7px 20px rgba(74, 222, 128, 0.3) !important;
+}
+
+[data-theme="dark"] .action-button:disabled {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
+    color: #64748b !important;
+}
+
+/* ========================================
+   38. 主按钮暗黑模式覆盖
+   ======================================== */
+
+[data-theme="dark"] button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button):not(.delete-button):not(.file-remove-btn):not(.help-button):not(.api-config-toggle):not(.edit-title-btn):not(.close-modal):not(.export-toggle-btn):not(.action-button):not(.chat-actions button):not(.popup-close):not(.popup-btn):not(.send-btn):not(.control-btn):not(.viewer-close-btn):not(.theme-toggle-btn) {
+    background: linear-gradient(135deg, #065f46 0%, #047857 100%) !important;
+    box-shadow: 0 4px 12px rgba(74, 222, 128, 0.2) !important;
+}
+
+[data-theme="dark"] button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button):not(.delete-button):not(.file-remove-btn):not(.help-button):not(.api-config-toggle):not(.edit-title-btn):not(.close-modal):not(.export-toggle-btn):not(.action-button):not(.chat-actions button):not(.popup-close):not(.popup-btn):not(.send-btn):not(.control-btn):not(.viewer-close-btn):not(.theme-toggle-btn):hover {
+    background: linear-gradient(135deg, #047857 0%, #059669 100%) !important;
+    box-shadow: 0 7px 20px rgba(74, 222, 128, 0.3) !important;
+}
+
+[data-theme="dark"] button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button):not(.delete-button):not(.file-remove-btn):not(.help-button):not(.api-config-toggle):not(.edit-title-btn):not(.close-modal):not(.export-toggle-btn):not(.action-button):not(.chat-actions button):not(.popup-close):not(.popup-btn):not(.send-btn):not(.control-btn):not(.viewer-close-btn):not(.theme-toggle-btn):disabled {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
+    color: #64748b !important;
+}
+
+/* ========================================
+   39. 发送按钮暗黑模式覆盖
+   ======================================== */
+
+[data-theme="dark"] .send-btn {
+    background: linear-gradient(135deg, #065f46 0%, #047857 100%) !important;
+}
+
+[data-theme="dark"] .send-btn:hover {
+    background: linear-gradient(135deg, #047857 0%, #059669 100%) !important;
+}
+
+/* ========================================
+   40. 导出按钮暗黑模式覆盖
+   ======================================== */
+
+[data-theme="dark"] .export-toggle-btn {
+    background: linear-gradient(135deg, #065f46 0%, #047857 100%) !important;
+    box-shadow: 0 4px 12px rgba(74, 222, 128, 0.2) !important;
+}
+
+[data-theme="dark"] .export-toggle-btn:hover {
+    background: linear-gradient(135deg, #047857 0%, #059669 100%) !important;
+    box-shadow: 0 7px 20px rgba(74, 222, 128, 0.3) !important;
+}
+
+/* ========================================
+   41. 保存按钮暗黑模式覆盖
+   ======================================== */
+
+[data-theme="dark"] #chat_save_title_btn,
+[data-theme="dark"] #chat_save_persona_btn {
+    background: linear-gradient(135deg, #065f46 0%, #047857 100%) !important;
+    box-shadow: 0 4px 12px rgba(74, 222, 128, 0.2) !important;
+}
+
+[data-theme="dark"] #chat_save_title_btn:hover,
+[data-theme="dark"] #chat_save_persona_btn:hover {
+    background: linear-gradient(135deg, #047857 0%, #059669 100%) !important;
+    box-shadow: 0 7px 20px rgba(74, 222, 128, 0.3) !important;
+}
+
+/* ========================================
+   42. 帮助标签暗黑模式覆盖
+   ======================================== */
+
+[data-theme="dark"] .help-tab {
+    background: linear-gradient(135deg, #065f46 0%, #047857 100%) !important;
+}
+
+[data-theme="dark"] .help-tab-icon {
+    background: linear-gradient(135deg, #065f46 0%, #047857 100%) !important;
+}
+
+/* ========================================
+   43. 专利配置按钮暗黑模式覆盖
+   ======================================== */
+
+[data-theme="dark"] .patent-action-btn {
+    background: linear-gradient(135deg, #065f46 0%, #047857 100%) !important;
+}
+
+[data-theme="dark"] .patent-action-btn:hover {
+    background: linear-gradient(135deg, #047857 0%, #059669 100%) !important;
+}
+
+/* ========================================
+   44. 功能七专利附图页面按钮覆盖
+   ======================================== */
+
+[data-theme="dark"] #start_processing_btn {
+    background: linear-gradient(135deg, #065f46 0%, #047857 100%) !important;
+}
+
+[data-theme="dark"] #start_processing_btn:hover {
+    background: linear-gradient(135deg, #047857 0%, #059669 100%) !important;
+}
+
+[data-theme="dark"] #clear_all_btn {
+    background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%) !important;
+}
+
+[data-theme="dark"] #clear_all_btn:hover {
+    background: linear-gradient(135deg, #b91c1c 0%, #ef4444 100%) !important;
+}
+
+/* ========================================
+   45. 功能五批量检索页面按钮覆盖
+   ======================================== */
+
+[data-theme="dark"] #search_patents_btn {
+    background: linear-gradient(135deg, #065f46 0%, #047857 100%) !important;
+}
+
+[data-theme="dark"] #search_patents_btn:hover {
+    background: linear-gradient(135deg, #047857 0%, #059669 100%) !important;
+}
+
+[data-theme="dark"] #manage_template_btn,
+[data-theme="dark"] #toggle_field_selector_btn,
+[data-theme="dark"] #save_field_selection_btn,
+[data-theme="dark"] #add_field_btn,
+[data-theme="dark"] #patent_save_template_btn,
+[data-theme="dark"] #patent_new_template_btn,
+[data-theme="dark"] #patent_export_template_btn,
+[data-theme="dark"] #patent_import_template_btn,
+[data-theme="dark"] #cancel_edit_btn,
+[data-theme="dark"] #view_cache_stats_btn,
+[data-theme="dark"] #view_history_btn {
+    background: linear-gradient(135deg, #065f46 0%, #047857 100%) !important;
+}
+
+[data-theme="dark"] #manage_template_btn:hover,
+[data-theme="dark"] #toggle_field_selector_btn:hover,
+[data-theme="dark"] #save_field_selection_btn:hover,
+[data-theme="dark"] #add_field_btn:hover,
+[data-theme="dark"] #patent_save_template_btn:hover,
+[data-theme="dark"] #patent_new_template_btn:hover,
+[data-theme="dark"] #patent_export_template_btn:hover,
+[data-theme="dark"] #patent_import_template_btn:hover,
+[data-theme="dark"] #cancel_edit_btn:hover,
+[data-theme="dark"] #view_cache_stats_btn:hover,
+[data-theme="dark"] #view_history_btn:hover {
+    background: linear-gradient(135deg, #047857 0%, #059669 100%) !important;
+}
+
+[data-theme="dark"] #clear_patent_input_btn,
+[data-theme="dark"] #patent_delete_template_btn,
+[data-theme="dark"] #clear_cache_btn,
+[data-theme="dark"] #clear_history_btn {
+    background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%) !important;
+}
+
+[data-theme="dark"] #clear_patent_input_btn:hover,
+[data-theme="dark"] #patent_delete_template_btn:hover,
+[data-theme="dark"] #clear_cache_btn:hover,
+[data-theme="dark"] #clear_history_btn:hover {
+    background: linear-gradient(135deg, #b91c1c 0%, #ef4444 100%) !important;
+}
+
+/* ========================================
+   46. 同族权利要求对比页面按钮覆盖
+   ======================================== */
+
+[data-theme="dark"] #select_all_family_btn,
+[data-theme="dark"] #deselect_all_family_btn,
+[data-theme="dark"] #family_toggle_language_btn,
+[data-theme="dark"] #family_export_comparison_btn {
+    background: linear-gradient(135deg, #065f46 0%, #047857 100%) !important;
+}
+
+[data-theme="dark"] #select_all_family_btn:hover,
+[data-theme="dark"] #deselect_all_family_btn:hover,
+[data-theme="dark"] #family_toggle_language_btn:hover,
+[data-theme="dark"] #family_export_comparison_btn:hover {
+    background: linear-gradient(135deg, #047857 0%, #059669 100%) !important;
+}
+
+[data-theme="dark"] #clear_family_list_btn {
+    background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%) !important;
+}
+
+/* ========================================
+   47. 权利要求对比页面按钮覆盖
+   ======================================== */
+
+[data-theme="dark"] #toggle_language_btn,
+[data-theme="dark"] #export_comparison_btn {
+    background: linear-gradient(135deg, #065f46 0%, #047857 100%) !important;
+}
+
+[data-theme="dark"] #toggle_language_btn:hover,
+[data-theme="dark"] #export_comparison_btn:hover {
+    background: linear-gradient(135deg, #047857 0%, #059669 100%) !important;
+}
+
+/* ========================================
+   48. 统一批量处理页面按钮覆盖
+   ======================================== */
+
+[data-theme="dark"] #unified_load_excel_btn,
+[data-theme="dark"] #unified_add_input_btn,
+[data-theme="dark"] #unified_inputs_select_all_btn,
+[data-theme="dark"] #unified_add_output_field_btn,
+[data-theme="dark"] #unified_add_template_btn,
+[data-theme="dark"] #unified_async_recover_btn,
+[data-theme="dark"] #unified_async_export_btn {
+    background: linear-gradient(135deg, #065f46 0%, #047857 100%) !important;
+}
+
+[data-theme="dark"] #unified_load_excel_btn:hover,
+[data-theme="dark"] #unified_add_input_btn:hover,
+[data-theme="dark"] #unified_inputs_select_all_btn:hover,
+[data-theme="dark"] #unified_add_output_field_btn:hover,
+[data-theme="dark"] #unified_add_template_btn:hover,
+[data-theme="dark"] #unified_async_recover_btn:hover,
+[data-theme="dark"] #unified_async_export_btn:hover {
+    background: linear-gradient(135deg, #047857 0%, #059669 100%) !important;
+}
+
+[data-theme="dark"] #unified_inputs_delete_selected_btn {
+    background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%) !important;
+}
+
+[data-theme="dark"] #unified_batch_step1_upload,
+[data-theme="dark"] #unified_batch_step2_create {
+    background: linear-gradient(135deg, #065f46 0%, #047857 100%) !important;
+}
+
+/* ========================================
+   49. 权利要求处理器页面按钮覆盖
+   ======================================== */
+
+[data-theme="dark"] #claims_text_example_btn {
+    background: linear-gradient(135deg, #065f46 0%, #047857 100%) !important;
+}
+
+[data-theme="dark"] #claims_text_example_btn:hover {
+    background: linear-gradient(135deg, #047857 0%, #059669 100%) !important;
+}
+
+/* ========================================
+   50. 专利详情弹窗按钮覆盖
+   ======================================== */
+
+[data-theme="dark"] #patent_chat_send_btn {
+    background: linear-gradient(135deg, #065f46 0%, #047857 100%) !important;
+}
+
+[data-theme="dark"] #patent_chat_send_btn:hover {
+    background: linear-gradient(135deg, #047857 0%, #059669 100%) !important;
+}
+
+/* ========================================
+   51. API Key保存按钮覆盖
+   ======================================== */
+
+[data-theme="dark"] #api_key_save_btn {
+    background: linear-gradient(135deg, #065f46 0%, #047857 100%) !important;
+}
+
+[data-theme="dark"] #api_key_save_btn:hover {
+    background: linear-gradient(135deg, #047857 0%, #059669 100%) !important;
+}
