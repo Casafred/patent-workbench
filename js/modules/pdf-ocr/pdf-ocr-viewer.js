@@ -225,8 +225,12 @@ class PDFOCRViewer {
         const currentPageBlocks = this.ocrBlocks.filter(block => block.pageIndex === pageIndex);
         console.log('[PDF-OCR] 当前页区块数量:', currentPageBlocks.length, '页码:', pageIndex);
         
-        // 如果当前页没有区块，尝试使用所有区块
-        const searchBlocks = currentPageBlocks.length > 0 ? currentPageBlocks : this.ocrBlocks;
+        // 只在当前页搜索区块，不使用其他页面的区块
+        if (currentPageBlocks.length === 0) {
+            console.log('[PDF-OCR] 当前页没有区块数据，不搜索其他页面');
+            return null;
+        }
+        const searchBlocks = currentPageBlocks;
         
         for (const block of searchBlocks) {
             if (!block.bbox) continue;

@@ -983,6 +983,44 @@ class PDFOCRParser {
         return this.currentTask;
     }
 
+    async loadCacheIfAvailable(pageNum) {
+        if (!window.pdfOCRCache || !window.pdfOCRCore?.currentFile) {
+            return false;
+        }
+        
+        if (window.pdfOCRViewer?.isPageParsed(pageNum)) {
+            console.log(`[PDF-OCR-Parser] 第${pageNum}页已在内存中，无需加载缓存`);
+            return false;
+        }
+        
+        const fileHash = this.currentFileHash || await window.pdfOCRCache.generateFileHash(window.pdfOCRCore.currentFile);
+        if (!fileHash) {
+            return false;
+        }
+        
+        const useCache = document.getElementById('ocr-use-cache')?.checked ?? true;
+        if (!useCache) {
+            console.log(`[PDF-OCR-Parser] 缓存已禁用，不自动加载`);
+            return false;
+        }
+        
+        if (!window.pdfOCRCache.hasCache(fileHash, pageNum)) {
+            console.log(`[PDF-OCR-Parser] 第${pageNum}页无缓存`);
+            return false;
+        }
+        
+        console.log(`[PDF-OCR-Parser] 自动加载缓存: 第${pageNum}页`);
+        
+        const cachedResult = window.pdfOCRCache.getCache(fileHash, pageNum);
+        if (cachedResult) {
+            this.handleParseResult(cachedResult, true);
+            this.showToast(`第${pageNum}页已自动加载缓存`, 'success');
+            return true;
+        }
+        
+        return false;
+    }
+
     clear() {
         this.currentTask = null;
         this.isParsing = false;

@@ -548,6 +548,11 @@ class PDFOCRCore {
         if (window.pdfOCRParser) {
             window.pdfOCRParser.updateCacheStatus();
         }
+        
+        // 自动加载缓存（如果当前页有缓存但内存中没有结果）
+        if (window.pdfOCRParser) {
+            window.pdfOCRParser.loadCacheIfAvailable(pageNum);
+        }
     }
     
     /**
