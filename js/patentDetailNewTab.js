@@ -18,7 +18,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
     }
     
     if (!patentResult || !patentResult.success) {
-        alert('❌ 无法打开：专利数据不存在');
+        alert('无法打开：专利数据不存在');
         return;
     }
     
@@ -71,7 +71,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
             // 如果不是JSON格式，显示原始内容
             displayContent = `
                 <div style="padding: 15px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; margin-bottom: 15px;">
-                    ⚠️ 解读结果未能解析为结构化格式，显示原始内容：
+                    解读结果未能解析为结构化格式，显示原始内容：
                 </div>
                 <div style="white-space: pre-wrap; font-family: monospace; background-color: #f5f5f5; padding: 15px; border-radius: 4px; border: 1px solid #ddd;">
                     ${analysisResult.analysis_content}
@@ -83,7 +83,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
             <div class="section" id="analysis-result" data-section-id="analysis-result">
                 <h2 class="section-title" onclick="toggleSection('analysis-result')">
                     <div class="section-title-content">
-                        <span class="section-icon">🤖</span>
+                        <span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 12.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5ZM3 8.5A.5.5 0 0 1 3.5 8h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5ZM2 3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11A.5.5 0 0 1 2 3Z"/></svg></span>
                         AI 解读结果
                     </div>
                 </h2>
@@ -750,20 +750,20 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     </svg>
                     顶部
                 </a>
-                ${analysisResult ? '<a href="#analysis-result" class="side-nav-item" data-section="analysis-result">🤖 AI解读</a>' : ''}
-                ${buildNavItem('abstract', '📄', '摘要')}
-                ${buildNavItem('basic-info', 'ℹ️', '基本信息')}
-                ${buildNavItem('classifications', '🏷️', 'CPC分类')}
-                ${buildNavItem('landscapes', '🌐', '技术领域')}
-                ${buildNavItem('claims', '⚖️', '权利要求')}
-                ${buildNavItem('timeline', '📅', '事件时间轴')}
-                ${buildNavItem('legal-events', '⚖️', '法律事件')}
-                ${buildNavItem('family', '👨‍👩‍👧‍👦', '同族信息')}
-                ${buildNavItem('external-links', '🔗', '外部链接')}
-                ${buildNavItem('citations', '📚', '引用专利')}
-                ${buildNavItem('cited-by', '🔗', '被引用')}
-                ${buildNavItem('similar', '📋', '相似文档')}
-                ${buildNavItem('description', '📝', '说明书')}
+                ${analysisResult ? '<a href="#analysis-result" class="side-nav-item" data-section="analysis-result"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right:5px;vertical-align:middle"><path d="M6 12.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5ZM3 8.5A.5.5 0 0 1 3.5 8h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5ZM2 3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11A.5.5 0 0 1 2 3Z"/></svg>AI解读</a>' : ''}
+                ${buildNavItem('abstract', '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right:5px;vertical-align:middle"><path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/></svg>', '摘要')}
+                ${buildNavItem('basic-info', '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right:5px;vertical-align:middle"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/></svg>', '基本信息')}
+                ${buildNavItem('classifications', '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right:5px;vertical-align:middle"><path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z"/></svg>', 'CPC分类')}
+                ${buildNavItem('landscapes', '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right:5px;vertical-align:middle"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm7.5-6.923c-.67.204-1.335.82-1.887 1.855A7.97 7.97 0 0 0 5.145 4H7.5V1.077zM4.09 4a9.267 9.267 0 0 1 .64-1.539 6.7 6.7 0 0 1 .597-.933A7.025 7.025 0 0 0 2.255 4H4.09zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a6.958 6.958 0 0 0-.656 2.5h2.49zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5H4.847zM8.5 5v2.5h2.99a12.495 12.495 0 0 0-.337-2.5H8.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5H4.51zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5H8.5zM5.145 12c.138.386.295.744.468 1.068.552 1.035 1.218 1.65 1.887 1.855V12H5.145zm.182 2.472a6.696 6.696 0 0 1-.597-.933A9.268 9.268 0 0 1 4.09 12H2.255a7.024 7.024 0 0 0 3.072 2.472zM3.82 11a13.652 13.652 0 0 1-.312-2.5h-2.49A6.95 6.95 0 0 0 1.674 11H3.82zm10.026-2.5a13.65 13.65 0 0 1-.312 2.5h2.146c.22-.765.368-1.608.426-2.5h-2.26zm-1.068 2.5c-.138.386-.295.744-.468 1.068-.552 1.035-1.218 1.65-1.887 1.855V12h2.355zm.182 2.472A6.696 6.696 0 0 0 13.91 12h1.835a7.024 7.024 0 0 1-3.072 2.472zM14.326 11a6.95 6.95 0 0 0 .656-2.5h-2.49c-.03.877-.138 1.718-.312 2.5h2.146z"/></svg>', '技术领域')}
+                ${buildNavItem('claims', '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right:5px;vertical-align:middle"><path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5z"/><path d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/></svg>', '权利要求')}
+                ${buildNavItem('timeline', '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right:5px;vertical-align:middle"><path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm-3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm-5 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>', '事件时间轴')}
+                ${buildNavItem('legal-events', '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right:5px;vertical-align:middle"><path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/></svg>', '法律事件')}
+                ${buildNavItem('family', '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right:5px;vertical-align:middle"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7Zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-5.784 6A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216ZM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/></svg>', '同族信息')}
+                ${buildNavItem('external-links', '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right:5px;vertical-align:middle"><path d="M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l1.315-1.315a.5.5 0 0 1 .707 0l.025.025a.5.5 0 0 1 0 .707l-1.315 1.315a4 4 0 0 1-5.656-5.656l1.372-1.372a.5.5 0 0 1 .707 0l.025.025a.5.5 0 0 1 0 .707l-.975.975A2.5 2.5 0 0 0 5.5 11a2.5 2.5 0 0 0 2.5-2.5V8a.5.5 0 0 1 1 0v.5a3.5 3.5 0 0 1-3.5 3.5A3.5 3.5 0 0 1 2 8.5a3.5 3.5 0 0 1 1.025-2.473l.975-.975a.5.5 0 0 1 .707 0l.025.025a.5.5 0 0 1 0 .707l-.025.025-.975.975a2.5 2.5 0 0 0-.515.558z"/><path d="M6.25 3.544l.975-.975a.5.5 0 0 1 .707 0l.025.025a.5.5 0 0 1 0 .707l-.975.975a2.5 2.5 0 0 0-.515.558 2.5 2.5 0 0 0 .515 3.042l.975.975a.5.5 0 0 1 0 .707l-.025.025a.5.5 0 0 1-.707 0l-.975-.975a3.5 3.5 0 0 1 0-4.95l.975-.975a.5.5 0 0 1 .025-.025z"/><path d="M9.878.392a.5.5 0 0 1 .707 0l4.243 4.243a.5.5 0 0 1 0 .707l-4.243 4.243a.5.5 0 0 1-.707 0l-4.243-4.243a.5.5 0 0 1 0-.707L9.878.392zM10.232 1 6 5.232l3.768 3.768L14 5.232 10.232 1z"/></svg>', '外部链接')}
+                ${buildNavItem('citations', '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right:5px;vertical-align:middle"><path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811V2.828zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"/></svg>', '引用专利')}
+                ${buildNavItem('cited-by', '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right:5px;vertical-align:middle"><path d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5z"/><path d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0v-5z"/></svg>', '被引用')}
+                ${buildNavItem('similar', '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right:5px;vertical-align:middle"><path d="M14 2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h12zM2 3a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H2z"/><path d="M3 5.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM3 8a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 3 8zm0 2.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5z"/></svg>', '相似文档')}
+                ${buildNavItem('description', '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right:5px;vertical-align:middle"><path d="M3 2.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5v-11zm1 1v9h8v-9h-8z"/><path d="M5 5.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zM5 8a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5A.5.5 0 0 1 5 8zm0 2.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5z"/></svg>', '说明书')}
             </nav>
             
             <div class="container">
@@ -778,14 +778,17 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                             </a>
                             ` : ''}
                             ${patentResult.url ? `
-                            <a href="${patentResult.url}" target="_blank" style="color: white; text-decoration: underline; font-size: 0.9em; opacity: 0.9;">🔗 Google Patents</a>
+                            <a href="${patentResult.url}" target="_blank" style="color: white; text-decoration: underline; font-size: 0.9em; opacity: 0.9; display: inline-flex; align-items: center; gap: 5px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5z"/><path d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0v-5z"/></svg>
+                                Google Patents
+                            </a>
                             ` : ''}
                         </div>
                     </div>
                     <h1 class="patent-title">${data.title || '专利详情'}</h1>
                     <div class="meta-info">
-                        ${data.application_date ? `<span>📅 申请日期: ${data.application_date}</span>` : ''}
-                        ${data.publication_date ? `<span>📅 公开日期: ${data.publication_date}</span>` : ''}
+                        ${data.application_date ? `<span style="display: inline-flex; align-items: center; gap: 5px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm-3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm-5 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg> 申请日期: ${data.application_date}</span>` : ''}
+                        ${data.publication_date ? `<span style="display: inline-flex; align-items: center; gap: 5px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm-3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm-5 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg> 公开日期: ${data.publication_date}</span>` : ''}
                     </div>
                 </div>
                 
@@ -797,7 +800,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     <div class="section collapsible-section" id="batch-analysis-${patentNumber}" data-section-id="batch-analysis" style="display: none;">
                         <h2 class="section-title" onclick="toggleSection('batch-analysis-${patentNumber}')">
                             <div class="section-title-content">
-                                <span class="section-icon">🤖</span>
+                                <span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 12.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5ZM3 8.5A.5.5 0 0 1 3.5 8h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5ZM2 3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11A.5.5 0 0 1 2 3Z"/></svg></span>
                                 批量解读结果
                                 <span id="tab-analysis-status-${patentNumber}" style="margin-left: 10px; font-size: 12px; color: #666;">等待解读...</span>
                             </div>
@@ -815,7 +818,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     <div class="section collapsible-section" id="abstract" data-section-id="abstract">
                         <h2 class="section-title" onclick="toggleSection('abstract')">
                             <div class="section-title-content">
-                                <span class="section-icon">📄</span>
+                                <span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/></svg></span>
                                 摘要
                             </div>
                             <button class="copy-section-btn" onclick="copySectionContent(event, 'abstract', '摘要')">
@@ -834,7 +837,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     
                     <div class="section" id="basic-info">
                         <h2 class="section-title">
-                            <span class="section-icon">ℹ️</span>
+                            <span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/></svg></span>
                             基本信息
                         </h2>
                         <div class="info-grid">
@@ -859,7 +862,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                             ${data.pdf_link ? `
                             <div class="info-card">
                                 <div class="info-label">PDF原文</div>
-                                <div class="info-value"><a href="${data.pdf_link}" target="_blank" style="color: #2e7d32; font-weight: 500;">📥 下载PDF</a></div>
+                                <div class="info-value"><a href="${data.pdf_link}" target="_blank" style="color: #2e7d32; font-weight: 500; display: inline-flex; align-items: center; gap: 5px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg> 下载PDF</a></div>
                             </div>
                             ` : ''}
                             ${patentResult.url ? `
@@ -874,7 +877,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     ${data.classifications && data.classifications.length > 0 && shouldShowField('classifications') ? `
                     <div class="section" id="classifications">
                         <h2 class="section-title">
-                            <span class="section-icon">🏷️</span>
+                            <span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z"/></svg></span>
                             CPC分类 (${data.classifications.length})
                         </h2>
                         <div class="cpc-grid">
@@ -891,7 +894,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     ${data.landscapes && data.landscapes.length > 0 && shouldShowField('landscapes') ? `
                     <div class="section" id="landscapes">
                         <h2 class="section-title">
-                            <span class="section-icon">🌐</span>
+                            <span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm7.5-6.923c-.67.204-1.335.82-1.887 1.855A7.97 7.97 0 0 0 5.145 4H7.5V1.077zM4.09 4a9.267 9.267 0 0 1 .64-1.539 6.7 6.7 0 0 1 .597-.933A7.025 7.025 0 0 0 2.255 4H4.09zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a6.958 6.958 0 0 0-.656 2.5h2.49zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5H4.847zM8.5 5v2.5h2.99a12.495 12.495 0 0 0-.337-2.5H8.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5H4.51zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5H8.5zM5.145 12c.138.386.295.744.468 1.068.552 1.035 1.218 1.65 1.887 1.855V12H5.145zm.182 2.472a6.696 6.696 0 0 1-.597-.933A9.268 9.268 0 0 1 4.09 12H2.255a7.024 7.024 0 0 0 3.072 2.472zM3.82 11a13.652 13.652 0 0 1-.312-2.5h-2.49A6.95 6.95 0 0 0 1.674 11H3.82zm10.026-2.5a13.65 13.65 0 0 1-.312 2.5h2.146c.22-.765.368-1.608.426-2.5h-2.26zm-1.068 2.5c-.138.386-.295.744-.468 1.068-.552 1.035-1.218 1.65-1.887 1.855V12h2.355zm.182 2.472A6.696 6.696 0 0 0 13.91 12h1.835a7.024 7.024 0 0 1-3.072 2.472zM14.326 11a6.95 6.95 0 0 0 .656-2.5h-2.49c-.03.877-.138 1.718-.312 2.5h2.146z"/></svg></span>
                             技术领域
                         </h2>
                         <div class="tag-list">
@@ -906,11 +909,12 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     <div class="section collapsible-section collapsed" id="claims" data-section-id="claims">
                         <h2 class="section-title" onclick="toggleSection('claims')">
                             <div class="section-title-content">
-                                <span class="section-icon">⚖️</span>
+                                <span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5z"/><path d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/></svg></span>
                                 权利要求 (${data.claims.length})
                             </div>
                             <button class="copy-section-btn translate-btn" onclick="showTranslateDialogNewTab(event, 'claims')" title="快捷翻译" style="background: linear-gradient(135deg, #00bcd4 0%, #009688 100%) !important;">
-                                🌐 翻译
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm7.5-6.923c-.67.204-1.335.82-1.887 1.855A7.97 7.97 0 0 0 5.145 4H7.5V1.077zM4.09 4a9.267 9.267 0 0 1 .64-1.539 6.7 6.7 0 0 1 .597-.933A7.025 7.025 0 0 0 2.255 4H4.09zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a6.958 6.958 0 0 0-.656 2.5h2.49zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5H4.847zM8.5 5v2.5h2.99a12.495 12.495 0 0 0-.337-2.5H8.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5H4.51zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5H8.5zM5.145 12c.138.386.295.744.468 1.068.552 1.035 1.218 1.65 1.887 1.855V12H5.145zm.182 2.472a6.696 6.696 0 0 1-.597-.933A9.268 9.268 0 0 1 4.09 12H2.255a7.024 7.024 0 0 0 3.072 2.472zM3.82 11a13.652 13.652 0 0 1-.312-2.5h-2.49A6.95 6.95 0 0 0 1.674 11H3.82zm10.026-2.5a13.65 13.65 0 0 1-.312 2.5h2.146c.22-.765.368-1.608.426-2.5h-2.26zm-1.068 2.5c-.138.386-.295.744-.468 1.068-.552 1.035-1.218 1.65-1.887 1.855V12h2.355zm.182 2.472A6.696 6.696 0 0 0 13.91 12h1.835a7.024 7.024 0 0 1-3.072 2.472zM14.326 11a6.95 6.95 0 0 0 .656-2.5h-2.49c-.03.877-.138 1.718-.312 2.5h2.146z"/></svg>
+                                翻译
                             </button>
                             <button class="copy-section-btn" onclick="copyClaimsWithNumbers(event)">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
@@ -968,7 +972,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     ${data.events_timeline && data.events_timeline.length > 0 && shouldShowField('events_timeline') ? `
                     <div class="section" id="timeline">
                         <h2 class="section-title">
-                            <span class="section-icon">📅</span>
+                            <span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm-3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm-5 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg></span>
                             事件时间轴 (${data.events_timeline.length})
                         </h2>
                         <div class="timeline">
@@ -986,7 +990,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     ${data.legal_events && data.legal_events.length > 0 && shouldShowField('legal_events') ? `
                     <div class="section" id="legal-events">
                         <h2 class="section-title">
-                            <span class="section-icon">⚖️</span>
+                            <span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/></svg></span>
                             法律事件 (${data.legal_events.length})
                         </h2>
                         <table class="data-table">
@@ -1014,7 +1018,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     <div class="section" id="family">
                         <h2 class="section-title">
                             <div class="section-title-content">
-                                <span class="section-icon">👨‍👩‍👧‍👦</span>
+                                <span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7Zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-5.784 6A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216ZM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/></svg></span>
                                 同族信息 ${data.family_applications ? '(' + data.family_applications.length + ')' : ''}
                             </div>
                             ${data.family_applications && data.family_applications.length > 1 ? `
@@ -1058,7 +1062,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     ${data.external_links && Object.keys(data.external_links).length > 0 && shouldShowField('external_links') ? `
                     <div class="section" id="external-links">
                         <h2 class="section-title">
-                            <span class="section-icon">🔗</span>
+                            <span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l1.315-1.315a.5.5 0 0 1 .707 0l.025.025a.5.5 0 0 1 0 .707l-1.315 1.315a4 4 0 0 1-5.656-5.656l1.372-1.372a.5.5 0 0 1 .707 0l.025.025a.5.5 0 0 1 0 .707l-.975.975A2.5 2.5 0 0 0 5.5 11a2.5 2.5 0 0 0 2.5-2.5V8a.5.5 0 0 1 1 0v.5a3.5 3.5 0 0 1-3.5 3.5A3.5 3.5 0 0 1 2 8.5a3.5 3.5 0 0 1 1.025-2.473l.975-.975a.5.5 0 0 1 .707 0l.025.025a.5.5 0 0 1 0 .707l-.025.025-.975.975a2.5 2.5 0 0 0-.515.558z"/><path d="M6.25 3.544l.975-.975a.5.5 0 0 1 .707 0l.025.025a.5.5 0 0 1 0 .707l-.975.975a2.5 2.5 0 0 0-.515.558 2.5 2.5 0 0 0 .515 3.042l.975.975a.5.5 0 0 1 0 .707l-.025.025a.5.5 0 0 1-.707 0l-.975-.975a3.5 3.5 0 0 1 0-4.95l.975-.975a.5.5 0 0 1 .025-.025z"/><path d="M9.878.392a.5.5 0 0 1 .707 0l4.243 4.243a.5.5 0 0 1 0 .707l-4.243 4.243a.5.5 0 0 1-.707 0l-4.243-4.243a.5.5 0 0 1 0-.707L9.878.392zM10.232 1 6 5.232l3.768 3.768L14 5.232 10.232 1z"/></svg></span>
                             外部链接
                         </h2>
                         <div class="link-grid">
@@ -1073,7 +1077,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     <div class="section collapsible-section collapsed" id="citations" data-section-id="citations">
                         <h2 class="section-title" onclick="toggleSection('citations')">
                             <div class="section-title-content">
-                                <span class="section-icon">📚</span>
+                                <span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811V2.828zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"/></svg></span>
                                 引用专利 (${data.patent_citations.length})
                             </div>
                             <div class="section-actions">
@@ -1106,7 +1110,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                     <tr data-patent-number="${citation.patent_number}">
                                         <td>${citation.patent_number}${citation.examiner_cited ? ' <span style="color: #d32f2f; font-weight: bold;">*</span>' : ''}</td>
                                         <td>${citation.title || '-'}</td>
-                                        <td>${citation.examiner_cited ? '<span style="color: #d32f2f; font-weight: bold;">✓ 审查员引用</span>' : '-'}</td>
+                                        <td>${citation.examiner_cited ? '<span style="color: #d32f2f; font-weight: bold;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/></svg> 审查员引用</span>' : '-'}</td>
                                     </tr>
                                     `).join('')}
                                 </tbody>
@@ -1119,7 +1123,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     <div class="section collapsible-section collapsed" id="cited-by" data-section-id="cited-by">
                         <h2 class="section-title" onclick="toggleSection('cited-by')">
                             <div class="section-title-content">
-                                <span class="section-icon">🔗</span>
+                                <span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5z"/><path d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0v-5z"/></svg></span>
                                 被引用专利 (${data.cited_by.length})
                             </div>
                             <div class="section-actions">
@@ -1163,7 +1167,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     <div class="section collapsible-section collapsed" id="similar" data-section-id="similar">
                         <h2 class="section-title" onclick="toggleSection('similar')">
                             <div class="section-title-content">
-                                <span class="section-icon">📋</span>
+                                <span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M14 2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h12zM2 3a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H2z"/><path d="M3 5.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM3 8a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 3 8zm0 2.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5z"/></svg></span>
                                 相似文档 (${data.similar_documents.length})
                             </div>
                             <div class="section-actions">
@@ -1209,11 +1213,12 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     <div class="section collapsible-section collapsed" id="description" data-section-id="description">
                         <h2 class="section-title" onclick="toggleSection('description')">
                             <div class="section-title-content">
-                                <span class="section-icon">📝</span>
+                                <span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M3 2.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5v-11zm1 1v9h8v-9h-8z"/><path d="M5 5.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zM5 8a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5A.5.5 0 0 1 5 8zm0 2.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5z"/></svg></span>
                                 说明书
                             </div>
                             <button class="copy-section-btn translate-btn" onclick="showTranslateDialogNewTab(event, 'description')" title="快捷翻译" style="background: linear-gradient(135deg, #00bcd4 0%, #009688 100%) !important;">
-                                🌐 翻译
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm7.5-6.923c-.67.204-1.335.82-1.887 1.855A7.97 7.97 0 0 0 5.145 4H7.5V1.077zM4.09 4a9.267 9.267 0 0 1 .64-1.539 6.7 6.7 0 0 1 .597-.933A7.025 7.025 0 0 0 2.255 4H4.09zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a6.958 6.958 0 0 0-.656 2.5h2.49zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5H4.847zM8.5 5v2.5h2.99a12.495 12.495 0 0 0-.337-2.5H8.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5H4.51zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5H8.5zM5.145 12c.138.386.295.744.468 1.068.552 1.035 1.218 1.65 1.887 1.855V12H5.145zm.182 2.472a6.696 6.696 0 0 1-.597-.933A9.268 9.268 0 0 1 4.09 12H2.255a7.024 7.024 0 0 0 3.072 2.472zM3.82 11a13.652 13.652 0 0 1-.312-2.5h-2.49A6.95 6.95 0 0 0 1.674 11H3.82zm10.026-2.5a13.65 13.65 0 0 1-.312 2.5h2.146c.22-.765.368-1.608.426-2.5h-2.26zm-1.068 2.5c-.138.386-.295.744-.468 1.068-.552 1.035-1.218 1.65-1.887 1.855V12h2.355zm.182 2.472A6.696 6.696 0 0 0 13.91 12h1.835a7.024 7.024 0 0 1-3.072 2.472zM14.326 11a6.95 6.95 0 0 0 .656-2.5h-2.49c-.03.877-.138 1.718-.312 2.5h2.146z"/></svg>
+                                翻译
                             </button>
                             <button class="copy-section-btn" onclick="copySectionContent(event, 'description', '说明书')">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
@@ -1418,7 +1423,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         const btn = event.target.closest('.copy-section-btn');
                         if (btn) {
                             const originalHTML = btn.innerHTML;
-                            btn.innerHTML = '✓ 已发送';
+                            btn.innerHTML = '已发送';
                             setTimeout(() => {
                                 btn.innerHTML = originalHTML;
                             }, 2000);
@@ -1504,7 +1509,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                             try {
                                 const signal = JSON.parse(e.newValue);
                                 if (signal && signal.patentNumber === currentPatentNumber.toUpperCase()) {
-                                    console.log('📡 收到解读更新信号:', signal);
+                                    console.log('收到解读更新信号:', signal);
                                     // 从主窗口获取解读结果
                                     if (window.opener && window.opener.PatentCache) {
                                         const cachedAnalysis = window.opener.PatentCache.getAnalysis(currentPatentNumber);
@@ -1543,7 +1548,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                             
                             displayContent = '<table style="width: 100%; border-collapse: collapse; margin-top: 10px; background: white;"><thead><tr style="background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); color: white;"><th style="border: 1px solid #ddd; padding: 12px; text-align: left; width: 30%;">字段</th><th style="border: 1px solid #ddd; padding: 12px; text-align: left;">内容</th></tr></thead><tbody>' + tableRows + '</tbody></table>';
                         } catch (e) {
-                            displayContent = '<div style="padding: 15px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; margin-bottom: 15px;">⚠️ 解读结果未能解析为结构化格式，显示原始内容：</div><div style="white-space: pre-wrap; font-family: monospace; background-color: #f5f5f5; padding: 15px; border-radius: 4px; border: 1px solid #ddd;">' + analysisContent + '</div>';
+                            displayContent = '<div style="padding: 15px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; margin-bottom: 15px;">解读结果未能解析为结构化格式，显示原始内容：</div><div style="white-space: pre-wrap; font-family: monospace; background-color: #f5f5f5; padding: 15px; border-radius: 4px; border: 1px solid #ddd;">' + analysisContent + '</div>';
                         }
                         
                         // 查找或创建解读结果区域
@@ -1556,7 +1561,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 newSection.className = 'section';
                                 newSection.id = 'analysis-result';
                                 newSection.setAttribute('data-section-id', 'analysis-result');
-                                newSection.innerHTML = '<h2 class="section-title" onclick="toggleSection(\\'analysis-result\\')"><div class="section-title-content"><span class="section-icon">🤖</span>AI 解读结果</div></h2><div class="section-content"><div style="padding: 15px; background: linear-gradient(135deg, #e3f2fd 0%, #f5f5f5 100%); border-radius: 8px; border-left: 4px solid #2e7d32;"><div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; padding: 10px; background: white; border-radius: 6px;"><span style="background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.8em; font-weight: bold;">AI</span><span style="color: #666; font-size: 0.9em;">以下解读由AI生成，仅供参考</span></div>' + displayContent + '</div></div>';
+                                newSection.innerHTML = '<h2 class="section-title" onclick="toggleSection(\\'analysis-result\\')"><div class="section-title-content"><span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 12.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5ZM3 8.5A.5.5 0 0 1 3.5 8h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5ZM2 3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11A.5.5 0 0 1 2 3Z"/></svg></span>AI 解读结果</div></h2><div class="section-content"><div style="padding: 15px; background: linear-gradient(135deg, #e3f2fd 0%, #f5f5f5 100%); border-radius: 8px; border-left: 4px solid #2e7d32;"><div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; padding: 10px; background: white; border-radius: 6px;"><span style="background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); color: white; padding: 4px 10px; border-radius: 4px; font-size: 0.8em; font-weight: bold;">AI</span><span style="color: #666; font-size: 0.9em;">以下解读由AI生成，仅供参考</span></div>' + displayContent + '</div></div>';
                                 container.insertBefore(newSection, container.firstChild);
                                 
                                 // 更新左侧导航
@@ -1566,7 +1571,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                     navItem.href = '#analysis-result';
                                     navItem.className = 'side-nav-item';
                                     navItem.setAttribute('data-section', 'analysis-result');
-                                    navItem.textContent = '🤖 AI解读';
+                                    navItem.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right:5px;vertical-align:middle"><path d="M6 12.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5ZM3 8.5A.5.5 0 0 1 3.5 8h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5ZM2 3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11A.5.5 0 0 1 2 3Z"/></svg>AI解读';
                                     sideNav.insertBefore(navItem, sideNav.children[1]);
                                 }
                             }
@@ -1593,7 +1598,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     if (window.opener && window.opener.PatentCache) {
                         const cachedAnalysis = window.opener.PatentCache.getAnalysis(currentPatentNumber);
                         if (cachedAnalysis) {
-                            console.log('📦 发现解读缓存，正在加载...');
+                            console.log('发现解读缓存，正在加载...');
                             setTimeout(function() {
                                 updateAnalysisSection(cachedAnalysis.content);
                             }, 500);
@@ -1629,10 +1634,10 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         
                         dialog.innerHTML = \`
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                                <h4 style="margin: 0; color: #009688;">🌐 选择翻译模型</h4>
+                                <h4 style="margin: 0; color: #009688; display: flex; align-items: center; gap: 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm7.5-6.923c-.67.204-1.335.82-1.887 1.855A7.97 7.97 0 0 0 5.145 4H7.5V1.077zM4.09 4a9.267 9.267 0 0 1 .64-1.539 6.7 6.7 0 0 1 .597-.933A7.025 7.025 0 0 0 2.255 4H4.09zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a6.958 6.958 0 0 0-.656 2.5h2.49zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5H4.847zM8.5 5v2.5h2.99a12.495 12.495 0 0 0-.337-2.5H8.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5H4.51zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5H8.5zM5.145 12c.138.386.295.744.468 1.068.552 1.035 1.218 1.65 1.887 1.855V12H5.145zm.182 2.472a6.696 6.696 0 0 1-.597-.933A9.268 9.268 0 0 1 4.09 12H2.255a7.024 7.024 0 0 0 3.072 2.472zM3.82 11a13.652 13.652 0 0 1-.312-2.5h-2.49A6.95 6.95 0 0 0 1.674 11H3.82zm10.026-2.5a13.65 13.65 0 0 1-.312 2.5h2.146c.22-.765.368-1.608.426-2.5h-2.26zm-1.068 2.5c-.138.386-.295.744-.468 1.068-.552 1.035-1.218 1.65-1.887 1.855V12h2.355zm.182 2.472A6.696 6.696 0 0 0 13.91 12h1.835a7.024 7.024 0 0 1-3.072 2.472zM14.326 11a6.95 6.95 0 0 0 .656-2.5h-2.49c-.03.877-.138 1.718-.312 2.5h2.146z"/></svg> 选择翻译模型</h4>
                                 <button onclick="document.getElementById('translate-dialog-newtab').remove()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #999;">&times;</button>
                             </div>
-                            \${cachedModel ? '<p style="margin: 0 0 8px 0; color: #28a745; font-size: 12px;">✅ 已有缓存 (模型: ' + cachedModel + ')</p>' : ''}
+                            \${cachedModel ? '<p style="margin: 0 0 8px 0; color: #28a745; font-size: 12px;">已有缓存 (模型: ' + cachedModel + ')</p>' : ''}
                             <select id="translate-model-select" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 12px;">
                                 \${models.map(m => '<option value="' + m + '"' + (m === cachedModel ? ' selected' : '') + '>' + m + '</option>').join('')}
                             </select>
@@ -1655,7 +1660,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         const btn = document.querySelector('.translate-btn');
                         if (btn) {
                             btn.disabled = true;
-                            btn.innerHTML = '<span style="animation: spin 1s linear infinite; display: inline-block;">⏳</span> 翻译中...';
+                            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="animation: spin 1s linear infinite;"><path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/></svg> 翻译中...';
                         }
                         
                         const cacheKey = 'translation_' + currentPatentNumber + '_' + textType + '_' + model;
@@ -1668,7 +1673,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                     showTranslationResultNewTab(data.translations, textType);
                                     if (btn) {
                                         btn.disabled = false;
-                                        btn.innerHTML = '🌐 翻译';
+                                        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm7.5-6.923c-.67.204-1.335.82-1.887 1.855A7.97 7.97 0 0 0 5.145 4H7.5V1.077zM4.09 4a9.267 9.267 0 0 1 .64-1.539 6.7 6.7 0 0 1 .597-.933A7.025 7.025 0 0 0 2.255 4H4.09zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a6.958 6.958 0 0 0-.656 2.5h2.49zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5H4.847zM8.5 5v2.5h2.99a12.495 12.495 0 0 0-.337-2.5H8.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5H4.51zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5H8.5zM5.145 12c.138.386.295.744.468 1.068.552 1.035 1.218 1.65 1.887 1.855V12H5.145zm.182 2.472a6.696 6.696 0 0 1-.597-.933A9.268 9.268 0 0 1 4.09 12H2.255a7.024 7.024 0 0 0 3.072 2.472zM3.82 11a13.652 13.652 0 0 1-.312-2.5h-2.49A6.95 6.95 0 0 0 1.674 11H3.82zm10.026-2.5a13.65 13.65 0 0 1-.312 2.5h2.146c.22-.765.368-1.608.426-2.5h-2.26zm-1.068 2.5c-.138.386-.295.744-.468 1.068-.552 1.035-1.218 1.65-1.887 1.855V12h2.355zm.182 2.472A6.696 6.696 0 0 0 13.91 12h1.835a7.024 7.024 0 0 1-3.072 2.472zM14.326 11a6.95 6.95 0 0 0 .656-2.5h-2.49c-.03.877-.138 1.718-.312 2.5h2.146z"/></svg> 翻译';
                                     }
                                     return;
                                 }
@@ -1791,7 +1796,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         
                         if (btn) {
                             btn.disabled = false;
-                            btn.innerHTML = '🌐 翻译';
+                            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm7.5-6.923c-.67.204-1.335.82-1.887 1.855A7.97 7.97 0 0 0 5.145 4H7.5V1.077zM4.09 4a9.267 9.267 0 0 1 .64-1.539 6.7 6.7 0 0 1 .597-.933A7.025 7.025 0 0 0 2.255 4H4.09zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a6.958 6.958 0 0 0-.656 2.5h2.49zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5H4.847zM8.5 5v2.5h2.99a12.495 12.495 0 0 0-.337-2.5H8.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5H4.51zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5H8.5zM5.145 12c.138.386.295.744.468 1.068.552 1.035 1.218 1.65 1.887 1.855V12H5.145zm.182 2.472a6.696 6.696 0 0 1-.597-.933A9.268 9.268 0 0 1 4.09 12H2.255a7.024 7.024 0 0 0 3.072 2.472zM3.82 11a13.652 13.652 0 0 1-.312-2.5h-2.49A6.95 6.95 0 0 0 1.674 11H3.82zm10.026-2.5a13.65 13.65 0 0 1-.312 2.5h2.146c.22-.765.368-1.608.426-2.5h-2.26zm-1.068 2.5c-.138.386-.295.744-.468 1.068-.552 1.035-1.218 1.65-1.887 1.855V12h2.355zm.182 2.472A6.696 6.696 0 0 0 13.91 12h1.835a7.024 7.024 0 0 1-3.072 2.472zM14.326 11a6.95 6.95 0 0 0 .656-2.5h-2.49c-.03.877-.138 1.718-.312 2.5h2.146z"/></svg> 翻译';
                         }
                     };
                     
@@ -1829,7 +1834,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         
                         panel.innerHTML = \`
                             <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: linear-gradient(135deg, #00bcd4 0%, #009688 100%); color: white;">
-                                <h4 style="margin: 0;">🌐 翻译结果 - \${textType === 'claims' ? '权利要求' : '说明书'}</h4>
+                                <h4 style="margin: 0; display: flex; align-items: center; gap: 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm7.5-6.923c-.67.204-1.335.82-1.887 1.855A7.97 7.97 0 0 0 5.145 4H7.5V1.077zM4.09 4a9.267 9.267 0 0 1 .64-1.539 6.7 6.7 0 0 1 .597-.933A7.025 7.025 0 0 0 2.255 4H4.09zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a6.958 6.958 0 0 0-.656 2.5h2.49zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5H4.847zM8.5 5v2.5h2.99a12.495 12.495 0 0 0-.337-2.5H8.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5H4.51zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5H8.5zM5.145 12c.138.386.295.744.468 1.068.552 1.035 1.218 1.65 1.887 1.855V12H5.145zm.182 2.472a6.696 6.696 0 0 1-.597-.933A9.268 9.268 0 0 1 4.09 12H2.255a7.024 7.024 0 0 0 3.072 2.472zM3.82 11a13.652 13.652 0 0 1-.312-2.5h-2.49A6.95 6.95 0 0 0 1.674 11H3.82zm10.026-2.5a13.65 13.65 0 0 1-.312 2.5h2.146c.22-.765.368-1.608.426-2.5h-2.26zm-1.068 2.5c-.138.386-.295.744-.468 1.068-.552 1.035-1.218 1.65-1.887 1.855V12h2.355zm.182 2.472A6.696 6.696 0 0 0 13.91 12h1.835a7.024 7.024 0 0 1-3.072 2.472zM14.326 11a6.95 6.95 0 0 0 .656-2.5h-2.49c-.03.877-.138 1.718-.312 2.5h2.146z"/></svg> 翻译结果 - \${textType === 'claims' ? '权利要求' : '说明书'}</h4>
                                 <button onclick="document.getElementById('translation-result-panel').remove()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: white;">&times;</button>
                             </div>
                             <div style="max-height: calc(70vh - 60px); overflow-y: auto;">
