@@ -73,6 +73,13 @@ async function loadComponent(componentPath, targetElementId, retryCountOrOptions
                 await onReady();
             }
             
+            // 触发组件加载完成事件
+            const eventName = targetElementId.replace(/-/g, '') + 'Loaded';
+            const loadedEvent = new CustomEvent(eventName, {
+                detail: { componentPath, targetElementId }
+            });
+            document.dispatchEvent(loadedEvent);
+            
             return true;
             
         } catch (error) {

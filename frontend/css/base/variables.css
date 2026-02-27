@@ -28,3 +28,36 @@
     --chat-user-bubble-text: #FFFFFF;  /* 白字 */
     --chat-assistant-bubble: #FFFFFF;
 }
+
+/* ========================================
+   暗夜模式变量 - 仅在 [data-theme="dark"] 时生效
+   ======================================== */
+[data-theme="dark"] {
+    /* 背景颜色 */
+    --bg-color: #0f172a;
+    --surface-color: #1e293b;
+    --chat-bg: #0f172a;
+    
+    /* 边框颜色 */
+    --border-color: rgba(100, 116, 139, 0.3);
+    
+    /* 文字颜色 */
+    --text-color: #e2e8f0;
+    --text-color-secondary: #94a3b8;
+    
+    /* 主题色 - 保持绿色系但稍微调亮 */
+    --primary-color: #4ade80;
+    --primary-color-dark: #22c55e;
+    --primary-color-glow: rgba(74, 222, 128, 0.2);
+    --primary-color-hover-bg: rgba(74, 222, 128, 0.15);
+    
+    /* 状态颜色 */
+    --error-color: #f87171;
+    --success-color: var(--primary-color);
+    --warning-color: #fbbf24;
+    
+    /* 聊天气泡颜色 */
+    --chat-user-bubble: #22C55E;
+    --chat-user-bubble-text: #FFFFFF;
+    --chat-assistant-bubble: #334155;
+}
