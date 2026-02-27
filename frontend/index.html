@@ -8,6 +8,16 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>专利分析智能工作台 v26</title>
     
+    <!-- 早期主题检测 - 必须在CSS加载前执行 -->
+    <script>
+    (function() {
+        var savedTheme = localStorage.getItem('patent-workbench-theme');
+        if (savedTheme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+    })();
+    </script>
+    
     <!-- 预连接优化 -->
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -460,6 +470,8 @@
         if (typeof VANTA !== 'undefined' && VANTA.NET && typeof THREE !== 'undefined') {
             var loadingVantaBg = document.getElementById('loading-vanta-bg');
             if (loadingVantaBg && !loadingVanta) {
+                var savedTheme = localStorage.getItem('patent-workbench-theme');
+                var isDark = savedTheme === 'dark';
                 loadingVanta = VANTA.NET({
                     el: "#loading-vanta-bg",
                     mouseControls: true,
@@ -469,14 +481,14 @@
                     minWidth: 200.00,
                     scale: 1.00,
                     scaleMobile: 1.00,
-                    color: 0x4ade80,
-                    backgroundColor: 0xf0fdf4,
+                    color: isDark ? 0x22c55e : 0x4ade80,
+                    backgroundColor: isDark ? 0x0f172a : 0xf0fdf4,
                     points: 8.00,
                     maxDistance: 18.00,
                     spacing: 18.00,
                     showDots: true
                 });
-                console.log('Loading Vanta initialized');
+                console.log('Loading Vanta initialized with theme:', isDark ? 'dark' : 'light');
             }
         }
     }
@@ -2504,6 +2516,8 @@ initPatentDrawings();
                 if (typeof VANTA !== 'undefined' && VANTA.NET && typeof THREE !== 'undefined') {
                     var vantaBg = document.getElementById('vanta-bg');
                     if (vantaBg) {
+                        var savedTheme = localStorage.getItem('patent-workbench-theme');
+                        var isDark = savedTheme === 'dark';
                         VANTA.NET({
                             el: "#vanta-bg",
                             mouseControls: true,
@@ -2513,14 +2527,14 @@ initPatentDrawings();
                             minWidth: 200.00,
                             scale: 1.00,
                             scaleMobile: 1.00,
-                            color: 0x4ade80,
-                            backgroundColor: 0xf0fdf4,
+                            color: isDark ? 0x22c55e : 0x4ade80,
+                            backgroundColor: isDark ? 0x0f172a : 0xf0fdf4,
                             points: 8.00,
                             maxDistance: 18.00,
                             spacing: 18.00,
                             showDots: true
                         });
-                        console.log('[成功] 主背景 Vanta.js 初始化成功');
+                        console.log('[成功] 主背景 Vanta.js 初始化成功，主题:', isDark ? 'dark' : 'light');
                     }
                 } else {
                     console.warn('[警告] Vanta 或 Three.js 未加载成功，跳过背景动画');
