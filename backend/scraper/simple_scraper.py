@@ -577,8 +577,6 @@ class SimplePatentScraper:
                             seen_images.add(full_img_url)
                             patent_data.drawings.append(full_img_url)
                             logger.info(f"从meta itemprop='full'提取到图片: {full_img_url[:80]}...")
-                            if not crawl_full_drawings:
-                                break
                             continue
                     
                     # 备用：提取缩略图URL
@@ -592,8 +590,6 @@ class SimplePatentScraper:
                                 seen_images.add(thumb_src)
                                 patent_data.drawings.append(thumb_src)
                                 logger.info(f"从img itemprop='thumbnail'提取到图片: {thumb_src[:80]}...")
-                                if not crawl_full_drawings:
-                                    break
             
             # Strategy 1: Extract from PDF link (convert to image URLs)
             # Google Patents stores images at: https://patentimages.storage.googleapis.com/{hash}/{patent_number}-{page}.png

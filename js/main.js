@@ -969,8 +969,8 @@ function initPatentBatchEventListeners() {
         const data = result.data;
         const titlePreview = data.title ? (data.title.length > 60 ? data.title.substring(0, 60) + '...' : data.title) : '无标题';
         const cacheBadge = result.fromCache ? '<span class="cache-badge">缓存</span>' : '';
-        const hasImages = data.images && data.images.length > 0;
-        const firstImage = hasImages ? data.images[0] : null;
+        const hasDrawings = data.drawings && data.drawings.length > 0;
+        const firstDrawing = hasDrawings ? data.drawings[0] : null;
         
         // 获取申请人、申请日信息（去掉发明人）
         // 后端返回的是 assignees 数组，需要取第一个或使用 join
@@ -981,7 +981,7 @@ function initPatentBatchEventListeners() {
         return `
             <div class="patent-strip success" data-patent-number="${result.patent_number}">
                 <div class="patent-strip-image">
-                    ${firstImage ? `<img src="${firstImage}" alt="专利附图" loading="lazy">` : '<div class="no-image">暂无附图</div>'}
+                    ${firstDrawing ? `<img src="${firstDrawing}" alt="专利附图" loading="lazy">` : '<div class="no-image">暂无附图</div>'}
                 </div>
                 <div class="patent-strip-content">
                     <div class="patent-strip-number">${result.patent_number}${cacheBadge}</div>
@@ -1787,6 +1787,89 @@ window.copyFieldContent = function(patentNumber, fieldKey, event) {
         })
         .catch(() => alert('❌ 复制失败'));
 };
+
+// 图片查看器
+window.patentDrawingsData = {};
+
+window.openImageViewer = function(startIndex, patentNumber) {
+    const drawings = window.patentDrawingsData[patentNumber] || [];
+    if (drawings.length === 0) return;
+    
+    let currentIndex = startIndex;
+    
+    const viewerHTML = `
+        <div id="image-viewer-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <div style="position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; align-items: center;">
+                <span id="viewer-counter" style="color: white; font-size: 16px;">图 ${currentIndex + 1} / ${drawings.length}</span>
+                <button onclick="closeImageViewer()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; width: 40px; height: 40px; border-radius: 50%; cursor: pointer;">&times;</button>
+            </div>
+            <div style="position: absolute; left: 20px; top: 50%; transform: translateY(-50%);">
+                <button id="viewer-prev-btn" onclick="navigateImageViewer(-1)" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 32px; width: 50px; height: 50px; border-radius: 50%; cursor: pointer;">&#8249;</button>
+            </div>
+            <div style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%);">
+                <button id="viewer-next-btn" onclick="navigateImageViewer(1)" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 32px; width: 50px; height: 50px; border-radius: 50%; cursor: pointer;">&#8250;</button>
+            </div>
+            <img id="viewer-image" src="${drawings[currentIndex]}" style="max-width: 90%; max-height: 80%; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+            <div style="position: absolute; bottom: 20px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; max-width: 90%; max-height: 80px; overflow-y: auto;">
+                ${drawings.map((d, i) => `
+                    <div onclick="jumpToImage(${i})" style="width: 50px; height: 50px; border: 2px solid ${i === currentIndex ? '#fff' : 'transparent'}; border-radius: 4px; cursor: pointer; overflow: hidden; opacity: ${i === currentIndex ? 1 : 0.6};">
+                        <img src="${d}" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', viewerHTML);
+    document.body.style.overflow = 'hidden';
+    
+    window.currentViewerDrawings = drawings;
+    window.currentViewerIndex = currentIndex;
+    
+    document.addEventListener('keydown', handleViewerKeydown);
+};
+
+window.closeImageViewer = function() {
+    const overlay = document.getElementById('image-viewer-overlay');
+    if (overlay) overlay.remove();
+    document.body.style.overflow = '';
+    document.removeEventListener('keydown', handleViewerKeydown);
+};
+
+window.navigateImageViewer = function(delta) {
+    const drawings = window.currentViewerDrawings;
+    if (!drawings) return;
+    
+    window.currentViewerIndex = (window.currentViewerIndex + delta + drawings.length) % drawings.length;
+    updateViewerImage();
+};
+
+window.jumpToImage = function(index) {
+    window.currentViewerIndex = index;
+    updateViewerImage();
+};
+
+function updateViewerImage() {
+    const drawings = window.currentViewerDrawings;
+    const index = window.currentViewerIndex;
+    
+    const img = document.getElementById('viewer-image');
+    const counter = document.getElementById('viewer-counter');
+    
+    if (img) img.src = drawings[index];
+    if (counter) counter.textContent = `图 ${index + 1} / ${drawings.length}`;
+    
+    document.querySelectorAll('#image-viewer-overlay > div:last-child > div').forEach((thumb, i) => {
+        thumb.style.borderColor = i === index ? '#fff' : 'transparent';
+        thumb.style.opacity = i === index ? 1 : 0.6;
+    });
+}
+
+function handleViewerKeydown(e) {
+    if (e.key === 'Escape') closeImageViewer();
+    else if (e.key === 'ArrowLeft') navigateImageViewer(-1);
+    else if (e.key === 'ArrowRight') navigateImageViewer(1);
+}
 
 // 从弹窗分析关系专利
 window.analyzeRelationFromModal = function(patentNumber, relationType) {
