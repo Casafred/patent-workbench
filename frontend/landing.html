@@ -1049,10 +1049,25 @@
            页脚
            ============================================ */
         .footer {
-            background: var(--bg-color);
+            position: relative;
+            z-index: 100;
+            background: linear-gradient(180deg, #0a0a0a 0%, #111111 100%);
             color: var(--text-color-secondary);
             padding: 80px 60px 40px;
-            border-top: 1px solid rgba(34, 197, 94, 0.1);
+            border-top: 2px solid rgba(34, 197, 94, 0.3);
+            min-height: 300px;
+            clear: both;
+        }
+
+        .footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            background: linear-gradient(180deg, rgba(34, 197, 94, 0.05) 0%, transparent 100%);
+            pointer-events: none;
         }
 
         .footer-content {
