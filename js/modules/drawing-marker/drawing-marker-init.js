@@ -176,8 +176,8 @@ function initOCRModeSelect() {
     }
     
     try {
-        ocrModeSelect.addEventListener('change', function() {
-            const selectedMode = this.value;
+        const updateOCRModeUI = () => {
+            const selectedMode = ocrModeSelect.value;
             
             if (paddleTokenContainer) {
                 paddleTokenContainer.style.display = selectedMode === 'paddle_ocr' ? 'block' : 'none';
@@ -196,8 +196,12 @@ function initOCRModeSelect() {
                 }
             }
             
-            console.log(`OCR mode changed to: ${selectedMode}`);
-        });
+            console.log(`OCR mode: ${selectedMode}`);
+        };
+        
+        ocrModeSelect.addEventListener('change', updateOCRModeUI);
+        
+        updateOCRModeUI();
         
         console.log('✅ OCR mode select initialized');
     } catch (error) {

@@ -1143,6 +1143,10 @@ async function startProcessing() {
     const paddleTokenInput = document.getElementById('paddle_token_input');
     const paddleToken = paddleTokenInput ? paddleTokenInput.value.trim() : '';
     
+    console.log('[DEBUG] OCR Mode:', ocrMode);
+    console.log('[DEBUG] Paddle Token Input Element:', paddleTokenInput);
+    console.log('[DEBUG] Paddle Token Value:', paddleToken ? '(已输入)' : '(空)');
+    
     const apiKey = appState?.apiKey || localStorage.getItem('zhipuai_api_key') || '';
     
     const headers = {
@@ -1422,6 +1426,10 @@ function reprocessOCR() {
     
     const paddleTokenInput = document.getElementById('paddle_token_input');
     const paddleToken = paddleTokenInput ? paddleTokenInput.value.trim() : '';
+    
+    console.log('[DEBUG reprocessOCR] OCR Mode:', ocrMode);
+    console.log('[DEBUG reprocessOCR] Paddle Token Input Element:', paddleTokenInput);
+    console.log('[DEBUG reprocessOCR] Paddle Token Value:', paddleToken ? '(已输入)' : '(空)');
     
     const processingData = {
         drawings: uploadedDrawings.map(drawing => {
