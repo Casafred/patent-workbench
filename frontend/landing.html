@@ -1083,6 +1083,30 @@
             color: var(--text-color-muted);
         }
 
+        .footer-contact {
+            margin-top: 10px;
+        }
+
+        .footer-qrcode {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .footer-qrcode img {
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            background: rgba(34, 197, 94, 0.1);
+            padding: 5px;
+        }
+
+        .footer-qrcode span {
+            font-size: 0.85rem;
+            color: var(--text-color-muted);
+        }
+
         .footer-column h4 {
             color: var(--text-color);
             font-size: 1rem;
@@ -1368,7 +1392,7 @@
             </div>
             <div class="hero-stats">
                 <div class="stat-item">
-                    <span class="stat-number" data-count="9">0</span>
+                    <span class="stat-number" data-count="8">0</span>
                     <span class="stat-label">核心功能模块</span>
                 </div>
                 <div class="stat-item">
@@ -1393,7 +1417,7 @@
     <section class="features-section" id="features">
         <div class="section-header">
             <span class="section-tag">FEATURES</span>
-            <h2 class="section-title">九大核心功能</h2>
+            <h2 class="section-title">八大核心功能</h2>
             <p class="section-subtitle">全方位覆盖专利检索、分析、解读全流程，助力知识产权工作高效开展</p>
         </div>
         <div class="features-grid">
@@ -1584,30 +1608,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- 功能九：同族权利要求对比 -->
-            <div class="feature-card animate-on-scroll">
-                <span class="feature-number">09</span>
-                <div class="feature-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="2" y1="12" x2="22" y2="12"></line>
-                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                    </svg>
-                </div>
-                <h3 class="feature-title">同族权利要求对比</h3>
-                <p class="feature-desc">一键获取全球同族专利，自动对比不同国家/地区的权利要求差异。</p>
-                <div class="feature-image">
-                    <div class="feature-image-placeholder">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                            <polyline points="21 15 16 10 5 21"></polyline>
-                        </svg>
-                        <div>功能截图位置</div>
-                    </div>
-                </div>
-            </div>
         </div>
     </section>
 
@@ -1710,6 +1710,12 @@
             <div class="footer-brand">
                 <div class="footer-logo">ALFRED X IP</div>
                 <p class="footer-desc">专利分析智能工作台，专注于为知识产权从业者提供高效、智能的专利检索、分析与解读服务。</p>
+                <div class="footer-contact">
+                    <div class="footer-qrcode">
+                        <img src="/frontend/images/qr_code.webp" alt="公众号二维码" onerror="this.style.display='none'">
+                        <span>关注公众号「IP智友」</span>
+                    </div>
+                </div>
             </div>
             <div class="footer-column">
                 <h4>产品功能</h4>
@@ -1724,22 +1730,20 @@
                 <h4>帮助支持</h4>
                 <ul class="footer-links">
                     <li><a href="/frontend/help.html" target="_blank">使用手册</a></li>
-                    <li><a href="#">常见问题</a></li>
-                    <li><a href="#">联系客服</a></li>
+                    <li><a href="mailto:freecasafred@outlook.com">联系邮箱</a></li>
                 </ul>
             </div>
             <div class="footer-column">
-                <h4>关于我们</h4>
+                <h4>法律条款</h4>
                 <ul class="footer-links">
-                    <li><a href="#">公司介绍</a></li>
-                    <li><a href="/frontend/terms.html" target="_blank">服务条款</a></li>
+                    <li><a href="/frontend/terms.html" target="_blank">用户协议</a></li>
                     <li><a href="/frontend/privacy.html" target="_blank">隐私政策</a></li>
                     <li><a href="/frontend/disclaimer.html" target="_blank">免责声明</a></li>
                 </ul>
             </div>
         </div>
         <div class="footer-bottom">
-            <p class="footer-copyright">&copy; 2025 ALFRED X IP. All rights reserved. 专利分析智能工作台 v26</p>
+            <p class="footer-copyright">&copy; 2026 Alfred. All Rights Reserved. 专利分析智能工作台</p>
         </div>
     </footer>
 
