@@ -1267,6 +1267,10 @@ window.openPatentDetailInNewTab = function(patentNumber) {
             </div>
             
             <script>
+                // 全局数据变量 - 供所有函数使用
+                const pageData = ${JSON.stringify(data)};
+                const currentPatentNumber = '${patentNumber}';
+                
                 // 回到顶部
                 function scrollToTop(event) {
                     event.preventDefault();
@@ -1436,7 +1440,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 window.jumpToFamilyComparisonFromNewTab = function(event, patentNumber) {
                     event.stopPropagation();
                     
-                    const familyApps = data.family_applications || [];
+                    const familyApps = pageData.family_applications || [];
                     let familyPatentNumbers = familyApps
                         .map(app => app.publication_number)
                         .filter(num => num && num !== '-');
@@ -1467,16 +1471,13 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     const navItems = document.querySelectorAll('.side-nav-item');
                     const sections = document.querySelectorAll('.section');
                     
-                    // 检测哪些section有数据，标记缺失数据的导航项
-                    const data = ${JSON.stringify(data)};
-                    const currentPatentNumber = '${patentNumber}';
                     const sectionDataMap = {
-                        'abstract': data.abstract && data.abstract.length > 0,
-                        'claims': data.claims && data.claims.length > 0,
-                        'citations': data.patent_citations && data.patent_citations.length > 0,
-                        'cited-by': data.cited_by && data.cited_by.length > 0,
-                        'similar': data.similar_documents && data.similar_documents.length > 0,
-                        'description': data.description && data.description.length > 0
+                        'abstract': pageData.abstract && pageData.abstract.length > 0,
+                        'claims': pageData.claims && pageData.claims.length > 0,
+                        'citations': pageData.patent_citations && pageData.patent_citations.length > 0,
+                        'cited-by': pageData.cited_by && pageData.cited_by.length > 0,
+                        'similar': pageData.similar_documents && pageData.similar_documents.length > 0,
+                        'description': pageData.description && pageData.description.length > 0
                     };
                     
                     // 标记缺失数据的导航项

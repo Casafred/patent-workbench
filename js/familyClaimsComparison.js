@@ -601,12 +601,12 @@ function renderOriginalClaimsPreview(patentClaims) {
             font-size: 16px;
             font-weight: 600;
             color: white;
-            background: linear-gradient(135deg, #1976d2 0%, #1565c0 50%, #0d47a1 100%);
+            background: linear-gradient(135deg, #2e7d32 0%, #388e3c 50%, #1b5e20 100%);
             border: none;
             border-radius: 10px;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 4px 15px rgba(25, 118, 210, 0.35);
+            box-shadow: 0 4px 15px rgba(46, 125, 50, 0.35);
             position: relative;
             overflow: hidden;
         ">
@@ -623,19 +623,19 @@ function renderOriginalClaimsPreview(patentClaims) {
             padding: 16px 32px;
             font-size: 15px;
             font-weight: 500;
-            color: #666;
-            background: white;
-            border: 2px solid #e0e0e0;
+            color: #555 !important;
+            background: #f5f5f5;
+            border: 2px solid #ccc;
             border-radius: 10px;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         ">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
-            <span>取消</span>
+            <span style="color: #555;">取消</span>
         </button>
     `;
     familyComparisonResultContainer.appendChild(actionDiv);
@@ -645,27 +645,27 @@ function renderOriginalClaimsPreview(patentClaims) {
 
     startBtn.addEventListener('mouseenter', function() {
         this.style.transform = 'translateY(-3px)';
-        this.style.boxShadow = '0 8px 25px rgba(25, 118, 210, 0.45)';
+        this.style.boxShadow = '0 8px 25px rgba(46, 125, 50, 0.45)';
         this.style.filter = 'brightness(1.05)';
     });
     startBtn.addEventListener('mouseleave', function() {
         this.style.transform = 'translateY(0)';
-        this.style.boxShadow = '0 4px 15px rgba(25, 118, 210, 0.35)';
+        this.style.boxShadow = '0 4px 15px rgba(46, 125, 50, 0.35)';
         this.style.filter = 'brightness(1)';
     });
     startBtn.addEventListener('click', startAIComparison);
 
     cancelBtn.addEventListener('mouseenter', function() {
-        this.style.borderColor = '#bdbdbd';
-        this.style.background = '#fafafa';
-        this.style.color = '#333';
+        this.style.borderColor = '#aaa';
+        this.style.background = '#e8e8e8';
+        this.style.color = '#333 !important';
         this.style.transform = 'translateY(-2px)';
         this.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.12)';
     });
     cancelBtn.addEventListener('mouseleave', function() {
-        this.style.borderColor = '#e0e0e0';
-        this.style.background = 'white';
-        this.style.color = '#666';
+        this.style.borderColor = '#ccc';
+        this.style.background = '#f5f5f5';
+        this.style.color = '#555 !important';
         this.style.transform = 'translateY(0)';
         this.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
     });
