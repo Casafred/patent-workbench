@@ -559,16 +559,45 @@ class SimplePatentScraper:
         
         # Extract drawings using multiple strategies
         # 始终尝试提取附图，不受crawl_specification限制
-        # 注意：Google Patents使用JavaScript动态加载图片，静态HTML中可能没有图片标签
-        # 我们尝试从meta标签和PDF链接中提取图片信息
-        if not patent_data.drawings:
-            try:
-                seen_images = set()
-                logger.info(f"开始提取附图 for {patent_number}")
-                
-                # Strategy 1: Extract from PDF link (convert to image URLs)
-                # Google Patents stores images at: https://patentimages.storage.googleapis.com/{hash}/{patent_number}-{page}.png
-                # 使用已提取的pdf_link或重新查找
+        try:
+            seen_images = set()
+            logger.info(f"开始提取附图 for {patent_number}")
+            
+            # Strategy 0: Extract from itemprop="images" structure (NEW - most reliable)
+            # Google Patents uses: <li itemprop="images"><meta itemprop="full" content="..."></li>
+            image_items = soup.find_all('li', {'itemprop': 'images'})
+            if image_items:
+                logger.info(f"找到 {len(image_items)} 个 itemprop='images' 元素")
+                for item in image_items:
+                    # 优先提取高清图URL
+                    full_img_meta = item.find('meta', {'itemprop': 'full'})
+                    if full_img_meta:
+                        full_img_url = full_img_meta.get('content', '')
+                        if full_img_url and full_img_url.startswith('http') and full_img_url not in seen_images:
+                            seen_images.add(full_img_url)
+                            patent_data.drawings.append(full_img_url)
+                            logger.info(f"从meta itemprop='full'提取到图片: {full_img_url[:80]}...")
+                            if not crawl_full_drawings:
+                                break
+                            continue
+                    
+                    # 备用：提取缩略图URL
+                    thumbnail_img = item.find('img', {'itemprop': 'thumbnail'})
+                    if thumbnail_img:
+                        thumb_src = thumbnail_img.get('src', '')
+                        if thumb_src:
+                            if thumb_src.startswith('//'):
+                                thumb_src = f'https:{thumb_src}'
+                            if thumb_src.startswith('http') and thumb_src not in seen_images:
+                                seen_images.add(thumb_src)
+                                patent_data.drawings.append(thumb_src)
+                                logger.info(f"从img itemprop='thumbnail'提取到图片: {thumb_src[:80]}...")
+                                if not crawl_full_drawings:
+                                    break
+            
+            # Strategy 1: Extract from PDF link (convert to image URLs)
+            # Google Patents stores images at: https://patentimages.storage.googleapis.com/{hash}/{patent_number}-{page}.png
+            if not patent_data.drawings:
                 pdf_url = patent_data.pdf_link
                 if not pdf_url:
                     pdf_link = soup.find('a', {'itemprop': 'pdfLink'})
@@ -578,87 +607,78 @@ class SimplePatentScraper:
                 if pdf_url:
                     logger.info(f"使用PDF链接构造图片: {pdf_url}")
                     
-                    # Extract the hash from PDF URL
-                    # Format: https://patentimages.storage.googleapis.com/c6/87/f6/62f66c32ba2f4e/CN104154208B.pdf
                     import re
                     match = re.search(r'patentimages\.storage\.googleapis\.com/([^/]+/[^/]+/[^/]+/[^/]+)/', pdf_url)
                     if match:
                         hash_path = match.group(1)
-                        # Try to construct image URLs for first few pages
-                        # Format: https://patentimages.storage.googleapis.com/{hash}/{patent_number}-{page}.png
                         max_pages = 5 if crawl_full_drawings else 1
                         for page in range(1, max_pages + 1):
                             img_url = f"https://patentimages.storage.googleapis.com/{hash_path}/{patent_number}-{page:04d}.png"
                             patent_data.drawings.append(img_url)
                             logger.info(f"构造图片URL: {img_url}")
                         
-                        # If we constructed URLs, we're done
                         if patent_data.drawings:
                             logger.info(f"从PDF链接构造了 {len(patent_data.drawings)} 个图片URL")
-                
-                # Strategy 2: Find figure elements (fallback, usually empty in static HTML)
-                if not patent_data.drawings:
-                    figures = soup.find_all('figure')
-                    logger.info(f"找到 {len(figures)} 个 figure 元素")
-                    for figure in figures:
-                        img = figure.find('img')
-                        if img and img.get('src'):
-                            img_src = img.get('src')
-                            # Handle relative URLs
-                            if img_src.startswith('//'):
-                                img_src = f'https:{img_src}'
-                            elif img_src.startswith('/'):
-                                img_src = f'https://patents.google.com{img_src}'
-                            
-                            if img_src.startswith('http') and img_src not in seen_images:
-                                # Filter out small icons (usually < 100px)
-                                width = img.get('width', '0')
-                                height = img.get('height', '0')
-                                try:
-                                    if width and width.isdigit() and int(width) < 100:
-                                        continue
-                                    if height and height.isdigit() and int(height) < 100:
-                                        continue
-                                except:
-                                    pass
-                                
-                                seen_images.add(img_src)
-                                patent_data.drawings.append(img_src)
-                                logger.info(f"从figure提取到图片: {img_src[:80]}...")
-                                
-                                if not crawl_full_drawings:
-                                    break
-                
-                # Strategy 3: Find all img tags with patent-related URLs (fallback)
-                if not patent_data.drawings:
-                    logger.info("Strategy 2 failed, trying Strategy 3: all img tags")
-                    all_imgs = soup.find_all('img')
-                    logger.info(f"找到 {len(all_imgs)} 个 img 标签")
-                    for img in all_imgs:
-                        img_src = img.get('src', '')
-                        if not img_src:
-                            continue
-                        
-                        # Handle relative URLs
+            
+            # Strategy 2: Find figure elements (fallback, usually empty in static HTML)
+            if not patent_data.drawings:
+                figures = soup.find_all('figure')
+                logger.info(f"找到 {len(figures)} 个 figure 元素")
+                for figure in figures:
+                    img = figure.find('img')
+                    if img and img.get('src'):
+                        img_src = img.get('src')
                         if img_src.startswith('//'):
                             img_src = f'https:{img_src}'
                         elif img_src.startswith('/'):
                             img_src = f'https://patents.google.com{img_src}'
                         
-                        # Look for patent image patterns
-                        if any(pattern in img_src for pattern in ['patentimages', '/patents/US', '/patents/CN', '/patents/EP', '/patents/WO', 'patent', 'drawing']):
-                            if img_src not in seen_images and len(img_src) > 50:
-                                seen_images.add(img_src)
-                                patent_data.drawings.append(img_src)
-                                logger.info(f"从img标签提取到图片: {img_src[:80]}...")
-                                
-                                if not crawl_full_drawings:
-                                    break
-                
-                logger.info(f"最终提取到 {len(patent_data.drawings)} 张附图")
-                
-            except Exception as e:
-                logger.warning(f"Error extracting drawings from HTML for {patent_number}: {e}")
+                        if img_src.startswith('http') and img_src not in seen_images:
+                            width = img.get('width', '0')
+                            height = img.get('height', '0')
+                            try:
+                                if width and width.isdigit() and int(width) < 100:
+                                    continue
+                                if height and height.isdigit() and int(height) < 100:
+                                    continue
+                            except:
+                                pass
+                            
+                            seen_images.add(img_src)
+                            patent_data.drawings.append(img_src)
+                            logger.info(f"从figure提取到图片: {img_src[:80]}...")
+                            
+                            if not crawl_full_drawings:
+                                break
+            
+            # Strategy 3: Find all img tags with patent-related URLs (fallback)
+            if not patent_data.drawings:
+                logger.info("Strategy 2 failed, trying Strategy 3: all img tags")
+                all_imgs = soup.find_all('img')
+                logger.info(f"找到 {len(all_imgs)} 个 img 标签")
+                for img in all_imgs:
+                    img_src = img.get('src', '')
+                    if not img_src:
+                        continue
+                    
+                    if img_src.startswith('//'):
+                        img_src = f'https:{img_src}'
+                    elif img_src.startswith('/'):
+                        img_src = f'https://patents.google.com{img_src}'
+                    
+                    if any(pattern in img_src for pattern in ['patentimages', '/patents/US', '/patents/CN', '/patents/EP', '/patents/WO', 'patent', 'drawing']):
+                        if img_src not in seen_images and len(img_src) > 50:
+                            seen_images.add(img_src)
+                            patent_data.drawings.append(img_src)
+                            logger.info(f"从img标签提取到图片: {img_src[:80]}...")
+                            
+                            if not crawl_full_drawings:
+                                break
+            
+            logger.info(f"最终提取到 {len(patent_data.drawings)} 张附图")
+            
+        except Exception as e:
+            logger.warning(f"Error extracting drawings from HTML for {patent_number}: {e}")
         
         # 如果仍然没有附图，记录详细日志
         if not patent_data.drawings:

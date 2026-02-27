@@ -932,18 +932,18 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                     if (typeof claim === 'string') {
                                         claimText = claim;
                                         // 检测权利要求类型：
-                                        // 1. 如果包含 '[从属]' 标记，则为从属权利要求
-                                        // 2. 如果包含 '其特征在于' 或 '根据权利要求' 等关键词，则为从属权利要求
-                                        // 3. 否则为独立权利要求
-                                        if (claim.includes('[从属]') || 
-                                            claim.includes('其特征在于') || 
-                                            claim.includes('根据权利要求') ||
-                                            claim.includes('如权利要求') ||
-                                            claim.match(/^\s*\d+\.[\s\S]*?权利要求\s*\d+/)) {
+                                        // 1. 优先检查后端添加的 [从属] 标记（最可靠）
+                                        // 2. 检查 claim-ref 引用标记（英文专利）
+                                        // 3. 检查中文关键词（中文专利备用）
+                                        if (claimText.includes('[从属]') || 
+                                            claimText.includes('<claim-ref') ||
+                                            claimText.match(/claim\s*\d+/i)) {
                                             claimType = 'dependent';
                                         } else {
                                             claimType = 'independent';
                                         }
+                                        // 移除后端添加的类型标记，保持显示整洁
+                                        claimText = claimText.replace(/\[\d+\]\[从属\]\s*/g, '').replace(/\[\d+\]\s*/g, '');
                                     } else {
                                         claimText = claim.text;
                                         claimType = claim.type || 'unknown';
@@ -1205,6 +1205,34 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                     `).join('')}
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    ${data.drawings && data.drawings.length > 0 && shouldShowField('drawings') ? `
+                    <div class="section collapsible-section collapsed" id="drawings" data-section-id="drawings">
+                        <h2 class="section-title" onclick="toggleSection('drawings')">
+                            <div class="section-title-content">
+                                <span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M.002 3a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-12a2 2 0 0 1-2-2V3zm1 9v1a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12zm5-6.5a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0z"/></svg></span>
+                                附图 (共${data.drawings.length}张)
+                            </div>
+                            <button class="copy-section-btn" onclick="copySectionContent(event, 'drawings', '附图链接')">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                    <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                                </svg>
+                                复制
+                            </button>
+                        </h2>
+                        <div class="section-content">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;" data-section-content="drawings">
+                                ${data.drawings.map((drawing, index) => `
+                                <div style="position: relative; background: white; border-radius: 8px; padding: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                    <img src="${drawing}" alt="附图 ${index + 1}" style="width: 100%; height: 180px; object-fit: contain; border: 1px solid #e0e0e0; border-radius: 4px; cursor: pointer;" onclick="window.open('${drawing}', '_blank')" onerror="this.parentElement.style.display='none'">
+                                    <div style="text-align: center; font-size: 0.9em; color: #666; margin-top: 6px;">图 ${index + 1}</div>
+                                </div>
+                                `).join('')}
+                            </div>
                         </div>
                     </div>
                     ` : ''}
