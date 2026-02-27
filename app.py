@@ -3,7 +3,7 @@ import json
 import traceback
 import time
 from io import BytesIO
-from flask import Flask, request, jsonify, make_response, send_from_directory, Response, session, redirect, url_for, render_template_string
+from flask import Flask, request, jsonify, make_response, send_from_directory, Response, session, redirect, url_for, render_template_string, send_file
 from flask_cors import CORS
 from zhipuai import ZhipuAI
 from datetime import timedelta, datetime
@@ -361,9 +361,8 @@ def logout():
 
 @app.route('/')
 def index():
-    # 我们要生成 'serve_app' 这个视图函数对应的 URL (即 /app)
-    # 当浏览器被重定向到 /app 时，Flask 会自动执行 @login_required 装饰器
-    return redirect(url_for('serve_app'))
+    landing_path = os.path.join(static_folder_path, 'frontend', 'landing.html')
+    return send_file(landing_path)
 
 
 @app.route('/app')

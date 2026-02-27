@@ -1,0 +1,1948 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>专利分析智能工作台 - ALFRED X IP</title>
+    <meta name="description" content="专利分析智能工作台 - 专业的专利检索、分析、解读AI工具平台">
+    <meta name="keywords" content="专利分析,专利检索,AI专利,专利工作台,知识产权">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #22C55E;
+            --primary-color-dark: #16A34A;
+            --primary-color-light: #4ADE80;
+            --accent-color: #FFD700;
+            --bg-color: #0a0a0a;
+            --bg-secondary: #111111;
+            --surface-color: rgba(20, 20, 20, 0.9);
+            --text-color: #ffffff;
+            --text-color-secondary: rgba(255, 255, 255, 0.7);
+            --text-color-muted: rgba(255, 255, 255, 0.5);
+            --border-color: rgba(34, 197, 94, 0.2);
+            --gradient-primary: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+            --gradient-glow: radial-gradient(circle, rgba(34, 197, 94, 0.15) 0%, transparent 70%);
+            --shadow-glow: 0 0 60px rgba(34, 197, 94, 0.3);
+            --transition-fast: 0.2s ease;
+            --transition-normal: 0.3s ease;
+            --transition-slow: 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            overflow-x: hidden;
+            cursor: none;
+        }
+
+        /* 自定义光标 */
+        .cursor {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--primary-color);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 99999;
+            transition: transform 0.1s ease, background 0.2s ease;
+            transform: translate(-50%, -50%);
+        }
+
+        .cursor-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 99999;
+            transform: translate(-50%, -50%);
+        }
+
+        .cursor.hover {
+            transform: translate(-50%, -50%) scale(1.5);
+            background: rgba(34, 197, 94, 0.2);
+        }
+
+        /* 鼠标跟随光效 */
+        .mouse-glow {
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(34, 197, 94, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.3s ease;
+        }
+
+        #vanta-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* ============================================
+           加载动画
+           ============================================ */
+        .loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-color);
+            z-index: 100000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
+        }
+
+        .loader.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .loader-logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3rem;
+            font-weight: 900;
+            color: var(--primary-color);
+            margin-bottom: 30px;
+            animation: pulse 1.5s infinite;
+        }
+
+        .loader-bar {
+            width: 200px;
+            height: 3px;
+            background: rgba(34, 197, 94, 0.2);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .loader-progress {
+            height: 100%;
+            background: var(--gradient-primary);
+            border-radius: 3px;
+            animation: loading 2s ease-in-out forwards;
+        }
+
+        @keyframes loading {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* ============================================
+           导航栏样式
+           ============================================ */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 20px 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: transparent;
+            transition: all var(--transition-normal);
+        }
+
+        .navbar.scrolled {
+            padding: 15px 60px;
+            background: rgba(10, 10, 10, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(34, 197, 94, 0.1);
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            text-decoration: none;
+        }
+
+        .navbar-logo {
+            height: 45px;
+            width: auto;
+            filter: brightness(1.2);
+        }
+
+        .navbar-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 900;
+            color: var(--text-color);
+            letter-spacing: 3px;
+        }
+
+        .navbar-nav {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--text-color-secondary);
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all var(--transition-fast);
+            position: relative;
+            padding: 8px 0;
+        }
+
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--gradient-primary);
+            transform: scaleX(0);
+            transform-origin: right;
+            transition: transform var(--transition-fast);
+        }
+
+        .nav-link:hover {
+            color: var(--text-color);
+        }
+
+        .nav-link:hover::before {
+            transform: scaleX(1);
+            transform-origin: left;
+        }
+
+        .login-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 28px;
+            background: transparent;
+            color: var(--text-color);
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all var(--transition-fast);
+            border: 1px solid rgba(34, 197, 94, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--gradient-primary);
+            transition: left var(--transition-fast);
+            z-index: -1;
+        }
+
+        .login-btn:hover {
+            border-color: var(--primary-color);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .login-btn:hover::before {
+            left: 0;
+        }
+
+        .login-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* ============================================
+           Hero 区域样式
+           ============================================ */
+        
+        /* 
+         * ==========================================
+         * 渐变背景图片设置教程
+         * ==========================================
+         * 
+         * 要将功能截图设置为 Hero 区域的渐变背景图片：
+         * 
+         * 1. 图片格式要求：
+         *    - 推荐格式：WebP、PNG、JPG
+         *    - 推荐尺寸：1920x1080 或更高（保证清晰度）
+         *    - 文件大小：建议 < 500KB（优化加载速度）
+         * 
+         * 2. 设置方法：
+         *    方法A - 直接修改CSS：
+         *    .hero-section::before {
+         *        background-image: url('your-image-path.webp');
+         *    }
+         * 
+         *    方法B - 使用内联样式（推荐）：
+         *    在HTML中添加 data-bg="your-image.webp" 属性
+         * 
+         * 3. 渐变叠加层说明：
+         *    - .hero-section::after 是渐变叠加层
+         *    - 可根据需要调整颜色和透明度
+         * 
+         * 4. 性能优化建议：
+         *    - 使用 WebP 格式（比 PNG/JPG 小 25-35%）
+         *    - 使用 CDN 加速图片加载
+         *    - 考虑使用 <picture> 标签提供多格式备选
+         */
+        
+        .hero-section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 120px 60px 100px;
+            overflow: hidden;
+        }
+
+        .hero-bg-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            opacity: 0.3;
+            filter: blur(2px);
+        }
+
+        .hero-gradient {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 20% 50%, rgba(34, 197, 94, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 50%, rgba(34, 197, 94, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 100%, rgba(34, 197, 94, 0.2) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .hero-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, 
+                rgba(10, 10, 10, 0.3) 0%, 
+                rgba(10, 10, 10, 0.6) 50%,
+                rgba(10, 10, 10, 0.9) 100%);
+            pointer-events: none;
+        }
+
+        /* 网格线背景 */
+        .hero-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(34, 197, 94, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(34, 197, 94, 0.03) 1px, transparent 1px);
+            background-size: 100px 100px;
+            pointer-events: none;
+            animation: gridMove 20s linear infinite;
+        }
+
+        @keyframes gridMove {
+            0% { transform: perspective(500px) rotateX(60deg) translateY(0); }
+            100% { transform: perspective(500px) rotateX(60deg) translateY(100px); }
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 24px;
+            background: rgba(34, 197, 94, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            color: var(--primary-color-light);
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 40px;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            animation: fadeInDown 1s ease;
+        }
+
+        .hero-badge-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            animation: blink 1s infinite;
+            box-shadow: 0 0 10px var(--accent-color);
+        }
+
+        .hero-title {
+            font-family: 'Orbitron', 'Noto Sans SC', sans-serif;
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 900;
+            color: var(--text-color);
+            margin-bottom: 30px;
+            letter-spacing: 6px;
+            line-height: 1.1;
+            animation: fadeInUp 1s ease 0.2s both;
+            position: relative;
+        }
+
+        .hero-title .highlight {
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            position: relative;
+        }
+
+        .hero-title .highlight::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--gradient-primary);
+            border-radius: 2px;
+        }
+
+        .hero-subtitle {
+            font-size: clamp(1.2rem, 3vw, 1.6rem);
+            color: var(--text-color-secondary);
+            margin-bottom: 50px;
+            font-weight: 300;
+            line-height: 1.8;
+            animation: fadeInUp 1s ease 0.4s both;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero-typing {
+            display: inline-block;
+            min-height: 1.5em;
+            color: var(--primary-color-light);
+        }
+
+        .typing-cursor {
+            display: inline-block;
+            width: 3px;
+            height: 1.2em;
+            background: var(--primary-color);
+            margin-left: 5px;
+            animation: blink 0.8s infinite;
+            vertical-align: text-bottom;
+            box-shadow: 0 0 10px var(--primary-color);
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 25px;
+            justify-content: center;
+            flex-wrap: wrap;
+            animation: fadeInUp 1s ease 0.6s both;
+            margin-bottom: 60px;
+        }
+
+        .cta-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 18px 40px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            text-decoration: none;
+            transition: all var(--transition-fast);
+            cursor: pointer;
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+            box-shadow: 0 10px 40px rgba(34, 197, 94, 0.3);
+        }
+
+        .cta-btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .cta-btn-primary:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 50px rgba(34, 197, 94, 0.4);
+        }
+
+        .cta-btn-primary:hover::before {
+            left: 100%;
+        }
+
+        .cta-btn-secondary {
+            background: transparent;
+            color: var(--text-color);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .cta-btn-secondary:hover {
+            border-color: var(--primary-color);
+            background: rgba(34, 197, 94, 0.1);
+            transform: translateY(-5px);
+        }
+
+        .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 80px;
+            animation: fadeInUp 1s ease 0.8s both;
+        }
+
+        .stat-item {
+            text-align: center;
+            position: relative;
+        }
+
+        .stat-item::after {
+            content: '';
+            position: absolute;
+            right: -40px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 1px;
+            height: 50px;
+            background: linear-gradient(180deg, transparent, rgba(34, 197, 94, 0.3), transparent);
+        }
+
+        .stat-item:last-child::after {
+            display: none;
+        }
+
+        .stat-number {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: block;
+            line-height: 1;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: var(--text-color-muted);
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+        }
+
+        /* 滚动指示器 */
+        .scroll-indicator {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounce 2s infinite;
+            z-index: 10;
+        }
+
+        .scroll-indicator-inner {
+            width: 30px;
+            height: 50px;
+            border: 2px solid rgba(34, 197, 94, 0.5);
+            border-radius: 20px;
+            position: relative;
+        }
+
+        .scroll-indicator-dot {
+            width: 6px;
+            height: 10px;
+            background: var(--primary-color);
+            border-radius: 3px;
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: scrollDot 1.5s infinite;
+        }
+
+        @keyframes scrollDot {
+            0% { opacity: 1; top: 8px; }
+            100% { opacity: 0; top: 30px; }
+        }
+
+        /* ============================================
+           功能特性区域样式
+           ============================================ */
+        .features-section {
+            padding: 150px 60px;
+            background: var(--bg-color);
+            position: relative;
+        }
+
+        .features-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(180deg, rgba(10, 10, 10, 0.9) 0%, transparent 100%);
+            pointer-events: none;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 80px;
+        }
+
+        .section-tag {
+            display: inline-block;
+            padding: 8px 20px;
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--primary-color-light);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            letter-spacing: 3px;
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .section-title {
+            font-family: 'Noto Sans SC', sans-serif;
+            font-size: clamp(2.5rem, 5vw, 3.5rem);
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 20px;
+        }
+
+        .section-subtitle {
+            font-size: 1.2rem;
+            color: var(--text-color-muted);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: var(--surface-color);
+            border-radius: 20px;
+            padding: 40px;
+            border: 1px solid rgba(34, 197, 94, 0.1);
+            transition: all var(--transition-slow);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-primary);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform var(--transition-normal);
+        }
+
+        .feature-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(34, 197, 94, 0.1) 0%, transparent 50%);
+            opacity: 0;
+            transition: opacity var(--transition-normal);
+            pointer-events: none;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            border-color: rgba(34, 197, 94, 0.3);
+            box-shadow: 0 20px 60px rgba(34, 197, 94, 0.15);
+        }
+
+        .feature-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .feature-card:hover::after {
+            opacity: 1;
+        }
+
+        .feature-icon {
+            width: 70px;
+            height: 70px;
+            background: rgba(34, 197, 94, 0.1);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 25px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-icon::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: var(--gradient-primary);
+            opacity: 0;
+            transition: opacity var(--transition-fast);
+        }
+
+        .feature-card:hover .feature-icon::before {
+            opacity: 1;
+        }
+
+        .feature-icon svg {
+            width: 32px;
+            height: 32px;
+            color: var(--primary-color);
+            position: relative;
+            z-index: 1;
+            transition: color var(--transition-fast);
+        }
+
+        .feature-card:hover .feature-icon svg {
+            color: white;
+        }
+
+        .feature-number {
+            position: absolute;
+            top: 25px;
+            right: 30px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 4rem;
+            font-weight: 900;
+            background: linear-gradient(180deg, rgba(34, 197, 94, 0.1) 0%, transparent 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .feature-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 15px;
+        }
+
+        .feature-desc {
+            color: var(--text-color-muted);
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        /* 功能截图区域 */
+        .feature-image {
+            width: 100%;
+            height: 160px;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-top: 25px;
+            background: rgba(34, 197, 94, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border: 1px solid rgba(34, 197, 94, 0.1);
+        }
+
+        .feature-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform var(--transition-slow);
+        }
+
+        .feature-card:hover .feature-image img {
+            transform: scale(1.05);
+        }
+
+        .feature-image-placeholder {
+            color: var(--text-color-muted);
+            font-size: 0.9rem;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .feature-image-placeholder svg {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 10px;
+            opacity: 0.3;
+        }
+
+        /* ============================================
+           产品演示区域
+           ============================================ */
+        .demo-section {
+            padding: 150px 60px;
+            background: var(--bg-secondary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .demo-section::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(34, 197, 94, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .demo-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        .demo-showcase {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 40px;
+            margin-top: 60px;
+        }
+
+        .demo-item {
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            aspect-ratio: 16/10;
+            background: var(--surface-color);
+            border: 1px solid rgba(34, 197, 94, 0.1);
+            transition: all var(--transition-slow);
+        }
+
+        .demo-item:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 30px 80px rgba(34, 197, 94, 0.2);
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .demo-item-inner {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, rgba(34, 197, 94, 0.02) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-color-muted);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .demo-item-inner::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent, rgba(34, 197, 94, 0.1), transparent 30%);
+            animation: rotate 10s linear infinite;
+        }
+
+        @keyframes rotate {
+            100% { transform: rotate(360deg); }
+        }
+
+        .demo-item-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+        }
+
+        .demo-item-content svg {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 15px;
+            opacity: 0.3;
+        }
+
+        .demo-item-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 30px;
+            background: linear-gradient(transparent, rgba(10, 10, 10, 0.95));
+            color: white;
+            transform: translateY(100%);
+            transition: transform var(--transition-normal);
+        }
+
+        .demo-item:hover .demo-item-overlay {
+            transform: translateY(0);
+        }
+
+        .demo-item-title {
+            font-weight: 600;
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+        }
+
+        .demo-item-desc {
+            font-size: 0.95rem;
+            color: var(--text-color-secondary);
+        }
+
+        /* ============================================
+           CTA 区域
+           ============================================ */
+        .cta-section {
+            padding: 150px 60px;
+            background: var(--bg-secondary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 30% 50%, rgba(34, 197, 94, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 50%, rgba(34, 197, 94, 0.08) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .cta-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .cta-title {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 25px;
+        }
+
+        .cta-desc {
+            font-size: 1.2rem;
+            color: var(--text-color-secondary);
+            margin-bottom: 40px;
+        }
+
+        .cta-btn-large {
+            display: inline-flex;
+            align-items: center;
+            gap: 15px;
+            padding: 22px 50px;
+            background: var(--gradient-primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            transition: all var(--transition-fast);
+            box-shadow: 0 15px 50px rgba(34, 197, 94, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-btn-large::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .cta-btn-large:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 25px 60px rgba(34, 197, 94, 0.4);
+        }
+
+        .cta-btn-large:hover::before {
+            left: 100%;
+        }
+
+        /* ============================================
+           页脚
+           ============================================ */
+        .footer {
+            background: var(--bg-color);
+            color: var(--text-color-secondary);
+            padding: 80px 60px 40px;
+            border-top: 1px solid rgba(34, 197, 94, 0.1);
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 60px;
+        }
+
+        .footer-brand {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .footer-logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 900;
+            color: var(--text-color);
+            letter-spacing: 3px;
+        }
+
+        .footer-desc {
+            font-size: 0.95rem;
+            line-height: 1.8;
+            color: var(--text-color-muted);
+        }
+
+        .footer-column h4 {
+            color: var(--text-color);
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 25px;
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 15px;
+        }
+
+        .footer-links a {
+            color: var(--text-color-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color var(--transition-fast);
+        }
+
+        .footer-links a:hover {
+            color: var(--primary-color-light);
+        }
+
+        .footer-bottom {
+            max-width: 1400px;
+            margin: 50px auto 0;
+            padding-top: 30px;
+            border-top: 1px solid rgba(34, 197, 94, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .footer-copyright {
+            font-size: 0.85rem;
+            color: var(--text-color-muted);
+        }
+
+        /* ============================================
+           动画定义
+           ============================================ */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+            40% { transform: translateX(-50%) translateY(-15px); }
+            60% { transform: translateX(-50%) translateY(-8px); }
+        }
+
+        /* 元素入场动画 */
+        .animate-on-scroll {
+            opacity: 0;
+            transform: translateY(60px);
+            transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .animate-on-scroll.animated {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ============================================
+           响应式设计
+           ============================================ */
+        @media (max-width: 1200px) {
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 1024px) {
+            body {
+                cursor: auto;
+            }
+            
+            .cursor, .cursor-dot, .mouse-glow {
+                display: none;
+            }
+
+            .navbar {
+                padding: 15px 30px;
+            }
+
+            .navbar-nav {
+                gap: 25px;
+            }
+
+            .nav-link {
+                display: none;
+            }
+
+            .hero-section {
+                padding: 100px 30px 80px;
+            }
+
+            .hero-stats {
+                gap: 50px;
+            }
+
+            .stat-item::after {
+                right: -25px;
+            }
+
+            .features-section,
+            .demo-section,
+            .cta-section {
+                padding: 100px 30px;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .navbar-title {
+                font-size: 1.1rem;
+            }
+
+            .hero-stats {
+                flex-direction: column;
+                gap: 30px;
+            }
+
+            .stat-item::after {
+                display: none;
+            }
+
+            .stat-number {
+                font-size: 2.5rem;
+            }
+
+            .hero-cta {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .cta-btn {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .demo-showcase {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .footer-bottom {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .tutorial-card {
+                padding: 30px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero-section {
+                padding: 80px 20px 60px;
+            }
+
+            .section-title {
+                font-size: 1.8rem;
+            }
+
+            .feature-card {
+                padding: 30px;
+            }
+
+            .login-btn {
+                padding: 10px 20px;
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 加载动画 -->
+    <div class="loader" id="loader">
+        <div class="loader-logo">ALFRED X IP</div>
+        <div class="loader-bar">
+            <div class="loader-progress"></div>
+        </div>
+    </div>
+
+    <!-- 自定义光标 -->
+    <div class="cursor" id="cursor"></div>
+    <div class="cursor-dot" id="cursor-dot"></div>
+    <div class="mouse-glow" id="mouse-glow"></div>
+
+    <div id="vanta-bg"></div>
+
+    <!-- 导航栏 -->
+    <nav class="navbar" id="navbar">
+        <a href="#" class="navbar-brand">
+            <img src="frontend/images/ALFRED X IP LOGO.webp" alt="ALFRED X IP Logo" class="navbar-logo">
+            <span class="navbar-title">ALFRED X IP</span>
+        </a>
+        <div class="navbar-nav">
+            <a href="#features" class="nav-link">功能特性</a>
+            <a href="#demo" class="nav-link">产品演示</a>
+            <a href="frontend/help.html" class="nav-link" target="_blank">帮助文档</a>
+            <a href="/admin_manage" class="login-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                    <polyline points="10 17 15 12 10 7"></polyline>
+                    <line x1="15" y1="12" x2="3" y2="12"></line>
+                </svg>
+                登录
+            </a>
+        </div>
+    </nav>
+
+    <!-- Hero 区域 -->
+    <section class="hero-section" id="hero">
+        <div class="hero-bg-image" id="hero-bg-image"></div>
+        <div class="hero-gradient"></div>
+        <div class="hero-overlay"></div>
+        <div class="hero-grid"></div>
+        
+        <div class="hero-content">
+            <div class="hero-badge">
+                <span class="hero-badge-dot"></span>
+                <span>专利分析智能工作台 v26</span>
+            </div>
+            <h1 class="hero-title">
+                <span class="highlight">AI</span> 驱动的专利分析平台
+            </h1>
+            <p class="hero-subtitle">
+                <span class="hero-typing" id="typing-text"></span>
+                <span class="typing-cursor"></span>
+            </p>
+            <div class="hero-cta">
+                <a href="/admin_manage" class="cta-btn cta-btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                    立即体验
+                </a>
+                <a href="#features" class="cta-btn cta-btn-secondary">
+                    了解更多
+                </a>
+            </div>
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <span class="stat-number" data-count="9">0</span>
+                    <span class="stat-label">核心功能模块</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" data-count="100">0</span>
+                    <span class="stat-label">支持多国专利</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" data-count="24">0</span>
+                    <span class="stat-label">小时在线服务</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="scroll-indicator">
+            <div class="scroll-indicator-inner">
+                <div class="scroll-indicator-dot"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 功能特性区域 -->
+    <section class="features-section" id="features">
+        <div class="section-header">
+            <span class="section-tag">FEATURES</span>
+            <h2 class="section-title">九大核心功能</h2>
+            <p class="section-subtitle">全方位覆盖专利检索、分析、解读全流程，助力知识产权工作高效开展</p>
+        </div>
+        <div class="features-grid">
+            <!-- 功能一：即时对话 -->
+            <div class="feature-card animate-on-scroll">
+                <span class="feature-number">01</span>
+                <div class="feature-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                </div>
+                <h3 class="feature-title">即时对话</h3>
+                <p class="feature-desc">基于智谱AI的智能对话系统，支持专利知识问答、技术方案分析、联网搜索等功能。</p>
+                <div class="feature-image">
+                    <div class="feature-image-placeholder">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <div>功能截图位置</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 功能二：文本批量智能分析 -->
+            <div class="feature-card animate-on-scroll">
+                <span class="feature-number">02</span>
+                <div class="feature-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                </div>
+                <h3 class="feature-title">文本批量智能分析</h3>
+                <p class="feature-desc">支持Excel批量上传，自定义分析模板，一键完成大量文本的智能分析与处理。</p>
+                <div class="feature-image">
+                    <div class="feature-image-placeholder">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <div>功能截图位置</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 功能三：本地专利库 -->
+            <div class="feature-card animate-on-scroll">
+                <span class="feature-number">03</span>
+                <div class="feature-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                    </svg>
+                </div>
+                <h3 class="feature-title">本地专利库</h3>
+                <p class="feature-desc">本地化管理已下载专利数据，支持快速检索、分类整理、批量导出。</p>
+                <div class="feature-image">
+                    <div class="feature-image-placeholder">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <div>功能截图位置</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 功能四：权利要求对比 -->
+            <div class="feature-card animate-on-scroll">
+                <span class="feature-number">04</span>
+                <div class="feature-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                </div>
+                <h3 class="feature-title">权利要求对比</h3>
+                <p class="feature-desc">智能对比不同专利的权利要求，可视化展示差异，支持同族专利对比分析。</p>
+                <div class="feature-image">
+                    <div class="feature-image-placeholder">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <div>功能截图位置</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 功能五：批量专利查询解读 -->
+            <div class="feature-card animate-on-scroll">
+                <span class="feature-number">05</span>
+                <div class="feature-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </div>
+                <h3 class="feature-title">批量专利查询解读</h3>
+                <p class="feature-desc">支持批量输入专利号，自动抓取专利信息，AI智能解读技术要点。</p>
+                <div class="feature-image">
+                    <div class="feature-image-placeholder">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <div>功能截图位置</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 功能六：权利要求分析器 -->
+            <div class="feature-card animate-on-scroll">
+                <span class="feature-number">06</span>
+                <div class="feature-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
+                </div>
+                <h3 class="feature-title">权利要求分析器</h3>
+                <p class="feature-desc">深度解析权利要求结构，自动识别独立/从属权利要求，可视化展示引用关系。</p>
+                <div class="feature-image">
+                    <div class="feature-image-placeholder">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <div>功能截图位置</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 功能七：专利附图标记 -->
+            <div class="feature-card animate-on-scroll">
+                <span class="feature-number">07</span>
+                <div class="feature-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                </div>
+                <h3 class="feature-title">专利附图标记</h3>
+                <p class="feature-desc">OCR智能识别附图标记，自动匹配说明书内容，支持交互式标注。</p>
+                <div class="feature-image">
+                    <div class="feature-image-placeholder">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <div>功能截图位置</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 功能八：PDF-OCR阅读器 -->
+            <div class="feature-card animate-on-scroll">
+                <span class="feature-number">08</span>
+                <div class="feature-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                </div>
+                <h3 class="feature-title">PDF-OCR阅读器</h3>
+                <p class="feature-desc">上传PDF自动OCR识别，支持划词翻译、智能问答、内容提取。</p>
+                <div class="feature-image">
+                    <div class="feature-image-placeholder">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <div>功能截图位置</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 功能九：同族权利要求对比 -->
+            <div class="feature-card animate-on-scroll">
+                <span class="feature-number">09</span>
+                <div class="feature-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                    </svg>
+                </div>
+                <h3 class="feature-title">同族权利要求对比</h3>
+                <p class="feature-desc">一键获取全球同族专利，自动对比不同国家/地区的权利要求差异。</p>
+                <div class="feature-image">
+                    <div class="feature-image-placeholder">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <div>功能截图位置</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 产品演示区域 -->
+    <section class="demo-section" id="demo">
+        <div class="demo-container">
+            <div class="section-header">
+                <span class="section-tag">DEMO</span>
+                <h2 class="section-title">产品演示</h2>
+                <p class="section-subtitle">直观展示核心功能界面，让您快速了解平台能力</p>
+            </div>
+            <div class="demo-showcase">
+                <div class="demo-item animate-on-scroll">
+                    <div class="demo-item-inner">
+                        <div class="demo-item-content">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                            <div>演示截图 1</div>
+                        </div>
+                    </div>
+                    <div class="demo-item-overlay">
+                        <div class="demo-item-title">即时对话界面</div>
+                        <div class="demo-item-desc">AI智能问答，支持联网搜索</div>
+                    </div>
+                </div>
+                <div class="demo-item animate-on-scroll">
+                    <div class="demo-item-inner">
+                        <div class="demo-item-content">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                            <div>演示截图 2</div>
+                        </div>
+                    </div>
+                    <div class="demo-item-overlay">
+                        <div class="demo-item-title">批量专利解读</div>
+                        <div class="demo-item-desc">一键获取专利信息与AI分析</div>
+                    </div>
+                </div>
+                <div class="demo-item animate-on-scroll">
+                    <div class="demo-item-inner">
+                        <div class="demo-item-content">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                            <div>演示截图 3</div>
+                        </div>
+                    </div>
+                    <div class="demo-item-overlay">
+                        <div class="demo-item-title">权利要求分析</div>
+                        <div class="demo-item-desc">可视化展示引用关系</div>
+                    </div>
+                </div>
+                <div class="demo-item animate-on-scroll">
+                    <div class="demo-item-inner">
+                        <div class="demo-item-content">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                            <div>演示截图 4</div>
+                        </div>
+                    </div>
+                    <div class="demo-item-overlay">
+                        <div class="demo-item-title">附图标记功能</div>
+                        <div class="demo-item-desc">OCR识别与智能标注</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA 区域 -->
+    <section class="cta-section">
+        <div class="cta-content">
+            <h2 class="cta-title">准备好提升您的专利工作效率了吗？</h2>
+            <p class="cta-desc">立即登录体验AI驱动的专利分析平台，让复杂的专利工作变得简单高效</p>
+            <a href="/admin_manage" class="cta-btn-large">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                    <polyline points="10 17 15 12 10 7"></polyline>
+                    <line x1="15" y1="12" x2="3" y2="12"></line>
+                </svg>
+                立即登录体验
+            </a>
+        </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <div class="footer-logo">ALFRED X IP</div>
+                <p class="footer-desc">专利分析智能工作台，专注于为知识产权从业者提供高效、智能的专利检索、分析与解读服务。</p>
+            </div>
+            <div class="footer-column">
+                <h4>产品功能</h4>
+                <ul class="footer-links">
+                    <li><a href="#features">即时对话</a></li>
+                    <li><a href="#features">批量分析</a></li>
+                    <li><a href="#features">专利检索</a></li>
+                    <li><a href="#features">权利要求分析</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>帮助支持</h4>
+                <ul class="footer-links">
+                    <li><a href="frontend/help.html" target="_blank">使用手册</a></li>
+                    <li><a href="#">常见问题</a></li>
+                    <li><a href="#">联系客服</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>关于我们</h4>
+                <ul class="footer-links">
+                    <li><a href="#">公司介绍</a></li>
+                    <li><a href="frontend/terms.html" target="_blank">服务条款</a></li>
+                    <li><a href="frontend/privacy.html" target="_blank">隐私政策</a></li>
+                    <li><a href="frontend/disclaimer.html" target="_blank">免责声明</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p class="footer-copyright">&copy; 2025 ALFRED X IP. All rights reserved. 专利分析智能工作台 v26</p>
+        </div>
+    </footer>
+
+    <script>
+        // ============================================
+        // 加载动画
+        // ============================================
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                document.getElementById('loader').classList.add('hidden');
+            }, 2000);
+        });
+
+        // ============================================
+        // 自定义光标
+        // ============================================
+        const cursor = document.getElementById('cursor');
+        const cursorDot = document.getElementById('cursor-dot');
+        const mouseGlow = document.getElementById('mouse-glow');
+
+        document.addEventListener('mousemove', function(e) {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+            cursorDot.style.left = e.clientX + 'px';
+            cursorDot.style.top = e.clientY + 'px';
+            mouseGlow.style.left = e.clientX + 'px';
+            mouseGlow.style.top = e.clientY + 'px';
+        });
+
+        // 悬停效果
+        const hoverElements = document.querySelectorAll('a, button, .feature-card, .demo-item');
+        hoverElements.forEach(el => {
+            el.addEventListener('mouseenter', () => cursor.classList.add('hover'));
+            el.addEventListener('mouseleave', () => cursor.classList.remove('hover'));
+        });
+
+        // ============================================
+        // Vanta.js 背景初始化
+        // ============================================
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof VANTA !== 'undefined' && VANTA.NET && typeof THREE !== 'undefined') {
+                VANTA.NET({
+                    el: "#vanta-bg",
+                    mouseControls: true,
+                    touchControls: true,
+                    gyroControls: false,
+                    minHeight: 200.00,
+                    minWidth: 200.00,
+                    scale: 1.00,
+                    scaleMobile: 1.00,
+                    color: 0x22C55E,
+                    backgroundColor: 0x0a0a0a,
+                    points: 10.00,
+                    maxDistance: 25.00,
+                    spacing: 20.00,
+                    showDots: true
+                });
+            }
+        });
+
+        // ============================================
+        // 导航栏滚动效果
+        // ============================================
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 100) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // ============================================
+        // 打字机效果
+        // ============================================
+        const typingTexts = [
+            '专业的专利检索、分析、解读AI工具平台',
+            '支持中、美、日、欧等多国专利检索',
+            'AI智能解读技术要点，一键生成分析报告',
+            '全方位覆盖专利工作全流程'
+        ];
+        let textIndex = 0;
+        let charIndex = 0;
+        let isDeleting = false;
+        const typingElement = document.getElementById('typing-text');
+
+        function typeWriter() {
+            const currentText = typingTexts[textIndex];
+            
+            if (isDeleting) {
+                typingElement.textContent = currentText.substring(0, charIndex - 1);
+                charIndex--;
+            } else {
+                typingElement.textContent = currentText.substring(0, charIndex + 1);
+                charIndex++;
+            }
+
+            let typeSpeed = isDeleting ? 30 : 80;
+
+            if (!isDeleting && charIndex === currentText.length) {
+                typeSpeed = 2500;
+                isDeleting = true;
+            } else if (isDeleting && charIndex === 0) {
+                isDeleting = false;
+                textIndex = (textIndex + 1) % typingTexts.length;
+                typeSpeed = 500;
+            }
+
+            setTimeout(typeWriter, typeSpeed);
+        }
+
+        typeWriter();
+
+        // ============================================
+        // 数字递增动画
+        // ============================================
+        function animateNumbers() {
+            const statNumbers = document.querySelectorAll('.stat-number');
+            statNumbers.forEach(stat => {
+                const target = parseInt(stat.getAttribute('data-count'));
+                const duration = 2500;
+                const step = target / (duration / 16);
+                let current = 0;
+
+                const updateNumber = () => {
+                    current += step;
+                    if (current < target) {
+                        stat.textContent = Math.floor(current);
+                        requestAnimationFrame(updateNumber);
+                    } else {
+                        stat.textContent = target + '+';
+                    }
+                };
+
+                updateNumber();
+            });
+        }
+
+        // ============================================
+        // 滚动动画
+        // ============================================
+        const observerOptions = {
+            threshold: 0.15,
+            rootMargin: '0px 0px -80px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry, index) => {
+                if (entry.isIntersecting) {
+                    setTimeout(() => {
+                        entry.target.classList.add('animated');
+                    }, index * 100);
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.animate-on-scroll').forEach(el => {
+            observer.observe(el);
+        });
+
+        // 页面加载后触发Hero区域的数字动画
+        setTimeout(animateNumbers, 2500);
+
+        // ============================================
+        // 功能卡片鼠标跟随效果
+        // ============================================
+        document.querySelectorAll('.feature-card').forEach(card => {
+            card.addEventListener('mousemove', function(e) {
+                const rect = card.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                card.style.setProperty('--mouse-x', x + '%');
+                card.style.setProperty('--mouse-y', y + '%');
+            });
+        });
+
+        // ============================================
+        // 平滑滚动
+        // ============================================
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // ============================================
+        // 视差滚动效果
+        // ============================================
+        window.addEventListener('scroll', function() {
+            const scrolled = window.pageYOffset;
+            const heroContent = document.querySelector('.hero-content');
+            if (heroContent) {
+                heroContent.style.transform = `translateY(${scrolled * 0.3}px)`;
+                heroContent.style.opacity = 1 - (scrolled * 0.002);
+            }
+        });
+    </script>
+</body>
+</html>
