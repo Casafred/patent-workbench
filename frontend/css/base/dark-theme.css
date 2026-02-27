@@ -1798,3 +1798,399 @@
 [data-theme="dark"] #api_key_save_btn:hover {
     background: linear-gradient(135deg, #047857 0%, #059669 100%) !important;
 }
+
+/* ========================================
+   52. 聊天历史列表项暗黑模式覆盖
+   ======================================== */
+
+[data-theme="dark"] .chat-history-item {
+    background: transparent !important;
+    border-bottom-color: #334155 !important;
+}
+
+[data-theme="dark"] .chat-history-item:hover {
+    background: rgba(74, 222, 128, 0.1) !important;
+    border-left-color: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .chat-history-item.active {
+    background: linear-gradient(135deg, #065f46 0%, #047857 100%) !important;
+    border-left-color: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .history-item-title {
+    color: var(--text-color) !important;
+}
+
+[data-theme="dark"] .history-item-details {
+    color: #64748b !important;
+}
+
+/* ========================================
+   53. AI处理面板暗黑模式覆盖
+   ======================================== */
+
+[data-theme="dark"] .ai-processing-panel {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+[data-theme="dark"] .ai-mode-options {
+    border-top-color: #334155 !important;
+}
+
+[data-theme="dark"] .toggle-text {
+    color: var(--text-color) !important;
+}
+
+[data-theme="dark"] .toggle-hint {
+    color: #64748b !important;
+}
+
+[data-theme="dark"] .model-selector-container label {
+    color: var(--text-color) !important;
+}
+
+[data-theme="dark"] .model-selector {
+    background-color: #0f172a !important;
+    border-color: #475569 !important;
+    color: var(--text-color) !important;
+}
+
+[data-theme="dark"] .model-selector:hover {
+    border-color: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .model-selector:focus {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 3px var(--primary-color-glow) !important;
+}
+
+[data-theme="dark"] .toggle-slider {
+    background-color: #475569 !important;
+}
+
+[data-theme="dark"] .toggle-label input[type="checkbox"]:checked + .toggle-slider {
+    background-color: var(--primary-color) !important;
+}
+
+/* ========================================
+   54. 提示词编辑器暗黑模式覆盖
+   ======================================== */
+
+[data-theme="dark"] .prompt-editor {
+    background: transparent !important;
+}
+
+[data-theme="dark"] .prompt-editor-header {
+    border-bottom-color: #334155 !important;
+}
+
+[data-theme="dark"] .prompt-editor-header label {
+    color: var(--text-color) !important;
+}
+
+[data-theme="dark"] .prompt-editor-hint {
+    background: rgba(74, 222, 128, 0.1) !important;
+    border-color: rgba(74, 222, 128, 0.2) !important;
+    color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .prompt-editor-message {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+[data-theme="dark"] .prompt-editor-message.success {
+    background: rgba(74, 222, 128, 0.1) !important;
+    border-color: var(--primary-color) !important;
+    color: #4ade80 !important;
+}
+
+[data-theme="dark"] .prompt-editor-message.error {
+    background: rgba(248, 113, 113, 0.1) !important;
+    border-color: #f87171 !important;
+    color: #fca5a5 !important;
+}
+
+[data-theme="dark"] .prompt-editor-message.info {
+    background: rgba(59, 130, 246, 0.1) !important;
+    border-color: #60a5fa !important;
+    color: #93c5fd !important;
+}
+
+/* ========================================
+   55. 多图查看器弹窗暗黑模式覆盖
+   ======================================== */
+
+[data-theme="dark"] .multi-image-viewer-v8 {
+    background-color: rgba(0, 0, 0, 0.95) !important;
+}
+
+[data-theme="dark"] .multi-image-viewer-v8 .image-container,
+[data-theme="dark"] .multi-image-viewer-v8 .sidebar {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+[data-theme="dark"] .multi-image-viewer-v8 .sidebar {
+    background: #0f172a !important;
+}
+
+[data-theme="dark"] .multi-image-viewer-v8 .sidebar-header {
+    background: linear-gradient(135deg, #064e3b 0%, #065f46 100%) !important;
+    border-bottom-color: #334155 !important;
+}
+
+[data-theme="dark"] .multi-image-viewer-v8 .sidebar-title {
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .multi-image-viewer-v8 .annotation-list {
+    background: transparent !important;
+}
+
+[data-theme="dark"] .multi-image-viewer-v8 .annotation-item {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+    color: var(--text-color) !important;
+}
+
+[data-theme="dark"] .multi-image-viewer-v8 .annotation-item:hover {
+    background: #334155 !important;
+    border-color: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .multi-image-viewer-v8 .annotation-item.selected {
+    background: rgba(74, 222, 128, 0.15) !important;
+    border-color: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .multi-image-viewer-v8 .annotation-number {
+    background: var(--primary-color) !important;
+    color: white !important;
+}
+
+[data-theme="dark"] .multi-image-viewer-v8 .annotation-name {
+    color: var(--text-color) !important;
+}
+
+[data-theme="dark"] .multi-image-viewer-v8 .annotation-confidence {
+    color: #64748b !important;
+}
+
+[data-theme="dark"] .multi-image-viewer-v8 .image-counter {
+    color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .multi-image-viewer-v8 .toolbar-btn {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+    color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .multi-image-viewer-v8 .toolbar-btn:hover {
+    background: #334155 !important;
+    border-color: var(--primary-color) !important;
+    color: var(--primary-color) !important;
+}
+
+/* ========================================
+   56. 功能五批量解读模版面板暗黑模式覆盖
+   ======================================== */
+
+[data-theme="dark"] .template-manager-panel,
+[data-theme="dark"] #template_manager_panel {
+    background: var(--surface-color) !important;
+    border-color: #334155 !important;
+}
+
+[data-theme="dark"] .template-manager-header {
+    background: linear-gradient(135deg, #064e3b 0%, #065f46 100%) !important;
+    border-bottom-color: #334155 !important;
+}
+
+[data-theme="dark"] .template-manager-title {
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .template-list {
+    background: transparent !important;
+}
+
+[data-theme="dark"] .template-item {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+[data-theme="dark"] .template-item:hover {
+    border-color: var(--primary-color) !important;
+    background: rgba(74, 222, 128, 0.1) !important;
+}
+
+[data-theme="dark"] .template-item.active {
+    background: rgba(74, 222, 128, 0.15) !important;
+    border-color: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .template-name {
+    color: var(--text-color) !important;
+}
+
+[data-theme="dark"] .template-desc {
+    color: #64748b !important;
+}
+
+[data-theme="dark"] .template-editor-area {
+    background: #0f172a !important;
+    border-color: #475569 !important;
+    color: var(--text-color) !important;
+}
+
+[data-theme="dark"] #template_select {
+    background-color: #0f172a !important;
+    border-color: #475569 !important;
+    color: var(--text-color) !important;
+}
+
+[data-theme="dark"] #template_select:focus {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 3px var(--primary-color-glow) !important;
+}
+
+/* ========================================
+   57. 功能七匹配识别结果块暗黑模式覆盖
+   ======================================== */
+
+[data-theme="dark"] .match-result-block,
+[data-theme="dark"] .recognition-result-block {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+[data-theme="dark"] .match-result-header,
+[data-theme="dark"] .recognition-result-header {
+    background: linear-gradient(135deg, #064e3b 0%, #065f46 100%) !important;
+    border-bottom-color: #334155 !important;
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .match-result-body,
+[data-theme="dark"] .recognition-result-body {
+    background: transparent !important;
+    color: var(--text-color) !important;
+}
+
+[data-theme="dark"] .match-result-item {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+}
+
+[data-theme="dark"] .match-result-item:hover {
+    border-color: var(--primary-color) !important;
+    background: rgba(74, 222, 128, 0.1) !important;
+}
+
+[data-theme="dark"] .match-result-item.selected {
+    background: rgba(74, 222, 128, 0.15) !important;
+    border-color: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .match-result-label {
+    color: var(--text-color) !important;
+}
+
+[data-theme="dark"] .match-result-value {
+    color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .match-result-confidence {
+    background: rgba(74, 222, 128, 0.2) !important;
+    color: #4ade80 !important;
+}
+
+/* ========================================
+   58. 历史面板暗黑模式覆盖
+   ======================================== */
+
+[data-theme="dark"] .history-panel {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+[data-theme="dark"] .history-panel-header {
+    border-bottom-color: #334155 !important;
+}
+
+[data-theme="dark"] .history-panel-title {
+    color: var(--text-color) !important;
+}
+
+[data-theme="dark"] .history-item {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+}
+
+[data-theme="dark"] .history-item:hover {
+    border-color: var(--primary-color) !important;
+    background: rgba(74, 222, 128, 0.1) !important;
+}
+
+/* ========================================
+   59. 缓存统计面板暗黑模式覆盖
+   ======================================== */
+
+[data-theme="dark"] .cache-stats-panel {
+    background: var(--surface-color) !important;
+    border-color: #334155 !important;
+}
+
+[data-theme="dark"] .cache-stats-header {
+    background: linear-gradient(135deg, #064e3b 0%, #065f46 100%) !important;
+    border-bottom-color: #334155 !important;
+}
+
+[data-theme="dark"] .cache-stats-title {
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .cache-stats-grid {
+    background: #0f172a !important;
+}
+
+[data-theme="dark"] .cache-stat-card {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+[data-theme="dark"] .cache-stat-label {
+    color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .cache-stat-value {
+    color: var(--primary-color) !important;
+}
+
+/* ========================================
+   60. 通用下拉选择框暗黑模式覆盖
+   ======================================== */
+
+[data-theme="dark"] select {
+    background-color: #0f172a !important;
+    border-color: #475569 !important;
+    color: var(--text-color) !important;
+}
+
+[data-theme="dark"] select:hover {
+    border-color: var(--primary-color) !important;
+}
+
+[data-theme="dark"] select:focus {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 3px var(--primary-color-glow) !important;
+}
+
+[data-theme="dark"] select option {
+    background-color: #1e293b !important;
+    color: var(--text-color) !important;
+}
