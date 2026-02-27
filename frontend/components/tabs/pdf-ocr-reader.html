@@ -20,7 +20,7 @@
         <div class="pdf-ocr-sidebar">
             <!-- 文件上传 -->
             <div class="ocr-panel">
-                <h4 class="panel-title">📄 文件上传</h4>
+                <h4 class="panel-title"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/></svg> 文件上传</h4>
                 <div id="pdf_upload_dropzone" class="upload-zone">
                     <input type="file" id="ocr-file-input" accept=".pdf,.png,.jpg,.jpeg,.bmp,.webp" style="display: none;">
                     <div class="upload-placeholder">
@@ -41,7 +41,7 @@
 
             <!-- OCR控制 -->
             <div class="ocr-panel">
-                <h4 class="panel-title">🔍 OCR解析</h4>
+                <h4 class="panel-title"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg> OCR解析</h4>
                 <div class="control-group">
                     <label>解析范围</label>
                     <select id="ocr-parse-mode" class="form-select">
@@ -61,7 +61,7 @@
                     <label><input type="checkbox" id="ocr-recognize-table" checked> 识别表格</label>
                 </div>
                 <div id="ocr-cache-status" class="cache-status" style="display: none;">
-                    <span class="cache-icon">💾</span>
+                    <span class="cache-icon"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg></span>
                     <span class="cache-text"></span>
                 </div>
                 <button id="start-ocr-btn" class="btn-primary" disabled>
@@ -77,7 +77,7 @@
 
             <!-- 识别结果列表 -->
             <div class="ocr-panel results-panel">
-                <h4 class="panel-title">📋 识别结果</h4>
+                <h4 class="panel-title"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M14 2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h12zM2 3a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H2z"/><path d="M3 5.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM3 8a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 3 8zm0 2.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5z"/></svg> 识别结果</h4>
                 <div class="filter-bar">
                     <select id="ocr-block-filter" class="form-select">
                         <option value="all">全部类型</option>
@@ -94,7 +94,7 @@
 
             <!-- 导出 -->
             <div class="ocr-panel">
-                <h4 class="panel-title">💾 导出</h4>
+                <h4 class="panel-title"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg> 导出</h4>
                 <div class="export-btns">
                     <button id="ocr-export-markdown" class="btn-export" disabled>Markdown</button>
                     <button id="ocr-export-text" class="btn-export" disabled>TXT</button>
@@ -136,7 +136,7 @@
                         取消全选
                     </button>
                     <button id="multi-page-concat-btn" class="btn-toggle" title="拼接多个已解析页面的内容" style="background: #8b5cf6; color: white; border-color: #8b5cf6;">
-                        📑 多页拼接
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M10.5 3.5a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-8a.5.5 0 0 1 .5-.5h8zM2 4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4z"/><path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/><path d="M11.5 5.5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/></svg> 多页拼接
                     </button>
                 </div>
             </div>
@@ -178,7 +178,7 @@
     <!-- 悬浮识别文本面板 -->
     <div id="floating-text-panel" class="floating-text-panel" style="display: none;">
         <div class="panel-header">
-            <div class="panel-title">📝 识别文本</div>
+            <div class="panel-title"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M3 2.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5v-11zm1 1v9h8v-9h-8z"/><path d="M5 5.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zM5 8a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5A.5.5 0 0 1 5 8zm0 2.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5z"/></svg> 识别文本</div>
             <div class="panel-controls">
                 <button class="control-btn minimize-btn" title="最小化">−</button>
                 <button class="control-btn close-btn" title="关闭">×</button>
@@ -188,7 +188,7 @@
             <!-- 当前选中区块 -->
             <div class="current-block-section">
                 <div class="section-header">
-                    <span class="section-title">📍 当前选中</span>
+                    <span class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/></svg> 当前选中</span>
                 </div>
                 <div id="ocr-current-block" class="block-content markdown-body">
                     <div class="empty-tip">点击识别结果查看内容</div>
@@ -197,15 +197,15 @@
             <!-- 全部原文（可折叠） -->
             <div class="full-text-section collapsed">
                 <div class="section-header clickable" id="toggle-full-text">
-                    <span class="section-title">📄 全部原文</span>
+                    <span class="section-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/></svg> 全部原文</span>
                     <span class="toggle-icon">▶</span>
                 </div>
                 <div class="section-body" id="full-text-body">
                     <div class="content-tabs">
                         <button class="tab-btn active" data-tab="original">原文</button>
                         <button class="tab-btn" data-tab="markdown">Markdown</button>
-                        <button class="tab-btn" id="translate-full-text-btn" style="background: #3b82f6; color: white;">🌐 翻译</button>
-                        <button class="tab-btn" id="ask-full-text-btn" style="margin-left: auto; background: #22c55e; color: white;">💬 提问</button>
+                        <button class="tab-btn" id="translate-full-text-btn" style="background: #3b82f6; color: white;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm7.5-6.923c-.67.204-1.335.82-1.887 1.855A7.97 7.97 0 0 0 5.145 4H7.5V1.077zM4.09 4a9.267 9.267 0 0 1 .64-1.539 6.7 6.7 0 0 1 .597-.933A7.025 7.025 0 0 0 2.255 4H4.09zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a6.958 6.958 0 0 0-.656 2.5h2.49zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5H4.847zM8.5 5v2.5h2.99a12.495 12.495 0 0 0-.337-2.5H8.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5H4.51zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5H8.5zM5.145 12c.138.386.295.744.468 1.068.552 1.035 1.218 1.65 1.887 1.855V12H5.145zm.182 2.472a6.696 6.696 0 0 1-.597-.933A9.268 9.268 0 0 1 4.09 12H2.255a7.024 7.024 0 0 0 3.072 2.472zM3.82 11a13.652 13.652 0 0 1-.312-2.5h-2.49A6.95 6.95 0 0 0 1.674 11H3.82zm10.026-2.5a13.65 13.65 0 0 1-.312 2.5h2.146c.22-.765.368-1.608.426-2.5h-2.26zm-1.068 2.5c-.138.386-.295.744-.468 1.068-.552 1.035-1.218 1.65-1.887 1.855V12h2.355zm.182 2.472A6.696 6.696 0 0 0 13.91 12h1.835a7.024 7.024 0 0 1-3.072 2.472zM14.326 11a6.95 6.95 0 0 0 .656-2.5h-2.49c-.03.877-.138 1.718-.312 2.5h2.146z"/></svg>翻译</button>
+                        <button class="tab-btn" id="ask-full-text-btn" style="margin-left: auto; background: #22c55e; color: white;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M2 6.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5zM2 9.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zM2 12.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5z"/><path d="M14 1a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H4.414A1 1 0 0 1 3 10.586l-1-1A1 1 0 0 1 1.586 9L3 7.586V2a1 1 0 0 1 1-1h10z"/></svg> 提问</button>
                     </div>
                     <div class="content-body">
                         <div id="tab_original" class="ocr-text-tab active">
@@ -219,7 +219,7 @@
             </div>
         </div>
         <div class="panel-details">
-            <h4 class="details-title">ℹ️ 区块详情</h4>
+            <h4 class="details-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/></svg> 区块详情</h4>
             <div id="ocr-block-details" class="block-details">
                 <div class="empty-tip">点击左侧识别结果查看详情</div>
             </div>
@@ -229,7 +229,7 @@
     <!-- 多页拼接弹窗 -->
     <div id="multi-page-concat-popup" class="multi-page-concat-popup" style="display: none;">
         <div class="popup-header">
-            <span class="popup-title">📑 多页拼接</span>
+            <span class="popup-title"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M10.5 3.5a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-8a.5.5 0 0 1 .5-.5h8zM2 4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4z"/><path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/><path d="M11.5 5.5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/></svg> 多页拼接</span>
             <button class="popup-close">×</button>
         </div>
         <div class="popup-body">
@@ -251,9 +251,9 @@
             </div>
         </div>
         <div class="popup-footer">
-            <button id="concat-view-btn" class="btn-action" disabled>👁️ 查看拼接</button>
-            <button id="concat-translate-btn" class="btn-action" disabled>🌐 翻译拼接</button>
-            <button id="concat-ask-btn" class="btn-action" disabled>💬 提问拼接</button>
+            <button id="concat-view-btn" class="btn-action" disabled><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M10.5 3.5a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-8a.5.5 0 0 1 .5-.5h8zM2 4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4z"/><path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/><path d="M11.5 5.5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/></svg> 查看拼接</button>
+            <button id="concat-translate-btn" class="btn-action" disabled><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm7.5-6.923c-.67.204-1.335.82-1.887 1.855A7.97 7.97 0 0 0 5.145 4H7.5V1.077zM4.09 4a9.267 9.267 0 0 1 .64-1.539 6.7 6.7 0 0 1 .597-.933A7.025 7.025 0 0 0 2.255 4H4.09zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a6.958 6.958 0 0 0-.656 2.5h2.49zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5H4.847zM8.5 5v2.5h2.99a12.495 12.495 0 0 0-.337-2.5H8.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5H4.51zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5H8.5zM5.145 12c.138.386.295.744.468 1.068.552 1.035 1.218 1.65 1.887 1.855V12H5.145zm.182 2.472a6.696 6.696 0 0 1-.597-.933A9.268 9.268 0 0 1 4.09 12H2.255a7.024 7.024 0 0 0 3.072 2.472zM3.82 11a13.652 13.652 0 0 1-.312-2.5h-2.49A6.95 6.95 0 0 0 1.674 11H3.82zm10.026-2.5a13.65 13.65 0 0 1-.312 2.5h2.146c.22-.765.368-1.608.426-2.5h-2.26zm-1.068 2.5c-.138.386-.295.744-.468 1.068-.552 1.035-1.218 1.65-1.887 1.855V12h2.355zm.182 2.472A6.696 6.696 0 0 0 13.91 12h1.835a7.024 7.024 0 0 1-3.072 2.472zM14.326 11a6.95 6.95 0 0 0 .656-2.5h-2.49c-.03.877-.138 1.718-.312 2.5h2.146z"/></svg> 翻译拼接</button>
+            <button id="concat-ask-btn" class="btn-action" disabled><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M2 6.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5zM2 9.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zM2 12.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5z"/><path d="M14 1a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H4.414A1 1 0 0 1 3 10.586l-1-1A1 1 0 0 1 1.586 9L3 7.586V2a1 1 0 0 1 1-1h10z"/></svg> 提问拼接</button>
         </div>
     </div>
 </div>
