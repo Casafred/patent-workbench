@@ -1,7 +1,7 @@
 /* Button Styles */
 
 /* 主按钮样式 - 只应用于没有特定类的按钮 */
-button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button):not(.delete-button):not(.file-remove-btn):not(.help-button):not(.api-config-toggle):not(.edit-title-btn):not(.close-modal):not(.export-toggle-btn):not(.action-button):not(.chat-actions button):not(.popup-close):not(.popup-btn):not(.send-btn):not(.control-btn) { 
+button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button):not(.delete-button):not(.file-remove-btn):not(.help-button):not(.api-config-toggle):not(.edit-title-btn):not(.close-modal):not(.export-toggle-btn):not(.action-button):not(.chat-actions button):not(.popup-close):not(.popup-btn):not(.send-btn):not(.control-btn):not(.viewer-close-btn) { 
     background: linear-gradient(45deg, var(--primary-color-dark), var(--primary-color)); 
     color: #FFFFFF !important; 
     font-weight: bold; 
@@ -25,13 +25,13 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
     transform: scale(1);
 }
 
-button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button):not(.delete-button):not(.file-remove-btn):not(.help-button):not(.api-config-toggle):not(.edit-title-btn):not(.close-modal):not(.export-toggle-btn):not(.action-button):not(.chat-actions button):not(.popup-close):not(.popup-btn):not(.send-btn):not(.control-btn):hover { 
+button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button):not(.delete-button):not(.file-remove-btn):not(.help-button):not(.api-config-toggle):not(.edit-title-btn):not(.close-modal):not(.export-toggle-btn):not(.action-button):not(.chat-actions button):not(.popup-close):not(.popup-btn):not(.send-btn):not(.control-btn):not(.viewer-close-btn):hover { 
     transform: translateY(-2px); 
     box-shadow: 0 7px 20px var(--primary-color-glow); 
     filter: brightness(1.05); 
 }
 
-button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button):not(.delete-button):not(.file-remove-btn):not(.help-button):not(.api-config-toggle):not(.edit-title-btn):not(.close-modal):not(.export-toggle-btn):not(.action-button):not(.chat-actions button):not(.popup-close):not(.popup-btn):not(.send-btn):not(.control-btn):disabled { 
+button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button):not(.delete-button):not(.file-remove-btn):not(.help-button):not(.api-config-toggle):not(.edit-title-btn):not(.close-modal):not(.export-toggle-btn):not(.action-button):not(.chat-actions button):not(.popup-close):not(.popup-btn):not(.send-btn):not(.control-btn):not(.viewer-close-btn):disabled { 
     background: rgba(34, 197, 94, 0.4); 
     color: rgba(255, 255, 255, 0.7); 
     cursor: not-allowed; 

@@ -177,6 +177,7 @@ class MultiImageViewerV8 {
         
         // 顶部关闭按钮
         const topCloseBtn = document.createElement('button');
+        topCloseBtn.className = 'viewer-close-btn';
         topCloseBtn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
         topCloseBtn.style.cssText = `
             position: absolute;
@@ -184,8 +185,8 @@ class MultiImageViewerV8 {
             left: 20px;
             width: 50px;
             height: 50px;
-            background-color: #dc3545;
-            color: white;
+            background-color: #dc3545 !important;
+            color: white !important;
             border: none;
             border-radius: 50%;
             font-size: 28px;
@@ -202,11 +203,11 @@ class MultiImageViewerV8 {
             modal.remove();
         });
         topCloseBtn.addEventListener('mouseenter', () => {
-            topCloseBtn.style.backgroundColor = '#c82333';
+            topCloseBtn.style.backgroundColor = '#c82333 !important';
             topCloseBtn.style.transform = 'scale(1.1)';
         });
         topCloseBtn.addEventListener('mouseleave', () => {
-            topCloseBtn.style.backgroundColor = '#dc3545';
+            topCloseBtn.style.backgroundColor = '#dc3545 !important';
             topCloseBtn.style.transform = 'scale(1)';
         });
         
