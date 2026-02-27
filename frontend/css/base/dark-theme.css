@@ -838,62 +838,7 @@
 }
 
 /* ========================================
-   17. 主题切换按钮样式
-   ======================================== */
-
-.theme-toggle-btn {
-    all: unset;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border: 2px solid var(--primary-color);
-    border-radius: 50%;
-    background-color: var(--surface-color);
-    cursor: pointer;
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.theme-toggle-btn:hover {
-    background-color: var(--primary-color-hover-bg);
-    transform: scale(1.05);
-}
-
-.theme-toggle-btn svg {
-    width: 20px;
-    height: 20px;
-    stroke: var(--primary-color);
-    fill: none;
-    transition: all 0.3s ease;
-}
-
-.theme-toggle-btn:hover svg {
-    stroke: var(--primary-color-dark);
-}
-
-/* 太阳图标（亮色模式显示） */
-.theme-toggle-btn .sun-icon {
-    display: block;
-}
-
-.theme-toggle-btn .moon-icon {
-    display: none;
-}
-
-/* 月亮图标（暗色模式显示） */
-[data-theme="dark"] .theme-toggle-btn .sun-icon {
-    display: none;
-}
-
-[data-theme="dark"] .theme-toggle-btn .moon-icon {
-    display: block;
-}
-
-/* ========================================
-   18. 过渡动画
+   17. 过渡动画
    ======================================== */
 
 [data-theme="dark"] * {
