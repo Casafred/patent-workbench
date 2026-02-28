@@ -1268,23 +1268,36 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 
                 // 图片查看器
                 let viewerIndex = 0;
+                let viewerScale = 1;
+                let viewerRotation = 0;
                 const drawings = window.newTabDrawings || [];
                 
                 function openNewTabImageViewer(startIndex) {
                     viewerIndex = startIndex;
+                    viewerScale = 1;
+                    viewerRotation = 0;
                     const viewerHTML = \`
                         <div id="image-viewer-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center;">
                             <div style="position: absolute; top: 20px; right: 20px; display: flex; gap: 15px; align-items: center;">
                                 <span id="viewer-counter" style="color: white; font-size: 18px; font-weight: 500;">图 \${viewerIndex + 1} / \${drawings.length}</span>
-                                <button onclick="closeNewTabImageViewer()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 28px; width: 44px; height: 44px; border-radius: 50%; cursor: pointer;">&times;</button>
+                                <button onclick="closeNewTabImageViewer()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 28px; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;">&times;</button>
                             </div>
-                            <div style="position: absolute; left: 30px; top: 50%; transform: translateY(-50%);">
-                                <button onclick="navigateNewTabViewer(-1)" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 36px; width: 56px; height: 56px; border-radius: 50%; cursor: pointer;">&#8249;</button>
+                            <div style="position: absolute; left: 30px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 8px;">
+                                <button onclick="navigateNewTabViewer(-1)" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 36px; width: 56px; height: 56px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;">&#8249;</button>
+                                <button onclick="rotateNewTabImage(-90)" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 22px; width: 56px; height: 56px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;" title="向左旋转90度">↺</button>
                             </div>
-                            <div style="position: absolute; right: 30px; top: 50%; transform: translateY(-50%);">
-                                <button onclick="navigateNewTabViewer(1)" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 36px; width: 56px; height: 56px; border-radius: 50%; cursor: pointer;">&#8250;</button>
+                            <div style="position: absolute; right: 30px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 8px;">
+                                <button onclick="navigateNewTabViewer(1)" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 36px; width: 56px; height: 56px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;">&#8250;</button>
+                                <button onclick="rotateNewTabImage(90)" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 22px; width: 56px; height: 56px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;" title="向右旋转90度">↻</button>
                             </div>
-                            <img id="viewer-image" src="\${drawings[viewerIndex]}" style="max-width: 88%; max-height: 78%; object-fit: contain; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.6);">
+                            <div id="viewer-image-container" style="position: relative; display: flex; align-items: center; justify-content: center;">
+                                <img id="viewer-image" src="\${drawings[viewerIndex]}" style="max-width: 88%; max-height: 78%; object-fit: contain; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.6); transition: transform 0.3s ease;">
+                            </div>
+                            <div style="position: absolute; bottom: 90px; display: flex; gap: 10px; align-items: center;">
+                                <button onclick="zoomNewTabImage(-0.2)" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 28px; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;" title="缩小">-</button>
+                                <span id="zoom-level" style="color: white; font-size: 16px; min-width: 70px; text-align: center;">\${Math.round(viewerScale * 100)}%</span>
+                                <button onclick="zoomNewTabImage(0.2)" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 28px; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;" title="放大">+</button>
+                            </div>
                             <div style="position: absolute; bottom: 25px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; max-width: 88%; max-height: 90px; overflow-y: auto; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 12px;">
                                 \${drawings.map((d, i) => \`
                                     <div onclick="jumpNewTabToImage(\${i})" style="width: 60px; height: 60px; border: 3px solid \${i === viewerIndex ? '#fff' : 'transparent'}; border-radius: 6px; cursor: pointer; overflow: hidden; opacity: \${i === viewerIndex ? 1 : 0.5}; transition: all 0.2s;">
@@ -1319,18 +1332,34 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 function updateNewTabViewerImage() {
                     const img = document.getElementById('viewer-image');
                     const counter = document.getElementById('viewer-counter');
+                    const zoomLevel = document.getElementById('zoom-level');
                     if (img) img.src = drawings[viewerIndex];
                     if (counter) counter.textContent = '图 ' + (viewerIndex + 1) + ' / ' + drawings.length;
+                    if (zoomLevel) zoomLevel.textContent = Math.round(viewerScale * 100) + '%';
+                    img.style.transform = 'scale(' + viewerScale + ') rotate(' + viewerRotation + 'deg)';
                     document.querySelectorAll('#image-viewer-overlay > div:last-child > div').forEach((thumb, i) => {
                         thumb.style.borderColor = i === viewerIndex ? '#fff' : 'transparent';
                         thumb.style.opacity = i === viewerIndex ? 1 : 0.5;
                     });
                 }
                 
+                function zoomNewTabImage(delta) {
+                    viewerScale = Math.max(0.5, Math.min(3, viewerScale + delta));
+                    updateNewTabViewerImage();
+                }
+                
+                function rotateNewTabImage(delta) {
+                    viewerRotation = (viewerRotation + delta) % 360;
+                    updateNewTabViewerImage();
+                }
+                
                 function handleNewTabViewerKeydown(e) {
                     if (e.key === 'Escape') closeNewTabImageViewer();
                     else if (e.key === 'ArrowLeft') navigateNewTabViewer(-1);
                     else if (e.key === 'ArrowRight') navigateNewTabViewer(1);
+                    else if (e.key === 'ArrowUp' || e.key === '+') zoomNewTabImage(0.2);
+                    else if (e.key === 'ArrowDown' || e.key === '-') zoomNewTabImage(-0.2);
+                    else if (e.key === 'r' || e.key === 'R') rotateNewTabImage(90);
                 }
                 
                 // 回到顶部

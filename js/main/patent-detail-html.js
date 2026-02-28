@@ -202,17 +202,17 @@ function buildPatentDetailHTML(result, selectedFields) {
         window.patentDrawingsData[result.patent_number] = data.drawings;
         
         htmlContent += `
-            <div style="margin-top: 15px; padding: 10px; background-color: #fce4ec; border-radius: 5px;">
-                <div style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-                    <strong style="color: var(--primary-color);"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M.002 3a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-12a2 2 0 0 1-2-2V3zm1 9v1a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12zm5-6.5a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0z"/></svg> 附图 (${data.drawings.length}张)</strong>
+            <div class="detail-section detail-section-drawings">
+                <div class="detail-section-header">
+                    <strong class="detail-section-title"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M.002 3a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-12a2 2 0 0 1-2-2V3zm1 9v1a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12zm5-6.5a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0z"/></svg> 附图 (${data.drawings.length}张)</strong>
                     <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'drawings', event)" title="复制附图链接">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg>
                     </button>
                 </div>
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <div style="position: relative; background: white; border-radius: 8px; padding: 8px; max-width: 300px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" onclick="openImageViewer(0, '${result.patent_number}')">
-                        <img src="${data.drawings[0]}" alt="附图 1" style="width: 100%; max-height: 200px; object-fit: contain; border-radius: 4px;" onerror="this.style.display='none'">
-                        <div style="text-align: center; font-size: 0.85em; color: #666; margin-top: 6px;">图 1 ${data.drawings.length > 1 ? '(点击查看全部 ' + data.drawings.length + ' 张)' : ''}</div>
+                <div class="detail-drawings-container">
+                    <div class="detail-drawing-preview" onclick="openImageViewer(0, '${result.patent_number}')">
+                        <img src="${data.drawings[0]}" alt="附图 1" class="detail-drawing-img" onerror="this.style.display='none'">
+                        <div class="detail-drawing-caption">图 1 ${data.drawings.length > 1 ? '(点击查看全部 ' + data.drawings.length + ' 张)' : ''}</div>
                     </div>
                 </div>
             </div>

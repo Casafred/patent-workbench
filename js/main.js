@@ -1801,23 +1801,23 @@ window.openImageViewer = function(startIndex, patentNumber) {
         <div id="image-viewer-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center;">
             <div style="position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; align-items: center;">
                 <span id="viewer-counter" style="color: white; font-size: 16px;">图 ${currentIndex + 1} / ${drawings.length}</span>
-                <button onclick="closeImageViewer()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; width: 40px; height: 40px; border-radius: 50%; cursor: pointer;">&times;</button>
+                <button onclick="closeImageViewer()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;">&times;</button>
             </div>
             <div style="position: absolute; left: 20px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 8px;">
-                <button id="viewer-prev-btn" onclick="navigateImageViewer(-1)" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 32px; width: 50px; height: 50px; border-radius: 50%; cursor: pointer;">&#8249;</button>
-                <button onclick="rotateImage(-90)" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 20px; width: 50px; height: 50px; border-radius: 50%; cursor: pointer;" title="向左旋转90度">↺</button>
+                <button id="viewer-prev-btn" onclick="navigateImageViewer(-1)" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 32px; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;">&#8249;</button>
+                <button onclick="rotateImage(-90)" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 20px; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;" title="向左旋转90度">↺</button>
             </div>
             <div style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 8px;">
-                <button id="viewer-next-btn" onclick="navigateImageViewer(1)" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 32px; width: 50px; height: 50px; border-radius: 50%; cursor: pointer;">&#8250;</button>
-                <button onclick="rotateImage(90)" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 20px; width: 50px; height: 50px; border-radius: 50%; cursor: pointer;" title="向右旋转90度">↻</button>
+                <button id="viewer-next-btn" onclick="navigateImageViewer(1)" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 32px; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;">&#8250;</button>
+                <button onclick="rotateImage(90)" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 20px; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;" title="向右旋转90度">↻</button>
             </div>
             <div id="viewer-image-container" style="position: relative; display: flex; align-items: center; justify-content: center;">
                 <img id="viewer-image" src="${drawings[currentIndex]}" style="max-width: 90%; max-height: 80%; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); transition: transform 0.3s ease;">
             </div>
             <div style="position: absolute; bottom: 80px; display: flex; gap: 8px; align-items: center;">
-                <button onclick="zoomImage(-0.2)" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; width: 44px; height: 44px; border-radius: 50%; cursor: pointer;" title="缩小">-</button>
+                <button onclick="zoomImage(-0.2)" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;" title="缩小">-</button>
                 <span id="zoom-level" style="color: white; font-size: 14px; min-width: 60px; text-align: center;">${Math.round(scale * 100)}%</span>
-                <button onclick="zoomImage(0.2)" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; width: 44px; height: 44px; border-radius: 50%; cursor: pointer;" title="放大">+</button>
+                <button onclick="zoomImage(0.2)" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;" title="放大">+</button>
             </div>
             <div style="position: absolute; bottom: 20px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; max-width: 90%; max-height: 80px; overflow-y: auto;">
                 ${drawings.map((d, i) => `
