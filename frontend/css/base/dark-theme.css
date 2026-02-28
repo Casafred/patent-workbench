@@ -2508,3 +2508,88 @@
 [data-theme="dark"] .analysis-section-title {
     color: var(--primary-color) !important;
 }
+
+/* ========================================
+   74. 专利详情弹窗区域暗黑模式覆盖
+   ======================================== */
+
+[data-theme="dark"] .detail-section {
+    background-color: var(--surface-color) !important;
+    border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .detail-section-title {
+    color: var(--primary-color) !important;
+}
+
+/* 附图区域 */
+[data-theme="dark"] .detail-section-drawings {
+    background-color: rgba(236, 72, 153, 0.1) !important;
+    border-color: rgba(236, 72, 153, 0.2) !important;
+}
+
+[data-theme="dark"] .detail-drawing-preview {
+    background: #1e293b !important;
+    border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .detail-drawing-caption {
+    color: #94a3b8 !important;
+}
+
+/* 权利要求区域 */
+[data-theme="dark"] .detail-section-claims {
+    background-color: rgba(100, 116, 139, 0.1) !important;
+    border-color: rgba(100, 116, 139, 0.2) !important;
+}
+
+/* 说明书区域 */
+[data-theme="dark"] .detail-section-description {
+    background-color: rgba(59, 130, 246, 0.1) !important;
+    border-color: rgba(59, 130, 246, 0.2) !important;
+}
+
+[data-theme="dark"] .detail-description-content {
+    color: var(--text-color) !important;
+}
+
+/* CPC分类区域 */
+[data-theme="dark"] .detail-section-cpc {
+    background-color: rgba(59, 130, 246, 0.1) !important;
+    border-color: rgba(59, 130, 246, 0.2) !important;
+}
+
+[data-theme="dark"] .cpc-item {
+    background-color: #1e293b !important;
+    border-left-color: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .cpc-code {
+    color: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .cpc-description {
+    color: #94a3b8 !important;
+}
+
+/* 技术领域区域 */
+[data-theme="dark"] .detail-section-landscapes {
+    background-color: rgba(168, 85, 247, 0.1) !important;
+    border-color: rgba(168, 85, 247, 0.2) !important;
+}
+
+[data-theme="dark"] .landscape-tag {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    color: var(--text-color) !important;
+}
+
+/* 优先权日期区域 */
+[data-theme="dark"] .detail-section-priority {
+    background-color: rgba(250, 204, 21, 0.1) !important;
+    border-color: rgba(250, 204, 21, 0.2) !important;
+}
+
+[data-theme="dark"] .detail-priority-text {
+    color: var(--text-color) !important;
+}

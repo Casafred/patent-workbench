@@ -1240,3 +1240,143 @@
     color: var(--primary-color);
 }
 
+/* ====================================================================== */
+/* 专利详情弹窗区域样式 */
+/* ====================================================================== */
+
+.detail-section {
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.detail-section-header {
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.detail-section-title {
+    color: var(--primary-color);
+}
+
+.detail-section-actions {
+    display: flex;
+    gap: 6px;
+}
+
+/* 附图区域 */
+.detail-section-drawings {
+    background-color: #fce4ec;
+}
+
+.detail-drawings-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.detail-drawing-preview {
+    position: relative;
+    background: white;
+    border-radius: 8px;
+    padding: 8px;
+    max-width: 300px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.detail-drawing-img {
+    width: 100%;
+    max-height: 200px;
+    object-fit: contain;
+    border-radius: 4px;
+}
+
+.detail-drawing-caption {
+    text-align: center;
+    font-size: 0.85em;
+    color: #666;
+    margin-top: 6px;
+}
+
+/* 权利要求区域 */
+.detail-section-claims {
+    background-color: #f8f9fa;
+}
+
+.claims-container {
+    margin-top: 8px;
+}
+
+/* 说明书区域 */
+.detail-section-description {
+    background-color: #f0f8ff;
+}
+
+.detail-description-content {
+    margin-top: 8px;
+    font-size: 0.9em;
+    line-height: 1.6;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* CPC分类区域 */
+.detail-section-cpc {
+    background-color: #e3f2fd;
+}
+
+.cpc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 10px;
+}
+
+.cpc-item {
+    padding: 10px;
+    background-color: white;
+    border-radius: 4px;
+    border-left: 3px solid var(--primary-color);
+}
+
+.cpc-code {
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 4px;
+}
+
+.cpc-description {
+    font-size: 0.85em;
+    color: #666;
+}
+
+/* 技术领域区域 */
+.detail-section-landscapes {
+    background-color: #f3e5f5;
+}
+
+.detail-landscapes-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.landscape-tag {
+    padding: 6px 12px;
+    background-color: white;
+    border-radius: 20px;
+    font-size: 0.9em;
+    border: 1px solid #ddd;
+}
+
+/* 优先权日期区域 */
+.detail-section-priority {
+    background-color: #fff9c4;
+}
+
+.detail-priority-text {
+    margin: 0;
+}
+
