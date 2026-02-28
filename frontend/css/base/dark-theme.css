@@ -2304,6 +2304,41 @@
     color: var(--text-color) !important;
 }
 
+[data-theme="dark"] .patent-strip-image {
+    background: #1e293b !important;
+    border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .patent-strip-image .no-image {
+    color: #64748b !important;
+}
+
+[data-theme="dark"] .patent-strip-meta {
+    color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .patent-strip-meta span {
+    color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .patent-strip-error {
+    color: #f87171 !important;
+}
+
+[data-theme="dark"] .patent-tab-results-container {
+    background: transparent !important;
+}
+
+[data-theme="dark"] .patent-strip-actions .small-button {
+    background: rgba(74, 222, 128, 0.15) !important;
+    color: #4ade80 !important;
+    border-color: rgba(74, 222, 128, 0.3) !important;
+}
+
+[data-theme="dark"] .patent-strip-actions .small-button:hover {
+    background: rgba(74, 222, 128, 0.25) !important;
+}
+
 /* ========================================
    63. 解读结果容器暗黑模式覆盖
    ======================================== */
@@ -2645,6 +2680,99 @@
 /* 时间轴区域 */
 [data-theme="dark"] .detail-section-timeline {
     background-color: transparent !important;
+}
+
+/* 时间轴组件暗黑模式 */
+[data-theme="dark"] .patent-timeline-container {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%) !important;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme="dark"] .patent-timeline::before {
+    background: linear-gradient(to bottom, 
+        #4ade80 0%, 
+        #22c55e 25%, 
+        #16a34a 50%, 
+        #22c55e 75%, 
+        #4ade80 100%
+    ) !important;
+    box-shadow: 0 0 10px rgba(74, 222, 128, 0.4) !important;
+}
+
+[data-theme="dark"] .timeline-event-content {
+    background: #1e293b !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    border-left-color: #4ade80 !important;
+}
+
+[data-theme="dark"] .timeline-event:nth-child(even) .timeline-event-content {
+    border-right-color: #4ade80 !important;
+    border-left-color: transparent !important;
+}
+
+[data-theme="dark"] .timeline-event-content::before {
+    background: linear-gradient(90deg, #4ade80, #22c55e, #16a34a) !important;
+}
+
+[data-theme="dark"] .timeline-event-content:hover {
+    box-shadow: 0 8px 24px rgba(74, 222, 128, 0.25) !important;
+    border-left-color: #22c55e !important;
+}
+
+[data-theme="dark"] .timeline-event:nth-child(even) .timeline-event-content:hover {
+    border-right-color: #22c55e !important;
+}
+
+[data-theme="dark"] .timeline-event-date {
+    color: #4ade80 !important;
+}
+
+[data-theme="dark"] .timeline-event-title {
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .timeline-event-code {
+    background: linear-gradient(135deg, rgba(74, 222, 128, 0.2) 0%, rgba(34, 197, 94, 0.3) 100%) !important;
+    color: #4ade80 !important;
+    box-shadow: 0 2px 4px rgba(74, 222, 128, 0.2) !important;
+}
+
+[data-theme="dark"] .timeline-event-description {
+    color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .timeline-event-node {
+    background: #0f172a !important;
+    border-color: #4ade80 !important;
+    box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.2) !important;
+}
+
+[data-theme="dark"] .timeline-event:hover .timeline-event-node {
+    box-shadow: 0 0 0 8px rgba(74, 222, 128, 0.3), 0 0 20px rgba(74, 222, 128, 0.4) !important;
+    border-color: #22c55e !important;
+}
+
+[data-theme="dark"] .timeline-event.critical .timeline-event-node {
+    background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%) !important;
+    border-color: #4ade80 !important;
+}
+
+[data-theme="dark"] .timeline-event.critical .timeline-event-code {
+    background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%) !important;
+    color: #0f172a !important;
+}
+
+[data-theme="dark"] .timeline-event.critical .timeline-event-content {
+    background: linear-gradient(135deg, #1e293b 0%, rgba(74, 222, 128, 0.05) 100%) !important;
+    border-left-color: #22c55e !important;
+}
+
+[data-theme="dark"] .timeline-event-connector {
+    background: linear-gradient(90deg, #4ade80, #22c55e) !important;
+}
+
+[data-theme="dark"] .timeline-event:nth-child(odd) .timeline-event-connector {
+    background: linear-gradient(90deg, #22c55e, #4ade80) !important;
 }
 
 /* 法律事件区域 */
