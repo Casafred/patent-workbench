@@ -1,6 +1,47 @@
 // 功能六：在新标签页打开专利详情 - 绿色主题 + 左侧导航
 // 此文件需要在 main.js 之后加载
 
+// 检查是否是从URL参数打开的专利详情页
+(function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const patentDetailParam = urlParams.get('patent_detail');
+    
+    if (patentDetailParam && !window.opener) {
+        // 这是一个刷新后的页面，尝试从sessionStorage恢复数据
+        const cacheKey = 'patent_detail_cache_' + patentDetailParam;
+        const cachedData = sessionStorage.getItem(cacheKey);
+        
+        if (cachedData) {
+            try {
+                const data = JSON.parse(cachedData);
+                // 检查缓存是否过期（30分钟）
+                if (Date.now() - data.timestamp < 30 * 60 * 1000) {
+                    // 重新打开详情页
+                    if (data.patentResult) {
+                        // 模拟window.opener的数据
+                        window.patentResults = [data.patentResult];
+                        window.patentBatchAnalysisResults = data.analysisResult ? [data.analysisResult] : [];
+                        
+                        // 调用打开函数
+                        setTimeout(() => {
+                            window.openPatentDetailInNewTab(patentDetailParam);
+                        }, 100);
+                    }
+                } else {
+                    // 缓存过期，清除
+                    sessionStorage.removeItem(cacheKey);
+                    alert('页面数据已过期，请从主页面重新打开');
+                }
+            } catch (e) {
+                console.error('恢复专利数据失败:', e);
+                alert('无法恢复页面数据，请从主页面重新打开');
+            }
+        } else {
+            alert('未找到页面数据，请从主页面重新打开');
+        }
+    }
+})();
+
 window.openPatentDetailInNewTab = function(patentNumber) {
     // 找到对应的专利结果
     // 首先尝试从 window.patentResults 中查找
@@ -2177,9 +2218,24 @@ window.openPatentDetailInNewTab = function(patentNumber) {
         </html>
     `;
     
-    // 创建一个新窗口
-    const newWindow = window.open('', '_blank');
+    // 创建一个新窗口，使用带专利号参数的URL
+    const baseUrl = window.location.href.split('?')[0].split('#')[0];
+    const newUrl = baseUrl + '?patent_detail=' + encodeURIComponent(patentNumber);
+    const newWindow = window.open(newUrl, '_blank');
     if (newWindow) {
+        // 将专利数据存储到sessionStorage供新页面读取
+        const cacheKey = 'patent_detail_cache_' + patentNumber;
+        const cacheData = {
+            patentResult: patentResult,
+            analysisResult: analysisResult,
+            timestamp: Date.now()
+        };
+        try {
+            sessionStorage.setItem(cacheKey, JSON.stringify(cacheData));
+        } catch (e) {
+            console.warn('无法缓存专利数据:', e);
+        }
+        
         // 写入HTML内容
         newWindow.document.write(htmlContent);
         newWindow.document.close();
