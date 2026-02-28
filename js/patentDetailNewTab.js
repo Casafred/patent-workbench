@@ -1377,8 +1377,13 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 function toggleDualColumnMode() {
                     dualColumnMode = !dualColumnMode;
                     const btn = document.getElementById('dual-column-btn');
-                    const mainContent = document.querySelector('.main-content');
+                    const mainContent = document.querySelector('.content');
                     const container = document.querySelector('.container');
+                    
+                    if (!mainContent) {
+                        console.error('找不到内容区域');
+                        return;
+                    }
                     
                     if (dualColumnMode) {
                         // 开启双栏模式
