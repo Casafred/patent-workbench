@@ -664,7 +664,27 @@
                     <span class="gif-label">占位符ID: apikey-setup</span>
                 </div>
 
-                <h3>4. 登出系统</h3>
+                <h3>4. 深色模式</h3>
+                <p>本平台支持亮色/深色两种主题模式，您可以根据喜好自由切换：</p>
+                
+                <h4>切换方法</h4>
+                <ul>
+                    <li><strong>切换按钮：</strong> 点击顶部导航栏右侧的太阳/月亮图标即可切换主题</li>
+                    <li><strong>自动保存：</strong> 您的主题选择会自动保存到本地，下次访问时自动应用</li>
+                    <li><strong>全局生效：</strong> 主题切换会影响所有页面和功能模块</li>
+                </ul>
+                
+                <div class="note">
+                    <strong>提示：</strong>深色模式适合在光线较暗的环境下使用，可以减少眼睛疲劳。
+                </div>
+                
+                <!-- GIF: 深色模式 -->
+                <div class="gif-placeholder" data-gif-id="dark-mode-toggle">
+                    <span>点击右侧"GIF管理"按钮插入：深色模式切换.gif</span>
+                    <span class="gif-label">占位符ID: dark-mode-toggle</span>
+                </div>
+
+                <h3>5. 登出系统</h3>
                 <p>在主界面右上角，您可以看到当前登录的用户名和一个"登出"按钮。点击"登出"将安全退出系统，并清除您的会话信息。</p>
                 
                 <!-- GIF: 登出系统 -->
@@ -673,7 +693,7 @@
                     <span class="gif-label">占位符ID: logout-demo</span>
                 </div>
 
-                <h3>5. 全局智能剪贴板</h3>
+                <h3>6. 全局智能剪贴板</h3>
                 <p>智能剪贴板是一个强大的跨功能数据传递工具，可以在不同功能模块之间无缝传递数据。</p>
                 
                 <h4>功能特点</h4>
@@ -1602,7 +1622,7 @@
                 <h2>功能四：权利要求智能比对</h2>
             </div>
             <div class="card-body">
-                <p>此功能用于智能对比不同专利的权利要求，自动识别语言、按需翻译，提供多种可视化展示方式。</p>
+                <p>此功能用于智能对比不同专利的权利要求，自动识别语言、按需翻译，提供多种可视化展示方式。包含两个子功能：<strong>多权利要求对比</strong>和<strong>同族权利要求对比</strong>。</p>
 
                 <h4>核心技术优势</h4>
                 <ul>
@@ -1619,7 +1639,7 @@
                     <span class="gif-label">占位符ID: claims-compare-intro</span>
                 </div>
 
-                <h4>工作流程</h4>
+                <h4>多权利要求对比</h4>
                 <ol>
                     <li><strong>输入权利要求：</strong> 在输入框中输入专利的权利要求内容（最多10个）。</li>
                     <li><strong>选择对比模型：</strong> 根据需求选择合适的对比模型。</li>
@@ -1632,6 +1652,35 @@
                 <div class="gif-placeholder" data-gif-id="claims-compare-workflow">
                     <span>点击右侧"GIF管理"按钮插入：权利要求对比-工作流程.gif</span>
                     <span class="gif-label">占位符ID: claims-compare-workflow</span>
+                </div>
+
+                <h4>同族权利要求对比</h4>
+                <p>同族权利要求对比功能可以自动获取专利的同族成员，并对其权利要求进行智能对比分析。</p>
+                
+                <h5>输入模式</h5>
+                <ul>
+                    <li><strong>自动获取模式：</strong> 输入一个专利号，系统自动获取其同族专利列表</li>
+                    <li><strong>手动输入模式：</strong> 手动输入多个专利号（每行一个），适合已知同族专利号的情况</li>
+                </ul>
+                
+                <h5>工作流程</h5>
+                <ol>
+                    <li><strong>输入专利号：</strong> 选择输入模式，输入专利号或专利号列表</li>
+                    <li><strong>获取同族列表：</strong> 点击"获取同族列表"按钮（自动模式）或"添加专利"按钮（手动模式）</li>
+                    <li><strong>选择对比对象：</strong> 在同族列表中勾选需要对比的专利（至少2个）</li>
+                    <li><strong>查看原文预览：</strong> 点击"开始对比"后，系统会先显示各专利的权利要求原文预览</li>
+                    <li><strong>执行AI分析：</strong> 确认原文后，点击"开始AI分析"进行智能对比</li>
+                    <li><strong>查看对比结果：</strong> 在结果区域查看AI生成的对比分析报告</li>
+                </ol>
+                
+                <div class="note">
+                    <strong>提示：</strong>同族权利要求对比功能会先显示原文预览，让您确认获取的权利要求内容是否正确，然后再进行AI分析，避免浪费API调用。
+                </div>
+                
+                <!-- GIF: 同族对比 -->
+                <div class="gif-placeholder" data-gif-id="family-claims-comparison">
+                    <span>点击右侧"GIF管理"按钮插入：同族权利要求对比.gif</span>
+                    <span class="gif-label">占位符ID: family-claims-comparison</span>
                 </div>
 
                 <h4>可视化视图说明</h4>
@@ -1788,6 +1837,37 @@
                     <li><strong>AI解读结果：</strong> 结构化的解读内容</li>
                     <li><strong>快捷操作：</strong> 复制专利号、查看原文、重新解读等</li>
                 </ul>
+
+                <h4>专利详情新标签页</h4>
+                <p>点击专利标签页中的"新标签页打开"按钮，可以在独立的浏览器标签页中查看专利详情，提供更完整的浏览体验：</p>
+                
+                <h5>主要功能</h5>
+                <ul>
+                    <li><strong>双栏对照模式：</strong> 左侧显示原文，右侧显示译文，方便对照阅读</li>
+                    <li><strong>同步滚动：</strong> 左右两栏内容同步滚动，阅读更便捷</li>
+                    <li><strong>导航目录：</strong> 左侧导航栏可快速跳转到各个信息区块</li>
+                    <li><strong>同族对比按钮：</strong> 当专利有2个及以上同族时，显示"同族对比"快捷按钮</li>
+                    <li><strong>翻译功能：</strong> 权利要求和说明书区域提供翻译按钮，支持一键翻译</li>
+                </ul>
+                
+                <h5>页面刷新恢复</h5>
+                <p>专利详情页支持刷新后数据恢复功能：</p>
+                <ul>
+                    <li><strong>自动缓存：</strong> 打开详情页时，数据会自动缓存到浏览器</li>
+                    <li><strong>有效期：</strong> 缓存有效期为30分钟</li>
+                    <li><strong>刷新恢复：</strong> 在有效期内刷新页面，数据会自动恢复</li>
+                    <li><strong>过期提示：</strong> 缓存过期后会提示从主页面重新打开</li>
+                </ul>
+                
+                <div class="note">
+                    <strong>提示：</strong> 新标签页功能适合需要详细阅读单个专利的场景，双栏对照模式特别适合阅读外文专利。
+                </div>
+                
+                <!-- GIF: 新标签页 -->
+                <div class="gif-placeholder" data-gif-id="patent-detail-newtab">
+                    <span>点击右侧"GIF管理"按钮插入：专利详情新标签页.gif</span>
+                    <span class="gif-label">占位符ID: patent-detail-newtab</span>
+                </div>
             </div>
         </div>
 
@@ -1892,9 +1972,12 @@
                     <li><strong>多格式支持：</strong> 支持PDF、PNG、JPG、JPEG、BMP、WEBP等常见格式。</li>
                     <li><strong>智能OCR识别：</strong> 采用智谱GLM-4V视觉模型，精准识别文字、表格、公式。</li>
                     <li><strong>结构化解析：</strong> 自动区分文本、表格、公式、图片等不同内容类型。</li>
+                    <li><strong>智能缓存机制：</strong> 自动缓存OCR结果，避免重复解析，节省API调用费用。</li>
                     <li><strong>划词选择：</strong> 支持鼠标划选识别区块，快速定位和复制内容。</li>
-                    <li><strong>AI对话集成：</strong> 可直接对识别内容进行AI提问和分析。</li>
+                    <li><strong>悬浮工具栏：</strong> 选中文本后显示快捷操作工具栏，支持复制、翻译、对话、引用。</li>
+                    <li><strong>悬浮AI对话：</strong> 可拖动的悬浮对话窗口，随时对识别内容进行AI提问。</li>
                     <li><strong>多选模式：</strong> 支持批量选择多个识别区块进行统一操作。</li>
+                    <li><strong>页面范围解析：</strong> 支持自定义页面范围解析，如"1,3,5-8"格式。</li>
                 </ul>
                 
                 <!-- GIF: 功能介绍 -->
@@ -1939,6 +2022,7 @@
                         <ul>
                             <li>当前页面：仅解析当前显示的页面</li>
                             <li>全部页面：自动解析PDF所有页面</li>
+                            <li>自定义范围：支持输入页码范围，如"1,3,5-8"表示第1、3、5到8页</li>
                         </ul>
                     </li>
                     <li><strong>识别公式：</strong> 开启后可识别数学公式并转换为LaTeX格式</li>
@@ -1949,6 +2033,78 @@
                 <div class="gif-placeholder" data-gif-id="pdf-ocr-settings">
                     <span>点击右侧"GIF管理"按钮插入：PDF阅读与OCR-OCR设置.gif</span>
                     <span class="gif-label">占位符ID: pdf-ocr-settings</span>
+                </div>
+
+                <h4>智能缓存机制</h4>
+                <p>系统会自动缓存已解析的OCR结果，提供以下优势：</p>
+                <ul>
+                    <li><strong>自动缓存：</strong> 每次OCR解析完成后，结果会自动缓存到本地存储</li>
+                    <li><strong>缓存有效期：</strong> 缓存默认保存7天，过期后自动清理</li>
+                    <li><strong>节省费用：</strong> 再次打开相同文件时，直接使用缓存结果，无需重复调用API</li>
+                    <li><strong>缓存状态显示：</strong> 页面缩略图上会显示已解析页面的标记</li>
+                    <li><strong>强制刷新：</strong> 按住Shift键点击"开始OCR解析"可强制重新解析</li>
+                </ul>
+                <div class="note">
+                    <strong>提示：</strong> 缓存基于文件名、大小和修改时间生成唯一标识，如果文件内容发生变化，系统会自动重新解析。
+                </div>
+                
+                <!-- GIF: 智能缓存 -->
+                <div class="gif-placeholder" data-gif-id="pdf-ocr-cache">
+                    <span>点击右侧"GIF管理"按钮插入：PDF阅读与OCR-智能缓存.gif</span>
+                    <span class="gif-label">占位符ID: pdf-ocr-cache</span>
+                </div>
+
+                <h4>划词选择与悬浮工具栏</h4>
+                <p>在PDF查看器中，您可以通过鼠标划选来选择识别区块：</p>
+                <ul>
+                    <li><strong>划选操作：</strong> 按住鼠标左键拖动，框选需要的内容区域</li>
+                    <li><strong>悬浮工具栏：</strong> 选中内容后会自动显示工具栏，提供以下快捷操作：
+                        <ul>
+                            <li><strong>复制：</strong> 将选中内容复制到剪贴板</li>
+                            <li><strong>翻译：</strong> 对选中内容进行智能翻译</li>
+                            <li><strong>对话：</strong> 打开悬浮AI对话窗口，对选中内容提问</li>
+                            <li><strong>引用：</strong> 将选中内容添加到引用列表</li>
+                        </ul>
+                    </li>
+                    <li><strong>高亮显示：</strong> 选中的区块会在查看器中高亮显示</li>
+                </ul>
+                
+                <!-- GIF: 划词选择 -->
+                <div class="gif-placeholder" data-gif-id="pdf-ocr-selection">
+                    <span>点击右侧"GIF管理"按钮插入：PDF阅读与OCR-划词选择.gif</span>
+                    <span class="gif-label">占位符ID: pdf-ocr-selection</span>
+                </div>
+
+                <h4>悬浮AI对话窗口</h4>
+                <p>悬浮AI对话窗口是一个可拖动的独立对话面板，提供便捷的AI交互体验：</p>
+                <ul>
+                    <li><strong>打开方式：</strong>
+                        <ul>
+                            <li>点击悬浮工具栏中的"对话"按钮</li>
+                            <li>点击右侧面板中的"💬 提问"按钮</li>
+                        </ul>
+                    </li>
+                    <li><strong>窗口特性：</strong>
+                        <ul>
+                            <li>可拖动：拖动标题栏移动窗口位置</li>
+                            <li>可调整大小：拖动窗口边缘调整尺寸</li>
+                            <li>可最小化：点击最小化按钮收起窗口</li>
+                        </ul>
+                    </li>
+                    <li><strong>模型选择：</strong> 可在下拉菜单中选择不同的AI模型</li>
+                    <li><strong>上下文显示：</strong> 窗口顶部显示当前对话的上下文内容预览</li>
+                    <li><strong>快捷操作：</strong>
+                        <ul>
+                            <li>清空对话历史</li>
+                            <li>Enter发送消息（Shift+Enter换行）</li>
+                        </ul>
+                    </li>
+                </ul>
+                
+                <!-- GIF: 悬浮对话 -->
+                <div class="gif-placeholder" data-gif-id="pdf-ocr-floating-chat">
+                    <span>点击右侧"GIF管理"按钮插入：PDF阅读与OCR-悬浮对话.gif</span>
+                    <span class="gif-label">占位符ID: pdf-ocr-floating-chat</span>
                 </div>
 
                 <h4>查看器工具栏</h4>
@@ -2355,6 +2511,87 @@
                     </li>
                     <li><strong>建议：</strong> 需要深度分析时开启，快速浏览时关闭</li>
                 </ul>
+
+                <h4>Q43: 如何切换深色/亮色主题模式？</h4>
+                <p><strong>A:</strong> 主题切换方法：</p>
+                <ul>
+                    <li><strong>切换按钮：</strong> 点击顶部导航栏右侧的太阳/月亮图标即可切换主题</li>
+                    <li><strong>自动保存：</strong> 您的主题选择会自动保存到本地存储，下次访问时自动应用</li>
+                    <li><strong>全局生效：</strong> 主题切换会影响所有页面和功能模块</li>
+                    <li><strong>提示：</strong> 深色模式适合在光线较暗的环境下使用，可以减少眼睛疲劳</li>
+                </ul>
+
+                <h4>Q44: 功能四的同族权利要求对比如何使用？</h4>
+                <p><strong>A:</strong> 同族权利要求对比使用方法：</p>
+                <ul>
+                    <li><strong>自动获取模式：</strong> 输入一个专利号，系统自动获取其同族专利列表</li>
+                    <li><strong>手动输入模式：</strong> 手动输入多个专利号（每行一个），适合已知同族专利号的情况</li>
+                    <li><strong>选择对比对象：</strong> 在同族列表中勾选需要对比的专利（至少2个）</li>
+                    <li><strong>原文预览：</strong> 点击"开始对比"后，系统会先显示各专利的权利要求原文预览</li>
+                    <li><strong>AI分析：</strong> 确认原文后，点击"开始AI分析"进行智能对比</li>
+                </ul>
+
+                <h4>Q45: 功能五的专利详情新标签页有什么功能？</h4>
+                <p><strong>A:</strong> 专利详情新标签页功能：</p>
+                <ul>
+                    <li><strong>打开方式：</strong> 点击专利标签页中的"新标签页打开"按钮</li>
+                    <li><strong>双栏对照模式：</strong> 左侧显示原文，右侧显示译文，方便对照阅读</li>
+                    <li><strong>同步滚动：</strong> 左右两栏内容同步滚动，阅读更便捷</li>
+                    <li><strong>同族对比按钮：</strong> 当专利有2个及以上同族时，显示"同族对比"快捷按钮</li>
+                    <li><strong>页面刷新恢复：</strong> 缓存有效期30分钟内刷新页面，数据会自动恢复</li>
+                </ul>
+
+                <h4>Q46: 功能八的智能缓存机制如何工作？</h4>
+                <p><strong>A:</strong> 智能缓存机制的工作原理：</p>
+                <ul>
+                    <li><strong>自动缓存：</strong> 每次OCR解析完成后，结果会自动缓存到本地存储</li>
+                    <li><strong>缓存键：</strong> 基于文件名、大小和修改时间生成唯一标识，确保文件变化后重新解析</li>
+                    <li><strong>缓存有效期：</strong> 默认保存7天，过期后自动清理</li>
+                    <li><strong>节省费用：</strong> 再次打开相同文件时，直接使用缓存结果，无需重复调用API</li>
+                    <li><strong>强制刷新：</strong> 按住Shift键点击"开始OCR解析"可强制重新解析</li>
+                    <li><strong>缓存状态：</strong> 页面缩略图上会显示已解析页面的标记</li>
+                </ul>
+
+                <h4>Q47: 功能八的划词选择功能如何使用？</h4>
+                <p><strong>A:</strong> 划词选择功能使用方法：</p>
+                <ul>
+                    <li><strong>操作方式：</strong> 在PDF查看器中按住鼠标左键拖动，框选需要的内容区域</li>
+                    <li><strong>悬浮工具栏：</strong> 选中内容后会自动显示工具栏，提供复制、翻译、对话、引用等快捷操作</li>
+                    <li><strong>高亮显示：</strong> 选中的区块会在查看器中高亮显示</li>
+                    <li><strong>多选支持：</strong> 可以选择多个区块进行批量操作</li>
+                    <li><strong>注意：</strong> 划词选择需要先完成OCR解析才能使用</li>
+                </ul>
+
+                <h4>Q48: 功能八的悬浮AI对话窗口有什么特点？</h4>
+                <p><strong>A:</strong> 悬浮AI对话窗口的特点：</p>
+                <ul>
+                    <li><strong>可拖动：</strong> 拖动标题栏可移动窗口位置，不影响查看文档</li>
+                    <li><strong>可调整大小：</strong> 拖动窗口边缘可调整窗口尺寸</li>
+                    <li><strong>可最小化：</strong> 点击最小化按钮可收起窗口，需要时再展开</li>
+                    <li><strong>模型选择：</strong> 可在下拉菜单中选择不同的AI模型</li>
+                    <li><strong>上下文显示：</strong> 窗口顶部显示当前对话的上下文内容预览</li>
+                    <li><strong>智能上下文：</strong> 选中文本后点击"对话"，会自动将选中内容作为上下文</li>
+                </ul>
+
+                <h4>Q49: 功能八支持哪些页面范围解析格式？</h4>
+                <p><strong>A:</strong> 页面范围解析支持的格式：</p>
+                <ul>
+                    <li><strong>单页：</strong> 输入单个页码，如 <code>5</code> 表示只解析第5页</li>
+                    <li><strong>连续范围：</strong> 使用连字符，如 <code>5-8</code> 表示解析第5到第8页</li>
+                    <li><strong>多范围：</strong> 使用逗号分隔，如 <code>1,3,5-8</code> 表示解析第1、3、5到8页</li>
+                    <li><strong>组合使用：</strong> 可以混合使用，如 <code>1-3,5,7-10</code></li>
+                    <li><strong>注意：</strong> 页码从1开始，超出文档页数范围会被自动忽略</li>
+                </ul>
+
+                <h4>Q50: 功能八的悬浮工具栏有哪些快捷操作？</h4>
+                <p><strong>A:</strong> 悬浮工具栏提供的快捷操作：</p>
+                <ul>
+                    <li><strong>复制：</strong> 将选中内容复制到剪贴板，方便粘贴到其他地方</li>
+                    <li><strong>翻译：</strong> 对选中内容进行智能翻译，支持多种语言</li>
+                    <li><strong>对话：</strong> 打开悬浮AI对话窗口，对选中内容进行提问和分析</li>
+                    <li><strong>引用：</strong> 将选中内容添加到引用列表，方便后续整理</li>
+                    <li><strong>提示：</strong> 工具栏会在选中内容后自动显示，点击其他位置会自动隐藏</li>
+                </ul>
             </div>
         </div>
     </main>
@@ -2400,6 +2637,7 @@
         'login-demo': '登录演示.gif',
         'interface-overview': '界面概览.gif',
         'apikey-setup': 'API-Key设置.gif',
+        'dark-mode-toggle': '深色模式切换.gif',
         'logout-demo': '登出系统.gif',
         'smart-clipboard-intro': '智能剪贴板-功能介绍.gif',
         
@@ -2434,6 +2672,7 @@
         'claims-compare-intro': '权利要求对比-功能介绍.gif',
         'claims-compare-workflow': '权利要求对比-工作流程.gif',
         'claims-compare-visualization': '权利要求对比-可视化视图.gif',
+        'family-claims-comparison': '同族权利要求对比.gif',
         
         // 功能五：批量专利解读
         'patent-batch-intro': '批量专利解读-功能介绍.gif',
@@ -2442,6 +2681,7 @@
         'patent-batch-template': '批量专利解读-模板管理.gif',
         'patent-batch-cache': '批量专利解读-缓存与历史.gif',
         'patent-batch-workflow': '批量专利解读-工作流程.gif',
+        'patent-detail-newtab': '专利详情新标签页.gif',
         
         // 功能六：权利要求处理
         'claims-processor-intro': '权利要求处理-功能介绍.gif',
@@ -2457,6 +2697,9 @@
         'pdf-ocr-interface': 'PDF阅读与OCR-界面布局.gif',
         'pdf-ocr-workflow': 'PDF阅读与OCR-工作流程.gif',
         'pdf-ocr-settings': 'PDF阅读与OCR-OCR设置.gif',
+        'pdf-ocr-cache': 'PDF阅读与OCR-智能缓存.gif',
+        'pdf-ocr-selection': 'PDF阅读与OCR-划词选择.gif',
+        'pdf-ocr-floating-chat': 'PDF阅读与OCR-悬浮对话.gif',
         'pdf-ocr-toolbar': 'PDF阅读与OCR-查看器工具栏.gif',
         'pdf-ocr-ai-chat': 'PDF阅读与OCR-AI对话.gif',
         'pdf-ocr-export': 'PDF阅读与OCR-导出功能.gif'

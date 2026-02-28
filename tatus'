@@ -1,0 +1,274 @@
+[33m8680493[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m update
+[33m1cc297d[m fix-dual-column-nav-and-sync-scroll
+[33m69fd225[m fix-button-alignment
+[33m7c28141[m improve-dual-column-and-header-layout
+[33md97f519[m dark-mode-fix
+[33m07976a9[m fix-thumbnail-multi-drawings
+[33mbd0bed1[m 更新Landing页：关于我区域添加照片，功能截图添加实际图片
+[33mba3d4cf[m 优化Landing页：emoji替换为SVG图标，功能截图添加倾斜3D效果
+[33m618b81a[m 添加Hero背景图到Landing页面
+[33m98398af[m add-page-refresh-recovery
+[33ma2aa881[m fix-dual-column-selector
+[33ma9da062[m fix-nav-and-layout-issues
+[33mafa63d8[m update-patent-detail-page
+[33mdfe8aa3[m update
+[33mb6d65eb[m update
+[33mf9e1d01[m fix-button-center
+[33m1a7df78[m fix-landing-route-in-auth
+[33m9dc275d[m feat-image-viewer-enhancements
+[33m91f06c7[m update
+[33m1fb7f7d[m alignment
+[33m7426e15[m fix-newtab-translation
+[33m36d4053[m fix-image-viewer
+[33m0ad2e53[m fix-title-wrap-and-landing-route
+[33m363a6fa[m fix-qrcode-image-name
+[33m60abea4[m fix-footer-visibility
+[33m1a396d0[m fix: add dark mode styles for chat history, AI panel, template manager, multi-image viewer and more
+[33ma30ddbe[m update-landing-8features-footer
+[33m49893d4[m fix: vanta background respects saved theme on page load
+[33mff68f32[m feat: add dark mode styles for all small buttons across pages
+[33m5018b3b[m feat: add landing_logo.webp
+[33m8f1094f[m feat: add dark_logo.webp for dark mode
+[33m12ff2ff[m feat: add dark_logo.webp and fix logo path
+[33md1a7036[m fix-links-logo
+[33mb5390f4[m fix: correct logo path case sensitivity
+[33mf689943[m feat: switch logo to dark_logo.webp in dark mode
+[33mea3fdf4[m fix: comprehensive dark mode improvements
+[33m730478a[m landing-page-update
+[33m09fe4f5[m fix: theme toggle button style and click handler
+[33m052b791[m feat: dark mode theme toggle
+[33mbb0aa71[m fix_ppocr_token_input
+[33m183e4ff[m feat-drawings-viewer-and-strip-fix
+[33m0506ced[m 修复同族对比按钮样式和功能问题
+[33ma781c73[m fix-drawings-and-claims
+[33m696e6f3[m fix_ocr_issues
+[33md27a3c2[m 优化同族权利要求对比功能的按钮样式和信息提示框
+[33m272321d[m 将HTML文件中的emoji替换为SVG图标
+[33m79a0dbf[m 将功能六和功能八页面中的emoji符号替换为SVG图标
+[33m3e88a03[m fix-await-cache-loading
+[33ma732463[m feat-pdf-ocr-improvements
+[33ma783bb2[m 修复多图查看器关闭按钮被全局CSS覆盖的问题
+[33m195edd0[m feature_lock_system
+[33m2b5afe5[m feat: 同族权利要求对比增强 - AI分析前显示原文预览，优化获取同族列表按钮样式
+[33m386f5d0[m 修复多图查看器关闭按钮显示问题
+[33m6363fd7[m feat: add family comparison button in new tab page
+[33me8eeab7[m 将调试面板改为绿色主题
+[33m7c454d9[m fix: load models from config and fix button position in new tab
+[33m904ab88[m feat: optimize translation feature with non-blocking UI and caching
+[33m67c480f[m 修复分阶段处理数据传递问题并添加调试日志
+[33m0c96a5f[m feat(功能八): 翻译结果支持Markdown渲染显示
+[33md60074d[m 优化功能七智能附图标记流程：分阶段处理避免超时
+[33mf8f3a88[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m update
+[33m8680493[m update
+[33m1cc297d[m fix-dual-column-nav-and-sync-scroll
+[33m69fd225[m fix-button-alignment
+[33m7c28141[m improve-dual-column-and-header-layout
+[33md97f519[m dark-mode-fix
+[33m07976a9[m fix-thumbnail-multi-drawings
+[33mbd0bed1[m 更新Landing页：关于我区域添加照片，功能截图添加实际图片
+[33mba3d4cf[m 优化Landing页：emoji替换为SVG图标，功能截图添加倾斜3D效果
+[33m618b81a[m 添加Hero背景图到Landing页面
+[33m98398af[m add-page-refresh-recovery
+[33ma2aa881[m fix-dual-column-selector
+[33ma9da062[m fix-nav-and-layout-issues
+[33mafa63d8[m update-patent-detail-page
+[33mdfe8aa3[m update
+[33mb6d65eb[m update
+[33mf9e1d01[m fix-button-center
+[33m1a7df78[m fix-landing-route-in-auth
+[33m9dc275d[m feat-image-viewer-enhancements
+[33m91f06c7[m update
+[33m1fb7f7d[m alignment
+[33m7426e15[m fix-newtab-translation
+[33m36d4053[m fix-image-viewer
+[33m0ad2e53[m fix-title-wrap-and-landing-route
+[33m363a6fa[m fix-qrcode-image-name
+[33m60abea4[m fix-footer-visibility
+[33m1a396d0[m fix: add dark mode styles for chat history, AI panel, template manager, multi-image viewer and more
+[33ma30ddbe[m update-landing-8features-footer
+[33m49893d4[m fix: vanta background respects saved theme on page load
+[33mff68f32[m feat: add dark mode styles for all small buttons across pages
+[33m5018b3b[m feat: add landing_logo.webp
+[33m8f1094f[m feat: add dark_logo.webp for dark mode
+[33m12ff2ff[m feat: add dark_logo.webp and fix logo path
+[33md1a7036[m fix-links-logo
+[33mb5390f4[m fix: correct logo path case sensitivity
+[33mf689943[m feat: switch logo to dark_logo.webp in dark mode
+[33mea3fdf4[m fix: comprehensive dark mode improvements
+[33m730478a[m landing-page-update
+[33m09fe4f5[m fix: theme toggle button style and click handler
+[33m052b791[m feat: dark mode theme toggle
+[33mbb0aa71[m fix_ppocr_token_input
+[33m183e4ff[m feat-drawings-viewer-and-strip-fix
+[33m0506ced[m 修复同族对比按钮样式和功能问题
+[33ma781c73[m fix-drawings-and-claims
+[33m696e6f3[m fix_ocr_issues
+[33md27a3c2[m 优化同族权利要求对比功能的按钮样式和信息提示框
+[33m272321d[m 将HTML文件中的emoji替换为SVG图标
+[33m79a0dbf[m 将功能六和功能八页面中的emoji符号替换为SVG图标
+[33m3e88a03[m fix-await-cache-loading
+[33ma732463[m feat-pdf-ocr-improvements
+[33ma783bb2[m 修复多图查看器关闭按钮被全局CSS覆盖的问题
+[33m195edd0[m feature_lock_system
+[33m2b5afe5[m feat: 同族权利要求对比增强 - AI分析前显示原文预览，优化获取同族列表按钮样式
+[33m386f5d0[m 修复多图查看器关闭按钮显示问题
+[33m6363fd7[m feat: add family comparison button in new tab page
+[33me8eeab7[m 将调试面板改为绿色主题
+[33m7c454d9[m fix: load models from config and fix button position in new tab
+[33m904ab88[m feat: optimize translation feature with non-blocking UI and caching
+[33m67c480f[m 修复分阶段处理数据传递问题并添加调试日志
+[33m0c96a5f[m feat(功能八): 翻译结果支持Markdown渲染显示
+[33md60074d[m 优化功能七智能附图标记流程：分阶段处理避免超时
+[33m659e507[m fix(功能八): 修改翻译功能为弹窗显示，与下方翻译保持一致
+[33m5c1e308[m fix: optimize translate function to call zhipu API directly
+[33m089ba1a[m fix(功能八): 修复翻译完成后内容不显示的问题
+[33m28eed9d[m restore
+[33m5f389be[m revert
+[33m1d44707[m fix
+[33m014c5b0[m refactor
+[33ma87896b[m fix
+[33md8fb773[m refactor: pass patent data via script tag to avoid template string issues
+[33m5738351[m fix: pass patent data via window object to avoid HTML escaping issues
+[33m9b02e59[m fix: escape HTML characters in JSON.stringify output to prevent syntax errors
+[33m72301d1[m fix: fix newline escaping issues in patentDetailNewTab.js template strings
+[33m50b56c1[m fix: escape backticks in template string for patentDetailNewTab.js
+[33m3fd640c[m fix
+[33md9fa92a[m fix
+[33ma70fb05[m fix: 使用!important覆盖CSS类样式，确保头部显示正确
+[33m8333163[m fix
+[33m8a6ef81[m fix
+[33m567a1a7[m fix
+[33mb0f8c87[m fix: 修复并排对比视图头部样式问题
+[33m9a8cdbe[m fix
+[33m17a0b59[m fix
+[33m43181ba[m update
+[33mb95e23a[m feat:pdf_ocr_improvements
+[33m31e3a90[m feat: 新增手动输入同族专利号功能
+[33m8583081[m fix: 修复并排对比视图头部显示和语言切换功能
+[33m2fbb769[m fix: 修复矩阵表格重复显示和并排对比视图数据问题
+[33mb01bb68[m style: 统一并排对比和矩阵视图的展示方式与手动输入对比一致
+[33m9d876b9[m style: 统一同族专利对比的展示方式与手动输入对比一致
+[33m6d08ba1[m fix: 修复功能四标签页内容不显示的问题
+[33m6a72373[m fix: 修复视图切换按钮无响应和添加缺失的CSS样式
+[33mce9f88a[m fix: 修复对比结果数据结构访问问题
+[33m41dc738[m fix: 修复对比API请求缺少Authorization头导致的401错误
+[33m567ca0a[m fix: 修复API请求未携带session cookie导致的401错误
+[33ma04b18f[m fix: 修复对比同族专利权利要求API的数据访问问题
+[33m320bb1b[m fix: 修复同族专利抓取不完整的问题
+[33me3a506d[m fix: 修复前端API响应数据结构访问问题
+[33m6d1f816[m fix: 修复获取同族专利列表API的数据访问问题
+[33mf7e90f1[m fix: 修复同族权利要求对比页面为空的问题
+[33m5ee5560[m fix: 添加调试日志并暴露 loadFamilyComparisonHTML 函数到全局
+[33m3b36413[m fix: 修复同族权利要求对比功能初始化时机问题
+[33m2e57270[m feat: 添加同族权利要求对比分析功能
+[33me9a8e04[m v26
+[33m0451b34[m v26
+[33md225b9a[m add-guest-limit-notice-ui
+[33me6e9bae[m add-guest-patent-search-limit
+[33m269978f[m add_fee_disclaimer_to_all_docs
+[33m669698c[m fix-guest-mode-cache-and-pdf-restrictions
+[33made6aed[m update_help_guest_mode_unified_batch
+[33m89ff636[m guest-mode-restrictions-update
+[33m9e867ca[m update_help_page
+[33m66f52f5[m guest-mode-feature
+[33mb5346b7[m fix-model-selector-and-checkbox-style
+[33m0e792d4[m fix-unified-batch-container
+[33m833fdbb[m remove-old-batch-files
+[33mc5f64b8[m unified-batch-merge
+[33m2729e6e[m 优化导入导出模态框样式，统一绿色主题
+[33mc8a6597[m 重构用户数据导入导出模态框组件
+[33me5f5769[m 重命名功能标签页名称
+[33mddae42d[m fix-modal-styles-injection
+[33m5575048[m fix-modal-overlay-style
+[33md14e9ad[m fix-bug
+[33mf0d5e99[m fix-userdata-ui
+[33m29448aa[m user-cache-system
+[33m0b8b60f[m loading-vanta-animation
+[33m528bf6e[m fix-ocr-render-blocks-visibility
+[33m6ef4a55[m feat-ocr-cache-page-range
+[33m2491636[m 优化新标签页导航栏：未爬取字段标红不可点击
+[33m0ef3f6b[m 优化历史记录按钮：合并爬取和解读按钮，添加并解读勾选框
+[33m3721c15[m 优化功能六：字段选择器保存按钮、字段选择生效、弹窗实时显示解读结果
+[33md382d9b[m refactor:fix-js-syntax-conflict
+[33m1b5bd5e[m fix: remove all template strings from JS
+[33m6a948b3[m fix: avoid jinja2 template parsing
+[33m843a10f[m fix:raw-tag-entire-html
+[33m2e0fe6f[m fix:jinja2-raw-tag
+[33mcb14db4[m fix:center-user-display
+[33mfaac736[m feat:user-management-center
+[33mf188f13[m fix:user-actions-layout
+[33m28530dd[m feat:change-username
+[33m55da413[m fix:autocomplete-and-style
+[33m861f85b[m fix:modal-display
+[33m5820bec[m feat:enhance-auth
+[33mef14628[m remove-duplicate-qr-button
+[33m6bf3f5c[m fix-admin-api-path
+[33m762bad9[m fix-login-and-qr-design
+[33m5ae4226[m fix-ui-layout
+[33m08aeb6b[m form-update
+[33mae3515b[m sidebar-qr
+[33me99a1be[m registration-system
+[33mf5d48d0[m 修复：功能六AI问答框不再显示功能一的联网搜索状态提示
+[33m736f455[m fix-panel-reference
+[33m7b3b8e1[m more-debug-logs
+[33m27f59f0[m fix-copy-event-overwrite
+[33mfdabed0[m debug-clipboard-issue
+[33m6c192b8[m buttons
+[33me276743[m ui
+[33md29c4c8[m fix-clear-selection-before-copy
+[33ma6d2b2c[m update
+[33m6b05af5[m green-theme
+[33m4033191[m alfred-x-ip-branding
+[33m350da20[m loading-animation
+[33m34e7ca4[m fix-clipboard-panel-update
+[33m6318bae[m fix-clipboard-sync
+[33m624ef26[m refactor-emoji-to-svg
+[33m7fd94a0[m update
+[33m352678a[m 更新README.md：添加功能九PDF阅读与OCR、功能亮点、更新版本信息至2.6
+[33m0fbb5bd[m 更新Help.html：添加功能九PDF阅读与OCR、功能六增强功能、全局智能剪贴板帮助内容
+[33mcbf37b8[m update
+[33m7c54367[m update
+[33mf3ceab4[m 修复help按钮：边缘可见，位于主容器外侧
+[33m5a7c395[m 优化help按钮位置：移至主容器外侧，不占用内部空间
+[33m1877b67[m update
+[33m01ce722[m update
+[33m04dfddc[m update
+[33m57bb877[m update
+[33m7b38fa4[m update
+[33meb6b424[m update
+[33m693eec8[m update
+[33m4a2d5f2[m update
+[33mf16cdaf[m update
+[33m0d68ba1[m update
+[33m14bd2d0[m update
+[33m8fad538[m update
+[33m6608324[m update
+[33m000f61b[m update
+[33mdaece3f[m update
+[33m1d012fe[m update
+[33m82cdb8e[m update
+[33m1d9b8b1[m update
+[33m96a5294[m update
+[33mb7669cd[m update
+[33m40eccfb[m update
+[33md736295[m update
+[33m9c941e2[m update
+[33m8645d2f[m update
+[33mb87ff0f[m update
+[33mcb1873a[m update
+[33m9f7af82[m update
+[33m8e380c7[m update
+[33m3ce9981[m update
+[33ma357626[m update
+[33m60a74f8[m update
+[33m61e6d35[m update
+[33mec95ce7[m update
+[33m3ab2c68[m update
+[33mc8e7900[m update
+[33m55159f6[m update
+[33m7acfaf5[m update
+[33m235c51f[m update
+[33m8fc0074[m update
+[33m6196e60[m update
+[33md02d9e9[m update
+[33m63c6880[m fix: improve OCR viewer UI and block display

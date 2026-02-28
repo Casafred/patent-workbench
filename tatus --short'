@@ -1,0 +1,50 @@
+[33mf8f3a88[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m update
+[33m8680493[m update
+[33m1cc297d[m fix-dual-column-nav-and-sync-scroll
+[33m69fd225[m fix-button-alignment
+[33m7c28141[m improve-dual-column-and-header-layout
+[33md97f519[m dark-mode-fix
+[33m07976a9[m fix-thumbnail-multi-drawings
+[33mbd0bed1[m 更新Landing页：关于我区域添加照片，功能截图添加实际图片
+[33mba3d4cf[m 优化Landing页：emoji替换为SVG图标，功能截图添加倾斜3D效果
+[33m618b81a[m 添加Hero背景图到Landing页面
+[33m98398af[m add-page-refresh-recovery
+[33ma2aa881[m fix-dual-column-selector
+[33ma9da062[m fix-nav-and-layout-issues
+[33mafa63d8[m update-patent-detail-page
+[33mdfe8aa3[m update
+[33mb6d65eb[m update
+[33mf9e1d01[m fix-button-center
+[33m1a7df78[m fix-landing-route-in-auth
+[33m9dc275d[m feat-image-viewer-enhancements
+[33m91f06c7[m update
+[33m1fb7f7d[m alignment
+[33m7426e15[m fix-newtab-translation
+[33m36d4053[m fix-image-viewer
+[33m0ad2e53[m fix-title-wrap-and-landing-route
+[33m363a6fa[m fix-qrcode-image-name
+[33m60abea4[m fix-footer-visibility
+[33m1a396d0[m fix: add dark mode styles for chat history, AI panel, template manager, multi-image viewer and more
+[33ma30ddbe[m update-landing-8features-footer
+[33m49893d4[m fix: vanta background respects saved theme on page load
+[33mff68f32[m feat: add dark mode styles for all small buttons across pages
+[33m5018b3b[m feat: add landing_logo.webp
+[33m8f1094f[m feat: add dark_logo.webp for dark mode
+[33m12ff2ff[m feat: add dark_logo.webp and fix logo path
+[33md1a7036[m fix-links-logo
+[33mb5390f4[m fix: correct logo path case sensitivity
+[33mf689943[m feat: switch logo to dark_logo.webp in dark mode
+[33mea3fdf4[m fix: comprehensive dark mode improvements
+[33m730478a[m landing-page-update
+[33m09fe4f5[m fix: theme toggle button style and click handler
+[33m052b791[m feat: dark mode theme toggle
+[33mbb0aa71[m fix_ppocr_token_input
+[33m183e4ff[m feat-drawings-viewer-and-strip-fix
+[33m0506ced[m 修复同族对比按钮样式和功能问题
+[33ma781c73[m fix-drawings-and-claims
+[33m696e6f3[m fix_ocr_issues
+[33md27a3c2[m 优化同族权利要求对比功能的按钮样式和信息提示框
+[33m272321d[m 将HTML文件中的emoji替换为SVG图标
+[33m79a0dbf[m 将功能六和功能八页面中的emoji符号替换为SVG图标
+[33m3e88a03[m fix-await-cache-loading
+[33ma732463[m feat-pdf-ocr-improvements

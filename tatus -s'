@@ -1,0 +1,100 @@
+[33m8680493[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m update
+[33m1cc297d[m fix-dual-column-nav-and-sync-scroll
+[33m69fd225[m fix-button-alignment
+[33m7c28141[m improve-dual-column-and-header-layout
+[33md97f519[m dark-mode-fix
+[33m07976a9[m fix-thumbnail-multi-drawings
+[33mbd0bed1[m 更新Landing页：关于我区域添加照片，功能截图添加实际图片
+[33mba3d4cf[m 优化Landing页：emoji替换为SVG图标，功能截图添加倾斜3D效果
+[33m618b81a[m 添加Hero背景图到Landing页面
+[33m98398af[m add-page-refresh-recovery
+[33ma2aa881[m fix-dual-column-selector
+[33ma9da062[m fix-nav-and-layout-issues
+[33mafa63d8[m update-patent-detail-page
+[33mdfe8aa3[m update
+[33mb6d65eb[m update
+[33mf9e1d01[m fix-button-center
+[33m1a7df78[m fix-landing-route-in-auth
+[33m9dc275d[m feat-image-viewer-enhancements
+[33m91f06c7[m update
+[33m1fb7f7d[m alignment
+[33m7426e15[m fix-newtab-translation
+[33m36d4053[m fix-image-viewer
+[33m0ad2e53[m fix-title-wrap-and-landing-route
+[33m363a6fa[m fix-qrcode-image-name
+[33m60abea4[m fix-footer-visibility
+[33m1a396d0[m fix: add dark mode styles for chat history, AI panel, template manager, multi-image viewer and more
+[33ma30ddbe[m update-landing-8features-footer
+[33m49893d4[m fix: vanta background respects saved theme on page load
+[33mff68f32[m feat: add dark mode styles for all small buttons across pages
+[33m5018b3b[m feat: add landing_logo.webp
+[33m8f1094f[m feat: add dark_logo.webp for dark mode
+[33m12ff2ff[m feat: add dark_logo.webp and fix logo path
+[33md1a7036[m fix-links-logo
+[33mb5390f4[m fix: correct logo path case sensitivity
+[33mf689943[m feat: switch logo to dark_logo.webp in dark mode
+[33mea3fdf4[m fix: comprehensive dark mode improvements
+[33m730478a[m landing-page-update
+[33m09fe4f5[m fix: theme toggle button style and click handler
+[33m052b791[m feat: dark mode theme toggle
+[33mbb0aa71[m fix_ppocr_token_input
+[33m183e4ff[m feat-drawings-viewer-and-strip-fix
+[33m0506ced[m 修复同族对比按钮样式和功能问题
+[33ma781c73[m fix-drawings-and-claims
+[33m696e6f3[m fix_ocr_issues
+[33md27a3c2[m 优化同族权利要求对比功能的按钮样式和信息提示框
+[33m272321d[m 将HTML文件中的emoji替换为SVG图标
+[33m79a0dbf[m 将功能六和功能八页面中的emoji符号替换为SVG图标
+[33m3e88a03[m fix-await-cache-loading
+[33ma732463[m feat-pdf-ocr-improvements
+[33ma783bb2[m 修复多图查看器关闭按钮被全局CSS覆盖的问题
+[33m195edd0[m feature_lock_system
+[33m2b5afe5[m feat: 同族权利要求对比增强 - AI分析前显示原文预览，优化获取同族列表按钮样式
+[33m386f5d0[m 修复多图查看器关闭按钮显示问题
+[33m6363fd7[m feat: add family comparison button in new tab page
+[33me8eeab7[m 将调试面板改为绿色主题
+[33m7c454d9[m fix: load models from config and fix button position in new tab
+[33m904ab88[m feat: optimize translation feature with non-blocking UI and caching
+[33m67c480f[m 修复分阶段处理数据传递问题并添加调试日志
+[33m0c96a5f[m feat(功能八): 翻译结果支持Markdown渲染显示
+[33md60074d[m 优化功能七智能附图标记流程：分阶段处理避免超时
+[33m659e507[m fix(功能八): 修改翻译功能为弹窗显示，与下方翻译保持一致
+[33m5c1e308[m fix: optimize translate function to call zhipu API directly
+[33m089ba1a[m fix(功能八): 修复翻译完成后内容不显示的问题
+[33m28eed9d[m restore
+[33m5f389be[m revert
+[33m1d44707[m fix
+[33m014c5b0[m refactor
+[33ma87896b[m fix
+[33md8fb773[m refactor: pass patent data via script tag to avoid template string issues
+[33m5738351[m fix: pass patent data via window object to avoid HTML escaping issues
+[33m9b02e59[m fix: escape HTML characters in JSON.stringify output to prevent syntax errors
+[33m72301d1[m fix: fix newline escaping issues in patentDetailNewTab.js template strings
+[33m50b56c1[m fix: escape backticks in template string for patentDetailNewTab.js
+[33m3fd640c[m fix
+[33md9fa92a[m fix
+[33ma70fb05[m fix: 使用!important覆盖CSS类样式，确保头部显示正确
+[33m8333163[m fix
+[33m8a6ef81[m fix
+[33m567a1a7[m fix
+[33mb0f8c87[m fix: 修复并排对比视图头部样式问题
+[33m9a8cdbe[m fix
+[33m17a0b59[m fix
+[33m43181ba[m update
+[33mb95e23a[m feat:pdf_ocr_improvements
+[33m31e3a90[m feat: 新增手动输入同族专利号功能
+[33m8583081[m fix: 修复并排对比视图头部显示和语言切换功能
+[33m2fbb769[m fix: 修复矩阵表格重复显示和并排对比视图数据问题
+[33mb01bb68[m style: 统一并排对比和矩阵视图的展示方式与手动输入对比一致
+[33m9d876b9[m style: 统一同族专利对比的展示方式与手动输入对比一致
+[33m6d08ba1[m fix: 修复功能四标签页内容不显示的问题
+[33m6a72373[m fix: 修复视图切换按钮无响应和添加缺失的CSS样式
+[33mce9f88a[m fix: 修复对比结果数据结构访问问题
+[33m41dc738[m fix: 修复对比API请求缺少Authorization头导致的401错误
+[33m567ca0a[m fix: 修复API请求未携带session cookie导致的401错误
+[33ma04b18f[m fix: 修复对比同族专利权利要求API的数据访问问题
+[33m320bb1b[m fix: 修复同族专利抓取不完整的问题
+[33me3a506d[m fix: 修复前端API响应数据结构访问问题
+[33m6d1f816[m fix: 修复获取同族专利列表API的数据访问问题
+[33mf7e90f1[m fix: 修复同族权利要求对比页面为空的问题
+[33m5ee5560[m fix: 添加调试日志并暴露 loadFamilyComparisonHTML 函数到全局

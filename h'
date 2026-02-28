@@ -1,0 +1,186 @@
+warning: in the working copy of 'config/providers.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'frontend/help.html', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/config/providers.json b/config/providers.json[m
+[1mindex 200d0bb..1deced5 100644[m
+[1m--- a/config/providers.json[m
+[1m+++ b/config/providers.json[m
+[36m@@ -5,22 +5,22 @@[m
+       "api_base": "https://open.bigmodel.cn/api/paas/v4",[m
+       "sdk_class": "zhipuai.ZhipuAI",[m
+       "models": [[m
+[31m-        {"id": "glm-4-flash", "name": "GLM-4-Flash", "type": "chat", "context": "128K", "free": true},[m
+[31m-        {"id": "glm-4-flashx-250414", "name": "GLM-4-FlashX", "type": "chat", "context": "128K"},[m
+[31m-        {"id": "glm-4-long", "name": "GLM-4-Long", "type": "chat", "context": "1M"},[m
+[31m-        {"id": "glm-4-plus", "name": "GLM-4-Plus", "type": "chat", "context": "128K"},[m
+[32m+[m[32m        {"id": "glm-4-flash", "name": "GLM-4-Flash", "type": "chat", "context": "128K", "free": true, "input_price": 0, "output_price": 0},[m
+[32m+[m[32m        {"id": "glm-4-flashx-250414", "name": "GLM-4-FlashX", "type": "chat", "context": "128K", "input_price": 0.5, "output_price": 0.25},[m
+[32m+[m[32m        {"id": "glm-4-long", "name": "GLM-4-Long", "type": "chat", "context": "1M", "input_price": 1, "output_price": 0.5},[m
+[32m+[m[32m        {"id": "glm-4-plus", "name": "GLM-4-Plus", "type": "chat", "context": "128K", "input_price": 5, "output_price": 2.5},[m
+         {"id": "glm-4-air-250414", "name": "GLM-4-Air", "type": "chat", "context": "128K"},[m
+         {"id": "glm-4-airx", "name": "GLM-4-AirX", "type": "chat", "context": "8K"},[m
+[31m-        {"id": "glm-4.5-air", "name": "GLM-4.5-Air", "type": "chat", "context": "128K"},[m
+[32m+[m[32m        {"id": "glm-4.5-air", "name": "GLM-4.5-Air", "type": "chat", "context": "128K", "input_price": 1, "output_price": 6},[m
+         {"id": "glm-4.5-airx", "name": "GLM-4.5-AirX", "type": "chat", "context": "128K"},[m
+         {"id": "glm-4.7-flash", "name": "GLM-4.7-Flash", "type": "chat", "context": "128K"},[m
+         {"id": "glm-4.7-flashx", "name": "GLM-4.7-FlashX", "type": "chat", "context": "200K"},[m
+[31m-        {"id": "glm-4.7", "name": "GLM-4.7", "type": "chat", "context": "128K"},[m
+[31m-        {"id": "glm-z1-flash", "name": "GLM-Z1-Flash", "type": "chat", "context": "128K", "free": true, "thinking": true},[m
+[31m-        {"id": "glm-z1-flashx", "name": "GLM-Z1-FlashX", "type": "chat", "context": "128K", "thinking": true},[m
+[32m+[m[32m        {"id": "glm-4.7", "name": "GLM-4.7", "type": "chat", "context": "128K", "input_price": 3, "output_price": 12},[m
+[32m+[m[32m        {"id": "glm-z1-flash", "name": "GLM-Z1-Flash", "type": "chat", "context": "128K", "free": true, "thinking": true, "input_price": 0, "output_price": 0},[m
+[32m+[m[32m        {"id": "glm-z1-flashx", "name": "GLM-Z1-FlashX", "type": "chat", "context": "128K", "thinking": true, "input_price": 0.1, "output_price": 0},[m
+         {"id": "glm-z1-air", "name": "GLM-Z1-Air", "type": "chat", "context": "128K", "thinking": true},[m
+         {"id": "glm-z1-airx", "name": "GLM-Z1-AirX", "type": "chat", "context": "32K", "thinking": true},[m
+[31m-        {"id": "glm-5", "name": "GLM-5", "type": "chat", "context": "128K"},[m
+[32m+[m[32m        {"id": "glm-5", "name": "GLM-5", "type": "chat", "context": "128K", "input_price": 5, "output_price": 20},[m
+         {"id": "glm-ocr", "name": "GLM-OCR", "type": "ocr", "context": "-"}[m
+       ],[m
+       "default_model": "glm-4-flash",[m
+[36m@@ -39,14 +39,47 @@[m
+       "api_base": "https://dashscope.aliyuncs.com/compatible-mode/v1",[m
+       "sdk_class": "openai.OpenAI",[m
+       "models": [[m
+[31m-        {"id": "qwen-turbo", "name": "通义千问-Turbo", "type": "chat", "context": "128K"},[m
+[31m-        {"id": "qwen-plus", "name": "通义千问-Plus", "type": "chat", "context": "128K"},[m
+[31m-        {"id": "qwen-max", "name": "通义千问-Max", "type": "chat", "context": "32K"},[m
+[31m-        {"id": "qwen-long", "name": "通义千问-Long", "type": "chat", "context": "1M"},[m
+[31m-        {"id": "qwen-vl-plus", "name": "通义千问-VL-Plus", "type": "multimodal", "context": "32K"},[m
+[31m-        {"id": "qwen-vl-max", "name": "通义千问-VL-Max", "type": "multimodal", "context": "32K"},[m
+[31m-        {"id": "qwq-plus", "name": "QwQ-Plus", "type": "chat", "context": "128K", "thinking_only": true},[m
+[31m-        {"id": "deepseek-r1", "name": "DeepSeek-R1", "type": "chat", "context": "64K", "thinking_only": true}[m
+[32m+[m[32m        {"id": "qwen-flash", "name": "通义千问-Flash", "type": "chat", "context": "1M", "input_price": 0.15, "output_price": 1.5, "thinking": true},[m
+[32m+[m[32m        {"id": "qwen-turbo", "name": "通义千问-Turbo", "type": "chat", "context": "128K", "input_price": 0.3, "output_price": 0.6, "thinking": true},[m
+[32m+[m[32m        {"id": "qwen-turbo-latest", "name": "通义千问-Turbo-Latest", "type": "chat", "context": "128K", "input_price": 0.3, "output_price": 0.6, "thinking": true},[m
+[32m+[m[32m        {"id": "qwen-plus", "name": "通义千问-Plus", "type": "chat", "context": "1M", "input_price": 0.8, "output_price": 2, "thinking": true},[m
+[32m+[m[32m        {"id": "qwen-plus-latest", "name": "通义千问-Plus-Latest", "type": "chat", "context": "1M", "input_price": 0.8, "output_price": 2, "thinking": true},[m
+[32m+[m[32m        {"id": "qwen-max", "name": "通义千问-Max", "type": "chat", "context": "32K", "input_price": 2.4, "output_price": 9.6, "thinking": true},[m
+[32m+[m[32m        {"id": "qwen-max-longcontext", "name": "通义千问-Max-LongContext", "type": "chat", "context": "1M", "input_price": 2.4, "output_price": 9.6, "thinking": true},[m
+[32m+[m[32m        {"id": "qwen3-max", "name": "Qwen3-Max", "type": "chat", "context": "262K", "input_price": 2.5, "output_price": 10, "thinking": true},[m
+[32m+[m[32m        {"id": "qwen3-max-latest", "name": "Qwen3-Max-Latest", "type": "chat", "context": "262K", "input_price": 2.5, "output_price": 10, "thinking": true},[m
+[32m+[m[32m        {"id": "qwen-long", "name": "通义千问-Long", "type": "chat", "context": "1M", "input_price": 0.5, "output_price": 2},[m
+[32m+[m[32m        {"id": "qwen3-235b-a22b", "name": "Qwen3-235B-A22B", "type": "chat", "context": "131K", "input_price": 2.5, "output_price": 10},[m
+[32m+[m[32m        {"id": "qwen3-32b", "name": "Qwen3-32B", "type": "chat", "context": "131K", "input_price": 0.5, "output_price": 2},[m
+[32m+[m[32m        {"id": "qwen3-14b", "name": "Qwen3-14B", "type": "chat", "context": "131K", "input_price": 0.2, "output_price": 0.8},[m
+[32m+[m[32m        {"id": "qwen3-8b", "name": "Qwen3-8B", "type": "chat", "context": "131K", "input_price": 0.05, "output_price": 0.2},[m
+[32m+[m[32m        {"id": "qwen2.5-72b-instruct", "name": "Qwen2.5-72B", "type": "chat", "context": "131K", "input_price": 0.8, "output_price": 2},[m
+[32m+[m[32m        {"id": "qwen2.5-32b-instruct", "name": "Qwen2.5-32B", "type": "chat", "context": "131K", "input_price": 0.35, "output_price": 0.7},[m
+[32m+[m[32m        {"id": "qwen2.5-14b-instruct", "name": "Qwen2.5-14B", "type": "chat", "context": "131K", "input_price": 0.2, "output_price": 0.6},[m
+[32m+[m[32m        {"id": "qwen2.5-7b-instruct", "name": "Qwen2.5-7B", "type": "chat", "context": "131K", "input_price": 0.05, "output_price": 0.2},[m
+[32m+[m[32m        {"id": "qwq-plus", "name": "QwQ-Plus", "type": "chat", "context": "131K", "thinking_only": true, "input_price": 1.6, "output_price": 4},[m
+[32m+[m[32m        {"id": "qwq-32b", "name": "QwQ-32B", "type": "chat", "context": "131K", "thinking_only": true, "input_price": 0.5, "output_price": 2},[m
+[32m+[m[32m        {"id": "qwen-vl-max", "name": "通义千问-VL-Max", "type": "multimodal", "context": "32K", "input_price": 3, "output_price": 9},[m
+[32m+[m[32m        {"id": "qwen-vl-plus", "name": "通义千问-VL-Plus", "type": "multimodal", "context": "32K", "input_price": 1.5, "output_price": 4.5},[m
+[32m+[m[32m        {"id": "qwen-vl-ocr", "name": "通义千问-VL-OCR", "type": "ocr", "context": "-"},[m
+[32m+[m[32m        {"id": "qwen2.5-vl-72b-instruct", "name": "Qwen2.5-VL-72B", "type": "multimodal", "context": "32K", "input_price": 1.6, "output_price": 4},[m
+[32m+[m[32m        {"id": "qwen2.5-vl-32b-instruct", "name": "Qwen2.5-VL-32B", "type": "multimodal", "context": "32K", "input_price": 0.7, "output_price": 2},[m
+[32m+[m[32m        {"id": "qwen-coder-plus", "name": "通义千问-Coder-Plus", "type": "chat", "context": "131K", "input_price": 0.8, "output_price": 2},[m
+[32m+[m[32m        {"id": "qwen-coder-turbo", "name": "通义千问-Coder-Turbo", "type": "chat", "context": "131K", "input_price": 0.3, "output_price": 0.6},[m
+[32m+[m[32m        {"id": "qwen2.5-coder-32b-instruct", "name": "Qwen2.5-Coder-32B", "type": "chat", "context": "131K", "input_price": 0.35, "output_price": 0.7},[m
+[32m+[m[32m        {"id": "qwen-mt-plus", "name": "通义千问-MT-Plus", "type": "chat", "context": "32K", "input_price": 1, "output_price": 3},[m
+[32m+[m[32m        {"id": "qwen-mt-turbo", "name": "通义千问-MT-Turbo", "type": "chat", "context": "32K", "input_price": 0.3, "output_price": 0.6},[m
+[32m+[m[32m        {"id": "deepseek-r1", "name": "DeepSeek-R1", "type": "chat", "context": "16K", "thinking_only": true, "input_price": 4, "output_price": 16},[m
+[32m+[m[32m        {"id": "deepseek-v3", "name": "DeepSeek-V3", "type": "chat", "context": "64K", "input_price": 1, "output_price": 4},[m
+[32m+[m[32m        {"id": "deepseek-v3-0324", "name": "DeepSeek-V3-0324", "type": "chat", "context": "64K", "input_price": 1, "output_price": 4},[m
+[32m+[m[32m        {"id": "deepseek-r1-distill-qwen-32b", "name": "DeepSeek-R1-Distill-32B", "type": "chat", "context": "131K", "thinking_only": true, "input_price": 0.5, "output_price": 2},[m
+[32m+[m[32m        {"id": "deepseek-r1-distill-qwen-14b", "name": "DeepSeek-R1-Distill-14B", "type": "chat", "context": "131K", "thinking_only": true, "input_price": 0.2, "output_price": 0.8},[m
+[32m+[m[32m        {"id": "kimi-k2.5", "name": "Kimi-K2.5", "type": "chat", "context": "128K", "input_price": 1, "output_price": 4},[m
+[32m+[m[32m        {"id": "kimi-k2-thinking", "name": "Kimi-K2-Thinking", "type": "chat", "context": "128K", "thinking_only": true, "input_price": 1.6, "output_price": 6},[m
+[32m+[m[32m        {"id": "glm-5", "name": "GLM-5(百炼)", "type": "chat", "context": "128K", "input_price": 4, "output_price": 16},[m
+[32m+[m[32m        {"id": "glm-4.7", "name": "GLM-4.7(百炼)", "type": "chat", "context": "128K", "input_price": 2, "output_price": 8},[m
+[32m+[m[32m        {"id": "glm-4.5", "name": "GLM-4.5(百炼)", "type": "chat", "context": "128K", "input_price": 0.8, "output_price": 3},[m
+[32m+[m[32m        {"id": "minimax-text-01", "name": "MiniMax-Text-01", "type": "chat", "context": "245K", "input_price": 1, "output_price": 4}[m
+       ],[m
+       "default_model": "qwen-plus",[m
+       "features": {[m
+[36m@@ -58,6 +91,13 @@[m
+         "structured_output": true,[m
+         "batch": true[m
+       },[m
+[32m+[m[32m      "thinking_only_models": ["qwq-plus", "qwq-32b", "deepseek-r1", "deepseek-r1-distill-qwen-32b", "deepseek-r1-distill-qwen-14b", "kimi-k2-thinking"],[m
+[32m+[m[32m      "free_tier": {[m
+[32m+[m[32m        "tokens": 1000000,[m
+[32m+[m[32m        "validity_days": 90,[m
+[32m+[m[32m        "description": "新用户100万Tokens免费额度，有效期90天"[m
+[32m+[m[32m      },[m
+[32m+[m[32m      "batch_discount": 0.5,[m
+       "enabled": false[m
+     }[m
+   },[m
+[36m@@ -67,5 +107,6 @@[m
+       "enabled": false,[m
+       "description": "使用统一LLM服务层"[m
+     }[m
+[31m-  }[m
+[32m+[m[32m  },[m
+[32m+[m[32m  "price_unit": "元/百万Tokens"[m
+ }[m
+[1mdiff --git a/frontend/help.html b/frontend/help.html[m
+[1mindex 061bcfd..aa7d5bf 100644[m
+[1m--- a/frontend/help.html[m
+[1m+++ b/frontend/help.html[m
+[36m@@ -664,7 +664,27 @@[m
+                     <span class="gif-label">占位符ID: apikey-setup</span>[m
+                 </div>[m
+ [m
+[31m-                <h3>4. 登出系统</h3>[m
+[32m+[m[32m                <h3>4. 深色模式</h3>[m
+[32m+[m[32m                <p>本平台支持亮色/深色两种主题模式，您可以根据喜好自由切换：</p>[m
+[32m+[m[41m                [m
+[32m+[m[32m                <h4>切换方法</h4>[m
+[32m+[m[32m                <ul>[m
+[32m+[m[32m                    <li><strong>切换按钮：</strong> 点击顶部导航栏右侧的太阳/月亮图标即可切换主题</li>[m
+[32m+[m[32m                    <li><strong>自动保存：</strong> 您的主题选择会自动保存到本地，下次访问时自动应用</li>[m
+[32m+[m[32m                    <li><strong>全局生效：</strong> 主题切换会影响所有页面和功能模块</li>[m
+[32m+[m[32m                </ul>[m
+[32m+[m[41m                [m
+[32m+[m[32m                <div class="note">[m
+[32m+[m[32m                    <strong>提示：</strong>深色模式适合在光线较暗的环境下使用，可以减少眼睛疲劳。[m
+[32m+[m[32m                </div>[m
+[32m+[m[41m                [m
+[32m+[m[32m                <!-- GIF: 深色模式 -->[m
+[32m+[m[32m                <div class="gif-placeholder" data-gif-id="dark-mode-toggle">[m
+[32m+[m[32m                    <span>点击右侧"GIF管理"按钮插入：深色模式切换.gif</span>[m
+[32m+[m[32m                    <span class="gif-label">占位符ID: dark-mode-toggle</span>[m
+[32m+[m[32m                </div>[m
+[32m+[m
+[32m+[m[32m                <h3>5. 登出系统</h3>[m
+                 <p>在主界面右上角，您可以看到当前登录的用户名和一个"登出"按钮。点击"登出"将安全退出系统，并清除您的会话信息。</p>[m
+                 [m
+                 <!-- GIF: 登出系统 -->[m
+[36m@@ -673,7 +693,7 @@[m
+                     <span class="gif-label">占位符ID: logout-demo</span>[m
+                 </div>[m
+ [m
+[31m-                <h3>5. 全局智能剪贴板</h3>[m
+[32m+[m[32m                <h3>6. 全局智能剪贴板</h3>[m
+                 <p>智能剪贴板是一个强大的跨功能数据传递工具，可以在不同功能模块之间无缝传递数据。</p>[m
+                 [m
+                 <h4>功能特点</h4>[m
+[36m@@ -1602,7 +1622,7 @@[m
+                 <h2>功能四：权利要求智能比对</h2>[m
+             </div>[m
+             <div class="card-body">[m
+[31m-                <p>此功能用于智能对比不同专利的权利要求，自动识别语言、按需翻译，提供多种可视化展示方式。</p>[m
+[32m+[m[32m                <p>此功能用于智能对比不同专利的权利要求，自动识别语言、按需翻译，提供多种可视化展示方式。包含两个子功能：<strong>多权利要求对比</strong>和<strong>同族权利要求对比</strong>。</p>[m
+ [m
+                 <h4>核心技术优势</h4>[m
+                 <ul>[m
+[36m@@ -1619,7 +1639,7 @@[m
+                     <span class="gif-label">占位符ID: claims-compare-intro</span>[m
+                 </div>[m
+ [m
+[31m-                <h4>工作流程</h4>[m
+[32m+[m[32m                <h4>多权利要求对比</h4>[m
+                 <ol>[m
+                     <li><strong>输入权利要求：</strong> 在输入框中输入专利的权利要求内容（最多10个）。</li>[m
+                     <li><strong>选择对比模型：</strong> 根据需求选择合适的对比模型。</li>[m
+[36m@@ -1634,6 +1654,35 @@[m
+                     <span class="gif-label">占位符ID: claims-compare-workflow</span>[m
+                 </div>[m
+ [m
+[32m+[m[32m                <h4>同族权利要求对比</h4>[m
+[32m+[m[32m                <p>同族权利要求对比功能可以自动获取专利的同族成员，并对其权利要求进行智能对比分析。</p>[m
+[32m+[m[41m                [m
+[32m+[m[32m                <h5>输入模式</h5>[m
+[32m+[m[32m                <ul>[m
+[32m+[m[32m                    <li><strong>自动获取模式：</strong> 输入一个专利号，�
