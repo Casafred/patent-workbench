@@ -570,6 +570,7 @@
             <ul>
                 <li><a data-target="getting-started" class="active">入门指南</a></li>
                 <li><a data-target="zhipu-apikey-guide">智谱API Key获取指南</a></li>
+                <li><a data-target="aliyun-bailian-guide">阿里云百炼模型指南</a></li>
                 <li><a data-target="feature-instant-chat">功能一：AI智能体对话</a></li>
                 <li><a data-target="feature-unified-batch">功能二：文本批量智能分析</a></li>
                 <li><a data-target="feature-local-lib">功能三：本地数据表管理</a></li>
@@ -1031,6 +1032,258 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- 阿里云百炼模型指南 -->
+        <div class="content-card" id="aliyun-bailian-guide">
+            <div class="card-header">
+                <h2>阿里云百炼模型指南</h2>
+            </div>
+            <div class="card-body">
+                <p>阿里云百炼是阿里云推出的大模型服务平台，提供通义千问系列及多家第三方模型服务。本节将介绍阿里云百炼的特点、模型系列和使用建议。</p>
+
+                <h3>一、平台概述</h3>
+                <p>阿里云百炼平台具有以下特点：</p>
+                <ul>
+                    <li><strong>OpenAI兼容接口：</strong>支持标准的OpenAI API格式，便于快速接入</li>
+                    <li><strong>免费额度：</strong>新用户注册即送100万Tokens，有效期90天</li>
+                    <li><strong>批量API折扣：</strong>Batch API享受50%折扣</li>
+                    <li><strong>深度思考模式：</strong>支持推理过程可视化</li>
+                    <li><strong>联网搜索：</strong>部分模型支持实时联网获取信息</li>
+                    <li><strong>多模态能力：</strong>支持图片理解、OCR等功能</li>
+                </ul>
+
+                <h3>二、API Key获取方式</h3>
+                <ol>
+                    <li>访问阿里云百炼控制台：<a href="https://bailian.console.aliyun.com/" target="_blank">https://bailian.console.aliyun.com/</a></li>
+                    <li>使用阿里云账号登录（如无账号需先注册）</li>
+                    <li>在控制台中创建API Key</li>
+                    <li>复制API Key并在本平台配置</li>
+                </ol>
+
+                <div class="note">
+                    <strong>免费额度说明：</strong>新用户注册后可获得100万Tokens免费额度，有效期90天，可用于体验所有模型。
+                </div>
+
+                <h3>三、支持的模型系列</h3>
+
+                <h4>通义千问商业系列</h4>
+                <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em;">
+                    <thead>
+                        <tr style="background-color: var(--primary-color); color: white;">
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: left;">模型名称</th>
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: center;">上下文长度</th>
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: center;">输入价格</th>
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: center;">输出价格</th>
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: left;">特点说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background-color: rgba(34, 197, 94, 0.1);">
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>qwen-flash</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">1M</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">0.15元/M</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">1.5元/M</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">极速响应，超低成本</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>qwen-turbo</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">128K</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">0.3元/M</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">0.6元/M</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">快速响应，经典模型</td>
+                        </tr>
+                        <tr style="background-color: rgba(34, 197, 94, 0.05);">
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>qwen-plus</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">1M</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">0.8元/M</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">2元/M</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">性价比首选，100万上下文</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>qwen3-max</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">262K</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">2.5元/M</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">10元/M</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">最新旗舰，能力最强</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h4>推理模型系列</h4>
+                <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em;">
+                    <thead>
+                        <tr style="background-color: var(--primary-color); color: white;">
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: left;">模型名称</th>
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: center;">上下文长度</th>
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: center;">输入价格</th>
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: center;">输出价格</th>
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: left;">特点说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>qwq-plus</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">131K</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">1.6元/M</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">4元/M</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">通义推理模型，性价比高</td>
+                        </tr>
+                        <tr style="background-color: rgba(34, 197, 94, 0.05);">
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>deepseek-r1</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">16K</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">4元/M</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">16元/M</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">深度推理，复杂问题</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h4>多模态模型系列</h4>
+                <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em;">
+                    <thead>
+                        <tr style="background-color: var(--primary-color); color: white;">
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: left;">模型名称</th>
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: center;">上下文长度</th>
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: center;">输入价格</th>
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: center;">输出价格</th>
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: left;">特点说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>qwen-vl-plus</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">32K</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">1.5元/M</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">4.5元/M</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">图片理解，OCR能力</td>
+                        </tr>
+                        <tr style="background-color: rgba(34, 197, 94, 0.05);">
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>qwen-vl-max</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">32K</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">3元/M</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">9元/M</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">最强视觉理解能力</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>四、特殊功能说明</h3>
+
+                <h4>深度思考模式</h4>
+                <p>阿里云百炼支持两种思考模式：</p>
+                <ul>
+                    <li><strong>混合思考模式：</strong>可开关思考功能，适用于qwen-plus、qwen-turbo、qwen-max等模型</li>
+                    <li><strong>仅思考模式：</strong>始终开启思考，适用于qwq-plus、deepseek-r1等推理模型</li>
+                </ul>
+                <p>开启思考模式后，模型会先输出思考过程（reasoning_content），再输出最终回复（content），便于理解推理过程。</p>
+
+                <h4>联网搜索</h4>
+                <p>部分模型支持联网搜索功能，可通过参数开启，让AI获取最新的网络信息。</p>
+
+                <h4>批量API（Batch API）</h4>
+                <p>适用于大规模异步处理场景，享受<strong>50%折扣</strong>。单文件最多支持50,000个请求，适合批量翻译、批量分析等场景。</p>
+
+                <h3>五、与智谱AI对比</h3>
+                <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em;">
+                    <thead>
+                        <tr style="background-color: var(--primary-color); color: white;">
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: left;">对比项</th>
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: center;">智谱AI</th>
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: center;">阿里云百炼</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">免费模型/额度</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">GLM-4-Flash免费</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">100万Tokens免费额度</td>
+                        </tr>
+                        <tr style="background-color: rgba(34, 197, 94, 0.05);">
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">性价比模型</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">GLM-4-FlashX</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">qwen-flash</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">旗舰模型</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">GLM-5</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">qwen3-max</td>
+                        </tr>
+                        <tr style="background-color: rgba(34, 197, 94, 0.05);">
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">推理模型</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">GLM-Z1系列</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">qwq-plus / deepseek-r1</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">OCR能力</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">GLM-OCR</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">qwen-vl-ocr</td>
+                        </tr>
+                        <tr style="background-color: rgba(34, 197, 94, 0.05);">
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">思考模式</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">不支持</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">支持</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">联网搜索</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">支持</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">支持</td>
+                        </tr>
+                        <tr style="background-color: rgba(34, 197, 94, 0.05);">
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">Batch API</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">支持</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center;">支持（50%折扣）</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>六、模型选择建议</h3>
+                <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em;">
+                    <thead>
+                        <tr style="background-color: var(--primary-color); color: white;">
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: left;">使用场景</th>
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: left;">推荐模型</th>
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: left;">原因</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">体验测试</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">qwen-flash / qwen-turbo</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">使用免费额度，成本低</td>
+                        </tr>
+                        <tr style="background-color: rgba(34, 197, 94, 0.05);">
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">专利翻译</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">qwen-plus / qwen-mt-plus</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">专业翻译，性价比高</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">权利要求分析</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">qwq-plus</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">推理能力强，思考过程可视化</td>
+                        </tr>
+                        <tr style="background-color: rgba(34, 197, 94, 0.05);">
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">专利附图识别</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">qwen-vl-plus</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">视觉理解，OCR能力</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">批量处理</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">qwen-flash + Batch API</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">高速低价，50%折扣</td>
+                        </tr>
+                        <tr style="background-color: rgba(34, 197, 94, 0.05);">
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">复杂专利解读</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">qwen3-max / deepseek-r1</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">最强能力，深度推理</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="note">
+                    <strong>说明：</strong>以上价格为参考价格，实际价格请以阿里云百炼官网为准。本平台支持多服务商切换，您可以根据需求选择智谱AI或阿里云百炼。
+                </div>
             </div>
         </div>
 

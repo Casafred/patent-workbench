@@ -252,14 +252,14 @@ class PatentTabManager {
         }
 
         const data = result.data;
-        const hasImages = data.images && data.images.length > 0;
-        const firstImage = hasImages ? data.images[0] : null;
+        const hasDrawings = data.drawings && data.drawings.length > 0;
+        const firstDrawing = hasDrawings ? data.drawings[0] : null;
         const cacheBadge = result.fromCache ? '<span class="cache-badge">缓存</span>' : '';
 
         return `
             <div class="patent-strip success" data-patent-number="${result.patent_number}">
                 <div class="patent-strip-image">
-                    ${firstImage ? `<img src="${firstImage}" alt="专利附图" loading="lazy">` : '<div class="no-image">暂无附图</div>'}
+                    ${firstDrawing ? `<img src="${firstDrawing}" alt="专利附图" loading="lazy">` : '<div class="no-image">暂无附图</div>'}
                 </div>
                 <div class="patent-strip-content">
                     <div class="patent-strip-number">${result.patent_number}${cacheBadge}</div>

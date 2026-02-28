@@ -195,11 +195,41 @@ function buildPatentDetailHTML(result, selectedFields) {
         `;
     }
     
-    // 附图 - 显示第一张，点击打开查看器
+    // 附图 - 显示多张缩略图，点击打开查看器
     if (data.drawings && data.drawings.length > 0 && shouldShowField('drawings', selectedFields)) {
         // 直接存储数据到全局变量（innerHTML中的script不会执行）
         if (!window.patentDrawingsData) window.patentDrawingsData = {};
         window.patentDrawingsData[result.patent_number] = data.drawings;
+        
+        // 生成多张缩略图HTML（最多显示6张，超过则显示"更多"提示）
+        const maxVisibleDrawings = 6;
+        const visibleDrawings = data.drawings.slice(0, maxVisibleDrawings);
+        const hasMoreDrawings = data.drawings.length > maxVisibleDrawings;
+        
+        let drawingsThumbnailsHTML = '';
+        visibleDrawings.forEach((drawing, index) => {
+            drawingsThumbnailsHTML += `
+                <div class="detail-drawing-thumbnail" onclick="openImageViewer(${index}, '${result.patent_number}')">
+                    <img src="${drawing}" alt="附图 ${index + 1}" class="detail-drawing-thumbnail-img" onerror="this.style.display='none'">
+                    <div class="detail-drawing-thumbnail-caption">${index + 1}</div>
+                </div>
+            `;
+        });
+        
+        // 如果超过6张，显示"更多"提示
+        if (hasMoreDrawings) {
+            const remainingCount = data.drawings.length - maxVisibleDrawings;
+            drawingsThumbnailsHTML += `
+                <div class="detail-drawing-thumbnail detail-drawing-more" onclick="openImageViewer(${maxVisibleDrawings}, '${result.patent_number}')">
+                    <div class="detail-drawing-more-content">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M6 12.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5ZM3 8.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5Zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5Z"/>
+                        </svg>
+                        <span>+${remainingCount}</span>
+                    </div>
+                </div>
+            `;
+        }
         
         htmlContent += `
             <div class="detail-section detail-section-drawings">
@@ -209,11 +239,8 @@ function buildPatentDetailHTML(result, selectedFields) {
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg>
                     </button>
                 </div>
-                <div class="detail-drawings-container">
-                    <div class="detail-drawing-preview" onclick="openImageViewer(0, '${result.patent_number}')">
-                        <img src="${data.drawings[0]}" alt="附图 1" class="detail-drawing-img" onerror="this.style.display='none'">
-                        <div class="detail-drawing-caption">图 1 ${data.drawings.length > 1 ? '(点击查看全部 ' + data.drawings.length + ' 张)' : ''}</div>
-                    </div>
+                <div class="detail-drawings-grid">
+                    ${drawingsThumbnailsHTML}
                 </div>
             </div>
         `;

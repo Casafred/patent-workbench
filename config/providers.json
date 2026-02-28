@@ -1,0 +1,71 @@
+{
+  "providers": {
+    "zhipu": {
+      "name": "智谱AI",
+      "api_base": "https://open.bigmodel.cn/api/paas/v4",
+      "sdk_class": "zhipuai.ZhipuAI",
+      "models": [
+        {"id": "glm-4-flash", "name": "GLM-4-Flash", "type": "chat", "context": "128K", "free": true},
+        {"id": "glm-4-flashx-250414", "name": "GLM-4-FlashX", "type": "chat", "context": "128K"},
+        {"id": "glm-4-long", "name": "GLM-4-Long", "type": "chat", "context": "1M"},
+        {"id": "glm-4-plus", "name": "GLM-4-Plus", "type": "chat", "context": "128K"},
+        {"id": "glm-4-air-250414", "name": "GLM-4-Air", "type": "chat", "context": "128K"},
+        {"id": "glm-4-airx", "name": "GLM-4-AirX", "type": "chat", "context": "8K"},
+        {"id": "glm-4.5-air", "name": "GLM-4.5-Air", "type": "chat", "context": "128K"},
+        {"id": "glm-4.5-airx", "name": "GLM-4.5-AirX", "type": "chat", "context": "128K"},
+        {"id": "glm-4.7-flash", "name": "GLM-4.7-Flash", "type": "chat", "context": "128K"},
+        {"id": "glm-4.7-flashx", "name": "GLM-4.7-FlashX", "type": "chat", "context": "200K"},
+        {"id": "glm-4.7", "name": "GLM-4.7", "type": "chat", "context": "128K"},
+        {"id": "glm-z1-flash", "name": "GLM-Z1-Flash", "type": "chat", "context": "128K", "free": true, "thinking": true},
+        {"id": "glm-z1-flashx", "name": "GLM-Z1-FlashX", "type": "chat", "context": "128K", "thinking": true},
+        {"id": "glm-z1-air", "name": "GLM-Z1-Air", "type": "chat", "context": "128K", "thinking": true},
+        {"id": "glm-z1-airx", "name": "GLM-Z1-AirX", "type": "chat", "context": "32K", "thinking": true},
+        {"id": "glm-5", "name": "GLM-5", "type": "chat", "context": "128K"},
+        {"id": "glm-ocr", "name": "GLM-OCR", "type": "ocr", "context": "-"}
+      ],
+      "default_model": "glm-4-flash",
+      "features": {
+        "web_search": true,
+        "ocr": true,
+        "stream": true,
+        "thinking": true,
+        "multimodal": false,
+        "structured_output": false,
+        "batch": false
+      }
+    },
+    "aliyun": {
+      "name": "阿里云百炼",
+      "api_base": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "sdk_class": "openai.OpenAI",
+      "models": [
+        {"id": "qwen-turbo", "name": "通义千问-Turbo", "type": "chat", "context": "128K"},
+        {"id": "qwen-plus", "name": "通义千问-Plus", "type": "chat", "context": "128K"},
+        {"id": "qwen-max", "name": "通义千问-Max", "type": "chat", "context": "32K"},
+        {"id": "qwen-long", "name": "通义千问-Long", "type": "chat", "context": "1M"},
+        {"id": "qwen-vl-plus", "name": "通义千问-VL-Plus", "type": "multimodal", "context": "32K"},
+        {"id": "qwen-vl-max", "name": "通义千问-VL-Max", "type": "multimodal", "context": "32K"},
+        {"id": "qwq-plus", "name": "QwQ-Plus", "type": "chat", "context": "128K", "thinking_only": true},
+        {"id": "deepseek-r1", "name": "DeepSeek-R1", "type": "chat", "context": "64K", "thinking_only": true}
+      ],
+      "default_model": "qwen-plus",
+      "features": {
+        "web_search": true,
+        "ocr": false,
+        "stream": true,
+        "thinking": true,
+        "multimodal": true,
+        "structured_output": true,
+        "batch": true
+      },
+      "enabled": false
+    }
+  },
+  "default_provider": "zhipu",
+  "feature_flags": {
+    "llm_unified": {
+      "enabled": false,
+      "description": "使用统一LLM服务层"
+    }
+  }
+}

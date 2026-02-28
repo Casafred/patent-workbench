@@ -5,6 +5,7 @@ werkzeug
 
 # API & Services
 zhipuai
+openai>=1.0.0
 flask-cors
 requests
 python-dotenv>=1.0.0

@@ -2537,6 +2537,32 @@
     color: #94a3b8 !important;
 }
 
+[data-theme="dark"] .detail-drawing-thumbnail {
+    background: #1e293b !important;
+    border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .detail-drawing-thumbnail:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4) !important;
+}
+
+[data-theme="dark"] .detail-drawing-thumbnail-caption {
+    color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .detail-drawing-more {
+    background: linear-gradient(135deg, rgba(30, 58, 95, 0.8) 0%, rgba(30, 58, 95, 1) 100%) !important;
+    border-color: #3b82f6 !important;
+}
+
+[data-theme="dark"] .detail-drawing-more:hover {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(59, 130, 246, 0.5) 100%) !important;
+}
+
+[data-theme="dark"] .detail-drawing-more-content {
+    color: #60a5fa !important;
+}
+
 /* 权利要求区域 */
 [data-theme="dark"] .detail-section-claims {
     background-color: rgba(100, 116, 139, 0.1) !important;

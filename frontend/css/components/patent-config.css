@@ -1271,6 +1271,74 @@
     background-color: #fce4ec;
 }
 
+.detail-drawings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.detail-drawing-thumbnail {
+    position: relative;
+    background: white;
+    border-radius: 8px;
+    padding: 6px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.detail-drawing-thumbnail:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.detail-drawing-thumbnail-img {
+    width: 100%;
+    height: 80px;
+    object-fit: contain;
+    border-radius: 4px;
+}
+
+.detail-drawing-thumbnail-caption {
+    text-align: center;
+    font-size: 0.75em;
+    color: #666;
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+.detail-drawing-more {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border: 2px dashed #90caf9;
+}
+
+.detail-drawing-more:hover {
+    background: linear-gradient(135deg, #bbdefb 0%, #90caf9 100%);
+}
+
+.detail-drawing-more-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #1976d2;
+    font-weight: 600;
+}
+
+.detail-drawing-more-content svg {
+    margin-bottom: 4px;
+}
+
+.detail-drawing-more-content span {
+    font-size: 0.9em;
+}
+
 .detail-drawings-container {
     display: flex;
     align-items: center;
