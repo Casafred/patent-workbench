@@ -167,6 +167,48 @@ class UserDataUI {
             .udu-action-btn.clear { background: linear-gradient(135deg, #EF4444 0%, #F87171 100%); }
             .udu-action-btn .icon { width: 20px; height: 20px; }
             .udu-loading { text-align: center; padding: 20px; color: #666; }
+            
+            /* 暗黑模式样式 */
+            [data-theme="dark"] .udu-overlay {
+                background: rgba(0, 0, 0, 0.7) !important;
+            }
+            [data-theme="dark"] .udu-panel {
+                background: #1e293b !important;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
+            }
+            [data-theme="dark"] .udu-header {
+                background: linear-gradient(135deg, #064e3b 0%, #065f46 100%) !important;
+            }
+            [data-theme="dark"] .udu-body {
+                background: #1e293b !important;
+            }
+            [data-theme="dark"] .udu-section h3 {
+                color: #94a3b8 !important;
+            }
+            [data-theme="dark"] .udu-stat-item {
+                background: #0f172a !important;
+            }
+            [data-theme="dark"] .udu-stat-value {
+                color: #4ade80 !important;
+            }
+            [data-theme="dark"] .udu-stat-label {
+                color: #64748b !important;
+            }
+            [data-theme="dark"] .udu-category-item {
+                background: #0f172a !important;
+            }
+            [data-theme="dark"] .udu-category-name {
+                color: #e2e8f0 !important;
+            }
+            [data-theme="dark"] .udu-category-info {
+                color: #64748b !important;
+            }
+            [data-theme="dark"] .udu-actions {
+                border-top-color: #334155 !important;
+            }
+            [data-theme="dark"] .udu-loading {
+                color: #94a3b8 !important;
+            }
         `;
         document.head.appendChild(style);
     }
