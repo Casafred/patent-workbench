@@ -365,10 +365,10 @@ function buildPatentDetailHTML(result, selectedFields) {
     const showFamilyInfo = shouldShowField('family_id', selectedFields) || shouldShowField('family_applications', selectedFields);
     if (showFamilyInfo && (data.family_id || (data.family_applications && data.family_applications.length > 0))) {
         htmlContent += `
-            <div style="margin-top: 15px; padding: 10px; background-color: #fff3e0; border-radius: 5px;">
-                <div style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-                    <strong style="color: var(--primary-color);"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7Zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-5.784 6A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216ZM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/></svg> 同族信息:</strong>
-                    <div style="display: flex; gap: 6px;">
+            <div class="detail-section detail-section-family">
+                <div class="detail-section-header">
+                    <strong class="detail-section-title"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7Zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-5.784 6A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216ZM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/></svg> 同族信息:</strong>
+                    <div class="detail-section-actions">
                         ${data.family_applications && data.family_applications.length > 1 ? `
                         <button class="copy-field-btn" onclick="jumpToFamilyComparisonFromModal('${result.patent_number}')" title="跳转到功能四进行同族权利要求对比分析" style="background: linear-gradient(135deg, #9c27b0 0%, #673ab7 100%) !important;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M9.5 1.5a.5.5 0 0 1 0 1H5.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L5.707 1.5H9.5z"/><path d="M6.5 14.5a.5.5 0 0 1 0-1h3.793l-2.147-2.146a.5.5 0 0 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 14.5H6.5z"/></svg>
@@ -386,25 +386,25 @@ function buildPatentDetailHTML(result, selectedFields) {
         `;
 
         if (data.family_id && shouldShowField('family_id', selectedFields)) {
-            htmlContent += `<p style="margin: 5px 0;"><strong>同族ID:</strong> ${data.family_id}</p>`;
+            htmlContent += `<p class="detail-family-id"><strong>同族ID:</strong> ${data.family_id}</p>`;
         }
 
         if (data.family_applications && data.family_applications.length > 0 && shouldShowField('family_applications', selectedFields)) {
             htmlContent += `
-                <div style="margin-top: 10px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div class="detail-family-applications">
+                    <div class="detail-family-header">
                         <strong>同族申请 (共${data.family_applications.length}条):</strong>
                         <button class="copy-field-btn" onclick="copyFamilyPublicationNumbers('${result.patent_number}', event)" title="复制所有公开号">
                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg>
                         </button>
                     </div>
-                    <div style="max-height: 200px; overflow-y: auto;">
-                        <table id="modal-family-table-${result.patent_number}" style="width: 100%; font-size: 0.85em; border-collapse: collapse;">
+                    <div class="detail-table-container">
+                        <table id="modal-family-table-${result.patent_number}" class="detail-table">
                             <thead>
-                                <tr style="background-color: #ffe0b2;">
-                                    <th style="padding: 5px; text-align: left; border: 1px solid #ddd;">申请号</th>
-                                    <th style="padding: 5px; text-align: left; border: 1px solid #ddd;">状态</th>
-                                    <th style="padding: 5px; text-align: left; border: 1px solid #ddd;">公开号</th>
+                                <tr class="detail-table-header-row">
+                                    <th class="detail-table-header">申请号</th>
+                                    <th class="detail-table-header">状态</th>
+                                    <th class="detail-table-header">公开号</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -413,9 +413,9 @@ function buildPatentDetailHTML(result, selectedFields) {
             data.family_applications.forEach(app => {
                 htmlContent += `
                     <tr>
-                        <td style="padding: 5px; border: 1px solid #ddd;">${app.application_number}</td>
-                        <td style="padding: 5px; border: 1px solid #ddd;">${app.status || '-'}</td>
-                        <td style="padding: 5px; border: 1px solid #ddd;">${app.publication_number || '-'}</td>
+                        <td class="detail-table-cell">${app.application_number}</td>
+                        <td class="detail-table-cell">${app.status || '-'}</td>
+                        <td class="detail-table-cell">${app.publication_number || '-'}</td>
                     </tr>
                 `;
             });
@@ -434,16 +434,16 @@ function buildPatentDetailHTML(result, selectedFields) {
     // 外部链接
     if (data.external_links && Object.keys(data.external_links).length > 0 && shouldShowField('external_links', selectedFields)) {
         htmlContent += `
-            <div style="margin-top: 15px; padding: 10px; background-color: #e8f5e9; border-radius: 5px;">
-                <div style="margin-bottom: 8px;">
-                    <strong style="color: var(--primary-color);"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M6.354 5.5H4a3 3 0 0 0 0 6h3a3 3 0 0 0 2.83-4H9c-.086 0-.17.01-.25.031A2 2 0 0 1 7 10.5H4a2 2 0 1 1 0-4h1.535c.218-.376.495-.714.82-1H4a3 3 0 1 0 0 6h3a3 3 0 0 0 2.83-4H9c-.086 0-.17.01-.25.031A2 2 0 0 1 7 10.5H4a2 2 0 1 1 0-4h1.535c.218-.376.495-.714.82-1H4z"/><path d="M9 5.5a3 3 0 0 0-2.83 4h1.098A2 2 0 0 1 9 6.5h3a2 2 0 1 1 0 4h-1.535a4.02 4.02 0 0 1-.82 1H12a3 3 0 1 0 0-6H9z"/></svg> 外部链接:</strong>
+            <div class="detail-section detail-section-links">
+                <div class="detail-section-header">
+                    <strong class="detail-section-title"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M6.354 5.5H4a3 3 0 0 0 0 6h3a3 3 0 0 0 2.83-4H9c-.086 0-.17.01-.25.031A2 2 0 0 1 7 10.5H4a2 2 0 1 1 0-4h1.535c.218-.376.495-.714.82-1H4a3 3 0 1 0 0 6h3a3 3 0 0 0 2.83-4H9c-.086 0-.17.01-.25.031A2 2 0 0 1 7 10.5H4a2 2 0 1 1 0-4h1.535c.218-.376.495-.714.82-1H4z"/><path d="M9 5.5a3 3 0 0 0-2.83 4h1.098A2 2 0 0 1 9 6.5h3a2 2 0 1 1 0 4h-1.535a4.02 4.02 0 0 1-.82 1H12a3 3 0 1 0 0-6H9z"/></svg> 外部链接:</strong>
                 </div>
-                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                <div class="detail-links-container">
         `;
         
         Object.entries(data.external_links).forEach(([id, link]) => {
             htmlContent += `
-                <a href="${link.url}" target="_blank" style="padding: 8px 16px; background-color: white; border-radius: 4px; border: 1px solid #ddd; text-decoration: none; color: var(--primary-color);">
+                <a href="${link.url}" target="_blank" class="detail-link-item">
                     ${link.text}
                 </a>
             `;
@@ -458,10 +458,10 @@ function buildPatentDetailHTML(result, selectedFields) {
     // 引用专利
     if (data.patent_citations && data.patent_citations.length > 0 && shouldShowField('patent_citations', selectedFields)) {
         htmlContent += `
-            <div style="margin-top: 15px; padding: 10px; background-color: #e8f5e9; border-radius: 5px;">
-                <div style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-                    <strong style="color: var(--primary-color);"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811V2.828zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"/></svg> 引用专利 (共${data.patent_citations.length}条):</strong>
-                    <div style="display: flex; gap: 6px;">
+            <div class="detail-section detail-section-citations">
+                <div class="detail-section-header">
+                    <strong class="detail-section-title"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811V2.828zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"/></svg> 引用专利 (共${data.patent_citations.length}条):</strong>
+                    <div class="detail-section-actions">
                         <button class="copy-field-btn" onclick="analyzeRelationFromModal('${result.patent_number}', 'citations')" title="分析引用专利" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>
                             分析引用
@@ -471,25 +471,25 @@ function buildPatentDetailHTML(result, selectedFields) {
                         </button>
                     </div>
                 </div>
-                <div style="max-height: 200px; overflow-y: auto;">
-                    <table style="width: 100%; font-size: 0.85em; border-collapse: collapse;">
+                <div class="detail-table-container">
+                    <table class="detail-table">
                         <thead>
-                            <tr style="background-color: #c8e6c9;">
-                                <th style="padding: 5px; text-align: left; border: 1px solid #ddd;">专利号</th>
-                                <th style="padding: 5px; text-align: left; border: 1px solid #ddd;">标题</th>
-                                <th style="padding: 5px; text-align: center; border: 1px solid #ddd; width: 80px;">审查员引用</th>
+                            <tr class="detail-table-header-row detail-table-header-citations">
+                                <th class="detail-table-header">专利号</th>
+                                <th class="detail-table-header">标题</th>
+                                <th class="detail-table-header detail-table-header-center">审查员引用</th>
                             </tr>
                         </thead>
                         <tbody>
         `;
         
         data.patent_citations.forEach(citation => {
-            const examinerMark = citation.examiner_cited ? '<span style="color: #d32f2f; font-weight: bold;">✓</span>' : '-';
+            const examinerMark = citation.examiner_cited ? '<span class="examiner-mark">✓</span>' : '-';
             htmlContent += `
                 <tr>
-                    <td style="padding: 5px; border: 1px solid #ddd;">${citation.patent_number}${citation.examiner_cited ? ' <span style="color: #d32f2f; font-weight: bold;">*</span>' : ''}</td>
-                    <td style="padding: 5px; border: 1px solid #ddd;">${citation.title || '-'}</td>
-                    <td style="padding: 5px; border: 1px solid #ddd; text-align: center;">${examinerMark}</td>
+                    <td class="detail-table-cell">${citation.patent_number}${citation.examiner_cited ? ' <span class="examiner-mark">*</span>' : ''}</td>
+                    <td class="detail-table-cell">${citation.title || '-'}</td>
+                    <td class="detail-table-cell detail-table-cell-center">${examinerMark}</td>
                 </tr>
             `;
         });
@@ -505,10 +505,10 @@ function buildPatentDetailHTML(result, selectedFields) {
     // 被引用专利
     if (data.cited_by && data.cited_by.length > 0 && shouldShowField('cited_by', selectedFields)) {
         htmlContent += `
-            <div style="margin-top: 15px; padding: 10px; background-color: #fff3e0; border-radius: 5px;">
-                <div style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-                    <strong style="color: var(--primary-color);"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M6.354 5.5H4a3 3 0 0 0 0 6h3a3 3 0 0 0 2.83-4H9c-.086 0-.17.01-.25.031A2 2 0 0 1 7 10.5H4a2 2 0 1 1 0-4h1.535c.218-.376.495-.714.82-1H4a3 3 0 1 0 0 6h3a3 3 0 0 0 2.83-4H9c-.086 0-.17.01-.25.031A2 2 0 0 1 7 10.5H4a2 2 0 1 1 0-4h1.535c.218-.376.495-.714.82-1H4z"/><path d="M9 5.5a3 3 0 0 0-2.83 4h1.098A2 2 0 0 1 9 6.5h3a2 2 0 1 1 0 4h-1.535a4.02 4.02 0 0 1-.82 1H12a3 3 0 1 0 0-6H9z"/></svg> 被引用专利 (共${data.cited_by.length}条):</strong>
-                    <div style="display: flex; gap: 6px;">
+            <div class="detail-section detail-section-citedby">
+                <div class="detail-section-header">
+                    <strong class="detail-section-title"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M6.354 5.5H4a3 3 0 0 0 0 6h3a3 3 0 0 0 2.83-4H9c-.086 0-.17.01-.25.031A2 2 0 0 1 7 10.5H4a2 2 0 1 1 0-4h1.535c.218-.376.495-.714.82-1H4a3 3 0 1 0 0 6h3a3 3 0 0 0 2.83-4H9c-.086 0-.17.01-.25.031A2 2 0 0 1 7 10.5H4a2 2 0 1 1 0-4h1.535c.218-.376.495-.714.82-1H4z"/><path d="M9 5.5a3 3 0 0 0-2.83 4h1.098A2 2 0 0 1 9 6.5h3a2 2 0 1 1 0 4h-1.535a4.02 4.02 0 0 1-.82 1H12a3 3 0 1 0 0-6H9z"/></svg> 被引用专利 (共${data.cited_by.length}条):</strong>
+                    <div class="detail-section-actions">
                         <button class="copy-field-btn" onclick="analyzeRelationFromModal('${result.patent_number}', 'cited_by')" title="分析被引用专利" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>
                             分析被引用
@@ -518,12 +518,12 @@ function buildPatentDetailHTML(result, selectedFields) {
                         </button>
                     </div>
                 </div>
-                <div style="max-height: 200px; overflow-y: auto;">
-                    <table style="width: 100%; font-size: 0.85em; border-collapse: collapse;">
+                <div class="detail-table-container">
+                    <table class="detail-table">
                         <thead>
-                            <tr style="background-color: #ffe0b2;">
-                                <th style="padding: 5px; text-align: left; border: 1px solid #ddd;">专利号</th>
-                                <th style="padding: 5px; text-align: left; border: 1px solid #ddd;">标题</th>
+                            <tr class="detail-table-header-row detail-table-header-citedby">
+                                <th class="detail-table-header">专利号</th>
+                                <th class="detail-table-header">标题</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -532,8 +532,8 @@ function buildPatentDetailHTML(result, selectedFields) {
         data.cited_by.forEach(citation => {
             htmlContent += `
                 <tr>
-                    <td style="padding: 5px; border: 1px solid #ddd;">${citation.patent_number}</td>
-                    <td style="padding: 5px; border: 1px solid #ddd;">${citation.title || '-'}</td>
+                    <td class="detail-table-cell">${citation.patent_number}</td>
+                    <td class="detail-table-cell">${citation.title || '-'}</td>
                 </tr>
             `;
         });
@@ -552,9 +552,9 @@ function buildPatentDetailHTML(result, selectedFields) {
         const sortedEvents = [...data.events_timeline].reverse();
         
         htmlContent += `
-            <div style="margin-top: 15px;">
-                <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
-                    <strong style="color: var(--primary-color);"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg> 事件时间轴 (共${sortedEvents.length}条):</strong>
+            <div class="detail-section detail-section-timeline">
+                <div class="detail-section-header">
+                    <strong class="detail-section-title"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg> 事件时间轴 (共${sortedEvents.length}条):</strong>
                     <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'events_timeline', event)" title="复制事件时间轴">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg>
                     </button>
@@ -597,20 +597,20 @@ function buildPatentDetailHTML(result, selectedFields) {
         const sortedLegalEvents = [...data.legal_events].reverse();
 
         htmlContent += `
-            <div style="margin-top: 15px; padding: 10px; background-color: #fff3e0; border-radius: 5px;">
-                <div style="margin-bottom: 8px;">
-                    <strong style="color: var(--primary-color);"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg> 法律事件 (共${sortedLegalEvents.length}条):</strong>
+            <div class="detail-section detail-section-legal">
+                <div class="detail-section-header">
+                    <strong class="detail-section-title"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg> 法律事件 (共${sortedLegalEvents.length}条):</strong>
                     <button class="copy-field-btn" onclick="copyFieldContent('${result.patent_number}', 'legal_events', event)" title="复制法律事件">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg>
                     </button>
                 </div>
-                <div style="max-height: 300px; overflow-y: auto;">
-                    <table style="width: 100%; font-size: 0.85em; border-collapse: collapse;">
+                <div class="detail-table-container">
+                    <table class="detail-table">
                         <thead>
-                            <tr style="background-color: #ffe0b2;">
-                                <th style="padding: 5px; text-align: left; border: 1px solid #ddd;">日期</th>
-                                <th style="padding: 5px; text-align: left; border: 1px solid #ddd; width: 100px;">代码</th>
-                                <th style="padding: 5px; text-align: left; border: 1px solid #ddd;">描述</th>
+                            <tr class="detail-table-header-row detail-table-header-legal">
+                                <th class="detail-table-header">日期</th>
+                                <th class="detail-table-header">代码</th>
+                                <th class="detail-table-header">描述</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -619,9 +619,9 @@ function buildPatentDetailHTML(result, selectedFields) {
         sortedLegalEvents.forEach(event => {
             htmlContent += `
                 <tr>
-                    <td style="padding: 5px; border: 1px solid #ddd;">${event.date}</td>
-                    <td style="padding: 5px; border: 1px solid #ddd;">${event.code || '-'}</td>
-                    <td style="padding: 5px; border: 1px solid #ddd;">${event.description || event.title || '-'}</td>
+                    <td class="detail-table-cell">${event.date}</td>
+                    <td class="detail-table-cell">${event.code || '-'}</td>
+                    <td class="detail-table-cell">${event.description || event.title || '-'}</td>
                 </tr>
             `;
         });
@@ -637,10 +637,10 @@ function buildPatentDetailHTML(result, selectedFields) {
     // 相似文档
     if (data.similar_documents && data.similar_documents.length > 0 && shouldShowField('similar_documents', selectedFields)) {
         htmlContent += `
-            <div style="margin-top: 15px; padding: 10px; background-color: #e8f5e9; border-radius: 5px;">
-                <div style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-                    <strong style="color: var(--primary-color);"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm0-1h-13A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2z"/><path d="M3 5.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM3 8a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 3 8zm0 2.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5z"/></svg> 相似文档 (共${data.similar_documents.length}条):</strong>
-                    <div style="display: flex; gap: 6px;">
+            <div class="detail-section detail-section-similar">
+                <div class="detail-section-header">
+                    <strong class="detail-section-title"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm0-1h-13A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2z"/><path d="M3 5.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM3 8a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 3 8zm0 2.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5z"/></svg> 相似文档 (共${data.similar_documents.length}条):</strong>
+                    <div class="detail-section-actions">
                         <button class="copy-field-btn" onclick="analyzeRelationFromModal('${result.patent_number}', 'similar')" title="分析相似专利" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>
                             分析相似
@@ -650,13 +650,13 @@ function buildPatentDetailHTML(result, selectedFields) {
                         </button>
                     </div>
                 </div>
-                <div style="max-height: 200px; overflow-y: auto;">
-                    <table style="width: 100%; font-size: 0.85em; border-collapse: collapse;">
+                <div class="detail-table-container">
+                    <table class="detail-table">
                         <thead>
-                            <tr style="background-color: #c8e6c9;">
-                                <th style="padding: 5px; text-align: left; border: 1px solid #ddd;">专利号</th>
-                                <th style="padding: 5px; text-align: left; border: 1px solid #ddd; width: 80px;">语言</th>
-                                <th style="padding: 5px; text-align: left; border: 1px solid #ddd; width: 80px;">操作</th>
+                            <tr class="detail-table-header-row detail-table-header-similar">
+                                <th class="detail-table-header">专利号</th>
+                                <th class="detail-table-header">语言</th>
+                                <th class="detail-table-header">操作</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -665,10 +665,10 @@ function buildPatentDetailHTML(result, selectedFields) {
         data.similar_documents.forEach(doc => {
             htmlContent += `
                 <tr>
-                    <td style="padding: 5px; border: 1px solid #ddd;">${doc.patent_number}</td>
-                    <td style="padding: 5px; border: 1px solid #ddd;">${doc.language || '-'}</td>
-                    <td style="padding: 5px; border: 1px solid #ddd;">
-                        <a href="${doc.link}" target="_blank" style="color: var(--primary-color); text-decoration: underline;">查看</a>
+                    <td class="detail-table-cell">${doc.patent_number}</td>
+                    <td class="detail-table-cell">${doc.language || '-'}</td>
+                    <td class="detail-table-cell">
+                        <a href="${doc.link}" target="_blank" class="detail-table-link">查看</a>
                     </td>
                 </tr>
             `;

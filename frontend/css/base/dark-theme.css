@@ -2593,3 +2593,103 @@
 [data-theme="dark"] .detail-priority-text {
     color: var(--text-color) !important;
 }
+
+/* 同族信息区域 */
+[data-theme="dark"] .detail-section-family {
+    background-color: rgba(251, 146, 60, 0.1) !important;
+    border-color: rgba(251, 146, 60, 0.2) !important;
+}
+
+[data-theme="dark"] .detail-family-id {
+    color: var(--text-color) !important;
+}
+
+/* 外部链接区域 */
+[data-theme="dark"] .detail-section-links {
+    background-color: rgba(34, 197, 94, 0.1) !important;
+    border-color: rgba(34, 197, 94, 0.2) !important;
+}
+
+[data-theme="dark"] .detail-link-item {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    color: var(--primary-color) !important;
+}
+
+/* 时间轴区域 */
+[data-theme="dark"] .detail-section-timeline {
+    background-color: transparent !important;
+}
+
+/* 法律事件区域 */
+[data-theme="dark"] .detail-section-legal {
+    background-color: rgba(251, 146, 60, 0.1) !important;
+    border-color: rgba(251, 146, 60, 0.2) !important;
+}
+
+/* 相似文档区域 */
+[data-theme="dark"] .detail-section-similar {
+    background-color: rgba(34, 197, 94, 0.1) !important;
+    border-color: rgba(34, 197, 94, 0.2) !important;
+}
+
+/* 通用表格暗黑模式 */
+[data-theme="dark"] .detail-table-container {
+    background: transparent !important;
+}
+
+[data-theme="dark"] .detail-table {
+    border-color: #334155 !important;
+}
+
+[data-theme="dark"] .detail-table-header-row {
+    background-color: #1e293b !important;
+}
+
+[data-theme="dark"] .detail-table-header-legal {
+    background-color: rgba(251, 146, 60, 0.2) !important;
+}
+
+[data-theme="dark"] .detail-table-header-similar {
+    background-color: rgba(34, 197, 94, 0.2) !important;
+}
+
+[data-theme="dark"] .detail-table-header {
+    background-color: #1e293b !important;
+    color: var(--text-color) !important;
+    border-color: #334155 !important;
+}
+
+[data-theme="dark"] .detail-table-cell {
+    border-color: #334155 !important;
+    color: var(--text-color) !important;
+}
+
+[data-theme="dark"] .detail-table-link {
+    color: var(--primary-color) !important;
+}
+
+/* 引用专利区域 */
+[data-theme="dark"] .detail-section-citations {
+    background-color: rgba(34, 197, 94, 0.1) !important;
+    border-color: rgba(34, 197, 94, 0.2) !important;
+}
+
+[data-theme="dark"] .detail-table-header-citations {
+    background-color: rgba(34, 197, 94, 0.2) !important;
+}
+
+/* 被引用专利区域 */
+[data-theme="dark"] .detail-section-citedby {
+    background-color: rgba(251, 146, 60, 0.1) !important;
+    border-color: rgba(251, 146, 60, 0.2) !important;
+}
+
+[data-theme="dark"] .detail-table-header-citedby {
+    background-color: rgba(251, 146, 60, 0.2) !important;
+}
+
+/* 审查员标记暗黑模式 */
+[data-theme="dark"] .examiner-mark {
+    color: #f87171 !important;
+}
