@@ -127,13 +127,13 @@ function buildPatentDetailHTML(result, selectedFields) {
             Object.keys(analysisJson).forEach(key => {
                 const value = analysisJson[key];
                 const displayValue = typeof value === 'string' ? value.replace(/\n/g, '<br>') : value;
-                tableRows += `<tr><td style="border: 1px solid #ddd; padding: 8px;">${key}</td><td style="border: 1px solid #ddd; padding: 8px;">${displayValue}</td></tr>`;
+                tableRows += `<tr><td class="analysis-table-field">${key}</td><td class="analysis-table-value">${displayValue}</td></tr>`;
             });
             
             displayContent = `
                 <div class="analysis-content">
-                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-                        <tr><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">字段</th><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">内容</th></tr>
+                    <table class="analysis-table">
+                        <tr><th class="analysis-table-header">字段</th><th class="analysis-table-header">内容</th></tr>
                         ${tableRows}
                     </table>
                 </div>
@@ -143,10 +143,10 @@ function buildPatentDetailHTML(result, selectedFields) {
             // 如果不是JSON格式，显示原始内容
             displayContent = `
                 <div class="analysis-content">
-                    <div style="padding: 10px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; margin-bottom: 10px;">
+                    <div class="analysis-warning-box">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px; color: #856404;"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg> 解读结果未能解析为结构化格式，显示原始内容：
                     </div>
-                    <div style="white-space: pre-wrap; font-family: monospace; background-color: #f5f5f5; padding: 10px; border-radius: 4px;">
+                    <div class="analysis-raw-content">
                         ${analysisResult.analysis_content}
                     </div>
                 </div>
@@ -154,11 +154,11 @@ function buildPatentDetailHTML(result, selectedFields) {
         }
         
         htmlContent += `
-            <div style="margin-top: 15px; padding: 10px; background-color: #e3f2fd; border-radius: 5px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div class="analysis-section-container">
+                <div class="analysis-section-header">
                     <div>
-                        <strong style="color: var(--primary-color);"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M7 2.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0 4a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0 4a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-2.5-4a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg> 批量解读结果:</strong>
-                        <span id="modal-analysis-status-${result.patent_number}" style="margin-left: 10px; font-size: 12px; color: #28a745;">已完成</span>
+                        <strong class="analysis-section-title"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M7 2.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0 4a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0 4a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-2.5-4a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg> 批量解读结果:</strong>
+                        <span id="modal-analysis-status-${result.patent_number}" class="analysis-status completed">已完成</span>
                     </div>
                 </div>
                 <div id="modal-analysis-result-${result.patent_number}" data-analysis-section="${result.patent_number}">
@@ -173,11 +173,11 @@ function buildPatentDetailHTML(result, selectedFields) {
     } else if (isAnalyzing) {
         // 正在解读中，显示加载状态
         htmlContent += `
-            <div style="margin-top: 15px; padding: 10px; background-color: #e3f2fd; border-radius: 5px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div class="analysis-section-container">
+                <div class="analysis-section-header">
                     <div>
-                        <strong style="color: var(--primary-color);"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M7 2.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0 4a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0 4a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-2.5-4a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg> 批量解读结果:</strong>
-                        <span id="modal-analysis-status-${result.patent_number}" style="margin-left: 10px; font-size: 12px; color: #ff9800;">
+                        <strong class="analysis-section-title"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M7 2.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0 4a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0 4a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-2.5-4a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg> 批量解读结果:</strong>
+                        <span id="modal-analysis-status-${result.patent_number}" class="analysis-status pending">
                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="animation: spin 1s linear infinite; vertical-align: middle;">
                                 <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
                             </svg>
@@ -743,13 +743,13 @@ function updateAnalysisSection(element, analysisContent, parseSuccess, template,
             Object.keys(analysisJson).forEach(key => {
                 const value = analysisJson[key];
                 const displayValue = typeof value === 'string' ? value.replace(/\n/g, '<br>') : value;
-                tableRows += `<tr><td style="border: 1px solid #ddd; padding: 8px;">${key}</td><td style="border: 1px solid #ddd; padding: 8px;">${displayValue}</td></tr>`;
+                tableRows += `<tr><td class="analysis-table-field">${key}</td><td class="analysis-table-value">${displayValue}</td></tr>`;
             });
             
             displayContent = `
                 <div class="analysis-content">
-                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-                        <tr><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">字段</th><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">内容</th></tr>
+                    <table class="analysis-table">
+                        <tr><th class="analysis-table-header">字段</th><th class="analysis-table-header">内容</th></tr>
                         ${tableRows}
                     </table>
                 </div>
@@ -757,7 +757,7 @@ function updateAnalysisSection(element, analysisContent, parseSuccess, template,
         } catch (e) {
             displayContent = `
                 <div class="analysis-content">
-                    <div style="white-space: pre-wrap; font-family: monospace; background-color: #f5f5f5; padding: 10px; border-radius: 4px;">
+                    <div class="analysis-raw-content">
                         ${analysisContent}
                     </div>
                 </div>
@@ -766,7 +766,7 @@ function updateAnalysisSection(element, analysisContent, parseSuccess, template,
     } else {
         displayContent = `
             <div class="analysis-content">
-                <div style="white-space: pre-wrap; font-family: monospace; background-color: #f5f5f5; padding: 10px; border-radius: 4px;">
+                <div class="analysis-raw-content">
                     ${analysisContent}
                 </div>
             </div>
@@ -785,7 +785,7 @@ function updateAnalysisSection(element, analysisContent, parseSuccess, template,
     const modalAnalysisStatus = document.getElementById(`modal-analysis-status-${patentNumber}`);
     if (modalAnalysisStatus) {
         modalAnalysisStatus.textContent = '已完成';
-        modalAnalysisStatus.style.color = '#28a745';
+        modalAnalysisStatus.className = 'analysis-status completed';
     }
 }
 
@@ -810,13 +810,13 @@ function createAnalysisSection(patentNumber, analysisContent, parseSuccess, temp
             Object.keys(analysisJson).forEach(key => {
                 const value = analysisJson[key];
                 const displayValue = typeof value === 'string' ? value.replace(/\n/g, '<br>') : value;
-                tableRows += `<tr><td style="border: 1px solid #ddd; padding: 8px;">${key}</td><td style="border: 1px solid #ddd; padding: 8px;">${displayValue}</td></tr>`;
+                tableRows += `<tr><td class="analysis-table-field">${key}</td><td class="analysis-table-value">${displayValue}</td></tr>`;
             });
             
             displayContent = `
                 <div class="analysis-content">
-                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-                        <tr><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">字段</th><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">内容</th></tr>
+                    <table class="analysis-table">
+                        <tr><th class="analysis-table-header">字段</th><th class="analysis-table-header">内容</th></tr>
                         ${tableRows}
                     </table>
                 </div>
@@ -824,7 +824,7 @@ function createAnalysisSection(patentNumber, analysisContent, parseSuccess, temp
         } catch (e) {
             displayContent = `
                 <div class="analysis-content">
-                    <div style="white-space: pre-wrap; font-family: monospace; background-color: #f5f5f5; padding: 10px; border-radius: 4px;">
+                    <div class="analysis-raw-content">
                         ${analysisContent}
                     </div>
                 </div>
@@ -833,11 +833,11 @@ function createAnalysisSection(patentNumber, analysisContent, parseSuccess, temp
     }
     
     return `
-        <div style="margin-top: 15px; padding: 10px; background-color: #e3f2fd; border-radius: 5px;" data-analysis-section="${patentNumber}">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <div class="analysis-section-container" data-analysis-section="${patentNumber}">
+            <div class="analysis-section-header">
                 <div>
-                    <strong style="color: var(--primary-color);"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M7 2.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0 4a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0 4a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-2.5-4a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg> 批量解读结果:</strong>
-                    <span id="modal-analysis-status-${patentNumber}" style="margin-left: 10px; font-size: 12px; color: #28a745;">已完成</span>
+                    <strong class="analysis-section-title"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle; margin-right: 4px;"><path d="M7 2.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0 4a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0 4a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-2.5-4a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg> 批量解读结果:</strong>
+                    <span id="modal-analysis-status-${patentNumber}" class="analysis-status completed">已完成</span>
                 </div>
             </div>
             <div id="modal-analysis-result-${patentNumber}">

@@ -1221,3 +1221,22 @@
     color: #721c24;
 }
 
+/* 解读区域容器样式 */
+.analysis-section-container {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #e3f2fd;
+    border-radius: 5px;
+}
+
+.analysis-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.analysis-section-title {
+    color: var(--primary-color);
+}
+
