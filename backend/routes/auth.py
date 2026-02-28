@@ -651,8 +651,10 @@ def guest_login():
 
 @auth_bp.route('/')
 def index():
-    """Redirect root to app."""
-    return redirect(url_for('auth.serve_app'))
+    """Serve landing page."""
+    from flask import send_file
+    landing_path = os.path.join(BASE_DIR, 'frontend', 'landing.html')
+    return send_file(landing_path)
 
 
 @auth_bp.route('/app')
