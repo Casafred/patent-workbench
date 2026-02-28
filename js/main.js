@@ -1794,6 +1794,8 @@ window.openImageViewer = function(startIndex, patentNumber) {
     if (drawings.length === 0) return;
     
     let currentIndex = startIndex;
+    let scale = 1;
+    let rotation = 0;
     
     const viewerHTML = `
         <div id="image-viewer-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center;">
@@ -1801,13 +1803,22 @@ window.openImageViewer = function(startIndex, patentNumber) {
                 <span id="viewer-counter" style="color: white; font-size: 16px;">图 ${currentIndex + 1} / ${drawings.length}</span>
                 <button onclick="closeImageViewer()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; width: 40px; height: 40px; border-radius: 50%; cursor: pointer;">&times;</button>
             </div>
-            <div style="position: absolute; left: 20px; top: 50%; transform: translateY(-50%);">
+            <div style="position: absolute; left: 20px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 8px;">
                 <button id="viewer-prev-btn" onclick="navigateImageViewer(-1)" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 32px; width: 50px; height: 50px; border-radius: 50%; cursor: pointer;">&#8249;</button>
+                <button onclick="rotateImage(-90)" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 20px; width: 50px; height: 50px; border-radius: 50%; cursor: pointer;" title="向左旋转90度">↺</button>
             </div>
-            <div style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%);">
+            <div style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 8px;">
                 <button id="viewer-next-btn" onclick="navigateImageViewer(1)" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 32px; width: 50px; height: 50px; border-radius: 50%; cursor: pointer;">&#8250;</button>
+                <button onclick="rotateImage(90)" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 20px; width: 50px; height: 50px; border-radius: 50%; cursor: pointer;" title="向右旋转90度">↻</button>
             </div>
-            <img id="viewer-image" src="${drawings[currentIndex]}" style="max-width: 90%; max-height: 80%; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+            <div id="viewer-image-container" style="position: relative; display: flex; align-items: center; justify-content: center;">
+                <img id="viewer-image" src="${drawings[currentIndex]}" style="max-width: 90%; max-height: 80%; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); transition: transform 0.3s ease;">
+            </div>
+            <div style="position: absolute; bottom: 80px; display: flex; gap: 8px; align-items: center;">
+                <button onclick="zoomImage(-0.2)" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; width: 44px; height: 44px; border-radius: 50%; cursor: pointer;" title="缩小">-</button>
+                <span id="zoom-level" style="color: white; font-size: 14px; min-width: 60px; text-align: center;">${Math.round(scale * 100)}%</span>
+                <button onclick="zoomImage(0.2)" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 24px; width: 44px; height: 44px; border-radius: 50%; cursor: pointer;" title="放大">+</button>
+            </div>
             <div style="position: absolute; bottom: 20px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; max-width: 90%; max-height: 80px; overflow-y: auto;">
                 ${drawings.map((d, i) => `
                     <div onclick="jumpToImage(${i})" style="width: 50px; height: 50px; border: 2px solid ${i === currentIndex ? '#fff' : 'transparent'}; border-radius: 4px; cursor: pointer; overflow: hidden; opacity: ${i === currentIndex ? 1 : 0.6};">
@@ -1823,6 +1834,8 @@ window.openImageViewer = function(startIndex, patentNumber) {
     
     window.currentViewerDrawings = drawings;
     window.currentViewerIndex = currentIndex;
+    window.currentViewerScale = scale;
+    window.currentViewerRotation = rotation;
     
     document.addEventListener('keydown', handleViewerKeydown);
 };
@@ -1853,9 +1866,14 @@ function updateViewerImage() {
     
     const img = document.getElementById('viewer-image');
     const counter = document.getElementById('viewer-counter');
+    const zoomLevel = document.getElementById('zoom-level');
     
     if (img) img.src = drawings[index];
     if (counter) counter.textContent = `图 ${index + 1} / ${drawings.length}`;
+    if (zoomLevel) zoomLevel.textContent = `${Math.round(window.currentViewerScale * 100)}%`;
+    
+    // 应用缩放和旋转
+    img.style.transform = `scale(${window.currentViewerScale}) rotate(${window.currentViewerRotation}deg)`;
     
     document.querySelectorAll('#image-viewer-overlay > div:last-child > div').forEach((thumb, i) => {
         thumb.style.borderColor = i === index ? '#fff' : 'transparent';
@@ -1863,10 +1881,23 @@ function updateViewerImage() {
     });
 }
 
+window.zoomImage = function(delta) {
+    window.currentViewerScale = Math.max(0.5, Math.min(3, window.currentViewerScale + delta));
+    updateViewerImage();
+};
+
+window.rotateImage = function(delta) {
+    window.currentViewerRotation = (window.currentViewerRotation + delta) % 360;
+    updateViewerImage();
+};
+
 function handleViewerKeydown(e) {
     if (e.key === 'Escape') closeImageViewer();
     else if (e.key === 'ArrowLeft') navigateImageViewer(-1);
     else if (e.key === 'ArrowRight') navigateImageViewer(1);
+    else if (e.key === 'ArrowUp' || e.key === '+') zoomImage(0.2);
+    else if (e.key === 'ArrowDown' || e.key === '-') zoomImage(-0.2);
+    else if (e.key === 'r' || e.key === 'R') rotateImage(90);
 }
 
 // 从弹窗分析关系专利

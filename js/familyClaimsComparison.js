@@ -1397,6 +1397,7 @@ window.startFamilyClaimsComparison = async function(basePatentNumber, familyPate
     }));
     
     // 7. 保存到状态
+    appState.familyClaimsComparison.basePatent = basePatentNumber;
     appState.familyClaimsComparison.familyPatents = familyPatents;
     appState.familyClaimsComparison.selectedPatents = [...familyPatents];
     
