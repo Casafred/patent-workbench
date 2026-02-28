@@ -1426,12 +1426,14 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 
                 // 双栏对照模式
                 let dualColumnMode = false;
+                let originalNavCollapsed = false;
                 
                 function toggleDualColumnMode() {
                     dualColumnMode = !dualColumnMode;
                     const btn = document.getElementById('dual-column-btn');
                     const mainContent = document.querySelector('.content');
                     const container = document.querySelector('.container');
+                    const sideNav = document.getElementById('sideNav');
                     
                     if (!mainContent) {
                         console.error('找不到内容区域');
@@ -1446,6 +1448,12 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         // 扩大容器宽度
                         if (container) {
                             container.style.maxWidth = '1800px';
+                        }
+                        
+                        // 默认隐藏导航栏
+                        if (sideNav) {
+                            originalNavCollapsed = sideNav.classList.contains('collapsed');
+                            sideNav.classList.add('collapsed');
                         }
                         
                         // 创建双栏容器
@@ -1480,6 +1488,9 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         dualColumnWrapper.appendChild(leftColumn);
                         dualColumnWrapper.appendChild(rightColumn);
                         
+                        // 绑定导航栏点击事件 - 双栏同步跳转
+                        bindDualColumnNavEvents(leftColumn, rightColumn);
+                        
                     } else {
                         // 关闭双栏模式
                         btn.style.background = 'rgba(255,255,255,0.2)';
@@ -1488,6 +1499,11 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         // 恢复容器宽度
                         if (container) {
                             container.style.maxWidth = '1200px';
+                        }
+                        
+                        // 恢复导航栏状态
+                        if (sideNav && !originalNavCollapsed) {
+                            sideNav.classList.remove('collapsed');
                         }
                         
                         // 移除双栏结构
@@ -1499,6 +1515,29 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         // 显示原始内容
                         mainContent.style.display = 'block';
                     }
+                }
+                
+                // 绑定双栏模式下的导航栏点击事件
+                function bindDualColumnNavEvents(leftColumn, rightColumn) {
+                    const navItems = document.querySelectorAll('.side-nav-item[data-section]');
+                    
+                    navItems.forEach(item => {
+                        item.addEventListener('click', function(e) {
+                            const sectionId = this.getAttribute('data-section');
+                            
+                            // 在左右两栏中找到对应的section
+                            const leftSection = leftColumn.querySelector('#' + sectionId + ', [data-section-id="' + sectionId + '"]');
+                            const rightSection = rightColumn.querySelector('#' + sectionId + ', [data-section-id="' + sectionId + '"]');
+                            
+                            // 同步滚动到对应区域
+                            if (leftSection) {
+                                leftSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }
+                            if (rightSection) {
+                                rightSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }
+                        });
+                    });
                 }
                 
                 // 事件Tab切换
