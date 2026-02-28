@@ -197,7 +197,10 @@ function buildPatentDetailHTML(result, selectedFields) {
     
     // 附图 - 显示第一张，点击打开查看器
     if (data.drawings && data.drawings.length > 0 && shouldShowField('drawings', selectedFields)) {
-        const drawingsJson = JSON.stringify(data.drawings).replace(/"/g, '&quot;');
+        // 直接存储数据到全局变量（innerHTML中的script不会执行）
+        if (!window.patentDrawingsData) window.patentDrawingsData = {};
+        window.patentDrawingsData[result.patent_number] = data.drawings;
+        
         htmlContent += `
             <div style="margin-top: 15px; padding: 10px; background-color: #fce4ec; border-radius: 5px;">
                 <div style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
@@ -213,10 +216,6 @@ function buildPatentDetailHTML(result, selectedFields) {
                     </div>
                 </div>
             </div>
-            <script>
-                if (!window.patentDrawingsData) window.patentDrawingsData = {};
-                window.patentDrawingsData['${result.patent_number}'] = ${JSON.stringify(data.drawings)};
-            </script>
         `;
     }
     
