@@ -807,29 +807,37 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 <div class="header">
                     <div class="header-top">
                         <div class="patent-number">专利号: ${patentNumber}</div>
-                        <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-                            <button id="dual-column-btn" onclick="toggleDualColumnMode()" title="切换双栏对照模式" style="color: white; text-decoration: none; font-size: 0.9em; opacity: 0.9; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid rgba(255,255,255,0.3); cursor: pointer;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M0 3a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3zm2-1a1 1 0 0 0-1 1v1h2V2H2zm3 2h2V2H5v2zm3-2v2h2V2H8zm3 2v2h2V4h-2zm0 3v2h2V7h-2zm0 3v2h2v-2h-2zm-3 2v2h2v-2H8zm-3 2v2h2v-2H5zm-3-2v2h2v-2H2zm0-3v2h2V7H2zm0-3v2h2V4H2zm5 0v2h2V4H7zm2 3H7v2h2V7z"/></svg>
-                                双栏对照
-                            </button>
-                            ${data.pdf_link ? `
-                            <a href="${data.pdf_link}" target="_blank" style="color: white; text-decoration: none; font-size: 0.9em; opacity: 0.9; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/></svg>
-                                PDF原文
-                            </a>
+                        <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                            <!-- 功能按钮组 -->
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <button id="dual-column-btn" onclick="toggleDualColumnMode()" title="切换双栏对照模式" style="color: white; text-decoration: none; font-size: 0.95em; font-weight: 500; background: rgba(255,255,255,0.25); padding: 6px 14px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,0.4); cursor: pointer;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M0 3a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3zm2-1a1 1 0 0 0-1 1v1h2V2H2zm3 2h2V2H5v2zm3-2v2h2V2H8zm3 2v2h2V4h-2zm0 3v2h2V7h-2zm0 3v2h2v-2h-2zm-3 2v2h2v-2H8zm-3 2v2h2v-2H5zm-3-2v2h2v-2H2zm0-3v2h2V7H2zm0-3v2h2V4H2zm5 0v2h2V4H7zm2 3H7v2h2V7z"/></svg>
+                                    双栏对照
+                                </button>
+                                ${data.pdf_link ? `
+                                <a href="${data.pdf_link}" target="_blank" style="color: white; text-decoration: none; font-size: 0.95em; font-weight: 500; background: rgba(255,255,255,0.25); padding: 6px 14px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,0.4);">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/></svg>
+                                    PDF原文
+                                </a>
+                                ` : ''}
+                                ${patentResult.url ? `
+                                <a href="${patentResult.url}" target="_blank" style="color: white; text-decoration: none; font-size: 0.95em; font-weight: 500; background: rgba(255,255,255,0.25); padding: 6px 14px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,0.4);">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5z"/><path d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0v-5z"/></svg>
+                                    Google Patents
+                                </a>
+                                ` : ''}
+                            </div>
+                            <!-- 外部链接组 -->
+                            ${data.external_links && Object.keys(data.external_links).length > 0 ? `
+                            <div style="display: flex; gap: 8px; align-items: center; padding-left: 15px; border-left: 1px solid rgba(255,255,255,0.3);">
+                                ${Object.entries(data.external_links).map(([id, link]) => `
+                                <a href="${link.url}" target="_blank" style="color: rgba(255,255,255,0.85); text-decoration: none; font-size: 0.85em; background: rgba(0,0,0,0.15); padding: 4px 10px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5z"/><path d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0v-5z"/></svg>
+                                    ${link.text}
+                                </a>
+                                `).join('')}
+                            </div>
                             ` : ''}
-                            ${patentResult.url ? `
-                            <a href="${patentResult.url}" target="_blank" style="color: white; text-decoration: none; font-size: 0.9em; opacity: 0.9; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5z"/><path d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0v-5z"/></svg>
-                                Google Patents
-                            </a>
-                            ` : ''}
-                            ${data.external_links && Object.keys(data.external_links).length > 0 ? Object.entries(data.external_links).map(([id, link]) => `
-                            <a href="${link.url}" target="_blank" style="color: white; text-decoration: none; font-size: 0.9em; opacity: 0.9; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5z"/><path d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0v-5z"/></svg>
-                                ${link.text}
-                            </a>
-                            `).join('') : ''}
                         </div>
                     </div>
                     <h1 class="patent-title">${data.title || '专利详情'}</h1>
@@ -1431,31 +1439,33 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         btn.style.background = 'rgba(255,255,255,0.4)';
                         btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M0 3a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3zm2-1a1 1 0 0 0-1 1v1h2V2H2zm3 2h2V2H5v2zm3-2v2h2V2H8zm3 2v2h2V4h-2zm0 3v2h2V7h-2zm0 3v2h2v-2h-2zm-3 2v2h2v-2H8zm-3 2v2h2v-2H5zm-3-2v2h2v-2H2zm0-3v2h2V7H2zm0-3v2h2V4H2zm5 0v2h2V4H7zm2 3H7v2h2V7z"/></svg> 退出双栏';
                         
+                        // 扩大容器宽度
+                        if (container) {
+                            container.style.maxWidth = '1800px';
+                        }
+                        
                         // 创建双栏容器
                         const sections = mainContent.querySelectorAll('.section');
-                        const halfIndex = Math.ceil(sections.length / 2);
                         
                         // 创建双栏结构
                         const dualColumnWrapper = document.createElement('div');
                         dualColumnWrapper.className = 'dual-column-wrapper';
-                        dualColumnWrapper.style.cssText = 'display: flex; gap: 20px; padding: 20px;';
+                        dualColumnWrapper.style.cssText = 'display: flex; gap: 30px; padding: 20px;';
                         
                         const leftColumn = document.createElement('div');
                         leftColumn.className = 'dual-column-left';
-                        leftColumn.style.cssText = 'flex: 1; overflow-y: auto; max-height: calc(100vh - 200px); padding-right: 10px;';
+                        leftColumn.style.cssText = 'flex: 1; overflow-y: auto; max-height: calc(100vh - 200px); padding-right: 15px;';
                         
                         const rightColumn = document.createElement('div');
                         rightColumn.className = 'dual-column-right';
-                        rightColumn.style.cssText = 'flex: 1; overflow-y: auto; max-height: calc(100vh - 200px); padding-left: 10px; border-left: 1px solid #e0e0e0;';
+                        rightColumn.style.cssText = 'flex: 1; overflow-y: auto; max-height: calc(100vh - 200px); padding-left: 15px; border-left: 2px solid #e0e0e0;';
                         
-                        // 将sections分配到两栏
-                        sections.forEach((section, index) => {
-                            const clone = section.cloneNode(true);
-                            if (index < halfIndex) {
-                                leftColumn.appendChild(clone);
-                            } else {
-                                rightColumn.appendChild(clone);
-                            }
+                        // 左右两栏都显示全部内容（独立滚动）
+                        sections.forEach((section) => {
+                            const leftClone = section.cloneNode(true);
+                            const rightClone = section.cloneNode(true);
+                            leftColumn.appendChild(leftClone);
+                            rightColumn.appendChild(rightClone);
                         });
                         
                         // 隐藏原始内容
@@ -1466,20 +1476,15 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         dualColumnWrapper.appendChild(leftColumn);
                         dualColumnWrapper.appendChild(rightColumn);
                         
-                        // 同步滚动
-                        let syncingScroll = false;
-                        leftColumn.addEventListener('scroll', function() {
-                            if (!syncingScroll) {
-                                syncingScroll = true;
-                                rightColumn.scrollTop = leftColumn.scrollTop;
-                                setTimeout(() => syncingScroll = false, 50);
-                            }
-                        });
-                        
                     } else {
                         // 关闭双栏模式
                         btn.style.background = 'rgba(255,255,255,0.2)';
                         btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M0 3a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3zm2-1a1 1 0 0 0-1 1v1h2V2H2zm3 2h2V2H5v2zm3-2v2h2V2H8zm3 2v2h2V4h-2zm0 3v2h2V7h-2zm0 3v2h2v-2h-2zm-3 2v2h2v-2H8zm-3 2v2h2v-2H5zm-3-2v2h2v-2H2zm0-3v2h2V7H2zm0-3v2h2V4H2zm5 0v2h2V4H7zm2 3H7v2h2V7z"/></svg> 双栏对照';
+                        
+                        // 恢复容器宽度
+                        if (container) {
+                            container.style.maxWidth = '1200px';
+                        }
                         
                         // 移除双栏结构
                         const wrapper = document.querySelector('.dual-column-wrapper');
