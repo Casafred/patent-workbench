@@ -759,7 +759,6 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 ${buildNavItem('description', '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right:5px;vertical-align:middle"><path d="M3 2.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5v-11zm1 1v9h8v-9h-8z"/><path d="M5 5.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zM5 8a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5A.5.5 0 0 1 5 8zm0 2.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5z"/></svg>', '说明书')}
                 ${buildNavItem('events-combined', '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right:5px;vertical-align:middle"><path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm-3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm-5 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>', '事件信息')}
                 ${buildNavItem('family', '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right:5px;vertical-align:middle"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7Zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-5.784 6A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216ZM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/></svg>', '同族信息')}
-                ${buildNavItem('external-links', '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right:5px;vertical-align:middle"><path d="M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l1.315-1.315a.5.5 0 0 1 .707 0l.025.025a.5.5 0 0 1 0 .707l-1.315 1.315a4 4 0 0 1-5.656-5.656l1.372-1.372a.5.5 0 0 1 .707 0l.025.025a.5.5 0 0 1 0 .707l-.975.975A2.5 2.5 0 0 0 5.5 11a2.5 2.5 0 0 0 2.5-2.5V8a.5.5 0 0 1 1 0v.5a3.5 3.5 0 0 1-3.5 3.5A3.5 3.5 0 0 1 2 8.5a3.5 3.5 0 0 1 1.025-2.473l.975-.975a.5.5 0 0 1 .707 0l.025.025a.5.5 0 0 1 0 .707l-.025.025-.975.975a2.5 2.5 0 0 0-.515.558z"/><path d="M6.25 3.544l.975-.975a.5.5 0 0 1 .707 0l.025.025a.5.5 0 0 1 0 .707l-.975.975a2.5 2.5 0 0 0-.515.558 2.5 2.5 0 0 0 .515 3.042l.975.975a.5.5 0 0 1 0 .707l-.025.025a.5.5 0 0 1-.707 0l-.975-.975a3.5 3.5 0 0 1 0-4.95l.975-.975a.5.5 0 0 1 .025-.025z"/><path d="M9.878.392a.5.5 0 0 1 .707 0l4.243 4.243a.5.5 0 0 1 0 .707l-4.243 4.243a.5.5 0 0 1-.707 0l-4.243-4.243a.5.5 0 0 1 0-.707L9.878.392zM10.232 1 6 5.232l3.768 3.768L14 5.232 10.232 1z"/></svg>', '外部链接')}
                 ${buildNavItem('related-patents', '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right:5px;vertical-align:middle"><path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811V2.828zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"/></svg>', '相关专利')}
             </nav>
             
@@ -767,7 +766,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 <div class="header">
                     <div class="header-top">
                         <div class="patent-number">专利号: ${patentNumber}</div>
-                        <div style="display: flex; gap: 15px; align-items: center;">
+                        <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
                             <button id="dual-column-btn" onclick="toggleDualColumnMode()" title="切换双栏对照模式" style="color: white; text-decoration: none; font-size: 0.9em; opacity: 0.9; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid rgba(255,255,255,0.3); cursor: pointer;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M0 3a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3zm2-1a1 1 0 0 0-1 1v1h2V2H2zm3 2h2V2H5v2zm3-2v2h2V2H8zm3 2v2h2V4h-2zm0 3v2h2V7h-2zm0 3v2h2v-2h-2zm-3 2v2h2v-2H8zm-3 2v2h2v-2H5zm-3-2v2h2v-2H2zm0-3v2h2V7H2zm0-3v2h2V4H2zm5 0v2h2V4H7zm2 3H7v2h2V7z"/></svg>
                                 双栏对照
@@ -775,15 +774,21 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                             ${data.pdf_link ? `
                             <a href="${data.pdf_link}" target="_blank" style="color: white; text-decoration: none; font-size: 0.9em; opacity: 0.9; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/></svg>
-                                下载PDF原文
+                                PDF原文
                             </a>
                             ` : ''}
                             ${patentResult.url ? `
-                            <a href="${patentResult.url}" target="_blank" style="color: white; text-decoration: underline; font-size: 0.9em; opacity: 0.9; display: inline-flex; align-items: center; gap: 5px;">
+                            <a href="${patentResult.url}" target="_blank" style="color: white; text-decoration: none; font-size: 0.9em; opacity: 0.9; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5z"/><path d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0v-5z"/></svg>
                                 Google Patents
                             </a>
                             ` : ''}
+                            ${data.external_links && Object.keys(data.external_links).length > 0 ? Object.entries(data.external_links).map(([id, link]) => `
+                            <a href="${link.url}" target="_blank" style="color: white; text-decoration: none; font-size: 0.9em; opacity: 0.9; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5z"/><path d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0v-5z"/></svg>
+                                ${link.text}
+                            </a>
+                            `).join('') : ''}
                         </div>
                     </div>
                     <h1 class="patent-title">${data.title || '专利详情'}</h1>
@@ -1065,19 +1070,30 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 <span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7Zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-5.784 6A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216ZM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"/></svg></span>
                                 同族信息 ${data.family_applications ? '(' + data.family_applications.length + ')' : ''}
                             </div>
-                            ${data.family_applications && data.family_applications.length > 1 ? `
-                            <button class="copy-section-btn" onclick="jumpToFamilyComparisonFromNewTab(event, '${patentNumber}')" title="跳转到功能四进行同族权利要求对比分析" style="background: linear-gradient(135deg, #9c27b0 0%, #673ab7 100%) !important;">
-                                同族对比
-                            </button>
-                            ` : ''}
-                            ${data.family_applications && data.family_applications.length > 0 ? `
-                            <button class="copy-section-btn analyze-btn" onclick="analyzeRelationPatents(event, '${patentNumber}', 'family')">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
-                                </svg>
-                                分析同族专利
-                            </button>
-                            ` : ''}
+                            <div class="section-actions" style="margin-left: auto; display: flex; gap: 8px;">
+                                ${data.family_applications && data.family_applications.length > 0 ? `
+                                <button class="copy-section-btn" onclick="copyFamilyPublicationNumbers(event)" title="复制所有公开号">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" width="14" height="14">
+                                        <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                        <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                                    </svg>
+                                    复制公开号
+                                </button>
+                                ` : ''}
+                                ${data.family_applications && data.family_applications.length > 1 ? `
+                                <button class="copy-section-btn" onclick="jumpToFamilyComparisonFromNewTab(event, '${patentNumber}')" title="跳转到功能四进行同族权利要求对比分析" style="background: linear-gradient(135deg, #9c27b0 0%, #673ab7 100%) !important;">
+                                    同族对比
+                                </button>
+                                ` : ''}
+                                ${data.family_applications && data.family_applications.length > 0 ? `
+                                <button class="copy-section-btn analyze-btn" onclick="analyzeRelationPatents(event, '${patentNumber}', 'family')">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                                    </svg>
+                                    分析同族专利
+                                </button>
+                                ` : ''}
+                            </div>
                         </h2>
                         ${data.family_id && shouldShowField('family_id') ? `<div class="info-card" style="margin-bottom: 20px;"><div class="info-label">同族ID</div><div class="info-value">${data.family_id}</div></div>` : ''}
                         ${data.family_applications && data.family_applications.length > 0 && shouldShowField('family_applications') ? `
@@ -1100,20 +1116,6 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                             </tbody>
                         </table>
                         ` : ''}
-                    </div>
-                    ` : ''}
-                    
-                    ${data.external_links && Object.keys(data.external_links).length > 0 && shouldShowField('external_links') ? `
-                    <div class="section" id="external-links">
-                        <h2 class="section-title">
-                            <span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l1.315-1.315a.5.5 0 0 1 .707 0l.025.025a.5.5 0 0 1 0 .707l-1.315 1.315a4 4 0 0 1-5.656-5.656l1.372-1.372a.5.5 0 0 1 .707 0l.025.025a.5.5 0 0 1 0 .707l-.975.975A2.5 2.5 0 0 0 5.5 11a2.5 2.5 0 0 0 2.5-2.5V8a.5.5 0 0 1 1 0v.5a3.5 3.5 0 0 1-3.5 3.5A3.5 3.5 0 0 1 2 8.5a3.5 3.5 0 0 1 1.025-2.473l.975-.975a.5.5 0 0 1 .707 0l.025.025a.5.5 0 0 1 0 .707l-.025.025-.975.975a2.5 2.5 0 0 0-.515.558z"/><path d="M6.25 3.544l.975-.975a.5.5 0 0 1 .707 0l.025.025a.5.5 0 0 1 0 .707l-.975.975a2.5 2.5 0 0 0-.515.558 2.5 2.5 0 0 0 .515 3.042l.975.975a.5.5 0 0 1 0 .707l-.025.025a.5.5 0 0 1-.707 0l-.975-.975a3.5 3.5 0 0 1 0-4.95l.975-.975a.5.5 0 0 1 .025-.025z"/><path d="M9.878.392a.5.5 0 0 1 .707 0l4.243 4.243a.5.5 0 0 1 0 .707l-4.243 4.243a.5.5 0 0 1-.707 0l-4.243-4.243a.5.5 0 0 1 0-.707L9.878.392zM10.232 1 6 5.232l3.768 3.768L14 5.232 10.232 1z"/></svg></span>
-                            外部链接
-                        </h2>
-                        <div class="link-grid">
-                            ${Object.entries(data.external_links).map(([id, link]) => `
-                            <a href="${link.url}" target="_blank" class="link-card">${link.text}</a>
-                            `).join('')}
-                        </div>
                     </div>
                     ` : ''}
                     
@@ -1565,6 +1567,45 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     });
                 }
                 
+                // 复制同族公开号
+                function copyFamilyPublicationNumbers(event) {
+                    event.stopPropagation();
+                    
+                    const table = document.getElementById('family-table');
+                    if (!table) return;
+                    
+                    const rows = table.querySelectorAll('tbody tr');
+                    const publicationNumbers = [];
+                    
+                    rows.forEach(row => {
+                        const cells = row.querySelectorAll('td');
+                        if (cells.length >= 3 && cells[2].textContent.trim() && cells[2].textContent.trim() !== '-') {
+                            publicationNumbers.push(cells[2].textContent.trim());
+                        }
+                    });
+                    
+                    if (publicationNumbers.length === 0) {
+                        alert('没有可复制的公开号');
+                        return;
+                    }
+                    
+                    const textToCopy = publicationNumbers.join('\\n');
+                    
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                        const btn = event.target.closest('.copy-section-btn');
+                        if (btn) {
+                            const originalHTML = btn.innerHTML;
+                            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16" style="width:14px;height:14px"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/></svg> 已复制 ' + publicationNumbers.length + ' 个';
+                            setTimeout(() => {
+                                btn.innerHTML = originalHTML;
+                            }, 2000);
+                        }
+                    }).catch(err => {
+                        console.error('复制失败:', err);
+                        alert('复制失败，请手动复制');
+                    });
+                }
+                
                 // 复制section内容的通用函数
                 function copySectionContent(event, sectionId, sectionName) {
                     event.stopPropagation(); // 阻止触发折叠/展开
@@ -1719,12 +1760,17 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     const sections = document.querySelectorAll('.section');
                     
                     const sectionDataMap = {
+                        'analysis-result': pageData.analysisResult,
+                        'basic-info': true,
                         'abstract': pageData.abstract && pageData.abstract.length > 0,
+                        'drawings': pageData.drawings && pageData.drawings.length > 0,
+                        'classifications': pageData.cpc_classifications && pageData.cpc_classifications.length > 0,
                         'claims': pageData.claims && pageData.claims.length > 0,
-                        'citations': pageData.patent_citations && pageData.patent_citations.length > 0,
-                        'cited-by': pageData.cited_by && pageData.cited_by.length > 0,
-                        'similar': pageData.similar_documents && pageData.similar_documents.length > 0,
-                        'description': pageData.description && pageData.description.length > 0
+                        'description': pageData.description && pageData.description.length > 0,
+                        'events-combined': (pageData.events_timeline && pageData.events_timeline.length > 0) || (pageData.legal_events && pageData.legal_events.length > 0),
+                        'family': pageData.family_id || (pageData.family_applications && pageData.family_applications.length > 0),
+                        'external-links': pageData.external_links && Object.keys(pageData.external_links).length > 0,
+                        'related-patents': (pageData.patent_citations && pageData.patent_citations.length > 0) || (pageData.cited_by && pageData.cited_by.length > 0) || (pageData.similar_documents && pageData.similar_documents.length > 0)
                     };
                     
                     // 标记缺失数据的导航项
