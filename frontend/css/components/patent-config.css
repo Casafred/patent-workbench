@@ -1102,3 +1102,122 @@
     }
 }
 
+/* ====================================================================== */
+/* 解读结果表格样式 */
+/* ====================================================================== */
+
+.analysis-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.analysis-table-header {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+    background-color: #f2f2f2;
+}
+
+.analysis-table-field {
+    border: 1px solid #ddd;
+    padding: 8px;
+    font-weight: 500;
+}
+
+.analysis-table-value {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+/* 解读状态样式 */
+.analysis-status {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.analysis-status.completed {
+    background: #d4edda;
+    color: #155724;
+}
+
+.analysis-status.cached {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.analysis-status.error {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.analysis-status.pending {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+/* AI声明样式 */
+.ai-disclaimer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 6px;
+    margin-bottom: 10px;
+}
+
+.ai-disclaimer.compact {
+    padding: 6px 10px;
+}
+
+.ai-disclaimer-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.ai-disclaimer-text {
+    font-size: 0.85em;
+    color: #64748b;
+}
+
+/* 解读警告框样式 */
+.analysis-warning-box {
+    padding: 10px;
+    background-color: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    color: #856404;
+}
+
+/* 解读原始内容样式 */
+.analysis-raw-content {
+    white-space: pre-wrap;
+    font-family: monospace;
+    background-color: #f5f5f5;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+/* 解读错误框样式 */
+.analysis-error-box {
+    padding: 10px;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    color: #721c24;
+}
+

@@ -1277,13 +1277,13 @@ function initPatentBatchEventListeners() {
                         template.fields.forEach(field => {
                             const value = analysisJson[field.id] || '-';
                             const displayValue = typeof value === 'string' ? value.replace(/\n/g, '<br>') : value;
-                            tableRows += `<tr><td style="border: 1px solid #ddd; padding: 8px; font-weight: 500;">${field.name}</td><td style="border: 1px solid #ddd; padding: 8px;">${displayValue}</td></tr>`;
+                            tableRows += `<tr><td class="analysis-table-field">${field.name}</td><td class="analysis-table-value">${displayValue}</td></tr>`;
                         });
                         
                         displayContent = `
                             <div class="analysis-content">
-                                <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-                                    <tr><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">字段</th><th style="border: 1px solid #ddd; padding: 8px; text-align: left; background-color: #f2f2f2;">内容</th></tr>
+                                <table class="analysis-table">
+                                    <tr><th class="analysis-table-header">字段</th><th class="analysis-table-header">内容</th></tr>
                                     ${tableRows}
                                 </table>
                             </div>
@@ -1293,10 +1293,10 @@ function initPatentBatchEventListeners() {
                         // 如果不是JSON格式，显示原始内容
                         displayContent = `
                             <div class="analysis-content">
-                                <div style="padding: 10px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; margin-bottom: 10px;">
+                                <div class="analysis-warning-box">
                                     ⚠️ 解读结果未能解析为结构化格式，显示原始内容：
                                 </div>
-                                <div style="white-space: pre-wrap; font-family: monospace; background-color: #f5f5f5; padding: 10px; border-radius: 4px;">
+                                <div class="analysis-raw-content">
                                     ${analysisContent}
                                 </div>
                             </div>
@@ -1308,14 +1308,13 @@ function initPatentBatchEventListeners() {
                         const statusBadge = resultContainer.querySelector('.analysis-status');
                         if (statusBadge) {
                             statusBadge.textContent = fromCache ? '已缓存' : '已完成';
-                            statusBadge.style.background = fromCache ? '#fff3cd' : '#d4edda';
-                            statusBadge.style.color = fromCache ? '#856404' : '#155724';
+                            statusBadge.className = 'analysis-status ' + (fromCache ? 'cached' : 'completed');
                         }
 
                         const contentDiv = resultContainer.querySelector('.analysis-result-content');
                         if (contentDiv) {
                             contentDiv.innerHTML = `
-                                <div class="ai-disclaimer compact" style="margin-bottom: 10px;">
+                                <div class="ai-disclaimer compact">
                                     <div class="ai-disclaimer-icon">AI</div>
                                     <div class="ai-disclaimer-text"><strong>AI生成：</strong>以下解读由AI生成，仅供参考${fromCache ? '（来自缓存）' : ''}</div>
                                 </div>
@@ -1355,14 +1354,13 @@ function initPatentBatchEventListeners() {
                         const statusBadge = resultContainer.querySelector('.analysis-status');
                         if (statusBadge) {
                             statusBadge.textContent = '失败';
-                            statusBadge.style.background = '#f8d7da';
-                            statusBadge.style.color = '#721c24';
+                            statusBadge.className = 'analysis-status error';
                         }
 
                         const contentDiv = resultContainer.querySelector('.analysis-result-content');
                         if (contentDiv) {
                             contentDiv.innerHTML = `
-                                <div style="padding: 10px; background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; color: #721c24;">
+                                <div class="analysis-error-box">
                                     <strong>解读失败:</strong> ${error.message}
                                 </div>
                             `;
