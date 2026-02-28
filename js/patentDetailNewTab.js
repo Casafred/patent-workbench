@@ -1780,7 +1780,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                             const url = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
                             
                             if (textType === 'claims') {
-                                const claims = data.claims || [];
+                                const claims = pageData.claims || [];
                                 if (claims.length === 0) throw new Error('没有可翻译的权利要求');
                                 
                                 const formattedClaims = claims.map((claim, i) => {
@@ -1842,7 +1842,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                     });
                                 }
                             } else {
-                                const description = data.description || '';
+                                const description = pageData.description || '';
                                 if (!description) throw new Error('没有可翻译的说明书内容');
                                 
                                 const response = await fetch(url, {
