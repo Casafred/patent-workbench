@@ -1430,6 +1430,62 @@
     color: var(--text-color) !important;
 }
 
+/* 历史记录面板按钮样式 */
+[data-theme="dark"] #history_panel .small-button {
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] #history_panel button.small-button {
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] #history_panel button[id="refresh_history_btn"],
+[data-theme="dark"] #history_panel button[id="close_history_btn"],
+[data-theme="dark"] #history_panel button[id="history_select_all_btn"],
+[data-theme="dark"] #history_panel button[id="history_deselect_all_btn"] {
+    color: #e2e8f0 !important;
+    background: #334155 !important;
+    border-color: #475569 !important;
+}
+
+[data-theme="dark"] #history_panel button[id="clear_history_btn"] {
+    color: #fca5a5 !important;
+    background: rgba(239, 68, 68, 0.2) !important;
+    border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+[data-theme="dark"] #history_panel button[id="history_batch_crawl_btn"] {
+    color: #e2e8f0 !important;
+}
+
+/* 历史记录表格内的按钮 */
+[data-theme="dark"] .history-list .history-action-btn {
+    color: white !important;
+}
+
+[data-theme="dark"] .history-list .history-item-auto-analyze {
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .history-list label {
+    color: #e2e8f0 !important;
+}
+
+/* 并解读勾选框文字 */
+[data-theme="dark"] #history_panel label[for="history_auto_analyze_checkbox"],
+[data-theme="dark"] #history_panel label {
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .history-actions label {
+    color: #e2e8f0 !important;
+}
+
+/* 历史记录表格内复选框标签 */
+[data-theme="dark"] .history-list table td label {
+    color: #e2e8f0 !important;
+}
+
 /* ========================================
    81. 多图查看器暗黑模式覆盖
    ======================================== */
