@@ -103,9 +103,9 @@ function initChat() {
     if (chatParamsModal && chatParamsBtn && closeModalBtn) {
         chatParamsBtn.addEventListener('click', () => {
             chatParamsModal.style.display = 'flex';
-            requestAnimationFrame(() => {
+            setTimeout(() => {
                 chatParamsModal.classList.add('show');
-            });
+            }, 10);
         });
 
         closeModalBtn.addEventListener('click', () => {
