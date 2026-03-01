@@ -1,8 +1,136 @@
 // =================================================================================
 // 专利对话功能模块
+// 支持多服务商切换和深度思考模式
 // =================================================================================
 
-// 初始化模态框拖动功能
+let patentChatState = {
+    providers: {},
+    currentProvider: 'zhipu',
+    currentModel: 'glm-4-flash',
+    thinkingMode: {
+        enabled: false,
+        budget: null
+    },
+    thinkingOnlyModels: [],
+    stopStreaming: false
+};
+
+async function initPatentChatProviders() {
+    try {
+        const response = await fetch('/api/providers');
+        if (response.ok) {
+            const data = await response.json();
+            if (data.providers) {
+                patentChatState.providers = data.providers;
+                patentChatState.thinkingOnlyModels = data.providers.aliyun?.thinking_only_models || [];
+                patentChatState.currentProvider = localStorage.getItem('llm_provider') || data.default_provider || 'zhipu';
+                patentChatState.currentModel = data.providers[patentChatState.currentProvider]?.default_model || 'glm-4-flash';
+                updatePatentChatProviderSelect();
+                updatePatentChatModelSelect();
+                updatePatentChatThinkingButton();
+            }
+        }
+    } catch (error) {
+        console.warn('[Patent Chat] 从API加载配置失败，尝试本地配置');
+        try {
+            const configResponse = await fetch('config/models.json');
+            if (configResponse.ok) {
+                const config = await configResponse.json();
+                if (config.providers) {
+                    patentChatState.providers = config.providers;
+                    patentChatState.thinkingOnlyModels = config.providers.aliyun?.thinking_only_models || [];
+                    patentChatState.currentProvider = localStorage.getItem('llm_provider') || config.default_provider || 'zhipu';
+                    patentChatState.currentModel = config.providers[patentChatState.currentProvider]?.default_model || config.default_model || 'glm-4-flash';
+                    updatePatentChatProviderSelect();
+                    updatePatentChatModelSelect();
+                    updatePatentChatThinkingButton();
+                }
+            }
+        } catch (err) {
+            console.warn('[Patent Chat] 使用默认配置');
+        }
+    }
+}
+
+function updatePatentChatProviderSelect() {
+    const providerSelect = document.getElementById('patent_chat_provider');
+    if (!providerSelect || !patentChatState.providers) return;
+    
+    const options = Object.entries(patentChatState.providers).map(([key, val]) => 
+        `<option value="${key}" ${key === patentChatState.currentProvider ? 'selected' : ''}>${val.name}</option>`
+    ).join('');
+    
+    providerSelect.innerHTML = options;
+}
+
+function updatePatentChatModelSelect() {
+    const modelSelect = document.getElementById('patent_chat_model');
+    if (!modelSelect || !patentChatState.providers || !patentChatState.providers[patentChatState.currentProvider]) return;
+    
+    const models = patentChatState.providers[patentChatState.currentProvider].models || [];
+    const defaultModel = patentChatState.providers[patentChatState.currentProvider].default_model || models[0];
+    
+    const options = models.map(m => 
+        `<option value="${m}" ${m === patentChatState.currentModel ? 'selected' : ''}>${m}</option>`
+    ).join('');
+    
+    modelSelect.innerHTML = options;
+    patentChatState.currentModel = defaultModel;
+}
+
+function patentChatSupportsThinking(model, provider) {
+    if (provider !== 'aliyun') return false;
+    const thinkingSupportedModels = [
+        'qwen-flash', 'qwen-turbo', 'qwen-plus', 'qwen3-max', 'qwen-long',
+        'deepseek-v3.2', 'qwq-plus', 'qwq-32b', 'deepseek-r1', 
+        'deepseek-r1-distill-qwen-32b', 'kimi-k2-thinking'
+    ];
+    return thinkingSupportedModels.includes(model);
+}
+
+function patentChatIsThinkingOnlyModel(model) {
+    return patentChatState.thinkingOnlyModels.includes(model);
+}
+
+function updatePatentChatThinkingButton() {
+    const thinkingBtn = document.getElementById('patent_chat_thinking_btn');
+    if (!thinkingBtn) return;
+    
+    const supportsThinking = patentChatSupportsThinking(patentChatState.currentModel, patentChatState.currentProvider);
+    
+    if (!supportsThinking) {
+        thinkingBtn.style.display = 'none';
+        return;
+    }
+    
+    thinkingBtn.style.display = 'inline-flex';
+    
+    const isOnlyThinking = patentChatIsThinkingOnlyModel(patentChatState.currentModel);
+    
+    if (isOnlyThinking) {
+        thinkingBtn.classList.add('active', 'thinking-only');
+        thinkingBtn.title = '当前模型为仅思考模式（自动启用）';
+    } else if (patentChatState.thinkingMode.enabled) {
+        thinkingBtn.classList.add('active');
+        thinkingBtn.classList.remove('thinking-only');
+        thinkingBtn.title = '深度思考模式已开启 (点击关闭)';
+    } else {
+        thinkingBtn.classList.remove('active', 'thinking-only');
+        thinkingBtn.title = '深度思考模式 (点击开启)';
+    }
+}
+
+function togglePatentChatThinkingMode() {
+    if (patentChatIsThinkingOnlyModel(patentChatState.currentModel)) {
+        console.log('[Patent Chat] 当前模型为仅思考模式，无法关闭');
+        return;
+    }
+    
+    patentChatState.thinkingMode.enabled = !patentChatState.thinkingMode.enabled;
+    updatePatentChatThinkingButton();
+    console.log('[Patent Chat] 深度思考模式:', patentChatState.thinkingMode.enabled ? '已开启' : '已关闭');
+}
+
 function initModalDrag(modal) {
     const modalContent = modal.querySelector('.patent-chat-modal');
     const header = modalContent.querySelector('.modal-header');
@@ -21,7 +149,6 @@ function initModalDrag(modal) {
     document.addEventListener('mouseup', dragEnd);
     
     function dragStart(e) {
-        // 不拖动关闭按钮
         if (e.target.closest('.close-btn')) return;
         
         isDragging = true;
@@ -38,7 +165,6 @@ function initModalDrag(modal) {
         currentX = e.clientX - initialX;
         currentY = e.clientY - initialY;
         
-        // 限制在视口内
         const maxX = window.innerWidth - modalContent.offsetWidth;
         const maxY = window.innerHeight - modalContent.offsetHeight;
         
@@ -57,9 +183,7 @@ function initModalDrag(modal) {
     }
 }
 
-// 打开专利对话窗口
 function openPatentChat(patentNumber) {
-    // 查找专利数据
     const patent = appState.patentBatch.patentResults.find(p => p.patent_number === patentNumber);
     
     if (!patent || !patent.success) {
@@ -67,7 +191,6 @@ function openPatentChat(patentNumber) {
         return;
     }
     
-    // 初始化对话状态
     if (!appState.patentBatch.patentChats[patentNumber]) {
         appState.patentBatch.patentChats[patentNumber] = {
             patentNumber,
@@ -79,49 +202,40 @@ function openPatentChat(patentNumber) {
         appState.patentBatch.patentChats[patentNumber].isOpen = true;
     }
     
-    // 显示弹窗（不使用flex，直接显示）
     const modal = getEl('patent_chat_modal');
     if (modal) {
         modal.style.display = 'block';
-        // 初始化拖动功能
         initModalDrag(modal);
     }
     
-    // 更新弹窗内容
     updatePatentChatModal(patentNumber);
     
-    // 聚焦输入框
     const input = getEl('patent_chat_input');
     if (input) {
         setTimeout(() => input.focus(), 100);
     }
 }
 
-// 关闭专利对话窗口
 function closePatentChat() {
     const modal = getEl('patent_chat_modal');
     if (modal) {
         modal.style.display = 'none';
     }
     
-    // 标记为关闭
     const currentPatentNumber = modal.dataset.currentPatent;
     if (currentPatentNumber && appState.patentBatch.patentChats[currentPatentNumber]) {
         appState.patentBatch.patentChats[currentPatentNumber].isOpen = false;
     }
 }
 
-// 更新对话弹窗内容
 function updatePatentChatModal(patentNumber) {
     const modal = getEl('patent_chat_modal');
     const chatState = appState.patentBatch.patentChats[patentNumber];
     
     if (!modal || !chatState) return;
     
-    // 保存当前专利号
     modal.dataset.currentPatent = patentNumber;
     
-    // 更新标题
     const titleEl = modal.querySelector('.patent-chat-title');
     if (titleEl) {
         titleEl.textContent = `专利对话：${patentNumber}`;
@@ -132,11 +246,9 @@ function updatePatentChatModal(patentNumber) {
         subtitleEl.textContent = chatState.patentData.title || '无标题';
     }
     
-    // 更新对话历史
     updateChatHistory(patentNumber);
 }
 
-// 更新对话历史显示
 function updateChatHistory(patentNumber) {
     const chatState = appState.patentBatch.patentChats[patentNumber];
     const historyEl = getEl('patent_chat_history');
@@ -145,7 +257,6 @@ function updateChatHistory(patentNumber) {
     
     historyEl.innerHTML = '';
     
-    // 如果没有对话历史，显示欢迎消息
     if (chatState.messages.length === 0) {
         const welcomeDiv = document.createElement('div');
         welcomeDiv.className = 'chat-message system-message';
@@ -171,9 +282,8 @@ function updateChatHistory(patentNumber) {
         return;
     }
     
-    // 显示对话历史
     chatState.messages.forEach(msg => {
-        if (msg.role === 'system') return; // 不显示system消息
+        if (msg.role === 'system') return;
         
         const messageDiv = document.createElement('div');
         messageDiv.className = `chat-message ${msg.role}-message`;
@@ -183,50 +293,61 @@ function updateChatHistory(patentNumber) {
             ? '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: text-bottom;"><path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/></svg>'
             : '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: text-bottom;"><path d="M6 12.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5ZM3 8.062C3 6.76 4.235 5.765 5.53 5.886a26.58 26.58 0 0 0 4.94 0C11.765 5.765 13 6.76 13 8.062v1.157a.933.933 0 0 1-.765.935c-.845.147-2.34.346-4.235.346-1.895 0-3.39-.2-4.235-.346A.933.933 0 0 1 3 9.219V8.062Zm4.542-.827a.25.25 0 0 0-.217.068l-.92.9a24.767 24.767 0 0 1-1.871-.183.25.25 0 0 0-.068.495c.55.076 1.232.149 2.02.193a.25.25 0 0 0 .189-.071l.754-.736.847 1.71a.25.25 0 0 0 .404.062l.932-.97a25.286 25.286 0 0 0 1.922-.188.25.25 0 0 0-.068-.495c-.538.074-1.207.145-1.98.189a.25.25 0 0 0-.166.076l-.754.785-.842-1.7a.25.25 0 0 0-.182-.135Z"/><path d="M8.5 1.866a1 1 0 1 0-1 0V3h-2A4.5 4.5 0 0 0 1 7.5V8a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1v1a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1v-.5A4.5 4.5 0 0 0 10.5 3h-2V1.866ZM14 7.5V13a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7.5A3.5 3.5 0 0 1 5.5 4h5A3.5 3.5 0 0 1 14 7.5Z"/></svg>';
         
+        let contentHtml = '';
+        if (msg.reasoningContent) {
+            contentHtml = `
+                <div class="thinking-container">
+                    <div class="thinking-header" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7"></circle><path d="M8 12v-4M8 6h.01"/></svg>
+                        <span class="thinking-title">深度思考完成</span>
+                        <span class="thinking-toggle-icon">▶</span>
+                    </div>
+                    <div class="thinking-content" style="display: none;">
+                        <div class="thinking-text">${escapeHtml(msg.reasoningContent)}</div>
+                    </div>
+                </div>
+                <div class="response-content">${formatMessageContent(msg.content)}</div>
+            `;
+        } else {
+            contentHtml = formatMessageContent(msg.content);
+        }
+        
         messageDiv.innerHTML = `
             <div class="message-header">
                 <span class="message-role">${roleIcon} ${roleLabel}</span>
                 <span class="message-time">${new Date(msg.timestamp).toLocaleTimeString()}</span>
             </div>
-            <div class="message-content">${formatMessageContent(msg.content)}</div>
+            <div class="message-content">${contentHtml}</div>
         `;
         
         historyEl.appendChild(messageDiv);
     });
     
-    // 滚动到底部
     historyEl.scrollTop = historyEl.scrollHeight;
 }
 
-// 格式化消息内容 - 支持Markdown渲染
 function formatMessageContent(content) {
-    // 检查是否有marked库
     if (typeof marked !== 'undefined') {
         try {
-            // 配置marked选项
             marked.setOptions({
-                breaks: true,          // 支持GFM换行
-                gfm: true,             // 启用GitHub风格的Markdown
-                headerIds: false,      // 禁用标题ID
-                mangle: false,         // 禁用邮箱混淆
-                sanitize: false,       // 不使用内置的sanitize（已废弃）
-                smartLists: true,      // 智能列表
-                smartypants: false,    // 不转换引号等
-                xhtml: false           // 不使用XHTML
+                breaks: true,
+                gfm: true,
+                headerIds: false,
+                mangle: false,
+                sanitize: false,
+                smartLists: true,
+                smartypants: false,
+                xhtml: false
             });
             
-            // 使用marked渲染Markdown
             const html = marked.parse(content);
             
-            // 简单的XSS防护：移除潜在危险的标签和属性
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = html;
             
-            // 移除script标签
             const scripts = tempDiv.querySelectorAll('script');
             scripts.forEach(script => script.remove());
             
-            // 移除on*事件属性
             const allElements = tempDiv.querySelectorAll('*');
             allElements.forEach(el => {
                 Array.from(el.attributes).forEach(attr => {
@@ -239,44 +360,38 @@ function formatMessageContent(content) {
             return tempDiv.innerHTML;
         } catch (e) {
             console.error('Markdown渲染失败:', e);
-            // 如果渲染失败，使用简单格式化
             return simpleFormatContent(content);
         }
     } else {
         console.warn('marked库未加载，使用简单格式化');
-        // 如果没有marked库，使用简单格式化
         return simpleFormatContent(content);
     }
 }
 
-// 简单格式化（备用方案）
 function simpleFormatContent(content) {
-    // 转义HTML
     let formatted = content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    
-    // 转换换行
     formatted = formatted.replace(/\n/g, '<br>');
-    
-    // 转换粗体
     formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    
-    // 转换斜体
     formatted = formatted.replace(/\*(.+?)\*/g, '<em>$1</em>');
-    
-    // 转换列表
     formatted = formatted.replace(/^- (.+)$/gm, '<li>$1</li>');
     if (formatted.includes('<li>')) {
         formatted = formatted.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
     }
-    
     return formatted;
 }
 
-// 发送消息
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 async function sendPatentChatMessage() {
     const modal = getEl('patent_chat_modal');
     const input = getEl('patent_chat_input');
     const sendBtn = getEl('patent_chat_send_btn');
+    const stopBtn = getEl('patent_chat_stop_btn');
     
     if (!modal || !input || !sendBtn) return;
     
@@ -291,26 +406,22 @@ async function sendPatentChatMessage() {
         return;
     }
     
-    // 禁用输入和按钮
     input.disabled = true;
     sendBtn.disabled = true;
-    sendBtn.textContent = '发送中...';
+    sendBtn.style.display = 'none';
+    if (stopBtn) stopBtn.style.display = 'inline-flex';
+    patentChatState.stopStreaming = false;
     
     try {
-        // 添加用户消息到历史
         chatState.messages.push({
             role: 'user',
             content: userMessage,
             timestamp: new Date().toISOString()
         });
         
-        // 更新显示
         updateChatHistory(patentNumber);
-        
-        // 清空输入框
         input.value = '';
         
-        // 创建AI消息容器（用于流式显示）
         const historyEl = getEl('patent_chat_history');
         const assistantDiv = document.createElement('div');
         assistantDiv.className = 'chat-message assistant-message streaming';
@@ -330,11 +441,8 @@ async function sendPatentChatMessage() {
         const contentDiv = assistantDiv.querySelector('.message-content');
         historyEl.scrollTop = historyEl.scrollHeight;
         
-        // 调用流式API - 使用与功能一相同的 /stream_chat 端点
-        // 构建完整的专利上下文信息 - 包含所有爬取的字段
         const patentInfo = chatState.patentData;
         
-        // 辅助函数：安全获取数组或字符串值
         const safeValue = (val) => {
             if (!val) return '未知';
             if (Array.isArray(val)) return val.length > 0 ? val.join(', ') : '未知';
@@ -386,27 +494,77 @@ ${patentInfo.legal_events && patentInfo.legal_events.length > 0 ? `### 法律事
             ...chatState.messages.filter(m => m.role !== 'system')
         ];
         
-        const reader = await apiCall('/stream_chat', {
-            model: appState.selectedModel || 'glm-4-flash',
+        const requestBody = {
+            model: patentChatState.currentModel,
             messages: apiMessages,
             temperature: 0.7,
-            enable_web_search: false
-        }, 'POST', true); // 启用流式传输
+            stream: true
+        };
         
-        let fullContent = '';
+        if (patentChatState.currentProvider === 'aliyun') {
+            requestBody.provider = 'aliyun';
+        }
+        
+        const shouldEnableThinking = patentChatSupportsThinking(patentChatState.currentModel, patentChatState.currentProvider) && 
+            (patentChatState.thinkingMode.enabled || patentChatIsThinkingOnlyModel(patentChatState.currentModel));
+        
+        if (shouldEnableThinking) {
+            requestBody.enable_thinking = true;
+            if (patentChatState.thinkingMode.budget) {
+                requestBody.thinking_budget = patentChatState.thinkingMode.budget;
+            }
+            console.log('[Patent Chat] 深度思考模式已启用');
+        }
+        
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        
+        if (patentChatState.currentProvider === 'aliyun') {
+            const aliyunKey = localStorage.getItem('aliyun_api_key') || window.appState?.aliyunApiKey;
+            if (aliyunKey) {
+                headers['X-LLM-Provider'] = 'aliyun';
+                headers['Authorization'] = `Bearer ${aliyunKey}`;
+            }
+        } else {
+            const apiKey = appState.apiKey || localStorage.getItem('globalApiKey') || localStorage.getItem('zhipu_api_key');
+            if (!apiKey) {
+                throw new Error('请先配置API密钥');
+            }
+            headers['Authorization'] = `Bearer ${apiKey}`;
+        }
+        
+        const response = await fetch('/api/stream_chat', {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(requestBody)
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `API请求失败: ${response.status}`);
+        }
+        
+        const reader = response.body.getReader();
         const decoder = new TextDecoder();
+        let fullContent = '';
+        let reasoningContent = '';
         let buffer = '';
         let lastRenderTime = 0;
-        const RENDER_INTERVAL = 100; // 每100ms渲染一次，避免过于频繁
+        const RENDER_INTERVAL = 100;
         
         while (true) {
+            if (patentChatState.stopStreaming) {
+                console.log('[Patent Chat] 用户终止输出');
+                break;
+            }
+            
             const { value, done } = await reader.read();
             if (value) {
                 buffer += decoder.decode(value, { stream: !done });
             }
             if (done) break;
             
-            // 处理所有完整的行
             let lines = buffer.split('\n\n');
             buffer = lines.pop() || '';
             
@@ -417,16 +575,19 @@ ${patentInfo.legal_events && patentInfo.legal_events.length > 0 ? `### 法律事
                 
                 try {
                     const parsed = JSON.parse(data);
-                    const delta = parsed.choices?.[0]?.delta?.content;
-                    if (delta) {
+                    const delta = parsed.choices?.[0]?.delta;
+                    
+                    if (delta?.reasoning_content) {
+                        reasoningContent += delta.reasoning_content;
+                        updatePatentChatMessageContent(contentDiv, fullContent, reasoningContent, true);
+                    }
+                    
+                    if (delta?.content) {
                         fullContent += delta;
                         
-                        // 节流渲染：避免过于频繁的Markdown解析
                         const now = Date.now();
                         if (now - lastRenderTime > RENDER_INTERVAL) {
-                            // 流式过程中显示纯文本，避免频繁的Markdown解析影响性能
-                            contentDiv.textContent = fullContent;
-                            historyEl.scrollTop = historyEl.scrollHeight;
+                            updatePatentChatMessageContent(contentDiv, fullContent, reasoningContent, reasoningContent ? false : undefined);
                             lastRenderTime = now;
                         }
                     }
@@ -436,28 +597,23 @@ ${patentInfo.legal_events && patentInfo.legal_events.length > 0 ? `### 法律事
             }
         }
         
-        // 移除流式标记和光标
         assistantDiv.classList.remove('streaming');
+        finalizePatentChatMessage(contentDiv, fullContent, reasoningContent);
         
-        // 使用Markdown渲染最终内容
-        contentDiv.innerHTML = formatMessageContent(fullContent);
-        
-        // 添加AI回复到历史
         chatState.messages.push({
             role: 'assistant',
             content: fullContent || '抱歉，我无法回答这个问题。',
+            reasoningContent: reasoningContent,
             timestamp: new Date().toISOString()
         });
         
     } catch (error) {
         console.error('发送消息失败:', error);
         
-        // 移除流式消息
         const historyEl = getEl('patent_chat_history');
         const streamingDiv = historyEl ? historyEl.querySelector('.streaming') : null;
         if (streamingDiv) streamingDiv.remove();
         
-        // 显示错误消息
         chatState.messages.push({
             role: 'assistant',
             content: `抱歉，发生错误：${error.message}`,
@@ -466,15 +622,71 @@ ${patentInfo.legal_events && patentInfo.legal_events.length > 0 ? `### 法律事
         updateChatHistory(patentNumber);
         
     } finally {
-        // 恢复输入和按钮
         input.disabled = false;
         sendBtn.disabled = false;
-        sendBtn.textContent = '发送';
+        sendBtn.style.display = 'inline-flex';
+        if (stopBtn) stopBtn.style.display = 'none';
         input.focus();
     }
 }
 
-// 清空对话历史
+function updatePatentChatMessageContent(contentDiv, content, reasoningContent = '', isThinking = false) {
+    if (!contentDiv) return;
+    
+    if (isThinking && reasoningContent) {
+        contentDiv.innerHTML = `
+            <div class="thinking-container">
+                <div class="thinking-header" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7"></circle><path d="M8 12v-4M8 6h.01"/></svg>
+                    <span class="thinking-title">深度思考中...</span>
+                    <span class="thinking-toggle-icon">▼</span>
+                </div>
+                <div class="thinking-content">
+                    <span class="thinking-text">${escapeHtml(reasoningContent)}</span>
+                    <span class="blinking-cursor">|</span>
+                </div>
+            </div>
+            <div class="response-content"><span class="blinking-cursor">|</span></div>
+        `;
+    } else if (reasoningContent) {
+        const responseEl = contentDiv.querySelector('.response-content');
+        if (responseEl) {
+            responseEl.innerHTML = formatMessageContent(content) + '<span class="blinking-cursor">|</span>';
+        }
+    } else {
+        contentDiv.textContent = content;
+        contentDiv.innerHTML += '<span class="blinking-cursor">|</span>';
+    }
+    
+    const historyEl = getEl('patent_chat_history');
+    if (historyEl) historyEl.scrollTop = historyEl.scrollHeight;
+}
+
+function finalizePatentChatMessage(contentDiv, content, reasoningContent = '') {
+    if (!contentDiv) return;
+    
+    if (reasoningContent) {
+        contentDiv.innerHTML = `
+            <div class="thinking-container">
+                <div class="thinking-header" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7"></circle><path d="M8 12v-4M8 6h.01"/></svg>
+                    <span class="thinking-title">深度思考完成</span>
+                    <span class="thinking-toggle-icon">▶</span>
+                </div>
+                <div class="thinking-content" style="display: none;">
+                    <div class="thinking-text">${escapeHtml(reasoningContent)}</div>
+                </div>
+            </div>
+            <div class="response-content">${formatMessageContent(content)}</div>
+        `;
+    } else {
+        contentDiv.innerHTML = formatMessageContent(content);
+    }
+    
+    const historyEl = getEl('patent_chat_history');
+    if (historyEl) historyEl.scrollTop = historyEl.scrollHeight;
+}
+
 function clearPatentChat() {
     const modal = getEl('patent_chat_modal');
     if (!modal) return;
@@ -492,7 +704,6 @@ function clearPatentChat() {
     updateChatHistory(patentNumber);
 }
 
-// 导出对话历史
 function exportPatentChat() {
     const modal = getEl('patent_chat_modal');
     if (!modal) return;
@@ -505,7 +716,6 @@ function exportPatentChat() {
         return;
     }
     
-    // 构建导出内容
     let content = `专利对话记录\n`;
     content += `专利号：${patentNumber}\n`;
     content += `专利标题：${chatState.patentData.title || '无标题'}\n`;
@@ -522,7 +732,6 @@ function exportPatentChat() {
         content += `${msg.content}\n\n`;
     });
     
-    // 下载文件
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -531,15 +740,19 @@ function exportPatentChat() {
     URL.revokeObjectURL(a.href);
 }
 
-// 初始化对话功能
-function initPatentChat() {
-    // 绑定发送按钮
+async function initPatentChat() {
+    await initPatentChatProviders();
+    
     const sendBtn = getEl('patent_chat_send_btn');
     if (sendBtn) {
         sendBtn.addEventListener('click', sendPatentChatMessage);
     }
     
-    // 绑定输入框回车键
+    const stopBtn = getEl('patent_chat_stop_btn');
+    if (stopBtn) {
+        stopBtn.addEventListener('click', () => patentChatState.stopStreaming = true);
+    }
+    
     const input = getEl('patent_chat_input');
     if (input) {
         input.addEventListener('keydown', (e) => {
@@ -550,28 +763,56 @@ function initPatentChat() {
         });
     }
     
-    // 绑定关闭按钮
     const closeBtn = getEl('patent_chat_close_btn');
     if (closeBtn) {
         closeBtn.addEventListener('click', closePatentChat);
     }
     
-    // 绑定清空按钮
     const clearBtn = getEl('patent_chat_clear_btn');
     if (clearBtn) {
         clearBtn.addEventListener('click', clearPatentChat);
     }
     
-    // 绑定导出按钮
     const exportBtn = getEl('patent_chat_export_btn');
     if (exportBtn) {
         exportBtn.addEventListener('click', exportPatentChat);
     }
     
-    // 注意：移除了点击模态框外部关闭的功能，因为现在是悬浮窗模式
+    const providerSelect = document.getElementById('patent_chat_provider');
+    if (providerSelect) {
+        providerSelect.addEventListener('change', (e) => {
+            patentChatState.currentProvider = e.target.value;
+            localStorage.setItem('llm_provider', patentChatState.currentProvider);
+            updatePatentChatModelSelect();
+            updatePatentChatThinkingButton();
+            console.log('[Patent Chat] 切换服务商:', patentChatState.currentProvider);
+        });
+    }
+    
+    const modelSelect = document.getElementById('patent_chat_model');
+    if (modelSelect) {
+        modelSelect.addEventListener('change', (e) => {
+            patentChatState.currentModel = e.target.value;
+            updatePatentChatThinkingButton();
+            console.log('[Patent Chat] 切换模型:', patentChatState.currentModel);
+        });
+    }
+    
+    const thinkingBtn = document.getElementById('patent_chat_thinking_btn');
+    if (thinkingBtn) {
+        thinkingBtn.addEventListener('click', togglePatentChatThinkingMode);
+    }
+    
+    window.addEventListener('providerChanged', () => {
+        if (patentChatState.providers && window.ProviderManager) {
+            patentChatState.currentProvider = window.ProviderManager.getProvider();
+            updatePatentChatProviderSelect();
+            updatePatentChatModelSelect();
+            updatePatentChatThinkingButton();
+        }
+    });
 }
 
-// 暴露到全局
 globalThis.initPatentChat = initPatentChat;
 globalThis.openPatentChat = openPatentChat;
 globalThis.closePatentChat = closePatentChat;

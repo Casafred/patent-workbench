@@ -11,6 +11,13 @@ async function handleChatFileUpload(event, fileFromReuse = null, skipCache = fal
     const file = fileFromReuse || (event.target ? event.target.files[0] : null);
     if (!file) return;
 
+    const provider = appState.provider || 'zhipu';
+    if (provider === 'aliyun') {
+        alert('文件解析功能仅支持智谱AI服务。请切换到智谱AI服务后再上传文件，或直接在对话中粘贴文本内容。');
+        event.target.value = '';
+        return;
+    }
+
     console.log(`[File Upload] 开始处理文件: ${file.name}, 跳过缓存: ${skipCache}`);
 
     // Check cache for already parsed files
@@ -612,4 +619,26 @@ function showParserServiceInfo() {
             modal.remove();
         }
     });
+}
+
+/**
+ * Update file upload button state based on current provider
+ */
+function updateFileUploadButtonState() {
+    const chatUploadFileBtn = document.getElementById('chat_upload_file_btn');
+    if (!chatUploadFileBtn) return;
+    
+    const provider = appState.provider || 'zhipu';
+    
+    if (provider === 'aliyun') {
+        chatUploadFileBtn.style.opacity = '0.5';
+        chatUploadFileBtn.style.cursor = 'not-allowed';
+        chatUploadFileBtn.title = '文件解析功能仅支持智谱AI服务';
+    } else {
+        chatUploadFileBtn.style.opacity = '1';
+        chatUploadFileBtn.style.cursor = 'pointer';
+        chatUploadFileBtn.title = '上传文件 (PDF, Word, Excel, 图片, CSV等)';
+    }
+    
+    console.log(`[File Upload] 按钮状态更新: provider=${provider}`);
 }

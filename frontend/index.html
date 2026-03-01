@@ -2243,6 +2243,23 @@ initPatentDrawings();
             </div>
             
             <div class="modal-body">
+                <div class="chat-config-bar">
+                    <div class="config-row">
+                        <label>服务商:</label>
+                        <select id="patent_chat_provider" class="provider-select"></select>
+                    </div>
+                    <div class="config-row">
+                        <label>模型:</label>
+                        <select id="patent_chat_model" class="model-select"></select>
+                        <button id="patent_chat_thinking_btn" class="thinking-btn" title="深度思考模式" style="display: none;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                <circle cx="8" cy="8" r="7"></circle>
+                                <path d="M8 12v-4M8 6h.01"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
                 <div class="chat-actions">
                     <button id="patent_chat_clear_btn">清空对话</button>
                     <button id="patent_chat_export_btn">导出对话</button>
@@ -2252,7 +2269,10 @@ initPatentDrawings();
                 
                 <div class="chat-input-area">
                     <textarea id="patent_chat_input" placeholder="请输入您的问题..."></textarea>
-                    <button id="patent_chat_send_btn" class="small-button">发送</button>
+                    <div class="input-buttons">
+                        <button id="patent_chat_stop_btn" class="small-button stop-btn" style="display: none; background: #e74c3c;">停止</button>
+                        <button id="patent_chat_send_btn" class="small-button">发送</button>
+                    </div>
                 </div>
             </div>
         </div>

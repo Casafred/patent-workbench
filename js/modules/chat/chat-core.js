@@ -190,11 +190,14 @@ function initChat() {
     // Provider change listener
     window.addEventListener('providerChanged', () => {
         setTimeout(updateThinkingButtonVisibility, 150);
+        setTimeout(updateFileUploadButtonState, 150);
+        setTimeout(updateSearchButtonState, 150);
     });
     
     // Models config loaded listener
     window.addEventListener('modelsConfigLoaded', () => {
         setTimeout(updateThinkingButtonVisibility, 150);
+        setTimeout(updateFileUploadButtonState, 150);
     });
     
     // Export functionality
