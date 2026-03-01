@@ -131,6 +131,14 @@
     flex-direction: row;
 }
 
+.chat-window-management-mode .assistant-message {
+    justify-content: flex-start;
+}
+
+.chat-window-management-mode .assistant-message .message-main-content {
+    flex-direction: row;
+}
+
 .chat-window-management-mode .message-main-content {
     max-width: 90%;
 }

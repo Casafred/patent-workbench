@@ -10,6 +10,12 @@
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
     will-change: opacity;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal.show {
+    display: flex;
 }
 
 /* 专利详情弹窗 - 添加半透明遮罩层 */

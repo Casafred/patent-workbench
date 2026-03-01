@@ -117,9 +117,19 @@
 
 [data-theme="dark"] .modal-header {
     border-bottom-color: var(--border-color);
+    background-color: var(--surface-color);
 }
 
 [data-theme="dark"] .modal-header h3 {
+    color: var(--primary-color);
+}
+
+[data-theme="dark"] #chat_params_modal .modal-header {
+    background-color: var(--surface-color);
+    border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] #chat_params_modal .modal-header h3 {
     color: var(--primary-color);
 }
 
