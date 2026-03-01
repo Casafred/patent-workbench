@@ -318,8 +318,6 @@ class PDFOCRFloatingChat {
             thinkingBtn.classList.remove('active', 'thinking-only');
             thinkingBtn.title = '深度思考模式 (点击开启)';
         }
-        
-        this.updateThinkingButtonVisibility();
     }
     
     toggleThinkingMode() {
