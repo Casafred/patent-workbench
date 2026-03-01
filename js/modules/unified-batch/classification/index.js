@@ -21,15 +21,13 @@ const ClassificationModule = {
 
     init() {
         console.log('[ClassificationModule] 模块初始化');
-        this.bindEvents();
+        this.setupEventListeners();
         this.initUI();
         return this;
     },
 
     bindEvents() {
-        document.addEventListener('DOMContentLoaded', () => {
-            this.setupEventListeners();
-        });
+        this.setupEventListeners();
     },
 
     setupEventListeners() {
@@ -76,13 +74,27 @@ const ClassificationModule = {
         if (multiLabelCheckbox) {
             multiLabelCheckbox.addEventListener('change', this.handleMultiLabelChange.bind(this));
         }
+        
+        console.log('[ClassificationModule] Event listeners setup complete');
     },
 
     initUI() {
+        console.log('[ClassificationModule] initUI called');
+        
+        if (classificationState.getLayers().length === 0) {
+            SchemaManager.addLayer();
+        }
+        
         this.updateSchemaSelect();
         this.updateLayersUI();
         this.updatePromptPreview();
         this.updateExamplesList();
+        this.updateInputsList();
+        
+        const layerCountEl = document.getElementById('classification_layer_count');
+        if (layerCountEl) {
+            layerCountEl.value = classificationState.getLayers().length;
+        }
     },
 
     updateSchemaSelect() {
