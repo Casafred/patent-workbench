@@ -282,9 +282,28 @@ function toggleManagementMode(forceState) {
     chatWindow.classList.toggle('chat-window-management-mode', appState.chat.isManagementMode);
     chatManagementBar.style.display = appState.chat.isManagementMode ? 'flex' : 'none';
     chatManageBtn.textContent = appState.chat.isManagementMode ? '退出管理' : '管理消息';
-    if (!appState.chat.isManagementMode) {
+    
+    if (appState.chat.isManagementMode) {
+        chatWindow.querySelectorAll('.message-content').forEach(content => {
+            content.classList.remove('expanded');
+            content.addEventListener('click', toggleMessageExpand);
+        });
+    } else {
         chatWindow.querySelectorAll('.message-checkbox').forEach(cb => cb.checked = false);
+        chatWindow.querySelectorAll('.message-content').forEach(content => {
+            content.classList.remove('expanded');
+            content.removeEventListener('click', toggleMessageExpand);
+        });
     }
+}
+
+/**
+ * Toggle message expand/collapse in management mode
+ * @param {Event} event - Click event
+ */
+function toggleMessageExpand(event) {
+    const content = event.currentTarget;
+    content.classList.toggle('expanded');
 }
 
 /**

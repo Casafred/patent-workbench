@@ -141,6 +141,54 @@
     max-width: 90%;
 }
 
+.chat-window-management-mode .message-content {
+    max-height: 80px;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+}
+
+.chat-window-management-mode .message-content.expanded {
+    max-height: none;
+    cursor: default;
+}
+
+.chat-window-management-mode .message-content::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 30px;
+    background: linear-gradient(transparent, var(--chat-assistant-bubble));
+    pointer-events: none;
+}
+
+.chat-window-management-mode .user-message .message-content::after {
+    background: linear-gradient(transparent, var(--chat-user-bubble));
+}
+
+.chat-window-management-mode .message-content.expanded::after {
+    display: none;
+}
+
+.chat-window-management-mode .message-expand-hint {
+    display: block;
+    text-align: center;
+    color: var(--primary-color);
+    font-size: 0.8em;
+    padding: 4px 0;
+    cursor: pointer;
+}
+
+.chat-window-management-mode .message-expand-hint:hover {
+    text-decoration: underline;
+}
+
+.chat-window-management-mode .message-content.expanded + .message-expand-hint {
+    display: none;
+}
+
 /* 聊天消息 */
 .chat-message {
     display: flex;
