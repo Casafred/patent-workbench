@@ -465,11 +465,22 @@ class PatentTabManager {
             }
         }
 
-        // 获取是否包含说明书的选项
         const includeSpecification = document.getElementById('include_specification_checkbox')?.checked || false;
 
-        // 获取选择的模型
         const selectedModel = document.getElementById('patent_batch_model_selector')?.value || 'GLM-4-Flash';
+        
+        const originalProvider = appState.provider || 'zhipu';
+        const isAliyunModel = window.ALIYUN_THINKING_CAPABLE_MODELS?.includes(selectedModel) || 
+                              window.ALIYUN_THINKING_ONLY_MODELS?.includes(selectedModel) ||
+                              selectedModel.startsWith('qwen') || 
+                              selectedModel.startsWith('deepseek') || 
+                              selectedModel.startsWith('qwq') ||
+                              selectedModel.startsWith('kimi');
+        
+        if (isAliyunModel && originalProvider !== 'aliyun') {
+            appState.provider = 'aliyun';
+            console.log(`[专利解读] 检测到阿里云模型 ${selectedModel}，临时切换服务商`);
+        }
 
         // 禁用按钮
         const analyzeBtn = document.getElementById(`${tabId}_analyze_btn`);
@@ -725,7 +736,11 @@ class PatentTabManager {
             searchStatus.textContent = `解读完成，共解读 ${successfulResults.length} 个专利`;
         }
         
-        // 启用导出按钮
+        if (typeof originalProvider !== 'undefined' && appState.provider !== originalProvider) {
+            appState.provider = originalProvider;
+            console.log(`[专利解读] 恢复原始服务商: ${originalProvider}`);
+        }
+        
         const exportAnalysisExcelBtn = document.getElementById('export_analysis_excel_btn');
         if (exportAnalysisExcelBtn) {
             exportAnalysisExcelBtn.disabled = false;

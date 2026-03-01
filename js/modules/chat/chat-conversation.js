@@ -186,7 +186,6 @@ async function generateConversationTitle(conversation) {
         return;
     }
     
-    // Title generation state management
     const titleGenerationState = window.titleGenerationState || {
         pending: new Set(),
         failed: new Set(),
@@ -216,14 +215,41 @@ async function generateConversationTitle(conversation) {
     const recentMessages = conversation.messages.slice(-2);
     const contentToSummarize = recentMessages.map(m => `${m.role}: ${m.content}`).join('\n\n');
 
+    const zhipuApiKey = appState.apiKey;
+    const aliyunApiKey = appState.aliyunApiKey;
+    const currentProvider = appState.provider || 'zhipu';
+    
+    let titleModel = 'glm-4-flash';
+    let useProvider = 'zhipu';
+    
+    if (zhipuApiKey) {
+        titleModel = 'glm-4-flash';
+        useProvider = 'zhipu';
+        console.log('[标题生成] 使用智谱免费模型生成标题');
+    } else if (aliyunApiKey) {
+        const chatModelSelect = document.getElementById('chat_model_select');
+        titleModel = chatModelSelect ? chatModelSelect.value : 'qwen-plus';
+        useProvider = 'aliyun';
+        console.log(`[标题生成] 仅配置阿里云，使用当前模型: ${titleModel}`);
+    } else {
+        console.log('[标题生成] 未配置任何API Key，跳过标题生成');
+        titleGenerationState.pending.delete(conversation.id);
+        return;
+    }
+
     const titlePrompt = {
-        model: 'GLM-4-Flash',
+        model: titleModel,
         messages: [
             { role: 'system', content: '你是一个对话主题提炼专家。你的任务是根据提供的对话内容，用一句话（中文不超过20个字）总结出一个简洁、精炼的标题。直接返回标题文本，不要包含任何引导词、引号或说明。' },
             { role: 'user', content: `请为以下对话生成一个标题：\n\n${contentToSummarize}` }
         ],
         temperature: 0.4,
     };
+
+    const originalProvider = appState.provider;
+    if (useProvider !== originalProvider) {
+        appState.provider = useProvider;
+    }
 
     try {
         const responseData = await apiCall('/chat', titlePrompt, 'POST');
@@ -246,6 +272,9 @@ async function generateConversationTitle(conversation) {
             console.log('检测到并发限制错误，该对话不再自动生成标题');
         }
     } finally {
+        if (useProvider !== originalProvider) {
+            appState.provider = originalProvider;
+        }
         titleGenerationState.pending.delete(conversation.id);
     }
 }

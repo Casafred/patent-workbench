@@ -3,6 +3,7 @@ Patent search and analysis routes.
 
 This module handles patent search from Google Patents and AI-powered analysis.
 Uses improved scraper for better reliability.
+Supports multiple LLM providers: ZhipuAI (default) and Aliyun Bailian.
 """
 
 import json
@@ -13,6 +14,7 @@ from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, session
 from backend.middleware import validate_api_request
 from backend.services import get_zhipu_client
+from backend.services.llm_service import get_llm_client, is_aliyun_model
 from backend.utils import create_response
 from backend.scraper.simple_scraper import SimplePatentScraper
 
@@ -210,10 +212,6 @@ def analyze_patent():
     if not is_valid:
         return error_response
     
-    client, error_response = get_zhipu_client()
-    if error_response:
-        return error_response
-    
     try:
         req_data = request.get_json()
         patent_data = req_data.get('patent_data')
@@ -229,12 +227,18 @@ def analyze_patent():
                 status_code=400
             )
         
-        # 使用自定义提示词或构建默认提示词
+        if is_aliyun_model(model):
+            client, error_response, provider = get_llm_client('aliyun')
+        else:
+            client, error_response = get_zhipu_client()
+            provider = 'zhipu'
+        
+        if error_response:
+            return error_response
+        
         if user_prompt:
-            # 使用前端传来的完整提示词
             prompt = user_prompt
         else:
-            # 构建默认提示词
             prompt = f"请详细解读以下专利信息，并以JSON格式返回结构化的解读结果：\n\n"
             prompt += f"专利号: {patent_data.get('patent_number', 'N/A')}\n"
             prompt += f"标题: {patent_data.get('title', 'N/A')}\n"
@@ -252,15 +256,12 @@ def analyze_patent():
             else:
                 prompt += "权利要求: N/A\n"
             
-            # 如果选择包含说明书，则添加说明书内容
             if include_specification and patent_data.get('description'):
                 description_text = patent_data.get('description', '')
-                # 限制说明书长度，避免超出token限制
                 if len(description_text) > 3000:
                     description_text = description_text[:3000] + "..."
                 prompt += f"说明书: {description_text}\n"
             
-            # 添加JSON格式要求
             prompt += "\n请严格按照以下JSON格式返回解读结果（只返回JSON对象，不要添加markdown代码块标记）：\n"
             prompt += "{\n"
             prompt += '  "technical_field": "技术领域",\n'
@@ -274,7 +275,6 @@ def analyze_patent():
             prompt += "1. 直接返回JSON对象，不要使用```json```标记包裹\n"
             prompt += "2. 所有输出内容必须使用中文\n"
         
-        # 使用自定义系统提示词或默认提示词
         system_prompt = "你是一位专业的专利分析师。你必须严格按照要求的JSON格式返回结果，不要添加任何markdown标记（如```json），只返回纯JSON对象。所有分析结果必须使用中文输出。"
         if template and template.get('system_prompt'):
             system_prompt = template['system_prompt']
@@ -289,6 +289,8 @@ def analyze_patent():
                 "content": prompt
             }
         ]
+        
+        print(f"[专利解读] 使用服务商: {provider}, 模型: {model}")
         
         response_from_sdk = client.chat.completions.create(
             model=model,
