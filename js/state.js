@@ -194,6 +194,9 @@ let AVAILABLE_MODELS = ["glm-4-flashX-250414", "glm-4-flash", "glm-4-long", "GLM
 let BATCH_MODELS = ["glm-4-flashX-250414", "glm-4-flash", "glm-4-long", "GLM-4.7-Flash"];
 let ASYNC_MODELS = ["glm-4-flashX-250414", "glm-4-flash", "glm-4-long", "GLM-4.7-Flash"];
 
+// 存储完整的模型配置
+let MODELS_CONFIG = null;
+
 // 将模型列表挂载到 window 对象，供其他模块访问
 window.AVAILABLE_MODELS = AVAILABLE_MODELS;
 window.BATCH_MODELS = BATCH_MODELS;
@@ -226,22 +229,21 @@ async function loadModelsConfig() {
             }
         }
         
-        if (config && config.models && Array.isArray(config.models)) {
-            AVAILABLE_MODELS = config.models;
-            BATCH_MODELS = config.models;
-            ASYNC_MODELS = config.models;
-            // 同步更新 window 对象上的模型列表
-            window.AVAILABLE_MODELS = config.models;
-            window.BATCH_MODELS = config.models;
-            window.ASYNC_MODELS = config.models;
-            console.log('✅ 可用模型列表:', config.models);
+        if (config) {
+            MODELS_CONFIG = config;
+            
+            // 根据当前服务商选择模型列表
+            const provider = appState.provider || 'zhipu';
+            updateModelsForProvider(provider);
+            
+            console.log('✅ 模型配置加载完成, 当前服务商:', provider);
             
             // 延迟更新所有模型选择器，确保DOM已准备好
             setTimeout(() => {
                 updateAllModelSelectors();
                 // 触发自定义事件，通知模型配置已加载
                 window.dispatchEvent(new CustomEvent('modelsConfigLoaded', { 
-                    detail: { models: AVAILABLE_MODELS } 
+                    detail: { models: AVAILABLE_MODELS, provider: appState.provider } 
                 }));
             }, 100);
         } else {
@@ -255,6 +257,38 @@ async function loadModelsConfig() {
         }, 100);
     }
 }
+
+// 根据服务商更新模型列表
+function updateModelsForProvider(provider) {
+    if (!MODELS_CONFIG || !MODELS_CONFIG.providers || !MODELS_CONFIG.providers[provider]) {
+        console.warn('⚠️ 未找到服务商配置，使用默认模型');
+        return;
+    }
+    
+    const providerConfig = MODELS_CONFIG.providers[provider];
+    const models = providerConfig.models || [];
+    
+    AVAILABLE_MODELS = models;
+    BATCH_MODELS = models;
+    ASYNC_MODELS = models;
+    
+    // 同步更新 window 对象上的模型列表
+    window.AVAILABLE_MODELS = models;
+    window.BATCH_MODELS = models;
+    window.ASYNC_MODELS = models;
+    
+    console.log(`✅ 服务商 ${provider} 的模型列表:`, models);
+}
+
+// 监听服务商切换事件
+window.addEventListener('providerChanged', (event) => {
+    const provider = event.detail?.provider || 'zhipu';
+    console.log('[State] 服务商切换为:', provider);
+    
+    appState.provider = provider;
+    updateModelsForProvider(provider);
+    updateAllModelSelectors();
+});
 
 // 更新所有功能的模型选择器
 function updateAllModelSelectors(retryCount = 0) {
