@@ -1,6 +1,64 @@
 // js/main.js (Final, Corrected, and Robust Version)
 
 // =================================================================================
+// Session过期监控
+// =================================================================================
+let sessionMonitorInterval = null;
+let sessionWarningShown = false;
+
+function initSessionMonitor() {
+    checkSessionStatus();
+    sessionMonitorInterval = setInterval(checkSessionStatus, 60000);
+    
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            checkSessionStatus();
+        }
+    });
+}
+
+async function checkSessionStatus() {
+    try {
+        const response = await fetch('/api/session-info');
+        const data = await response.json();
+        
+        if (!data.authenticated) {
+            if (typeof handleSessionExpired === 'function') {
+                handleSessionExpired();
+            }
+            return;
+        }
+        
+        const remainingMinutes = Math.floor(data.remaining_seconds / 60);
+        const warningThreshold = data.is_guest ? 15 : 30;
+        
+        if (remainingMinutes <= warningThreshold && remainingMinutes > 0 && !sessionWarningShown) {
+            sessionWarningShown = true;
+            showSessionWarning(remainingMinutes, data.is_guest);
+        }
+        
+        if (remainingMinutes <= 0) {
+            if (typeof handleSessionExpired === 'function') {
+                handleSessionExpired();
+            }
+        }
+    } catch (error) {
+        console.warn('[Session Monitor] 无法获取session状态:', error);
+    }
+}
+
+function showSessionWarning(remainingMinutes, isGuest) {
+    const userType = isGuest ? '游客' : '用户';
+    const message = `您的${userType}会话将在 ${remainingMinutes} 分钟后过期，届时需要重新登录。请及时保存当前工作。`;
+    
+    if (confirm(message + '\n\n点击"确定"继续使用，点击"取消"前往重新登录')) {
+        sessionWarningShown = false;
+    } else {
+        window.location.href = '/login';
+    }
+}
+
+// =================================================================================
 // 智能剪贴板系统初始化
 // =================================================================================
 // 在 DOMContentLoaded 之前加载剪贴板核心模块
@@ -319,6 +377,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize API Key Config (global, not tied to a specific component)
     initApiKeyConfig();
     LoadingManager.updateProgress('初始化API配置');
+    
+    // Initialize Session Expiration Monitor
+    initSessionMonitor();
     
     // Initialize Feature Lock Manager
     if (window.FeatureLockManager) {

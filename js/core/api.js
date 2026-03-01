@@ -6,6 +6,16 @@
  * @module api
  */
 
+let sessionExpiredHandled = false;
+
+function handleSessionExpired() {
+    if (sessionExpiredHandled) return;
+    sessionExpiredHandled = true;
+    
+    alert('登录已过期，请重新登录');
+    window.location.href = '/login';
+}
+
 // =================================================================================
 // API Key配置
 // =================================================================================
@@ -250,6 +260,10 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false, timeou
 
         if (isStream) {
             if (!response.ok) {
+                if (response.status === 401) {
+                    handleSessionExpired();
+                    throw new Error('SESSION_EXPIRED');
+                }
                 const errorText = await response.text();
                 let errorMessage = `请求失败 (Stream): ${response.statusText}`;
                 try {
@@ -263,16 +277,17 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false, timeou
             return response.body.getReader();
         }
 
-        // 优雅处理非JSON响应
         const contentType = response.headers.get("content-type");
         if (!response.ok) {
-            // 对于失败的响应，先克隆response以便多次读取
+            if (response.status === 401) {
+                handleSessionExpired();
+                throw new Error('SESSION_EXPIRED');
+            }
             const clonedResponse = response.clone();
             let errorData;
             try {
                 errorData = await response.json();
             } catch (e) {
-                // 如果JSON解析失败，使用克隆的response读取文本
                 try {
                     errorData = await clonedResponse.text();
                 } catch (textError) {
@@ -301,5 +316,5 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false, timeou
 
 // 导出函数供其他模块使用
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { initApiKeyConfig, apiCall, getCurrentApiKey, getProviderHeaders, updateProviderUI };
+    module.exports = { initApiKeyConfig, apiCall, getCurrentApiKey, getProviderHeaders, updateProviderUI, handleSessionExpired };
 }

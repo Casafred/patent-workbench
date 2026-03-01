@@ -597,6 +597,8 @@ def login():
             # Set session
             session['user'] = username
             session.permanent = True
+            from datetime import datetime
+            session['_creation_time'] = datetime.now().timestamp()
             
             return redirect(url_for('auth.serve_app'))
         else:
@@ -632,6 +634,42 @@ def guest_status():
     return {'enabled': GUEST_MODE_ENABLED}
 
 
+@auth_bp.route('/api/session-info')
+def session_info():
+    """
+    Return session information including remaining time.
+    
+    This endpoint is used by the frontend to show session expiration warnings.
+    """
+    if 'user' not in session:
+        return {'authenticated': False, 'remaining_seconds': 0}
+    
+    is_guest = session.get('is_guest', False)
+    username = session.get('user')
+    
+    from datetime import datetime
+    from backend.config import PERMANENT_SESSION_LIFETIME, GUEST_SESSION_LIFETIME
+    
+    session_lifetime = GUEST_SESSION_LIFETIME if is_guest else PERMANENT_SESSION_LIFETIME
+    
+    session_created = session.get('_creation_time')
+    if session_created:
+        elapsed = datetime.now() - datetime.fromtimestamp(session_created)
+        remaining = session_lifetime - elapsed
+        remaining_seconds = max(0, int(remaining.total_seconds()))
+    else:
+        session['_creation_time'] = datetime.now().timestamp()
+        remaining_seconds = int(session_lifetime.total_seconds())
+    
+    return {
+        'authenticated': True,
+        'username': username,
+        'is_guest': is_guest,
+        'remaining_seconds': remaining_seconds,
+        'total_seconds': int(session_lifetime.total_seconds())
+    }
+
+
 @auth_bp.route('/guest-login')
 @guest_mode_required
 def guest_login():
@@ -645,6 +683,8 @@ def guest_login():
     session['user'] = 'guest'
     session['is_guest'] = True
     session.permanent = False
+    from datetime import datetime
+    session['_creation_time'] = datetime.now().timestamp()
     
     return redirect(url_for('auth.serve_app'))
 
