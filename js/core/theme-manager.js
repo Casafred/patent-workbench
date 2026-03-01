@@ -55,7 +55,7 @@
             const logoImg = document.querySelector('.image-logo');
             if (logoImg) {
                 if (theme === THEMES.DARK) {
-                    logoImg.src = 'frontend/images/dark_logo.webp';
+                    logoImg.src = 'frontend/images/dark_logo.png';
                 } else {
                     logoImg.src = 'frontend/images/ALFRED X IP LOGO.webp';
                 }
