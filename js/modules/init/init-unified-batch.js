@@ -716,7 +716,8 @@ function switchUnifiedMode(mode) {
         
         if (typeof ClassificationModule !== 'undefined') {
             if (!ClassificationModule._initialized) {
-                initClassificationModule();
+                ClassificationModule.init();
+                ClassificationModule._initialized = true;
             }
             ClassificationModule.initUI();
         }

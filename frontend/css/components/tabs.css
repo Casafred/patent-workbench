@@ -193,3 +193,32 @@
 .progress-bar {
     display: none;
 }
+
+/* 功能二模式切换大按钮样式 */
+.mode-switcher-tab {
+    flex: 1;
+    padding: 14px 24px;
+    background: linear-gradient(135deg, rgba(74, 222, 128, 0.1) 0%, rgba(34, 197, 94, 0.15) 100%);
+    border: 1px solid rgba(74, 222, 128, 0.3);
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-size: 1.05em;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.mode-switcher-tab:hover {
+    background: linear-gradient(135deg, rgba(74, 222, 128, 0.2) 0%, rgba(34, 197, 94, 0.25) 100%);
+    color: rgba(255, 255, 255, 0.95);
+    border-color: rgba(74, 222, 128, 0.5);
+}
+
+.mode-switcher-tab.active {
+    background: linear-gradient(135deg, var(--primary-color-dark), var(--primary-color));
+    color: white;
+    border: 1px solid var(--primary-color-dark);
+    border-bottom: 3px solid var(--primary-color);
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
