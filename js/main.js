@@ -152,6 +152,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         await loadComponent('frontend/components/tabs/instant-chat.html', 'instant-chat-component');
         // Wait for DOM to be ready
         await new Promise(resolve => setTimeout(resolve, 50));
+        // Ensure marked library is loaded before initializing chat
+        if (typeof window.ResourceLoader !== 'undefined' && typeof window.marked === 'undefined') {
+            await window.ResourceLoader.ensureLibrary('marked');
+        }
         initChat();
         LoadingManager.updateProgress('初始化即时对话');
     } catch (error) {

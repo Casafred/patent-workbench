@@ -106,7 +106,6 @@ function addMessageToDOM(role, content, index, isStreaming = false, usage = null
     const timeHtml = `<div class="message-time" title="${dateObj.toLocaleString()}">${formattedTime}</div>`;
 
     messageDiv.innerHTML = `
-        <input type="checkbox" class="message-checkbox" title="选择此消息">
         <div class="message-main-content">
             <div class="avatar">${role === 'user' ? 'U' : 'AI'}</div>
             <div class="message-body">
@@ -123,6 +122,7 @@ function addMessageToDOM(role, content, index, isStreaming = false, usage = null
                 </div>
             </div>
         </div>
+        <input type="checkbox" class="message-checkbox" title="选择此消息">
     `;
 
     const footer = messageDiv.querySelector('.message-footer');
