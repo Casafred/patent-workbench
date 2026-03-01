@@ -3,6 +3,8 @@
 // =================================================================================
 const appState = {
     apiKey: '',
+    aliyunApiKey: '',  // 新增：阿里云API Key
+    provider: 'zhipu',  // 新增：当前服务商 'zhipu' 或 'aliyun'
     isGuestMode: false,
     guestModel: 'glm-4-flash',
     chat: {

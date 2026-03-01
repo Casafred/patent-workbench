@@ -30,10 +30,17 @@
             </svg>
         </button>
         <div id="api_config_container" class="api-config-container">
-            <div class="config-item">
-                <label for="global_api_key_input">您的智谱AI API Key:</label>
+            <div class="config-item provider-selector">
+                <label for="llm_provider_select">LLM服务商:</label>
+                <select id="llm_provider_select" onchange="ProviderManager.onProviderChange(this.value)">
+                    <option value="zhipu">智谱AI (默认)</option>
+                    <option value="aliyun">阿里云百炼</option>
+                </select>
+            </div>
+            <div id="zhipu_api_config" class="config-item">
+                <label for="global_api_key_input">智谱AI API Key:</label>
                 <div class="api-key-wrapper">
-                    <input type="password" id="global_api_key_input" placeholder="在此处粘贴以启用所有功能">
+                    <input type="password" id="global_api_key_input" placeholder="在此处粘贴智谱AI API Key">
                     <div class="api-key-actions">
                         <button type="button" id="api_key_copy_btn" class="api-key-action-btn" title="复制">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
@@ -46,6 +53,21 @@
                         </button>
                     </div>
                 </div>
+            </div>
+            <div id="aliyun_api_config" class="config-item" style="display: none;">
+                <label for="aliyun_api_key_input">阿里云百炼 API Key:</label>
+                <div class="api-key-wrapper">
+                    <input type="password" id="aliyun_api_key_input" placeholder="在此处粘贴阿里云百炼 API Key">
+                    <div class="api-key-actions">
+                        <button type="button" id="aliyun_api_key_copy_btn" class="api-key-action-btn" title="复制">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                        </button>
+                        <button type="button" id="aliyun_api_key_delete_btn" class="api-key-action-btn" title="删除">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                    </div>
+                </div>
+                <p style="font-size: 0.8em; color: #888; margin-top: 5px;">新用户可获得100万Tokens免费额度，有效期90天</p>
             </div>
             <div class="api-config-footer">
                 <span id="api_key_save_status"></span>

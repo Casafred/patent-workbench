@@ -25,6 +25,7 @@ def register_blueprints(app: Flask):
     from .drawing_marker import drawing_marker_bp
     from .registration import registration_bp
     from .feature_lock import feature_lock_bp
+    from .bailian_test import bailian_test_bp
     from backend.user_management.user_management import user_management_bp
     
     # Register blueprints with appropriate URL prefixes
@@ -40,6 +41,7 @@ def register_blueprints(app: Flask):
     app.register_blueprint(user_management_bp)
     app.register_blueprint(registration_bp, url_prefix='/api/register')
     app.register_blueprint(feature_lock_bp, url_prefix='/api/feature-lock')
+    app.register_blueprint(bailian_test_bp, url_prefix='/api/bailian-test')
     
     print("✓ All blueprints registered successfully")
     

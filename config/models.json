@@ -1,4 +1,60 @@
 {
+  "providers": {
+    "zhipu": {
+      "name": "智谱AI",
+      "models": [
+        "glm-4-flash",
+        "glm-4-flashx-250414",
+        "glm-4-flash-250414",
+        "glm-4-long",
+        "glm-4-plus",
+        "glm-4-air-250414",
+        "glm-4-airx",
+        "glm-4.5-air",
+        "glm-4.5-airx",
+        "glm-4.7-flash",
+        "glm-4.7-flashx",
+        "glm-4.7",
+        "glm-z1-flash",
+        "glm-z1-flashx",
+        "glm-z1-air",
+        "glm-z1-airx",
+        "glm-5"
+      ],
+      "default_model": "glm-4-flash",
+      "free_models": ["glm-4-flash", "glm-4-flash-250414", "glm-z1-flash"]
+    },
+    "aliyun": {
+      "name": "阿里云百炼",
+      "models": [
+        "qwen-flash",
+        "qwen-turbo",
+        "qwen-plus",
+        "qwen3-max",
+        "qwen-long",
+        "qwq-plus",
+        "qwq-32b",
+        "deepseek-v3",
+        "deepseek-v3.2",
+        "deepseek-r1",
+        "deepseek-r1-distill-qwen-32b",
+        "glm-5",
+        "glm-4.7",
+        "glm-4.5",
+        "kimi-k2.5",
+        "kimi-k2-thinking",
+        "minimax-text-01"
+      ],
+      "default_model": "qwen-plus",
+      "thinking_only_models": [
+        "qwq-plus",
+        "qwq-32b",
+        "deepseek-r1",
+        "deepseek-r1-distill-qwen-32b",
+        "kimi-k2-thinking"
+      ]
+    }
+  },
   "models": [
     "glm-4-flash",
     "glm-4-flashx-250414",
@@ -137,12 +193,75 @@
       "input_price": "4-6元/百万tokens",
       "output_price": "18-22元/百万tokens",
       "description": "最新旗舰，能力最强"
+    },
+    "qwen-flash": {
+      "name": "Qwen-Flash",
+      "context": "1M",
+      "input_price": "0.15元/百万tokens",
+      "output_price": "1.5元/百万tokens",
+      "description": "阿里云-极速低价，支持思考模式"
+    },
+    "qwen-turbo": {
+      "name": "Qwen-Turbo",
+      "context": "128K",
+      "input_price": "0.3元/百万tokens",
+      "output_price": "0.6元/百万tokens",
+      "description": "阿里云-快速响应，支持思考模式"
+    },
+    "qwen-plus": {
+      "name": "Qwen-Plus",
+      "context": "1M",
+      "input_price": "0.8元/百万tokens",
+      "output_price": "2元/百万tokens",
+      "description": "阿里云-性价比首选，支持思考模式"
+    },
+    "qwen3-max": {
+      "name": "Qwen3-Max",
+      "context": "262K",
+      "input_price": "2.5元/百万tokens",
+      "output_price": "10元/百万tokens",
+      "description": "阿里云-最新旗舰，支持思考模式"
+    },
+    "qwen-long": {
+      "name": "Qwen-Long",
+      "context": "1M",
+      "input_price": "0.5元/百万tokens",
+      "output_price": "2元/百万tokens",
+      "description": "阿里云-超长上下文"
+    },
+    "qwq-plus": {
+      "name": "QwQ-Plus",
+      "context": "131K",
+      "input_price": "1.6元/百万tokens",
+      "output_price": "4元/百万tokens",
+      "description": "阿里云-推理模型(仅思考模式)"
+    },
+    "deepseek-v3": {
+      "name": "DeepSeek-V3",
+      "context": "64K",
+      "input_price": "1元/百万tokens",
+      "output_price": "4元/百万tokens",
+      "description": "阿里云-DeepSeek通用模型"
+    },
+    "deepseek-v3.2": {
+      "name": "DeepSeek-V3.2",
+      "context": "131K",
+      "input_price": "1元/百万tokens",
+      "output_price": "4元/百万tokens",
+      "description": "阿里云-DeepSeek最新版，支持思考模式"
+    },
+    "deepseek-r1": {
+      "name": "DeepSeek-R1",
+      "context": "16K",
+      "input_price": "4元/百万tokens",
+      "output_price": "16元/百万tokens",
+      "description": "阿里云-深度推理模型(仅思考模式)"
     }
   },
-  "description": "统一的模型配置文件，所有功能的模型选择列表都从这里读取。模型名称严格按照智谱AI官方API文档",
+  "description": "统一的模型配置文件，支持智谱AI和阿里云百炼双服务商",
+  "default_provider": "zhipu",
   "default_model": "glm-4-flash",
   "free_models": ["glm-4-flash", "glm-4-flash-250414", "glm-z1-flash"],
-  "note": "模型名称来源：https://docs.bigmodel.cn 官方API文档 ChatCompletionTextRequest.model 枚举值。价格仅供参考，以官网为准。",
-  "reference": "官方文档示例使用 glm-4-flash 作为默认模型",
-  "pricing_url": "https://bigmodel.cn/pricing"
+  "note": "智谱AI模型名称来源：https://docs.bigmodel.cn；阿里云百炼模型来源：https://help.aliyun.com/zh/model-studio/getting-started/models",
+  "reference": "默认使用智谱AI，可通过切换服务商选择阿里云百炼"
 }

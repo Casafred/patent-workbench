@@ -1,6 +1,7 @@
 /**
  * API Client Module
  * 负责API Key配置和统一的API调用
+ * 支持多服务商：智谱AI（默认）和阿里云百炼
  * 
  * @module api
  */
@@ -15,6 +16,7 @@
  */
 function initApiKeyConfig() {
     const globalApiKeyInput = document.getElementById('global_api_key_input');
+    const aliyunApiKeyInput = document.getElementById('aliyun_api_key_input');
     const apiKeySaveBtn = document.getElementById('api_key_save_btn');
     const apiKeySaveStatus = document.getElementById('api_key_save_status');
     const apiConfigToggleBtn = document.getElementById('api_config_toggle_btn');
@@ -22,6 +24,9 @@ function initApiKeyConfig() {
     const apiKeyToggleVisibilityBtn = document.getElementById('api_key_toggle_visibility_btn');
     const apiKeyCopyBtn = document.getElementById('api_key_copy_btn');
     const apiKeyDeleteBtn = document.getElementById('api_key_delete_btn');
+    const providerSelect = document.getElementById('llm_provider_select');
+    const zhipuConfig = document.getElementById('zhipu_api_config');
+    const aliyunConfig = document.getElementById('aliyun_api_config');
 
     if (!globalApiKeyInput || !apiKeySaveBtn || !apiConfigToggleBtn || !apiConfigContainer) {
         console.warn('[API] API配置元素未找到，跳过初始化');
@@ -30,17 +35,50 @@ function initApiKeyConfig() {
 
     // 从localStorage加载API Key
     appState.apiKey = localStorage.getItem('globalApiKey') || '';
+    appState.aliyunApiKey = localStorage.getItem('aliyun_api_key') || '';
     globalApiKeyInput.value = appState.apiKey;
+    
+    // 加载服务商设置
+    const savedProvider = localStorage.getItem('llm_provider') || 'zhipu';
+    appState.provider = savedProvider;
+    
+    // 更新服务商选择器和配置显示
+    if (providerSelect) {
+        providerSelect.value = savedProvider;
+    }
+    updateProviderUI(savedProvider);
+    
+    // 加载阿里云API Key到输入框
+    if (aliyunApiKeyInput) {
+        aliyunApiKeyInput.value = appState.aliyunApiKey;
+    }
 
     // 保存API Key
     apiKeySaveBtn.addEventListener('click', () => {
         appState.apiKey = globalApiKeyInput.value.trim();
+        appState.aliyunApiKey = aliyunApiKeyInput ? aliyunApiKeyInput.value.trim() : '';
         localStorage.setItem('globalApiKey', appState.apiKey);
+        localStorage.setItem('aliyun_api_key', appState.aliyunApiKey);
         if (apiKeySaveStatus) {
             apiKeySaveStatus.textContent = "已保存!";
             setTimeout(() => { apiKeySaveStatus.textContent = ""; }, 2000);
         }
     });
+
+    // 服务商切换
+    if (providerSelect) {
+        providerSelect.addEventListener('change', (e) => {
+            const provider = e.target.value;
+            appState.provider = provider;
+            localStorage.setItem('llm_provider', provider);
+            updateProviderUI(provider);
+            
+            // 触发服务商变更事件
+            window.dispatchEvent(new CustomEvent('providerChanged', {
+                detail: { provider: provider }
+            }));
+        });
+    }
 
     // 切换配置面板显示
     apiConfigToggleBtn.addEventListener('click', () => {
@@ -74,6 +112,27 @@ function initApiKeyConfig() {
         });
     }
 
+    // 阿里云API Key操作
+    const aliyunCopyBtn = document.getElementById('aliyun_api_key_copy_btn');
+    const aliyunDeleteBtn = document.getElementById('aliyun_api_key_delete_btn');
+    
+    if (aliyunCopyBtn && aliyunApiKeyInput) {
+        aliyunCopyBtn.addEventListener('click', () => {
+            if (!aliyunApiKeyInput.value) return;
+            navigator.clipboard.writeText(aliyunApiKeyInput.value).then(() => {
+                const originalHTML = aliyunCopyBtn.innerHTML;
+                aliyunCopyBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+                setTimeout(() => { aliyunCopyBtn.innerHTML = originalHTML; }, 1500);
+            });
+        });
+    }
+    
+    if (aliyunDeleteBtn && aliyunApiKeyInput) {
+        aliyunDeleteBtn.addEventListener('click', () => {
+            aliyunApiKeyInput.value = '';
+        });
+    }
+
     // 点击外部关闭配置面板
     document.addEventListener('click', (event) => {
         if (!apiConfigContainer.contains(event.target) && !apiConfigToggleBtn.contains(event.target)) {
@@ -84,9 +143,54 @@ function initApiKeyConfig() {
     console.log('[API] API Key配置初始化完成');
 }
 
+/**
+ * 更新服务商UI显示
+ * @param {string} provider - 服务商类型
+ */
+function updateProviderUI(provider) {
+    const zhipuConfig = document.getElementById('zhipu_api_config');
+    const aliyunConfig = document.getElementById('aliyun_api_config');
+    
+    if (zhipuConfig) {
+        zhipuConfig.style.display = provider === 'zhipu' ? 'block' : 'none';
+    }
+    if (aliyunConfig) {
+        aliyunConfig.style.display = provider === 'aliyun' ? 'block' : 'none';
+    }
+}
+
 // =================================================================================
 // 统一API调用函数
 // =================================================================================
+
+/**
+ * 获取当前服务商的API Key
+ * @returns {string} API Key
+ */
+function getCurrentApiKey() {
+    if (appState.provider === 'aliyun') {
+        return appState.aliyunApiKey;
+    }
+    return appState.apiKey;
+}
+
+/**
+ * 获取当前服务商的API Headers
+ * @returns {Object} Headers对象
+ */
+function getProviderHeaders() {
+    const headers = {};
+    
+    if (appState.provider === 'aliyun') {
+        headers['X-LLM-Provider'] = 'aliyun';
+        headers['X-Aliyun-API-Key'] = appState.aliyunApiKey;
+        headers['Authorization'] = `Bearer ${appState.aliyunApiKey}`;
+    } else {
+        headers['Authorization'] = `Bearer ${appState.apiKey}`;
+    }
+    
+    return headers;
+}
 
 /**
  * 统一的API调用函数
@@ -99,16 +203,17 @@ function initApiKeyConfig() {
  * @throws {Error} - API调用失败时抛出错误
  */
 async function apiCall(endpoint, body, method = 'POST', isStream = false, timeout = null) {
-    if (!appState.apiKey) {
-        const errorMsg = "API Key 未配置。请点击右上角 ⚙️ 设置并保存您的 API Key。";
+    const currentApiKey = getCurrentApiKey();
+    
+    if (!currentApiKey) {
+        const providerName = appState.provider === 'aliyun' ? '阿里云百炼' : '智谱AI';
+        const errorMsg = `API Key 未配置。请设置您的 ${providerName} API Key。`;
         alert(errorMsg);
         throw new Error(errorMsg);
     }
 
     // 智能处理 Headers
-    const headers = {
-        'Authorization': `Bearer ${appState.apiKey}`
-    };
+    const headers = getProviderHeaders();
 
     // 只有当 body 不是 FormData 时，才设置 Content-Type 为 JSON
     if (body && !(body instanceof FormData)) {
@@ -196,5 +301,5 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false, timeou
 
 // 导出函数供其他模块使用
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { initApiKeyConfig, apiCall };
+    module.exports = { initApiKeyConfig, apiCall, getCurrentApiKey, getProviderHeaders, updateProviderUI };
 }
