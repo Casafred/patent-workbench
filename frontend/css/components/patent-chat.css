@@ -415,6 +415,161 @@
     cursor: not-allowed;
 }
 
+/* 配置栏 - 服务商和模型选择 */
+.chat-config-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #e9ecef;
+}
+
+.chat-config-bar .config-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.chat-config-bar label {
+    font-size: 0.85em;
+    color: #495057;
+    min-width: 60px;
+    font-weight: 500;
+}
+
+.chat-config-bar .provider-select,
+.chat-config-bar .model-select {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    font-size: 0.85em;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.chat-config-bar .provider-select:focus,
+.chat-config-bar .model-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.15);
+}
+
+/* 深度思考按钮 */
+.thinking-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 10px;
+    background: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
+    color: #666;
+}
+
+.thinking-btn:hover {
+    background: #e0e0e0;
+}
+
+.thinking-btn.active {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    color: white;
+    border-color: #7c3aed;
+}
+
+.thinking-btn.thinking-only {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    border-color: #d97706;
+    cursor: default;
+}
+
+.thinking-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* 深度思考内容容器 */
+.thinking-container {
+    margin-bottom: 10px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.thinking-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    cursor: pointer;
+    font-size: 0.85em;
+    color: #6b7280;
+    transition: all 0.3s;
+}
+
+.thinking-header:hover {
+    background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+}
+
+.thinking-header svg {
+    width: 14px;
+    height: 14px;
+    color: #8b5cf6;
+}
+
+.thinking-title {
+    font-weight: 500;
+}
+
+.thinking-toggle-icon {
+    margin-left: auto;
+    font-size: 0.8em;
+    transition: transform 0.3s;
+}
+
+.thinking-content {
+    padding: 12px;
+    background: #fafafa;
+    border-top: 1px solid #e9ecef;
+    font-size: 0.9em;
+    color: #6b7280;
+    line-height: 1.6;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.thinking-text {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.response-content {
+    padding: 0;
+}
+
+/* 输入按钮组 */
+.input-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.input-buttons .stop-btn {
+    background: #e74c3c !important;
+}
+
+.input-buttons .stop-btn:hover {
+    background: #c0392b !important;
+}
+
 /* 操作按钮组 */
 .chat-actions {
     display: flex;

@@ -144,6 +144,39 @@
     background: rgba(239, 68, 68, 0.8);
 }
 
+/* 服务商选择栏 */
+.floating-chat-window .chat-provider-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #f0fdf4;
+    border-bottom: 1px solid #bbf7d0;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.floating-chat-window .provider-label {
+    color: #16a34a;
+    font-weight: 500;
+}
+
+.floating-chat-window .provider-select {
+    flex: 1;
+    padding: 4px 8px;
+    border: 1px solid #bbf7d0;
+    border-radius: 4px;
+    font-size: 12px;
+    background: white;
+    color: #374151;
+    cursor: pointer;
+    outline: none;
+}
+
+.floating-chat-window .provider-select:focus {
+    border-color: #22c55e;
+}
+
 /* 模型选择栏 */
 .floating-chat-window .chat-model-bar {
     display: flex;
@@ -175,6 +208,102 @@
 
 .floating-chat-window .model-select:focus {
     border-color: #22c55e;
+}
+
+/* 深度思考按钮 - 悬浮对话窗口 */
+.floating-chat-window .thinking-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 8px;
+    background: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #666;
+}
+
+.floating-chat-window .thinking-btn:hover {
+    background: #e0e0e0;
+}
+
+.floating-chat-window .thinking-btn.active {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    color: white;
+    border-color: #7c3aed;
+}
+
+.floating-chat-window .thinking-btn.thinking-only {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    border-color: #d97706;
+    cursor: default;
+}
+
+.floating-chat-window .thinking-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* 深度思考内容容器 - 悬浮对话窗口 */
+.floating-chat-window .thinking-container {
+    margin-bottom: 8px;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.floating-chat-window .thinking-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    cursor: pointer;
+    font-size: 12px;
+    color: #6b7280;
+    transition: all 0.2s ease;
+}
+
+.floating-chat-window .thinking-header:hover {
+    background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+}
+
+.floating-chat-window .thinking-header svg {
+    width: 12px;
+    height: 12px;
+    color: #8b5cf6;
+}
+
+.floating-chat-window .thinking-title {
+    font-weight: 500;
+}
+
+.floating-chat-window .thinking-toggle-icon {
+    margin-left: auto;
+    font-size: 10px;
+    transition: transform 0.2s ease;
+}
+
+.floating-chat-window .thinking-content {
+    padding: 10px;
+    background: #fafafa;
+    border-top: 1px solid #e9ecef;
+    font-size: 12px;
+    color: #6b7280;
+    line-height: 1.5;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.floating-chat-window .thinking-text {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.floating-chat-window .response-content {
+    padding: 0;
 }
 
 /* 上下文栏 */
@@ -498,6 +627,17 @@
 .floating-chat-window .action-btn.send:hover {
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.floating-chat-window .action-btn.stop {
+    background: #e74c3c;
+    color: white;
+}
+
+.floating-chat-window .action-btn.stop:hover {
+    background: #c0392b;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
 }
 
 /* 调整大小手柄 */
