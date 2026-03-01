@@ -688,28 +688,37 @@ function switchUnifiedMode(mode) {
     var classificationPanel = document.getElementById('unified-classification-mode-panel');
 
     if (mode === 'batch') {
-        if (batchTab) batchTab.classList.add('active');
-        if (classificationTab) classificationTab.classList.remove('active');
+        if (batchTab) {
+            batchTab.classList.add('active');
+            batchTab.style.borderBottomColor = 'var(--primary-color)';
+            batchTab.style.color = 'var(--primary-color)';
+        }
+        if (classificationTab) {
+            classificationTab.classList.remove('active');
+            classificationTab.style.borderBottomColor = 'transparent';
+            classificationTab.style.color = 'var(--text-color-secondary)';
+        }
         if (batchPanel) batchPanel.style.display = 'block';
         if (classificationPanel) classificationPanel.style.display = 'none';
-        
-        batchTab.style.borderBottomColor = 'var(--primary-color)';
-        batchTab.style.color = 'var(--primary-color)';
-        classificationTab.style.borderBottomColor = 'transparent';
-        classificationTab.style.color = 'var(--text-color-secondary)';
     } else {
-        if (batchTab) batchTab.classList.remove('active');
-        if (classificationTab) classificationTab.classList.add('active');
+        if (batchTab) {
+            batchTab.classList.remove('active');
+            batchTab.style.borderBottomColor = 'transparent';
+            batchTab.style.color = 'var(--text-color-secondary)';
+        }
+        if (classificationTab) {
+            classificationTab.classList.add('active');
+            classificationTab.style.borderBottomColor = 'var(--primary-color)';
+            classificationTab.style.color = 'var(--primary-color)';
+        }
         if (batchPanel) batchPanel.style.display = 'none';
         if (classificationPanel) classificationPanel.style.display = 'block';
         
-        batchTab.style.borderBottomColor = 'transparent';
-        batchTab.style.color = 'var(--text-color-secondary)';
-        classificationTab.style.borderBottomColor = 'var(--primary-color)';
-        classificationTab.style.color = 'var(--primary-color)';
-        
-        if (typeof ClassificationModule !== 'undefined' && !ClassificationModule._initialized) {
-            initClassificationModule();
+        if (typeof ClassificationModule !== 'undefined') {
+            if (!ClassificationModule._initialized) {
+                initClassificationModule();
+            }
+            ClassificationModule.initUI();
         }
     }
 }

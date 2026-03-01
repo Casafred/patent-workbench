@@ -33,11 +33,9 @@ const ClassificationModule = {
     },
 
     setupEventListeners() {
-        const elements = {
-            'classification_excel_file': this.handleExcelUpload.bind(this),
+        const clickElements = {
             'classification_load_excel_btn': this.handleLoadExcel.bind(this),
             'classification_add_input_btn': this.handleAddManualInput.bind(this),
-            'classification_layer_count': this.handleLayerCountChange.bind(this),
             'classification_add_layer_btn': this.handleAddLayer.bind(this),
             'classification_save_schema_btn': this.handleSaveSchema.bind(this),
             'classification_cold_start_btn': this.handleColdStart.bind(this),
@@ -48,16 +46,26 @@ const ClassificationModule = {
             'classification_import_examples_btn': this.handleImportExamples.bind(this),
             'classification_export_examples_btn': this.handleExportExamples.bind(this),
             'classification_async_submit_btn': this.handleSubmitAsync.bind(this),
-            'classification_confidence_filter': this.handleConfidenceFilter.bind(this),
             'classification_add_to_examples_btn': this.handleAddToExamples.bind(this)
         };
 
-        Object.entries(elements).forEach(([id, handler]) => {
+        Object.entries(clickElements).forEach(([id, handler]) => {
             const el = document.getElementById(id);
             if (el) {
                 el.addEventListener('click', handler);
             }
         });
+
+        const layerCountInput = document.getElementById('classification_layer_count');
+        if (layerCountInput) {
+            layerCountInput.addEventListener('input', this.handleLayerCountChange.bind(this));
+            layerCountInput.addEventListener('change', this.handleLayerCountChange.bind(this));
+        }
+
+        const confidenceFilter = document.getElementById('classification_confidence_filter');
+        if (confidenceFilter) {
+            confidenceFilter.addEventListener('change', this.handleConfidenceFilter.bind(this));
+        }
 
         const schemaSelect = document.getElementById('classification_schema_select');
         if (schemaSelect) {
@@ -217,12 +225,14 @@ const ClassificationModule = {
 
     handleLayerCountChange(e) {
         const count = parseInt(e.target.value) || 1;
+        console.log('[ClassificationModule] handleLayerCountChange:', count);
         SchemaManager.setLayerCount(count);
         this.updateLayersUI();
         this.updatePromptPreview();
     },
 
     handleAddLayer() {
+        console.log('[ClassificationModule] handleAddLayer');
         SchemaManager.addLayer();
         this.updateLayersUI();
         this.updatePromptPreview();
