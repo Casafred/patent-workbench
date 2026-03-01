@@ -1,5 +1,19 @@
 <!-- 统一批量处理：文本批量智能分析 -->
 <div id="unified_batch-tab" class="tab-content">
+    <!-- 功能模式切换 -->
+    <div class="mode-switcher" style="margin-bottom: 20px;">
+        <div class="mode-switcher-tabs" style="display: flex; gap: 0; border-bottom: 2px solid var(--border-color);">
+            <button class="mode-switcher-tab active" id="mode-tab-batch" onclick="switchUnifiedMode('batch')" style="flex: 1; padding: 12px 20px; background: transparent; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-size: 1em; font-weight: 500; color: var(--text-color-secondary); transition: all 0.3s;">
+                通用批量分析
+            </button>
+            <button class="mode-switcher-tab" id="mode-tab-classification" onclick="switchUnifiedMode('classification')" style="flex: 1; padding: 12px 20px; background: transparent; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-size: 1em; font-weight: 500; color: var(--text-color-secondary); transition: all 0.3s;">
+                智能分类标引
+            </button>
+        </div>
+    </div>
+
+    <!-- ========== 通用批量分析模式 ========== -->
+    <div id="unified-batch-mode-panel" class="unified-mode-panel active">
     <div class="progress-stepper" id="unified-stepper">
         <div class="step-item active" onclick="switchUnifiedSubTab('input', this)">
             <div class="step-number">1</div>
@@ -273,5 +287,332 @@
                 <button id="unified_download_report_btn" style="display:none; margin-top: 15px;">下载最终报告 (Excel)</button>
             </div>
         </div>
+    </div>
+    </div>
+
+    <!-- ========== 智能分类标引模式 ========== -->
+    <div id="unified-classification-mode-panel" class="unified-mode-panel" style="display:none;">
+    <div class="progress-stepper" id="classification-stepper">
+        <div class="step-item active" onclick="switchClassificationSubTab('input', this)">
+            <div class="step-number">1</div>
+            <div class="step-title">输入数据</div>
+        </div>
+        <div class="step-item" onclick="switchClassificationSubTab('schema', this)">
+            <div class="step-number">2</div>
+            <div class="step-title">配置分类</div>
+        </div>
+        <div class="step-item" onclick="switchClassificationSubTab('mode', this)">
+            <div class="step-number">3</div>
+            <div class="step-title">选择模式</div>
+        </div>
+        <div class="step-item" onclick="switchClassificationSubTab('result', this)">
+            <div class="step-number">4</div>
+            <div class="step-title">标引结果</div>
+        </div>
+        <div class="progress-bar"></div>
+    </div>
+
+    <!-- 分类步骤1: 输入数据 -->
+    <div id="classification-sub-tab-input" class="sub-tab-content active">
+        <div class="step">
+            <div class="step-header">步骤 1: 添加待标引数据</div>
+            <div class="sub-tab-container" style="border-bottom:none; margin-bottom: 20px;">
+                <button class="sub-tab-button active" onclick="switchClassificationInput(event, 'excel')">Excel导入</button>
+                <button class="sub-tab-button" onclick="switchClassificationInput(event, 'manual')">手动添加</button>
+            </div>
+            
+            <div id="classification-input-excel" class="sub-tab-content active">
+                <div class="config-item">
+                    <label for="classification_excel_file">上传Excel文件:</label>
+                    <input type="file" id="classification_excel_file" accept=".xlsx, .xls">
+                </div>
+                <div class="config-item">
+                    <label for="classification_excel_sheet">选择Sheet:</label>
+                    <select id="classification_excel_sheet" disabled></select>
+                </div>
+                <div id="classification_column_config_container" style="display:none;">
+                    <div class="config-item row-flex">
+                        <label for="classification_excel_column_count">选择输入列数量:</label>
+                        <input type="number" id="classification_excel_column_count" value="1" min="1" max="10" style="width: 100px;">
+                    </div>
+                    <div id="classification_excel_column_config_area"></div>
+                </div>
+                <button id="classification_load_excel_btn" class="small-button" disabled>从Excel加载输入</button>
+            </div>
+
+            <div id="classification-input-manual" class="sub-tab-content">
+                <div class="config-item">
+                    <label for="classification_manual_input">新输入 (每行一条):</label>
+                    <textarea id="classification_manual_input" rows="5" placeholder="请输入需要分类标引的内容..."></textarea>
+                </div>
+                <button id="classification_add_input_btn" class="small-button">添加输入</button>
+            </div>
+
+            <hr style="margin: 20px 0; border-color: var(--border-color);">
+            <label><strong>已添加的输入 (<span id="classification_inputs_count">0</span>):</strong></label>
+            <div id="classification_inputs_management">
+                <button id="classification_inputs_select_all_btn" class="small-button">全选</button>
+                <button id="classification_inputs_delete_selected_btn" class="small-button delete-button">删除选中</button>
+            </div>
+            <div id="classification_inputs_list" class="scrollable-list"></div>
+        </div>
+    </div>
+
+    <!-- 分类步骤2: 配置分类体系 -->
+    <div id="classification-sub-tab-schema" class="sub-tab-content">
+        <div class="step">
+            <div class="step-header">步骤 2: 配置分类体系</div>
+            
+            <!-- 分类体系选择 -->
+            <div class="config-item">
+                <label for="classification_schema_select">选择已有分类体系或新建:</label>
+                <select id="classification_schema_select">
+                    <option value="new">+ 新建分类体系</option>
+                </select>
+            </div>
+
+            <!-- 智能冷启动选项 -->
+            <div class="info-box" style="background: var(--bg-color-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="var(--primary-color)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                    <span style="font-weight: 500;">智能冷启动</span>
+                </div>
+                <p style="margin: 0 0 10px; color: var(--text-color-secondary); font-size: 0.9em;">没有现成的分类体系？让AI帮您分析数据特征，自动生成初步分类建议。</p>
+                <button id="classification_cold_start_btn" class="small-button" style="background: var(--primary-color); color: white;">
+                    开始智能冷启动
+                </button>
+            </div>
+
+            <!-- 分类体系配置区 -->
+            <div id="classification_schema_config_area">
+                <div class="config-item">
+                    <label for="classification_schema_name">分类体系名称:</label>
+                    <input type="text" id="classification_schema_name" placeholder="例如：专利技术领域分类">
+                </div>
+
+                <div class="config-item">
+                    <label>分类层级设置:</label>
+                    <div style="display: flex; align-items: center; gap: 15px; margin-top: 8px;">
+                        <label style="display: inline-flex; align-items: center; gap: 5px;">
+                            <span>层级数量:</span>
+                            <input type="number" id="classification_layer_count" value="1" min="1" max="5" style="width: 60px;">
+                        </label>
+                        <label style="display: inline-flex; align-items: center; gap: 5px;">
+                            <input type="checkbox" id="classification_multi_label" style="margin: 0;">
+                            <span>多标签交叉标注模式</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 分类层级配置 -->
+                <div id="classification_layers_container"></div>
+                <button id="classification_add_layer_btn" class="small-button" type="button">添加分类层级</button>
+            </div>
+
+            <hr style="margin: 25px 0 20px; border-color: var(--border-color);">
+
+            <!-- AI优化提示词 -->
+            <div class="config-item">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label>生成的分类提示词预览:</label>
+                    <button id="classification_optimize_prompt_btn" class="small-button" style="background: var(--accent-color); color: white;">
+                        AI一键优化提示词
+                    </button>
+                </div>
+                <textarea id="classification_prompt_preview" rows="6" readonly style="background: var(--bg-color-secondary); margin-top: 10px;" placeholder="配置分类层级后，将自动生成分类提示词..."></textarea>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+                <button id="classification_save_schema_btn" class="small-button">保存分类体系</button>
+                <div style="display: flex; gap: 10px;">
+                    <button id="classification_import_schema_btn" class="small-button">导入体系</button>
+                    <button id="classification_export_schema_btn" class="small-button">导出体系</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 示例库管理 -->
+        <details style="margin-top: 20px;">
+            <summary style="cursor: pointer; font-weight: 500; padding: 10px; background: var(--bg-color-secondary); border-radius: 8px;">
+                示例库管理
+            </summary>
+            <div class="step" style="border-top: none; margin-top: 10px;">
+                <div style="margin-bottom: 15px;">
+                    <button id="classification_add_example_btn" class="small-button">添加示例</button>
+                    <button id="classification_import_examples_btn" class="small-button">导入示例</button>
+                    <button id="classification_export_examples_btn" class="small-button">导出示例</button>
+                </div>
+                <div id="classification_examples_list" class="scrollable-list" style="max-height: 300px;">
+                    <div style="text-align: center; color: var(--text-color-tertiary); padding: 20px;">暂无示例，请在标引结果页面将有问题的数据条添加为例示</div>
+                </div>
+            </div>
+        </details>
+    </div>
+
+    <!-- 分类步骤3: 选择模式 -->
+    <div id="classification-sub-tab-mode" class="sub-tab-content">
+        <div class="step">
+            <div class="step-header">步骤 3: 选择处理模式</div>
+            
+            <div id="classification_mode_recommendation" class="info success" style="margin-bottom: 20px; padding: 15px; border-radius: 8px;">
+                <div style="font-weight: bold; margin-bottom: 10px;">系统推荐</div>
+                <div id="classification_recommendation_text">请先添加输入数据...</div>
+            </div>
+
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <div class="mode-card" id="classification_mode_async_card" onclick="selectClassificationMode('async')" style="flex: 1; min-width: 280px; border: 2px solid var(--border-color); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.3s;">
+                    <div style="font-size: 1.2em; font-weight: bold; margin-bottom: 10px; color: var(--primary-color);">小批量异步模式</div>
+                    <div style="color: var(--text-color-secondary); margin-bottom: 15px;">实时标引，逐条获取结果</div>
+                    <ul style="margin: 0; padding-left: 20px; color: var(--text-color-secondary); font-size: 0.9em;">
+                        <li>实时API调用，快速响应</li>
+                        <li>逐条显示标引结果</li>
+                        <li>支持中途导出</li>
+                        <li>便于快速迭代优化</li>
+                    </ul>
+                    <div style="margin-top: 15px; font-size: 0.85em; color: var(--text-color-tertiary);">适合: 少于50条数据</div>
+                </div>
+
+                <div class="mode-card" id="classification_mode_batch_card" onclick="selectClassificationMode('batch')" style="flex: 1; min-width: 280px; border: 2px solid var(--border-color); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.3s;">
+                    <div style="font-size: 1.2em; font-weight: bold; margin-bottom: 10px; color: var(--primary-color);">大批量延时模式</div>
+                    <div style="color: var(--text-color-secondary); margin-bottom: 15px;">高效批处理，完成后统一获取</div>
+                    <ul style="margin: 0; padding-left: 20px; color: var(--text-color-secondary); font-size: 0.9em;">
+                        <li>智谱Batch API批处理</li>
+                        <li>整体进度显示</li>
+                        <li>支持断点续查</li>
+                        <li>成本更低</li>
+                    </ul>
+                    <div style="margin-top: 15px; font-size: 0.85em; color: var(--text-color-tertiary);">适合: 50条以上数据</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; text-align: center;">
+                <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="classification_auto_mode_checkbox" checked style="margin: 0;">
+                    <span style="white-space: nowrap;">自动选择模式（根据数据量）</span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- 分类步骤4: 标引结果 -->
+    <div id="classification-sub-tab-result" class="sub-tab-content">
+        <!-- 小批量异步模式进度UI -->
+        <div id="classification_async_progress_panel" style="display:none;">
+            <div class="step">
+                <div class="step-header">小批量分类标引</div>
+                <div style="text-align: center; margin-bottom: 25px;">
+                    <button id="classification_async_submit_btn">提交全部标引请求</button>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <div id="classification_async_progress_info" class="info" style="text-align:center; flex-grow: 1;">等待提交任务...</div>
+                    <div style="display:flex; gap:10px;">
+                        <button id="classification_async_recover_btn" class="small-button" style="background: var(--warning-color); color: #fff;" disabled>恢复上次任务</button>
+                        <button id="classification_async_export_btn" class="small-button" disabled>导出为Excel</button>
+                    </div>
+                </div>
+                
+                <!-- 确信度筛选 -->
+                <div style="margin-bottom: 15px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                    <label style="display: inline-flex; align-items: center; gap: 5px;">
+                        <span>确信度筛选:</span>
+                        <select id="classification_confidence_filter" style="width: auto;">
+                            <option value="all">显示全部</option>
+                            <option value="low">低确信度 (&lt;60%)</option>
+                            <option value="medium">中等确信度 (60%-80%)</option>
+                            <option value="high">高确信度 (&gt;80%)</option>
+                        </select>
+                    </label>
+                    <button id="classification_export_low_confidence_btn" class="small-button" style="display:none;">导出低确信度条目</button>
+                </div>
+
+                <div style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px;">
+                    <div style="overflow-x:auto;">
+                        <table id="classification_async_results_table">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" id="classification_select_all_results"></th>
+                                    <th>请求ID</th>
+                                    <th>输入预览</th>
+                                    <th>分类结果</th>
+                                    <th>确信度</th>
+                                    <th>状态</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="classification_async_results_tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 批量操作 -->
+                <div style="margin-top: 15px; display: flex; gap: 10px;">
+                    <button id="classification_add_to_examples_btn" class="small-button" disabled>将选中添加为例示</button>
+                    <button id="classification_reclassify_btn" class="small-button" disabled>重新标引选中项</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 大批量延时模式进度UI -->
+        <div id="classification_batch_progress_panel" style="display:none;">
+            <div class="step">
+                <div class="step-header">大批量分类标引</div>
+                <p>请按照1-3的顺序执行。点击步骤2后将启动自动状态检查。</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px; justify-content: center;">
+                    <button id="classification_batch_step1_upload" class="action-button">1. 上传请求文件</button>
+                    <button id="classification_batch_step2_create" class="action-button" disabled>2. 创建Batch任务</button>
+                    <button id="classification_batch_step3_download" class="action-button" disabled>3. 获取结果内容</button>
+                </div>
+                <div id="classification_batch_id_reminder" class="info" style="display: none; margin-top: 20px; text-align: center;"></div>
+
+                <div id="classification_auto_check_container" style="display:none; margin-top: 20px; text-align: center;">
+                    <span id="classification_auto_check_status" style="margin-right: 15px; color: var(--primary-color-dark); font-weight: bold;"></span>
+                    <button id="classification_batch_stop_check_btn" class="small-button" style="background: var(--warning-color); color: #fff;">停止自动检查</button>
+                </div>
+            </div>
+            
+            <details open>
+                <summary>断点续查 / 任务恢复</summary>
+                <div class="step" style="border-top: none; margin-top: 0;">
+                    <p class="info warning">如果您因关闭浏览器等原因中断了流程，但已记录下 Batch ID，可在此恢复任务状态。</p>
+                    <div class="config-item row-flex">
+                        <label for="classification_recover_batch_id_input">Batch ID:</label>
+                        <input type="text" id="classification_recover_batch_id_input" placeholder="粘贴您记录的 Batch ID">
+                    </div>
+                    <button id="classification_recover_state_btn">恢复查询状态</button>
+                </div>
+            </details>
+
+            <div class="step">
+                <div class="step-header">执行日志</div>
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+                    <button id="classification_batch_manual_check_btn" class="small-button">手动检查状态</button>
+                </div>
+                <div id="classification_batch_log" class="preview-output">等待操作...</div>
+            </div>
+
+            <div class="step">
+                <div class="step-header">解析报告</div>
+                <div class="reporter-uploads">
+                    <div>
+                        <p><strong>A. 上传原始 Excel 文件</strong> (用于数据匹配)</p>
+                        <input type="file" id="classification_rep_excel_input" accept=".xlsx, .xls">
+                        <select id="classification_rep_sheet_selector" style="display:none; margin-top: 10px;"></select>
+                    </div>
+                    <div style="margin-top:20px;">
+                        <p><strong>B. 加载 Batch 任务结果文件</strong></p>
+                        <input type="file" id="classification_rep_jsonl_input" accept=".jsonl">
+                        <div class="info success" id="classification_reporter_info_box" style="display:none;">
+                            检测到来自批处理的结果文件已在内存中，将优先使用此数据。
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 20px;">
+                    <button id="classification_generate_report_btn" disabled>解析并生成最终报告</button>
+                </div>
+                <div class="preview-output" id="classification_rep_output_preview" style="display:none;"></div>
+                <button id="classification_download_report_btn" style="display:none; margin-top: 15px;">下载最终报告 (Excel)</button>
+            </div>
+        </div>
+    </div>
     </div>
 </div>

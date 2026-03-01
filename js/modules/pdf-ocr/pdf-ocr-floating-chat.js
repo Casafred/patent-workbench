@@ -1,6 +1,7 @@
 /**
  * PDF-OCR 悬浮对话窗口模块
  * 处理可拖动的悬浮AI对话窗口
+ * 支持多服务商切换和深度思考模式
  */
 
 class PDFOCRFloatingChat {
@@ -14,14 +15,20 @@ class PDFOCRFloatingChat {
         this.dragOffset = { x: 0, y: 0 };
         this.isResizing = false;
         this.currentModel = 'glm-4-flash';
+        this.currentProvider = 'zhipu';
         this.models = [];
+        this.thinkingMode = {
+            enabled: false,
+            budget: null
+        };
+        this.thinkingOnlyModels = [];
+        this.stopStreaming = false;
         
-        // 配置
         this.config = {
-            width: 380,
-            height: 500,
-            minWidth: 300,
-            minHeight: 400,
+            width: 400,
+            height: 550,
+            minWidth: 320,
+            minHeight: 450,
             defaultPosition: { right: 20, bottom: 100 }
         };
         
@@ -29,32 +36,47 @@ class PDFOCRFloatingChat {
     }
     
     async init() {
-        await this.loadModels();
+        await this.loadProvidersConfig();
         this.createWindow();
         this.bindEvents();
     }
     
-    /**
-     * 加载模型列表
-     */
-    async loadModels() {
+    async loadProvidersConfig() {
         try {
-            const response = await fetch('config/models.json');
-            const data = await response.json();
-            this.models = data.models || ['glm-4-flash'];
-            this.currentModel = data.default_model || 'glm-4-flash';
+            const response = await fetch('/api/providers');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.providers) {
+                    this.providers = data.providers;
+                    this.thinkingOnlyModels = data.providers.aliyun?.thinking_only_models || [];
+                    this.currentProvider = localStorage.getItem('llm_provider') || data.default_provider || 'zhipu';
+                    this.models = data.providers[this.currentProvider]?.models || ['glm-4-flash'];
+                    this.currentModel = data.providers[this.currentProvider]?.default_model || 'glm-4-flash';
+                }
+            }
         } catch (error) {
-            console.error('加载模型列表失败:', error);
-            this.models = ['glm-4-flash'];
-            this.currentModel = 'glm-4-flash';
+            console.warn('[PDF-OCR Floating Chat] 从API加载配置失败，尝试本地配置');
+            try {
+                const configResponse = await fetch('config/models.json');
+                if (configResponse.ok) {
+                    const config = await configResponse.json();
+                    if (config.providers) {
+                        this.providers = config.providers;
+                        this.thinkingOnlyModels = config.providers.aliyun?.thinking_only_models || [];
+                        this.currentProvider = localStorage.getItem('llm_provider') || config.default_provider || 'zhipu';
+                        this.models = config.providers[this.currentProvider]?.models || config.models || ['glm-4-flash'];
+                        this.currentModel = config.providers[this.currentProvider]?.default_model || config.default_model || 'glm-4-flash';
+                    }
+                }
+            } catch (err) {
+                console.warn('[PDF-OCR Floating Chat] 使用默认配置');
+                this.models = ['glm-4-flash'];
+                this.currentModel = 'glm-4-flash';
+            }
         }
     }
     
-    /**
-     * 创建悬浮窗口
-     */
     createWindow() {
-        // 检查是否已存在
         if (document.getElementById('ocr-floating-chat')) {
             this.window = document.getElementById('ocr-floating-chat');
             return;
@@ -79,8 +101,22 @@ class PDFOCRFloatingChat {
             transition: transform 0.2s ease, opacity 0.2s ease;
         `;
         
-        this.window.innerHTML = `
-            <!-- 标题栏 -->
+        this.window.innerHTML = this.getWindowHTML();
+        document.body.appendChild(this.window);
+        this.bindWindowEvents();
+        this.updateThinkingButtonVisibility();
+    }
+    
+    getWindowHTML() {
+        const providerOptions = Object.entries(this.providers || {}).map(([key, val]) => 
+            `<option value="${key}" ${key === this.currentProvider ? 'selected' : ''}>${val.name}</option>`
+        ).join('');
+        
+        const modelOptions = this.models.map(m => 
+            `<option value="${m}" ${m === this.currentModel ? 'selected' : ''}>${m}</option>`
+        ).join('');
+        
+        return `
             <div class="chat-window-header">
                 <div class="chat-window-title">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -103,21 +139,32 @@ class PDFOCRFloatingChat {
                 </div>
             </div>
             
-            <!-- 模型选择 -->
-            <div class="chat-model-bar">
-                <span class="model-label">模型:</span>
-                <select class="model-select" id="ocr-chat-model-select">
-                    ${this.models.map(m => `<option value="${m}" ${m === this.currentModel ? 'selected' : ''}>${m}</option>`).join('')}
+            <div class="chat-provider-bar">
+                <span class="provider-label">服务商:</span>
+                <select class="provider-select" id="ocr-chat-provider-select">
+                    ${providerOptions}
                 </select>
             </div>
             
-            <!-- 上下文提示 -->
+            <div class="chat-model-bar">
+                <span class="model-label">模型:</span>
+                <select class="model-select" id="ocr-chat-model-select">
+                    ${modelOptions}
+                </select>
+                <button class="thinking-btn" id="ocr-chat-thinking-btn" title="深度思考模式" style="display: none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 16v-4"></path>
+                        <path d="M12 8h.01"></path>
+                    </svg>
+                </button>
+            </div>
+            
             <div class="chat-context-bar">
                 <span class="context-label">上下文:</span>
                 <span class="context-preview">未选择内容</span>
             </div>
             
-            <!-- 消息区域 -->
             <div class="chat-messages">
                 <div class="chat-welcome">
                     <div class="welcome-icon"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16"><path d="M2 6.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5zM2 9.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zM2 12.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5z"/><path d="M14 1a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H4.414A1 1 0 0 1 3 10.586l-1-1A1 1 0 0 1 1.586 9L3 7.586V2a1 1 0 0 1 1-1h10z"/></svg></div>
@@ -134,17 +181,21 @@ class PDFOCRFloatingChat {
                 </div>
             </div>
             
-            <!-- 输入区域 -->
             <div class="chat-input-area">
                 <textarea class="chat-input" placeholder="输入您的问题..." rows="2"></textarea>
                 <div class="chat-actions">
+                    <button class="action-btn stop" id="ocr-chat-stop-btn" title="停止生成" style="display: none; background: #e74c3c;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="6" y="6" width="12" height="12"></rect>
+                        </svg>
+                    </button>
                     <button class="action-btn clear-history" title="清空对话">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="3 6 5 6 21 6"></polyline>
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                         </svg>
                     </button>
-                    <button class="action-btn send" title="发送">
+                    <button class="action-btn send" id="ocr-chat-send-btn" title="发送">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="22" y1="2" x2="11" y2="13"></line>
                             <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
@@ -153,42 +204,29 @@ class PDFOCRFloatingChat {
                 </div>
             </div>
             
-            <!-- 调整大小手柄 -->
             <div class="resize-handle"></div>
         `;
-        
-        document.body.appendChild(this.window);
-        
-        // 绑定内部事件
-        this.bindWindowEvents();
     }
     
-    /**
-     * 绑定窗口内部事件
-     */
     bindWindowEvents() {
         const header = this.window.querySelector('.chat-window-header');
         const minimizeBtn = this.window.querySelector('.control-btn.minimize');
         const closeBtn = this.window.querySelector('.control-btn.close');
-        const sendBtn = this.window.querySelector('.action-btn.send');
+        const sendBtn = this.window.querySelector('#ocr-chat-send-btn');
+        const stopBtn = this.window.querySelector('#ocr-chat-stop-btn');
         const input = this.window.querySelector('.chat-input');
         const clearHistoryBtn = this.window.querySelector('.action-btn.clear-history');
         const resizeHandle = this.window.querySelector('.resize-handle');
         const modelSelect = this.window.querySelector('#ocr-chat-model-select');
+        const providerSelect = this.window.querySelector('#ocr-chat-provider-select');
+        const thinkingBtn = this.window.querySelector('#ocr-chat-thinking-btn');
         
-        // 拖动功能
         header.addEventListener('mousedown', (e) => this.startDrag(e));
-        
-        // 最小化
         minimizeBtn.addEventListener('click', () => this.toggleMinimize());
-        
-        // 关闭
         closeBtn.addEventListener('click', () => this.hide());
-        
-        // 发送消息
         sendBtn.addEventListener('click', () => this.sendMessage());
+        stopBtn.addEventListener('click', () => this.stopStreaming = true);
         
-        // 输入框回车发送
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -196,31 +234,110 @@ class PDFOCRFloatingChat {
             }
         });
         
-        // 清空历史
         clearHistoryBtn.addEventListener('click', () => this.clearHistory());
-        
-        // 调整大小
         resizeHandle.addEventListener('mousedown', (e) => this.startResize(e));
         
-        // 模型选择
+        if (providerSelect) {
+            providerSelect.addEventListener('change', (e) => {
+                this.currentProvider = e.target.value;
+                localStorage.setItem('llm_provider', this.currentProvider);
+                this.updateModelList();
+                this.updateThinkingButtonVisibility();
+                console.log('[PDF-OCR Floating Chat] 切换服务商:', this.currentProvider);
+            });
+        }
+        
         if (modelSelect) {
             modelSelect.addEventListener('change', (e) => {
                 this.currentModel = e.target.value;
-                console.log('[PDF-OCR] 切换模型:', this.currentModel);
+                this.updateThinkingButtonState();
+                console.log('[PDF-OCR Floating Chat] 切换模型:', this.currentModel);
             });
+        }
+        
+        if (thinkingBtn) {
+            thinkingBtn.addEventListener('click', () => this.toggleThinkingMode());
         }
     }
     
-    /**
-     * 绑定全局事件
-     */
+    updateModelList() {
+        const modelSelect = this.window.querySelector('#ocr-chat-model-select');
+        if (!modelSelect || !this.providers) return;
+        
+        const models = this.providers[this.currentProvider]?.models || [];
+        const defaultModel = this.providers[this.currentProvider]?.default_model || models[0];
+        
+        modelSelect.innerHTML = models.map(m => 
+            `<option value="${m}" ${m === defaultModel ? 'selected' : ''}>${m}</option>`
+        ).join('');
+        
+        this.currentModel = defaultModel;
+        this.models = models;
+    }
+    
+    supportsThinkingMode(model, provider) {
+        if (provider !== 'aliyun') return false;
+        const thinkingSupportedModels = [
+            'qwen-flash', 'qwen-turbo', 'qwen-plus', 'qwen3-max', 'qwen-long',
+            'deepseek-v3.2', 'qwq-plus', 'qwq-32b', 'deepseek-r1', 
+            'deepseek-r1-distill-qwen-32b', 'kimi-k2-thinking'
+        ];
+        return thinkingSupportedModels.includes(model);
+    }
+    
+    isThinkingOnlyModel(model) {
+        return this.thinkingOnlyModels.includes(model);
+    }
+    
+    updateThinkingButtonVisibility() {
+        const thinkingBtn = this.window.querySelector('#ocr-chat-thinking-btn');
+        if (!thinkingBtn) return;
+        
+        if (this.supportsThinkingMode(this.currentModel, this.currentProvider)) {
+            thinkingBtn.style.display = 'inline-flex';
+            this.updateThinkingButtonState();
+        } else {
+            thinkingBtn.style.display = 'none';
+        }
+    }
+    
+    updateThinkingButtonState() {
+        const thinkingBtn = this.window.querySelector('#ocr-chat-thinking-btn');
+        if (!thinkingBtn) return;
+        
+        const isOnlyThinking = this.isThinkingOnlyModel(this.currentModel);
+        
+        if (isOnlyThinking) {
+            thinkingBtn.classList.add('active', 'thinking-only');
+            thinkingBtn.title = '当前模型为仅思考模式（自动启用）';
+        } else if (this.thinkingMode.enabled) {
+            thinkingBtn.classList.add('active');
+            thinkingBtn.classList.remove('thinking-only');
+            thinkingBtn.title = '深度思考模式已开启 (点击关闭)';
+        } else {
+            thinkingBtn.classList.remove('active', 'thinking-only');
+            thinkingBtn.title = '深度思考模式 (点击开启)';
+        }
+        
+        this.updateThinkingButtonVisibility();
+    }
+    
+    toggleThinkingMode() {
+        if (this.isThinkingOnlyModel(this.currentModel)) {
+            console.log('[PDF-OCR Floating Chat] 当前模型为仅思考模式，无法关闭');
+            return;
+        }
+        
+        this.thinkingMode.enabled = !this.thinkingMode.enabled;
+        this.updateThinkingButtonState();
+        console.log('[PDF-OCR Floating Chat] 深度思考模式:', this.thinkingMode.enabled ? '已开启' : '已关闭');
+    }
+    
     bindEvents() {
-        // 监听打开对话窗口事件
         document.addEventListener('pdfocr:openFloatingChat', (e) => {
             this.openWithContext(e.detail);
         });
         
-        // 全局鼠标事件（拖动和调整大小）
         document.addEventListener('mousemove', (e) => {
             if (this.isDragging) {
                 this.onDrag(e);
@@ -230,25 +347,26 @@ class PDFOCRFloatingChat {
         document.addEventListener('mouseup', () => {
             this.isDragging = false;
         });
+        
+        window.addEventListener('providerChanged', () => {
+            if (this.providers && ProviderManager) {
+                this.currentProvider = ProviderManager.getProvider();
+                this.updateModelList();
+                this.updateThinkingButtonVisibility();
+            }
+        });
     }
     
-    /**
-     * 显示窗口
-     */
     show() {
         this.window.style.display = 'flex';
         this.isVisible = true;
         
-        // 触发动画
         requestAnimationFrame(() => {
             this.window.style.opacity = '1';
             this.window.style.transform = 'scale(1)';
         });
     }
     
-    /**
-     * 隐藏窗口
-     */
     hide() {
         this.window.style.opacity = '0';
         this.window.style.transform = 'scale(0.95)';
@@ -259,74 +377,69 @@ class PDFOCRFloatingChat {
         }, 200);
     }
     
-    /**
-     * 切换最小化
-     */
     toggleMinimize() {
         this.isMinimized = !this.isMinimized;
         
         const messages = this.window.querySelector('.chat-messages');
         const inputArea = this.window.querySelector('.chat-input-area');
         const contextBar = this.window.querySelector('.chat-context-bar');
+        const modelBar = this.window.querySelector('.chat-model-bar');
+        const providerBar = this.window.querySelector('.chat-provider-bar');
         
         if (this.isMinimized) {
             messages.style.display = 'none';
             inputArea.style.display = 'none';
             contextBar.style.display = 'none';
+            modelBar.style.display = 'none';
+            providerBar.style.display = 'none';
             this.window.style.height = 'auto';
         } else {
             messages.style.display = 'block';
             inputArea.style.display = 'flex';
             contextBar.style.display = 'flex';
+            modelBar.style.display = 'flex';
+            providerBar.style.display = 'flex';
             this.window.style.height = `${this.config.height}px`;
         }
     }
     
-    /**
-     * 打开窗口并设置上下文
-     */
     openWithContext(data) {
-        // 重置状态（新的对话）
         this.messages = [];
         this.currentContext = data.context || '';
         
-        // 清空消息容器
         const messagesContainer = this.window.querySelector('.chat-messages');
         if (messagesContainer) {
             messagesContainer.innerHTML = '';
         }
         
-        // 更新上下文显示
         this.updateContextPreview();
         
-        // 如果是最小化状态，恢复
         if (this.isMinimized) {
             this.isMinimized = false;
             const messages = this.window.querySelector('.chat-messages');
             const inputArea = this.window.querySelector('.chat-input-area');
             const contextBar = this.window.querySelector('.chat-context-bar');
+            const modelBar = this.window.querySelector('.chat-model-bar');
+            const providerBar = this.window.querySelector('.chat-provider-bar');
             if (messages) messages.style.display = 'block';
             if (inputArea) inputArea.style.display = 'flex';
             if (contextBar) contextBar.style.display = 'flex';
+            if (modelBar) modelBar.style.display = 'flex';
+            if (providerBar) providerBar.style.display = 'flex';
             this.window.style.height = `${this.config.height}px`;
         }
         
-        // 添加系统提示
         if (this.currentContext) {
             this.addMessage('system', `已加载选中的内容作为上下文。您可以询问关于这段内容的任何问题。`);
         }
         
         this.show();
         
-        // 聚焦输入框
         setTimeout(() => {
             this.window.querySelector('.chat-input').focus();
         }, 100);
     }
     
-    /**
-     * 更新上下文预览
-     */
     updateContextPreview() {
         const preview = this.window.querySelector('.context-preview');
         if (this.currentContext) {
@@ -341,19 +454,8 @@ class PDFOCRFloatingChat {
         }
     }
     
-    /**
-     * 清除上下文
-     */
-    clearContext() {
-        this.currentContext = '';
-        this.updateContextPreview();
-        this.addMessage('system', '上下文已清除。');
-    }
-    
-    /**
-     * 开始拖动
-     */
     startDrag(e) {
+        if (e.target.closest('.control-btn')) return;
         this.isDragging = true;
         const rect = this.window.getBoundingClientRect();
         this.dragOffset = {
@@ -363,16 +465,12 @@ class PDFOCRFloatingChat {
         this.window.style.transition = 'none';
     }
     
-    /**
-     * 拖动中
-     */
     onDrag(e) {
         if (!this.isDragging) return;
         
         const x = e.clientX - this.dragOffset.x;
         const y = e.clientY - this.dragOffset.y;
         
-        // 确保不超出视口
         const maxX = window.innerWidth - this.window.offsetWidth;
         const maxY = window.innerHeight - this.window.offsetHeight;
         
@@ -382,9 +480,6 @@ class PDFOCRFloatingChat {
         this.window.style.bottom = 'auto';
     }
     
-    /**
-     * 开始调整大小
-     */
     startResize(e) {
         e.preventDefault();
         const startX = e.clientX;
@@ -409,110 +504,146 @@ class PDFOCRFloatingChat {
         document.addEventListener('mouseup', onResizeEnd);
     }
     
-    /**
-     * 发送消息
-     */
     async sendMessage() {
         const input = this.window.querySelector('.chat-input');
         const message = input.value.trim();
         
         if (!message) return;
         
-        // 添加用户消息
         this.addMessage('user', message);
         input.value = '';
         
-        // 调用AI
         await this.callAI(message);
     }
     
-    /**
-     * 调用AI
-     */
     async callAI(userMessage) {
-        // 显示加载中
         const loadingId = this.addMessage('loading', '思考中...');
+        this.stopStreaming = false;
+        
+        const sendBtn = this.window.querySelector('#ocr-chat-send-btn');
+        const stopBtn = this.window.querySelector('#ocr-chat-stop-btn');
+        sendBtn.style.display = 'none';
+        stopBtn.style.display = 'inline-flex';
         
         try {
-            const apiKey = await this.getAPIKey();
-            if (!apiKey) {
-                this.removeMessage(loadingId);
-                this.addMessage('error', '请先配置智谱AI API密钥');
-                return;
-            }
-            
-            // 构建消息历史
             const messages = this.buildMessages(userMessage);
             
-            // 调用API
-            const response = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
+            const requestBody = {
+                model: this.currentModel,
+                messages: messages,
+                temperature: 0.7,
+                stream: true
+            };
+            
+            if (this.currentProvider === 'aliyun') {
+                requestBody.provider = 'aliyun';
+            }
+            
+            const shouldEnableThinking = this.supportsThinkingMode(this.currentModel, this.currentProvider) && 
+                (this.thinkingMode.enabled || this.isThinkingOnlyModel(this.currentModel));
+            
+            if (shouldEnableThinking) {
+                requestBody.enable_thinking = true;
+                if (this.thinkingMode.budget) {
+                    requestBody.thinking_budget = this.thinkingMode.budget;
+                }
+                console.log('[PDF-OCR Floating Chat] 深度思考模式已启用');
+            }
+            
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            
+            if (this.currentProvider === 'aliyun') {
+                const aliyunKey = localStorage.getItem('aliyun_api_key') || window.appState?.aliyunApiKey;
+                if (aliyunKey) {
+                    headers['X-LLM-Provider'] = 'aliyun';
+                    headers['Authorization'] = `Bearer ${aliyunKey}`;
+                }
+            } else {
+                const apiKey = await this.getAPIKey();
+                if (!apiKey) {
+                    throw new Error('请先配置API密钥');
+                }
+                headers['Authorization'] = `Bearer ${apiKey}`;
+            }
+            
+            const response = await fetch('/api/stream_chat', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
-                },
-                body: JSON.stringify({
-                    model: this.currentModel,
-                    messages: messages,
-                    stream: true
-                })
+                headers: headers,
+                body: JSON.stringify(requestBody)
             });
             
             if (!response.ok) {
-                throw new Error('API请求失败');
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `API请求失败: ${response.status}`);
             }
             
-            // 移除加载消息
             this.removeMessage(loadingId);
             
-            // 创建AI消息占位
             const aiMessageId = this.addMessage('assistant', '');
             
-            // 处理流式响应
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let aiResponse = '';
+            let reasoningContent = '';
+            let buffer = '';
             
             while (true) {
+                if (this.stopStreaming) {
+                    console.log('[PDF-OCR Floating Chat] 用户终止输出');
+                    break;
+                }
+                
                 const { done, value } = await reader.read();
+                if (value) {
+                    buffer += decoder.decode(value, { stream: !done });
+                }
                 if (done) break;
                 
-                const chunk = decoder.decode(value);
-                const lines = chunk.split('\n');
+                let lines = buffer.split('\n\n');
+                buffer = lines.pop() || '';
                 
                 for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        const data = line.slice(6);
-                        if (data === '[DONE]') continue;
+                    if (!line.startsWith('data: ')) continue;
+                    const data = line.substring(6);
+                    if (data === '[DONE]') continue;
+                    
+                    try {
+                        const parsed = JSON.parse(data);
+                        const delta = parsed.choices?.[0]?.delta;
                         
-                        try {
-                            const parsed = JSON.parse(data);
-                            const content = parsed.choices?.[0]?.delta?.content || '';
-                            if (content) {
-                                aiResponse += content;
-                                this.updateMessage(aiMessageId, aiResponse);
-                            }
-                        } catch (e) {
-                            // 忽略解析错误
+                        if (delta?.reasoning_content) {
+                            reasoningContent += delta.reasoning_content;
+                            this.updateMessage(aiMessageId, aiResponse, reasoningContent, true);
                         }
+                        
+                        if (delta?.content) {
+                            aiResponse += delta.content;
+                            this.updateMessage(aiMessageId, aiResponse, reasoningContent, reasoningContent ? false : undefined);
+                        }
+                    } catch (e) {
+                        // 忽略解析错误
                     }
                 }
             }
             
+            this.finalizeMessage(aiMessageId, aiResponse, reasoningContent);
+            
         } catch (error) {
             this.removeMessage(loadingId);
             this.addMessage('error', '请求失败: ' + error.message);
-            console.error('AI调用失败:', error);
+            console.error('[PDF-OCR Floating Chat] AI调用失败:', error);
+        } finally {
+            sendBtn.style.display = 'inline-flex';
+            stopBtn.style.display = 'none';
+            this.stopStreaming = false;
         }
     }
     
-    /**
-     * 构建消息历史
-     */
     buildMessages(userMessage) {
         const messages = [];
         
-        // 系统提示
         let systemPrompt = '你是一个专业的AI助手，擅长分析文档内容并提供详细解答。';
         if (this.currentContext) {
             systemPrompt += `\n\n当前上下文内容：\n"""\n${this.currentContext}\n"""\n\n请基于以上上下文回答用户的问题。`;
@@ -523,10 +654,9 @@ class PDFOCRFloatingChat {
             content: systemPrompt
         });
         
-        // 历史消息（保留最近10条）
         const recentMessages = this.messages.slice(-10);
         recentMessages.forEach(msg => {
-            if (msg.role !== 'system' && msg.role !== 'loading') {
+            if (msg.role !== 'system' && msg.role !== 'loading' && msg.role !== 'error') {
                 messages.push({
                     role: msg.role,
                     content: msg.content
@@ -534,7 +664,6 @@ class PDFOCRFloatingChat {
             }
         });
         
-        // 当前消息
         messages.push({
             role: 'user',
             content: userMessage
@@ -543,9 +672,6 @@ class PDFOCRFloatingChat {
         return messages;
     }
     
-    /**
-     * 添加消息
-     */
     addMessage(role, content) {
         const id = Date.now() + Math.random();
         const message = { id, role, content };
@@ -553,11 +679,9 @@ class PDFOCRFloatingChat {
         
         const messagesContainer = this.window.querySelector('.chat-messages');
         
-        // 移除欢迎消息
         const welcome = messagesContainer.querySelector('.chat-welcome');
         if (welcome) welcome.remove();
         
-        // 创建消息元素
         const messageEl = document.createElement('div');
         messageEl.className = `chat-message ${role}`;
         messageEl.dataset.messageId = id;
@@ -581,7 +705,6 @@ class PDFOCRFloatingChat {
                 break;
         }
         
-        // 渲染内容（assistant使用Markdown）
         const renderedContent = role === 'assistant' ? this.renderMarkdown(content) : this.escapeHtml(content);
         
         messageEl.innerHTML = `
@@ -597,89 +720,113 @@ class PDFOCRFloatingChat {
         return id;
     }
     
-    /**
-     * 渲染Markdown
-     */
+    updateMessage(id, content, reasoningContent = '', isThinking = false) {
+        const messageEl = this.window.querySelector(`[data-message-id="${id}"]`);
+        if (!messageEl) return;
+        
+        const contentEl = messageEl.querySelector('.message-content');
+        if (!contentEl) return;
+        
+        if (isThinking && reasoningContent) {
+            contentEl.innerHTML = `
+                <div class="thinking-container">
+                    <div class="thinking-header" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7"></circle><path d="M8 12v-4M8 6h.01"/></svg>
+                        <span class="thinking-title">深度思考中...</span>
+                        <span class="thinking-toggle-icon">▼</span>
+                    </div>
+                    <div class="thinking-content">
+                        <span class="thinking-text">${this.escapeHtml(reasoningContent)}</span>
+                        <span class="blinking-cursor">|</span>
+                    </div>
+                </div>
+                <div class="response-content"><span class="blinking-cursor">|</span></div>
+            `;
+        } else if (reasoningContent) {
+            const responseEl = contentEl.querySelector('.response-content');
+            if (responseEl) {
+                responseEl.innerHTML = this.renderMarkdown(content) + '<span class="blinking-cursor">|</span>';
+            }
+        } else {
+            contentEl.innerHTML = `<div class="message-text">${this.renderMarkdown(content)}<span class="blinking-cursor">|</span></div>`;
+        }
+        
+        const message = this.messages.find(m => m.id === id);
+        if (message) {
+            message.content = content;
+            message.reasoningContent = reasoningContent;
+        }
+        
+        const messagesContainer = this.window.querySelector('.chat-messages');
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    
+    finalizeMessage(id, content, reasoningContent = '') {
+        const messageEl = this.window.querySelector(`[data-message-id="${id}"]`);
+        if (!messageEl) return;
+        
+        const contentEl = messageEl.querySelector('.message-content');
+        if (!contentEl) return;
+        
+        if (reasoningContent) {
+            contentEl.innerHTML = `
+                <div class="thinking-container">
+                    <div class="thinking-header" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7"></circle><path d="M8 12v-4M8 6h.01"/></svg>
+                        <span class="thinking-title">深度思考完成</span>
+                        <span class="thinking-toggle-icon">▶</span>
+                    </div>
+                    <div class="thinking-content" style="display: none;">
+                        <div class="thinking-text">${this.escapeHtml(reasoningContent)}</div>
+                    </div>
+                </div>
+                <div class="response-content">${this.renderMarkdown(content)}</div>
+            `;
+        } else {
+            contentEl.innerHTML = `<div class="message-text">${this.renderMarkdown(content)}</div>`;
+        }
+        
+        const message = this.messages.find(m => m.id === id);
+        if (message) {
+            message.content = content;
+            message.reasoningContent = reasoningContent;
+        }
+    }
+    
     renderMarkdown(text) {
         if (!text) return '';
         
-        // 使用marked库（如果可用）
         if (typeof marked !== 'undefined') {
             try {
-                return marked.parse(text);
+                return marked.parse(text, { gfm: true, breaks: true });
             } catch (e) {
                 console.error('Markdown渲染失败:', e);
             }
         }
         
-        // 简单的Markdown渲染（备用）
         return this.simpleMarkdownRender(text);
     }
     
-    /**
-     * 简单的Markdown渲染
-     */
     simpleMarkdownRender(text) {
         if (!text) return '';
         
-        // 转义HTML
         let html = this.escapeHtml(text);
         
-        // 代码块
         html = html.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>');
-        
-        // 行内代码
         html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-        
-        // 粗体
         html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-        
-        // 斜体
         html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-        
-        // 标题
         html = html.replace(/^### (.+)$/gm, '<h4>$1</h4>');
         html = html.replace(/^## (.+)$/gm, '<h3>$1</h3>');
         html = html.replace(/^# (.+)$/gm, '<h2>$1</h2>');
-        
-        // 列表
         html = html.replace(/^\- (.+)$/gm, '<li>$1</li>');
         html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
-        
-        // 段落
         html = html.replace(/\n\n/g, '</p><p>');
         html = '<p>' + html + '</p>';
         
         return html;
     }
     
-    /**
-     * 更新消息内容
-     */
-    updateMessage(id, content) {
-        const messageEl = this.window.querySelector(`[data-message-id="${id}"]`);
-        if (messageEl) {
-            const textEl = messageEl.querySelector('.message-text');
-            if (textEl) {
-                // 使用Markdown渲染
-                textEl.innerHTML = this.renderMarkdown(content);
-            }
-        }
-        
-        // 更新消息数据
-        const message = this.messages.find(m => m.id === id);
-        if (message) {
-            message.content = content;
-        }
-        
-        // 滚动到底部
-        const messagesContainer = this.window.querySelector('.chat-messages');
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
-    
-    /**
-     * 移除消息
-     */
     removeMessage(id) {
         const messageEl = this.window.querySelector(`[data-message-id="${id}"]`);
         if (messageEl) {
@@ -688,20 +835,6 @@ class PDFOCRFloatingChat {
         this.messages = this.messages.filter(m => m.id !== id);
     }
     
-    /**
-     * 格式化内容
-     */
-    formatContent(content) {
-        // 简单的Markdown格式化
-        return this.escapeHtml(content)
-            .replace(/\n/g, '<br>')
-            .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
-            .replace(/`([^`]+)`/g, '<code>$1</code>');
-    }
-    
-    /**
-     * HTML转义
-     */
     escapeHtml(text) {
         if (!text) return '';
         const div = document.createElement('div');
@@ -709,9 +842,6 @@ class PDFOCRFloatingChat {
         return div.innerHTML;
     }
     
-    /**
-     * 清空历史
-     */
     clearHistory() {
         this.messages = [];
         const messagesContainer = this.window.querySelector('.chat-messages');
@@ -726,9 +856,6 @@ class PDFOCRFloatingChat {
         `;
     }
     
-    /**
-     * 获取API密钥
-     */
     async getAPIKey() {
         let apiKey = window.appState?.apiKey || '';
         if (!apiKey) {
@@ -740,9 +867,6 @@ class PDFOCRFloatingChat {
         return apiKey;
     }
     
-    /**
-     * 销毁
-     */
     destroy() {
         if (this.window) {
             this.window.remove();
@@ -751,6 +875,5 @@ class PDFOCRFloatingChat {
     }
 }
 
-// 暴露类定义
 window.PDFOCRFloatingChat = PDFOCRFloatingChat;
 window.pdfOCRFloatingChat = null;

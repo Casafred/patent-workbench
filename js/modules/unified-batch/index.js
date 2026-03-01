@@ -11,6 +11,7 @@ import TemplateManager from './template-manager.js';
 import OutputHandler from './output-handler.js';
 import AsyncEngine from './engines/async-engine.js';
 import BatchEngine from './engines/batch-engine.js';
+import ClassificationModule from './classification/index.js';
 
 const UnifiedBatch = {
     config: UnifiedBatchConfig,
@@ -21,6 +22,7 @@ const UnifiedBatch = {
     output: OutputHandler,
     asyncEngine: AsyncEngine,
     batchEngine: BatchEngine,
+    classification: ClassificationModule,
 
     init() {
         this.state.loadState();

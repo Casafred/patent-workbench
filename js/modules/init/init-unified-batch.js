@@ -674,4 +674,172 @@ if (typeof window !== 'undefined') {
     window.deleteUnifiedTemplate = deleteUnifiedTemplate;
     window.updateUnifiedOutputField = updateUnifiedOutputField;
     window.removeUnifiedOutputField = removeUnifiedOutputField;
+    window.switchUnifiedMode = switchUnifiedMode;
+    window.switchClassificationSubTab = switchClassificationSubTab;
+    window.switchClassificationInput = switchClassificationInput;
+    window.selectClassificationMode = selectClassificationMode;
+    window.initClassificationModule = initClassificationModule;
+}
+
+function switchUnifiedMode(mode) {
+    var batchTab = document.getElementById('mode-tab-batch');
+    var classificationTab = document.getElementById('mode-tab-classification');
+    var batchPanel = document.getElementById('unified-batch-mode-panel');
+    var classificationPanel = document.getElementById('unified-classification-mode-panel');
+
+    if (mode === 'batch') {
+        if (batchTab) batchTab.classList.add('active');
+        if (classificationTab) classificationTab.classList.remove('active');
+        if (batchPanel) batchPanel.style.display = 'block';
+        if (classificationPanel) classificationPanel.style.display = 'none';
+        
+        batchTab.style.borderBottomColor = 'var(--primary-color)';
+        batchTab.style.color = 'var(--primary-color)';
+        classificationTab.style.borderBottomColor = 'transparent';
+        classificationTab.style.color = 'var(--text-color-secondary)';
+    } else {
+        if (batchTab) batchTab.classList.remove('active');
+        if (classificationTab) classificationTab.classList.add('active');
+        if (batchPanel) batchPanel.style.display = 'none';
+        if (classificationPanel) classificationPanel.style.display = 'block';
+        
+        batchTab.style.borderBottomColor = 'transparent';
+        batchTab.style.color = 'var(--text-color-secondary)';
+        classificationTab.style.borderBottomColor = 'var(--primary-color)';
+        classificationTab.style.color = 'var(--primary-color)';
+        
+        if (typeof ClassificationModule !== 'undefined' && !ClassificationModule._initialized) {
+            initClassificationModule();
+        }
+    }
+}
+
+function initClassificationModule() {
+    console.log('[Classification] 初始化分类标引模块...');
+    
+    if (typeof ClassificationModule === 'undefined') {
+        console.error('[Classification] ClassificationModule未加载');
+        return false;
+    }
+    
+    ClassificationModule.init();
+    ClassificationModule._initialized = true;
+    
+    console.log('[Classification] 分类标引模块初始化完成');
+    return true;
+}
+
+function switchClassificationSubTab(tabName, element) {
+    var stepper = document.getElementById('classification-stepper');
+    if (stepper) {
+        stepper.querySelectorAll('.step-item').forEach(function(item) {
+            item.classList.remove('active');
+        });
+    }
+    
+    if (element) {
+        element.classList.add('active');
+    }
+
+    document.querySelectorAll('#unified-classification-mode-panel .sub-tab-content').forEach(function(content) {
+        content.classList.remove('active');
+    });
+
+    var targetTab = document.getElementById('classification-sub-tab-' + tabName);
+    if (targetTab) {
+        targetTab.classList.add('active');
+    }
+
+    if (tabName === 'mode') {
+        updateClassificationModeRecommendation();
+    } else if (tabName === 'result') {
+        updateClassificationProcessPanelVisibility();
+    }
+}
+
+function switchClassificationInput(event, type) {
+    var container = event.target.parentElement;
+    container.querySelectorAll('.sub-tab-button').forEach(function(btn) {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+
+    document.getElementById('classification-input-excel').classList.remove('active');
+    document.getElementById('classification-input-manual').classList.remove('active');
+    document.getElementById('classification-input-' + type).classList.add('active');
+}
+
+function selectClassificationMode(mode) {
+    var autoCheckbox = document.getElementById('classification_auto_mode_checkbox');
+    if (autoCheckbox && autoCheckbox.checked) {
+        autoCheckbox.checked = false;
+    }
+    
+    if (typeof ClassificationModule !== 'undefined') {
+        ClassificationModule.state.setMode(mode);
+    }
+    
+    updateClassificationModeCardStyles();
+    updateClassificationProcessPanelVisibility();
+}
+
+function updateClassificationModeRecommendation() {
+    var count = 0;
+    var recommendation = { mode: 'async', reason: '' };
+    
+    if (typeof ClassificationModule !== 'undefined') {
+        count = ClassificationModule.state.getInputCount();
+        recommendation = count < 50 
+            ? { mode: 'async', reason: '数据量较少，适合实时处理' }
+            : { mode: 'batch', reason: '数据量较大，建议使用批处理' };
+    }
+    
+    var textEl = document.getElementById('classification_recommendation_text');
+    
+    if (textEl) {
+        if (count === 0) {
+            textEl.textContent = '请先添加输入数据...';
+        } else {
+            textEl.innerHTML = '<strong>推荐模式:</strong> ' + (recommendation.mode === 'async' ? '小批量异步模式' : '大批量延时模式') + '<br><strong>原因:</strong> ' + recommendation.reason;
+        }
+    }
+
+    updateClassificationModeCardStyles();
+}
+
+function updateClassificationModeCardStyles() {
+    var asyncCard = document.getElementById('classification_mode_async_card');
+    var batchCard = document.getElementById('classification_mode_batch_card');
+    var mode = 'async';
+    
+    if (typeof ClassificationModule !== 'undefined') {
+        mode = ClassificationModule.state.getMode();
+        if (mode === 'auto') {
+            mode = ClassificationModule.state.getInputCount() < 50 ? 'async' : 'batch';
+        }
+    }
+
+    if (asyncCard && batchCard) {
+        asyncCard.style.borderColor = mode === 'async' ? 'var(--primary-color)' : 'var(--border-color)';
+        batchCard.style.borderColor = mode === 'batch' ? 'var(--primary-color)' : 'var(--border-color)';
+    }
+}
+
+function updateClassificationProcessPanelVisibility() {
+    var mode = 'async';
+    
+    if (typeof ClassificationModule !== 'undefined') {
+        mode = ClassificationModule.state.getMode();
+        if (mode === 'auto') {
+            mode = ClassificationModule.state.getInputCount() < 50 ? 'async' : 'batch';
+        }
+    }
+    
+    var asyncPanel = document.getElementById('classification_async_progress_panel');
+    var batchPanel = document.getElementById('classification_batch_progress_panel');
+
+    if (asyncPanel && batchPanel) {
+        asyncPanel.style.display = mode === 'async' ? 'block' : 'none';
+        batchPanel.style.display = mode === 'batch' ? 'block' : 'none';
+    }
 }
