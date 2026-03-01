@@ -371,12 +371,89 @@ def serve_app():
     with open(os.path.join(static_folder_path, 'index.html'), 'r', encoding='utf-8') as f:
         html_content = f.read()
     username = session.get('user', '用户')
+    user_actions_css = """
+    <style>
+        .user-actions {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 253, 244, 0.98) 100%);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            transition: all 0.3s ease;
+        }
+        .user-actions:hover {
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+        }
+        .user-display {
+            font-size: 14px;
+            color: #475569;
+        }
+        .user-display strong {
+            color: #16A34A;
+            font-weight: 600;
+        }
+        .logout-btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 14px;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(248, 113, 113, 0.08) 100%);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+            color: #dc2626;
+            font-size: 13px;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .logout-btn:hover {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(248, 113, 113, 0.15) 100%);
+            border-color: rgba(239, 68, 68, 0.5);
+            color: #b91c1c;
+        }
+        .user-btns {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .user-btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 8px;
+            color: #16A34A;
+            font-size: 13px;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .user-btn:hover {
+            background: rgba(34, 197, 94, 0.2);
+            border-color: rgba(34, 197, 94, 0.5);
+        }
+    </style>
+    """
     user_actions_html = f"""
     <div class="user-actions">
         <span class="user-display">当前用户: <strong>{username}</strong></span>
-        <a href="{url_for('logout')}" class="logout-btn">登出</a>
+        <div class="user-btns">
+            <a href="{url_for('logout')}" class="logout-btn">登出</a>
+        </div>
     </div>
     """
+    if '</head>' in html_content:
+        html_content = html_content.replace('</head>', f'{user_actions_css}</head>', 1)
     if '<body>' in html_content:
         html_content = html_content.replace('<body>', f'<body>{user_actions_html}', 1)
     return Response(html_content, mimetype='text/html')

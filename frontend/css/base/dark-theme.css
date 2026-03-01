@@ -3682,3 +3682,43 @@
 [data-theme="dark"] .user-btn:hover {
     background: rgba(74, 222, 128, 0.2) !important;
 }
+
+/* ========================================
+   79. 用户账户展示和管理面板暗黑模式覆盖
+   ======================================== */
+
+[data-theme="dark"] .user-actions {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%) !important;
+    border: 1px solid rgba(74, 222, 128, 0.3) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme="dark"] .user-actions:hover {
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.5) !important;
+}
+
+[data-theme="dark"] .user-display {
+    color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .user-display strong {
+    color: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .user-btns {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+[data-theme="dark"] .logout-btn {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(248, 113, 113, 0.15) 100%) !important;
+    border: 1px solid rgba(239, 68, 68, 0.4) !important;
+    color: #f87171 !important;
+}
+
+[data-theme="dark"] .logout-btn:hover {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.3) 0%, rgba(248, 113, 113, 0.25) 100%) !important;
+    border-color: rgba(248, 113, 113, 0.6) !important;
+    color: #fca5a5 !important;
+}
