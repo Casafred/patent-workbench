@@ -609,19 +609,27 @@ class PDFOCRFloatingChat {
                     
                     try {
                         const parsed = JSON.parse(data);
+                        
+                        if (parsed.error) {
+                            throw new Error(parsed.error.message || JSON.stringify(parsed.error));
+                        }
+                        
                         const delta = parsed.choices?.[0]?.delta;
                         
-                        if (delta?.reasoning_content) {
+                        if (!delta) continue;
+                        
+                        if (delta.reasoning_content) {
                             reasoningContent += delta.reasoning_content;
                             this.updateMessage(aiMessageId, aiResponse, reasoningContent, true);
                         }
                         
-                        if (delta?.content) {
-                            aiResponse += delta.content;
+                        if (delta.content) {
+                            const contentStr = typeof delta.content === 'string' ? delta.content : String(delta.content);
+                            aiResponse += contentStr;
                             this.updateMessage(aiMessageId, aiResponse, reasoningContent, reasoningContent ? false : undefined);
                         }
                     } catch (e) {
-                        // 忽略解析错误
+                        console.error('[PDF-OCR Floating Chat] 解析错误:', e, 'data:', data);
                     }
                 }
             }

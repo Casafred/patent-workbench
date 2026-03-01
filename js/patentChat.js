@@ -575,15 +575,23 @@ ${patentInfo.legal_events && patentInfo.legal_events.length > 0 ? `### 法律事
                 
                 try {
                     const parsed = JSON.parse(data);
+                    
+                    if (parsed.error) {
+                        throw new Error(parsed.error.message || JSON.stringify(parsed.error));
+                    }
+                    
                     const delta = parsed.choices?.[0]?.delta;
                     
-                    if (delta?.reasoning_content) {
+                    if (!delta) continue;
+                    
+                    if (delta.reasoning_content) {
                         reasoningContent += delta.reasoning_content;
                         updatePatentChatMessageContent(contentDiv, fullContent, reasoningContent, true);
                     }
                     
-                    if (delta?.content) {
-                        fullContent += delta;
+                    if (delta.content) {
+                        const contentStr = typeof delta.content === 'string' ? delta.content : String(delta.content);
+                        fullContent += contentStr;
                         
                         const now = Date.now();
                         if (now - lastRenderTime > RENDER_INTERVAL) {
@@ -592,7 +600,7 @@ ${patentInfo.legal_events && patentInfo.legal_events.length > 0 ? `### 法律事
                         }
                     }
                 } catch (e) {
-                    console.warn('解析流式数据失败:', e);
+                    console.warn('解析流式数据失败:', e, 'data:', data);
                 }
             }
         }
