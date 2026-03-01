@@ -176,6 +176,27 @@ function initChat() {
         chatSearchBtn.addEventListener('click', handleSearch);
     }
     
+    // Thinking mode functionality
+    const chatThinkingBtn = document.getElementById('chat_thinking_btn');
+    if (chatThinkingBtn) {
+        chatThinkingBtn.addEventListener('click', toggleThinkingMode);
+    }
+    
+    // Model change listener for thinking button visibility
+    if (chatModelSelect) {
+        chatModelSelect.addEventListener('change', updateThinkingButtonVisibility);
+    }
+    
+    // Provider change listener
+    window.addEventListener('providerChanged', () => {
+        setTimeout(updateThinkingButtonVisibility, 150);
+    });
+    
+    // Models config loaded listener
+    window.addEventListener('modelsConfigLoaded', () => {
+        setTimeout(updateThinkingButtonVisibility, 150);
+    });
+    
     // Export functionality
     document.addEventListener('click', (e) => {
         if (e.target.matches('[data-export]')) {
@@ -343,10 +364,13 @@ async function handleStreamChatRequest() {
     const assistantContentEl = assistantMessageEl.querySelector('.message-content');
     const tokenUsageEl = assistantMessageEl.querySelector('.message-token-usage');
     let fullResponse = "";
+    let fullReasoning = "";
     let usageInfo = null;
-    let webSearchResults = null;  // 存储联网搜索结果
+    let webSearchResults = null;
     let isSearching = false;
     let contentStarted = false;
+    let reasoningStarted = false;
+    let isThinkingMode = false;
 
     // 检测用户是否手动滚动的标志
     let userScrolled = false;
@@ -366,12 +390,22 @@ async function handleStreamChatRequest() {
             messages: messagesToSend
         };
 
-        // 调试日志：检查发送的消息
         const lastMessage = messagesToSend[messagesToSend.length - 1];
         console.log(`[Chat] 发送请求 - 模型: ${requestPayload.model}, 消息数量: ${messagesToSend.length}`);
         console.log(`[Chat] 最后一条消息角色: ${lastMessage?.role}, 内容长度: ${lastMessage?.content?.length || 0}`);
 
-        // 获取当前对话的联网搜索配置
+        const model = chatModelSelect.value;
+        const provider = appState.provider || 'zhipu';
+        
+        if (window.shouldEnableThinking && window.shouldEnableThinking(model, provider)) {
+            requestPayload.enable_thinking = true;
+            if (appState.chat.thinkingMode.budget) {
+                requestPayload.thinking_budget = appState.chat.thinkingMode.budget;
+            }
+            isThinkingMode = true;
+            console.log(`🧠 [深度思考] 已启用！模型: ${model}`);
+        }
+
         const conversationSearchMode = getCurrentConversationSearchMode();
 
         console.log('🔍 [联网搜索] 准备发送请求，当前搜索模式状态:', {
@@ -459,25 +493,86 @@ async function handleStreamChatRequest() {
                     if (parsed.error) throw new Error(parsed.error.message || JSON.stringify(parsed.error));
                     if (parsed.usage) usageInfo = parsed.usage;
 
-                    // 捕获 web_search 数据（智谱联网搜索返回的搜索结果）
                     if (parsed.web_search && parsed.web_search.length > 0) {
                         webSearchResults = parsed.web_search;
                         console.log('🔍 [联网搜索] 获取到搜索结果，共', webSearchResults.length, '条');
                     }
 
-                    const delta = parsed.choices[0]?.delta?.content || "";
-                    if (delta) {
+                    const delta = parsed.choices[0]?.delta;
+                    
+                    if (delta?.reasoning_content) {
+                        if (!reasoningStarted) {
+                            reasoningStarted = true;
+                            assistantContentEl.innerHTML = `
+                                <div class="thinking-container">
+                                    <div class="thinking-header" onclick="toggleThinkingContent(this)">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                            <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+                                        </svg>
+                                        <span class="thinking-title">深度思考中...</span>
+                                        <span class="thinking-toggle-icon">▼</span>
+                                    </div>
+                                    <div class="thinking-content">
+                                        <span class="thinking-text"></span>
+                                        <span class="blinking-cursor">|</span>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                        
+                        fullReasoning += delta.reasoning_content;
+                        const thinkingText = assistantContentEl.querySelector('.thinking-text');
+                        if (thinkingText) {
+                            thinkingText.textContent = fullReasoning;
+                        }
+                        
+                        if (!userScrolled) {
+                            chatWindow.scrollTop = chatWindow.scrollHeight;
+                        }
+                    }
+
+                    if (delta?.content) {
                         if (!contentStarted) {
                             contentStarted = true;
                             isSearching = false;
-                            assistantContentEl.innerHTML = '';
+                            
+                            if (reasoningStarted) {
+                                const thinkingContainer = assistantContentEl.querySelector('.thinking-container');
+                                if (thinkingContainer) {
+                                    const thinkingTitle = thinkingContainer.querySelector('.thinking-title');
+                                    const thinkingToggleIcon = thinkingContainer.querySelector('.thinking-toggle-icon');
+                                    if (thinkingTitle) thinkingTitle.textContent = '深度思考完成';
+                                    if (thinkingToggleIcon) thinkingToggleIcon.textContent = '▶';
+                                    
+                                    const thinkingContent = thinkingContainer.querySelector('.thinking-content');
+                                    if (thinkingContent) thinkingContent.style.display = 'none';
+                                }
+                                
+                                const responseDiv = document.createElement('div');
+                                responseDiv.className = 'response-content';
+                                responseDiv.innerHTML = '<span class="blinking-cursor">|</span>';
+                                assistantContentEl.appendChild(responseDiv);
+                            } else {
+                                assistantContentEl.innerHTML = '<span class="blinking-cursor">|</span>';
+                            }
                             fullResponse = '';
-                            console.log('🔍 [联网搜索] 开始接收回答内容，搜索阶段完成');
+                            console.log('🧠 [深度思考] 思考阶段完成，开始接收回答内容');
                         }
 
-                        fullResponse += delta;
-                        assistantContentEl.innerHTML = window.marked.parse(fullResponse + '<span class="blinking-cursor">|</span>', { gfm: true, breaks: true });
-                        // 只有用户没有手动滚动时才自动滚动到底部
+                        fullResponse += delta.content;
+                        
+                        let targetEl;
+                        if (reasoningStarted) {
+                            targetEl = assistantContentEl.querySelector('.response-content');
+                        } else {
+                            targetEl = assistantContentEl;
+                        }
+                        
+                        if (targetEl) {
+                            targetEl.innerHTML = window.marked.parse(fullResponse + '<span class="blinking-cursor">|</span>', { gfm: true, breaks: true });
+                        }
+                        
                         if (!userScrolled) {
                             chatWindow.scrollTop = chatWindow.scrollHeight;
                         }
@@ -495,24 +590,27 @@ async function handleStreamChatRequest() {
                     if (parsed.error) throw new Error(parsed.error.message || JSON.stringify(parsed.error));
                     if (parsed.usage) usageInfo = parsed.usage;
                     
-                    const delta = parsed.choices[0]?.delta?.content || "";
-                    if (delta) {
+                    const delta = parsed.choices[0]?.delta;
+                    if (delta?.reasoning_content) {
+                        fullReasoning += delta.reasoning_content;
+                    }
+                    if (delta?.content) {
                         if (!contentStarted) {
                             contentStarted = true;
                             isSearching = false;
-                            assistantContentEl.innerHTML = '';
+                            if (!reasoningStarted) {
+                                assistantContentEl.innerHTML = '';
+                            }
                             fullResponse = '';
                         }
-                        fullResponse += delta;
+                        fullResponse += delta.content;
                     }
                 } catch(e) { /* Ignore */ }
             }
         }
 
-        // 先渲染 Markdown
         let renderedContent = window.marked.parse(fullResponse, { gfm: true, breaks: true });
 
-        // 如果有搜索结果，将 [ref_x] 替换为可点击的链接
         if (webSearchResults && webSearchResults.length > 0) {
             webSearchResults.forEach((result, index) => {
                 const refNumber = index + 1;
@@ -522,7 +620,26 @@ async function handleStreamChatRequest() {
             });
         }
 
-        assistantContentEl.innerHTML = renderedContent;
+        if (reasoningStarted && fullReasoning) {
+            assistantContentEl.innerHTML = `
+                <div class="thinking-container">
+                    <div class="thinking-header" onclick="toggleThinkingContent(this)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                            <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+                        </svg>
+                        <span class="thinking-title">深度思考完成</span>
+                        <span class="thinking-toggle-icon">▶</span>
+                    </div>
+                    <div class="thinking-content" style="display: none;">
+                        <div class="thinking-text">${fullReasoning}</div>
+                    </div>
+                </div>
+                <div class="response-content">${renderedContent}</div>
+            `;
+        } else {
+            assistantContentEl.innerHTML = renderedContent;
+        }
 
         // 添加搜索来源（如果有）
         if (webSearchResults && webSearchResults.length > 0) {
@@ -560,7 +677,9 @@ async function handleStreamChatRequest() {
             content: fullResponse,
             timestamp: Date.now(),
             webSearchEnabled: conversationSearchMode.enabled,
-            webSearchResults: webSearchResults
+            webSearchResults: webSearchResults,
+            thinkingEnabled: isThinkingMode,
+            reasoningContent: fullReasoning || null
         };
         if (usageInfo) {
             assistantMessageData.usage = usageInfo;
@@ -607,5 +726,85 @@ function stopStreamChat() {
         console.log('🛑 用户点击终止按钮');
     }
 }
+
+function toggleThinkingMode() {
+    const chatThinkingBtn = document.getElementById('chat_thinking_btn');
+    const chatModelSelect = document.getElementById('chat_model_select');
+    
+    if (!chatThinkingBtn || !chatModelSelect) return;
+    
+    const model = chatModelSelect.value;
+    
+    if (window.isThinkingOnlyModel && window.isThinkingOnlyModel(model)) {
+        console.log('🧠 当前模型为仅思考模式，无法关闭');
+        return;
+    }
+    
+    appState.chat.thinkingMode.enabled = !appState.chat.thinkingMode.enabled;
+    
+    updateThinkingButtonState();
+    
+    console.log(`🧠 深度思考模式: ${appState.chat.thinkingMode.enabled ? '已开启' : '已关闭'}`);
+}
+
+function updateThinkingButtonVisibility() {
+    const chatThinkingBtn = document.getElementById('chat_thinking_btn');
+    const chatModelSelect = document.getElementById('chat_model_select');
+    
+    if (!chatThinkingBtn || !chatModelSelect) return;
+    
+    const model = chatModelSelect.value;
+    const provider = appState.provider || 'zhipu';
+    
+    if (window.supportsThinkingMode && window.supportsThinkingMode(model, provider)) {
+        chatThinkingBtn.style.display = 'inline-flex';
+        updateThinkingButtonState();
+    } else {
+        chatThinkingBtn.style.display = 'none';
+    }
+    
+    console.log(`🧠 思考按钮可见性更新: model=${model}, provider=${provider}, visible=${chatThinkingBtn.style.display !== 'none'}`);
+}
+
+function updateThinkingButtonState() {
+    const chatThinkingBtn = document.getElementById('chat_thinking_btn');
+    const chatModelSelect = document.getElementById('chat_model_select');
+    
+    if (!chatThinkingBtn || !chatModelSelect) return;
+    
+    const model = chatModelSelect.value;
+    const isEnabled = appState.chat.thinkingMode.enabled;
+    const isOnlyThinking = window.isThinkingOnlyModel && window.isThinkingOnlyModel(model);
+    
+    if (isOnlyThinking) {
+        chatThinkingBtn.classList.add('active', 'thinking-only');
+        chatThinkingBtn.title = '当前模型为仅思考模式（自动启用）';
+    } else if (isEnabled) {
+        chatThinkingBtn.classList.add('active');
+        chatThinkingBtn.classList.remove('thinking-only');
+        chatThinkingBtn.title = '深度思考模式已开启 (点击关闭)';
+    } else {
+        chatThinkingBtn.classList.remove('active', 'thinking-only');
+        chatThinkingBtn.title = '深度思考模式 (点击开启)';
+    }
+}
+
+function toggleThinkingContent(headerEl) {
+    const container = headerEl.closest('.thinking-container');
+    if (!container) return;
+    
+    const content = container.querySelector('.thinking-content');
+    const toggleIcon = headerEl.querySelector('.thinking-toggle-icon');
+    
+    if (content) {
+        const isHidden = content.style.display === 'none';
+        content.style.display = isHidden ? 'block' : 'none';
+        if (toggleIcon) {
+            toggleIcon.textContent = isHidden ? '▼' : '▶';
+        }
+    }
+}
+
+window.toggleThinkingContent = toggleThinkingContent;
 
 

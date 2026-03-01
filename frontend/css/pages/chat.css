@@ -807,3 +807,152 @@
 #chat_file_status_area .file-remove-btn:hover {
     color: #e74c3c;
 }
+
+/* Deep Thinking Mode Styles */
+.thinking-btn {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.thinking-btn.active {
+    background-color: rgba(147, 51, 234, 0.15);
+    border-color: #9333ea;
+    color: #9333ea;
+}
+
+.thinking-btn.active svg {
+    animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+.thinking-btn.thinking-only {
+    background-color: rgba(234, 179, 8, 0.15);
+    border-color: #eab308;
+    color: #eab308;
+}
+
+.thinking-indicator {
+    font-size: 10px;
+    margin-left: 4px;
+    color: #9333ea;
+    font-weight: 600;
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        filter: drop-shadow(0 0 2px rgba(147, 51, 234, 0.5));
+    }
+    50% {
+        filter: drop-shadow(0 0 6px rgba(147, 51, 234, 0.8));
+    }
+}
+
+/* Thinking Container in Messages */
+.thinking-container {
+    margin-bottom: 16px;
+    border: 1px solid #e9d5ff;
+    border-radius: 8px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+}
+
+.thinking-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 100%);
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s ease;
+}
+
+.thinking-header:hover {
+    background: linear-gradient(135deg, #d8b4fe 0%, #c084fc 100%);
+}
+
+.thinking-header svg {
+    flex-shrink: 0;
+    color: #7c3aed;
+}
+
+.thinking-title {
+    flex: 1;
+    font-weight: 600;
+    font-size: 13px;
+    color: #5b21b6;
+}
+
+.thinking-toggle-icon {
+    font-size: 10px;
+    color: #7c3aed;
+    transition: transform 0.2s ease;
+}
+
+.thinking-content {
+    padding: 14px;
+    background: #faf5ff;
+    border-top: 1px solid #e9d5ff;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.thinking-text {
+    font-size: 13px;
+    line-height: 1.6;
+    color: #6b7280;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.response-content {
+    margin-top: 0;
+}
+
+/* Dark mode thinking styles */
+@media (prefers-color-scheme: dark) {
+    .thinking-btn.active {
+        background-color: rgba(167, 139, 250, 0.2);
+        border-color: #a78bfa;
+        color: #a78bfa;
+    }
+    
+    .thinking-btn.thinking-only {
+        background-color: rgba(250, 204, 21, 0.2);
+        border-color: #facc15;
+        color: #facc15;
+    }
+    
+    .thinking-container {
+        border-color: #4c1d95;
+        background: linear-gradient(135deg, #2e1065 0%, #1e1b4b 100%);
+    }
+    
+    .thinking-header {
+        background: linear-gradient(135deg, #4c1d95 0%, #5b21b6 100%);
+    }
+    
+    .thinking-header:hover {
+        background: linear-gradient(135deg, #5b21b6 0%, #6d28d9 100%);
+    }
+    
+    .thinking-header svg {
+        color: #a78bfa;
+    }
+    
+    .thinking-title {
+        color: #c4b5fd;
+    }
+    
+    .thinking-toggle-icon {
+        color: #a78bfa;
+    }
+    
+    .thinking-content {
+        background: #1e1b4b;
+        border-top-color: #4c1d95;
+    }
+    
+    .thinking-text {
+        color: #9ca3af;
+    }
+}

@@ -3,31 +3,30 @@
 // =================================================================================
 const appState = {
     apiKey: '',
-    aliyunApiKey: '',  // 新增：阿里云API Key
-    provider: 'zhipu',  // 新增：当前服务商 'zhipu' 或 'aliyun'
+    aliyunApiKey: '',
+    provider: 'zhipu',
     isGuestMode: false,
     guestModel: 'glm-4-flash',
     chat: {
         personas: {},
-        conversations: [], // { id, title, personaId, messages, lastUpdate }
+        conversations: [],
         currentConversationId: null,
         isManagementMode: false,
-        // ▼▼▼ 新增：存储当前对话附加的文件信息 ▼▼▼
-        activeFile: null, // { taskId, filename, content, toolType }
-        // ▼▼▼ 新增：文件缓存 - 避免重复解析 ▼▼▼
-        parsedFilesCache: {}, // { filename: { taskId, filename, content, toolType, timestamp } }
-        // ▼▼▼ 新增：文件解析状态 ▼▼▼
-        pendingFile: null, // 待上传的文件对象
-        pendingFileEvent: null, // 文件选择事件
-        fileProcessing: false, // 文件是否正在处理中
-        // ▼▼▼ 新增：联网搜索配置 ▼▼▼
+        activeFile: null,
+        parsedFilesCache: {},
+        pendingFile: null,
+        pendingFileEvent: null,
+        fileProcessing: false,
         searchMode: {
             enabled: false,
             searchEngine: 'search_pro',
             count: 5,
             contentSize: 'medium'
+        },
+        thinkingMode: {
+            enabled: false,
+            budget: null
         }
-        // ▲▲▲ 新增结束 ▲▲▲
     },
     asyncBatch: {
         inputs: [], // { id, content }
@@ -474,3 +473,45 @@ if (document.readyState === 'loading') {
 // ▲▲▲ 用户缓存管理器初始化结束 ▲▲▲
 
 const MAX_ASYNC_RETRIES = 3;
+
+const ALIYUN_THINKING_ONLY_MODELS = [
+    'qwq-plus', 'qwq-32b', 
+    'deepseek-r1', 'deepseek-r1-distill-qwen-32b',
+    'kimi-k2-thinking'
+];
+
+const ALIYUN_THINKING_CAPABLE_MODELS = [
+    'qwen-flash', 'qwen-turbo', 'qwen-plus', 'qwen3-max',
+    'deepseek-v3.2',
+    ...ALIYUN_THINKING_ONLY_MODELS
+];
+
+function isThinkingOnlyModel(model) {
+    return ALIYUN_THINKING_ONLY_MODELS.includes(model);
+}
+
+function isThinkingCapableModel(model) {
+    return ALIYUN_THINKING_CAPABLE_MODELS.includes(model);
+}
+
+function supportsThinkingMode(model, provider) {
+    if (provider === 'aliyun') {
+        return isThinkingCapableModel(model);
+    }
+    return false;
+}
+
+function shouldEnableThinking(model, provider) {
+    if (provider !== 'aliyun') return false;
+    
+    if (isThinkingOnlyModel(model)) return true;
+    
+    return appState.chat.thinkingMode.enabled && isThinkingCapableModel(model);
+}
+
+window.ALIYUN_THINKING_ONLY_MODELS = ALIYUN_THINKING_ONLY_MODELS;
+window.ALIYUN_THINKING_CAPABLE_MODELS = ALIYUN_THINKING_CAPABLE_MODELS;
+window.isThinkingOnlyModel = isThinkingOnlyModel;
+window.isThinkingCapableModel = isThinkingCapableModel;
+window.supportsThinkingMode = supportsThinkingMode;
+window.shouldEnableThinking = shouldEnableThinking;
