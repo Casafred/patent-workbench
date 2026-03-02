@@ -175,23 +175,59 @@ function updateProviderUI(provider) {
 
 /**
  * 获取当前服务商的API Key
+ * @param {string} model - 可选，根据模型确定服务商
  * @returns {string} API Key
  */
-function getCurrentApiKey() {
-    if (appState.provider === 'aliyun') {
+function getCurrentApiKey(model) {
+    const provider = getProviderForModel(model);
+    if (provider === 'aliyun') {
         return appState.aliyunApiKey;
     }
     return appState.apiKey;
 }
 
 /**
+ * 根据模型获取服务商
+ * @param {string} model - 模型ID
+ * @returns {string} 服务商标识
+ */
+function getProviderForModel(model) {
+    if (!model) {
+        return appState.provider || 'zhipu';
+    }
+    
+    if (window.getProviderForModel) {
+        return window.getProviderForModel(model);
+    }
+    
+    if (window.ProviderManager && ProviderManager.getProviderForModel) {
+        return ProviderManager.getProviderForModel(model);
+    }
+    
+    if (model.startsWith('glm-') || model.startsWith('GLM-')) {
+        return 'zhipu';
+    }
+    if (model.startsWith('qwen') || model.startsWith('Qwen') || 
+        model.startsWith('qwq') || model.startsWith('QwQ') ||
+        model.startsWith('deepseek') || model.startsWith('DeepSeek') ||
+        model.startsWith('kimi') || model.startsWith('Kimi') ||
+        model.startsWith('minimax') || model.startsWith('MiniMax')) {
+        return 'aliyun';
+    }
+    
+    return appState.provider || 'zhipu';
+}
+
+/**
  * 获取当前服务商的API Headers
+ * @param {string} model - 可选，根据模型确定服务商
  * @returns {Object} Headers对象
  */
-function getProviderHeaders() {
+function getProviderHeaders(model) {
     const headers = {};
+    const provider = getProviderForModel(model);
     
-    if (appState.provider === 'aliyun') {
+    if (provider === 'aliyun') {
         headers['X-LLM-Provider'] = 'aliyun';
         headers['X-Aliyun-API-Key'] = appState.aliyunApiKey;
         headers['Authorization'] = `Bearer ${appState.aliyunApiKey}`;
@@ -213,17 +249,18 @@ function getProviderHeaders() {
  * @throws {Error} - API调用失败时抛出错误
  */
 async function apiCall(endpoint, body, method = 'POST', isStream = false, timeout = null) {
-    const currentApiKey = getCurrentApiKey();
+    const model = body && !(body instanceof FormData) ? body.model : null;
+    const currentApiKey = getCurrentApiKey(model);
     
     if (!currentApiKey) {
-        const providerName = appState.provider === 'aliyun' ? '阿里云百炼' : '智谱AI';
+        const provider = getProviderForModel(model);
+        const providerName = provider === 'aliyun' ? '阿里云百炼' : '智谱AI';
         const errorMsg = `API Key 未配置。请设置您的 ${providerName} API Key。`;
         alert(errorMsg);
         throw new Error(errorMsg);
     }
 
-    // 智能处理 Headers
-    const headers = getProviderHeaders();
+    const headers = getProviderHeaders(model);
 
     // 只有当 body 不是 FormData 时，才设置 Content-Type 为 JSON
     if (body && !(body instanceof FormData)) {
