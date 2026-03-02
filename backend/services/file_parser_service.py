@@ -226,12 +226,17 @@ class FileParserService:
                 logger.info(f"Poll result response (attempt {attempt + 1}/{max_attempts}): {result}")
                 
                 if status == 'succeeded':
-                    logger.info(f"Parser task {task_id} succeeded")
-                    return {
-                        "status": "succeeded",
-                        "content": result.get('content', ''),
-                        "task_id": task_id
-                    }
+                    content = result.get('content', '')
+                    if content:
+                        logger.info(f"Parser task {task_id} succeeded with content length: {len(content)}")
+                        return {
+                            "status": "succeeded",
+                            "content": content,
+                            "task_id": task_id
+                        }
+                    else:
+                        logger.warning(f"Parser task {task_id} returned succeeded but content is empty, continuing to poll...")
+                        time.sleep(interval)
                 elif status == 'failed':
                     error_msg = result.get('message') or result.get('error') or 'Unknown error'
                     logger.error(f"Parser task {task_id} failed: {error_msg}, full response: {result}")

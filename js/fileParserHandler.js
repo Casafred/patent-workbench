@@ -163,7 +163,10 @@ class FileParserHandler {
                 }
                 
                 if (data.status === 'succeeded') {
-                    return data;
+                    if (data.content && data.content.length > 0) {
+                        return data;
+                    }
+                    console.log(`[FileParserHandler] 状态 succeeded 但内容为空，继续轮询...`);
                 } else if (data.status === 'failed') {
                     throw new Error(data.message || data.error || '解析失败');
                 }
