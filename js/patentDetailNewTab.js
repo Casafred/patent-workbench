@@ -122,7 +122,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
         
         analysisResultHTML = `
             <div class="section" id="analysis-result" data-section-id="analysis-result">
-                <h2 class="section-title" onclick="toggleSection('analysis-result')">
+                <h2 class="section-title" onclick="toggleSection(event, 'analysis-result')">
                     <div class="section-title-content">
                         <span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 12.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5ZM3 8.5A.5.5 0 0 1 3.5 8h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5ZM2 3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11A.5.5 0 0 1 2 3Z"/></svg></span>
                         AI 解读结果
@@ -893,7 +893,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     
                     ${data.abstract && shouldShowField('abstract') ? `
                     <div class="section collapsible-section" id="abstract" data-section-id="abstract">
-                        <h2 class="section-title" onclick="toggleSection('abstract')">
+                        <h2 class="section-title" onclick="toggleSection(event, 'abstract')">
                             <div class="section-title-content">
                                 <span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/></svg></span>
                                 摘要
@@ -976,7 +976,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     
                     ${data.claims && data.claims.length > 0 && shouldShowField('claims') ? `
                     <div class="section collapsible-section collapsed" id="claims" data-section-id="claims">
-                        <h2 class="section-title" onclick="toggleSection('claims')">
+                        <h2 class="section-title" onclick="toggleSection(event, 'claims')">
                             <div class="section-title-content">
                                 <span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 7a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM5 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0 2a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5z"/><path d="M9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0zm0 1v2A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/></svg></span>
                                 权利要求 (${data.claims.length})
@@ -1035,7 +1035,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     
                     ${data.description && shouldShowField('description') ? `
                     <div class="section collapsible-section collapsed" id="description" data-section-id="description">
-                        <h2 class="section-title" onclick="toggleSection('description')">
+                        <h2 class="section-title" onclick="toggleSection(event, 'description')">
                             <div class="section-title-content">
                                 <span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M3 2.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5v-11zm1 1v9h8v-9h-8z"/><path d="M5 5.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zM5 8a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5A.5.5 0 0 1 5 8zm0 2.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5z"/></svg></span>
                                 说明书
@@ -1174,7 +1174,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     
                     ${(data.patent_citations && data.patent_citations.length > 0 && shouldShowField('patent_citations')) || (data.cited_by && data.cited_by.length > 0 && shouldShowField('cited_by')) || (data.similar_documents && data.similar_documents.length > 0 && shouldShowField('similar_documents')) ? `
                     <div class="section collapsible-section collapsed" id="related-patents" data-section-id="related-patents">
-                        <h2 class="section-title" onclick="toggleSection('related-patents')">
+                        <h2 class="section-title" onclick="toggleSection(event, 'related-patents')">
                             <div class="section-title-content">
                                 <span class="section-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811V2.828zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"/></svg></span>
                                 相关专利
@@ -1195,7 +1195,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 </div>
                                 ${data.patent_citations && data.patent_citations.length > 0 && shouldShowField('patent_citations') ? `
                                 <div class="tab-content active" id="citations-tab" style="display: block;">
-                                    <div class="section-actions" style="margin-bottom: 15px; display: flex; justify-content: flex-end; gap: 8px;">
+                                    <div class="section-actions" style="margin-bottom: 15px; display: flex; justify-content: flex-end; gap: 8px; width: 100%;">
                                         <button class="copy-section-btn analyze-btn" onclick="analyzeRelationPatents(event, '${patentNumber}', 'citations')">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                                                 <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
@@ -1232,7 +1232,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 ` : ''}
                                 ${data.cited_by && data.cited_by.length > 0 && shouldShowField('cited_by') ? `
                                 <div class="tab-content" id="cited-by-tab" style="display: none;">
-                                    <div class="section-actions" style="margin-bottom: 15px; display: flex; justify-content: flex-end; gap: 8px;">
+                                    <div class="section-actions" style="margin-bottom: 15px; display: flex; justify-content: flex-end; gap: 8px; width: 100%;">
                                         <button class="copy-section-btn analyze-btn" onclick="analyzeRelationPatents(event, '${patentNumber}', 'cited_by')">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                                                 <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
@@ -1267,7 +1267,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 ` : ''}
                                 ${data.similar_documents && data.similar_documents.length > 0 && shouldShowField('similar_documents') ? `
                                 <div class="tab-content" id="similar-tab" style="display: none;">
-                                    <div class="section-actions" style="margin-bottom: 15px; display: flex; justify-content: flex-end; gap: 8px;">
+                                    <div class="section-actions" style="margin-bottom: 15px; display: flex; justify-content: flex-end; gap: 8px; width: 100%;">
                                         <button class="copy-section-btn analyze-btn" onclick="analyzeRelationPatents(event, '${patentNumber}', 'similar')">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                                                 <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
@@ -1417,8 +1417,14 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 }
                 
                 // 折叠/展开section
-                function toggleSection(sectionId) {
-                    const section = document.querySelector('[data-section-id="' + sectionId + '"]');
+                function toggleSection(eventOrId, sectionId) {
+                    let section;
+                    if (typeof eventOrId === 'object' && eventOrId.currentTarget) {
+                        section = eventOrId.currentTarget.closest('.collapsible-section');
+                    } else {
+                        sectionId = eventOrId;
+                        section = document.querySelector('[data-section-id="' + sectionId + '"]');
+                    }
                     if (section) {
                         section.classList.toggle('collapsed');
                     }
