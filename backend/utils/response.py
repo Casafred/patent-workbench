@@ -50,9 +50,9 @@ def success_response(data=None, status_code=200):
         status_code: HTTP status code (default: 200)
     
     Returns:
-        Flask Response object with JSON content
+        dict: JSON response data
     """
-    return create_response(data=data, status_code=status_code)
+    return jsonify({'success': True, 'data': data}), status_code
 
 
 def error_response(error, status_code=400):
@@ -64,6 +64,6 @@ def error_response(error, status_code=400):
         status_code: HTTP status code (default: 400)
     
     Returns:
-        Flask Response object with JSON content
+        dict: JSON response data
     """
-    return create_response(error=error, status_code=status_code)
+    return jsonify({'success': False, 'error': error}), status_code
