@@ -381,6 +381,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize Session Expiration Monitor
     initSessionMonitor();
     
+    // Initialize Prompt Forum
+    if (window.PromptForum) {
+        const forumBtn = document.getElementById('prompt_forum_btn');
+        if (forumBtn) {
+            forumBtn.addEventListener('click', () => {
+                window.PromptForum.open();
+            });
+        }
+    }
+    
     // Initialize Feature Lock Manager
     if (window.FeatureLockManager) {
         await window.FeatureLockManager.init();

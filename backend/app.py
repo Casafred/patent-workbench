@@ -16,6 +16,7 @@ from backend.config import Config
 from backend.extensions import init_extensions
 from backend.routes import register_blueprints
 from backend.services.auth_service import AuthService
+from backend.services.prompt_forum_service import PromptForumService
 
 
 def create_app(config_class=Config):
@@ -53,6 +54,10 @@ def create_app(config_class=Config):
     # Initialize database tables
     AuthService.init_database()
     print("✓ Database initialized")
+    
+    # Initialize prompt forum tables
+    PromptForumService.init_tables()
+    print("✓ Forum tables initialized")
     
     print("\n" + "="*50)
     print("🚀 Application created successfully!")

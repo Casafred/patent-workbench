@@ -391,7 +391,7 @@ class AuthService:
                         id SERIAL PRIMARY KEY,
                         username VARCHAR(255) NOT NULL,
                         ip_address VARCHAR(45) NOT NULL,
-                        first_seen TIMESTAMZ DEFAULT NOW(),
+                        first_seen TIMESTAMPTZ DEFAULT NOW(),
                         UNIQUE (username, ip_address)
                     );
                 """)
