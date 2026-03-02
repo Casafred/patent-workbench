@@ -579,6 +579,7 @@
                 <li><a data-target="feature-claims-processor">功能六：独从权识别与可视化</a></li>
                 <li><a data-target="feature-drawing-marker">功能七：专利附图智能标记</a></li>
                 <li><a data-target="feature-pdf-ocr">功能八：文档OCR与智能分析</a></li>
+                <li><a data-target="feature-prompt-forum">提示词广场</a></li>
                 <li><a data-target="faq">常见问题 (FAQ)</a></li>
             </ul>
         </nav>
@@ -693,7 +694,54 @@
                     <span class="gif-label">占位符ID: logout-demo</span>
                 </div>
 
-                <h3>6. 全局智能剪贴板</h3>
+                <h3>6. 多服务商选择</h3>
+                <p>本平台支持多个AI服务商，您可以根据需求自由切换：</p>
+                
+                <h4>支持的服务商</h4>
+                <ul>
+                    <li><strong>智谱AI：</strong> 提供GLM系列模型，包括免费模型GLM-4-Flash、高性能模型GLM-4.7、旗舰模型GLM-5等</li>
+                    <li><strong>阿里云百炼：</strong> 提供通义千问系列模型，包括qwen-flash、qwen-plus、qwen3-max等，新用户赠送100万Tokens</li>
+                </ul>
+                
+                <h4>切换方法</h4>
+                <ol>
+                    <li>点击界面右上角的 <strong>⚙️</strong> 图标，打开设置面板</li>
+                    <li>在"服务商选择"下拉菜单中选择目标服务商</li>
+                    <li>输入对应服务商的API Key并保存</li>
+                    <li>在模型选择下拉菜单中，即可看到该服务商支持的所有模型</li>
+                </ol>
+                
+                <div class="note">
+                    <strong>提示：</strong>不同服务商的模型各有特色，智谱AI的GLM系列在中文理解方面表现出色，阿里云百炼的通义千问系列则提供更多模型选择和更灵活的定价方案。
+                </div>
+                
+                <!-- GIF: 多服务商切换 -->
+                <div class="gif-placeholder" data-gif-id="provider-switch">
+                    <span>点击右侧"GIF管理"按钮插入：多服务商切换.gif</span>
+                    <span class="gif-label">占位符ID: provider-switch</span>
+                </div>
+
+                <h3>7. 会话过期预警</h3>
+                <p>为保障账户安全，系统会在登录会话即将过期时提醒您：</p>
+                
+                <h4>预警机制</h4>
+                <ul>
+                    <li><strong>提前提醒：</strong> 会话过期前5分钟，系统会弹出预警提示</li>
+                    <li><strong>续期操作：</strong> 点击"续期"按钮可延长会话有效期</li>
+                    <li><strong>自动登出：</strong> 会话过期后，系统会自动登出并跳转到登录页面</li>
+                </ul>
+                
+                <div class="warning">
+                    <strong>注意：</strong>请及时响应会话过期预警，避免在操作过程中被意外登出导致数据丢失。
+                </div>
+                
+                <!-- GIF: 会话过期预警 -->
+                <div class="gif-placeholder" data-gif-id="session-expiration">
+                    <span>点击右侧"GIF管理"按钮插入：会话过期预警.gif</span>
+                    <span class="gif-label">占位符ID: session-expiration</span>
+                </div>
+
+                <h3>8. 全局智能剪贴板</h3>
                 <p>智能剪贴板是一个强大的跨功能数据传递工具，可以在不同功能模块之间无缝传递数据。</p>
                 
                 <h4>功能特点</h4>
@@ -1413,6 +1461,7 @@
                     <li><strong>统一工作流：</strong> 四步完成批量处理，从输入到结果一站式操作</li>
                     <li><strong>智能模式推荐：</strong> 系统根据数据量自动推荐最优处理模式</li>
                     <li><strong>双模式支持：</strong> 小批量异步模式（实时）和大批量延时模式（高效）</li>
+                    <li><strong>智能分类：</strong> AI自动识别文本类型并进行分类，支持自定义分类体系</li>
                     <li><strong>断点续查：</strong> 大批量模式支持通过Batch ID恢复任务状态</li>
                     <li><strong>模板管理：</strong> 支持保存和复用处理模板</li>
                 </ul>
@@ -1549,6 +1598,37 @@
                 <div class="gif-placeholder" data-gif-id="unified-batch-results">
                     <span>点击右侧"GIF管理"按钮插入：文本批量分析-处理结果.gif</span>
                     <span class="gif-label">占位符ID: unified-batch-results</span>
+                </div>
+
+                <h4>智能分类功能</h4>
+                <p>智能分类是文本批量分析的高级功能，可以自动识别文本类型并进行分类：</p>
+                
+                <h5>功能特点</h5>
+                <ul>
+                    <li><strong>AI自动识别：</strong> 利用大语言模型自动分析文本内容，识别其所属类别</li>
+                    <li><strong>自定义分类体系：</strong> 支持自定义分类类别和分类标准</li>
+                    <li><strong>示例库管理：</strong> 可添加分类示例，提高分类准确性</li>
+                    <li><strong>冷启动配置：</strong> 首次使用时提供快速配置向导</li>
+                    <li><strong>结果分析：</strong> 分类完成后提供详细的统计分析和可视化报告</li>
+                </ul>
+                
+                <h5>使用方法</h5>
+                <ol>
+                    <li><strong>配置分类体系：</strong> 在"智能分类"标签页中定义分类类别</li>
+                    <li><strong>添加示例（可选）：</strong> 为每个类别添加示例文本，提高分类准确性</li>
+                    <li><strong>选择模型：</strong> 选择适合分类任务的AI模型</li>
+                    <li><strong>执行分类：</strong> 点击"开始分类"，系统会自动处理所有输入数据</li>
+                    <li><strong>查看结果：</strong> 分类完成后查看结果统计和详细分类列表</li>
+                </ol>
+                
+                <div class="note">
+                    <strong>提示：</strong> 添加高质量的分类示例可以显著提高分类准确性，建议每个类别至少添加3-5个典型示例。
+                </div>
+                
+                <!-- GIF: 智能分类 -->
+                <div class="gif-placeholder" data-gif-id="unified-batch-classification">
+                    <span>点击右侧"GIF管理"按钮插入：文本批量分析-智能分类.gif</span>
+                    <span class="gif-label">占位符ID: unified-batch-classification</span>
                 </div>
 
                 <h4>费用说明</h4>
@@ -2158,6 +2238,93 @@
             </div>
         </div>
 
+        <!-- 提示词广场 -->
+        <div class="content-card" id="feature-prompt-forum">
+            <div class="card-header">
+                <h2>提示词广场</h2>
+            </div>
+            <div class="card-body">
+                <p>提示词广场是一个社区驱动的提示词分享平台，您可以在这里浏览、搜索、使用其他用户分享的优质提示词，也可以发布自己的提示词供他人使用。</p>
+
+                <h4>核心功能</h4>
+                <ul>
+                    <li><strong>浏览提示词：</strong> 浏览社区中其他用户分享的优质提示词</li>
+                    <li><strong>搜索筛选：</strong> 按分类、关键词搜索提示词</li>
+                    <li><strong>收藏使用：</strong> 收藏喜欢的提示词，一键应用到对话中</li>
+                    <li><strong>发布分享：</strong> 发布自己的提示词，分享给社区用户</li>
+                    <li><strong>评分评价：</strong> 对提示词进行评分和评价</li>
+                </ul>
+                
+                <!-- GIF: 功能介绍 -->
+                <div class="gif-placeholder" data-gif-id="prompt-forum-intro">
+                    <span>点击右侧"GIF管理"按钮插入：提示词广场-功能介绍.gif</span>
+                    <span class="gif-label">占位符ID: prompt-forum-intro</span>
+                </div>
+
+                <h4>浏览与搜索</h4>
+                <p>在提示词广场首页，您可以：</p>
+                <ul>
+                    <li><strong>分类浏览：</strong> 选择不同的分类（如专利分析、技术翻译、权利要求等）浏览相关提示词</li>
+                    <li><strong>关键词搜索：</strong> 在搜索框中输入关键词，快速找到所需提示词</li>
+                    <li><strong>排序方式：</strong> 按热度、最新、评分等维度排序</li>
+                    <li><strong>预览内容：</strong> 点击提示词卡片可预览完整内容</li>
+                </ul>
+                
+                <!-- GIF: 浏览搜索 -->
+                <div class="gif-placeholder" data-gif-id="prompt-forum-browse">
+                    <span>点击右侧"GIF管理"按钮插入：提示词广场-浏览搜索.gif</span>
+                    <span class="gif-label">占位符ID: prompt-forum-browse</span>
+                </div>
+
+                <h4>收藏与使用</h4>
+                <ol>
+                    <li><strong>收藏提示词：</strong> 点击提示词卡片上的收藏按钮，将提示词添加到个人收藏</li>
+                    <li><strong>查看收藏：</strong> 在"我的收藏"标签页查看已收藏的提示词</li>
+                    <li><strong>应用到对话：</strong> 点击"使用"按钮，提示词将自动填充到即时对话的角色设置中</li>
+                </ol>
+                
+                <div class="note">
+                    <strong>提示：</strong>收藏的提示词会保存在您的账户中，方便随时调用。
+                </div>
+                
+                <!-- GIF: 收藏使用 -->
+                <div class="gif-placeholder" data-gif-id="prompt-forum-favorite">
+                    <span>点击右侧"GIF管理"按钮插入：提示词广场-收藏使用.gif</span>
+                    <span class="gif-label">占位符ID: prompt-forum-favorite</span>
+                </div>
+
+                <h4>发布提示词</h4>
+                <p>您可以将自己精心设计的提示词分享给社区：</p>
+                <ol>
+                    <li><strong>点击发布：</strong> 点击右上角的"发布提示词"按钮</li>
+                    <li><strong>填写信息：</strong> 填写提示词标题、描述、分类、系统提示词、用户提示词模板</li>
+                    <li><strong>提交审核：</strong> 提交后，管理员会审核您的提示词</li>
+                    <li><strong>审核通过：</strong> 审核通过后，提示词将在广场中展示</li>
+                </ol>
+                
+                <div class="warning">
+                    <strong>注意：</strong>发布的提示词需经过管理员审核才能公开显示，请确保内容合规、质量优良。
+                </div>
+                
+                <!-- GIF: 发布提示词 -->
+                <div class="gif-placeholder" data-gif-id="prompt-forum-publish">
+                    <span>点击右侧"GIF管理"按钮插入：提示词广场-发布提示词.gif</span>
+                    <span class="gif-label">占位符ID: prompt-forum-publish</span>
+                </div>
+
+                <h4>提示词模板变量</h4>
+                <p>在发布提示词时，可以使用以下变量占位符：</p>
+                <ul>
+                    <li><code>{{INPUT}}</code> - 用户输入的内容</li>
+                    <li><code>{{patent_number}}</code> - 专利号</li>
+                    <li><code>{{title}}</code> - 专利标题</li>
+                    <li><code>{{abstract}}</code> - 摘要</li>
+                    <li><code>{{claims}}</code> - 权利要求</li>
+                    <li><code>{{description}}</code> - 说明书</li>
+                </ul>
+            </div>
+        </div>
+
         <!-- 常见问题 -->
         <div class="content-card" id="faq">
             <div class="card-header">
@@ -2592,6 +2759,72 @@
                     <li><strong>引用：</strong> 将选中内容添加到引用列表，方便后续整理</li>
                     <li><strong>提示：</strong> 工具栏会在选中内容后自动显示，点击其他位置会自动隐藏</li>
                 </ul>
+
+                <h4>Q51: 如何切换AI服务商？</h4>
+                <p><strong>A:</strong> 本平台支持智谱AI和阿里云百炼两个服务商：</p>
+                <ul>
+                    <li><strong>切换方法：</strong> 点击右上角⚙️图标，在"服务商选择"下拉菜单中选择目标服务商</li>
+                    <li><strong>配置API Key：</strong> 切换服务商后需要配置对应的API Key</li>
+                    <li><strong>模型选择：</strong> 不同服务商支持的模型不同，切换后模型列表会自动更新</li>
+                    <li><strong>智谱AI特点：</strong> GLM系列模型，中文理解能力强，提供免费模型</li>
+                    <li><strong>阿里云百炼特点：</strong> 通义千问系列，新用户赠送100万Tokens，支持深度思考模式</li>
+                </ul>
+
+                <h4>Q52: 提示词广场是什么？如何使用？</h4>
+                <p><strong>A:</strong> 提示词广场是社区驱动的提示词分享平台：</p>
+                <ul>
+                    <li><strong>浏览提示词：</strong> 按分类浏览或搜索关键词找到优质提示词</li>
+                    <li><strong>收藏使用：</strong> 点击收藏按钮，然后在"我的收藏"中一键应用到对话</li>
+                    <li><strong>发布提示词：</strong> 点击"发布提示词"分享您的优质提示词，需管理员审核</li>
+                    <li><strong>评分评价：</strong> 对使用过的提示词进行评分，帮助其他用户选择</li>
+                </ul>
+
+                <h4>Q53: 会话过期预警是如何工作的？</h4>
+                <p><strong>A:</strong> 会话过期预警机制：</p>
+                <ul>
+                    <li><strong>预警时间：</strong> 会话过期前5分钟，系统会弹出预警提示</li>
+                    <li><strong>续期操作：</strong> 点击"续期"按钮可延长会话有效期，无需重新登录</li>
+                    <li><strong>自动登出：</strong> 会话过期后系统会自动登出，跳转到登录页面</li>
+                    <li><strong>数据保护：</strong> 登出前系统会提示保存未完成的工作</li>
+                </ul>
+
+                <h4>Q54: 智能分类功能如何使用？</h4>
+                <p><strong>A:</strong> 智能分类功能的使用方法：</p>
+                <ul>
+                    <li><strong>配置分类体系：</strong> 在"智能分类"标签页定义分类类别和标准</li>
+                    <li><strong>添加示例：</strong> 为每个类别添加典型示例文本，提高分类准确性</li>
+                    <li><strong>选择模型：</strong> 选择适合分类任务的AI模型</li>
+                    <li><strong>执行分类：</strong> 点击"开始分类"，AI会自动分析并归类所有输入数据</li>
+                    <li><strong>查看结果：</strong> 分类完成后查看统计报告和详细分类列表</li>
+                    <li><strong>建议：</strong> 每个类别至少添加3-5个高质量示例以获得最佳效果</li>
+                </ul>
+
+                <h4>Q55: 多服务商的模型有什么区别？</h4>
+                <p><strong>A:</strong> 两个服务商的主要模型对比：</p>
+                <table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.9em;">
+                    <thead>
+                        <tr style="background-color: var(--primary-color); color: white;">
+                            <th style="padding: 8px; border: 1px solid var(--border-color);">服务商</th>
+                            <th style="padding: 8px; border: 1px solid var(--border-color);">免费模型</th>
+                            <th style="padding: 8px; border: 1px solid var(--border-color);">性价比模型</th>
+                            <th style="padding: 8px; border: 1px solid var(--border-color);">旗舰模型</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid var(--border-color);">智谱AI</td>
+                            <td style="padding: 8px; border: 1px solid var(--border-color);">GLM-4-Flash</td>
+                            <td style="padding: 8px; border: 1px solid var(--border-color);">GLM-4-FlashX</td>
+                            <td style="padding: 8px; border: 1px solid var(--border-color);">GLM-5</td>
+                        </tr>
+                        <tr style="background-color: rgba(34, 197, 94, 0.05);">
+                            <td style="padding: 8px; border: 1px solid var(--border-color);">阿里云百炼</td>
+                            <td style="padding: 8px; border: 1px solid var(--border-color);">100万Tokens额度</td>
+                            <td style="padding: 8px; border: 1px solid var(--border-color);">qwen-flash</td>
+                            <td style="padding: 8px; border: 1px solid var(--border-color);">qwen3-max</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </main>
