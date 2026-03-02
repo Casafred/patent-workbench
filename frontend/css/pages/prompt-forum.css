@@ -925,22 +925,32 @@
 .forum-entry-btn {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-    color: #fff;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px;
+    background: transparent;
+    color: var(--text-color-secondary, #6b7280);
     border: none;
-    border-radius: 8px;
+    border-radius: 50%;
     font-size: 14px;
-    font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
-    box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
+    width: 40px;
+    height: 40px;
 }
 
 .forum-entry-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4);
+    background: var(--bg-color-hover, #f3f4f6);
+    color: var(--primary-color, #059669);
+}
+
+[data-theme="dark"] .forum-entry-btn {
+    color: #9ca3af;
+}
+
+[data-theme="dark"] .forum-entry-btn:hover {
+    background: #2d2d44;
+    color: #34d399;
 }
 
 /* Responsive */
