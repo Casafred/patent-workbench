@@ -1883,23 +1883,34 @@ window.sendToDrawingMarker = function(patentNumber, event) {
     const description = patentResult.data.description || '';
     const patentTitle = patentResult.data.title || patentNumber;
     
-    console.log(`[sendToDrawingMarker] 准备传递数据到功能八:`, {
+    console.log(`[sendToDrawingMarker] 准备传递数据到功能七:`, {
         patentNumber,
         patentTitle,
         drawingsCount: drawings.length,
         descriptionLength: description.length
     });
     
-    if (typeof window.switchToTab === 'function') {
-        window.switchToTab('drawing_marker-tab');
-    } else {
-        const tabBtn = document.querySelector('[data-tab="drawing_marker-tab"]');
+    let switchSuccess = false;
+    
+    if (typeof switchTab === 'function') {
+        const tabButton = document.querySelector('.tab-button[onclick*="drawing_marker"]');
+        if (tabButton) {
+            switchTab('drawing_marker', tabButton);
+            switchSuccess = true;
+        }
+    }
+    
+    if (!switchSuccess) {
+        const tabBtn = document.querySelector('.tab-button[onclick*="drawing_marker"]');
         if (tabBtn) {
             tabBtn.click();
-        } else {
-            alert('❌ 无法切换到功能八标签页');
-            return;
+            switchSuccess = true;
         }
+    }
+    
+    if (!switchSuccess) {
+        alert('❌ 无法切换到功能七标签页');
+        return;
     }
     
     setTimeout(() => {
@@ -1907,7 +1918,7 @@ window.sendToDrawingMarker = function(patentNumber, event) {
             window.fillDrawingMarkerData(drawings, description, patentNumber, patentTitle);
         } else {
             console.error('[sendToDrawingMarker] fillDrawingMarkerData 函数未定义');
-            alert('❌ 功能八数据填充函数未加载，请刷新页面后重试');
+            alert('❌ 功能七数据填充函数未加载，请刷新页面后重试');
         }
     }, 300);
 };
