@@ -1133,14 +1133,29 @@
         }
         
         function approvePrompt(id) {
-            fetch('/api/prompts/moderation/prompt/' + id + '/approve', { method: 'POST' })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success) {
-                        loadPromptForum();
-                    } else {
-                        alert(data.message || '操作失败');
+            if (!confirm('确定通过该提示词？')) return;
+            fetch('/api/prompts/moderation/prompt/' + id + '/approve', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+                .then(r => r.text())
+                .then(text => {
+                    try {
+                        const data = JSON.parse(text);
+                        if (data.success) {
+                            alert('审核通过');
+                            loadPromptForum();
+                        } else {
+                            alert(data.error || data.message || '操作失败');
+                        }
+                    } catch (e) {
+                        console.error('JSON解析错误:', text);
+                        alert('服务器响应异常');
                     }
+                })
+                .catch(err => {
+                    console.error('请求失败:', err);
+                    alert('请求失败');
                 });
         }
         
@@ -1151,25 +1166,51 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ reason: reason || '' })
             })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success) {
-                        loadPromptForum();
-                    } else {
-                        alert(data.message || '操作失败');
+                .then(r => r.text())
+                .then(text => {
+                    try {
+                        const data = JSON.parse(text);
+                        if (data.success) {
+                            alert('已拒绝');
+                            loadPromptForum();
+                        } else {
+                            alert(data.error || data.message || '操作失败');
+                        }
+                    } catch (e) {
+                        console.error('JSON解析错误:', text);
+                        alert('服务器响应异常');
                     }
+                })
+                .catch(err => {
+                    console.error('请求失败:', err);
+                    alert('请求失败');
                 });
         }
         
         function approveComment(id) {
-            fetch('/api/prompts/moderation/comment/' + id + '/approve', { method: 'POST' })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success) {
-                        loadPromptForum();
-                    } else {
-                        alert(data.message || '操作失败');
+            if (!confirm('确定通过该评论？')) return;
+            fetch('/api/prompts/moderation/comment/' + id + '/approve', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+                .then(r => r.text())
+                .then(text => {
+                    try {
+                        const data = JSON.parse(text);
+                        if (data.success) {
+                            alert('审核通过');
+                            loadPromptForum();
+                        } else {
+                            alert(data.error || data.message || '操作失败');
+                        }
+                    } catch (e) {
+                        console.error('JSON解析错误:', text);
+                        alert('服务器响应异常');
                     }
+                })
+                .catch(err => {
+                    console.error('请求失败:', err);
+                    alert('请求失败');
                 });
         }
         
@@ -1180,13 +1221,24 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ reason: reason || '' })
             })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success) {
-                        loadPromptForum();
-                    } else {
-                        alert(data.message || '操作失败');
+                .then(r => r.text())
+                .then(text => {
+                    try {
+                        const data = JSON.parse(text);
+                        if (data.success) {
+                            alert('已拒绝');
+                            loadPromptForum();
+                        } else {
+                            alert(data.error || data.message || '操作失败');
+                        }
+                    } catch (e) {
+                        console.error('JSON解析错误:', text);
+                        alert('服务器响应异常');
                     }
+                })
+                .catch(err => {
+                    console.error('请求失败:', err);
+                    alert('请求失败');
                 });
         }
         
