@@ -324,6 +324,19 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     border-radius: 2px;
                 }
                 
+                .side-nav.collapsed {
+                    display: none;
+                }
+                
+                .tab-content {
+                    display: flex;
+                    flex-direction: column;
+                }
+                
+                .tab-content .section-actions {
+                    align-self: flex-end;
+                }
+                
                 /* 复制按钮样式 */
                 .copy-section-btn {
                     background: #2e7d32;
@@ -1864,7 +1877,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         'basic-info': true,
                         'abstract': pageData.abstract && pageData.abstract.length > 0,
                         'drawings': pageData.drawings && pageData.drawings.length > 0,
-                        'classifications': pageData.cpc_classifications && pageData.cpc_classifications.length > 0,
+                        'classifications': (pageData.classifications && pageData.classifications.length > 0) || (pageData.landscapes && pageData.landscapes.length > 0),
                         'claims': pageData.claims && pageData.claims.length > 0,
                         'description': pageData.description && pageData.description.length > 0,
                         'events-combined': (pageData.events_timeline && pageData.events_timeline.length > 0) || (pageData.legal_events && pageData.legal_events.length > 0),
@@ -1891,8 +1904,11 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                             e.preventDefault();
                             const targetId = this.getAttribute('href').substring(1);
                             const targetSection = document.getElementById(targetId);
+                            
+                            navItems.forEach(nav => nav.classList.remove('active'));
+                            this.classList.add('active');
+                            
                             if (targetSection) {
-                                // 如果是可折叠的section，展开它
                                 if (targetSection.classList.contains('collapsible-section')) {
                                     targetSection.classList.remove('collapsed');
                                 }
