@@ -219,6 +219,8 @@ class FileParserService:
                 result = response.json()
                 status = result.get('status')
                 
+                logger.info(f"Poll result response (attempt {attempt + 1}/{max_attempts}): {result}")
+                
                 if status == 'succeeded':
                     logger.info(f"Parser task {task_id} succeeded")
                     return {
@@ -227,18 +229,21 @@ class FileParserService:
                         "task_id": task_id
                     }
                 elif status == 'failed':
-                    error_msg = result.get('error', 'Unknown error')
-                    logger.error(f"Parser task {task_id} failed: {error_msg}")
+                    error_msg = result.get('message') or result.get('error') or 'Unknown error'
+                    logger.error(f"Parser task {task_id} failed: {error_msg}, full response: {result}")
                     return {
                         "status": "failed",
                         "error": error_msg,
+                        "message": error_msg,
                         "task_id": task_id
                     }
                 elif status == 'processing':
                     logger.debug(f"Parser task {task_id} still processing (attempt {attempt + 1}/{max_attempts})")
                     time.sleep(interval)
                 else:
-                    logger.warning(f"Unknown status for task {task_id}: {status}")
+                    logger.warning(f"Unknown status for task {task_id}: {status}, full response: {result}")
+                    if result.get('message'):
+                        logger.info(f"API message: {result.get('message')}")
                     time.sleep(interval)
                     
             except requests.RequestException as e:
@@ -247,7 +252,6 @@ class FileParserService:
                     raise
                 time.sleep(interval)
         
-        # Timeout
         logger.error(f"Parser task {task_id} timed out after {max_attempts * interval} seconds")
         raise TimeoutError(f"Parsing timeout after {max_attempts * interval} seconds")
     

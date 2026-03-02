@@ -688,29 +688,13 @@ function switchUnifiedMode(mode) {
     var classificationPanel = document.getElementById('unified-classification-mode-panel');
 
     if (mode === 'batch') {
-        if (batchTab) {
-            batchTab.classList.add('active');
-            batchTab.style.borderBottomColor = 'var(--primary-color)';
-            batchTab.style.color = 'var(--primary-color)';
-        }
-        if (classificationTab) {
-            classificationTab.classList.remove('active');
-            classificationTab.style.borderBottomColor = 'transparent';
-            classificationTab.style.color = 'var(--text-color-secondary)';
-        }
+        if (batchTab) batchTab.classList.add('active');
+        if (classificationTab) classificationTab.classList.remove('active');
         if (batchPanel) batchPanel.style.display = 'block';
         if (classificationPanel) classificationPanel.style.display = 'none';
     } else {
-        if (batchTab) {
-            batchTab.classList.remove('active');
-            batchTab.style.borderBottomColor = 'transparent';
-            batchTab.style.color = 'var(--text-color-secondary)';
-        }
-        if (classificationTab) {
-            classificationTab.classList.add('active');
-            classificationTab.style.borderBottomColor = 'var(--primary-color)';
-            classificationTab.style.color = 'var(--primary-color)';
-        }
+        if (batchTab) batchTab.classList.remove('active');
+        if (classificationTab) classificationTab.classList.add('active');
         if (batchPanel) batchPanel.style.display = 'none';
         if (classificationPanel) classificationPanel.style.display = 'block';
         
@@ -720,6 +704,25 @@ function switchUnifiedMode(mode) {
                 ClassificationModule._initialized = true;
             }
             ClassificationModule.initUI();
+            
+            var stepper = document.getElementById('classification-stepper');
+            if (stepper) {
+                stepper.querySelectorAll('.step-item').forEach(function(item, index) {
+                    if (index === 0) {
+                        item.classList.add('active');
+                    } else {
+                        item.classList.remove('active');
+                    }
+                });
+            }
+            
+            var inputTab = document.getElementById('classification-sub-tab-input');
+            if (inputTab) {
+                document.querySelectorAll('#unified-classification-mode-panel .sub-tab-content').forEach(function(content) {
+                    content.classList.remove('active');
+                });
+                inputTab.classList.add('active');
+            }
         }
     }
 }

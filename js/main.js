@@ -1851,6 +1851,57 @@ window.copyFieldContent = function(patentNumber, fieldKey, event) {
         .catch(() => alert('❌ 复制失败'));
 };
 
+// 将专利详情的附图和说明书传递到功能八进行OCR智能标记
+window.sendToDrawingMarker = function(patentNumber, event) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    
+    const patentResult = window.patentResults.find(result => result.patent_number === patentNumber);
+    if (!patentResult || !patentResult.success) {
+        alert('❌ 无法处理：专利数据不存在');
+        return;
+    }
+    
+    const drawings = window.patentDrawingsData && window.patentDrawingsData[patentNumber];
+    if (!drawings || drawings.length === 0) {
+        alert('❌ 该专利没有附图数据');
+        return;
+    }
+    
+    const description = patentResult.data.description || '';
+    const patentTitle = patentResult.data.title || patentNumber;
+    
+    console.log(`[sendToDrawingMarker] 准备传递数据到功能八:`, {
+        patentNumber,
+        patentTitle,
+        drawingsCount: drawings.length,
+        descriptionLength: description.length
+    });
+    
+    if (typeof window.switchToTab === 'function') {
+        window.switchToTab('drawing_marker-tab');
+    } else {
+        const tabBtn = document.querySelector('[data-tab="drawing_marker-tab"]');
+        if (tabBtn) {
+            tabBtn.click();
+        } else {
+            alert('❌ 无法切换到功能八标签页');
+            return;
+        }
+    }
+    
+    setTimeout(() => {
+        if (typeof window.fillDrawingMarkerData === 'function') {
+            window.fillDrawingMarkerData(drawings, description, patentNumber, patentTitle);
+        } else {
+            console.error('[sendToDrawingMarker] fillDrawingMarkerData 函数未定义');
+            alert('❌ 功能八数据填充函数未加载，请刷新页面后重试');
+        }
+    }, 300);
+};
+
 // 图片查看器
 window.patentDrawingsData = {};
 

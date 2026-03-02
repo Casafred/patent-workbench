@@ -1820,6 +1820,33 @@
 }
 
 /* ========================================
+   31.5. 功能二模式切换按钮暗黑样式
+   ======================================== */
+
+[data-theme="dark"] .mode-switcher-tabs {
+    border-bottom-color: #334155 !important;
+}
+
+[data-theme="dark"] .mode-switcher-tab {
+    background: linear-gradient(135deg, rgba(74, 222, 128, 0.15) 0%, rgba(34, 197, 94, 0.1) 100%) !important;
+    border-color: rgba(74, 222, 128, 0.35) !important;
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .mode-switcher-tab:hover {
+    background: linear-gradient(135deg, rgba(74, 222, 128, 0.25) 0%, rgba(34, 197, 94, 0.2) 100%) !important;
+    border-color: rgba(74, 222, 128, 0.55) !important;
+    color: #f8fafc !important;
+}
+
+[data-theme="dark"] .mode-switcher-tab.active {
+    background: linear-gradient(135deg, #065f46 0%, #047857 100%) !important;
+    border-color: var(--primary-color) !important;
+    color: white !important;
+    box-shadow: 0 4px 16px rgba(74, 222, 128, 0.35) !important;
+}
+
+/* ========================================
    32. Banner和步骤标题暗黑样式
    ======================================== */
 

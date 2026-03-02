@@ -313,7 +313,6 @@ function initResultDisplay() {
  */
 function initReprocessManager() {
     try {
-        // Check if DrawingReprocessManager class is available
         if (typeof DrawingReprocessManager === 'undefined') {
             console.warn('⚠️ DrawingReprocessManager class not found, skipping');
             return;
@@ -326,7 +325,90 @@ function initReprocessManager() {
     }
 }
 
-// Export to global scope
+/**
+ * 从专利详情接收数据并填充到功能八
+ * @param {Array} drawings - 附图URL数组
+ * @param {string} description - 说明书内容
+ * @param {string} patentNumber - 专利号
+ * @param {string} patentTitle - 专利标题
+ */
+window.fillDrawingMarkerData = async function(drawings, description, patentNumber, patentTitle) {
+    console.log('[fillDrawingMarkerData] 接收数据:', { 
+        drawingsCount: drawings?.length, 
+        descriptionLength: description?.length,
+        patentNumber,
+        patentTitle 
+    });
+    
+    const specInput = document.getElementById('specification_input');
+    const statusDiv = document.getElementById('processing_status');
+    
+    if (specInput && description) {
+        specInput.value = description;
+        console.log('[fillDrawingMarkerData] 说明书已填充');
+    }
+    
+    if (statusDiv) {
+        statusDiv.innerHTML = `<span style="color: #28a745;">⏳ 正在加载 ${drawings.length} 张附图...</span>`;
+    }
+    
+    if (!drawings || drawings.length === 0) {
+        if (statusDiv) {
+            statusDiv.innerHTML = `<span style="color: #dc3545;">❌ 没有附图数据</span>`;
+        }
+        return;
+    }
+    
+    let loadedCount = 0;
+    let failedCount = 0;
+    const total = drawings.length;
+    
+    for (let i = 0; i < drawings.length; i++) {
+        const url = drawings[i];
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            
+            const blob = await response.blob();
+            const fileName = `附图_${i + 1}.png`;
+            const file = new File([blob], fileName, { type: blob.type || 'image/png' });
+            
+            if (typeof processImageFile === 'function') {
+                processImageFile(file);
+                loadedCount++;
+            } else {
+                console.error('[fillDrawingMarkerData] processImageFile 函数未定义');
+                failedCount++;
+            }
+            
+            updateLoadingStatus();
+            
+        } catch (error) {
+            console.error(`[fillDrawingMarkerData] 加载附图失败: ${url}`, error);
+            failedCount++;
+            updateLoadingStatus();
+        }
+    }
+    
+    function updateLoadingStatus() {
+        const processed = loadedCount + failedCount;
+        
+        if (processed < total) {
+            if (statusDiv) {
+                statusDiv.innerHTML = `<span style="color: #28a745;">⏳ 正在加载附图... (${processed}/${total})</span>`;
+            }
+        } else {
+            if (statusDiv) {
+                if (failedCount > 0) {
+                    statusDiv.innerHTML = `<span style="color: #856404;">⚠️ 已加载 ${loadedCount}/${total} 张附图 (${failedCount}张失败)，专利: ${patentTitle}</span>`;
+                } else {
+                    statusDiv.innerHTML = `<span style="color: #28a745;">✅ 已加载 ${loadedCount} 张附图，专利: ${patentTitle}</span>`;
+                }
+            }
+        }
+    }
+};
+
 window.initDrawingMarker = initDrawingMarker;
 
 console.log('📦 Drawing Marker initialization module loaded');
