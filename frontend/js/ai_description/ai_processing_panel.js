@@ -141,30 +141,92 @@ class AIProcessingPanel {
             const response = await fetch('/config/models.json');
             const config = await response.json();
             
-            this.models = config.models || [];
-            
             const modelSelector = document.getElementById('modelSelector');
-            if (modelSelector && this.models.length > 0) {
-                const isGuest = window.IS_GUEST_MODE || false;
-                const guestModel = window.GUEST_MODEL || 'glm-4-flash';
-                
-                if (isGuest) {
-                    modelSelector.innerHTML = `<option value="${guestModel}">${guestModel}</option>`;
-                    this.selectedModel = guestModel;
-                    modelSelector.disabled = true;
-                    modelSelector.style.cursor = 'not-allowed';
-                    modelSelector.style.opacity = '0.7';
-                } else {
-                    modelSelector.innerHTML = this.models.map(model => 
-                        `<option value="${model}" ${model === this.selectedModel ? 'selected' : ''}>${model}</option>`
-                    ).join('');
-                    
-                    if (!this.selectedModel && this.models.length > 0) {
-                        this.selectedModel = this.models[0];
-                        this.saveState();
-                    }
-                }
+            if (!modelSelector) return;
+            
+            const isGuest = window.IS_GUEST_MODE || false;
+            const guestModel = window.GUEST_MODEL || 'glm-4-flash';
+            
+            if (isGuest) {
+                modelSelector.innerHTML = `<option value="${guestModel}">${guestModel}</option>`;
+                this.selectedModel = guestModel;
+                modelSelector.disabled = true;
+                modelSelector.style.cursor = 'not-allowed';
+                modelSelector.style.opacity = '0.7';
+                this.models = [guestModel];
+                return;
             }
+            
+            const zhipuKey = window.appState?.apiKey || localStorage.getItem('api_key') || localStorage.getItem('globalApiKey');
+            const aliyunKey = window.appState?.aliyunApiKey || localStorage.getItem('aliyun_api_key');
+            
+            const availableModels = [];
+            const allModels = config.all_models || [];
+            
+            if (zhipuKey && config.providers?.zhipu?.models) {
+                config.providers.zhipu.models.forEach(modelId => {
+                    const modelInfo = allModels.find(m => m.id === modelId) || { id: modelId, provider: 'zhipu', name: modelId };
+                    availableModels.push({ ...modelInfo, provider: 'zhipu', providerName: '智谱AI' });
+                });
+            }
+            
+            if (aliyunKey && config.providers?.aliyun?.models) {
+                config.providers.aliyun.models.forEach(modelId => {
+                    if (!availableModels.find(m => m.id === modelId)) {
+                        const modelInfo = allModels.find(m => m.id === modelId) || { id: modelId, provider: 'aliyun', name: modelId };
+                        availableModels.push({ ...modelInfo, provider: 'aliyun', providerName: '阿里云百炼' });
+                    }
+                });
+            }
+            
+            if (availableModels.length === 0 && config.providers?.zhipu?.models) {
+                config.providers.zhipu.models.forEach(modelId => {
+                    const modelInfo = allModels.find(m => m.id === modelId) || { id: modelId, provider: 'zhipu', name: modelId };
+                    availableModels.push({ ...modelInfo, provider: 'zhipu', providerName: '智谱AI' });
+                });
+            }
+            
+            this.models = availableModels;
+            
+            let optionsHtml = '';
+            const grouped = { zhipu: [], aliyun: [] };
+            
+            availableModels.forEach(model => {
+                const provider = model.provider || 'zhipu';
+                if (grouped[provider]) {
+                    grouped[provider].push(model);
+                }
+            });
+            
+            if (grouped.zhipu.length > 0) {
+                optionsHtml += '<optgroup label="智谱AI">';
+                grouped.zhipu.forEach(m => {
+                    optionsHtml += `<option value="${m.id}" ${m.id === this.selectedModel ? 'selected' : ''}>${m.name || m.id}</option>`;
+                });
+                optionsHtml += '</optgroup>';
+            }
+            
+            if (grouped.aliyun.length > 0) {
+                optionsHtml += '<optgroup label="阿里云百炼">';
+                grouped.aliyun.forEach(m => {
+                    optionsHtml += `<option value="${m.id}" ${m.id === this.selectedModel ? 'selected' : ''}>${m.name || m.id}</option>`;
+                });
+                optionsHtml += '</optgroup>';
+            }
+            
+            if (optionsHtml === '') {
+                optionsHtml = availableModels.map(m => 
+                    `<option value="${m.id}" ${m.id === this.selectedModel ? 'selected' : ''}>${m.name || m.id}</option>`
+                ).join('');
+            }
+            
+            modelSelector.innerHTML = optionsHtml;
+            
+            if (!this.selectedModel && availableModels.length > 0) {
+                this.selectedModel = availableModels[0].id;
+                this.saveState();
+            }
+            
         } catch (e) {
             console.error('Failed to load models:', e);
             const modelSelector = document.getElementById('modelSelector');
