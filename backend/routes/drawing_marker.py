@@ -1293,3 +1293,90 @@ def process_drawing_marker_staged():
     except Exception as e:
         print(f"Error in process_drawing_marker_staged: {traceback.format_exc()}")
         return create_response(error=f"处理失败: {str(e)}", status_code=500)
+
+
+@drawing_marker_bp.route('/drawing-marker/proxy-image', methods=['POST'])
+def proxy_image():
+    """
+    Proxy image from external URL to bypass CORS restrictions.
+    
+    Request body:
+    {
+        "url": "https://patentimages.storage.googleapis.com/..."
+    }
+    
+    Response:
+    {
+        "success": true,
+        "data": "base64encodeddata",
+        "content_type": "image/png"
+    }
+    """
+    try:
+        import requests
+        import base64
+        
+        req_data = request.get_json()
+        image_url = req_data.get('url')
+        
+        if not image_url:
+            return create_response(
+                error="url is required",
+                status_code=400
+            )
+        
+        allowed_domains = [
+            'patentimages.storage.googleapis.com',
+            'patentimages.googleapis.com',
+            'image-ppubs.uspto.gov',
+            'patents.google.com'
+        ]
+        
+        from urllib.parse import urlparse
+        parsed_url = urlparse(image_url)
+        is_allowed = any(domain in parsed_url.netloc for domain in allowed_domains)
+        
+        if not is_allowed:
+            return create_response(
+                error="URL domain not allowed",
+                status_code=403
+            )
+        
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'image/*'
+        }
+        
+        response = requests.get(image_url, headers=headers, timeout=30)
+        
+        if response.status_code != 200:
+            return create_response(
+                error=f"Failed to fetch image: HTTP {response.status_code}",
+                status_code=response.status_code
+            )
+        
+        content_type = response.headers.get('Content-Type', 'image/png')
+        image_data = base64.b64encode(response.content).decode('utf-8')
+        
+        return create_response(data={
+            'data': image_data,
+            'content_type': content_type,
+            'size': len(response.content)
+        })
+        
+    except requests.exceptions.Timeout:
+        return create_response(
+            error="Request timeout",
+            status_code=504
+        )
+    except requests.exceptions.RequestException as e:
+        return create_response(
+            error=f"Request failed: {str(e)}",
+            status_code=502
+        )
+    except Exception as e:
+        print(f"Error in proxy_image: {traceback.format_exc()}")
+        return create_response(
+            error=f"Proxy failed: {str(e)}",
+            status_code=500
+        )

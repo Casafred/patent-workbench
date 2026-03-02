@@ -366,12 +366,34 @@ window.fillDrawingMarkerData = async function(drawings, description, patentNumbe
     for (let i = 0; i < drawings.length; i++) {
         const url = drawings[i];
         try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const proxyResponse = await fetch('/api/drawing-marker/proxy-image', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ url: url })
+            });
             
-            const blob = await response.blob();
+            if (!proxyResponse.ok) {
+                throw new Error(`Proxy HTTP ${proxyResponse.status}`);
+            }
+            
+            const proxyResult = await proxyResponse.json();
+            
+            if (!proxyResult.success || !proxyResult.data) {
+                throw new Error(proxyResult.error || 'Proxy returned no data');
+            }
+            
+            const base64Data = proxyResult.data;
+            const contentType = proxyResult.content_type || 'image/png';
+            const binaryString = atob(base64Data);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let j = 0; j < binaryString.length; j++) {
+                bytes[j] = binaryString.charCodeAt(j);
+            }
+            const blob = new Blob([bytes], { type: contentType });
             const fileName = `附图_${i + 1}.png`;
-            const file = new File([blob], fileName, { type: blob.type || 'image/png' });
+            const file = new File([blob], fileName, { type: contentType });
             
             if (typeof processImageFile === 'function') {
                 processImageFile(file);
