@@ -110,14 +110,18 @@ class FileParserService:
                     'file_type': file_type
                 }
                 
-                # Remove Content-Type header for multipart/form-data
                 headers = {"Authorization": f"Bearer {self.api_key}"}
                 
+                logger.info(f"Creating parser task: url={url}, tool_type={tool_type}, file_type={file_type}, filename={os.path.basename(file_path)}")
+                
                 response = requests.post(url, headers=headers, files=files, data=data, timeout=30)
+                
+                logger.info(f"API response status: {response.status_code}")
+                
                 response.raise_for_status()
                 
                 result = response.json()
-                logger.info(f"API response: {result}")
+                logger.info(f"API response body: {result}")
 
                 # 根据官方文档，响应格式为：
                 # {"message": "任务创建成功", "success": true, "task_id": "task_id"}

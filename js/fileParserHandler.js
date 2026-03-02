@@ -168,6 +168,8 @@ class FileParserHandler {
                     throw new Error(data.message || data.error || '解析失败');
                 }
                 
+                console.log(`[FileParserHandler] 轮询状态: ${data.status}, 尝试 ${i + 1}/${maxAttempts}`);
+                
                 // Update progress
                 this.updateProgress(i + 1, maxAttempts);
                 
@@ -178,7 +180,6 @@ class FileParserHandler {
                 consecutiveErrors++;
                 console.warn(`轮询第 ${i + 1} 次失败:`, error.message);
                 
-                // 如果连续失败次数过多，抛出错误
                 if (consecutiveErrors >= maxConsecutiveErrors) {
                     throw new Error(`网络连接不稳定，已连续失败 ${maxConsecutiveErrors} 次。请检查网络连接后重试。`);
                 }
