@@ -2280,9 +2280,7 @@ function saveTranslationCache(cacheKey, translations) {
     }
 }
 
-// 直接调用智谱AI API翻译权利要求
 async function translateClaimsDirect(claims, model, apiKey) {
-    const url = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
     const translations = [];
     
     const formattedClaims = claims.map((claim, i) => 
@@ -2302,12 +2300,24 @@ async function translateClaimsDirect(claims, model, apiKey) {
 权利要求 1: [翻译内容]
 权利要求 2: [翻译内容]`;
 
-    const response = await fetch(url, {
+    const provider = window.getProviderForModel ? window.getProviderForModel(model) : 
+        (window.ProviderManager ? ProviderManager.getProviderForModel(model) : 'zhipu');
+    
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+    
+    if (provider === 'aliyun') {
+        const aliyunKey = appState.aliyunApiKey || localStorage.getItem('aliyun_api_key');
+        headers['X-LLM-Provider'] = 'aliyun';
+        headers['Authorization'] = `Bearer ${aliyunKey}`;
+    } else {
+        headers['Authorization'] = `Bearer ${apiKey}`;
+    }
+
+    const response = await fetch('/api/chat', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
-        },
+        headers: headers,
         body: JSON.stringify({
             model: model,
             messages: [
@@ -2321,7 +2331,7 @@ async function translateClaimsDirect(claims, model, apiKey) {
 
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || `API请求失败: ${response.status}`);
+        throw new Error(errorData.error?.message || errorData.error || `API请求失败: ${response.status}`);
     }
 
     const result = await response.json();
@@ -2360,10 +2370,23 @@ async function translateClaimsDirect(claims, model, apiKey) {
     return translations;
 }
 
-// 直接调用智谱AI API翻译说明书
 async function translateDescriptionDirect(description, model, apiKey) {
-    const url = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
     const translations = [];
+    
+    const provider = window.getProviderForModel ? window.getProviderForModel(model) : 
+        (window.ProviderManager ? ProviderManager.getProviderForModel(model) : 'zhipu');
+    
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+    
+    if (provider === 'aliyun') {
+        const aliyunKey = appState.aliyunApiKey || localStorage.getItem('aliyun_api_key');
+        headers['X-LLM-Provider'] = 'aliyun';
+        headers['Authorization'] = `Bearer ${aliyunKey}`;
+    } else {
+        headers['Authorization'] = `Bearer ${apiKey}`;
+    }
     
     const maxChunkSize = 4000;
     
@@ -2375,12 +2398,9 @@ async function translateDescriptionDirect(description, model, apiKey) {
             if (!para.trim()) continue;
             
             try {
-                const response = await fetch(url, {
+                const response = await fetch('/api/chat', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`
-                    },
+                    headers: headers,
                     body: JSON.stringify({
                         model: model,
                         messages: [
@@ -2397,7 +2417,7 @@ async function translateDescriptionDirect(description, model, apiKey) {
 
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.error?.message || `API请求失败: ${response.status}`);
+                    throw new Error(errorData.error?.message || errorData.error || `API请求失败: ${response.status}`);
                 }
 
                 const result = await response.json();
@@ -2415,12 +2435,9 @@ async function translateDescriptionDirect(description, model, apiKey) {
             }
         }
     } else {
-        const response = await fetch(url, {
+        const response = await fetch('/api/chat', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
-            },
+            headers: headers,
             body: JSON.stringify({
                 model: model,
                 messages: [
@@ -2437,7 +2454,7 @@ async function translateDescriptionDirect(description, model, apiKey) {
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error?.message || `API请求失败: ${response.status}`);
+            throw new Error(errorData.error?.message || errorData.error || `API请求失败: ${response.status}`);
         }
 
         const result = await response.json();

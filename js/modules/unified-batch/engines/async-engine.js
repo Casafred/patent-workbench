@@ -1,6 +1,7 @@
 /**
  * 统一批量处理系统 - 小批量异步引擎
  * 实时异步API调用，逐条获取结果
+ * 支持智谱AI和阿里云百炼双服务商
  */
 
 import unifiedBatchState from '../state.js';
@@ -13,37 +14,88 @@ const { ASYNC } = UnifiedBatchConfig;
 const AsyncEngine = {
     state: unifiedBatchState.state,
 
+    getProviderForModel(model) {
+        if (window.getProviderForModel) {
+            return window.getProviderForModel(model);
+        }
+        if (window.ProviderManager && ProviderManager.getProviderForModel) {
+            return ProviderManager.getProviderForModel(model);
+        }
+        if (model.startsWith('glm-') || model.startsWith('GLM-')) {
+            return 'zhipu';
+        }
+        if (model.startsWith('qwen') || model.startsWith('Qwen') || 
+            model.startsWith('qwq') || model.startsWith('QwQ') ||
+            model.startsWith('deepseek') || model.startsWith('DeepSeek') ||
+            model.startsWith('kimi') || model.startsWith('Kimi') ||
+            model.startsWith('minimax') || model.startsWith('MiniMax')) {
+            return 'aliyun';
+        }
+        return 'zhipu';
+    },
+
+    getApiHeaders(model) {
+        const provider = this.getProviderForModel(model);
+        const headers = { 'Content-Type': 'application/json' };
+        
+        if (provider === 'aliyun') {
+            const aliyunKey = window.appState?.aliyunApiKey || localStorage.getItem('aliyun_api_key');
+            headers['X-LLM-Provider'] = 'aliyun';
+            headers['Authorization'] = `Bearer ${aliyunKey}`;
+        } else {
+            const zhipuKey = window.appState?.apiKey || localStorage.getItem('api_key') || localStorage.getItem('globalApiKey');
+            headers['Authorization'] = `Bearer ${zhipuKey}`;
+        }
+        
+        return headers;
+    },
+
     async submitRequest(input, template) {
         const requestBody = TemplateManager.buildRequestBody(input, template);
+        const model = requestBody.model || template.model || 'glm-4-flash';
+        const provider = this.getProviderForModel(model);
+        
+        requestBody.provider = provider;
         
         try {
+            const headers = this.getApiHeaders(model);
+            
             const response = await fetch('/async_submit', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: headers,
                 body: JSON.stringify(requestBody)
             });
 
             if (!response.ok) {
-                throw new Error('提交失败: ' + response.status);
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || '提交失败: ' + response.status);
             }
 
             const result = await response.json();
             return {
                 success: true,
                 taskId: result.task_id,
-                requestId: this.state.asyncTask.nextRequestId++
+                requestId: this.state.asyncTask.nextRequestId++,
+                provider: provider
             };
         } catch (error) {
             return { success: false, error: error.message };
         }
     },
 
-    async retrieveResult(taskId) {
+    async retrieveResult(taskId, model) {
         try {
-            const response = await fetch('/async_retrieve?task_id=' + taskId);
+            const headers = this.getApiHeaders(model);
+            
+            const response = await fetch('/async_retrieve', {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({ task_id: taskId })
+            });
             
             if (!response.ok) {
-                throw new Error('获取结果失败: ' + response.status);
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || '获取结果失败: ' + response.status);
             }
 
             const result = await response.json();
@@ -85,7 +137,9 @@ const AsyncEngine = {
                         taskId: submitResult.taskId,
                         status: 'pending',
                         retries: 0,
-                        templateName: template.name
+                        templateName: template.name,
+                        model: template.model,
+                        provider: submitResult.provider
                     };
                     
                     asyncTask.requests.push(requestInfo);
@@ -159,7 +213,7 @@ const AsyncEngine = {
                     continue;
                 }
 
-                const result = await this.retrieveResult(request.taskId);
+                const result = await this.retrieveResult(request.taskId, request.model);
                 
                 if (result.success) {
                     switch (result.status) {

@@ -2119,13 +2119,34 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         }
                         
                         try {
-                            const apiKey = window.opener && window.opener.appState ? window.opener.appState.apiKey : localStorage.getItem('api_key');
-                            if (!apiKey) {
+                            const openerState = window.opener && window.opener.appState ? window.opener.appState : null;
+                            const zhipuKey = openerState?.apiKey || localStorage.getItem('api_key') || localStorage.getItem('globalApiKey');
+                            const aliyunKey = openerState?.aliyunApiKey || localStorage.getItem('aliyun_api_key');
+                            
+                            if (!zhipuKey && !aliyunKey) {
                                 throw new Error('请先配置API Key');
                             }
                             
+                            const getProviderForModel = window.opener?.getProviderForModel || function(m) {
+                                if (m.startsWith('glm-') || m.startsWith('GLM-')) return 'zhipu';
+                                if (m.startsWith('qwen') || m.startsWith('Qwen') || m.startsWith('qwq') || m.startsWith('QwQ') || m.startsWith('deepseek') || m.startsWith('DeepSeek') || m.startsWith('kimi') || m.startsWith('Kimi') || m.startsWith('minimax')) return 'aliyun';
+                                return 'zhipu';
+                            };
+                            
+                            const provider = getProviderForModel(model);
+                            
+                            const headers = {
+                                'Content-Type': 'application/json'
+                            };
+                            
+                            if (provider === 'aliyun') {
+                                headers['X-LLM-Provider'] = 'aliyun';
+                                headers['Authorization'] = 'Bearer ' + aliyunKey;
+                            } else {
+                                headers['Authorization'] = 'Bearer ' + zhipuKey;
+                            }
+                            
                             let translations = [];
-                            const url = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
                             
                             if (textType === 'claims') {
                                 const claims = pageData.claims || [];
@@ -2136,12 +2157,9 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                     return '权利要求 ' + (i + 1) + ': ' + text;
                                 }).join('\\n\\n');
                                 
-                                const response = await fetch(url, {
+                                const response = await fetch('/api/chat', {
                                     method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'Authorization': 'Bearer ' + apiKey
-                                    },
+                                    headers: headers,
                                     body: JSON.stringify({
                                         model: model,
                                         messages: [
@@ -2155,7 +2173,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 
                                 if (!response.ok) {
                                     const errorData = await response.json().catch(() => ({}));
-                                    throw new Error(errorData.error?.message || 'API请求失败: ' + response.status);
+                                    throw new Error(errorData.error?.message || errorData.error || 'API请求失败: ' + response.status);
                                 }
                                 
                                 const result = await response.json();
@@ -2193,12 +2211,9 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 const description = pageData.description || '';
                                 if (!description) throw new Error('没有可翻译的说明书内容');
                                 
-                                const response = await fetch(url, {
+                                const response = await fetch('/api/chat', {
                                     method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'Authorization': 'Bearer ' + apiKey
-                                    },
+                                    headers: headers,
                                     body: JSON.stringify({
                                         model: model,
                                         messages: [
@@ -2212,7 +2227,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 
                                 if (!response.ok) {
                                     const errorData = await response.json().catch(() => ({}));
-                                    throw new Error(errorData.error?.message || 'API请求失败: ' + response.status);
+                                    throw new Error(errorData.error?.message || errorData.error || 'API请求失败: ' + response.status);
                                 }
                                 
                                 const result = await response.json();

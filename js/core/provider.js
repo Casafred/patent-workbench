@@ -1,6 +1,7 @@
 /**
  * LLM Provider Manager
  * 管理LLM服务商切换（智谱AI / 阿里云百炼）
+ * 支持模型优先选择：根据选择的模型自动使用对应服务商的API Key
  */
 
 const ProviderManager = {
@@ -19,6 +20,8 @@ const ProviderManager = {
     
     currentProvider: 'zhipu',
     thinkingOnlyModels: [],
+    modelProviderMap: {},
+    allModels: [],
     
     async init() {
         await this.loadProvidersConfig();
@@ -36,6 +39,12 @@ const ProviderManager = {
                     this.providers = data.providers;
                     this.thinkingOnlyModels = data.providers.aliyun?.thinking_only_models || [];
                 }
+                if (data.model_provider_map) {
+                    this.modelProviderMap = data.model_provider_map;
+                }
+                if (data.all_models) {
+                    this.allModels = data.all_models;
+                }
             }
         } catch (e) {
             console.warn('[ProviderManager] 从API加载配置失败，尝试从本地配置加载');
@@ -46,6 +55,12 @@ const ProviderManager = {
                     if (config.providers) {
                         this.providers = config.providers;
                         this.thinkingOnlyModels = config.providers.aliyun?.thinking_only_models || [];
+                    }
+                    if (config.model_provider_map) {
+                        this.modelProviderMap = config.model_provider_map;
+                    }
+                    if (config.all_models) {
+                        this.allModels = config.all_models;
                     }
                 }
             } catch (err) {
@@ -75,6 +90,95 @@ const ProviderManager = {
         }
     },
     
+    getProviderForModel(model) {
+        if (this.modelProviderMap && this.modelProviderMap[model]) {
+            return this.modelProviderMap[model];
+        }
+        
+        if (model.startsWith('glm-') || model.startsWith('GLM-')) {
+            return 'zhipu';
+        }
+        if (model.startsWith('qwen') || model.startsWith('Qwen') || 
+            model.startsWith('qwq') || model.startsWith('QwQ') ||
+            model.startsWith('deepseek') || model.startsWith('DeepSeek') ||
+            model.startsWith('kimi') || model.startsWith('Kimi') ||
+            model.startsWith('minimax') || model.startsWith('MiniMax')) {
+            return 'aliyun';
+        }
+        
+        return this.currentProvider;
+    },
+    
+    hasApiKey(provider) {
+        if (provider === 'aliyun') {
+            return !!(appState.aliyunApiKey || localStorage.getItem('aliyun_api_key'));
+        } else {
+            return !!(appState.apiKey || localStorage.getItem('api_key') || localStorage.getItem('globalApiKey'));
+        }
+    },
+    
+    getAvailableModels() {
+        const availableModels = [];
+        const zhipuKey = appState.apiKey || localStorage.getItem('api_key') || localStorage.getItem('globalApiKey');
+        const aliyunKey = appState.aliyunApiKey || localStorage.getItem('aliyun_api_key');
+        
+        if (zhipuKey && this.providers.zhipu?.models) {
+            this.providers.zhipu.models.forEach(modelId => {
+                const modelInfo = this.allModels.find(m => m.id === modelId) || { id: modelId, provider: 'zhipu', name: modelId };
+                availableModels.push({
+                    ...modelInfo,
+                    provider: 'zhipu',
+                    providerName: '智谱AI'
+                });
+            });
+        }
+        
+        if (aliyunKey && this.providers.aliyun?.models) {
+            this.providers.aliyun.models.forEach(modelId => {
+                const existingIndex = availableModels.findIndex(m => m.id === modelId);
+                if (existingIndex === -1) {
+                    const modelInfo = this.allModels.find(m => m.id === modelId) || { id: modelId, provider: 'aliyun', name: modelId };
+                    availableModels.push({
+                        ...modelInfo,
+                        provider: 'aliyun',
+                        providerName: '阿里云百炼'
+                    });
+                }
+            });
+        }
+        
+        if (availableModels.length === 0) {
+            if (this.providers.zhipu?.models) {
+                this.providers.zhipu.models.forEach(modelId => {
+                    const modelInfo = this.allModels.find(m => m.id === modelId) || { id: modelId, provider: 'zhipu', name: modelId };
+                    availableModels.push({
+                        ...modelInfo,
+                        provider: 'zhipu',
+                        providerName: '智谱AI'
+                    });
+                });
+            }
+        }
+        
+        return availableModels;
+    },
+    
+    getAvailableModelsGrouped() {
+        const models = this.getAvailableModels();
+        const grouped = {
+            zhipu: [],
+            aliyun: []
+        };
+        
+        models.forEach(model => {
+            if (grouped[model.provider]) {
+                grouped[model.provider].push(model);
+            }
+        });
+        
+        return grouped;
+    },
+    
     setProvider(provider) {
         if (!this.providers[provider]) {
             console.error('[ProviderManager] 无效的服务商:', provider);
@@ -92,6 +196,22 @@ const ProviderManager = {
         
         console.log('[ProviderManager] 服务商已切换为:', this.providers[provider].name);
         return true;
+    },
+    
+    setProviderByModel(model) {
+        const provider = this.getProviderForModel(model);
+        if (provider !== this.currentProvider) {
+            this.currentProvider = provider;
+            appState.provider = provider;
+            this.saveToStorage();
+            
+            window.dispatchEvent(new CustomEvent('providerChanged', {
+                detail: { provider: provider, providerName: this.providers[provider]?.name || provider }
+            }));
+            
+            console.log('[ProviderManager] 根据模型', model, '自动切换服务商为:', provider);
+        }
+        return provider;
     },
     
     getProvider() {
@@ -114,11 +234,12 @@ const ProviderManager = {
         return this.thinkingOnlyModels.includes(model);
     },
     
-    getApiKey() {
-        if (this.currentProvider === 'aliyun') {
-            return appState.aliyunApiKey;
+    getApiKey(provider) {
+        const targetProvider = provider || this.currentProvider;
+        if (targetProvider === 'aliyun') {
+            return appState.aliyunApiKey || localStorage.getItem('aliyun_api_key');
         }
-        return appState.apiKey;
+        return appState.apiKey || localStorage.getItem('api_key') || localStorage.getItem('globalApiKey');
     },
     
     setAliyunApiKey(key) {
@@ -126,15 +247,22 @@ const ProviderManager = {
         localStorage.setItem('aliyun_api_key', key);
     },
     
-    getApiHeaders() {
+    getApiHeaders(model) {
         const headers = {};
+        let provider = this.currentProvider;
         
-        if (this.currentProvider === 'aliyun') {
+        if (model) {
+            provider = this.getProviderForModel(model);
+        }
+        
+        if (provider === 'aliyun') {
+            const aliyunKey = appState.aliyunApiKey || localStorage.getItem('aliyun_api_key');
             headers['X-LLM-Provider'] = 'aliyun';
-            headers['X-Aliyun-API-Key'] = appState.aliyunApiKey;
-            headers['Authorization'] = `Bearer ${appState.aliyunApiKey}`;
+            headers['X-Aliyun-API-Key'] = aliyunKey;
+            headers['Authorization'] = `Bearer ${aliyunKey}`;
         } else {
-            headers['Authorization'] = `Bearer ${appState.apiKey}`;
+            const zhipuKey = appState.apiKey || localStorage.getItem('api_key') || localStorage.getItem('globalApiKey');
+            headers['Authorization'] = `Bearer ${zhipuKey}`;
         }
         
         return headers;
@@ -159,10 +287,33 @@ const ProviderManager = {
     },
     
     updateModelSelectors() {
-        const models = this.getModels();
-        const defaultModel = this.getDefaultModel();
+        const availableModels = this.getAvailableModels();
+        const grouped = this.getAvailableModelsGrouped();
         
-        const modelOptions = models.map(m => `<option value="${m}">${m}</option>`).join('');
+        let modelOptions = '';
+        
+        if (grouped.zhipu.length > 0) {
+            modelOptions += '<optgroup label="智谱AI">';
+            grouped.zhipu.forEach(m => {
+                modelOptions += `<option value="${m.id}">${m.name || m.id}</option>`;
+            });
+            modelOptions += '</optgroup>';
+        }
+        
+        if (grouped.aliyun.length > 0) {
+            modelOptions += '<optgroup label="阿里云百炼">';
+            grouped.aliyun.forEach(m => {
+                modelOptions += `<option value="${m.id}">${m.name || m.id}</option>`;
+            });
+            modelOptions += '</optgroup>';
+        }
+        
+        if (availableModels.length === 0) {
+            const models = this.getModels();
+            modelOptions = models.map(m => `<option value="${m}">${m}</option>`).join('');
+        }
+        
+        const defaultModel = this.getDefaultModel();
         
         const selectors = [
             'chat_model_select',
@@ -178,13 +329,29 @@ const ProviderManager = {
             if (select) {
                 const currentValue = select.value;
                 select.innerHTML = modelOptions;
-                if (models.includes(currentValue)) {
+                if (availableModels.find(m => m.id === currentValue)) {
                     select.value = currentValue;
                 } else {
                     select.value = defaultModel;
                 }
+                
+                select.removeEventListener('change', this._handleModelChange);
+                select.addEventListener('change', (e) => this._handleModelChange(e));
             }
         });
+    },
+    
+    _handleModelChange(e) {
+        const model = e.target.value;
+        const provider = this.getProviderForModel(model);
+        if (provider !== this.currentProvider) {
+            this.currentProvider = provider;
+            appState.provider = provider;
+            this.saveToStorage();
+            this.updateApiKeyUI();
+            
+            console.log('[ProviderManager] 模型选择', model, '自动切换服务商为:', provider);
+        }
     },
     
     updateApiKeyUI() {
@@ -246,6 +413,7 @@ const ProviderManager = {
                 aliyunInput.value = appState.aliyunApiKey || '';
                 aliyunInput.addEventListener('change', (e) => {
                     this.setAliyunApiKey(e.target.value);
+                    this.updateModelSelectors();
                 });
             }
         }

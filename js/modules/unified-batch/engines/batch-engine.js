@@ -1,6 +1,6 @@
 /**
  * 统一批量处理系统 - 大批量延时引擎
- * 智谱Batch API批处理，完成后统一获取结果
+ * 支持智谱AI和阿里云百炼双服务商Batch API
  */
 
 import unifiedBatchState from '../state.js';
@@ -12,6 +12,49 @@ const { BATCH } = UnifiedBatchConfig;
 
 const BatchEngine = {
     state: unifiedBatchState.state,
+    currentProvider: 'zhipu',
+    currentModel: 'glm-4-flash',
+
+    getProviderForModel(model) {
+        if (window.getProviderForModel) {
+            return window.getProviderForModel(model);
+        }
+        if (window.ProviderManager && ProviderManager.getProviderForModel) {
+            return ProviderManager.getProviderForModel(model);
+        }
+        if (model.startsWith('glm-') || model.startsWith('GLM-')) {
+            return 'zhipu';
+        }
+        if (model.startsWith('qwen') || model.startsWith('Qwen') || 
+            model.startsWith('qwq') || model.startsWith('QwQ') ||
+            model.startsWith('deepseek') || model.startsWith('DeepSeek') ||
+            model.startsWith('kimi') || model.startsWith('Kimi') ||
+            model.startsWith('minimax') || model.startsWith('MiniMax')) {
+            return 'aliyun';
+        }
+        return 'zhipu';
+    },
+
+    getApiHeaders(model) {
+        const provider = this.getProviderForModel(model || this.currentModel);
+        const headers = { 'Content-Type': 'application/json' };
+        
+        if (provider === 'aliyun') {
+            const aliyunKey = window.appState?.aliyunApiKey || localStorage.getItem('aliyun_api_key');
+            headers['X-LLM-Provider'] = 'aliyun';
+            headers['Authorization'] = `Bearer ${aliyunKey}`;
+        } else {
+            const zhipuKey = window.appState?.apiKey || localStorage.getItem('api_key') || localStorage.getItem('globalApiKey');
+            headers['Authorization'] = `Bearer ${zhipuKey}`;
+        }
+        
+        return headers;
+    },
+
+    setModel(model) {
+        this.currentModel = model;
+        this.currentProvider = this.getProviderForModel(model);
+    },
 
     generateJsonl(inputs, template) {
         const lines = [];
@@ -47,10 +90,14 @@ const BatchEngine = {
         return { success: true, message: 'JSONL文件已下载' };
     },
 
-    async uploadJsonl() {
+    async uploadJsonl(model) {
         const content = this.state.batchTask.jsonlContent;
         if (!content) {
             return { success: false, message: '没有请求文件内容' };
+        }
+
+        if (model) {
+            this.setModel(model);
         }
 
         try {
@@ -58,13 +105,20 @@ const BatchEngine = {
             const formData = new FormData();
             formData.append('file', blob, 'batch_requests.jsonl');
 
+            const headers = {};
+            if (this.currentProvider === 'aliyun') {
+                headers['X-LLM-Provider'] = 'aliyun';
+            }
+
             const response = await fetch('/upload', {
                 method: 'POST',
+                headers: headers,
                 body: formData
             });
 
             if (!response.ok) {
-                throw new Error('上传失败: ' + response.status);
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || '上传失败: ' + response.status);
             }
 
             const result = await response.json();
@@ -80,29 +134,42 @@ const BatchEngine = {
         }
     },
 
-    async createBatch() {
+    async createBatch(model) {
         const fileId = this.state.batchTask.fileId;
         if (!fileId) {
             return { success: false, message: '未上传文件' };
         }
 
+        if (model) {
+            this.setModel(model);
+        }
+
         try {
+            const headers = this.getApiHeaders(model);
+            
+            const endpoint = this.currentProvider === 'aliyun' 
+                ? '/v1/chat/completions' 
+                : '/v4/chat/completions';
+
             const response = await fetch('/create_batch', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: headers,
                 body: JSON.stringify({
                     input_file_id: fileId,
-                    endpoint: '/v4/chat/completions',
-                    completion_window: '24h'
+                    endpoint: endpoint,
+                    completion_window: '24h',
+                    provider: this.currentProvider
                 })
             });
 
             if (!response.ok) {
-                throw new Error('创建批处理失败: ' + response.status);
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || '创建批处理失败: ' + response.status);
             }
 
             const result = await response.json();
             this.state.batchTask.batchId = result.id;
+            this.state.batchTask.provider = this.currentProvider;
             this.state.task.status = 'running';
             this.state.task.startTime = new Date();
 
@@ -111,6 +178,7 @@ const BatchEngine = {
             return { 
                 success: true, 
                 batchId: result.id,
+                provider: this.currentProvider,
                 message: '批处理任务已创建'
             };
         } catch (error) {
@@ -124,11 +192,23 @@ const BatchEngine = {
             return { success: false, message: '没有批处理任务' };
         }
 
+        const provider = this.state.batchTask.provider || this.currentProvider;
+
         try {
-            const response = await fetch('/check_status?batch_id=' + batchId);
+            const headers = this.getApiHeaders(this.currentModel);
+            
+            const response = await fetch('/check_status', {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({ 
+                    batch_id: batchId,
+                    provider: provider
+                })
+            });
             
             if (!response.ok) {
-                throw new Error('查询状态失败: ' + response.status);
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || '查询状态失败: ' + response.status);
             }
 
             const result = await response.json();
@@ -179,11 +259,23 @@ const BatchEngine = {
             return { success: false, message: '没有输出文件' };
         }
 
+        const provider = this.state.batchTask.provider || this.currentProvider;
+
         try {
-            const response = await fetch('/download_result?file_id=' + outputFileId);
+            const headers = this.getApiHeaders(this.currentModel);
+            
+            const response = await fetch('/download_result', {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({ 
+                    file_id: outputFileId,
+                    provider: provider
+                })
+            });
             
             if (!response.ok) {
-                throw new Error('下载结果失败: ' + response.status);
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || '下载结果失败: ' + response.status);
             }
 
             const content = await response.text();
@@ -344,7 +436,8 @@ const BatchEngine = {
             batchId: this.state.batchTask.batchId,
             fileId: this.state.batchTask.fileId,
             outputFileId: this.state.batchTask.outputFileId,
-            hasResult: !!this.state.batchTask.resultContent
+            hasResult: !!this.state.batchTask.resultContent,
+            provider: this.state.batchTask.provider || this.currentProvider
         };
     },
 
@@ -362,7 +455,8 @@ const BatchEngine = {
             batchId: null,
             outputFileId: null,
             resultContent: null,
-            autoCheckTimer: null
+            autoCheckTimer: null,
+            provider: null
         };
         this.state.task = { status: 'idle', startTime: null, endTime: null };
         OutputHandler.clearResults();

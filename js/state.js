@@ -193,22 +193,20 @@ let AVAILABLE_MODELS = ["glm-4-flashX-250414", "glm-4-flash", "glm-4-long", "GLM
 let BATCH_MODELS = ["glm-4-flashX-250414", "glm-4-flash", "glm-4-long", "GLM-4.7-Flash"];
 let ASYNC_MODELS = ["glm-4-flashX-250414", "glm-4-flash", "glm-4-long", "GLM-4.7-Flash"];
 
-// 存储完整的模型配置
 let MODELS_CONFIG = null;
+let MODEL_PROVIDER_MAP = {};
+let ALL_MODELS = [];
 
-// 将模型列表挂载到 window 对象，供其他模块访问
 window.AVAILABLE_MODELS = AVAILABLE_MODELS;
 window.BATCH_MODELS = BATCH_MODELS;
 window.ASYNC_MODELS = ASYNC_MODELS;
 
-// 从配置文件加载模型列表
 async function loadModelsConfig() {
     try {
-        // 尝试多个可能的路径（适配不同页面位置）
         const possiblePaths = [
-            '../config/models.json',  // 从 frontend/ 子目录访问
-            'config/models.json',      // 从根目录访问
-            './config/models.json'     // 相对根目录访问
+            '../config/models.json',
+            'config/models.json',
+            './config/models.json'
         ];
         
         let config = null;
@@ -231,16 +229,22 @@ async function loadModelsConfig() {
         if (config) {
             MODELS_CONFIG = config;
             
-            // 根据当前服务商选择模型列表
-            const provider = appState.provider || 'zhipu';
-            updateModelsForProvider(provider);
+            if (config.model_provider_map) {
+                MODEL_PROVIDER_MAP = config.model_provider_map;
+                window.MODEL_PROVIDER_MAP = MODEL_PROVIDER_MAP;
+            }
             
-            console.log('✅ 模型配置加载完成, 当前服务商:', provider);
+            if (config.all_models) {
+                ALL_MODELS = config.all_models;
+                window.ALL_MODELS = ALL_MODELS;
+            }
             
-            // 延迟更新所有模型选择器，确保DOM已准备好
+            updateAvailableModels();
+            
+            console.log('✅ 模型配置加载完成');
+            
             setTimeout(() => {
                 updateAllModelSelectors();
-                // 触发自定义事件，通知模型配置已加载
                 window.dispatchEvent(new CustomEvent('modelsConfigLoaded', { 
                     detail: { models: AVAILABLE_MODELS, provider: appState.provider } 
                 }));
@@ -250,46 +254,135 @@ async function loadModelsConfig() {
         }
     } catch (error) {
         console.warn('⚠️ 无法加载模型配置文件，使用默认配置:', error);
-        // 即使加载失败，也要更新选择器
         setTimeout(() => {
             updateAllModelSelectors();
         }, 100);
     }
 }
 
-// 根据服务商更新模型列表
-function updateModelsForProvider(provider) {
-    if (!MODELS_CONFIG || !MODELS_CONFIG.providers || !MODELS_CONFIG.providers[provider]) {
+function getProviderForModel(model) {
+    if (MODEL_PROVIDER_MAP && MODEL_PROVIDER_MAP[model]) {
+        return MODEL_PROVIDER_MAP[model];
+    }
+    
+    if (model.startsWith('glm-') || model.startsWith('GLM-')) {
+        return 'zhipu';
+    }
+    if (model.startsWith('qwen') || model.startsWith('Qwen') || 
+        model.startsWith('qwq') || model.startsWith('QwQ') ||
+        model.startsWith('deepseek') || model.startsWith('DeepSeek') ||
+        model.startsWith('kimi') || model.startsWith('Kimi') ||
+        model.startsWith('minimax') || model.startsWith('MiniMax')) {
+        return 'aliyun';
+    }
+    
+    return appState.provider || 'zhipu';
+}
+
+function updateAvailableModels() {
+    if (!MODELS_CONFIG || !MODELS_CONFIG.providers) {
         console.warn('⚠️ 未找到服务商配置，使用默认模型');
         return;
     }
     
-    const providerConfig = MODELS_CONFIG.providers[provider];
-    const models = providerConfig.models || [];
+    const zhipuKey = appState.apiKey || localStorage.getItem('api_key') || localStorage.getItem('globalApiKey');
+    const aliyunKey = appState.aliyunApiKey || localStorage.getItem('aliyun_api_key');
     
-    AVAILABLE_MODELS = models;
-    BATCH_MODELS = models;
-    ASYNC_MODELS = models;
+    const availableModels = [];
+    const batchModels = [];
+    const asyncModels = [];
     
-    // 同步更新 window 对象上的模型列表
-    window.AVAILABLE_MODELS = models;
-    window.BATCH_MODELS = models;
-    window.ASYNC_MODELS = models;
+    if (zhipuKey && MODELS_CONFIG.providers.zhipu?.models) {
+        MODELS_CONFIG.providers.zhipu.models.forEach(m => {
+            availableModels.push(m);
+            batchModels.push(m);
+            asyncModels.push(m);
+        });
+    }
     
-    console.log(`✅ 服务商 ${provider} 的模型列表:`, models);
+    if (aliyunKey && MODELS_CONFIG.providers.aliyun?.models) {
+        MODELS_CONFIG.providers.aliyun.models.forEach(m => {
+            if (!availableModels.includes(m)) {
+                availableModels.push(m);
+            }
+            if (!batchModels.includes(m)) {
+                batchModels.push(m);
+            }
+            if (!asyncModels.includes(m)) {
+                asyncModels.push(m);
+            }
+        });
+    }
+    
+    if (availableModels.length === 0) {
+        if (MODELS_CONFIG.providers.zhipu?.models) {
+            availableModels.push(...MODELS_CONFIG.providers.zhipu.models);
+            batchModels.push(...MODELS_CONFIG.providers.zhipu.models);
+            asyncModels.push(...MODELS_CONFIG.providers.zhipu.models);
+        }
+    }
+    
+    AVAILABLE_MODELS = availableModels;
+    BATCH_MODELS = batchModels;
+    ASYNC_MODELS = asyncModels;
+    
+    window.AVAILABLE_MODELS = availableModels;
+    window.BATCH_MODELS = batchModels;
+    window.ASYNC_MODELS = asyncModels;
+    
+    console.log('✅ 可用模型列表已更新:', availableModels.length, '个模型');
+    console.log('  - 智谱AI Key:', zhipuKey ? '已配置' : '未配置');
+    console.log('  - 阿里云Key:', aliyunKey ? '已配置' : '未配置');
 }
 
-// 监听服务商切换事件
+function updateModelsForProvider(provider) {
+    updateAvailableModels();
+}
+
 window.addEventListener('providerChanged', (event) => {
     const provider = event.detail?.provider || 'zhipu';
     console.log('[State] 服务商切换为:', provider);
     
     appState.provider = provider;
-    updateModelsForProvider(provider);
+    updateAvailableModels();
     updateAllModelSelectors();
 });
 
-// 更新所有功能的模型选择器
+function buildGroupedModelOptions(modelsToShow) {
+    const grouped = {
+        zhipu: [],
+        aliyun: []
+    };
+    
+    modelsToShow.forEach(modelId => {
+        const provider = getProviderForModel(modelId);
+        const modelInfo = ALL_MODELS.find(m => m.id === modelId) || { id: modelId, name: modelId };
+        if (grouped[provider]) {
+            grouped[provider].push(modelInfo);
+        }
+    });
+    
+    let optionsHtml = '';
+    
+    if (grouped.zhipu.length > 0) {
+        optionsHtml += '<optgroup label="智谱AI">';
+        grouped.zhipu.forEach(m => {
+            optionsHtml += `<option value="${m.id}">${m.name || m.id}</option>`;
+        });
+        optionsHtml += '</optgroup>';
+    }
+    
+    if (grouped.aliyun.length > 0) {
+        optionsHtml += '<optgroup label="阿里云百炼">';
+        grouped.aliyun.forEach(m => {
+            optionsHtml += `<option value="${m.id}">${m.name || m.id}</option>`;
+        });
+        optionsHtml += '</optgroup>';
+    }
+    
+    return optionsHtml;
+}
+
 function updateAllModelSelectors(retryCount = 0) {
     const isGuest = window.IS_GUEST_MODE || appState.isGuestMode;
     const guestModel = window.GUEST_MODEL || appState.guestModel || 'glm-4-flash';
@@ -299,127 +392,49 @@ function updateAllModelSelectors(retryCount = 0) {
         modelsToShow = [guestModel];
     }
     
-    const modelOptions = modelsToShow.map(m => `<option value="${m}">${m}</option>`).join('');
+    const modelOptions = buildGroupedModelOptions(modelsToShow);
     let allFound = true;
     
-    // 功能一：即时对话
-    const chatModelSelect = document.getElementById('chat_model_select');
-    if (chatModelSelect) {
-        const currentValue = chatModelSelect.value;
-        chatModelSelect.innerHTML = modelOptions;
-        if (isGuest) {
-            chatModelSelect.value = guestModel;
-            chatModelSelect.disabled = true;
-            chatModelSelect.style.cursor = 'not-allowed';
-        } else if (AVAILABLE_MODELS.includes(currentValue)) {
-            chatModelSelect.value = currentValue;
-        }
-        console.log('✅ 功能一模型选择器已更新');
-    } else {
-        console.warn('⚠️ chat_model_select 未找到');
-        allFound = false;
-    }
+    const selectors = [
+        { id: 'chat_model_select', name: '即时对话' },
+        { id: 'async_template_model_select', name: '小批量异步' },
+        { id: 'api-model', name: '大批量处理' },
+        { id: 'unified_template_model_select', name: '统一批量处理' },
+        { id: 'comparison_model_select', name: '权利要求对比' },
+        { id: 'patent_batch_model_selector', name: '批量专利解读' }
+    ];
     
-    // 功能二：小批量异步
-    const asyncTemplateModelSelect = document.getElementById('async_template_model_select');
-    if (asyncTemplateModelSelect) {
-        const currentValue = asyncTemplateModelSelect.value;
-        asyncTemplateModelSelect.innerHTML = modelOptions;
-        if (isGuest) {
-            asyncTemplateModelSelect.value = guestModel;
-            asyncTemplateModelSelect.disabled = true;
-            asyncTemplateModelSelect.style.cursor = 'not-allowed';
-        } else if (AVAILABLE_MODELS.includes(currentValue)) {
-            asyncTemplateModelSelect.value = currentValue;
+    selectors.forEach(({ id, name }) => {
+        const select = document.getElementById(id);
+        if (select) {
+            const currentValue = select.value;
+            select.innerHTML = modelOptions;
+            if (isGuest) {
+                select.value = guestModel;
+                select.disabled = true;
+                select.style.cursor = 'not-allowed';
+            } else if (modelsToShow.includes(currentValue)) {
+                select.value = currentValue;
+            }
+            console.log(`✅ ${name}模型选择器已更新`);
+        } else {
+            console.warn(`⚠️ ${id} 未找到`);
+            allFound = false;
         }
-        console.log('✅ 功能二模型选择器已更新');
-    } else {
-        console.warn('⚠️ async_template_model_select 未找到');
-        allFound = false;
-    }
-    
-    // 功能三：大批量处理
-    const apiModelSelect = document.getElementById('api-model');
-    if (apiModelSelect) {
-        const currentValue = apiModelSelect.value;
-        apiModelSelect.innerHTML = modelOptions;
-        if (isGuest) {
-            apiModelSelect.value = guestModel;
-            apiModelSelect.disabled = true;
-            apiModelSelect.style.cursor = 'not-allowed';
-        } else if (AVAILABLE_MODELS.includes(currentValue)) {
-            apiModelSelect.value = currentValue;
-        }
-        console.log('✅ 功能三模型选择器已更新');
-    } else {
-        console.warn('⚠️ api-model 未找到');
-        allFound = false;
-    }
-    
-    // 功能二/三：统一批量处理（合并后）
-    const unifiedTemplateModelSelect = document.getElementById('unified_template_model_select');
-    if (unifiedTemplateModelSelect) {
-        const currentValue = unifiedTemplateModelSelect.value;
-        unifiedTemplateModelSelect.innerHTML = modelOptions;
-        if (isGuest) {
-            unifiedTemplateModelSelect.value = guestModel;
-            unifiedTemplateModelSelect.disabled = true;
-            unifiedTemplateModelSelect.style.cursor = 'not-allowed';
-        } else if (AVAILABLE_MODELS.includes(currentValue)) {
-            unifiedTemplateModelSelect.value = currentValue;
-        }
-        console.log('✅ 统一批量处理模型选择器已更新');
-    } else {
-        console.warn('⚠️ unified_template_model_select 未找到');
-        allFound = false;
-    }
-    
-    // 功能五：权利要求对比
-    const comparisonModelSelect = document.getElementById('comparison_model_select');
-    if (comparisonModelSelect) {
-        const currentValue = comparisonModelSelect.value;
-        comparisonModelSelect.innerHTML = modelOptions;
-        if (isGuest) {
-            comparisonModelSelect.value = guestModel;
-            comparisonModelSelect.disabled = true;
-            comparisonModelSelect.style.cursor = 'not-allowed';
-        } else if (AVAILABLE_MODELS.includes(currentValue)) {
-            comparisonModelSelect.value = currentValue;
-        }
-        console.log('✅ 功能五模型选择器已更新');
-    } else {
-        console.warn('⚠️ comparison_model_select 未找到');
-        allFound = false;
-    }
-    
-    // 功能六：批量专利解读
-    const patentBatchModelSelector = document.getElementById('patent_batch_model_selector');
-    if (patentBatchModelSelector) {
-        const currentValue = patentBatchModelSelector.value;
-        patentBatchModelSelector.innerHTML = modelOptions;
-        if (isGuest) {
-            patentBatchModelSelector.value = guestModel;
-            patentBatchModelSelector.disabled = true;
-            patentBatchModelSelector.style.cursor = 'not-allowed';
-        } else if (AVAILABLE_MODELS.includes(currentValue)) {
-            patentBatchModelSelector.value = currentValue;
-        }
-        console.log('✅ 功能六模型选择器已更新');
-    } else {
-        console.warn('⚠️ patent_batch_model_selector 未找到');
-        allFound = false;
-    }
+    });
     
     if (allFound) {
         console.log('✅ 所有模型选择器已更新');
     } else if (retryCount < 3) {
-        // 如果有选择器未找到，且重试次数未超过3次，则延迟重试
-        console.log(`⏳ 部分选择器未找到，${500}ms后重试 (${retryCount + 1}/3)`);
+        console.log(`⏳ 部分选择器未找到，500ms后重试 (${retryCount + 1}/3)`);
         setTimeout(() => updateAllModelSelectors(retryCount + 1), 500);
     } else {
         console.warn('⚠️ 部分模型选择器未找到，已达到最大重试次数');
     }
 }
+
+window.getProviderForModel = getProviderForModel;
+window.updateAvailableModels = updateAvailableModels;
 
 // 在页面加载时自动加载模型配置
 if (document.readyState === 'loading') {

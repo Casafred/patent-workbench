@@ -17,6 +17,8 @@ class PDFOCRFloatingChat {
         this.currentModel = 'glm-4-flash';
         this.currentProvider = 'zhipu';
         this.models = [];
+        this.modelProviderMap = {};
+        this.allModels = [];
         this.thinkingMode = {
             enabled: false,
             budget: null
@@ -49,10 +51,15 @@ class PDFOCRFloatingChat {
                 if (data.providers) {
                     this.providers = data.providers;
                     this.thinkingOnlyModels = data.providers.aliyun?.thinking_only_models || [];
-                    this.currentProvider = localStorage.getItem('llm_provider') || data.default_provider || 'zhipu';
-                    this.models = data.providers[this.currentProvider]?.models || ['glm-4-flash'];
-                    this.currentModel = data.providers[this.currentProvider]?.default_model || 'glm-4-flash';
                 }
+                if (data.model_provider_map) {
+                    this.modelProviderMap = data.model_provider_map;
+                }
+                if (data.all_models) {
+                    this.allModels = data.all_models;
+                }
+                this.currentProvider = localStorage.getItem('llm_provider') || 'zhipu';
+                this.updateAvailableModels();
             }
         } catch (error) {
             console.warn('[PDF-OCR Floating Chat] 从API加载配置失败，尝试本地配置');
@@ -63,15 +70,78 @@ class PDFOCRFloatingChat {
                     if (config.providers) {
                         this.providers = config.providers;
                         this.thinkingOnlyModels = config.providers.aliyun?.thinking_only_models || [];
-                        this.currentProvider = localStorage.getItem('llm_provider') || config.default_provider || 'zhipu';
-                        this.models = config.providers[this.currentProvider]?.models || config.models || ['glm-4-flash'];
-                        this.currentModel = config.providers[this.currentProvider]?.default_model || config.default_model || 'glm-4-flash';
                     }
+                    if (config.model_provider_map) {
+                        this.modelProviderMap = config.model_provider_map;
+                    }
+                    if (config.all_models) {
+                        this.allModels = config.all_models;
+                    }
+                    this.currentProvider = localStorage.getItem('llm_provider') || 'zhipu';
+                    this.updateAvailableModels();
                 }
             } catch (err) {
                 console.warn('[PDF-OCR Floating Chat] 使用默认配置');
                 this.models = ['glm-4-flash'];
                 this.currentModel = 'glm-4-flash';
+            }
+        }
+    }
+    
+    getProviderForModel(model) {
+        if (this.modelProviderMap && this.modelProviderMap[model]) {
+            return this.modelProviderMap[model];
+        }
+        if (model.startsWith('glm-') || model.startsWith('GLM-')) {
+            return 'zhipu';
+        }
+        if (model.startsWith('qwen') || model.startsWith('Qwen') || 
+            model.startsWith('qwq') || model.startsWith('QwQ') ||
+            model.startsWith('deepseek') || model.startsWith('DeepSeek') ||
+            model.startsWith('kimi') || model.startsWith('Kimi') ||
+            model.startsWith('minimax') || model.startsWith('MiniMax')) {
+            return 'aliyun';
+        }
+        return 'zhipu';
+    }
+    
+    updateAvailableModels() {
+        const zhipuKey = window.appState?.apiKey || localStorage.getItem('api_key') || localStorage.getItem('globalApiKey');
+        const aliyunKey = window.appState?.aliyunApiKey || localStorage.getItem('aliyun_api_key');
+        
+        const availableModels = [];
+        
+        if (zhipuKey && this.providers?.zhipu?.models) {
+            this.providers.zhipu.models.forEach(m => {
+                const modelInfo = this.allModels.find(am => am.id === m) || { id: m, provider: 'zhipu', name: m };
+                availableModels.push({ ...modelInfo, provider: 'zhipu', providerName: '智谱AI' });
+            });
+        }
+        
+        if (aliyunKey && this.providers?.aliyun?.models) {
+            this.providers.aliyun.models.forEach(m => {
+                if (!availableModels.find(am => am.id === m)) {
+                    const modelInfo = this.allModels.find(am => am.id === m) || { id: m, provider: 'aliyun', name: m };
+                    availableModels.push({ ...modelInfo, provider: 'aliyun', providerName: '阿里云百炼' });
+                }
+            });
+        }
+        
+        if (availableModels.length === 0 && this.providers?.zhipu?.models) {
+            this.providers.zhipu.models.forEach(m => {
+                const modelInfo = this.allModels.find(am => am.id === m) || { id: m, provider: 'zhipu', name: m };
+                availableModels.push({ ...modelInfo, provider: 'zhipu', providerName: '智谱AI' });
+            });
+        }
+        
+        this.models = availableModels;
+        
+        if (availableModels.length > 0) {
+            const defaultModel = this.providers?.[this.currentProvider]?.default_model;
+            if (defaultModel && availableModels.find(m => m.id === defaultModel)) {
+                this.currentModel = defaultModel;
+            } else {
+                this.currentModel = availableModels[0].id;
             }
         }
     }
@@ -112,9 +182,7 @@ class PDFOCRFloatingChat {
             `<option value="${key}" ${key === this.currentProvider ? 'selected' : ''}>${val.name}</option>`
         ).join('');
         
-        const modelOptions = this.models.map(m => 
-            `<option value="${m}" ${m === this.currentModel ? 'selected' : ''}>${m}</option>`
-        ).join('');
+        const modelOptions = this.buildGroupedModelOptions();
         
         return `
             <div class="chat-window-header">
@@ -139,7 +207,7 @@ class PDFOCRFloatingChat {
                 </div>
             </div>
             
-            <div class="chat-provider-bar">
+            <div class="chat-provider-bar" style="display: none;">
                 <span class="provider-label">服务商:</span>
                 <select class="provider-select" id="ocr-chat-provider-select">
                     ${providerOptions}
@@ -208,6 +276,48 @@ class PDFOCRFloatingChat {
         `;
     }
     
+    buildGroupedModelOptions() {
+        const grouped = { zhipu: [], aliyun: [] };
+        
+        this.models.forEach(model => {
+            const provider = model.provider || this.getProviderForModel(model.id || model);
+            if (grouped[provider]) {
+                grouped[provider].push(model);
+            }
+        });
+        
+        let optionsHtml = '';
+        
+        if (grouped.zhipu.length > 0) {
+            optionsHtml += '<optgroup label="智谱AI">';
+            grouped.zhipu.forEach(m => {
+                const modelId = m.id || m;
+                const modelName = m.name || modelId;
+                optionsHtml += `<option value="${modelId}" ${modelId === this.currentModel ? 'selected' : ''}>${modelName}</option>`;
+            });
+            optionsHtml += '</optgroup>';
+        }
+        
+        if (grouped.aliyun.length > 0) {
+            optionsHtml += '<optgroup label="阿里云百炼">';
+            grouped.aliyun.forEach(m => {
+                const modelId = m.id || m;
+                const modelName = m.name || modelId;
+                optionsHtml += `<option value="${modelId}" ${modelId === this.currentModel ? 'selected' : ''}>${modelName}</option>`;
+            });
+            optionsHtml += '</optgroup>';
+        }
+        
+        if (optionsHtml === '') {
+            this.models.forEach(m => {
+                const modelId = m.id || m;
+                optionsHtml += `<option value="${modelId}" ${modelId === this.currentModel ? 'selected' : ''}>${modelId}</option>`;
+            });
+        }
+        
+        return optionsHtml;
+    }
+    
     bindWindowEvents() {
         const header = this.window.querySelector('.chat-window-header');
         const minimizeBtn = this.window.querySelector('.control-btn.minimize');
@@ -250,8 +360,9 @@ class PDFOCRFloatingChat {
         if (modelSelect) {
             modelSelect.addEventListener('change', (e) => {
                 this.currentModel = e.target.value;
-                this.updateThinkingButtonState();
-                console.log('[PDF-OCR Floating Chat] 切换模型:', this.currentModel);
+                this.currentProvider = this.getProviderForModel(this.currentModel);
+                this.updateThinkingButtonVisibility();
+                console.log('[PDF-OCR Floating Chat] 切换模型:', this.currentModel, '服务商:', this.currentProvider);
             });
         }
         
@@ -262,17 +373,10 @@ class PDFOCRFloatingChat {
     
     updateModelList() {
         const modelSelect = this.window.querySelector('#ocr-chat-model-select');
-        if (!modelSelect || !this.providers) return;
+        if (!modelSelect) return;
         
-        const models = this.providers[this.currentProvider]?.models || [];
-        const defaultModel = this.providers[this.currentProvider]?.default_model || models[0];
-        
-        modelSelect.innerHTML = models.map(m => 
-            `<option value="${m}" ${m === defaultModel ? 'selected' : ''}>${m}</option>`
-        ).join('');
-        
-        this.currentModel = defaultModel;
-        this.models = models;
+        this.updateAvailableModels();
+        modelSelect.innerHTML = this.buildGroupedModelOptions();
     }
     
     supportsThinkingMode(model, provider) {
@@ -347,10 +451,21 @@ class PDFOCRFloatingChat {
         });
         
         window.addEventListener('providerChanged', () => {
-            if (this.providers && ProviderManager) {
-                this.currentProvider = ProviderManager.getProvider();
-                this.updateModelList();
-                this.updateThinkingButtonVisibility();
+            this.updateAvailableModels();
+            const modelSelect = this.window.querySelector('#ocr-chat-model-select');
+            if (modelSelect) {
+                modelSelect.innerHTML = this.buildGroupedModelOptions();
+            }
+            this.updateThinkingButtonVisibility();
+        });
+        
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'api_key' || e.key === 'globalApiKey' || e.key === 'aliyun_api_key') {
+                this.updateAvailableModels();
+                const modelSelect = this.window.querySelector('#ocr-chat-model-select');
+                if (modelSelect) {
+                    modelSelect.innerHTML = this.buildGroupedModelOptions();
+                }
             }
         });
     }
