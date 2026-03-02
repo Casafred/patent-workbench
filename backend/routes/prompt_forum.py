@@ -273,7 +273,10 @@ def moderate_item(item_type, item_id, action):
     if action not in ['approve', 'reject']:
         return error_response('无效的操作')
     
-    data = request.get_json() or {}
+    try:
+        data = request.get_json(silent=True) or {}
+    except:
+        data = {}
     reason = data.get('reason')
     
     result = PromptForumService.moderate_item(
