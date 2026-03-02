@@ -775,17 +775,19 @@
 #forum_publish_view {
     flex-direction: column;
     padding: 20px;
-    overflow: auto;
+    overflow-y: auto;
+    max-height: 100%;
 }
 
 .forum-publish-form {
-    max-width: 800px;
+    max-width: 900px;
     margin: 0 auto;
+    width: 100%;
 }
 
 .forum-publish-form h3 {
-    margin: 0 0 24px 0;
-    font-size: 20px;
+    margin: 0 0 16px 0;
+    font-size: 18px;
     color: var(--text-color, #1f2937);
 }
 
@@ -794,13 +796,13 @@
 }
 
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 14px;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 8px;
-    font-size: 14px;
+    margin-bottom: 6px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--text-color, #1f2937);
 }
@@ -813,10 +815,10 @@
 .form-group select,
 .form-group textarea {
     width: 100%;
-    padding: 10px 12px;
+    padding: 8px 10px;
     border: 1px solid var(--border-color, #e5e7eb);
-    border-radius: 8px;
-    font-size: 14px;
+    border-radius: 6px;
+    font-size: 13px;
     background: var(--bg-color, #fff);
     color: var(--text-color, #1f2937);
 }
@@ -832,18 +834,28 @@
 .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 16px;
+    gap: 12px;
 }
 
 .feature-options {
     background: var(--bg-color-secondary, #f9fafb);
     border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 20px;
+    padding: 12px;
+    margin-bottom: 14px;
+}
+
+.feature-options h4 {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    color: var(--text-color, #1f2937);
 }
 
 [data-theme="dark"] .feature-options {
     background: #16162a;
+}
+
+[data-theme="dark"] .feature-options h4 {
+    color: #e5e7eb;
 }
 
 .output-field-row {

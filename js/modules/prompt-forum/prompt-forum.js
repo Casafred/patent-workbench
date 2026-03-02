@@ -462,19 +462,10 @@ const PromptForum = (function() {
         container.innerHTML = `
             <h3>发布新提示词</h3>
             <form id="prompt_publish_form" onsubmit="return PromptForum.submitPrompt(event)">
-                <div class="form-group">
-                    <label>标题 *</label>
-                    <input type="text" id="prompt_title" required maxlength="100" placeholder="给提示词起个名字">
-                </div>
-                
                 <div class="form-row">
                     <div class="form-group">
-                        <label>目标功能 *</label>
-                        <select id="prompt_target_feature" onchange="PromptForum.onTargetFeatureChange()">
-                            <option value="feature_1">💬 即时聊天</option>
-                            <option value="feature_5">📦 批量处理</option>
-                            <option value="feature_7">📝 文本分析</option>
-                        </select>
+                        <label>标题 *</label>
+                        <input type="text" id="prompt_title" required maxlength="100" placeholder="给提示词起个名字">
                     </div>
                     <div class="form-group">
                         <label>分类 *</label>
@@ -485,47 +476,57 @@ const PromptForum = (function() {
                     </div>
                 </div>
                 
-                <div class="form-group">
-                    <label>标签</label>
-                    <input type="text" id="prompt_tags" placeholder="多个标签用逗号分隔，如：专利分析,权利要求">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>导入到 *</label>
+                        <select id="prompt_target_feature" onchange="PromptForum.onTargetFeatureChange()">
+                            <option value="feature_1">💬 即时聊天 - 作为对话角色</option>
+                            <option value="feature_5">📦 批量处理 - 作为分析模板</option>
+                            <option value="feature_7">📝 文本分析 - 复制使用</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>标签</label>
+                        <input type="text" id="prompt_tags" placeholder="多个标签用逗号分隔">
+                    </div>
                 </div>
                 
                 <div class="form-group">
                     <label>描述</label>
-                    <textarea id="prompt_description" rows="2" placeholder="简单描述这个提示词的用途"></textarea>
+                    <textarea id="prompt_description" rows="2" placeholder="简单描述这个提示词的用途和效果"></textarea>
                 </div>
                 
                 <div class="form-group">
                     <label>提示词内容 *</label>
-                    <textarea id="prompt_content" required rows="8" placeholder="输入提示词内容，可使用 {{INPUT}} 作为输入占位符"></textarea>
+                    <textarea id="prompt_content" required rows="6" placeholder="输入提示词内容，可使用 {{INPUT}} 作为输入占位符"></textarea>
                 </div>
                 
                 <div id="feature_5_options" class="feature-options" style="display: none;">
+                    <h4>批量处理选项</h4>
                     <div class="form-row">
                         <div class="form-group">
                             <label>推荐模型</label>
                             <select id="prompt_model">
-                                <option value="GLM-4-Flash">GLM-4-Flash</option>
-                                <option value="GLM-4-Plus">GLM-4-Plus</option>
-                                <option value="GLM-4-Long">GLM-4-Long</option>
+                                <option value="GLM-4-Flash">GLM-4-Flash（快速）</option>
+                                <option value="GLM-4-Plus">GLM-4-Plus（均衡）</option>
+                                <option value="GLM-4-Long">GLM-4-Long（长文本）</option>
                                 <option value="qwen-plus">Qwen-Plus</option>
                                 <option value="qwen-max">Qwen-Max</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>温度</label>
+                            <label>温度: <span id="temperature_value">0.1</span></label>
                             <input type="range" id="prompt_temperature" min="0" max="1" step="0.1" value="0.1">
-                            <span id="temperature_value">0.1</span>
                         </div>
                     </div>
                     
                     <div class="form-group">
-                        <label>输出字段</label>
+                        <label>输出字段（可选）</label>
                         <div id="output_fields_container">
                             <div class="output-field-row">
                                 <input type="text" class="field-name-input" placeholder="字段名">
                                 <input type="text" class="field-desc-input" placeholder="字段描述">
-                                <button type="button" class="remove-field-btn" onclick="PromptForum.removeOutputField(this)">删除</button>
+                                <button type="button" class="remove-field-btn" onclick="PromptForum.removeOutputField(this)">✕</button>
                             </div>
                         </div>
                         <button type="button" class="add-field-btn" onclick="PromptForum.addOutputField()">+ 添加字段</button>
