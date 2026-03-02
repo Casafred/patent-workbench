@@ -261,6 +261,10 @@ async function loadModelsConfig() {
 }
 
 function getProviderForModel(model) {
+    if (!model) {
+        return appState.provider || 'zhipu';
+    }
+    
     if (MODEL_PROVIDER_MAP && MODEL_PROVIDER_MAP[model]) {
         return MODEL_PROVIDER_MAP[model];
     }
