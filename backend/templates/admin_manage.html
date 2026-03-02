@@ -197,6 +197,33 @@
             margin-left: 8px;
         }
         .empty-state { text-align: center; padding: 40px; color: #6B7280; }
+        
+        .prompt-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+        .prompt-tab {
+            padding: 8px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .prompt-tab:hover { background: #f3f4f6; }
+        .prompt-tab.active {
+            background: #059669;
+            color: white;
+            border-color: #059669;
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status-pending { background: #fef3c7; color: #d97706; }
+        .status-approved { background: #d1fae5; color: #059669; }
+        .status-rejected { background: #fee2e2; color: #dc2626; }
         .login-container {
             max-width: 400px;
             margin: 100px auto;
@@ -594,6 +621,9 @@
             if (currentTab === 'feature-lock') {
                 loadFeatureLocks();
             }
+            if (currentTab === 'prompt-forum') {
+                loadPromptForum();
+            }
         }
 
         function loadUsers() {
@@ -981,6 +1011,190 @@
         function copyAccount(username, password) {
             const text = '用户名: ' + username + '\n密码: ' + password;
             navigator.clipboard.writeText(text).then(() => alert('已复制'));
+        }
+        
+        // ===== 提示词审核功能 =====
+        let currentPromptTab = 'prompts';
+        
+        function loadPromptForum() {
+            if (currentPromptTab === 'prompts') {
+                loadPendingPrompts();
+            } else {
+                loadPendingComments();
+            }
+        }
+        
+        function switchPromptTab(tab) {
+            currentPromptTab = tab;
+            document.querySelectorAll('.prompt-tab').forEach(t => {
+                t.classList.toggle('active', t.dataset.promptTab === tab);
+            });
+            loadPromptForum();
+        }
+        
+        function loadPendingPrompts() {
+            fetch('/api/prompts/moderation/pending?type=prompt')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        renderPendingPrompts(data.data.items);
+                    }
+                });
+        }
+        
+        function loadPendingComments() {
+            fetch('/api/prompts/moderation/pending?type=comment')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        renderPendingComments(data.data.items);
+                    }
+                });
+        }
+        
+        function renderPendingPrompts(prompts) {
+            const container = document.getElementById('tab-content');
+            
+            let html = '<div class="prompt-tabs" style="display: flex; gap: 8px; margin-bottom: 16px;">';
+            html += '<button class="prompt-tab active" data-prompt-tab="prompts" onclick="switchPromptTab(\'prompts\')">待审核提示词 (' + prompts.length + ')</button>';
+            html += '<button class="prompt-tab" data-prompt-tab="comments" onclick="switchPromptTab(\'comments\')">待审核评论</button>';
+            html += '</div>';
+            
+            if (prompts.length === 0) {
+                html += '<div class="card"><div class="empty-state">暂无待审核的提示词</div></div>';
+                container.innerHTML = html;
+                return;
+            }
+            
+            prompts.forEach(prompt => {
+                html += '<div class="card">';
+                html += '<div class="card-header">';
+                html += '<span class="card-title">' + escapeHtml(prompt.title) + '</span>';
+                html += '<span class="status-badge status-pending">待审核</span>';
+                html += '</div>';
+                html += '<div style="padding: 16px;">';
+                html += '<p style="margin: 0 0 8px 0; color: #6b7280; font-size: 13px;">';
+                html += '作者: <strong>' + prompt.author_username + '</strong> | 提交时间: ' + (prompt.created_at || '-');
+                html += '</p>';
+                if (prompt.description) {
+                    html += '<p style="margin: 0 0 12px 0; color: #374151;"><strong>描述:</strong> ' + escapeHtml(prompt.description) + '</p>';
+                }
+                html += '<div style="background: #f3f4f6; border-radius: 8px; padding: 12px; margin-bottom: 12px;">';
+                html += '<strong style="display: block; margin-bottom: 8px;">提示词内容:</strong>';
+                html += '<pre style="margin: 0; white-space: pre-wrap; word-break: break-word; font-size: 13px; max-height: 200px; overflow-y: auto;">' + escapeHtml(prompt.content) + '</pre>';
+                html += '</div>';
+                html += '<div style="display: flex; gap: 8px;">';
+                html += '<button class="btn btn-primary" onclick="approvePrompt(' + prompt.id + ')">✓ 通过</button>';
+                html += '<button class="btn btn-danger" onclick="rejectPrompt(' + prompt.id + ')">✗ 拒绝</button>';
+                html += '</div>';
+                html += '</div>';
+                html += '</div>';
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function renderPendingComments(comments) {
+            const container = document.getElementById('tab-content');
+            
+            let html = '<div class="prompt-tabs" style="display: flex; gap: 8px; margin-bottom: 16px;">';
+            html += '<button class="prompt-tab" data-prompt-tab="prompts" onclick="switchPromptTab(\'prompts\')">待审核提示词</button>';
+            html += '<button class="prompt-tab active" data-prompt-tab="comments" onclick="switchPromptTab(\'comments\')">待审核评论 (' + comments.length + ')</button>';
+            html += '</div>';
+            
+            if (comments.length === 0) {
+                html += '<div class="card"><div class="empty-state">暂无待审核的评论</div></div>';
+                container.innerHTML = html;
+                return;
+            }
+            
+            comments.forEach(comment => {
+                html += '<div class="card">';
+                html += '<div class="card-header">';
+                html += '<span class="card-title">评论 #' + comment.id + '</span>';
+                html += '<span class="status-badge status-pending">待审核</span>';
+                html += '</div>';
+                html += '<div style="padding: 16px;">';
+                html += '<p style="margin: 0 0 8px 0; color: #6b7280; font-size: 13px;">';
+                html += '作者: <strong>' + comment.author_username + '</strong> | 提示词: ' + escapeHtml(comment.prompt_title || '#' + comment.prompt_id) + ' | 提交时间: ' + (comment.created_at || '-');
+                html += '</p>';
+                html += '<div style="background: #f3f4f6; border-radius: 8px; padding: 12px; margin-bottom: 12px;">';
+                html += '<pre style="margin: 0; white-space: pre-wrap; word-break: break-word; font-size: 13px;">' + escapeHtml(comment.content) + '</pre>';
+                html += '</div>';
+                html += '<div style="display: flex; gap: 8px;">';
+                html += '<button class="btn btn-primary" onclick="approveComment(' + comment.id + ')">✓ 通过</button>';
+                html += '<button class="btn btn-danger" onclick="rejectComment(' + comment.id + ')">✗ 拒绝</button>';
+                html += '</div>';
+                html += '</div>';
+                html += '</div>';
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function approvePrompt(id) {
+            fetch('/api/prompts/moderation/prompt/' + id + '/approve', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        loadPromptForum();
+                    } else {
+                        alert(data.message || '操作失败');
+                    }
+                });
+        }
+        
+        function rejectPrompt(id) {
+            const reason = prompt('请输入拒绝原因（可选）：');
+            fetch('/api/prompts/moderation/prompt/' + id + '/reject', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason: reason || '' })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        loadPromptForum();
+                    } else {
+                        alert(data.message || '操作失败');
+                    }
+                });
+        }
+        
+        function approveComment(id) {
+            fetch('/api/prompts/moderation/comment/' + id + '/approve', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        loadPromptForum();
+                    } else {
+                        alert(data.message || '操作失败');
+                    }
+                });
+        }
+        
+        function rejectComment(id) {
+            const reason = prompt('请输入拒绝原因（可选）：');
+            fetch('/api/prompts/moderation/comment/' + id + '/reject', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason: reason || '' })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        loadPromptForum();
+                    } else {
+                        alert(data.message || '操作失败');
+                    }
+                });
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         document.getElementById('admin-password').addEventListener('keypress', function(e) {
