@@ -39,3 +39,31 @@ def create_response(data=None, error=None, status_code=200):
     response = make_response(jsonify(response_data), status_code)
     response.headers['Content-Type'] = 'application/json; charset=utf-8'
     return response
+
+
+def success_response(data=None, status_code=200):
+    """
+    Create a success JSON response.
+    
+    Args:
+        data: Response data
+        status_code: HTTP status code (default: 200)
+    
+    Returns:
+        Flask Response object with JSON content
+    """
+    return create_response(data=data, status_code=status_code)
+
+
+def error_response(error, status_code=400):
+    """
+    Create an error JSON response.
+    
+    Args:
+        error: Error message
+        status_code: HTTP status code (default: 400)
+    
+    Returns:
+        Flask Response object with JSON content
+    """
+    return create_response(error=error, status_code=status_code)
