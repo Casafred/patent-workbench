@@ -496,12 +496,46 @@ class SimplePatentScraper:
                         description_section = abstract_section.find_next_sibling()
                 
                 if description_section:
-                    # 方法1: 尝试提取带有段落结构的说明书（保留换行）
-                    # 查找所有description-paragraph div元素
-                    paragraphs = description_section.find_all('div', {'class': 'description-paragraph'})
+                    # 方法1: 尝试从 ul.description 提取（Google Patents 新结构）
+                    # 结构: <ul class="description"> 包含混合的 <heading> 和 <li> 元素
+                    # 每个 <li> 内部有 <div class="description-line"> 包含实际文本
+                    ul_desc = description_section.find('ul', {'class': 'description'})
                     
-                    if paragraphs:
-                        logger.info(f"找到 {len(paragraphs)} 个说明书段落")
+                    if ul_desc:
+                        logger.info("找到 ul.description 结构")
+                        text_parts = []
+                        
+                        # 遍历 ul 的所有直接子元素
+                        for child in ul_desc.children:
+                            if not hasattr(child, 'name') or not child.name:
+                                continue
+                            
+                            if child.name == 'heading':
+                                heading_text = child.get_text(strip=True)
+                                if heading_text:
+                                    text_parts.append(f"\n\n## {heading_text}\n")
+                            elif child.name == 'li':
+                                # 提取 li 内的所有 description-line
+                                desc_lines = child.find_all('div', {'class': 'description-line'})
+                                if desc_lines:
+                                    for line in desc_lines:
+                                        line_text = line.get_text(strip=True)
+                                        if line_text:
+                                            text_parts.append(line_text + '\n')
+                                else:
+                                    # 如果没有 description-line，直接提取文本
+                                    li_text = child.get_text(strip=True)
+                                    if li_text:
+                                        text_parts.append(li_text + '\n')
+                        
+                        description = ''.join(text_parts).strip()
+                        logger.info(f"从 ul.description 提取到说明书，长度: {len(description)} 字符")
+                    
+                    # 方法2: 尝试提取带有段落结构的说明书（保留换行）
+                    # 查找所有description-paragraph div元素
+                    elif description_section.find_all('div', {'class': 'description-paragraph'}):
+                        paragraphs = description_section.find_all('div', {'class': 'description-paragraph'})
+                        logger.info(f"找到 {len(paragraphs)} 个说明书段落 (description-paragraph)")
                         # 每个段落单独提取，用双换行符分隔
                         paragraph_texts = []
                         for para in paragraphs:
@@ -511,9 +545,9 @@ class SimplePatentScraper:
                         
                         # 用双换行符连接段落，保留原网页的段落结构
                         description = '\n\n'.join(paragraph_texts)
+                    
+                    # 方法3: 如果没有找到段落结构，尝试查找heading和div
                     else:
-                        # 方法2: 如果没有找到段落结构，尝试查找heading和div
-                        # 这种方法也尝试保留一些结构
                         content_div = description_section.find('div', {'itemprop': 'content'})
                         if content_div:
                             # 提取所有heading和div，保留结构
@@ -533,7 +567,7 @@ class SimplePatentScraper:
                             
                             description = ''.join(text_parts).strip()
                         else:
-                            # 方法3: 最后备用方案，直接提取所有文本
+                            # 方法4: 最后备用方案，直接提取所有文本
                             description = description_section.get_text(separator=' ', strip=True)
                     
                     # 不限制说明书长度，提取完整内容
