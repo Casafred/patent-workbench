@@ -304,8 +304,11 @@ const PromptBuilder = {
 
         const currentPrompt = this.buildSystemPrompt(schema) + '\n\n' + this.buildUserPrompt({ content: '{{INPUT}}' }, schema);
 
+        const model = window.ProviderManager?.getDefaultModel?.() || 'GLM-4-Flash';
+        const headers = window.ProviderManager?.getApiHeaders?.() || {};
+
         const optimizeRequest = {
-            model: 'GLM-4.7-Flash',
+            model: model,
             temperature: 0.3,
             messages: [
                 {
@@ -320,9 +323,13 @@ const PromptBuilder = {
         };
 
         try {
-            const response = await fetch('/chat', {
+            const response = await fetch('/api/chat', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    ...headers
+                },
+                credentials: 'include',
                 body: JSON.stringify(optimizeRequest)
             });
 

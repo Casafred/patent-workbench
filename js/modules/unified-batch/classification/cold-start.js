@@ -77,12 +77,19 @@ const ColdStart = {
     async callAnalysisAPI(sample, options = {}) {
         const prompt = this.buildAnalysisPrompt(sample, options);
 
+        const model = options.model || window.ProviderManager?.getDefaultModel?.() || 'GLM-4-Flash';
+        const headers = window.ProviderManager?.getApiHeaders?.() || {};
+
         try {
-            const response = await fetch('/chat', {
+            const response = await fetch('/api/chat', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    ...headers
+                },
+                credentials: 'include',
                 body: JSON.stringify({
-                    model: options.model || 'GLM-4.7-Flash',
+                    model: model,
                     temperature: 0.5,
                     messages: [
                         {
@@ -315,11 +322,18 @@ ${feedback}
 请输出优化后的完整分类体系JSON，格式与之前相同。只输出JSON，不要其他内容。`;
 
         try {
-            const response = await fetch('/chat', {
+            const model = window.ProviderManager?.getDefaultModel?.() || 'GLM-4-Flash';
+            const headers = window.ProviderManager?.getApiHeaders?.() || {};
+
+            const response = await fetch('/api/chat', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    ...headers
+                },
+                credentials: 'include',
                 body: JSON.stringify({
-                    model: 'GLM-4.7-Flash',
+                    model: model,
                     temperature: 0.3,
                     messages: [
                         {
