@@ -921,36 +921,56 @@
     flex: 1;
 }
 
-/* Forum Entry Button */
-.forum-entry-btn {
-    display: flex;
+/* Forum Entry Button - 与主题切换按钮和API配置按钮样式一致 */
+#prompt_forum_btn.forum-entry-btn {
+    all: unset;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 8px;
-    background: transparent;
-    color: var(--text-color-secondary, #6b7280);
-    border: none;
-    border-radius: 50%;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s;
     width: 40px;
     height: 40px;
+    border: 2px solid var(--primary-color);
+    border-radius: 50%;
+    background-color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    z-index: 10;
+    margin-right: 10px;
+    transform: translateY(-3px);
 }
 
-.forum-entry-btn:hover {
-    background: var(--bg-color-hover, #f3f4f6);
-    color: var(--primary-color, #059669);
+#prompt_forum_btn.forum-entry-btn svg {
+    width: 20px;
+    height: 20px;
+    stroke: var(--primary-color);
+    fill: none;
+    transition: stroke 0.2s ease;
 }
 
-[data-theme="dark"] .forum-entry-btn {
-    color: #9ca3af;
+#prompt_forum_btn.forum-entry-btn:hover {
+    background-color: var(--primary-color-hover-bg);
 }
 
-[data-theme="dark"] .forum-entry-btn:hover {
-    background: #2d2d44;
-    color: #34d399;
+#prompt_forum_btn.forum-entry-btn:hover svg {
+    stroke: var(--primary-color-dark);
+}
+
+[data-theme="dark"] #prompt_forum_btn.forum-entry-btn {
+    background-color: var(--bg-color-secondary, #1e1e2e);
+    border-color: var(--primary-color);
+}
+
+[data-theme="dark"] #prompt_forum_btn.forum-entry-btn svg {
+    stroke: var(--primary-color);
+}
+
+[data-theme="dark"] #prompt_forum_btn.forum-entry-btn:hover {
+    background-color: var(--primary-color-hover-bg, #2d2d44);
+}
+
+[data-theme="dark"] #prompt_forum_btn.forum-entry-btn:hover svg {
+    stroke: var(--primary-color-dark);
 }
 
 /* Responsive */
