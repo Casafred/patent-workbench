@@ -136,14 +136,35 @@ const BatchEngine = {
             const statusInfo = {
                 success: true,
                 id: result.id,
+                object: result.object,
+                endpoint: result.endpoint,
                 status: result.status,
-                requestCounts: result.request_counts,
+                inputFileId: result.input_file_id,
                 outputFileId: result.output_file_id,
-                errorFileId: result.error_file_id
+                errorFileId: result.error_file_id,
+                completionWindow: result.completion_window,
+                requestCounts: result.request_counts,
+                total: result.total,
+                completed: result.completed,
+                failed: result.failed,
+                createdAt: result.created_at,
+                inProgressAt: result.in_progress_at,
+                expiresAt: result.expires_at,
+                finalizingAt: result.finalizing_at,
+                completedAt: result.completed_at,
+                failedAt: result.failed_at,
+                expiredAt: result.expired_at,
+                cancellingAt: result.cancelling_at,
+                cancelledAt: result.cancelled_at,
+                metadata: result.metadata
             };
 
             if (result.output_file_id) {
                 this.state.batchTask.outputFileId = result.output_file_id;
+            }
+            
+            if (result.input_file_id) {
+                this.state.batchTask.inputFileId = result.input_file_id;
             }
 
             return statusInfo;

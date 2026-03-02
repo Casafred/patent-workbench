@@ -607,19 +607,51 @@ function logUnifiedBatchMessage(message) {
     }
 }
 
-function logUnifiedBatchProgress(progress) {
-    var statusText = {
+function formatZhipuTimestamp(timestamp) {
+    if (!timestamp) return '-';
+    var date = new Date(timestamp * 1000);
+    var year = date.getFullYear();
+    var month = String(date.getMonth() + 1).padStart(2, '0');
+    var day = String(date.getDate()).padStart(2, '0');
+    var hours = String(date.getHours()).padStart(2, '0');
+    var minutes = String(date.getMinutes()).padStart(2, '0');
+    var seconds = String(date.getSeconds()).padStart(2, '0');
+    return year + '-' + month + '-' + day + ' ' + hours + ':' + minutes + ':' + seconds;
+}
+
+function getZhipuStatusText(status) {
+    var statusMap = {
         'pending': '等待中',
         'running': '运行中',
         'completed': '已完成',
-        'failed': '失败'
+        'failed': '失败',
+        'expired': '已过期',
+        'cancelled': '已取消',
+        'finalizing': '最终处理中',
+        'cancelling': '取消中'
     };
+    return statusMap[status] || status;
+}
 
-    var message = '状态: ' + (statusText[progress.status] || progress.status);
+function logUnifiedBatchProgress(progress) {
+    var statusText = getZhipuStatusText(progress.status);
+    var message = '状态: ' + statusText;
+    
     if (progress.requestCounts) {
-        message += ' | 进度: ' + progress.requestCounts.completed + '/' + progress.requestCounts.total;
-        if (progress.requestCounts.failed > 0) {
-            message += ' (失败: ' + progress.requestCounts.failed + ')';
+        var completed = progress.requestCounts.completed || 0;
+        var total = progress.requestCounts.total || 0;
+        var failed = progress.requestCounts.failed || 0;
+        message += ' | 进度: ' + completed + '/' + total;
+        if (failed > 0) {
+            message += ' (失败: ' + failed + ')';
+        }
+    } else if (progress.total !== undefined) {
+        var completed = progress.completed || 0;
+        var total = progress.total || 0;
+        var failed = progress.failed || 0;
+        message += ' | 进度: ' + completed + '/' + total;
+        if (failed > 0) {
+            message += ' (失败: ' + failed + ')';
         }
     }
     
@@ -629,10 +661,87 @@ function logUnifiedBatchProgress(progress) {
     if (statusEl) {
         statusEl.textContent = message;
     }
+    
+    updateZhipuBatchDetails(progress);
 
     if (progress.status === 'running' || progress.status === 'pending') {
         document.getElementById('unified_auto_check_container').style.display = 'block';
     }
+}
+
+function updateZhipuBatchDetails(progress) {
+    var detailsEl = document.getElementById('unified_batch_details');
+    var detailsPanel = document.getElementById('unified_batch_details_panel');
+    if (!detailsEl) return;
+    
+    if (detailsPanel) {
+        detailsPanel.style.display = 'block';
+    }
+    
+    var html = '<div class="batch-details-grid">';
+    
+    html += '<div class="detail-item"><span class="detail-label">任务ID:</span><span class="detail-value">' + (progress.id || '-') + '</span></div>';
+    html += '<div class="detail-item"><span class="detail-label">状态:</span><span class="detail-value status-' + (progress.status || 'unknown') + '">' + getZhipuStatusText(progress.status) + '</span></div>';
+    
+    if (progress.endpoint) {
+        html += '<div class="detail-item"><span class="detail-label">API端点:</span><span class="detail-value">' + progress.endpoint + '</span></div>';
+    }
+    
+    if (progress.completionWindow) {
+        html += '<div class="detail-item"><span class="detail-label">完成窗口:</span><span class="detail-value">' + progress.completionWindow + '</span></div>';
+    }
+    
+    if (progress.createdAt) {
+        html += '<div class="detail-item"><span class="detail-label">创建时间:</span><span class="detail-value">' + formatZhipuTimestamp(progress.createdAt) + '</span></div>';
+    }
+    
+    if (progress.inProgressAt) {
+        html += '<div class="detail-item"><span class="detail-label">开始处理:</span><span class="detail-value">' + formatZhipuTimestamp(progress.inProgressAt) + '</span></div>';
+    }
+    
+    if (progress.expiresAt) {
+        html += '<div class="detail-item"><span class="detail-label">过期时间:</span><span class="detail-value">' + formatZhipuTimestamp(progress.expiresAt) + '</span></div>';
+    }
+    
+    if (progress.completedAt) {
+        html += '<div class="detail-item"><span class="detail-label">完成时间:</span><span class="detail-value">' + formatZhipuTimestamp(progress.completedAt) + '</span></div>';
+    }
+    
+    if (progress.failedAt) {
+        html += '<div class="detail-item"><span class="detail-label">失败时间:</span><span class="detail-value">' + formatZhipuTimestamp(progress.failedAt) + '</span></div>';
+    }
+    
+    var completed = progress.requestCounts?.completed || progress.completed || 0;
+    var total = progress.requestCounts?.total || progress.total || 0;
+    var failed = progress.requestCounts?.failed || progress.failed || 0;
+    
+    if (total > 0) {
+        var percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+        html += '<div class="detail-item full-width"><span class="detail-label">处理进度:</span>';
+        html += '<div class="progress-bar-container"><div class="progress-bar-fill" style="width: ' + percent + '%;"></div></div>';
+        html += '<span class="detail-value">' + completed + '/' + total + ' (' + percent + '%)</span></div>';
+        
+        if (failed > 0) {
+            html += '<div class="detail-item"><span class="detail-label">失败数量:</span><span class="detail-value status-failed">' + failed + '</span></div>';
+        }
+    }
+    
+    if (progress.inputFileId) {
+        html += '<div class="detail-item"><span class="detail-label">输入文件ID:</span><span class="detail-value small-text">' + progress.inputFileId + '</span></div>';
+    }
+    
+    if (progress.outputFileId) {
+        html += '<div class="detail-item"><span class="detail-label">输出文件ID:</span><span class="detail-value small-text status-success">' + progress.outputFileId + '</span></div>';
+    }
+    
+    if (progress.errorFileId) {
+        html += '<div class="detail-item"><span class="detail-label">错误文件ID:</span><span class="detail-value small-text status-failed">' + progress.errorFileId + '</span></div>';
+    }
+    
+    html += '</div>';
+    
+    detailsEl.innerHTML = html;
+    detailsEl.style.display = 'block';
 }
 
 function handleUnifiedBatchComplete(result) {
@@ -855,4 +964,79 @@ function updateClassificationProcessPanelVisibility() {
         asyncPanel.style.display = mode === 'async' ? 'block' : 'none';
         batchPanel.style.display = mode === 'batch' ? 'block' : 'none';
     }
+}
+
+function updateClassificationBatchDetails(progress) {
+    var detailsEl = document.getElementById('classification_batch_details');
+    var detailsPanel = document.getElementById('classification_batch_details_panel');
+    if (!detailsEl) return;
+    
+    if (detailsPanel) {
+        detailsPanel.style.display = 'block';
+    }
+    
+    var html = '<div class="batch-details-grid">';
+    
+    html += '<div class="detail-item"><span class="detail-label">任务ID:</span><span class="detail-value">' + (progress.id || '-') + '</span></div>';
+    html += '<div class="detail-item"><span class="detail-label">状态:</span><span class="detail-value status-' + (progress.status || 'unknown') + '">' + getZhipuStatusText(progress.status) + '</span></div>';
+    
+    if (progress.endpoint) {
+        html += '<div class="detail-item"><span class="detail-label">API端点:</span><span class="detail-value">' + progress.endpoint + '</span></div>';
+    }
+    
+    if (progress.completionWindow) {
+        html += '<div class="detail-item"><span class="detail-label">完成窗口:</span><span class="detail-value">' + progress.completionWindow + '</span></div>';
+    }
+    
+    if (progress.createdAt) {
+        html += '<div class="detail-item"><span class="detail-label">创建时间:</span><span class="detail-value">' + formatZhipuTimestamp(progress.createdAt) + '</span></div>';
+    }
+    
+    if (progress.inProgressAt) {
+        html += '<div class="detail-item"><span class="detail-label">开始处理:</span><span class="detail-value">' + formatZhipuTimestamp(progress.inProgressAt) + '</span></div>';
+    }
+    
+    if (progress.expiresAt) {
+        html += '<div class="detail-item"><span class="detail-label">过期时间:</span><span class="detail-value">' + formatZhipuTimestamp(progress.expiresAt) + '</span></div>';
+    }
+    
+    if (progress.completedAt) {
+        html += '<div class="detail-item"><span class="detail-label">完成时间:</span><span class="detail-value">' + formatZhipuTimestamp(progress.completedAt) + '</span></div>';
+    }
+    
+    if (progress.failedAt) {
+        html += '<div class="detail-item"><span class="detail-label">失败时间:</span><span class="detail-value">' + formatZhipuTimestamp(progress.failedAt) + '</span></div>';
+    }
+    
+    var completed = progress.requestCounts?.completed || progress.completed || 0;
+    var total = progress.requestCounts?.total || progress.total || 0;
+    var failed = progress.requestCounts?.failed || progress.failed || 0;
+    
+    if (total > 0) {
+        var percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+        html += '<div class="detail-item full-width"><span class="detail-label">处理进度:</span>';
+        html += '<div class="progress-bar-container"><div class="progress-bar-fill" style="width: ' + percent + '%;"></div></div>';
+        html += '<span class="detail-value">' + completed + '/' + total + ' (' + percent + '%)</span></div>';
+        
+        if (failed > 0) {
+            html += '<div class="detail-item"><span class="detail-label">失败数量:</span><span class="detail-value status-failed">' + failed + '</span></div>';
+        }
+    }
+    
+    if (progress.inputFileId) {
+        html += '<div class="detail-item"><span class="detail-label">输入文件ID:</span><span class="detail-value small-text">' + progress.inputFileId + '</span></div>';
+    }
+    
+    if (progress.outputFileId) {
+        html += '<div class="detail-item"><span class="detail-label">输出文件ID:</span><span class="detail-value small-text status-success">' + progress.outputFileId + '</span></div>';
+    }
+    
+    if (progress.errorFileId) {
+        html += '<div class="detail-item"><span class="detail-label">错误文件ID:</span><span class="detail-value small-text status-failed">' + progress.errorFileId + '</span></div>';
+    }
+    
+    html += '</div>';
+    
+    detailsEl.innerHTML = html;
+    detailsEl.style.display = 'block';
 }

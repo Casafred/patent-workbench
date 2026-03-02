@@ -229,7 +229,7 @@
         <!-- 大批量延时模式进度UI -->
         <div id="unified_batch_progress_panel" style="display:none;">
             <div class="step">
-                <div class="step-header">大批量批处理</div>
+                <div class="step-header">大批量批处理 <span style="font-size: 0.8em; color: var(--text-color-secondary);">(智谱AI Batch API)</span></div>
                 <p>请按照1-3的顺序执行。点击步骤2后将启动自动状态检查。</p>
                 <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px; justify-content: center;">
                     <button id="unified_batch_step1_upload" class="action-button">1. 上传请求文件</button>
@@ -242,6 +242,12 @@
                     <span id="unified_auto_check_status" style="margin-right: 15px; color: var(--primary-color-dark); font-weight: bold;"></span>
                     <button id="unified_batch_stop_check_btn" class="small-button" style="background: var(--warning-color); color: #fff;">停止自动检查</button>
                 </div>
+            </div>
+            
+            <!-- 智谱批处理任务详情面板 -->
+            <div class="step" id="unified_batch_details_panel" style="display:none;">
+                <div class="step-header">任务详情</div>
+                <div id="unified_batch_details" class="batch-details-container"></div>
             </div>
             
             <details open>
@@ -555,7 +561,7 @@
         <!-- 大批量延时模式进度UI -->
         <div id="classification_batch_progress_panel" style="display:none;">
             <div class="step">
-                <div class="step-header">大批量分类标引</div>
+                <div class="step-header">大批量分类标引 <span style="font-size: 0.8em; color: var(--text-color-secondary);">(智谱AI Batch API)</span></div>
                 <p>请按照1-3的顺序执行。点击步骤2后将启动自动状态检查。</p>
                 <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px; justify-content: center;">
                     <button id="classification_batch_step1_upload" class="action-button">1. 上传请求文件</button>
@@ -568,6 +574,12 @@
                     <span id="classification_auto_check_status" style="margin-right: 15px; color: var(--primary-color-dark); font-weight: bold;"></span>
                     <button id="classification_batch_stop_check_btn" class="small-button" style="background: var(--warning-color); color: #fff;">停止自动检查</button>
                 </div>
+            </div>
+            
+            <!-- 智谱批处理任务详情面板 -->
+            <div class="step" id="classification_batch_details_panel" style="display:none;">
+                <div class="step-header">任务详情</div>
+                <div id="classification_batch_details" class="batch-details-container"></div>
             </div>
             
             <details open>
