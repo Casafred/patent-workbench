@@ -61,18 +61,31 @@ const IPCPredict = (function() {
         const listEl = document.getElementById('ipc_predict_list');
 
         if (statsEl) {
+            const levelNames = {
+                'class': '部',
+                'subclass': '大类',
+                'maingroup': '大组',
+                'subgroup': '小组'
+            };
+            const langNames = {
+                'zh': '中文',
+                'en': 'English',
+                'ja': '日本語',
+                'ko': '한국어'
+            };
+            
             statsEl.innerHTML = `
-                <div class="ipc-stat-item">
-                    <div class="stat-value">${data.count || 0}</div>
-                    <div class="stat-label">预测结果数</div>
+                <div class="ipc-stat-item-simple">
+                    <span class="stat-label">结果</span>
+                    <span class="stat-value">${data.count || 0}</span>
                 </div>
-                <div class="ipc-stat-item">
-                    <div class="stat-value">${data.lang || '-'}</div>
-                    <div class="stat-label">检测语言</div>
+                <div class="ipc-stat-item-simple">
+                    <span class="stat-label">语言</span>
+                    <span class="stat-value">${langNames[data.lang] || data.lang}</span>
                 </div>
-                <div class="ipc-stat-item">
-                    <div class="stat-value">${data.version || 'latest'}</div>
-                    <div class="stat-label">IPC版本</div>
+                <div class="ipc-stat-item-simple">
+                    <span class="stat-label">层级</span>
+                    <span class="stat-value">${levelNames[data.level] || data.level || '小组'}</span>
                 </div>
             `;
         }
@@ -96,18 +109,18 @@ const IPCPredict = (function() {
 
         let html = '';
         data.results.forEach((item, index) => {
-            const scoreClass = IPCCore.getScoreClass(item.score);
-            const score = Math.round(item.score || 0);
+            const score = item.score || 0;
+            const scoreClass = score >= 4 ? 'high' : (score >= 2 ? 'medium' : 'low');
 
             html += `
                 <div class="ipc-result-item" onclick="IPCPredict.showDetail('${item.symbol}')">
                     <div class="ipc-result-score ${scoreClass}">
-                        ${score}%
+                        ${score}
                     </div>
                     <div class="ipc-result-content">
                         <div class="ipc-result-symbol">
-                            ${IPCCore.formatSymbol(item.symbol)}
-                            <button class="ipc-copy-btn" onclick="event.stopPropagation(); IPCCore.copyToClipboard('${item.symbol}')">复制</button>
+                            <span class="ipc-symbol-text">${IPCCore.formatSymbol(item.symbol)}</span>
+                            <span class="ipc-copy-link" onclick="event.stopPropagation(); IPCCore.copyToClipboard('${item.symbol}')">复制</span>
                         </div>
                         <div class="ipc-result-code">${item.code || ''}</div>
                     </div>
@@ -119,7 +132,30 @@ const IPCPredict = (function() {
     }
 
     async function showDetail(symbol) {
-        IPCSearch.showDetail(symbol);
+        if (!symbol) return;
+        
+        const modal = document.getElementById('ipc_detail_modal');
+        const titleEl = document.getElementById('ipc_detail_title');
+        const bodyEl = document.getElementById('ipc_detail_body');
+
+        if (!modal || !titleEl || !bodyEl) {
+            IPCCore.showToast('无法显示详情', 'error');
+            return;
+        }
+
+        titleEl.textContent = 'IPC分类详情';
+        bodyEl.innerHTML = `
+            <div class="ipc-detail-symbol">
+                ${IPCCore.formatSymbol(symbol)}
+                <span class="ipc-copy-link" onclick="IPCCore.copyToClipboard('${symbol}')">复制</span>
+            </div>
+            <div class="ipc-detail-info">
+                <p style="color: #666; font-size: 14px; margin: 0;">
+                    IPC分类号: <strong>${symbol}</strong>
+                </p>
+            </div>
+        `;
+        modal.style.display = 'block';
     }
 
     function renderError(message, text, lang) {
