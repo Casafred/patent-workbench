@@ -94,22 +94,43 @@ class AIComponentExtractor:
             json.JSONDecodeError: If response is not valid JSON
             ValueError: If response structure is invalid
         """
-        # Try to find JSON in the response
         response = response.strip()
+        
+        logger.info(f"[AI响应解析] 原始响应长度: {len(response)}")
+        logger.info(f"[AI响应解析] 原始响应前500字符: {response[:500]}")
         
         # Remove markdown code blocks if present
         if response.startswith('```'):
             lines = response.split('\n')
-            # Remove first and last lines (``` markers)
-            response = '\n'.join(lines[1:-1])
+            logger.info(f"[AI响应解析] 检测到markdown代码块，行数: {len(lines)}")
+            # Find the closing ```
+            start_idx = 0
+            end_idx = len(lines) - 1
+            for i, line in enumerate(lines):
+                if line.strip().startswith('```'):
+                    start_idx = i
+                if i > start_idx and line.strip() == '```':
+                    end_idx = i
+                    break
+            # Extract content between markers
+            content_lines = lines[start_idx + 1:end_idx]
             # Remove json language identifier if present
-            if response.startswith('json'):
-                response = response[4:].strip()
+            if content_lines and content_lines[0].strip().lower() == 'json':
+                content_lines = content_lines[1:]
+            response = '\n'.join(content_lines).strip()
+            logger.info(f"[AI响应解析] 去除markdown后长度: {len(response)}")
+        
+        # Try to find JSON object in the response
+        import re
+        json_match = re.search(r'\{[\s\S]*\}', response)
+        if json_match:
+            response = json_match.group(0)
+            logger.info(f"[AI响应解析] 提取JSON对象长度: {len(response)}")
         
         try:
             result = json.loads(response)
         except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse JSON response: {response[:200]}")
+            logger.error(f"Failed to parse JSON response: {response[:500]}")
             raise json.JSONDecodeError(
                 f"AI returned invalid JSON format: {str(e)}",
                 response,
