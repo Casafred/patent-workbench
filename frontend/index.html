@@ -1291,6 +1291,7 @@ async function startProcessing() {
                 ocr_mode: ocrMode,
                 ocr_results: ocrMarkers,
                 ocr_drawings: ocrResult.data.drawings,
+                extracted_text: extractInfo.extracted_text,
                 stage: 'ai'
             })
         }, 120000);

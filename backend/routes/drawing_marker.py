@@ -254,7 +254,6 @@ def process_drawing_marker():
         print(f"[DEBUG] Step 1 complete: Collected {len(all_ocr_markers)} unique markers from OCR: {all_ocr_markers}")
 
         # 🚀 STEP 2: 解析说明书，提取附图标记和部件名称
-        # 🔥 优化：移除预处理步骤，直接处理完整说明书（提高准确性，减少处理时间）
         print(f"[DEBUG] Step 2: Extracting components from specification...")
 
         # 根据AI模式选择不同的处理方式
@@ -273,20 +272,33 @@ def process_drawing_marker():
             if error:
                 return error
 
+            # 🔧 关键优化：先根据OCR标记提取相关段落，避免处理过长说明书导致超时
+            from backend.utils.text_segment_extractor import extract_relevant_segments
+            
+            extraction_result = extract_relevant_segments(
+                specification,
+                all_ocr_markers,
+                context_sentences=1,
+                max_total_length=8000
+            )
+            
+            specification_to_process = extraction_result['extracted_text']
+            print(f"[DEBUG] 说明书预处理: {extraction_result['original_length']} -> {extraction_result['extracted_length']} 字符")
+            print(f"[DEBUG] 找到的标记: {extraction_result['found_markers']}, 未找到: {extraction_result['not_found_markers']}")
+            print(f"[DEBUG] 提取了 {extraction_result['segment_count']} 个相关段落")
+
             # Import AI processor
             from backend.services.ai_description.ai_description_processor import AIDescriptionProcessor
 
             # Create processor instance (no longer needs api_key)
             processor = AIDescriptionProcessor()
 
-            # 🔥 优化：直接处理完整说明书，让AI自己判断相关内容
-            # Process description using AI, passing client directly
-            # Run async function in sync context
+            # 使用预处理后的精简文本，而非完整说明书
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             try:
                 ai_result = loop.run_until_complete(
-                    processor.process(specification, model_name, client, custom_prompt)
+                    processor.process(specification_to_process, model_name, client, custom_prompt)
                 )
             finally:
                 loop.close()
@@ -955,6 +967,7 @@ def process_drawing_marker_staged():
         stage = req_data.get('stage', 'all')
         ocr_results_from_client = req_data.get('ocr_results')
         ocr_drawings_from_client = req_data.get('ocr_drawings')
+        extracted_text_from_client = req_data.get('extracted_text')
         
         if not drawings or not isinstance(drawings, list) or len(drawings) == 0:
             return create_response(error="drawings is required and must be a non-empty list", status_code=400)
@@ -1176,12 +1189,18 @@ def process_drawing_marker_staged():
                 from backend.services.ai_description.ai_description_processor import AIDescriptionProcessor
                 processor = AIDescriptionProcessor()
                 
+                # 优先使用前端传来的提取文本，其次使用本阶段提取的，最后重新提取
                 text_to_process = specification
-                if 'extracted_text' in locals():
+                if extracted_text_from_client:
+                    text_to_process = extracted_text_from_client
+                    print(f"[STAGED] Using extracted_text from client: {len(text_to_process)} chars")
+                elif 'extracted_text' in locals():
                     text_to_process = extracted_text
+                    print(f"[STAGED] Using extracted_text from extract stage: {len(text_to_process)} chars")
                 elif stage == 'ai':
                     extraction_result = extract_relevant_segments(specification, all_ocr_markers, 1, 8000)
                     text_to_process = extraction_result['extracted_text']
+                    print(f"[STAGED] Re-extracted text: {len(text_to_process)} chars")
                 
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
