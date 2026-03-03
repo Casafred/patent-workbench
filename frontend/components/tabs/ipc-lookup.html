@@ -61,7 +61,7 @@
             </div>
             
             <div style="text-align: center; margin-top: 20px;">
-                <button id="ipc_predict_btn" class="small-button">
+                <button id="ipc_predict_btn" class="small-button" onclick="IPCPredict.performPredict()">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;">
                         <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                     </svg>
@@ -117,8 +117,8 @@
             <div class="config-item">
                 <label for="ipc_search_input">搜索关键词:</label>
                 <div style="display: flex; gap: 10px;">
-                    <input type="text" id="ipc_search_input" placeholder="例如：神经网络、半导体、发动机..." style="flex: 1;">
-                    <button id="ipc_search_btn" class="small-button">搜索</button>
+                    <input type="text" id="ipc_search_input" placeholder="例如：神经网络、半导体、发动机..." style="flex: 1;" onkeypress="if(event.key==='Enter')IPCSearch.performSearch()">
+                    <button id="ipc_search_btn" class="small-button" onclick="IPCSearch.performSearch()">搜索</button>
                 </div>
             </div>
             
