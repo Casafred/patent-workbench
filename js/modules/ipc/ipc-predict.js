@@ -121,6 +121,7 @@ const IPCPredict = (function() {
                         <div class="ipc-result-symbol">
                             <span class="ipc-symbol-text">${IPCCore.formatSymbol(item.symbol)}</span>
                             <span class="ipc-copy-link" onclick="event.stopPropagation(); IPCCore.copyToClipboard('${item.symbol}')">复制</span>
+                            <span class="ipc-copy-link" onclick="event.stopPropagation(); IPCTree.viewInTree('${item.symbol}')" style="color: #3b82f6;">树中查看</span>
                         </div>
                         <div class="ipc-result-code">${item.code || ''}</div>
                     </div>
@@ -153,6 +154,11 @@ const IPCPredict = (function() {
                 <p style="color: #666; font-size: 14px; margin: 0;">
                     IPC分类号: <strong>${symbol}</strong>
                 </p>
+            </div>
+            <div class="ipc-detail-actions">
+                <button class="small-button" onclick="closeIpcDetailModal(); IPCTree.viewInTree('${symbol}')">
+                    在分类树中查看
+                </button>
             </div>
         `;
         modal.style.display = 'flex';

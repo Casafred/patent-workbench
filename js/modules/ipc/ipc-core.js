@@ -157,12 +157,20 @@ const IPCCore = (function() {
 
         const toast = document.createElement('div');
         toast.className = 'ipc-toast';
+        
+        const bgColors = {
+            'success': '#22c55e',
+            'error': '#ef4444',
+            'info': '#3b82f6',
+            'warning': '#f59e0b'
+        };
+        
         toast.style.cssText = `
             position: fixed;
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
-            background: ${type === 'success' ? '#22c55e' : '#ef4444'};
+            background: ${bgColors[type] || bgColors.success};
             color: white;
             padding: 12px 24px;
             border-radius: 8px;

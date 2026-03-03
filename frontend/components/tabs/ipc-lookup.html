@@ -90,7 +90,7 @@
                 </svg>
                 IPC分类树浏览
             </h4>
-            <p class="info-text">点击展开查看IPC分类层级结构，从部(A-H)到小组。</p>
+            <p class="info-text">点击部(A-H)展开查看详细分类层级，选择分类号查看详情。</p>
             
             <div id="ipc_tree_loading" style="display: none; text-align: center; padding: 30px;">
                 <div class="loading-spinner"></div>
@@ -98,7 +98,8 @@
             </div>
             
             <div id="ipc_tree_container" class="ipc-tree-container">
-                <div class="ipc-section-grid" id="ipc_section_grid"></div>
+                <div id="ipc_breadcrumb" class="ipc-breadcrumb"></div>
+                <div id="ipc_tree_content" class="ipc-tree-content"></div>
             </div>
         </div>
     </div>
@@ -117,19 +118,12 @@
             <div class="config-item">
                 <label for="ipc_search_input">搜索关键词:</label>
                 <div style="display: flex; gap: 10px;">
-                    <input type="text" id="ipc_search_input" placeholder="例如：神经网络、半导体、发动机..." style="flex: 1;" onkeypress="if(event.key==='Enter')IPCSearch.performSearch()">
+                    <input type="text" id="ipc_search_input" placeholder="例如：neural network、semiconductor、engine..." style="flex: 1;" onkeypress="if(event.key==='Enter')IPCSearch.performSearch()">
                     <button id="ipc_search_btn" class="small-button" onclick="IPCSearch.performSearch()">搜索</button>
                 </div>
             </div>
             
             <div class="ipc-options-row" style="margin-top: 15px;">
-                <div class="config-item" style="flex: 1;">
-                    <label for="ipc_search_lang">语言:</label>
-                    <select id="ipc_search_lang">
-                        <option value="en">English</option>
-                        <option value="fr">Français</option>
-                    </select>
-                </div>
                 <div class="config-item" style="flex: 1;">
                     <label for="ipc_search_limit">结果数量:</label>
                     <select id="ipc_search_limit">
@@ -155,7 +149,7 @@
     </div>
     
     <div id="ipc_detail_modal" class="modal" style="display: none;">
-        <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-content" style="max-width: 700px;">
             <div class="modal-header">
                 <h3 id="ipc_detail_title">IPC分类详情</h3>
                 <button class="close-modal" onclick="closeIpcDetailModal()">&times;</button>
