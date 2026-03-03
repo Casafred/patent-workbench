@@ -180,6 +180,40 @@ window.LoadingManager = {
     }
 };
 
+function initSidebarNavigation() {
+    const sidebar = document.getElementById('sidebarNav');
+    const mobileToggle = document.getElementById('mobileMenuToggle');
+    const mainWrapper = document.getElementById('mainContentWrapper');
+    
+    if (mobileToggle && sidebar) {
+        mobileToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('mobile-open');
+        });
+        
+        document.addEventListener('click', (e) => {
+            if (sidebar.classList.contains('mobile-open') && 
+                !sidebar.contains(e.target) && 
+                !mobileToggle.contains(e.target)) {
+                sidebar.classList.remove('mobile-open');
+            }
+        });
+    }
+    
+    const sidebarItems = document.querySelectorAll('.sidebar-item');
+    sidebarItems.forEach(item => {
+        item.addEventListener('click', function() {
+            sidebarItems.forEach(i => i.classList.remove('active'));
+            this.classList.add('active');
+            
+            if (window.innerWidth <= 768 && sidebar) {
+                sidebar.classList.remove('mobile-open');
+            }
+        });
+    });
+    
+    console.log('Sidebar navigation initialized');
+}
+
 // =================================================================================
 // 初始化
 // =================================================================================
@@ -197,15 +231,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('❌ Failed to load header component:', error);
     }
     
-    // Load tab navigation component
+    // Load sidebar navigation component
     try {
-        await loadComponent('frontend/components/tab-navigation.html', 'tab-navigation-component');
-        LoadingManager.updateProgress('加载导航组件');
-        if (typeof initTabSlider === 'function') {
-            setTimeout(() => initTabSlider(), 100);
-        }
+        await loadComponent('frontend/components/sidebar-navigation.html', 'sidebar-navigation-component');
+        LoadingManager.updateProgress('加载侧边栏导航');
+        initSidebarNavigation();
     } catch (error) {
-        console.error('❌ Failed to load tab navigation component:', error);
+        console.error('❌ Failed to load sidebar navigation component:', error);
     }
     
     // Load instant chat component and initialize

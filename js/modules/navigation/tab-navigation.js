@@ -78,10 +78,20 @@ function initTabSlider() {
 function switchTab(tabId, clickedButton) {
     document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
     document.querySelectorAll(".tab-button").forEach(el => el.classList.remove("active"));
-    getEl(`${tabId}-tab`).classList.add("active");
+    document.querySelectorAll(".sidebar-item").forEach(el => el.classList.remove("active"));
+    
+    const tabElement = getEl(`${tabId}-tab`);
+    if (tabElement) {
+        tabElement.classList.add("active");
+    }
+    
     if (clickedButton) {
         clickedButton.classList.add("active");
-        updateTabSlider(clickedButton);
+    }
+    
+    const sidebarItem = document.querySelector(`.sidebar-item[data-tab="${tabId}"]`);
+    if (sidebarItem) {
+        sidebarItem.classList.add("active");
     }
 
     if (tabId === 'large_batch') {

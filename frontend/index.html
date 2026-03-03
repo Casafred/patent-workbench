@@ -357,6 +357,8 @@
     <link rel="stylesheet" href="frontend/css/pages/ipc-lookup.css">
     <!-- 暗夜模式CSS -->
     <link rel="stylesheet" href="frontend/css/base/dark-theme.css?v=20260227">
+    <!-- 侧边栏导航CSS -->
+    <link rel="stylesheet" href="frontend/css/components/sidebar.css?v=20260303">
 
         <style>
             /* Vanta.js 背景容器 */
@@ -554,15 +556,18 @@
 
 <div id="vanta-bg"></div>
 
-<div class="container">
-    <!-- Header Component (loaded dynamically) -->
-    <div id="header-component"></div>
-    
-    <div class="main-content">
-        <!-- Tab Navigation Component (loaded dynamically) -->
-        <div id="tab-navigation-component"></div>
+<!-- Sidebar Navigation Component (loaded dynamically) -->
+<div id="sidebar-navigation-component"></div>
 
-        <!-- 功能一：即时对话 -->
+<div class="main-content-wrapper" id="mainContentWrapper">
+    <div class="container">
+        <!-- Header Component (loaded dynamically) -->
+        <div id="header-component"></div>
+        
+        <div class="main-content">
+            <!-- Tab Navigation Component (loaded dynamically) - REMOVED, using sidebar instead -->
+
+            <!-- 功能一：即时对话 -->
 
         <!-- 功能一：即时对话 (loaded dynamically) -->
         <div id="instant-chat-component"></div>
@@ -2286,19 +2291,7 @@ initPatentDrawings();
     </div>
 </div>
 
-<!-- 右侧帮助标签按钮 -->
-<div class="help-tab-container">
-    <a href="frontend/help.html" target="_blank" class="help-tab" title="打开帮助文档">
-        <span class="help-tab-text">帮助</span>
-        <span class="help-tab-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-            </svg>
-        </span>
-    </a>
-</div>
+<!-- 右侧帮助标签按钮 - 移除，已集成到侧边栏 -->
 
 <!-- Core modules - must load before main.js -->
     <script src="js/core/component-loader.js"></script>
