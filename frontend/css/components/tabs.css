@@ -1,32 +1,130 @@
-/* Tab Styles */
+/* Tab Styles - Modern Stacked Design */
 
 .tab-navigation { 
-    padding-top: 30px; 
-    margin-bottom: -1px; 
+    padding-top: 25px; 
+    padding-bottom: 10px;
     position: relative; 
-    z-index: 1; 
+    z-index: 1;
+    overflow-x: auto;
+    overflow-y: hidden;
 }
 
-.main-tab-container, .sub-tab-container { 
+.tab-navigation::-webkit-scrollbar {
+    height: 4px;
+}
+
+.tab-navigation::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 2px;
+}
+
+.tab-navigation::-webkit-scrollbar-thumb {
+    background: rgba(34, 197, 94, 0.3);
+    border-radius: 2px;
+}
+
+.tab-navigation::-webkit-scrollbar-thumb:hover {
+    background: rgba(34, 197, 94, 0.5);
+}
+
+.main-tab-container { 
     display: flex; 
     justify-content: flex-start; 
-    gap: 8px; 
-    border-bottom: none; 
-    margin-bottom: 20px; 
+    align-items: center;
+    gap: 0;
+    margin-bottom: 15px;
+    padding: 8px 5px;
 }
 
 .sub-tab-container { 
+    display: flex;
+    justify-content: flex-start;
+    gap: 8px;
     margin-bottom: 15px; 
     border-bottom: 1px solid var(--border-color); 
 }
 
-.tab-button, .sub-tab-button { 
+.tab-button { 
+    background: linear-gradient(145deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.08));
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    padding: 10px 18px;
+    cursor: pointer;
+    font-size: 0.92em;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 10px;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-left: -12px;
+    z-index: 1;
+}
+
+.tab-button:first-child {
+    margin-left: 0;
+}
+
+.tab-button:nth-child(1) { z-index: 9; }
+.tab-button:nth-child(2) { z-index: 8; }
+.tab-button:nth-child(3) { z-index: 7; }
+.tab-button:nth-child(4) { z-index: 6; }
+.tab-button:nth-child(5) { z-index: 5; }
+.tab-button:nth-child(6) { z-index: 4; }
+.tab-button:nth-child(7) { z-index: 3; }
+.tab-button:nth-child(8) { z-index: 2; }
+.tab-button:nth-child(9) { z-index: 1; }
+
+.tab-button:hover { 
+    color: white;
+    background: linear-gradient(145deg, rgba(34, 197, 94, 0.35), rgba(34, 197, 94, 0.2));
+    border-color: rgba(34, 197, 94, 0.6);
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(34, 197, 94, 0.25), 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 20 !important;
+}
+
+.tab-button.active { 
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-color-dark));
+    color: white;
+    font-weight: 700;
+    border: 1px solid var(--primary-color);
+    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4), 0 3px 10px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transform: translateY(-3px) scale(1.03);
+    z-index: 25 !important;
+}
+
+.tab-button.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 10px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.tab-button.active::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+    border-radius: 2px;
+}
+
+.sub-tab-button { 
     background-color: rgba(34, 197, 94, 0.12); 
     border: 1px solid rgba(34, 197, 94, 0.25); 
-    border-bottom: 1px solid rgba(34, 197, 94, 0.25); 
-    padding: 12px 20px; 
+    padding: 10px 16px; 
     cursor: pointer; 
-    font-size: 1.05em; 
+    font-size: 0.95em; 
     font-weight: 600; 
     color: rgba(255, 255, 255, 0.75); 
     transition: all 0.3s ease; 
@@ -35,7 +133,7 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.tab-button:hover, .sub-tab-button:hover { 
+.sub-tab-button:hover { 
     color: rgba(255, 255, 255, 0.95); 
     background-color: rgba(34, 197, 94, 0.2); 
     border-color: rgba(34, 197, 94, 0.4);
@@ -43,7 +141,7 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
-.tab-button.active, .sub-tab-button.active { 
+.sub-tab-button.active { 
     background: linear-gradient(135deg, var(--primary-color-dark), var(--primary-color)); 
     color: white; 
     font-weight: 700; 
@@ -53,8 +151,7 @@
     position: relative;
 }
 
-/* 选中标签页的底部高亮横条 */
-.tab-button.active::after, .sub-tab-button.active::after {
+.sub-tab-button.active::after {
     content: '';
     position: absolute;
     bottom: -4px;
