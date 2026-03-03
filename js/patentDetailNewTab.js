@@ -2157,8 +2157,22 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     }
                     
                     // 翻译功能
-                    window.showTranslateDialogNewTab = function(event, textType) {
+                    window.currentTranslateColumn = null;
+                    
+                    window.showTranslateDialogNewTab = function(event, textType, column) {
                         event.stopPropagation();
+                        
+                        if (!column) {
+                            const dualLeft = event.currentTarget.closest('.dual-column-left');
+                            const dualRight = event.currentTarget.closest('.dual-column-right');
+                            if (dualLeft) {
+                                column = 'left';
+                            } else if (dualRight) {
+                                column = 'right';
+                            }
+                        }
+                        
+                        window.currentTranslateColumn = column || null;
                         
                         let models = ['glm-4-flash', 'glm-4-long', 'glm-4.7-flash'];
                         if (window.opener && window.opener.AVAILABLE_MODELS && window.opener.AVAILABLE_MODELS.length > 0) {
@@ -2179,12 +2193,15 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                             }
                         }
                         
+                        const existingDialog = document.getElementById('translate-dialog-newtab');
+                        if (existingDialog) existingDialog.remove();
+                        
                         const dialog = document.createElement('div');
                         dialog.id = 'translate-dialog-newtab';
-                        dialog.style.cssText = 'position: fixed; top: 20px; right: 20px; background: white; border-radius: 12px; padding: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); z-index: 10000; min-width: 300px;';
+                        dialog.style.cssText = 'position: fixed; top: 20px; right: 20px; background: white; border-radius: 12px; padding: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); z-index: 10000; min-width: 300px; cursor: move;';
                         
                         dialog.innerHTML = \`
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <div class="drag-handle" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; cursor: move;">
                                 <h4 style="margin: 0; color: #009688; display: flex; align-items: center; gap: 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm7.5-6.923c-.67.204-1.335.82-1.887 1.855A7.97 7.97 0 0 0 5.145 4H7.5V1.077zM4.09 4a9.267 9.267 0 0 1 .64-1.539 6.7 6.7 0 0 1 .597-.933A7.025 7.025 0 0 0 2.255 4H4.09zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a6.958 6.958 0 0 0-.656 2.5h2.49zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5H4.847zM8.5 5v2.5h2.99a12.495 12.495 0 0 0-.337-2.5H8.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5H4.51zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5H8.5zM5.145 12c.138.386.295.744.468 1.068.552 1.035 1.218 1.65 1.887 1.855V12H5.145zm.182 2.472a6.696 6.696 0 0 1-.597-.933A9.268 9.268 0 0 1 4.09 12H2.255a7.024 7.024 0 0 0 3.072 2.472zM3.82 11a13.652 13.652 0 0 1-.312-2.5h-2.49A6.95 6.95 0 0 0 1.674 11H3.82zm10.026-2.5a13.65 13.65 0 0 1-.312 2.5h2.146c.22-.765.368-1.608.426-2.5h-2.26zm-1.068 2.5c-.138.386-.295.744-.468 1.068-.552 1.035-1.218 1.65-1.887 1.855V12h2.355zm.182 2.472A6.696 6.696 0 0 0 13.91 12h1.835a7.024 7.024 0 0 1-3.072 2.472zM14.326 11a6.95 6.95 0 0 0 .656-2.5h-2.49c-.03.877-.138 1.718-.312 2.5h2.146z"/></svg> 选择翻译模型</h4>
                                 <button onclick="document.getElementById('translate-dialog-newtab').remove()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #999;">&times;</button>
                             </div>
@@ -2199,6 +2216,8 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         \`;
                         
                         document.body.appendChild(dialog);
+                        
+                        makeDraggable(dialog);
                         
                         document.getElementById('start-translate-btn').onclick = function() {
                             const model = document.getElementById('translate-model-select').value;
@@ -2367,12 +2386,16 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     };
                     
                     window.showTranslationResultNewTab = function(translations, textType) {
-                        const existingResult = document.getElementById('translation-result-panel');
-                        if (existingResult) existingResult.remove();
+                        const panelId = 'translation-result-panel-' + textType + '-' + Date.now();
+                        const existingPanels = document.querySelectorAll('[id^="translation-result-panel-"]');
+                        const offsetIndex = existingPanels.length;
+                        const offsetX = offsetIndex * 30;
+                        const offsetY = offsetIndex * 30;
                         
                         const panel = document.createElement('div');
-                        panel.id = 'translation-result-panel';
-                        panel.style.cssText = 'position: fixed; top: 80px; right: 20px; width: 450px; max-height: 70vh; background: white; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); z-index: 9999; overflow: hidden;';
+                        panel.id = panelId;
+                        panel.className = 'translation-result-panel';
+                        panel.style.cssText = 'position: fixed; top: ' + (80 + offsetY) + 'px; right: ' + (20 + offsetX) + 'px; width: 450px; min-width: 300px; min-height: 200px; max-height: 70vh; background: white; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); z-index: 9999; overflow: hidden; resize: both; cursor: default;';
                         
                         let content = '';
                         if (textType === 'claims' && translations[0]?.index) {
@@ -2399,17 +2422,117 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         }
                         
                         panel.innerHTML = \`
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: linear-gradient(135deg, #00bcd4 0%, #009688 100%); color: white;">
+                            <div class="drag-handle" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: linear-gradient(135deg, #00bcd4 0%, #009688 100%); color: white; cursor: move;">
                                 <h4 style="margin: 0; display: flex; align-items: center; gap: 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm7.5-6.923c-.67.204-1.335.82-1.887 1.855A7.97 7.97 0 0 0 5.145 4H7.5V1.077zM4.09 4a9.267 9.267 0 0 1 .64-1.539 6.7 6.7 0 0 1 .597-.933A7.025 7.025 0 0 0 2.255 4H4.09zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a6.958 6.958 0 0 0-.656 2.5h2.49zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5H4.847zM8.5 5v2.5h2.99a12.495 12.495 0 0 0-.337-2.5H8.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5H4.51zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5H8.5zM5.145 12c.138.386.295.744.468 1.068.552 1.035 1.218 1.65 1.887 1.855V12H5.145zm.182 2.472a6.696 6.696 0 0 1-.597-.933A9.268 9.268 0 0 1 4.09 12H2.255a7.024 7.024 0 0 0 3.072 2.472zM3.82 11a13.652 13.652 0 0 1-.312-2.5h-2.49A6.95 6.95 0 0 0 1.674 11H3.82zm10.026-2.5a13.65 13.65 0 0 1-.312 2.5h2.146c.22-.765.368-1.608.426-2.5h-2.26zm-1.068 2.5c-.138.386-.295.744-.468 1.068-.552 1.035-1.218 1.65-1.887 1.855V12h2.355zm.182 2.472A6.696 6.696 0 0 0 13.91 12h1.835a7.024 7.024 0 0 1-3.072 2.472zM14.326 11a6.95 6.95 0 0 0 .656-2.5h-2.49c-.03.877-.138 1.718-.312 2.5h2.146z"/></svg> 翻译结果 - \${textType === 'claims' ? '权利要求' : '说明书'}</h4>
-                                <button onclick="document.getElementById('translation-result-panel').remove()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: white;">&times;</button>
+                                <button onclick="document.getElementById('\${panelId}').remove()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: white;">&times;</button>
                             </div>
-                            <div style="max-height: calc(70vh - 60px); overflow-y: auto;">
+                            <div style="max-height: calc(70vh - 120px); overflow-y: auto;">
                                 \${content}
+                            </div>
+                            <div style="padding: 8px 16px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 8px; background: #f9f9f9;">
+                                <button onclick="replaceContentWithTranslation('\${textType}')" style="padding: 6px 12px; border: none; background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); color: white; border-radius: 6px; cursor: pointer; font-size: 12px;">替换原文</button>
+                                <button onclick="document.getElementById('\${panelId}').remove()" style="padding: 6px 12px; border: 1px solid #ddd; background: white; border-radius: 6px; cursor: pointer; font-size: 12px;">关闭</button>
                             </div>
                         \`;
                         
                         document.body.appendChild(panel);
+                        
+                        makeDraggable(panel);
+                        
+                        window.currentTranslations = window.currentTranslations || {};
+                        window.currentTranslations[textType] = translations;
                     };
+                    
+                    window.replaceContentWithTranslation = function(textType) {
+                        const translations = window.currentTranslations?.[textType];
+                        if (!translations) {
+                            alert('没有可用的翻译结果');
+                            return;
+                        }
+                        
+                        const column = window.currentTranslateColumn;
+                        let targetContainer;
+                        
+                        if (column === 'left' || column === 'right') {
+                            targetContainer = document.querySelector('.dual-column-' + column);
+                        }
+                        
+                        if (textType === 'claims') {
+                            if (targetContainer) {
+                                const claimsList = targetContainer.querySelector('.claims-list');
+                                if (claimsList) {
+                                    let newHtml = '';
+                                    translations.forEach(t => {
+                                        newHtml += '<div class="claim-item" data-claim-number="' + t.index + '"><div class="claim-number">权利要求 ' + t.index + '</div><div class="claim-text">' + t.translated + '</div></div>';
+                                    });
+                                    claimsList.innerHTML = newHtml;
+                                }
+                            } else {
+                                const claimsList = document.querySelector('.claims-list');
+                                if (claimsList) {
+                                    let newHtml = '';
+                                    translations.forEach(t => {
+                                        newHtml += '<div class="claim-item" data-claim-number="' + t.index + '"><div class="claim-number">权利要求 ' + t.index + '</div><div class="claim-text">' + t.translated + '</div></div>';
+                                    });
+                                    claimsList.innerHTML = newHtml;
+                                }
+                            }
+                        } else if (textType === 'description') {
+                            if (targetContainer) {
+                                const descContent = targetContainer.querySelector('.abstract-box[data-section-content="description"]');
+                                if (descContent) {
+                                    let newHtml = '';
+                                    translations.forEach(t => {
+                                        newHtml += t.translated + '<br/><br/>';
+                                    });
+                                    descContent.innerHTML = newHtml;
+                                }
+                            } else {
+                                const descContent = document.querySelector('.abstract-box[data-section-content="description"]');
+                                if (descContent) {
+                                    let newHtml = '';
+                                    translations.forEach(t => {
+                                        newHtml += t.translated + '<br/><br/>';
+                                    });
+                                    descContent.innerHTML = newHtml;
+                                }
+                            }
+                        }
+                    };
+                    
+                    function makeDraggable(element) {
+                        const dragHandle = element.querySelector('.drag-handle');
+                        if (!dragHandle) return;
+                        
+                        let isDragging = false;
+                        let startX, startY, startLeft, startTop;
+                        
+                        dragHandle.addEventListener('mousedown', function(e) {
+                            if (e.target.tagName === 'BUTTON') return;
+                            isDragging = true;
+                            startX = e.clientX;
+                            startY = e.clientY;
+                            const rect = element.getBoundingClientRect();
+                            startLeft = rect.left;
+                            startTop = rect.top;
+                            element.style.right = 'auto';
+                            element.style.left = startLeft + 'px';
+                            element.style.top = startTop + 'px';
+                            e.preventDefault();
+                        });
+                        
+                        document.addEventListener('mousemove', function(e) {
+                            if (!isDragging) return;
+                            const dx = e.clientX - startX;
+                            const dy = e.clientY - startY;
+                            element.style.left = (startLeft + dx) + 'px';
+                            element.style.top = (startTop + dy) + 'px';
+                        });
+                        
+                        document.addEventListener('mouseup', function() {
+                            isDragging = false;
+                        });
+                    }
                 });
             </script>
         </body>
