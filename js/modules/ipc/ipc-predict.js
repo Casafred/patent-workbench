@@ -44,7 +44,7 @@ const IPCPredict = (function() {
             IPCCore.showResult('ipc_predict_result');
         } catch (error) {
             console.error('预测失败:', error);
-            IPCCore.showError('ipc_predict_result', error.message);
+            renderError(error.message, text, lang);
             IPCCore.showResult('ipc_predict_result');
         } finally {
             IPCCore.hideLoading('ipc_predict_loading');
@@ -122,6 +122,92 @@ const IPCPredict = (function() {
         IPCSearch.showDetail(symbol);
     }
 
+    function renderError(message, text, lang) {
+        const listEl = document.getElementById('ipc_predict_list');
+        const statsEl = document.getElementById('ipc_predict_stats');
+        
+        if (statsEl) {
+            statsEl.innerHTML = '';
+        }
+        
+        if (!listEl) return;
+        
+        const isWipoDown = message.includes('500') || message.includes('不可用') || message.includes('WIPO');
+        
+        if (isWipoDown) {
+            listEl.innerHTML = `
+                <div class="ipc-error-message" style="margin-bottom: 15px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    WIPO IPCCAT 服务暂时不可用
+                </div>
+                <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                    <h5 style="margin: 0 0 10px 0; color: #166534;">替代方案：使用关键词搜索</h5>
+                    <p style="margin: 0 0 10px 0; font-size: 13px; color: #166534;">
+                        您可以使用关键词搜索功能查找相关的IPC分类号。
+                    </p>
+                    <button class="small-button" onclick="IPCPredict.fallbackToSearch('${text.replace(/'/g, "\\'")}', '${lang}')">
+                        切换到关键词搜索
+                    </button>
+                </div>
+                <div style="font-size: 12px; color: #666;">
+                    <strong>提示：</strong>IPCCAT 是 WIPO 提供的 AI 分类预测服务，偶尔会出现服务中断。关键词搜索功能使用不同的 API 端点，通常更加稳定。
+                </div>
+            `;
+        } else {
+            listEl.innerHTML = `
+                <div class="ipc-error-message">
+                    ${message}
+                </div>
+            `;
+        }
+    }
+
+    async function fallbackToSearch(text, lang) {
+        switchIpcSubTab('search');
+        
+        const searchInput = document.getElementById('ipc_search_input');
+        if (searchInput) {
+            const keywords = extractKeywords(text);
+            searchInput.value = keywords;
+        }
+        
+        const searchLang = document.getElementById('ipc_search_lang');
+        if (searchLang && (lang === 'zh' || lang === 'en')) {
+            searchLang.value = 'en';
+        }
+        
+        setTimeout(() => {
+            IPCSearch.performSearch();
+        }, 300);
+    }
+
+    function extractKeywords(text) {
+        const stopWords = ['的', '一种', '包括', '其特征', '所述', '方法', '装置', '系统', '设备', 
+                          'a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+                          'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
+                          'should', 'may', 'might', 'must', 'shall', 'can', 'need', 'dare',
+                          'ought', 'used', 'to', 'of', 'in', 'for', 'on', 'with', 'at', 'by',
+                          'from', 'as', 'into', 'through', 'during', 'before', 'after',
+                          'above', 'below', 'between', 'under', 'again', 'further', 'then',
+                          'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'each',
+                          'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not',
+                          'only', 'own', 'same', 'so', 'than', 'too', 'very', 'just', 'and',
+                          'but', 'if', 'or', 'because', 'until', 'while', 'although', 'though'];
+        
+        let words = text.toLowerCase()
+            .replace(/[，。！？、；：""''（）【】《》\n\r\t]/g, ' ')
+            .split(/\s+/)
+            .filter(word => word.length > 2 && !stopWords.includes(word));
+        
+        const uniqueWords = [...new Set(words)];
+        
+        return uniqueWords.slice(0, 5).join(' ');
+    }
+
     function clearInput() {
         const input = document.getElementById('ipc_predict_input');
         if (input) {
@@ -146,7 +232,10 @@ const IPCPredict = (function() {
         performPredict,
         showDetail,
         clearInput,
-        loadExample
+        loadExample,
+        renderError,
+        fallbackToSearch,
+        extractKeywords
     };
 })();
 
