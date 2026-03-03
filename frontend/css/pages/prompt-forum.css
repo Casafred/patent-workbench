@@ -166,10 +166,28 @@
     right: 8px;
     top: 50%;
     transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    padding: 0;
     background: transparent;
     border: none;
+    border-radius: 4px;
     cursor: pointer;
     color: var(--text-color-secondary, #6b7280);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.forum-search-btn:hover {
+    background: var(--bg-color-hover, #f3f4f6);
+    color: var(--primary-color, #059669);
+}
+
+[data-theme="dark"] .forum-search-btn:hover {
+    background: #2d2d44;
+    color: #34d399;
 }
 
 .forum-categories h4,

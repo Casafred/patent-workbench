@@ -734,26 +734,32 @@ const PromptForum = (function() {
     }
     
     function importToFeature1(prompt) {
-        if (typeof window.addPersona === 'function') {
-            const persona = {
-                id: `imported_${prompt.id}`,
-                name: prompt.title,
-                system: prompt.content,
-                userTemplate: '',
-                isCustom: true
-            };
+        const persona = {
+            id: `imported_${prompt.id}_${Date.now()}`,
+            name: prompt.title,
+            system: prompt.content,
+            userTemplate: '',
+            isCustom: true
+        };
+        
+        if (window.appState && window.appState.chat && window.appState.chat.personas) {
+            window.appState.chat.personas[persona.id] = persona;
             
-            if (window.appState && window.appState.chat && window.appState.chat.personas) {
-                window.appState.chat.personas[persona.id] = persona;
-                if (typeof window.savePersonas === 'function') {
-                    window.savePersonas();
-                }
+            if (typeof window.savePersonas === 'function') {
+                window.savePersonas();
+            } else if (window.userCacheStorage) {
+                window.userCacheStorage.setJSON('chatPersonas', window.appState.chat.personas);
+            }
+            
+            if (typeof window.updatePersonaSelector === 'function') {
+                window.updatePersonaSelector();
             }
             
             alert(`提示词「${prompt.title}」已导入到即时聊天角色`);
             
-            if (typeof window.switchToTab === 'function') {
-                window.switchToTab('instant-chat');
+            const instantChatTab = document.querySelector('[data-tab="instant-chat"]');
+            if (instantChatTab) {
+                instantChatTab.click();
             }
         } else {
             copyToClipboard(prompt.content);
@@ -762,28 +768,27 @@ const PromptForum = (function() {
     }
     
     function importToFeature5(prompt) {
-        if (typeof window.unifiedBatchState !== 'undefined') {
-            const template = {
-                id: `imported_${prompt.id}`,
+        if (window.UnifiedBatch && window.UnifiedBatch.template) {
+            const templateData = {
                 name: prompt.title,
                 systemPrompt: prompt.content,
                 userPromptTemplate: '{{INPUT}}',
-                model: prompt.model || 'GLM-4-Flash',
+                model: prompt.model || 'GLM-4.7-Flash',
                 temperature: prompt.temperature || 0.1,
                 outputFields: prompt.output_fields || []
             };
             
-            if (window.unifiedBatchState.customTemplates) {
-                window.unifiedBatchState.customTemplates.push(template);
-                if (typeof window.unifiedBatchState.saveCustomTemplates === 'function') {
-                    window.unifiedBatchState.saveCustomTemplates();
+            const result = window.UnifiedBatch.template.importTemplate(templateData);
+            
+            if (result.success) {
+                alert(`提示词「${prompt.title}」已导入到批量处理模板`);
+                
+                const unifiedBatchTab = document.querySelector('[data-tab="unified-batch"]');
+                if (unifiedBatchTab) {
+                    unifiedBatchTab.click();
                 }
-            }
-            
-            alert(`提示词「${prompt.title}」已导入到批量处理模板`);
-            
-            if (typeof window.switchToTab === 'function') {
-                window.switchToTab('unified-batch');
+            } else {
+                alert(result.message || '导入失败');
             }
         } else {
             copyToClipboard(prompt.content);

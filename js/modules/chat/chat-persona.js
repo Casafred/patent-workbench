@@ -162,3 +162,60 @@ function saveCurrentPersona() {
     updateCurrentConversationPersona();
     alert('角色已更新并保存到本地！');
 }
+
+window.loadPersonas = loadPersonas;
+window.savePersonas = savePersonas;
+window.updatePersonaSelector = updatePersonaSelector;
+window.updatePersonaEditor = updatePersonaEditor;
+window.addPersona = addPersona;
+window.deletePersona = deletePersona;
+window.saveCurrentPersona = saveCurrentPersona;
+window.saveLastUsedPersona = saveLastUsedPersona;
+window.getLastUsedPersona = getLastUsedPersona;
+window.updatePersonaIndicator = updatePersonaIndicator;
+
+/**
+ * Save the last used persona ID to localStorage
+ * @param {string} personaId - The persona ID to save
+ */
+function saveLastUsedPersona(personaId) {
+    if (!personaId) return;
+    window.userCacheStorage.set('lastUsedPersonaId', personaId);
+}
+
+/**
+ * Get the last used persona ID from localStorage
+ * @returns {string|null} The last used persona ID or null if not set
+ */
+function getLastUsedPersona() {
+    return window.userCacheStorage.get('lastUsedPersonaId');
+}
+
+/**
+ * Update the persona indicator display
+ * Shows the current persona name in the floating indicator
+ */
+function updatePersonaIndicator() {
+    const indicatorText = document.getElementById('chat_persona_indicator_text');
+    const chatPersonaSelect = document.getElementById('chat_persona_select');
+    
+    if (!indicatorText) return;
+    
+    let personaId = null;
+    let personaName = '通用助手';
+    
+    if (chatPersonaSelect && chatPersonaSelect.value) {
+        personaId = chatPersonaSelect.value;
+    }
+    
+    if (personaId && appState.chat.personas[personaId]) {
+        personaName = appState.chat.personas[personaId].name;
+    } else {
+        const lastUsedId = getLastUsedPersona();
+        if (lastUsedId && appState.chat.personas[lastUsedId]) {
+            personaName = appState.chat.personas[lastUsedId].name;
+        }
+    }
+    
+    indicatorText.textContent = `当前角色：${personaName}`;
+}
