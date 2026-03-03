@@ -1722,7 +1722,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         // 创建图文对照结构
                         const imageTextWrapper = document.createElement('div');
                         imageTextWrapper.className = 'image-text-wrapper';
-                        imageTextWrapper.style.cssText = 'display: flex; gap: 20px; padding: 15px; height: calc(100vh - 180px);';
+                        imageTextWrapper.style.cssText = 'display: flex; gap: 20px; padding: 15px; height: calc(100vh - 80px);';
                         
                         // 左栏：专利详情内容
                         const leftColumn = document.createElement('div');
