@@ -40,6 +40,36 @@ function updateStepperState(stepper, activeStepElement) {
 }
 
 /**
+ * 更新滑动指示器位置
+ * @param {HTMLElement} activeButton - 当前激活的标签按钮
+ */
+function updateTabSlider(activeButton) {
+    const slider = document.getElementById('tabSlider');
+    if (!slider || !activeButton) return;
+    
+    const container = activeButton.closest('.main-tab-container');
+    if (!container) return;
+    
+    const containerRect = container.getBoundingClientRect();
+    const buttonRect = activeButton.getBoundingClientRect();
+    
+    const leftOffset = buttonRect.left - containerRect.left;
+    
+    slider.style.width = `${buttonRect.width}px`;
+    slider.style.transform = `translateX(${leftOffset - 6}px)`;
+}
+
+/**
+ * 初始化滑动指示器
+ */
+function initTabSlider() {
+    const activeButton = document.querySelector('.tab-button.active');
+    if (activeButton) {
+        updateTabSlider(activeButton);
+    }
+}
+
+/**
  * 切换主标签页
  * 
  * @param {string} tabId - 标签页ID (不含'-tab'后缀)
@@ -49,19 +79,19 @@ function switchTab(tabId, clickedButton) {
     document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
     document.querySelectorAll(".tab-button").forEach(el => el.classList.remove("active"));
     getEl(`${tabId}-tab`).classList.add("active");
-    if (clickedButton) clickedButton.classList.add("active");
+    if (clickedButton) {
+        clickedButton.classList.add("active");
+        updateTabSlider(clickedButton);
+    }
 
-    // 当切换到功能三标签页时，确保模板选择器能够正确初始化
     if (tabId === 'large_batch') {
         setTimeout(() => {
-            // 首先激活功能三内部的第一个步骤
             const largeBatchFirstStep = document.querySelector('#large_batch-tab .step-item');
             if (largeBatchFirstStep) {
                 switchSubTab('generator', largeBatchFirstStep);
                 console.log('✅ 功能三内部步骤已激活');
             }
 
-            // 然后初始化功能三独立的模板选择器
             if (typeof updateTemplateSelector === 'function') {
                 updateTemplateSelector();
                 console.log('✅ 功能三标签页切换，独立模板选择器已重新初始化');
@@ -69,7 +99,6 @@ function switchTab(tabId, clickedButton) {
         }, 100);
     }
 
-    // 当切换到功能四(权利要求对比)标签页时，确保默认激活"手动输入对比"子标签页
     if (tabId === 'claims_comparison') {
         setTimeout(() => {
             const manualSubTab = document.getElementById('manual-sub-tab');
@@ -77,11 +106,9 @@ function switchTab(tabId, clickedButton) {
             const manualButton = document.querySelector('#claims_comparison-tab .sub-tab-button[data-sub-tab="manual"]');
 
             if (manualSubTab && familySubTab) {
-                // 激活手动输入对比子标签页
                 manualSubTab.classList.add('active');
                 familySubTab.classList.remove('active');
 
-                // 激活手动输入对比按钮
                 if (manualButton) {
                     document.querySelectorAll('#claims_comparison-tab .sub-tab-button').forEach(btn => btn.classList.remove('active'));
                     manualButton.classList.add('active');
@@ -233,6 +260,8 @@ function switchClaimsComparisonSubTab(subTabId, clickedButton) {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         updateStepperState,
+        updateTabSlider,
+        initTabSlider,
         switchTab,
         switchAsyncSubTab,
         switchSubTab,

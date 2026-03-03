@@ -1,6 +1,7 @@
 <div class="tab-navigation">
     <div class="main-tab-container">
-        <button class="tab-button" onclick="switchTab('instant', this)">AI智能体对话</button>
+        <div class="tab-slider" id="tabSlider"></div>
+        <button class="tab-button active" onclick="switchTab('instant', this)">AI智能体对话</button>
         <button class="tab-button" onclick="switchTab('unified_batch', this)">文本批量智能分析</button>
         <button class="tab-button" onclick="switchTab('local_patent_lib', this)">本地数据表管理</button>
         <button class="tab-button" onclick="switchTab('claims_comparison', this)">权利要求智能比对</button>

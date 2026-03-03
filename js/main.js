@@ -201,6 +201,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         await loadComponent('frontend/components/tab-navigation.html', 'tab-navigation-component');
         LoadingManager.updateProgress('加载导航组件');
+        if (typeof initTabSlider === 'function') {
+            setTimeout(() => initTabSlider(), 100);
+        }
     } catch (error) {
         console.error('❌ Failed to load tab navigation component:', error);
     }
