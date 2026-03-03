@@ -1583,11 +1583,11 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         
                         const leftColumn = document.createElement('div');
                         leftColumn.className = 'dual-column-left';
-                        leftColumn.style.cssText = 'flex: 1; overflow-y: auto; max-height: calc(100vh - 200px); padding-right: 15px;';
+                        leftColumn.style.cssText = 'flex: 1; overflow-y: auto; max-height: calc(100vh - 80px); padding-right: 15px;';
                         
                         const rightColumn = document.createElement('div');
                         rightColumn.className = 'dual-column-right';
-                        rightColumn.style.cssText = 'flex: 1; overflow-y: auto; max-height: calc(100vh - 200px); padding-left: 15px; border-left: 2px solid #e0e0e0;';
+                        rightColumn.style.cssText = 'flex: 1; overflow-y: auto; max-height: calc(100vh - 80px); padding-left: 15px; border-left: 2px solid #e0e0e0;';
                         
                         // 左右两栏都显示全部内容（独立滚动）
                         sections.forEach((section) => {
@@ -1923,35 +1923,48 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     // 关闭图文对照模式
                     toggleImageTextMode();
                     
-                    // 调用智能标记功能
+                    // 调用与附图查看器相同的智能标记逻辑
                     const patentData = pageData;
                     const description = patentData.description || '';
                     const patentTitle = patentData.title || currentPatentNumber;
+                    const drawings = window.newTabDrawings || [];
                     
-                    if (description && window.patentDrawingsData) {
-                        const drawings = window.newTabDrawings || [];
-                        const images = drawings.map((url, index) => ({
-                            url: url,
-                            title: '图' + (index + 1),
-                            detectedNumbers: [],
-                            referenceMap: {}
-                        }));
-                        
-                        window.currentViewerImages = images;
-                        window.currentTaskId = null;
-                        
-                        if (typeof openMultiImageViewer === 'function') {
-                            openMultiImageViewer(imageTextViewerIndex);
-                        } else {
-                            const viewer = new MultiImageViewerV8(images, {
-                                fontSize: 22,
-                                highlightColor: '#FFD700'
-                            });
-                            viewer.open(imageTextViewerIndex, null);
+                    console.log('[imageTextSmartMarker] 准备传递数据到功能七:', {
+                        patentNumber: currentPatentNumber,
+                        patentTitle,
+                        drawingsCount: drawings.length,
+                        descriptionLength: description.length
+                    });
+                    
+                    if (typeof window.opener !== 'undefined' && window.opener && !window.opener.closed) {
+                        if (!window.opener.patentDrawingsData) {
+                            window.opener.patentDrawingsData = {};
                         }
-                    } else {
-                        alert('请先在主页面打开智能标记功能');
+                        window.opener.patentDrawingsData[currentPatentNumber] = drawings;
+                        
+                        if (!window.opener.patentResults) {
+                            window.opener.patentResults = [];
+                        }
+                        const existingIndex = window.opener.patentResults.findIndex(r => r.patent_number === currentPatentNumber);
+                        const patentResult = {
+                            patent_number: currentPatentNumber,
+                            success: true,
+                            data: patentData
+                        };
+                        if (existingIndex >= 0) {
+                            window.opener.patentResults[existingIndex] = patentResult;
+                        } else {
+                            window.opener.patentResults.push(patentResult);
+                        }
+                        
+                        if (typeof window.opener.sendToDrawingMarker === 'function') {
+                            window.opener.sendToDrawingMarker(currentPatentNumber);
+                            window.opener.focus();
+                            return;
+                        }
                     }
+                    
+                    alert('❌ 请在主页面中使用此功能，或确保主页面已加载完成');
                 }
                 
                 // 事件Tab切换
