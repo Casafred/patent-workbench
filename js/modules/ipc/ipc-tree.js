@@ -6,6 +6,8 @@
 const IPCTree = (function() {
     let isInitialized = false;
     let expandedNodes = new Set();
+    let rootNodes = [];
+    let keyMap = {};
 
     async function initialize() {
         if (isInitialized) return;
@@ -13,15 +15,70 @@ const IPCTree = (function() {
         IPCCore.showLoading('ipc_tree_loading');
 
         try {
-            const sections = await IPCCore.getSections();
-            renderSections(sections);
+            const data = await IPCCore.getTree('l1');
+            rootNodes = data.data || data || [];
+            
+            rootNodes.forEach(node => {
+                if (node.symbolcode) {
+                    keyMap[node.symbolcode] = node.key;
+                }
+            });
+            
+            renderSectionsFromRoots(rootNodes);
             isInitialized = true;
         } catch (error) {
             console.error('加载分类树失败:', error);
-            IPCCore.showError('ipc_tree_container', '加载分类树失败: ' + error.message);
+            const sections = await IPCCore.getSections();
+            renderSections(sections);
+            isInitialized = true;
         } finally {
             IPCCore.hideLoading('ipc_tree_loading');
         }
+    }
+
+    function renderSectionsFromRoots(nodes) {
+        const container = document.getElementById('ipc_section_grid');
+        if (!container) return;
+
+        const sectionTitles = {
+            'A': '人类生活需要',
+            'B': '作业；运输',
+            'C': '化学；冶金',
+            'D': '纺织；造纸',
+            'E': '固定建筑物',
+            'F': '机械工程；照明；加热；武器；爆破',
+            'G': '物理',
+            'H': '电学'
+        };
+
+        let html = '';
+        nodes.forEach(node => {
+            const symbol = node.symbol || node.symbolcode;
+            const title = sectionTitles[symbol] || node.title1 || '';
+            const key = node.key;
+            
+            html += `
+                <div class="ipc-section-card" id="section_${symbol}" data-key="${key}">
+                    <div class="ipc-section-header" onclick="IPCTree.toggleSection('${symbol}', '${key}')">
+                        <span class="ipc-section-symbol">${symbol}</span>
+                        <span class="ipc-section-title">${title}</span>
+                        <span class="ipc-section-toggle">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </span>
+                    </div>
+                    <div class="ipc-section-children" id="children_${symbol}">
+                        <div class="ipc-loading-inline">
+                            <div class="loading-spinner"></div>
+                            <span>加载中...</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
     }
 
     function renderSections(sections) {
@@ -32,7 +89,7 @@ const IPCTree = (function() {
         sections.forEach(section => {
             html += `
                 <div class="ipc-section-card" id="section_${section.symbol}">
-                    <div class="ipc-section-header" onclick="IPCTree.toggleSection('${section.symbol}')">
+                    <div class="ipc-section-header" onclick="IPCTree.toggleSection('${section.symbol}', '')">
                         <span class="ipc-section-symbol">${section.symbol}</span>
                         <span class="ipc-section-title">${section.title}</span>
                         <span class="ipc-section-toggle">
@@ -54,7 +111,7 @@ const IPCTree = (function() {
         container.innerHTML = html;
     }
 
-    async function toggleSection(symbol) {
+    async function toggleSection(symbol, key) {
         const card = document.getElementById(`section_${symbol}`);
         const childrenContainer = document.getElementById(`children_${symbol}`);
 
@@ -70,7 +127,7 @@ const IPCTree = (function() {
             expandedNodes.add(symbol);
 
             if (childrenContainer.querySelector('.ipc-loading-inline')) {
-                await loadChildren(symbol, 'l1', symbol);
+                await loadChildren(symbol, 'l1', key);
             }
         }
     }
@@ -82,7 +139,8 @@ const IPCTree = (function() {
                 title1: child.title,
                 folder: child.hasChildren,
                 lazy: child.hasChildren,
-                key: child.symbol
+                key: child.symbol,
+                symbolcode: child.symbol
             }));
         }
         return null;
@@ -93,8 +151,20 @@ const IPCTree = (function() {
         if (!container) return;
 
         try {
+            if (!key) {
+                throw new Error('缺少key参数');
+            }
+            
             const data = await IPCCore.getTree(level, key);
-            renderChildren(container, data.data || data, symbol);
+            const nodes = data.data || data;
+            
+            nodes.forEach(node => {
+                if (node.symbolcode) {
+                    keyMap[node.symbolcode] = node.key;
+                }
+            });
+            
+            renderChildren(container, nodes, symbol);
         } catch (error) {
             console.error('加载子节点失败:', error);
             
@@ -135,13 +205,14 @@ const IPCTree = (function() {
         nodes.forEach(node => {
             const hasChildren = node.folder || node.lazy;
             const nodeKey = node.key || node.symbolcode || '';
-            const nodeSymbol = node.symbol || '';
+            const nodeSymbol = node.symbol || node.symbolcode || '';
             const nodeTitle = node.title1 || node.text || '';
 
             html += `
                 <div class="ipc-tree-node ${hasChildren ? 'has-children' : ''}" 
                      id="node_${nodeKey}"
-                     onclick="IPCTree.handleNodeClick(event, '${nodeKey}', '${nodeSymbol}', ${hasChildren})">
+                     data-key="${nodeKey}"
+                     data-symbol="${nodeSymbol}">
                     ${nodeSymbol ? `<strong>${IPCCore.formatSymbol(nodeSymbol)}</strong>` : ''}
                     ${nodeTitle ? ` - ${nodeTitle}` : ''}
                     ${nodeSymbol ? `<button class="ipc-copy-btn" onclick="event.stopPropagation(); IPCCore.copyToClipboard('${nodeSymbol}')">复制</button>` : ''}
@@ -151,6 +222,25 @@ const IPCTree = (function() {
         });
 
         container.innerHTML = html;
+        
+        if (!isLocalData) {
+            container.querySelectorAll('.ipc-tree-node.has-children').forEach(nodeEl => {
+                nodeEl.addEventListener('click', function(e) {
+                    const key = this.dataset.key;
+                    const symbol = this.dataset.symbol;
+                    handleNodeClick(e, key, symbol, true);
+                });
+            });
+            
+            container.querySelectorAll('.ipc-tree-node:not(.has-children)').forEach(nodeEl => {
+                nodeEl.addEventListener('click', function(e) {
+                    const symbol = this.dataset.symbol;
+                    if (symbol) {
+                        IPCSearch.showDetail(symbol);
+                    }
+                });
+            });
+        }
     }
 
     async function handleNodeClick(event, key, symbol, hasChildren) {
@@ -181,7 +271,15 @@ const IPCTree = (function() {
 
                     try {
                         const data = await IPCCore.getTree('l1', key);
-                        renderChildren(childrenEl, data.data || data, key);
+                        const nodes = data.data || data;
+                        
+                        nodes.forEach(node => {
+                            if (node.symbolcode) {
+                                keyMap[node.symbolcode] = node.key;
+                            }
+                        });
+                        
+                        renderChildren(childrenEl, nodes, key);
                     } catch (error) {
                         const localData = getLocalData(key);
                         if (localData && localData.length > 0) {
@@ -223,7 +321,8 @@ const IPCTree = (function() {
     function expandAll() {
         document.querySelectorAll('.ipc-section-card:not(.expanded)').forEach(card => {
             const symbol = card.id.replace('section_', '');
-            toggleSection(symbol);
+            const key = card.dataset.key || '';
+            toggleSection(symbol, key);
         });
     }
 

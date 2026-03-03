@@ -101,12 +101,18 @@ def predict():
         return create_response(data=cached)
     
     try:
+        level_map = {
+            'class': 'CLASS',
+            'subclass': 'SUBCLASS',
+            'maingroup': 'MAINGROUP',
+            'subgroup': 'SUBGROUP'
+        }
+        
         params = {
-            'q': text,
-            'version': 'latest',
+            'text': text,
             'lang': lang,
-            'level': level,
-            'limit': limit
+            'numberofpredictions': limit,
+            'hierarchiclevel': level_map.get(level, 'SUBGROUP')
         }
         
         headers = {
@@ -116,7 +122,7 @@ def predict():
         }
         
         response = requests.get(
-            f"{WIPO_API_BASE}/search/advanced/ipccat",
+            f"{WIPO_API_BASE}/search/ipccat",
             params=params,
             headers=headers,
             timeout=30
@@ -134,10 +140,15 @@ def predict():
         
         data = response.json()
         
+        if data.get('code', 0) != 0:
+            return create_response(
+                error=f"IPCCAT错误: {data.get('message', '未知错误')}"
+            )
+        
         result = {
             'query': text[:100] + '...' if len(text) > 100 else text,
             'lang': data.get('lang', lang),
-            'version': data.get('version', 'latest'),
+            'version': 'latest',
             'count': data.get('count', 0),
             'results': []
         }
