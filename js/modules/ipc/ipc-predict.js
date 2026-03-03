@@ -155,7 +155,8 @@ const IPCPredict = (function() {
                 </p>
             </div>
         `;
-        modal.style.display = 'block';
+        modal.style.display = 'flex';
+        modal.classList.add('show');
     }
 
     function renderError(message, text, lang) {
