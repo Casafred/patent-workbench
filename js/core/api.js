@@ -248,11 +248,22 @@ function getProviderHeaders(model) {
  * @returns {Promise<any>} - API响应数据或ReadableStreamDefaultReader
  * @throws {Error} - API调用失败时抛出错误
  */
+const NO_API_KEY_REQUIRED_ENDPOINTS = [
+    '/patent/search',
+    '/patent/version',
+    '/patent/family/',
+];
+
+function isApiKeyRequired(endpoint) {
+    return !NO_API_KEY_REQUIRED_ENDPOINTS.some(e => endpoint.startsWith(e));
+}
+
 async function apiCall(endpoint, body, method = 'POST', isStream = false, timeout = null) {
     const model = body && !(body instanceof FormData) ? body.model : null;
     const currentApiKey = getCurrentApiKey(model);
+    const requiresApiKey = isApiKeyRequired(endpoint);
     
-    if (!currentApiKey) {
+    if (requiresApiKey && !currentApiKey) {
         const provider = getProviderForModel(model);
         const providerName = provider === 'aliyun' ? '阿里云百炼' : '智谱AI';
         const errorMsg = `API Key 未配置。请设置您的 ${providerName} API Key。`;
@@ -260,7 +271,7 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false, timeou
         throw new Error(errorMsg);
     }
 
-    const headers = getProviderHeaders(model);
+    const headers = requiresApiKey ? getProviderHeaders(model) : {};
 
     // 只有当 body 不是 FormData 时，才设置 Content-Type 为 JSON
     if (body && !(body instanceof FormData)) {
