@@ -1503,6 +1503,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         if (typeof window.opener.sendToDrawingMarker === 'function') {
                             window.opener.sendToDrawingMarker(currentPatentNumber);
                             window.opener.focus();
+                            alert('✅ 已传递数据到主页面，请在主页面中选择要标记的图片');
                             return;
                         }
                     }
@@ -1960,6 +1961,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         if (typeof window.opener.sendToDrawingMarker === 'function') {
                             window.opener.sendToDrawingMarker(currentPatentNumber);
                             window.opener.focus();
+                            alert('✅ 已传递数据到主页面，请在主页面中选择要标记的图片');
                             return;
                         }
                     }
