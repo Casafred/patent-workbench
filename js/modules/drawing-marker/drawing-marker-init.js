@@ -384,7 +384,12 @@ window.fillDrawingMarkerData = async function(drawings, description, patentNumbe
                 throw new Error(proxyResult.error || 'Proxy returned no data');
             }
             
-            const base64Data = proxyResult.data;
+            let base64Data = proxyResult.data;
+            base64Data = base64Data.replace(/\s/g, '');
+            base64Data = base64Data.replace(/-/g, '+').replace(/_/g, '/');
+            while (base64Data.length % 4) {
+                base64Data += '=';
+            }
             const contentType = proxyResult.content_type || 'image/png';
             const binaryString = atob(base64Data);
             const bytes = new Uint8Array(binaryString.length);

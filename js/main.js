@@ -1861,6 +1861,169 @@ window.copyFieldContent = function(patentNumber, fieldKey, event) {
         .catch(() => alert('❌ 复制失败'));
 };
 
+// 图片选择模态框 - 用于选择要传递到智能标记功能的附图
+window.showDrawingSelectorModal = function(patentNumber, patentTitle, description) {
+    const drawings = window.patentDrawingsData && window.patentDrawingsData[patentNumber];
+    if (!drawings || drawings.length === 0) {
+        alert('❌ 该专利没有附图数据');
+        return;
+    }
+    
+    const existingModal = document.getElementById('drawing-selector-modal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    const dialog = document.createElement('div');
+    dialog.id = 'drawing-selector-modal';
+    dialog.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 10001;';
+    
+    const thumbnailsHTML = drawings.map((url, index) => `
+        <div class="drawing-selector-item" data-index="${index}" data-url="${url}" style="position: relative; cursor: pointer; border: 2px solid #e0e0e0; border-radius: 8px; overflow: hidden; transition: all 0.2s; background: #f5f5f5;">
+            <img src="${url}" alt="附图 ${index + 1}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text x=%2250%%22 y=%2250%%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2212%22>加载失败</text></svg>'">
+            <div class="drawing-selector-checkbox" style="position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; background: rgba(255,255,255,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #ccc;">
+                <svg class="check-icon" style="display: none; width: 16px; height: 16px; color: #28a745;" viewBox="0 0 16 16" fill="currentColor"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>
+            </div>
+            <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6); color: white; font-size: 12px; padding: 2px 6px; text-align: center;">图 ${index + 1}</div>
+        </div>
+    `).join('');
+    
+    dialog.innerHTML = `
+        <div style="background: white; border-radius: 12px; padding: 24px; max-width: 700px; width: 90%; max-height: 85vh; box-shadow: 0 8px 32px rgba(0,0,0,0.2); display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 style="margin: 0; color: #28a745; display: flex; align-items: center; gap: 8px; font-size: 18px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M.002 3a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-12a2 2 0 0 1-2-2V3zm1 9v1a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12zm5-6.5a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0z"/>
+                    </svg>
+                    选择要智能标记的附图
+                </h3>
+                <button onclick="document.getElementById('drawing-selector-modal').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666; padding: 0; line-height: 1;">&times;</button>
+            </div>
+            <p style="margin: 0 0 12px 0; color: #666; font-size: 14px;">
+                专利: <strong>${patentTitle}</strong> (共 ${drawings.length} 张附图)
+            </p>
+            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                <button id="select-all-drawings-btn" style="padding: 6px 12px; border: 1px solid #28a745; background: white; color: #28a745; border-radius: 4px; cursor: pointer; font-size: 13px;">全选</button>
+                <button id="deselect-all-drawings-btn" style="padding: 6px 12px; border: 1px solid #dc3545; background: white; color: #dc3545; border-radius: 4px; cursor: pointer; font-size: 13px;">全不选</button>
+                <span id="selected-count" style="margin-left: auto; color: #666; font-size: 13px; display: flex; align-items: center;">已选择: 0 张</span>
+            </div>
+            <div id="drawing-selector-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; overflow-y: auto; flex: 1; padding: 4px;">
+                ${thumbnailsHTML}
+            </div>
+            <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 16px; padding-top: 16px; border-top: 1px solid #eee;">
+                <button id="cancel-drawing-selector-btn" style="padding: 10px 24px; border: 1px solid #ddd; background: white; border-radius: 6px; cursor: pointer; font-size: 14px;">取消</button>
+                <button id="confirm-drawing-selector-btn" style="padding: 10px 24px; border: none; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 14px;">确认发送</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(dialog);
+    
+    const selectedDrawings = new Set();
+    const updateSelectedCount = () => {
+        document.getElementById('selected-count').textContent = `已选择: ${selectedDrawings.size} 张`;
+    };
+    
+    const toggleSelection = (item, index) => {
+        const checkbox = item.querySelector('.drawing-selector-checkbox');
+        const checkIcon = item.querySelector('.check-icon');
+        
+        if (selectedDrawings.has(index)) {
+            selectedDrawings.delete(index);
+            item.style.borderColor = '#e0e0e0';
+            checkbox.style.borderColor = '#ccc';
+            checkbox.style.background = 'rgba(255,255,255,0.9)';
+            checkIcon.style.display = 'none';
+        } else {
+            selectedDrawings.add(index);
+            item.style.borderColor = '#28a745';
+            checkbox.style.borderColor = '#28a745';
+            checkbox.style.background = '#28a745';
+            checkIcon.style.display = 'block';
+        }
+        updateSelectedCount();
+    };
+    
+    document.querySelectorAll('.drawing-selector-item').forEach((item, index) => {
+        item.addEventListener('click', () => toggleSelection(item, index));
+    });
+    
+    document.getElementById('select-all-drawings-btn').addEventListener('click', () => {
+        document.querySelectorAll('.drawing-selector-item').forEach((item, index) => {
+            if (!selectedDrawings.has(index)) {
+                toggleSelection(item, index);
+            }
+        });
+    });
+    
+    document.getElementById('deselect-all-drawings-btn').addEventListener('click', () => {
+        document.querySelectorAll('.drawing-selector-item').forEach((item, index) => {
+            if (selectedDrawings.has(index)) {
+                toggleSelection(item, index);
+            }
+        });
+    });
+    
+    document.getElementById('cancel-drawing-selector-btn').addEventListener('click', () => {
+        dialog.remove();
+    });
+    
+    document.getElementById('confirm-drawing-selector-btn').addEventListener('click', () => {
+        if (selectedDrawings.size === 0) {
+            alert('请至少选择一张附图');
+            return;
+        }
+        
+        const selectedUrls = Array.from(selectedDrawings).sort((a, b) => a - b).map(i => drawings[i]);
+        dialog.remove();
+        
+        console.log(`[sendToDrawingMarker] 准备传递数据到功能七:`, {
+            patentNumber,
+            patentTitle,
+            selectedDrawingsCount: selectedUrls.length,
+            descriptionLength: description.length
+        });
+        
+        let switchSuccess = false;
+        
+        if (typeof switchTab === 'function') {
+            const tabButton = document.querySelector('.tab-button[onclick*="drawing_marker"]');
+            if (tabButton) {
+                switchTab('drawing_marker', tabButton);
+                switchSuccess = true;
+            }
+        }
+        
+        if (!switchSuccess) {
+            const tabBtn = document.querySelector('.tab-button[onclick*="drawing_marker"]');
+            if (tabBtn) {
+                tabBtn.click();
+                switchSuccess = true;
+            }
+        }
+        
+        if (!switchSuccess) {
+            alert('❌ 无法切换到功能七标签页');
+            return;
+        }
+        
+        setTimeout(() => {
+            if (typeof window.fillDrawingMarkerData === 'function') {
+                window.fillDrawingMarkerData(selectedUrls, description, patentNumber, patentTitle);
+            } else {
+                console.error('[sendToDrawingMarker] fillDrawingMarkerData 函数未定义');
+                alert('❌ 功能七数据填充函数未加载，请刷新页面后重试');
+            }
+        }, 300);
+    });
+    
+    dialog.addEventListener('click', (e) => {
+        if (e.target === dialog) {
+            dialog.remove();
+        }
+    });
+};
+
 // 将专利详情的附图和说明书传递到功能八进行OCR智能标记
 window.sendToDrawingMarker = function(patentNumber, event) {
     if (event) {
@@ -1883,44 +2046,7 @@ window.sendToDrawingMarker = function(patentNumber, event) {
     const description = patentResult.data.description || '';
     const patentTitle = patentResult.data.title || patentNumber;
     
-    console.log(`[sendToDrawingMarker] 准备传递数据到功能七:`, {
-        patentNumber,
-        patentTitle,
-        drawingsCount: drawings.length,
-        descriptionLength: description.length
-    });
-    
-    let switchSuccess = false;
-    
-    if (typeof switchTab === 'function') {
-        const tabButton = document.querySelector('.tab-button[onclick*="drawing_marker"]');
-        if (tabButton) {
-            switchTab('drawing_marker', tabButton);
-            switchSuccess = true;
-        }
-    }
-    
-    if (!switchSuccess) {
-        const tabBtn = document.querySelector('.tab-button[onclick*="drawing_marker"]');
-        if (tabBtn) {
-            tabBtn.click();
-            switchSuccess = true;
-        }
-    }
-    
-    if (!switchSuccess) {
-        alert('❌ 无法切换到功能七标签页');
-        return;
-    }
-    
-    setTimeout(() => {
-        if (typeof window.fillDrawingMarkerData === 'function') {
-            window.fillDrawingMarkerData(drawings, description, patentNumber, patentTitle);
-        } else {
-            console.error('[sendToDrawingMarker] fillDrawingMarkerData 函数未定义');
-            alert('❌ 功能七数据填充函数未加载，请刷新页面后重试');
-        }
-    }, 300);
+    window.showDrawingSelectorModal(patentNumber, patentTitle, description);
 };
 
 // 图片查看器
