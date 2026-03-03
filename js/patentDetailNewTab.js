@@ -325,7 +325,40 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 }
                 
                 .side-nav.collapsed {
+                    left: -180px;
+                    transition: left 0.3s ease;
+                }
+                
+                .side-nav.collapsed:hover {
+                    left: 5px;
+                }
+                
+                .nav-trigger {
+                    position: fixed;
+                    left: 0;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    width: 20px;
+                    height: 80px;
+                    background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%);
+                    border-radius: 0 8px 8px 0;
+                    cursor: pointer;
+                    z-index: 999;
                     display: none;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-size: 12px;
+                    box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+                    transition: width 0.3s ease;
+                }
+                
+                .nav-trigger:hover {
+                    width: 28px;
+                }
+                
+                .nav-trigger.visible {
+                    display: flex;
                 }
                 
                 .tab-content {
@@ -796,6 +829,12 @@ window.openPatentDetailInNewTab = function(patentNumber) {
             </style>
         </head>
         <body>
+            <!-- 导航栏触发按钮 -->
+            <div class="nav-trigger" id="navTrigger" title="悬浮展开导航栏">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"/>
+                </svg>
+            </div>
             <!-- 左侧悬浮导航 -->
             <nav class="side-nav" id="sideNav">
                 <a href="#" class="side-nav-item scroll-to-top" onclick="scrollToTop(event)" title="回到顶部" style="background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); color: white; font-weight: 600; margin-bottom: 15px;">
@@ -1513,10 +1552,15 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                             container.style.maxWidth = '1800px';
                         }
                         
-                        // 默认隐藏导航栏
+                        // 默认隐藏导航栏，显示触发按钮
                         if (sideNav) {
                             originalNavCollapsed = sideNav.classList.contains('collapsed');
                             sideNav.classList.add('collapsed');
+                        }
+                        
+                        const navTrigger = document.getElementById('navTrigger');
+                        if (navTrigger) {
+                            navTrigger.classList.add('visible');
                         }
                         
                         // 创建双栏容器
@@ -1567,6 +1611,12 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         // 恢复导航栏状态
                         if (sideNav && !originalNavCollapsed) {
                             sideNav.classList.remove('collapsed');
+                        }
+                        
+                        // 隐藏触发按钮
+                        const navTrigger = document.getElementById('navTrigger');
+                        if (navTrigger) {
+                            navTrigger.classList.remove('visible');
                         }
                         
                         // 移除双栏结构
@@ -1984,6 +2034,25 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     
                     window.addEventListener('scroll', highlightNav);
                     highlightNav(); // 初始化
+                    
+                    // 触发按钮悬浮展开导航栏
+                    const navTrigger = document.getElementById('navTrigger');
+                    if (navTrigger) {
+                        navTrigger.addEventListener('mouseenter', function() {
+                            if (sideNav && sideNav.classList.contains('collapsed')) {
+                                sideNav.style.left = '5px';
+                            }
+                        });
+                    }
+                    
+                    // 鼠标离开导航栏区域时收起
+                    if (sideNav) {
+                        sideNav.addEventListener('mouseleave', function() {
+                            if (sideNav.classList.contains('collapsed')) {
+                                sideNav.style.left = '';
+                            }
+                        });
+                    }
                     
                     // 监听解读缓存更新事件（跨窗口通信）
                     window.addEventListener('storage', function(e) {
