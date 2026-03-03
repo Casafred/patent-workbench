@@ -1,0 +1,176 @@
+<!-- 功能九：IPC分类智能查询 -->
+<div id="ipc_lookup-tab" class="tab-content">
+    <div class="step">
+        <div class="step-header">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+            IPC分类智能查询
+        </div>
+        <p class="info">基于WIPO IPCCAT API，提供IPC分类预测、分类树浏览和关键词搜索功能。支持中英文输入。</p>
+    </div>
+    
+    <div class="sub-tab-container" style="margin-bottom: 25px;">
+        <button class="sub-tab-button active" onclick="switchIpcSubTab('predict')">分类预测</button>
+        <button class="sub-tab-button" onclick="switchIpcSubTab('browse')">分类浏览</button>
+        <button class="sub-tab-button" onclick="switchIpcSubTab('search')">关键词搜索</button>
+    </div>
+    
+    <div id="ipc-predict-tab" class="ipc-sub-tab active">
+        <div class="ipc-card">
+            <h4>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                IPC分类预测
+            </h4>
+            <p class="info-text">输入技术方案描述，AI将自动预测最匹配的IPC分类号。</p>
+            
+            <div class="config-item">
+                <label for="ipc_predict_input">技术描述:</label>
+                <textarea id="ipc_predict_input" rows="6" placeholder="请输入技术方案描述，例如：&#10;一种基于深度学习的图像识别方法，包括：&#10;1. 获取待识别图像；&#10;2. 对图像进行预处理；&#10;3. 使用卷积神经网络进行特征提取；&#10;4. 输出识别结果。"></textarea>
+            </div>
+            
+            <div class="ipc-options-row">
+                <div class="config-item" style="flex: 1;">
+                    <label for="ipc_predict_lang">语言:</label>
+                    <select id="ipc_predict_lang">
+                        <option value="zh">中文</option>
+                        <option value="en">English</option>
+                        <option value="ja">日本語</option>
+                        <option value="ko">한국어</option>
+                    </select>
+                </div>
+                <div class="config-item" style="flex: 1;">
+                    <label for="ipc_predict_level">分类层级:</label>
+                    <select id="ipc_predict_level">
+                        <option value="class">部 (A-H)</option>
+                        <option value="subclass">大类 (如G06F)</option>
+                        <option value="maingroup">大组 (如G06F 17/00)</option>
+                        <option value="subgroup" selected>小组 (最精确)</option>
+                    </select>
+                </div>
+                <div class="config-item" style="flex: 1;">
+                    <label for="ipc_predict_limit">结果数量:</label>
+                    <select id="ipc_predict_limit">
+                        <option value="3">3个</option>
+                        <option value="5" selected>5个</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <button id="ipc_predict_btn" class="small-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                    开始预测
+                </button>
+            </div>
+            
+            <div id="ipc_predict_loading" style="display: none; text-align: center; padding: 30px;">
+                <div class="loading-spinner"></div>
+                <p style="color: #666; margin-top: 10px;">正在分析技术描述...</p>
+            </div>
+            
+            <div id="ipc_predict_result" style="display: none; margin-top: 25px;">
+                <h5>预测结果</h5>
+                <div id="ipc_predict_stats" class="ipc-stats-row"></div>
+                <div id="ipc_predict_list" class="ipc-result-list"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="ipc-browse-tab" class="ipc-sub-tab" style="display: none;">
+        <div class="ipc-card">
+            <h4>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                </svg>
+                IPC分类树浏览
+            </h4>
+            <p class="info-text">点击展开查看IPC分类层级结构，从部(A-H)到小组。</p>
+            
+            <div id="ipc_tree_loading" style="display: none; text-align: center; padding: 30px;">
+                <div class="loading-spinner"></div>
+                <p style="color: #666; margin-top: 10px;">正在加载分类树...</p>
+            </div>
+            
+            <div id="ipc_tree_container" class="ipc-tree-container">
+                <div class="ipc-section-grid" id="ipc_section_grid"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="ipc-search-tab" class="ipc-sub-tab" style="display: none;">
+        <div class="ipc-card">
+            <h4>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                关键词搜索
+            </h4>
+            <p class="info-text">输入关键词搜索相关的IPC分类号。</p>
+            
+            <div class="config-item">
+                <label for="ipc_search_input">搜索关键词:</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="ipc_search_input" placeholder="例如：神经网络、半导体、发动机..." style="flex: 1;">
+                    <button id="ipc_search_btn" class="small-button">搜索</button>
+                </div>
+            </div>
+            
+            <div class="ipc-options-row" style="margin-top: 15px;">
+                <div class="config-item" style="flex: 1;">
+                    <label for="ipc_search_lang">语言:</label>
+                    <select id="ipc_search_lang">
+                        <option value="en">English</option>
+                        <option value="fr">Français</option>
+                    </select>
+                </div>
+                <div class="config-item" style="flex: 1;">
+                    <label for="ipc_search_limit">结果数量:</label>
+                    <select id="ipc_search_limit">
+                        <option value="10">10个</option>
+                        <option value="20" selected>20个</option>
+                        <option value="50">50个</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div id="ipc_search_loading" style="display: none; text-align: center; padding: 30px;">
+                <div class="loading-spinner"></div>
+                <p style="color: #666; margin-top: 10px;">正在搜索...</p>
+            </div>
+            
+            <div id="ipc_search_result" style="display: none; margin-top: 25px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h5>搜索结果 <span id="ipc_search_count" style="color: #666; font-weight: normal;"></span></h5>
+                </div>
+                <div id="ipc_search_list" class="ipc-search-list"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="ipc_detail_modal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 id="ipc_detail_title">IPC分类详情</h3>
+                <button class="close-modal" onclick="closeIpcDetailModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="ipc_detail_body">
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.ipc-sub-tab {
+    display: none;
+}
+.ipc-sub-tab.active {
+    display: block;
+}
+</style>

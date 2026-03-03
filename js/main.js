@@ -374,6 +374,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('❌ Failed to load Feature 9 (PDF OCR Reader) component:', error);
     }
     
+    // Load Feature 10 (IPC Lookup) component and initialize
+    try {
+        const loaded = await loadComponent('frontend/components/tabs/ipc-lookup.html', 'ipc-lookup-component', {
+            retryCount: 3,
+            onReady: async () => {
+                await new Promise(resolve => setTimeout(resolve, 200));
+                if (typeof window.IPCInit !== 'undefined') {
+                    window.IPCInit.initialize();
+                }
+            }
+        });
+        
+        if (loaded) {
+            LoadingManager.updateProgress('初始化IPC分类查询');
+        }
+    } catch (error) {
+        console.error('❌ Failed to load Feature 10 (IPC Lookup) component:', error);
+    }
+    
     // Initialize API Key Config (global, not tied to a specific component)
     initApiKeyConfig();
     LoadingManager.updateProgress('初始化API配置');

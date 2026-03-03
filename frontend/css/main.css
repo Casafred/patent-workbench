@@ -30,6 +30,7 @@
 /* 页面特定样式 */
 @import url('pages/chat.css');
 @import url('pages/claims.css');
+@import url('pages/ipc-lookup.css');
 /* 专利查询和可视化样式 */
 .search-result-item {
     padding: 10px;

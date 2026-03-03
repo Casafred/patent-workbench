@@ -28,9 +28,9 @@ def register_blueprints(app: Flask):
     from .bailian_test import bailian_test_bp
     from .classification import classification_bp
     from .prompt_forum import prompt_forum_bp
+    from .ipc import ipc_bp
     from backend.user_management.user_management import user_management_bp
     
-    # Register blueprints with appropriate URL prefixes
     app.register_blueprint(auth_bp)
     app.register_blueprint(chat_bp, url_prefix='/api')
     app.register_blueprint(async_batch_bp, url_prefix='/api')
@@ -46,6 +46,7 @@ def register_blueprints(app: Flask):
     app.register_blueprint(bailian_test_bp, url_prefix='/api/bailian-test')
     app.register_blueprint(classification_bp, url_prefix='/api')
     app.register_blueprint(prompt_forum_bp)
+    app.register_blueprint(ipc_bp, url_prefix='/api')
     
     print("✓ All blueprints registered successfully")
     
