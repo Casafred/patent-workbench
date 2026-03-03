@@ -75,6 +75,19 @@ const IPCTree = (function() {
         }
     }
 
+    function getLocalData(symbol) {
+        if (typeof IPC_LOCAL_DATA !== 'undefined' && IPC_LOCAL_DATA.sections[symbol]) {
+            return IPC_LOCAL_DATA.sections[symbol].children.map(child => ({
+                symbol: child.symbol,
+                title1: child.title,
+                folder: child.hasChildren,
+                lazy: child.hasChildren,
+                key: child.symbol
+            }));
+        }
+        return null;
+    }
+
     async function loadChildren(symbol, level, key) {
         const container = document.getElementById(`children_${symbol}`);
         if (!container) return;
@@ -84,25 +97,41 @@ const IPCTree = (function() {
             renderChildren(container, data.data || data, symbol);
         } catch (error) {
             console.error('加载子节点失败:', error);
-            container.innerHTML = `
-                <div class="ipc-error-message">
-                    加载失败: ${error.message}
-                </div>
-            `;
+            
+            const localData = getLocalData(symbol);
+            if (localData && localData.length > 0) {
+                console.log('使用本地数据作为后备');
+                container.innerHTML = `
+                    <div style="background: #fef3c7; padding: 8px 12px; margin-bottom: 10px; border-radius: 6px; font-size: 12px; color: #92400e;">
+                        ⚠️ WIPO API暂时不可用，显示本地缓存数据
+                    </div>
+                `;
+                renderChildren(container, localData, symbol, true);
+            } else {
+                container.innerHTML = `
+                    <div class="ipc-error-message">
+                        加载失败: ${error.message}
+                        <br><br>
+                        <button class="small-button" onclick="IPCTree.retryLoad('${symbol}', '${level}', '${key}')">重试</button>
+                    </div>
+                `;
+            }
         }
     }
 
-    function renderChildren(container, nodes, parentSymbol) {
+    function renderChildren(container, nodes, parentSymbol, isLocalData = false) {
         if (!nodes || nodes.length === 0) {
-            container.innerHTML = `
-                <div class="ipc-empty-message" style="padding: 20px;">
-                    无子分类
-                </div>
-            `;
+            if (!isLocalData) {
+                container.innerHTML = `
+                    <div class="ipc-empty-message" style="padding: 20px;">
+                        无子分类
+                    </div>
+                `;
+            }
             return;
         }
 
-        let html = '';
+        let html = isLocalData ? container.innerHTML : '';
         nodes.forEach(node => {
             const hasChildren = node.folder || node.lazy;
             const nodeKey = node.key || node.symbolcode || '';
@@ -154,17 +183,41 @@ const IPCTree = (function() {
                         const data = await IPCCore.getTree('l1', key);
                         renderChildren(childrenEl, data.data || data, key);
                     } catch (error) {
-                        childrenEl.innerHTML = `
-                            <div class="ipc-error-message">
-                                加载失败
-                            </div>
-                        `;
+                        const localData = getLocalData(key);
+                        if (localData && localData.length > 0) {
+                            childrenEl.innerHTML = `
+                                <div style="background: #fef3c7; padding: 6px 10px; margin-bottom: 8px; border-radius: 4px; font-size: 11px; color: #92400e;">
+                                    ⚠️ 使用本地数据
+                                </div>
+                            `;
+                            renderChildren(childrenEl, localData, key, true);
+                        } else {
+                            childrenEl.innerHTML = `
+                                <div class="ipc-error-message" style="padding: 10px;">
+                                    加载失败
+                                </div>
+                            `;
+                        }
                     }
                 }
             }
         } else if (symbol) {
             IPCSearch.showDetail(symbol);
         }
+    }
+
+    async function retryLoad(symbol, level, key) {
+        const container = document.getElementById(`children_${symbol}`);
+        if (!container) return;
+        
+        container.innerHTML = `
+            <div class="ipc-loading-inline">
+                <div class="loading-spinner"></div>
+                <span>加载中...</span>
+            </div>
+        `;
+        
+        await loadChildren(symbol, level, key);
     }
 
     function expandAll() {
@@ -193,7 +246,8 @@ const IPCTree = (function() {
         loadChildren,
         handleNodeClick,
         expandAll,
-        collapseAll
+        collapseAll,
+        retryLoad
     };
 })();
 

@@ -186,6 +186,12 @@ def get_tree():
         return create_response(data=cached)
     
     try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'application/json',
+            'Accept-Language': 'en-US,en;q=0.9'
+        }
+        
         if key:
             endpoint = f"{WIPO_API_BASE}/scheme/children/{level}"
             params = {'key': key, 'version': version}
@@ -193,7 +199,12 @@ def get_tree():
             endpoint = f"{WIPO_API_BASE}/scheme/roots/{level}"
             params = {'version': version}
         
-        response = requests.get(endpoint, params=params, timeout=15)
+        response = requests.get(endpoint, params=params, headers=headers, timeout=15)
+        
+        if response.status_code == 500:
+            return create_response(
+                error="WIPO IPC服务暂时不可用，请稍后重试或使用关键词搜索功能"
+            )
         
         if response.status_code != 200:
             return create_response(
