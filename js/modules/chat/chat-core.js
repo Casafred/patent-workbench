@@ -237,9 +237,18 @@ function initChat() {
         chatDeleteSelectedBtn.addEventListener('click', deleteSelectedMessages);
     }
     
+    // Persona indicator click event
+    const personaIndicator = document.getElementById('chat_persona_indicator');
+    if (personaIndicator && chatParamsBtn) {
+        personaIndicator.addEventListener('click', () => {
+            chatParamsBtn.click();
+        });
+    }
+    
     // Initialize UI
     updatePersonaEditor();
     updatePersonaSelector();
+    updatePersonaIndicator();
     renderChatHistoryList();
     if (!appState.chat.currentConversationId || !appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId)) {
         startNewChat(false);

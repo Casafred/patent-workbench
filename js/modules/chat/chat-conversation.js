@@ -40,7 +40,21 @@ function startNewChat(shouldSwitch = false) {
     const newId = `convo-${Date.now()}`;
     
     const chatPersonaSelect = document.getElementById('chat_persona_select');
-    const personaId = (chatPersonaSelect ? chatPersonaSelect.value : null) || Object.keys(appState.chat.personas)[0];
+    let personaId = (chatPersonaSelect ? chatPersonaSelect.value : null);
+    
+    if (!personaId || !appState.chat.personas[personaId]) {
+        const lastUsedId = getLastUsedPersona();
+        if (lastUsedId && appState.chat.personas[lastUsedId]) {
+            personaId = lastUsedId;
+        } else {
+            personaId = 'general_assistant';
+        }
+    }
+    
+    if (chatPersonaSelect && appState.chat.personas[personaId]) {
+        chatPersonaSelect.value = personaId;
+    }
+    
     const persona = appState.chat.personas[personaId];
     
     const newConvo = {
@@ -54,6 +68,8 @@ function startNewChat(shouldSwitch = false) {
     appState.chat.conversations.push(newConvo);
     if (shouldSwitch) {
         switchConversation(newId);
+    } else {
+        updatePersonaIndicator();
     }
     saveConversations();
     renderChatHistoryList();
@@ -70,9 +86,16 @@ function switchConversation(id) {
     renderCurrentChat();
     renderChatHistoryList();
     toggleManagementMode(false);
-    updatePersonaEditor();
     
-    // 恢复当前对话的联网搜索配置
+    const convo = appState.chat.conversations.find(c => c.id === id);
+    const chatPersonaSelect = document.getElementById('chat_persona_select');
+    if (convo && chatPersonaSelect && convo.personaId && appState.chat.personas[convo.personaId]) {
+        chatPersonaSelect.value = convo.personaId;
+    }
+    
+    updatePersonaEditor();
+    updatePersonaIndicator();
+    
     updateSearchButtonState();
 }
 
@@ -297,8 +320,10 @@ function updateCurrentConversationPersona() {
     convo.messages[0] = { role: 'system', content: newPersona.system };
     convo.lastUpdate = Date.now();
     
+    saveLastUsedPersona(newPersonaId);
     saveConversations();
     renderChatHistoryList();
+    updatePersonaIndicator();
     
     if (chatWindow) {
         const notification = document.createElement('div');
