@@ -385,6 +385,18 @@ window.fillDrawingMarkerData = async function(drawings, description, patentNumbe
             }
             
             let base64Data = proxyResult.data;
+            if (typeof base64Data === 'object' && base64Data !== null) {
+                if (base64Data.base64) {
+                    base64Data = base64Data.base64;
+                } else if (base64Data.data) {
+                    base64Data = base64Data.data;
+                } else {
+                    base64Data = JSON.stringify(base64Data);
+                }
+            }
+            if (typeof base64Data !== 'string') {
+                base64Data = String(base64Data);
+            }
             base64Data = base64Data.replace(/\s/g, '');
             base64Data = base64Data.replace(/-/g, '+').replace(/_/g, '/');
             while (base64Data.length % 4) {

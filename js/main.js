@@ -1903,15 +1903,15 @@ window.showDrawingSelectorModal = function(patentNumber, patentTitle, descriptio
                 专利: <strong>${patentTitle}</strong> (共 ${drawings.length} 张附图)
             </p>
             <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                <button id="select-all-drawings-btn" style="padding: 6px 12px; border: 1px solid #28a745; background: white; color: #28a745; border-radius: 4px; cursor: pointer; font-size: 13px;">全选</button>
-                <button id="deselect-all-drawings-btn" style="padding: 6px 12px; border: 1px solid #dc3545; background: white; color: #dc3545; border-radius: 4px; cursor: pointer; font-size: 13px;">全不选</button>
+                <button id="select-all-drawings-btn" style="padding: 6px 12px; border: 1px solid #28a745; background: #28a745; color: white; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 500;">全选</button>
+                <button id="deselect-all-drawings-btn" style="padding: 6px 12px; border: 1px solid #6c757d; background: #6c757d; color: white; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 500;">全不选</button>
                 <span id="selected-count" style="margin-left: auto; color: #666; font-size: 13px; display: flex; align-items: center;">已选择: 0 张</span>
             </div>
             <div id="drawing-selector-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; overflow-y: auto; flex: 1; padding: 4px;">
                 ${thumbnailsHTML}
             </div>
             <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 16px; padding-top: 16px; border-top: 1px solid #eee;">
-                <button id="cancel-drawing-selector-btn" style="padding: 10px 24px; border: 1px solid #ddd; background: white; border-radius: 6px; cursor: pointer; font-size: 14px;">取消</button>
+                <button id="cancel-drawing-selector-btn" style="padding: 10px 24px; border: 1px solid #6c757d; background: #6c757d; color: white; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">取消</button>
                 <button id="confirm-drawing-selector-btn" style="padding: 10px 24px; border: none; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 14px;">确认发送</button>
             </div>
         </div>
