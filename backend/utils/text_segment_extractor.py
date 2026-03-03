@@ -150,6 +150,9 @@ class TextSegmentExtractor:
         - "1、" 
         - "第1实施例"
         """
+        if not markers:
+            return re.compile(r'(?!a)a')
+        
         sorted_markers = sorted(markers, key=len, reverse=True)
         escaped_markers = [re.escape(m) for m in sorted_markers]
         marker_group = '|'.join(escaped_markers)

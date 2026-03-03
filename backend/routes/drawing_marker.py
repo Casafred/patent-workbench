@@ -275,17 +275,23 @@ def process_drawing_marker():
             # 🔧 关键优化：先根据OCR标记提取相关段落，避免处理过长说明书导致超时
             from backend.utils.text_segment_extractor import extract_relevant_segments
             
-            extraction_result = extract_relevant_segments(
-                specification,
-                all_ocr_markers,
-                context_sentences=1,
-                max_total_length=8000
-            )
-            
-            specification_to_process = extraction_result['extracted_text']
-            print(f"[DEBUG] 说明书预处理: {extraction_result['original_length']} -> {extraction_result['extracted_length']} 字符")
-            print(f"[DEBUG] 找到的标记: {extraction_result['found_markers']}, 未找到: {extraction_result['not_found_markers']}")
-            print(f"[DEBUG] 提取了 {extraction_result['segment_count']} 个相关段落")
+            # 只有当OCR识别到标记时才进行预处理
+            if all_ocr_markers:
+                extraction_result = extract_relevant_segments(
+                    specification,
+                    all_ocr_markers,
+                    context_sentences=1,
+                    max_total_length=8000
+                )
+                
+                specification_to_process = extraction_result['extracted_text']
+                print(f"[DEBUG] 说明书预处理: {extraction_result['original_length']} -> {extraction_result['extracted_length']} 字符")
+                print(f"[DEBUG] 找到的标记: {extraction_result['found_markers']}, 未找到: {extraction_result['not_found_markers']}")
+                print(f"[DEBUG] 提取了 {extraction_result['segment_count']} 个相关段落")
+            else:
+                # OCR未识别到任何标记，使用完整说明书
+                specification_to_process = specification
+                print(f"[DEBUG] OCR未识别到标记，使用完整说明书: {len(specification)} 字符")
 
             # Import AI processor
             from backend.services.ai_description.ai_description_processor import AIDescriptionProcessor
