@@ -638,92 +638,6 @@ class MultiImageViewerV8 {
         fontGroup.appendChild(fontMinusBtn);
         toolbar.appendChild(fontGroup);
         
-        const rotateGroup = document.createElement('div');
-        rotateGroup.style.cssText = 'display: flex; flex-direction: column; gap: 4px;';
-        
-        const rotateLeftBtn = this.createIconButton(`
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-                <path d="M21 3v5h-5"/>
-            </svg>
-        `, () => {
-            this.currentRotation = (this.currentRotation - 90 + 360) % 360;
-            this.renderCanvas();
-        }, '逆时针旋转');
-        
-        const rotateRightBtn = this.createIconButton(`
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
-                <path d="M3 3v5h5"/>
-            </svg>
-        `, () => {
-            this.currentRotation = (this.currentRotation + 90) % 360;
-            this.renderCanvas();
-        }, '顺时针旋转');
-        
-        rotateGroup.appendChild(rotateLeftBtn);
-        rotateGroup.appendChild(rotateRightBtn);
-        toolbar.appendChild(rotateGroup);
-        
-        const zoomGroup = document.createElement('div');
-        zoomGroup.style.cssText = 'display: flex; flex-direction: column; gap: 4px;';
-        
-        this.zoomDisplay = document.createElement('div');
-        this.zoomDisplay.textContent = '100%';
-        this.zoomDisplay.style.cssText = `
-            font-size: 12px;
-            font-weight: bold;
-            text-align: center;
-            color: #4CAF50;
-            padding: 10px 0;
-            background: white;
-            border: 3px solid #4CAF50;
-            border-radius: 24px;
-            box-shadow: 0 3px 10px rgba(76, 175, 80, 0.3);
-            min-width: 48px;
-        `;
-        zoomGroup.appendChild(this.zoomDisplay);
-        
-        const zoomInBtn = this.createIconButton(`
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="1.5" stroke-linecap="round">
-                <circle cx="11" cy="11" r="7"/>
-                <path d="M21 21l-4.35-4.35"/>
-                <line x1="11" y1="8" x2="11" y2="14"/>
-                <line x1="8" y1="11" x2="14" y2="11"/>
-            </svg>
-        `, () => {
-            this.currentZoom = Math.min(this.maxZoom, this.currentZoom + this.zoomStep);
-            this.updateCanvasSize();
-            this.updateZoomDisplay();
-        }, '放大');
-        
-        const zoomOutBtn = this.createIconButton(`
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="1.5" stroke-linecap="round">
-                <circle cx="11" cy="11" r="7"/>
-                <path d="M21 21l-4.35-4.35"/>
-                <line x1="8" y1="11" x2="14" y2="11"/>
-            </svg>
-        `, () => {
-            this.currentZoom = Math.max(this.minZoom, this.currentZoom - this.zoomStep);
-            this.updateCanvasSize();
-            this.updateZoomDisplay();
-        }, '缩小');
-        
-        const zoomResetBtn = this.createIconButton(`
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="1.5">
-                <text x="4" y="17" font-size="10" font-weight="normal" fill="#4CAF50">1:1</text>
-            </svg>
-        `, () => {
-            this.currentZoom = 1.0;
-            this.updateCanvasSize();
-            this.updateZoomDisplay();
-        }, '重置缩放');
-        
-        zoomGroup.appendChild(zoomInBtn);
-        zoomGroup.appendChild(zoomOutBtn);
-        zoomGroup.appendChild(zoomResetBtn);
-        toolbar.appendChild(zoomGroup);
-        
         const screenshotBtn = this.createIconButton(`
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
@@ -829,7 +743,74 @@ class MultiImageViewerV8 {
         this.imageInfoSection.appendChild(this.imageInfoDisplay);
         sidebar.appendChild(this.imageInfoSection);
         
-        // 选择控制
+        const rotateZoomSection = this.createSection('旋转与缩放');
+        const rotateZoomContainer = document.createElement('div');
+        rotateZoomContainer.style.cssText = 'display: flex; flex-direction: column; gap: 8px;';
+        
+        const rotateBtnContainer = document.createElement('div');
+        rotateBtnContainer.style.cssText = 'display: flex; gap: 5px;';
+        
+        const rotateLeftBtn = this.createButton('↺ 左转', () => {
+            this.currentRotation = (this.currentRotation - 90 + 360) % 360;
+            this.renderCanvas();
+        });
+        rotateLeftBtn.style.backgroundColor = '#FF9800';
+        
+        const rotateRightBtn = this.createButton('↻ 右转', () => {
+            this.currentRotation = (this.currentRotation + 90) % 360;
+            this.renderCanvas();
+        });
+        rotateRightBtn.style.backgroundColor = '#FF9800';
+        
+        rotateBtnContainer.appendChild(rotateLeftBtn);
+        rotateBtnContainer.appendChild(rotateRightBtn);
+        rotateZoomContainer.appendChild(rotateBtnContainer);
+        
+        this.zoomDisplay = document.createElement('div');
+        this.zoomDisplay.textContent = '100%';
+        this.zoomDisplay.style.cssText = `
+            text-align: center;
+            font-weight: bold;
+            color: #4CAF50;
+            padding: 8px;
+            background-color: #e8f5e9;
+            border-radius: 4px;
+            font-size: 14px;
+        `;
+        rotateZoomContainer.appendChild(this.zoomDisplay);
+        
+        const zoomBtnContainer = document.createElement('div');
+        zoomBtnContainer.style.cssText = 'display: flex; gap: 5px;';
+        
+        const zoomInBtn = this.createButton('＋ 放大', () => {
+            this.currentZoom = Math.min(this.maxZoom, this.currentZoom + this.zoomStep);
+            this.updateCanvasSize();
+            this.updateZoomDisplay();
+        });
+        zoomInBtn.style.backgroundColor = '#2196F3';
+        
+        const zoomOutBtn = this.createButton('－ 缩小', () => {
+            this.currentZoom = Math.max(this.minZoom, this.currentZoom - this.zoomStep);
+            this.updateCanvasSize();
+            this.updateZoomDisplay();
+        });
+        zoomOutBtn.style.backgroundColor = '#2196F3';
+        
+        zoomBtnContainer.appendChild(zoomInBtn);
+        zoomBtnContainer.appendChild(zoomOutBtn);
+        rotateZoomContainer.appendChild(zoomBtnContainer);
+        
+        const zoomResetBtn = this.createButton('重置缩放', () => {
+            this.currentZoom = 1.0;
+            this.updateCanvasSize();
+            this.updateZoomDisplay();
+        });
+        zoomResetBtn.style.backgroundColor = '#607D8B';
+        rotateZoomContainer.appendChild(zoomResetBtn);
+        
+        rotateZoomSection.appendChild(rotateZoomContainer);
+        sidebar.appendChild(rotateZoomSection);
+        
         const selectSection = this.createSection('选择控制');
         const selectBtnContainer = document.createElement('div');
         selectBtnContainer.style.cssText = 'display: flex; gap: 5px;';
