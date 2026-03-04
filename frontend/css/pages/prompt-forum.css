@@ -238,6 +238,27 @@
     transition: all 0.2s;
 }
 
+.forum-category-item .category-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+}
+
+.forum-category-item .category-icon svg {
+    stroke: var(--text-color-secondary, #6b7280);
+    transition: stroke 0.2s;
+}
+
+.forum-category-item:hover .category-icon svg {
+    stroke: var(--text-color, #1f2937);
+}
+
+.forum-category-item.active .category-icon svg {
+    stroke: #fff;
+}
+
 .forum-category-item:hover {
     background: var(--bg-color-hover, #f3f4f6);
 }
