@@ -573,17 +573,17 @@ class MultiImageViewerV8 {
     createFloatingToolbar() {
         const toolbar = document.createElement('div');
         toolbar.style.cssText = `
-            position: absolute;
+            position: fixed;
             right: 20px;
             top: 50%;
             transform: translateY(-50%);
             display: flex;
             flex-direction: column;
             gap: 10px;
-            z-index: 101;
+            z-index: 10005;
+            pointer-events: auto;
         `;
         
-        // 字体大小按钮组
         const fontGroup = document.createElement('div');
         fontGroup.style.cssText = 'display: flex; flex-direction: column; gap: 4px;';
         
@@ -638,7 +638,6 @@ class MultiImageViewerV8 {
         fontGroup.appendChild(fontMinusBtn);
         toolbar.appendChild(fontGroup);
         
-        // 旋转按钮组
         const rotateGroup = document.createElement('div');
         rotateGroup.style.cssText = 'display: flex; flex-direction: column; gap: 4px;';
         
@@ -666,7 +665,6 @@ class MultiImageViewerV8 {
         rotateGroup.appendChild(rotateRightBtn);
         toolbar.appendChild(rotateGroup);
         
-        // 缩放按钮组
         const zoomGroup = document.createElement('div');
         zoomGroup.style.cssText = 'display: flex; flex-direction: column; gap: 4px;';
         
@@ -726,7 +724,6 @@ class MultiImageViewerV8 {
         zoomGroup.appendChild(zoomResetBtn);
         toolbar.appendChild(zoomGroup);
         
-        // 截图按钮
         const screenshotBtn = this.createIconButton(`
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
@@ -737,7 +734,6 @@ class MultiImageViewerV8 {
         }, '高清截图');
         toolbar.appendChild(screenshotBtn);
 
-        // 导出标记按钮
         const exportBtn = this.createIconButton(`
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -749,7 +745,6 @@ class MultiImageViewerV8 {
         }, '导出任务');
         toolbar.appendChild(exportBtn);
 
-        // 导入标记按钮
         const importBtn = this.createIconButton(`
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 9v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9"/>
