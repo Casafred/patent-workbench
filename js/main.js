@@ -2041,23 +2041,35 @@ window.showDrawingSelectorModal = function(patentNumber, patentTitle, descriptio
         let switchSuccess = false;
         
         if (typeof switchTab === 'function') {
-            const tabButton = document.querySelector('.tab-button[onclick*="drawing_marker"]');
-            if (tabButton) {
-                switchTab('drawing_marker', tabButton);
+            const sidebarItem = document.querySelector('.sidebar-item[data-tab="drawing_marker"]');
+            if (sidebarItem) {
+                switchTab('drawing_marker', sidebarItem);
                 switchSuccess = true;
+            } else {
+                const tabButton = document.querySelector('.tab-button[onclick*="drawing_marker"]');
+                if (tabButton) {
+                    switchTab('drawing_marker', tabButton);
+                    switchSuccess = true;
+                }
             }
         }
         
         if (!switchSuccess) {
-            const tabBtn = document.querySelector('.tab-button[onclick*="drawing_marker"]');
-            if (tabBtn) {
-                tabBtn.click();
+            const sidebarItem = document.querySelector('.sidebar-item[data-tab="drawing_marker"]');
+            if (sidebarItem) {
+                sidebarItem.click();
                 switchSuccess = true;
+            } else {
+                const tabBtn = document.querySelector('.tab-button[onclick*="drawing_marker"]');
+                if (tabBtn) {
+                    tabBtn.click();
+                    switchSuccess = true;
+                }
             }
         }
         
         if (!switchSuccess) {
-            alert('❌ 无法切换到功能七标签页');
+            alert('❌ 无法切换到专利附图智能标记标签页');
             return;
         }
         
