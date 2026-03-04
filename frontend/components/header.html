@@ -34,11 +34,12 @@
         </button>
         <div id="api_config_container" class="api-config-container">
             <div class="config-item provider-selector">
-                <label for="llm_provider_select">LLM服务商:</label>
+                <label for="llm_provider_select">默认LLM服务商:</label>
                 <select id="llm_provider_select" onchange="ProviderManager.onProviderChange(this.value)">
                     <option value="zhipu">智谱AI (默认)</option>
                     <option value="aliyun">阿里云百炼</option>
                 </select>
+                <span class="provider-hint" style="font-size: 0.75em; color: #888; margin-left: 8px;">选择默认使用的平台</span>
             </div>
             <div id="zhipu_api_config" class="config-item">
                 <label for="global_api_key_input">智谱AI API Key:</label>
@@ -57,7 +58,7 @@
                     </div>
                 </div>
             </div>
-            <div id="aliyun_api_config" class="config-item" style="display: none;">
+            <div id="aliyun_api_config" class="config-item">
                 <label for="aliyun_api_key_input">阿里云百炼 API Key:</label>
                 <div class="api-key-wrapper">
                     <input type="password" id="aliyun_api_key_input" placeholder="在此处粘贴阿里云百炼 API Key">
@@ -67,6 +68,9 @@
                         </button>
                         <button type="button" id="aliyun_api_key_delete_btn" class="api-key-action-btn" title="删除">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                        <button type="button" id="aliyun_api_key_toggle_visibility_btn" class="password-toggle-btn" title="显示/隐藏">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                         </button>
                     </div>
                 </div>

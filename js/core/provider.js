@@ -378,11 +378,11 @@ const ProviderManager = {
         const aliyunConfig = document.getElementById('aliyun_api_config');
         
         if (zhipuConfig) {
-            zhipuConfig.style.display = this.currentProvider === 'zhipu' ? 'block' : 'none';
+            zhipuConfig.style.display = 'block';
         }
         
         if (aliyunConfig) {
-            aliyunConfig.style.display = this.currentProvider === 'aliyun' ? 'block' : 'none';
+            aliyunConfig.style.display = 'block';
         }
     },
     
@@ -390,13 +390,13 @@ const ProviderManager = {
         return `
             <div class="provider-config" style="margin-bottom: 15px; padding: 10px; background: #f5f5f5; border-radius: 8px;">
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                    <label style="font-weight: 500;">LLM服务商:</label>
+                    <label style="font-weight: 500;">默认LLM服务商:</label>
                     <select id="llm_provider_select" onchange="ProviderManager.onProviderChange(this.value)" 
                             style="padding: 5px 10px; border-radius: 4px; border: 1px solid #ddd;">
                         <option value="zhipu">智谱AI (默认)</option>
                         <option value="aliyun">阿里云百炼</option>
                     </select>
-                    <span id="current_provider_name" style="color: #666; font-size: 0.9em;"></span>
+                    <span style="color: #888; font-size: 0.75em;">选择默认使用的平台</span>
                 </div>
                 
                 <div id="zhipu_api_config">
@@ -405,7 +405,7 @@ const ProviderManager = {
                            style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;">
                 </div>
                 
-                <div id="aliyun_api_config" style="display: none;">
+                <div id="aliyun_api_config">
                     <label style="font-size: 0.9em; color: #666;">阿里云百炼 API Key:</label>
                     <input type="password" id="aliyun_api_key_input" placeholder="输入阿里云百炼 API Key"
                            style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;">

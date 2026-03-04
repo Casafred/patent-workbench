@@ -163,6 +163,7 @@ function initApiKeyConfig() {
     // 阿里云API Key操作
     const aliyunCopyBtn = document.getElementById('aliyun_api_key_copy_btn');
     const aliyunDeleteBtn = document.getElementById('aliyun_api_key_delete_btn');
+    const aliyunToggleVisibilityBtn = document.getElementById('aliyun_api_key_toggle_visibility_btn');
     
     if (aliyunCopyBtn && aliyunApiKeyInput) {
         aliyunCopyBtn.addEventListener('click', () => {
@@ -180,6 +181,13 @@ function initApiKeyConfig() {
             aliyunApiKeyInput.value = '';
         });
     }
+    
+    if (aliyunToggleVisibilityBtn && aliyunApiKeyInput) {
+        aliyunToggleVisibilityBtn.addEventListener('click', () => {
+            const isPassword = aliyunApiKeyInput.type === 'password';
+            aliyunApiKeyInput.type = isPassword ? 'text' : 'password';
+        });
+    }
 
     // 点击外部关闭配置面板
     document.addEventListener('click', (event) => {
@@ -193,6 +201,7 @@ function initApiKeyConfig() {
 
 /**
  * 更新服务商UI显示
+ * 现在两个配置区域始终显示，服务商选择器仅决定默认使用哪个平台
  * @param {string} provider - 服务商类型
  */
 function updateProviderUI(provider) {
@@ -200,10 +209,10 @@ function updateProviderUI(provider) {
     const aliyunConfig = document.getElementById('aliyun_api_config');
     
     if (zhipuConfig) {
-        zhipuConfig.style.display = provider === 'zhipu' ? 'block' : 'none';
+        zhipuConfig.style.display = 'block';
     }
     if (aliyunConfig) {
-        aliyunConfig.style.display = provider === 'aliyun' ? 'block' : 'none';
+        aliyunConfig.style.display = 'block';
     }
 }
 
