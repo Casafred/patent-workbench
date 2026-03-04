@@ -154,16 +154,25 @@
 
 .forum-search {
     position: relative;
+    display: flex;
+    align-items: center;
 }
 
 .forum-search input {
     width: 100%;
-    padding: 10px 36px 10px 12px;
+    padding: 10px 44px 10px 12px;
     border: 1px solid var(--border-color, #e5e7eb);
     border-radius: 8px;
     font-size: 14px;
     background: var(--bg-color, #fff);
     color: var(--text-color, #1f2937);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.forum-search input:focus {
+    border-color: var(--primary-color, #059669);
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
 }
 
 [data-theme="dark"] .forum-search input {
@@ -172,44 +181,48 @@
     color: #e5e7eb;
 }
 
+[data-theme="dark"] .forum-search input:focus {
+    border-color: #34d399;
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.1);
+}
+
 .forum-search-btn {
     position: absolute;
-    right: 8px;
+    right: 4px;
     top: 50%;
     transform: translateY(-50%);
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     padding: 0;
-    background: transparent;
+    background: var(--primary-color, #059669);
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
-    color: var(--text-color-secondary, #6b7280);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
-}
-
-.forum-search-btn svg {
-    stroke: var(--text-color-secondary, #6b7280);
-    transition: stroke 0.2s;
+    transition: background 0.2s, transform 0.1s;
 }
 
 .forum-search-btn:hover {
-    background: var(--bg-color-hover, #f3f4f6);
+    background: var(--primary-color-dark, #047857);
 }
 
-.forum-search-btn:hover svg {
-    stroke: var(--primary-color, #059669);
+.forum-search-btn:active {
+    transform: translateY(-50%) scale(0.95);
 }
 
-[data-theme="dark"] .forum-search-btn svg {
-    stroke: #9ca3af;
+.forum-search-btn svg {
+    stroke: #fff;
+    stroke-width: 2.5;
 }
 
-[data-theme="dark"] .forum-search-btn:hover svg {
-    stroke: #34d399;
+[data-theme="dark"] .forum-search-btn {
+    background: #059669;
+}
+
+[data-theme="dark"] .forum-search-btn:hover {
+    background: #047857;
 }
 
 .forum-categories h4,
