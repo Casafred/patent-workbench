@@ -28,25 +28,13 @@ class GuestModeRestrictions {
     }
     
     clearAllGuestData() {
-        console.log('[GuestMode] 清空所有游客缓存数据...');
+        console.log('[GuestMode] 清空游客缓存数据...');
         
         const keysToRemove = [];
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             if (key) {
-                const lowerKey = key.toLowerCase();
-                if (lowerKey.includes('guest') || 
-                    lowerKey.includes('cache') ||
-                    lowerKey.includes('ocr') ||
-                    lowerKey.includes('chat') ||
-                    lowerKey.includes('patent') ||
-                    lowerKey.includes('conversation') ||
-                    lowerKey.includes('persona') ||
-                    lowerKey.includes('template') ||
-                    lowerKey.includes('history') ||
-                    lowerKey.includes('setting') ||
-                    lowerKey.includes('config') ||
-                    lowerKey.includes('user_')) {
+                if (key.startsWith('guest_')) {
                     keysToRemove.push(key);
                 }
             }
@@ -58,7 +46,7 @@ class GuestModeRestrictions {
             } catch (e) {}
         });
         
-        console.log(`[GuestMode] 已清空 ${keysToRemove.length} 项缓存数据`);
+        console.log(`[GuestMode] 已清空 ${keysToRemove.length} 项游客专属缓存数据`);
         
         if (window.sessionStorage) {
             sessionStorage.clear();

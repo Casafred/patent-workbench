@@ -209,6 +209,158 @@ class UserDataUI {
             [data-theme="dark"] .udu-loading {
                 color: #94a3b8 !important;
             }
+            
+            .udu-clear-panel {
+                width: 450px;
+            }
+            .udu-clear-notice {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 12px;
+                background: #fef3c7;
+                border-radius: 8px;
+                margin-bottom: 16px;
+                font-size: 13px;
+                color: #92400e;
+            }
+            .udu-clear-actions-top {
+                display: flex;
+                gap: 8px;
+                margin-bottom: 12px;
+            }
+            .udu-clear-btn-small {
+                padding: 6px 12px;
+                border: 1px solid #ddd;
+                border-radius: 6px;
+                background: #f5f5f5;
+                cursor: pointer;
+                font-size: 12px;
+                color: #666;
+            }
+            .udu-clear-btn-small:hover {
+                background: #e5e5e5;
+            }
+            .udu-clear-list {
+                max-height: 280px;
+                overflow-y: auto;
+                border: 1px solid #eee;
+                border-radius: 8px;
+                padding: 8px;
+            }
+            .udu-clear-item {
+                display: flex;
+                align-items: center;
+                padding: 10px 12px;
+                border-radius: 6px;
+                cursor: pointer;
+                transition: background 0.15s;
+            }
+            .udu-clear-item:hover {
+                background: #f0f0f0;
+            }
+            .udu-clear-checkbox {
+                width: 16px;
+                height: 16px;
+                margin-right: 10px;
+                cursor: pointer;
+            }
+            .udu-clear-checkbox:disabled {
+                cursor: not-allowed;
+                opacity: 0.4;
+            }
+            .udu-clear-name {
+                flex: 1;
+                font-size: 14px;
+                color: #333;
+            }
+            .udu-clear-count {
+                font-size: 12px;
+                color: #888;
+            }
+            .udu-clear-footer {
+                display: flex;
+                justify-content: flex-end;
+                gap: 10px;
+                margin-top: 20px;
+                padding-top: 16px;
+                border-top: 1px solid #eee;
+            }
+            .udu-clear-btn {
+                padding: 10px 20px;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: 500;
+                transition: all 0.2s;
+            }
+            .udu-clear-btn-cancel {
+                background: #f5f5f5;
+                color: #666;
+            }
+            .udu-clear-btn-cancel:hover {
+                background: #e5e5e5;
+            }
+            .udu-clear-btn-danger {
+                background: linear-gradient(135deg, #EF4444 0%, #F87171 100%);
+                color: white;
+            }
+            .udu-clear-btn-danger:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+            }
+            .udu-clear-btn-danger-outline {
+                background: white;
+                color: #EF4444;
+                border: 1px solid #EF4444;
+            }
+            .udu-clear-btn-danger-outline:hover {
+                background: #fef2f2;
+            }
+            
+            [data-theme="dark"] .udu-clear-notice {
+                background: #422006 !important;
+                color: #fcd34d !important;
+            }
+            [data-theme="dark"] .udu-clear-btn-small {
+                background: #334155 !important;
+                border-color: #475569 !important;
+                color: #94a3b8 !important;
+            }
+            [data-theme="dark"] .udu-clear-btn-small:hover {
+                background: #475569 !important;
+            }
+            [data-theme="dark"] .udu-clear-list {
+                border-color: #334155 !important;
+            }
+            [data-theme="dark"] .udu-clear-item:hover {
+                background: #1e293b !important;
+            }
+            [data-theme="dark"] .udu-clear-name {
+                color: #e2e8f0 !important;
+            }
+            [data-theme="dark"] .udu-clear-count {
+                color: #64748b !important;
+            }
+            [data-theme="dark"] .udu-clear-footer {
+                border-top-color: #334155 !important;
+            }
+            [data-theme="dark"] .udu-clear-btn-cancel {
+                background: #334155 !important;
+                color: #94a3b8 !important;
+            }
+            [data-theme="dark"] .udu-clear-btn-cancel:hover {
+                background: #475569 !important;
+            }
+            [data-theme="dark"] .udu-clear-btn-danger-outline {
+                background: transparent !important;
+                border-color: #f87171 !important;
+                color: #f87171 !important;
+            }
+            [data-theme="dark"] .udu-clear-btn-danger-outline:hover {
+                background: rgba(248, 113, 113, 0.1) !important;
+            }
         `;
         document.head.appendChild(style);
     }
@@ -419,14 +571,150 @@ class UserDataUI {
     }
 
     confirmClear() {
-        if (!confirm('确定要清除所有缓存数据吗？此操作不可撤销！\n\n建议先导出数据备份。')) {
-            return;
+        this._showClearModal();
+    }
+
+    _showClearModal() {
+        this.hideDataPanel();
+        this._injectStyles();
+
+        const existingModal = document.getElementById('clear-cache-modal');
+        if (existingModal) {
+            existingModal.remove();
         }
 
-        const count = window.userCacheManager.clearAllData();
-        alert(`已清除 ${count} 条数据`);
+        const overlay = document.createElement('div');
+        overlay.className = 'udu-overlay';
+        overlay.id = 'clear-cache-modal';
+        overlay.onclick = (e) => {
+            if (e.target === overlay) {
+                overlay.remove();
+            }
+        };
 
-        this._loadStats();
+        const dataTypes = window.userCacheManager.getDataTypes();
+        const categoryStats = window.userCacheManager.getCategoryStats();
+
+        let checkboxesHTML = '';
+        Object.entries(dataTypes).forEach(([typeKey, type]) => {
+            let itemCount = 0;
+            if (type.isPrefix) {
+                const keys = window.userCacheManager.getStorage().getKeysByPrefix(type.key);
+                itemCount = keys.length;
+            } else {
+                if (window.userCacheManager.has(type.key)) {
+                    itemCount = 1;
+                }
+            }
+
+            checkboxesHTML += `
+                <label class="udu-clear-item" data-type="${typeKey}">
+                    <input type="checkbox" class="udu-clear-checkbox" value="${typeKey}" ${itemCount === 0 ? 'disabled' : ''}>
+                    <span class="udu-clear-name">${type.name}</span>
+                    <span class="udu-clear-count">${itemCount} 项</span>
+                </label>
+            `;
+        });
+
+        overlay.innerHTML = `
+            <div class="udu-panel udu-clear-panel">
+                <div class="udu-header">
+                    <h2>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                        清除缓存
+                    </h2>
+                    <button class="udu-close" onclick="document.getElementById('clear-cache-modal').remove()">&times;</button>
+                </div>
+                <div class="udu-body">
+                    <div class="udu-clear-notice">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        选择要清除的模块，此操作不可撤销，建议先导出备份
+                    </div>
+                    <div class="udu-clear-actions-top">
+                        <button class="udu-clear-btn-small" id="select-all-btn">全选</button>
+                        <button class="udu-clear-btn-small" id="deselect-all-btn">取消全选</button>
+                    </div>
+                    <div class="udu-clear-list">
+                        ${checkboxesHTML}
+                    </div>
+                    <div class="udu-clear-footer">
+                        <button class="udu-clear-btn udu-clear-btn-cancel" id="cancel-clear-btn">取消</button>
+                        <button class="udu-clear-btn udu-clear-btn-danger" id="do-clear-btn">清除选中</button>
+                        <button class="udu-clear-btn udu-clear-btn-danger-outline" id="clear-all-btn">清除全部</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        overlay.querySelector('#select-all-btn').onclick = () => {
+            overlay.querySelectorAll('.udu-clear-checkbox:not(:disabled)').forEach(cb => {
+                cb.checked = true;
+            });
+        };
+
+        overlay.querySelector('#deselect-all-btn').onclick = () => {
+            overlay.querySelectorAll('.udu-clear-checkbox').forEach(cb => {
+                cb.checked = false;
+            });
+        };
+
+        overlay.querySelector('#cancel-clear-btn').onclick = () => {
+            overlay.remove();
+        };
+
+        overlay.querySelector('#do-clear-btn').onclick = () => {
+            const checked = overlay.querySelectorAll('.udu-clear-checkbox:checked');
+            if (checked.length === 0) {
+                alert('请至少选择一个模块');
+                return;
+            }
+
+            const typeNames = [];
+            checked.forEach(cb => {
+                const type = dataTypes[cb.value];
+                if (type) typeNames.push(type.name);
+            });
+
+            if (!confirm(`确定要清除以下模块的数据吗？\n\n${typeNames.join('\n')}\n\n此操作不可撤销！`)) {
+                return;
+            }
+
+            let totalCleared = 0;
+            checked.forEach(cb => {
+                const count = window.userCacheManager.clearDataType(cb.value);
+                totalCleared += count;
+            });
+
+            alert(`已清除 ${totalCleared} 条数据`);
+            overlay.remove();
+        };
+
+        overlay.querySelector('#clear-all-btn').onclick = () => {
+            if (!confirm('确定要清除所有缓存数据吗？\n\n此操作不可撤销！建议先导出数据备份。')) {
+                return;
+            }
+
+            const count = window.userCacheManager.clearAllData();
+            alert(`已清除 ${count} 条数据`);
+            overlay.remove();
+        };
+
+        const handleEsc = (e) => {
+            if (e.key === 'Escape') {
+                overlay.remove();
+                document.removeEventListener('keydown', handleEsc);
+            }
+        };
+        document.addEventListener('keydown', handleEsc);
     }
 }
 

@@ -29,7 +29,7 @@ const PromptForum = (function() {
         modal.innerHTML = `
             <div class="forum-modal-content">
                 <div class="forum-header">
-                    <h2>💡 提示词广场</h2>
+                    <h2><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6"></path><path d="M10 22h4"></path><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"></path></svg> 提示词广场</h2>
                     <div class="forum-header-actions">
                         <button id="forum_my_prompts_btn" class="forum-header-btn" title="我的发布">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
@@ -173,7 +173,7 @@ const PromptForum = (function() {
         
         categories.forEach(cat => {
             html += `<li class="forum-category-item ${currentFilters.category_id === cat.id ? 'active' : ''}" data-id="${cat.id}">
-                <span class="category-icon">${cat.icon || '📁'}</span>
+                <span class="category-icon">${cat.icon || '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>'}</span>
                 <span class="category-name">${cat.name}</span>
             </li>`;
         });
@@ -239,7 +239,7 @@ const PromptForum = (function() {
             html += `
                 <div class="forum-prompt-card" data-id="${prompt.id}">
                     <div class="prompt-card-header">
-                        <span class="prompt-category">${prompt.category_icon || '📁'} ${prompt.category_name || '未分类'}</span>
+                        <span class="prompt-category">${prompt.category_icon ? `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>` : ''} ${prompt.category_name || '未分类'}</span>
                         ${prompt.is_featured ? '<span class="prompt-featured">精选</span>' : ''}
                     </div>
                     <h3 class="prompt-title">${escapeHtml(prompt.title)}</h3>
@@ -338,7 +338,7 @@ const PromptForum = (function() {
             <div class="prompt-detail-header">
                 <h2>${escapeHtml(prompt.title)}</h2>
                 <div class="prompt-detail-meta">
-                    <span class="prompt-category">${prompt.category_icon || '📁'} ${prompt.category_name || '未分类'}</span>
+                    <span class="prompt-category">${prompt.category_icon ? `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>` : ''} ${prompt.category_name || '未分类'}</span>
                     <span class="prompt-author">@${prompt.author_username}</span>
                     <span class="prompt-time">${timeAgo}</span>
                 </div>
@@ -393,8 +393,8 @@ const PromptForum = (function() {
             </div>
             
             <div class="prompt-detail-stats">
-                <span>👁️ ${prompt.view_count} 次浏览</span>
-                <span>📥 ${prompt.import_count} 次导入</span>
+                <span><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg> ${prompt.view_count} 次浏览</span>
+                <span><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> ${prompt.import_count} 次导入</span>
             </div>
         `;
         
@@ -456,7 +456,7 @@ const PromptForum = (function() {
         const container = document.getElementById('forum_publish_form');
         
         let categoryOptions = categories.map(c => 
-            `<option value="${c.id}">${c.icon || '📁'} ${c.name}</option>`
+            `<option value="${c.id}"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg> ${c.name}</option>`
         ).join('');
         
         container.innerHTML = `
@@ -526,7 +526,7 @@ const PromptForum = (function() {
                             <div class="output-field-row">
                                 <input type="text" class="field-name-input" placeholder="字段名">
                                 <input type="text" class="field-desc-input" placeholder="字段描述">
-                                <button type="button" class="remove-field-btn" onclick="PromptForum.removeOutputField(this)">✕</button>
+                                <button type="button" class="remove-field-btn" onclick="PromptForum.removeOutputField(this)"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
                             </div>
                         </div>
                         <button type="button" class="add-field-btn" onclick="PromptForum.addOutputField()">+ 添加字段</button>
@@ -534,7 +534,7 @@ const PromptForum = (function() {
                 </div>
                 
                 <div class="form-notice">
-                    ⚠️ 发布后需经管理员审核才能公开显示
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> 发布后需经管理员审核才能公开显示
                 </div>
                 
                 <div class="form-actions">
@@ -877,9 +877,9 @@ const PromptForum = (function() {
                         <span class="prompt-time">${getTimeAgo(isFavorite ? prompt.favorited_at : prompt.created_at)}</span>
                     </div>
                     <div class="prompt-stats">
-                        <span title="浏览">👁️ ${prompt.view_count}</span>
-                        <span title="点赞">❤️ ${prompt.like_count}</span>
-                        <span title="收藏">⭐ ${prompt.favorite_count}</span>
+                        <span title="浏览"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg> ${prompt.view_count}</span>
+                        <span title="点赞"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg> ${prompt.like_count}</span>
+                        <span title="收藏"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> ${prompt.favorite_count}</span>
                     </div>
                 </div>
             `;
