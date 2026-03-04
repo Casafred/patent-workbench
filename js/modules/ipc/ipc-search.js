@@ -118,53 +118,35 @@ const IPCSearch = (function() {
             </div>
         `;
 
-        if (detail.section) {
+        if (detail.title) {
             html += `
                 <div class="ipc-detail-section">
-                    <h5>部 (Section)</h5>
-                    <div class="ipc-detail-content">${detail.section}</div>
+                    <h5>标题</h5>
+                    <div class="ipc-detail-content">${detail.title}</div>
                 </div>
             `;
         }
 
-        if (detail.class) {
+        if (detail.key) {
             html += `
                 <div class="ipc-detail-section">
-                    <h5>大类 (Class)</h5>
-                    <div class="ipc-detail-content">${detail.class}</div>
+                    <h5>键值</h5>
+                    <div class="ipc-detail-content">${detail.key}</div>
                 </div>
             `;
         }
 
-        if (detail.subclass) {
+        if (detail.parent) {
             html += `
                 <div class="ipc-detail-section">
-                    <h5>小类 (Subclass)</h5>
-                    <div class="ipc-detail-content">${detail.subclass}</div>
+                    <h5>父级分类</h5>
+                    <div class="ipc-detail-content">${detail.parent}</div>
                 </div>
             `;
         }
 
-        if (detail.main_group) {
-            html += `
-                <div class="ipc-detail-section">
-                    <h5>大组 (Main Group)</h5>
-                    <div class="ipc-detail-content">${detail.main_group}</div>
-                </div>
-            `;
-        }
-
-        if (detail.subgroup) {
-            html += `
-                <div class="ipc-detail-section">
-                    <h5>小组 (Subgroup)</h5>
-                    <div class="ipc-detail-content">${detail.subgroup}</div>
-                </div>
-            `;
-        }
-
-        if (detail.classification_validity) {
-            const isValid = detail.classification_validity === 'V';
+        if (detail.valid !== undefined) {
+            const isValid = detail.valid;
             html += `
                 <div class="ipc-detail-section">
                     <h5>有效性</h5>
