@@ -92,17 +92,85 @@ class PDFOCRChat {
 
     updateModelSelect() {
         const modelSelect = this.elements.modelSelect;
-        if (!modelSelect || !this.providers || !this.providers[this.currentProvider]) return;
+        if (!modelSelect) return;
         
-        const models = this.providers[this.currentProvider].models || [];
-        const defaultModel = this.providers[this.currentProvider].default_model || models[0];
+        let availableModels = [];
         
-        const options = models.map(m => 
-            `<option value="${m}" ${m === this.currentModel ? 'selected' : ''}>${m}</option>`
-        ).join('');
+        if (window.ProviderManager && typeof ProviderManager.getAvailableModelsGrouped === 'function') {
+            availableModels = ProviderManager.getAvailableModelsGrouped();
+        } else {
+            const getUserStorageItem = (key) => {
+                if (window.userCacheStorage && window.userCacheStorage.isInitialized()) {
+                    return window.userCacheStorage.get(key);
+                }
+                return localStorage.getItem(key);
+            };
+            
+            const zhipuKey = window.appState?.apiKey || getUserStorageItem('globalApiKey');
+            const aliyunKey = window.appState?.aliyunApiKey || getUserStorageItem('aliyun_api_key');
+            
+            const defaultZhipuModels = [
+                { id: 'glm-4-flash', name: 'GLM-4-Flash', provider: 'zhipu' },
+                { id: 'glm-4-long', name: 'GLM-4-Long', provider: 'zhipu' },
+                { id: 'glm-4.7-flash', name: 'GLM-4.7-Flash', provider: 'zhipu' }
+            ];
+            
+            const defaultAliyunModels = [
+                { id: 'qwen-turbo', name: 'Qwen-Turbo', provider: 'aliyun' },
+                { id: 'qwen-plus', name: 'Qwen-Plus', provider: 'aliyun' },
+                { id: 'qwen-max', name: 'Qwen-Max', provider: 'aliyun' }
+            ];
+            
+            if (zhipuKey) {
+                availableModels = availableModels.concat(defaultZhipuModels);
+            }
+            if (aliyunKey) {
+                availableModels = availableModels.concat(defaultAliyunModels);
+            }
+            
+            if (availableModels.length === 0 && this.providers && this.providers[this.currentProvider]) {
+                const models = this.providers[this.currentProvider].models || [];
+                availableModels = models.map(m => ({ id: m, name: m, provider: this.currentProvider }));
+            }
+        }
         
-        modelSelect.innerHTML = options;
-        this.currentModel = defaultModel;
+        const grouped = { zhipu: [], aliyun: [] };
+        availableModels.forEach(model => {
+            const provider = model.provider || 'zhipu';
+            if (grouped[provider]) {
+                grouped[provider].push(model);
+            }
+        });
+        
+        let optionsHtml = '';
+        
+        if (grouped.zhipu.length > 0) {
+            optionsHtml += '<optgroup label="智谱AI">';
+            grouped.zhipu.forEach(m => {
+                optionsHtml += `<option value="${m.id}" ${m.id === this.currentModel ? 'selected' : ''}>${m.name || m.id}</option>`;
+            });
+            optionsHtml += '</optgroup>';
+        }
+        
+        if (grouped.aliyun.length > 0) {
+            optionsHtml += '<optgroup label="阿里云百炼">';
+            grouped.aliyun.forEach(m => {
+                optionsHtml += `<option value="${m.id}" ${m.id === this.currentModel ? 'selected' : ''}>${m.name || m.id}</option>`;
+            });
+            optionsHtml += '</optgroup>';
+        }
+        
+        if (optionsHtml === '') {
+            optionsHtml = availableModels.map(m => 
+                `<option value="${m.id}" ${m.id === this.currentModel ? 'selected' : ''}>${m.name || m.id}</option>`
+            ).join('');
+        }
+        
+        modelSelect.innerHTML = optionsHtml;
+        
+        if (!this.currentModel && availableModels.length > 0) {
+            this.currentModel = availableModels[0].id;
+        }
     }
 
     supportsThinkingMode(model, provider) {

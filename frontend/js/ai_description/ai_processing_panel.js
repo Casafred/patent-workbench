@@ -134,13 +134,10 @@ class AIProcessingPanel {
     }
     
     /**
-     * Load available models from config
+     * Load available models using ProviderManager
      */
     async loadModels() {
         try {
-            const response = await fetch('/config/models.json');
-            const config = await response.json();
-            
             const modelSelector = document.getElementById('modelSelector');
             if (!modelSelector) return;
             
@@ -157,33 +154,43 @@ class AIProcessingPanel {
                 return;
             }
             
-            const zhipuKey = window.appState?.apiKey || localStorage.getItem('api_key') || localStorage.getItem('globalApiKey');
-            const aliyunKey = window.appState?.aliyunApiKey || localStorage.getItem('aliyun_api_key');
+            let availableModels = [];
             
-            const availableModels = [];
-            const allModels = config.all_models || [];
-            
-            if (zhipuKey && config.providers?.zhipu?.models) {
-                config.providers.zhipu.models.forEach(modelId => {
-                    const modelInfo = allModels.find(m => m.id === modelId) || { id: modelId, provider: 'zhipu', name: modelId };
-                    availableModels.push({ ...modelInfo, provider: 'zhipu', providerName: '智谱AI' });
-                });
-            }
-            
-            if (aliyunKey && config.providers?.aliyun?.models) {
-                config.providers.aliyun.models.forEach(modelId => {
-                    if (!availableModels.find(m => m.id === modelId)) {
-                        const modelInfo = allModels.find(m => m.id === modelId) || { id: modelId, provider: 'aliyun', name: modelId };
-                        availableModels.push({ ...modelInfo, provider: 'aliyun', providerName: '阿里云百炼' });
+            if (window.ProviderManager && typeof ProviderManager.getAvailableModelsGrouped === 'function') {
+                availableModels = ProviderManager.getAvailableModelsGrouped();
+            } else {
+                const getUserStorageItem = (key) => {
+                    if (window.userCacheStorage && window.userCacheStorage.isInitialized()) {
+                        return window.userCacheStorage.get(key);
                     }
-                });
-            }
-            
-            if (availableModels.length === 0 && config.providers?.zhipu?.models) {
-                config.providers.zhipu.models.forEach(modelId => {
-                    const modelInfo = allModels.find(m => m.id === modelId) || { id: modelId, provider: 'zhipu', name: modelId };
-                    availableModels.push({ ...modelInfo, provider: 'zhipu', providerName: '智谱AI' });
-                });
+                    return localStorage.getItem(key);
+                };
+                
+                const zhipuKey = window.appState?.apiKey || getUserStorageItem('globalApiKey');
+                const aliyunKey = window.appState?.aliyunApiKey || getUserStorageItem('aliyun_api_key');
+                
+                const defaultZhipuModels = [
+                    { id: 'glm-4-flash', name: 'GLM-4-Flash', provider: 'zhipu', providerName: '智谱AI' },
+                    { id: 'glm-4-long', name: 'GLM-4-Long', provider: 'zhipu', providerName: '智谱AI' },
+                    { id: 'glm-4.7-flash', name: 'GLM-4.7-Flash', provider: 'zhipu', providerName: '智谱AI' }
+                ];
+                
+                const defaultAliyunModels = [
+                    { id: 'qwen-turbo', name: 'Qwen-Turbo', provider: 'aliyun', providerName: '阿里云百炼' },
+                    { id: 'qwen-plus', name: 'Qwen-Plus', provider: 'aliyun', providerName: '阿里云百炼' },
+                    { id: 'qwen-max', name: 'Qwen-Max', provider: 'aliyun', providerName: '阿里云百炼' }
+                ];
+                
+                if (zhipuKey) {
+                    availableModels = availableModels.concat(defaultZhipuModels);
+                }
+                if (aliyunKey) {
+                    availableModels = availableModels.concat(defaultAliyunModels);
+                }
+                
+                if (availableModels.length === 0) {
+                    availableModels = defaultZhipuModels;
+                }
             }
             
             this.models = availableModels;

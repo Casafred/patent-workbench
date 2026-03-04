@@ -65,30 +65,87 @@ function populateUnifiedModelSelect() {
     if (!select) return;
 
     select.innerHTML = '';
-
-    if (typeof AVAILABLE_MODELS !== 'undefined' && AVAILABLE_MODELS.length > 0) {
-        AVAILABLE_MODELS.forEach(function(modelId) {
-            var option = document.createElement('option');
-            option.value = modelId;
-            option.textContent = modelId;
-            if (modelId === 'GLM-4.7-Flash' || modelId === 'GLM-4-Flash') {
-                option.textContent = modelId + ' (推荐)';
-            }
-            select.appendChild(option);
-        });
+    
+    let availableModels = [];
+    
+    if (window.ProviderManager && typeof ProviderManager.getAvailableModelsGrouped === 'function') {
+        availableModels = ProviderManager.getAvailableModelsGrouped();
     } else {
-        var defaultModels = [
-            'GLM-4.7-Flash',
-            'GLM-4-Flash',
-            'GLM-4-Plus',
-            'GLM-4-Air',
-            'GLM-4-0520',
-            'GLM-4'
+        const getUserStorageItem = (key) => {
+            if (window.userCacheStorage && window.userCacheStorage.isInitialized()) {
+                return window.userCacheStorage.get(key);
+            }
+            return localStorage.getItem(key);
+        };
+        
+        const zhipuKey = window.appState?.apiKey || getUserStorageItem('globalApiKey');
+        const aliyunKey = window.appState?.aliyunApiKey || getUserStorageItem('aliyun_api_key');
+        
+        const defaultZhipuModels = [
+            { id: 'glm-4-flash', name: 'GLM-4-Flash', provider: 'zhipu' },
+            { id: 'glm-4-long', name: 'GLM-4-Long', provider: 'zhipu' },
+            { id: 'glm-4.7-flash', name: 'GLM-4.7-Flash', provider: 'zhipu' }
         ];
-        defaultModels.forEach(function(modelId) {
+        
+        const defaultAliyunModels = [
+            { id: 'qwen-turbo', name: 'Qwen-Turbo', provider: 'aliyun' },
+            { id: 'qwen-plus', name: 'Qwen-Plus', provider: 'aliyun' },
+            { id: 'qwen-max', name: 'Qwen-Max', provider: 'aliyun' }
+        ];
+        
+        if (zhipuKey) {
+            availableModels = availableModels.concat(defaultZhipuModels);
+        }
+        if (aliyunKey) {
+            availableModels = availableModels.concat(defaultAliyunModels);
+        }
+        
+        if (availableModels.length === 0 && typeof AVAILABLE_MODELS !== 'undefined' && AVAILABLE_MODELS.length > 0) {
+            availableModels = AVAILABLE_MODELS.map(m => ({ id: m, name: m, provider: 'zhipu' }));
+        }
+        
+        if (availableModels.length === 0) {
+            availableModels = defaultZhipuModels;
+        }
+    }
+    
+    const grouped = { zhipu: [], aliyun: [] };
+    availableModels.forEach(function(model) {
+        const provider = model.provider || 'zhipu';
+        if (grouped[provider]) {
+            grouped[provider].push(model);
+        }
+    });
+    
+    if (grouped.zhipu.length > 0) {
+        var optgroup = document.createElement('optgroup');
+        optgroup.label = '智谱AI';
+        grouped.zhipu.forEach(function(m) {
             var option = document.createElement('option');
-            option.value = modelId;
-            option.textContent = modelId;
+            option.value = m.id;
+            option.textContent = m.name || m.id;
+            optgroup.appendChild(option);
+        });
+        select.appendChild(optgroup);
+    }
+    
+    if (grouped.aliyun.length > 0) {
+        var optgroup = document.createElement('optgroup');
+        optgroup.label = '阿里云百炼';
+        grouped.aliyun.forEach(function(m) {
+            var option = document.createElement('option');
+            option.value = m.id;
+            option.textContent = m.name || m.id;
+            optgroup.appendChild(option);
+        });
+        select.appendChild(optgroup);
+    }
+    
+    if (select.options.length === 0) {
+        availableModels.forEach(function(m) {
+            var option = document.createElement('option');
+            option.value = m.id;
+            option.textContent = m.name || m.id;
             select.appendChild(option);
         });
     }

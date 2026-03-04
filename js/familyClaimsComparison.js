@@ -265,15 +265,82 @@ function clearFamilyList() {
 function initFamilyComparisonModelSelector() {
     if (!familyComparisonModelSelect) return;
 
-    const models = window.AVAILABLE_MODELS || ["glm-4-flash", "glm-4-long", "glm-4.7-flash"];
-
-    const currentValue = familyComparisonModelSelect.value;
-    familyComparisonModelSelect.innerHTML = models.map(m => `<option value="${m}">${m}</option>`).join('');
-
-    if (currentValue && models.includes(currentValue)) {
-        familyComparisonModelSelect.value = currentValue;
+    let availableModels = [];
+    
+    if (window.ProviderManager && typeof ProviderManager.getAvailableModelsGrouped === 'function') {
+        availableModels = ProviderManager.getAvailableModelsGrouped();
     } else {
-        familyComparisonModelSelect.value = models[0];
+        const getUserStorageItem = (key) => {
+            if (window.userCacheStorage && window.userCacheStorage.isInitialized()) {
+                return window.userCacheStorage.get(key);
+            }
+            return localStorage.getItem(key);
+        };
+        
+        const zhipuKey = window.appState?.apiKey || getUserStorageItem('globalApiKey');
+        const aliyunKey = window.appState?.aliyunApiKey || getUserStorageItem('aliyun_api_key');
+        
+        const defaultZhipuModels = [
+            { id: 'glm-4-flash', name: 'GLM-4-Flash', provider: 'zhipu' },
+            { id: 'glm-4-long', name: 'GLM-4-Long', provider: 'zhipu' },
+            { id: 'glm-4.7-flash', name: 'GLM-4.7-Flash', provider: 'zhipu' }
+        ];
+        
+        const defaultAliyunModels = [
+            { id: 'qwen-turbo', name: 'Qwen-Turbo', provider: 'aliyun' },
+            { id: 'qwen-plus', name: 'Qwen-Plus', provider: 'aliyun' },
+            { id: 'qwen-max', name: 'Qwen-Max', provider: 'aliyun' }
+        ];
+        
+        if (zhipuKey) {
+            availableModels = availableModels.concat(defaultZhipuModels);
+        }
+        if (aliyunKey) {
+            availableModels = availableModels.concat(defaultAliyunModels);
+        }
+        
+        if (availableModels.length === 0) {
+            availableModels = defaultZhipuModels;
+        }
+    }
+    
+    const grouped = { zhipu: [], aliyun: [] };
+    availableModels.forEach(model => {
+        const provider = model.provider || 'zhipu';
+        if (grouped[provider]) {
+            grouped[provider].push(model);
+        }
+    });
+    
+    let optionsHtml = '';
+    
+    if (grouped.zhipu.length > 0) {
+        optionsHtml += '<optgroup label="智谱AI">';
+        grouped.zhipu.forEach(m => {
+            optionsHtml += `<option value="${m.id}">${m.name || m.id}</option>`;
+        });
+        optionsHtml += '</optgroup>';
+    }
+    
+    if (grouped.aliyun.length > 0) {
+        optionsHtml += '<optgroup label="阿里云百炼">';
+        grouped.aliyun.forEach(m => {
+            optionsHtml += `<option value="${m.id}">${m.name || m.id}</option>`;
+        });
+        optionsHtml += '</optgroup>';
+    }
+    
+    if (optionsHtml === '') {
+        optionsHtml = availableModels.map(m => `<option value="${m.id}">${m.name || m.id}</option>`).join('');
+    }
+    
+    const currentValue = familyComparisonModelSelect.value;
+    familyComparisonModelSelect.innerHTML = optionsHtml;
+
+    if (currentValue && availableModels.find(m => m.id === currentValue)) {
+        familyComparisonModelSelect.value = currentValue;
+    } else if (availableModels.length > 0) {
+        familyComparisonModelSelect.value = availableModels[0].id;
     }
 
     console.log('✅ 同族权利要求对比模型选择器已初始化');

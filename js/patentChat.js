@@ -65,17 +65,85 @@ function updatePatentChatProviderSelect() {
 
 function updatePatentChatModelSelect() {
     const modelSelect = document.getElementById('patent_chat_model');
-    if (!modelSelect || !patentChatState.providers || !patentChatState.providers[patentChatState.currentProvider]) return;
+    if (!modelSelect) return;
     
-    const models = patentChatState.providers[patentChatState.currentProvider].models || [];
-    const defaultModel = patentChatState.providers[patentChatState.currentProvider].default_model || models[0];
+    let availableModels = [];
     
-    const options = models.map(m => 
-        `<option value="${m}" ${m === patentChatState.currentModel ? 'selected' : ''}>${m}</option>`
-    ).join('');
+    if (window.ProviderManager && typeof ProviderManager.getAvailableModelsGrouped === 'function') {
+        availableModels = ProviderManager.getAvailableModelsGrouped();
+    } else {
+        const getUserStorageItem = (key) => {
+            if (window.userCacheStorage && window.userCacheStorage.isInitialized()) {
+                return window.userCacheStorage.get(key);
+            }
+            return localStorage.getItem(key);
+        };
+        
+        const zhipuKey = window.appState?.apiKey || getUserStorageItem('globalApiKey');
+        const aliyunKey = window.appState?.aliyunApiKey || getUserStorageItem('aliyun_api_key');
+        
+        const defaultZhipuModels = [
+            { id: 'glm-4-flash', name: 'GLM-4-Flash', provider: 'zhipu' },
+            { id: 'glm-4-long', name: 'GLM-4-Long', provider: 'zhipu' },
+            { id: 'glm-4.7-flash', name: 'GLM-4.7-Flash', provider: 'zhipu' }
+        ];
+        
+        const defaultAliyunModels = [
+            { id: 'qwen-turbo', name: 'Qwen-Turbo', provider: 'aliyun' },
+            { id: 'qwen-plus', name: 'Qwen-Plus', provider: 'aliyun' },
+            { id: 'qwen-max', name: 'Qwen-Max', provider: 'aliyun' }
+        ];
+        
+        if (zhipuKey) {
+            availableModels = availableModels.concat(defaultZhipuModels);
+        }
+        if (aliyunKey) {
+            availableModels = availableModels.concat(defaultAliyunModels);
+        }
+        
+        if (availableModels.length === 0 && patentChatState.providers && patentChatState.providers[patentChatState.currentProvider]) {
+            const models = patentChatState.providers[patentChatState.currentProvider].models || [];
+            availableModels = models.map(m => ({ id: m, name: m, provider: patentChatState.currentProvider }));
+        }
+    }
     
-    modelSelect.innerHTML = options;
-    patentChatState.currentModel = defaultModel;
+    const grouped = { zhipu: [], aliyun: [] };
+    availableModels.forEach(model => {
+        const provider = model.provider || 'zhipu';
+        if (grouped[provider]) {
+            grouped[provider].push(model);
+        }
+    });
+    
+    let optionsHtml = '';
+    
+    if (grouped.zhipu.length > 0) {
+        optionsHtml += '<optgroup label="智谱AI">';
+        grouped.zhipu.forEach(m => {
+            optionsHtml += `<option value="${m.id}" ${m.id === patentChatState.currentModel ? 'selected' : ''}>${m.name || m.id}</option>`;
+        });
+        optionsHtml += '</optgroup>';
+    }
+    
+    if (grouped.aliyun.length > 0) {
+        optionsHtml += '<optgroup label="阿里云百炼">';
+        grouped.aliyun.forEach(m => {
+            optionsHtml += `<option value="${m.id}" ${m.id === patentChatState.currentModel ? 'selected' : ''}>${m.name || m.id}</option>`;
+        });
+        optionsHtml += '</optgroup>';
+    }
+    
+    if (optionsHtml === '') {
+        optionsHtml = availableModels.map(m => 
+            `<option value="${m.id}" ${m.id === patentChatState.currentModel ? 'selected' : ''}>${m.name || m.id}</option>`
+        ).join('');
+    }
+    
+    modelSelect.innerHTML = optionsHtml;
+    
+    if (!patentChatState.currentModel && availableModels.length > 0) {
+        patentChatState.currentModel = availableModels[0].id;
+    }
 }
 
 function patentChatSupportsThinking(model, provider) {
