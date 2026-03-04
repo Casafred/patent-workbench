@@ -9,7 +9,7 @@ import random
 from flask import Blueprint, request, session, redirect, url_for, render_template_string, Response
 from backend.services.auth_service import AuthService
 from backend.middleware.auth_middleware import login_required, guest_mode_required
-from backend.config import BASE_DIR, GUEST_MODE_ENABLED, GUEST_MODEL
+from backend.config import BASE_DIR, GUEST_MODE_ENABLED, GUEST_MODEL, REMEMBER_ME_SESSION_LIFETIME
 
 # Create blueprint
 auth_bp = Blueprint('auth', __name__)
@@ -246,6 +246,63 @@ LOGIN_PAGE_HTML = """
         .agreement-text a:hover {
             text-decoration: underline;
         }
+        .remember-me-section {
+            margin: 15px 0;
+            text-align: left;
+        }
+        .remember-me-checkbox {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            position: relative;
+            padding-left: 30px;
+            user-select: none;
+            line-height: 1.6;
+        }
+        .remember-me-checkbox input[type="checkbox"] {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+        .checkmark-remember {
+            position: absolute;
+            left: 0;
+            top: 2px;
+            height: 20px;
+            width: 20px;
+            background-color: #fff;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        .remember-me-checkbox:hover .checkmark-remember {
+            border-color: var(--primary-color);
+        }
+        .remember-me-checkbox input:checked ~ .checkmark-remember {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        .checkmark-remember:after {
+            content: "";
+            position: absolute;
+            display: none;
+            left: 6px;
+            top: 2px;
+            width: 5px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+        .remember-me-checkbox input:checked ~ .checkmark-remember:after {
+            display: block;
+        }
+        .remember-me-text {
+            font-size: 13px;
+            color: #666;
+        }
         .get-account-btn {
             display: inline-block;
             margin-left: 10px;
@@ -424,6 +481,14 @@ LOGIN_PAGE_HTML = """
                     </label>
                 </div>
                 
+                <div class="remember-me-section">
+                    <label class="remember-me-checkbox">
+                        <input type="checkbox" id="remember-me" name="remember_me">
+                        <span class="checkmark-remember"></span>
+                        <span class="remember-me-text">保持登录（24小时内免登录）</span>
+                    </label>
+                </div>
+                
                 <button id="login-btn" type="submit" class="login-btn">
                     <span id="btn-text">登 录</span>
                     <div id="spinner" class="spinner"></div>
@@ -594,11 +659,19 @@ def login():
             client_ip = AuthService.get_client_ip()
             AuthService.manage_user_ip(username, client_ip)
             
+            # Check "remember me" option
+            remember_me = request.form.get('remember_me') == 'on'
+            
             # Set session
             session['user'] = username
             session.permanent = True
             from datetime import datetime
             session['_creation_time'] = datetime.now().timestamp()
+            
+            # If remember me is checked, mark session for extended lifetime
+            if remember_me:
+                session['_remember_me'] = True
+                session.permanent_session_lifetime = REMEMBER_ME_SESSION_LIFETIME
             
             return redirect(url_for('auth.serve_app'))
         else:
@@ -645,12 +718,18 @@ def session_info():
         return {'authenticated': False, 'remaining_seconds': 0}
     
     is_guest = session.get('is_guest', False)
+    is_remember_me = session.get('_remember_me', False)
     username = session.get('user')
     
     from datetime import datetime
-    from backend.config import PERMANENT_SESSION_LIFETIME, GUEST_SESSION_LIFETIME
+    from backend.config import PERMANENT_SESSION_LIFETIME, GUEST_SESSION_LIFETIME, REMEMBER_ME_SESSION_LIFETIME
     
-    session_lifetime = GUEST_SESSION_LIFETIME if is_guest else PERMANENT_SESSION_LIFETIME
+    if is_guest:
+        session_lifetime = GUEST_SESSION_LIFETIME
+    elif is_remember_me:
+        session_lifetime = REMEMBER_ME_SESSION_LIFETIME
+    else:
+        session_lifetime = PERMANENT_SESSION_LIFETIME
     
     session_created = session.get('_creation_time')
     if session_created:
@@ -665,6 +744,7 @@ def session_info():
         'authenticated': True,
         'username': username,
         'is_guest': is_guest,
+        'is_remember_me': is_remember_me,
         'remaining_seconds': remaining_seconds,
         'total_seconds': int(session_lifetime.total_seconds())
     }

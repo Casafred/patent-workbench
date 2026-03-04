@@ -8,9 +8,8 @@ This module initializes and configures all Flask extensions including:
 
 import psycopg2.pool
 from flask_cors import CORS
-from backend.config import Config
+from backend.config import Config, REMEMBER_ME_SESSION_LIFETIME
 
-# Database connection pool (initialized later)
 db_pool = None
 
 
@@ -21,11 +20,15 @@ def init_extensions(app):
     Args:
         app: Flask application instance
     """
-    # Initialize CORS
     CORS(app)
     
-    # Initialize database connection pool
     init_db_pool()
+    
+    @app.before_request
+    def set_session_lifetime():
+        from flask import session
+        if session.get('_remember_me'):
+            session.permanent_session_lifetime = REMEMBER_ME_SESSION_LIFETIME
     
     return app
 

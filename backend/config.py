@@ -29,6 +29,7 @@ else:
 # --- Flask配置 ---
 SECRET_KEY = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-key-for-local-testing-only')
 PERMANENT_SESSION_LIFETIME = timedelta(hours=6)
+REMEMBER_ME_SESSION_LIFETIME = timedelta(days=1)
 
 # --- 数据库配置 ---
 DATABASE_URL = os.environ.get('DATABASE_URL')
@@ -87,6 +88,7 @@ class Config:
     
     SECRET_KEY = SECRET_KEY
     PERMANENT_SESSION_LIFETIME = PERMANENT_SESSION_LIFETIME
+    REMEMBER_ME_SESSION_LIFETIME = REMEMBER_ME_SESSION_LIFETIME
     MAX_CONTENT_LENGTH = MAX_CONTENT_LENGTH
     
     # JSON配置 - 确保中文字符正确显示
