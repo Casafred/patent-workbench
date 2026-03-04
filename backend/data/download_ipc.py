@@ -1,5 +1,6 @@
 """
-通过WIPO API获取IPC分类数据并缓存到本地
+通过WIPO API获取完整IPC分类数据并缓存到本地
+递归获取所有层级
 """
 import requests
 import json
@@ -20,11 +21,12 @@ def clean_title(title):
     """清理标题HTML标签"""
     if not title:
         return ''
-    return re.sub(r'<[^>]+>', '', title).strip()
+    title = re.sub(r'<[^>]+>', '', title)
+    title = re.sub(r'\s+', ' ', title)
+    return title.strip()
 
 def get_roots():
     """获取根节点（部A-H）"""
-    print('获取IPC根节点...')
     url = f'{WIPO_API_BASE}/scheme/roots/l1'
     resp = requests.get(url, headers=headers, timeout=30)
     if resp.status_code == 200:
@@ -43,114 +45,146 @@ def get_children(key):
         return data.get('data', [])
     return []
 
-def build_full_tree():
-    """构建完整的IPC分类树"""
-    print('开始构建IPC分类树...')
+def build_tree_recursive(key, symbol, title, depth=0, max_depth=5, request_count=[0]):
+    """递归构建分类树"""
+    indent = '  ' * depth
+    display_symbol = format_symbol(symbol)
+    print(f'{indent}{display_symbol} ({depth})')
     
-    ipc_data = {
-        'version': '2024.01',
-        'sections': [],
-        'all_entries': {},
-        'key_map': {}
+    node = {
+        'symbol': symbol,
+        'title': title,
+        'key': key,
+        'depth': depth,
+        'children': []
     }
     
+    if depth >= max_depth:
+        return node
+    
+    try:
+        request_count[0] += 1
+        if request_count[0] % 10 == 0:
+            time.sleep(0.5)
+        
+        children = get_children(key)
+        
+        for child in children:
+            child_symbol = child.get('symbol') or child.get('symbolcode', '')
+            child_title = clean_title(child.get('title1', ''))
+            child_key = child.get('key', '')
+            
+            if child_key and child_symbol:
+                child_node = build_tree_recursive(
+                    child_key,
+                    child_symbol,
+                    child_title,
+                    depth + 1,
+                    max_depth,
+                    request_count
+                )
+                node['children'].append(child_node)
+    except Exception as e:
+        print(f'{indent}错误: {e}')
+    
+    return node
+
+def format_symbol(symbol):
+    """格式化分类号显示"""
+    if not symbol:
+        return ''
+    if len(symbol) <= 4:
+        return symbol
+    if '/' in symbol:
+        return symbol.replace('/', ' ')
+    if len(symbol) > 4 and symbol[4].isdigit():
+        return symbol[:4] + ' ' + symbol[4:]
+    return symbol
+
+def count_nodes(node):
+    """统计节点总数"""
+    count = 1
+    for child in node.get('children', []):
+        count += count_nodes(child)
+    return count
+
+def flatten_tree(node, all_entries, parent_symbol=''):
+    """将树结构扁平化，便于快速查找"""
+    symbol = node.get('symbol', '')
+    
+    all_entries[symbol] = {
+        'symbol': symbol,
+        'title': node.get('title', ''),
+        'key': node.get('key', ''),
+        'depth': node.get('depth', 0),
+        'parent': parent_symbol
+    }
+    
+    for child in node.get('children', []):
+        flatten_tree(child, all_entries, symbol)
+
+def build_full_tree():
+    """构建完整的IPC分类树"""
+    print('开始构建完整IPC分类树...')
+    print('=' * 50)
+    
     roots = get_roots()
-    print(f'获取到 {len(roots)} 个根节点')
+    print(f'获取到 {len(roots)} 个根节点\n')
+    
+    sections = []
+    all_entries = {}
+    key_map = {}
     
     for root in roots:
         symbol = root.get('symbol') or root.get('symbolcode', '')
         key = root.get('key', '')
         title = clean_title(root.get('title1', ''))
         
-        print(f'\n处理部: {symbol} (key: {key})')
+        print(f'\n处理部: {symbol}')
+        print('-' * 30)
         
-        ipc_data['key_map'][symbol] = key
+        key_map[symbol] = key
         
-        section_node = {
-            'symbol': symbol,
-            'title': title,
-            'key': key,
-            'children': []
+        section_node = build_tree_recursive(key, symbol, title, depth=0, max_depth=5)
+        sections.append(section_node)
+        
+        node_count = count_nodes(section_node)
+        print(f'\n  部 {symbol} 共 {node_count} 个节点')
+    
+    for section in sections:
+        flatten_tree(section, all_entries)
+    
+    for symbol, entry in all_entries.items():
+        key_map[symbol] = entry.get('key', '')
+    
+    ipc_data = {
+        'version': '2024.01',
+        'generated': time.strftime('%Y-%m-%d %H:%M:%S'),
+        'sections': sections,
+        'all_entries': all_entries,
+        'key_map': key_map,
+        'stats': {
+            'sections': len(sections),
+            'total_entries': len(all_entries)
         }
-        
-        ipc_data['all_entries'][symbol] = {
-            'symbol': symbol,
-            'title': title,
-            'key': key
-        }
-        
-        try:
-            children = get_children(key)
-            time.sleep(0.15)
-            print(f'  获取到 {len(children)} 个大类')
-            
-            for child in children:
-                child_symbol = child.get('symbol') or child.get('symbolcode', '')
-                child_title = clean_title(child.get('title1', ''))
-                child_key = child.get('key', '')
-                
-                if child_key:
-                    ipc_data['key_map'][child_symbol] = child_key
-                    ipc_data['all_entries'][child_symbol] = {
-                        'symbol': child_symbol,
-                        'title': child_title,
-                        'key': child_key,
-                        'parent': symbol
-                    }
-                    
-                    child_node = {
-                        'symbol': child_symbol,
-                        'title': child_title,
-                        'key': child_key,
-                        'children': []
-                    }
-                    
-                    try:
-                        sub_children = get_children(child_key)
-                        time.sleep(0.1)
-                        
-                        for sub in sub_children:
-                            sub_symbol = sub.get('symbol') or sub.get('symbolcode', '')
-                            sub_title = clean_title(sub.get('title1', ''))
-                            sub_key = sub.get('key', '')
-                            
-                            if sub_key:
-                                ipc_data['key_map'][sub_symbol] = sub_key
-                                ipc_data['all_entries'][sub_symbol] = {
-                                    'symbol': sub_symbol,
-                                    'title': sub_title,
-                                    'key': sub_key,
-                                    'parent': child_symbol
-                                }
-                                
-                                child_node['children'].append({
-                                    'symbol': sub_symbol,
-                                    'title': sub_title,
-                                    'key': sub_key
-                                })
-                    except Exception as e:
-                        print(f'  获取子节点失败 {child_symbol}: {e}')
-                    
-                    section_node['children'].append(child_node)
-        except Exception as e:
-            print(f'获取部 {symbol} 的子节点失败: {e}')
-        
-        ipc_data['sections'].append(section_node)
+    }
     
     return ipc_data
 
 def main():
     ipc_data = build_full_tree()
     
-    print(f'\n构建完成:')
-    print(f'  - 部数量: {len(ipc_data["sections"])}')
-    print(f'  - 总条目数: {len(ipc_data["all_entries"])}')
-    print(f'  - key映射数: {len(ipc_data["key_map"])}')
+    print('\n' + '=' * 50)
+    print('构建完成:')
+    print(f'  - 部数量: {ipc_data["stats"]["sections"]}')
+    print(f'  - 总条目数: {ipc_data["stats"]["total_entries"]}')
     
     output_file = os.path.join(DATA_DIR, 'ipc_data.json')
     with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(ipc_data, f, ensure_ascii=False, indent=2)
     
+    file_size = os.path.getsize(output_file)
+    print(f'  - 文件大小: {file_size / 1024:.1f} KB')
     print(f'\n数据已保存到: {output_file}')
     
     return ipc_data

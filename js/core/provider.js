@@ -350,6 +350,10 @@ const ProviderManager = {
             this.saveToStorage();
             this.updateApiKeyUI();
             
+            window.dispatchEvent(new CustomEvent('providerChanged', {
+                detail: { provider: provider, providerName: this.providers[provider]?.name || provider }
+            }));
+            
             console.log('[ProviderManager] 模型选择', model, '自动切换服务商为:', provider);
         }
     },

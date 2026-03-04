@@ -1,13 +1,16 @@
 """
 IPC Classification API routes.
 
-This module handles IPC classification-related operations using local data.
+This module handles IPC classification-related operations using a hybrid approach:
+- Local data for basic browsing (sections, classes, subclasses)
+- On-demand fetching from WIPO API for deeper levels
 """
 
 import json
 import os
 import time
 import traceback
+import re
 from functools import wraps
 from flask import Blueprint, request, jsonify, current_app
 from backend.utils import create_response
@@ -17,7 +20,16 @@ ipc_bp = Blueprint('ipc', __name__)
 
 DATA_FILE = os.path.join(os.path.dirname(__file__), '..', 'data', 'ipc_data.json')
 IPC_DATA = None
+CHILDREN_CACHE = {}
 DATA_LOAD_TIME = 0
+
+WIPO_API_BASE = 'https://ipcpub.wipo.int/api/v1'
+
+HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'application/json',
+    'Accept-Language': 'en-US,en;q=0.9'
+}
 
 def load_local_data():
     """加载本地IPC数据"""
@@ -35,6 +47,35 @@ def load_local_data():
                 return IPC_DATA
     except Exception as e:
         print(f'加载本地IPC数据失败: {e}')
+    
+    return None
+
+def clean_title(title):
+    """清理标题HTML标签"""
+    if not title:
+        return ''
+    title = re.sub(r'<[^>]+>', '', title)
+    title = re.sub(r'\s+', ' ', title)
+    return title.strip()
+
+def fetch_from_wipo(key):
+    """从WIPO API获取子节点"""
+    cache_key = f"wipo_{key}"
+    if cache_key in CHILDREN_CACHE:
+        return CHILDREN_CACHE[cache_key]
+    
+    try:
+        url = f'{WIPO_API_BASE}/scheme/children/l1'
+        params = {'key': key}
+        resp = requests.get(url, params=params, headers=HEADERS, timeout=30)
+        
+        if resp.status_code == 200:
+            data = resp.json()
+            children = data.get('data', [])
+            CHILDREN_CACHE[cache_key] = children
+            return children
+    except Exception as e:
+        print(f'WIPO API请求失败: {e}')
     
     return None
 
@@ -127,16 +168,10 @@ def predict():
             'hierarchiclevel': level_map.get(level, 'SUBGROUP')
         }
         
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'application/json',
-            'Accept-Language': 'en-US,en;q=0.9'
-        }
-        
         response = requests.get(
-            "https://ipcpub.wipo.int/api/v1/search/ipccat",
+            f"{WIPO_API_BASE}/search/ipccat",
             params=params,
-            headers=headers,
+            headers=HEADERS,
             timeout=30
         )
         
@@ -189,18 +224,16 @@ def predict():
 @ipc_bp.route('/ipc/tree', methods=['GET'])
 def get_tree():
     """
-    Get IPC classification tree structure from local data.
+    Get IPC classification tree structure.
+    Hybrid mode: local data + on-demand WIPO API
     """
     level = request.args.get('level', 'l1')
     key = request.args.get('key', '')
     
     local_data = load_local_data()
     
-    if not local_data:
-        return create_response(error="IPC数据未加载，请稍后重试")
-    
-    try:
-        if not key:
+    if not key:
+        if local_data:
             roots = []
             for section in local_data.get('sections', []):
                 roots.append({
@@ -212,17 +245,31 @@ def get_tree():
                     'lazy': True
                 })
             return create_response(data=roots)
-        
+        else:
+            return create_response(error="IPC数据未加载")
+    
+    children = get_children_hybrid(key, local_data)
+    
+    if children is not None:
+        return create_response(data=children)
+    
+    return create_response(error="获取分类树失败")
+
+
+def get_children_hybrid(key, local_data):
+    """混合模式获取子节点：优先本地，按需从WIPO获取"""
+    
+    if local_data:
         all_entries = local_data.get('all_entries', {})
-        key_map = local_data.get('key_map', {})
         
-        children = []
+        local_children = []
         for symbol, entry in all_entries.items():
             if entry.get('key') == key:
-                for child_symbol in entry.get('children', []):
+                child_symbols = get_child_symbols_from_tree(symbol, local_data)
+                for child_symbol in child_symbols:
                     if child_symbol in all_entries:
                         child_entry = all_entries[child_symbol]
-                        children.append({
+                        local_children.append({
                             'key': child_entry.get('key', ''),
                             'symbol': child_symbol,
                             'symbolcode': child_symbol,
@@ -232,31 +279,50 @@ def get_tree():
                         })
                 break
         
-        if not children:
-            for section in local_data.get('sections', []):
-                if section.get('key') == key:
-                    for child in section.get('children', []):
-                        children.append({
-                            'key': child.get('key', ''),
-                            'symbol': child.get('symbol', ''),
-                            'symbolcode': child.get('symbol', ''),
-                            'title1': child.get('title', ''),
-                            'folder': True,
-                            'lazy': True
-                        })
-                    break
-        
-        return create_response(data=children)
-        
-    except Exception as e:
-        print(f"Error in get_tree: {traceback.format_exc()}")
-        return create_response(error=f"获取分类树失败: {str(e)}")
+        if local_children:
+            return local_children
+    
+    wipo_children = fetch_from_wipo(key)
+    
+    if wipo_children:
+        result = []
+        for child in wipo_children:
+            result.append({
+                'key': child.get('key', ''),
+                'symbol': child.get('symbol') or child.get('symbolcode', ''),
+                'symbolcode': child.get('symbolcode', ''),
+                'title1': clean_title(child.get('title1', '')),
+                'folder': child.get('folder', True),
+                'lazy': child.get('lazy', True)
+            })
+        return result
+    
+    return None
+
+
+def get_child_symbols_from_tree(symbol, local_data):
+    """从本地树结构中获取子节点符号"""
+    sections = local_data.get('sections', [])
+    
+    def find_children(nodes, target_symbol):
+        for node in nodes:
+            if node.get('symbol') == target_symbol:
+                return [c.get('symbol') for c in node.get('children', [])]
+            children = node.get('children', [])
+            if children:
+                result = find_children(children, target_symbol)
+                if result:
+                    return result
+        return []
+    
+    return find_children(sections, symbol)
 
 
 @ipc_bp.route('/ipc/search', methods=['GET'])
 def search():
     """
-    Search IPC symbols by keywords in local data.
+    Search IPC symbols by keywords.
+    Hybrid mode: local + WIPO API
     """
     query = request.args.get('q', '').lower()
     limit = request.args.get('limit', 20, type=int)
@@ -265,12 +331,9 @@ def search():
         return create_response(error="请输入搜索关键词")
     
     local_data = load_local_data()
+    results = []
     
-    if not local_data:
-        return create_response(error="IPC数据未加载，请稍后重试")
-    
-    try:
-        results = []
+    if local_data:
         all_entries = local_data.get('all_entries', {})
         
         for symbol, entry in all_entries.items():
@@ -282,27 +345,47 @@ def search():
                     'title': entry.get('title', ''),
                     'score': 100 if query in symbol.lower() else 50
                 })
-        
-        results.sort(key=lambda x: x['score'], reverse=True)
-        results = results[:min(limit, 50)]
-        
-        result = {
-            'query': query,
-            'count': len(results),
-            'results': results
-        }
-        
-        return create_response(data=result)
-        
-    except Exception as e:
-        print(f"Error in search: {traceback.format_exc()}")
-        return create_response(error=f"搜索失败: {str(e)}")
+    
+    if len(results) < limit:
+        try:
+            url = f'{WIPO_API_BASE}/search/quick'
+            params = {
+                'q': query,
+                'limit': limit - len(results),
+                'lang': 'en'
+            }
+            resp = requests.get(url, params=params, headers=HEADERS, timeout=15)
+            
+            if resp.status_code == 200:
+                data = resp.json()
+                for item in data.get('results', []):
+                    symbol = item.get('display', '')
+                    if not any(r['symbol'] == symbol for r in results):
+                        results.append({
+                            'symbol': symbol,
+                            'code': item.get('code', ''),
+                            'title': clean_title(item.get('title1', '')),
+                            'score': item.get('score', 30)
+                        })
+        except Exception as e:
+            print(f'WIPO搜索失败: {e}')
+    
+    results.sort(key=lambda x: x['score'], reverse=True)
+    results = results[:min(limit, 50)]
+    
+    result = {
+        'query': query,
+        'count': len(results),
+        'results': results
+    }
+    
+    return create_response(data=result)
 
 
 @ipc_bp.route('/ipc/detail', methods=['GET'])
 def get_detail():
     """
-    Get detailed information for an IPC symbol from local data.
+    Get detailed information for an IPC symbol.
     """
     symbol = request.args.get('symbol', '')
     
@@ -311,10 +394,7 @@ def get_detail():
     
     local_data = load_local_data()
     
-    if not local_data:
-        return create_response(error="IPC数据未加载，请稍后重试")
-    
-    try:
+    if local_data:
         all_entries = local_data.get('all_entries', {})
         
         if symbol in all_entries:
@@ -325,21 +405,33 @@ def get_detail():
                 'key': entry.get('key', ''),
                 'parent': entry.get('parent', '')
             })
+    
+    try:
+        url = f'{WIPO_API_BASE}/scheme/getSymbolValidity'
+        params = {'symbol': symbol}
+        resp = requests.get(url, params=params, headers=HEADERS, timeout=10)
         
-        return create_response(error=f"未找到分类号: {symbol}")
-        
+        if resp.status_code == 200:
+            data = resp.json()
+            if data.get('data'):
+                entry = data['data']
+                return create_response(data={
+                    'symbol': symbol,
+                    'title': clean_title(entry.get('title1', '')),
+                    'key': entry.get('key', ''),
+                    'valid': entry.get('valid', True)
+                })
     except Exception as e:
-        print(f"Error in get_detail: {traceback.format_exc()}")
-        return create_response(error=f"获取详情失败: {str(e)}")
+        print(f'获取详情失败: {e}')
+    
+    return create_response(error=f"未找到分类号: {symbol}")
 
 
 @ipc_bp.route('/ipc/sections', methods=['GET'])
 def get_sections():
     """
-    Get IPC section list (A-H) from local data.
+    Get IPC section list (A-H).
     """
-    local_data = load_local_data()
-    
     sections = [
         {'symbol': 'A', 'title': '人类生活需要', 'titleEn': 'HUMAN NECESSITIES'},
         {'symbol': 'B', 'title': '作业；运输', 'titleEn': 'PERFORMING OPERATIONS; TRANSPORTING'},
@@ -350,6 +442,8 @@ def get_sections():
         {'symbol': 'G', 'title': '物理', 'titleEn': 'PHYSICS'},
         {'symbol': 'H', 'title': '电学', 'titleEn': 'ELECTRICITY'}
     ]
+    
+    local_data = load_local_data()
     
     if local_data:
         for section in sections:
@@ -366,9 +460,10 @@ def reload_data():
     """
     Reload IPC data from file.
     """
-    global IPC_DATA, DATA_LOAD_TIME
+    global IPC_DATA, DATA_LOAD_TIME, CHILDREN_CACHE
     IPC_DATA = None
     DATA_LOAD_TIME = 0
+    CHILDREN_CACHE = {}
     
     data = load_local_data()
     
@@ -379,3 +474,13 @@ def reload_data():
         })
     else:
         return create_response(error='数据加载失败')
+
+
+@ipc_bp.route('/ipc/clear-cache', methods=['POST'])
+def clear_cache():
+    """
+    Clear children cache.
+    """
+    global CHILDREN_CACHE
+    CHILDREN_CACHE = {}
+    return create_response(data={'message': '缓存已清除'})

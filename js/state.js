@@ -296,7 +296,10 @@ function updateAvailableModels() {
     const batchModels = [];
     const asyncModels = [];
     
-    if (zhipuKey && MODELS_CONFIG.providers.zhipu?.models) {
+    const hasZhipuKey = !!zhipuKey;
+    const hasAliyunKey = !!aliyunKey;
+    
+    if (hasZhipuKey && MODELS_CONFIG.providers.zhipu?.models) {
         MODELS_CONFIG.providers.zhipu.models.forEach(m => {
             availableModels.push(m);
             batchModels.push(m);
@@ -304,7 +307,7 @@ function updateAvailableModels() {
         });
     }
     
-    if (aliyunKey && MODELS_CONFIG.providers.aliyun?.models) {
+    if (hasAliyunKey && MODELS_CONFIG.providers.aliyun?.models) {
         MODELS_CONFIG.providers.aliyun.models.forEach(m => {
             if (!availableModels.includes(m)) {
                 availableModels.push(m);
@@ -334,9 +337,22 @@ function updateAvailableModels() {
     window.BATCH_MODELS = batchModels;
     window.ASYNC_MODELS = asyncModels;
     
+    if (hasZhipuKey && !hasAliyunKey) {
+        appState.provider = 'zhipu';
+        window.CURRENT_PROVIDER_MODE = 'zhipu_only';
+    } else if (hasAliyunKey && !hasZhipuKey) {
+        appState.provider = 'aliyun';
+        window.CURRENT_PROVIDER_MODE = 'aliyun_only';
+    } else if (hasZhipuKey && hasAliyunKey) {
+        window.CURRENT_PROVIDER_MODE = 'both';
+    } else {
+        window.CURRENT_PROVIDER_MODE = 'none';
+    }
+    
     console.log('✅ 可用模型列表已更新:', availableModels.length, '个模型');
-    console.log('  - 智谱AI Key:', zhipuKey ? '已配置' : '未配置');
-    console.log('  - 阿里云Key:', aliyunKey ? '已配置' : '未配置');
+    console.log('  - 智谱AI Key:', hasZhipuKey ? '已配置' : '未配置');
+    console.log('  - 阿里云Key:', hasAliyunKey ? '已配置' : '未配置');
+    console.log('  - 服务商模式:', window.CURRENT_PROVIDER_MODE);
 }
 
 function updateModelsForProvider(provider) {
@@ -399,6 +415,8 @@ function updateAllModelSelectors(retryCount = 0) {
     const modelOptions = buildGroupedModelOptions(modelsToShow);
     let allFound = true;
     
+    const defaultModel = getDefaultModelForCurrentProvider();
+    
     const selectors = [
         { id: 'chat_model_select', name: '即时对话' },
         { id: 'async_template_model_select', name: '小批量异步' },
@@ -419,6 +437,9 @@ function updateAllModelSelectors(retryCount = 0) {
                 select.style.cursor = 'not-allowed';
             } else if (modelsToShow.includes(currentValue)) {
                 select.value = currentValue;
+            } else {
+                select.value = defaultModel;
+                console.log(`⚠️ ${name} 模型 ${currentValue} 不可用，重置为 ${defaultModel}`);
             }
             console.log(`✅ ${name}模型选择器已更新`);
         } else {
@@ -435,6 +456,21 @@ function updateAllModelSelectors(retryCount = 0) {
     } else {
         console.warn('⚠️ 部分模型选择器未找到，已达到最大重试次数');
     }
+}
+
+function getDefaultModelForCurrentProvider() {
+    const providerMode = window.CURRENT_PROVIDER_MODE;
+    
+    if (providerMode === 'zhipu_only') {
+        return MODELS_CONFIG?.providers?.zhipu?.default_model || 'glm-4-flash';
+    } else if (providerMode === 'aliyun_only') {
+        return MODELS_CONFIG?.providers?.aliyun?.default_model || 'qwen-plus';
+    } else if (providerMode === 'both') {
+        const currentProvider = appState.provider || 'zhipu';
+        return MODELS_CONFIG?.providers?.[currentProvider]?.default_model || 'glm-4-flash';
+    }
+    
+    return 'glm-4-flash';
 }
 
 window.getProviderForModel = getProviderForModel;

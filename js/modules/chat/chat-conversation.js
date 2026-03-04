@@ -40,6 +40,10 @@ function startNewChat(shouldSwitch = false) {
     const newId = `convo-${Date.now()}`;
     
     const chatPersonaSelect = document.getElementById('chat_persona_select');
+    const chatModelSelect = document.getElementById('chat_model_select');
+    const chatTempInput = document.getElementById('chat_temperature');
+    const chatContextCount = document.getElementById('chat_context_count');
+    
     let personaId = (chatPersonaSelect ? chatPersonaSelect.value : null);
     
     if (!personaId || !appState.chat.personas[personaId]) {
@@ -57,12 +61,23 @@ function startNewChat(shouldSwitch = false) {
     
     const persona = appState.chat.personas[personaId];
     
+    const currentModel = chatModelSelect ? chatModelSelect.value : null;
+    const currentTemperature = chatTempInput ? chatTempInput.value : '0.7';
+    const currentContextCount = chatContextCount ? chatContextCount.value : '10';
+    const currentThinkingMode = appState.chat.thinkingMode.enabled;
+    const currentSearchMode = JSON.parse(JSON.stringify(appState.chat.searchMode));
+    
     const newConvo = {
         id: newId,
         title: ``,
         personaId: personaId,
         messages: [{ role: 'system', content: persona.system }],
-        lastUpdate: Date.now()
+        lastUpdate: Date.now(),
+        model: currentModel,
+        temperature: currentTemperature,
+        contextCount: currentContextCount,
+        thinkingModeEnabled: currentThinkingMode,
+        searchMode: currentSearchMode
     };
     
     appState.chat.conversations.push(newConvo);
@@ -89,14 +104,41 @@ function switchConversation(id) {
     
     const convo = appState.chat.conversations.find(c => c.id === id);
     const chatPersonaSelect = document.getElementById('chat_persona_select');
-    if (convo && chatPersonaSelect && convo.personaId && appState.chat.personas[convo.personaId]) {
-        chatPersonaSelect.value = convo.personaId;
+    const chatModelSelect = document.getElementById('chat_model_select');
+    const chatTempInput = document.getElementById('chat_temperature');
+    const chatContextCount = document.getElementById('chat_context_count');
+    
+    if (convo) {
+        if (chatPersonaSelect && convo.personaId && appState.chat.personas[convo.personaId]) {
+            chatPersonaSelect.value = convo.personaId;
+        }
+        
+        if (chatModelSelect && convo.model) {
+            chatModelSelect.value = convo.model;
+        }
+        
+        if (chatTempInput && convo.temperature) {
+            chatTempInput.value = convo.temperature;
+        }
+        
+        if (chatContextCount && convo.contextCount) {
+            chatContextCount.value = convo.contextCount;
+        }
+        
+        if (convo.thinkingModeEnabled !== undefined) {
+            appState.chat.thinkingMode.enabled = convo.thinkingModeEnabled;
+        }
+        
+        if (convo.searchMode) {
+            appState.chat.searchMode = JSON.parse(JSON.stringify(convo.searchMode));
+        }
     }
     
     updatePersonaEditor();
     updatePersonaIndicator();
     
     updateSearchButtonState();
+    updateThinkingButtonVisibility();
 }
 
 /**

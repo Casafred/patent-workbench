@@ -187,6 +187,18 @@ function getCurrentApiKey(model) {
 }
 
 /**
+ * 检查指定服务商是否有API Key
+ * @param {string} provider - 服务商标识
+ * @returns {boolean} 是否有API Key
+ */
+function hasApiKeyForProvider(provider) {
+    if (provider === 'aliyun') {
+        return !!(appState.aliyunApiKey || localStorage.getItem('aliyun_api_key'));
+    }
+    return !!(appState.apiKey || localStorage.getItem('api_key') || localStorage.getItem('globalApiKey'));
+}
+
+/**
  * 根据模型获取服务商
  * @param {string} model - 模型ID
  * @returns {string} 服务商标识
@@ -260,13 +272,27 @@ function isApiKeyRequired(endpoint) {
 
 async function apiCall(endpoint, body, method = 'POST', isStream = false, timeout = null) {
     const model = body && !(body instanceof FormData) ? body.model : null;
+    const provider = getProviderForModel(model);
     const currentApiKey = getCurrentApiKey(model);
     const requiresApiKey = isApiKeyRequired(endpoint);
     
     if (requiresApiKey && !currentApiKey) {
-        const provider = getProviderForModel(model);
         const providerName = provider === 'aliyun' ? '阿里云百炼' : '智谱AI';
-        const errorMsg = `API Key 未配置。请设置您的 ${providerName} API Key。`;
+        
+        const zhipuKey = appState.apiKey || localStorage.getItem('api_key') || localStorage.getItem('globalApiKey');
+        const aliyunKey = appState.aliyunApiKey || localStorage.getItem('aliyun_api_key');
+        const hasZhipuKey = !!zhipuKey;
+        const hasAliyunKey = !!aliyunKey;
+        
+        let errorMsg;
+        if (hasZhipuKey && !hasAliyunKey && provider === 'aliyun') {
+            errorMsg = `您只配置了智谱AI的API Key，但选择的模型 "${model}" 需要阿里云百炼API Key。\n\n请选择智谱AI的模型，或配置阿里云百炼API Key。`;
+        } else if (hasAliyunKey && !hasZhipuKey && provider === 'zhipu') {
+            errorMsg = `您只配置了阿里云百炼的API Key，但选择的模型 "${model}" 需要智谱AI API Key。\n\n请选择阿里云百炼的模型，或配置智谱AI API Key。`;
+        } else {
+            errorMsg = `API Key 未配置。请设置您的 ${providerName} API Key。`;
+        }
+        
         alert(errorMsg);
         throw new Error(errorMsg);
     }

@@ -757,13 +757,16 @@ function updateThinkingButtonVisibility() {
     if (!chatThinkingBtn || !chatModelSelect) return;
     
     const model = chatModelSelect.value;
-    const provider = appState.provider || 'zhipu';
+    const provider = getProviderForModel(model);
+    
+    console.log(`🧠 updateThinkingButtonVisibility: model=${model}, provider=${provider}`);
     
     if (window.supportsThinkingMode && window.supportsThinkingMode(model, provider)) {
         chatThinkingBtn.style.display = 'inline-flex';
         updateThinkingButtonState();
     } else {
         chatThinkingBtn.style.display = 'none';
+        appState.chat.thinkingMode.enabled = false;
     }
     
     console.log(`🧠 思考按钮可见性更新: model=${model}, provider=${provider}, visible=${chatThinkingBtn.style.display !== 'none'}`);
@@ -776,20 +779,25 @@ function updateThinkingButtonState() {
     if (!chatThinkingBtn || !chatModelSelect) return;
     
     const model = chatModelSelect.value;
+    const provider = getProviderForModel(model);
     const isEnabled = appState.chat.thinkingMode.enabled;
     const isOnlyThinking = window.isThinkingOnlyModel && window.isThinkingOnlyModel(model);
     
     if (isOnlyThinking) {
+        appState.chat.thinkingMode.enabled = true;
         chatThinkingBtn.classList.add('active', 'thinking-only');
         chatThinkingBtn.title = '当前模型为仅思考模式（自动启用）';
-    } else if (isEnabled) {
+    } else if (isEnabled && window.supportsThinkingMode && window.supportsThinkingMode(model, provider)) {
         chatThinkingBtn.classList.add('active');
         chatThinkingBtn.classList.remove('thinking-only');
         chatThinkingBtn.title = '深度思考模式已开启 (点击关闭)';
     } else {
+        appState.chat.thinkingMode.enabled = false;
         chatThinkingBtn.classList.remove('active', 'thinking-only');
         chatThinkingBtn.title = '深度思考模式 (点击开启)';
     }
+    
+    console.log(`🧠 updateThinkingButtonState: model=${model}, isOnlyThinking=${isOnlyThinking}, isEnabled=${appState.chat.thinkingMode.enabled}`);
 }
 
 function toggleThinkingContent(headerEl) {
