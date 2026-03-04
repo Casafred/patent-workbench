@@ -204,17 +204,16 @@
     transition: background 0.2s, transform 0.1s;
 }
 
+.forum-search-btn svg {
+    stroke: #fff !important;
+}
+
 .forum-search-btn:hover {
     background: var(--primary-color-dark, #047857);
 }
 
 .forum-search-btn:active {
     transform: translateY(-50%) scale(0.95);
-}
-
-.forum-search-btn svg {
-    stroke: #fff;
-    stroke-width: 2.5;
 }
 
 [data-theme="dark"] .forum-search-btn {
