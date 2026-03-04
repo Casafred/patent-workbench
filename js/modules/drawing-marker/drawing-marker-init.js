@@ -169,6 +169,7 @@ function initOCRModeSelect() {
     const ocrModeSelect = document.getElementById('ocr_mode_select');
     const ocrModeHint = document.getElementById('ocr_mode_hint');
     const paddleTokenContainer = document.getElementById('paddle_token_input_container');
+    const paddleTokenInput = document.getElementById('paddle_token_input');
     
     if (!ocrModeSelect) {
         console.warn('⚠️ ocr_mode_select not found');
@@ -176,8 +177,45 @@ function initOCRModeSelect() {
     }
     
     try {
+        const getUserStorageItem = (key) => {
+            if (window.userCacheStorage && window.userCacheStorage.isInitialized()) {
+                return window.userCacheStorage.get(key);
+            }
+            return localStorage.getItem(key);
+        };
+        
+        const setUserStorageItem = (key, value) => {
+            if (window.userCacheStorage && window.userCacheStorage.isInitialized()) {
+                window.userCacheStorage.set(key, value);
+            } else {
+                localStorage.setItem(key, value);
+            }
+        };
+        
+        const savedOcrMode = getUserStorageItem('drawing_marker_ocr_mode');
+        if (savedOcrMode && ocrModeSelect.querySelector(`option[value="${savedOcrMode}"]`)) {
+            ocrModeSelect.value = savedOcrMode;
+        }
+        
+        if (paddleTokenInput) {
+            const savedPaddleToken = getUserStorageItem('paddle_token');
+            if (savedPaddleToken) {
+                paddleTokenInput.value = savedPaddleToken;
+            }
+            
+            paddleTokenInput.addEventListener('input', () => {
+                setUserStorageItem('paddle_token', paddleTokenInput.value);
+            });
+            
+            paddleTokenInput.addEventListener('change', () => {
+                setUserStorageItem('paddle_token', paddleTokenInput.value);
+            });
+        }
+        
         const updateOCRModeUI = () => {
             const selectedMode = ocrModeSelect.value;
+            
+            setUserStorageItem('drawing_marker_ocr_mode', selectedMode);
             
             if (paddleTokenContainer) {
                 paddleTokenContainer.style.display = selectedMode === 'paddle_ocr' ? 'block' : 'none';
@@ -203,7 +241,7 @@ function initOCRModeSelect() {
         
         updateOCRModeUI();
         
-        console.log('✅ OCR mode select initialized');
+        console.log('✅ OCR mode select initialized with persistence');
     } catch (error) {
         console.error('❌ Failed to initialize OCR mode select:', error);
     }

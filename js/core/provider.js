@@ -70,12 +70,12 @@ const ProviderManager = {
     },
     
     loadFromStorage() {
-        const savedProvider = localStorage.getItem('llm_provider');
+        const savedProvider = (window.userCacheStorage?.isInitialized() && window.userCacheStorage.get('llm_provider')) || localStorage.getItem('llm_provider');
         if (savedProvider && this.providers[savedProvider]) {
             this.currentProvider = savedProvider;
         }
         
-        const savedAliyunKey = localStorage.getItem('aliyun_api_key');
+        const savedAliyunKey = (window.userCacheStorage?.isInitialized() && window.userCacheStorage.get('aliyun_api_key')) || localStorage.getItem('aliyun_api_key');
         if (savedAliyunKey) {
             appState.aliyunApiKey = savedAliyunKey;
         }
@@ -84,9 +84,16 @@ const ProviderManager = {
     },
     
     saveToStorage() {
-        localStorage.setItem('llm_provider', this.currentProvider);
-        if (appState.aliyunApiKey) {
-            localStorage.setItem('aliyun_api_key', appState.aliyunApiKey);
+        if (window.userCacheStorage?.isInitialized()) {
+            window.userCacheStorage.set('llm_provider', this.currentProvider);
+            if (appState.aliyunApiKey) {
+                window.userCacheStorage.set('aliyun_api_key', appState.aliyunApiKey);
+            }
+        } else {
+            localStorage.setItem('llm_provider', this.currentProvider);
+            if (appState.aliyunApiKey) {
+                localStorage.setItem('aliyun_api_key', appState.aliyunApiKey);
+            }
         }
     },
     
@@ -110,17 +117,19 @@ const ProviderManager = {
     },
     
     hasApiKey(provider) {
+        const getUserItem = (key) => (window.userCacheStorage?.isInitialized() && window.userCacheStorage.get(key)) || localStorage.getItem(key);
         if (provider === 'aliyun') {
-            return !!(appState.aliyunApiKey || localStorage.getItem('aliyun_api_key'));
+            return !!(appState.aliyunApiKey || getUserItem('aliyun_api_key'));
         } else {
-            return !!(appState.apiKey || localStorage.getItem('api_key') || localStorage.getItem('globalApiKey'));
+            return !!(appState.apiKey || getUserItem('api_key') || getUserItem('globalApiKey'));
         }
     },
     
     getAvailableModels() {
         const availableModels = [];
-        const zhipuKey = appState.apiKey || localStorage.getItem('api_key') || localStorage.getItem('globalApiKey');
-        const aliyunKey = appState.aliyunApiKey || localStorage.getItem('aliyun_api_key');
+        const getUserItem = (key) => (window.userCacheStorage?.isInitialized() && window.userCacheStorage.get(key)) || localStorage.getItem(key);
+        const zhipuKey = appState.apiKey || getUserItem('api_key') || getUserItem('globalApiKey');
+        const aliyunKey = appState.aliyunApiKey || getUserItem('aliyun_api_key');
         
         if (zhipuKey && this.providers.zhipu?.models) {
             this.providers.zhipu.models.forEach(modelId => {
@@ -235,33 +244,39 @@ const ProviderManager = {
     },
     
     getApiKey(provider) {
+        const getUserItem = (key) => (window.userCacheStorage?.isInitialized() && window.userCacheStorage.get(key)) || localStorage.getItem(key);
         const targetProvider = provider || this.currentProvider;
         if (targetProvider === 'aliyun') {
-            return appState.aliyunApiKey || localStorage.getItem('aliyun_api_key');
+            return appState.aliyunApiKey || getUserItem('aliyun_api_key');
         }
-        return appState.apiKey || localStorage.getItem('api_key') || localStorage.getItem('globalApiKey');
+        return appState.apiKey || getUserItem('api_key') || getUserItem('globalApiKey');
     },
     
     setAliyunApiKey(key) {
         appState.aliyunApiKey = key;
-        localStorage.setItem('aliyun_api_key', key);
+        if (window.userCacheStorage?.isInitialized()) {
+            window.userCacheStorage.set('aliyun_api_key', key);
+        } else {
+            localStorage.setItem('aliyun_api_key', key);
+        }
     },
     
     getApiHeaders(model) {
         const headers = {};
         let provider = this.currentProvider;
+        const getUserItem = (key) => (window.userCacheStorage?.isInitialized() && window.userCacheStorage.get(key)) || localStorage.getItem(key);
         
         if (model) {
             provider = this.getProviderForModel(model);
         }
         
         if (provider === 'aliyun') {
-            const aliyunKey = appState.aliyunApiKey || localStorage.getItem('aliyun_api_key');
+            const aliyunKey = appState.aliyunApiKey || getUserItem('aliyun_api_key');
             headers['X-LLM-Provider'] = 'aliyun';
             headers['X-Aliyun-API-Key'] = aliyunKey;
             headers['Authorization'] = `Bearer ${aliyunKey}`;
         } else {
-            const zhipuKey = appState.apiKey || localStorage.getItem('api_key') || localStorage.getItem('globalApiKey');
+            const zhipuKey = appState.apiKey || getUserItem('api_key') || getUserItem('globalApiKey');
             headers['Authorization'] = `Bearer ${zhipuKey}`;
         }
         

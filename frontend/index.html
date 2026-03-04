@@ -1172,7 +1172,14 @@ async function startProcessing() {
     console.log('[DEBUG] Paddle Token Input Element:', paddleTokenInput);
     console.log('[DEBUG] Paddle Token Value:', paddleToken ? '(已输入)' : '(空)');
     
-    const apiKey = appState?.apiKey || localStorage.getItem('zhipuai_api_key') || '';
+    const getUserStorageItem = (key) => {
+        if (window.userCacheStorage && window.userCacheStorage.isInitialized()) {
+            return window.userCacheStorage.get(key);
+        }
+        return localStorage.getItem(key);
+    };
+    
+    const apiKey = appState?.apiKey || getUserStorageItem('globalApiKey') || getUserStorageItem('zhipuai_api_key') || '';
     
     const headers = {
         'Content-Type': 'application/json'
@@ -1502,7 +1509,14 @@ function reprocessOCR() {
         });
     }, timeoutMs);
     
-    const apiKey = appState?.apiKey || localStorage.getItem('zhipuai_api_key') || '';
+    const getUserStorageItem = (key) => {
+        if (window.userCacheStorage && window.userCacheStorage.isInitialized()) {
+            return window.userCacheStorage.get(key);
+        }
+        return localStorage.getItem(key);
+    };
+    
+    const apiKey = appState?.apiKey || getUserStorageItem('globalApiKey') || getUserStorageItem('zhipuai_api_key') || '';
     const headers = { 'Content-Type': 'application/json' };
     
     if (aiConfig.aiMode) {

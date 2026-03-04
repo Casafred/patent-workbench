@@ -21,8 +21,46 @@ function handleSessionExpired() {
 // =================================================================================
 
 /**
+ * 获取用户隔离的存储键名
+ * @param {string} key - 原始键名
+ * @returns {string} 带用户前缀的键名（如果用户缓存管理器已初始化）
+ */
+function getUserStorageKey(key) {
+    if (window.userCacheStorage && window.userCacheStorage.isInitialized()) {
+        return window.userCacheStorage.getKey(key);
+    }
+    return key;
+}
+
+/**
+ * 从用户隔离存储中获取数据
+ * @param {string} key - 键名
+ * @returns {string|null} 数据或null
+ */
+function getUserStorageItem(key) {
+    if (window.userCacheStorage && window.userCacheStorage.isInitialized()) {
+        return window.userCacheStorage.get(key);
+    }
+    return localStorage.getItem(key);
+}
+
+/**
+ * 保存数据到用户隔离存储
+ * @param {string} key - 键名
+ * @param {string} value - 数据
+ */
+function setUserStorageItem(key, value) {
+    if (window.userCacheStorage && window.userCacheStorage.isInitialized()) {
+        window.userCacheStorage.set(key, value);
+    } else {
+        localStorage.setItem(key, value);
+    }
+}
+
+/**
  * 初始化API Key配置
  * 从localStorage加载API Key，设置事件监听器
+ * 支持用户隔离存储
  */
 function initApiKeyConfig() {
     const globalApiKeyInput = document.getElementById('global_api_key_input');
@@ -43,13 +81,13 @@ function initApiKeyConfig() {
         return;
     }
 
-    // 从localStorage加载API Key
-    appState.apiKey = localStorage.getItem('globalApiKey') || '';
-    appState.aliyunApiKey = localStorage.getItem('aliyun_api_key') || '';
+    // 从用户隔离存储加载API Key
+    appState.apiKey = getUserStorageItem('globalApiKey') || '';
+    appState.aliyunApiKey = getUserStorageItem('aliyun_api_key') || '';
     globalApiKeyInput.value = appState.apiKey;
     
     // 加载服务商设置
-    const savedProvider = localStorage.getItem('llm_provider') || 'zhipu';
+    const savedProvider = getUserStorageItem('llm_provider') || 'zhipu';
     appState.provider = savedProvider;
     
     // 更新服务商选择器和配置显示
@@ -63,24 +101,24 @@ function initApiKeyConfig() {
         aliyunApiKeyInput.value = appState.aliyunApiKey;
     }
 
-    // 保存API Key
+    // 保存API Key（使用用户隔离存储）
     apiKeySaveBtn.addEventListener('click', () => {
         appState.apiKey = globalApiKeyInput.value.trim();
         appState.aliyunApiKey = aliyunApiKeyInput ? aliyunApiKeyInput.value.trim() : '';
-        localStorage.setItem('globalApiKey', appState.apiKey);
-        localStorage.setItem('aliyun_api_key', appState.aliyunApiKey);
+        setUserStorageItem('globalApiKey', appState.apiKey);
+        setUserStorageItem('aliyun_api_key', appState.aliyunApiKey);
         if (apiKeySaveStatus) {
             apiKeySaveStatus.textContent = "已保存!";
             setTimeout(() => { apiKeySaveStatus.textContent = ""; }, 2000);
         }
     });
 
-    // 服务商切换
+    // 服务商切换（使用用户隔离存储）
     if (providerSelect) {
         providerSelect.addEventListener('change', (e) => {
             const provider = e.target.value;
             appState.provider = provider;
-            localStorage.setItem('llm_provider', provider);
+            setUserStorageItem('llm_provider', provider);
             updateProviderUI(provider);
             
             // 触发服务商变更事件
@@ -193,9 +231,9 @@ function getCurrentApiKey(model) {
  */
 function hasApiKeyForProvider(provider) {
     if (provider === 'aliyun') {
-        return !!(appState.aliyunApiKey || localStorage.getItem('aliyun_api_key'));
+        return !!(appState.aliyunApiKey || getUserStorageItem('aliyun_api_key'));
     }
-    return !!(appState.apiKey || localStorage.getItem('api_key') || localStorage.getItem('globalApiKey'));
+    return !!(appState.apiKey || getUserStorageItem('api_key') || getUserStorageItem('globalApiKey'));
 }
 
 /**
@@ -279,8 +317,8 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false, timeou
     if (requiresApiKey && !currentApiKey) {
         const providerName = provider === 'aliyun' ? '阿里云百炼' : '智谱AI';
         
-        const zhipuKey = appState.apiKey || localStorage.getItem('api_key') || localStorage.getItem('globalApiKey');
-        const aliyunKey = appState.aliyunApiKey || localStorage.getItem('aliyun_api_key');
+        const zhipuKey = appState.apiKey || getUserStorageItem('api_key') || getUserStorageItem('globalApiKey');
+        const aliyunKey = appState.aliyunApiKey || getUserStorageItem('aliyun_api_key');
         const hasZhipuKey = !!zhipuKey;
         const hasAliyunKey = !!aliyunKey;
         
