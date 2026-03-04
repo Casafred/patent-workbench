@@ -276,7 +276,8 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
 }
 
 /* API密钥操作按钮 - 重构样式 */
-#api_key_copy_btn, #api_key_delete_btn, #api_key_toggle_visibility_btn {
+#api_key_copy_btn, #api_key_delete_btn, #api_key_toggle_visibility_btn,
+#aliyun_api_key_copy_btn, #aliyun_api_key_delete_btn, #aliyun_api_key_toggle_visibility_btn {
     /* 重置所有样式 */
     all: unset;
     /* 重新定义样式 */
@@ -293,7 +294,8 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
     margin: 0 2px;
 }
 
-#api_key_copy_btn svg, #api_key_delete_btn svg, #api_key_toggle_visibility_btn svg {
+#api_key_copy_btn svg, #api_key_delete_btn svg, #api_key_toggle_visibility_btn svg,
+#aliyun_api_key_copy_btn svg, #aliyun_api_key_delete_btn svg, #aliyun_api_key_toggle_visibility_btn svg {
     width: 16px;
     height: 16px;
     stroke: var(--primary-color);
@@ -301,12 +303,14 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
     transition: stroke 0.2s ease;
 }
 
-#api_key_copy_btn:hover, #api_key_delete_btn:hover, #api_key_toggle_visibility_btn:hover {
+#api_key_copy_btn:hover, #api_key_delete_btn:hover, #api_key_toggle_visibility_btn:hover,
+#aliyun_api_key_copy_btn:hover, #aliyun_api_key_delete_btn:hover, #aliyun_api_key_toggle_visibility_btn:hover {
     background-color: var(--primary-color-hover-bg);
     transform: scale(1.05);
 }
 
-#api_key_copy_btn:hover svg, #api_key_delete_btn:hover svg, #api_key_toggle_visibility_btn:hover svg {
+#api_key_copy_btn:hover svg, #api_key_delete_btn:hover svg, #api_key_toggle_visibility_btn:hover svg,
+#aliyun_api_key_copy_btn:hover svg, #aliyun_api_key_delete_btn:hover svg, #aliyun_api_key_toggle_visibility_btn:hover svg {
     stroke: var(--primary-color-dark);
 }
 

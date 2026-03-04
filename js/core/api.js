@@ -86,21 +86,12 @@ function initApiKeyConfig() {
     appState.aliyunApiKey = getUserStorageItem('aliyun_api_key') || '';
     globalApiKeyInput.value = appState.apiKey;
     
-    // 加载服务商设置
-    const savedProvider = getUserStorageItem('llm_provider') || 'zhipu';
-    appState.provider = savedProvider;
-    
-    // 更新服务商选择器和配置显示
-    if (providerSelect) {
-        providerSelect.value = savedProvider;
-    }
-    updateProviderUI(savedProvider);
-    
     // 加载阿里云API Key到输入框
     if (aliyunApiKeyInput) {
         aliyunApiKeyInput.value = appState.aliyunApiKey;
     }
 
+    
     // 保存API Key（使用用户隔离存储）
     apiKeySaveBtn.addEventListener('click', () => {
         appState.apiKey = globalApiKeyInput.value.trim();
@@ -111,22 +102,11 @@ function initApiKeyConfig() {
             apiKeySaveStatus.textContent = "已保存!";
             setTimeout(() => { apiKeySaveStatus.textContent = ""; }, 2000);
         }
+        
+        if (window.ProviderManager) {
+            ProviderManager.updateModelSelectors();
+        }
     });
-
-    // 服务商切换（使用用户隔离存储）
-    if (providerSelect) {
-        providerSelect.addEventListener('change', (e) => {
-            const provider = e.target.value;
-            appState.provider = provider;
-            setUserStorageItem('llm_provider', provider);
-            updateProviderUI(provider);
-            
-            // 触发服务商变更事件
-            window.dispatchEvent(new CustomEvent('providerChanged', {
-                detail: { provider: provider }
-            }));
-        });
-    }
 
     // 切换配置面板显示
     apiConfigToggleBtn.addEventListener('click', () => {
