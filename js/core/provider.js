@@ -301,28 +301,28 @@ const ProviderManager = {
         
         let modelOptions = '';
         
-        if (grouped.zhipu.length > 0) {
-            modelOptions += '<optgroup label="智谱AI">';
-            grouped.zhipu.forEach(m => {
-                modelOptions += `<option value="${m.id}">${m.name || m.id}</option>`;
-            });
-            modelOptions += '</optgroup>';
-        }
-        
-        if (grouped.aliyun.length > 0) {
-            modelOptions += '<optgroup label="阿里云百炼">';
-            grouped.aliyun.forEach(m => {
-                modelOptions += `<option value="${m.id}">${m.name || m.id}</option>`;
-            });
-            modelOptions += '</optgroup>';
-        }
-        
         if (availableModels.length === 0) {
-            const models = this.getModels();
-            modelOptions = models.map(m => `<option value="${m}">${m}</option>`).join('');
+            modelOptions = '<option value="" disabled selected>请先配置API Key</option>';
+        } else {
+            if (grouped.zhipu.length > 0) {
+                modelOptions += '<optgroup label="智谱AI">';
+                grouped.zhipu.forEach(m => {
+                    modelOptions += `<option value="${m.id}">${m.name || m.id}</option>`;
+                });
+                modelOptions += '</optgroup>';
+            }
+            
+            if (grouped.aliyun.length > 0) {
+                modelOptions += '<optgroup label="阿里云百炼">';
+                grouped.aliyun.forEach(m => {
+                    modelOptions += `<option value="${m.id}">${m.name || m.id}</option>`;
+                });
+                modelOptions += '</optgroup>';
+            }
         }
         
         const defaultModel = this.getDefaultModel();
+        const hasNoModels = availableModels.length === 0;
         
         const selectors = [
             'chat_model_select',
@@ -339,10 +339,21 @@ const ProviderManager = {
             if (select) {
                 const currentValue = select.value;
                 select.innerHTML = modelOptions;
-                if (availableModels.find(m => m.id === currentValue)) {
-                    select.value = currentValue;
+                
+                if (hasNoModels) {
+                    select.disabled = true;
+                    select.style.cursor = 'not-allowed';
+                    select.style.opacity = '0.7';
                 } else {
-                    select.value = defaultModel;
+                    select.disabled = false;
+                    select.style.cursor = 'pointer';
+                    select.style.opacity = '1';
+                    
+                    if (availableModels.find(m => m.id === currentValue)) {
+                        select.value = currentValue;
+                    } else {
+                        select.value = defaultModel;
+                    }
                 }
                 
                 select.removeEventListener('change', this._handleModelChange);
