@@ -866,6 +866,10 @@ function switchUnifiedMode(mode) {
         if (batchPanel) batchPanel.style.display = 'none';
         if (classificationPanel) classificationPanel.style.display = 'block';
         
+        if (typeof ProviderManager !== 'undefined' && ProviderManager.updateModelSelectors) {
+            ProviderManager.updateModelSelectors();
+        }
+        
         if (typeof ClassificationModule !== 'undefined') {
             if (!ClassificationModule._initialized) {
                 ClassificationModule.init();
