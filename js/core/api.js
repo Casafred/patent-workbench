@@ -208,9 +208,9 @@ function updateProviderUI(provider) {
 function getCurrentApiKey(model) {
     const provider = getProviderForModel(model);
     if (provider === 'aliyun') {
-        return appState.aliyunApiKey;
+        return appState.aliyunApiKey || getUserStorageItem('aliyun_api_key');
     }
-    return appState.apiKey;
+    return appState.apiKey || getUserStorageItem('api_key') || getUserStorageItem('globalApiKey');
 }
 
 /**
@@ -267,11 +267,13 @@ function getProviderHeaders(model) {
     const provider = getProviderForModel(model);
     
     if (provider === 'aliyun') {
+        const aliyunKey = appState.aliyunApiKey || getUserStorageItem('aliyun_api_key');
         headers['X-LLM-Provider'] = 'aliyun';
-        headers['X-Aliyun-API-Key'] = appState.aliyunApiKey;
-        headers['Authorization'] = `Bearer ${appState.aliyunApiKey}`;
+        headers['X-Aliyun-API-Key'] = aliyunKey;
+        headers['Authorization'] = `Bearer ${aliyunKey}`;
     } else {
-        headers['Authorization'] = `Bearer ${appState.apiKey}`;
+        const zhipuKey = appState.apiKey || getUserStorageItem('api_key') || getUserStorageItem('globalApiKey');
+        headers['Authorization'] = `Bearer ${zhipuKey}`;
     }
     
     return headers;
