@@ -336,7 +336,8 @@ const ProviderManager = {
             'api-model',
             'unified_template_model_select',
             'comparison_model_select',
-            'patent_batch_model_selector'
+            'patent_batch_model_selector',
+            'classification_model_select'
         ];
         
         selectors.forEach(id => {

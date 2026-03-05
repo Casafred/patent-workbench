@@ -74,6 +74,16 @@ const ClassificationModule = {
         if (multiLabelCheckbox) {
             multiLabelCheckbox.addEventListener('change', this.handleMultiLabelChange.bind(this));
         }
+
+        const modelSelect = document.getElementById('classification_model_select');
+        if (modelSelect) {
+            modelSelect.addEventListener('change', this.handleModelChange.bind(this));
+        }
+
+        const temperatureInput = document.getElementById('classification_temperature');
+        if (temperatureInput) {
+            temperatureInput.addEventListener('change', this.handleTemperatureChange.bind(this));
+        }
         
         console.log('[ClassificationModule] Event listeners setup complete');
     },
@@ -94,6 +104,20 @@ const ClassificationModule = {
         const layerCountEl = document.getElementById('classification_layer_count');
         if (layerCountEl) {
             layerCountEl.value = classificationState.getLayers().length;
+        }
+
+        const modelSelect = document.getElementById('classification_model_select');
+        if (modelSelect) {
+            const currentModel = classificationState.state.schema.model || 'GLM-4.7-Flash';
+            if (modelSelect.options.length > 0) {
+                const modelExists = Array.from(modelSelect.options).some(opt => opt.value === currentModel);
+                modelSelect.value = modelExists ? currentModel : modelSelect.options[0].value;
+            }
+        }
+
+        const temperatureInput = document.getElementById('classification_temperature');
+        if (temperatureInput) {
+            temperatureInput.value = classificationState.state.schema.temperature || 0.1;
         }
     },
 
@@ -293,12 +317,41 @@ const ClassificationModule = {
         
         this.updateLayersUI();
         this.updatePromptPreview();
+
+        const modelSelect = document.getElementById('classification_model_select');
+        if (modelSelect) {
+            const currentModel = classificationState.state.schema.model || 'GLM-4.7-Flash';
+            const modelExists = Array.from(modelSelect.options).some(opt => opt.value === currentModel);
+            modelSelect.value = modelExists ? currentModel : (modelSelect.options[0]?.value || '');
+        }
+
+        const temperatureInput = document.getElementById('classification_temperature');
+        if (temperatureInput) {
+            temperatureInput.value = classificationState.state.schema.temperature || 0.1;
+        }
+
+        const nameEl = document.getElementById('classification_schema_name');
+        if (nameEl) {
+            nameEl.value = classificationState.state.schema.name || '';
+        }
     },
 
     handleMultiLabelChange(e) {
         const enabled = e.target.checked;
         SchemaManager.setMultiLabel(enabled);
         this.updatePromptPreview();
+    },
+
+    handleModelChange(e) {
+        const model = e.target.value;
+        classificationState.state.schema.model = model;
+        console.log('[ClassificationModule] Model changed to:', model);
+    },
+
+    handleTemperatureChange(e) {
+        const temperature = parseFloat(e.target.value) || 0.1;
+        classificationState.state.schema.temperature = Math.max(0, Math.min(1, temperature));
+        console.log('[ClassificationModule] Temperature changed to:', classificationState.state.schema.temperature);
     },
 
     handleSaveSchema() {
