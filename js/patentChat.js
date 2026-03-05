@@ -100,11 +100,11 @@ function updatePatentChatModelSelect() {
         if (aliyunKey) {
             availableModels = availableModels.concat(defaultAliyunModels);
         }
-        
-        if (availableModels.length === 0 && patentChatState.providers && patentChatState.providers[patentChatState.currentProvider]) {
-            const models = patentChatState.providers[patentChatState.currentProvider].models || [];
-            availableModels = models.map(m => ({ id: m, name: m, provider: patentChatState.currentProvider }));
-        }
+    }
+    
+    if (availableModels.length === 0) {
+        modelSelect.innerHTML = '<option value="" disabled selected>请先配置API Key</option>';
+        return;
     }
     
     const grouped = { zhipu: [], aliyun: [] };

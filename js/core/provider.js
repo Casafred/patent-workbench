@@ -156,20 +156,14 @@ const ProviderManager = {
             });
         }
         
-        if (availableModels.length === 0) {
-            if (this.providers.zhipu?.models) {
-                this.providers.zhipu.models.forEach(modelId => {
-                    const modelInfo = this.allModels.find(m => m.id === modelId) || { id: modelId, provider: 'zhipu', name: modelId };
-                    availableModels.push({
-                        ...modelInfo,
-                        provider: 'zhipu',
-                        providerName: '智谱AI'
-                    });
-                });
-            }
-        }
-        
         return availableModels;
+    },
+    
+    hasAnyApiKey() {
+        const getUserItem = (key) => (window.userCacheStorage?.isInitialized() && window.userCacheStorage.get(key)) || localStorage.getItem(key);
+        const zhipuKey = appState.apiKey || getUserItem('api_key') || getUserItem('globalApiKey');
+        const aliyunKey = appState.aliyunApiKey || getUserItem('aliyun_api_key');
+        return !!(zhipuKey || aliyunKey);
     },
     
     getAvailableModelsGrouped() {

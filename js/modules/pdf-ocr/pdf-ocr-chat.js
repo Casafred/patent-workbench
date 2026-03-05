@@ -127,11 +127,11 @@ class PDFOCRChat {
             if (aliyunKey) {
                 availableModels = availableModels.concat(defaultAliyunModels);
             }
-            
-            if (availableModels.length === 0 && this.providers && this.providers[this.currentProvider]) {
-                const models = this.providers[this.currentProvider].models || [];
-                availableModels = models.map(m => ({ id: m, name: m, provider: this.currentProvider }));
-            }
+        }
+        
+        if (availableModels.length === 0) {
+            modelSelect.innerHTML = '<option value="" disabled selected>请先配置API Key</option>';
+            return;
         }
         
         const grouped = { zhipu: [], aliyun: [] };

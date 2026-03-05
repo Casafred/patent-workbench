@@ -187,13 +187,14 @@ class AIProcessingPanel {
                 if (aliyunKey) {
                     availableModels = availableModels.concat(defaultAliyunModels);
                 }
-                
-                if (availableModels.length === 0) {
-                    availableModels = defaultZhipuModels;
-                }
             }
             
             this.models = availableModels;
+            
+            if (availableModels.length === 0) {
+                modelSelector.innerHTML = '<option value="" disabled selected>请先配置API Key</option>';
+                return;
+            }
             
             let optionsHtml = '';
             const grouped = { zhipu: [], aliyun: [] };

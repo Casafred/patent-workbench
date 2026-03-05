@@ -99,14 +99,16 @@ function populateUnifiedModelSelect() {
         if (aliyunKey) {
             availableModels = availableModels.concat(defaultAliyunModels);
         }
-        
-        if (availableModels.length === 0 && typeof AVAILABLE_MODELS !== 'undefined' && AVAILABLE_MODELS.length > 0) {
-            availableModels = AVAILABLE_MODELS.map(m => ({ id: m, name: m, provider: 'zhipu' }));
-        }
-        
-        if (availableModels.length === 0) {
-            availableModels = defaultZhipuModels;
-        }
+    }
+    
+    if (availableModels.length === 0) {
+        var option = document.createElement('option');
+        option.value = '';
+        option.textContent = '请先配置API Key';
+        option.disabled = true;
+        option.selected = true;
+        select.appendChild(option);
+        return;
     }
     
     const grouped = { zhipu: [], aliyun: [] };

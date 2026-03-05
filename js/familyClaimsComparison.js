@@ -298,10 +298,12 @@ function initFamilyComparisonModelSelector() {
         if (aliyunKey) {
             availableModels = availableModels.concat(defaultAliyunModels);
         }
-        
-        if (availableModels.length === 0) {
-            availableModels = defaultZhipuModels;
-        }
+    }
+    
+    if (availableModels.length === 0) {
+        familyComparisonModelSelect.innerHTML = '<option value="" disabled selected>请先配置API Key</option>';
+        console.log('⚠️ 同族权利要求对比模型选择器：请先配置API Key');
+        return;
     }
     
     const grouped = { zhipu: [], aliyun: [] };

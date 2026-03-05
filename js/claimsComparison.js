@@ -127,10 +127,12 @@ function initComparisonModelSelector() {
         if (aliyunKey) {
             availableModels = availableModels.concat(defaultAliyunModels);
         }
-        
-        if (availableModels.length === 0) {
-            availableModels = defaultZhipuModels;
-        }
+    }
+    
+    if (availableModels.length === 0) {
+        comparisonModelSelect.innerHTML = '<option value="" disabled selected>请先配置API Key</option>';
+        console.log('⚠️ 功能五模型选择器：请先配置API Key');
+        return;
     }
     
     const grouped = { zhipu: [], aliyun: [] };
