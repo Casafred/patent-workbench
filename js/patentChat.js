@@ -69,8 +69,8 @@ function updatePatentChatModelSelect() {
     
     let availableModels = [];
     
-    if (window.ProviderManager && typeof ProviderManager.getAvailableModelsGrouped === 'function') {
-        availableModels = ProviderManager.getAvailableModelsGrouped();
+    if (window.ProviderManager && typeof ProviderManager.getAvailableModels === 'function') {
+        availableModels = ProviderManager.getAvailableModels();
     } else {
         const getUserStorageItem = (key) => {
             if (window.userCacheStorage && window.userCacheStorage.isInitialized()) {
