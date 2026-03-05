@@ -627,6 +627,30 @@
             letter-spacing: 1px;
         }
 
+        .stat-number-live {
+            background: linear-gradient(135deg, #22C55E 0%, #FFD700 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: livePulse 2s ease-in-out infinite;
+        }
+
+        @keyframes livePulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .stat-live-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: blink 1s infinite;
+            box-shadow: 0 0 10px var(--accent-color);
+        }
+
         /* 滚动指示器 */
         .scroll-indicator {
             position: absolute;
@@ -660,6 +684,175 @@
         @keyframes scrollDot {
             0% { opacity: 1; top: 8px; }
             100% { opacity: 0; top: 30px; }
+        }
+
+        /* ============================================
+           AI亮点功能区域
+           ============================================ */
+        .ai-highlights-section {
+            padding: 150px 60px;
+            background: var(--bg-secondary);
+            position: relative;
+        }
+
+        .ai-highlights-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 20% 30%, rgba(34, 197, 94, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 70%, rgba(255, 215, 0, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .highlights-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        .highlight-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin-top: 60px;
+        }
+
+        .highlight-card {
+            background: var(--surface-color);
+            border-radius: 20px;
+            padding: 35px;
+            border: 1px solid rgba(34, 197, 94, 0.1);
+            transition: all var(--transition-slow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .highlight-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-primary);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform var(--transition-normal);
+        }
+
+        .highlight-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(34, 197, 94, 0.3);
+            box-shadow: 0 20px 60px rgba(34, 197, 94, 0.15);
+        }
+
+        .highlight-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .highlight-card-live {
+            border-color: rgba(255, 215, 0, 0.2);
+        }
+
+        .highlight-card-live::before {
+            background: linear-gradient(90deg, #22C55E, #FFD700);
+        }
+
+        .highlight-card-live:hover {
+            border-color: rgba(255, 215, 0, 0.4);
+            box-shadow: 0 20px 60px rgba(255, 215, 0, 0.15);
+        }
+
+        .highlight-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(34, 197, 94, 0.1);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            transition: all var(--transition-fast);
+        }
+
+        .highlight-card:hover .highlight-icon {
+            background: var(--gradient-primary);
+        }
+
+        .highlight-icon svg {
+            width: 28px;
+            height: 28px;
+            color: var(--primary-color);
+            transition: color var(--transition-fast);
+        }
+
+        .highlight-card:hover .highlight-icon svg {
+            color: white;
+        }
+
+        .highlight-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 12px;
+        }
+
+        .highlight-desc {
+            color: var(--text-color-muted);
+            font-size: 0.95rem;
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+
+        .highlight-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .highlight-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 14px;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            border-radius: 20px;
+            color: var(--primary-color-light);
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all var(--transition-fast);
+        }
+
+        .highlight-card:hover .highlight-tag {
+            background: rgba(34, 197, 94, 0.15);
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .highlight-tag-live {
+            background: rgba(255, 215, 0, 0.15) !important;
+            border-color: rgba(255, 215, 0, 0.3) !important;
+            color: var(--accent-color) !important;
+        }
+
+        @media (max-width: 1024px) {
+            .highlight-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .highlight-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .ai-highlights-section {
+                padding: 100px 30px;
+            }
         }
 
         /* ============================================
@@ -1654,6 +1847,7 @@
         </a>
         <div class="navbar-nav">
             <a href="#features" class="nav-link">功能特性</a>
+            <a href="#ai-highlights" class="nav-link">AI亮点</a>
             <a href="#demo" class="nav-link">产品演示</a>
             <a href="/frontend/help.html" class="nav-link" target="_blank">帮助文档</a>
             <a href="/login" class="login-btn">
@@ -1719,12 +1913,16 @@
                     <span class="stat-label">核心功能模块</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-number" data-count="50">0</span>
-                    <span class="stat-label">海量AI模型</span>
+                    <span class="stat-number" data-count="31">0</span>
+                    <span class="stat-label">AI模型 (持续接入中)</span>
                 </div>
                 <div class="stat-item">
                     <span class="stat-number" data-count="2">0</span>
                     <span class="stat-label">服务商支持</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number stat-number-live">24h</span>
+                    <span class="stat-label">全天候开放服务</span>
                 </div>
             </div>
         </div>
@@ -1907,6 +2105,117 @@
                             <polyline points="21 15 16 10 5 21"></polyline>
                         </svg>
                         <div>功能截图位置</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- AI亮点功能区域 -->
+    <section class="ai-highlights-section" id="ai-highlights">
+        <div class="section-header">
+            <span class="section-tag">AI HIGHLIGHTS</span>
+            <h2 class="section-title">智能亮点功能</h2>
+            <p class="section-subtitle">专为专利分析场景打造的AI增强功能，让专业工作更高效</p>
+        </div>
+        <div class="highlights-container">
+            <div class="highlight-cards">
+                <div class="highlight-card animate-on-scroll">
+                    <div class="highlight-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                            <line x1="12" y1="11" x2="12" y2="17"></line>
+                            <line x1="9" y1="14" x2="15" y2="14"></line>
+                        </svg>
+                    </div>
+                    <h3 class="highlight-title">智能分类标引</h3>
+                    <p class="highlight-desc">多层级自定义分类体系，支持冷启动优化、示例库管理、置信度过滤，一键完成海量文本的智能分类。</p>
+                    <div class="highlight-tags">
+                        <span class="highlight-tag">多层级分类</span>
+                        <span class="highlight-tag">冷启动优化</span>
+                        <span class="highlight-tag">示例库</span>
+                    </div>
+                </div>
+
+                <div class="highlight-card animate-on-scroll">
+                    <div class="highlight-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="2" y1="12" x2="22" y2="12"></line>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="highlight-title">IPC分类预测</h3>
+                    <p class="highlight-desc">输入技术描述，AI自动预测最可能的IPC分类号，支持中英日韩多语言，精确到小组级别。</p>
+                    <div class="highlight-tags">
+                        <span class="highlight-tag">多语言支持</span>
+                        <span class="highlight-tag">精确预测</span>
+                        <span class="highlight-tag">一键定位</span>
+                    </div>
+                </div>
+
+                <div class="highlight-card animate-on-scroll">
+                    <div class="highlight-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="3" y1="9" x2="21" y2="9"></line>
+                            <line x1="9" y1="21" x2="9" y2="9"></line>
+                        </svg>
+                    </div>
+                    <h3 class="highlight-title">专利号批量查询</h3>
+                    <p class="highlight-desc">批量输入专利号，自动抓取专利详情信息，AI智能解读技术要点，一键导出分析报告。</p>
+                    <div class="highlight-tags">
+                        <span class="highlight-tag">批量处理</span>
+                        <span class="highlight-tag">智能解读</span>
+                        <span class="highlight-tag">报告导出</span>
+                    </div>
+                </div>
+
+                <div class="highlight-card animate-on-scroll">
+                    <div class="highlight-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                            <polyline points="2 17 12 22 22 17"></polyline>
+                            <polyline points="2 12 12 17 22 12"></polyline>
+                        </svg>
+                    </div>
+                    <h3 class="highlight-title">灵活智能体搭建</h3>
+                    <p class="highlight-desc">自定义分析模板、温度调节、示例库管理，打造专属智能分析助手，满足多样化分析需求。</p>
+                    <div class="highlight-tags">
+                        <span class="highlight-tag">自定义模板</span>
+                        <span class="highlight-tag">参数可调</span>
+                        <span class="highlight-tag">示例优化</span>
+                    </div>
+                </div>
+
+                <div class="highlight-card animate-on-scroll">
+                    <div class="highlight-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="highlight-title">AI即时对话</h3>
+                    <p class="highlight-desc">支持智谱AI、阿里云百炼双服务商，31+模型自由切换，专利知识问答、联网搜索一应俱全。</p>
+                    <div class="highlight-tags">
+                        <span class="highlight-tag">多服务商</span>
+                        <span class="highlight-tag">模型丰富</span>
+                        <span class="highlight-tag">联网搜索</span>
+                    </div>
+                </div>
+
+                <div class="highlight-card animate-on-scroll highlight-card-live">
+                    <div class="highlight-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </div>
+                    <h3 class="highlight-title">24h全天候服务</h3>
+                    <p class="highlight-desc">云端部署，随时随地访问，无时间限制，让您的工作不受约束，高效完成专利分析任务。</p>
+                    <div class="highlight-tags">
+                        <span class="highlight-tag highlight-tag-live"><span class="stat-live-dot"></span>实时在线</span>
+                        <span class="highlight-tag">云端部署</span>
+                        <span class="highlight-tag">随时访问</span>
                     </div>
                 </div>
             </div>
@@ -2173,9 +2482,10 @@
         // ============================================
         const typingTexts = [
             '专业的专利检索、分析、解读AI工具平台',
-            '支持智谱AI、阿里云百炼等多服务商自由切换',
-            '海量AI模型任选，满足不同场景需求',
-            'AI智能解读技术要点，一键生成分析报告'
+            '支持智谱AI、阿里云百炼双服务商，31+模型自由切换',
+            '智能分类标引、IPC预测、专利号批量查询解读',
+            '灵活智能体搭建，自定义模板打造专属分析助手',
+            '24h全天候开放服务，随时随地高效完成专利分析'
         ];
         let textIndex = 0;
         let charIndex = 0;
