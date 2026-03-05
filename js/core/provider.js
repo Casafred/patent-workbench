@@ -128,7 +128,7 @@ const ProviderManager = {
     getAvailableModels() {
         const availableModels = [];
         const getUserItem = (key) => (window.userCacheStorage?.isInitialized() && window.userCacheStorage.get(key)) || localStorage.getItem(key);
-        const zhipuKey = appState.apiKey || getUserItem('api_key') || getUserItem('globalApiKey');
+        const zhipuKey = appState.apiKey || getUserItem('globalApiKey');
         const aliyunKey = appState.aliyunApiKey || getUserItem('aliyun_api_key');
         
         if (zhipuKey && this.providers.zhipu?.models) {
@@ -161,7 +161,7 @@ const ProviderManager = {
     
     hasAnyApiKey() {
         const getUserItem = (key) => (window.userCacheStorage?.isInitialized() && window.userCacheStorage.get(key)) || localStorage.getItem(key);
-        const zhipuKey = appState.apiKey || getUserItem('api_key') || getUserItem('globalApiKey');
+        const zhipuKey = appState.apiKey || getUserItem('globalApiKey');
         const aliyunKey = appState.aliyunApiKey || getUserItem('aliyun_api_key');
         return !!(zhipuKey || aliyunKey);
     },
