@@ -289,8 +289,15 @@ function updateAvailableModels() {
         return;
     }
     
-    const zhipuKey = appState.apiKey || localStorage.getItem('api_key') || localStorage.getItem('globalApiKey');
-    const aliyunKey = appState.aliyunApiKey || localStorage.getItem('aliyun_api_key');
+    const getUserStorageItem = (key) => {
+        if (window.userCacheStorage && window.userCacheStorage.isInitialized()) {
+            return window.userCacheStorage.get(key);
+        }
+        return localStorage.getItem(key);
+    };
+    
+    const zhipuKey = appState.apiKey || getUserStorageItem('globalApiKey');
+    const aliyunKey = appState.aliyunApiKey || getUserStorageItem('aliyun_api_key');
     
     const availableModels = [];
     const batchModels = [];
@@ -322,11 +329,7 @@ function updateAvailableModels() {
     }
     
     if (availableModels.length === 0) {
-        if (MODELS_CONFIG.providers.zhipu?.models) {
-            availableModels.push(...MODELS_CONFIG.providers.zhipu.models);
-            batchModels.push(...MODELS_CONFIG.providers.zhipu.models);
-            asyncModels.push(...MODELS_CONFIG.providers.zhipu.models);
-        }
+        console.log('⚠️ 未配置任何API Key，模型列表为空');
     }
     
     AVAILABLE_MODELS = availableModels;
@@ -369,6 +372,10 @@ window.addEventListener('providerChanged', (event) => {
 });
 
 function buildGroupedModelOptions(modelsToShow) {
+    if (!modelsToShow || modelsToShow.length === 0) {
+        return '<option value="" disabled selected>请先配置API Key</option>';
+    }
+    
     const grouped = {
         zhipu: [],
         aliyun: []
@@ -400,6 +407,12 @@ function buildGroupedModelOptions(modelsToShow) {
         optionsHtml += '</optgroup>';
     }
     
+    if (optionsHtml === '') {
+        optionsHtml = modelsToShow.map(m => 
+            `<option value="${m.id}">${m.name || m.id}</option>`
+        ).join('');
+    }
+    
     return optionsHtml;
 }
 
@@ -413,9 +426,8 @@ function updateAllModelSelectors(retryCount = 0) {
     }
     
     const modelOptions = buildGroupedModelOptions(modelsToShow);
+    const hasNoModels = !modelsToShow || modelsToShow.length === 0;
     let allFound = true;
-    
-    const defaultModel = getDefaultModelForCurrentProvider();
     
     const selectors = [
         { id: 'chat_model_select', name: '即时对话' },
@@ -435,9 +447,17 @@ function updateAllModelSelectors(retryCount = 0) {
                 select.value = guestModel;
                 select.disabled = true;
                 select.style.cursor = 'not-allowed';
+            } else if (hasNoModels) {
+                select.disabled = true;
+                select.style.cursor = 'not-allowed';
+                select.style.opacity = '0.7';
             } else if (modelsToShow.includes(currentValue)) {
                 select.value = currentValue;
+                select.disabled = false;
+                select.style.cursor = 'pointer';
+                select.style.opacity = '1';
             } else {
+                const defaultModel = getDefaultModelForCurrentProvider();
                 select.value = defaultModel;
                 console.log(`⚠️ ${name} 模型 ${currentValue} 不可用，重置为 ${defaultModel}`);
             }
