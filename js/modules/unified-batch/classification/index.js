@@ -172,6 +172,8 @@ const ClassificationModule = {
     },
 
     renderLayerConfig(layer, index) {
+        const childLabelsHtml = this.renderChildLabelsConfig(layer, index);
+        
         return `
             <div class="layer-config" data-layer-index="${index}" style="border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
@@ -194,10 +196,56 @@ const ClassificationModule = {
                     <label>分类标签 (每行一个):</label>
                     <textarea rows="3" 
                               onchange="ClassificationModule.updateLayerLabels(${index}, this.value)"
-                              placeholder="标签1&#10;标签2&#10;标签3">${(layer.labels || []).join('\n')}</textarea>
+                              placeholder="每行输入一个标签...">${(layer.labels || []).join('\n')}</textarea>
                 </div>
+                <div class="config-item">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" ${layer.multiLabel ? 'checked' : ''} 
+                               onchange="ClassificationModule.updateLayerMultiLabel(${index}, this.checked)">
+                        允许多标签分类
+                    </label>
+                </div>
+                ${childLabelsHtml}
             </div>
         `;
+    },
+
+    renderChildLabelsConfig(layer, layerIndex) {
+        if (!layer.labels || layer.labels.length === 0) {
+            return '';
+        }
+
+        const childrenHtml = layer.labels.map(parentLabel => {
+            const childLabels = (layer.children && layer.children[parentLabel]) ? layer.children[parentLabel] : [];
+            return `
+                <div class="child-labels-item" style="margin-bottom: 10px; padding: 10px; background: var(--bg-color-tertiary); border-radius: 6px;">
+                    <div style="font-weight: 500; margin-bottom: 5px; color: var(--primary-color);">
+                        📁 ${parentLabel} 的下级标签:
+                    </div>
+                    <textarea rows="2" 
+                              style="background: var(--bg-color-secondary);"
+                              onchange="ClassificationModule.updateChildLabels(${layerIndex}, '${parentLabel}', this.value)"
+                              placeholder="每行输入一个下级标签（可选）...">${childLabels.join('\n')}</textarea>
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div class="child-labels-container" style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border-color);">
+                <label style="font-weight: 500; margin-bottom: 10px; display: block;">
+                    🌳 树状层级配置（为每个标签配置下级标签）:
+                </label>
+                ${childrenHtml}
+            </div>
+        `;
+    },
+
+    updateChildLabels(layerIndex, parentLabel, value) {
+        const childLabels = value.split('\n')
+            .map(l => l.trim())
+            .filter(l => l.length > 0);
+        SchemaManager.setChildLabels(layerIndex, parentLabel, childLabels);
+        this.updatePromptPreview();
     },
 
     updatePromptPreview() {

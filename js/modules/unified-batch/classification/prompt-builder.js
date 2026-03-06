@@ -62,9 +62,15 @@ const PromptBuilder = {
             }
 
             if (layer.labels && layer.labels.length > 0) {
-                description += '可选标签：\n';
+                description += '可选标签（树状层级结构）：\n';
                 layer.labels.forEach(label => {
                     description += `- ${label}\n`;
+                    
+                    if (layer.children && layer.children[label] && layer.children[label].length > 0) {
+                        layer.children[label].forEach(childLabel => {
+                            description += `  - ${childLabel}\n`;
+                        });
+                    }
                 });
                 description += '\n';
             }
@@ -145,7 +151,11 @@ const PromptBuilder = {
 
         schema.layers.forEach((layer, index) => {
             const comma = index < schema.layers.length - 1 ? ',' : '';
-            if (schema.multiLabel) {
+            const hasChildren = layer.children && Object.keys(layer.children).some(k => layer.children[k].length > 0);
+            
+            if (hasChildren) {
+                format += `    "${layer.name}": {"parent": "父级标签", "child": "子级标签"}${comma}\n`;
+            } else if (layer.multiLabel || schema.multiLabel) {
                 format += `    "${layer.name}": ["标签1", "标签2"]${comma}\n`;
             } else {
                 format += `    "${layer.name}": "标签"${comma}\n`;
@@ -157,7 +167,11 @@ const PromptBuilder = {
 
         schema.layers.forEach((layer, index) => {
             const comma = index < schema.layers.length - 1 ? ',' : '';
-            if (schema.multiLabel) {
+            const hasChildren = layer.children && Object.keys(layer.children).some(k => layer.children[k].length > 0);
+            
+            if (hasChildren) {
+                format += `    "${layer.name}": {"parent": 0.95, "child": 0.90}${comma}\n`;
+            } else if (layer.multiLabel || schema.multiLabel) {
                 format += `    "${layer.name}": [0.95, 0.85]${comma}\n`;
             } else {
                 format += `    "${layer.name}": 0.95${comma}\n`;
@@ -168,6 +182,11 @@ const PromptBuilder = {
         format += '  "reasoning": "简要说明分类依据"\n';
         format += '}\n';
         format += '```\n';
+        
+        format += '\n**重要说明**：\n';
+        format += '- 如果标签有下级标签，请同时输出父级标签和子级标签\n';
+        format += '- 如果标签没有下级标签，直接输出标签名称\n';
+        format += '- confidence表示分类确信度，范围0.0-1.0\n';
 
         return format;
     },
