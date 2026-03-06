@@ -365,6 +365,9 @@ class ClassificationState {
                 mode: this.state.mode,
                 inputs: this.state.inputs,
                 schema: this.state.schema,
+                indexColumn: this.state.indexColumn,
+                concatColumns: this.state.concatColumns,
+                currentSheetData: this.state.currentSheetData,
                 asyncTask: {
                     requests: this.state.asyncTask.requests,
                     tasks: this.state.asyncTask.tasks
@@ -376,7 +379,12 @@ class ClassificationState {
                 results: this.state.results,
                 timestamp: new Date().toISOString()
             };
-            localStorage.setItem(STORAGE_KEYS.LAST_STATE, JSON.stringify(stateToSave));
+            
+            if (window.userCacheStorage) {
+                window.userCacheStorage.setJSON(STORAGE_KEYS.LAST_STATE, stateToSave);
+            } else {
+                localStorage.setItem(STORAGE_KEYS.LAST_STATE, JSON.stringify(stateToSave));
+            }
         } catch (e) {
             console.error('保存状态失败:', e);
         }
@@ -384,22 +392,27 @@ class ClassificationState {
 
     loadLastState() {
         try {
-            const saved = localStorage.getItem(STORAGE_KEYS.LAST_STATE);
+            const saved = window.userCacheStorage 
+                ? window.userCacheStorage.getJSON(STORAGE_KEYS.LAST_STATE)
+                : JSON.parse(localStorage.getItem(STORAGE_KEYS.LAST_STATE) || 'null');
+                
             if (saved) {
-                const parsed = JSON.parse(saved);
-                if (parsed.mode) this.state.mode = parsed.mode;
-                if (parsed.inputs) this.state.inputs = parsed.inputs;
-                if (parsed.schema) this.state.schema = parsed.schema;
-                if (parsed.asyncTask) {
-                    this.state.asyncTask.requests = parsed.asyncTask.requests || [];
-                    this.state.asyncTask.tasks = parsed.asyncTask.tasks || {};
+                if (saved.mode) this.state.mode = saved.mode;
+                if (saved.inputs) this.state.inputs = saved.inputs;
+                if (saved.schema) this.state.schema = saved.schema;
+                if (saved.indexColumn) this.state.indexColumn = saved.indexColumn;
+                if (saved.concatColumns) this.state.concatColumns = saved.concatColumns;
+                if (saved.currentSheetData) this.state.currentSheetData = saved.currentSheetData;
+                if (saved.asyncTask) {
+                    this.state.asyncTask.requests = saved.asyncTask.requests || [];
+                    this.state.asyncTask.tasks = saved.asyncTask.tasks || {};
                 }
-                if (parsed.batchTask) {
-                    this.state.batchTask.batchId = parsed.batchTask.batchId;
-                    this.state.batchTask.fileId = parsed.batchTask.fileId;
+                if (saved.batchTask) {
+                    this.state.batchTask.batchId = saved.batchTask.batchId;
+                    this.state.batchTask.fileId = saved.batchTask.fileId;
                 }
-                if (parsed.results) {
-                    this.state.results = parsed.results;
+                if (saved.results) {
+                    this.state.results = saved.results;
                 }
                 return true;
             }
@@ -410,7 +423,11 @@ class ClassificationState {
     }
 
     clearState() {
-        localStorage.removeItem(STORAGE_KEYS.LAST_STATE);
+        if (window.userCacheStorage) {
+            window.userCacheStorage.remove(STORAGE_KEYS.LAST_STATE);
+        } else {
+            localStorage.removeItem(STORAGE_KEYS.LAST_STATE);
+        }
     }
 
     reset() {

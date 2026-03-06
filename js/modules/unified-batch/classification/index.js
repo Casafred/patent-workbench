@@ -752,24 +752,87 @@ const ClassificationModule = {
 
         list.innerHTML = inputs.map((input, index) => {
             let preview;
-            if (typeof input.content === 'string') {
-                preview = this.truncateText(input.content, 80);
-            } else {
-                preview = Object.entries(input.content)
+            let tooltip = '';
+            
+            if (input.originalData) {
+                const parts = [];
+                Object.entries(input.originalData).forEach(([key, value]) => {
+                    if (value) {
+                        parts.push(`${key}: ${this.truncateText(String(value), 50)}`);
+                    }
+                });
+                preview = parts.slice(0, 3).join(' | ');
+                if (parts.length > 3) {
+                    preview += ' ...';
+                }
+                tooltip = parts.join('\n');
+            } else if (typeof input.content === 'string') {
+                preview = this.truncateText(input.content, 100);
+                tooltip = input.content;
+            } else if (typeof input.content === 'object') {
+                const parts = Object.entries(input.content)
                     .filter(([key, value]) => value)
-                    .map(([key, value]) => `${key}: ${this.truncateText(value, 30)}`)
-                    .join(' | ');
+                    .map(([key, value]) => `${key}: ${this.truncateText(value, 50)}`);
+                preview = parts.join(' | ');
+                tooltip = parts.join('\n');
             }
             
             return `
-                <div class="input-item" style="padding: 8px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 10px;">
-                    <input type="checkbox" class="classification-input-checkbox" data-index="${index}">
+                <div class="input-item" style="padding: 8px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 10px; cursor: pointer;" 
+                     onclick="ClassificationModule.showInputDetail(${index})" 
+                     title="${tooltip.replace(/"/g, '&quot;')}">
+                    <input type="checkbox" class="classification-input-checkbox" data-index="${index}" onclick="event.stopPropagation();">
                     <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        ${index + 1}. ${preview}
+                        <strong style="color: var(--primary-color);">${input.id || index + 1}</strong>: ${preview}
                     </span>
                 </div>
             `;
         }).join('');
+    },
+
+    showInputDetail(index) {
+        const inputs = classificationState.getInputs();
+        const input = inputs[index];
+        if (!input) return;
+
+        let detailContent = '';
+        
+        if (input.originalData) {
+            detailContent = Object.entries(input.originalData)
+                .filter(([key, value]) => value)
+                .map(([key, value]) => `<div style="margin-bottom: 8px;"><strong>${key}:</strong><br><span style="color: var(--text-color-secondary);">${String(value)}</span></div>`)
+                .join('');
+        } else if (typeof input.content === 'string') {
+            detailContent = `<div style="white-space: pre-wrap;">${input.content}</div>`;
+        } else if (typeof input.content === 'object') {
+            detailContent = Object.entries(input.content)
+                .filter(([key, value]) => value)
+                .map(([key, value]) => `<div style="margin-bottom: 8px;"><strong>${key}:</strong><br><span style="color: var(--text-color-secondary);">${value}</span></div>`)
+                .join('');
+        }
+
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;';
+        modal.innerHTML = `
+            <div class="modal-content" style="background: var(--bg-color); border-radius: 12px; padding: 20px; max-width: 600px; max-height: 80vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0;">数据详情 - ${input.id || `第${index + 1}条`}</h3>
+                    <button class="small-button" onclick="this.closest('.modal-overlay').remove()">关闭</button>
+                </div>
+                <div class="detail-content" style="font-size: 0.9em;">
+                    ${detailContent}
+                </div>
+            </div>
+        `;
+        
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+        
+        document.body.appendChild(modal);
     },
 
     handleLayerCountChange(e) {
