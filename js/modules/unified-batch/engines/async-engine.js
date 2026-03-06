@@ -37,13 +37,19 @@ const AsyncEngine = {
     getApiHeaders(model) {
         const provider = this.getProviderForModel(model);
         const headers = { 'Content-Type': 'application/json' };
+        const getUserItem = (key) => {
+            if (window.userCacheStorage && window.userCacheStorage.isInitialized()) {
+                return window.userCacheStorage.get(key);
+            }
+            return localStorage.getItem(key);
+        };
         
         if (provider === 'aliyun') {
-            const aliyunKey = window.appState?.aliyunApiKey || localStorage.getItem('aliyun_api_key');
+            const aliyunKey = window.appState?.aliyunApiKey || getUserItem('aliyun_api_key');
             headers['X-LLM-Provider'] = 'aliyun';
             headers['Authorization'] = `Bearer ${aliyunKey}`;
         } else {
-            const zhipuKey = window.appState?.apiKey || localStorage.getItem('api_key') || localStorage.getItem('globalApiKey');
+            const zhipuKey = window.appState?.apiKey || getUserItem('api_key') || getUserItem('globalApiKey');
             headers['Authorization'] = `Bearer ${zhipuKey}`;
         }
         

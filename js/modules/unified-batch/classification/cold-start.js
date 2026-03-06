@@ -78,7 +78,7 @@ const ColdStart = {
         const prompt = this.buildAnalysisPrompt(sample, options);
 
         const model = options.model || window.ProviderManager?.getDefaultModel?.() || 'GLM-4-Flash';
-        const headers = window.ProviderManager?.getApiHeaders?.() || {};
+        const headers = window.ProviderManager?.getApiHeaders?.(model) || {};
 
         try {
             const response = await fetch('/api/chat', {
@@ -323,7 +323,7 @@ ${feedback}
 
         try {
             const model = window.ProviderManager?.getDefaultModel?.() || 'GLM-4-Flash';
-            const headers = window.ProviderManager?.getApiHeaders?.() || {};
+            const headers = window.ProviderManager?.getApiHeaders?.(model) || {};
 
             const response = await fetch('/api/chat', {
                 method: 'POST',

@@ -295,6 +295,19 @@ const PromptBuilder = {
         return this.buildUserPrompt({ content: '【示例输入文本】' }, schema);
     },
 
+    generateFullPrompt() {
+        const schema = this.state.schema;
+        
+        if (!schema.layers || schema.layers.length === 0) {
+            return '';
+        }
+
+        const systemPrompt = this.buildSystemPrompt(schema);
+        const userPromptTemplate = this.buildUserPrompt({ content: '{{INPUT}}' }, schema);
+        
+        return systemPrompt + '\n\n' + userPromptTemplate;
+    },
+
     async optimizePromptWithAI() {
         const schema = this.state.schema;
         
@@ -305,7 +318,7 @@ const PromptBuilder = {
         const currentPrompt = this.buildSystemPrompt(schema) + '\n\n' + this.buildUserPrompt({ content: '{{INPUT}}' }, schema);
 
         const model = window.ProviderManager?.getDefaultModel?.() || 'GLM-4-Flash';
-        const headers = window.ProviderManager?.getApiHeaders?.() || {};
+        const headers = window.ProviderManager?.getApiHeaders?.(model) || {};
 
         const optimizeRequest = {
             model: model,

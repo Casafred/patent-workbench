@@ -337,8 +337,37 @@
                     <select id="classification_excel_sheet" disabled></select>
                 </div>
                 <div id="classification_column_config_container" style="display:none;">
+                    <hr style="margin: 15px 0; border-color: var(--border-color);">
+                    <div class="info-box" style="background: var(--bg-color-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                        <div style="font-weight: 500; margin-bottom: 10px;">📊 数据列配置</div>
+                        <p style="margin: 0 0 10px; color: var(--text-color-secondary); font-size: 0.9em;">
+                            配置数据列用于分类标引。索引列用于标识每条数据，拼接列将合并作为分类依据的文本。
+                        </p>
+                    </div>
+                    
+                    <div class="config-item">
+                        <label for="classification_index_column">索引列 (唯一标识):</label>
+                        <select id="classification_index_column">
+                            <option value="">-- 选择索引列 --</option>
+                        </select>
+                        <small style="color: var(--text-color-tertiary);">选择作为数据唯一标识的列，如序号、ID等</small>
+                    </div>
+                    
+                    <div class="config-item">
+                        <label>拼接列 (分类依据文本):</label>
+                        <div id="classification_concat_columns_container" style="margin-top: 8px;">
+                        </div>
+                        <div style="margin-top: 10px; display: flex; gap: 10px; align-items: center;">
+                            <button id="classification_add_concat_column_btn" class="small-button" type="button">+ 添加拼接列</button>
+                            <span id="classification_concat_preview" style="color: var(--text-color-secondary); font-size: 0.85em;"></span>
+                        </div>
+                        <small style="color: var(--text-color-tertiary);">选择多列将按顺序拼接作为分类依据文本</small>
+                    </div>
+                    
+                    <hr style="margin: 15px 0; border-color: var(--border-color);">
+                    
                     <div class="config-item row-flex">
-                        <label for="classification_excel_column_count">选择输入列数量:</label>
+                        <label for="classification_excel_column_count">或使用传统模式 (选择输入列数量):</label>
                         <input type="number" id="classification_excel_column_count" value="1" min="1" max="10" style="width: 100px;">
                     </div>
                     <div id="classification_excel_column_config_area"></div>
@@ -471,6 +500,55 @@
         <div class="step">
             <div class="step-header">步骤 3: 选择处理模式</div>
             
+            <!-- 前置校验区域 -->
+            <div id="classification_precheck_container" class="info-box" style="background: linear-gradient(135deg, var(--bg-color-secondary) 0%, rgba(var(--primary-color-rgb), 0.05) 100%); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="var(--primary-color)"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+                    <span style="font-weight: 600; font-size: 1.1em;">分类效果前置校验</span>
+                </div>
+                <p style="margin: 0 0 15px; color: var(--text-color-secondary); font-size: 0.9em;">
+                    在正式批量分类前，先对前5条数据进行测试分类，确认效果符合预期后再进行批量处理。
+                </p>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
+                    <button id="classification_precheck_btn" class="small-button" style="background: var(--primary-color); color: white; padding: 10px 20px;">
+                        🔍 开始前置校验
+                    </button>
+                    <span id="classification_precheck_status" style="color: var(--text-color-secondary); font-size: 0.9em;"></span>
+                </div>
+            </div>
+            
+            <!-- 校验结果展示区域 -->
+            <div id="classification_precheck_results" style="display: none; margin-bottom: 20px;">
+                <div style="background: var(--bg-color-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h4 style="margin: 0;">📋 校验结果预览</h4>
+                        <div id="classification_precheck_actions" style="display: none; gap: 10px;">
+                            <button id="classification_precheck_proceed_btn" class="small-button" style="background: var(--success-color); color: white;">
+                                ✓ 效果满意，转入正式分类
+                            </button>
+                            <button id="classification_precheck_modify_btn" class="small-button" style="background: var(--warning-color); color: white;">
+                                ✎ 修改分类模板
+                            </button>
+                        </div>
+                    </div>
+                    <div id="classification_precheck_summary" style="margin-bottom: 15px;"></div>
+                    <div id="classification_precheck_table_container" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px;">
+                        <table id="classification_precheck_table" style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: var(--bg-color-tertiary);">
+                                    <th style="padding: 10px; text-align: left; border-bottom: 1px solid var(--border-color);">序号</th>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 1px solid var(--border-color);">输入预览</th>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 1px solid var(--border-color);">分类结果</th>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 1px solid var(--border-color);">确信度</th>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 1px solid var(--border-color);">状态</th>
+                                </tr>
+                            </thead>
+                            <tbody id="classification_precheck_tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
             <div id="classification_mode_recommendation" class="info success" style="margin-bottom: 20px; padding: 15px; border-radius: 8px;">
                 <div style="font-weight: bold; margin-bottom: 10px;">系统推荐</div>
                 <div id="classification_recommendation_text">请先添加输入数据...</div>
@@ -522,9 +600,10 @@
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-bottom: 15px; flex-wrap: wrap;">
                     <div id="classification_async_progress_info" class="info" style="text-align:center; flex-grow: 1;">等待提交任务...</div>
-                    <div style="display:flex; gap:10px;">
+                    <div style="display:flex; gap:10px; flex-wrap: wrap;">
                         <button id="classification_async_recover_btn" class="small-button" style="background: var(--warning-color); color: #fff;" disabled>恢复上次任务</button>
-                        <button id="classification_async_export_btn" class="small-button" disabled>导出为Excel</button>
+                        <button id="classification_async_export_btn" class="small-button" disabled>导出结果Excel</button>
+                        <button id="classification_export_to_original_btn" class="small-button" style="background: var(--success-color); color: #fff;" disabled>写回原Excel</button>
                     </div>
                 </div>
                 

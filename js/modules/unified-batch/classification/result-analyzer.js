@@ -116,12 +116,14 @@ const ResultAnalyzer = {
         };
 
         const schema = this.state.schema;
-        schema.layers.forEach(layer => {
-            stats.layerStats[layer.name] = {
-                total: 0,
-                labelDistribution: {}
-            };
-        });
+        if (schema && schema.layers) {
+            schema.layers.forEach(layer => {
+                stats.layerStats[layer.name] = {
+                    total: 0,
+                    labelDistribution: {}
+                };
+            });
+        }
 
         results.forEach(result => {
             const analysis = this.analyzeResult(result);
@@ -132,9 +134,11 @@ const ResultAnalyzer = {
                 stats.invalid++;
             }
 
-            stats.byConfidence[analysis.confidenceLevel]++;
+            if (analysis.confidenceLevel) {
+                stats.byConfidence[analysis.confidenceLevel]++;
+            }
 
-            if (analysis.issues.length > 0) {
+            if (analysis.issues && analysis.issues.length > 0) {
                 stats.issues.push({
                     resultId: result.id || result.requestId,
                     issues: analysis.issues
@@ -159,8 +163,8 @@ const ResultAnalyzer = {
         });
 
         stats.avgConfidence = this.calculateBatchAvgConfidence(results);
-        stats.lowConfidenceRate = (stats.byConfidence.low / stats.total * 100).toFixed(1);
-        stats.highConfidenceRate = (stats.byConfidence.high / stats.total * 100).toFixed(1);
+        stats.lowConfidenceRate = stats.total > 0 ? (stats.byConfidence.low / stats.total * 100).toFixed(1) : '0.0';
+        stats.highConfidenceRate = stats.total > 0 ? (stats.byConfidence.high / stats.total * 100).toFixed(1) : '0.0';
 
         return stats;
     },
@@ -325,6 +329,114 @@ const ResultAnalyzer = {
         });
 
         return { headers, rows };
+    },
+
+    exportToOriginalExcel(results, originalData, indexColumn, concatColumns) {
+        if (!originalData || originalData.length === 0) {
+            return { success: false, message: '没有原始Excel数据' };
+        }
+
+        if (!results || results.length === 0) {
+            return { success: false, message: '没有分类结果' };
+        }
+
+        const schema = this.state.schema;
+        
+        const resultMap = new Map();
+        results.forEach((result, index) => {
+            const key = result.id || result.customId || `I${index + 1}`;
+            resultMap.set(key, result);
+        });
+
+        const newHeaders = [];
+        schema.layers.forEach(layer => {
+            newHeaders.push(`${layer.name}_分类`);
+            newHeaders.push(`${layer.name}_确信度`);
+        });
+        newHeaders.push('整体确信度', '分类依据');
+
+        const outputData = originalData.map((row, rowIndex) => {
+            const newRow = { ...row };
+            
+            let lookupKey;
+            if (indexColumn && row[indexColumn]) {
+                lookupKey = String(row[indexColumn]).trim();
+            } else {
+                lookupKey = `I${rowIndex + 1}`;
+            }
+            
+            const result = resultMap.get(lookupKey);
+            
+            if (result && result.classification) {
+                schema.layers.forEach(layer => {
+                    const label = result.classification[layer.name];
+                    const conf = result.confidence?.[layer.name];
+                    
+                    if (label) {
+                        newRow[`${layer.name}_分类`] = Array.isArray(label) ? label.join('; ') : label;
+                    }
+                    
+                    if (conf !== undefined) {
+                        const displayConf = Array.isArray(conf) ? Math.min(...conf) : conf;
+                        newRow[`${layer.name}_确信度`] = (displayConf * 100).toFixed(1) + '%';
+                    }
+                });
+                
+                if (result.overallConfidence !== undefined) {
+                    newRow['整体确信度'] = (result.overallConfidence * 100).toFixed(1) + '%';
+                }
+                
+                if (result.reasoning) {
+                    newRow['分类依据'] = result.reasoning;
+                }
+            }
+            
+            return newRow;
+        });
+
+        const worksheet = XLSX.utils.json_to_sheet(outputData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, '分类结果');
+        
+        const summaryData = this.generateSummarySheet(results, schema);
+        if (summaryData.length > 0) {
+            const summarySheet = XLSX.utils.json_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(workbook, summarySheet, '统计汇总');
+        }
+
+        const fileName = `分类标引结果_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        XLSX.writeFile(workbook, fileName);
+
+        return { 
+            success: true, 
+            message: `已导出${outputData.length}条分类结果到Excel`,
+            fileName: fileName
+        };
+    },
+
+    generateSummarySheet(results, schema) {
+        const summary = [];
+        
+        const stats = this.batchAnalyze(results);
+        
+        summary.push({ 项目: '总记录数', 数值: stats.total });
+        summary.push({ 项目: '有效记录数', 数值: stats.valid });
+        summary.push({ 项目: '无效记录数', 数值: stats.invalid });
+        summary.push({ 项目: '平均确信度', 数值: (stats.avgConfidence * 100).toFixed(1) + '%' });
+        summary.push({ 项目: '高确信度比例', 数值: stats.highConfidenceRate + '%' });
+        summary.push({ 项目: '低确信度比例', 数值: stats.lowConfidenceRate + '%' });
+        summary.push({ 项目: '', 数值: '' });
+        
+        Object.entries(stats.layerStats).forEach(([layerName, layerStats]) => {
+            summary.push({ 项目: `层级: ${layerName}`, 数值: '' });
+            summary.push({ 项目: '  分类数量', 数值: layerStats.total });
+            
+            Object.entries(layerStats.labelDistribution).forEach(([label, count]) => {
+                summary.push({ 项目: `  - ${label}`, 数值: count });
+            });
+        });
+
+        return summary;
     }
 };
 
