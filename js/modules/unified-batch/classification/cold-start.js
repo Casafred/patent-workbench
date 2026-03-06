@@ -109,7 +109,20 @@ const ColdStart = {
             }
 
             const result = await response.json();
-            const content = result.content || result.response || result.message?.content;
+            
+            let content;
+            if (result.choices && result.choices[0]?.message?.content) {
+                content = result.choices[0].message.content;
+            } else if (result.content) {
+                content = result.content;
+            } else if (result.response) {
+                content = result.response;
+            } else if (result.message?.content) {
+                content = result.message.content;
+            } else {
+                console.error('[ColdStart] Unexpected API response structure:', result);
+                content = null;
+            }
 
             const analysis = this.parseAnalysisResult(content);
 
@@ -193,6 +206,20 @@ const ColdStart = {
 
     parseAnalysisResult(content) {
         try {
+            if (!content) {
+                console.error('[ColdStart] content is undefined or null');
+                return {
+                    dataCharacteristics: {
+                        domain: '未知领域',
+                        mainTopics: [],
+                        structureFeatures: 'API响应内容为空'
+                    },
+                    suggestedSchema: null,
+                    recommendations: [],
+                    parseError: 'API响应内容为空'
+                };
+            }
+            
             const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || 
                              content.match(/\{[\s\S]*\}/);
             
@@ -227,7 +254,7 @@ const ColdStart = {
                 suggestedSchema: null,
                 recommendations: [],
                 parseError: error.message,
-                rawContent: content
+                rawContent: content || ''
             };
         }
     },

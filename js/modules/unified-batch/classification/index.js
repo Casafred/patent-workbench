@@ -853,20 +853,25 @@ const ClassificationModule = {
         try {
             const result = await ColdStart.analyzeAndSuggest(inputs);
             
-            if (result.success) {
+            if (result.success && result.suggestedSchema) {
                 ColdStart.applySuggestedSchema();
                 this.updateLayersUI();
                 this.updatePromptPreview();
                 
                 const nameEl = document.getElementById('classification_schema_name');
-                if (nameEl) {
+                if (nameEl && result.suggestedSchema.name) {
                     nameEl.value = result.suggestedSchema.name;
                 }
                 
                 alert('智能冷启动完成！分类体系已自动生成，您可以在配置页面进行微调。');
             } else {
-                alert('智能冷启动失败: ' + result.message);
+                const errorMsg = result.message || (result.analysis?.parseError ? '解析失败: ' + result.analysis.parseError : '未能生成分类体系');
+                alert('智能冷启动失败: ' + errorMsg);
+                console.error('[ClassificationModule] Cold start failed:', result);
             }
+        } catch (error) {
+            console.error('[ClassificationModule] Cold start error:', error);
+            alert('智能冷启动出错: ' + error.message);
         } finally {
             if (btn) {
                 btn.disabled = false;
