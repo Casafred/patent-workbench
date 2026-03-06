@@ -34,12 +34,23 @@ function getUserStorageKey(key) {
 
 /**
  * 从用户隔离存储中获取数据
+ * 支持从旧键名迁移到新的用户隔离键名
  * @param {string} key - 键名
  * @returns {string|null} 数据或null
  */
 function getUserStorageItem(key) {
     if (window.userCacheStorage && window.userCacheStorage.isInitialized()) {
-        return window.userCacheStorage.get(key);
+        const value = window.userCacheStorage.get(key);
+        if (value !== null) {
+            return value;
+        }
+        const legacyValue = localStorage.getItem(key);
+        if (legacyValue !== null) {
+            window.userCacheStorage.set(key, legacyValue);
+            console.log(`[API] 已迁移数据: ${key} -> 用户隔离存储`);
+            return legacyValue;
+        }
+        return null;
     }
     return localStorage.getItem(key);
 }
