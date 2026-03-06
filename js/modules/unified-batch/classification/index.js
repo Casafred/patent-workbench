@@ -62,7 +62,7 @@ const ClassificationModule = {
 
         const excelFileInput = document.getElementById('classification_excel_file');
         if (excelFileInput) {
-            excelFileInput.addEventListener('change', this.handleExcelFileChange.bind(this));
+            excelFileInput.addEventListener('change', this.handleExcelUpload.bind(this));
         }
 
         const excelSheetSelect = document.getElementById('classification_excel_sheet');
