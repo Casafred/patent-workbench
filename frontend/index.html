@@ -1227,6 +1227,15 @@ async function startProcessing() {
         updateProgressStatus('ocr', '[OCR] 正在识别图片中的序号...');
         
         const ocrStartTime = Date.now();
+        
+        // 根据OCR模式设置不同的超时时间
+        const ocrTimeouts = {
+            'rapidocr': 60000,    // RapidOCR本地处理，60秒
+            'glm_ocr': 90000,     // GLM OCR API，90秒
+            'paddle_ocr': 90000   // Paddle OCR API，90秒
+        };
+        const ocrTimeout = ocrTimeouts[ocrMode] || 60000;
+        
         const ocrResponse = await fetchWithTimeout('/api/drawing-marker/process-staged', {
             method: 'POST',
             headers: headers,
@@ -1237,7 +1246,7 @@ async function startProcessing() {
                 paddle_token: paddleToken,
                 stage: 'ocr'
             })
-        }, 30000);
+        }, ocrTimeout);
         
         const ocrResult = await ocrResponse.json();
         
@@ -1276,7 +1285,7 @@ async function startProcessing() {
                 ocr_results: ocrMarkers,
                 stage: 'extract'
             })
-        }, 10000);
+        }, 30000);
         
         const extractResult = await extractResponse.json();
         

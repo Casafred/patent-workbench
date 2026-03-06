@@ -99,11 +99,9 @@ class AIComponentExtractor:
         logger.info(f"[AI响应解析] 原始响应长度: {len(response)}")
         logger.info(f"[AI响应解析] 原始响应前500字符: {response[:500]}")
         
-        # Remove markdown code blocks if present
         if response.startswith('```'):
             lines = response.split('\n')
             logger.info(f"[AI响应解析] 检测到markdown代码块，行数: {len(lines)}")
-            # Find the closing ```
             start_idx = 0
             end_idx = len(lines) - 1
             for i, line in enumerate(lines):
@@ -112,15 +110,12 @@ class AIComponentExtractor:
                 if i > start_idx and line.strip() == '```':
                     end_idx = i
                     break
-            # Extract content between markers
             content_lines = lines[start_idx + 1:end_idx]
-            # Remove json language identifier if present
-            if content_lines and content_lines[0].strip().lower() == 'json':
+            if content_lines and content_lines[0].strip().lower() in ['json', '']:
                 content_lines = content_lines[1:]
             response = '\n'.join(content_lines).strip()
             logger.info(f"[AI响应解析] 去除markdown后长度: {len(response)}")
         
-        # Try to find JSON object in the response
         import re
         json_match = re.search(r'\{[\s\S]*\}', response)
         if json_match:
@@ -131,25 +126,31 @@ class AIComponentExtractor:
             result = json.loads(response)
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse JSON response: {response[:500]}")
+            components = self._try_fallback_parse(response)
+            if components:
+                logger.info(f"[AI响应解析] 备用解析成功，提取到 {len(components)} 个组件")
+                return components
             raise json.JSONDecodeError(
                 f"AI returned invalid JSON format: {str(e)}",
                 response,
                 e.pos
             )
         
-        # Validate structure
         if not isinstance(result, dict):
             raise ValueError("AI response must be a JSON object")
         
         if "components" not in result:
-            raise ValueError("AI response missing 'components' field")
+            if isinstance(result, list):
+                logger.info("[AI响应解析] 响应是列表格式，尝试转换")
+                result = {"components": result}
+            else:
+                raise ValueError("AI response missing 'components' field")
         
         components = result["components"]
         
         if not isinstance(components, list):
             raise ValueError("'components' field must be a list")
         
-        # Validate each component
         for i, comp in enumerate(components):
             if not isinstance(comp, dict):
                 raise ValueError(f"Component {i} must be an object")
@@ -159,6 +160,43 @@ class AIComponentExtractor:
                 raise ValueError(f"Component {i} 'marker' and 'name' must be strings")
         
         return components
+    
+    def _try_fallback_parse(self, response: str) -> List[Dict[str, str]]:
+        """
+        Try fallback parsing methods when JSON parsing fails.
+        
+        Attempts to extract marker-name pairs using regex patterns.
+        """
+        import re
+        components = []
+        
+        patterns = [
+            r'["\']marker["\']\s*:\s*["\']?(\d+[A-Za-z]?)["\']?\s*,\s*["\']name["\']\s*:\s*["\']([^"\']+)["\']',
+            r'["\'](\d+[A-Za-z]?)["\']\s*:\s*["\']([^"\']+)["\']',
+            r'\b(\d{1,4}[A-Za-z]?)\s*[:：]\s*([^\n,，]+)',
+            r'["\']?(\d+[A-Za-z]?)["\']?\s*[,，]\s*["\']?([^"\',，\n]+)["\']?',
+        ]
+        
+        for pattern in patterns:
+            matches = re.findall(pattern, response)
+            if matches:
+                for match in matches:
+                    if len(match) >= 2:
+                        marker = str(match[0]).strip()
+                        name = str(match[1]).strip()
+                        if marker and name and len(marker) <= 5:
+                            components.append({"marker": marker, "name": name})
+                if components:
+                    break
+        
+        seen = set()
+        unique_components = []
+        for comp in components:
+            if comp["marker"] not in seen:
+                seen.add(comp["marker"])
+                unique_components.append(comp)
+        
+        return unique_components
     
     async def extract(
         self,

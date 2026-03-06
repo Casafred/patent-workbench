@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 GLM_HANDWRITING_OCR_URL = "https://open.bigmodel.cn/api/paas/v4/files/ocr"
 GLM_LAYOUT_PARSING_URL = "https://open.bigmodel.cn/api/paas/v4/layout_parsing"
 
-DEFAULT_TIMEOUT = 60
+DEFAULT_TIMEOUT = 90
 
 
 def call_glm_handwriting_ocr(
