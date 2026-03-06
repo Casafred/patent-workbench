@@ -146,7 +146,7 @@ const ColdStart = {
 你需要：
 1. 分析数据的主题、领域、结构特征
 2. 识别可能的分类维度
-3. 为每个分类维度提出具体的分类标签
+3. 为每个分类维度提出具体的分类标签（支持多层级）
 4. 给出分类原则和判断标准
 
 输出格式必须是有效的JSON。`;
@@ -177,14 +177,19 @@ const ColdStart = {
   },
   "suggestedSchema": {
     "name": "分类体系名称",
-    "layers": [
+    "categories": [
       {
-        "name": "层级名称",
-        "description": "分类原则描述",
-        "labels": ["标签1", "标签2", "标签3"]
+        "name": "一级分类名称",
+        "description": "分类描述",
+        "children": [
+          {
+            "name": "二级分类名称",
+            "description": "分类描述",
+            "children": []
+          }
+        ]
       }
     ],
-    "multiLabel": false,
     "reasoning": "分类体系设计理由"
   },
   "recommendations": ["其他建议"]
@@ -194,8 +199,9 @@ const ColdStart = {
 请确保：
 1. 分类标签具体且互斥
 2. 分类原则清晰可操作
-3. 标签数量适中（每个层级3-10个标签为宜）
-4. 考虑实际应用场景`;
+3. 每个一级分类下可以有多个二级分类
+4. 支持树状层级结构，每个分类项包含名称和描述
+5. 考虑实际应用场景`;
         
         if (options.hint) {
             prompt += `\n\n## 用户提示\n${options.hint}`;
@@ -236,8 +242,7 @@ const ColdStart = {
                 },
                 suggestedSchema: {
                     name: '自动生成分类',
-                    layers: [],
-                    multiLabel: false,
+                    categories: [],
                     reasoning: '无法解析AI响应'
                 },
                 recommendations: [],
@@ -266,26 +271,64 @@ const ColdStart = {
 
         const suggested = analysis.suggestedSchema;
         const schema = {
-            ...DEFAULT_SCHEMA,
             id: `schema_coldstart_${Date.now()}`,
             name: suggested.name || '智能生成分类体系',
-            multiLabel: suggested.multiLabel || false,
-            maxLabels: suggested.multiLabel ? 3 : 1,
+            categories: [],
+            model: 'GLM-4.7-Flash',
+            temperature: 0.1,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
         };
 
-        if (suggested.layers && Array.isArray(suggested.layers)) {
-            schema.layers = suggested.layers.map((layer, index) => ({
-                ...DEFAULT_LAYER,
-                level: index + 1,
-                name: layer.name || `层级${index + 1}`,
-                description: layer.description || '',
-                labels: layer.labels || []
-            }));
+        if (suggested.categories && Array.isArray(suggested.categories)) {
+            schema.categories = suggested.categories.map(cat => this.normalizeCategory(cat));
+        } else if (suggested.layers && Array.isArray(suggested.layers)) {
+            schema.categories = this.convertLayersToCategories(suggested.layers);
         }
 
         return schema;
+    },
+
+    normalizeCategory(category) {
+        return {
+            id: `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            name: category.name || '',
+            description: category.description || '',
+            children: (category.children || []).map(child => this.normalizeCategory(child)),
+            expanded: true
+        };
+    },
+
+    convertLayersToCategories(layers) {
+        const categories = [];
+        
+        layers.forEach((layer, index) => {
+            if (layer.labels && layer.labels.length > 0) {
+                layer.labels.forEach(label => {
+                    const category = {
+                        id: `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                        name: label,
+                        description: layer.description || '',
+                        children: [],
+                        expanded: true
+                    };
+                    
+                    if (layer.children && layer.children[label]) {
+                        category.children = layer.children[label].map(childLabel => ({
+                            id: `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                            name: childLabel,
+                            description: '',
+                            children: [],
+                            expanded: true
+                        }));
+                    }
+                    
+                    categories.push(category);
+                });
+            }
+        });
+        
+        return categories;
     },
 
     applySuggestedSchema() {
@@ -295,11 +338,22 @@ const ColdStart = {
             return { success: false, message: '没有可应用的分类体系建议' };
         }
 
-        classificationState.setSchema(suggested);
+        const schema = {
+            id: suggested.id || `schema_${Date.now()}`,
+            name: suggested.name || '智能生成分类体系',
+            categories: suggested.categories || [],
+            model: suggested.model || 'GLM-4.7-Flash',
+            temperature: suggested.temperature || 0.1,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+
+        classificationState.state.schema = schema;
+        classificationState.saveState();
         
         return { 
             success: true, 
-            schema: suggested,
+            schema: schema,
             message: '分类体系已应用，您可以在配置页面进行微调'
         };
     },
@@ -346,7 +400,23 @@ ${feedback}
 
 ## 输出要求
 
-请输出优化后的完整分类体系JSON，格式与之前相同。只输出JSON，不要其他内容。`;
+请输出优化后的完整分类体系JSON，格式如下：
+
+\`\`\`json
+{
+  "name": "分类体系名称",
+  "categories": [
+    {
+      "name": "分类名称",
+      "description": "分类描述",
+      "children": [...]
+    }
+  ],
+  "reasoning": "优化理由"
+}
+\`\`\`
+
+只输出JSON，不要其他内容。`;
 
         try {
             const model = window.ProviderManager?.getDefaultModel?.() || 'GLM-4-Flash';
@@ -365,7 +435,7 @@ ${feedback}
                     messages: [
                         {
                             role: 'system',
-                            content: '你是一个分类体系优化专家。根据用户反馈优化分类体系。'
+                            content: '你是一个分类体系优化专家。根据用户反馈优化分类体系，保持树状层级结构。'
                         },
                         {
                             role: 'user',
@@ -380,7 +450,16 @@ ${feedback}
             }
 
             const result = await response.json();
-            const content = result.content || result.response || result.message?.content;
+            let content;
+            if (result.choices && result.choices[0]?.message?.content) {
+                content = result.choices[0].message.content;
+            } else if (result.content) {
+                content = result.content;
+            } else if (result.response) {
+                content = result.response;
+            } else if (result.message?.content) {
+                content = result.message.content;
+            }
 
             const jsonMatch = content.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
