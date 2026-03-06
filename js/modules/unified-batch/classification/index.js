@@ -190,46 +190,60 @@ const ClassificationModule = {
                                   placeholder="分类原则描述（可选）">${layer.description || ''}</textarea>
                     </div>
                     <div class="layer-field">
+                        <div class="field-label">一级标签（每行一个）:</div>
                         <textarea class="layer-labels-input" rows="3"
                                   onchange="ClassificationModule.updateLayerLabels(${index}, this.value)"
-                                  placeholder="分类标签（每行一个）">${(layer.labels || []).join('\n')}</textarea>
+                                  placeholder="例如：&#10;机械&#10;电子&#10;化学">${(layer.labels || []).join('\n')}</textarea>
                     </div>
-                    ${this.renderSubCategories(layer, index)}
+                    <div class="layer-field">
+                        <div class="sub-categories-section">
+                            <div class="sub-categories-header">二级分类配置（为每个一级标签添加子类）</div>
+                            <div class="sub-categories-list" id="sub-categories-${index}">
+                                ${this.renderSubCategoriesContent(layer, index)}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
     },
 
-    renderSubCategories(layer, layerIndex) {
+    renderSubCategoriesContent(layer, layerIndex) {
         if (!layer.labels || layer.labels.length === 0) {
-            return '';
+            return '<div class="sub-categories-empty">请先在上方输入一级标签</div>';
         }
 
-        const subCategoryHtml = layer.labels.map((label, labelIndex) => {
+        return layer.labels.map((label, labelIndex) => {
             const children = (layer.children && layer.children[label]) ? layer.children[label] : [];
             return `
                 <div class="sub-category-item">
                     <div class="sub-category-header" onclick="ClassificationModule.toggleSubCategory(this)">
-                        <span class="sub-category-label">${label}</span>
+                        <span class="sub-category-label">📁 ${label}</span>
                         <span class="sub-category-toggle">${children.length > 0 ? `▼ ${children.length}个子类` : '+ 添加子类'}</span>
                     </div>
                     <div class="sub-category-body" style="display: none;">
                         <textarea rows="2" class="sub-category-input"
                                   onchange="ClassificationModule.updateChildLabels(${layerIndex}, '${label}', this.value)"
-                                  placeholder="子分类标签（每行一个，支持继续添加下级）">${children.join('\n')}</textarea>
+                                  placeholder="子分类标签（每行一个）">${children.join('\n')}</textarea>
                     </div>
                 </div>
             `;
         }).join('');
+    },
 
-        return `
-            <div class="sub-categories-section">
-                <div class="sub-categories-header">子分类配置（点击展开）</div>
-                <div class="sub-categories-list">
-                    ${subCategoryHtml}
-                </div>
-            </div>
-        `;
+    updateLayerLabels(index, value) {
+        const labels = value.split('\n')
+            .map(l => l.trim())
+            .filter(l => l.length > 0);
+        SchemaManager.updateLabelsInLayer(index, labels);
+        
+        const subCategoriesContainer = document.getElementById(`sub-categories-${index}`);
+        if (subCategoriesContainer) {
+            const layer = classificationState.getLayer(index);
+            subCategoriesContainer.innerHTML = this.renderSubCategoriesContent(layer, index);
+        }
+        
+        this.updatePromptPreview();
     },
 
     toggleSubCategory(headerEl) {
