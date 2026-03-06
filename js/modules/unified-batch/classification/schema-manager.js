@@ -84,24 +84,74 @@ const SchemaManager = {
         return this.updateLayer(index, { description });
     },
 
-    addLabelToLayer(layerIndex, label) {
+    addLabelToLayer(layerIndex, label, parentLabel = null) {
         const layer = this.getLayer(layerIndex);
         if (layer) {
-            if (!layer.labels.includes(label)) {
-                layer.labels.push(label);
-                this.updateLayer(layerIndex, { labels: layer.labels });
+            if (parentLabel !== null) {
+                if (!layer.children) {
+                    layer.children = {};
+                }
+                if (!layer.children[parentLabel]) {
+                    layer.children[parentLabel] = [];
+                }
+                if (!layer.children[parentLabel].includes(label)) {
+                    layer.children[parentLabel].push(label);
+                    this.updateLayer(layerIndex, { children: layer.children });
+                }
+            } else {
+                if (!layer.labels.includes(label)) {
+                    layer.labels.push(label);
+                    this.updateLayer(layerIndex, { labels: layer.labels });
+                }
             }
         }
         return layer;
     },
 
-    removeLabelFromLayer(layerIndex, labelIndex) {
+    removeLabelFromLayer(layerIndex, labelIndex, parentLabel = null) {
         const layer = this.getLayer(layerIndex);
-        if (layer && layer.labels[labelIndex] !== undefined) {
-            layer.labels.splice(labelIndex, 1);
-            this.updateLayer(layerIndex, { labels: layer.labels });
+        if (layer) {
+            if (parentLabel !== null && layer.children && layer.children[parentLabel]) {
+                layer.children[parentLabel].splice(labelIndex, 1);
+                if (layer.children[parentLabel].length === 0) {
+                    delete layer.children[parentLabel];
+                }
+                this.updateLayer(layerIndex, { children: layer.children });
+            } else if (layer.labels[labelIndex] !== undefined) {
+                const removedLabel = layer.labels[labelIndex];
+                layer.labels.splice(labelIndex, 1);
+                if (layer.children && layer.children[removedLabel]) {
+                    delete layer.children[removedLabel];
+                }
+                this.updateLayer(layerIndex, { labels: layer.labels, children: layer.children });
+            }
         }
         return layer;
+    },
+
+    getChildLabels(layerIndex, parentLabel) {
+        const layer = this.getLayer(layerIndex);
+        if (layer && layer.children && layer.children[parentLabel]) {
+            return layer.children[parentLabel];
+        }
+        return [];
+    },
+
+    setChildLabels(layerIndex, parentLabel, childLabels) {
+        const layer = this.getLayer(layerIndex);
+        if (layer) {
+            if (!layer.children) {
+                layer.children = {};
+            }
+            layer.children[parentLabel] = childLabels;
+            this.updateLayer(layerIndex, { children: layer.children });
+        }
+        return layer;
+    },
+
+    hasChildLabels(layerIndex, parentLabel) {
+        const layer = this.getLayer(layerIndex);
+        return layer && layer.children && layer.children[parentLabel] && layer.children[parentLabel].length > 0;
     },
 
     updateLabelsInLayer(layerIndex, labels) {

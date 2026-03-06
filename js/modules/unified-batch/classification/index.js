@@ -1566,7 +1566,7 @@ const ClassificationModule = {
             headers['Authorization'] = `Bearer ${apiKey}`;
         }
         
-        const response = await fetch('/api/chat/stream', {
+        const response = await fetch('/api/chat', {
             method: 'POST',
             headers: headers,
             body: JSON.stringify({
@@ -1574,8 +1574,7 @@ const ClassificationModule = {
                 messages: [
                     { role: 'user', content: fullPrompt }
                 ],
-                temperature: temperature,
-                stream: false
+                temperature: temperature
             })
         });
         

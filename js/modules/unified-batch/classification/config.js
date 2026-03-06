@@ -70,6 +70,7 @@ export const DEFAULT_LAYER = {
     name: '',
     description: '',
     labels: [],
+    children: [],
     examples: []
 };
 
