@@ -1142,14 +1142,10 @@ const ClassificationModule = {
             return;
         }
         
-        if (!schema.layers || schema.layers.length === 0) {
-            alert('请先配置分类体系');
-            return;
-        }
-        
-        const hasValidLayer = schema.layers.some(layer => layer.name && layer.labels && layer.labels.length > 0);
-        if (!hasValidLayer) {
-            alert('请至少配置一个有效的分类层级');
+        const categories = schema.categories || [];
+        const hasValidCategory = categories.some(cat => cat.name && cat.name.trim() !== '');
+        if (!hasValidCategory) {
+            alert('请至少配置一个有效的分类项');
             return;
         }
         
@@ -1551,14 +1547,10 @@ const ClassificationModule = {
             return;
         }
         
-        if (!schema.layers || schema.layers.length === 0) {
-            alert('请先配置分类体系');
-            return;
-        }
-        
-        const hasValidLayer = schema.layers.some(layer => layer.name && layer.labels && layer.labels.length > 0);
-        if (!hasValidLayer) {
-            alert('请至少配置一个有效的分类层级（包含名称和标签）');
+        const categories = schema.categories || [];
+        const hasValidCategory = categories.some(cat => cat.name && cat.name.trim() !== '');
+        if (!hasValidCategory) {
+            alert('请至少配置一个有效的分类项');
             return;
         }
         
@@ -1573,10 +1565,11 @@ const ClassificationModule = {
         }
         
         if (statusEl) {
-            statusEl.textContent = '正在获取前5条数据进行测试分类...';
+            statusEl.textContent = '正在获取前3条数据进行测试分类...';
+            statusEl.style.color = 'var(--text-color-secondary)';
         }
         
-        const testInputs = inputs.slice(0, 5);
+        const testInputs = inputs.slice(0, 3);
         const precheckResults = [];
         
         try {
@@ -1764,6 +1757,7 @@ const ClassificationModule = {
         if (!tbody) return;
         
         const schema = classificationState.getSchema();
+        const categories = schema.categories || [];
         
         tbody.innerHTML = '';
         
@@ -1807,15 +1801,18 @@ const ClassificationModule = {
                     
                     confidenceText = `${confPercent}%`;
                     
-                    const classificationParts = [];
-                    schema.layers.forEach(layer => {
-                        if (layer.name && result.classification[layer.name]) {
-                            const label = result.classification[layer.name];
-                            const labelStr = Array.isArray(label) ? label.join(', ') : label;
-                            classificationParts.push(`${layer.name}: ${labelStr}`);
+                    if (result.classification) {
+                        if (Array.isArray(result.classification)) {
+                            classificationText = result.classification.join(' > ');
+                        } else if (typeof result.classification === 'object') {
+                            const parts = [];
+                            Object.entries(result.classification).forEach(([key, value]) => {
+                                const valueStr = Array.isArray(value) ? value.join(', ') : value;
+                                parts.push(`${key}: ${valueStr}`);
+                            });
+                            classificationText = parts.join('; ') || '-';
                         }
-                    });
-                    classificationText = classificationParts.join('; ') || '-';
+                    }
                 }
             }
             
