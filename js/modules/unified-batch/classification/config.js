@@ -56,13 +56,19 @@ export const ClassificationConfig = {
 export const DEFAULT_SCHEMA = {
     id: null,
     name: '',
-    layers: [],
-    multiLabel: false,
-    maxLabels: 1,
+    categories: [],
     model: 'GLM-4.7-Flash',
     temperature: 0.1,
     createdAt: null,
     updatedAt: null
+};
+
+export const DEFAULT_CATEGORY = {
+    id: '',
+    name: '',
+    description: '',
+    children: [],
+    expanded: true
 };
 
 export const DEFAULT_LAYER = {

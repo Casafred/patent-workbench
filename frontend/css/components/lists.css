@@ -467,18 +467,146 @@
     border-color: var(--primary-color);
 }
 
-.field-label {
-    font-size: 0.8em;
-    color: var(--text-color-secondary);
-    margin-bottom: 6px;
+/* 新的树状分类配置样式 */
+.category-tree-item {
+    margin-bottom: 2px;
 }
 
-.sub-categories-empty {
-    padding: 15px;
-    text-align: center;
-    color: var(--text-color-tertiary);
+.category-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.category-row:hover {
+    background: var(--bg-color-secondary);
+    border-color: var(--primary-color);
+}
+
+.root-category > .category-row {
+    background: linear-gradient(135deg, var(--bg-color-secondary) 0%, var(--bg-color) 100%);
+    border-left: 3px solid var(--primary-color);
+}
+
+.category-expand {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-color-secondary);
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.category-expand:hover {
+    color: var(--primary-color);
+}
+
+.category-inputs {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.cat-name {
+    flex: 1;
+    min-width: 120px;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
     font-size: 0.85em;
     background: var(--bg-color);
-    border-radius: 6px;
-    border: 1px dashed var(--border-color);
+    color: var(--text-color);
+}
+
+.cat-desc {
+    flex: 2;
+    min-width: 150px;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.85em;
+    background: var(--bg-color);
+    color: var(--text-color);
+}
+
+.cat-name:focus,
+.cat-desc:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.category-toolbar {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.btn-icon {
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.btn-icon.add {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-icon.add:hover {
+    background: var(--primary-color-dark);
+}
+
+.btn-icon.del {
+    background: transparent;
+    color: var(--text-color-tertiary);
+}
+
+.btn-icon.del:hover {
+    background: var(--error-color);
+    color: white;
+}
+
+.category-children {
+    margin-left: 20px;
+    padding-left: 10px;
+    border-left: 2px dashed var(--border-color);
+    margin-top: 2px;
+}
+
+.depth-1 .category-row {
+    background: rgba(var(--primary-color-rgb), 0.03);
+}
+
+.depth-2 .category-row {
+    background: rgba(var(--primary-color-rgb), 0.06);
+}
+
+.depth-3 .category-row {
+    background: rgba(var(--primary-color-rgb), 0.09);
+}
+
+.empty-categories {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-color-tertiary);
+    background: var(--bg-color-secondary);
+    border-radius: 8px;
+    border: 2px dashed var(--border-color);
 }

@@ -163,99 +163,148 @@ const ClassificationModule = {
     },
 
     updateLayersUI() {
-        const container = document.getElementById('classification_layers_container');
+        const container = document.getElementById('classification_tree_container');
         if (!container) return;
 
-        const layers = classificationState.getLayers();
+        const categories = classificationState.state.schema.categories || [];
         
-        container.innerHTML = layers.map((layer, index) => this.renderLayerConfig(layer, index)).join('');
+        if (categories.length === 0) {
+            container.innerHTML = `
+                <div class="empty-categories">
+                    <p style="text-align: center; color: var(--text-color-tertiary); padding: 30px;">
+                        暂无分类配置<br>点击下方"添加一级分类"按钮开始配置
+                    </p>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = categories.map((category, index) => 
+            this.renderCategoryItem(category, [index], 0)
+        ).join('');
     },
 
-    renderLayerConfig(layer, index) {
+    renderCategoryItem(category, path, depth) {
+        const pathStr = path.join('-');
+        const hasChildren = category.children && category.children.length > 0;
+        const levelClass = depth === 0 ? 'root-category' : `child-category depth-${depth}`;
+        
         return `
-            <div class="layer-config-card" data-layer-index="${index}">
-                <div class="layer-header">
-                    <span class="layer-badge">一级分类 ${index + 1}</span>
-                    <button class="icon-btn delete" onclick="ClassificationModule.removeLayer(${index})" title="删除">×</button>
-                </div>
-                <div class="layer-body">
-                    <div class="layer-field">
-                        <input type="text" class="layer-name-input" value="${layer.name || ''}" 
-                               onchange="ClassificationModule.updateLayerName(${index}, this.value)"
-                               placeholder="输入分类名称（如：技术领域）">
+            <div class="category-tree-item ${levelClass}" data-path="${pathStr}">
+                <div class="category-row">
+                    <div class="category-expand" onclick="ClassificationModule.toggleExpand('${pathStr}')">
+                        ${hasChildren ? (category.expanded !== false ? '▼' : '▶') : '•'}
                     </div>
-                    <div class="layer-field">
-                        <textarea class="layer-desc-input" rows="2"
-                                  onchange="ClassificationModule.updateLayerDescription(${index}, this.value)"
-                                  placeholder="分类原则描述（可选）">${layer.description || ''}</textarea>
+                    <div class="category-inputs">
+                        <input type="text" class="cat-name" value="${category.name || ''}" 
+                               placeholder="分类名称"
+                               onchange="ClassificationModule.updateCategoryField('${pathStr}', 'name', this.value)">
+                        <input type="text" class="cat-desc" value="${category.description || ''}" 
+                               placeholder="分类描述（可选）"
+                               onchange="ClassificationModule.updateCategoryField('${pathStr}', 'description', this.value)">
                     </div>
-                    <div class="layer-field">
-                        <div class="field-label">一级标签（每行一个）:</div>
-                        <textarea class="layer-labels-input" rows="3"
-                                  onchange="ClassificationModule.updateLayerLabels(${index}, this.value)"
-                                  placeholder="例如：&#10;机械&#10;电子&#10;化学">${(layer.labels || []).join('\n')}</textarea>
-                    </div>
-                    <div class="layer-field">
-                        <div class="sub-categories-section">
-                            <div class="sub-categories-header">二级分类配置（为每个一级标签添加子类）</div>
-                            <div class="sub-categories-list" id="sub-categories-${index}">
-                                ${this.renderSubCategoriesContent(layer, index)}
-                            </div>
-                        </div>
+                    <div class="category-toolbar">
+                        <button class="btn-icon add" onclick="ClassificationModule.addChild('${pathStr}')" title="添加子分类">+</button>
+                        <button class="btn-icon del" onclick="ClassificationModule.deleteCategory('${pathStr}')" title="删除">×</button>
                     </div>
                 </div>
+                ${hasChildren && category.expanded !== false ? `
+                    <div class="category-children">
+                        ${category.children.map((child, idx) => 
+                            this.renderCategoryItem(child, [...path, idx], depth + 1)
+                        ).join('')}
+                    </div>
+                ` : ''}
             </div>
         `;
     },
 
-    renderSubCategoriesContent(layer, layerIndex) {
-        if (!layer.labels || layer.labels.length === 0) {
-            return '<div class="sub-categories-empty">请先在上方输入一级标签</div>';
+    toggleExpand(pathStr) {
+        const path = pathStr.split('-').map(Number);
+        let current = this.getCategoryByPath(path);
+        if (current) {
+            current.expanded = current.expanded === false ? true : false;
+            this.updateLayersUI();
         }
-
-        return layer.labels.map((label, labelIndex) => {
-            const children = (layer.children && layer.children[label]) ? layer.children[label] : [];
-            return `
-                <div class="sub-category-item">
-                    <div class="sub-category-header" onclick="ClassificationModule.toggleSubCategory(this)">
-                        <span class="sub-category-label">📁 ${label}</span>
-                        <span class="sub-category-toggle">${children.length > 0 ? `▼ ${children.length}个子类` : '+ 添加子类'}</span>
-                    </div>
-                    <div class="sub-category-body" style="display: none;">
-                        <textarea rows="2" class="sub-category-input"
-                                  onchange="ClassificationModule.updateChildLabels(${layerIndex}, '${label}', this.value)"
-                                  placeholder="子分类标签（每行一个）">${children.join('\n')}</textarea>
-                    </div>
-                </div>
-            `;
-        }).join('');
     },
 
-    updateLayerLabels(index, value) {
-        const labels = value.split('\n')
-            .map(l => l.trim())
-            .filter(l => l.length > 0);
-        SchemaManager.updateLabelsInLayer(index, labels);
-        
-        const subCategoriesContainer = document.getElementById(`sub-categories-${index}`);
-        if (subCategoriesContainer) {
-            const layer = classificationState.getLayer(index);
-            subCategoriesContainer.innerHTML = this.renderSubCategoriesContent(layer, index);
+    getCategoryByPath(path) {
+        let current = classificationState.state.schema.categories;
+        for (let i = 0; i < path.length; i++) {
+            if (!current || !current[path[i]]) return null;
+            if (i < path.length - 1) {
+                current = current[path[i]].children;
+            } else {
+                return current[path[i]];
+            }
+        }
+        return null;
+    },
+
+    getParentByPath(path) {
+        if (path.length <= 1) return null;
+        const parentPath = path.slice(0, -1);
+        return this.getCategoryByPath(parentPath);
+    },
+
+    addRootCategory() {
+        if (!classificationState.state.schema.categories) {
+            classificationState.state.schema.categories = [];
         }
         
+        classificationState.state.schema.categories.push({
+            id: `cat_${Date.now()}`,
+            name: '',
+            description: '',
+            children: [],
+            expanded: true
+        });
+        
+        this.updateLayersUI();
         this.updatePromptPreview();
     },
 
-    toggleSubCategory(headerEl) {
-        const bodyEl = headerEl.nextElementSibling;
-        if (bodyEl.style.display === 'none') {
-            bodyEl.style.display = 'block';
-            headerEl.querySelector('.sub-category-toggle').textContent = '收起';
+    addChild(pathStr) {
+        const path = pathStr.split('-').map(Number);
+        const parent = this.getCategoryByPath(path);
+        
+        if (parent) {
+            if (!parent.children) parent.children = [];
+            parent.children.push({
+                id: `cat_${Date.now()}`,
+                name: '',
+                description: '',
+                children: [],
+                expanded: true
+            });
+            parent.expanded = true;
+            this.updateLayersUI();
+            this.updatePromptPreview();
+        }
+    },
+
+    deleteCategory(pathStr) {
+        const path = pathStr.split('-').map(Number);
+        
+        if (path.length === 1) {
+            classificationState.state.schema.categories.splice(path[0], 1);
         } else {
-            bodyEl.style.display = 'none';
-            const textarea = bodyEl.querySelector('textarea');
-            const count = textarea.value.split('\n').filter(l => l.trim()).length;
-            headerEl.querySelector('.sub-category-toggle').textContent = count > 0 ? `▼ ${count}个子类` : '+ 添加子类';
+            const parent = this.getParentByPath(path);
+            if (parent && parent.children) {
+                parent.children.splice(path[path.length - 1], 1);
+            }
+        }
+        
+        this.updateLayersUI();
+        this.updatePromptPreview();
+    },
+
+    updateCategoryField(pathStr, field, value) {
+        const path = pathStr.split('-').map(Number);
+        const category = this.getCategoryByPath(path);
+        if (category) {
+            category[field] = value;
+            this.updatePromptPreview();
         }
     },
 

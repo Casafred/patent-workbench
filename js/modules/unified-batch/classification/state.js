@@ -14,7 +14,11 @@ class ClassificationState {
             columnHeaders: [],
             workbook: null,
             currentSheetData: null,
-            schema: { ...DEFAULT_SCHEMA },
+            schema: { 
+                categories: [],
+                model: 'GLM-4.7-Flash',
+                temperature: 0.1
+            },
             savedSchemas: [],
             examples: [],
             task: {

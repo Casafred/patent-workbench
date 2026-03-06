@@ -437,17 +437,20 @@
                 </div>
 
                 <div class="config-item">
-                    <label>分类层级设置:</label>
-                    <div style="display: flex; align-items: center; gap: 15px; margin-top: 8px;">
-                        <label style="display: inline-flex; align-items: center; gap: 5px;">
-                            <span>一级分类数量:</span>
-                            <input type="number" id="classification_layer_count" value="1" min="1" max="10" style="width: 60px;" onchange="ClassificationModule.handleLayerCountChange(this)">
-                        </label>
-                    </div>
+                    <label>分类体系配置:</label>
+                    <p style="font-size: 0.85em; color: var(--text-color-secondary); margin: 8px 0;">
+                        配置多层级分类体系。每个分类项包含名称和描述，可无限添加子层级。
+                    </p>
                 </div>
 
-                <!-- 分类层级配置 - 树状结构 -->
-                <div id="classification_layers_container" class="classification-tree-container"></div>
+                <!-- 分类体系树状配置 -->
+                <div id="classification_tree_container" class="classification-tree-container">
+                    <!-- 动态渲染 -->
+                </div>
+                
+                <button id="classification_add_root_btn" class="small-button" type="button" onclick="ClassificationModule.addRootCategory()" style="margin-top: 10px;">
+                    + 添加一级分类
+                </button>
             </div>
 
             <hr style="margin: 25px 0 20px; border-color: var(--border-color);">
