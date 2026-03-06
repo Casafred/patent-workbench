@@ -109,42 +109,45 @@ class ClassificationState {
     }
 
     resetSchema() {
-        this.state.schema = { ...DEFAULT_SCHEMA };
+        this.state.schema = { 
+            categories: [],
+            model: 'GLM-4.7-Flash',
+            temperature: 0.1
+        };
     }
 
     addLayer(layer = null) {
-        const newLayer = layer || {
-            ...DEFAULT_LAYER,
-            level: this.state.schema.layers.length + 1
-        };
-        this.state.schema.layers.push(newLayer);
-        return newLayer;
+        console.warn('[ClassificationState] addLayer is deprecated, use categories instead');
+        return null;
     }
 
     updateLayer(index, updates) {
-        if (this.state.schema.layers[index]) {
-            this.state.schema.layers[index] = {
-                ...this.state.schema.layers[index],
-                ...updates
-            };
-        }
-        return this.state.schema.layers[index];
+        console.warn('[ClassificationState] updateLayer is deprecated, use categories instead');
+        return null;
     }
 
     removeLayer(index) {
-        this.state.schema.layers.splice(index, 1);
-        this.state.schema.layers.forEach((layer, i) => {
-            layer.level = i + 1;
-        });
-        return this.state.schema.layers;
+        console.warn('[ClassificationState] removeLayer is deprecated, use categories instead');
+        return [];
     }
 
     getLayer(index) {
-        return this.state.schema.layers[index];
+        console.warn('[ClassificationState] getLayer is deprecated, use categories instead');
+        return null;
     }
 
     getLayers() {
-        return this.state.schema.layers;
+        console.warn('[ClassificationState] getLayers is deprecated, use schema.categories instead');
+        return [];
+    }
+
+    getSchema() {
+        return this.state.schema;
+    }
+
+    setSchema(schema) {
+        this.state.schema = schema;
+        this.saveState();
     }
 
     getSavedSchemas() {

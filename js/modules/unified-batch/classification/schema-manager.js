@@ -182,18 +182,23 @@ const SchemaManager = {
             errors.push('请输入分类体系名称');
         }
 
-        if (schema.layers.length === 0) {
-            errors.push('请至少添加一个分类层级');
+        const categories = schema.categories || [];
+        if (categories.length === 0) {
+            errors.push('请至少添加一个分类项');
         }
 
-        schema.layers.forEach((layer, index) => {
-            if (!layer.name || layer.name.trim() === '') {
-                errors.push(`层级${index + 1}：请输入层级名称`);
-            }
-            if (!layer.labels || layer.labels.length === 0) {
-                errors.push(`层级${index + 1}：请至少添加一个分类标签`);
-            }
-        });
+        const validateCategories = (cats, path = '') => {
+            cats.forEach((cat, index) => {
+                if (!cat.name || cat.name.trim() === '') {
+                    errors.push(`${path}第${index + 1}项：请输入分类名称`);
+                }
+                if (cat.children && cat.children.length > 0) {
+                    validateCategories(cat.children, `${path}${cat.name || '未命名'} > `);
+                }
+            });
+        };
+        
+        validateCategories(categories);
 
         return {
             valid: errors.length === 0,
@@ -203,22 +208,27 @@ const SchemaManager = {
 
     getSchemaSummary() {
         const schema = this.state.schema;
-        const summary = {
-            name: schema.name,
-            layerCount: schema.layers.length,
-            layers: [],
-            multiLabel: schema.multiLabel,
-            maxLabels: schema.maxLabels
+        const categories = schema.categories || [];
+        
+        const countCategories = (cats) => {
+            let count = 0;
+            cats.forEach(cat => {
+                count++;
+                if (cat.children && cat.children.length > 0) {
+                    count += countCategories(cat.children);
+                }
+            });
+            return count;
         };
 
-        schema.layers.forEach(layer => {
-            summary.layers.push({
-                level: layer.level,
-                name: layer.name,
-                labelCount: layer.labels.length,
-                labels: layer.labels
-            });
-        });
+        const summary = {
+            name: schema.name,
+            categoryCount: countCategories(categories),
+            categories: categories.map(cat => ({
+                name: cat.name,
+                childCount: cat.children ? cat.children.length : 0
+            }))
+        };
 
         return summary;
     },
@@ -276,8 +286,9 @@ const SchemaManager = {
             errors.push('分类体系名称不能为空');
         }
 
-        if (!schema.layers || schema.layers.length === 0) {
-            errors.push('分类层级不能为空');
+        const categories = schema.categories || [];
+        if (categories.length === 0) {
+            errors.push('分类项不能为空');
         }
 
         return {

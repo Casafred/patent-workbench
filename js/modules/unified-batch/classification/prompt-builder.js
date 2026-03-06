@@ -15,14 +15,9 @@ const PromptBuilder = {
         
         systemPrompt += '## 重要规则\n';
         systemPrompt += '1. 必须严格按照指定的分类标签进行选择，不能创造新标签\n';
-        systemPrompt += '2. 对于每个分类层级，需要给出确信度评分（0-1之间的小数）\n';
+        systemPrompt += '2. 需要给出确信度评分（0-1之间的小数）\n';
         systemPrompt += '3. 如果无法确定分类，选择最接近的标签并在reasoning中说明\n';
-        
-        if (currentSchema.multiLabel) {
-            systemPrompt += `4. 这是一个多标签分类任务，每条数据可以属于多个类别（最多${currentSchema.maxLabels}个）\n`;
-        } else {
-            systemPrompt += '4. 这是一个单标签分类任务，每条数据只能属于一个类别\n';
-        }
+        systemPrompt += '4. 输出完整的分类路径，从根分类到叶分类\n';
 
         return systemPrompt;
     },
@@ -315,8 +310,9 @@ const PromptBuilder = {
     generatePreviewPrompt() {
         const schema = this.state.schema;
         
-        if (!schema.layers || schema.layers.length === 0) {
-            return '请先配置分类层级';
+        const categories = schema.categories || [];
+        if (categories.length === 0) {
+            return '请先配置分类项';
         }
 
         return this.buildUserPrompt({ content: '【示例输入文本】' }, schema);
@@ -325,7 +321,8 @@ const PromptBuilder = {
     generateFullPrompt() {
         const schema = this.state.schema;
         
-        if (!schema.layers || schema.layers.length === 0) {
+        const categories = schema.categories || [];
+        if (categories.length === 0) {
             return '';
         }
 
@@ -338,8 +335,9 @@ const PromptBuilder = {
     async optimizePromptWithAI() {
         const schema = this.state.schema;
         
-        if (!schema.layers || schema.layers.length === 0) {
-            return { success: false, message: '请先配置分类层级' };
+        const categories = schema.categories || [];
+        if (categories.length === 0) {
+            return { success: false, message: '请先配置分类项' };
         }
 
         const currentPrompt = this.buildSystemPrompt(schema) + '\n\n' + this.buildUserPrompt({ content: '{{INPUT}}' }, schema);

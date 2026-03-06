@@ -34,42 +34,16 @@ const ResultAnalyzer = {
             analysis.suggestions.push('考虑添加更多示例');
         }
 
-        const schema = this.state.schema;
-        schema.layers.forEach(layer => {
-            if (!result.classification[layer.name]) {
-                analysis.issues.push(`层级"${layer.name}"缺少分类结果`);
-            }
-        });
-
-        Object.entries(result.classification).forEach(([layerName, label]) => {
-            const layer = schema.layers.find(l => l.name === layerName);
-            if (layer) {
-                if (Array.isArray(label)) {
-                    label.forEach(l => {
-                        if (!layer.labels.includes(l)) {
-                            analysis.issues.push(`层级"${layerName}"的标签"${l}"不在预定义标签列表中`);
-                        }
-                    });
-                } else {
-                    if (!layer.labels.includes(label)) {
-                        analysis.issues.push(`层级"${layerName}"的标签"${label}"不在预定义标签列表中`);
-                    }
-                }
-            }
-        });
-
         return analysis;
     },
 
     calculateOverallConfidence(confidenceObj) {
-        if (!confidenceObj || typeof confidenceObj !== 'object') {
-            return 0;
-        }
+        if (!confidenceObj) return 0;
+        if (typeof confidenceObj === 'number') return confidenceObj;
+        if (typeof confidenceObj !== 'object') return 0;
 
         const values = Object.values(confidenceObj).filter(v => typeof v === 'number');
-        if (values.length === 0) {
-            return 0;
-        }
+        if (values.length === 0) return 0;
 
         return values.reduce((sum, v) => sum + v, 0) / values.length;
     },
@@ -112,18 +86,8 @@ const ResultAnalyzer = {
                 high: 0
             },
             issues: [],
-            layerStats: {}
+            categoryStats: {}
         };
-
-        const schema = this.state.schema;
-        if (schema && schema.layers) {
-            schema.layers.forEach(layer => {
-                stats.layerStats[layer.name] = {
-                    total: 0,
-                    labelDistribution: {}
-                };
-            });
-        }
 
         results.forEach(result => {
             const analysis = this.analyzeResult(result);
@@ -146,19 +110,23 @@ const ResultAnalyzer = {
             }
 
             if (result.classification) {
-                Object.entries(result.classification).forEach(([layerName, label]) => {
-                    if (stats.layerStats[layerName]) {
-                        stats.layerStats[layerName].total++;
-                        
-                        const labels = Array.isArray(label) ? label : [label];
-                        labels.forEach(l => {
-                            if (!stats.layerStats[layerName].labelDistribution[l]) {
-                                stats.layerStats[layerName].labelDistribution[l] = 0;
-                            }
-                            stats.layerStats[layerName].labelDistribution[l]++;
-                        });
-                    }
-                });
+                const classification = result.classification;
+                if (Array.isArray(classification)) {
+                    classification.forEach(path => {
+                        if (!stats.categoryStats[path]) {
+                            stats.categoryStats[path] = 0;
+                        }
+                        stats.categoryStats[path]++;
+                    });
+                } else if (typeof classification === 'object') {
+                    Object.entries(classification).forEach(([key, value]) => {
+                        const path = Array.isArray(value) ? value.join(' > ') : `${key}: ${value}`;
+                        if (!stats.categoryStats[path]) {
+                            stats.categoryStats[path] = 0;
+                        }
+                        stats.categoryStats[path]++;
+                    });
+                }
             }
         });
 
@@ -200,14 +168,14 @@ const ResultAnalyzer = {
     generateReport(results) {
         const stats = this.batchAnalyze(results);
         const schema = this.state.schema;
+        const categories = schema.categories || [];
 
         const report = {
             title: '分类标引结果报告',
             generatedAt: new Date().toISOString(),
             schema: {
                 name: schema.name,
-                layerCount: schema.layers.length,
-                multiLabel: schema.multiLabel
+                categoryCount: categories.length
             },
             summary: {
                 totalRecords: stats.total,
@@ -222,17 +190,9 @@ const ResultAnalyzer = {
                 medium: stats.byConfidence.medium,
                 low: stats.byConfidence.low
             },
-            layerAnalysis: {},
+            categoryAnalysis: stats.categoryStats,
             recommendations: []
         };
-
-        Object.entries(stats.layerStats).forEach(([layerName, layerStats]) => {
-            report.layerAnalysis[layerName] = {
-                totalClassified: layerStats.total,
-                labelDistribution: layerStats.labelDistribution,
-                uniqueLabels: Object.keys(layerStats.labelDistribution).length
-            };
-        });
 
         if (parseFloat(stats.lowConfidenceRate) > 20) {
             report.recommendations.push('低确信度条目比例较高，建议优化分类体系描述或添加更多示例');
@@ -247,12 +207,11 @@ const ResultAnalyzer = {
 
     formatResultForDisplay(result) {
         const analysis = this.analyzeResult(result);
-        const schema = this.state.schema;
 
         const formatted = {
             id: result.id || result.requestId,
             inputPreview: this.truncateText(result.input || result.inputPreview, 100),
-            classification: {},
+            classification: '',
             confidence: {},
             confidenceLevel: analysis.confidenceLevel,
             confidenceColor: this.getConfidenceColor(analysis.confidence),
@@ -260,21 +219,28 @@ const ResultAnalyzer = {
             issues: analysis.issues
         };
 
-        schema.layers.forEach(layer => {
-            const label = result.classification?.[layer.name];
-            const conf = result.confidence?.[layer.name];
-
-            if (label) {
-                formatted.classification[layer.name] = Array.isArray(label) ? label.join(', ') : label;
+        if (result.classification) {
+            if (Array.isArray(result.classification)) {
+                formatted.classification = result.classification.join(' > ');
+            } else if (typeof result.classification === 'object') {
+                const parts = [];
+                Object.entries(result.classification).forEach(([key, value]) => {
+                    const valueStr = Array.isArray(value) ? value.join(', ') : value;
+                    parts.push(`${key}: ${valueStr}`);
+                });
+                formatted.classification = parts.join('; ');
             }
+        }
 
-            if (conf !== undefined) {
-                const displayConf = Array.isArray(conf) 
-                    ? Math.min(...conf) 
-                    : conf;
-                formatted.confidence[layer.name] = (displayConf * 100).toFixed(0) + '%';
+        if (result.confidence) {
+            if (typeof result.confidence === 'number') {
+                formatted.confidence.overall = (result.confidence * 100).toFixed(0) + '%';
+            } else if (typeof result.confidence === 'object') {
+                Object.entries(result.confidence).forEach(([key, value]) => {
+                    formatted.confidence[key] = typeof value === 'number' ? (value * 100).toFixed(0) + '%' : value;
+                });
             }
-        });
+        }
 
         return formatted;
     },
@@ -286,46 +252,33 @@ const ResultAnalyzer = {
     },
 
     exportResultsToExcel(results) {
-        const schema = this.state.schema;
-        const headers = ['序号', '输入内容'];
-        
-        schema.layers.forEach(layer => {
-            headers.push(`${layer.name}(分类)`);
-            headers.push(`${layer.name}(确信度)`);
-        });
-        
-        headers.push('整体确信度', '状态', '问题');
+        const headers = ['序号', '输入内容', '分类结果', '确信度', '状态', '问题'];
 
         const rows = results.map((result, index) => {
             const analysis = this.analyzeResult(result);
-            const row = [
-                index + 1,
-                result.input || result.inputPreview || ''
-            ];
-
-            schema.layers.forEach(layer => {
-                const label = result.classification?.[layer.name];
-                const conf = result.confidence?.[layer.name];
-
-                row.push(Array.isArray(label) ? label.join('; ') : (label || ''));
-                
-                if (conf !== undefined) {
-                    const displayConf = Array.isArray(conf) 
-                        ? Math.min(...conf) 
-                        : conf;
-                    row.push((displayConf * 100).toFixed(1) + '%');
-                } else {
-                    row.push('');
+            
+            let classificationText = '';
+            if (result.classification) {
+                if (Array.isArray(result.classification)) {
+                    classificationText = result.classification.join(' > ');
+                } else if (typeof result.classification === 'object') {
+                    const parts = [];
+                    Object.entries(result.classification).forEach(([key, value]) => {
+                        const valueStr = Array.isArray(value) ? value.join(', ') : value;
+                        parts.push(`${key}: ${valueStr}`);
+                    });
+                    classificationText = parts.join('; ');
                 }
-            });
+            }
 
-            row.push(
+            return [
+                index + 1,
+                result.input || result.inputPreview || '',
+                classificationText,
                 analysis.confidence ? (analysis.confidence * 100).toFixed(1) + '%' : '',
                 result.status || 'completed',
                 analysis.issues.join('; ')
-            );
-
-            return row;
+            ];
         });
 
         return { headers, rows };
@@ -340,20 +293,11 @@ const ResultAnalyzer = {
             return { success: false, message: '没有分类结果' };
         }
 
-        const schema = this.state.schema;
-        
         const resultMap = new Map();
         results.forEach((result, index) => {
             const key = result.id || result.customId || `I${index + 1}`;
             resultMap.set(key, result);
         });
-
-        const newHeaders = [];
-        schema.layers.forEach(layer => {
-            newHeaders.push(`${layer.name}_分类`);
-            newHeaders.push(`${layer.name}_确信度`);
-        });
-        newHeaders.push('整体确信度', '分类依据');
 
         const outputData = originalData.map((row, rowIndex) => {
             const newRow = { ...row };
@@ -368,19 +312,14 @@ const ResultAnalyzer = {
             const result = resultMap.get(lookupKey);
             
             if (result && result.classification) {
-                schema.layers.forEach(layer => {
-                    const label = result.classification[layer.name];
-                    const conf = result.confidence?.[layer.name];
-                    
-                    if (label) {
-                        newRow[`${layer.name}_分类`] = Array.isArray(label) ? label.join('; ') : label;
-                    }
-                    
-                    if (conf !== undefined) {
-                        const displayConf = Array.isArray(conf) ? Math.min(...conf) : conf;
-                        newRow[`${layer.name}_确信度`] = (displayConf * 100).toFixed(1) + '%';
-                    }
-                });
+                if (Array.isArray(result.classification)) {
+                    newRow['分类结果'] = result.classification.join(' > ');
+                } else if (typeof result.classification === 'object') {
+                    Object.entries(result.classification).forEach(([key, value]) => {
+                        const valueStr = Array.isArray(value) ? value.join('; ') : value;
+                        newRow[`${key}_分类`] = valueStr;
+                    });
+                }
                 
                 if (result.overallConfidence !== undefined) {
                     newRow['整体确信度'] = (result.overallConfidence * 100).toFixed(1) + '%';
@@ -398,7 +337,7 @@ const ResultAnalyzer = {
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, '分类结果');
         
-        const summaryData = this.generateSummarySheet(results, schema);
+        const summaryData = this.generateSummarySheet(results);
         if (summaryData.length > 0) {
             const summarySheet = XLSX.utils.json_to_sheet(summaryData);
             XLSX.utils.book_append_sheet(workbook, summarySheet, '统计汇总');
@@ -414,9 +353,8 @@ const ResultAnalyzer = {
         };
     },
 
-    generateSummarySheet(results, schema) {
+    generateSummarySheet(results) {
         const summary = [];
-        
         const stats = this.batchAnalyze(results);
         
         summary.push({ 项目: '总记录数', 数值: stats.total });
@@ -427,13 +365,8 @@ const ResultAnalyzer = {
         summary.push({ 项目: '低确信度比例', 数值: stats.lowConfidenceRate + '%' });
         summary.push({ 项目: '', 数值: '' });
         
-        Object.entries(stats.layerStats).forEach(([layerName, layerStats]) => {
-            summary.push({ 项目: `层级: ${layerName}`, 数值: '' });
-            summary.push({ 项目: '  分类数量', 数值: layerStats.total });
-            
-            Object.entries(layerStats.labelDistribution).forEach(([label, count]) => {
-                summary.push({ 项目: `  - ${label}`, 数值: count });
-            });
+        Object.entries(stats.categoryStats).forEach(([path, count]) => {
+            summary.push({ 项目: path, 数值: count });
         });
 
         return summary;
