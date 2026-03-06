@@ -233,14 +233,12 @@ const SchemaManager = {
         }
 
         const exportData = {
-            version: '1.0',
+            version: '2.0',
             type: 'classification_schema',
             exportedAt: new Date().toISOString(),
             data: {
                 name: schema.name,
-                layers: schema.layers,
-                multiLabel: schema.multiLabel,
-                maxLabels: schema.maxLabels,
+                categories: schema.categories || [],
                 model: schema.model,
                 temperature: schema.temperature
             }
@@ -256,22 +254,14 @@ const SchemaManager = {
 
         const data = importData.data;
         const schema = {
-            ...DEFAULT_SCHEMA,
             id: `schema_${Date.now()}`,
             name: data.name || '导入的分类体系',
-            layers: data.layers || [],
-            multiLabel: data.multiLabel || false,
-            maxLabels: data.maxLabels || 1,
+            categories: data.categories || data.layers || [],
             model: data.model || 'GLM-4.7-Flash',
             temperature: data.temperature || 0.1,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
         };
-
-        const validation = this.validateSchemaObject(schema);
-        if (!validation.valid) {
-            return { success: false, message: validation.errors.join('; ') };
-        }
 
         classificationState.setSchema(schema);
         classificationState.saveSchema();

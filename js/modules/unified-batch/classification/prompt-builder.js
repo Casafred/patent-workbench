@@ -54,43 +54,70 @@ const PromptBuilder = {
             description += `**${schema.name}**\n\n`;
         }
 
-        schema.layers.forEach((layer, index) => {
-            description += `### 层级${layer.level}：${layer.name || '未命名'}\n\n`;
-            
-            if (layer.description) {
-                description += `分类原则：${layer.description}\n\n`;
-            }
-
-            if (layer.labels && layer.labels.length > 0) {
-                description += '可选标签（树状层级结构）：\n';
-                layer.labels.forEach(label => {
-                    description += `- ${label}\n`;
-                    
-                    if (layer.children && layer.children[label] && layer.children[label].length > 0) {
-                        layer.children[label].forEach(childLabel => {
-                            description += `  - ${childLabel}\n`;
-                        });
-                    }
-                });
-                description += '\n';
-            }
-        });
-
-        if (schema.multiLabel) {
-            description += `\n**注意**：此分类支持多标签，每条数据最多可标注${schema.maxLabels}个标签。\n`;
+        const categories = schema.categories || [];
+        
+        if (categories.length === 0) {
+            description += '（暂无分类配置）\n';
+            return description;
         }
 
+        description += this.buildCategoryTree(categories, 0);
+        
         return description;
+    },
+
+    buildCategoryTree(categories, depth) {
+        let result = '';
+        const indent = '  '.repeat(depth);
+        const prefix = depth === 0 ? '-' : '-';
+        
+        categories.forEach(category => {
+            if (category.name) {
+                result += `${indent}${prefix} **${category.name}**`;
+                if (category.description) {
+                    result += `：${category.description}`;
+                }
+                result += '\n';
+                
+                if (category.children && category.children.length > 0) {
+                    result += this.buildCategoryTree(category.children, depth + 1);
+                }
+            }
+        });
+        
+        return result;
     },
 
     buildClassificationRules(schema) {
         let rules = '## 分类原则\n\n';
 
-        schema.layers.forEach(layer => {
-            if (layer.description) {
-                rules += `**${layer.name}**：${layer.description}\n\n`;
-            }
-        });
+        const categories = schema.categories || [];
+        
+        const extractDescriptions = (cats, path = []) => {
+            let result = [];
+            cats.forEach(cat => {
+                if (cat.name && cat.description) {
+                    result.push({
+                        path: [...path, cat.name].join(' > '),
+                        description: cat.description
+                    });
+                }
+                if (cat.children && cat.children.length > 0) {
+                    result = result.concat(extractDescriptions(cat.children, [...path, cat.name]));
+                }
+            });
+            return result;
+        };
+
+        const descriptions = extractDescriptions(categories);
+        
+        if (descriptions.length > 0) {
+            descriptions.forEach(item => {
+                rules += `**${item.path}**：${item.description}\n\n`;
+            });
+        } else {
+            rules += '请根据文本内容选择最合适的分类标签。\n\n';
+        }
 
         rules += '### 评分标准\n';
         rules += '- **高确信度（0.8-1.0）**：文本内容明确符合该分类标签的特征\n';
@@ -147,46 +174,27 @@ const PromptBuilder = {
         format += '请严格按照以下JSON格式输出分类结果，不要添加任何额外内容：\n\n';
         format += '```json\n';
         format += '{\n';
-        format += '  "classification": {\n';
-
-        schema.layers.forEach((layer, index) => {
-            const comma = index < schema.layers.length - 1 ? ',' : '';
-            const hasChildren = layer.children && Object.keys(layer.children).some(k => layer.children[k].length > 0);
-            
-            if (hasChildren) {
-                format += `    "${layer.name}": {"parent": "父级标签", "child": "子级标签"}${comma}\n`;
-            } else if (layer.multiLabel || schema.multiLabel) {
-                format += `    "${layer.name}": ["标签1", "标签2"]${comma}\n`;
-            } else {
-                format += `    "${layer.name}": "标签"${comma}\n`;
-            }
-        });
-
-        format += '  },\n';
-        format += '  "confidence": {\n';
-
-        schema.layers.forEach((layer, index) => {
-            const comma = index < schema.layers.length - 1 ? ',' : '';
-            const hasChildren = layer.children && Object.keys(layer.children).some(k => layer.children[k].length > 0);
-            
-            if (hasChildren) {
-                format += `    "${layer.name}": {"parent": 0.95, "child": 0.90}${comma}\n`;
-            } else if (layer.multiLabel || schema.multiLabel) {
-                format += `    "${layer.name}": [0.95, 0.85]${comma}\n`;
-            } else {
-                format += `    "${layer.name}": 0.95${comma}\n`;
-            }
-        });
-
-        format += '  },\n';
+        format += '  "classification": [\n';
+        
+        const categories = schema.categories || [];
+        
+        if (categories.length > 0) {
+            format += '    // 分类路径，从根到叶\n';
+            format += '    "分类路径1 > 子分类1 > 叶分类",\n';
+            format += '    "分类路径2 > 子分类2"\n';
+        }
+        
+        format += '  ],\n';
+        format += '  "confidence": 0.95,\n';
         format += '  "reasoning": "简要说明分类依据"\n';
         format += '}\n';
         format += '```\n';
         
         format += '\n**重要说明**：\n';
-        format += '- 如果标签有下级标签，请同时输出父级标签和子级标签\n';
-        format += '- 如果标签没有下级标签，直接输出标签名称\n';
-        format += '- confidence表示分类确信度，范围0.0-1.0\n';
+        format += '- classification为数组，包含从根到叶的完整分类路径\n';
+        format += '- 如果有多个匹配的分类，可以输出多个路径\n';
+        format += '- confidence表示整体分类确信度，范围0.0-1.0\n';
+        format += '- reasoning简要说明分类的依据和理由\n';
 
         return format;
     },

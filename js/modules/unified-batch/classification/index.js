@@ -122,8 +122,8 @@ const ClassificationModule = {
     initUI() {
         console.log('[ClassificationModule] initUI called');
         
-        if (classificationState.getLayers().length === 0) {
-            SchemaManager.addLayer();
+        if (!classificationState.state.schema.categories) {
+            classificationState.state.schema.categories = [];
         }
         
         this.updateSchemaSelect();
@@ -131,11 +131,6 @@ const ClassificationModule = {
         this.updatePromptPreview();
         this.updateExamplesList();
         this.updateInputsList();
-        
-        const layerCountEl = document.getElementById('classification_layer_count');
-        if (layerCountEl) {
-            layerCountEl.value = classificationState.getLayers().length;
-        }
 
         const modelSelect = document.getElementById('classification_model_select');
         if (modelSelect) {
