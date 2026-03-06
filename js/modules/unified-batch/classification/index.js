@@ -172,72 +172,77 @@ const ClassificationModule = {
     },
 
     renderLayerConfig(layer, index) {
-        const childLabelsHtml = this.renderChildLabelsConfig(layer, index);
-        
         return `
-            <div class="layer-config" data-layer-index="${index}" style="border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <h4 style="margin: 0;">层级 ${layer.level}</h4>
-                    <button class="small-button delete-button" onclick="ClassificationModule.removeLayer(${index})">删除层级</button>
+            <div class="layer-config-card" data-layer-index="${index}">
+                <div class="layer-header">
+                    <span class="layer-badge">一级分类 ${index + 1}</span>
+                    <button class="icon-btn delete" onclick="ClassificationModule.removeLayer(${index})" title="删除">×</button>
                 </div>
-                <div class="config-item">
-                    <label>层级名称:</label>
-                    <input type="text" value="${layer.name || ''}" 
-                           onchange="ClassificationModule.updateLayerName(${index}, this.value)"
-                           placeholder="例如：技术领域">
+                <div class="layer-body">
+                    <div class="layer-field">
+                        <input type="text" class="layer-name-input" value="${layer.name || ''}" 
+                               onchange="ClassificationModule.updateLayerName(${index}, this.value)"
+                               placeholder="输入分类名称（如：技术领域）">
+                    </div>
+                    <div class="layer-field">
+                        <textarea class="layer-desc-input" rows="2"
+                                  onchange="ClassificationModule.updateLayerDescription(${index}, this.value)"
+                                  placeholder="分类原则描述（可选）">${layer.description || ''}</textarea>
+                    </div>
+                    <div class="layer-field">
+                        <textarea class="layer-labels-input" rows="3"
+                                  onchange="ClassificationModule.updateLayerLabels(${index}, this.value)"
+                                  placeholder="分类标签（每行一个）">${(layer.labels || []).join('\n')}</textarea>
+                    </div>
+                    ${this.renderSubCategories(layer, index)}
                 </div>
-                <div class="config-item">
-                    <label>分类原则描述:</label>
-                    <textarea rows="2" 
-                              onchange="ClassificationModule.updateLayerDescription(${index}, this.value)"
-                              placeholder="描述该层级的分类原则和判断标准...">${layer.description || ''}</textarea>
-                </div>
-                <div class="config-item">
-                    <label>分类标签 (每行一个):</label>
-                    <textarea rows="3" 
-                              onchange="ClassificationModule.updateLayerLabels(${index}, this.value)"
-                              placeholder="每行输入一个标签...">${(layer.labels || []).join('\n')}</textarea>
-                </div>
-                <div class="config-item">
-                    <label style="display: flex; align-items: center; gap: 8px;">
-                        <input type="checkbox" ${layer.multiLabel ? 'checked' : ''} 
-                               onchange="ClassificationModule.updateLayerMultiLabel(${index}, this.checked)">
-                        允许多标签分类
-                    </label>
-                </div>
-                ${childLabelsHtml}
             </div>
         `;
     },
 
-    renderChildLabelsConfig(layer, layerIndex) {
+    renderSubCategories(layer, layerIndex) {
         if (!layer.labels || layer.labels.length === 0) {
             return '';
         }
 
-        const childrenHtml = layer.labels.map(parentLabel => {
-            const childLabels = (layer.children && layer.children[parentLabel]) ? layer.children[parentLabel] : [];
+        const subCategoryHtml = layer.labels.map((label, labelIndex) => {
+            const children = (layer.children && layer.children[label]) ? layer.children[label] : [];
             return `
-                <div class="child-labels-item" style="margin-bottom: 10px; padding: 10px; background: var(--bg-color-tertiary); border-radius: 6px;">
-                    <div style="font-weight: 500; margin-bottom: 5px; color: var(--primary-color);">
-                        📁 ${parentLabel} 的下级标签:
+                <div class="sub-category-item">
+                    <div class="sub-category-header" onclick="ClassificationModule.toggleSubCategory(this)">
+                        <span class="sub-category-label">${label}</span>
+                        <span class="sub-category-toggle">${children.length > 0 ? `▼ ${children.length}个子类` : '+ 添加子类'}</span>
                     </div>
-                    <textarea rows="2" 
-                              style="background: var(--bg-color-secondary);"
-                              onchange="ClassificationModule.updateChildLabels(${layerIndex}, '${parentLabel}', this.value)"
-                              placeholder="每行输入一个下级标签（可选）...">${childLabels.join('\n')}</textarea>
+                    <div class="sub-category-body" style="display: none;">
+                        <textarea rows="2" class="sub-category-input"
+                                  onchange="ClassificationModule.updateChildLabels(${layerIndex}, '${label}', this.value)"
+                                  placeholder="子分类标签（每行一个，支持继续添加下级）">${children.join('\n')}</textarea>
+                    </div>
                 </div>
             `;
         }).join('');
 
         return `
-            <div class="child-labels-container" style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border-color);">
-                <label style="font-weight: 500; margin-bottom: 10px; display: block;">
-                    🌳 树状层级配置（为每个标签配置下级标签）:
-                </label>
-                ${childrenHtml}
+            <div class="sub-categories-section">
+                <div class="sub-categories-header">子分类配置（点击展开）</div>
+                <div class="sub-categories-list">
+                    ${subCategoryHtml}
+                </div>
             </div>
         `;
+    },
+
+    toggleSubCategory(headerEl) {
+        const bodyEl = headerEl.nextElementSibling;
+        if (bodyEl.style.display === 'none') {
+            bodyEl.style.display = 'block';
+            headerEl.querySelector('.sub-category-toggle').textContent = '收起';
+        } else {
+            bodyEl.style.display = 'none';
+            const textarea = bodyEl.querySelector('textarea');
+            const count = textarea.value.split('\n').filter(l => l.trim()).length;
+            headerEl.querySelector('.sub-category-toggle').textContent = count > 0 ? `▼ ${count}个子类` : '+ 添加子类';
+        }
     },
 
     updateChildLabels(layerIndex, parentLabel, value) {
@@ -245,6 +250,13 @@ const ClassificationModule = {
             .map(l => l.trim())
             .filter(l => l.length > 0);
         SchemaManager.setChildLabels(layerIndex, parentLabel, childLabels);
+        this.updatePromptPreview();
+    },
+
+    handleLayerCountChange(e) {
+        const count = parseInt(e.target.value) || 1;
+        SchemaManager.setLayerCount(count);
+        this.updateLayersUI();
         this.updatePromptPreview();
     },
 
@@ -751,88 +763,37 @@ const ClassificationModule = {
         }
 
         list.innerHTML = inputs.map((input, index) => {
-            let preview;
-            let tooltip = '';
+            let summary = '';
+            let fullContent = '';
             
             if (input.originalData) {
-                const parts = [];
-                Object.entries(input.originalData).forEach(([key, value]) => {
-                    if (value) {
-                        parts.push(`${key}: ${this.truncateText(String(value), 50)}`);
-                    }
-                });
-                preview = parts.slice(0, 3).join(' | ');
-                if (parts.length > 3) {
-                    preview += ' ...';
-                }
-                tooltip = parts.join('\n');
+                const entries = Object.entries(input.originalData).filter(([k, v]) => v);
+                summary = entries.slice(0, 2).map(([k, v]) => `${k}: ${this.truncateText(String(v), 30)}`).join(' | ');
+                if (entries.length > 2) summary += ' ...';
+                fullContent = entries.map(([k, v]) => `<div class="preview-row"><span class="preview-label">${k}:</span> <span class="preview-value">${String(v)}</span></div>`).join('');
             } else if (typeof input.content === 'string') {
-                preview = this.truncateText(input.content, 100);
-                tooltip = input.content;
+                summary = this.truncateText(input.content, 60);
+                fullContent = `<div class="preview-row"><span class="preview-value">${input.content}</span></div>`;
             } else if (typeof input.content === 'object') {
-                const parts = Object.entries(input.content)
-                    .filter(([key, value]) => value)
-                    .map(([key, value]) => `${key}: ${this.truncateText(value, 50)}`);
-                preview = parts.join(' | ');
-                tooltip = parts.join('\n');
+                const entries = Object.entries(input.content).filter(([k, v]) => v);
+                summary = entries.slice(0, 2).map(([k, v]) => `${k}: ${this.truncateText(v, 30)}`).join(' | ');
+                fullContent = entries.map(([k, v]) => `<div class="preview-row"><span class="preview-label">${k}:</span> <span class="preview-value">${v}</span></div>`).join('');
             }
             
             return `
-                <div class="input-item" style="padding: 8px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 10px; cursor: pointer;" 
-                     onclick="ClassificationModule.showInputDetail(${index})" 
-                     title="${tooltip.replace(/"/g, '&quot;')}">
-                    <input type="checkbox" class="classification-input-checkbox" data-index="${index}" onclick="event.stopPropagation();">
-                    <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        <strong style="color: var(--primary-color);">${input.id || index + 1}</strong>: ${preview}
-                    </span>
+                <div class="input-item-strip" data-index="${index}">
+                    <input type="checkbox" class="classification-input-checkbox strip-checkbox" data-index="${index}">
+                    <div class="strip-id">${input.id || index + 1}</div>
+                    <div class="strip-summary">${summary}</div>
+                    <div class="strip-preview">
+                        <div class="preview-header">
+                            <span class="preview-title">数据详情 - ${input.id || `第${index + 1}条`}</span>
+                        </div>
+                        <div class="preview-body">${fullContent}</div>
+                    </div>
                 </div>
             `;
         }).join('');
-    },
-
-    showInputDetail(index) {
-        const inputs = classificationState.getInputs();
-        const input = inputs[index];
-        if (!input) return;
-
-        let detailContent = '';
-        
-        if (input.originalData) {
-            detailContent = Object.entries(input.originalData)
-                .filter(([key, value]) => value)
-                .map(([key, value]) => `<div style="margin-bottom: 8px;"><strong>${key}:</strong><br><span style="color: var(--text-color-secondary);">${String(value)}</span></div>`)
-                .join('');
-        } else if (typeof input.content === 'string') {
-            detailContent = `<div style="white-space: pre-wrap;">${input.content}</div>`;
-        } else if (typeof input.content === 'object') {
-            detailContent = Object.entries(input.content)
-                .filter(([key, value]) => value)
-                .map(([key, value]) => `<div style="margin-bottom: 8px;"><strong>${key}:</strong><br><span style="color: var(--text-color-secondary);">${value}</span></div>`)
-                .join('');
-        }
-
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
-        modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;';
-        modal.innerHTML = `
-            <div class="modal-content" style="background: var(--bg-color); border-radius: 12px; padding: 20px; max-width: 600px; max-height: 80vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3 style="margin: 0;">数据详情 - ${input.id || `第${index + 1}条`}</h3>
-                    <button class="small-button" onclick="this.closest('.modal-overlay').remove()">关闭</button>
-                </div>
-                <div class="detail-content" style="font-size: 0.9em;">
-                    ${detailContent}
-                </div>
-            </div>
-        `;
-        
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.remove();
-            }
-        });
-        
-        document.body.appendChild(modal);
     },
 
     handleLayerCountChange(e) {
