@@ -1190,6 +1190,7 @@
             height: 100%;
             object-fit: cover;
             transition: transform 0.5s ease;
+            cursor: zoom-in;
         }
 
         .feature-image-stack .stacked-image:hover img {
@@ -3408,6 +3409,18 @@
             });
         });
 
+        // 堆叠图片点击放大
+        document.querySelectorAll('.feature-image-stack .stacked-image').forEach(stackItem => {
+            stackItem.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const img = this.querySelector('img');
+                if (img) {
+                    const caption = img.alt || this.closest('.feature-card')?.querySelector('.feature-title')?.textContent || '';
+                    openLightbox(img.src, caption);
+                }
+            });
+        });
+
         if (lightbox) {
             lightbox.addEventListener('click', function(e) {
                 if (e.target === lightbox) {
@@ -3619,13 +3632,22 @@
                 return;
             }
 
+            const imgAlt = `${placeholderNames[stackId] || filename} - 截图${stackIndex + 1}`;
             slot.innerHTML = `
-                <img src="/frontend/images/${filename}" alt="${placeholderNames[stackId] || filename} - 截图${stackIndex + 1}" 
+                <img src="/frontend/images/${filename}" alt="${imgAlt}" 
                      onerror="this.parentElement.innerHTML='<div class=\\'stacked-image-placeholder\\'><svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'1.5\\'><rect x=\\'3\\' y=\\'3\\' width=\\'18\\' height=\\'18\\' rx=\\'2\\' ry=\\'2\\'></rect><circle cx=\\'8.5\\' cy=\\'8.5\\' r=\\'1.5\\'></circle><polyline points=\\'21 15 16 10 5 21\\'></polyline></svg><div>图片加载失败</div></div>'"
-                     onclick="openLightbox(this.src, '${placeholderNames[stackId]} - 截图${stackIndex + 1}')" 
                      style="cursor: zoom-in;">
                 <span class="stacked-image-label">截图 ${stackIndex + 1}</span>
             `;
+            
+            // 添加点击放大事件
+            slot.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const img = this.querySelector('img');
+                if (img) {
+                    openLightbox(img.src, imgAlt);
+                }
+            });
             
             usedImages.add(stackId);
             selectedStackIndex = stackIndex;
@@ -3658,13 +3680,22 @@
             const slot = container.querySelector(`.stacked-image[data-stack-index="${selectedStackIndex}"]`);
             if (!slot) return;
 
+            const imgAlt = `${placeholderNames[selectedPlaceholder]} - 截图${selectedStackIndex + 1}`;
             slot.innerHTML = `
-                <img src="${path}" alt="${placeholderNames[selectedPlaceholder]} - 截图${selectedStackIndex + 1}" 
+                <img src="${path}" alt="${imgAlt}" 
                      onerror="this.parentElement.innerHTML='<div class=\\'stacked-image-placeholder\\'><svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'1.5\\'><rect x=\\'3\\' y=\\'3\\' width=\\'18\\' height=\\'18\\' rx=\\'2\\' ry=\\'2\\'></rect><circle cx=\\'8.5\\' cy=\\'8.5\\' r=\\'1.5\\'></circle><polyline points=\\'21 15 16 10 5 21\\'></polyline></svg><div>图片加载失败</div></div>'"
-                     onclick="openLightbox(this.src, '${placeholderNames[selectedPlaceholder]} - 截图${selectedStackIndex + 1}')" 
                      style="cursor: zoom-in;">
                 <span class="stacked-image-label">截图 ${selectedStackIndex + 1}</span>
             `;
+            
+            // 添加点击放大事件
+            slot.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const img = this.querySelector('img');
+                if (img) {
+                    openLightbox(img.src, imgAlt);
+                }
+            });
             
             usedImages.add(selectedPlaceholder);
             document.getElementById('manualImagePath').value = '';
