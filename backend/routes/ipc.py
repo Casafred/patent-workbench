@@ -18,7 +18,6 @@ import requests
 ipc_bp = Blueprint('ipc', __name__)
 
 INCOPAT_API_BASE = 'https://ipc.incopat.com'
-WIPO_API_BASE = 'https://ipcpub.wipo.int/api/v1'
 
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -103,9 +102,30 @@ def normalize_symbol(s):
     return s
 
 
-def fetch_from_incopat(symbol):
-    """从 incoPat API 获取 IPC 数据"""
-    cache_key = f"incopat_{normalize_symbol(symbol)}"
+def extract_base_symbol(symbol):
+    """从分类号中提取基础部分用于查询
+    
+    例如:
+    - H04L9/08 -> H04L9
+    - A61K31/00 -> A61K31
+    - G06F17/00 -> G06F17
+    - A61K31 -> A61K31
+    """
+    symbol = normalize_symbol(symbol)
+    
+    # 如果包含斜杠，提取斜杠前的部分
+    if '/' in symbol:
+        return symbol.split('/')[0]
+    
+    return symbol
+
+
+def fetch_from_incopat_query(symbol):
+    """从 incoPat ipcquery API 获取 IPC 数据
+    
+    这是 incoPat 网站使用的真实 API，返回完整的层级数据。
+    """
+    cache_key = f"incopat_query_{normalize_symbol(symbol)}"
     cached = get_cached(cache_key)
     if cached:
         return cached
@@ -113,10 +133,13 @@ def fetch_from_incopat(symbol):
     try:
         session = get_incopat_session()
         
+        base_symbol = extract_base_symbol(symbol)
+        
         resp = session.post(
-            f'{INCOPAT_API_BASE}/ipcFindTool/ipcRecommendSearch',
+            f'{INCOPAT_API_BASE}/ipcFindTool/ipcquery',
             data={
-                'input': symbol,
+                'id': '',
+                'code': base_symbol,
                 'version': '2026',
                 'format': 'zh'
             },
@@ -125,24 +148,30 @@ def fetch_from_incopat(symbol):
                 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
                 'X-Requested-With': 'XMLHttpRequest',
             },
-            timeout=15
+            timeout=30
         )
         
         if resp.status_code == 200:
             data = resp.json()
-            if data.get('data') and data.get('status'):
-                all_items = []
-                for level_data in data['data']:
-                    if isinstance(level_data, list):
-                        all_items.extend(level_data)
+            if data.get('status') and data.get('data'):
+                items = data.get('data', [])
                 
-                if all_items:
-                    set_cache(cache_key, all_items)
-                    return all_items
+                # 去重并构建字典
+                seen = set()
+                unique_items = []
+                for item in items:
+                    code = item.get('code', '').replace(' ', '').upper()
+                    if code not in seen:
+                        seen.add(code)
+                        unique_items.append(item)
+                
+                if unique_items:
+                    set_cache(cache_key, unique_items)
+                    return unique_items
         
         return None
     except Exception as e:
-        print(f'incoPat API error: {e}')
+        print(f'incoPat ipcquery API error: {e}')
         return None
 
 
@@ -161,6 +190,200 @@ def get_section_info(symbol):
     return sections.get(symbol[0] if symbol else '', None)
 
 
+def build_hierarchy_from_items(symbol, items):
+    """从 ipcquery 返回的数据构建层级结构"""
+    if not items:
+        return []
+    
+    normalized_symbol = normalize_symbol(symbol)
+    
+    # 构建分类号到条目的映射
+    code_to_item = {}
+    for item in items:
+        code = normalize_symbol(item.get('code', ''))
+        if code and code not in code_to_item:
+            code_to_item[code] = item
+    
+    # 查找目标条目
+    target_item = code_to_item.get(normalized_symbol)
+    
+    # 如果没找到精确匹配，尝试查找父级
+    if not target_item:
+        # 尝试去掉斜杠后的部分
+        if '/' in normalized_symbol:
+            base = normalized_symbol.split('/')[0]
+            target_item = code_to_item.get(base)
+        
+        # 尝试前缀匹配
+        if not target_item:
+            for code in sorted(code_to_item.keys(), key=len, reverse=True):
+                if normalized_symbol.startswith(code):
+                    target_item = code_to_item[code]
+                    break
+    
+    # 如果还是没找到，从子节点中推断
+    if not target_item and items:
+        # 从第一个子节点推断父节点
+        first_item = items[0]
+        fcode = first_item.get('fcode', '')
+        
+        if fcode:
+            fcode_normalized = normalize_symbol(fcode)
+            
+            # 检查目标是否是 fcode 或 fcode 的父级
+            # 例如：输入 G06F17/00，返回的 fcode 是 G06F17/00
+            # 这说明 G06F17/00 是父节点（目标）
+            if fcode_normalized == normalized_symbol:
+                # 目标是父节点，构建虚拟条目
+                # 从子节点的 code 推断目标的大组
+                child_code = normalize_symbol(first_item.get('code', ''))
+                if '/' in child_code:
+                    # 子节点是小组，目标是该小组所属的大组
+                    target_item = {
+                        'code': normalized_symbol,
+                        'fcode': normalized_symbol.split('/')[0],  # 小类
+                        'name': first_item.get('name', '').split(']')[-1].strip() if first_item.get('name') else f'{normalized_symbol} (大组)'
+                    }
+                else:
+                    target_item = {
+                        'code': normalized_symbol,
+                        'fcode': '',
+                        'name': f'{normalized_symbol} (分类)'
+                    }
+            elif fcode_normalized.startswith(normalized_symbol) or normalized_symbol.startswith(fcode_normalized.split('/')[0]):
+                # 检查是否需要添加大组层级
+                if '/' in fcode_normalized and fcode_normalized.split('/')[0] == normalized_symbol:
+                    # 目标是小类，fcode 是大组
+                    # 需要构建：目标(小类) -> 大组
+                    target_item = {
+                        'code': normalized_symbol,
+                        'fcode': normalized_symbol[:3] if len(normalized_symbol) > 3 else normalized_symbol[0],
+                        'name': f'{normalized_symbol} (小类)'
+                    }
+                else:
+                    # 目标是父节点，构建虚拟条目
+                    target_item = {
+                        'code': normalized_symbol,
+                        'fcode': '',
+                        'name': f'{normalized_symbol} (分类)'
+                    }
+    
+    if not target_item:
+        return []
+    
+    # 构建层级
+    hierarchy = []
+    
+    # 添加目标节点
+    target_code = normalize_symbol(target_item.get('code', ''))
+    name = target_item.get('name', '')
+    # 清理名称，去掉分类号前缀
+    if name:
+        name = re.sub(r'^[A-Z0-9/]+\s*', '', name).strip()
+        name = re.sub(r'\[.*?\]', '', name).strip()
+    
+    hierarchy.append({
+        'symbol': target_code,
+        'title': name,
+        'titleCn': name,
+        'depth': 0
+    })
+    
+    # 向上遍历父节点
+    fcode = target_item.get('fcode', '')
+    visited = set()
+    
+    while fcode and fcode not in visited:
+        visited.add(fcode)
+        
+        parent_item = code_to_item.get(normalize_symbol(fcode))
+        if parent_item:
+            parent_code = normalize_symbol(parent_item.get('code', ''))
+            parent_name = parent_item.get('name', '')
+            if parent_name:
+                parent_name = re.sub(r'^[A-Z0-9/]+\s*', '', parent_name).strip()
+                parent_name = re.sub(r'\[.*?\]', '', parent_name).strip()
+            
+            hierarchy.insert(0, {
+                'symbol': parent_code,
+                'title': parent_name,
+                'titleCn': parent_name,
+                'depth': 0
+            })
+            fcode = parent_item.get('fcode', '')
+        else:
+            # 如果父节点不在返回的数据中，手动构建层级
+            fcode_normalized = normalize_symbol(fcode)
+            
+            # 根据格式推断层级类型
+            if '/' in fcode_normalized:
+                # 大组级别
+                maingroup = fcode_normalized
+                subclass = maingroup.split('/')[0]
+                
+                # 添加大组
+                hierarchy.insert(0, {
+                    'symbol': maingroup,
+                    'title': f'{maingroup} (大组)',
+                    'titleCn': f'{maingroup} (大组)',
+                    'depth': 0
+                })
+                
+                # 添加小类
+                hierarchy.insert(0, {
+                    'symbol': subclass,
+                    'title': f'{subclass} (小类)',
+                    'titleCn': f'{subclass} (小类)',
+                    'depth': 0
+                })
+            else:
+                # 小类或大类级别
+                subclass = fcode_normalized
+                
+                # 添加小类
+                hierarchy.insert(0, {
+                    'symbol': subclass,
+                    'title': f'{subclass} (小类)',
+                    'titleCn': f'{subclass} (小类)',
+                    'depth': 0
+                })
+            
+            # 添加大类
+            if len(subclass) >= 3:
+                mainclass = subclass[:3]
+                hierarchy.insert(0, {
+                    'symbol': mainclass,
+                    'title': f'{mainclass} (大类)',
+                    'titleCn': f'{mainclass} (大类)',
+                    'depth': 0
+                })
+            
+            # 添加部
+            if len(subclass) >= 1:
+                section = subclass[0]
+                info = get_section_info(section)
+                if info:
+                    hierarchy.insert(0, {
+                        'symbol': section,
+                        'title': info['title'],
+                        'titleCn': info['title'],
+                        'depth': 0
+                    })
+            break
+    
+    # 如果目标符号不在层级中，添加它
+    if hierarchy and hierarchy[-1]['symbol'] != normalized_symbol:
+        if normalized_symbol.startswith(hierarchy[-1]['symbol']):
+            hierarchy.append({
+                'symbol': normalized_symbol,
+                'title': f'{normalized_symbol} (详细分类)',
+                'titleCn': f'{normalized_symbol} (详细分类)',
+                'depth': len(hierarchy)
+            })
+    
+    return hierarchy
+
+
 @ipc_bp.route('/ipc/tree', methods=['GET'])
 def get_tree():
     """
@@ -169,7 +392,6 @@ def get_tree():
     key = request.args.get('key', '')
     symbol = request.args.get('symbol', '')
     
-    # 如果没有提供 key 或 symbol，返回根节点（8个部）
     if not key and not symbol:
         roots = []
         for s in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
@@ -185,18 +407,11 @@ def get_tree():
             })
         return create_response(data=roots)
     
-    # 如果提供了 symbol，使用 symbol 查询
-    if symbol:
-        target_symbol = symbol
-    else:
-        # key 就是 symbol
-        target_symbol = key
+    target_symbol = symbol if symbol else key
     
-    # 从 incoPat 获取数据
-    all_items = fetch_from_incopat(target_symbol)
+    items = fetch_from_incopat_query(target_symbol)
     
-    if not all_items:
-        # 如果 incoPat 没有数据，尝试使用部的基本信息
+    if not items:
         if len(target_symbol) <= 2:
             info = get_section_info(target_symbol)
             if info:
@@ -211,50 +426,65 @@ def get_tree():
                 }])
         return create_response(error="未找到分类数据")
     
-    # 找到目标节点
-    normalized_target = normalize_symbol(target_symbol)
-    target_id = None
-    target_item = None
-    
-    for item in all_items:
+    # 构建分类号到条目的映射
+    code_to_item = {}
+    for item in items:
         code = normalize_symbol(item.get('code', ''))
-        if code == normalized_target:
-            target_id = item.get('id')
-            target_item = item
-            break
+        if code and code not in code_to_item:
+            code_to_item[code] = item
     
-    # 如果没找到精确匹配，尝试前缀匹配
-    if not target_id:
-        for item in all_items:
-            code = normalize_symbol(item.get('code', ''))
-            if code.startswith(normalized_target[:3]) or normalized_target.startswith(code[:3]):
-                target_id = item.get('id')
-                target_item = item
-                break
+    # 查找目标条目
+    normalized_target = normalize_symbol(target_symbol)
+    target_item = code_to_item.get(normalized_target)
+    
+    # 如果没找到精确匹配，尝试查找父级
+    if not target_item:
+        if '/' in normalized_target:
+            base = normalized_target.split('/')[0]
+            target_item = code_to_item.get(base)
+        
+        if not target_item:
+            for code in sorted(code_to_item.keys(), key=len, reverse=True):
+                if normalized_target.startswith(code):
+                    target_item = code_to_item[code]
+                    break
     
     # 获取子节点
     children = []
-    if target_id:
-        for item in all_items:
-            if str(item.get('pId')) == str(target_id):
+    if target_item:
+        target_code = normalize_symbol(target_item.get('code', ''))
+        
+        for item in items:
+            fcode = normalize_symbol(item.get('fcode', ''))
+            if fcode == target_code:
+                child_code = normalize_symbol(item.get('code', ''))
+                name = item.get('name', '')
+                if name:
+                    name = re.sub(r'^[A-Z0-9/]+\s*', '', name).strip()
+                    name = re.sub(r'\[.*?\]', '', name).strip()
+                
                 children.append({
                     'key': item.get('id', ''),
-                    'symbol': item.get('code', ''),
-                    'symbolcode': item.get('code', ''),
-                    'title1': item.get('nameNew', item.get('name', '')),
-                    'titleCn': item.get('nameNew', ''),
-                    'folder': True,
-                    'lazy': True
+                    'symbol': child_code,
+                    'symbolcode': child_code,
+                    'title1': name,
+                    'titleCn': name,
+                    'folder': item.get('isParent', 0) == 1,
+                    'lazy': item.get('isParent', 0) == 1
                 })
     
-    # 如果没有子节点，返回目标节点本身
     if not children and target_item:
+        name = target_item.get('name', '')
+        if name:
+            name = re.sub(r'^[A-Z0-9/]+\s*', '', name).strip()
+            name = re.sub(r'\[.*?\]', '', name).strip()
+        
         return create_response(data=[{
             'key': target_item.get('id', ''),
-            'symbol': target_item.get('code', ''),
-            'symbolcode': target_item.get('code', ''),
-            'title1': target_item.get('nameNew', target_item.get('name', '')),
-            'titleCn': target_item.get('nameNew', ''),
+            'symbol': normalize_symbol(target_item.get('code', '')),
+            'symbolcode': normalize_symbol(target_item.get('code', '')),
+            'title1': name,
+            'titleCn': name,
             'folder': False,
             'lazy': False
         }])
@@ -275,17 +505,18 @@ def search():
     
     query = query.upper()
     
-    # 从 incoPat 获取数据
-    all_items = fetch_from_incopat(query)
+    items = fetch_from_incopat_query(query)
     
     results = []
     
-    if all_items:
-        for item in all_items:
+    if items:
+        for item in items:
             code = item.get('code', '')
-            name = item.get('nameNew', item.get('name', ''))
+            name = item.get('name', '')
+            if name:
+                name = re.sub(r'^[A-Z0-9/]+\s*', '', name).strip()
+                name = re.sub(r'\[.*?\]', '', name).strip()
             
-            # 匹配分类号或标题
             if query.upper() in code.upper() or query.lower() in name.lower():
                 results.append({
                     'symbol': code,
@@ -295,7 +526,6 @@ def search():
                     'score': 100 if query.upper() in code.upper() else 50
                 })
     
-    # 去重并排序
     seen = set()
     unique_results = []
     for r in results:
@@ -316,7 +546,7 @@ def search():
 @ipc_bp.route('/ipc/hierarchy', methods=['GET'])
 def get_hierarchy():
     """
-    Get complete hierarchy path for an IPC symbol using incoPat API.
+    Get complete hierarchy path for an IPC symbol using incoPat ipcquery API.
     """
     symbol = request.args.get('symbol', '').strip().upper()
     
@@ -325,81 +555,22 @@ def get_hierarchy():
     
     symbol = normalize_symbol(symbol)
     
-    # 从 incoPat 获取数据
-    all_items = fetch_from_incopat(symbol)
+    items = fetch_from_incopat_query(symbol)
     
-    if not all_items:
-        # 如果 incoPat 没有数据，返回部的基本信息
+    hierarchy = build_hierarchy_from_items(symbol, items)
+    
+    if not hierarchy:
         info = get_section_info(symbol)
         if info:
-            return create_response(data={
-                'symbol': symbol,
-                'hierarchy': [{
-                    'symbol': info['symbol'],
-                    'title': info['titleEn'],
-                    'titleCn': info['title'],
-                    'depth': 0,
-                    'levelName': '部 (Section)'
-                }],
-                'count': 1
-            })
-        return create_response(error=f"未找到分类号: {symbol}")
+            hierarchy = [{
+                'symbol': info['symbol'],
+                'title': info['titleEn'],
+                'titleCn': info['title'],
+                'depth': 0
+            }]
+        else:
+            return create_response(error=f"未找到分类号: {symbol}")
     
-    # 找到目标节点
-    normalized_symbol = normalize_symbol(symbol)
-    target_item = None
-    
-    for item in all_items:
-        code = normalize_symbol(item.get('code', ''))
-        if code == normalized_symbol:
-            target_item = item
-            break
-    
-    # 如果没找到精确匹配，尝试前缀匹配
-    if not target_item:
-        for item in all_items:
-            code = normalize_symbol(item.get('code', ''))
-            if code.startswith(normalized_symbol[:3]) or normalized_symbol.startswith(code[:3]):
-                target_item = item
-                break
-    
-    # 构建层级结构
-    hierarchy = []
-    
-    if target_item:
-        # 添加目标节点
-        hierarchy.append({
-            'symbol': target_item.get('code', ''),
-            'title': target_item.get('nameNew', target_item.get('name', '')),
-            'titleCn': target_item.get('nameNew', ''),
-            'depth': 0
-        })
-        
-        # 向上遍历父节点
-        parent_id = target_item.get('pId')
-        visited = set()
-        
-        while parent_id and parent_id != '-1' and parent_id not in visited:
-            visited.add(parent_id)
-            
-            parent_item = None
-            for item in all_items:
-                if str(item.get('id')) == str(parent_id):
-                    parent_item = item
-                    break
-            
-            if parent_item:
-                hierarchy.insert(0, {
-                    'symbol': parent_item.get('code', ''),
-                    'title': parent_item.get('nameNew', parent_item.get('name', '')),
-                    'titleCn': parent_item.get('nameNew', ''),
-                    'depth': 0
-                })
-                parent_id = parent_item.get('pId')
-            else:
-                break
-    
-    # 添加层级名称
     level_names = ['部 (Section)', '大类 (Class)', '小类 (Subclass)', '大组 (Main Group)', '小组 (Subgroup)']
     for i, item in enumerate(hierarchy):
         item['depth'] = i
@@ -424,21 +595,30 @@ def get_detail():
     
     symbol = normalize_symbol(symbol)
     
-    # 从 incoPat 获取数据
-    all_items = fetch_from_incopat(symbol)
+    items = fetch_from_incopat_query(symbol)
     
-    if all_items:
-        for item in all_items:
+    if items:
+        code_to_item = {}
+        for item in items:
             code = normalize_symbol(item.get('code', ''))
-            if code == symbol:
-                return create_response(data={
-                    'symbol': symbol,
-                    'code': code,
-                    'title': item.get('nameNew', item.get('name', '')),
-                    'titleCn': item.get('nameNew', ''),
-                    'key': item.get('id', ''),
-                    'parentKey': item.get('pId', '')
-                })
+            if code and code not in code_to_item:
+                code_to_item[code] = item
+        
+        item = code_to_item.get(symbol)
+        if item:
+            name = item.get('name', '')
+            if name:
+                name = re.sub(r'^[A-Z0-9/]+\s*', '', name).strip()
+                name = re.sub(r'\[.*?\]', '', name).strip()
+            
+            return create_response(data={
+                'symbol': symbol,
+                'code': symbol,
+                'title': name,
+                'titleCn': name,
+                'key': item.get('id', ''),
+                'parentKey': item.get('fcode', '')
+            })
     
     return create_response(error=f"未找到分类号: {symbol}")
 
@@ -496,7 +676,7 @@ def predict():
         }
         
         response = requests.get(
-            f"{WIPO_API_BASE}/search/ipccat",
+            "https://ipcpub.wipo.int/api/v1/search/ipccat",
             params=params,
             headers=HEADERS,
             timeout=30
