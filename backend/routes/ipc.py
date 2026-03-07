@@ -256,8 +256,99 @@ def get_tree():
     return create_response(error="获取分类树失败")
 
 
+def fetch_children_from_incopat(symbol):
+    """从 incoPat API 获取子节点数据
+    
+    注意：incoPat API 只支持小类级别（如 G06F）及以上的查询，
+    不支持部（如 G）和大类（如 G06）级别的查询。
+    """
+    try:
+        # 检查符号长度，incoPat API 只支持至少3个字符的分类号
+        if len(symbol.replace(' ', '').replace('/', '')) < 3:
+            return None
+        
+        session = requests.Session()
+        
+        session.get(f'{INCOPAT_API_BASE}/', headers=HEADERS, timeout=10)
+        
+        resp = session.post(
+            f'{INCOPAT_API_BASE}/ipcFindTool/ipcRecommendSearch',
+            data={
+                'input': symbol,
+                'version': '2026',
+                'format': 'zh'
+            },
+            headers={
+                **HEADERS,
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            timeout=15
+        )
+        
+        if resp.status_code == 200:
+            data = resp.json()
+            if data.get('data') and data.get('status'):
+                all_items = []
+                for level_data in data['data']:
+                    if isinstance(level_data, list):
+                        all_items.extend(level_data)
+                
+                if not all_items:
+                    return None
+                
+                target_id = None
+                for item in all_items:
+                    code = item.get('code', '').replace(' ', '')
+                    if code == symbol.replace(' ', ''):
+                        target_id = item.get('id')
+                        break
+                
+                if target_id:
+                    children = []
+                    for item in all_items:
+                        if str(item.get('pId')) == str(target_id):
+                            children.append({
+                                'key': item.get('id', ''),
+                                'symbol': item.get('code', ''),
+                                'symbolcode': item.get('code', ''),
+                                'title1': item.get('nameNew', item.get('name', '')),
+                                'folder': True,
+                                'lazy': True
+                            })
+                    return children
+        
+        return None
+    except Exception as e:
+        print(f'incoPat API error: {e}')
+        return None
+
+
 def get_children_hybrid(key, local_data):
-    """混合模式获取子节点：优先本地，按需从WIPO获取"""
+    """混合模式获取子节点：优先incoPat，然后本地，最后WIPO"""
+    
+    symbol = None
+    
+    # 首先从 sections 中查找（根节点）
+    if local_data:
+        sections = local_data.get('sections', [])
+        for section in sections:
+            if section.get('key') == key:
+                symbol = section.get('symbol')
+                break
+    
+    # 如果 sections 中没找到，从 all_entries 中查找
+    if not symbol and local_data:
+        all_entries = local_data.get('all_entries', {})
+        for s, entry in all_entries.items():
+            if entry.get('key') == key:
+                symbol = s
+                break
+    
+    if symbol:
+        incopat_children = fetch_children_from_incopat(symbol)
+        if incopat_children:
+            return incopat_children
     
     if local_data:
         all_entries = local_data.get('all_entries', {})
