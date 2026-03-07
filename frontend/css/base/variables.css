@@ -39,6 +39,7 @@
     --chat-user-bubble: #22C55E;  /* 绿底 */
     --chat-user-bubble-text: #FFFFFF;  /* 白字 */
     --chat-assistant-bubble: #FFFFFF;
+    --chat-assistant-bubble-text: #14532D;
 }
 
 /* ========================================
@@ -84,4 +85,5 @@
     --chat-user-bubble: #22C55E;
     --chat-user-bubble-text: #FFFFFF;
     --chat-assistant-bubble: #334155;
+    --chat-assistant-bubble-text: #e2e8f0;
 }

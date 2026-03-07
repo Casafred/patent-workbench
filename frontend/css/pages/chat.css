@@ -398,6 +398,7 @@
 
 .assistant-message .message-content {
     background-color: var(--chat-assistant-bubble);
+    color: var(--chat-assistant-bubble-text);
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
