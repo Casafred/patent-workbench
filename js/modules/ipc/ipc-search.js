@@ -67,7 +67,7 @@ const IPCSearch = (function() {
         let html = '';
         data.results.forEach((item, index) => {
             html += `
-                <div class="ipc-search-item" onclick="IPCSearch.showDetail('${item.symbol}')">
+                <div class="ipc-search-item" onclick="IPCSearch.viewInLookup('${item.symbol}')">
                     <span class="ipc-search-symbol">${IPCCore.formatSymbol(item.symbol)}</span>
                     <span class="ipc-search-score">${item.score || 0}</span>
                 </div>
@@ -77,87 +77,17 @@ const IPCSearch = (function() {
         listEl.innerHTML = html;
     }
 
-    async function showDetail(symbol) {
-        const modal = document.getElementById('ipc_detail_modal');
-        const titleEl = document.getElementById('ipc_detail_title');
-        const bodyEl = document.getElementById('ipc_detail_body');
-
-        if (!modal || !titleEl || !bodyEl) return;
-
-        titleEl.textContent = 'IPC分类详情';
-        bodyEl.innerHTML = `
-            <div class="ipc-loading-inline">
-                <div class="loading-spinner"></div>
-                <span>正在加载详情...</span>
-            </div>
-        `;
-        modal.style.display = 'block';
-
-        try {
-            const data = await IPCCore.getDetail(symbol);
-            renderDetail(symbol, data);
-        } catch (error) {
-            bodyEl.innerHTML = `
-                <div class="ipc-error-message">
-                    获取详情失败: ${error.message}
-                </div>
-            `;
+    function viewInLookup(symbol) {
+        switchIpcSubTab('lookup');
+        
+        const lookupInput = document.getElementById('ipc_lookup_input');
+        if (lookupInput) {
+            lookupInput.value = symbol;
         }
-    }
-
-    function renderDetail(symbol, data) {
-        const bodyEl = document.getElementById('ipc_detail_body');
-        if (!bodyEl) return;
-
-        const detail = data.data || data;
-
-        let html = `
-            <div class="ipc-detail-symbol">
-                ${IPCCore.formatSymbol(symbol)}
-                <button class="ipc-copy-btn" onclick="IPCCore.copyToClipboard('${symbol}')">复制</button>
-            </div>
-        `;
-
-        if (detail.title) {
-            html += `
-                <div class="ipc-detail-section">
-                    <h5>标题</h5>
-                    <div class="ipc-detail-content">${detail.title}</div>
-                </div>
-            `;
-        }
-
-        if (detail.key) {
-            html += `
-                <div class="ipc-detail-section">
-                    <h5>键值</h5>
-                    <div class="ipc-detail-content">${detail.key}</div>
-                </div>
-            `;
-        }
-
-        if (detail.parent) {
-            html += `
-                <div class="ipc-detail-section">
-                    <h5>父级分类</h5>
-                    <div class="ipc-detail-content">${detail.parent}</div>
-                </div>
-            `;
-        }
-
-        if (detail.valid !== undefined) {
-            const isValid = detail.valid;
-            html += `
-                <div class="ipc-detail-section">
-                    <h5>有效性</h5>
-                    <div class="ipc-detail-content" style="color: ${isValid ? '#22c55e' : '#ef4444'};">
-                        ${isValid ? '✓ 有效分类号' : '✗ 无效分类号'}
-                    </div>
-                </div>
-            `;
-        }
-
-        bodyEl.innerHTML = html;
+        
+        setTimeout(() => {
+            IPCLookup.performLookup();
+        }, 300);
     }
 
     function handleKeyPress(event) {
@@ -168,7 +98,7 @@ const IPCSearch = (function() {
 
     return {
         performSearch,
-        showDetail,
+        viewInLookup,
         handleKeyPress
     };
 })();

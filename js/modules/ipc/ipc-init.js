@@ -99,7 +99,10 @@ function switchIpcSubTab(tabName, btnElement) {
 function closeIpcDetailModal() {
     const modal = document.getElementById('ipc_detail_modal');
     if (modal) {
-        modal.style.display = 'none';
+        modal.classList.remove('show');
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 200);
     }
 }
 

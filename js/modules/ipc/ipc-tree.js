@@ -244,69 +244,29 @@ const IPCTree = (function() {
     }
 
     function showDetail(symbol, title) {
-        const modal = document.getElementById('ipc_detail_modal');
-        const titleEl = document.getElementById('ipc_detail_title');
-        const bodyEl = document.getElementById('ipc_detail_body');
-
-        if (!modal || !titleEl || !bodyEl) {
-            IPCCore.showToast('无法显示详情', 'error');
-            return;
+        switchIpcSubTab('lookup');
+        
+        const lookupInput = document.getElementById('ipc_lookup_input');
+        if (lookupInput) {
+            lookupInput.value = symbol;
         }
-
-        titleEl.textContent = 'IPC分类详情';
-        bodyEl.innerHTML = `
-            <div class="ipc-detail-symbol">
-                ${IPCCore.formatSymbol(symbol)}
-                <span class="ipc-copy-link" onclick="IPCCore.copyToClipboard('${symbol}')">复制</span>
-            </div>
-            <div class="ipc-detail-info">
-                <p style="color: #666; font-size: 14px; margin: 0 0 10px 0;">
-                    IPC分类号: <strong>${symbol}</strong>
-                </p>
-                ${title ? `<p style="color: #333; font-size: 14px; margin: 0;">${title}</p>` : ''}
-            </div>
-            <div class="ipc-detail-actions">
-                <button class="small-button" onclick="IPCTree.viewInTree('${symbol}')">
-                    在分类树中查看
-                </button>
-            </div>
-        `;
-        modal.style.display = 'flex';
-        modal.classList.add('show');
+        
+        setTimeout(() => {
+            IPCLookup.performLookup();
+        }, 300);
     }
 
-    async function viewInTree(symbol) {
-        closeIpcDetailModal();
+    function viewInTree(symbol) {
+        switchIpcSubTab('lookup');
         
-        switchIpcSubTab('browse');
-        
-        if (!isInitialized) {
-            await initialize();
+        const lookupInput = document.getElementById('ipc_lookup_input');
+        if (lookupInput) {
+            lookupInput.value = symbol;
         }
         
-        const section = symbol.charAt(0).toUpperCase();
-        const sectionKey = keyMap[section];
-        
-        if (sectionKey) {
-            const sectionTitles = {
-                'A': 'HUMAN NECESSITIES (人类生活需要)',
-                'B': 'PERFORMING OPERATIONS; TRANSPORTING (作业；运输)',
-                'C': 'CHEMISTRY; METALLURGY (化学；冶金)',
-                'D': 'TEXTILES; PAPER (纺织；造纸)',
-                'E': 'FIXED CONSTRUCTIONS (固定建筑物)',
-                'F': 'MECHANICAL ENGINEERING (机械工程)',
-                'G': 'PHYSICS (物理)',
-                'H': 'ELECTRICITY (电学)'
-            };
-            
-            IPCCore.showToast(`正在定位到 ${section} 部...`, 'info');
-            
-            await expandNode(sectionKey, section, sectionTitles[section] || section);
-            
-            setTimeout(() => {
-                IPCCore.showToast(`已展开 ${section} 部，请继续查找 ${symbol}`, 'success');
-            }, 500);
-        }
+        setTimeout(() => {
+            IPCLookup.performLookup();
+        }, 300);
     }
 
     function renderError(message) {

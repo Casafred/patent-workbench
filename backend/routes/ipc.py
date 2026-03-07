@@ -501,26 +501,91 @@ def get_section_title(symbol):
     return sections.get(section, ('', ''))
 
 
+def get_simple_section_title(symbol):
+    if len(symbol) == 1 and symbol.isalpha():
+        return get_section_title(symbol)
+    return None
+
+
+def infer_parent_symbol(symbol):
+    if not symbol:
+        return ''
+    
+    symbol = symbol.replace(' ', '/')
+    
+    if len(symbol) == 1 and symbol.isalpha():
+        return ''
+    
+    if len(symbol) == 3 and symbol[0].isalpha() and symbol[1:3].isdigit():
+        return symbol[0]
+    
+    if len(symbol) == 4 and symbol[0].isalpha() and symbol[1:3].isdigit() and symbol[3].isalpha():
+        return symbol[:3]
+    
+    if '/' in symbol:
+        parts = symbol.split('/')
+        main_part = parts[0]
+        if len(main_part) == 4:
+            return main_part[:4]
+        return main_part
+    
+    if len(symbol) > 4 and symbol[0].isalpha() and symbol[1:3].isdigit():
+        if symbol[3].isalpha():
+            return symbol[:4]
+        return symbol[:3]
+    
+    return symbol[0] if symbol else ''
+
+
 def build_hierarchy_from_local(symbol, local_data):
     all_entries = local_data.get('all_entries', {})
     hierarchy = []
     
     if symbol in all_entries:
         entry = all_entries[symbol]
-        current_symbol = symbol
+        hierarchy.insert(0, {
+            'symbol': symbol,
+            'title': entry.get('title', ''),
+            'key': entry.get('key', '')
+        })
         
-        while current_symbol:
-            if current_symbol in all_entries:
-                curr_entry = all_entries[current_symbol]
-                hierarchy.insert(0, {
-                    'symbol': current_symbol,
-                    'title': curr_entry.get('title', ''),
-                    'key': curr_entry.get('key', ''),
-                    'depth': curr_entry.get('depth', 0)
-                })
-                current_symbol = curr_entry.get('parent', '')
-            else:
+        current_symbol = symbol
+        visited = set()
+        
+        while current_symbol and current_symbol not in visited:
+            visited.add(current_symbol)
+            
+            parent_symbol = infer_parent_symbol(current_symbol)
+            if not parent_symbol or parent_symbol == current_symbol:
                 break
+            
+            if parent_symbol in all_entries:
+                parent_entry = all_entries[parent_symbol]
+                hierarchy.insert(0, {
+                    'symbol': parent_symbol,
+                    'title': parent_entry.get('title', ''),
+                    'key': parent_entry.get('key', '')
+                })
+                current_symbol = parent_symbol
+            else:
+                section_title = get_section_title(parent_symbol)
+                if section_title[1]:
+                    hierarchy.insert(0, {
+                        'symbol': parent_symbol,
+                        'title': section_title[1],
+                        'titleCn': section_title[0]
+                    })
+                break
+    
+    if hierarchy and len(hierarchy[0]['symbol']) > 1:
+        root_symbol = hierarchy[0]['symbol'][0]
+        simple_title = get_simple_section_title(root_symbol)
+        if simple_title:
+            hierarchy.insert(0, {
+                'symbol': root_symbol,
+                'title': simple_title[1],
+                'titleCn': simple_title[0]
+            })
     
     return hierarchy
 

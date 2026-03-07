@@ -113,7 +113,7 @@ const IPCPredict = (function() {
             const scoreClass = score >= 4 ? 'high' : (score >= 2 ? 'medium' : 'low');
 
             html += `
-                <div class="ipc-result-item" onclick="IPCPredict.showDetail('${item.symbol}')">
+                <div class="ipc-result-item" onclick="IPCPredict.viewInLookup('${item.symbol}')">
                     <div class="ipc-result-score ${scoreClass}">
                         ${score}
                     </div>
@@ -121,7 +121,6 @@ const IPCPredict = (function() {
                         <div class="ipc-result-symbol">
                             <span class="ipc-symbol-text">${IPCCore.formatSymbol(item.symbol)}</span>
                             <span class="ipc-copy-link" onclick="event.stopPropagation(); IPCCore.copyToClipboard('${item.symbol}')">复制</span>
-                            <span class="ipc-copy-link" onclick="event.stopPropagation(); IPCTree.viewInTree('${item.symbol}')" style="color: #3b82f6;">树中查看</span>
                         </div>
                         <div class="ipc-result-code">${item.code || ''}</div>
                     </div>
@@ -132,37 +131,17 @@ const IPCPredict = (function() {
         listEl.innerHTML = html;
     }
 
-    async function showDetail(symbol) {
-        if (!symbol) return;
+    function viewInLookup(symbol) {
+        switchIpcSubTab('lookup');
         
-        const modal = document.getElementById('ipc_detail_modal');
-        const titleEl = document.getElementById('ipc_detail_title');
-        const bodyEl = document.getElementById('ipc_detail_body');
-
-        if (!modal || !titleEl || !bodyEl) {
-            IPCCore.showToast('无法显示详情', 'error');
-            return;
+        const lookupInput = document.getElementById('ipc_lookup_input');
+        if (lookupInput) {
+            lookupInput.value = symbol;
         }
-
-        titleEl.textContent = 'IPC分类详情';
-        bodyEl.innerHTML = `
-            <div class="ipc-detail-symbol">
-                ${IPCCore.formatSymbol(symbol)}
-                <span class="ipc-copy-link" onclick="IPCCore.copyToClipboard('${symbol}')">复制</span>
-            </div>
-            <div class="ipc-detail-info">
-                <p style="color: #666; font-size: 14px; margin: 0;">
-                    IPC分类号: <strong>${symbol}</strong>
-                </p>
-            </div>
-            <div class="ipc-detail-actions">
-                <button class="small-button" onclick="closeIpcDetailModal(); IPCTree.viewInTree('${symbol}')">
-                    在分类树中查看
-                </button>
-            </div>
-        `;
-        modal.style.display = 'flex';
-        modal.classList.add('show');
+        
+        setTimeout(() => {
+            IPCLookup.performLookup();
+        }, 300);
     }
 
     function renderError(message, text, lang) {
@@ -273,7 +252,7 @@ const IPCPredict = (function() {
 
     return {
         performPredict,
-        showDetail,
+        viewInLookup,
         clearInput,
         loadExample,
         renderError,
