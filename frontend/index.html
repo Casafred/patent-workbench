@@ -1880,10 +1880,20 @@ function displayProcessingResult(data, isAIMode = false) {
         // 准备多图查看器数据
         const viewerImages = [];
         const markerSentencesMap = data.marker_sentences_map || {};
+        console.log('[DEBUG] marker_sentences_map from backend:', markerSentencesMap);
+        console.log('[DEBUG] marker_sentences_map keys:', Object.keys(markerSentencesMap));
         
         data.drawings.forEach((processedDrawing, index) => {
             const originalDrawing = uploadedDrawings.find(d => d.name === processedDrawing.name);
             if (originalDrawing) {
+                console.log(`[DEBUG] Drawing ${processedDrawing.name} detected_numbers:`, 
+                    processedDrawing.detected_numbers?.map(d => ({
+                        number: d.number,
+                        is_matched: d.is_matched,
+                        has_original_sentence: !!d.original_sentence,
+                        original_sentence_preview: d.original_sentence?.substring(0, 50)
+                    }))
+                );
                 viewerImages.push({
                     url: originalDrawing.dataUrl,
                     title: processedDrawing.name,

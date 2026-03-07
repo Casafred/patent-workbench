@@ -97,8 +97,9 @@ class MultiImageViewerV8 {
         console.log('[MultiImageViewerV8] Images data:', images.map(img => ({
             title: img.title,
             detectedNumbersCount: (img.detectedNumbers || []).length,
-            detectedNumbers: (img.detectedNumbers || []).map(d => ({ number: d.number, x: Math.round(d.x), y: Math.round(d.y) })),
-            hasMarkerSentences: !!(img.markerSentencesMap && Object.keys(img.markerSentencesMap).length > 0)
+            detectedNumbers: (img.detectedNumbers || []).map(d => ({ number: d.number, x: Math.round(d.x), y: Math.round(d.y), is_matched: d.is_matched, original_sentence: d.original_sentence ? d.original_sentence.substring(0, 30) + '...' : '' })),
+            hasMarkerSentences: !!(img.markerSentencesMap && Object.keys(img.markerSentencesMap).length > 0),
+            markerSentencesMapKeys: img.markerSentencesMap ? Object.keys(img.markerSentencesMap).slice(0, 10) : []
         })));
         this.images = images;
         this.currentIndex = 0;
@@ -1331,20 +1332,18 @@ class MultiImageViewerV8 {
             }
             
             item.addEventListener('click', () => {
-                // 切换选中状态
+                // 未匹配标记：单击直接显示原文弹窗
+                if (!annotation.hasMatch) {
+                    this.showOriginalSentencePopup(annotation);
+                    return;
+                }
+                
+                // 已匹配标记：切换选中状态
                 annotation.isSelected = !annotation.isSelected;
                 this.selectedAnnotationId = annotation.isSelected ? annotation.id : null;
                 this.renderCanvas();
                 this.updateAnnotationList();
             });
-            
-            // 未匹配标记双击显示原文弹窗
-            if (!annotation.hasMatch && annotation.originalSentence) {
-                item.addEventListener('dblclick', (e) => {
-                    e.stopPropagation();
-                    this.showOriginalSentencePopup(annotation);
-                });
-            }
             
             this.annotationList.appendChild(item);
         });

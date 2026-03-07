@@ -363,6 +363,10 @@ def process_drawing_marker():
                 if marker not in marker_sentences_map:
                     marker_sentences_map[marker] = sentence
             print(f"[DEBUG] 构建了 {len(marker_sentences_map)} 个标记-句子映射")
+            print(f"[DEBUG] marker_sentences_map 内容示例: {list(marker_sentences_map.items())[:5]}")
+        else:
+            print(f"[DEBUG] extraction_result 为空或没有 marker_sentences")
+            print(f"[DEBUG] extraction_result: {extraction_result}")
 
         for drawing_result in processed_results:
             if 'error' in drawing_result:
@@ -1256,6 +1260,14 @@ def process_drawing_marker_staged():
             else:
                 reference_map = extract_reference_markers(specification)
                 print(f"[STAGED] Rule-based extracted reference_map: {reference_map}")
+                
+                # 规则模式下也需要提取句子映射（用于调试面板和未匹配标记显示原文）
+                if all_ocr_markers:
+                    extraction_result = extract_relevant_segments(specification, all_ocr_markers, 1, 8000)
+                    print(f"[STAGED] 规则模式说明书预处理: {extraction_result['original_length']} -> {extraction_result['extracted_length']} 字符")
+                else:
+                    extraction_result = None
+                    print(f"[STAGED] 规则模式: OCR未识别到标记，跳过句子提取")
             
             from backend.utils.smart_split_utils import smart_split_ocr_results
             spec_markers = list(reference_map.keys())
