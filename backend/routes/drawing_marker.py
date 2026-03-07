@@ -276,6 +276,7 @@ def process_drawing_marker():
             from backend.utils.text_segment_extractor import extract_relevant_segments
             
             # 只有当OCR识别到标记时才进行预处理
+            extraction_result = None
             if all_ocr_markers:
                 extraction_result = extract_relevant_segments(
                     specification,
@@ -338,6 +339,16 @@ def process_drawing_marker():
         from backend.utils.smart_split_utils import smart_split_ocr_results
         
         spec_markers = list(reference_map.keys())
+        
+        # 构建标记-句子映射（用于未匹配标记显示原文）
+        marker_sentences_map = {}
+        if extraction_result and extraction_result.get('marker_sentences'):
+            for ms in extraction_result['marker_sentences']:
+                marker = ms['marker']
+                sentence = ms['sentence']
+                if marker not in marker_sentences_map:
+                    marker_sentences_map[marker] = sentence
+            print(f"[DEBUG] 构建了 {len(marker_sentences_map)} 个标记-句子映射")
 
         for drawing_result in processed_results:
             if 'error' in drawing_result:
@@ -360,14 +371,17 @@ def process_drawing_marker():
                 print(f"[DEBUG] Drawing {drawing_result['name']}: Matched {len(detected_numbers)} numbers")
 
                 # 🔥 关键优化：即使没有匹配，也要保留OCR识别结果
-                # 将未匹配的OCR结果也添加到detected_numbers中，标记为"未匹配"
+                # 将未匹配的OCR结果也添加到detected_numbers中
                 unmatched_ocr = []
                 for ocr_item in ocr_results:
                     if ocr_item['number'] not in reference_map:
+                        # 获取原文句子
+                        original_sentence = marker_sentences_map.get(ocr_item['number'], '')
                         unmatched_ocr.append({
                             **ocr_item,
-                            'name': '(说明书未匹配)',
-                            'is_matched': False
+                            'name': '',  # 未匹配标记不显示名称
+                            'is_matched': False,
+                            'original_sentence': original_sentence
                         })
                 
                 # 标记已匹配的项

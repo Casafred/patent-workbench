@@ -1068,13 +1068,16 @@ class MultiImageViewerV8 {
         ctx.font = `bold ${this.currentFontSize}px Arial, sans-serif`;
 
         this.annotations = detectedNumbers.map((detected, index) => {
-            const matchedName = detected.name || referenceMap[detected.number];
-            const hasMatch = !!matchedName;
-            const name = hasMatch ? matchedName : '';
+            // 优先使用后端传递的is_matched字段，其次通过name判断
+            const hasMatch = detected.is_matched === true || (!!detected.name && detected.name !== '');
+            const name = hasMatch ? (detected.name || referenceMap[detected.number] || '') : '';
             const originalSentence = detected.original_sentence || '';
             const text = hasMatch ? `${detected.number}: ${name}` : `${detected.number}`;
             const textWidth = ctx.measureText(text).width;
             const textHeight = this.currentFontSize * 1.5;
+            
+            // 调试日志
+            console.log(`[Annotation ${index}] number=${detected.number}, is_matched=${detected.is_matched}, hasMatch=${hasMatch}, name="${name}", originalSentence="${originalSentence.substring(0, 50)}..."`);
 
             // 计算离标记点最近的边框及距离
             const distances = {
