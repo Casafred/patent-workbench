@@ -1,21 +1,12 @@
 // js/modules/chat/chat-persona.js
 // Persona management functionality
 
-/**
- * Load personas from localStorage (user-isolated)
- */
-function loadPersonas() {
-    const storage = window.userCacheStorage;
-    const savedPersonas = storage.getJSON('chatPersonas');
-    if (savedPersonas && Object.keys(savedPersonas).length > 0) {
-        appState.chat.personas = savedPersonas;
-    } else {
-        appState.chat.personas = {
-            "patent_analyzer": { name: "资深专利分析师", system: "你是一位顶级的专利分析师和信息架构师，极其擅长从复杂、冗长的专利文本中快速提炼核心技术原理、解决方案、技术问题和效果。你的回答应该专业、结构清晰、逻辑严谨。", userTemplate: "", isCustom: false },
-            "translator": { name: "专业技术翻译", system: "你是一个专业精通各技术领域术语的、精通多国语言的专利文本翻译引擎。你的任务是自动检测用户输入专利文本的语言并将其翻译成中文或英文。请直接返回翻译后的文本，不要添加任何额外的解释或说明。", userTemplate: "", isCustom: false },
-            "keyword_expander": { 
-                name: "专利检索词拓展专家", 
-                system: `你是一位资深的专利检索词拓展专家，拥有丰富的专利信息检索经验。你的核心任务是对用户输入的检索词进行系统性、多角度的专业拓展，生成符合专利数据库检索规范的关键词集合。
+const PRESET_PERSONAS = {
+    "patent_analyzer": { name: "资深专利分析师", system: "你是一位顶级的专利分析师和信息架构师，极其擅长从复杂、冗长的专利文本中快速提炼核心技术原理、解决方案、技术问题和效果。你的回答应该专业、结构清晰、逻辑严谨。", userTemplate: "", isCustom: false },
+    "translator": { name: "专业技术翻译", system: "你是一个专业精通各技术领域术语的、精通多国语言的专利文本翻译引擎。你的任务是自动检测用户输入专利文本的语言并将其翻译成中文或英文。请直接返回翻译后的文本，不要添加任何额外的解释或说明。", userTemplate: "", isCustom: false },
+    "keyword_expander": { 
+        name: "专利检索词拓展专家", 
+        system: `你是一位资深的专利检索词拓展专家，拥有丰富的专利信息检索经验。你的核心任务是对用户输入的检索词进行系统性、多角度的专业拓展，生成符合专利数据库检索规范的关键词集合。
 
 ## 一、核心能力要求
 
@@ -161,11 +152,30 @@ term1, term2, term3...
 4. 对于跨领域术语，分别标注各领域的含义差异
 
 请始终保持专业、严谨的态度，确保输出结果能够直接应用于专利检索实践。`, 
-                userTemplate: "请对以下专利检索词进行专业拓展分析：\n\n{{INPUT}}", 
-                isCustom: false 
-            },
-            "general_assistant": { name: "通用助手", system: "你是一个乐于助人的通用AI助手，可以回答各种问题。", userTemplate: "", isCustom: false }
-        };
+        userTemplate: "请对以下专利检索词进行专业拓展分析：\n\n{{INPUT}}", 
+        isCustom: false 
+    },
+    "general_assistant": { name: "通用助手", system: "你是一个乐于助人的通用AI助手，可以回答各种问题。", userTemplate: "", isCustom: false }
+};
+
+/**
+ * Load personas from localStorage (user-isolated)
+ * Preset personas are always updated to latest version
+ */
+function loadPersonas() {
+    const storage = window.userCacheStorage;
+    const savedPersonas = storage.getJSON('chatPersonas');
+    
+    if (savedPersonas && Object.keys(savedPersonas).length > 0) {
+        appState.chat.personas = { ...savedPersonas };
+        Object.keys(PRESET_PERSONAS).forEach(id => {
+            if (!appState.chat.personas[id] || !appState.chat.personas[id].isCustom) {
+                appState.chat.personas[id] = PRESET_PERSONAS[id];
+            }
+        });
+        savePersonas();
+    } else {
+        appState.chat.personas = { ...PRESET_PERSONAS };
         savePersonas();
     }
 }
