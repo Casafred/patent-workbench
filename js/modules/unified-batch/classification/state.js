@@ -53,6 +53,10 @@ class ClassificationState {
                 sampleData: [],
                 suggestedSchema: null
             },
+            smartImport: {
+                isRunning: false,
+                suggestedSchema: null
+            },
             ui: {
                 currentSubTab: 'input',
                 selectedResults: new Set(),
@@ -345,6 +349,18 @@ class ClassificationState {
         this.state.coldStart.suggestedSchema = schema;
     }
 
+    getSmartImport() {
+        return this.state.smartImport;
+    }
+
+    setSmartImportRunning(isRunning) {
+        this.state.smartImport.isRunning = isRunning;
+    }
+
+    setSmartImportSuggestion(schema) {
+        this.state.smartImport.suggestedSchema = schema;
+    }
+
     getUI() {
         return this.state.ui;
     }
@@ -463,6 +479,10 @@ class ClassificationState {
         this.state.coldStart = {
             isRunning: false,
             sampleData: [],
+            suggestedSchema: null
+        };
+        this.state.smartImport = {
+            isRunning: false,
             suggestedSchema: null
         };
         this.state.ui = {

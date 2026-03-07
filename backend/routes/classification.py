@@ -358,3 +358,165 @@ def batch_analyze():
     except Exception as e:
         print(f"Error in batch_analyze: {traceback.format_exc()}")
         return create_response(error=f"批量分析时发生错误: {str(e)}")
+
+
+@classification_bp.route('/classify/smart_import', methods=['POST'])
+def smart_import():
+    """
+    Parse natural language description into classification schema.
+    
+    Request body:
+        - description: Natural language description of classification schema
+        - options: Additional options (optional)
+    
+    Returns:
+        - schema: Parsed classification schema
+    """
+    is_valid, error_response = validate_api_request()
+    if not is_valid:
+        return error_response
+    
+    client, error_response = get_zhipu_client()
+    if error_response:
+        return error_response
+    
+    req_data = request.get_json()
+    description = req_data.get('description', '')
+    options = req_data.get('options', {})
+    
+    if not description:
+        return create_response(error="分类体系描述不能为空")
+    
+    try:
+        system_prompt = """你是一个专业的分类体系设计专家。你的任务是将用户用自然语言描述的分类体系转换为标准的树状结构JSON格式。
+
+你需要：
+1. 理解用户描述的分类层级结构
+2. 识别每个分类的名称和描述
+3. 正确处理多层级嵌套关系
+4. 保持分类的完整性和一致性
+
+输出格式必须是有效的JSON，严格按照指定格式输出。"""
+
+        user_prompt = f"""请将以下自然语言描述的分类体系转换为标准的树状JSON结构。
+
+## 用户描述
+
+{description}
+
+## 输出要求
+
+请严格按照以下JSON格式输出分类体系：
+
+```json
+{{
+  "name": "分类体系名称（根据描述推断）",
+  "description": "分类体系整体描述（可选）",
+  "categories": [
+    {{
+      "name": "一级分类名称",
+      "description": "该分类的描述或判断标准",
+      "children": [
+        {{
+          "name": "二级分类名称",
+          "description": "该分类的描述或判断标准",
+          "children": [
+            {{
+              "name": "三级分类名称",
+              "description": "该分类的描述",
+              "children": []
+            }}
+          ]
+        }}
+      ]
+    }}
+  ],
+  "reasoning": "分类体系设计说明（可选）"
+}}
+```
+
+## 解析规则
+
+1. **层级识别**：
+   - "一级"、"二级"、"三级"等词汇表示层级
+   - 缩进、编号（1. 1.1 1.1.1）也表示层级
+   - "包含"、"下设"、"分为"等词汇表示父子关系
+
+2. **分类名称**：
+   - 提取每个分类的名称
+   - 如果用户提供了描述或判断标准，放入description字段
+
+3. **结构处理**：
+   - 支持任意层级深度
+   - 每个分类项必须包含name和children字段
+   - description字段可选，用于存放分类说明
+   - 最底层的children为空数组[]
+
+4. **特殊情况**：
+   - 如果描述不清晰，根据上下文合理推断
+   - 如果没有提供体系名称，根据内容生成合适的名称
+   - 保持分类的互斥性和完整性
+
+请确保输出的JSON格式正确，可以直接解析使用。"""
+
+        if options.get('hint'):
+            user_prompt += f"\n\n## 补充说明\n{options['hint']}"
+
+        response = client.chat.completions.create(
+            model=options.get('model', 'GLM-4.7-Flash'),
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.3
+        )
+        
+        content = response.choices[0].message.content
+        
+        json_match = content.split('```json')[-1].split('```')[0] if '```json' in content else content
+        if '{' in json_match:
+            json_match = '{' + json_match.split('{', 1)[1]
+        if '}' in json_match:
+            json_match = json_match.rsplit('}', 1)[0] + '}'
+        
+        parsed_schema = json.loads(json_match)
+        
+        schema = {
+            'id': f'schema_smart_import_{int(__import__("time").time())}',
+            'name': parsed_schema.get('name', '智能导入分类体系'),
+            'categories': parsed_schema.get('categories', []),
+            'model': 'GLM-4.7-Flash',
+            'temperature': 0.1,
+            'createdAt': __import__("datetime").datetime.now().isoformat(),
+            'updatedAt': __import__("datetime").datetime.now().isoformat()
+        }
+        
+        def normalize_categories(categories):
+            result = []
+            for cat in categories:
+                normalized = {
+                    'id': f'cat_{int(__import__("time").time() * 1000)}_{__import__("random").randint(100000, 999999)}',
+                    'name': cat.get('name', ''),
+                    'description': cat.get('description', ''),
+                    'children': normalize_categories(cat.get('children', [])),
+                    'expanded': True
+                }
+                result.append(normalized)
+            return result
+        
+        schema['categories'] = normalize_categories(schema['categories'])
+        
+        return create_response(data={
+            'schema': schema,
+            'rawContent': content
+        })
+    except json.JSONDecodeError as e:
+        print(f"JSON decode error: {e}")
+        return create_response(data={
+            'schema': None,
+            'rawContent': content if 'content' in dir() else '',
+            'parseError': str(e)
+        })
+    except Exception as e:
+        print(f"Error in smart_import: {traceback.format_exc()}")
+        return create_response(error=f"智能导入时发生错误: {str(e)}")

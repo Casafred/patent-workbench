@@ -418,6 +418,19 @@
                 </button>
             </div>
 
+            <!-- 智能导入体系选项 -->
+            <div class="info-box" style="background: linear-gradient(135deg, var(--bg-color-secondary) 0%, rgba(var(--accent-color-rgb, 102, 126, 234), 0.1) 100%); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="var(--accent-color, #667eea)"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                    <span style="font-weight: 500;">智能导入体系</span>
+                    <span style="background: var(--accent-color, #667eea); color: white; font-size: 0.7em; padding: 2px 6px; border-radius: 10px;">NEW</span>
+                </div>
+                <p style="margin: 0 0 10px; color: var(--text-color-secondary); font-size: 0.9em;">用自然语言描述您的分类体系，AI将智能解析并生成标准格式。支持多层级结构描述。</p>
+                <button id="classification_smart_import_btn" class="small-button" style="background: var(--accent-color, #667eea); color: white;">
+                    开始智能导入
+                </button>
+            </div>
+
             <!-- 分类体系配置区 -->
             <div id="classification_schema_config_area">
                 <div class="config-item">
@@ -714,5 +727,70 @@
             </div>
         </div>
     </div>
+    </div>
+</div>
+
+<!-- 智能导入体系模态框 -->
+<div id="smart_import_modal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-header">
+            <h3>智能导入分类体系</h3>
+            <span class="close" onclick="ClassificationModule.closeSmartImportModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="info-box" style="background: var(--bg-color-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                <div style="font-weight: 500; margin-bottom: 10px;">使用说明</div>
+                <p style="margin: 0; color: var(--text-color-secondary); font-size: 0.9em;">
+                    请用自然语言描述您的分类体系。您可以：
+                </p>
+                <ul style="margin: 10px 0 0; padding-left: 20px; color: var(--text-color-secondary); font-size: 0.85em;">
+                    <li>描述一级、二级、三级等各层级的分类</li>
+                    <li>为每个分类添加描述或判断标准</li>
+                    <li>使用编号、缩进等方式表示层级关系</li>
+                    <li>参考下方的示例模板</li>
+                </ul>
+            </div>
+
+            <div class="config-item">
+                <label for="smart_import_description">分类体系描述:</label>
+                <textarea id="smart_import_description" rows="12" placeholder="请输入您的分类体系描述...
+
+示例格式：
+这是一个专利技术领域的分类体系：
+
+一级分类：
+1. 机械工程 - 涉及机械设备、结构设计相关的专利
+2. 电气工程 - 涉及电路、电子设备、电力系统相关的专利
+3. 化学工程 - 涉及化工工艺、材料合成相关的专利
+
+二级分类（以机械工程为例）：
+- 机械制造 - 包括加工工艺、制造设备
+- 交通运输 - 包括车辆、船舶、航空器
+
+三级分类（以机械制造为例）：
+- 切削加工 - 车削、铣削、钻削等工艺
+- 成形加工 - 锻造、冲压、铸造等工艺"></textarea>
+            </div>
+
+            <div class="config-item">
+                <label>示例模板 (点击快速填充):</label>
+                <div id="smart_import_templates" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;">
+                </div>
+            </div>
+
+            <div id="smart_import_result_area" style="display: none; margin-top: 20px;">
+                <hr style="margin: 20px 0; border-color: var(--border-color);">
+                <div class="config-item">
+                    <label>解析结果预览:</label>
+                    <div id="smart_import_preview" style="background: var(--bg-color-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-top: 10px; max-height: 300px; overflow-y: auto;">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="smart_import_cancel_btn" class="small-button" onclick="ClassificationModule.closeSmartImportModal()">取消</button>
+            <button id="smart_import_parse_btn" class="small-button" style="background: var(--accent-color, #667eea); color: white;">开始解析</button>
+            <button id="smart_import_apply_btn" class="small-button" style="background: var(--success-color); color: white; display: none;">应用此体系</button>
+        </div>
     </div>
 </div>
