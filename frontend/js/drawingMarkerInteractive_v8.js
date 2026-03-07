@@ -21,6 +21,7 @@ class InteractiveDrawingMarkerV8 {
         this.imageUrl = imageUrl;
         this.detectedNumbers = detectedNumbers || [];
         this.referenceMap = referenceMap || {};
+        this.markerSentences = options.markerSentences || {}; // 原始段落数据
         
         // 标注数据
         this.annotations = [];
@@ -92,9 +93,9 @@ class InteractiveDrawingMarkerV8 {
             const offsetX = Math.cos(angle * Math.PI / 180) * offsetDistance;
             const offsetY = Math.sin(angle * Math.PI / 180) * offsetDistance;
             
-            // 🔥 优化：区分匹配和未匹配的标记
-            const isMatched = detected.is_matched !== false; // 默认为true（兼容旧数据）
-            const displayName = detected.name || this.referenceMap[detected.number] || '(说明书未匹配)';
+            const isMatched = detected.is_matched !== false;
+            const displayName = detected.name || this.referenceMap[detected.number] || '';
+            const originalSentence = detected.original_sentence || '';
             
             return {
                 id: `annotation_${index}`,
@@ -106,8 +107,9 @@ class InteractiveDrawingMarkerV8 {
                 name: displayName,
                 confidence: detected.confidence || 0,
                 isSelected: false,
-                isManual: false, // 标记是否为手动添加
-                isMatched: isMatched // 🔥 新增：标记是否匹配
+                isManual: false,
+                isMatched: isMatched,
+                originalSentence: originalSentence
             };
         });
     }
@@ -131,19 +133,17 @@ class InteractiveDrawingMarkerV8 {
         const ctx = this.ctx;
         const fontSize = this.options.fontSize || 18;
         
-        // 🔥 优化：根据匹配状态选择颜色
         let color;
         if (isHighlighted) {
-            color = this.options.highlightColor; // 高亮颜色（选中时）
+            color = this.options.highlightColor;
         } else if (!annotation.isMatched) {
-            color = '#FFA500'; // 橙色表示未匹配（OCR识别但说明书未匹配）
+            color = '#FFA500';
         } else {
-            color = '#FF5722'; // 红色表示已匹配
+            color = '#FF5722';
         }
         
         const lineWidth = isHighlighted ? 4 : 2;
         
-        // 绘制连接线
         ctx.beginPath();
         ctx.moveTo(annotation.markerX, annotation.markerY);
         ctx.lineTo(annotation.labelX, annotation.labelY);
@@ -151,18 +151,21 @@ class InteractiveDrawingMarkerV8 {
         ctx.lineWidth = lineWidth;
         ctx.stroke();
         
-        // 绘制文本
-        const text = `${annotation.number}: ${annotation.name}`;
+        let text;
+        if (!annotation.isMatched) {
+            text = `${annotation.number}`;
+        } else {
+            text = `${annotation.number}: ${annotation.name}`;
+        }
+        
         ctx.font = `bold ${fontSize}px Arial, sans-serif`;
         ctx.textBaseline = 'middle';
         ctx.textAlign = 'left';
         
-        // 白色描边
         ctx.strokeStyle = '#FFFFFF';
         ctx.lineWidth = 4;
         ctx.strokeText(text, annotation.labelX, annotation.labelY);
         
-        // 文字颜色
         ctx.fillStyle = color;
         ctx.fillText(text, annotation.labelX, annotation.labelY);
     }
@@ -259,19 +262,17 @@ class InteractiveDrawingMarkerV8 {
             this.annotations.forEach(annotation => {
                 const isHighlighted = annotation.id === selectedAnnotationId;
                 
-                // 🔥 优化：根据匹配状态选择颜色
                 let color;
                 if (isHighlighted) {
                     color = this.options.highlightColor;
                 } else if (!annotation.isMatched) {
-                    color = '#FFA500'; // 橙色表示未匹配
+                    color = '#FFA500';
                 } else {
-                    color = '#FF5722'; // 红色表示已匹配
+                    color = '#FF5722';
                 }
                 
                 const lineWidth = isHighlighted ? 4 : 3;
                 
-                // 绘制连接线
                 modalCtx.beginPath();
                 modalCtx.moveTo(annotation.markerX, annotation.markerY);
                 modalCtx.lineTo(annotation.labelX, annotation.labelY);
@@ -279,18 +280,21 @@ class InteractiveDrawingMarkerV8 {
                 modalCtx.lineWidth = lineWidth;
                 modalCtx.stroke();
                 
-                // 绘制文本
-                const text = `${annotation.number}: ${annotation.name}`;
+                let text;
+                if (!annotation.isMatched) {
+                    text = `${annotation.number}`;
+                } else {
+                    text = `${annotation.number}: ${annotation.name}`;
+                }
+                
                 modalCtx.font = `bold ${currentFontSize}px Arial, sans-serif`;
                 modalCtx.textBaseline = 'middle';
                 modalCtx.textAlign = 'left';
                 
-                // 白色描边
                 modalCtx.strokeStyle = '#FFFFFF';
                 modalCtx.lineWidth = 5;
                 modalCtx.strokeText(text, annotation.labelX, annotation.labelY);
                 
-                // 文字颜色
                 modalCtx.fillStyle = color;
                 modalCtx.fillText(text, annotation.labelX, annotation.labelY);
             });
@@ -423,7 +427,6 @@ class InteractiveDrawingMarkerV8 {
         // 标注列表
         const annotationSection = this.createSection('标注列表');
         
-        // 🔥 优化：添加图例说明
         const legend = document.createElement('div');
         legend.style.cssText = `
             font-size: 12px;
@@ -435,7 +438,7 @@ class InteractiveDrawingMarkerV8 {
         `;
         legend.innerHTML = `
             <div style="margin-bottom: 4px;"><span style="color: #FF5722;">●</span> 已匹配</div>
-            <div style="margin-bottom: 4px;"><span style="color: #FFA500;">●</span> 未匹配（仅OCR识别）</div>
+            <div style="margin-bottom: 4px;"><span style="color: #FFA500;">●</span> 未匹配（点击查看原文）</div>
             <div><span style="color: ${this.options.highlightColor};">●</span> 当前选中</div>
         `;
         annotationSection.appendChild(legend);
@@ -449,11 +452,77 @@ class InteractiveDrawingMarkerV8 {
             gap: 5px;
         `;
         
+        const showOriginalSentencePopup = (annotation) => {
+            const popup = document.createElement('div');
+            popup.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+                z-index: 10002;
+                max-width: 600px;
+                width: 90%;
+                max-height: 80vh;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            `;
+            
+            const header = document.createElement('div');
+            header.style.cssText = `
+                background: linear-gradient(135deg, #FFA500, #FF8C00);
+                color: white;
+                padding: 15px 20px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            `;
+            header.innerHTML = `
+                <div>
+                    <span style="font-size: 18px; font-weight: bold;">标记 ${annotation.number}</span>
+                    <span style="margin-left: 10px; font-size: 14px; opacity: 0.9;">说明书原文段落</span>
+                </div>
+                <button style="background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 0 5px;">&times;</button>
+            `;
+            
+            const content = document.createElement('div');
+            content.style.cssText = `
+                padding: 20px;
+                overflow-y: auto;
+                flex: 1;
+            `;
+            
+            const sentenceContent = annotation.originalSentence || '（未找到该标记在说明书中的原始段落）';
+            
+            content.innerHTML = `
+                <div style="margin-bottom: 15px; padding: 10px; background: #fff3e0; border-radius: 8px; border-left: 4px solid #FFA500;">
+                    <div style="font-size: 12px; color: #666; margin-bottom: 5px;">💡 提示</div>
+                    <div style="font-size: 14px; color: #333;">该标记在OCR识别中检测到，但AI未能匹配到部件名称。以下是说明书中包含该标记的原始段落，供您参考。</div>
+                </div>
+                <div style="padding: 15px; background: #f5f5f5; border-radius: 8px; line-height: 1.8; font-size: 15px; color: #333;">
+                    ${sentenceContent}
+                </div>
+            `;
+            
+            popup.appendChild(header);
+            popup.appendChild(content);
+            document.body.appendChild(popup);
+            
+            const closeBtn = header.querySelector('button');
+            const closePopup = () => popup.remove();
+            closeBtn.addEventListener('click', closePopup);
+            popup.addEventListener('click', (e) => {
+                if (e.target === popup) closePopup();
+            });
+        };
+        
         this.annotations.forEach(annotation => {
             const item = document.createElement('div');
             
-            // 🔥 优化：根据匹配状态设置不同的背景色
-            const bgColor = annotation.isMatched ? '#f0f0f0' : '#fff3e0'; // 未匹配用浅橙色
+            const bgColor = annotation.isMatched ? '#f0f0f0' : '#fff3e0';
             
             item.style.cssText = `
                 padding: 8px;
@@ -462,17 +531,25 @@ class InteractiveDrawingMarkerV8 {
                 cursor: pointer;
                 transition: background-color 0.2s;
                 border-left: 3px solid ${annotation.isMatched ? '#FF5722' : '#FFA500'};
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
             `;
             
-            // 🔥 优化：显示匹配状态
             const statusIcon = annotation.isMatched ? '✓' : '⚠';
-            item.textContent = `${statusIcon} ${annotation.number}: ${annotation.name}`;
+            const displayText = annotation.isMatched 
+                ? `${annotation.number}: ${annotation.name}`
+                : `${annotation.number} (点击查看原文)`;
+            
+            item.innerHTML = `
+                <span>${statusIcon} ${displayText}</span>
+                ${!annotation.isMatched ? '<span style="font-size: 12px; color: #FFA500;">📄</span>' : ''}
+            `;
             
             item.addEventListener('click', () => {
                 selectedAnnotationId = annotation.id;
                 renderCanvas();
                 
-                // 更新列表样式
                 annotationList.querySelectorAll('div').forEach(el => {
                     const ann = this.annotations.find(a => a.id === el.dataset.annotationId);
                     if (ann) {
@@ -480,6 +557,10 @@ class InteractiveDrawingMarkerV8 {
                     }
                 });
                 item.style.backgroundColor = this.options.highlightColor;
+                
+                if (!annotation.isMatched) {
+                    showOriginalSentencePopup(annotation);
+                }
             });
             
             item.addEventListener('mouseenter', () => {
@@ -494,7 +575,7 @@ class InteractiveDrawingMarkerV8 {
                 }
             });
             
-            item.dataset.annotationId = annotation.id; // 存储ID用于更新
+            item.dataset.annotationId = annotation.id;
             annotationList.appendChild(item);
         });
         

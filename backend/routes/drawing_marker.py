@@ -1233,6 +1233,15 @@ def process_drawing_marker_staged():
             print(f"[STAGED] spec_markers from reference_map: {spec_markers[:20]}..." if len(spec_markers) > 20 else f"[STAGED] spec_markers: {spec_markers}")
             print(f"[STAGED] processed_results count: {len(processed_results)}")
             
+            # 获取原始句子映射（用于未匹配标记）
+            marker_sentences_map = {}
+            if 'extraction_result' in locals() and extraction_result.get('marker_sentences'):
+                for ms in extraction_result['marker_sentences']:
+                    marker = ms['marker']
+                    sentence = ms['sentence']
+                    if marker not in marker_sentences_map:
+                        marker_sentences_map[marker] = sentence
+            
             total_numbers = 0
             for drawing_result in processed_results:
                 if 'error' in drawing_result:
@@ -1252,7 +1261,13 @@ def process_drawing_marker_staged():
                 unmatched_ocr = []
                 for ocr_item in ocr_results:
                     if ocr_item['number'] not in reference_map:
-                        unmatched_ocr.append({**ocr_item, 'name': '(说明书未匹配)', 'is_matched': False})
+                        original_sentence = marker_sentences_map.get(ocr_item['number'], '')
+                        unmatched_ocr.append({
+                            **ocr_item, 
+                            'name': '', 
+                            'is_matched': False,
+                            'original_sentence': original_sentence
+                        })
                 
                 for item in detected_numbers:
                     item['is_matched'] = True
