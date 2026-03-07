@@ -1372,6 +1372,48 @@
             opacity: 0.3;
         }
 
+        .demo-gif-placeholder {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .demo-gif-placeholder svg {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 15px;
+            opacity: 0.3;
+        }
+
+        .demo-gif-placeholder .gif-badge {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: linear-gradient(135deg, #22C55E, #16A34A);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .demo-item-inner img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: relative;
+            z-index: 1;
+        }
+
+        .demo-item-inner img:hover {
+            cursor: zoom-in;
+        }
+
         .demo-item-overlay {
             position: absolute;
             bottom: 0;
@@ -2321,6 +2363,38 @@
             background: rgba(255, 255, 255, 0.1);
             color: var(--text-color-muted);
         }
+
+        /* 管理器标签页 */
+        .manager-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .manager-tab {
+            flex: 1;
+            padding: 10px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: var(--text-color-muted);
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .manager-tab:hover {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: var(--primary-color);
+        }
+
+        .manager-tab.active {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -2936,15 +3010,16 @@
                 <p class="section-subtitle">直观展示核心功能界面，让您快速了解平台能力</p>
             </div>
             <div class="demo-showcase">
-                <div class="demo-item animate-on-scroll">
+                <div class="demo-item animate-on-scroll" data-gif-id="demo-01-chat">
                     <div class="demo-item-inner">
-                        <div class="demo-item-content">
+                        <div class="demo-gif-placeholder">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                                 <circle cx="8.5" cy="8.5" r="1.5"></circle>
                                 <polyline points="21 15 16 10 5 21"></polyline>
                             </svg>
-                            <div>演示截图 1</div>
+                            <div>GIF演示 1</div>
+                            <span class="gif-badge">GIF</span>
                         </div>
                     </div>
                     <div class="demo-item-overlay">
@@ -2952,15 +3027,16 @@
                         <div class="demo-item-desc">AI智能问答，支持联网搜索</div>
                     </div>
                 </div>
-                <div class="demo-item animate-on-scroll">
+                <div class="demo-item animate-on-scroll" data-gif-id="demo-02-batch">
                     <div class="demo-item-inner">
-                        <div class="demo-item-content">
+                        <div class="demo-gif-placeholder">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                                 <circle cx="8.5" cy="8.5" r="1.5"></circle>
                                 <polyline points="21 15 16 10 5 21"></polyline>
                             </svg>
-                            <div>演示截图 2</div>
+                            <div>GIF演示 2</div>
+                            <span class="gif-badge">GIF</span>
                         </div>
                     </div>
                     <div class="demo-item-overlay">
@@ -2968,15 +3044,16 @@
                         <div class="demo-item-desc">一键获取专利信息与AI分析</div>
                     </div>
                 </div>
-                <div class="demo-item animate-on-scroll">
+                <div class="demo-item animate-on-scroll" data-gif-id="demo-03-claims">
                     <div class="demo-item-inner">
-                        <div class="demo-item-content">
+                        <div class="demo-gif-placeholder">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                                 <circle cx="8.5" cy="8.5" r="1.5"></circle>
                                 <polyline points="21 15 16 10 5 21"></polyline>
                             </svg>
-                            <div>演示截图 3</div>
+                            <div>GIF演示 3</div>
+                            <span class="gif-badge">GIF</span>
                         </div>
                     </div>
                     <div class="demo-item-overlay">
@@ -2984,15 +3061,16 @@
                         <div class="demo-item-desc">可视化展示引用关系</div>
                     </div>
                 </div>
-                <div class="demo-item animate-on-scroll">
+                <div class="demo-item animate-on-scroll" data-gif-id="demo-04-drawing">
                     <div class="demo-item-inner">
-                        <div class="demo-item-content">
+                        <div class="demo-gif-placeholder">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                                 <circle cx="8.5" cy="8.5" r="1.5"></circle>
                                 <polyline points="21 15 16 10 5 21"></polyline>
                             </svg>
-                            <div>演示截图 4</div>
+                            <div>GIF演示 4</div>
+                            <span class="gif-badge">GIF</span>
                         </div>
                     </div>
                     <div class="demo-item-overlay">
@@ -3456,6 +3534,14 @@
             'feature-08-pdf-ocr': ['8_doc layout OCR.png', '8_pdf_ocr_2.png', '8_pdf_ocr_3.png']
         };
 
+        // GIF配置 - 产品演示区域
+        const gifConfig = {
+            'demo-01-chat': 'demo_chat.gif',
+            'demo-02-batch': 'demo_batch.gif',
+            'demo-03-claims': 'demo_claims.gif',
+            'demo-04-drawing': 'demo_drawing.gif'
+        };
+
         // 占位符名称映射
         const placeholderNames = {
             'feature-01-chat': '即时对话',
@@ -3468,12 +3554,26 @@
             'feature-08-pdf-ocr': 'PDF-OCR阅读器'
         };
 
+        // GIF名称映射
+        const gifNames = {
+            'demo-01-chat': '即时对话界面',
+            'demo-02-batch': '批量专利解读',
+            'demo-03-claims': '权利要求分析',
+            'demo-04-drawing': '附图标记功能'
+        };
+
         // 已使用的图片记录
         let usedImages = new Set();
+        // 已使用的GIF记录
+        let usedGifs = new Set();
         // 当前选中的占位符
         let selectedPlaceholder = null;
         // 当前选中的图片索引
         let selectedStackIndex = null;
+        // 当前选中的GIF
+        let selectedGif = null;
+        // 当前管理模式: 'images' 或 'gifs'
+        let currentManagerMode = 'images';
 
         // 开发模式检测
         const isLandingDevMode = () => {
@@ -3513,8 +3613,9 @@
                 console.log('💡 提示: 在控制台执行 disableLandingDevMode() 可退出开发模式');
             }
 
-            // 扫描已有图片
+            // 扫描已有图片和GIF
             scanExistingImages();
+            scanExistingGifs();
         }
 
         // 扫描已有图片
@@ -3524,6 +3625,17 @@
                 if (images.length > 0) {
                     const stackId = container.getAttribute('data-stack-id');
                     usedImages.add(stackId);
+                }
+            });
+        }
+
+        // 扫描已有GIF
+        function scanExistingGifs() {
+            document.querySelectorAll('.demo-item[data-gif-id]').forEach(container => {
+                const img = container.querySelector('.demo-item-inner img');
+                if (img) {
+                    const gifId = container.getAttribute('data-gif-id');
+                    usedGifs.add(gifId);
                 }
             });
         }
@@ -3704,6 +3816,159 @@
             console.log(`已手动插入图片: ${path} -> ${selectedPlaceholder}[${selectedStackIndex}]`);
         }
 
+        // ============================================
+        // GIF管理功能
+        // ============================================
+
+        // 切换管理模式
+        function switchManagerMode(mode) {
+            currentManagerMode = mode;
+            document.querySelectorAll('.manager-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.mode === mode);
+            });
+            document.getElementById('imagesModeContent').style.display = mode === 'images' ? 'block' : 'none';
+            document.getElementById('gifsModeContent').style.display = mode === 'gifs' ? 'block' : 'none';
+            
+            if (mode === 'gifs') {
+                refreshGifList();
+                refreshGifFileList();
+            } else {
+                refreshPlaceholderList();
+                refreshImageList();
+            }
+        }
+
+        // 刷新GIF位置列表
+        function refreshGifList() {
+            const list = document.getElementById('gifList');
+            list.innerHTML = '';
+
+            Object.keys(gifConfig).forEach(gifId => {
+                const container = document.querySelector(`[data-gif-id="${gifId}"]`);
+                const hasGif = container ? !!container.querySelector('img') : false;
+                const isSelected = selectedGif === gifId;
+                
+                const item = document.createElement('div');
+                item.className = 'placeholder-item';
+                if (isSelected) item.style.borderColor = 'var(--primary-color)';
+                item.innerHTML = `
+                    <span class="placeholder-id">${gifId}</span>
+                    <span>
+                        <span style="color: var(--text-color-muted); margin-right: 10px;">${gifNames[gifId] || ''}</span>
+                        <span class="placeholder-status ${hasGif ? 'filled' : 'empty'}">${hasGif ? '✓ 已填充' : '○ 空'}</span>
+                    </span>
+                `;
+                item.onclick = () => selectGif(gifId);
+                list.appendChild(item);
+            });
+        }
+
+        // 选择GIF位置
+        function selectGif(gifId) {
+            selectedGif = gifId;
+            refreshGifList();
+            refreshGifFileList();
+            console.log(`已选择GIF位置: ${gifId}`);
+        }
+
+        // 刷新GIF文件列表
+        function refreshGifFileList() {
+            const list = document.getElementById('gifFileList');
+            list.innerHTML = '';
+
+            if (!selectedGif) {
+                list.innerHTML = '<div style="color: var(--text-color-muted); text-align: center; padding: 20px;">请先在上方选择一个演示位置</div>';
+                return;
+            }
+
+            Object.entries(gifConfig).forEach(([id, filename]) => {
+                const container = document.querySelector(`[data-gif-id="${id}"]`);
+                const hasGif = container ? !!container.querySelector('img') : false;
+                const isSelected = selectedGif === id;
+                
+                const item = document.createElement('div');
+                item.className = 'image-item';
+                if (isSelected) item.style.borderColor = 'var(--primary-color)';
+                item.innerHTML = `
+                    <div class="image-item-preview">
+                        <span>GIF</span>
+                    </div>
+                    <div class="image-item-info">
+                        <div class="image-item-name">${filename}</div>
+                        <div class="image-item-status ${hasGif ? 'used' : ''}">
+                            ${hasGif ? '✓ 已使用' : '○ 未使用'}
+                        </div>
+                    </div>
+                `;
+                item.onclick = () => insertGif(id, filename);
+                list.appendChild(item);
+            });
+        }
+
+        // 插入GIF
+        function insertGif(gifId, filename) {
+            const container = document.querySelector(`[data-gif-id="${gifId}"] .demo-item-inner`);
+            if (!container) {
+                alert(`未找到容器: ${gifId}`);
+                return;
+            }
+
+            const gifAlt = gifNames[gifId] || filename;
+            container.innerHTML = `
+                <img src="/frontend/gifs/${filename}" alt="${gifAlt}" 
+                     onerror="this.parentElement.innerHTML='<div class=\\'demo-gif-placeholder\\'><svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'1.5\\'><rect x=\\'3\\' y=\\'3\\' width=\\'18\\' height=\\'18\\' rx=\\'2\\' ry=\\'2\\'></rect><circle cx=\\'8.5\\' cy=\\'8.5\\' r=\\'1.5\\'></circle><polyline points=\\'21 15 16 10 5 21\\'></polyline></svg><div>GIF加载失败</div><span class=\\'gif-badge\\'>GIF</span></div>'"
+                     style="cursor: zoom-in;">
+            `;
+            
+            // 添加点击放大事件
+            container.querySelector('img').addEventListener('click', function(e) {
+                e.stopPropagation();
+                openLightbox(this.src, gifAlt);
+            });
+            
+            usedGifs.add(gifId);
+            selectedGif = gifId;
+            refreshGifList();
+            refreshGifFileList();
+            console.log(`已插入GIF: ${filename} -> ${gifId}`);
+        }
+
+        // 手动应用GIF
+        function applyManualGif() {
+            const path = document.getElementById('manualGifPath').value.trim();
+            if (!path) {
+                alert('请输入GIF路径');
+                return;
+            }
+
+            if (!selectedGif) {
+                alert('请先选择一个演示位置');
+                return;
+            }
+
+            const container = document.querySelector(`[data-gif-id="${selectedGif}"] .demo-item-inner`);
+            if (!container) return;
+
+            const gifAlt = gifNames[selectedGif] || path;
+            container.innerHTML = `
+                <img src="${path}" alt="${gifAlt}" 
+                     onerror="this.parentElement.innerHTML='<div class=\\'demo-gif-placeholder\\'><svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'1.5\\'><rect x=\\'3\\' y=\\'3\\' width=\\'18\\' height=\\'18\\' rx=\\'2\\' ry=\\'2\\'></rect><circle cx=\\'8.5\\' cy=\\'8.5\\' r=\\'1.5\\'></circle><polyline points=\\'21 15 16 10 5 21\\'></polyline></svg><div>GIF加载失败</div><span class=\\'gif-badge\\'>GIF</span></div>'"
+                     style="cursor: zoom-in;">
+            `;
+            
+            // 添加点击放大事件
+            container.querySelector('img').addEventListener('click', function(e) {
+                e.stopPropagation();
+                openLightbox(this.src, gifAlt);
+            });
+            
+            usedGifs.add(selectedGif);
+            document.getElementById('manualGifPath').value = '';
+            refreshGifList();
+            refreshGifFileList();
+            console.log(`已手动插入GIF: ${path} -> ${selectedGif}`);
+        }
+
         // 点击遮罩关闭
         document.addEventListener('click', (e) => {
             if (e.target.id === 'imageManagerOverlay') {
@@ -3735,28 +4000,56 @@
     <div class="image-manager-overlay" id="imageManagerOverlay"></div>
     <div class="image-manager-panel" id="imageManagerPanel">
         <div class="image-manager-header">
-            <h3>🖼️ Landing页面图片管理器</h3>
+            <h3>🖼️ Landing页面媒体管理器</h3>
             <button class="image-manager-close" onclick="closeImageManager()">&times;</button>
         </div>
         
-        <div class="image-manager-section">
-            <h4>📋 第一步：选择功能模块</h4>
-            <div class="placeholder-list" id="placeholderList"></div>
+        <!-- 标签页切换 -->
+        <div class="manager-tabs">
+            <button class="manager-tab active" data-mode="images" onclick="switchManagerMode('images')">📸 功能截图</button>
+            <button class="manager-tab" data-mode="gifs" onclick="switchManagerMode('gifs')">🎬 产品演示GIF</button>
         </div>
         
-        <div class="image-manager-section">
-            <h4>📁 第二步：点击图片填充到对应位置（每模块支持3张堆叠图）</h4>
-            <div class="image-list" id="imageList"></div>
+        <!-- 图片管理模式 -->
+        <div id="imagesModeContent">
+            <div class="image-manager-section">
+                <h4>📋 第一步：选择功能模块</h4>
+                <div class="placeholder-list" id="placeholderList"></div>
+            </div>
+            
+            <div class="image-manager-section">
+                <h4>📁 第二步：点击图片填充到对应位置（每模块支持3张堆叠图）</h4>
+                <div class="image-list" id="imageList"></div>
+            </div>
+            
+            <div class="image-manager-section">
+                <h4>✏️ 手动指定图片路径</h4>
+                <input type="text" class="image-path-input" id="manualImagePath" placeholder="例如: /frontend/images/your_image.png">
+                <button class="apply-image-btn" onclick="applyManualImage()">应用到选中位置</button>
+            </div>
         </div>
         
-        <div class="image-manager-section">
-            <h4>✏️ 手动指定图片路径</h4>
-            <input type="text" class="image-path-input" id="manualImagePath" placeholder="例如: /frontend/images/your_image.png">
-            <button class="apply-image-btn" onclick="applyManualImage()">应用到选中位置</button>
+        <!-- GIF管理模式 -->
+        <div id="gifsModeContent" style="display: none;">
+            <div class="image-manager-section">
+                <h4>🎬 选择演示位置</h4>
+                <div class="placeholder-list" id="gifList"></div>
+            </div>
+            
+            <div class="image-manager-section">
+                <h4>📁 点击GIF文件填充到对应位置</h4>
+                <div class="image-list" id="gifFileList"></div>
+            </div>
+            
+            <div class="image-manager-section">
+                <h4>✏️ 手动指定GIF路径</h4>
+                <input type="text" class="image-path-input" id="manualGifPath" placeholder="例如: /frontend/gifs/demo_chat.gif">
+                <button class="apply-image-btn" onclick="applyManualGif()">应用到选中位置</button>
+            </div>
         </div>
     </div>
 
     <!-- 图片管理按钮 (仅开发模式显示) -->
-    <button class="open-image-manager-btn" id="imageManagerBtn" onclick="openImageManager()">📷 图片管理</button>
+    <button class="open-image-manager-btn" id="imageManagerBtn" onclick="openImageManager()">📷 媒体管理</button>
 </body>
 </html>
