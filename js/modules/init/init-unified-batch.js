@@ -870,7 +870,12 @@ function switchUnifiedMode(mode) {
             ProviderManager.updateModelSelectors();
         }
         
-        if (typeof ClassificationModule !== 'undefined') {
+        waitForClassificationModule(5000).then(function(loaded) {
+            if (!loaded) {
+                console.error('[Classification] 无法加载ClassificationModule');
+                return;
+            }
+            
             if (!ClassificationModule._initialized) {
                 ClassificationModule.init();
                 ClassificationModule._initialized = true;
@@ -895,7 +900,7 @@ function switchUnifiedMode(mode) {
                 });
                 inputTab.classList.add('active');
             }
-        }
+        });
     }
 }
 
@@ -903,7 +908,7 @@ function initClassificationModule() {
     console.log('[Classification] 初始化分类标引模块...');
     
     if (typeof ClassificationModule === 'undefined') {
-        console.error('[Classification] ClassificationModule未加载');
+        console.warn('[Classification] ClassificationModule未加载，等待中...');
         return false;
     }
     
@@ -912,6 +917,28 @@ function initClassificationModule() {
     
     console.log('[Classification] 分类标引模块初始化完成');
     return true;
+}
+
+function waitForClassificationModule(timeout) {
+    timeout = timeout || 5000;
+    return new Promise(function(resolve) {
+        if (typeof ClassificationModule !== 'undefined') {
+            resolve(true);
+            return;
+        }
+        
+        var startTime = Date.now();
+        var checkInterval = setInterval(function() {
+            if (typeof ClassificationModule !== 'undefined') {
+                clearInterval(checkInterval);
+                resolve(true);
+            } else if (Date.now() - startTime > timeout) {
+                clearInterval(checkInterval);
+                console.error('[Classification] 等待ClassificationModule超时');
+                resolve(false);
+            }
+        }, 100);
+    });
 }
 
 function switchClassificationSubTab(tabName, element) {
