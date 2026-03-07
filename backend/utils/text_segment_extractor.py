@@ -152,18 +152,40 @@ class TextSegmentExtractor:
         sentences = self._split_into_sentences(specification)
         logger.info(f"[文本提取] 分句数量: {len(sentences)}")
         
+        # 输出分句详情（前10句和后10句）
+        logger.info("=" * 80)
+        logger.info("[文本提取] 分句详情（前10句）:")
+        for i, s in enumerate(sentences[:10]):
+            logger.info(f"  句子{i+1}: {s[:100]}{'...' if len(s) > 100 else ''}")
+        if len(sentences) > 20:
+            logger.info(f"  ... 中间省略 {len(sentences) - 20} 句 ...")
+            logger.info("[文本提取] 分句详情（后10句）:")
+            for i, s in enumerate(sentences[-10:]):
+                logger.info(f"  句子{len(sentences)-9+i}: {s[:100]}{'...' if len(s) > 100 else ''}")
+        elif len(sentences) > 10:
+            logger.info("[文本提取] 分句详情（剩余）:")
+            for i, s in enumerate(sentences[10:]):
+                logger.info(f"  句子{11+i}: {s[:100]}{'...' if len(s) > 100 else ''}")
+        logger.info("=" * 80)
+        
         # Build marker pattern
         marker_pattern = self._build_marker_pattern(valid_markers)
+        logger.info(f"[文本提取] 匹配正则模式: {marker_pattern.pattern}")
         
         # Find sentences containing markers
         marker_sentence_map: Dict[str, List[str]] = {}  # marker -> list of sentences
         
-        for sentence in sentences:
+        # 记录匹配过程
+        match_count = 0
+        no_match_sentences = []
+        
+        for idx, sentence in enumerate(sentences):
             if not sentence.strip():
                 continue
             
             matches = marker_pattern.findall(sentence)
             if matches:
+                match_count += 1
                 for match in matches:
                     marker = match
                     if marker not in marker_sentence_map:
@@ -172,7 +194,18 @@ class TextSegmentExtractor:
                     # Avoid duplicate sentences for the same marker
                     if sentence not in marker_sentence_map[marker]:
                         marker_sentence_map[marker].append(sentence)
-                        logger.info(f"[文本提取] 标记 {marker} 匹配句子: {sentence[:60]}...")
+                        logger.info(f"[文本提取] 标记 {marker} 匹配句子: {sentence[:80]}...")
+            else:
+                # 记录没有匹配到任何标记的句子（仅记录前20句）
+                if len(no_match_sentences) < 20:
+                    no_match_sentences.append((idx, sentence[:80]))
+        
+        # 输出未匹配句子统计
+        if no_match_sentences:
+            logger.info(f"[文本提取] 未匹配任何标记的句子数: {len(sentences) - match_count}")
+            logger.info("[文本提取] 未匹配句子示例（前20句）:")
+            for idx, s in no_match_sentences:
+                logger.info(f"  句子{idx+1}: {s}...")
         
         # Build result
         found_markers = set(marker_sentence_map.keys())
@@ -209,10 +242,21 @@ class TextSegmentExtractor:
         result.structured_text = '\n'.join(structured_lines)
         result.extracted_length = total_length
         
+        logger.info("=" * 80)
         logger.info(f"[文本提取] 提取了 {len(result.marker_sentences)} 个句子")
         logger.info(f"[文本提取] 找到的标记: {found_markers}")
         logger.info(f"[文本提取] 未找到的标记: {result.not_found_markers}")
         logger.info(f"[文本提取] 跳过的纯字母标记: {skipped_letter_markers}")
+        logger.info(f"[文本提取] 原文长度: {result.original_length} 字符")
+        logger.info(f"[文本提取] 提取长度: {result.extracted_length} 字符")
+        logger.info(f"[文本提取] 提取比例: {result.extracted_length / result.original_length * 100:.1f}%" if result.original_length > 0 else "[文本提取] 提取比例: 0%")
+        
+        # 输出提取结果详情
+        logger.info("-" * 80)
+        logger.info("[文本提取] 提取结果详情:")
+        for ms in result.marker_sentences:
+            logger.info(f"  [标记{ms.marker}] {ms.sentence}")
+        logger.info("=" * 80)
         
         return result
     
