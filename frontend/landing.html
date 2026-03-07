@@ -3311,7 +3311,11 @@
         }
 
         // 点击遮罩关闭
-        document.getElementById('imageManagerOverlay').addEventListener('click', closeImageManager);
+        document.addEventListener('click', (e) => {
+            if (e.target.id === 'imageManagerOverlay') {
+                closeImageManager();
+            }
+        });
 
         // 键盘快捷键
         document.addEventListener('keydown', (e) => {
@@ -3323,8 +3327,14 @@
             }
         });
 
-        // 页面加载时初始化
-        initImageManager();
+        // 页面加载时初始化 (等待DOM完全加载)
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                initImageManager();
+            });
+        } else {
+            initImageManager();
+        }
     </script>
 
     <!-- 图片管理器面板 -->
