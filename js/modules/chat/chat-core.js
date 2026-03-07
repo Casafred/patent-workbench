@@ -196,9 +196,27 @@ function initChat() {
     
     // Models config loaded listener
     window.addEventListener('modelsConfigLoaded', () => {
-        setTimeout(updateThinkingButtonVisibility, 150);
-        setTimeout(updateFileUploadButtonState, 150);
+        console.log('📡 即时对话收到模型配置加载完成事件');
+        setTimeout(() => {
+            updateThinkingButtonVisibility();
+            updateFileUploadButtonState();
+            if (typeof updateAllModelSelectors === 'function') {
+                updateAllModelSelectors();
+            }
+        }, 150);
     });
+    
+    // Check if models are already loaded (in case event fired before listener was registered)
+    if (window.AVAILABLE_MODELS && window.AVAILABLE_MODELS.length > 0) {
+        console.log('📡 即时对话检测到模型配置已加载');
+        setTimeout(() => {
+            updateThinkingButtonVisibility();
+            updateFileUploadButtonState();
+            if (typeof updateAllModelSelectors === 'function') {
+                updateAllModelSelectors();
+            }
+        }, 150);
+    }
     
     // Export functionality
     document.addEventListener('click', (e) => {

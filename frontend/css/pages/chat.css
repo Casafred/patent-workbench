@@ -213,19 +213,21 @@
     display: flex;
     gap: 10px;
     align-items: flex-start;
-    max-width: 95%;
+    max-width: 90%;
     width: auto;
     box-sizing: border-box;
 }
 
 .assistant-message .message-main-content {
     align-self: flex-start;
-    max-width: 95%;
+    max-width: 90%;
 }
 
 .assistant-message .message-body {
     flex: 0 1 auto;
     max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .user-message {
@@ -280,6 +282,7 @@
     max-width: 100%;
     box-sizing: border-box;
     white-space: normal;
+    overflow-x: auto;
 }
 
 /* Markdown样式优化 */
@@ -318,6 +321,8 @@
 	border-radius: 8px;
 	overflow-x: auto;
 	margin: 6px 0;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .message-content pre code {
@@ -340,6 +345,41 @@
 
 .message-content a:hover {
     color: var(--primary-color-dark);
+}
+
+/* Markdown表格样式 - 防止溢出 */
+.message-content table {
+    border-collapse: collapse;
+    width: max-content;
+    min-width: 100%;
+    max-width: 100%;
+    margin: 8px 0;
+    border: 1px solid var(--border-color);
+    display: block;
+    overflow-x: auto;
+    font-size: 0.9em;
+}
+
+.message-content th,
+.message-content td {
+    border: 1px solid var(--border-color);
+    padding: 6px 10px;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.message-content th {
+    background-color: var(--primary-color-hover-bg);
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+.message-content tr:nth-child(even) {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.message-content td {
+    color: var(--text-color);
 }
 
 .message-footer { 
