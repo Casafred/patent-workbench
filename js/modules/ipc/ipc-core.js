@@ -98,6 +98,10 @@ const IPCCore = (function() {
         return await fetchAPI(`/detail?symbol=${encodeURIComponent(symbol)}`);
     }
 
+    async function getHierarchy(symbol) {
+        return await fetchAPI(`/hierarchy?symbol=${encodeURIComponent(symbol)}`);
+    }
+
     async function getSections() {
         if (state.sections.length > 0) {
             return state.sections;
@@ -239,6 +243,7 @@ const IPCCore = (function() {
         getTree,
         search,
         getDetail,
+        getHierarchy,
         getSections,
         getScoreClass,
         formatSymbol,

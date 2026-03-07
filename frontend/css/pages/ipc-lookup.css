@@ -477,3 +477,153 @@
         align-items: flex-start;
     }
 }
+
+/* IPC分类号查询 - 层级路径样式 */
+.ipc-examples {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.example-btn {
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: var(--primary-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: monospace;
+}
+
+.example-btn:hover {
+    background: var(--primary-color-hover-bg);
+    border-color: var(--primary-color);
+}
+
+.ipc-hierarchy-path {
+    margin-top: 10px;
+}
+
+.ipc-hierarchy-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.ipc-hierarchy-item {
+    display: flex;
+    align-items: stretch;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 0;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.ipc-hierarchy-item:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.1);
+}
+
+.ipc-hierarchy-item.current {
+    border-color: var(--primary-color);
+    border-width: 2px;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, rgba(22, 163, 74, 0.05) 100%);
+}
+
+.ipc-hierarchy-level {
+    background: var(--bg-color);
+    padding: 15px 12px;
+    min-width: 120px;
+    font-size: 12px;
+    color: var(--text-color-secondary);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-weight: 500;
+}
+
+.ipc-hierarchy-item.current .ipc-hierarchy-level {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(22, 163, 74, 0.1) 100%);
+    color: var(--primary-color-dark);
+}
+
+.ipc-hierarchy-content {
+    flex: 1;
+    padding: 12px 15px;
+    min-width: 0;
+}
+
+.ipc-hierarchy-symbol {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary-color-dark);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 5px;
+}
+
+.ipc-hierarchy-badge {
+    background: var(--primary-color);
+    color: white;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 500;
+}
+
+.ipc-hierarchy-title {
+    font-size: 14px;
+    color: var(--text-color);
+    line-height: 1.5;
+}
+
+.ipc-hierarchy-title-cn {
+    font-size: 13px;
+    color: var(--text-color-secondary);
+    margin-top: 4px;
+}
+
+.ipc-hierarchy-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 15px;
+    color: var(--text-color-secondary);
+}
+
+.ipc-hierarchy-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
+}
+
+@media (max-width: 768px) {
+    .ipc-hierarchy-item {
+        flex-direction: column;
+    }
+    
+    .ipc-hierarchy-level {
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        padding: 10px;
+    }
+    
+    .ipc-hierarchy-arrow {
+        display: none;
+    }
+    
+    .ipc-hierarchy-actions {
+        flex-direction: column;
+    }
+}

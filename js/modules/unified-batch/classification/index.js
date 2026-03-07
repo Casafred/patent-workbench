@@ -1071,7 +1071,7 @@ const ClassificationModule = {
         
         container.innerHTML = templates.map(template => `
             <button class="small-button template-btn" data-template="${template.name}" 
-                    style="background: var(--bg-color-tertiary); border: 1px solid var(--border-color);">
+                    style="background: var(--primary-color); color: white; border: 1px solid var(--primary-color-dark); padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
                 ${template.name}
             </button>
         `).join('');

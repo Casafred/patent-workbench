@@ -12,7 +12,7 @@
     
     <div class="sub-tab-container" style="margin-bottom: 25px;">
         <button class="sub-tab-button active" onclick="switchIpcSubTab('predict', this)">分类预测</button>
-        <button class="sub-tab-button" onclick="switchIpcSubTab('browse', this)">分类浏览</button>
+        <button class="sub-tab-button" onclick="switchIpcSubTab('lookup', this)">分类号查询</button>
         <button class="sub-tab-button" onclick="switchIpcSubTab('search', this)">关键词搜索</button>
     </div>
     
@@ -82,24 +82,41 @@
         </div>
     </div>
     
-    <div id="ipc-browse-tab" class="ipc-sub-tab" style="display: none;">
+    <div id="ipc-lookup-tab" class="ipc-sub-tab" style="display: none;">
         <div class="ipc-card">
             <h4>
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
-                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
                 </svg>
-                IPC分类树浏览
+                IPC分类号查询
             </h4>
-            <p class="info-text">点击部(A-H)展开查看详细分类层级，选择分类号查看详情。</p>
+            <p class="info-text">输入IPC分类号，查询其含义及完整层级路径（从部到小组）。</p>
             
-            <div id="ipc_tree_loading" style="display: none; text-align: center; padding: 30px;">
-                <div class="loading-spinner"></div>
-                <p style="color: #666; margin-top: 10px;">正在加载分类树...</p>
+            <div class="config-item">
+                <label for="ipc_lookup_input">IPC分类号:</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="ipc_lookup_input" placeholder="例如：G06F、G06F17/00、H04L9/08..." style="flex: 1;" onkeypress="if(event.key==='Enter')IPCLookup.performLookup()">
+                    <button id="ipc_lookup_btn" class="small-button" onclick="IPCLookup.performLookup()">查询</button>
+                </div>
             </div>
             
-            <div id="ipc_tree_container" class="ipc-tree-container">
-                <div id="ipc_breadcrumb" class="ipc-breadcrumb"></div>
-                <div id="ipc_tree_content" class="ipc-tree-content"></div>
+            <div class="ipc-examples" style="margin-top: 10px; padding: 10px; background: #f8fafc; border-radius: 6px;">
+                <span style="color: #64748b; font-size: 13px;">快速示例：</span>
+                <button class="example-btn" onclick="IPCLookup.quickLookup('G06F')">G06F</button>
+                <button class="example-btn" onclick="IPCLookup.quickLookup('G06F17/00')">G06F17/00</button>
+                <button class="example-btn" onclick="IPCLookup.quickLookup('H04L9/08')">H04L9/08</button>
+                <button class="example-btn" onclick="IPCLookup.quickLookup('A61K31')">A61K31</button>
+            </div>
+            
+            <div id="ipc_lookup_loading" style="display: none; text-align: center; padding: 30px;">
+                <div class="loading-spinner"></div>
+                <p style="color: #666; margin-top: 10px;">正在查询分类号...</p>
+            </div>
+            
+            <div id="ipc_lookup_result" style="display: none; margin-top: 25px;">
+                <h5>层级路径</h5>
+                <div id="ipc_hierarchy_path" class="ipc-hierarchy-path"></div>
             </div>
         </div>
     </div>

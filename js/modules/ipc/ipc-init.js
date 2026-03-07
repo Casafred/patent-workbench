@@ -91,8 +91,8 @@ function switchIpcSubTab(tabName, btnElement) {
         btnElement.classList.add('active');
     }
 
-    if (tabName === 'browse') {
-        IPCTree.initialize();
+    if (tabName === 'lookup') {
+        IPCLookup.initialize();
     }
 }
 

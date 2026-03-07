@@ -484,3 +484,156 @@ def clear_cache():
     global CHILDREN_CACHE
     CHILDREN_CACHE = {}
     return create_response(data={'message': '缓存已清除'})
+
+
+def get_section_title(symbol):
+    sections = {
+        'A': ('人类生活需要', 'HUMAN NECESSITIES'),
+        'B': ('作业；运输', 'PERFORMING OPERATIONS; TRANSPORTING'),
+        'C': ('化学；冶金', 'CHEMISTRY; METALLURGY'),
+        'D': ('纺织；造纸', 'TEXTILES; PAPER'),
+        'E': ('固定建筑物', 'FIXED CONSTRUCTIONS'),
+        'F': ('机械工程', 'MECHANICAL ENGINEERING'),
+        'G': ('物理', 'PHYSICS'),
+        'H': ('电学', 'ELECTRICITY')
+    }
+    section = symbol[0] if symbol else ''
+    return sections.get(section, ('', ''))
+
+
+def build_hierarchy_from_local(symbol, local_data):
+    all_entries = local_data.get('all_entries', {})
+    hierarchy = []
+    
+    if symbol in all_entries:
+        entry = all_entries[symbol]
+        current_symbol = symbol
+        
+        while current_symbol:
+            if current_symbol in all_entries:
+                curr_entry = all_entries[current_symbol]
+                hierarchy.insert(0, {
+                    'symbol': current_symbol,
+                    'title': curr_entry.get('title', ''),
+                    'key': curr_entry.get('key', ''),
+                    'depth': curr_entry.get('depth', 0)
+                })
+                current_symbol = curr_entry.get('parent', '')
+            else:
+                break
+    
+    return hierarchy
+
+
+def build_hierarchy_from_wipo(symbol):
+    try:
+        url = f'{WIPO_API_BASE}/scheme/getSymbolValidity'
+        params = {'symbol': symbol}
+        resp = requests.get(url, params=params, headers=HEADERS, timeout=10)
+        
+        if resp.status_code == 200:
+            data = resp.json()
+            if data.get('data'):
+                entry = data['data']
+                hierarchy = [{
+                    'symbol': symbol,
+                    'title': clean_title(entry.get('title1', '')),
+                    'key': entry.get('key', ''),
+                    'depth': 0
+                }]
+                
+                parent_key = entry.get('parentKey')
+                depth = 1
+                while parent_key and depth < 10:
+                    try:
+                        parent_url = f'{WIPO_API_BASE}/scheme/getSymbolValidity'
+                        parent_params = {'symbol': '', 'key': parent_key}
+                        parent_resp = requests.get(parent_url, params=parent_params, headers=HEADERS, timeout=10)
+                        
+                        if parent_resp.status_code == 200:
+                            parent_data = parent_resp.json()
+                            if parent_data.get('data'):
+                                parent_entry = parent_data['data']
+                                hierarchy.insert(0, {
+                                    'symbol': parent_entry.get('symbol') or parent_entry.get('symbolcode', ''),
+                                    'title': clean_title(parent_entry.get('title1', '')),
+                                    'key': parent_entry.get('key', ''),
+                                    'depth': depth
+                                })
+                                parent_key = parent_entry.get('parentKey')
+                                depth += 1
+                            else:
+                                break
+                        else:
+                            break
+                    except:
+                        break
+                
+                return hierarchy
+    except Exception as e:
+        print(f'从WIPO获取层级失败: {e}')
+    
+    return None
+
+
+@ipc_bp.route('/ipc/hierarchy', methods=['GET'])
+def get_hierarchy():
+    """
+    Get complete hierarchy path for an IPC symbol.
+    Returns all parent classifications from root to the given symbol.
+    """
+    symbol = request.args.get('symbol', '').strip().upper()
+    
+    if not symbol:
+        return create_response(error="请提供IPC分类号")
+    
+    symbol = symbol.replace(' ', '/')
+    
+    local_data = load_local_data()
+    
+    hierarchy = build_hierarchy_from_local(symbol, local_data)
+    
+    if not hierarchy:
+        hierarchy = build_hierarchy_from_wipo(symbol)
+    
+    if not hierarchy:
+        section_title = get_section_title(symbol)
+        if section_title[1]:
+            hierarchy = [{
+                'symbol': symbol[0],
+                'title': section_title[1],
+                'titleCn': section_title[0],
+                'depth': 0
+            }]
+            if len(symbol) > 1:
+                hierarchy.append({
+                    'symbol': symbol,
+                    'title': f'未找到详细定义',
+                    'depth': 1
+                })
+    
+    if hierarchy:
+        for i, item in enumerate(hierarchy):
+            item['depth'] = i
+            item['levelName'] = get_level_name(i)
+        
+        return create_response(data={
+            'symbol': symbol,
+            'hierarchy': hierarchy,
+            'count': len(hierarchy)
+        })
+    
+    return create_response(error=f"未找到分类号: {symbol}")
+
+
+def get_level_name(depth):
+    level_names = [
+        '部 (Section)',
+        '大类 (Class)',
+        '小类 (Subclass)',
+        '大组 (Main Group)',
+        '小组 (Subgroup)'
+    ]
+    if depth < len(level_names):
+        return level_names[depth]
+    return f'层级 {depth}'
