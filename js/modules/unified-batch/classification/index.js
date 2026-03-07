@@ -1020,7 +1020,10 @@ const ClassificationModule = {
     openSmartImportModal() {
         const modal = document.getElementById('smart_import_modal');
         if (modal) {
-            modal.style.display = 'block';
+            modal.style.display = 'flex';
+            setTimeout(() => {
+                modal.classList.add('show');
+            }, 10);
             this.initSmartImportTemplates();
             
             const parseBtn = document.getElementById('smart_import_parse_btn');
@@ -1038,7 +1041,10 @@ const ClassificationModule = {
     closeSmartImportModal() {
         const modal = document.getElementById('smart_import_modal');
         if (modal) {
-            modal.style.display = 'none';
+            modal.classList.remove('show');
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 200);
         }
         
         const resultArea = document.getElementById('smart_import_result_area');
