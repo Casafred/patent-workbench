@@ -1,5 +1,0 @@
-修复多图查看器关闭按钮被全局CSS覆盖的问题
-
-- 为关闭按钮添加viewer-close-btn类名
-- 在inline样式中使用!important确保优先级
-- 在全局buttons.css中排除viewer-close-btn类

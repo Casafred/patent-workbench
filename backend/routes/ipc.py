@@ -590,6 +590,48 @@ def build_hierarchy_from_local(symbol, local_data):
     return hierarchy
 
 
+def build_partial_hierarchy_from_local(symbol, local_data):
+    all_entries = local_data.get('all_entries', {})
+    hierarchy = []
+    
+    parent_symbol = infer_parent_symbol(symbol)
+    current_symbol = parent_symbol
+    visited = set()
+    
+    while current_symbol and current_symbol not in visited:
+        visited.add(current_symbol)
+        
+        if current_symbol in all_entries:
+            entry = all_entries[current_symbol]
+            hierarchy.insert(0, {
+                'symbol': current_symbol,
+                'title': entry.get('title', ''),
+                'key': entry.get('key', '')
+            })
+            current_symbol = infer_parent_symbol(current_symbol)
+        else:
+            section_title = get_section_title(current_symbol)
+            if section_title[1]:
+                hierarchy.insert(0, {
+                    'symbol': current_symbol,
+                    'title': section_title[1],
+                    'titleCn': section_title[0]
+                })
+            current_symbol = infer_parent_symbol(current_symbol)
+    
+    if hierarchy and len(hierarchy[0]['symbol']) > 1:
+        root_symbol = hierarchy[0]['symbol'][0]
+        simple_title = get_simple_section_title(root_symbol)
+        if simple_title:
+            hierarchy.insert(0, {
+                'symbol': root_symbol,
+                'title': simple_title[1],
+                'titleCn': simple_title[0]
+            })
+    
+    return hierarchy
+
+
 def build_hierarchy_from_wipo(symbol):
     try:
         url = f'{WIPO_API_BASE}/scheme/getSymbolValidity'
@@ -600,39 +642,118 @@ def build_hierarchy_from_wipo(symbol):
             data = resp.json()
             if data.get('data'):
                 entry = data['data']
+                is_valid = entry.get('classification_validity', 'Y') == 'Y'
+                
                 hierarchy = [{
                     'symbol': symbol,
                     'title': clean_title(entry.get('title1', '')),
                     'key': entry.get('key', ''),
-                    'depth': 0
+                    'depth': 0,
+                    'valid': is_valid
                 }]
                 
+                if not hierarchy[0]['title']:
+                    hierarchy[0]['title'] = f"{'[已废弃] ' if not is_valid else ''}详细分类号定义需参考上级分类"
+                
                 parent_key = entry.get('parentKey')
-                depth = 1
-                while parent_key and depth < 10:
-                    try:
-                        parent_url = f'{WIPO_API_BASE}/scheme/getSymbolValidity'
-                        parent_params = {'symbol': '', 'key': parent_key}
-                        parent_resp = requests.get(parent_url, params=parent_params, headers=HEADERS, timeout=10)
-                        
-                        if parent_resp.status_code == 200:
-                            parent_data = parent_resp.json()
-                            if parent_data.get('data'):
-                                parent_entry = parent_data['data']
-                                hierarchy.insert(0, {
-                                    'symbol': parent_entry.get('symbol') or parent_entry.get('symbolcode', ''),
-                                    'title': clean_title(parent_entry.get('title1', '')),
-                                    'key': parent_entry.get('key', ''),
-                                    'depth': depth
-                                })
-                                parent_key = parent_entry.get('parentKey')
-                                depth += 1
+                
+                if parent_key:
+                    depth = 1
+                    while parent_key and depth < 10:
+                        try:
+                            parent_url = f'{WIPO_API_BASE}/scheme/getSymbolValidity'
+                            parent_params = {'symbol': '', 'key': parent_key}
+                            parent_resp = requests.get(parent_url, params=parent_params, headers=HEADERS, timeout=10)
+                            
+                            if parent_resp.status_code == 200:
+                                parent_data = parent_resp.json()
+                                if parent_data.get('data'):
+                                    parent_entry = parent_data['data']
+                                    parent_symbol = parent_entry.get('symbol') or parent_entry.get('symbolcode', '')
+                                    
+                                    if not parent_symbol:
+                                        section = parent_entry.get('section', '')
+                                        cls = parent_entry.get('class', '')
+                                        subclass = parent_entry.get('subclass', '')
+                                        main_group = parent_entry.get('main_group', '')
+                                        
+                                        if main_group:
+                                            parent_symbol = f"{section}{cls}{subclass} {main_group}".replace('/0', '/').rstrip('/')
+                                        elif subclass:
+                                            parent_symbol = f"{section}{cls}{subclass}"
+                                        elif cls:
+                                            parent_symbol = f"{section}{cls}"
+                                        else:
+                                            parent_symbol = section
+                                    
+                                    hierarchy.insert(0, {
+                                        'symbol': parent_symbol,
+                                        'title': clean_title(parent_entry.get('title1', '')),
+                                        'key': parent_entry.get('key', ''),
+                                        'depth': depth
+                                    })
+                                    parent_key = parent_entry.get('parentKey')
+                                    depth += 1
+                                else:
+                                    break
                             else:
                                 break
-                        else:
+                        except:
                             break
-                    except:
-                        break
+                else:
+                    section = entry.get('section', '')
+                    cls = entry.get('class', '')
+                    subclass = entry.get('subclass', '')
+                    main_group = entry.get('main_group', '')
+                    
+                    print(f"[DEBUG] No parentKey, building from: section={section}, class={cls}, subclass={subclass}")
+                    
+                    parent_symbols = []
+                    
+                    subclass_symbol = f"{section}{cls}{subclass}".strip()
+                    if subclass_symbol:
+                        parent_symbols.append(subclass_symbol)
+                    
+                    class_symbol = f"{section}{cls}"
+                    if class_symbol and class_symbol not in parent_symbols:
+                        parent_symbols.append(class_symbol)
+                    
+                    if section and section not in parent_symbols:
+                        parent_symbols.append(section)
+                    
+                    print(f"[DEBUG] parent_symbols: {parent_symbols}")
+                    
+                    local_data = load_local_data()
+                    all_entries = local_data.get('all_entries', {}) if local_data else {}
+                    print(f"[DEBUG] all_entries has {len(all_entries)} entries")
+                    
+                    for ps in reversed(parent_symbols):
+                        print(f"[DEBUG] Checking parent symbol: {ps}")
+                        if ps in all_entries:
+                            print(f"[DEBUG] Found {ps} in all_entries")
+                            hierarchy.insert(0, {
+                                'symbol': ps,
+                                'title': all_entries[ps].get('title', ''),
+                                'key': all_entries[ps].get('key', '')
+                            })
+                        else:
+                            simple_title = get_simple_section_title(ps)
+                            if simple_title:
+                                hierarchy.insert(0, {
+                                    'symbol': ps,
+                                    'title': simple_title[1],
+                                    'titleCn': simple_title[0]
+                                })
+                            elif len(ps) == 1:
+                                section_title = get_section_title(ps)
+                                if section_title[1]:
+                                    hierarchy.insert(0, {
+                                        'symbol': ps,
+                                        'title': section_title[1],
+                                        'titleCn': section_title[0]
+                                    })
+                    
+                    print(f"[DEBUG] Final hierarchy: {hierarchy}")
                 
                 return hierarchy
     except Exception as e:
@@ -652,14 +773,32 @@ def get_hierarchy():
     if not symbol:
         return create_response(error="请提供IPC分类号")
     
-    symbol = symbol.replace(' ', '/')
+    # Normalize symbol: handle space and slash
+    # G06F 17/00 -> G06F17/00
+    # G06F17/00 -> G06F17/00
+    symbol = symbol.replace(' ', '')
     
     local_data = load_local_data()
+    all_entries = local_data.get('all_entries', {}) if local_data else {}
     
-    hierarchy = build_hierarchy_from_local(symbol, local_data)
+    hierarchy = []
     
-    if not hierarchy:
-        hierarchy = build_hierarchy_from_wipo(symbol)
+    if symbol in all_entries:
+        hierarchy = build_hierarchy_from_local(symbol, local_data)
+    else:
+        wipo_result = build_hierarchy_from_wipo(symbol)
+        
+        if wipo_result:
+            hierarchy = wipo_result
+        else:
+            partial_hierarchy = build_partial_hierarchy_from_local(symbol, local_data)
+            
+            if partial_hierarchy:
+                hierarchy = partial_hierarchy
+                hierarchy.append({
+                    'symbol': symbol,
+                    'title': '未找到详细定义，请参考上级分类'
+                })
     
     if not hierarchy:
         section_title = get_section_title(symbol)
