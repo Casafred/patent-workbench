@@ -93,11 +93,12 @@ class MultiImageViewerV8 {
         const clearedCount = MultiImageViewerV8.clearAllImageCaches();
         console.log(`[MultiImageViewerV8] Cleared ${clearedCount} caches`);
 
-        // images: [{ url, detectedNumbers, referenceMap, title }]
+        // images: [{ url, detectedNumbers, referenceMap, title, markerSentencesMap }]
         console.log('[MultiImageViewerV8] Images data:', images.map(img => ({
             title: img.title,
             detectedNumbersCount: (img.detectedNumbers || []).length,
-            detectedNumbers: (img.detectedNumbers || []).map(d => ({ number: d.number, x: Math.round(d.x), y: Math.round(d.y) }))
+            detectedNumbers: (img.detectedNumbers || []).map(d => ({ number: d.number, x: Math.round(d.x), y: Math.round(d.y) })),
+            hasMarkerSentences: !!(img.markerSentencesMap && Object.keys(img.markerSentencesMap).length > 0)
         })));
         this.images = images;
         this.currentIndex = 0;
@@ -106,6 +107,9 @@ class MultiImageViewerV8 {
             highlightColor: options.highlightColor || '#00FF00',
             ...options
         };
+
+        // 存储标记-句子映射（AI处理前抽取的句子）
+        this.markerSentencesMap = images[0]?.markerSentencesMap || {};
 
         this.annotations = [];
         this.selectedAnnotationId = null;
@@ -1866,6 +1870,88 @@ class MultiImageViewerV8 {
         }
         
         rightColumn.appendChild(specList);
+        
+        // 添加AI处理前抽取句子区域
+        const extractedSentencesSection = document.createElement('div');
+        extractedSentencesSection.style.cssText = `
+            background-color: white;
+            border: 1px solid #17a2b8;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+        `;
+        
+        const extractedTitle = document.createElement('h4');
+        extractedTitle.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>AI处理前抽取的说明书句子';
+        extractedTitle.style.cssText = `
+            margin: 0 0 10px 0;
+            color: #17a2b8;
+            font-size: 16px;
+        `;
+        extractedSentencesSection.appendChild(extractedTitle);
+        
+        // 抽取句子统计信息
+        const extractedStats = document.createElement('div');
+        extractedStats.style.cssText = `
+            background-color: #d1ecf1;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        `;
+        
+        const markerSentencesMap = this.markerSentencesMap || {};
+        const extractedCount = Object.keys(markerSentencesMap).length;
+        
+        extractedStats.innerHTML = `
+            <div><strong>抽取标记数:</strong> ${extractedCount} 个</div>
+            <div style="font-size: 12px; color: #0c5460; margin-top: 5px;">
+                这些是根据OCR识别结果，从说明书中抽取的包含对应标记的原始句子，供AI处理前参考。
+            </div>
+        `;
+        extractedSentencesSection.appendChild(extractedStats);
+        
+        // 抽取句子列表
+        const extractedList = document.createElement('div');
+        extractedList.style.cssText = `
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 13px;
+        `;
+        
+        if (extractedCount > 0) {
+            const sortedMarkers = Object.entries(markerSentencesMap).sort((a, b) => {
+                const numA = parseInt(a[0]) || 0;
+                const numB = parseInt(b[0]) || 0;
+                return numA - numB;
+            });
+            
+            sortedMarkers.forEach(([marker, sentence]) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.style.cssText = `
+                    padding: 10px;
+                    margin: 8px 0;
+                    border-left: 4px solid #17a2b8;
+                    background-color: #e8f4f8;
+                    border-radius: 4px;
+                `;
+                
+                // 截取句子前100个字符显示
+                const displaySentence = sentence.length > 150 ? sentence.substring(0, 150) + '...' : sentence;
+                
+                itemDiv.innerHTML = `
+                    <div style="font-weight: bold; color: #17a2b8; margin-bottom: 5px;">标记 ${marker}</div>
+                    <div style="line-height: 1.6; color: #333;">${displaySentence}</div>
+                    ${sentence.length > 150 ? `<div style="font-size: 11px; color: #6c757d; margin-top: 5px; cursor: pointer;" onclick="alert(this.getAttribute('data-full'))" data-full="${sentence.replace(/"/g, '&quot;')}">点击查看完整内容</div>` : ''}
+                `;
+                extractedList.appendChild(itemDiv);
+            });
+        } else {
+            extractedList.innerHTML = '<div style="color: #6c757d; padding: 10px;">暂无抽取的句子数据</div>';
+        }
+        
+        extractedSentencesSection.appendChild(extractedList);
+        content.appendChild(extractedSentencesSection);
         
         // 添加列到容器
         columnsContainer.appendChild(leftColumn);

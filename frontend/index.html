@@ -1879,6 +1879,8 @@ function displayProcessingResult(data, isAIMode = false) {
         
         // 准备多图查看器数据
         const viewerImages = [];
+        const markerSentencesMap = data.marker_sentences_map || {};
+        
         data.drawings.forEach((processedDrawing, index) => {
             const originalDrawing = uploadedDrawings.find(d => d.name === processedDrawing.name);
             if (originalDrawing) {
@@ -1886,7 +1888,8 @@ function displayProcessingResult(data, isAIMode = false) {
                     url: originalDrawing.dataUrl,
                     title: processedDrawing.name,
                     detectedNumbers: processedDrawing.detected_numbers || [],
-                    referenceMap: currentReferenceMap
+                    referenceMap: currentReferenceMap,
+                    markerSentencesMap: markerSentencesMap
                 });
             }
         });

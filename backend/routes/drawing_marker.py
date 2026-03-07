@@ -473,13 +473,15 @@ def process_drawing_marker():
             'cache_info': cache_info,
             'ocr_mode': ocr_mode,
             'ocr_mode_display': ocr_mode_display,
+            'marker_sentences_map': marker_sentences_map,
             'debug_info': {
                 'total_markers_in_spec': len(reference_map),
                 'reference_map': reference_map,
                 'extraction_method': 'AI智能抽取' if ai_mode else 'jieba分词',
                 'ocr_mode': ocr_mode,
                 'has_ocr_results': total_ocr_detected > 0,
-                'has_matched_results': total_matched > 0
+                'has_matched_results': total_matched > 0,
+                'marker_sentences_count': len(marker_sentences_map)
             }
         })
     
