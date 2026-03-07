@@ -1,0 +1,8 @@
+fix(ipc): improve hierarchy query for detailed IPC symbols
+
+- Fix symbol normalization (remove space instead of replacing with slash)
+- Handle WIPO API responses without parentKey
+- Build parent hierarchy from local data when WIPO returns incomplete data
+- Mark deprecated IPC symbols with prefix
+- Clean up project structure (move docs, scripts, tools to proper folders)
+- Remove temporary test files
