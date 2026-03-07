@@ -104,6 +104,14 @@
             height: 100%;
             z-index: 0;
             pointer-events: none;
+            will-change: transform;
+        }
+
+        /* GPU加速优化 */
+        .cursor, .cursor-dot, .mouse-glow, .hero-content, .feature-card {
+            will-change: transform;
+            transform: translateZ(0);
+            backface-visibility: hidden;
         }
 
         /* ============================================
@@ -2558,20 +2566,35 @@
         });
 
         // ============================================
-        // 自定义光标
+        // 自定义光标 (性能优化：使用requestAnimationFrame)
         // ============================================
         const cursor = document.getElementById('cursor');
         const cursorDot = document.getElementById('cursor-dot');
         const mouseGlow = document.getElementById('mouse-glow');
-
+        
+        let mouseX = 0, mouseY = 0;
+        let cursorX = 0, cursorY = 0;
+        let rafId = null;
+        
         document.addEventListener('mousemove', function(e) {
-            cursor.style.left = e.clientX + 'px';
-            cursor.style.top = e.clientY + 'px';
-            cursorDot.style.left = e.clientX + 'px';
-            cursorDot.style.top = e.clientY + 'px';
-            mouseGlow.style.left = e.clientX + 'px';
-            mouseGlow.style.top = e.clientY + 'px';
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            
+            if (!rafId) {
+                rafId = requestAnimationFrame(updateCursor);
+            }
         });
+        
+        function updateCursor() {
+            cursorX += (mouseX - cursorX) * 0.5;
+            cursorY += (mouseY - cursorY) * 0.5;
+            
+            cursor.style.transform = `translate(${cursorX}px, ${cursorY}px) translate(-50%, -50%)`;
+            cursorDot.style.transform = `translate(${mouseX}px, ${mouseY}px) translate(-50%, -50%)`;
+            mouseGlow.style.transform = `translate(${mouseX}px, ${mouseY}px) translate(-50%, -50%)`;
+            
+            rafId = null;
+        }
 
         // 悬停效果
         const hoverElements = document.querySelectorAll('a, button, .feature-card, .demo-item');
@@ -2581,14 +2604,15 @@
         });
 
         // ============================================
-        // Vanta.js 背景初始化
+        // Vanta.js 背景初始化 (性能优化：降低复杂度)
         // ============================================
+        let vantaEffect = null;
         document.addEventListener('DOMContentLoaded', function() {
             if (typeof VANTA !== 'undefined' && VANTA.NET && typeof THREE !== 'undefined') {
-                VANTA.NET({
+                vantaEffect = VANTA.NET({
                     el: "#vanta-bg",
-                    mouseControls: true,
-                    touchControls: true,
+                    mouseControls: false,
+                    touchControls: false,
                     gyroControls: false,
                     minHeight: 200.00,
                     minWidth: 200.00,
@@ -2596,12 +2620,35 @@
                     scaleMobile: 1.00,
                     color: 0x22C55E,
                     backgroundColor: 0x0a0a0a,
-                    points: 10.00,
-                    maxDistance: 25.00,
-                    spacing: 20.00,
+                    points: 6.00,
+                    maxDistance: 20.00,
+                    spacing: 25.00,
                     showDots: true
                 });
             }
+            
+            // 页面不可见时暂停动画
+            document.addEventListener('visibilitychange', function() {
+                if (vantaEffect) {
+                    if (document.hidden) {
+                        vantaEffect.destroy();
+                        vantaEffect = null;
+                    } else if (!vantaEffect && typeof VANTA !== 'undefined') {
+                        vantaEffect = VANTA.NET({
+                            el: "#vanta-bg",
+                            mouseControls: false,
+                            touchControls: false,
+                            gyroControls: false,
+                            color: 0x22C55E,
+                            backgroundColor: 0x0a0a0a,
+                            points: 6.00,
+                            maxDistance: 20.00,
+                            spacing: 25.00,
+                            showDots: true
+                        });
+                    }
+                }
+            });
         });
 
         // ============================================
@@ -2709,15 +2756,22 @@
         setTimeout(animateNumbers, 2500);
 
         // ============================================
-        // 功能卡片鼠标跟随效果
+        // 功能卡片鼠标跟随效果 (性能优化：节流)
         // ============================================
+        let cardMoveTicking = false;
         document.querySelectorAll('.feature-card').forEach(card => {
             card.addEventListener('mousemove', function(e) {
-                const rect = card.getBoundingClientRect();
-                const x = ((e.clientX - rect.left) / rect.width) * 100;
-                const y = ((e.clientY - rect.top) / rect.height) * 100;
-                card.style.setProperty('--mouse-x', x + '%');
-                card.style.setProperty('--mouse-y', y + '%');
+                if (!cardMoveTicking) {
+                    requestAnimationFrame(function() {
+                        const rect = card.getBoundingClientRect();
+                        const x = ((e.clientX - rect.left) / rect.width) * 100;
+                        const y = ((e.clientY - rect.top) / rect.height) * 100;
+                        card.style.setProperty('--mouse-x', x + '%');
+                        card.style.setProperty('--mouse-y', y + '%');
+                        cardMoveTicking = false;
+                    });
+                    cardMoveTicking = true;
+                }
             });
         });
 
@@ -2738,16 +2792,23 @@
         });
 
         // ============================================
-        // 视差滚动效果
+        // 视差滚动效果 (性能优化：节流)
         // ============================================
+        let scrollTicking = false;
         window.addEventListener('scroll', function() {
-            const scrolled = window.pageYOffset;
-            const heroContent = document.querySelector('.hero-content');
-            if (heroContent) {
-                heroContent.style.transform = `translateY(${scrolled * 0.3}px)`;
-                heroContent.style.opacity = 1 - (scrolled * 0.002);
+            if (!scrollTicking) {
+                requestAnimationFrame(function() {
+                    const scrolled = window.pageYOffset;
+                    const heroContent = document.querySelector('.hero-content');
+                    if (heroContent && scrolled < 800) {
+                        heroContent.style.transform = `translateY(${scrolled * 0.3}px)`;
+                        heroContent.style.opacity = Math.max(0, 1 - (scrolled * 0.002));
+                    }
+                    scrollTicking = false;
+                });
+                scrollTicking = true;
             }
-        });
+        }, { passive: true });
 
         // ============================================
         // Lightbox 图片放大功能

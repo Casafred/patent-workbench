@@ -332,6 +332,20 @@ def process_drawing_marker():
             reference_map = extract_reference_markers(specification)
             print(f"[DEBUG] Extracted reference_map: {reference_map}")
             print(f"[DEBUG] Total markers in specification: {len(reference_map)}")
+            
+            # 规则模式下也需要提取句子映射（用于调试面板和未匹配标记显示原文）
+            if all_ocr_markers:
+                extraction_result = extract_relevant_segments(
+                    specification,
+                    all_ocr_markers,
+                    context_sentences=1,
+                    max_total_length=8000
+                )
+                print(f"[DEBUG] 规则模式说明书预处理: {extraction_result['original_length']} -> {extraction_result['extracted_length']} 字符")
+                print(f"[DEBUG] 规则模式找到的标记: {extraction_result['found_markers']}, 未找到: {extraction_result['not_found_markers']}")
+            else:
+                extraction_result = None
+                print(f"[DEBUG] 规则模式: OCR未识别到标记，跳过句子提取")
 
         # 🚀 STEP 3: 应用智能分割并匹配OCR结果
         print(f"[DEBUG] Step 3: Applying smart split and matching OCR results...")
