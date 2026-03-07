@@ -501,6 +501,11 @@ class MultiImageViewerV8 {
             const annotation = this.findAnnotationAt(clickX, clickY);
             
             if (annotation) {
+                // 如果是未匹配标记，显示原文弹窗
+                if (!annotation.hasMatch && annotation.originalSentence) {
+                    this.showOriginalSentencePopup(annotation);
+                }
+                
                 if (e.ctrlKey || e.metaKey) {
                     // Ctrl/Cmd + 点击：多选
                     annotation.isSelected = !annotation.isSelected;
@@ -572,9 +577,10 @@ class MultiImageViewerV8 {
     
     createFloatingToolbar() {
         const toolbar = document.createElement('div');
+        toolbar.className = 'floating-toolbar';
         toolbar.style.cssText = `
-            position: fixed;
-            right: 20px;
+            position: absolute;
+            right: 15px;
             top: 50%;
             transform: translateY(-50%);
             display: flex;
@@ -1062,8 +1068,11 @@ class MultiImageViewerV8 {
         ctx.font = `bold ${this.currentFontSize}px Arial, sans-serif`;
 
         this.annotations = detectedNumbers.map((detected, index) => {
-            const name = detected.name || referenceMap[detected.number] || '未知';
-            const text = `${detected.number}: ${name}`;
+            const matchedName = detected.name || referenceMap[detected.number];
+            const hasMatch = !!matchedName;
+            const name = hasMatch ? matchedName : '';
+            const originalSentence = detected.original_sentence || '';
+            const text = hasMatch ? `${detected.number}: ${name}` : `${detected.number}`;
             const textWidth = ctx.measureText(text).width;
             const textHeight = this.currentFontSize * 1.5;
 
@@ -1116,6 +1125,8 @@ class MultiImageViewerV8 {
                 labelY: labelY,
                 number: detected.number,
                 name: name,
+                hasMatch: hasMatch,
+                originalSentence: originalSentence,
                 confidence: detected.confidence || 0,
                 isSelected: false,
                 isManual: false,
@@ -1249,7 +1260,7 @@ class MultiImageViewerV8 {
 
             // 绘制标注文字
             ctx.save();
-            const text = `${annotation.number}: ${annotation.name}`;
+            const text = annotation.hasMatch ? `${annotation.number}: ${annotation.name}` : `${annotation.number}`;
             ctx.font = `bold ${fontSize}px Arial, sans-serif`;
             ctx.textBaseline = 'middle';
             ctx.textAlign = 'left';
@@ -1303,7 +1314,14 @@ class MultiImageViewerV8 {
                 font-weight: ${isHighlighted ? 'bold' : 'normal'};
                 border: ${isHighlighted ? `3px solid ${borderColor}` : '1px solid #ddd'};
             `;
-            item.textContent = `${annotation.number}: ${annotation.name}${annotation.isManual ? ' (手动)' : ''}`;
+            
+            // 未匹配标记只显示标号，并添加提示
+            if (annotation.hasMatch) {
+                item.textContent = `${annotation.number}: ${annotation.name}${annotation.isManual ? ' (手动)' : ''}`;
+            } else {
+                item.innerHTML = `${annotation.number} <span style="color: #999; font-size: 11px;">(点击查看原文)</span>`;
+                item.style.borderLeft = '3px solid #ffc107';
+            }
             
             item.addEventListener('click', () => {
                 // 切换选中状态
@@ -1313,8 +1331,94 @@ class MultiImageViewerV8 {
                 this.updateAnnotationList();
             });
             
+            // 未匹配标记双击显示原文弹窗
+            if (!annotation.hasMatch && annotation.originalSentence) {
+                item.addEventListener('dblclick', (e) => {
+                    e.stopPropagation();
+                    this.showOriginalSentencePopup(annotation);
+                });
+            }
+            
             this.annotationList.appendChild(item);
         });
+    }
+    
+    showOriginalSentencePopup(annotation) {
+        const popup = document.createElement('div');
+        popup.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            z-index: 10010;
+            max-width: 600px;
+            width: 90%;
+            max-height: 70vh;
+            display: flex;
+            flex-direction: column;
+        `;
+        
+        const header = document.createElement('div');
+        header.style.cssText = `
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #FF9800, #F57C00);
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        `;
+        header.innerHTML = `
+            <span>标记 ${annotation.number} - 说明书原文</span>
+            <button style="background: none; border: none; color: white; font-size: 24px; cursor: pointer; line-height: 1;">&times;</button>
+        `;
+        
+        const closeBtn = header.querySelector('button');
+        closeBtn.addEventListener('click', () => popup.remove());
+        
+        const content = document.createElement('div');
+        content.style.cssText = `
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+            line-height: 1.8;
+            font-size: 15px;
+            color: #333;
+        `;
+        
+        if (annotation.originalSentence) {
+            content.innerHTML = `
+                <div style="background: #fff8e1; padding: 15px; border-radius: 8px; border-left: 4px solid #FF9800;">
+                    ${annotation.originalSentence}
+                </div>
+                <div style="margin-top: 15px; font-size: 12px; color: #666;">
+                    <strong>提示：</strong>这是说明书原文中标记 ${annotation.number} 附近的内容，AI未能匹配到具体部件名称。
+                </div>
+            `;
+        } else {
+            content.innerHTML = `
+                <div style="color: #999; text-align: center; padding: 20px;">
+                    暂无原文信息
+                </div>
+            `;
+        }
+        
+        popup.appendChild(header);
+        popup.appendChild(content);
+        
+        // 点击背景关闭
+        popup.addEventListener('click', (e) => {
+            if (e.target === popup) {
+                popup.remove();
+            }
+        });
+        
+        document.body.appendChild(popup);
     }
     
     updateImageInfo() {
@@ -1520,7 +1624,7 @@ class MultiImageViewerV8 {
             ctx.stroke();
 
             // 绘制标注文字
-            const text = `${annotation.number}: ${annotation.name}`;
+            const text = annotation.hasMatch ? `${annotation.number}: ${annotation.name}` : `${annotation.number}`;
             ctx.font = `bold ${fontSize}px Arial, sans-serif`;
             ctx.textBaseline = 'middle';
             ctx.textAlign = 'left';
@@ -1844,6 +1948,8 @@ class MultiImageViewerV8 {
                     labelY: ann.labelY,
                     number: ann.number,
                     name: ann.name,
+                    hasMatch: ann.hasMatch,
+                    originalSentence: ann.originalSentence,
                     confidence: ann.confidence,
                     isManual: ann.isManual,
                     fontSize: ann.fontSize,
