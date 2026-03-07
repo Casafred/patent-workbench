@@ -839,10 +839,10 @@
 
 @keyframes pulse-glow {
     0%, 100% {
-        filter: drop-shadow(0 0 2px rgba(147, 51, 234, 0.5));
+        box-shadow: 0 0 4px rgba(147, 51, 234, 0.5);
     }
     50% {
-        filter: drop-shadow(0 0 6px rgba(147, 51, 234, 0.8));
+        box-shadow: 0 0 12px rgba(147, 51, 234, 0.8);
     }
 }
 
@@ -966,18 +966,17 @@
     align-items: center;
     gap: 6px;
     padding: 8px 14px;
-    background: linear-gradient(135deg, rgba(74, 108, 247, 0.12) 0%, rgba(99, 102, 241, 0.08) 100%);
+    background: linear-gradient(135deg, rgba(74, 108, 247, 0.15) 0%, rgba(99, 102, 241, 0.1) 100%);
     border: 1px solid rgba(74, 108, 247, 0.25);
     border-radius: 20px;
     font-size: 13px;
     color: var(--primary-color);
     cursor: pointer;
-    transition: all 0.25s ease;
+    transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
     width: fit-content;
     margin-bottom: 12px;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
     box-shadow: 0 2px 8px rgba(74, 108, 247, 0.1);
+    will-change: transform;
 }
 
 .persona-indicator:hover {

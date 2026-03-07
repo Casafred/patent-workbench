@@ -10,8 +10,9 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
     border-radius: 8px; 
     cursor: pointer; 
     font-size: 1em; 
-    transition: all 0.3s ease; 
+    transition: transform 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease; 
     box-shadow: 0 4px 12px var(--primary-color-glow); 
+    will-change: transform;
 }
 
 /* 颜色按钮样式 */
@@ -60,8 +61,9 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
     border: none; 
     border-radius: 6px; 
     cursor: pointer; 
-    transition: all 0.3s ease; 
+    transition: transform 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease; 
     box-shadow: 0 2px 6px var(--primary-color-glow); 
+    will-change: transform;
 }
 
 .small-button:hover { 
@@ -85,7 +87,7 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
     display: flex; 
     align-items: center; 
     justify-content: center; 
-    transition: all .2s; 
+    transition: background-color 0.2s ease, color 0.2s ease; 
     box-shadow: none; 
 }
 
@@ -120,7 +122,7 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, color 0.2s ease;
     padding: 0;
     box-shadow: none;
 }
@@ -144,7 +146,7 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease;
     color: var(--primary-color);
     flex-shrink: 0;
 }
@@ -166,7 +168,7 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
     color: var(--text-color-secondary);
     text-decoration: none;
     flex-shrink: 0;
@@ -190,9 +192,7 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
 
 /* API配置切换按钮 - 重构样式 */
 #api_config_toggle_btn.api-config-toggle {
-    /* 重置所有样式 */
     all: unset;
-    /* 重新定义样式 */
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -202,7 +202,7 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
     border-radius: 50%;
     background-color: white;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease;
     position: relative;
     z-index: 10;
 }
@@ -236,7 +236,7 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
     border-radius: 50%;
     background-color: white;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease;
     position: relative;
     z-index: 10;
     margin-right: 10px;
@@ -278,9 +278,7 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
 /* API密钥操作按钮 - 重构样式 */
 #api_key_copy_btn, #api_key_delete_btn, #api_key_toggle_visibility_btn,
 #aliyun_api_key_copy_btn, #aliyun_api_key_delete_btn, #aliyun_api_key_toggle_visibility_btn {
-    /* 重置所有样式 */
     all: unset;
-    /* 重新定义样式 */
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -290,7 +288,7 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
     border-radius: 50%;
     background-color: white;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, transform 0.2s ease;
     margin: 0 2px;
 }
 
@@ -332,8 +330,9 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
     border-radius: 8px;
     cursor: pointer;
     font-size: 0.9em;
-    transition: all 0.3s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
     box-shadow: 0 4px 12px var(--primary-color-glow);
+    will-change: transform;
 }
 
 .export-toggle-btn:hover {
@@ -396,8 +395,9 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
     border-radius: 8px;
     cursor: pointer;
     font-size: 1em;
-    transition: all 0.3s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
     box-shadow: 0 4px 12px var(--primary-color-glow);
+    will-change: transform;
 }
 
 #chat_save_persona_btn:hover {
@@ -455,7 +455,8 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
     overflow: visible;
     height: 80px;
     pointer-events: auto;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: box-shadow;
 }
 
 .help-tab-text {
@@ -468,11 +469,12 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
     font-weight: 500;
     white-space: nowrap;
     overflow: hidden;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     padding: 0;
     writing-mode: vertical-rl;
     text-orientation: mixed;
     letter-spacing: 2px;
+    will-change: width, opacity;
 }
 
 .help-tab-icon {

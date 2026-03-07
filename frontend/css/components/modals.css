@@ -208,9 +208,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s;
+    transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
     box-shadow: 0 2px 8px rgba(244, 67, 54, 0.3);
     z-index: 10;
+    will-change: transform;
 }
 
 .modal-close-btn:hover {
@@ -349,7 +350,8 @@
     border-radius: 8px;
     border: 2px solid #e9ecef;
     background: white;
-    transition: all 0.3s ease;
+    transition: box-shadow 0.3s ease;
+    will-change: box-shadow;
 }
 
 .claim-item:hover {
