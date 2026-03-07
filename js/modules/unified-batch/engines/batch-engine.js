@@ -116,7 +116,7 @@ const BatchEngine = {
                 headers['X-LLM-Provider'] = 'aliyun';
             }
 
-            const response = await fetch('/upload', {
+            const response = await fetch('/api/upload', {
                 method: 'POST',
                 headers: headers,
                 body: formData
@@ -157,7 +157,7 @@ const BatchEngine = {
                 ? '/v1/chat/completions' 
                 : '/v4/chat/completions';
 
-            const response = await fetch('/create_batch', {
+            const response = await fetch('/api/create_batch', {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify({
@@ -203,7 +203,7 @@ const BatchEngine = {
         try {
             const headers = this.getApiHeaders(this.currentModel);
             
-            const response = await fetch('/check_status', {
+            const response = await fetch('/api/check_status', {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify({ 
@@ -270,7 +270,7 @@ const BatchEngine = {
         try {
             const headers = this.getApiHeaders(this.currentModel);
             
-            const response = await fetch('/download_result', {
+            const response = await fetch('/api/download_result', {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify({ 

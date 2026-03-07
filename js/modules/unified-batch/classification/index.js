@@ -8,6 +8,7 @@ import PromptBuilder from './prompt-builder.js';
 import ExampleLibrary from './example-library.js';
 import ColdStart from './cold-start.js';
 import ResultAnalyzer from './result-analyzer.js';
+import SmartImport from './smart-import.js';
 import { ClassificationConfig, DEFAULT_SCHEMA, DEFAULT_LAYER, DEFAULT_EXAMPLE } from './config.js';
 
 const ClassificationModule = {
@@ -17,6 +18,7 @@ const ClassificationModule = {
     examples: ExampleLibrary,
     coldStart: ColdStart,
     analyzer: ResultAnalyzer,
+    smartImport: SmartImport,
     config: ClassificationConfig,
 
     init() {
@@ -37,6 +39,7 @@ const ClassificationModule = {
             'classification_add_layer_btn': this.handleAddLayer.bind(this),
             'classification_save_schema_btn': this.handleSaveSchema.bind(this),
             'classification_cold_start_btn': this.handleColdStart.bind(this),
+            'classification_smart_import_btn': this.handleSmartImport.bind(this),
             'classification_optimize_prompt_btn': this.handleOptimizePrompt.bind(this),
             'classification_import_schema_btn': this.handleImportSchema.bind(this),
             'classification_export_schema_btn': this.handleExportSchema.bind(this),
@@ -1010,6 +1013,205 @@ const ClassificationModule = {
         }
     },
 
+    handleSmartImport() {
+        this.openSmartImportModal();
+    },
+
+    openSmartImportModal() {
+        const modal = document.getElementById('smart_import_modal');
+        if (modal) {
+            modal.style.display = 'block';
+            this.initSmartImportTemplates();
+            
+            const parseBtn = document.getElementById('smart_import_parse_btn');
+            if (parseBtn) {
+                parseBtn.onclick = () => this.handleSmartImportParse();
+            }
+            
+            const applyBtn = document.getElementById('smart_import_apply_btn');
+            if (applyBtn) {
+                applyBtn.onclick = () => this.handleSmartImportApply();
+            }
+        }
+    },
+
+    closeSmartImportModal() {
+        const modal = document.getElementById('smart_import_modal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+        
+        const resultArea = document.getElementById('smart_import_result_area');
+        if (resultArea) {
+            resultArea.style.display = 'none';
+        }
+        
+        const applyBtn = document.getElementById('smart_import_apply_btn');
+        if (applyBtn) {
+            applyBtn.style.display = 'none';
+        }
+        
+        const descriptionEl = document.getElementById('smart_import_description');
+        if (descriptionEl) {
+            descriptionEl.value = '';
+        }
+    },
+
+    initSmartImportTemplates() {
+        const container = document.getElementById('smart_import_templates');
+        if (!container) return;
+
+        const templates = SmartImport.getExampleTemplates();
+        
+        container.innerHTML = templates.map(template => `
+            <button class="small-button template-btn" data-template="${template.name}" 
+                    style="background: var(--bg-color-tertiary); border: 1px solid var(--border-color);">
+                ${template.name}
+            </button>
+        `).join('');
+
+        container.querySelectorAll('.template-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const templateName = btn.dataset.template;
+                const template = templates.find(t => t.name === templateName);
+                if (template) {
+                    const descriptionEl = document.getElementById('smart_import_description');
+                    if (descriptionEl) {
+                        descriptionEl.value = template.description;
+                    }
+                }
+            });
+        });
+    },
+
+    async handleSmartImportParse() {
+        const descriptionEl = document.getElementById('smart_import_description');
+        const description = descriptionEl?.value?.trim();
+        
+        if (!description) {
+            alert('请输入分类体系描述');
+            return;
+        }
+
+        const parseBtn = document.getElementById('smart_import_parse_btn');
+        if (parseBtn) {
+            parseBtn.disabled = true;
+            parseBtn.textContent = '解析中...';
+        }
+
+        try {
+            const result = await SmartImport.importFromText(description);
+            
+            if (result.success && result.schema) {
+                this.showSmartImportPreview(result.schema);
+                
+                const applyBtn = document.getElementById('smart_import_apply_btn');
+                if (applyBtn) {
+                    applyBtn.style.display = 'inline-block';
+                }
+            } else {
+                alert('解析失败: ' + (result.message || '未知错误'));
+            }
+        } catch (error) {
+            console.error('[ClassificationModule] Smart import parse error:', error);
+            alert('解析出错: ' + error.message);
+        } finally {
+            if (parseBtn) {
+                parseBtn.disabled = false;
+                parseBtn.textContent = '开始解析';
+            }
+        }
+    },
+
+    showSmartImportPreview(schema) {
+        const resultArea = document.getElementById('smart_import_result_area');
+        const previewEl = document.getElementById('smart_import_preview');
+        
+        if (!resultArea || !previewEl) return;
+
+        resultArea.style.display = 'block';
+        
+        const renderCategories = (categories, depth = 0) => {
+            if (!categories || categories.length === 0) return '';
+            
+            const indent = '  '.repeat(depth);
+            return categories.map(cat => {
+                let html = `
+                    <div class="preview-category" style="margin-left: ${depth * 20}px; margin-bottom: 8px;">
+                        <div style="font-weight: ${depth === 0 ? '600' : '500'}; color: var(--text-color);">
+                            ${cat.name || '未命名'}
+                        </div>
+                        ${cat.description ? `
+                            <div style="font-size: 0.85em; color: var(--text-color-secondary); margin-top: 2px;">
+                                ${cat.description}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+                if (cat.children && cat.children.length > 0) {
+                    html += renderCategories(cat.children, depth + 1);
+                }
+                return html;
+            }).join('');
+        };
+
+        previewEl.innerHTML = `
+            <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color);">
+                <div style="font-weight: 600; font-size: 1.1em; color: var(--primary-color);">
+                    ${schema.name || '智能导入分类体系'}
+                </div>
+                <div style="font-size: 0.85em; color: var(--text-color-secondary); margin-top: 5px;">
+                    共 ${this.countCategories(schema.categories)} 个分类项
+                </div>
+            </div>
+            <div class="preview-categories">
+                ${renderCategories(schema.categories)}
+            </div>
+        `;
+    },
+
+    countCategories(categories) {
+        if (!categories) return 0;
+        let count = categories.length;
+        categories.forEach(cat => {
+            if (cat.children && cat.children.length > 0) {
+                count += this.countCategories(cat.children);
+            }
+        });
+        return count;
+    },
+
+    handleSmartImportApply() {
+        const schema = SmartImport.getSuggestion();
+        
+        if (!schema) {
+            alert('没有可应用的分类体系');
+            return;
+        }
+
+        classificationState.state.schema = {
+            ...classificationState.state.schema,
+            ...schema,
+            id: schema.id || `schema_${Date.now()}`,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+        
+        classificationState.saveState();
+        
+        const nameEl = document.getElementById('classification_schema_name');
+        if (nameEl && schema.name) {
+            nameEl.value = schema.name;
+        }
+        
+        this.updateLayersUI();
+        this.updatePromptPreview();
+        
+        this.closeSmartImportModal();
+        
+        alert('分类体系已应用！您可以在配置页面进行微调。');
+    },
+
     async handleOptimizePrompt() {
         const btn = document.getElementById('classification_optimize_prompt_btn');
         if (btn) {
@@ -1365,7 +1567,7 @@ const ClassificationModule = {
                 uploadHeaders['X-LLM-Provider'] = 'aliyun';
             }
             
-            const uploadResponse = await fetch('/upload', {
+            const uploadResponse = await fetch('/api/upload', {
                 method: 'POST',
                 headers: uploadHeaders,
                 body: formData
@@ -1386,7 +1588,7 @@ const ClassificationModule = {
             const headers = this.getApiHeaders(model);
             const endpoint = provider === 'aliyun' ? '/v1/chat/completions' : '/v4/chat/completions';
             
-            const batchResponse = await fetch('/create_batch', {
+            const batchResponse = await fetch('/api/create_batch', {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify({

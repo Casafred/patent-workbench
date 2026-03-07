@@ -66,7 +66,7 @@ const AsyncEngine = {
         try {
             const headers = this.getApiHeaders(model);
             
-            const response = await fetch('/async_submit', {
+            const response = await fetch('/api/async_submit', {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify(requestBody)
@@ -93,7 +93,7 @@ const AsyncEngine = {
         try {
             const headers = this.getApiHeaders(model);
             
-            const response = await fetch('/async_retrieve', {
+            const response = await fetch('/api/async_retrieve', {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify({ task_id: taskId })

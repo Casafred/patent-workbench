@@ -587,14 +587,28 @@ def upload_file():
 
     client, error_response = get_client_from_header()
     if error_response: return error_response
+    
+    provider = request.headers.get('X-LLM-Provider', 'zhipu')
+    
+    if 'file' in request.files:
+        file = request.files['file']
+        try:
+            result = client.files.create(
+                file=(file.filename, file.stream, 'application/octet-stream'),
+                purpose="batch"
+            )
+            return create_response(data={'file_id': result.id, 'fileId': result.id, 'message': '文件上传成功！'})
+        except Exception as e:
+            return create_response(error=f"上传过程中发生错误: {str(e)}")
+    
     req_data = request.get_json()
-    jsonl_content = req_data.get('jsonlContent')
-    file_name = req_data.get('fileName', 'temp_batch_upload.jsonl')
+    jsonl_content = req_data.get('jsonlContent') if req_data else None
+    file_name = req_data.get('fileName', 'temp_batch_upload.jsonl') if req_data else 'temp_batch_upload.jsonl'
     if not jsonl_content: return create_response(error="JSONL 内容不能为空")
     try:
         bytes_io = BytesIO(jsonl_content.encode('utf-8'))
         result = client.files.create(file=(file_name, bytes_io), purpose="batch")
-        return create_response(data={'fileId': result.id, 'message': '文件上传成功！'})
+        return create_response(data={'file_id': result.id, 'fileId': result.id, 'message': '文件上传成功！'})
     except Exception as e: return create_response(error=f"上传过程中发生错误: {str(e)}")
 
 
@@ -607,7 +621,7 @@ def create_batch_task():
     client, error_response = get_client_from_header()
     if error_response: return error_response
     req_data = request.get_json()
-    file_id = req_data.get('fileId')
+    file_id = req_data.get('input_file_id') or req_data.get('fileId')
     if not file_id: return create_response(error="File ID 不能为空")
     try:
         batch_job = client.batches.create(input_file_id=file_id, endpoint="/v4/chat/completions", completion_window="24h", metadata={"description": "来自专利工作台的分析任务"})
@@ -624,7 +638,7 @@ def check_batch_status():
     client, error_response = get_client_from_header()
     if error_response: return error_response
     req_data = request.get_json()
-    batch_id = req_data.get('batchId')
+    batch_id = req_data.get('batch_id') or req_data.get('batchId')
     if not batch_id: return create_response(error="Batch ID 不能为空")
     try:
         batch_job = client.batches.retrieve(batch_id)
@@ -641,7 +655,7 @@ def download_result_file():
     client, error_response = get_client_from_header()
     if error_response: return error_response
     req_data = request.get_json()
-    file_id = req_data.get('fileId')
+    file_id = req_data.get('file_id') or req_data.get('fileId')
     if not file_id: return create_response(error="File ID 不能为空")
     try:
         response_content_object = client.files.content(file_id)
