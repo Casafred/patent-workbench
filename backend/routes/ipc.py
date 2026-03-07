@@ -87,11 +87,22 @@ def set_cache(key, data):
 
 
 def clean_title(title):
-    """清理标题HTML标签"""
+    """清理标题HTML标签和多余字符"""
     if not title:
         return ''
     title = re.sub(r'<[^>]+>', '', title)
     title = re.sub(r'\s+', ' ', title)
+    title = title.strip()
+    
+    # 去掉分类号前缀（如 "H04L9/08  "）
+    title = re.sub(r'^[A-Z0-9/]+\s*', '', title)
+    
+    # 去掉日期部分（如 "[20060101]"）
+    title = re.sub(r'\s*\[\d+\]', '', title)
+    
+    # 去掉开头的星号（表示层级深度）
+    title = re.sub(r'^\*+', '', title)
+    
     return title.strip()
 
 
@@ -172,6 +183,106 @@ def fetch_from_incopat_query(symbol):
         return None
     except Exception as e:
         print(f'incoPat ipcquery API error: {e}')
+        return None
+
+
+def fetch_parent_title_from_incopat(symbol):
+    """从 incoPat API 获取父节点的标题
+    
+    使用多种策略获取标题：
+    1. 使用 ipcRecommendSearch API
+    2. 使用 ipcquery API 从父节点的子节点列表中查找
+    """
+    cache_key = f"incopat_parent_{normalize_symbol(symbol)}"
+    cached = get_cached(cache_key)
+    if cached:
+        return cached
+    
+    try:
+        session = get_incopat_session()
+        normalized_symbol = normalize_symbol(symbol)
+        
+        # 策略1: 使用 ipcRecommendSearch API
+        resp = session.post(
+            f'{INCOPAT_API_BASE}/ipcFindTool/ipcRecommendSearch',
+            data={
+                'input': symbol,
+                'version': '2026',
+                'format': 'zh'
+            },
+            headers={
+                **HEADERS,
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            timeout=15
+        )
+        
+        if resp.status_code == 200:
+            data = resp.json()
+            if data.get('data') and data.get('status'):
+                all_items = []
+                for level_data in data['data']:
+                    if isinstance(level_data, list):
+                        all_items.extend(level_data)
+                
+                for item in all_items:
+                    code = normalize_symbol(item.get('code', ''))
+                    if code == normalized_symbol:
+                        title = clean_title(item.get('nameNew', item.get('name', '')))
+                        if title:
+                            set_cache(cache_key, title)
+                            return title
+        
+        # 策略2: 使用 ipcquery API 从父节点的子节点列表中查找
+        # 推断父节点（根据 IPC 结构）
+        # IPC 结构：部(1位) -> 大类(3位) -> 小类(4位) -> 大组(含/) -> 小组
+        parent_symbol = None
+        
+        if '/' in normalized_symbol:
+            # 大组或小组，父节点是小类（斜杠前的部分）
+            parent_symbol = normalized_symbol.split('/')[0]
+        elif len(normalized_symbol) == 4:
+            # 小类，父节点是大类
+            parent_symbol = normalized_symbol[:3]
+        elif len(normalized_symbol) == 3:
+            # 大类，父节点是部
+            parent_symbol = normalized_symbol[0]
+        
+        if parent_symbol:
+            resp = session.post(
+                f'{INCOPAT_API_BASE}/ipcFindTool/ipcquery',
+                data={
+                    'id': '',
+                    'code': parent_symbol,
+                    'version': '2026',
+                    'format': 'zh'
+                },
+                headers={
+                    **HEADERS,
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                timeout=30
+            )
+            
+            if resp.status_code == 200:
+                data = resp.json()
+                if data.get('status') and data.get('data'):
+                    items = data['data']
+                    
+                    # 查找目标分类号
+                    for item in items:
+                        code = normalize_symbol(item.get('code', ''))
+                        if code == normalized_symbol:
+                            title = clean_title(item.get('name', ''))
+                            if title:
+                                set_cache(cache_key, title)
+                                return title
+        
+        return None
+    except Exception as e:
+        print(f'incoPat API error: {e}')
         return None
 
 
@@ -276,11 +387,7 @@ def build_hierarchy_from_items(symbol, items):
     
     # 添加目标节点
     target_code = normalize_symbol(target_item.get('code', ''))
-    name = target_item.get('name', '')
-    # 清理名称，去掉分类号前缀
-    if name:
-        name = re.sub(r'^[A-Z0-9/]+\s*', '', name).strip()
-        name = re.sub(r'\[.*?\]', '', name).strip()
+    name = clean_title(target_item.get('name', ''))
     
     hierarchy.append({
         'symbol': target_code,
@@ -299,10 +406,7 @@ def build_hierarchy_from_items(symbol, items):
         parent_item = code_to_item.get(normalize_symbol(fcode))
         if parent_item:
             parent_code = normalize_symbol(parent_item.get('code', ''))
-            parent_name = parent_item.get('name', '')
-            if parent_name:
-                parent_name = re.sub(r'^[A-Z0-9/]+\s*', '', parent_name).strip()
-                parent_name = re.sub(r'\[.*?\]', '', parent_name).strip()
+            parent_name = clean_title(parent_item.get('name', ''))
             
             hierarchy.insert(0, {
                 'symbol': parent_code,
@@ -312,64 +416,86 @@ def build_hierarchy_from_items(symbol, items):
             })
             fcode = parent_item.get('fcode', '')
         else:
-            # 如果父节点不在返回的数据中，手动构建层级
+            # 如果父节点不在返回的数据中，尝试从 API 获取标题
             fcode_normalized = normalize_symbol(fcode)
             
-            # 根据格式推断层级类型
-            if '/' in fcode_normalized:
-                # 大组级别
-                maingroup = fcode_normalized
-                subclass = maingroup.split('/')[0]
-                
-                # 添加大组
+            # 尝试从 ipcRecommendSearch API 获取标题
+            parent_title = fetch_parent_title_from_incopat(fcode_normalized)
+            
+            if parent_title:
                 hierarchy.insert(0, {
-                    'symbol': maingroup,
-                    'title': f'{maingroup} (大组)',
-                    'titleCn': f'{maingroup} (大组)',
+                    'symbol': fcode_normalized,
+                    'title': parent_title,
+                    'titleCn': parent_title,
                     'depth': 0
                 })
-                
-                # 添加小类
-                hierarchy.insert(0, {
-                    'symbol': subclass,
-                    'title': f'{subclass} (小类)',
-                    'titleCn': f'{subclass} (小类)',
-                    'depth': 0
-                })
+                # 继续向上查找
+                # 根据格式推断父节点
+                if '/' in fcode_normalized:
+                    fcode = fcode_normalized.split('/')[0]
+                elif len(fcode_normalized) > 3:
+                    fcode = fcode_normalized[:3]
+                elif len(fcode_normalized) > 1:
+                    fcode = fcode_normalized[0]
+                else:
+                    break
             else:
-                # 小类或大类级别
-                subclass = fcode_normalized
-                
-                # 添加小类
-                hierarchy.insert(0, {
-                    'symbol': subclass,
-                    'title': f'{subclass} (小类)',
-                    'titleCn': f'{subclass} (小类)',
-                    'depth': 0
-                })
-            
-            # 添加大类
-            if len(subclass) >= 3:
-                mainclass = subclass[:3]
-                hierarchy.insert(0, {
-                    'symbol': mainclass,
-                    'title': f'{mainclass} (大类)',
-                    'titleCn': f'{mainclass} (大类)',
-                    'depth': 0
-                })
-            
-            # 添加部
-            if len(subclass) >= 1:
-                section = subclass[0]
-                info = get_section_info(section)
-                if info:
+                # 如果 API 也没有返回，手动构建层级
+                # 根据格式推断层级类型
+                if '/' in fcode_normalized:
+                    # 大组级别
+                    maingroup = fcode_normalized
+                    subclass = maingroup.split('/')[0]
+                    
+                    # 添加大组
                     hierarchy.insert(0, {
-                        'symbol': section,
-                        'title': info['title'],
-                        'titleCn': info['title'],
+                        'symbol': maingroup,
+                        'title': f'{maingroup} (大组)',
+                        'titleCn': f'{maingroup} (大组)',
                         'depth': 0
                     })
-            break
+                    
+                    # 添加小类
+                    hierarchy.insert(0, {
+                        'symbol': subclass,
+                        'title': f'{subclass} (小类)',
+                        'titleCn': f'{subclass} (小类)',
+                        'depth': 0
+                    })
+                else:
+                    # 小类或大类级别
+                    subclass = fcode_normalized
+                    
+                    # 添加小类
+                    hierarchy.insert(0, {
+                        'symbol': subclass,
+                        'title': f'{subclass} (小类)',
+                        'titleCn': f'{subclass} (小类)',
+                        'depth': 0
+                    })
+                
+                # 添加大类
+                if len(subclass) >= 3:
+                    mainclass = subclass[:3]
+                    hierarchy.insert(0, {
+                        'symbol': mainclass,
+                        'title': f'{mainclass} (大类)',
+                        'titleCn': f'{mainclass} (大类)',
+                        'depth': 0
+                    })
+                
+                # 添加部
+                if len(subclass) >= 1:
+                    section = subclass[0]
+                    info = get_section_info(section)
+                    if info:
+                        hierarchy.insert(0, {
+                            'symbol': section,
+                            'title': info['title'],
+                            'titleCn': info['title'],
+                            'depth': 0
+                        })
+                break
     
     # 如果目标符号不在层级中，添加它
     if hierarchy and hierarchy[-1]['symbol'] != normalized_symbol:
