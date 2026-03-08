@@ -432,6 +432,21 @@
     text-align: left;
 }
 
+.user-message .message-content code {
+    background: rgba(0, 0, 0, 0.15);
+    color: #FFFFFF;
+}
+
+.user-message .message-content pre {
+    background-color: rgba(0, 0, 0, 0.2);
+    color: #FFFFFF;
+}
+
+.user-message .message-content pre code {
+    background: none;
+    color: inherit;
+}
+
 .assistant-message .message-main-content {
     background-color: transparent;
 }
