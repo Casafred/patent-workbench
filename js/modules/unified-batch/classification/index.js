@@ -53,7 +53,9 @@ const ClassificationModule = {
             'classification_precheck_btn': this.handlePrecheck.bind(this),
             'classification_precheck_proceed_btn': this.handlePrecheckProceed.bind(this),
             'classification_precheck_modify_btn': this.handlePrecheckModify.bind(this),
-            'classification_export_to_original_btn': this.handleExportToOriginalExcel.bind(this)
+            'classification_export_to_original_btn': this.handleExportToOriginalExcel.bind(this),
+            'classification_copy_prompt_btn': this.handleCopyPrompt.bind(this),
+            'classification_publish_prompt_btn': this.handlePublishPrompt.bind(this)
         };
 
         Object.entries(clickElements).forEach(([id, handler]) => {
@@ -1286,17 +1288,19 @@ const ClassificationModule = {
         const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         
+        const schema = classificationState.state.schema;
         const link = document.createElement('a');
         link.href = url;
-        link.download = `${this.state.schema.name || '分类体系'}_${new Date().toISOString().slice(0, 10)}.json`;
+        link.download = `${schema?.name || '分类体系'}_${new Date().toISOString().slice(0, 10)}.json`;
         link.click();
         
         URL.revokeObjectURL(url);
     },
 
     handleAddExample() {
+        const schema = classificationState.state.schema;
         const example = {
-            schemaId: this.state.schema.id,
+            schemaId: schema?.id,
             layerLevel: 1,
             input: '',
             correctLabel: '',
@@ -1722,16 +1726,17 @@ const ClassificationModule = {
     },
 
     handleAddToExamples() {
-        const selected = Array.from(this.state.ui.selectedResults);
+        const selected = Array.from(classificationState.state.ui.selectedResults);
         if (selected.length === 0) {
             alert('请先选择要添加的结果');
             return;
         }
 
+        const schema = classificationState.state.schema;
         selected.forEach(resultId => {
-            const result = this.state.results.find(r => r.id === resultId || r.requestId === resultId);
+            const result = classificationState.state.results.find(r => r.id === resultId || r.requestId === resultId);
             if (result) {
-                ExampleLibrary.addFromResult(result, this.state.schema.layers[0]?.name, false, '低确信度条目');
+                ExampleLibrary.addFromResult(result, schema?.categories?.[0]?.name, false, '低确信度条目');
             }
         });
 
@@ -2132,6 +2137,78 @@ const ClassificationModule = {
         if (!text) return '';
         if (text.length <= maxLength) return text;
         return text.substring(0, maxLength) + '...';
+    },
+
+    handleCopyPrompt() {
+        const preview = document.getElementById('classification_prompt_preview');
+        if (!preview || !preview.value.trim()) {
+            alert('提示词为空，无法复制');
+            return;
+        }
+
+        const promptContent = preview.value.trim();
+        const schema = classificationState.state.schema;
+        const schemaName = schema?.name || '智能分类';
+
+        if (window.smartClipboard) {
+            window.smartClipboard.export(promptContent, '智能分类提示词', {
+                schemaName: schemaName,
+                categoryCount: this.countCategories(schema?.categories || [])
+            });
+            alert('提示词已复制到智能剪贴板！');
+        } else {
+            navigator.clipboard.writeText(promptContent).then(() => {
+                alert('提示词已复制到系统剪贴板！');
+            }).catch(err => {
+                console.error('复制失败:', err);
+                alert('复制失败，请手动选择复制');
+            });
+        }
+    },
+
+    handlePublishPrompt() {
+        const preview = document.getElementById('classification_prompt_preview');
+        if (!preview || !preview.value.trim()) {
+            alert('提示词为空，无法发布');
+            return;
+        }
+
+        const promptContent = preview.value.trim();
+        const schema = classificationState.state.schema;
+        const schemaName = schema?.name || '智能分类';
+
+        if (window.PromptForum && window.PromptForum.open) {
+            window.PromptForum.open();
+            
+            setTimeout(() => {
+                window.PromptForum.showView('publish');
+                
+                setTimeout(() => {
+                    const titleInput = document.getElementById('prompt_title');
+                    const contentInput = document.getElementById('prompt_content');
+                    const descInput = document.getElementById('prompt_description');
+                    const categorySelect = document.getElementById('prompt_category');
+                    
+                    if (titleInput) titleInput.value = schemaName;
+                    if (contentInput) contentInput.value = promptContent;
+                    if (descInput) {
+                        const categoryCount = this.countCategories(schema?.categories || []);
+                        descInput.value = `智能分类标引提示词，包含 ${categoryCount} 个分类项`;
+                    }
+                    
+                    if (categorySelect) {
+                        for (let i = 0; i < categorySelect.options.length; i++) {
+                            if (categorySelect.options[i].text.includes('智能分类') || categorySelect.options[i].text.includes('分类')) {
+                                categorySelect.selectedIndex = i;
+                                break;
+                            }
+                        }
+                    }
+                }, 100);
+            }, 200);
+        } else {
+            alert('提示词广场模块未加载，请刷新页面后重试');
+        }
     }
 };
 

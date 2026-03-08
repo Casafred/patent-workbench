@@ -472,9 +472,17 @@
             <div class="config-item">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <label>生成的分类提示词预览:</label>
-                    <button id="classification_optimize_prompt_btn" class="small-button" style="background: var(--accent-color); color: white;">
-                        AI一键优化提示词
-                    </button>
+                    <div style="display: flex; gap: 8px;">
+                        <button id="classification_copy_prompt_btn" class="small-button" style="background: var(--primary-color); color: white;" title="复制到智能剪贴板">
+                            📋 复制
+                        </button>
+                        <button id="classification_publish_prompt_btn" class="small-button" style="background: var(--success-color); color: white;" title="发布到提示词广场">
+                            🚀 发布到广场
+                        </button>
+                        <button id="classification_optimize_prompt_btn" class="small-button" style="background: var(--accent-color); color: white;">
+                            AI一键优化提示词
+                        </button>
+                    </div>
                 </div>
                 <textarea id="classification_prompt_preview" rows="6" readonly style="background: var(--bg-color-secondary); margin-top: 10px;" placeholder="配置分类层级后，将自动生成分类提示词..."></textarea>
             </div>
