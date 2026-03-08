@@ -174,8 +174,17 @@ function renderUnifiedTemplatesList() {
 }
 
 function updateUnifiedModeRecommendation() {
-    const count = UnifiedBatch.getInputCount();
-    const recommendation = UnifiedBatch.getRecommendedMode();
+    const allInputs = UnifiedBatch.getInputs();
+    const selectedCheckboxes = document.querySelectorAll('.unified-input-checkbox:checked');
+    
+    let count;
+    if (selectedCheckboxes.length > 0) {
+        count = selectedCheckboxes.length;
+    } else {
+        count = allInputs.length;
+    }
+    
+    const recommendation = UnifiedBatch.router.getRecommendation(count);
     const textEl = document.getElementById('unified_recommendation_text');
     
     if (textEl) {
@@ -192,7 +201,12 @@ function updateUnifiedModeRecommendation() {
 function updateModeCardStyles() {
     const asyncCard = document.getElementById('unified_mode_async_card');
     const batchCard = document.getElementById('unified_mode_batch_card');
-    const mode = UnifiedBatch.getActualMode();
+    
+    const allInputs = UnifiedBatch.getInputs();
+    const selectedCheckboxes = document.querySelectorAll('.unified-input-checkbox:checked');
+    const count = selectedCheckboxes.length > 0 ? selectedCheckboxes.length : allInputs.length;
+    const userMode = UnifiedBatch.getMode();
+    const mode = UnifiedBatch.router.determineMode(count, userMode);
 
     if (asyncCard && batchCard) {
         asyncCard.style.borderColor = mode === 'async' ? 'var(--primary-color)' : 'var(--border-color)';
@@ -212,7 +226,12 @@ function selectUnifiedMode(mode) {
 }
 
 function updateProcessPanelVisibility() {
-    const mode = UnifiedBatch.getActualMode();
+    const allInputs = UnifiedBatch.getInputs();
+    const selectedCheckboxes = document.querySelectorAll('.unified-input-checkbox:checked');
+    const count = selectedCheckboxes.length > 0 ? selectedCheckboxes.length : allInputs.length;
+    const userMode = UnifiedBatch.getMode();
+    const mode = UnifiedBatch.router.determineMode(count, userMode);
+    
     const asyncPanel = document.getElementById('unified_async_progress_panel');
     const batchPanel = document.getElementById('unified_batch_progress_panel');
 
@@ -1000,7 +1019,15 @@ function updateClassificationModeRecommendation() {
     var recommendation = { mode: 'async', reason: '' };
     
     if (typeof ClassificationModule !== 'undefined') {
-        count = ClassificationModule.state.getInputCount();
+        var allInputs = ClassificationModule.state.getInputs();
+        var selectedCheckboxes = document.querySelectorAll('.classification-input-checkbox:checked');
+        
+        if (selectedCheckboxes.length > 0) {
+            count = selectedCheckboxes.length;
+        } else {
+            count = allInputs.length;
+        }
+        
         recommendation = count < 50 
             ? { mode: 'async', reason: '数据量较少，适合实时处理' }
             : { mode: 'batch', reason: '数据量较大，建议使用批处理' };
@@ -1027,7 +1054,10 @@ function updateClassificationModeCardStyles() {
     if (typeof ClassificationModule !== 'undefined') {
         mode = ClassificationModule.state.getMode();
         if (mode === 'auto') {
-            mode = ClassificationModule.state.getInputCount() < 50 ? 'async' : 'batch';
+            var allInputs = ClassificationModule.state.getInputs();
+            var selectedCheckboxes = document.querySelectorAll('.classification-input-checkbox:checked');
+            var count = selectedCheckboxes.length > 0 ? selectedCheckboxes.length : allInputs.length;
+            mode = count < 50 ? 'async' : 'batch';
         }
     }
 
@@ -1043,7 +1073,10 @@ function updateClassificationProcessPanelVisibility() {
     if (typeof ClassificationModule !== 'undefined') {
         mode = ClassificationModule.state.getMode();
         if (mode === 'auto') {
-            mode = ClassificationModule.state.getInputCount() < 50 ? 'async' : 'batch';
+            var allInputs = ClassificationModule.state.getInputs();
+            var selectedCheckboxes = document.querySelectorAll('.classification-input-checkbox:checked');
+            var count = selectedCheckboxes.length > 0 ? selectedCheckboxes.length : allInputs.length;
+            mode = count < 50 ? 'async' : 'batch';
         }
     }
     

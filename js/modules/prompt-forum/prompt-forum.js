@@ -157,13 +157,34 @@ const PromptForum = (function() {
     async function loadCategories() {
         try {
             const response = await fetch('/api/prompts/categories');
-            const data = await response.json();
-            if (data.success) {
-                categories = data.data.categories;
-                renderCategories();
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
             }
+            const data = await response.json();
+            if (data.success && data.data && data.data.categories) {
+                categories = data.data.categories;
+            } else {
+                categories = [
+                    { id: 1, name: '专利检索' },
+                    { id: 2, name: '权利要求' },
+                    { id: 3, name: '说明书' },
+                    { id: 4, name: '附图标记' },
+                    { id: 5, name: '智能分类' },
+                    { id: 6, name: '其他' }
+                ];
+            }
+            renderCategories();
         } catch (error) {
             console.error('加载分类失败:', error);
+            categories = [
+                { id: 1, name: '专利检索' },
+                { id: 2, name: '权利要求' },
+                { id: 3, name: '说明书' },
+                { id: 4, name: '附图标记' },
+                { id: 5, name: '智能分类' },
+                { id: 6, name: '其他' }
+            ];
+            renderCategories();
         }
     }
     
@@ -477,13 +498,13 @@ const PromptForum = (function() {
             <form id="prompt_publish_form" onsubmit="return PromptForum.submitPrompt(event)">
                 <div class="form-row">
                     <div class="form-group">
-                        <label>标题 *</label>
-                        <input type="text" id="prompt_title" required maxlength="100" placeholder="给提示词起个名字">
+                        <label>标题</label>
+                        <input type="text" id="prompt_title" maxlength="100" placeholder="给提示词起个名字（可选）">
                     </div>
                     <div class="form-group">
-                        <label>分类 *</label>
-                        <select id="prompt_category" required>
-                            <option value="">选择分类</option>
+                        <label>分类</label>
+                        <select id="prompt_category">
+                            <option value="">选择分类（可选）</option>
                             ${categoryOptions}
                         </select>
                     </div>
@@ -491,59 +512,18 @@ const PromptForum = (function() {
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>导入到 *</label>
-                        <select id="prompt_target_feature" onchange="PromptForum.onTargetFeatureChange()">
-                            <option value="feature_1">💬 即时聊天 - 作为对话角色</option>
-                            <option value="feature_5">📦 批量处理 - 作为分析模板</option>
-                            <option value="feature_7">📝 文本分析 - 复制使用</option>
-                        </select>
+                        <label>标签</label>
+                        <input type="text" id="prompt_tags" placeholder="多个标签用逗号分隔（可选）">
                     </div>
                     <div class="form-group">
-                        <label>标签</label>
-                        <input type="text" id="prompt_tags" placeholder="多个标签用逗号分隔">
+                        <label>描述</label>
+                        <input type="text" id="prompt_description" placeholder="简单描述用途和效果（可选）">
                     </div>
-                </div>
-                
-                <div class="form-group">
-                    <label>描述</label>
-                    <textarea id="prompt_description" rows="2" placeholder="简单描述这个提示词的用途和效果"></textarea>
                 </div>
                 
                 <div class="form-group">
                     <label>提示词内容 *</label>
-                    <textarea id="prompt_content" required rows="6" placeholder="输入提示词内容，可使用 {{INPUT}} 作为输入占位符"></textarea>
-                </div>
-                
-                <div id="feature_5_options" class="feature-options" style="display: none;">
-                    <h4>批量处理选项</h4>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>推荐模型</label>
-                            <select id="prompt_model">
-                                <option value="GLM-4-Flash">GLM-4-Flash（快速）</option>
-                                <option value="GLM-4-Plus">GLM-4-Plus（均衡）</option>
-                                <option value="GLM-4-Long">GLM-4-Long（长文本）</option>
-                                <option value="qwen-plus">Qwen-Plus</option>
-                                <option value="qwen-max">Qwen-Max</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>温度: <span id="temperature_value">0.1</span></label>
-                            <input type="range" id="prompt_temperature" min="0" max="1" step="0.1" value="0.1">
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>输出字段（可选）</label>
-                        <div id="output_fields_container">
-                            <div class="output-field-row">
-                                <input type="text" class="field-name-input" placeholder="字段名">
-                                <input type="text" class="field-desc-input" placeholder="字段描述">
-                                <button type="button" class="remove-field-btn" onclick="PromptForum.removeOutputField(this)"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
-                            </div>
-                        </div>
-                        <button type="button" class="add-field-btn" onclick="PromptForum.addOutputField()">+ 添加字段</button>
-                    </div>
+                    <textarea id="prompt_content" required rows="8" placeholder="输入提示词内容，可使用 {{INPUT}} 作为输入占位符"></textarea>
                 </div>
                 
                 <div class="form-notice">
@@ -556,10 +536,6 @@ const PromptForum = (function() {
                 </div>
             </form>
         `;
-        
-        document.getElementById('prompt_temperature').addEventListener('input', (e) => {
-            document.getElementById('temperature_value').textContent = e.target.value;
-        });
     }
     
     function onTargetFeatureChange() {

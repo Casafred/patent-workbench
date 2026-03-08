@@ -1825,6 +1825,7 @@ const ClassificationModule = {
             }
             
             this.state.precheckResults = precheckResults;
+            classificationState.state.precheckResults = precheckResults;
             this.renderPrecheckResults(precheckResults);
             
             if (resultsContainer) {
