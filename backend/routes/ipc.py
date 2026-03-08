@@ -301,12 +301,490 @@ def get_section_info(symbol):
     return sections.get(symbol[0] if symbol else '', None)
 
 
+def fetch_single_item_from_incopat(symbol):
+    """从 incoPat API 获取单个分类号的详细信息
+    
+    使用 ipcquery API 查询，从返回的子节点列表中提取目标节点的信息
+    """
+    cache_key = f"incopat_single_{normalize_symbol(symbol)}"
+    cached = get_cached(cache_key)
+    if cached:
+        return cached
+    
+    try:
+        session = get_incopat_session()
+        normalized_symbol = normalize_symbol(symbol)
+        
+        # 确定查询的基础符号
+        if '/' in normalized_symbol:
+            base_symbol = normalized_symbol.split('/')[0]
+        else:
+            base_symbol = normalized_symbol
+        
+        resp = session.post(
+            f'{INCOPAT_API_BASE}/ipcFindTool/ipcquery',
+            data={
+                'id': '',
+                'code': base_symbol,
+                'version': '2026',
+                'format': 'zh'
+            },
+            headers={
+                **HEADERS,
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            timeout=30
+        )
+        
+        if resp.status_code == 200:
+            data = resp.json()
+            if data.get('status') and data.get('data'):
+                items = data['data']
+                
+                # 构建映射
+                code_to_item = {}
+                for item in items:
+                    code = normalize_symbol(item.get('code', ''))
+                    if code and code not in code_to_item:
+                        code_to_item[code] = item
+                
+                # 查找目标
+                target = code_to_item.get(normalized_symbol)
+                if target:
+                    set_cache(cache_key, target)
+                    return target
+                
+                # 如果目标是小类级别（如 A63H），它可能作为 fcode 出现在子节点中
+                # 需要从子节点推断
+                for item in items:
+                    fcode = normalize_symbol(item.get('fcode', ''))
+                    if fcode == normalized_symbol:
+                        # 目标是父节点，构建虚拟条目
+                        # 需要单独查询获取标题
+                        pass
+        
+        return None
+    except Exception as e:
+        print(f'fetch_single_item_from_incopat error: {e}')
+        return None
+
+
+def fetch_level_info_from_incopat(symbol):
+    """获取指定层级及其所有父级的完整信息
+    
+    这是核心函数，确保获取完整的层级链：
+    部 -> 大类 -> 小类 -> 大组 -> 小组
+    
+    返回格式：
+    [
+        {'symbol': 'A', 'title': '人类必需品', 'level': 'section'},
+        {'symbol': 'A63', 'title': '运动;游戏;娱乐活动', 'level': 'class'},
+        {'symbol': 'A63H', 'title': '玩具，如陀螺、玩偶、铁环或积木', 'level': 'subclass'},
+        {'symbol': 'A63H30/00', 'title': '专门适用于玩具...', 'level': 'maingroup'},
+        {'symbol': 'A63H30/02', 'title': '电气装置', 'level': 'subgroup'}
+    ]
+    """
+    normalized_symbol = normalize_symbol(symbol)
+    cache_key = f"incopat_level_{normalized_symbol}"
+    cached = get_cached(cache_key)
+    if cached:
+        return cached
+    
+    hierarchy = []
+    
+    # 解析符号，确定层级结构
+    # IPC 结构：部(1位) -> 大类(3位) -> 小类(4位) -> 大组(含/) -> 小组
+    section = normalized_symbol[0] if normalized_symbol else None
+    
+    if not section:
+        return []
+    
+    # 1. 获取部信息
+    section_info = get_section_info(section)
+    if section_info:
+        hierarchy.append({
+            'symbol': section,
+            'title': section_info['title'],
+            'titleCn': section_info['title'],
+            'level': 'section',
+            'levelName': '部 (Section)'
+        })
+    
+    # 2. 获取大类信息 (如 A63)
+    if len(normalized_symbol) >= 3:
+        mainclass = normalized_symbol[:3]
+        if mainclass != section:
+            mainclass_info = fetch_class_info(mainclass)
+            if mainclass_info:
+                hierarchy.append(mainclass_info)
+    
+    # 3. 获取小类信息 (如 A63H)
+    if len(normalized_symbol) >= 4:
+        subclass = normalized_symbol[:4]
+        if subclass != normalized_symbol[:3]:
+            subclass_info = fetch_subclass_info(subclass)
+            if subclass_info:
+                hierarchy.append(subclass_info)
+    
+    # 4. 获取大组信息 (如 A63H30/00)
+    if '/' in normalized_symbol:
+        parts = normalized_symbol.split('/')
+        maingroup = f"{parts[0]}/00"
+        if maingroup != normalized_symbol[:4]:
+            maingroup_info = fetch_maingroup_info(maingroup)
+            if maingroup_info:
+                hierarchy.append(maingroup_info)
+        
+        # 5. 获取小组信息 (如 A63H30/02)
+        if normalized_symbol != maingroup:
+            subgroup_info = fetch_subgroup_info(normalized_symbol)
+            if subgroup_info:
+                hierarchy.append(subgroup_info)
+    elif len(normalized_symbol) > 4:
+        # 如果没有斜杠但长度大于4，可能是大组格式（如 A63H30）
+        # 尝试作为大组处理
+        maingroup_info = fetch_maingroup_info(f"{normalized_symbol}/00")
+        if maingroup_info:
+            hierarchy.append(maingroup_info)
+    
+    if hierarchy:
+        set_cache(cache_key, hierarchy)
+    
+    return hierarchy
+
+
+def fetch_class_info(mainclass):
+    """获取大类信息（如 A63）"""
+    cache_key = f"class_{mainclass}"
+    cached = get_cached(cache_key)
+    if cached:
+        return cached
+    
+    try:
+        session = get_incopat_session()
+        
+        # 查询该大类，从返回的小类列表中获取大类名称
+        resp = session.post(
+            f'{INCOPAT_API_BASE}/ipcFindTool/ipcquery',
+            data={
+                'id': '',
+                'code': mainclass,
+                'version': '2026',
+                'format': 'zh'
+            },
+            headers={
+                **HEADERS,
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            timeout=30
+        )
+        
+        if resp.status_code == 200:
+            data = resp.json()
+            if data.get('status') and data.get('data'):
+                items = data['data']
+                
+                # 大类名称通常可以从子节点的 fcode 推断
+                # 或者从第一个子节点的名称中提取
+                for item in items:
+                    fcode = item.get('fcode', '')
+                    if fcode and normalize_symbol(fcode) == normalize_symbol(mainclass):
+                        # 找到了该大类下的子节点
+                        # 大类名称需要从其他地方获取
+                        break
+                
+                # 尝试从子节点名称中提取大类信息
+                # 查询父级（部）来获取大类列表
+                section = mainclass[0]
+                resp2 = session.post(
+                    f'{INCOPAT_API_BASE}/ipcFindTool/ipcquery',
+                    data={
+                        'id': '',
+                        'code': section,
+                        'version': '2026',
+                        'format': 'zh'
+                    },
+                    headers={
+                        **HEADERS,
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    timeout=30
+                )
+                
+                if resp2.status_code == 200:
+                    data2 = resp2.json()
+                    if data2.get('status') and data2.get('data'):
+                        for item in data2['data']:
+                            code = normalize_symbol(item.get('code', ''))
+                            if code == normalize_symbol(mainclass):
+                                name = clean_title(item.get('name', ''))
+                                result = {
+                                    'symbol': mainclass,
+                                    'title': name,
+                                    'titleCn': name,
+                                    'level': 'class',
+                                    'levelName': '大类 (Class)'
+                                }
+                                set_cache(cache_key, result)
+                                return result
+        
+        return None
+    except Exception as e:
+        print(f'fetch_class_info error: {e}')
+        return None
+
+
+def fetch_subclass_info(subclass):
+    """获取小类信息（如 A63H）"""
+    cache_key = f"subclass_{subclass}"
+    cached = get_cached(cache_key)
+    if cached:
+        return cached
+    
+    try:
+        session = get_incopat_session()
+        
+        # 查询该小类，从返回的大组列表中获取小类名称
+        # 首先尝试直接查询小类
+        resp = session.post(
+            f'{INCOPAT_API_BASE}/ipcFindTool/ipcquery',
+            data={
+                'id': '',
+                'code': subclass,
+                'version': '2026',
+                'format': 'zh'
+            },
+            headers={
+                **HEADERS,
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            timeout=30
+        )
+        
+        if resp.status_code == 200:
+            data = resp.json()
+            if data.get('status') and data.get('data'):
+                items = data['data']
+                
+                # 查找小类名称
+                # 小类通常作为 fcode 出现在大组数据中
+                for item in items:
+                    fcode = item.get('fcode', '')
+                    if fcode and normalize_symbol(fcode) == normalize_symbol(subclass):
+                        # 找到了该小类下的大组
+                        pass
+                
+                # 从大类查询中获取小类名称
+                mainclass = subclass[:3]
+                resp2 = session.post(
+                    f'{INCOPAT_API_BASE}/ipcFindTool/ipcquery',
+                    data={
+                        'id': '',
+                        'code': mainclass,
+                        'version': '2026',
+                        'format': 'zh'
+                    },
+                    headers={
+                        **HEADERS,
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    timeout=30
+                )
+                
+                if resp2.status_code == 200:
+                    data2 = resp2.json()
+                    if data2.get('status') and data2.get('data'):
+                        for item in data2['data']:
+                            code = normalize_symbol(item.get('code', ''))
+                            if code == normalize_symbol(subclass):
+                                name = clean_title(item.get('name', ''))
+                                result = {
+                                    'symbol': subclass,
+                                    'title': name,
+                                    'titleCn': name,
+                                    'level': 'subclass',
+                                    'levelName': '小类 (Subclass)'
+                                }
+                                set_cache(cache_key, result)
+                                return result
+        
+        return None
+    except Exception as e:
+        print(f'fetch_subclass_info error: {e}')
+        return None
+
+
+def fetch_maingroup_info(maingroup):
+    """获取大组信息（如 A63H30/00）"""
+    cache_key = f"maingroup_{maingroup}"
+    cached = get_cached(cache_key)
+    if cached:
+        return cached
+    
+    try:
+        session = get_incopat_session()
+        
+        # 大组格式：A63H30/00，基础符号是 A63H30
+        base = maingroup.split('/')[0]
+        
+        resp = session.post(
+            f'{INCOPAT_API_BASE}/ipcFindTool/ipcquery',
+            data={
+                'id': '',
+                'code': base,
+                'version': '2026',
+                'format': 'zh'
+            },
+            headers={
+                **HEADERS,
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            timeout=30
+        )
+        
+        if resp.status_code == 200:
+            data = resp.json()
+            if data.get('status') and data.get('data'):
+                items = data['data']
+                
+                # 查找大组
+                for item in items:
+                    code = normalize_symbol(item.get('code', ''))
+                    fcode = normalize_symbol(item.get('fcode', ''))
+                    
+                    # 大组可能是 fcode（当返回的是小组时）
+                    # 或者大组本身就是返回项
+                    if code == normalize_symbol(maingroup):
+                        name = clean_title(item.get('name', ''))
+                        result = {
+                            'symbol': maingroup,
+                            'title': name,
+                            'titleCn': name,
+                            'level': 'maingroup',
+                            'levelName': '大组 (Main Group)'
+                        }
+                        set_cache(cache_key, result)
+                        return result
+                
+                # 如果大组作为 fcode 出现，需要从小类查询
+                subclass = base[:4]
+                resp2 = session.post(
+                    f'{INCOPAT_API_BASE}/ipcFindTool/ipcquery',
+                    data={
+                        'id': '',
+                        'code': subclass,
+                        'version': '2026',
+                        'format': 'zh'
+                    },
+                    headers={
+                        **HEADERS,
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    timeout=30
+                )
+                
+                if resp2.status_code == 200:
+                    data2 = resp2.json()
+                    if data2.get('status') and data2.get('data'):
+                        for item in data2['data']:
+                            code = normalize_symbol(item.get('code', ''))
+                            if code == normalize_symbol(maingroup):
+                                name = clean_title(item.get('name', ''))
+                                result = {
+                                    'symbol': maingroup,
+                                    'title': name,
+                                    'titleCn': name,
+                                    'level': 'maingroup',
+                                    'levelName': '大组 (Main Group)'
+                                }
+                                set_cache(cache_key, result)
+                                return result
+        
+        return None
+    except Exception as e:
+        print(f'fetch_maingroup_info error: {e}')
+        return None
+
+
+def fetch_subgroup_info(subgroup):
+    """获取小组信息（如 A63H30/02）"""
+    cache_key = f"subgroup_{subgroup}"
+    cached = get_cached(cache_key)
+    if cached:
+        return cached
+    
+    try:
+        session = get_incopat_session()
+        
+        base = subgroup.split('/')[0]
+        
+        resp = session.post(
+            f'{INCOPAT_API_BASE}/ipcFindTool/ipcquery',
+            data={
+                'id': '',
+                'code': base,
+                'version': '2026',
+                'format': 'zh'
+            },
+            headers={
+                **HEADERS,
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            timeout=30
+        )
+        
+        if resp.status_code == 200:
+            data = resp.json()
+            if data.get('status') and data.get('data'):
+                items = data['data']
+                
+                for item in items:
+                    code = normalize_symbol(item.get('code', ''))
+                    if code == normalize_symbol(subgroup):
+                        name = clean_title(item.get('name', ''))
+                        result = {
+                            'symbol': subgroup,
+                            'title': name,
+                            'titleCn': name,
+                            'level': 'subgroup',
+                            'levelName': '小组 (Subgroup)'
+                        }
+                        set_cache(cache_key, result)
+                        return result
+        
+        return None
+    except Exception as e:
+        print(f'fetch_subgroup_info error: {e}')
+        return None
+
+
 def build_hierarchy_from_items(symbol, items):
-    """从 ipcquery 返回的数据构建层级结构"""
-    if not items:
+    """从 ipcquery 返回的数据构建层级结构
+    
+    改进版本：确保获取完整的父级链
+    """
+    if not symbol:
         return []
     
     normalized_symbol = normalize_symbol(symbol)
+    
+    # 使用新的层级获取函数
+    hierarchy = fetch_level_info_from_incopat(normalized_symbol)
+    
+    if hierarchy:
+        return hierarchy
+    
+    # 如果新方法失败，使用原来的逻辑作为后备
+    if not items:
+        return []
     
     # 构建分类号到条目的映射
     code_to_item = {}
@@ -320,39 +798,29 @@ def build_hierarchy_from_items(symbol, items):
     
     # 如果没找到精确匹配，尝试查找父级
     if not target_item:
-        # 尝试去掉斜杠后的部分
         if '/' in normalized_symbol:
             base = normalized_symbol.split('/')[0]
             target_item = code_to_item.get(base)
         
-        # 尝试前缀匹配
         if not target_item:
             for code in sorted(code_to_item.keys(), key=len, reverse=True):
                 if normalized_symbol.startswith(code):
                     target_item = code_to_item[code]
                     break
     
-    # 如果还是没找到，从子节点中推断
     if not target_item and items:
-        # 从第一个子节点推断父节点
         first_item = items[0]
         fcode = first_item.get('fcode', '')
         
         if fcode:
             fcode_normalized = normalize_symbol(fcode)
             
-            # 检查目标是否是 fcode 或 fcode 的父级
-            # 例如：输入 G06F17/00，返回的 fcode 是 G06F17/00
-            # 这说明 G06F17/00 是父节点（目标）
             if fcode_normalized == normalized_symbol:
-                # 目标是父节点，构建虚拟条目
-                # 从子节点的 code 推断目标的大组
                 child_code = normalize_symbol(first_item.get('code', ''))
                 if '/' in child_code:
-                    # 子节点是小组，目标是该小组所属的大组
                     target_item = {
                         'code': normalized_symbol,
-                        'fcode': normalized_symbol.split('/')[0],  # 小类
+                        'fcode': normalized_symbol.split('/')[0],
                         'name': first_item.get('name', '').split(']')[-1].strip() if first_item.get('name') else f'{normalized_symbol} (大组)'
                     }
                 else:
@@ -362,17 +830,13 @@ def build_hierarchy_from_items(symbol, items):
                         'name': f'{normalized_symbol} (分类)'
                     }
             elif fcode_normalized.startswith(normalized_symbol) or normalized_symbol.startswith(fcode_normalized.split('/')[0]):
-                # 检查是否需要添加大组层级
                 if '/' in fcode_normalized and fcode_normalized.split('/')[0] == normalized_symbol:
-                    # 目标是小类，fcode 是大组
-                    # 需要构建：目标(小类) -> 大组
                     target_item = {
                         'code': normalized_symbol,
                         'fcode': normalized_symbol[:3] if len(normalized_symbol) > 3 else normalized_symbol[0],
                         'name': f'{normalized_symbol} (小类)'
                     }
                 else:
-                    # 目标是父节点，构建虚拟条目
                     target_item = {
                         'code': normalized_symbol,
                         'fcode': '',
@@ -382,10 +846,8 @@ def build_hierarchy_from_items(symbol, items):
     if not target_item:
         return []
     
-    # 构建层级
     hierarchy = []
     
-    # 添加目标节点
     target_code = normalize_symbol(target_item.get('code', ''))
     name = clean_title(target_item.get('name', ''))
     
@@ -396,7 +858,6 @@ def build_hierarchy_from_items(symbol, items):
         'depth': 0
     })
     
-    # 向上遍历父节点
     fcode = target_item.get('fcode', '')
     visited = set()
     
@@ -416,10 +877,8 @@ def build_hierarchy_from_items(symbol, items):
             })
             fcode = parent_item.get('fcode', '')
         else:
-            # 如果父节点不在返回的数据中，尝试从 API 获取标题
             fcode_normalized = normalize_symbol(fcode)
             
-            # 尝试从 ipcRecommendSearch API 获取标题
             parent_title = fetch_parent_title_from_incopat(fcode_normalized)
             
             if parent_title:
@@ -429,8 +888,6 @@ def build_hierarchy_from_items(symbol, items):
                     'titleCn': parent_title,
                     'depth': 0
                 })
-                # 继续向上查找
-                # 根据格式推断父节点
                 if '/' in fcode_normalized:
                     fcode = fcode_normalized.split('/')[0]
                 elif len(fcode_normalized) > 3:
@@ -440,14 +897,10 @@ def build_hierarchy_from_items(symbol, items):
                 else:
                     break
             else:
-                # 如果 API 也没有返回，手动构建层级
-                # 根据格式推断层级类型
                 if '/' in fcode_normalized:
-                    # 大组级别
                     maingroup = fcode_normalized
                     subclass = maingroup.split('/')[0]
                     
-                    # 添加大组
                     hierarchy.insert(0, {
                         'symbol': maingroup,
                         'title': f'{maingroup} (大组)',
@@ -455,7 +908,6 @@ def build_hierarchy_from_items(symbol, items):
                         'depth': 0
                     })
                     
-                    # 添加小类
                     hierarchy.insert(0, {
                         'symbol': subclass,
                         'title': f'{subclass} (小类)',
@@ -463,10 +915,8 @@ def build_hierarchy_from_items(symbol, items):
                         'depth': 0
                     })
                 else:
-                    # 小类或大类级别
                     subclass = fcode_normalized
                     
-                    # 添加小类
                     hierarchy.insert(0, {
                         'symbol': subclass,
                         'title': f'{subclass} (小类)',
@@ -474,7 +924,6 @@ def build_hierarchy_from_items(symbol, items):
                         'depth': 0
                     })
                 
-                # 添加大类
                 if len(subclass) >= 3:
                     mainclass = subclass[:3]
                     hierarchy.insert(0, {
@@ -484,7 +933,6 @@ def build_hierarchy_from_items(symbol, items):
                         'depth': 0
                     })
                 
-                # 添加部
                 if len(subclass) >= 1:
                     section = subclass[0]
                     info = get_section_info(section)
@@ -497,7 +945,6 @@ def build_hierarchy_from_items(symbol, items):
                         })
                 break
     
-    # 如果目标符号不在层级中，添加它
     if hierarchy and hierarchy[-1]['symbol'] != normalized_symbol:
         if normalized_symbol.startswith(hierarchy[-1]['symbol']):
             hierarchy.append({
