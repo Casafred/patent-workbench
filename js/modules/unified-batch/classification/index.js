@@ -1346,8 +1346,18 @@ const ClassificationModule = {
     handleSubmitAsync() {
         console.log('[ClassificationModule] Starting async classification');
         
-        const inputs = classificationState.getInputs();
+        const allInputs = classificationState.getInputs();
         const schema = classificationState.getSchema();
+        
+        const selectedCheckboxes = document.querySelectorAll('.classification-input-checkbox:checked');
+        let inputs;
+        if (selectedCheckboxes.length > 0) {
+            const selectedIndices = Array.from(selectedCheckboxes).map(cb => parseInt(cb.dataset.index));
+            inputs = selectedIndices.map(idx => allInputs[idx]).filter(Boolean);
+            console.log('[ClassificationModule] Using selected inputs:', inputs.length, 'of', allInputs.length);
+        } else {
+            inputs = allInputs;
+        }
         
         if (inputs.length === 0) {
             alert('请先添加待分类数据');
@@ -1936,16 +1946,20 @@ const ClassificationModule = {
             const result = JSON.parse(jsonString);
             
             let overallConfidence = 0;
-            if (result.confidence) {
-                const confValues = Object.values(result.confidence).filter(v => typeof v === 'number');
-                if (confValues.length > 0) {
-                    overallConfidence = confValues.reduce((a, b) => a + b, 0) / confValues.length;
+            if (result.confidence !== undefined) {
+                if (typeof result.confidence === 'number') {
+                    overallConfidence = result.confidence;
+                } else if (typeof result.confidence === 'object') {
+                    const confValues = Object.values(result.confidence).filter(v => typeof v === 'number');
+                    if (confValues.length > 0) {
+                        overallConfidence = confValues.reduce((a, b) => a + b, 0) / confValues.length;
+                    }
                 }
             }
             
             return {
                 classification: result.classification || {},
-                confidence: result.confidence || {},
+                confidence: typeof result.confidence === 'object' ? result.confidence : { overall: result.confidence || 0 },
                 reasoning: result.reasoning || '',
                 overallConfidence: overallConfidence,
                 rawContent: content
@@ -2060,7 +2074,14 @@ const ClassificationModule = {
         
         const mode = classificationState.getMode();
         if (mode === 'auto') {
-            const count = classificationState.getInputCount();
+            const allInputs = classificationState.getInputs();
+            const selectedCheckboxes = document.querySelectorAll('.classification-input-checkbox:checked');
+            let count;
+            if (selectedCheckboxes.length > 0) {
+                count = selectedCheckboxes.length;
+            } else {
+                count = allInputs.length;
+            }
             const actualMode = count < 50 ? 'async' : 'batch';
             classificationState.setMode(actualMode);
         }
