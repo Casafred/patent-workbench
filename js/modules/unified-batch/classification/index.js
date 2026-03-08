@@ -1466,46 +1466,36 @@ const ClassificationModule = {
         let completed = 0;
         let failed = 0;
         
-        const concurrency = 5;
-        const batches = [];
-        for (let i = 0; i < inputs.length; i += concurrency) {
-            batches.push(inputs.slice(i, i + concurrency));
-        }
-        
-        for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-            const batch = batches[batchIndex];
+        for (let i = 0; i < inputs.length; i++) {
+            const input = inputs[i];
             
-            const promises = batch.map(async (input) => {
-                try {
-                    const result = await this.classifySingleInput(input, prompt, model, temperature);
-                    results.push({
-                        id: input.id,
-                        input: input,
-                        result: result,
-                        status: 'success'
-                    });
-                    completed++;
-                } catch (error) {
-                    const errorMsg = error?.message || error?.error?.message || (typeof error === 'object' ? JSON.stringify(error) : String(error));
-                    console.error('[ClassificationModule] Classification failed for:', input.id, errorMsg);
-                    results.push({
-                        id: input.id,
-                        input: input,
-                        error: errorMsg,
-                        status: 'failed'
-                    });
-                    failed++;
-                }
-                
-                if (progressInfo) {
-                    progressInfo.textContent = `处理进度: ${completed + failed}/${inputs.length} (成功: ${completed}, 失败: ${failed})`;
-                }
-            });
+            if (progressInfo) {
+                progressInfo.textContent = `正在处理: ${i + 1}/${inputs.length} (成功: ${completed}, 失败: ${failed})`;
+            }
             
-            await Promise.all(promises);
+            try {
+                const result = await this.classifySingleInputWithRetry(input, prompt, model, temperature, 3);
+                results.push({
+                    id: input.id,
+                    input: input,
+                    result: result,
+                    status: 'success'
+                });
+                completed++;
+            } catch (error) {
+                const errorMsg = error?.message || error?.error?.message || (typeof error === 'object' ? JSON.stringify(error) : String(error));
+                console.error('[ClassificationModule] Classification failed for:', input.id, errorMsg);
+                results.push({
+                    id: input.id,
+                    input: input,
+                    error: errorMsg,
+                    status: 'failed'
+                });
+                failed++;
+            }
             
-            if (batchIndex < batches.length - 1) {
-                await new Promise(resolve => setTimeout(resolve, 100));
+            if (i < inputs.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 500));
             }
         }
         
