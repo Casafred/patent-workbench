@@ -160,11 +160,20 @@ class ClassificationState {
 
     loadSavedSchemas() {
         try {
-            const stored = window.userCacheStorage 
-                ? window.userCacheStorage.getJSON(STORAGE_KEYS.SCHEMAS)
-                : JSON.parse(localStorage.getItem(STORAGE_KEYS.SCHEMAS) || '[]');
+            let stored = null;
+            if (window.userCacheStorage && window.userCacheStorage.isInitialized && window.userCacheStorage.isInitialized()) {
+                stored = window.userCacheStorage.getJSON(STORAGE_KEYS.SCHEMAS);
+            } else if (window.userCacheStorage && typeof window.userCacheStorage.getJSON === 'function') {
+                stored = window.userCacheStorage.getJSON(STORAGE_KEYS.SCHEMAS);
+            } else {
+                const raw = localStorage.getItem(STORAGE_KEYS.SCHEMAS);
+                if (raw) {
+                    stored = JSON.parse(raw);
+                }
+            }
             if (stored && Array.isArray(stored)) {
                 this.state.savedSchemas = stored;
+                console.log('[ClassificationState] Loaded', stored.length, 'saved schemas');
             }
         } catch (e) {
             console.error('加载分类体系失败:', e);

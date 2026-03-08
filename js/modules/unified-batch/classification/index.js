@@ -1788,6 +1788,14 @@ const ClassificationModule = {
             btn.textContent = '⏳ 校验中...';
         }
         
+        if (resultsContainer) {
+            resultsContainer.style.display = 'none';
+        }
+        
+        if (actionsEl) {
+            actionsEl.style.display = 'none';
+        }
+        
         if (statusEl) {
             statusEl.textContent = '正在获取前3条数据进行测试分类...';
             statusEl.style.color = 'var(--text-color-secondary)';
@@ -1809,17 +1817,18 @@ const ClassificationModule = {
                 }
                 
                 try {
-                    const result = await this.classifySingleInput(input, prompt, model, temperature);
+                    const result = await this.classifySingleInputWithRetry(input, prompt, model, temperature, 3);
                     precheckResults.push({
                         input: input,
                         result: result,
                         status: 'success'
                     });
                 } catch (error) {
-                    console.error('[ClassificationModule] Precheck error for input:', input.id, error);
+                    const errorMsg = error?.message || error?.error?.message || (typeof error === 'object' ? JSON.stringify(error) : String(error));
+                    console.error('[ClassificationModule] Precheck error for input:', input.id, errorMsg);
                     precheckResults.push({
                         input: input,
-                        error: error.message,
+                        error: errorMsg,
                         status: 'failed'
                     });
                 }
@@ -1839,14 +1848,23 @@ const ClassificationModule = {
             
             if (statusEl) {
                 const successCount = precheckResults.filter(r => r.status === 'success').length;
-                statusEl.textContent = `校验完成！成功: ${successCount}/${testInputs.length}`;
-                statusEl.style.color = successCount === testInputs.length ? 'var(--success-color)' : 'var(--warning-color)';
+                const failedCount = precheckResults.filter(r => r.status === 'failed').length;
+                if (successCount === testInputs.length) {
+                    statusEl.textContent = `校验完成！全部成功: ${successCount}/${testInputs.length}`;
+                    statusEl.style.color = 'var(--success-color)';
+                } else if (successCount > 0) {
+                    statusEl.textContent = `校验完成！成功: ${successCount}, 失败: ${failedCount}`;
+                    statusEl.style.color = 'var(--warning-color)';
+                } else {
+                    statusEl.textContent = `校验失败！全部请求失败，请检查API配置或稍后重试`;
+                    statusEl.style.color = 'var(--error-color)';
+                }
             }
             
         } catch (error) {
             console.error('[ClassificationModule] Precheck failed:', error);
             if (statusEl) {
-                statusEl.textContent = '校验失败: ' + error.message;
+                statusEl.textContent = '校验失败: ' + (error.message || '未知错误');
                 statusEl.style.color = 'var(--error-color)';
             }
         } finally {
@@ -1855,6 +1873,30 @@ const ClassificationModule = {
                 btn.textContent = '🔍 重新校验';
             }
         }
+    },
+
+    async classifySingleInputWithRetry(input, prompt, model, temperature, maxRetries = 3) {
+        let lastError = null;
+        
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                const result = await this.classifySingleInput(input, prompt, model, temperature);
+                return result;
+            } catch (error) {
+                lastError = error;
+                const errorMsg = error?.message || '';
+                
+                if (errorMsg.includes('429') || errorMsg.includes('速率限制') || errorMsg.includes('rate limit')) {
+                    const waitTime = Math.min(2000 * attempt, 10000);
+                    console.log(`[ClassificationModule] Rate limited, waiting ${waitTime}ms before retry ${attempt}/${maxRetries}`);
+                    await new Promise(resolve => setTimeout(resolve, waitTime));
+                } else {
+                    throw error;
+                }
+            }
+        }
+        
+        throw lastError;
     },
 
     async classifySingleInput(input, prompt, model, temperature) {
