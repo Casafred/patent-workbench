@@ -47,6 +47,7 @@ const ClassificationModule = {
             'classification_import_examples_btn': this.handleImportExamples.bind(this),
             'classification_export_examples_btn': this.handleExportExamples.bind(this),
             'classification_async_submit_btn': this.handleSubmitAsync.bind(this),
+            'classification_async_export_btn': this.handleExportResults.bind(this),
             'classification_add_to_examples_btn': this.handleAddToExamples.bind(this),
             'classification_inputs_select_all_btn': this.handleSelectAllInputs.bind(this),
             'classification_inputs_delete_selected_btn': this.handleDeleteSelectedInputs.bind(this),
@@ -1668,12 +1669,16 @@ const ClassificationModule = {
     },
 
     updateResultsUI(results) {
-        const list = document.getElementById('classification_results_list');
+        const tbody = document.getElementById('classification_async_results_tbody');
         const statsEl = document.getElementById('classification_results_stats');
         
-        if (!list) return;
+        if (!tbody) {
+            console.warn('[ClassificationModule] Results tbody element not found');
+            return;
+        }
         
         const schema = classificationState.getSchema();
+        console.log('[ClassificationModule] Updating results UI with', results.length, 'results');
         
         if (statsEl) {
             const successCount = results.filter(r => r.status === 'success').length;
@@ -1681,55 +1686,76 @@ const ClassificationModule = {
             statsEl.textContent = `共 ${results.length} 条结果 (成功: ${successCount}, 失败: ${failedCount})`;
         }
         
-        list.innerHTML = results.map((item, index) => {
+        tbody.innerHTML = results.map((item, index) => {
             let resultText = '-';
             let confidenceText = '-';
+            let confidenceValue = 0;
             let statusClass = item.status === 'success' ? 'success' : 'error';
+            let statusText = item.status === 'success' ? '成功' : '失败';
             
             if (item.result) {
                 const result = item.result;
                 const classificationParts = [];
                 
-                if (schema.layers) {
-                    schema.layers.forEach(layer => {
-                        if (layer.name && result.classification && result.classification[layer.name]) {
-                            const label = result.classification[layer.name];
-                            classificationParts.push(`${layer.name}: ${Array.isArray(label) ? label.join(', ') : label}`);
+                if (result.classification) {
+                    if (Array.isArray(result.classification)) {
+                        classificationParts.push(result.classification.join(' > '));
+                    } else if (typeof result.classification === 'object') {
+                        const keys = Object.keys(result.classification);
+                        if (keys.length > 0) {
+                            keys.forEach(key => {
+                                const value = result.classification[key];
+                                if (value) {
+                                    classificationParts.push(`${key}: ${Array.isArray(value) ? value.join(', ') : value}`);
+                                }
+                            });
                         }
-                    });
+                    }
                 }
                 
                 resultText = classificationParts.join('; ') || '-';
                 
-                if (result.overallConfidence !== undefined) {
-                    const conf = result.overallConfidence;
+                const conf = result.overallConfidence;
+                if (conf !== undefined) {
+                    confidenceValue = conf;
                     confidenceText = (conf * 100).toFixed(0) + '%';
                     if (conf >= 0.8) {
                         statusClass = 'success';
+                        statusText = '高确信度';
                     } else if (conf >= 0.6) {
                         statusClass = 'warning';
+                        statusText = '中等确信度';
                     } else {
                         statusClass = 'error';
+                        statusText = '低确信度';
                     }
                 }
             } else if (item.error) {
                 resultText = '错误: ' + item.error;
+                statusText = '失败';
             }
             
+            const inputPreview = typeof item.input?.content === 'string' 
+                ? this.truncateText(item.input.content, 50)
+                : (item.inputPreview || '-');
+            
             return `
-                <div class="result-item" style="padding: 10px; border-bottom: 1px solid var(--border-color);">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-weight: 500;">${item.id}</span>
-                        <span class="status-badge ${statusClass}" style="padding: 2px 8px; border-radius: 4px; font-size: 0.85em;">
-                            ${confidenceText}
-                        </span>
-                    </div>
-                    <div style="margin-top: 5px; color: var(--text-color-secondary);">
-                        ${resultText}
-                    </div>
-                </div>
+                <tr>
+                    <td><input type="checkbox" class="classification-result-checkbox" data-id="${item.id}"></td>
+                    <td>${item.id}</td>
+                    <td>${inputPreview}</td>
+                    <td>${resultText}</td>
+                    <td>${confidenceText}</td>
+                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    <td>
+                        <button class="small-button" onclick="ClassificationModule.viewResultDetail('${item.id}')">查看</button>
+                    </td>
+                </tr>
             `;
         }).join('');
+        
+        this.updateExportButtonState();
+        console.log('[ClassificationModule] Results UI updated');
     },
 
     handleConfidenceFilter(e) {
@@ -2170,6 +2196,28 @@ const ClassificationModule = {
         }
     },
 
+    handleExportResults() {
+        console.log('[ClassificationModule] Exporting results...');
+        
+        const results = classificationState.getResults();
+        
+        if (!results || results.length === 0) {
+            alert('没有分类结果可导出');
+            return;
+        }
+        
+        const { headers, rows } = ResultAnalyzer.exportResultsToExcel(results);
+        
+        const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, '分类结果');
+        
+        const fileName = `分类结果_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+        
+        console.log('[ClassificationModule] Results exported to', fileName);
+    },
+
     handleExportToOriginalExcel() {
         console.log('[ClassificationModule] Exporting to original Excel...');
         
@@ -2206,9 +2254,14 @@ const ClassificationModule = {
         const results = classificationState.getResults();
         const originalData = classificationState.state.currentSheetData;
         const exportToOriginalBtn = document.getElementById('classification_export_to_original_btn');
+        const exportResultsBtn = document.getElementById('classification_async_export_btn');
         
         if (exportToOriginalBtn) {
             exportToOriginalBtn.disabled = results.length === 0 || !originalData || originalData.length === 0;
+        }
+        
+        if (exportResultsBtn) {
+            exportResultsBtn.disabled = results.length === 0;
         }
     },
 
