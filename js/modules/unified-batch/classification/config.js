@@ -2,6 +2,103 @@
  * 智能分类标引模块 - 配置常量
  */
 
+export const MODEL_CONCURRENCY_LIMITS = {
+    'GLM-4.6': 3,
+    'GLM-4.6V-FlashX': 3,
+    'GLM-4.7': 3,
+    'GLM-Image': 1,
+    'GLM-Z1-Air': 30,
+    'GLM-4.5': 10,
+    'embedding-3-pro': 100,
+    'GLM-4.6V': 10,
+    'GLM-4.7-Flash': 1,
+    'GLM-4.7-FlashX': 3,
+    'GLM-OCR': 2,
+    'GLM-5': 5,
+    'GLM-4-Plus': 20,
+    'GLM-Z1-Flash': 30,
+    'GLM-Z1-AirX': 30,
+    'GLM-4.5V': 10,
+    'GLM-4.6V-Flash': 1,
+    'AutoGLM-Phone': 5,
+    'AutoGLM-Phone-Multilingual': 5,
+    'GLM-4-0520': 20,
+    'Search-Pro': 5,
+    'Search-Std': 50,
+    'GLM-4.5-Air': 5,
+    'GLM-4.5-AirX': 5,
+    'GLM-4-AirX': 5,
+    'GLM-Realtime': 5,
+    'GLM-4-Flash-250414': 5,
+    'GLM-4-FlashX-250414': 50,
+    'GLM-Realtime-Flash': 5,
+    'GLM-Realtime-Air': 5,
+    'GLM-4.5-Flash': 2,
+    'GLM-4V-Plus-0111': 5,
+    'GLM-Zero-Preview': 50,
+    'GLM-4-Air': 100,
+    'GLM-4-Air-250414': 30,
+    'GLM-4-32B-0414-128K': 15,
+    'GLM-4-Long': 10,
+    'GLM-4-FlashX': 50,
+    'GLM-4.1V-Thinking-Flash': 5,
+    'GLM-4.1V-Thinking-FlashX': 30,
+    'GLM-4-Voice': 5,
+    'GLM-4-Flash': 200,
+    'GLM-Z1-FlashX': 50,
+    'GLM-4-9B': 5,
+    'GLM-4V-Plus': 5,
+    'GLM-4V-Flash': 10,
+    'GLM-4V': 5,
+    'Web-Search-Pro': 30,
+    'GLM-ASR': 5,
+    'Rerank': 50,
+    'CogView-4-250304': 5,
+    'CogView-3-Plus': 5,
+    'CogView-4': 5,
+    'CogView-3-Flash': 5,
+    'CogView-3': 5,
+    'CogVideoX-Flash': 3,
+    'CogVideoX': 5,
+    'CogVideoX-2': 5,
+    'CogTTS-Clone': 2,
+    'CogTTS': 5,
+    'GLM-TTS': 5,
+    'GLM-TTS-Clone': 2,
+    'GLM-ASR-2512': 5,
+    'ViduQ1-text': 5,
+    'Viduq1-Image': 5,
+    'Viduq1-Start-End': 5,
+    'Vidu2-Image': 5,
+    'Vidu2-Start-End': 5,
+    'Vidu2-Reference': 5,
+    'Embedding-3': 50,
+    'Embedding-2': 50,
+    'GLM-4-AllTools': 5,
+    'GLM-4-Assistant': 5,
+    'CodeGeeX-4': 50,
+    'GLM-4': 30,
+    'CharGLM-4': 5,
+    'GLM-3-Turbo': 50,
+    'Moderation': 5,
+    'CogVideoX-3': 1,
+    'GLM-Experimental-Preview': 5
+};
+
+export const getConcurrencyForModel = (model) => {
+    if (!model) return 1;
+    const normalizedName = model.replace(/^glm-/i, 'GLM-').replace(/^GLM-/i, 'GLM-');
+    if (MODEL_CONCURRENCY_LIMITS[normalizedName]) {
+        return MODEL_CONCURRENCY_LIMITS[normalizedName];
+    }
+    for (const [key, value] of Object.entries(MODEL_CONCURRENCY_LIMITS)) {
+        if (normalizedName.toLowerCase() === key.toLowerCase()) {
+            return value;
+        }
+    }
+    return 1;
+};
+
 export const ClassificationConfig = {
     MODE_THRESHOLD: 50,
     MODE: {

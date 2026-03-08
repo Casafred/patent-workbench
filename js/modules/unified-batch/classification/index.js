@@ -9,7 +9,7 @@ import ExampleLibrary from './example-library.js';
 import ColdStart from './cold-start.js';
 import ResultAnalyzer from './result-analyzer.js';
 import SmartImport from './smart-import.js';
-import { ClassificationConfig, DEFAULT_SCHEMA, DEFAULT_LAYER, DEFAULT_EXAMPLE } from './config.js';
+import { ClassificationConfig, DEFAULT_SCHEMA, DEFAULT_LAYER, DEFAULT_EXAMPLE, getConcurrencyForModel } from './config.js';
 
 const ClassificationModule = {
     state: classificationState,
@@ -1448,6 +1448,7 @@ const ClassificationModule = {
 
     async startAsyncClassification(inputs, schema, model, temperature, provider) {
         console.log('[ClassificationModule] Starting async classification with', inputs.length, 'inputs');
+        console.log('[ClassificationModule] Using model:', model);
         
         const btn = document.getElementById('classification_async_submit_btn');
         const progressInfo = document.getElementById('classification_async_progress_info');
@@ -1465,6 +1466,16 @@ const ClassificationModule = {
         const results = [];
         let completed = 0;
         let failed = 0;
+        
+        const concurrency = getConcurrencyForModel(model);
+        const requestDelay = concurrency >= 50 ? 100 : (concurrency >= 10 ? 200 : 500);
+        
+        console.log('[ClassificationModule] Model concurrency limit:', concurrency, ', request delay:', requestDelay + 'ms');
+        
+        if (progressInfo) {
+            progressInfo.textContent = `模型并发限制: ${concurrency}, 请求间隔: ${requestDelay}ms`;
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
         
         for (let i = 0; i < inputs.length; i++) {
             const input = inputs[i];
@@ -1495,7 +1506,7 @@ const ClassificationModule = {
             }
             
             if (i < inputs.length - 1) {
-                await new Promise(resolve => setTimeout(resolve, 500));
+                await new Promise(resolve => setTimeout(resolve, requestDelay));
             }
         }
         
