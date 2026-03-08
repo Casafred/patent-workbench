@@ -1485,11 +1485,12 @@ const ClassificationModule = {
                     });
                     completed++;
                 } catch (error) {
-                    console.error('[ClassificationModule] Classification failed for:', input.id, error);
+                    const errorMsg = error?.message || error?.error?.message || (typeof error === 'object' ? JSON.stringify(error) : String(error));
+                    console.error('[ClassificationModule] Classification failed for:', input.id, errorMsg);
                     results.push({
                         id: input.id,
                         input: input,
-                        error: error.message,
+                        error: errorMsg,
                         status: 'failed'
                     });
                     failed++;
@@ -1926,8 +1927,22 @@ const ClassificationModule = {
         });
         
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || `API请求失败: ${response.status}`);
+            let errorMsg = `API请求失败: ${response.status}`;
+            try {
+                const errorData = await response.json();
+                if (errorData.error) {
+                    if (typeof errorData.error === 'string') {
+                        errorMsg = errorData.error;
+                    } else if (errorData.error.message) {
+                        errorMsg = errorData.error.message;
+                    } else {
+                        errorMsg = JSON.stringify(errorData.error);
+                    }
+                }
+            } catch (e) {
+                console.error('[ClassificationModule] Failed to parse error response:', e);
+            }
+            throw new Error(errorMsg);
         }
         
         const data = await response.json();
