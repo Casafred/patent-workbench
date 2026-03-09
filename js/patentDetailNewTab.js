@@ -2876,6 +2876,16 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         });
                     }
                 });
+
+                // 新标签页中的问一问功能
+                window.openPatentChatInNewTab = function(patentNumber) {
+                    if (window.opener && window.opener.openPatentChat) {
+                        window.opener.openPatentChat(patentNumber);
+                        window.opener.focus();
+                    } else {
+                        alert('无法打开问一问功能，请确保从主页面打开此详情页');
+                    }
+                };
             </script>
         </body>
         </html>
@@ -2902,15 +2912,5 @@ window.openPatentDetailInNewTab = function(patentNumber) {
         // 写入HTML内容
         newWindow.document.write(htmlContent);
         newWindow.document.close();
-    }
-};
-
-// 新标签页中的问一问功能
-window.openPatentChatInNewTab = function(patentNumber) {
-    if (window.opener && window.opener.openPatentChat) {
-        window.opener.openPatentChat(patentNumber);
-        window.opener.focus();
-    } else {
-        alert('无法打开问一问功能，请确保从主页面打开此详情页');
     }
 };
