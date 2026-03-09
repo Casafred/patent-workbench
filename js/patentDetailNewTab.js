@@ -2877,19 +2877,183 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     }
                 });
 
-                // 新标签页中的问一问功能
+                // 新标签页中的问一问功能 - 在新标签页中创建独立的弹窗
                 window.openPatentChatInNewTab = function(patentNumber) {
-                    if (window.opener && window.opener.openPatentChat) {
-                        window.opener.openPatentChat(patentNumber);
-                        window.opener.focus();
-                    } else {
-                        alert('无法打开问一问功能，请确保从主页面打开此详情页');
+                    // 检查是否已存在弹窗
+                    const existingModal = document.getElementById('newtab_patent_chat_modal');
+                    if (existingModal) {
+                        existingModal.style.display = 'flex';
+                        return;
+                    }
+                    
+                    // 获取专利数据
+                    const patentData = window.pageData || {};
+                    
+                    // 创建问一问弹窗
+                    const chatModal = document.createElement('div');
+                    chatModal.id = 'newtab_patent_chat_modal';
+                    chatModal.style.cssText = \`
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background: rgba(0,0,0,0.5);
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        z-index: 10000;
+                    \`;
+                    
+                    chatModal.innerHTML = \`
+                        <div style="background: white; border-radius: 12px; width: 90%; max-width: 800px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #eee; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px 12px 0 0;">
+                                <div>
+                                    <h4 style="margin: 0; font-size: 18px; color: white;">专利对话：\${patentNumber}</h4>
+                                    <p style="margin: 4px 0 0 0; font-size: 13px; color: rgba(255,255,255,0.8);">\${patentData.title || '无标题'}</p>
+                                </div>
+                                <button onclick="closeNewTabPatentChat()" style="background: rgba(255,255,255,0.2); border: none; font-size: 24px; cursor: pointer; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button>
+                            </div>
+                            <div id="newtab_chat_history" style="flex: 1; overflow-y: auto; padding: 16px; background: #f8f9fa; min-height: 300px;">
+                                <div class="welcome-message" style="text-align: center; padding: 40px 20px; color: #666;">
+                                    <div style="font-size: 48px; margin-bottom: 16px;">💬</div>
+                                    <p style="font-size: 16px; margin: 0;">暂无对话记录</p>
+                                    <p style="font-size: 14px; color: #999; margin-top: 8px;">在下方输入您的问题，开始与AI对话</p>
+                                </div>
+                            </div>
+                            <div style="padding: 16px; border-top: 1px solid #eee; background: white; border-radius: 0 0 12px 12px;">
+                                <div style="display: flex; gap: 10px; align-items: flex-end;">
+                                    <textarea id="newtab_chat_input" placeholder="输入您的问题，按Enter发送..." style="flex: 1; border: 1px solid #ddd; border-radius: 8px; padding: 12px; resize: none; font-size: 14px; line-height: 1.5;" rows="2"></textarea>
+                                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                                        <button id="newtab_chat_send_btn" onclick="sendNewTabPatentChatMessage()" style="padding: 12px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;">发送</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    \`;
+                    
+                    document.body.appendChild(chatModal);
+                    
+                    // 初始化对话状态
+                    window.newTabChatState = {
+                        patentNumber: patentNumber,
+                        patentData: patentData,
+                        messages: [],
+                        isLoading: false
+                    };
+                    
+                    // 绑定回车发送
+                    const input = document.getElementById('newtab_chat_input');
+                    input.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            sendNewTabPatentChatMessage();
+                        }
+                    });
+                    
+                    input.focus();
+                };
+                
+                // 关闭弹窗函数
+                window.closeNewTabPatentChat = function() {
+                    const modal = document.getElementById('newtab_patent_chat_modal');
+                    if (modal) {
+                        modal.remove();
                     }
                 };
+                
+                // 发送消息函数
+                window.sendNewTabPatentChatMessage = async function() {
+                    const input = document.getElementById('newtab_chat_input');
+                    const message = input.value.trim();
+                    
+                    if (!message) return;
+                    
+                    input.value = '';
+                    
+                    const historyEl = document.getElementById('newtab_chat_history');
+                    const welcomeDiv = historyEl.querySelector('.welcome-message');
+                    if (welcomeDiv) welcomeDiv.remove();
+                    
+                    // 添加用户消息
+                    const userMsgDiv = document.createElement('div');
+                    userMsgDiv.style.cssText = 'margin-bottom: 16px; display: flex; justify-content: flex-end;';
+                    userMsgDiv.innerHTML = \`
+                        <div style="max-width: 70%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 16px; border-radius: 16px 16px 4px 16px;">
+                            <div style="font-size: 14px; line-height: 1.5;">\${escapeHtml(message)}</div>
+                        </div>
+                    \`;
+                    historyEl.appendChild(userMsgDiv);
+                    historyEl.scrollTop = historyEl.scrollHeight;
+                    
+                    // 显示AI加载状态
+                    const aiMsgDiv = document.createElement('div');
+                    aiMsgDiv.style.cssText = 'margin-bottom: 16px; display: flex; justify-content: flex-start;';
+                    aiMsgDiv.innerHTML = \`
+                        <div style="max-width: 70%; background: white; padding: 12px 16px; border-radius: 16px 16px 16px 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <div style="font-size: 14px; color: #666;">思考中...</div>
+                        </div>
+                    \`;
+                    historyEl.appendChild(aiMsgDiv);
+                    historyEl.scrollTop = historyEl.scrollHeight;
+                    
+                    window.newTabChatState.isLoading = true;
+                    const sendBtn = document.getElementById('newtab_chat_send_btn');
+                    sendBtn.textContent = '发送中...';
+                    sendBtn.disabled = true;
+                    
+                    try {
+                        // 调用后端API
+                        const response = await fetch('/api/patent/chat', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                patent_number: window.newTabChatState.patentNumber,
+                                message: message,
+                                patent_data: window.newTabChatState.patentData
+                            })
+                        });
+                        
+                        if (!response.ok) throw new Error('请求失败');
+                        
+                        const data = await response.json();
+                        const aiContent = data.response || data.message || '抱歉，无法获取回复';
+                        
+                        // 更新AI回复
+                        aiMsgDiv.innerHTML = \`
+                            <div style="max-width: 70%; background: white; padding: 12px 16px; border-radius: 16px 16px 16px 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                <div style="font-size: 14px; line-height: 1.6; color: #333; white-space: pre-wrap;">\${escapeHtml(aiContent)}</div>
+                            </div>
+                        \`;
+                        historyEl.scrollTop = historyEl.scrollHeight;
+                        
+                        window.newTabChatState.messages.push({ role: 'user', content: message });
+                        window.newTabChatState.messages.push({ role: 'assistant', content: aiContent });
+                        
+                    } catch (error) {
+                        console.error('发送失败:', error);
+                        aiMsgDiv.innerHTML = \`
+                            <div style="max-width: 70%; background: #ffebee; padding: 12px 16px; border-radius: 16px 16px 16px 4px;">
+                                <div style="font-size: 14px; color: #c62828;">发送失败: \${error.message}</div>
+                            </div>
+                        \`;
+                    } finally {
+                        window.newTabChatState.isLoading = false;
+                        sendBtn.textContent = '发送';
+                        sendBtn.disabled = false;
+                    }
+                };
+                
+                // HTML转义函数
+                function escapeHtml(text) {
+                    const div = document.createElement('div');
+                    div.textContent = text;
+                    return div.innerHTML;
+                }
             </script>
         </body>
         </html>
-    `;
+    \`;
     
     // 创建一个新窗口，使用带专利号参数的URL
     const baseUrl = window.location.href.split('?')[0].split('#')[0];
