@@ -1759,6 +1759,61 @@ const ClassificationModule = {
         console.log('[ClassificationModule] Results UI updated');
     },
 
+    viewResultDetail(resultId) {
+        const results = classificationState.getResults();
+        const item = results.find(r => r.id === resultId);
+        
+        if (!item) {
+            alert('未找到结果');
+            return;
+        }
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;';
+        
+        let resultContent = '';
+        if (item.result) {
+            resultContent = `
+                <h4>分类结果</h4>
+                <pre style="background: var(--bg-secondary); padding: 10px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap;">${JSON.stringify(item.result.classification, null, 2)}</pre>
+                <p><strong>确信度:</strong> ${item.result.overallConfidence ? (item.result.overallConfidence * 100).toFixed(0) + '%' : '-'}</p>
+                ${item.result.reasoning ? `<p><strong>推理:</strong> ${item.result.reasoning}</p>` : ''}
+            `;
+        } else if (item.error) {
+            resultContent = `
+                <h4 style="color: var(--error-color);">错误信息</h4>
+                <pre style="background: var(--bg-secondary); padding: 10px; border-radius: 4px; color: var(--error-color);">${item.error}</pre>
+            `;
+        }
+        
+        modal.innerHTML = `
+            <div style="background: var(--bg-primary); border-radius: 8px; padding: 20px; max-width: 600px; max-height: 80vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0;">结果详情: ${item.id}</h3>
+                    <button class="close-btn" style="background: none; border: none; font-size: 20px; cursor: pointer;">✕</button>
+                </div>
+                <div class="modal-content">
+                    <h4>输入内容</h4>
+                    <pre style="background: var(--bg-secondary); padding: 10px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; max-height: 200px;">${typeof item.input?.content === 'string' ? item.input.content : JSON.stringify(item.input, null, 2)}</pre>
+                    ${resultContent}
+                </div>
+            </div>
+        `;
+        
+        modal.querySelector('.close-btn').addEventListener('click', () => {
+            document.body.removeChild(modal);
+        });
+        
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                document.body.removeChild(modal);
+            }
+        });
+        
+        document.body.appendChild(modal);
+    },
+
     handleConfidenceFilter(e) {
         classificationState.setConfidenceFilter(e.target.value);
     },
