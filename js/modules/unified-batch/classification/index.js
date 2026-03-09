@@ -1768,50 +1768,74 @@ const ClassificationModule = {
             return;
         }
         
+        const existingModal = document.getElementById('classification_result_detail_modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
         const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
-        modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;';
+        modal.id = 'classification_result_detail_modal';
         
         let resultContent = '';
         if (item.result) {
+            const classificationStr = JSON.stringify(item.result.classification, null, 2);
+            const confidenceStr = item.result.overallConfidence ? (item.result.overallConfidence * 100).toFixed(0) + '%' : '-';
             resultContent = `
-                <h4>分类结果</h4>
-                <pre style="background: var(--bg-secondary); padding: 10px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap;">${JSON.stringify(item.result.classification, null, 2)}</pre>
-                <p><strong>确信度:</strong> ${item.result.overallConfidence ? (item.result.overallConfidence * 100).toFixed(0) + '%' : '-'}</p>
-                ${item.result.reasoning ? `<p><strong>推理:</strong> ${item.result.reasoning}</p>` : ''}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #333;">分类结果:</strong>
+                    <pre style="background: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; margin: 8px 0; border: 1px solid #ddd;">${classificationStr}</pre>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #333;">确信度:</strong> 
+                    <span style="color: ${item.result.overallConfidence >= 0.8 ? '#22c55e' : (item.result.overallConfidence >= 0.6 ? '#f59e0b' : '#ef4444')};">${confidenceStr}</span>
+                </div>
+                ${item.result.reasoning ? `<div style="margin-bottom: 15px;"><strong style="color: #333;">推理:</strong><p style="margin: 8px 0; color: #555;">${item.result.reasoning}</p></div>` : ''}
             `;
         } else if (item.error) {
             resultContent = `
-                <h4 style="color: var(--error-color);">错误信息</h4>
-                <pre style="background: var(--bg-secondary); padding: 10px; border-radius: 4px; color: var(--error-color);">${item.error}</pre>
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #ef4444;">错误信息:</strong>
+                    <pre style="background: #fef2f2; padding: 10px; border-radius: 4px; color: #ef4444; margin: 8px 0; border: 1px solid #fecaca;">${item.error}</pre>
+                </div>
             `;
         }
         
+        const inputContent = typeof item.input?.content === 'string' ? item.input.content : JSON.stringify(item.input, null, 2);
+        
         modal.innerHTML = `
-            <div style="background: var(--bg-primary); border-radius: 8px; padding: 20px; max-width: 600px; max-height: 80vh; overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3 style="margin: 0;">结果详情: ${item.id}</h3>
-                    <button class="close-btn" style="background: none; border: none; font-size: 20px; cursor: pointer;">✕</button>
-                </div>
-                <div class="modal-content">
-                    <h4>输入内容</h4>
-                    <pre style="background: var(--bg-secondary); padding: 10px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; max-height: 200px;">${typeof item.input?.content === 'string' ? item.input.content : JSON.stringify(item.input, null, 2)}</pre>
+            <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; z-index: 99999;">
+                <div style="background: #ffffff; border-radius: 12px; padding: 24px; max-width: 650px; width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e5e7eb;">
+                        <h3 style="margin: 0; color: #111827; font-size: 18px;">结果详情</h3>
+                        <button id="close_detail_modal_btn" style="background: #f3f4f6; border: none; font-size: 18px; cursor: pointer; padding: 8px 12px; border-radius: 6px; color: #6b7280;">✕ 关闭</button>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <strong style="color: #374151;">ID:</strong> 
+                        <span style="color: #6b7280;">${item.id}</span>
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <strong style="color: #374151; display: block; margin-bottom: 8px;">输入内容:</strong>
+                        <pre style="background: #f9fafb; padding: 12px; border-radius: 6px; overflow-x: auto; white-space: pre-wrap; max-height: 200px; margin: 0; border: 1px solid #e5e7eb; font-size: 13px; color: #374151;">${inputContent}</pre>
+                    </div>
                     ${resultContent}
                 </div>
             </div>
         `;
         
-        modal.querySelector('.close-btn').addEventListener('click', () => {
-            document.body.removeChild(modal);
-        });
+        document.body.appendChild(modal);
+        
+        const closeBtn = document.getElementById('close_detail_modal_btn');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                modal.remove();
+            });
+        }
         
         modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                document.body.removeChild(modal);
+            if (e.target === modal.querySelector('div > div').parentElement) {
+                modal.remove();
             }
         });
-        
-        document.body.appendChild(modal);
     },
 
     handleConfidenceFilter(e) {
