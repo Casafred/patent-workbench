@@ -298,6 +298,10 @@ class ClassificationState {
         return this.state.results;
     }
 
+    setResults(results) {
+        this.state.results = results;
+    }
+
     addResult(result) {
         this.state.results.push(result);
     }

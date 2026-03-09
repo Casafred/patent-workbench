@@ -1462,8 +1462,8 @@ const ClassificationModule = {
             progressInfo.textContent = '正在提交分类任务...';
         }
         
+        classificationState.clearResults();
         const prompt = PromptBuilder.generateFullPrompt();
-        const results = [];
         let completed = 0;
         let failed = 0;
         
@@ -1474,7 +1474,7 @@ const ClassificationModule = {
         
         if (progressInfo) {
             progressInfo.textContent = `模型并发限制: ${concurrency}, 请求间隔: ${requestDelay}ms`;
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 500));
         }
         
         for (let i = 0; i < inputs.length; i++) {
@@ -1484,34 +1484,36 @@ const ClassificationModule = {
                 progressInfo.textContent = `正在处理: ${i + 1}/${inputs.length} (成功: ${completed}, 失败: ${failed})`;
             }
             
+            let resultItem;
             try {
                 const result = await this.classifySingleInputWithRetry(input, prompt, model, temperature, 3);
-                results.push({
+                resultItem = {
                     id: input.id,
                     input: input,
                     result: result,
                     status: 'success'
-                });
+                };
                 completed++;
             } catch (error) {
                 const errorMsg = error?.message || error?.error?.message || (typeof error === 'object' ? JSON.stringify(error) : String(error));
                 console.error('[ClassificationModule] Classification failed for:', input.id, errorMsg);
-                results.push({
+                resultItem = {
                     id: input.id,
                     input: input,
                     error: errorMsg,
                     status: 'failed'
-                });
+                };
                 failed++;
             }
+            
+            classificationState.addResult(resultItem);
+            this.updateResultsUI(classificationState.getResults());
+            this.updateExportButtonState();
             
             if (i < inputs.length - 1) {
                 await new Promise(resolve => setTimeout(resolve, requestDelay));
             }
         }
-        
-        classificationState.setResults(results);
-        this.updateResultsUI(results);
         
         if (btn) {
             btn.disabled = false;
@@ -1521,8 +1523,6 @@ const ClassificationModule = {
         if (progressInfo) {
             progressInfo.textContent = `分类完成！成功: ${completed}, 失败: ${failed}`;
         }
-        
-        this.updateExportButtonState();
         
         console.log('[ClassificationModule] Async classification completed:', completed, 'success,', failed, 'failed');
     },
