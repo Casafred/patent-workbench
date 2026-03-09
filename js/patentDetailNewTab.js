@@ -3053,7 +3053,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
             </script>
         </body>
         </html>
-    \`;
+    `;
     
     // 创建一个新窗口，使用带专利号参数的URL
     const baseUrl = window.location.href.split('?')[0].split('#')[0];
