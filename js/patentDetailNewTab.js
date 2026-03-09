@@ -882,6 +882,10 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                     Google Patents
                                 </a>
                                 ` : ''}
+                                <button id="patent-chat-btn" onclick="openPatentChatInNewTab('${patentNumber}')" title="问一问 - AI智能问答" style="color: white; text-decoration: none; font-size: 0.95em; font-weight: 500; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 6px 14px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; border: none; cursor: pointer;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm4 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 1a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/><path d="m2.165 15.803.02-.004c1.83-.363 2.948-.842 3.468-1.105A9.06 9.06 0 0 0 8 15c4.418 0 8-3.134 8-7s-3.582-7-8-7-8 3.134-8 7c0 1.76.743 3.37 1.97 4.6a10.437 10.437 0 0 1-.524 2.318l-.003.011a10.722 10.722 0 0 1-.244.637c-.079.186.074.394.273.362a21.673 21.673 0 0 0 .693-.125zm.8-3.108a1 1 0 0 0-.287-.801C1.618 10.83 1 9.468 1 8c0-3.192 3.004-6 7-6s7 2.808 7 6c0 3.193-3.004 6-7 6a8.06 8.06 0 0 1-2.088-.272 1 1 0 0 0-.711.074c-.387.196-1.24.57-2.634.893a10.97 10.97 0 0 0 .398-2z"/></svg>
+                                    问一问
+                                </button>
                             </div>
                             <!-- 外部链接组 -->
                             ${data.external_links && Object.keys(data.external_links).length > 0 ? `
@@ -977,11 +981,33 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                             </div>
                         </h2>
                         <div class="section-content" style="display: block;">
-                            <div style="display: flex; align-items: center; gap: 15px;">
-                                <div id="drawing-preview" style="position: relative; background: white; border-radius: 12px; padding: 12px; max-width: 400px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" onclick="openNewTabImageViewer(0)">
-                                    <img src="${data.drawings[0]}" alt="附图 1" style="width: 100%; max-height: 250px; object-fit: contain; border-radius: 8px;" onerror="this.style.display='none'">
-                                    <div style="text-align: center; font-size: 0.95em; color: #666; margin-top: 8px; font-weight: 500;">图 1 ${data.drawings.length > 1 ? '(点击查看全部 ' + data.drawings.length + ' 张)' : ''}</div>
-                                </div>
+                            <div class="drawings-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-top: 10px;">
+                                ${(() => {
+                                    const maxVisibleDrawings = 6;
+                                    const visibleDrawings = data.drawings.slice(0, maxVisibleDrawings);
+                                    const hasMoreDrawings = data.drawings.length > maxVisibleDrawings;
+                                    let html = '';
+                                    visibleDrawings.forEach((drawing, index) => {
+                                        html += `
+                                            <div class="drawing-thumbnail" onclick="openNewTabImageViewer(${index})" style="position: relative; background: white; border-radius: 8px; overflow: hidden; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: all 0.3s; border: 2px solid transparent;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 4px 16px rgba(46,125,50,0.2)';this.style.borderColor='#2e7d32';" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';this.style.borderColor='transparent';">
+                                                <img src="${drawing}" alt="附图 ${index + 1}" style="width: 100%; height: 120px; object-fit: contain; background: #f5f5f5;" onerror="this.style.display='none'">
+                                                <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.7)); color: white; font-size: 12px; padding: 8px 6px 4px; text-align: center;">图 ${index + 1}</div>
+                                            </div>
+                                        `;
+                                    });
+                                    if (hasMoreDrawings) {
+                                        const remainingCount = data.drawings.length - maxVisibleDrawings;
+                                        html += `
+                                            <div class="drawing-thumbnail drawing-more" onclick="openNewTabImageViewer(${maxVisibleDrawings})" style="position: relative; background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); border-radius: 8px; overflow: hidden; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: all 0.3s; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 120px;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 4px 16px rgba(46,125,50,0.3)';" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="white" viewBox="0 0 16 16" style="opacity: 0.9;">
+                                                    <path d="M6 12.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5ZM3 8.5A.5.5 0 0 1 3.5 8h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5Zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5Z"/>
+                                                </svg>
+                                                <div style="color: white; font-size: 14px; font-weight: 500; margin-top: 4px;">+${remainingCount} 张</div>
+                                            </div>
+                                        `;
+                                    }
+                                    return html;
+                                })()}
                             </div>
                         </div>
                     </div>
@@ -2876,5 +2902,15 @@ window.openPatentDetailInNewTab = function(patentNumber) {
         // 写入HTML内容
         newWindow.document.write(htmlContent);
         newWindow.document.close();
+    }
+};
+
+// 新标签页中的问一问功能
+window.openPatentChatInNewTab = function(patentNumber) {
+    if (window.opener && window.opener.openPatentChat) {
+        window.opener.openPatentChat(patentNumber);
+        window.opener.focus();
+    } else {
+        alert('无法打开问一问功能，请确保从主页面打开此详情页');
     }
 };
