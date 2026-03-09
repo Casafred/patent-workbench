@@ -25,6 +25,13 @@ const ClassificationModule = {
         console.log('[ClassificationModule] 模块初始化');
         this.setupEventListeners();
         this.initUI();
+        
+        setTimeout(() => {
+            classificationState.loadSavedSchemas();
+            classificationState.updateSchemaSelect();
+            console.log('[ClassificationModule] Reloaded saved schemas after delay');
+        }, 1000);
+        
         return this;
     },
 

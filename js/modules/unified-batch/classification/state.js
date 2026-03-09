@@ -161,16 +161,26 @@ class ClassificationState {
     loadSavedSchemas() {
         try {
             let stored = null;
-            if (window.userCacheStorage && window.userCacheStorage.isInitialized && window.userCacheStorage.isInitialized()) {
-                stored = window.userCacheStorage.getJSON(STORAGE_KEYS.SCHEMAS);
-            } else if (window.userCacheStorage && typeof window.userCacheStorage.getJSON === 'function') {
-                stored = window.userCacheStorage.getJSON(STORAGE_KEYS.SCHEMAS);
-            } else {
+            
+            if (window.userCacheStorage) {
+                if (window.userCacheStorage.isInitialized && window.userCacheStorage.isInitialized()) {
+                    stored = window.userCacheStorage.getJSON(STORAGE_KEYS.SCHEMAS);
+                } else if (typeof window.userCacheStorage.getJSON === 'function') {
+                    try {
+                        stored = window.userCacheStorage.getJSON(STORAGE_KEYS.SCHEMAS);
+                    } catch (e) {
+                        console.warn('[ClassificationState] userCacheStorage not ready, falling back to localStorage');
+                    }
+                }
+            }
+            
+            if (!stored) {
                 const raw = localStorage.getItem(STORAGE_KEYS.SCHEMAS);
                 if (raw) {
                     stored = JSON.parse(raw);
                 }
             }
+            
             if (stored && Array.isArray(stored)) {
                 this.state.savedSchemas = stored;
                 console.log('[ClassificationState] Loaded', stored.length, 'saved schemas');
@@ -201,12 +211,36 @@ class ClassificationState {
 
         this.state.schema = schema;
         this.persistSchemas();
+        
+        this.updateSchemaSelect();
+        
         return schema;
+    }
+
+    updateSchemaSelect() {
+        const select = document.getElementById('classification_schema_select');
+        if (!select) return;
+        
+        const currentValue = select.value;
+        
+        select.innerHTML = '<option value="">选择已有分类体系</option>';
+        
+        this.state.savedSchemas.forEach(schema => {
+            const option = document.createElement('option');
+            option.value = schema.id;
+            option.textContent = schema.name || `体系 ${schema.id.slice(-6)}`;
+            select.appendChild(option);
+        });
+        
+        if (currentValue) {
+            select.value = currentValue;
+        }
     }
 
     deleteSchema(schemaId) {
         this.state.savedSchemas = this.state.savedSchemas.filter(s => s.id !== schemaId);
         this.persistSchemas();
+        this.updateSchemaSelect();
         return true;
     }
 
@@ -220,11 +254,25 @@ class ClassificationState {
 
     persistSchemas() {
         try {
+            let saved = false;
+            
             if (window.userCacheStorage) {
-                window.userCacheStorage.setJSON(STORAGE_KEYS.SCHEMAS, this.state.savedSchemas);
-            } else {
-                localStorage.setItem(STORAGE_KEYS.SCHEMAS, JSON.stringify(this.state.savedSchemas));
+                if (window.userCacheStorage.isInitialized && window.userCacheStorage.isInitialized()) {
+                    window.userCacheStorage.setJSON(STORAGE_KEYS.SCHEMAS, this.state.savedSchemas);
+                    saved = true;
+                } else if (typeof window.userCacheStorage.setJSON === 'function') {
+                    try {
+                        window.userCacheStorage.setJSON(STORAGE_KEYS.SCHEMAS, this.state.savedSchemas);
+                        saved = true;
+                    } catch (e) {
+                        console.warn('[ClassificationState] userCacheStorage not ready for saving');
+                    }
+                }
             }
+            
+            localStorage.setItem(STORAGE_KEYS.SCHEMAS, JSON.stringify(this.state.savedSchemas));
+            
+            console.log('[ClassificationState] Saved', this.state.savedSchemas.length, 'schemas to', saved ? 'userCacheStorage' : 'localStorage');
         } catch (e) {
             console.error('保存分类体系失败:', e);
         }
