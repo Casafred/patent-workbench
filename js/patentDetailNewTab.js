@@ -3181,7 +3181,11 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 
                 window.closeNewTabPatentChat = function() {
                     const modal = document.getElementById('newtab_patent_chat_modal');
+                    const ball = document.getElementById('newtab_chat_floating_ball');
                     if (modal) modal.remove();
+                    if (ball) ball.remove();
+                    // 清空对话状态
+                    window.newTabChatState.messages = [];
                 };
                 
                 window.clearNewTabChatHistory = function() {
