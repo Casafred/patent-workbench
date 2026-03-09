@@ -3053,9 +3053,15 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     
                     const patentData = window.pageData || {};
                     
-                    window.newTabChatState.patentNumber = patentNumber;
-                    window.newTabChatState.patentData = patentData;
-                    window.newTabChatState.messages = [];
+                    // 如果是同一个专利且已有对话记录，则保留
+                    const isSamePatent = window.newTabChatState.patentNumber === patentNumber;
+                    const hasMessages = (window.newTabChatState.messages || []).length > 0;
+                    
+                    if (!isSamePatent || !hasMessages) {
+                        window.newTabChatState.patentNumber = patentNumber;
+                        window.newTabChatState.patentData = patentData;
+                        window.newTabChatState.messages = [];
+                    }
                     window.newTabChatState.isLoading = false;
                     window.newTabChatState.stopStreaming = false;
                     
@@ -3063,6 +3069,11 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     createNewTabChatModal(patentNumber, patentData);
                     
                     await initNewTabChatProviders();
+                    
+                    // 恢复之前的对话历史
+                    if (hasMessages && isSamePatent) {
+                        restoreNewTabChatHistory();
+                    }
                     
                     const input = document.getElementById('newtab_chat_input');
                     input.addEventListener('keydown', function(e) {
@@ -3084,6 +3095,36 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     chatModal.innerHTML = '<div style="background: white; border-radius: 12px; width: 90%; max-width: 800px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 8px 32px rgba(0,0,0,0.3);"><div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #e8f5e9; background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); border-radius: 12px 12px 0 0;"><div><h4 style="margin: 0; font-size: 18px; color: white;">专利对话：' + patentNumber + '</h4><p style="margin: 4px 0 0 0; font-size: 13px; color: rgba(255,255,255,0.85);">' + (patentData.title || '无标题') + '</p></div><div style="display: flex; gap: 8px;"><button onclick="minimizeNewTabChat()" title="最小化为悬浮球" style="background: rgba(255,255,255,0.2); border: none; font-size: 18px; cursor: pointer; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">−</button><button onclick="closeNewTabPatentChat()" style="background: rgba(255,255,255,0.2); border: none; font-size: 24px; cursor: pointer; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button></div></div><div style="padding: 12px 16px; background: #f1f8e9; border-bottom: 1px solid #e8f5e9;"><div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;"><div style="display: flex; align-items: center; gap: 8px;"><label style="font-size: 13px; color: #2e7d32; font-weight: 500;">服务商:</label><select id="newtab_chat_provider" onchange="onNewTabProviderChange()" style="padding: 6px 12px; border: 1px solid #c8e6c9; border-radius: 6px; font-size: 13px; background: white; cursor: pointer;"></select></div><div style="display: flex; align-items: center; gap: 8px;"><label style="font-size: 13px; color: #2e7d32; font-weight: 500;">模型:</label><select id="newtab_chat_model" onchange="onNewTabModelChange()" style="padding: 6px 12px; border: 1px solid #c8e6c9; border-radius: 6px; font-size: 13px; background: white; cursor: pointer;"></select></div><button onclick="clearNewTabChatHistory()" style="padding: 6px 12px; background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; border-radius: 6px; font-size: 13px; cursor: pointer;">清空对话</button></div></div><div id="newtab_chat_history" style="flex: 1; overflow-y: auto; padding: 16px; background: #fafafa; min-height: 300px;"><div class="welcome-message" style="text-align: center; padding: 40px 20px; color: #666;"><div style="font-size: 48px; margin-bottom: 16px;">💬</div><p style="font-size: 16px; margin: 0;">暂无对话记录</p><p style="font-size: 14px; color: #999; margin-top: 8px;">在下方输入您的问题，开始与AI对话</p></div></div><div style="padding: 16px; border-top: 1px solid #e8f5e9; background: white; border-radius: 0 0 12px 12px;"><div style="display: flex; gap: 10px; align-items: flex-end;"><textarea id="newtab_chat_input" placeholder="输入您的问题，按Enter发送..." style="flex: 1; border: 1px solid #c8e6c9; border-radius: 8px; padding: 12px; resize: none; font-size: 14px; line-height: 1.5;" rows="2"></textarea><div style="display: flex; flex-direction: column; gap: 8px;"><button id="newtab_chat_stop_btn" onclick="stopNewTabChatStream()" style="padding: 12px 24px; background: #e74c3c; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; display: none;">停止</button><button id="newtab_chat_send_btn" onclick="sendNewTabPatentChatMessage()" style="padding: 12px 24px; background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;">发送</button></div></div></div></div>';
                     
                     document.body.appendChild(chatModal);
+                }
+                
+                // 恢复对话历史
+                function restoreNewTabChatHistory() {
+                    const historyEl = document.getElementById('newtab_chat_history');
+                    if (!historyEl) return;
+                    
+                    const messages = window.newTabChatState.messages || [];
+                    if (messages.length === 0) return;
+                    
+                    // 清空欢迎消息
+                    historyEl.innerHTML = '';
+                    
+                    // 渲染每条消息
+                    messages.forEach(msg => {
+                        if (msg.role === 'system') return;
+                        
+                        const msgDiv = document.createElement('div');
+                        if (msg.role === 'user') {
+                            msgDiv.style.cssText = 'margin-bottom: 16px; display: flex; justify-content: flex-end;';
+                            msgDiv.innerHTML = '<div style="max-width: 70%; background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); color: white; padding: 12px 16px; border-radius: 16px 16px 4px 16px;"><div style="font-size: 14px; line-height: 1.5;">' + escapeHtml(msg.content) + '</div></div>';
+                        } else if (msg.role === 'assistant') {
+                            msgDiv.style.cssText = 'margin-bottom: 16px; display: flex; justify-content: flex-start;';
+                            msgDiv.innerHTML = '<div style="max-width: 70%; background: white; padding: 12px 16px; border-radius: 16px 16px 16px 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e8f5e9;"><div style="font-size: 14px; line-height: 1.5;">' + formatContent(msg.content) + '</div></div>';
+                        }
+                        historyEl.appendChild(msgDiv);
+                    });
+                    
+                    // 滚动到底部
+                    historyEl.scrollTop = historyEl.scrollHeight;
                 }
                 
                 // 创建悬浮球
@@ -3182,9 +3223,39 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 window.closeNewTabPatentChat = function() {
                     const modal = document.getElementById('newtab_patent_chat_modal');
                     const ball = document.getElementById('newtab_chat_floating_ball');
+                    
+                    const messages = window.newTabChatState.messages || [];
+                    const nonSystemMessages = messages.filter(m => m.role !== 'system');
+                    
+                    if (nonSystemMessages.length >= 2 && window.opener && !window.opener.closed) {
+                        const shouldSync = confirm('是否将本次对话记录同步到主页面历史？\n\n同步后可在主页面"功能一即时对话"中查看和继续此对话。');
+                        
+                        if (shouldSync) {
+                            try {
+                                if (window.opener.ChatHistorySync) {
+                                    window.opener.ChatHistorySync.syncToHistory(
+                                        messages,
+                                        'NEW_TAB_CHAT',
+                                        {
+                                            patentNumber: window.newTabChatState.patentNumber,
+                                            patentTitle: window.newTabChatState.patentData?.title || '',
+                                            model: window.newTabChatState.currentModel,
+                                            thinkingMode: window.newTabChatState.thinkingModeEnabled || false
+                                        }
+                                    );
+                                    alert('对话已同步到主页面历史记录！');
+                                } else {
+                                    alert('主页面未加载对话同步模块，无法同步。');
+                                }
+                            } catch (e) {
+                                console.error('同步对话失败:', e);
+                                alert('同步失败，请确保主页面已加载完成。');
+                            }
+                        }
+                    }
+                    
                     if (modal) modal.remove();
                     if (ball) ball.remove();
-                    // 清空对话状态
                     window.newTabChatState.messages = [];
                 };
                 
