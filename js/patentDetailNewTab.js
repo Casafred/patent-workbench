@@ -2886,19 +2886,59 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     patentData: {},
                     messages: [],
                     isLoading: false,
-                    stopStreaming: false
+                    stopStreaming: false,
+                    apiKeys: {}
                 };
+                
+                // 从主窗口获取API Key
+                function getApiKeysFromOpener() {
+                    const keys = {
+                        zhipu: null,
+                        aliyun: null
+                    };
+                    
+                    // 尝试从window.opener获取
+                    if (window.opener) {
+                        try {
+                            // 尝试从opener的localStorage获取
+                            if (window.opener.localStorage) {
+                                keys.zhipu = window.opener.localStorage.getItem('globalApiKey') || window.opener.localStorage.getItem('zhipu_api_key');
+                                keys.aliyun = window.opener.localStorage.getItem('aliyun_api_key');
+                            }
+                            // 尝试从opener的appState获取
+                            if (window.opener.appState) {
+                                if (!keys.zhipu && window.opener.appState.apiKey) keys.zhipu = window.opener.appState.apiKey;
+                                if (!keys.aliyun && window.opener.appState.aliyunApiKey) keys.aliyun = window.opener.appState.aliyunApiKey;
+                            }
+                        } catch (e) {
+                            console.warn('无法从主窗口获取API Key:', e);
+                        }
+                    }
+                    
+                    return keys;
+                }
                 
                 // 初始化服务商配置
                 async function initNewTabChatProviders() {
+                    // 获取API Keys
+                    window.newTabChatState.apiKeys = getApiKeysFromOpener();
+                    
                     try {
                         const response = await fetch('/api/providers');
                         if (response.ok) {
                             const data = await response.json();
                             if (data.providers) {
                                 window.newTabChatState.providers = data.providers;
-                                window.newTabChatState.currentProvider = localStorage.getItem('llm_provider') || data.default_provider || 'zhipu';
-                                window.newTabChatState.currentModel = data.providers[window.newTabChatState.currentProvider]?.default_model || 'glm-4-flash';
+                                
+                                // 从主窗口获取当前选择的服务商
+                                if (window.opener && window.opener.patentChatState) {
+                                    window.newTabChatState.currentProvider = window.opener.patentChatState.currentProvider || 'zhipu';
+                                    window.newTabChatState.currentModel = window.opener.patentChatState.currentModel || 'glm-4-flash';
+                                } else {
+                                    window.newTabChatState.currentProvider = 'zhipu';
+                                    window.newTabChatState.currentModel = data.providers.zhipu?.default_model || 'glm-4-flash';
+                                }
+                                
                                 updateNewTabChatProviderSelect();
                                 updateNewTabChatModelSelect();
                             }
@@ -2906,9 +2946,25 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     } catch (error) {
                         console.warn('加载服务商配置失败，使用默认配置');
                         window.newTabChatState.providers = {
-                            zhipu: { name: '智谱AI', models: [{id: 'glm-4-flash', name: 'GLM-4-Flash'}, {id: 'glm-4-long', name: 'GLM-4-Long'}] },
-                            aliyun: { name: '阿里云百炼', models: [{id: 'qwen-turbo', name: 'Qwen-Turbo'}, {id: 'qwen-plus', name: 'Qwen-Plus'}] }
+                            zhipu: { 
+                                name: '智谱AI', 
+                                models: [
+                                    {id: 'glm-4-flash', name: 'GLM-4-Flash'}, 
+                                    {id: 'glm-4-long', name: 'GLM-4-Long'},
+                                    {id: 'glm-4.7-flash', name: 'GLM-4.7-Flash'}
+                                ] 
+                            },
+                            aliyun: { 
+                                name: '阿里云百炼', 
+                                models: [
+                                    {id: 'qwen-turbo', name: 'Qwen-Turbo'}, 
+                                    {id: 'qwen-plus', name: 'Qwen-Plus'},
+                                    {id: 'qwen-max', name: 'Qwen-Max'}
+                                ] 
+                            }
                         };
+                        updateNewTabChatProviderSelect();
+                        updateNewTabChatModelSelect();
                     }
                 }
                 
@@ -2916,8 +2972,8 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     const providerSelect = document.getElementById('newtab_chat_provider');
                     if (!providerSelect || !window.newTabChatState.providers) return;
                     
-                    const zhipuKey = localStorage.getItem('globalApiKey') || localStorage.getItem('zhipu_api_key');
-                    const aliyunKey = localStorage.getItem('aliyun_api_key');
+                    const zhipuKey = window.newTabChatState.apiKeys.zhipu;
+                    const aliyunKey = window.newTabChatState.apiKeys.aliyun;
                     const hasZhipuKey = !!zhipuKey;
                     const hasAliyunKey = !!aliyunKey;
                     
@@ -2932,6 +2988,19 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     });
                     
                     providerSelect.innerHTML = optionsHtml;
+                    
+                    // 如果当前服务商没有Key，切换到有Key的服务商
+                    if (!hasZhipuKey && !hasAliyunKey) {
+                        providerSelect.disabled = true;
+                    } else if (window.newTabChatState.currentProvider === 'zhipu' && !hasZhipuKey && hasAliyunKey) {
+                        window.newTabChatState.currentProvider = 'aliyun';
+                        providerSelect.value = 'aliyun';
+                        updateNewTabChatModelSelect();
+                    } else if (window.newTabChatState.currentProvider === 'aliyun' && !hasAliyunKey && hasZhipuKey) {
+                        window.newTabChatState.currentProvider = 'zhipu';
+                        providerSelect.value = 'zhipu';
+                        updateNewTabChatModelSelect();
+                    }
                 }
                 
                 function updateNewTabChatModelSelect() {
@@ -2941,8 +3010,8 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     const provider = window.newTabChatState.currentProvider;
                     const providerConfig = window.newTabChatState.providers[provider];
                     
-                    if (!providerConfig || !providerConfig.models) {
-                        modelSelect.innerHTML = '<option value="">请先配置API Key</option>';
+                    if (!providerConfig || !providerConfig.models || providerConfig.models.length === 0) {
+                        modelSelect.innerHTML = '<option value="">无可用模型</option>';
                         return;
                     }
                     
@@ -2953,6 +3022,13 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     });
                     
                     modelSelect.innerHTML = optionsHtml;
+                    
+                    // 如果当前模型不在列表中，选择第一个
+                    const modelIds = providerConfig.models.map(m => m.id);
+                    if (!modelIds.includes(window.newTabChatState.currentModel)) {
+                        window.newTabChatState.currentModel = providerConfig.models[0].id;
+                        modelSelect.value = window.newTabChatState.currentModel;
+                    }
                 }
                 
                 window.openPatentChatInNewTab = async function(patentNumber) {
@@ -3090,14 +3166,13 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         const headers = { 'Content-Type': 'application/json' };
                         
                         if (window.newTabChatState.currentProvider === 'aliyun') {
-                            const aliyunKey = localStorage.getItem('aliyun_api_key');
-                            if (aliyunKey) {
-                                headers['X-LLM-Provider'] = 'aliyun';
-                                headers['Authorization'] = 'Bearer ' + aliyunKey;
-                            }
+                            const aliyunKey = window.newTabChatState.apiKeys.aliyun;
+                            if (!aliyunKey) throw new Error('请先配置阿里云API密钥');
+                            headers['X-LLM-Provider'] = 'aliyun';
+                            headers['Authorization'] = 'Bearer ' + aliyunKey;
                         } else {
-                            const apiKey = localStorage.getItem('globalApiKey') || localStorage.getItem('zhipu_api_key');
-                            if (!apiKey) throw new Error('请先配置API密钥');
+                            const apiKey = window.newTabChatState.apiKeys.zhipu;
+                            if (!apiKey) throw new Error('请先配置智谱API密钥');
                             headers['Authorization'] = 'Bearer ' + apiKey;
                         }
                         
