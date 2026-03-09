@@ -185,9 +185,17 @@ function renderChatHistoryList() {
     sortedConvos.forEach(convo => {
         const item = document.createElement('div');
         item.className = 'chat-history-item';
+        if (convo.source) {
+            item.classList.add('synced-conversation');
+        }
         item.dataset.id = convo.id;
         if (convo.id === appState.chat.currentConversationId) {
             item.classList.add('active');
+        }
+
+        let sourceBadge = '';
+        if (convo.source && window.ChatHistorySync) {
+            sourceBadge = ChatHistorySync.getSourceBadge(convo.source);
         }
 
         item.innerHTML = `
@@ -196,6 +204,7 @@ function renderChatHistoryList() {
                   <span class="history-item-title" 
                         title="${convo.title || '未命名对话'}"
                         data-convo-id="${convo.id}">${convo.title || '未命名对话'}</span>
+                  ${sourceBadge}
                 </div>
                 <span class="history-item-details">${new Date(convo.lastUpdate).toLocaleString()}</span>
             </div>

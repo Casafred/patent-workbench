@@ -9,7 +9,7 @@ console.log('Claims Processor Core Module v1.0.0 Loaded');
 
 // Import sub-modules
 import { handleClaimsFileSelect, loadClaimsColumns } from './claims-file-handler.js';
-import { handleClaimsProcess, exportClaimsResults } from './claims-processor.js';
+import { handleClaimsProcess, exportClaimsResults, updateClaimsProgress, loadClaimsResults } from './claims-processor.js';
 import { claimsGenerateVisualization } from './claims-visualization.js';
 import { 
     analyzeClaimsText, 
@@ -64,20 +64,20 @@ export function initClaimsProcessor() {
         console.log('Initializing Excel batch processing...');
         
         // File selection event
-        fileInput.addEventListener('change', (event) => handleClaimsFileSelect(event, claimsState));
+        fileInput.addEventListener('change', (event) => handleClaimsFileSelect(event, claimsState, showClaimsMessage));
         
         // Process button
         if (processBtn) {
-            processBtn.addEventListener('click', () => handleClaimsProcess(claimsState));
+            processBtn.addEventListener('click', () => handleClaimsProcess(claimsState, showClaimsMessage, updateClaimsProgress, (state, showMessage) => loadClaimsResults(state, showMessage, displayClaimsResults)));
         }
         
         // Export buttons
         if (exportExcelBtn) {
-            exportExcelBtn.addEventListener('click', () => exportClaimsResults('excel', claimsState));
+            exportExcelBtn.addEventListener('click', () => exportClaimsResults('excel', claimsState, showClaimsMessage));
         }
         
         if (exportJsonBtn) {
-            exportJsonBtn.addEventListener('click', () => exportClaimsResults('json', claimsState));
+            exportJsonBtn.addEventListener('click', () => exportClaimsResults('json', claimsState, showClaimsMessage));
         }
         
         // Patent search event listeners

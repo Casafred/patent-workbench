@@ -1066,3 +1066,56 @@
         box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
     }
 }
+
+/* Synced Conversation Styles */
+.chat-history-item.synced-conversation {
+    position: relative;
+    border-left: 3px solid #667eea;
+}
+
+.chat-history-item.synced-conversation::before {
+    content: '';
+    position: absolute;
+    left: -3px;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+}
+
+.source-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    margin-left: 8px;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.source-badge svg {
+    flex-shrink: 0;
+    width: 12px;
+    height: 12px;
+}
+
+.title-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Dark mode synced conversation */
+@media (prefers-color-scheme: dark) {
+    .chat-history-item.synced-conversation {
+        border-left-color: #818cf8;
+    }
+    
+    .chat-history-item.synced-conversation::before {
+        background: linear-gradient(180deg, #818cf8 0%, #a78bfa 100%);
+    }
+}

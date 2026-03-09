@@ -352,7 +352,24 @@ function closePatentChat() {
     
     const currentPatentNumber = modal.dataset.currentPatent;
     if (currentPatentNumber && appState.patentBatch.patentChats[currentPatentNumber]) {
-        appState.patentBatch.patentChats[currentPatentNumber].isOpen = false;
+        const chatState = appState.patentBatch.patentChats[currentPatentNumber];
+        chatState.isOpen = false;
+        
+        if (window.ChatHistorySync && chatState.messages && chatState.messages.length > 0) {
+            const nonSystemMessages = chatState.messages.filter(m => m.role !== 'system');
+            if (nonSystemMessages.length >= 2) {
+                ChatHistorySync.showSyncConfirmation(
+                    chatState.messages,
+                    'PATENT_CHAT',
+                    {
+                        patentNumber: currentPatentNumber,
+                        patentTitle: chatState.patentData?.title || '',
+                        model: patentChatState.currentModel,
+                        thinkingMode: patentChatState.thinkingMode.enabled
+                    }
+                );
+            }
+        }
     }
 }
 

@@ -11,6 +11,7 @@ class PDFOCRFloatingChat {
         this.isMinimized = false;
         this.messages = [];
         this.currentContext = '';
+        this.currentFileName = '';
         this.isDragging = false;
         this.dragOffset = { x: 0, y: 0 };
         this.isResizing = false;
@@ -481,6 +482,22 @@ class PDFOCRFloatingChat {
     }
     
     hide() {
+        if (window.ChatHistorySync && this.messages && this.messages.length > 0) {
+            const nonSystemMessages = this.messages.filter(m => m.role !== 'system' && m.role !== 'loading' && m.role !== 'error');
+            if (nonSystemMessages.length >= 2) {
+                ChatHistorySync.showSyncConfirmation(
+                    this.messages,
+                    'PDF_OCR_CHAT',
+                    {
+                        fileName: this.currentFileName || '未知文件',
+                        contextPreview: this.currentContext ? this.currentContext.substring(0, 200) : '',
+                        model: this.currentModel,
+                        thinkingMode: this.thinkingMode.enabled
+                    }
+                );
+            }
+        }
+        
         this.window.style.opacity = '0';
         this.window.style.transform = 'scale(0.95)';
         
@@ -519,6 +536,7 @@ class PDFOCRFloatingChat {
     openWithContext(data) {
         this.messages = [];
         this.currentContext = data.context || '';
+        this.currentFileName = data.fileName || '';
         
         const messagesContainer = this.window.querySelector('.chat-messages');
         if (messagesContainer) {
