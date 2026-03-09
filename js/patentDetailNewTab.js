@@ -3017,16 +3017,19 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     
                     let optionsHtml = '';
                     providerConfig.models.forEach(m => {
-                        const selected = m.id === window.newTabChatState.currentModel ? ' selected' : '';
-                        optionsHtml += '<option value="' + m.id + '"' + selected + '>' + (m.name || m.id) + '</option>';
+                        // 支持两种格式：字符串或对象
+                        const modelId = typeof m === 'string' ? m : m.id;
+                        const modelName = typeof m === 'string' ? m : (m.name || m.id);
+                        const selected = modelId === window.newTabChatState.currentModel ? ' selected' : '';
+                        optionsHtml += '<option value="' + modelId + '"' + selected + '>' + modelName + '</option>';
                     });
                     
                     modelSelect.innerHTML = optionsHtml;
                     
                     // 如果当前模型不在列表中，选择第一个
-                    const modelIds = providerConfig.models.map(m => m.id);
+                    const modelIds = providerConfig.models.map(m => typeof m === 'string' ? m : m.id);
                     if (!modelIds.includes(window.newTabChatState.currentModel)) {
-                        window.newTabChatState.currentModel = providerConfig.models[0].id;
+                        window.newTabChatState.currentModel = modelIds[0];
                         modelSelect.value = window.newTabChatState.currentModel;
                     }
                 }
