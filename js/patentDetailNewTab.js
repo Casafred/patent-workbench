@@ -1394,6 +1394,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
             <script>
                 // 全局数据变量 - 供所有函数使用
                 const pageData = ${JSON.stringify(data)};
+                window.pageData = pageData; // 挂载到window供问一问等功能使用
                 const currentPatentNumber = '${patentNumber}';
                 
                 // 图片查看器
