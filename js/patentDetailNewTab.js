@@ -1993,7 +1993,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         }
                     }
                     
-                    alert('❌ 请在主页面中使用此功能，或确保主页面已加载完成');
+                    alert('请在主页面中使用此功能，或确保主页面已加载完成');
                 }
                 
                 // 事件Tab切换
