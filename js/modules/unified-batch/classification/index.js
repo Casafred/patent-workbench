@@ -63,7 +63,9 @@ const ClassificationModule = {
             'classification_precheck_modify_btn': this.handlePrecheckModify.bind(this),
             'classification_export_to_original_btn': this.handleExportToOriginalExcel.bind(this),
             'classification_copy_prompt_btn': this.handleCopyPrompt.bind(this),
-            'classification_publish_prompt_btn': this.handlePublishPrompt.bind(this)
+            'classification_publish_prompt_btn': this.handlePublishPrompt.bind(this),
+            'classification_delete_schema_btn': this.handleDeleteSchema.bind(this),
+            'classification_rename_schema_btn': this.handleRenameSchema.bind(this)
         };
 
         Object.entries(clickElements).forEach(([id, handler]) => {
@@ -977,6 +979,49 @@ const ClassificationModule = {
         const saved = SchemaManager.saveSchema();
         this.updateSchemaSelect();
         alert(`分类体系"${saved.name}"已保存`);
+    },
+
+    handleDeleteSchema() {
+        const select = document.getElementById('classification_schema_select');
+        if (!select || !select.value) {
+            alert('请先选择要删除的分类体系');
+            return;
+        }
+        
+        const schemaId = select.value;
+        const schema = classificationState.state.savedSchemas.find(s => s.id === schemaId);
+        const schemaName = schema?.name || schemaId;
+        
+        if (confirm(`确定要删除分类体系"${schemaName}"吗？此操作不可撤销。`)) {
+            classificationState.deleteSchema(schemaId);
+            select.value = '';
+            alert(`分类体系"${schemaName}"已删除`);
+        }
+    },
+
+    handleRenameSchema() {
+        const select = document.getElementById('classification_schema_select');
+        if (!select || !select.value) {
+            alert('请先选择要重命名的分类体系');
+            return;
+        }
+        
+        const schemaId = select.value;
+        const schema = classificationState.state.savedSchemas.find(s => s.id === schemaId);
+        if (!schema) {
+            alert('未找到该分类体系');
+            return;
+        }
+        
+        const newName = prompt('请输入新的分类体系名称:', schema.name || '');
+        if (newName && newName.trim()) {
+            schema.name = newName.trim();
+            schema.updatedAt = new Date().toISOString();
+            classificationState.persistSchemas();
+            classificationState.updateSchemaSelect();
+            select.value = schemaId;
+            alert(`分类体系已重命名为"${newName.trim()}"`);
+        }
     },
 
     async handleColdStart() {

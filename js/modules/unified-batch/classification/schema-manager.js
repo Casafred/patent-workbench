@@ -319,13 +319,13 @@ const SchemaManager = {
 
     getSchemaSelectOptions() {
         const options = [
-            { value: 'new', label: '+ 新建分类体系' }
+            { value: '', label: '选择已有分类体系' }
         ];
 
         this.state.savedSchemas.forEach(schema => {
             options.push({
                 value: schema.id,
-                label: schema.name
+                label: schema.name || `体系 ${schema.id.slice(-6)}`
             });
         });
 

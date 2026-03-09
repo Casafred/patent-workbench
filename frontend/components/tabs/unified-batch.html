@@ -401,9 +401,17 @@
             <!-- 分类体系选择 -->
             <div class="config-item">
                 <label for="classification_schema_select">选择已有分类体系或新建:</label>
-                <select id="classification_schema_select">
-                    <option value="new">+ 新建分类体系</option>
-                </select>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <select id="classification_schema_select" style="flex: 1;">
+                        <option value="">选择已有分类体系</option>
+                    </select>
+                    <button id="classification_delete_schema_btn" class="small-button" style="background: #ef4444; color: white; padding: 6px 12px;" title="删除选中的分类体系">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </button>
+                    <button id="classification_rename_schema_btn" class="small-button" style="background: #6b7280; color: white; padding: 6px 12px;" title="重命名选中的分类体系">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    </button>
+                </div>
             </div>
 
             <!-- 智能冷启动选项 -->
