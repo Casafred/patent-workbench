@@ -2877,72 +2877,109 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     }
                 });
 
-                // 新标签页中的问一问功能 - 在新标签页中创建独立的弹窗
-                window.openPatentChatInNewTab = function(patentNumber) {
-                    // 检查是否已存在弹窗
+                // 新标签页中的问一问功能 - 绿色主题，参考主页面实现
+                window.newTabChatState = {
+                    providers: {},
+                    currentProvider: 'zhipu',
+                    currentModel: 'glm-4-flash',
+                    patentNumber: '',
+                    patentData: {},
+                    messages: [],
+                    isLoading: false,
+                    stopStreaming: false
+                };
+                
+                // 初始化服务商配置
+                async function initNewTabChatProviders() {
+                    try {
+                        const response = await fetch('/api/providers');
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.providers) {
+                                window.newTabChatState.providers = data.providers;
+                                window.newTabChatState.currentProvider = localStorage.getItem('llm_provider') || data.default_provider || 'zhipu';
+                                window.newTabChatState.currentModel = data.providers[window.newTabChatState.currentProvider]?.default_model || 'glm-4-flash';
+                                updateNewTabChatProviderSelect();
+                                updateNewTabChatModelSelect();
+                            }
+                        }
+                    } catch (error) {
+                        console.warn('加载服务商配置失败，使用默认配置');
+                        window.newTabChatState.providers = {
+                            zhipu: { name: '智谱AI', models: [{id: 'glm-4-flash', name: 'GLM-4-Flash'}, {id: 'glm-4-long', name: 'GLM-4-Long'}] },
+                            aliyun: { name: '阿里云百炼', models: [{id: 'qwen-turbo', name: 'Qwen-Turbo'}, {id: 'qwen-plus', name: 'Qwen-Plus'}] }
+                        };
+                    }
+                }
+                
+                function updateNewTabChatProviderSelect() {
+                    const providerSelect = document.getElementById('newtab_chat_provider');
+                    if (!providerSelect || !window.newTabChatState.providers) return;
+                    
+                    const zhipuKey = localStorage.getItem('globalApiKey') || localStorage.getItem('zhipu_api_key');
+                    const aliyunKey = localStorage.getItem('aliyun_api_key');
+                    const hasZhipuKey = !!zhipuKey;
+                    const hasAliyunKey = !!aliyunKey;
+                    
+                    let optionsHtml = '';
+                    Object.entries(window.newTabChatState.providers).forEach(([key, val]) => {
+                        const hasKey = key === 'zhipu' ? hasZhipuKey : hasAliyunKey;
+                        const isCurrent = key === window.newTabChatState.currentProvider;
+                        const disabled = !hasKey ? ' disabled' : '';
+                        const selected = isCurrent && hasKey ? ' selected' : '';
+                        const label = hasKey ? val.name : val.name + ' (未配置)';
+                        optionsHtml += '<option value="' + key + '"' + disabled + selected + '>' + label + '</option>';
+                    });
+                    
+                    providerSelect.innerHTML = optionsHtml;
+                }
+                
+                function updateNewTabChatModelSelect() {
+                    const modelSelect = document.getElementById('newtab_chat_model');
+                    if (!modelSelect) return;
+                    
+                    const provider = window.newTabChatState.currentProvider;
+                    const providerConfig = window.newTabChatState.providers[provider];
+                    
+                    if (!providerConfig || !providerConfig.models) {
+                        modelSelect.innerHTML = '<option value="">请先配置API Key</option>';
+                        return;
+                    }
+                    
+                    let optionsHtml = '';
+                    providerConfig.models.forEach(m => {
+                        const selected = m.id === window.newTabChatState.currentModel ? ' selected' : '';
+                        optionsHtml += '<option value="' + m.id + '"' + selected + '>' + (m.name || m.id) + '</option>';
+                    });
+                    
+                    modelSelect.innerHTML = optionsHtml;
+                }
+                
+                window.openPatentChatInNewTab = async function(patentNumber) {
                     const existingModal = document.getElementById('newtab_patent_chat_modal');
                     if (existingModal) {
                         existingModal.style.display = 'flex';
                         return;
                     }
                     
-                    // 获取专利数据
                     const patentData = window.pageData || {};
                     
-                    // 创建问一问弹窗
+                    window.newTabChatState.patentNumber = patentNumber;
+                    window.newTabChatState.patentData = patentData;
+                    window.newTabChatState.messages = [];
+                    window.newTabChatState.isLoading = false;
+                    window.newTabChatState.stopStreaming = false;
+                    
                     const chatModal = document.createElement('div');
                     chatModal.id = 'newtab_patent_chat_modal';
-                    chatModal.style.cssText = \`
-                        position: fixed;
-                        top: 0;
-                        left: 0;
-                        width: 100%;
-                        height: 100%;
-                        background: rgba(0,0,0,0.5);
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        z-index: 10000;
-                    \`;
+                    chatModal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 10000;';
                     
-                    chatModal.innerHTML = \`
-                        <div style="background: white; border-radius: 12px; width: 90%; max-width: 800px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #eee; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px 12px 0 0;">
-                                <div>
-                                    <h4 style="margin: 0; font-size: 18px; color: white;">专利对话：\${patentNumber}</h4>
-                                    <p style="margin: 4px 0 0 0; font-size: 13px; color: rgba(255,255,255,0.8);">\${patentData.title || '无标题'}</p>
-                                </div>
-                                <button onclick="closeNewTabPatentChat()" style="background: rgba(255,255,255,0.2); border: none; font-size: 24px; cursor: pointer; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button>
-                            </div>
-                            <div id="newtab_chat_history" style="flex: 1; overflow-y: auto; padding: 16px; background: #f8f9fa; min-height: 300px;">
-                                <div class="welcome-message" style="text-align: center; padding: 40px 20px; color: #666;">
-                                    <div style="font-size: 48px; margin-bottom: 16px;">💬</div>
-                                    <p style="font-size: 16px; margin: 0;">暂无对话记录</p>
-                                    <p style="font-size: 14px; color: #999; margin-top: 8px;">在下方输入您的问题，开始与AI对话</p>
-                                </div>
-                            </div>
-                            <div style="padding: 16px; border-top: 1px solid #eee; background: white; border-radius: 0 0 12px 12px;">
-                                <div style="display: flex; gap: 10px; align-items: flex-end;">
-                                    <textarea id="newtab_chat_input" placeholder="输入您的问题，按Enter发送..." style="flex: 1; border: 1px solid #ddd; border-radius: 8px; padding: 12px; resize: none; font-size: 14px; line-height: 1.5;" rows="2"></textarea>
-                                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                                        <button id="newtab_chat_send_btn" onclick="sendNewTabPatentChatMessage()" style="padding: 12px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;">发送</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    \`;
+                    chatModal.innerHTML = '<div style="background: white; border-radius: 12px; width: 90%; max-width: 800px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 8px 32px rgba(0,0,0,0.3);"><div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #e8f5e9; background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); border-radius: 12px 12px 0 0;"><div><h4 style="margin: 0; font-size: 18px; color: white;">专利对话：' + patentNumber + '</h4><p style="margin: 4px 0 0 0; font-size: 13px; color: rgba(255,255,255,0.85);">' + (patentData.title || '无标题') + '</p></div><button onclick="closeNewTabPatentChat()" style="background: rgba(255,255,255,0.2); border: none; font-size: 24px; cursor: pointer; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button></div><div style="padding: 12px 16px; background: #f1f8e9; border-bottom: 1px solid #e8f5e9;"><div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;"><div style="display: flex; align-items: center; gap: 8px;"><label style="font-size: 13px; color: #2e7d32; font-weight: 500;">服务商:</label><select id="newtab_chat_provider" onchange="onNewTabProviderChange()" style="padding: 6px 12px; border: 1px solid #c8e6c9; border-radius: 6px; font-size: 13px; background: white; cursor: pointer;"></select></div><div style="display: flex; align-items: center; gap: 8px;"><label style="font-size: 13px; color: #2e7d32; font-weight: 500;">模型:</label><select id="newtab_chat_model" onchange="onNewTabModelChange()" style="padding: 6px 12px; border: 1px solid #c8e6c9; border-radius: 6px; font-size: 13px; background: white; cursor: pointer;"></select></div><button onclick="clearNewTabChatHistory()" style="padding: 6px 12px; background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; border-radius: 6px; font-size: 13px; cursor: pointer;">清空对话</button></div></div><div id="newtab_chat_history" style="flex: 1; overflow-y: auto; padding: 16px; background: #fafafa; min-height: 300px;"><div class="welcome-message" style="text-align: center; padding: 40px 20px; color: #666;"><div style="font-size: 48px; margin-bottom: 16px;">💬</div><p style="font-size: 16px; margin: 0;">暂无对话记录</p><p style="font-size: 14px; color: #999; margin-top: 8px;">在下方输入您的问题，开始与AI对话</p></div></div><div style="padding: 16px; border-top: 1px solid #e8f5e9; background: white; border-radius: 0 0 12px 12px;"><div style="display: flex; gap: 10px; align-items: flex-end;"><textarea id="newtab_chat_input" placeholder="输入您的问题，按Enter发送..." style="flex: 1; border: 1px solid #c8e6c9; border-radius: 8px; padding: 12px; resize: none; font-size: 14px; line-height: 1.5;" rows="2"></textarea><div style="display: flex; flex-direction: column; gap: 8px;"><button id="newtab_chat_stop_btn" onclick="stopNewTabChatStream()" style="padding: 12px 24px; background: #e74c3c; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; display: none;">停止</button><button id="newtab_chat_send_btn" onclick="sendNewTabPatentChatMessage()" style="padding: 12px 24px; background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;">发送</button></div></div></div></div>';
                     
                     document.body.appendChild(chatModal);
                     
-                    // 初始化对话状态
-                    window.newTabChatState = {
-                        patentNumber: patentNumber,
-                        patentData: patentData,
-                        messages: [],
-                        isLoading: false
-                    };
+                    await initNewTabChatProviders();
                     
-                    // 绑定回车发送
                     const input = document.getElementById('newtab_chat_input');
                     input.addEventListener('keydown', function(e) {
                         if (e.key === 'Enter' && !e.shiftKey) {
@@ -2954,15 +2991,38 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     input.focus();
                 };
                 
-                // 关闭弹窗函数
-                window.closeNewTabPatentChat = function() {
-                    const modal = document.getElementById('newtab_patent_chat_modal');
-                    if (modal) {
-                        modal.remove();
+                window.onNewTabProviderChange = function() {
+                    const providerSelect = document.getElementById('newtab_chat_provider');
+                    window.newTabChatState.currentProvider = providerSelect.value;
+                    const providerConfig = window.newTabChatState.providers[window.newTabChatState.currentProvider];
+                    if (providerConfig && providerConfig.default_model) {
+                        window.newTabChatState.currentModel = providerConfig.default_model;
+                    } else if (providerConfig && providerConfig.models && providerConfig.models.length > 0) {
+                        window.newTabChatState.currentModel = providerConfig.models[0].id;
                     }
+                    updateNewTabChatModelSelect();
                 };
                 
-                // 发送消息函数
+                window.onNewTabModelChange = function() {
+                    const modelSelect = document.getElementById('newtab_chat_model');
+                    window.newTabChatState.currentModel = modelSelect.value;
+                };
+                
+                window.closeNewTabPatentChat = function() {
+                    const modal = document.getElementById('newtab_patent_chat_modal');
+                    if (modal) modal.remove();
+                };
+                
+                window.clearNewTabChatHistory = function() {
+                    const historyEl = document.getElementById('newtab_chat_history');
+                    historyEl.innerHTML = '<div class="welcome-message" style="text-align: center; padding: 40px 20px; color: #666;"><div style="font-size: 48px; margin-bottom: 16px;">💬</div><p style="font-size: 16px; margin: 0;">暂无对话记录</p><p style="font-size: 14px; color: #999; margin-top: 8px;">在下方输入您的问题，开始与AI对话</p></div>';
+                    window.newTabChatState.messages = [];
+                };
+                
+                window.stopNewTabChatStream = function() {
+                    window.newTabChatState.stopStreaming = true;
+                };
+                
                 window.sendNewTabPatentChatMessage = async function() {
                     const input = document.getElementById('newtab_chat_input');
                     const message = input.value.trim();
@@ -2975,77 +3035,142 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     const welcomeDiv = historyEl.querySelector('.welcome-message');
                     if (welcomeDiv) welcomeDiv.remove();
                     
-                    // 添加用户消息
                     const userMsgDiv = document.createElement('div');
                     userMsgDiv.style.cssText = 'margin-bottom: 16px; display: flex; justify-content: flex-end;';
-                    userMsgDiv.innerHTML = \`
-                        <div style="max-width: 70%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 16px; border-radius: 16px 16px 4px 16px;">
-                            <div style="font-size: 14px; line-height: 1.5;">\${escapeHtml(message)}</div>
-                        </div>
-                    \`;
+                    userMsgDiv.innerHTML = '<div style="max-width: 70%; background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); color: white; padding: 12px 16px; border-radius: 16px 16px 4px 16px;"><div style="font-size: 14px; line-height: 1.5;">' + escapeHtml(message) + '</div></div>';
                     historyEl.appendChild(userMsgDiv);
                     historyEl.scrollTop = historyEl.scrollHeight;
                     
-                    // 显示AI加载状态
                     const aiMsgDiv = document.createElement('div');
                     aiMsgDiv.style.cssText = 'margin-bottom: 16px; display: flex; justify-content: flex-start;';
-                    aiMsgDiv.innerHTML = \`
-                        <div style="max-width: 70%; background: white; padding: 12px 16px; border-radius: 16px 16px 16px 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                            <div style="font-size: 14px; color: #666;">思考中...</div>
-                        </div>
-                    \`;
+                    aiMsgDiv.innerHTML = '<div style="max-width: 70%; background: white; padding: 12px 16px; border-radius: 16px 16px 16px 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e8f5e9;"><div style="font-size: 14px; color: #666;">思考中...</div></div>';
                     historyEl.appendChild(aiMsgDiv);
                     historyEl.scrollTop = historyEl.scrollHeight;
                     
                     window.newTabChatState.isLoading = true;
+                    window.newTabChatState.stopStreaming = false;
+                    
                     const sendBtn = document.getElementById('newtab_chat_send_btn');
-                    sendBtn.textContent = '发送中...';
-                    sendBtn.disabled = true;
+                    const stopBtn = document.getElementById('newtab_chat_stop_btn');
+                    sendBtn.style.display = 'none';
+                    stopBtn.style.display = 'inline-block';
+                    
+                    const contentDiv = aiMsgDiv.querySelector('div > div');
                     
                     try {
-                        // 调用后端API
-                        const response = await fetch('/api/patent/chat', {
+                        window.newTabChatState.messages.push({ role: 'user', content: message, timestamp: new Date().toISOString() });
+                        
+                        const patentInfo = window.newTabChatState.patentData;
+                        const patentNumber = window.newTabChatState.patentNumber;
+                        
+                        const safeValue = (val) => {
+                            if (!val) return '未知';
+                            if (Array.isArray(val)) return val.length > 0 ? val.join(', ') : '未知';
+                            return val;
+                        };
+                        
+                        let contextInfo = '你是一个专业的专利分析助手。当前正在分析专利号为 ' + patentNumber + ' 的专利。\\n\\n## 专利完整信息\\n\\n### 基本信息\\n- **专利号**: ' + (patentInfo.patent_number || patentNumber) + '\\n- **标题**: ' + (patentInfo.title || '无标题') + '\\n- **申请日期**: ' + (patentInfo.application_date || '未知') + '\\n- **公开日期**: ' + (patentInfo.publication_date || '未知') + '\\n- **法律状态**: ' + (patentInfo.legal_status || '未知') + '\\n\\n### 申请人与发明人\\n- **申请人**: ' + safeValue(patentInfo.assignees || patentInfo.applicant) + '\\n- **发明人**: ' + safeValue(patentInfo.inventors || patentInfo.inventor) + '\\n\\n### 分类信息\\n- **IPC分类**: ' + (patentInfo.ipc_classification || '未知') + '\\n\\n### 摘要\\n' + (patentInfo.abstract || '无摘要') + '\\n\\n请基于以上专利信息，准确、专业地回答用户的问题。';
+                        
+                        const apiMessages = [
+                            { role: 'system', content: contextInfo },
+                            ...window.newTabChatState.messages.filter(m => m.role !== 'system')
+                        ];
+                        
+                        const requestBody = {
+                            model: window.newTabChatState.currentModel,
+                            messages: apiMessages,
+                            temperature: 0.7,
+                            stream: true
+                        };
+                        
+                        if (window.newTabChatState.currentProvider === 'aliyun') {
+                            requestBody.provider = 'aliyun';
+                        }
+                        
+                        const headers = { 'Content-Type': 'application/json' };
+                        
+                        if (window.newTabChatState.currentProvider === 'aliyun') {
+                            const aliyunKey = localStorage.getItem('aliyun_api_key');
+                            if (aliyunKey) {
+                                headers['X-LLM-Provider'] = 'aliyun';
+                                headers['Authorization'] = 'Bearer ' + aliyunKey;
+                            }
+                        } else {
+                            const apiKey = localStorage.getItem('globalApiKey') || localStorage.getItem('zhipu_api_key');
+                            if (!apiKey) throw new Error('请先配置API密钥');
+                            headers['Authorization'] = 'Bearer ' + apiKey;
+                        }
+                        
+                        const response = await fetch('/api/stream_chat', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                patent_number: window.newTabChatState.patentNumber,
-                                message: message,
-                                patent_data: window.newTabChatState.patentData
-                            })
+                            headers: headers,
+                            body: JSON.stringify(requestBody)
                         });
                         
-                        if (!response.ok) throw new Error('请求失败');
+                        if (!response.ok) {
+                            const errorData = await response.json().catch(() => ({}));
+                            throw new Error(errorData.error || 'API请求失败: ' + response.status);
+                        }
                         
-                        const data = await response.json();
-                        const aiContent = data.response || data.message || '抱歉，无法获取回复';
+                        const reader = response.body.getReader();
+                        const decoder = new TextDecoder();
+                        let fullContent = '';
+                        let buffer = '';
                         
-                        // 更新AI回复
-                        aiMsgDiv.innerHTML = \`
-                            <div style="max-width: 70%; background: white; padding: 12px 16px; border-radius: 16px 16px 16px 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                                <div style="font-size: 14px; line-height: 1.6; color: #333; white-space: pre-wrap;">\${escapeHtml(aiContent)}</div>
-                            </div>
-                        \`;
-                        historyEl.scrollTop = historyEl.scrollHeight;
+                        contentDiv.textContent = '';
                         
-                        window.newTabChatState.messages.push({ role: 'user', content: message });
-                        window.newTabChatState.messages.push({ role: 'assistant', content: aiContent });
+                        while (true) {
+                            if (window.newTabChatState.stopStreaming) break;
+                            
+                            const { value, done } = await reader.read();
+                            if (value) buffer += decoder.decode(value, { stream: !done });
+                            if (done) break;
+                            
+                            let lines = buffer.split('\\n\\n');
+                            buffer = lines.pop() || '';
+                            
+                            for (const line of lines) {
+                                if (!line.trim() || !line.startsWith('data:')) continue;
+                                
+                                const jsonStr = line.substring(5).trim();
+                                if (jsonStr === '[DONE]') continue;
+                                
+                                try {
+                                    const data = JSON.parse(jsonStr);
+                                    const content = data.choices?.[0]?.delta?.content || data.content || '';
+                                    if (content) {
+                                        fullContent += content;
+                                        contentDiv.innerHTML = formatContent(fullContent);
+                                        historyEl.scrollTop = historyEl.scrollHeight;
+                                    }
+                                } catch (e) {}
+                            }
+                        }
+                        
+                        if (fullContent) {
+                            window.newTabChatState.messages.push({ role: 'assistant', content: fullContent, timestamp: new Date().toISOString() });
+                        }
                         
                     } catch (error) {
                         console.error('发送失败:', error);
-                        aiMsgDiv.innerHTML = \`
-                            <div style="max-width: 70%; background: #ffebee; padding: 12px 16px; border-radius: 16px 16px 16px 4px;">
-                                <div style="font-size: 14px; color: #c62828;">发送失败: \${error.message}</div>
-                            </div>
-                        \`;
+                        contentDiv.innerHTML = '<span style="color: #c62828;">发送失败: ' + escapeHtml(error.message) + '</span>';
                     } finally {
                         window.newTabChatState.isLoading = false;
-                        sendBtn.textContent = '发送';
-                        sendBtn.disabled = false;
+                        sendBtn.style.display = 'inline-block';
+                        stopBtn.style.display = 'none';
                     }
                 };
                 
-                // HTML转义函数
+                function formatContent(content) {
+                    let formatted = content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    formatted = formatted.replace(/\\n/g, '<br>');
+                    formatted = formatted.replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>');
+                    formatted = formatted.replace(/\\*(.+?)\\*/g, '<em>$1</em>');
+                    return formatted;
+                }
+                
                 function escapeHtml(text) {
+                    if (!text) return '';
                     const div = document.createElement('div');
                     div.textContent = text;
                     return div.innerHTML;
