@@ -1530,12 +1530,12 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         if (typeof window.opener.sendToDrawingMarker === 'function') {
                             window.opener.sendToDrawingMarker(currentPatentNumber);
                             window.opener.focus();
-                            alert('✅ 已传递数据到主页面，请在主页面中选择要标记的图片');
+                            alert('已传递数据到主页面，请在主页面中选择要标记的图片');
                             return;
                         }
                     }
                     
-                    alert('❌ 请在主页面中使用此功能，或确保主页面已加载完成');
+                    alert('请在主页面中使用此功能，或确保主页面已加载完成');
                 }
                 
                 // 回到顶部
@@ -1988,7 +1988,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         if (typeof window.opener.sendToDrawingMarker === 'function') {
                             window.opener.sendToDrawingMarker(currentPatentNumber);
                             window.opener.focus();
-                            alert('✅ 已传递数据到主页面，请在主页面中选择要标记的图片');
+                            alert('已传递数据到主页面，请在主页面中选择要标记的图片');
                             return;
                         }
                     }

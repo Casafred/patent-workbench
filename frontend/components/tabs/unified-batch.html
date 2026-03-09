@@ -339,7 +339,7 @@
                 <div id="classification_column_config_container" style="display:none;">
                     <hr style="margin: 15px 0; border-color: var(--border-color);">
                     <div class="info-box" style="background: var(--bg-color-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-                        <div style="font-weight: 500; margin-bottom: 10px;">📊 数据列配置</div>
+                        <div style="font-weight: 500; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4 11H2v3h2v-3zm5-4H7v7h2V7zm5-5v12h-2V2h2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1h-2zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-3z"/></svg> 数据列配置</div>
                         <p style="margin: 0 0 10px; color: var(--text-color-secondary); font-size: 0.9em;">
                             配置数据列用于分类标引。索引列用于标识每条数据，拼接列将合并作为分类依据的文本。
                         </p>
@@ -481,11 +481,11 @@
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <label>生成的分类提示词预览:</label>
                     <div style="display: flex; gap: 8px;">
-                        <button id="classification_copy_prompt_btn" class="small-button" style="background: var(--primary-color); color: white;" title="复制到智能剪贴板">
-                            📋 复制
+                        <button id="classification_copy_prompt_btn" class="small-button" style="background: var(--primary-color); color: white; display: inline-flex; align-items: center; gap: 4px;" title="复制到智能剪贴板">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg> 复制
                         </button>
-                        <button id="classification_publish_prompt_btn" class="small-button" style="background: var(--success-color); color: white;" title="发布到提示词广场">
-                            🚀 发布到广场
+                        <button id="classification_publish_prompt_btn" class="small-button" style="background: var(--success-color); color: white; display: inline-flex; align-items: center; gap: 4px;" title="发布到提示词广场">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M15.5 1.5a.5.5 0 0 1 .5.5v3.5a.5.5 0 0 1-.5.5h-3.5a.5.5 0 0 1 0-1h2.19l-3.54-3.54a.5.5 0 0 1 .708-.708L15 4.31V1.5a.5.5 0 0 1 .5-.5zM0 14.5a.5.5 0 0 0 .5.5h3.5a.5.5 0 0 0 0-1H1.81l3.54-3.54a.5.5 0 0 0-.708-.708L1 13.69V10.5a.5.5 0 0 0-1 0v4z"/></svg> 发布到广场
                         </button>
                         <button id="classification_optimize_prompt_btn" class="small-button" style="background: var(--accent-color); color: white;">
                             AI一键优化提示词
@@ -537,8 +537,8 @@
                     在正式批量分类前，先对前3条数据进行测试分类，确认效果符合预期后再进行批量处理。
                 </p>
                 <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
-                    <button id="classification_precheck_btn" class="small-button" style="background: var(--primary-color); color: white; padding: 10px 20px;">
-                        🔍 开始前置校验
+                    <button id="classification_precheck_btn" class="small-button" style="background: var(--primary-color); color: white; padding: 10px 20px; display: inline-flex; align-items: center; gap: 6px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg> 开始前置校验
                     </button>
                     <span id="classification_precheck_status" style="color: var(--text-color-secondary); font-size: 0.9em;"></span>
                 </div>
@@ -548,7 +548,7 @@
             <div id="classification_precheck_results" style="display: none; margin-bottom: 20px;">
                 <div style="background: var(--bg-color-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <h4 style="margin: 0;">📋 校验结果预览</h4>
+                        <h4 style="margin: 0; display: flex; align-items: center; gap: 6px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M14 2H2a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1zM2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2z"/><path d="M6 5.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1H6.5a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1H6.5a.5.5 0 0 1-.5-.5zm0 3a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1H6.5a.5.5 0 0 1-.5-.5z"/></svg> 校验结果预览</h4>
                         <div id="classification_precheck_actions" style="display: none; gap: 10px;">
                             <button id="classification_precheck_proceed_btn" class="small-button" style="background: var(--success-color); color: white;">
                                 ✓ 效果满意，转入正式分类

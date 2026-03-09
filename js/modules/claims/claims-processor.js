@@ -240,7 +240,7 @@ export async function loadClaimsResults(state, showMessage, displayResults, retr
         if (data.success) {
             const responseData = data.data || {};
             state.processedData = responseData;
-            displayResults(responseData);
+            displayResults(responseData, state);
             showMessage('处理完成！', 'success');
         } else {
             showMessage('获取结果失败：' + data.error, 'error');
