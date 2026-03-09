@@ -180,6 +180,32 @@ function initApiKeyConfig() {
         });
     }
 
+    // 智谱AI连通性测试
+    const zhipuTestBtn = document.getElementById('zhipu_test_connection_btn');
+    if (zhipuTestBtn && globalApiKeyInput) {
+        zhipuTestBtn.addEventListener('click', async () => {
+            const apiKey = globalApiKeyInput.value.trim();
+            if (!apiKey) {
+                showConnectionResult(zhipuTestBtn, false, '请先输入API Key');
+                return;
+            }
+            await testApiConnection('zhipu', apiKey, zhipuTestBtn);
+        });
+    }
+
+    // 阿里云连通性测试
+    const aliyunTestBtn = document.getElementById('aliyun_test_connection_btn');
+    if (aliyunTestBtn && aliyunApiKeyInput) {
+        aliyunTestBtn.addEventListener('click', async () => {
+            const apiKey = aliyunApiKeyInput.value.trim();
+            if (!apiKey) {
+                showConnectionResult(aliyunTestBtn, false, '请先输入API Key');
+                return;
+            }
+            await testApiConnection('aliyun', apiKey, aliyunTestBtn);
+        });
+    }
+
     // 点击外部关闭配置面板
     document.addEventListener('click', (event) => {
         if (!apiConfigContainer.contains(event.target) && !apiConfigToggleBtn.contains(event.target)) {
@@ -428,7 +454,64 @@ async function apiCall(endpoint, body, method = 'POST', isStream = false, timeou
     }
 }
 
+/**
+ * 测试API连通性
+ * @param {string} provider - 服务商标识 ('zhipu' 或 'aliyun')
+ * @param {string} apiKey - API Key
+ * @param {HTMLElement} button - 触发按钮元素
+ */
+async function testApiConnection(provider, apiKey, button) {
+    const originalHTML = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<svg class="spinning" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>';
+    
+    try {
+        const response = await fetch('/api/test_connection', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                provider: provider,
+                api_key: apiKey
+            })
+        });
+        
+        const result = await response.json();
+        showConnectionResult(button, result.success, result.message);
+        
+    } catch (error) {
+        console.error('[API] 连通性测试失败:', error);
+        showConnectionResult(button, false, `测试失败: ${error.message}`);
+    } finally {
+        button.disabled = false;
+        setTimeout(() => {
+            button.innerHTML = originalHTML;
+        }, 2000);
+    }
+}
+
+/**
+ * 显示连通性测试结果
+ * @param {HTMLElement} button - 按钮元素
+ * @param {boolean} success - 是否成功
+ * @param {string} message - 结果消息
+ */
+function showConnectionResult(button, success, message) {
+    const successIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
+    const failIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>';
+    
+    button.innerHTML = success ? successIcon : failIcon;
+    button.style.color = success ? '#10b981' : '#ef4444';
+    button.title = message;
+    
+    setTimeout(() => {
+        button.style.color = '';
+        button.title = '测试连通性';
+    }, 3000);
+}
+
 // 导出函数供其他模块使用
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { initApiKeyConfig, apiCall, getCurrentApiKey, getProviderHeaders, updateProviderUI, handleSessionExpired };
+    module.exports = { initApiKeyConfig, apiCall, getCurrentApiKey, getProviderHeaders, updateProviderUI, handleSessionExpired, testApiConnection };
 }

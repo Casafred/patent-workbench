@@ -9,6 +9,8 @@ import json
 import traceback
 import requests
 from flask import Blueprint, request, Response, jsonify
+from zhipuai import ZhipuAI
+from openai import OpenAI
 from backend.middleware import validate_api_request
 from backend.services import get_zhipu_client
 from backend.services.llm_service import (
@@ -444,3 +446,137 @@ def get_providers():
         },
         "default_provider": "zhipu"
     })
+
+
+@chat_bp.route('/test_connection', methods=['POST'])
+def test_connection():
+    """
+    测试API Key连通性
+    
+    请求体:
+    {
+        "provider": "zhipu" | "aliyun",
+        "api_key": "your-api-key"
+    }
+    
+    返回:
+    {
+        "success": true/false,
+        "message": "连接成功" 或 错误信息,
+        "provider": "zhipu" | "aliyun"
+    }
+    """
+    try:
+        req_data = request.get_json(silent=True)
+        if req_data is None:
+            return jsonify({
+                "success": False,
+                "message": "请求体格式错误"
+            }), 400
+        
+        provider = req_data.get('provider', 'zhipu')
+        api_key = req_data.get('api_key', '')
+        
+        if not api_key:
+            return jsonify({
+                "success": False,
+                "message": "API Key不能为空",
+                "provider": provider
+            }), 400
+        
+        if provider == 'aliyun':
+            return test_aliyun_connection(api_key)
+        else:
+            return test_zhipu_connection(api_key)
+            
+    except Exception as e:
+        print(f"Error in test_connection: {traceback.format_exc()}")
+        return jsonify({
+            "success": False,
+            "message": f"测试失败: {str(e)}"
+        }), 500
+
+
+def test_zhipu_connection(api_key):
+    """测试智谱AI API Key连通性"""
+    try:
+        client = ZhipuAI(api_key=api_key)
+        
+        response = client.chat.completions.create(
+            model="glm-4-flash",
+            messages=[{"role": "user", "content": "Hi"}],
+            max_tokens=5,
+            temperature=0.1
+        )
+        
+        if response and response.choices:
+            return jsonify({
+                "success": True,
+                "message": "智谱AI API连接成功！",
+                "provider": "zhipu"
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "message": "API响应异常，请检查API Key是否有效",
+                "provider": "zhipu"
+            }), 400
+            
+    except Exception as e:
+        error_msg = str(e)
+        if "invalid" in error_msg.lower() or "unauthorized" in error_msg.lower():
+            error_msg = "API Key无效或已过期"
+        elif "rate" in error_msg.lower() or "limit" in error_msg.lower():
+            error_msg = "API调用频率限制，请稍后重试"
+        elif "network" in error_msg.lower() or "connection" in error_msg.lower():
+            error_msg = "网络连接失败，请检查网络"
+        
+        return jsonify({
+            "success": False,
+            "message": f"连接失败: {error_msg}",
+            "provider": "zhipu"
+        }), 400
+
+
+def test_aliyun_connection(api_key):
+    """测试阿里云百炼 API Key连通性"""
+    try:
+        client = OpenAI(
+            api_key=api_key,
+            base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
+        )
+        
+        response = client.chat.completions.create(
+            model="qwen-turbo",
+            messages=[{"role": "user", "content": "Hi"}],
+            max_tokens=5,
+            temperature=0.1
+        )
+        
+        if response and response.choices:
+            return jsonify({
+                "success": True,
+                "message": "阿里云百炼 API连接成功！",
+                "provider": "aliyun"
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "message": "API响应异常，请检查API Key是否有效",
+                "provider": "aliyun"
+            }), 400
+            
+    except Exception as e:
+        error_msg = str(e)
+        if "invalid" in error_msg.lower() or "unauthorized" in error_msg.lower() or "api key" in error_msg.lower():
+            error_msg = "API Key无效或已过期"
+        elif "rate" in error_msg.lower() or "limit" in error_msg.lower():
+            error_msg = "API调用频率限制，请稍后重试"
+        elif "network" in error_msg.lower() or "connection" in error_msg.lower():
+            error_msg = "网络连接失败，请检查网络"
+        
+        return jsonify({
+            "success": False,
+            "message": f"连接失败: {error_msg}",
+            "provider": "aliyun"
+        }), 400

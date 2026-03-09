@@ -312,6 +312,34 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
     stroke: var(--primary-color-dark);
 }
 
+/* 测试连通性按钮 */
+.test-connection-btn {
+    transition: all 0.3s ease;
+}
+
+.test-connection-btn:hover {
+    background-color: var(--primary-color-hover-bg);
+    transform: scale(1.05);
+}
+
+.test-connection-btn:hover svg {
+    stroke: var(--primary-color-dark);
+}
+
+/* 旋转动画 */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+svg.spinning {
+    animation: spin 1s linear infinite;
+}
+
 /* 确保按钮不继承其他样式 */
 .api-key-action-btn, .password-toggle-btn {
     all: unset;

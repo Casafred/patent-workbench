@@ -56,11 +56,47 @@ function updatePatentChatProviderSelect() {
     const providerSelect = document.getElementById('patent_chat_provider');
     if (!providerSelect || !patentChatState.providers) return;
     
-    const options = Object.entries(patentChatState.providers).map(([key, val]) => 
-        `<option value="${key}" ${key === patentChatState.currentProvider ? 'selected' : ''}>${val.name}</option>`
-    ).join('');
+    const getUserStorageItem = (key) => {
+        if (window.userCacheStorage && window.userCacheStorage.isInitialized()) {
+            return window.userCacheStorage.get(key);
+        }
+        return localStorage.getItem(key);
+    };
     
-    providerSelect.innerHTML = options;
+    const zhipuKey = window.appState?.apiKey || getUserStorageItem('globalApiKey');
+    const aliyunKey = window.appState?.aliyunApiKey || getUserStorageItem('aliyun_api_key');
+    const hasZhipuKey = !!zhipuKey;
+    const hasAliyunKey = !!aliyunKey;
+    
+    let optionsHtml = '';
+    Object.entries(patentChatState.providers).forEach(([key, val]) => {
+        const hasKey = key === 'zhipu' ? hasZhipuKey : hasAliyunKey;
+        const isCurrent = key === patentChatState.currentProvider;
+        const disabled = !hasKey ? ' disabled' : '';
+        const selected = isCurrent && hasKey ? ' selected' : '';
+        const label = hasKey ? val.name : `${val.name} (未配置)`;
+        optionsHtml += `<option value="${key}"${disabled}${selected}>${label}</option>`;
+    });
+    
+    providerSelect.innerHTML = optionsHtml;
+    
+    if (!hasZhipuKey && !hasAliyunKey) {
+        providerSelect.disabled = true;
+        providerSelect.style.cursor = 'not-allowed';
+        providerSelect.style.opacity = '0.7';
+    } else {
+        providerSelect.disabled = false;
+        providerSelect.style.cursor = 'pointer';
+        providerSelect.style.opacity = '1';
+        
+        if (!hasZhipuKey && patentChatState.currentProvider === 'zhipu') {
+            patentChatState.currentProvider = 'aliyun';
+            providerSelect.value = 'aliyun';
+        } else if (!hasAliyunKey && patentChatState.currentProvider === 'aliyun') {
+            patentChatState.currentProvider = 'zhipu';
+            providerSelect.value = 'zhipu';
+        }
+    }
 }
 
 function updatePatentChatModelSelect() {
@@ -144,6 +180,27 @@ function updatePatentChatModelSelect() {
     if (!patentChatState.currentModel && availableModels.length > 0) {
         patentChatState.currentModel = availableModels[0].id;
     }
+}
+
+function getProviderForPatentChatModel(model) {
+    if (!model) return null;
+    
+    if (model.startsWith('glm-') || model.startsWith('GLM-')) {
+        return 'zhipu';
+    }
+    if (model.startsWith('qwen') || model.startsWith('Qwen') || 
+        model.startsWith('qwq') || model.startsWith('QwQ') ||
+        model.startsWith('deepseek') || model.startsWith('DeepSeek') ||
+        model.startsWith('kimi') || model.startsWith('Kimi') ||
+        model.startsWith('minimax') || model.startsWith('MiniMax')) {
+        return 'aliyun';
+    }
+    
+    if (window.ProviderManager && typeof ProviderManager.getProviderForModel === 'function') {
+        return ProviderManager.getProviderForModel(model);
+    }
+    
+    return patentChatState.currentProvider;
 }
 
 function patentChatSupportsThinking(model, provider) {
@@ -276,6 +333,9 @@ function openPatentChat(patentNumber) {
         initModalDrag(modal);
     }
     
+    updatePatentChatProviderSelect();
+    updatePatentChatModelSelect();
+    updatePatentChatThinkingButton();
     updatePatentChatModal(patentNumber);
     
     const input = getEl('patent_chat_input');
@@ -868,7 +928,17 @@ async function initPatentChat() {
     const modelSelect = document.getElementById('patent_chat_model');
     if (modelSelect) {
         modelSelect.addEventListener('change', (e) => {
-            patentChatState.currentModel = e.target.value;
+            const selectedModel = e.target.value;
+            patentChatState.currentModel = selectedModel;
+            
+            const newProvider = getProviderForPatentChatModel(selectedModel);
+            if (newProvider && newProvider !== patentChatState.currentProvider) {
+                patentChatState.currentProvider = newProvider;
+                localStorage.setItem('llm_provider', newProvider);
+                updatePatentChatProviderSelect();
+                console.log('[Patent Chat] 根据模型自动切换服务商:', newProvider);
+            }
+            
             updatePatentChatThinkingButton();
             console.log('[Patent Chat] 切换模型:', patentChatState.currentModel);
         });
