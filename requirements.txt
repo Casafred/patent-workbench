@@ -35,5 +35,8 @@ rapidocr-onnxruntime>=1.3.0
 opencv-python>=4.5.0
 Pillow>=8.0.0
 
+# EPO OPS API Client
+python-epo-ops-client>=3.0.0
+
 # Testing (Property-Based Testing)
 hypothesis>=6.0.0

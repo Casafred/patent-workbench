@@ -428,6 +428,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('❌ Failed to load Feature 10 (IPC Lookup) component:', error);
     }
     
+    // Load Feature 11 (EPO Search) component and initialize
+    try {
+        const loaded = await loadComponent('frontend/components/tabs/epo-search.html', 'epo-search-component', {
+            retryCount: 3,
+            onReady: async () => {
+                await new Promise(resolve => setTimeout(resolve, 200));
+                if (typeof window.epoSearchModule !== 'undefined') {
+                    console.log('✓ EPO Search module initialized');
+                }
+            }
+        });
+        
+        if (loaded) {
+            LoadingManager.updateProgress('初始化EPO专利检索');
+        }
+    } catch (error) {
+        console.error('❌ Failed to load Feature 11 (EPO Search) component:', error);
+    }
+    
     // Initialize API Key Config (global, not tied to a specific component)
     initApiKeyConfig();
     LoadingManager.updateProgress('初始化API配置');
