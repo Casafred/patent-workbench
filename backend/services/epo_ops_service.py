@@ -502,6 +502,106 @@ class EPOOPSClient:
     
     def get_quota_info(self) -> Dict:
         return asdict(self.quota_manager.get_quota_info())
+    
+    def get_official_usage(self, date_from: str = None, date_to: str = None) -> Dict:
+        """
+        从EPO官方API获取使用量数据
+        
+        Args:
+            date_from: 开始日期 (dd/mm/yyyy)
+            date_to: 结束日期 (dd/mm/yyyy)
+        
+        Returns:
+            包含使用量数据的字典
+        """
+        if not self.consumer_key or not self.consumer_secret:
+            return {'error': '凭证未配置', 'configured': False}
+        
+        try:
+            token = self._get_access_token()
+            
+            if not date_from or not date_to:
+                today = datetime.now()
+                week_start = today - timedelta(days=today.weekday())
+                date_from = week_start.strftime('%d/%m/%Y')
+                date_to = today.strftime('%d/%m/%Y')
+            
+            url = f"https://ops.epo.org/3.2/developers/me/stats/usage"
+            params = {'timeRange': f"{date_from}~{date_to}"}
+            
+            headers = {
+                'Authorization': f'Bearer {token}',
+                'Accept': 'application/json'
+            }
+            
+            response = requests.get(url, headers=headers, params=params)
+            
+            if response.status_code != 200:
+                return {
+                    'error': f'API请求失败: {response.status_code}',
+                    'configured': True
+                }
+            
+            data = response.json()
+            
+            total_bytes = 0
+            total_requests = 0
+            daily_usage = []
+            
+            environments = data.get('environments', [])
+            for env in environments:
+                dimensions = env.get('dimensions', [])
+                for dim in dimensions:
+                    metrics = dim.get('metrics', [])
+                    for metric in metrics:
+                        name = metric.get('name', '')
+                        values = metric.get('values', [])
+                        
+                        for v in values:
+                            timestamp = v.get('timestamp', 0)
+                            value_str = v.get('value', '0')
+                            
+                            try:
+                                value = float(value_str)
+                            except:
+                                value = 0
+                            
+                            date_str = datetime.utcfromtimestamp(timestamp / 1000).strftime('%Y-%m-%d')
+                            
+                            if name == 'total_response_size':
+                                total_bytes += value
+                                daily_usage.append({
+                                    'date': date_str,
+                                    'bytes': value,
+                                    'mb': round(value / (1024 * 1024), 2)
+                                })
+                            elif name == 'message_count':
+                                total_requests += int(value)
+                                for du in daily_usage:
+                                    if du['date'] == date_str:
+                                        du['requests'] = int(value)
+            
+            total_mb = total_bytes / (1024 * 1024)
+            remaining_mb = max(0, (WEEKLY_QUOTA_BYTES - total_bytes) / (1024 * 1024))
+            usage_percent = (total_bytes / WEEKLY_QUOTA_BYTES) * 100
+            
+            return {
+                'configured': True,
+                'total_bytes': int(total_bytes),
+                'total_mb': round(total_mb, 2),
+                'total_requests': total_requests,
+                'remaining_mb': round(remaining_mb, 2),
+                'usage_percent': round(usage_percent, 2),
+                'weekly_quota_mb': 4096,
+                'daily_usage': daily_usage
+            }
+            
+        except Exception as e:
+            logger.error(f"获取官方使用量失败: {e}")
+            return {
+                'error': str(e),
+                'configured': True
+            }
 
 
 epo_ops_client = None

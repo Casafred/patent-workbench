@@ -1,5 +1,23 @@
 <!-- 功能十：全球专利智能检索 -->
 <div id="epo_search-tab" class="tab-content">
+    <!-- 配额状态显示 -->
+    <div id="epo-quota-banner" class="epo-quota-banner" style="margin-bottom: 16px; padding: 12px 16px; background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%); border: 1px solid #2196F3; border-radius: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#1976D2" viewBox="0 0 16 16">
+                    <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+                </svg>
+                <span style="font-weight: 600; color: #1565C0;">API配额状态</span>
+            </div>
+            <div id="epo-quota-info" style="display: flex; gap: 20px; font-size: 13px; color: #1976D2;">
+                <span id="epo-quota-status">加载中...</span>
+            </div>
+        </div>
+        <div id="epo-quota-bar-container" style="margin-top: 8px; height: 6px; background: #fff; border-radius: 3px; overflow: hidden; display: none;">
+            <div id="epo-quota-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #4CAF50, #8BC34A); transition: width 0.3s ease;"></div>
+        </div>
+    </div>
+
     <div class="step">
         <div class="step-header">全球专利智能检索</div>
         <p class="info">使用 CQL 检索语法搜索全球专利数据库。支持标题、摘要、申请人、发明人、分类号等多维度检索。</p>

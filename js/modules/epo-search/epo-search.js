@@ -16,7 +16,66 @@ class EPOSearchModule {
     
     init() {
         this.bindEvents();
+        this.loadQuotaInfo();
         this.loadCQLHelp();
+    }
+    
+    async loadQuotaInfo() {
+        const statusEl = document.getElementById('epo-quota-status');
+        const barContainer = document.getElementById('epo-quota-bar-container');
+        const barEl = document.getElementById('epo-quota-bar');
+        const bannerEl = document.getElementById('epo-quota-banner');
+        
+        if (!statusEl) return;
+        
+        try {
+            const response = await fetch('/api/epo/quota');
+            const data = await response.json();
+            
+            if (data.success && data.quota) {
+                const quota = data.quota;
+                
+                if (!quota.configured) {
+                    statusEl.innerHTML = '<span style="color: #f44336;">⚠️ API未配置</span>';
+                    return;
+                }
+                
+                if (quota.error) {
+                    statusEl.innerHTML = `<span style="color: #f44336;">⚠️ ${quota.error}</span>`;
+                    return;
+                }
+                
+                const usedMB = quota.total_mb || 0;
+                const remainingMB = quota.remaining_mb || 4096;
+                const percent = quota.usage_percent || 0;
+                const requests = quota.total_requests || 0;
+                
+                statusEl.innerHTML = `
+                    <span>已用: <strong>${usedMB.toFixed(2)} MB</strong></span>
+                    <span>剩余: <strong>${remainingMB.toFixed(2)} MB</strong></span>
+                    <span>请求: <strong>${requests}</strong> 次</span>
+                    <span>使用率: <strong>${percent.toFixed(1)}%</strong></span>
+                `;
+                
+                if (barContainer && barEl) {
+                    barContainer.style.display = 'block';
+                    barEl.style.width = `${Math.min(percent, 100)}%`;
+                    
+                    if (percent >= 90) {
+                        barEl.style.background = 'linear-gradient(90deg, #f44336, #ef5350)';
+                        if (bannerEl) bannerEl.style.background = 'linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 100%)';
+                    } else if (percent >= 70) {
+                        barEl.style.background = 'linear-gradient(90deg, #ff9800, #ffc107)';
+                        if (bannerEl) bannerEl.style.background = 'linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%)';
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('加载配额信息失败:', error);
+            if (statusEl) {
+                statusEl.innerHTML = '<span style="color: #666;">配额信息加载失败</span>';
+            }
+        }
     }
     
     bindEvents() {

@@ -127,7 +127,7 @@ def get_patent_detail(patent_number):
 @epo_bp.route('/quota', methods=['GET'])
 def get_quota_info():
     """
-    获取配额使用情况
+    获取配额使用情况（从EPO官方API）
     """
     try:
         import os
@@ -146,12 +146,11 @@ def get_quota_info():
             })
         
         client = get_epo_ops_client()
-        quota_info = client.get_quota_info()
-        quota_info['configured'] = True
+        usage_info = client.get_official_usage()
         
         return jsonify({
             'success': True,
-            'quota': quota_info
+            'quota': usage_info
         })
         
     except Exception as e:
