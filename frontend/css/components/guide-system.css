@@ -177,93 +177,96 @@
 }
 
 /* =================================================================================
-   引导按钮样式
+   引导按钮样式 - 精致紧凑版
    ================================================================================= */
 
 .guide-tooltip-footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 20px;
-    background: #f9fafb;
-    border-top: 1px solid #e5e7eb;
+    padding: 12px 16px;
+    background: transparent;
+    border-top: none;
 }
 
 .guide-nav-buttons {
     display: flex;
-    gap: 10px;
+    gap: 6px;
+    align-items: center;
 }
 
 .guide-btn {
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-size: 14px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
     border: none;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
+    letter-spacing: 0.3px;
 }
 
 .guide-btn-primary {
-    background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+    background: #22C55E;
     color: white;
+    box-shadow: 0 1px 3px rgba(34, 197, 94, 0.3);
 }
 
 .guide-btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+    background: #16A34A;
+    box-shadow: 0 2px 6px rgba(34, 197, 94, 0.4);
 }
 
 .guide-btn-secondary {
-    background: white;
+    background: #f3f4f6;
     color: #374151;
-    border: 1px solid #d1d5db;
+    border: none;
 }
 
 .guide-btn-secondary:hover {
-    background: #f9fafb;
-    border-color: #9ca3af;
+    background: #e5e7eb;
+    color: #1f2937;
 }
 
 .guide-btn-skip {
     background: transparent;
     color: #9ca3af;
-    padding: 10px 12px;
+    padding: 6px 10px;
+    font-size: 11px;
 }
 
 .guide-btn-skip:hover {
     color: #6b7280;
+    background: rgba(0, 0, 0, 0.03);
 }
 
 .guide-btn svg {
-    width: 16px;
-    height: 16px;
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
 }
 
-/* =================================================================================
-   进度指示器
-   ================================================================================= */
-
+/* 进度指示器 - 精致版 */
 .guide-progress {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
 }
 
 .guide-progress-dot {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
-    background: #d1d5db;
+    background: #e5e7eb;
     transition: all 0.3s ease;
 }
 
 .guide-progress-dot.active {
     background: #22C55E;
-    transform: scale(1.2);
+    transform: scale(1.3);
 }
 
 .guide-progress-dot.completed {
@@ -1021,7 +1024,7 @@
 }
 
 /* =================================================================================
-   固定进度条（隐藏式侧边条带）
+   固定进度条（精致侧边条带）
    ================================================================================= */
 
 .guide-progress-bar {
@@ -1032,15 +1035,15 @@
     z-index: 100001;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    padding: 12px 8px;
-    background: linear-gradient(135deg, rgba(34, 197, 94, 0.95) 0%, rgba(22, 163, 74, 0.95) 100%);
-    border-radius: 0 12px 12px 0;
-    box-shadow: 4px 0 20px rgba(34, 197, 94, 0.3);
+    align-items: center;
+    padding: 10px 6px;
+    background: rgba(34, 197, 94, 0.9);
+    border-radius: 0 8px 8px 0;
+    box-shadow: 2px 0 12px rgba(34, 197, 94, 0.2);
     opacity: 0;
     visibility: hidden;
     transform: translateY(-50%) translateX(-100%);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .guide-progress-bar.active {
@@ -1050,60 +1053,49 @@
 }
 
 .guide-progress-bar:hover {
-    padding: 12px 16px;
+    padding: 10px 8px;
+    background: rgba(34, 197, 94, 0.95);
 }
 
 .guide-progress-bar-title {
     writing-mode: vertical-rl;
     text-orientation: mixed;
-    color: white;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 2px;
-    margin-bottom: 12px;
-    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
 }
 
 .guide-progress-bar-dots {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
 }
 
 .guide-progress-bar-dot {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.4);
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     cursor: pointer;
+    position: relative;
 }
 
 .guide-progress-bar-dot:hover {
-    transform: scale(1.3);
-    background: rgba(255, 255, 255, 0.6);
+    transform: scale(1.4);
+    background: rgba(255, 255, 255, 0.7);
 }
 
 .guide-progress-bar-dot.active {
     background: white;
     transform: scale(1.2);
-    box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
 }
 
 .guide-progress-bar-dot.completed {
-    background: rgba(255, 255, 255, 0.9);
-}
-
-.guide-progress-bar-dot.completed::after {
-    content: '';
-    position: absolute;
-    width: 4px;
-    height: 4px;
-    background: #22C55E;
-    border-radius: 50%;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.85);
 }
 
 .guide-progress-bar-step-info {
@@ -1111,13 +1103,13 @@
     left: 100%;
     top: 50%;
     transform: translateY(-50%);
-    margin-left: 12px;
+    margin-left: 10px;
     background: white;
-    padding: 8px 12px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 6px 10px;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
     white-space: nowrap;
-    font-size: 12px;
+    font-size: 11px;
     color: #374151;
     opacity: 0;
     visibility: hidden;
@@ -1130,7 +1122,7 @@
 }
 
 [data-theme="dark"] .guide-progress-bar {
-    background: linear-gradient(135deg, rgba(22, 163, 74, 0.95) 0%, rgba(20, 83, 45, 0.95) 100%);
+    background: rgba(22, 163, 74, 0.85);
 }
 
 [data-theme="dark"] .guide-progress-bar-step-info {
@@ -1139,27 +1131,27 @@
 }
 
 /* =================================================================================
-   引导步骤指示器（替代原来的进度点）
+   引导步骤指示器（底部居中显示）
    ================================================================================= */
 
 .guide-step-indicator {
     position: fixed;
-    bottom: 20px;
+    bottom: 16px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 100001;
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px 20px;
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 30px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-    backdrop-filter: blur(10px);
+    gap: 10px;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.92);
+    border-radius: 20px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(8px);
     opacity: 0;
     visibility: hidden;
-    transform: translateX(-50%) translateY(20px);
-    transition: all 0.3s ease;
+    transform: translateX(-50%) translateY(16px);
+    transition: all 0.25s ease;
 }
 
 .guide-step-indicator.active {
@@ -1169,22 +1161,22 @@
 }
 
 .guide-step-indicator-text {
-    font-size: 13px;
-    color: #374151;
+    font-size: 11px;
+    color: #6b7280;
     font-weight: 500;
 }
 
 .guide-step-indicator-dots {
     display: flex;
-    gap: 6px;
+    gap: 4px;
 }
 
 .guide-step-indicator-dot {
-    width: 10px;
-    height: 10px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background: #e5e7eb;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
 }
 
 .guide-step-indicator-dot.active {
@@ -1197,11 +1189,11 @@
 }
 
 [data-theme="dark"] .guide-step-indicator {
-    background: rgba(31, 41, 55, 0.95);
+    background: rgba(31, 41, 55, 0.92);
 }
 
 [data-theme="dark"] .guide-step-indicator-text {
-    color: #e5e7eb;
+    color: #9ca3af;
 }
 
 [data-theme="dark"] .guide-step-indicator-dot {
