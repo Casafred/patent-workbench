@@ -544,9 +544,9 @@ class EPOOPSClient:
             
             data = response.json()
             
-            total_bytes = 0
+            total_bytes = 0.0
             total_requests = 0
-            daily_usage = []
+            daily_usage = {}
             
             environments = data.get('environments', [])
             for env in environments:
@@ -562,28 +562,29 @@ class EPOOPSClient:
                             value_str = v.get('value', '0')
                             
                             try:
-                                value = float(value_str)
-                            except:
-                                value = 0
+                                value = float(value_str) if value_str else 0.0
+                            except (ValueError, TypeError):
+                                value = 0.0
                             
-                            date_str = datetime.utcfromtimestamp(timestamp / 1000).strftime('%Y-%m-%d')
+                            try:
+                                date_str = datetime.utcfromtimestamp(timestamp / 1000).strftime('%Y-%m-%d')
+                            except (ValueError, TypeError, OSError):
+                                continue
+                            
+                            if date_str not in daily_usage:
+                                daily_usage[date_str] = {'date': date_str, 'bytes': 0.0, 'mb': 0.0, 'requests': 0}
                             
                             if name == 'total_response_size':
                                 total_bytes += value
-                                daily_usage.append({
-                                    'date': date_str,
-                                    'bytes': value,
-                                    'mb': round(value / (1024 * 1024), 2)
-                                })
+                                daily_usage[date_str]['bytes'] = value
+                                daily_usage[date_str]['mb'] = round(value / (1024 * 1024), 2)
                             elif name == 'message_count':
                                 total_requests += int(value)
-                                for du in daily_usage:
-                                    if du['date'] == date_str:
-                                        du['requests'] = int(value)
+                                daily_usage[date_str]['requests'] = int(value)
             
             total_mb = total_bytes / (1024 * 1024)
-            remaining_mb = max(0, (WEEKLY_QUOTA_BYTES - total_bytes) / (1024 * 1024))
-            usage_percent = (total_bytes / WEEKLY_QUOTA_BYTES) * 100
+            remaining_mb = max(0.0, (WEEKLY_QUOTA_BYTES - total_bytes) / (1024 * 1024))
+            usage_percent = (total_bytes / WEEKLY_QUOTA_BYTES) * 100 if WEEKLY_QUOTA_BYTES > 0 else 0
             
             return {
                 'configured': True,
@@ -593,7 +594,7 @@ class EPOOPSClient:
                 'remaining_mb': round(remaining_mb, 2),
                 'usage_percent': round(usage_percent, 2),
                 'weekly_quota_mb': 4096,
-                'daily_usage': daily_usage
+                'daily_usage': list(daily_usage.values())
             }
             
         except Exception as e:
