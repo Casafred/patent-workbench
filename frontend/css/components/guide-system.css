@@ -1028,114 +1028,227 @@
 }
 
 /* =================================================================================
-   固定进度条（附接在主容器边框）
+   悬浮引导球（与公众号二维码并排）
    ================================================================================= */
 
-.guide-progress-bar {
+.guide-float-ball {
     position: fixed;
-    left: 64px;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 100001;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 8px 5px;
-    background: rgba(34, 197, 94, 0.88);
-    border-radius: 0 6px 6px 0;
-    box-shadow: 2px 0 8px rgba(34, 197, 94, 0.15);
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-50%) translateX(-100%);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.guide-progress-bar.active {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(-50%) translateX(0);
-}
-
-.guide-progress-bar.sidebar-expanded {
-    left: 220px;
-}
-
-.guide-progress-bar:hover {
-    padding: 8px 6px;
-    background: rgba(34, 197, 94, 0.92);
-}
-
-.guide-progress-bar-title {
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
-    color: rgba(255, 255, 255, 0.75);
-    font-size: 9px;
-    font-weight: 500;
-    letter-spacing: 0.5px;
-    margin-bottom: 6px;
-}
-
-.guide-progress-bar-dots {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.guide-progress-bar-dot {
-    width: 5px;
-    height: 5px;
+    right: 80px;
+    bottom: 20px;
+    z-index: 99998;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.4);
-    transition: all 0.2s ease;
+    background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+    box-shadow: 0 4px 16px rgba(34, 197, 94, 0.35);
     cursor: pointer;
-    position: relative;
-}
-
-.guide-progress-bar-dot:hover {
-    transform: scale(1.3);
-    background: rgba(255, 255, 255, 0.65);
-}
-
-.guide-progress-bar-dot.active {
-    background: white;
-    transform: scale(1.15);
-    box-shadow: 0 0 5px rgba(255, 255, 255, 0.4);
-}
-
-.guide-progress-bar-dot.completed {
-    background: rgba(255, 255, 255, 0.8);
-}
-
-.guide-progress-bar-step-info {
-    position: absolute;
-    left: 100%;
-    top: 50%;
-    transform: translateY(-50%);
-    margin-left: 8px;
-    background: white;
-    padding: 5px 8px;
-    border-radius: 5px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    white-space: nowrap;
-    font-size: 10px;
-    color: #374151;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
     opacity: 0;
     visibility: hidden;
-    transition: all 0.2s ease;
+    transform: scale(0.8);
 }
 
-.guide-progress-bar:hover .guide-progress-bar-step-info {
+.guide-float-ball.active {
     opacity: 1;
     visibility: visible;
+    transform: scale(1);
 }
 
-[data-theme="dark"] .guide-progress-bar {
-    background: rgba(22, 163, 74, 0.82);
+.guide-float-ball:hover {
+    transform: scale(1.08);
+    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.45);
 }
 
-[data-theme="dark"] .guide-progress-bar-step-info {
+.guide-float-ball svg {
+    color: white;
+    width: 22px;
+    height: 22px;
+}
+
+.guide-float-ball .guide-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    background: #ef4444;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+}
+
+.guide-float-panel {
+    position: absolute;
+    right: 60px;
+    bottom: 60px;
+    width: 200px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.guide-float-panel.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.guide-float-panel-header {
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.guide-float-panel-header h4 {
+    margin: 0;
+    font-size: 14px;
+    color: #166534;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.guide-float-panel-header h4 svg {
+    width: 16px;
+    height: 16px;
+}
+
+.guide-float-panel-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    color: #6b7280;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.guide-float-panel-close:hover {
+    color: #374151;
+}
+
+.guide-float-panel-body {
+    padding: 12px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.guide-float-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 4px;
+}
+
+.guide-float-step:hover {
+    background: #f3f4f6;
+}
+
+.guide-float-step.active {
+    background: #f0fdf4;
+}
+
+.guide-float-step.completed {
+    opacity: 0.7;
+}
+
+.guide-float-step-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #d1d5db;
+    flex-shrink: 0;
+}
+
+.guide-float-step.active .guide-float-step-dot {
+    background: #22C55E;
+}
+
+.guide-float-step.completed .guide-float-step-dot {
+    background: #86efac;
+}
+
+.guide-float-step-text {
+    font-size: 12px;
+    color: #374151;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.guide-float-step.active .guide-float-step-text {
+    color: #166534;
+    font-weight: 500;
+}
+
+[data-theme="dark"] .guide-float-ball {
+    background: linear-gradient(135deg, #166534 0%, #14532d 100%);
+}
+
+[data-theme="dark"] .guide-float-panel {
     background: #1f2937;
+}
+
+[data-theme="dark"] .guide-float-panel-header {
+    background: linear-gradient(135deg, #166534 0%, #14532d 100%);
+    border-bottom-color: #374151;
+}
+
+[data-theme="dark"] .guide-float-panel-header h4 {
+    color: #4ade80;
+}
+
+[data-theme="dark"] .guide-float-panel-close {
+    color: #9ca3af;
+}
+
+[data-theme="dark"] .guide-float-panel-close:hover {
     color: #e5e7eb;
+}
+
+[data-theme="dark"] .guide-float-step:hover {
+    background: #374151;
+}
+
+[data-theme="dark"] .guide-float-step.active {
+    background: #1f2937;
+}
+
+[data-theme="dark"] .guide-float-step-dot {
+    background: #4b5563;
+}
+
+[data-theme="dark"] .guide-float-step.active .guide-float-step-dot {
+    background: #22C55E;
+}
+
+[data-theme="dark"] .guide-float-step.completed .guide-float-step-dot {
+    background: #4ade80;
+}
+
+[data-theme="dark"] .guide-float-step-text {
+    color: #e5e7eb;
+}
+
+[data-theme="dark"] .guide-float-step.active .guide-float-step-text {
+    color: #4ade80;
 }
 
 /* =================================================================================

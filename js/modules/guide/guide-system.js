@@ -827,44 +827,73 @@
         },
 
         showProgressBar: function() {
-            let progressBar = document.getElementById('guide-progress-bar');
-            if (!progressBar) {
-                const dotsHtml = this.steps.map(function(step, index) {
-                    return `<div class="guide-progress-bar-dot ${index === this.currentStep ? 'active' : ''}" data-step="${index}"></div>`;
+            let floatBall = document.getElementById('guide-float-ball');
+            if (!floatBall) {
+                const stepsHtml = this.steps.map(function(step, index) {
+                    const isActive = index === this.currentStep;
+                    const isCompleted = index < this.currentStep;
+                    return `
+                        <div class="guide-float-step ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}" data-step="${index}">
+                            <div class="guide-float-step-dot"></div>
+                            <span class="guide-float-step-text">${step.title}</span>
+                        </div>
+                    `;
                 }.bind(this)).join('');
 
                 const html = `
-                    <div class="guide-progress-bar" id="guide-progress-bar">
-                        <div class="guide-progress-bar-title">引导</div>
-                        <div class="guide-progress-bar-dots">
-                            ${dotsHtml}
-                        </div>
-                        <div class="guide-progress-bar-step-info">
-                            ${this.currentStep + 1}/${this.steps.length}: ${this.steps[this.currentStep].title}
+                    <div class="guide-float-ball" id="guide-float-ball" title="引导进度">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        <span class="guide-badge">${this.currentStep + 1}/${this.steps.length}</span>
+                        <div class="guide-float-panel" id="guide-float-panel">
+                            <div class="guide-float-panel-header">
+                                <h4>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                        <polyline points="14 2 14 8 20 8"/>
+                                    </svg>
+                                    引导进度
+                                </h4>
+                                <button class="guide-float-panel-close" id="guide-float-close">&times;</button>
+                            </div>
+                            <div class="guide-float-panel-body">
+                                ${stepsHtml}
+                            </div>
                         </div>
                     </div>
                 `;
                 document.body.insertAdjacentHTML('beforeend', html);
-                progressBar = document.getElementById('guide-progress-bar');
+                floatBall = document.getElementById('guide-float-ball');
 
                 const self = this;
-                progressBar.querySelectorAll('.guide-progress-bar-dot').forEach(function(dot) {
-                    dot.addEventListener('click', function() {
-                        const stepIndex = parseInt(this.dataset.step);
+                floatBall.addEventListener('click', function(e) {
+                    if (e.target.closest('.guide-float-panel-close')) {
+                        document.getElementById('guide-float-panel').classList.remove('show');
+                        return;
+                    }
+                    if (e.target.closest('.guide-float-step')) {
+                        const stepEl = e.target.closest('.guide-float-step');
+                        const stepIndex = parseInt(stepEl.dataset.step);
                         self.goToStep(stepIndex);
-                    });
+                        return;
+                    }
+                    const panel = document.getElementById('guide-float-panel');
+                    panel.classList.toggle('show');
                 });
             }
 
             setTimeout(function() {
-                progressBar.classList.add('active');
+                floatBall.classList.add('active');
             }, 100);
         },
 
         hideProgressBar: function() {
-            const progressBar = document.getElementById('guide-progress-bar');
-            if (progressBar) {
-                progressBar.classList.remove('active');
+            const floatBall = document.getElementById('guide-float-ball');
+            if (floatBall) {
+                floatBall.classList.remove('active');
             }
         },
 
