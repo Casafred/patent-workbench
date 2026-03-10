@@ -15,7 +15,7 @@ from backend.services.epo_ops_service import get_epo_ops_client, EPOOPSClient
 
 logger = logging.getLogger(__name__)
 
-epo_bp = Blueprint('epo', __name__, url_prefix='/api/epo')
+epo_bp = Blueprint('epo', __name__)
 
 
 @epo_bp.route('/search', methods=['POST'])

@@ -48,7 +48,7 @@ def register_blueprints(app: Flask):
     app.register_blueprint(classification_bp, url_prefix='/api')
     app.register_blueprint(prompt_forum_bp)
     app.register_blueprint(ipc_bp, url_prefix='/api')
-    app.register_blueprint(epo_bp, url_prefix='/api')
+    app.register_blueprint(epo_bp, url_prefix='/api/epo')
     
     print("✓ All blueprints registered successfully")
     
