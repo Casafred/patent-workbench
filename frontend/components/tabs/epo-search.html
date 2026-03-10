@@ -1,55 +1,23 @@
 <!-- 功能十：全球专利智能检索 -->
-<!-- ====================================================================== -->
 <div id="epo_search-tab" class="tab-content">
-    <!-- 配额状态显示 -->
-    <div id="epo-quota-banner" class="quota-banner" style="margin-bottom: 16px; padding: 12px 16px; background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%); border: 1px solid #2196F3; border-radius: 8px;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#1976D2" viewBox="0 0 16 16">
-                    <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
-                </svg>
-                <span style="font-weight: 600; color: #1565C0;">全球专利检索配额状态</span>
-            </div>
-            <div id="epo-quota-info" style="display: flex; gap: 20px; font-size: 13px; color: #1976D2;">
-                <span>已使用: <strong id="epo-used-mb">0</strong> MB</span>
-                <span>剩余: <strong id="epo-remaining-mb">4096</strong> MB</span>
-                <span>使用率: <strong id="epo-usage-percent">0</strong>%</span>
-                <span>重置日期: <strong id="epo-reset-date">-</strong></span>
-            </div>
-        </div>
-        <div style="margin-top: 8px; height: 6px; background: #fff; border-radius: 3px; overflow: hidden;">
-            <div id="epo-quota-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #4CAF50, #8BC34A); transition: width 0.3s ease;"></div>
-        </div>
-    </div>
-
     <div class="step">
         <div class="step-header">全球专利智能检索</div>
         <p class="info">使用 CQL 检索语法搜索全球专利数据库。支持标题、摘要、申请人、发明人、分类号等多维度检索。</p>
         
-        <!-- 检索区域 -->
-        <div class="epo-search-container" style="display: grid; grid-template-columns: 1fr 300px; gap: 20px;">
-            <!-- 左侧：检索输入 -->
+        <div class="epo-search-container" style="display: grid; grid-template-columns: 1fr 280px; gap: 20px; margin-top: 16px;">
             <div class="epo-search-main">
-                <!-- 检索类型选择 -->
                 <div class="search-type-selector" style="margin-bottom: 16px;">
-                    <label style="font-weight: 500; margin-bottom: 8px; display: block;">检索类型：</label>
-                    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                        <button class="search-type-btn active" data-type="simple" style="padding: 8px 16px; border: 2px solid var(--primary-color); background: var(--primary-color); color: white; border-radius: 6px; cursor: pointer; font-weight: 500;">
-                            简单检索
-                        </button>
-                        <button class="search-type-btn" data-type="advanced" style="padding: 8px 16px; border: 2px solid #ddd; background: #f5f5f5; color: #333; border-radius: 6px; cursor: pointer; font-weight: 500;">
-                            高级检索
-                        </button>
-                        <button class="search-type-btn" data-type="cql" style="padding: 8px 16px; border: 2px solid #ddd; background: #f5f5f5; color: #333; border-radius: 6px; cursor: pointer; font-weight: 500;">
-                            CQL语法
-                        </button>
+                    <label style="font-weight: 500; margin-bottom: 8px; display: block; color: #333;">检索类型：</label>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button type="button" class="search-type-btn epo-active" data-type="simple">简单检索</button>
+                        <button type="button" class="search-type-btn" data-type="advanced">高级检索</button>
+                        <button type="button" class="search-type-btn" data-type="cql">CQL语法</button>
                     </div>
                 </div>
                 
-                <!-- 简单检索面板 -->
                 <div id="simple-search-panel" class="search-panel">
-                    <div style="display: flex; gap: 12px; margin-bottom: 12px;">
-                        <select id="simple-field-select" style="padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; min-width: 120px;">
+                    <div style="display: flex; gap: 12px;">
+                        <select id="simple-field-select" class="epo-select">
                             <option value="ta">标题</option>
                             <option value="ab">摘要</option>
                             <option value="cl">权利要求</option>
@@ -60,15 +28,14 @@
                             <option value="cpc">CPC分类</option>
                             <option value="ipc">IPC分类</option>
                         </select>
-                        <input type="text" id="simple-keyword-input" placeholder="输入检索关键词..." style="flex: 1; padding: 10px 14px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                        <input type="text" id="simple-keyword-input" class="epo-input" placeholder="输入检索关键词..." style="flex: 1;">
                     </div>
                 </div>
                 
-                <!-- 高级检索面板 -->
                 <div id="advanced-search-panel" class="search-panel" style="display: none;">
-                    <div class="advanced-search-rows" id="advanced-search-rows">
-                        <div class="advanced-search-row" style="display: flex; gap: 8px; margin-bottom: 10px; align-items: center;">
-                            <select class="adv-field" style="padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+                    <div id="advanced-search-rows">
+                        <div class="adv-row">
+                            <select class="adv-field epo-select-sm">
                                 <option value="ta">标题</option>
                                 <option value="ab">摘要</option>
                                 <option value="cl">权利要求</option>
@@ -78,61 +45,48 @@
                                 <option value="cpc">CPC分类</option>
                                 <option value="ipc">IPC分类</option>
                             </select>
-                            <select class="adv-operator" style="padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+                            <select class="adv-operator epo-select-sm">
                                 <option value="AND">AND</option>
                                 <option value="OR">OR</option>
                                 <option value="NOT">NOT</option>
                             </select>
-                            <input type="text" class="adv-keyword" placeholder="关键词" style="flex: 1; padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
-                            <button class="remove-row-btn" style="padding: 6px 10px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; display: none;">×</button>
+                            <input type="text" class="adv-keyword epo-input-sm" placeholder="关键词">
+                            <button type="button" class="remove-row-btn epo-btn-danger" style="display: none;">×</button>
                         </div>
                     </div>
-                    <button id="add-search-row-btn" style="margin-top: 8px; padding: 6px 12px; background: #e3f2fd; color: #1976D2; border: 1px solid #90caf9; border-radius: 4px; cursor: pointer; font-size: 13px;">
-                        + 添加检索条件
-                    </button>
+                    <button type="button" id="add-search-row-btn" class="epo-btn-link">+ 添加检索条件</button>
                 </div>
                 
-                <!-- CQL语法面板 -->
                 <div id="cql-search-panel" class="search-panel" style="display: none;">
-                    <textarea id="cql-query-input" rows="4" placeholder="输入 CQL 检索语法，例如：ta=machine learning AND pa=Google" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; font-family: monospace;"></textarea>
-                    <div style="margin-top: 10px;">
-                        <button id="show-cql-help-btn" style="padding: 6px 12px; background: #E3F2FD; color: #1976D2; border: 1px solid #90CAF9; border-radius: 4px; cursor: pointer; font-size: 13px;">
-                            查看CQL语法帮助
-                        </button>
+                    <textarea id="cql-query-input" class="epo-textarea" rows="4" placeholder="输入 CQL 检索语法，例如：ta=machine learning AND pa=Google"></textarea>
+                    <button type="button" id="show-cql-help-btn" class="epo-btn-link" style="margin-top: 8px;">查看CQL语法帮助</button>
+                </div>
+                
+                <div class="date-range-section" style="margin-top: 16px; padding: 12px; background: #f8f9fa; border-radius: 6px;">
+                    <label style="font-weight: 500; margin-bottom: 8px; display: block; color: #333;">公开日期范围（可选）：</label>
+                    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                        <input type="date" id="date-from" class="epo-input-sm">
+                        <span style="color: #666;">至</span>
+                        <input type="date" id="date-to" class="epo-input-sm">
+                        <button type="button" id="clear-date-btn" class="epo-btn-secondary">清除</button>
                     </div>
                 </div>
                 
-                <!-- 日期范围 -->
-                <div class="date-range-section" style="margin-top: 16px; padding: 12px; background: #f9f9f9; border-radius: 6px;">
-                    <label style="font-weight: 500; margin-bottom: 8px; display: block;">公开日期范围（可选）：</label>
-                    <div style="display: flex; gap: 12px; align-items: center;">
-                        <input type="date" id="date-from" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px;">
-                        <span>至</span>
-                        <input type="date" id="date-to" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px;">
-                        <button id="clear-date-btn" style="padding: 6px 12px; background: #f5f5f5; color: #333; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">清除</button>
-                    </div>
-                </div>
-                
-                <!-- 检索按钮 -->
-                <div style="margin-top: 16px; display: flex; gap: 12px;">
-                    <button id="epo-search-btn" class="small-button primary-btn" style="flex: 1; padding: 12px;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 6px;">
+                <div style="margin-top: 20px; display: flex; gap: 12px;">
+                    <button type="button" id="epo-search-btn" class="epo-btn-primary" style="flex: 1;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 6px; vertical-align: middle;">
                             <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
                         </svg>
                         开始检索
                     </button>
-                    <button id="epo-clear-btn" class="small-button" style="padding: 12px 20px; background: #f5f5f5; color: #333; border: 1px solid #ddd;">
-                        清空
-                    </button>
+                    <button type="button" id="epo-clear-btn" class="epo-btn-secondary">清空</button>
                 </div>
             </div>
             
-            <!-- 右侧：快捷选项 -->
             <div class="epo-search-sidebar">
-                <!-- 结果数量设置 -->
-                <div class="sidebar-section" style="padding: 12px; background: #f9f9f9; border-radius: 6px; margin-bottom: 12px;">
-                    <label style="font-weight: 500; margin-bottom: 8px; display: block;">每页显示：</label>
-                    <select id="results-per-page" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                <div class="sidebar-section" style="padding: 12px; background: #f8f9fa; border-radius: 6px; margin-bottom: 12px;">
+                    <label style="font-weight: 500; margin-bottom: 8px; display: block; color: #333;">每页显示：</label>
+                    <select id="results-per-page" class="epo-select">
                         <option value="10">10 条</option>
                         <option value="25" selected>25 条</option>
                         <option value="50">50 条</option>
@@ -140,29 +94,19 @@
                     </select>
                 </div>
                 
-                <!-- 快捷检索 -->
-                <div class="sidebar-section" style="padding: 12px; background: #f9f9f9; border-radius: 6px; margin-bottom: 12px;">
-                    <label style="font-weight: 500; margin-bottom: 8px; display: block;">快捷检索：</label>
+                <div class="sidebar-section" style="padding: 12px; background: #f8f9fa; border-radius: 6px; margin-bottom: 12px;">
+                    <label style="font-weight: 500; margin-bottom: 8px; display: block; color: #333;">快捷检索：</label>
                     <div style="display: flex; flex-direction: column; gap: 6px;">
-                        <button class="quick-search-btn" data-query="ta=artificial intelligence" style="padding: 8px; background: white; color: #333; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; text-align: left; font-size: 12px;">
-                            🤖 AI相关专利
-                        </button>
-                        <button class="quick-search-btn" data-query="cpc=G06N" style="padding: 8px; background: white; color: #333; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; text-align: left; font-size: 12px;">
-                            📊 G06N分类（计算）
-                        </button>
-                        <button class="quick-search-btn" data-query="cpc=H04L" style="padding: 8px; background: white; color: #333; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; text-align: left; font-size: 12px;">
-                            📡 H04L分类（通信）
-                        </button>
-                        <button class="quick-search-btn" data-query="pd=20240101..20241231" style="padding: 8px; background: white; color: #333; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; text-align: left; font-size: 12px;">
-                            📅 2024年公开专利
-                        </button>
+                        <button type="button" class="quick-search-btn epo-btn-quick" data-query="ta=artificial intelligence">🤖 AI相关专利</button>
+                        <button type="button" class="quick-search-btn epo-btn-quick" data-query="cpc=G06N">📊 G06N分类（计算）</button>
+                        <button type="button" class="quick-search-btn epo-btn-quick" data-query="cpc=H04L">📡 H04L分类（通信）</button>
+                        <button type="button" class="quick-search-btn epo-btn-quick" data-query="pd=20240101..20241231">📅 2024年公开专利</button>
                     </div>
                 </div>
                 
-                <!-- AI模型选择 -->
-                <div class="sidebar-section" style="padding: 12px; background: #E8F5E9; border-radius: 6px;">
-                    <label style="font-weight: 500; margin-bottom: 8px; display: block;">AI解读模型：</label>
-                    <select id="epo-model-select" style="width: 100%; padding: 8px; border: 1px solid #81C784; border-radius: 4px;">
+                <div class="sidebar-section" style="padding: 12px; background: #e8f5e9; border-radius: 6px;">
+                    <label style="font-weight: 500; margin-bottom: 8px; display: block; color: #2e7d32;">AI解读模型：</label>
+                    <select id="epo-model-select" class="epo-select" style="border-color: #81c784;">
                         <option value="glm-4-flash">GLM-4-Flash（快速）</option>
                         <option value="glm-4-plus">GLM-4-Plus（精准）</option>
                         <option value="qwen-turbo">Qwen-Turbo</option>
@@ -173,199 +117,211 @@
         </div>
     </div>
     
-    <!-- 检索结果区域 -->
     <div id="epo-results-section" class="step" style="display: none; margin-top: 20px;">
         <div class="step-header" style="display: flex; justify-content: space-between; align-items: center;">
             <span>检索结果 <span id="epo-total-count" style="color: #666; font-weight: normal;"></span></span>
-            <div style="display: flex; gap: 10px;">
-                <button id="export-results-btn" class="small-button" style="padding: 6px 12px; background: #e3f2fd; color: #1976D2; border: 1px solid #90caf9;">
-                    导出结果
-                </button>
-            </div>
+            <button type="button" id="export-results-btn" class="epo-btn-secondary">导出结果</button>
         </div>
         
-        <!-- 分页控制 -->
-        <div id="epo-pagination" style="display: flex; justify-content: center; gap: 8px; margin: 16px 0;">
-            <!-- 分页按钮动态生成 -->
-        </div>
+        <div id="epo-pagination" style="display: flex; justify-content: center; gap: 8px; margin: 16px 0;"></div>
         
-        <!-- 结果列表 -->
-        <div id="epo-results-list" class="epo-results-list">
-            <!-- 检索结果动态生成 -->
-        </div>
-        
-        <!-- 加载更多 -->
-        <div id="load-more-container" style="text-align: center; margin-top: 16px; display: none;">
-            <button id="load-more-btn" class="small-button" style="padding: 10px 30px; background: var(--primary-color); color: white;">
-                加载更多
-            </button>
-        </div>
+        <div id="epo-results-list" class="epo-results-list"></div>
     </div>
     
-    <!-- 专利详情弹窗 -->
-    <div id="epo-detail-modal" class="modal" style="display: none;">
-        <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
-            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 16px; border-bottom: 1px solid #eee;">
-                <h3 id="epo-detail-title" style="margin: 0;">专利详情</h3>
-                <button id="close-epo-modal" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">×</button>
+    <div id="epo-detail-modal" class="epo-modal" style="display: none;">
+        <div class="epo-modal-content">
+            <div class="epo-modal-header">
+                <h3 id="epo-detail-title">专利详情</h3>
+                <button type="button" id="close-epo-modal" class="epo-modal-close">×</button>
             </div>
-            <div class="modal-body" style="padding: 16px;">
-                <div id="epo-detail-content">
-                    <!-- 详情内容动态生成 -->
-                </div>
-            </div>
-            <div class="modal-footer" style="padding: 16px; border-top: 1px solid #eee; display: flex; gap: 12px; justify-content: flex-end;">
-                <button id="analyze-patent-btn" class="small-button primary-btn">
-                    AI解读
-                </button>
-                <button id="view-on-google-btn" class="small-button" style="background: #4285f4; color: white;">
-                    在Google Patents查看
-                </button>
-                <button id="close-detail-btn" class="small-button" style="background: #f5f5f5; color: #333;">
-                    关闭
-                </button>
+            <div class="epo-modal-body" id="epo-detail-content"></div>
+            <div class="epo-modal-footer">
+                <button type="button" id="analyze-patent-btn" class="epo-btn-primary">AI解读</button>
+                <button type="button" id="view-on-google-btn" class="epo-btn-info">在Google Patents查看</button>
+                <button type="button" id="close-detail-btn" class="epo-btn-secondary">关闭</button>
             </div>
         </div>
     </div>
     
-    <!-- CQL帮助弹窗 -->
-    <div id="cql-help-modal" class="modal" style="display: none;">
-        <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
-            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 16px; border-bottom: 1px solid #eee;">
-                <h3 style="margin: 0;">CQL检索语法帮助</h3>
-                <button id="close-cql-help" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">×</button>
+    <div id="cql-help-modal" class="epo-modal" style="display: none;">
+        <div class="epo-modal-content">
+            <div class="epo-modal-header">
+                <h3>CQL检索语法帮助</h3>
+                <button type="button" id="close-cql-help" class="epo-modal-close">×</button>
             </div>
-            <div class="modal-body" style="padding: 16px;" id="cql-help-content">
-                <!-- CQL帮助内容动态生成 -->
-            </div>
+            <div class="epo-modal-body" id="cql-help-content"></div>
         </div>
     </div>
     
-    <!-- AI解读结果弹窗 -->
-    <div id="ai-analysis-modal" class="modal" style="display: none;">
-        <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
-            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 16px; border-bottom: 1px solid #eee;">
-                <h3 style="margin: 0;">AI解读结果</h3>
-                <button id="close-analysis-modal" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">×</button>
+    <div id="ai-analysis-modal" class="epo-modal" style="display: none;">
+        <div class="epo-modal-content">
+            <div class="epo-modal-header">
+                <h3>AI解读结果</h3>
+                <button type="button" id="close-analysis-modal" class="epo-modal-close">×</button>
             </div>
-            <div class="modal-body" style="padding: 16px;">
-                <div id="ai-analysis-content" style="white-space: pre-wrap; line-height: 1.8;">
-                    <!-- AI解读内容动态生成 -->
-                </div>
+            <div class="epo-modal-body">
+                <div id="ai-analysis-content" style="white-space: pre-wrap; line-height: 1.8;"></div>
             </div>
-            <div class="modal-footer" style="padding: 16px; border-top: 1px solid #eee; display: flex; gap: 12px; justify-content: flex-end;">
-                <button id="copy-analysis-btn" class="small-button" style="background: #e3f2fd; color: #1976D2; border: 1px solid #90caf9;">
-                    复制内容
-                </button>
-                <button id="close-analysis-btn" class="small-button primary-btn">
-                    关闭
-                </button>
+            <div class="epo-modal-footer">
+                <button type="button" id="copy-analysis-btn" class="epo-btn-secondary">复制内容</button>
+                <button type="button" id="close-analysis-btn" class="epo-btn-primary">关闭</button>
             </div>
         </div>
     </div>
 </div>
 
 <style>
-/* 欧洲专利检索页面样式 */
-.epo-results-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+/* 按钮基础样式 */
+.epo-btn-primary {
+    padding: 10px 20px;
+    background: #1976d2;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.2s;
 }
+.epo-btn-primary:hover { background: #1565c0; }
+.epo-btn-primary:disabled { background: #90caf9; cursor: not-allowed; }
 
-.epo-result-item {
-    padding: 16px;
-    background: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    transition: all 0.2s ease;
+.epo-btn-secondary {
+    padding: 8px 16px;
+    background: #f5f5f5;
+    color: #333;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
 }
+.epo-btn-secondary:hover { background: #e0e0e0; }
 
-.epo-result-item:hover {
-    border-color: var(--primary-color);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.epo-result-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 8px;
-}
-
-.epo-result-patent-number {
-    font-weight: 600;
-    color: var(--primary-color);
+.epo-btn-info {
+    padding: 8px 16px;
+    background: #4285f4;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
     font-size: 14px;
 }
+.epo-btn-info:hover { background: #3367d6; }
 
-.epo-result-title {
-    font-size: 16px;
-    font-weight: 500;
-    margin-bottom: 8px;
-    color: #333;
-    cursor: pointer;
-}
-
-.epo-result-title:hover {
-    color: var(--primary-color);
-}
-
-.epo-result-meta {
-    display: flex;
-    gap: 16px;
-    font-size: 12px;
-    color: #666;
-    margin-bottom: 8px;
-}
-
-.epo-result-abstract {
-    font-size: 13px;
-    color: #555;
-    line-height: 1.6;
-    margin-bottom: 12px;
-}
-
-.epo-result-classifications {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-}
-
-.epo-classification-tag {
-    padding: 2px 8px;
-    background: #E3F2FD;
-    color: #1976D2;
+.epo-btn-danger {
+    padding: 6px 10px;
+    background: #f44336;
+    color: #fff;
+    border: none;
     border-radius: 4px;
-    font-size: 11px;
+    cursor: pointer;
+    font-size: 14px;
+}
+.epo-btn-danger:hover { background: #d32f2f; }
+
+.epo-btn-link {
+    padding: 6px 12px;
+    background: transparent;
+    color: #1976d2;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+}
+.epo-btn-link:hover { text-decoration: underline; }
+
+.epo-btn-quick {
+    padding: 8px 12px;
+    background: #fff;
+    color: #333;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    text-align: left;
+    transition: all 0.2s;
+}
+.epo-btn-quick:hover { background: #f0f0f0; border-color: #bbb; }
+
+/* 检索类型按钮 */
+.search-type-btn {
+    padding: 8px 16px;
+    background: #f5f5f5;
+    color: #333;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+.search-type-btn:hover { background: #e0e0e0; }
+.search-type-btn.epo-active {
+    background: #1976d2;
+    color: #fff;
+    border-color: #1976d2;
 }
 
-.epo-result-actions {
+/* 输入框样式 */
+.epo-input {
+    padding: 10px 14px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #333;
+}
+.epo-input:focus { outline: none; border-color: #1976d2; }
+
+.epo-input-sm {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #333;
+}
+.epo-input-sm:focus { outline: none; border-color: #1976d2; }
+
+.epo-select {
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #333;
+    background: #fff;
+    min-width: 120px;
+}
+.epo-select-sm {
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #333;
+    background: #fff;
+}
+
+.epo-textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: monospace;
+    color: #333;
+    resize: vertical;
+}
+.epo-textarea:focus { outline: none; border-color: #1976d2; }
+
+/* 高级检索行 */
+.adv-row {
     display: flex;
     gap: 8px;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid #eee;
+    margin-bottom: 10px;
+    align-items: center;
 }
+.adv-row .adv-keyword { flex: 1; }
 
-.epo-result-actions button {
-    padding: 6px 12px;
-    font-size: 12px;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.search-type-btn.active {
-    background: var(--primary-color) !important;
-    color: white !important;
-    border-color: var(--primary-color) !important;
-}
-
-.search-type-btn:hover:not(.active) {
-    background: #e8e8e8;
-}
-
-.modal {
+/* 弹窗样式 */
+.epo-modal {
     position: fixed;
     top: 0;
     left: 0;
@@ -377,31 +333,112 @@
     align-items: center;
     z-index: 1000;
 }
-
-.modal-content {
-    background: white;
+.epo-modal-content {
+    background: #fff;
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    max-width: 900px;
+    max-height: 90vh;
+    overflow-y: auto;
+    width: 90%;
+}
+.epo-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #eee;
+}
+.epo-modal-header h3 { margin: 0; color: #333; }
+.epo-modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    padding: 0;
+    line-height: 1;
+}
+.epo-modal-close:hover { color: #333; }
+.epo-modal-body { padding: 20px; }
+.epo-modal-footer {
+    padding: 16px 20px;
+    border-top: 1px solid #eee;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
 }
 
-.quota-banner.warning {
-    background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%) !important;
-    border-color: #FF9800 !important;
+/* 结果列表样式 */
+.epo-results-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.epo-result-item {
+    padding: 16px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+.epo-result-item:hover {
+    border-color: #1976d2;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.epo-result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+.epo-result-patent-number {
+    font-weight: 600;
+    color: #1976d2;
+    font-size: 14px;
+}
+.epo-result-title {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: #333;
+    cursor: pointer;
+}
+.epo-result-title:hover { color: #1976d2; }
+.epo-result-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 8px;
+}
+.epo-result-abstract {
+    font-size: 13px;
+    color: #555;
+    line-height: 1.6;
+    margin-bottom: 12px;
+}
+.epo-result-classifications {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.epo-classification-tag {
+    padding: 2px 8px;
+    background: #e3f2fd;
+    color: #1976d2;
+    border-radius: 4px;
+    font-size: 11px;
+}
+.epo-result-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #eee;
 }
 
-.quota-banner.danger {
-    background: linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 100%) !important;
-    border-color: #F44336 !important;
-}
-
-#epo-quota-bar.warning {
-    background: linear-gradient(90deg, #FF9800, #FFC107) !important;
-}
-
-#epo-quota-bar.danger {
-    background: linear-gradient(90deg, #F44336, #EF5350) !important;
-}
-
+/* 分页按钮 */
 .page-btn {
     padding: 6px 12px;
     background: #f5f5f5;
@@ -409,9 +446,33 @@
     border: 1px solid #ddd;
     border-radius: 4px;
     cursor: pointer;
+    font-size: 13px;
+}
+.page-btn:hover { background: #e0e0e0; }
+.page-btn.active {
+    background: #1976d2;
+    color: #fff;
+    border-color: #1976d2;
 }
 
-.page-btn:hover {
-    background: #e0e0e0;
+/* Toast提示 */
+.epo-toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 6px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    z-index: 10000;
+    animation: slideIn 0.3s ease;
+}
+.epo-toast-success { background: #4caf50; color: #fff; }
+.epo-toast-error { background: #f44336; color: #fff; }
+.epo-toast-warning { background: #ff9800; color: #fff; }
+.epo-toast-info { background: #2196f3; color: #fff; }
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
 }
 </style>

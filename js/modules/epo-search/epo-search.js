@@ -1,8 +1,6 @@
 /**
  * 全球专利智能检索模块
- * 功能：CQL检索、结果展示、详情获取、AI解读
  */
-
 class EPOSearchModule {
     constructor() {
         this.currentQuery = '';
@@ -11,113 +9,198 @@ class EPOSearchModule {
         this.totalResults = 0;
         this.searchResults = [];
         this.currentPatentNumber = null;
+        this.cqlHelpData = null;
         
         this.init();
     }
     
     init() {
         this.bindEvents();
-        this.loadQuotaInfo();
         this.loadCQLHelp();
     }
     
     bindEvents() {
-        document.getElementById('epo-search-btn')?.addEventListener('click', () => this.search());
-        document.getElementById('epo-clear-btn')?.addEventListener('click', () => this.clearSearch());
+        const searchBtn = document.getElementById('epo-search-btn');
+        const clearBtn = document.getElementById('epo-clear-btn');
+        
+        if (searchBtn) {
+            searchBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.search();
+            });
+        }
+        
+        if (clearBtn) {
+            clearBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.clearSearch();
+            });
+        }
         
         document.querySelectorAll('.search-type-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => this.switchSearchType(e.target.dataset.type));
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.switchSearchType(e.target.dataset.type);
+            });
         });
         
         document.querySelectorAll('.quick-search-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
+                e.preventDefault();
                 const query = e.target.dataset.query;
-                document.getElementById('cql-query-input').value = query;
+                const cqlInput = document.getElementById('cql-query-input');
+                if (cqlInput) {
+                    cqlInput.value = query;
+                }
                 this.switchSearchType('cql');
             });
         });
         
-        document.getElementById('add-search-row-btn')?.addEventListener('click', () => this.addSearchRow());
+        const addRowBtn = document.getElementById('add-search-row-btn');
+        if (addRowBtn) {
+            addRowBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.addSearchRow();
+            });
+        }
         
-        document.getElementById('show-cql-help-btn')?.addEventListener('click', () => {
-            document.getElementById('cql-help-modal').style.display = 'flex';
-        });
+        const showCqlHelpBtn = document.getElementById('show-cql-help-btn');
+        if (showCqlHelpBtn) {
+            showCqlHelpBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const modal = document.getElementById('cql-help-modal');
+                if (modal) modal.style.display = 'flex';
+            });
+        }
         
-        document.getElementById('close-cql-help')?.addEventListener('click', () => {
-            document.getElementById('cql-help-modal').style.display = 'none';
-        });
+        const closeCqlHelp = document.getElementById('close-cql-help');
+        if (closeCqlHelp) {
+            closeCqlHelp.addEventListener('click', (e) => {
+                e.preventDefault();
+                const modal = document.getElementById('cql-help-modal');
+                if (modal) modal.style.display = 'none';
+            });
+        }
         
-        document.getElementById('close-epo-modal')?.addEventListener('click', () => {
-            document.getElementById('epo-detail-modal').style.display = 'none';
-        });
+        const closeEpoModal = document.getElementById('close-epo-modal');
+        if (closeEpoModal) {
+            closeEpoModal.addEventListener('click', (e) => {
+                e.preventDefault();
+                const modal = document.getElementById('epo-detail-modal');
+                if (modal) modal.style.display = 'none';
+            });
+        }
         
-        document.getElementById('close-detail-btn')?.addEventListener('click', () => {
-            document.getElementById('epo-detail-modal').style.display = 'none';
-        });
+        const closeDetailBtn = document.getElementById('close-detail-btn');
+        if (closeDetailBtn) {
+            closeDetailBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const modal = document.getElementById('epo-detail-modal');
+                if (modal) modal.style.display = 'none';
+            });
+        }
         
-        document.getElementById('analyze-patent-btn')?.addEventListener('click', () => this.analyzePatent());
+        const analyzeBtn = document.getElementById('analyze-patent-btn');
+        if (analyzeBtn) {
+            analyzeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.analyzePatent();
+            });
+        }
         
-        document.getElementById('close-analysis-modal')?.addEventListener('click', () => {
-            document.getElementById('ai-analysis-modal').style.display = 'none';
-        });
+        const closeAnalysisModal = document.getElementById('close-analysis-modal');
+        if (closeAnalysisModal) {
+            closeAnalysisModal.addEventListener('click', (e) => {
+                e.preventDefault();
+                const modal = document.getElementById('ai-analysis-modal');
+                if (modal) modal.style.display = 'none';
+            });
+        }
         
-        document.getElementById('close-analysis-btn')?.addEventListener('click', () => {
-            document.getElementById('ai-analysis-modal').style.display = 'none';
-        });
+        const closeAnalysisBtn = document.getElementById('close-analysis-btn');
+        if (closeAnalysisBtn) {
+            closeAnalysisBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const modal = document.getElementById('ai-analysis-modal');
+                if (modal) modal.style.display = 'none';
+            });
+        }
         
-        document.getElementById('copy-analysis-btn')?.addEventListener('click', () => this.copyAnalysis());
+        const copyAnalysisBtn = document.getElementById('copy-analysis-btn');
+        if (copyAnalysisBtn) {
+            copyAnalysisBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.copyAnalysis();
+            });
+        }
         
-        document.getElementById('clear-date-btn')?.addEventListener('click', () => {
-            document.getElementById('date-from').value = '';
-            document.getElementById('date-to').value = '';
-        });
+        const clearDateBtn = document.getElementById('clear-date-btn');
+        if (clearDateBtn) {
+            clearDateBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const dateFrom = document.getElementById('date-from');
+                const dateTo = document.getElementById('date-to');
+                if (dateFrom) dateFrom.value = '';
+                if (dateTo) dateTo.value = '';
+            });
+        }
         
-        document.getElementById('results-per-page')?.addEventListener('change', (e) => {
-            this.resultsPerPage = parseInt(e.target.value);
-        });
+        const resultsPerPage = document.getElementById('results-per-page');
+        if (resultsPerPage) {
+            resultsPerPage.addEventListener('change', (e) => {
+                this.resultsPerPage = parseInt(e.target.value);
+            });
+        }
         
-        document.getElementById('simple-keyword-input')?.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.search();
-        });
+        const simpleInput = document.getElementById('simple-keyword-input');
+        if (simpleInput) {
+            simpleInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.search();
+                }
+            });
+        }
         
-        document.getElementById('cql-query-input')?.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && e.ctrlKey) this.search();
-        });
+        const cqlInput = document.getElementById('cql-query-input');
+        if (cqlInput) {
+            cqlInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && e.ctrlKey) {
+                    e.preventDefault();
+                    this.search();
+                }
+            });
+        }
     }
     
     switchSearchType(type) {
         document.querySelectorAll('.search-type-btn').forEach(btn => {
-            btn.classList.remove('active');
-            btn.style.background = 'white';
-            btn.style.color = '#666';
-            btn.style.borderColor = '#ddd';
+            btn.classList.remove('epo-active');
         });
         
         const activeBtn = document.querySelector(`.search-type-btn[data-type="${type}"]`);
         if (activeBtn) {
-            activeBtn.classList.add('active');
-            activeBtn.style.background = 'var(--primary-color)';
-            activeBtn.style.color = 'white';
-            activeBtn.style.borderColor = 'var(--primary-color)';
+            activeBtn.classList.add('epo-active');
         }
         
         document.querySelectorAll('.search-panel').forEach(panel => {
             panel.style.display = 'none';
         });
         
-        document.getElementById(`${type}-search-panel`).style.display = 'block';
+        const targetPanel = document.getElementById(`${type}-search-panel`);
+        if (targetPanel) {
+            targetPanel.style.display = 'block';
+        }
     }
     
     addSearchRow() {
         const container = document.getElementById('advanced-search-rows');
-        const rowCount = container.children.length;
+        if (!container) return;
         
         const row = document.createElement('div');
-        row.className = 'advanced-search-row';
-        row.style.cssText = 'display: flex; gap: 8px; margin-bottom: 10px; align-items: center;';
-        
+        row.className = 'adv-row';
         row.innerHTML = `
-            <select class="adv-field" style="padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+            <select class="adv-field epo-select-sm">
                 <option value="ta">标题</option>
                 <option value="ab">摘要</option>
                 <option value="cl">权利要求</option>
@@ -127,48 +210,64 @@ class EPOSearchModule {
                 <option value="cpc">CPC分类</option>
                 <option value="ipc">IPC分类</option>
             </select>
-            <select class="adv-operator" style="padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+            <select class="adv-operator epo-select-sm">
                 <option value="AND">AND</option>
                 <option value="OR">OR</option>
                 <option value="NOT">NOT</option>
             </select>
-            <input type="text" class="adv-keyword" placeholder="关键词" style="flex: 1; padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
-            <button class="remove-row-btn" style="padding: 6px 10px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">×</button>
+            <input type="text" class="adv-keyword epo-input-sm" placeholder="关键词">
+            <button type="button" class="remove-row-btn epo-btn-danger">×</button>
         `;
         
         container.appendChild(row);
         
-        row.querySelector('.remove-row-btn').addEventListener('click', () => {
+        row.querySelector('.remove-row-btn').addEventListener('click', (e) => {
+            e.preventDefault();
             row.remove();
+            this.updateRemoveButtons();
         });
         
-        container.querySelectorAll('.remove-row-btn').forEach(btn => {
-            btn.style.display = 'block';
-        });
+        this.updateRemoveButtons();
+    }
+    
+    updateRemoveButtons() {
+        const container = document.getElementById('advanced-search-rows');
+        if (!container) return;
         
-        if (container.children.length === 1) {
-            container.querySelector('.remove-row-btn').style.display = 'none';
-        }
+        const rows = container.querySelectorAll('.adv-row');
+        rows.forEach((row, index) => {
+            const btn = row.querySelector('.remove-row-btn');
+            if (btn) {
+                btn.style.display = rows.length > 1 ? 'block' : 'none';
+            }
+        });
     }
     
     buildQuery() {
-        const activeType = document.querySelector('.search-type-btn.active')?.dataset.type || 'simple';
+        const activeBtn = document.querySelector('.search-type-btn.epo-active');
+        const activeType = activeBtn ? activeBtn.dataset.type : 'simple';
         let query = '';
         
         if (activeType === 'simple') {
-            const field = document.getElementById('simple-field-select').value;
-            const keyword = document.getElementById('simple-keyword-input').value.trim();
-            if (keyword) {
-                query = `${field}=${keyword}`;
+            const field = document.getElementById('simple-field-select');
+            const keyword = document.getElementById('simple-keyword-input');
+            const fieldVal = field ? field.value : 'ta';
+            const keywordVal = keyword ? keyword.value.trim() : '';
+            if (keywordVal) {
+                query = `${fieldVal}=${keywordVal}`;
             }
         } else if (activeType === 'advanced') {
-            const rows = document.querySelectorAll('.advanced-search-row');
+            const rows = document.querySelectorAll('.adv-row');
             const parts = [];
             
             rows.forEach((row, index) => {
-                const field = row.querySelector('.adv-field').value;
-                const operator = row.querySelector('.adv-operator').value;
-                const keyword = row.querySelector('.adv-keyword').value.trim();
+                const fieldEl = row.querySelector('.adv-field');
+                const operatorEl = row.querySelector('.adv-operator');
+                const keywordEl = row.querySelector('.adv-keyword');
+                
+                const field = fieldEl ? fieldEl.value : 'ta';
+                const operator = operatorEl ? operatorEl.value : 'AND';
+                const keyword = keywordEl ? keywordEl.value.trim() : '';
                 
                 if (keyword) {
                     if (index > 0) {
@@ -180,20 +279,23 @@ class EPOSearchModule {
             
             query = parts.join(' ');
         } else if (activeType === 'cql') {
-            query = document.getElementById('cql-query-input').value.trim();
+            const cqlInput = document.getElementById('cql-query-input');
+            query = cqlInput ? cqlInput.value.trim() : '';
         }
         
-        const dateFrom = document.getElementById('date-from').value;
-        const dateTo = document.getElementById('date-to').value;
+        const dateFrom = document.getElementById('date-from');
+        const dateTo = document.getElementById('date-to');
+        const dateFromVal = dateFrom ? dateFrom.value : '';
+        const dateToVal = dateTo ? dateTo.value : '';
         
-        if (dateFrom && dateTo) {
-            const dateQuery = `pd=${dateFrom.replace(/-/g, '')}..${dateTo.replace(/-/g, '')}`;
+        if (dateFromVal && dateToVal) {
+            const dateQuery = `pd=${dateFromVal.replace(/-/g, '')}..${dateToVal.replace(/-/g, '')}`;
             query = query ? `${query} AND ${dateQuery}` : dateQuery;
-        } else if (dateFrom) {
-            const dateQuery = `pd>=${dateFrom.replace(/-/g, '')}`;
+        } else if (dateFromVal) {
+            const dateQuery = `pd>=${dateFromVal.replace(/-/g, '')}`;
             query = query ? `${query} AND ${dateQuery}` : dateQuery;
-        } else if (dateTo) {
-            const dateQuery = `pd<=${dateTo.replace(/-/g, '')}`;
+        } else if (dateToVal) {
+            const dateQuery = `pd<=${dateToVal.replace(/-/g, '')}`;
             query = query ? `${query} AND ${dateQuery}` : dateQuery;
         }
         
@@ -212,8 +314,10 @@ class EPOSearchModule {
         this.currentPage = page;
         
         const searchBtn = document.getElementById('epo-search-btn');
-        searchBtn.disabled = true;
-        searchBtn.innerHTML = '<span class="spinner"></span> 检索中...';
+        if (searchBtn) {
+            searchBtn.disabled = true;
+            searchBtn.innerHTML = '<span style="display:inline-block;animation:spin 1s linear infinite;">⏳</span> 检索中...';
+        }
         
         try {
             const rangeStart = (page - 1) * this.resultsPerPage + 1;
@@ -235,7 +339,6 @@ class EPOSearchModule {
                 this.searchResults = data.results;
                 this.totalResults = data.total_results;
                 this.displayResults(data.results, data.total_results);
-                this.updateQuotaInfo(data.quota_info);
             } else {
                 this.showToast(data.error || '检索失败', 'error');
             }
@@ -243,13 +346,15 @@ class EPOSearchModule {
             console.error('检索错误:', error);
             this.showToast('检索请求失败: ' + error.message, 'error');
         } finally {
-            searchBtn.disabled = false;
-            searchBtn.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 6px;">
-                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
-                </svg>
-                开始检索
-            `;
+            if (searchBtn) {
+                searchBtn.disabled = false;
+                searchBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 6px; vertical-align: middle;">
+                        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                    </svg>
+                    开始检索
+                `;
+            }
         }
     }
     
@@ -258,15 +363,14 @@ class EPOSearchModule {
         const resultsList = document.getElementById('epo-results-list');
         const totalCount = document.getElementById('epo-total-count');
         
-        resultsSection.style.display = 'block';
-        totalCount.textContent = `(共 ${total.toLocaleString()} 条结果)`;
+        if (resultsSection) resultsSection.style.display = 'block';
+        if (totalCount) totalCount.textContent = `(共 ${total.toLocaleString()} 条结果)`;
+        
+        if (!resultsList) return;
         
         if (results.length === 0) {
             resultsList.innerHTML = `
                 <div style="text-align: center; padding: 40px; color: #666;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16" style="margin-bottom: 16px; opacity: 0.5;">
-                        <path d="M7.5 1a.5.5 0 0 0-.5.5v3a.5.5 0 0 1-.5.5h-3a.5.5 0 0 0 0 1h3a.5.5 0 0 1 .5.5v3a.5.5 0 0 0 1 0v-3a.5.5 0 0 1 .5-.5h3a.5.5 0 0 0 0-1h-3a.5.5 0 0 1-.5-.5v-3a.5.5 0 0 0-.5-.5z"/>
-                    </svg>
                     <p>未找到匹配的专利</p>
                     <p style="font-size: 13px; margin-top: 8px;">请尝试调整检索条件</p>
                 </div>
@@ -299,22 +403,25 @@ class EPOSearchModule {
     
     renderResultItem(result) {
         const classifications = [
-            ...result.cpc_classifications.slice(0, 3),
-            ...result.ipc_classifications.slice(0, 2)
+            ...(result.cpc_classifications || []).slice(0, 3),
+            ...(result.ipc_classifications || []).slice(0, 2)
         ].map(c => `<span class="epo-classification-tag">${c}</span>`).join('');
+        
+        const applicants = result.applicants || [];
+        const inventors = result.inventors || [];
         
         return `
             <div class="epo-result-item">
                 <div class="epo-result-header">
-                    <span class="epo-result-patent-number">${result.patent_number}</span>
+                    <span class="epo-result-patent-number">${result.patent_number || '-'}</span>
                     <span style="font-size: 12px; color: #999;">公开日期: ${result.publication_date || '-'}</span>
                 </div>
                 <div class="epo-result-title" data-patent-number="${result.patent_number}">
                     ${result.title || '无标题'}
                 </div>
                 <div class="epo-result-meta">
-                    <span>申请人: ${result.applicants.slice(0, 2).join(', ') || '-'}${result.applicants.length > 2 ? ' 等' : ''}</span>
-                    <span>发明人: ${result.inventors.slice(0, 2).join(', ') || '-'}${result.inventors.length > 2 ? ' 等' : ''}</span>
+                    <span>申请人: ${applicants.slice(0, 2).join(', ') || '-'}${applicants.length > 2 ? ' 等' : ''}</span>
+                    <span>发明人: ${inventors.slice(0, 2).join(', ') || '-'}${inventors.length > 2 ? ' 等' : ''}</span>
                 </div>
                 <div class="epo-result-abstract">
                     ${result.abstract || '无摘要'}
@@ -323,13 +430,13 @@ class EPOSearchModule {
                     ${classifications}
                 </div>
                 <div class="epo-result-actions">
-                    <button class="view-detail-btn small-button primary-btn" data-patent-number="${result.patent_number}">
+                    <button type="button" class="view-detail-btn epo-btn-primary" data-patent-number="${result.patent_number}">
                         查看详情
                     </button>
-                    <button class="quick-analyze-btn small-button" data-patent-number="${result.patent_number}" style="background: #E8F5E9; color: #2E7D32;">
+                    <button type="button" class="quick-analyze-btn epo-btn-secondary" data-patent-number="${result.patent_number}">
                         AI解读
                     </button>
-                    <a href="${result.url}" target="_blank" class="small-button" style="background: #f5f5f5; text-decoration: none; padding: 6px 12px; border-radius: 4px;">
+                    <a href="${result.url || '#'}" target="_blank" class="epo-btn-info" style="text-decoration: none; display: inline-block;">
                         Google Patents
                     </a>
                 </div>
@@ -339,6 +446,8 @@ class EPOSearchModule {
     
     renderPagination() {
         const pagination = document.getElementById('epo-pagination');
+        if (!pagination) return;
+        
         const totalPages = Math.ceil(this.totalResults / this.resultsPerPage);
         
         if (totalPages <= 1) {
@@ -349,29 +458,29 @@ class EPOSearchModule {
         let html = '';
         
         if (this.currentPage > 1) {
-            html += `<button class="page-btn" data-page="${this.currentPage - 1}">上一页</button>`;
+            html += `<button type="button" class="page-btn" data-page="${this.currentPage - 1}">上一页</button>`;
         }
         
         const startPage = Math.max(1, this.currentPage - 2);
         const endPage = Math.min(totalPages, this.currentPage + 2);
         
         if (startPage > 1) {
-            html += `<button class="page-btn" data-page="1">1</button>`;
-            if (startPage > 2) html += `<span style="padding: 0 8px;">...</span>`;
+            html += `<button type="button" class="page-btn" data-page="1">1</button>`;
+            if (startPage > 2) html += `<span style="padding: 0 8px; color: #666;">...</span>`;
         }
         
         for (let i = startPage; i <= endPage; i++) {
-            const active = i === this.currentPage ? 'style="background: var(--primary-color); color: white;"' : '';
-            html += `<button class="page-btn" data-page="${i}" ${active}>${i}</button>`;
+            const activeClass = i === this.currentPage ? ' active' : '';
+            html += `<button type="button" class="page-btn${activeClass}" data-page="${i}">${i}</button>`;
         }
         
         if (endPage < totalPages) {
-            if (endPage < totalPages - 1) html += `<span style="padding: 0 8px;">...</span>`;
-            html += `<button class="page-btn" data-page="${totalPages}">${totalPages}</button>`;
+            if (endPage < totalPages - 1) html += `<span style="padding: 0 8px; color: #666;">...</span>`;
+            html += `<button type="button" class="page-btn" data-page="${totalPages}">${totalPages}</button>`;
         }
         
         if (this.currentPage < totalPages) {
-            html += `<button class="page-btn" data-page="${this.currentPage + 1}">下一页</button>`;
+            html += `<button type="button" class="page-btn" data-page="${this.currentPage + 1}">下一页</button>`;
         }
         
         pagination.innerHTML = html;
@@ -390,9 +499,11 @@ class EPOSearchModule {
         const content = document.getElementById('epo-detail-content');
         const title = document.getElementById('epo-detail-title');
         
+        if (!modal || !content) return;
+        
         modal.style.display = 'flex';
-        content.innerHTML = '<div style="text-align: center; padding: 40px;"><span class="spinner"></span> 加载中...</div>';
-        title.textContent = patentNumber;
+        content.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">加载中...</div>';
+        if (title) title.textContent = patentNumber;
         
         try {
             const response = await fetch(`/api/epo/detail/${patentNumber}?endpoint=biblio`);
@@ -400,7 +511,6 @@ class EPOSearchModule {
             
             if (data.success && data.detail) {
                 this.displayDetail(data.detail);
-                this.updateQuotaInfo(data.quota_info);
             } else {
                 content.innerHTML = `<p style="color: #f44336;">获取详情失败: ${data.error || '未知错误'}</p>`;
             }
@@ -411,6 +521,7 @@ class EPOSearchModule {
     
     displayDetail(detail) {
         const content = document.getElementById('epo-detail-content');
+        if (!content) return;
         
         content.innerHTML = `
             <div style="display: grid; gap: 16px;">
@@ -427,11 +538,11 @@ class EPOSearchModule {
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                     <div>
                         <h4 style="margin: 0 0 8px 0; color: #333;">申请人</h4>
-                        <p style="margin: 0; font-size: 14px;">${detail.applicants?.join(', ') || '-'}</p>
+                        <p style="margin: 0; font-size: 14px;">${(detail.applicants || []).join(', ') || '-'}</p>
                     </div>
                     <div>
                         <h4 style="margin: 0 0 8px 0; color: #333;">发明人</h4>
-                        <p style="margin: 0; font-size: 14px;">${detail.inventors?.join(', ') || '-'}</p>
+                        <p style="margin: 0; font-size: 14px;">${(detail.inventors || []).join(', ') || '-'}</p>
                     </div>
                 </div>
                 
@@ -464,34 +575,15 @@ class EPOSearchModule {
                         </div>
                     </div>
                 </div>
-                
-                ${detail.family_id ? `
-                <div>
-                    <h4 style="margin: 0 0 8px 0; color: #333;">同族ID</h4>
-                    <p style="margin: 0;">${detail.family_id}</p>
-                </div>
-                ` : ''}
-                
-                ${detail.legal_status?.length > 0 ? `
-                <div>
-                    <h4 style="margin: 0 0 8px 0; color: #333;">法律状态</h4>
-                    <div style="max-height: 150px; overflow-y: auto;">
-                        ${detail.legal_status.map(s => `
-                            <div style="padding: 6px 0; border-bottom: 1px solid #eee; font-size: 13px;">
-                                <span style="color: #666;">${s.date || '-'}</span>
-                                <span style="margin: 0 8px;">|</span>
-                                <span>${s.status || s.description || '-'}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-                ` : ''}
             </div>
         `;
         
-        document.getElementById('view-on-google-btn').onclick = () => {
-            window.open(`https://patents.google.com/patent/${patentNumber}`, '_blank');
-        };
+        const viewOnGoogleBtn = document.getElementById('view-on-google-btn');
+        if (viewOnGoogleBtn) {
+            viewOnGoogleBtn.onclick = () => {
+                window.open(`https://patents.google.com/patent/${this.currentPatentNumber}`, '_blank');
+            };
+        }
     }
     
     async quickAnalyze(patentNumber) {
@@ -505,17 +597,20 @@ class EPOSearchModule {
             return;
         }
         
-        const model = document.getElementById('epo-model-select').value;
+        const modelSelect = document.getElementById('epo-model-select');
+        const model = modelSelect ? modelSelect.value : 'glm-4-flash';
         const analyzeBtn = document.getElementById('analyze-patent-btn');
         
-        analyzeBtn.disabled = true;
-        analyzeBtn.innerHTML = '<span class="spinner"></span> 解读中...';
+        if (analyzeBtn) {
+            analyzeBtn.disabled = true;
+            analyzeBtn.textContent = '解读中...';
+        }
         
         const modal = document.getElementById('ai-analysis-modal');
         const content = document.getElementById('ai-analysis-content');
         
-        modal.style.display = 'flex';
-        content.innerHTML = '<div style="text-align: center; padding: 40px;"><span class="spinner"></span> AI正在分析...</div>';
+        if (modal) modal.style.display = 'flex';
+        if (content) content.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">AI正在分析...</div>';
         
         try {
             const response = await fetch('/api/epo/analyze', {
@@ -531,96 +626,69 @@ class EPOSearchModule {
             const data = await response.json();
             
             if (data.success) {
-                content.textContent = data.analysis;
-                this.updateQuotaInfo(data.quota_info);
+                if (content) content.textContent = data.analysis;
             } else {
-                content.textContent = `解读失败: ${data.error || '未知错误'}`;
+                if (content) content.textContent = `解读失败: ${data.error || '未知错误'}`;
             }
         } catch (error) {
-            content.textContent = `请求失败: ${error.message}`;
+            if (content) content.textContent = `请求失败: ${error.message}`;
         } finally {
-            analyzeBtn.disabled = false;
-            analyzeBtn.innerHTML = 'AI解读';
+            if (analyzeBtn) {
+                analyzeBtn.disabled = false;
+                analyzeBtn.textContent = 'AI解读';
+            }
         }
     }
     
     copyAnalysis() {
-        const content = document.getElementById('ai-analysis-content').textContent;
-        navigator.clipboard.writeText(content).then(() => {
-            this.showToast('已复制到剪贴板', 'success');
-        });
+        const content = document.getElementById('ai-analysis-content');
+        if (content) {
+            navigator.clipboard.writeText(content.textContent).then(() => {
+                this.showToast('已复制到剪贴板', 'success');
+            });
+        }
     }
     
     clearSearch() {
-        document.getElementById('simple-keyword-input').value = '';
-        document.getElementById('cql-query-input').value = '';
-        document.getElementById('date-from').value = '';
-        document.getElementById('date-to').value = '';
+        const simpleInput = document.getElementById('simple-keyword-input');
+        const cqlInput = document.getElementById('cql-query-input');
+        const dateFrom = document.getElementById('date-from');
+        const dateTo = document.getElementById('date-to');
+        const resultsSection = document.getElementById('epo-results-section');
+        
+        if (simpleInput) simpleInput.value = '';
+        if (cqlInput) cqlInput.value = '';
+        if (dateFrom) dateFrom.value = '';
+        if (dateTo) dateTo.value = '';
         
         const container = document.getElementById('advanced-search-rows');
-        container.innerHTML = `
-            <div class="advanced-search-row" style="display: flex; gap: 8px; margin-bottom: 10px; align-items: center;">
-                <select class="adv-field" style="padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
-                    <option value="ta">标题</option>
-                    <option value="ab">摘要</option>
-                    <option value="cl">权利要求</option>
-                    <option value="de">说明书</option>
-                    <option value="pa">申请人</option>
-                    <option value="in">发明人</option>
-                    <option value="cpc">CPC分类</option>
-                    <option value="ipc">IPC分类</option>
-                </select>
-                <select class="adv-operator" style="padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
-                    <option value="AND">AND</option>
-                    <option value="OR">OR</option>
-                    <option value="NOT">NOT</option>
-                </select>
-                <input type="text" class="adv-keyword" placeholder="关键词" style="flex: 1; padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
-                <button class="remove-row-btn" style="padding: 6px 10px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; display: none;">×</button>
-            </div>
-        `;
+        if (container) {
+            container.innerHTML = `
+                <div class="adv-row">
+                    <select class="adv-field epo-select-sm">
+                        <option value="ta">标题</option>
+                        <option value="ab">摘要</option>
+                        <option value="cl">权利要求</option>
+                        <option value="de">说明书</option>
+                        <option value="pa">申请人</option>
+                        <option value="in">发明人</option>
+                        <option value="cpc">CPC分类</option>
+                        <option value="ipc">IPC分类</option>
+                    </select>
+                    <select class="adv-operator epo-select-sm">
+                        <option value="AND">AND</option>
+                        <option value="OR">OR</option>
+                        <option value="NOT">NOT</option>
+                    </select>
+                    <input type="text" class="adv-keyword epo-input-sm" placeholder="关键词">
+                    <button type="button" class="remove-row-btn epo-btn-danger" style="display: none;">×</button>
+                </div>
+            `;
+        }
         
-        document.getElementById('epo-results-section').style.display = 'none';
+        if (resultsSection) resultsSection.style.display = 'none';
         this.searchResults = [];
         this.totalResults = 0;
-    }
-    
-    async loadQuotaInfo() {
-        try {
-            const response = await fetch('/api/epo/quota');
-            const data = await response.json();
-            
-            if (data.success) {
-                this.updateQuotaInfo(data.quota);
-            }
-        } catch (error) {
-            console.error('加载配额信息失败:', error);
-        }
-    }
-    
-    updateQuotaInfo(quota) {
-        if (!quota) return;
-        
-        document.getElementById('epo-used-mb').textContent = quota.weekly_used_mb.toFixed(2);
-        document.getElementById('epo-remaining-mb').textContent = quota.weekly_remaining_mb.toFixed(2);
-        document.getElementById('epo-usage-percent').textContent = quota.usage_percent.toFixed(1);
-        document.getElementById('epo-reset-date').textContent = quota.reset_date;
-        
-        const quotaBar = document.getElementById('epo-quota-bar');
-        const quotaBanner = document.getElementById('epo-quota-banner');
-        
-        quotaBar.style.width = `${Math.min(quota.usage_percent, 100)}%`;
-        
-        quotaBanner.classList.remove('warning', 'danger');
-        quotaBar.classList.remove('warning', 'danger');
-        
-        if (quota.usage_percent >= 90) {
-            quotaBanner.classList.add('danger');
-            quotaBar.classList.add('danger');
-        } else if (quota.usage_percent >= 70) {
-            quotaBanner.classList.add('warning');
-            quotaBar.classList.add('warning');
-        }
     }
     
     async loadCQLHelp() {
@@ -629,6 +697,7 @@ class EPOSearchModule {
             const data = await response.json();
             
             if (data.success) {
+                this.cqlHelpData = data.help;
                 this.displayCQLHelp(data.help);
             }
         } catch (error) {
@@ -638,6 +707,7 @@ class EPOSearchModule {
     
     displayCQLHelp(help) {
         const content = document.getElementById('cql-help-content');
+        if (!content) return;
         
         content.innerHTML = `
             <div style="display: grid; gap: 20px;">
@@ -652,9 +722,9 @@ class EPOSearchModule {
                             </tr>
                         </thead>
                         <tbody>
-                            ${help.fields.map(f => `
+                            ${(help.fields || []).map(f => `
                                 <tr>
-                                    <td style="padding: 8px; border: 1px solid #ddd; font-weight: 600; color: var(--primary-color);">${f.code}</td>
+                                    <td style="padding: 8px; border: 1px solid #ddd; font-weight: 600; color: #1976d2;">${f.code}</td>
                                     <td style="padding: 8px; border: 1px solid #ddd;">${f.name}</td>
                                     <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace; color: #666;">${f.example}</td>
                                 </tr>
@@ -674,7 +744,7 @@ class EPOSearchModule {
                             </tr>
                         </thead>
                         <tbody>
-                            ${help.operators.map(o => `
+                            ${(help.operators || []).map(o => `
                                 <tr>
                                     <td style="padding: 8px; border: 1px solid #ddd; font-weight: 600;">${o.operator}</td>
                                     <td style="padding: 8px; border: 1px solid #ddd;">${o.description}</td>
@@ -688,10 +758,10 @@ class EPOSearchModule {
                 <div>
                     <h4 style="margin: 0 0 12px 0; color: #333;">检索示例</h4>
                     <div style="display: grid; gap: 8px;">
-                        ${help.examples.map(e => `
-                            <div style="padding: 12px; background: #f9f9f9; border-radius: 6px; cursor: pointer;" class="cql-example" data-query="${e.query}">
+                        ${(help.examples || []).map(e => `
+                            <div style="padding: 12px; background: #f8f9fa; border-radius: 6px; cursor: pointer;" class="cql-example" data-query="${e.query}">
                                 <div style="font-weight: 500; margin-bottom: 4px;">${e.name}</div>
-                                <div style="font-family: monospace; font-size: 12px; color: var(--primary-color); margin-bottom: 4px;">${e.query}</div>
+                                <div style="font-family: monospace; font-size: 12px; color: #1976d2; margin-bottom: 4px;">${e.query}</div>
                                 <div style="font-size: 12px; color: #666;">${e.description}</div>
                             </div>
                         `).join('')}
@@ -702,32 +772,22 @@ class EPOSearchModule {
         
         content.querySelectorAll('.cql-example').forEach(el => {
             el.addEventListener('click', () => {
-                document.getElementById('cql-query-input').value = el.dataset.query;
-                document.getElementById('cql-help-modal').style.display = 'none';
+                const cqlInput = document.getElementById('cql-query-input');
+                if (cqlInput) cqlInput.value = el.dataset.query;
+                const modal = document.getElementById('cql-help-modal');
+                if (modal) modal.style.display = 'none';
             });
         });
     }
     
     showToast(message, type = 'info') {
         const toast = document.createElement('div');
-        toast.className = `toast toast-${type}`;
-        toast.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            padding: 12px 20px;
-            background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : type === 'warning' ? '#FF9800' : '#2196F3'};
-            color: white;
-            border-radius: 6px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            z-index: 10000;
-            animation: slideIn 0.3s ease;
-        `;
+        toast.className = `epo-toast epo-toast-${type}`;
         toast.textContent = message;
         document.body.appendChild(toast);
         
         setTimeout(() => {
-            toast.style.animation = 'slideOut 0.3s ease';
+            toast.style.animation = 'slideIn 0.3s ease reverse';
             setTimeout(() => toast.remove(), 300);
         }, 3000);
     }
