@@ -45,7 +45,7 @@
             {
                 id: 'sidebar',
                 type: 'highlight',
-                target: '#sidebar-navigation-component',
+                target: '#sidebarNav',
                 title: '功能导航栏',
                 content: `
                     <p>左侧是<strong>功能导航栏</strong>，包含系统的所有功能模块。</p>
@@ -107,7 +107,7 @@
             {
                 id: 'theme_toggle',
                 type: 'highlight',
-                target: '#theme-toggle-btn',
+                target: '#theme_toggle_btn',
                 title: '主题切换',
                 content: `
                     <p>点击此按钮可以<strong>切换明暗主题</strong>。</p>
@@ -118,18 +118,18 @@
             {
                 id: 'help_button',
                 type: 'highlight',
-                target: '#help-btn',
-                title: '帮助中心',
+                target: '.sidebar-footer',
+                title: '帮助文档',
                 content: `
-                    <p>点击此按钮可以打开<strong>帮助中心</strong>。</p>
-                    <p>帮助中心包含详细的功能说明、操作指南和常见问题解答。</p>
+                    <p>点击这里可以打开<strong>帮助文档</strong>。</p>
+                    <p>帮助文档包含详细的功能说明、操作指南和常见问题解答。</p>
                 `,
-                position: 'left'
+                position: 'right'
             },
             {
                 id: 'feature_instant_chat',
                 type: 'highlight',
-                target: '[data-tab-id="instant"]',
+                target: '[data-tab="instant"]',
                 title: '功能一：AI智能体对话',
                 content: `
                     <div class="guide-feature-card">
@@ -152,7 +152,7 @@
             {
                 id: 'feature_batch',
                 type: 'highlight',
-                target: '[data-tab-id="unified_batch"]',
+                target: '[data-tab="unified_batch"]',
                 title: '功能二：文本批量智能分析',
                 content: `
                     <div class="guide-feature-card">
@@ -175,7 +175,7 @@
             {
                 id: 'feature_patent_search',
                 type: 'highlight',
-                target: '[data-tab-id="patent_batch"]',
+                target: '[data-tab="patent_batch"]',
                 title: '功能五：批量专利检索与解读',
                 content: `
                     <div class="guide-feature-card">
@@ -412,8 +412,18 @@
 
             const target = document.querySelector(step.target);
             if (!target) {
-                console.warn('[GuideSystem] 目标元素未找到:', step.target);
-                this.next();
+                console.warn('[GuideSystem] 目标元素未找到，等待重试:', step.target);
+                const self = this;
+                setTimeout(function() {
+                    const retryTarget = document.querySelector(step.target);
+                    if (retryTarget) {
+                        self.highlightElement(retryTarget);
+                        self.positionTooltip(retryTarget, step);
+                    } else {
+                        console.warn('[GuideSystem] 重试后仍未找到目标元素:', step.target);
+                        self.next();
+                    }
+                }, 500);
                 return;
             }
 
