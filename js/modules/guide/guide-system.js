@@ -1,0 +1,702 @@
+/**
+ * 用户引导系统 - 核心模块
+ * 实现首次登录用户的交互式引导
+ * 
+ * @module guide-system
+ * @version 1.0.0
+ */
+
+(function(global) {
+    'use strict';
+
+    const GuideSystem = {
+        version: '1.0.0',
+        initialized: false,
+        active: false,
+        currentStep: 0,
+        steps: [],
+        overlay: null,
+        highlight: null,
+        tooltip: null,
+        config: {
+            storageKey: 'patent_workbench_guide_completed',
+            skipConfirmEnabled: true,
+            animationDuration: 400,
+            autoStartDelay: 1000
+        },
+
+        guideSteps: [
+            {
+                id: 'welcome',
+                type: 'modal',
+                title: '欢迎使用 ALFRED X IP',
+                content: `
+                    <p>您好！欢迎使用<strong>专利智能工作台</strong>。</p>
+                    <p>这是一个专为专利分析设计的智能工具平台，让我们花几分钟时间了解系统的核心功能。</p>
+                `,
+                position: 'center',
+                features: [
+                    { icon: 'chat', text: 'AI智能对话' },
+                    { icon: 'search', text: '专利检索分析' },
+                    { icon: 'compare', text: '权利要求比对' },
+                    { icon: 'ocr', text: '文档OCR识别' }
+                ]
+            },
+            {
+                id: 'sidebar',
+                type: 'highlight',
+                target: '#sidebar-navigation-component',
+                title: '功能导航栏',
+                content: `
+                    <p>左侧是<strong>功能导航栏</strong>，包含系统的所有功能模块。</p>
+                    <p>点击不同的功能标签即可切换到对应的功能页面。</p>
+                    <ul>
+                        <li><strong>功能一</strong>：AI智能体对话</li>
+                        <li><strong>功能二</strong>：文本批量智能分析</li>
+                        <li><strong>功能三</strong>：本地数据表管理</li>
+                        <li><strong>功能四</strong>：权利要求智能比对</li>
+                        <li><strong>功能五</strong>：批量专利检索与解读</li>
+                        <li><strong>功能六</strong>：独从权识别与可视化</li>
+                        <li><strong>功能七</strong>：专利附图智能标记</li>
+                        <li><strong>功能八</strong>：文档OCR与智能分析</li>
+                        <li><strong>功能九</strong>：IPC分类智能查询</li>
+                    </ul>
+                `,
+                position: 'right'
+            },
+            {
+                id: 'api_config',
+                type: 'highlight',
+                target: '#api_config_toggle_btn',
+                title: 'API密钥配置',
+                content: `
+                    <p>点击此按钮可以<strong>配置AI模型的API密钥</strong>。</p>
+                    <div class="guide-api-config">
+                        <h4>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                            如何获取API密钥？
+                        </h4>
+                        <div class="guide-api-steps">
+                            <div class="guide-api-step">
+                                <div class="guide-api-step-number">1</div>
+                                <div class="guide-api-step-content">
+                                    <strong>智谱AI</strong>
+                                    <p>访问 <a href="https://open.bigmodel.cn/" target="_blank">open.bigmodel.cn</a> 注册账号</p>
+                                </div>
+                            </div>
+                            <div class="guide-api-step">
+                                <div class="guide-api-step-number">2</div>
+                                <div class="guide-api-step-content">
+                                    <strong>创建API Key</strong>
+                                    <p>在控制台创建API密钥并复制</p>
+                                </div>
+                            </div>
+                            <div class="guide-api-step">
+                                <div class="guide-api-step-number">3</div>
+                                <div class="guide-api-step-content">
+                                    <strong>粘贴保存</strong>
+                                    <p>将密钥粘贴到输入框并点击保存</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `,
+                position: 'left',
+                action: 'click_api_config'
+            },
+            {
+                id: 'theme_toggle',
+                type: 'highlight',
+                target: '#theme-toggle-btn',
+                title: '主题切换',
+                content: `
+                    <p>点击此按钮可以<strong>切换明暗主题</strong>。</p>
+                    <p>系统支持亮色和暗色两种主题模式，根据您的喜好自由切换。</p>
+                `,
+                position: 'left'
+            },
+            {
+                id: 'help_button',
+                type: 'highlight',
+                target: '#help-btn',
+                title: '帮助中心',
+                content: `
+                    <p>点击此按钮可以打开<strong>帮助中心</strong>。</p>
+                    <p>帮助中心包含详细的功能说明、操作指南和常见问题解答。</p>
+                `,
+                position: 'left'
+            },
+            {
+                id: 'feature_instant_chat',
+                type: 'highlight',
+                target: '[data-tab-id="instant"]',
+                title: '功能一：AI智能体对话',
+                content: `
+                    <div class="guide-feature-card">
+                        <div class="guide-feature-card-header">
+                            <div class="guide-feature-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                            </div>
+                            <h4 class="guide-feature-title">AI智能体对话</h4>
+                        </div>
+                        <p class="guide-feature-desc">与AI进行智能对话，支持专利分析、技术问答、文本处理等多种场景。</p>
+                        <div class="guide-feature-tags">
+                            <span class="guide-feature-tag">多模型支持</span>
+                            <span class="guide-feature-tag">流式输出</span>
+                            <span class="guide-feature-tag">历史记录</span>
+                        </div>
+                    </div>
+                `,
+                position: 'right'
+            },
+            {
+                id: 'feature_batch',
+                type: 'highlight',
+                target: '[data-tab-id="unified_batch"]',
+                title: '功能二：文本批量智能分析',
+                content: `
+                    <div class="guide-feature-card">
+                        <div class="guide-feature-card-header">
+                            <div class="guide-feature-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                            </div>
+                            <h4 class="guide-feature-title">文本批量智能分析</h4>
+                        </div>
+                        <p class="guide-feature-desc">批量处理文本数据，支持Excel导入导出、智能分类标引、批量翻译等功能。</p>
+                        <div class="guide-feature-tags">
+                            <span class="guide-feature-tag">Excel导入导出</span>
+                            <span class="guide-feature-tag">智能分类</span>
+                            <span class="guide-feature-tag">批量处理</span>
+                        </div>
+                    </div>
+                `,
+                position: 'right'
+            },
+            {
+                id: 'feature_patent_search',
+                type: 'highlight',
+                target: '[data-tab-id="patent_batch"]',
+                title: '功能五：批量专利检索与解读',
+                content: `
+                    <div class="guide-feature-card">
+                        <div class="guide-feature-card-header">
+                            <div class="guide-feature-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            </div>
+                            <h4 class="guide-feature-title">批量专利检索与解读</h4>
+                        </div>
+                        <p class="guide-feature-desc">批量检索专利信息，支持Google专利、CNIPA专利查询，AI智能解读专利内容。</p>
+                        <div class="guide-feature-tags">
+                            <span class="guide-feature-tag">专利检索</span>
+                            <span class="guide-feature-tag">AI解读</span>
+                            <span class="guide-feature-tag">同族分析</span>
+                        </div>
+                    </div>
+                `,
+                position: 'right'
+            },
+            {
+                id: 'complete',
+                type: 'modal',
+                title: '引导完成',
+                content: `
+                    <p>恭喜您完成了系统引导！</p>
+                    <p>现在您可以开始使用专利智能工作台了。如有任何问题，请随时查看帮助中心。</p>
+                `,
+                position: 'center'
+            }
+        ],
+
+        init: function() {
+            if (this.initialized) {
+                console.warn('[GuideSystem] 已经初始化');
+                return;
+            }
+
+            console.log('[GuideSystem] 初始化引导系统...');
+            
+            this.steps = this.guideSteps;
+            this.createDOMElements();
+            this.bindEvents();
+            this.initialized = true;
+            
+            console.log('[GuideSystem] 引导系统初始化完成');
+        },
+
+        createDOMElements: function() {
+            this.overlay = document.createElement('div');
+            this.overlay.className = 'guide-overlay';
+            this.overlay.id = 'guide-overlay';
+            document.body.appendChild(this.overlay);
+
+            this.highlight = document.createElement('div');
+            this.highlight.className = 'guide-highlight';
+            this.highlight.id = 'guide-highlight';
+            document.body.appendChild(this.highlight);
+
+            this.tooltip = document.createElement('div');
+            this.tooltip.className = 'guide-tooltip';
+            this.tooltip.id = 'guide-tooltip';
+            document.body.appendChild(this.tooltip);
+        },
+
+        bindEvents: function() {
+            const self = this;
+            
+            this.overlay.addEventListener('click', function(e) {
+                if (e.target === self.overlay) {
+                    self.showSkipConfirm();
+                }
+            });
+
+            document.addEventListener('keydown', function(e) {
+                if (!self.active) return;
+                
+                switch(e.key) {
+                    case 'Escape':
+                        self.showSkipConfirm();
+                        break;
+                    case 'ArrowRight':
+                    case 'Enter':
+                        self.next();
+                        break;
+                    case 'ArrowLeft':
+                        self.previous();
+                        break;
+                }
+            });
+        },
+
+        start: function() {
+            if (this.isCompleted()) {
+                console.log('[GuideSystem] 用户已完成引导，跳过');
+                return false;
+            }
+
+            if (this.active) {
+                console.warn('[GuideSystem] 引导已在进行中');
+                return false;
+            }
+
+            this.init();
+            this.active = true;
+            this.currentStep = 0;
+            this.showStep(0);
+            
+            console.log('[GuideSystem] 引导开始');
+            return true;
+        },
+
+        showStep: function(index) {
+            if (index < 0 || index >= this.steps.length) {
+                console.error('[GuideSystem] 无效的步骤索引:', index);
+                return;
+            }
+
+            const step = this.steps[index];
+            this.currentStep = index;
+
+            if (step.type === 'modal') {
+                this.showModalStep(step);
+            } else if (step.type === 'highlight') {
+                this.showHighlightStep(step);
+            }
+        },
+
+        showModalStep: function(step) {
+            this.overlay.classList.add('active');
+            this.highlight.style.display = 'none';
+
+            if (step.id === 'welcome') {
+                this.showWelcomeModal(step);
+            } else if (step.id === 'complete') {
+                this.showCompleteModal(step);
+            }
+        },
+
+        showWelcomeModal: function(step) {
+            const featureIcons = {
+                chat: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+                search: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+                compare: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
+                ocr: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'
+            };
+
+            let featuresHtml = '';
+            if (step.features) {
+                featuresHtml = '<div class="guide-welcome-features">';
+                step.features.forEach(function(f) {
+                    featuresHtml += `
+                        <div class="guide-welcome-feature">
+                            <div class="guide-welcome-feature-icon">${featureIcons[f.icon] || ''}</div>
+                            <span class="guide-welcome-feature-text">${f.text}</span>
+                        </div>
+                    `;
+                });
+                featuresHtml += '</div>';
+            }
+
+            const html = `
+                <div class="guide-welcome-modal active" id="guide-welcome-modal">
+                    <div class="guide-overlay active"></div>
+                    <div class="guide-welcome-content">
+                        <div class="guide-welcome-header">
+                            <div class="guide-welcome-logo">ALFRED X IP</div>
+                            <div class="guide-welcome-subtitle">专利智能工作台</div>
+                        </div>
+                        <div class="guide-welcome-body">
+                            <h2>${step.title}</h2>
+                            ${step.content}
+                            ${featuresHtml}
+                            <div class="guide-welcome-footer">
+                                <button class="guide-btn guide-btn-primary" onclick="GuideSystem.startGuide()">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                    开始引导
+                                </button>
+                                <button class="guide-btn guide-btn-skip" onclick="GuideSystem.skip()">
+                                    跳过引导
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const existingModal = document.getElementById('guide-welcome-modal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            document.body.insertAdjacentHTML('beforeend', html);
+        },
+
+        showCompleteModal: function(step) {
+            const html = `
+                <div class="guide-complete-modal active" id="guide-complete-modal">
+                    <div class="guide-overlay active"></div>
+                    <div class="guide-complete-content">
+                        <div class="guide-complete-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                        </div>
+                        <h2>${step.title}</h2>
+                        ${step.content}
+                        <button class="guide-btn guide-btn-primary" onclick="GuideSystem.complete()">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            开始使用
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            const existingModal = document.getElementById('guide-complete-modal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            this.tooltip.classList.remove('active');
+            document.body.insertAdjacentHTML('beforeend', html);
+        },
+
+        showHighlightStep: function(step) {
+            const welcomeModal = document.getElementById('guide-welcome-modal');
+            if (welcomeModal) {
+                welcomeModal.remove();
+            }
+
+            const completeModal = document.getElementById('guide-complete-modal');
+            if (completeModal) {
+                completeModal.remove();
+            }
+
+            this.overlay.classList.add('active');
+
+            const target = document.querySelector(step.target);
+            if (!target) {
+                console.warn('[GuideSystem] 目标元素未找到:', step.target);
+                this.next();
+                return;
+            }
+
+            this.highlightElement(target);
+            this.positionTooltip(target, step);
+        },
+
+        highlightElement: function(element) {
+            const rect = element.getBoundingClientRect();
+            
+            this.highlight.style.display = 'block';
+            this.highlight.style.top = rect.top + 'px';
+            this.highlight.style.left = rect.left + 'px';
+            this.highlight.style.width = rect.width + 'px';
+            this.highlight.style.height = rect.height + 'px';
+
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        },
+
+        positionTooltip: function(target, step) {
+            const rect = target.getBoundingClientRect();
+            const tooltipWidth = 420;
+            const tooltipHeight = 300;
+            const margin = 20;
+
+            let top, left;
+            const position = step.position || 'right';
+
+            switch(position) {
+                case 'right':
+                    left = rect.right + margin;
+                    top = rect.top;
+                    if (left + tooltipWidth > window.innerWidth) {
+                        left = rect.left - tooltipWidth - margin;
+                    }
+                    break;
+                case 'left':
+                    left = rect.left - tooltipWidth - margin;
+                    top = rect.top;
+                    if (left < 0) {
+                        left = rect.right + margin;
+                    }
+                    break;
+                case 'top':
+                    left = rect.left;
+                    top = rect.top - tooltipHeight - margin;
+                    if (top < 0) {
+                        top = rect.bottom + margin;
+                    }
+                    break;
+                case 'bottom':
+                    left = rect.left;
+                    top = rect.bottom + margin;
+                    if (top + tooltipHeight > window.innerHeight) {
+                        top = rect.top - tooltipHeight - margin;
+                    }
+                    break;
+            }
+
+            top = Math.max(10, Math.min(top, window.innerHeight - tooltipHeight - 10));
+            left = Math.max(10, Math.min(left, window.innerWidth - tooltipWidth - 10));
+
+            this.renderTooltip(step, top, left);
+        },
+
+        renderTooltip: function(step, top, left) {
+            const progressDots = this.renderProgressDots();
+            
+            const html = `
+                <div class="guide-tooltip-header">
+                    <h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                        ${step.title}
+                    </h3>
+                    <span class="guide-step-badge">步骤 ${this.currentStep + 1}/${this.steps.length}</span>
+                </div>
+                <div class="guide-tooltip-body">
+                    <div class="guide-tooltip-content">
+                        ${step.content}
+                    </div>
+                </div>
+                <div class="guide-tooltip-footer">
+                    <div class="guide-progress">
+                        ${progressDots}
+                    </div>
+                    <div class="guide-nav-buttons">
+                        <button class="guide-btn guide-btn-skip" onclick="GuideSystem.showSkipConfirm()">
+                            跳过
+                        </button>
+                        ${this.currentStep > 0 ? `
+                            <button class="guide-btn guide-btn-secondary" onclick="GuideSystem.previous()">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                                上一步
+                            </button>
+                        ` : ''}
+                        <button class="guide-btn guide-btn-primary" onclick="GuideSystem.next()">
+                            ${this.currentStep === this.steps.length - 2 ? '完成' : '下一步'}
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            this.tooltip.innerHTML = html;
+            this.tooltip.style.top = top + 'px';
+            this.tooltip.style.left = left + 'px';
+            this.tooltip.classList.add('active');
+        },
+
+        renderProgressDots: function() {
+            let html = '';
+            for (let i = 0; i < this.steps.length; i++) {
+                let className = 'guide-progress-dot';
+                if (i < this.currentStep) {
+                    className += ' completed';
+                } else if (i === this.currentStep) {
+                    className += ' active';
+                }
+                html += `<div class="${className}"></div>`;
+            }
+            return html;
+        },
+
+        startGuide: function() {
+            const welcomeModal = document.getElementById('guide-welcome-modal');
+            if (welcomeModal) {
+                welcomeModal.remove();
+            }
+            
+            this.currentStep = 1;
+            this.showStep(1);
+        },
+
+        next: function() {
+            if (this.currentStep < this.steps.length - 1) {
+                this.currentStep++;
+                this.showStep(this.currentStep);
+            }
+        },
+
+        previous: function() {
+            if (this.currentStep > 0) {
+                this.currentStep--;
+                this.showStep(this.currentStep);
+            }
+        },
+
+        showSkipConfirm: function() {
+            if (!this.config.skipConfirmEnabled) {
+                this.skip();
+                return;
+            }
+
+            const existingConfirm = document.querySelector('.guide-skip-confirm');
+            if (existingConfirm) {
+                existingConfirm.remove();
+            }
+
+            const html = `
+                <div class="guide-skip-confirm">
+                    <h3>确定要跳过引导吗？</h3>
+                    <p>您可以随时在帮助中心查看使用指南。</p>
+                    <div class="guide-skip-confirm-buttons">
+                        <button class="guide-btn guide-btn-secondary" onclick="GuideSystem.hideSkipConfirm()">
+                            继续引导
+                        </button>
+                        <button class="guide-btn guide-btn-primary" onclick="GuideSystem.skip()">
+                            确认跳过
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', html);
+        },
+
+        hideSkipConfirm: function() {
+            const confirm = document.querySelector('.guide-skip-confirm');
+            if (confirm) {
+                confirm.remove();
+            }
+        },
+
+        skip: function() {
+            this.hideSkipConfirm();
+            this.markCompleted();
+            this.destroy();
+            console.log('[GuideSystem] 用户跳过引导');
+        },
+
+        complete: function() {
+            this.markCompleted();
+            this.destroy();
+            console.log('[GuideSystem] 用户完成引导');
+        },
+
+        markCompleted: function() {
+            try {
+                const data = {
+                    completed: true,
+                    completedAt: new Date().toISOString(),
+                    version: this.version
+                };
+                localStorage.setItem(this.config.storageKey, JSON.stringify(data));
+            } catch (e) {
+                console.error('[GuideSystem] 保存引导状态失败:', e);
+            }
+        },
+
+        isCompleted: function() {
+            try {
+                const data = localStorage.getItem(this.config.storageKey);
+                if (data) {
+                    const parsed = JSON.parse(data);
+                    return parsed.completed === true;
+                }
+            } catch (e) {
+                console.error('[GuideSystem] 读取引导状态失败:', e);
+            }
+            return false;
+        },
+
+        reset: function() {
+            try {
+                localStorage.removeItem(this.config.storageKey);
+                console.log('[GuideSystem] 引导状态已重置');
+            } catch (e) {
+                console.error('[GuideSystem] 重置引导状态失败:', e);
+            }
+        },
+
+        destroy: function() {
+            this.active = false;
+            
+            if (this.overlay) {
+                this.overlay.classList.remove('active');
+            }
+            if (this.highlight) {
+                this.highlight.style.display = 'none';
+            }
+            if (this.tooltip) {
+                this.tooltip.classList.remove('active');
+            }
+
+            const welcomeModal = document.getElementById('guide-welcome-modal');
+            if (welcomeModal) {
+                welcomeModal.remove();
+            }
+
+            const completeModal = document.getElementById('guide-complete-modal');
+            if (completeModal) {
+                completeModal.remove();
+            }
+
+            this.hideSkipConfirm();
+        },
+
+        autoStart: function() {
+            const self = this;
+            
+            if (this.isCompleted()) {
+                console.log('[GuideSystem] 用户已完成引导，不自动启动');
+                return;
+            }
+
+            setTimeout(function() {
+                self.start();
+            }, this.config.autoStartDelay);
+        },
+
+        showApiGuide: function() {
+            const apiStep = this.steps.find(s => s.id === 'api_config');
+            if (apiStep) {
+                this.currentStep = this.steps.indexOf(apiStep);
+                this.showStep(this.currentStep);
+            }
+        }
+    };
+
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = GuideSystem;
+    } else {
+        global.GuideSystem = GuideSystem;
+    }
+
+})(typeof window !== 'undefined' ? window : this);

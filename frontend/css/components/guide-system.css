@@ -1,0 +1,1021 @@
+/**
+ * 引导系统样式
+ * 用于首次登录用户的交互式引导
+ */
+
+/* =================================================================================
+   遮罩层基础样式
+   ================================================================================= */
+
+.guide-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 99998;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.guide-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* 高亮区域 - 使用box-shadow模拟镂空效果 */
+.guide-highlight {
+    position: absolute;
+    z-index: 99999;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+}
+
+.guide-highlight::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    right: -4px;
+    bottom: -4px;
+    border: 2px solid #22C55E;
+    border-radius: 8px;
+    animation: guide-pulse 2s ease-in-out infinite;
+}
+
+.guide-highlight::after {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    right: -8px;
+    bottom: -8px;
+    border: 1px dashed rgba(34, 197, 94, 0.5);
+    border-radius: 10px;
+    animation: guide-pulse-delayed 2s ease-in-out infinite;
+}
+
+@keyframes guide-pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4),
+                    0 0 20px rgba(34, 197, 94, 0.2);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(34, 197, 94, 0),
+                    0 0 30px rgba(34, 197, 94, 0.3);
+    }
+}
+
+@keyframes guide-pulse-delayed {
+    0%, 100% {
+        opacity: 0.5;
+    }
+    50% {
+        opacity: 0.8;
+    }
+}
+
+/* =================================================================================
+   引导弹窗样式
+   ================================================================================= */
+
+.guide-tooltip {
+    position: fixed;
+    z-index: 100000;
+    background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(34, 197, 94, 0.2);
+    max-width: 420px;
+    min-width: 320px;
+    padding: 0;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}
+
+.guide-tooltip.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.guide-tooltip-header {
+    background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+    padding: 16px 20px;
+    color: white;
+    position: relative;
+}
+
+.guide-tooltip-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.guide-tooltip-header h3 svg {
+    width: 20px;
+    height: 20px;
+}
+
+.guide-step-badge {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.guide-tooltip-body {
+    padding: 20px;
+}
+
+.guide-tooltip-content {
+    color: #374151;
+    font-size: 14px;
+    line-height: 1.7;
+    margin-bottom: 16px;
+}
+
+.guide-tooltip-content p {
+    margin: 0 0 12px;
+}
+
+.guide-tooltip-content p:last-child {
+    margin-bottom: 0;
+}
+
+.guide-tooltip-content ul {
+    margin: 8px 0;
+    padding-left: 20px;
+}
+
+.guide-tooltip-content li {
+    margin-bottom: 6px;
+}
+
+.guide-tooltip-content strong {
+    color: #166534;
+}
+
+.guide-tooltip-content code {
+    background: #f3f4f6;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #059669;
+}
+
+/* =================================================================================
+   引导按钮样式
+   ================================================================================= */
+
+.guide-tooltip-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+}
+
+.guide-nav-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.guide-btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.guide-btn-primary {
+    background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+    color: white;
+}
+
+.guide-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+}
+
+.guide-btn-secondary {
+    background: white;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.guide-btn-secondary:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.guide-btn-skip {
+    background: transparent;
+    color: #9ca3af;
+    padding: 10px 12px;
+}
+
+.guide-btn-skip:hover {
+    color: #6b7280;
+}
+
+.guide-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* =================================================================================
+   进度指示器
+   ================================================================================= */
+
+.guide-progress {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.guide-progress-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #d1d5db;
+    transition: all 0.3s ease;
+}
+
+.guide-progress-dot.active {
+    background: #22C55E;
+    transform: scale(1.2);
+}
+
+.guide-progress-dot.completed {
+    background: #86efac;
+}
+
+/* =================================================================================
+   API配置引导特殊样式
+   ================================================================================= */
+
+.guide-api-config {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border-radius: 12px;
+    padding: 16px;
+    margin: 12px 0;
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.guide-api-config h4 {
+    margin: 0 0 12px;
+    font-size: 14px;
+    color: #166534;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.guide-api-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.guide-api-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.guide-api-step-number {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.guide-api-step-content {
+    flex: 1;
+}
+
+.guide-api-step-content strong {
+    display: block;
+    margin-bottom: 4px;
+    color: #374151;
+    font-size: 13px;
+}
+
+.guide-api-step-content p {
+    margin: 0;
+    font-size: 12px;
+    color: #6b7280;
+    line-height: 1.5;
+}
+
+.guide-api-step-content a {
+    color: #059669;
+    text-decoration: none;
+}
+
+.guide-api-step-content a:hover {
+    text-decoration: underline;
+}
+
+/* =================================================================================
+   功能介绍卡片
+   ================================================================================= */
+
+.guide-feature-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    margin: 12px 0;
+    border: 1px solid #e5e7eb;
+    transition: all 0.3s ease;
+}
+
+.guide-feature-card:hover {
+    border-color: #22C55E;
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.1);
+}
+
+.guide-feature-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.guide-feature-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #22C55E;
+}
+
+.guide-feature-icon svg {
+    width: 22px;
+    height: 22px;
+}
+
+.guide-feature-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #166534;
+    margin: 0;
+}
+
+.guide-feature-desc {
+    font-size: 13px;
+    color: #6b7280;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.guide-feature-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.guide-feature-tag {
+    padding: 3px 8px;
+    background: #f3f4f6;
+    border-radius: 4px;
+    font-size: 11px;
+    color: #6b7280;
+}
+
+/* =================================================================================
+   欢迎弹窗
+   ================================================================================= */
+
+.guide-welcome-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 100001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.guide-welcome-modal.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.guide-welcome-modal .guide-overlay {
+    z-index: 1;
+}
+
+.guide-welcome-content {
+    position: relative;
+    z-index: 2;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
+    max-width: 520px;
+    width: 90%;
+    overflow: hidden;
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+}
+
+.guide-welcome-modal.active .guide-welcome-content {
+    transform: scale(1);
+}
+
+.guide-welcome-header {
+    background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+    padding: 30px;
+    text-align: center;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.guide-welcome-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+    animation: guide-welcome-shine 3s ease-in-out infinite;
+}
+
+@keyframes guide-welcome-shine {
+    0%, 100% {
+        transform: translate(0, 0);
+    }
+    50% {
+        transform: translate(10%, 10%);
+    }
+}
+
+.guide-welcome-logo {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 32px;
+    font-weight: 900;
+    margin-bottom: 8px;
+    position: relative;
+    z-index: 1;
+}
+
+.guide-welcome-subtitle {
+    font-size: 14px;
+    opacity: 0.9;
+    position: relative;
+    z-index: 1;
+}
+
+.guide-welcome-body {
+    padding: 30px;
+    text-align: center;
+}
+
+.guide-welcome-body h2 {
+    margin: 0 0 16px;
+    font-size: 20px;
+    color: #166534;
+}
+
+.guide-welcome-body p {
+    margin: 0 0 24px;
+    color: #6b7280;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.guide-welcome-features {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+    text-align: left;
+}
+
+.guide-welcome-feature {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: #f9fafb;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+.guide-welcome-feature:hover {
+    background: #f0fdf4;
+    transform: translateX(4px);
+}
+
+.guide-welcome-feature-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+}
+
+.guide-welcome-feature-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+.guide-welcome-feature-text {
+    font-size: 13px;
+    color: #374151;
+    font-weight: 500;
+}
+
+.guide-welcome-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.guide-welcome-footer .guide-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 14px 24px;
+    font-size: 15px;
+}
+
+/* =================================================================================
+   完成弹窗
+   ================================================================================= */
+
+.guide-complete-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 100001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.guide-complete-modal.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.guide-complete-modal .guide-overlay {
+    z-index: 1;
+}
+
+.guide-complete-content {
+    position: relative;
+    z-index: 2;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
+    max-width: 440px;
+    width: 90%;
+    padding: 40px;
+    text-align: center;
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+}
+
+.guide-complete-modal.active .guide-complete-content {
+    transform: scale(1);
+}
+
+.guide-complete-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+    animation: guide-complete-bounce 0.6s ease;
+}
+
+@keyframes guide-complete-bounce {
+    0% {
+        transform: scale(0);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.guide-complete-icon svg {
+    width: 40px;
+    height: 40px;
+    color: white;
+}
+
+.guide-complete-content h2 {
+    margin: 0 0 12px;
+    font-size: 22px;
+    color: #166534;
+}
+
+.guide-complete-content p {
+    margin: 0 0 24px;
+    color: #6b7280;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* =================================================================================
+   箭头指示器
+   ================================================================================= */
+
+.guide-arrow {
+    position: absolute;
+    width: 0;
+    height: 0;
+    border: 10px solid transparent;
+}
+
+.guide-arrow.top {
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-top-color: white;
+}
+
+.guide-arrow.bottom {
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-bottom-color: white;
+}
+
+.guide-arrow.left {
+    right: -20px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-left-color: white;
+}
+
+.guide-arrow.right {
+    left: -20px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-right-color: white;
+}
+
+/* =================================================================================
+   响应式适配
+   ================================================================================= */
+
+@media (max-width: 768px) {
+    .guide-tooltip {
+        max-width: calc(100% - 32px);
+        min-width: 280px;
+        left: 16px !important;
+        right: 16px !important;
+        bottom: 16px !important;
+        top: auto !important;
+        transform: translateY(20px);
+    }
+    
+    .guide-tooltip.active {
+        transform: translateY(0);
+    }
+    
+    .guide-tooltip-footer {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .guide-nav-buttons {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .guide-btn {
+        flex: 1;
+        justify-content: center;
+    }
+    
+    .guide-progress {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .guide-welcome-features {
+        grid-template-columns: 1fr;
+    }
+    
+    .guide-welcome-content {
+        margin: 16px;
+    }
+    
+    .guide-api-config {
+        padding: 12px;
+    }
+    
+    .guide-api-step {
+        padding: 8px;
+    }
+}
+
+/* =================================================================================
+   暗色主题适配
+   ================================================================================= */
+
+[data-theme="dark"] .guide-overlay {
+    background-color: rgba(0, 0, 0, 0.85);
+}
+
+[data-theme="dark"] .guide-tooltip {
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(34, 197, 94, 0.3);
+}
+
+[data-theme="dark"] .guide-tooltip-body {
+    background: transparent;
+}
+
+[data-theme="dark"] .guide-tooltip-content {
+    color: #e5e7eb;
+}
+
+[data-theme="dark"] .guide-tooltip-content strong {
+    color: #4ade80;
+}
+
+[data-theme="dark"] .guide-tooltip-content code {
+    background: #374151;
+    color: #4ade80;
+}
+
+[data-theme="dark"] .guide-tooltip-footer {
+    background: #111827;
+    border-top-color: #374151;
+}
+
+[data-theme="dark"] .guide-btn-secondary {
+    background: #374151;
+    color: #e5e7eb;
+    border-color: #4b5563;
+}
+
+[data-theme="dark"] .guide-btn-secondary:hover {
+    background: #4b5563;
+}
+
+[data-theme="dark"] .guide-btn-skip {
+    color: #6b7280;
+}
+
+[data-theme="dark"] .guide-btn-skip:hover {
+    color: #9ca3af;
+}
+
+[data-theme="dark"] .guide-progress-dot {
+    background: #4b5563;
+}
+
+[data-theme="dark"] .guide-progress-dot.active {
+    background: #22C55E;
+}
+
+[data-theme="dark"] .guide-api-config {
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+[data-theme="dark"] .guide-api-config h4 {
+    color: #4ade80;
+}
+
+[data-theme="dark"] .guide-api-step {
+    background: #374151;
+    border-color: #4b5563;
+}
+
+[data-theme="dark"] .guide-api-step-content strong {
+    color: #e5e7eb;
+}
+
+[data-theme="dark"] .guide-api-step-content p {
+    color: #9ca3af;
+}
+
+[data-theme="dark"] .guide-feature-card {
+    background: #1f2937;
+    border-color: #374151;
+}
+
+[data-theme="dark"] .guide-feature-card:hover {
+    border-color: #22C55E;
+}
+
+[data-theme="dark"] .guide-feature-icon {
+    background: linear-gradient(135deg, #166534 0%, #14532d 100%);
+}
+
+[data-theme="dark"] .guide-feature-title {
+    color: #4ade80;
+}
+
+[data-theme="dark"] .guide-feature-desc {
+    color: #9ca3af;
+}
+
+[data-theme="dark"] .guide-feature-tag {
+    background: #374151;
+    color: #9ca3af;
+}
+
+[data-theme="dark"] .guide-welcome-content,
+[data-theme="dark"] .guide-complete-content {
+    background: #1f2937;
+}
+
+[data-theme="dark"] .guide-welcome-body h2,
+[data-theme="dark"] .guide-complete-content h2 {
+    color: #4ade80;
+}
+
+[data-theme="dark"] .guide-welcome-body p,
+[data-theme="dark"] .guide-complete-content p {
+    color: #9ca3af;
+}
+
+[data-theme="dark"] .guide-welcome-feature {
+    background: #374151;
+}
+
+[data-theme="dark"] .guide-welcome-feature:hover {
+    background: #4b5563;
+}
+
+[data-theme="dark"] .guide-welcome-feature-text {
+    color: #e5e7eb;
+}
+
+[data-theme="dark"] .guide-arrow.top {
+    border-top-color: #1f2937;
+}
+
+[data-theme="dark"] .guide-arrow.bottom {
+    border-bottom-color: #1f2937;
+}
+
+[data-theme="dark"] .guide-arrow.left {
+    border-left-color: #1f2937;
+}
+
+[data-theme="dark"] .guide-arrow.right {
+    border-right-color: #1f2937;
+}
+
+/* =================================================================================
+   动画效果
+   ================================================================================= */
+
+@keyframes guide-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes guide-slide-in-left {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes guide-slide-in-right {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.guide-animate-fade-in {
+    animation: guide-fade-in 0.4s ease forwards;
+}
+
+.guide-animate-slide-left {
+    animation: guide-slide-in-left 0.4s ease forwards;
+}
+
+.guide-animate-slide-right {
+    animation: guide-slide-in-right 0.4s ease forwards;
+}
+
+/* 跳过引导的确认弹窗 */
+.guide-skip-confirm {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    z-index: 100002;
+    max-width: 360px;
+    text-align: center;
+}
+
+[data-theme="dark"] .guide-skip-confirm {
+    background: #1f2937;
+}
+
+.guide-skip-confirm h3 {
+    margin: 0 0 12px;
+    font-size: 18px;
+    color: #166534;
+}
+
+[data-theme="dark"] .guide-skip-confirm h3 {
+    color: #4ade80;
+}
+
+.guide-skip-confirm p {
+    margin: 0 0 20px;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+[data-theme="dark"] .guide-skip-confirm p {
+    color: #9ca3af;
+}
+
+.guide-skip-confirm-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.guide-skip-confirm-buttons .guide-btn {
+    min-width: 100px;
+}
