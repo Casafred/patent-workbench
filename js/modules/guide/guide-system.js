@@ -409,26 +409,43 @@
             }
 
             this.overlay.classList.add('active');
+            this.showProgressBar();
 
-            const target = document.querySelector(step.target);
-            if (!target) {
-                console.warn('[GuideSystem] 目标元素未找到，等待重试:', step.target);
-                const self = this;
-                setTimeout(function() {
-                    const retryTarget = document.querySelector(step.target);
-                    if (retryTarget) {
-                        self.highlightElement(retryTarget);
-                        self.positionTooltip(retryTarget, step);
+            if (step.id === 'sidebar' || step.id.startsWith('feature_') || step.id === 'help_button') {
+                this.expandSidebar();
+            }
+
+            if (step.id === 'feature_instant_chat') {
+                this.switchToTab('instant');
+            } else if (step.id === 'feature_batch') {
+                this.switchToTab('unified_batch');
+            } else if (step.id === 'feature_patent_search') {
+                this.switchToTab('patent_batch');
+            }
+
+            const self = this;
+            const tryShowHighlight = function(attempts) {
+                attempts = attempts || 0;
+                
+                const target = document.querySelector(step.target);
+                if (!target) {
+                    if (attempts < 5) {
+                        setTimeout(function() {
+                            tryShowHighlight(attempts + 1);
+                        }, 200);
                     } else {
                         console.warn('[GuideSystem] 重试后仍未找到目标元素:', step.target);
                         self.next();
                     }
-                }, 500);
-                return;
-            }
+                    return;
+                }
 
-            this.highlightElement(target);
-            this.positionTooltip(target, step);
+                self.highlightElement(target);
+                self.positionTooltip(target, step);
+                self.updateProgressBar();
+            };
+
+            tryShowHighlight(0);
         },
 
         highlightElement: function(element) {
@@ -491,6 +508,7 @@
 
         renderTooltip: function(step, top, left) {
             const progressDots = this.renderProgressDots();
+            const isLastHighlightStep = this.currentStep === this.steps.length - 2;
             
             const html = `
                 <div class="guide-tooltip-header">
@@ -520,7 +538,7 @@
                             </button>
                         ` : ''}
                         <button class="guide-btn guide-btn-primary" onclick="GuideSystem.next()">
-                            ${this.currentStep === this.steps.length - 2 ? '完成' : '下一步'}
+                            ${isLastHighlightStep ? '完成引导' : '下一步'}
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
                         </button>
                     </div>
@@ -561,6 +579,7 @@
             if (this.currentStep < this.steps.length - 1) {
                 this.currentStep++;
                 this.showStep(this.currentStep);
+                this.updateProgressBar();
             }
         },
 
@@ -568,6 +587,102 @@
             if (this.currentStep > 0) {
                 this.currentStep--;
                 this.showStep(this.currentStep);
+                this.updateProgressBar();
+            }
+        },
+
+        goToStep: function(index) {
+            if (index >= 0 && index < this.steps.length) {
+                this.currentStep = index;
+                this.showStep(index);
+                this.updateProgressBar();
+            }
+        },
+
+        updateProgressBar: function() {
+            const progressBar = document.getElementById('guide-progress-bar');
+            if (!progressBar) return;
+
+            const dots = progressBar.querySelectorAll('.guide-progress-bar-dot');
+            dots.forEach(function(dot, index) {
+                dot.classList.remove('active', 'completed');
+                if (index < this.currentStep) {
+                    dot.classList.add('completed');
+                } else if (index === this.currentStep) {
+                    dot.classList.add('active');
+                }
+            }.bind(this));
+
+            const stepInfo = progressBar.querySelector('.guide-progress-bar-step-info');
+            if (stepInfo) {
+                const step = this.steps[this.currentStep];
+                stepInfo.textContent = `${this.currentStep + 1}/${this.steps.length}: ${step.title}`;
+            }
+        },
+
+        expandSidebar: function() {
+            const sidebar = document.getElementById('sidebarNav');
+            if (sidebar) {
+                sidebar.classList.add('expanded');
+                sidebar.classList.remove('collapsed');
+            }
+            
+            const toggle = document.getElementById('sidebarToggle');
+            if (toggle) {
+                toggle.setAttribute('title', '收起菜单');
+            }
+        },
+
+        switchToTab: function(tabId) {
+            if (typeof switchTab === 'function') {
+                switchTab(tabId);
+            } else {
+                const tabElement = document.querySelector(`[data-tab="${tabId}"]`);
+                if (tabElement && typeof tabElement.onclick === 'function') {
+                    tabElement.click();
+                }
+            }
+        },
+
+        showProgressBar: function() {
+            let progressBar = document.getElementById('guide-progress-bar');
+            if (!progressBar) {
+                const dotsHtml = this.steps.map(function(step, index) {
+                    return `<div class="guide-progress-bar-dot ${index === this.currentStep ? 'active' : ''}" data-step="${index}"></div>`;
+                }.bind(this)).join('');
+
+                const html = `
+                    <div class="guide-progress-bar" id="guide-progress-bar">
+                        <div class="guide-progress-bar-title">引导</div>
+                        <div class="guide-progress-bar-dots">
+                            ${dotsHtml}
+                        </div>
+                        <div class="guide-progress-bar-step-info">
+                            ${this.currentStep + 1}/${this.steps.length}: ${this.steps[this.currentStep].title}
+                        </div>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', html);
+                progressBar = document.getElementById('guide-progress-bar');
+
+                const self = this;
+                progressBar.querySelectorAll('.guide-progress-bar-dot').forEach(function(dot) {
+                    dot.addEventListener('click', function() {
+                        const stepIndex = parseInt(this.dataset.step);
+                        self.goToStep(stepIndex);
+                    });
+                });
+            }
+
+            setTimeout(function() {
+                progressBar.classList.add('active');
+            }, 100);
+        },
+
+        hideProgressBar: function() {
+            const progressBar = document.getElementById('guide-progress-bar');
+            if (progressBar) {
+                progressBar.classList.remove('active');
             }
         },
 
@@ -676,6 +791,14 @@
             const completeModal = document.getElementById('guide-complete-modal');
             if (completeModal) {
                 completeModal.remove();
+            }
+
+            const progressBar = document.getElementById('guide-progress-bar');
+            if (progressBar) {
+                progressBar.classList.remove('active');
+                setTimeout(function() {
+                    progressBar.remove();
+                }, 400);
             }
 
             this.hideSkipConfirm();
