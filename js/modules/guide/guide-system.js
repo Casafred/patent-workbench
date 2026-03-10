@@ -610,7 +610,6 @@
                 self.highlightElement(target);
                 self.positionTooltip(target, step);
                 self.updateProgressBar();
-                self.updateProgressBarPosition();
             };
 
             tryShowHighlight(0);
@@ -989,12 +988,12 @@
                 completeModal.remove();
             }
 
-            const progressBar = document.getElementById('guide-progress-bar');
-            if (progressBar) {
-                progressBar.classList.remove('active');
+            const floatBall = document.getElementById('guide-float-ball');
+            if (floatBall) {
+                floatBall.classList.remove('active');
                 setTimeout(function() {
-                    progressBar.remove();
-                }, 400);
+                    floatBall.remove();
+                }, 300);
             }
 
             this.hideSkipConfirm();
