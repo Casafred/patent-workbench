@@ -410,7 +410,7 @@ export function claimsJumpToVisualization(patentNumber, rowIndex, state) {
         selectedPatentInfo.style.display = 'block';
     }
     
-    claimsGenerateVisualization(state);
+    claimsGenerateVisualization(state, showClaimsMessage);
     
     const visualizationSection = document.getElementById('claims_visualization_section');
     if (visualizationSection) {
