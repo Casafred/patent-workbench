@@ -768,38 +768,23 @@
         },
 
         updateProgressBar: function() {
-            const progressBar = document.getElementById('guide-progress-bar');
-            if (!progressBar) return;
+            const floatBall = document.getElementById('guide-float-ball');
+            if (!floatBall) return;
 
-            const dots = progressBar.querySelectorAll('.guide-progress-bar-dot');
-            dots.forEach(function(dot, index) {
-                dot.classList.remove('active', 'completed');
+            const badge = floatBall.querySelector('.guide-badge');
+            if (badge) {
+                badge.textContent = `${this.currentStep + 1}/${this.steps.length}`;
+            }
+
+            const steps = floatBall.querySelectorAll('.guide-float-step');
+            steps.forEach(function(step, index) {
+                step.classList.remove('active', 'completed');
                 if (index < this.currentStep) {
-                    dot.classList.add('completed');
+                    step.classList.add('completed');
                 } else if (index === this.currentStep) {
-                    dot.classList.add('active');
+                    step.classList.add('active');
                 }
             }.bind(this));
-
-            const stepInfo = progressBar.querySelector('.guide-progress-bar-step-info');
-            if (stepInfo) {
-                const step = this.steps[this.currentStep];
-                stepInfo.textContent = `${this.currentStep + 1}/${this.steps.length}: ${step.title}`;
-            }
-        },
-
-        updateProgressBarPosition: function() {
-            const progressBar = document.getElementById('guide-progress-bar');
-            if (!progressBar) return;
-
-            const sidebar = document.getElementById('sidebarNav');
-            const isExpanded = sidebar && sidebar.classList.contains('expanded');
-            
-            if (isExpanded) {
-                progressBar.classList.add('sidebar-expanded');
-            } else {
-                progressBar.classList.remove('sidebar-expanded');
-            }
         },
 
         expandSidebar: function() {

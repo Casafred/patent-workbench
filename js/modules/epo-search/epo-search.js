@@ -854,8 +854,18 @@ class EPOSearchModule {
 
 let epoSearchModule = null;
 
-document.addEventListener('DOMContentLoaded', () => {
-    epoSearchModule = new EPOSearchModule();
-});
+function initEPOSearchModule() {
+    if (!epoSearchModule) {
+        epoSearchModule = new EPOSearchModule();
+        window.epoSearchModule = epoSearchModule;
+        console.log('✓ EPO Search module initialized');
+    }
+}
 
-window.epoSearchModule = epoSearchModule;
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initEPOSearchModule);
+} else {
+    initEPOSearchModule();
+}
+
+window.initEPOSearchModule = initEPOSearchModule;
