@@ -1,4 +1,4 @@
-<!-- 功能十：EPO专利智能检索 -->
+<!-- 功能十：欧洲专利智能检索 -->
 <!-- ====================================================================== -->
 <div id="epo_search-tab" class="tab-content">
     <!-- 配额状态显示 -->
@@ -8,7 +8,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#1976D2" viewBox="0 0 16 16">
                     <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
                 </svg>
-                <span style="font-weight: 600; color: #1565C0;">EPO OPS 配额状态</span>
+                <span style="font-weight: 600; color: #1565C0;">欧洲专利检索配额状态</span>
             </div>
             <div id="epo-quota-info" style="display: flex; gap: 20px; font-size: 13px; color: #1976D2;">
                 <span>已使用: <strong id="epo-used-mb">0</strong> MB</span>
@@ -23,8 +23,8 @@
     </div>
 
     <div class="step">
-        <div class="step-header">EPO专利智能检索</div>
-        <p class="info">使用 EPO CQL 检索语法搜索全球专利数据库。支持标题、摘要、申请人、发明人、分类号等多维度检索。</p>
+        <div class="step-header">欧洲专利智能检索</div>
+        <p class="info">使用 CQL 检索语法搜索全球专利数据库。支持标题、摘要、申请人、发明人、分类号等多维度检索。</p>
         
         <!-- 检索区域 -->
         <div class="epo-search-container" style="display: grid; grid-template-columns: 1fr 300px; gap: 20px;">
@@ -37,10 +37,10 @@
                         <button class="search-type-btn active" data-type="simple" style="padding: 8px 16px; border: 2px solid var(--primary-color); background: var(--primary-color); color: white; border-radius: 6px; cursor: pointer; font-weight: 500;">
                             简单检索
                         </button>
-                        <button class="search-type-btn" data-type="advanced" style="padding: 8px 16px; border: 2px solid #ddd; background: white; color: #666; border-radius: 6px; cursor: pointer; font-weight: 500;">
+                        <button class="search-type-btn" data-type="advanced" style="padding: 8px 16px; border: 2px solid #ddd; background: #f5f5f5; color: #333; border-radius: 6px; cursor: pointer; font-weight: 500;">
                             高级检索
                         </button>
-                        <button class="search-type-btn" data-type="cql" style="padding: 8px 16px; border: 2px solid #ddd; background: white; color: #666; border-radius: 6px; cursor: pointer; font-weight: 500;">
+                        <button class="search-type-btn" data-type="cql" style="padding: 8px 16px; border: 2px solid #ddd; background: #f5f5f5; color: #333; border-radius: 6px; cursor: pointer; font-weight: 500;">
                             CQL语法
                         </button>
                     </div>
@@ -87,7 +87,7 @@
                             <button class="remove-row-btn" style="padding: 6px 10px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; display: none;">×</button>
                         </div>
                     </div>
-                    <button id="add-search-row-btn" style="margin-top: 8px; padding: 6px 12px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 13px;">
+                    <button id="add-search-row-btn" style="margin-top: 8px; padding: 6px 12px; background: #e3f2fd; color: #1976D2; border: 1px solid #90caf9; border-radius: 4px; cursor: pointer; font-size: 13px;">
                         + 添加检索条件
                     </button>
                 </div>
@@ -109,7 +109,7 @@
                         <input type="date" id="date-from" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px;">
                         <span>至</span>
                         <input type="date" id="date-to" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px;">
-                        <button id="clear-date-btn" style="padding: 6px 12px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">清除</button>
+                        <button id="clear-date-btn" style="padding: 6px 12px; background: #f5f5f5; color: #333; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">清除</button>
                     </div>
                 </div>
                 
@@ -121,7 +121,7 @@
                         </svg>
                         开始检索
                     </button>
-                    <button id="epo-clear-btn" class="small-button" style="padding: 12px 20px; background: #f5f5f5; border: 1px solid #ddd;">
+                    <button id="epo-clear-btn" class="small-button" style="padding: 12px 20px; background: #f5f5f5; color: #333; border: 1px solid #ddd;">
                         清空
                     </button>
                 </div>
@@ -144,16 +144,16 @@
                 <div class="sidebar-section" style="padding: 12px; background: #f9f9f9; border-radius: 6px; margin-bottom: 12px;">
                     <label style="font-weight: 500; margin-bottom: 8px; display: block;">快捷检索：</label>
                     <div style="display: flex; flex-direction: column; gap: 6px;">
-                        <button class="quick-search-btn" data-query="ta=artificial intelligence" style="padding: 8px; background: white; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; text-align: left; font-size: 12px;">
+                        <button class="quick-search-btn" data-query="ta=artificial intelligence" style="padding: 8px; background: white; color: #333; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; text-align: left; font-size: 12px;">
                             🤖 AI相关专利
                         </button>
-                        <button class="quick-search-btn" data-query="cpc=G06N" style="padding: 8px; background: white; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; text-align: left; font-size: 12px;">
+                        <button class="quick-search-btn" data-query="cpc=G06N" style="padding: 8px; background: white; color: #333; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; text-align: left; font-size: 12px;">
                             📊 G06N分类（计算）
                         </button>
-                        <button class="quick-search-btn" data-query="cpc=H04L" style="padding: 8px; background: white; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; text-align: left; font-size: 12px;">
+                        <button class="quick-search-btn" data-query="cpc=H04L" style="padding: 8px; background: white; color: #333; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; text-align: left; font-size: 12px;">
                             📡 H04L分类（通信）
                         </button>
-                        <button class="quick-search-btn" data-query="pd=20240101..20241231" style="padding: 8px; background: white; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; text-align: left; font-size: 12px;">
+                        <button class="quick-search-btn" data-query="pd=20240101..20241231" style="padding: 8px; background: white; color: #333; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; text-align: left; font-size: 12px;">
                             📅 2024年公开专利
                         </button>
                     </div>
@@ -178,7 +178,7 @@
         <div class="step-header" style="display: flex; justify-content: space-between; align-items: center;">
             <span>检索结果 <span id="epo-total-count" style="color: #666; font-weight: normal;"></span></span>
             <div style="display: flex; gap: 10px;">
-                <button id="export-results-btn" class="small-button" style="padding: 6px 12px; background: #f5f5f5; border: 1px solid #ddd;">
+                <button id="export-results-btn" class="small-button" style="padding: 6px 12px; background: #e3f2fd; color: #1976D2; border: 1px solid #90caf9;">
                     导出结果
                 </button>
             </div>
@@ -196,7 +196,7 @@
         
         <!-- 加载更多 -->
         <div id="load-more-container" style="text-align: center; margin-top: 16px; display: none;">
-            <button id="load-more-btn" class="small-button" style="padding: 10px 30px;">
+            <button id="load-more-btn" class="small-button" style="padding: 10px 30px; background: var(--primary-color); color: white;">
                 加载更多
             </button>
         </div>
@@ -221,7 +221,7 @@
                 <button id="view-on-google-btn" class="small-button" style="background: #4285f4; color: white;">
                     在Google Patents查看
                 </button>
-                <button id="close-detail-btn" class="small-button" style="background: #f5f5f5;">
+                <button id="close-detail-btn" class="small-button" style="background: #f5f5f5; color: #333;">
                     关闭
                 </button>
             </div>
@@ -254,7 +254,7 @@
                 </div>
             </div>
             <div class="modal-footer" style="padding: 16px; border-top: 1px solid #eee; display: flex; gap: 12px; justify-content: flex-end;">
-                <button id="copy-analysis-btn" class="small-button">
+                <button id="copy-analysis-btn" class="small-button" style="background: #e3f2fd; color: #1976D2; border: 1px solid #90caf9;">
                     复制内容
                 </button>
                 <button id="close-analysis-btn" class="small-button primary-btn">
@@ -266,7 +266,7 @@
 </div>
 
 <style>
-/* EPO检索页面样式 */
+/* 欧洲专利检索页面样式 */
 .epo-results-list {
     display: flex;
     flex-direction: column;
@@ -362,7 +362,7 @@
 }
 
 .search-type-btn:hover:not(.active) {
-    background: #f5f5f5;
+    background: #e8e8e8;
 }
 
 .modal {
@@ -400,5 +400,18 @@
 
 #epo-quota-bar.danger {
     background: linear-gradient(90deg, #F44336, #EF5350) !important;
+}
+
+.page-btn {
+    padding: 6px 12px;
+    background: #f5f5f5;
+    color: #333;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.page-btn:hover {
+    background: #e0e0e0;
 }
 </style>

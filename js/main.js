@@ -51,10 +51,34 @@ function showSessionWarning(remainingMinutes, isGuest) {
     const userType = isGuest ? '游客' : '用户';
     const message = `您的${userType}会话将在 ${remainingMinutes} 分钟后过期，届时需要重新登录。请及时保存当前工作。`;
     
-    if (confirm(message + '\n\n点击"确定"继续使用，点击"取消"前往重新登录')) {
-        sessionWarningShown = false;
+    if (confirm(message + '\n\n点击"确定"继续使用（会话将延长2小时），点击"取消"前往重新登录')) {
+        extendSession();
     } else {
         window.location.href = '/login';
+    }
+}
+
+async function extendSession() {
+    try {
+        const response = await fetch('/api/extend-session', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            sessionWarningShown = false;
+            console.log('[Session Monitor] 会话已延长，剩余时间:', Math.floor(data.remaining_seconds / 60), '分钟');
+        } else {
+            console.warn('[Session Monitor] 延长会话失败:', data.message);
+            window.location.href = '/login';
+        }
+    } catch (error) {
+        console.error('[Session Monitor] 延长会话请求失败:', error);
+        sessionWarningShown = false;
     }
 }
 

@@ -750,6 +750,39 @@ def session_info():
     }
 
 
+@auth_bp.route('/api/extend-session', methods=['POST'])
+def extend_session():
+    """
+    Extend the current session by 2 hours.
+    
+    This endpoint is called when the user clicks "Continue" on the session warning dialog.
+    It resets the session creation time to now, effectively extending the session.
+    """
+    if 'user' not in session:
+        return {'success': False, 'message': '未登录'}, 401
+    
+    from datetime import datetime
+    session['_creation_time'] = datetime.now().timestamp()
+    
+    is_guest = session.get('is_guest', False)
+    is_remember_me = session.get('_remember_me', False)
+    
+    from backend.config import PERMANENT_SESSION_LIFETIME, GUEST_SESSION_LIFETIME, REMEMBER_ME_SESSION_LIFETIME
+    
+    if is_guest:
+        session_lifetime = GUEST_SESSION_LIFETIME
+    elif is_remember_me:
+        session_lifetime = REMEMBER_ME_SESSION_LIFETIME
+    else:
+        session_lifetime = PERMANENT_SESSION_LIFETIME
+    
+    return {
+        'success': True,
+        'message': '会话已延长',
+        'remaining_seconds': int(session_lifetime.total_seconds())
+    }
+
+
 @auth_bp.route('/guest-login')
 @guest_mode_required
 def guest_login():

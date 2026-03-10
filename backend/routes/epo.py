@@ -1,5 +1,5 @@
 """
-EPO OPS API 路由 - 欧洲专利局专利检索接口
+欧洲专利检索API路由
 
 功能：
 1. CQL 检索
@@ -21,7 +21,7 @@ epo_bp = Blueprint('epo', __name__, url_prefix='/api/epo')
 @epo_bp.route('/search', methods=['POST'])
 def search_patents():
     """
-    EPO OPS 专利检索
+    专利检索
     
     Request:
         {
@@ -39,6 +39,13 @@ def search_patents():
         }
     """
     try:
+        import os
+        if not os.getenv('EPO_OPS_KEY') or not os.getenv('EPO_OPS_SECRET'):
+            return jsonify({
+                'success': False,
+                'error': '专利检索服务未配置，请联系管理员配置API密钥'
+            }), 400
+        
         data = request.get_json()
         query = data.get('query', '')
         range_start = data.get('range_start', 1)
@@ -81,7 +88,7 @@ def search_patents():
             'error': str(e)
         }), 400
     except Exception as e:
-        logger.error(f"EPO 检索失败: {e}")
+        logger.error(f"专利检索失败: {e}")
         return jsonify({
             'success': False,
             'error': str(e)
@@ -123,8 +130,24 @@ def get_quota_info():
     获取配额使用情况
     """
     try:
+        import os
+        if not os.getenv('EPO_OPS_KEY') or not os.getenv('EPO_OPS_SECRET'):
+            return jsonify({
+                'success': True,
+                'quota': {
+                    'weekly_used_bytes': 0,
+                    'weekly_used_mb': 0.0,
+                    'weekly_remaining_mb': 4096.0,
+                    'usage_percent': 0.0,
+                    'week_start': '',
+                    'reset_date': '',
+                    'configured': False
+                }
+            })
+        
         client = get_epo_ops_client()
         quota_info = client.get_quota_info()
+        quota_info['configured'] = True
         
         return jsonify({
             'success': True,
