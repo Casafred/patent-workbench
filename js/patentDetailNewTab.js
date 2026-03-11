@@ -1428,8 +1428,8 @@ window.openPatentDetailInNewTab = function(patentNumber) {
             <script>
                 // 全局数据变量 - 供所有函数使用
                 const pageData = ${safeJsonStringify(data)};
-                window.pageData = pageData; // 挂载到window供问一问等功能使用
-                const currentPatentNumber = '${patentNumber}';
+                window.pageData = pageData; // 挂载到 window 供问一问等功能使用
+                const currentPatentNumber = '${safeStr(patentNumber)}';
                 
                 // 图片查看器
                 let viewerIndex = 0;
@@ -1437,7 +1437,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 let viewerRotation = 0;
                 const drawings = window.newTabDrawings || [];
                 
-                function openNewTabImageViewer(startIndex) {
+                window.openNewTabImageViewer = function(startIndex) {
                     viewerIndex = startIndex;
                     viewerScale = 1;
                     viewerRotation = 0;
@@ -1476,14 +1476,14 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     document.addEventListener('keydown', handleNewTabViewerKeydown);
                 }
                 
-                function closeNewTabImageViewer() {
+                window.closeNewTabImageViewer = function() {
                     const overlay = document.getElementById('image-viewer-overlay');
                     if (overlay) overlay.remove();
                     document.body.style.overflow = '';
                     document.removeEventListener('keydown', handleNewTabViewerKeydown);
                 }
                 
-                function navigateNewTabViewer(delta) {
+                window.navigateNewTabViewer = function(delta) {
                     viewerIndex = (viewerIndex + delta + drawings.length) % drawings.length;
                     updateNewTabViewerImage();
                 }
@@ -1507,7 +1507,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     });
                 }
                 
-                function zoomNewTabImage(delta) {
+                window.zoomNewTabImage = function(delta) {
                     viewerScale = Math.max(0.5, Math.min(3, viewerScale + delta));
                     updateNewTabViewerImage();
                 }
@@ -1578,8 +1578,8 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
                 
-                // 折叠/展开section
-                function toggleSection(eventOrId, sectionId) {
+                // 折叠/展开 section
+                window.toggleSection = function(eventOrId, sectionId) {
                     let section;
                     if (typeof eventOrId === 'object' && eventOrId.currentTarget) {
                         section = eventOrId.currentTarget.closest('.collapsible-section');
@@ -1596,7 +1596,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 let dualColumnMode = false;
                 let originalNavCollapsed = false;
                 
-                function toggleDualColumnMode() {
+                window.toggleDualColumnMode = function() {
                     dualColumnMode = !dualColumnMode;
                     const btn = document.getElementById('dual-column-btn');
                     const mainContent = document.querySelector('.content');
@@ -1731,7 +1731,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 let imageTextViewerScale = 1;
                 let imageTextViewerRotation = 0;
                 
-                function toggleImageTextMode() {
+                window.toggleImageTextMode = function() {
                     imageTextMode = !imageTextMode;
                     const btn = document.getElementById('image-text-btn');
                     const mainContent = document.querySelector('.content');
@@ -2031,7 +2031,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 }
                 
                 // 事件Tab切换
-                function switchEventTab(tabId) {
+                window.switchEventTab = function(tabId) {
                     const container = document.querySelector('#events-combined .tab-container');
                     if (!container) return;
                     
@@ -2191,7 +2191,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                 }
                 
                 // 复制section内容的通用函数
-                function copySectionContent(event, sectionId, sectionName) {
+                window.copySectionContent = function(event, sectionId, sectionName) {
                     event.stopPropagation(); // 阻止触发折叠/展开
                     
                     const section = document.querySelector('[data-section-content="' + sectionId + '"]');
