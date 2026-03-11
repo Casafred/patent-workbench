@@ -87,12 +87,19 @@
                             <div class="guide-api-step">
                                 <div class="guide-api-step-number">2</div>
                                 <div class="guide-api-step-content">
+                                    <strong>阿里云百炼</strong>
+                                    <p>访问 <a href="https://bailian.console.aliyun.com/" target="_blank">bailian.console.aliyun.com</a> 开通服务</p>
+                                </div>
+                            </div>
+                            <div class="guide-api-step">
+                                <div class="guide-api-step-number">3</div>
+                                <div class="guide-api-step-content">
                                     <strong>创建API Key</strong>
                                     <p>在控制台创建API密钥并复制</p>
                                 </div>
                             </div>
                             <div class="guide-api-step">
-                                <div class="guide-api-step-number">3</div>
+                                <div class="guide-api-step-number">4</div>
                                 <div class="guide-api-step-content">
                                     <strong>粘贴保存</strong>
                                     <p>将密钥粘贴到输入框并点击保存</p>
