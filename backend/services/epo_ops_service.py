@@ -566,10 +566,7 @@ class EPOOPSClient:
                                     value = float(value_str)
                                 elif value_str:
                                     clean_str = str(value_str).strip()
-                                    if 'E' in clean_str.upper() or 'e' in clean_str:
-                                        value = float(clean_str)
-                                    else:
-                                        value = float(clean_str)
+                                    value = float(clean_str)
                                 else:
                                     value = 0.0
                             except (ValueError, TypeError) as e:
