@@ -607,9 +607,11 @@
                     return;
                 }
 
-                self.highlightElement(target);
-                self.positionTooltip(target, step);
-                self.updateProgressBar();
+                setTimeout(function() {
+                    self.highlightElement(target);
+                    self.positionTooltip(target, step);
+                    self.updateProgressBar();
+                }, 350);
             };
 
             tryShowHighlight(0);
@@ -627,6 +629,7 @@
             element.scrollIntoView({ behavior: 'smooth', block: 'center' });
         },
 
+        
         positionTooltip: function(target, step) {
             const rect = target.getBoundingClientRect();
             const tooltipWidth = 420;
@@ -669,7 +672,6 @@
 
             top = Math.max(10, Math.min(top, window.innerHeight - tooltipHeight - 10));
             left = Math.max(10, Math.min(left, window.innerWidth - tooltipWidth - 10));
-
             this.renderTooltip(step, top, left);
         },
 
