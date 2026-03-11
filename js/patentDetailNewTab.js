@@ -238,7 +238,9 @@ window.openPatentDetailInNewTab = function(patentNumber) {
         return JSON.stringify(obj)
             .replace(/\\/g, '\\\\')
             .replace(/`/g, '\\`')
-            .replace(/\$/g, '\\$');
+            .replace(/\$/g, '\\$')
+            .replace(/\n/g, '\\n')
+            .replace(/\r/g, '\\r');
     }
     
     // 安全字符串转义函数 - 转义特殊字符以防止模板字符串解析错误
@@ -247,7 +249,9 @@ window.openPatentDetailInNewTab = function(patentNumber) {
         return String(str)
             .replace(/\\/g, '\\\\')
             .replace(/`/g, '\\`')
-            .replace(/\$/g, '\\$');
+            .replace(/\$/g, '\\$')
+            .replace(/\n/g, '\\n')
+            .replace(/\r/g, '\\r');
     }
     
     // 生成导航项HTML
