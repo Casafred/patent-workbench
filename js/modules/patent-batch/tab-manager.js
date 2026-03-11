@@ -72,7 +72,22 @@ class PatentTabManager {
         );
         
         if (existingTab) {
-            console.log('[WARN] 标签页已存在，切换到现有标签页: ${existingTab.id}');
+            console.log(`[WARN] 标签页已存在，重置现有标签页: ${existingTab.id}`);
+            existingTab.patentNumbers = options.patentNumbers || [];
+            existingTab.results = [];
+            existingTab.isLoading = true;
+            existingTab.createdAt = new Date();
+            
+            const resultsContainer = document.getElementById(`${existingTab.id}_results`);
+            if (resultsContainer) {
+                resultsContainer.innerHTML = this.generateLoadingHTML(existingTab);
+            }
+            
+            const tabButton = this.headerContainer.querySelector(`[data-tab-id="${existingTab.id}"] .tab-title`);
+            if (tabButton) {
+                tabButton.textContent = existingTab.title;
+            }
+            
             this.switchToTab(existingTab.id);
             return existingTab.id;
         }
@@ -402,6 +417,11 @@ class PatentTabManager {
 
         // 将当前标签页的结果设置到 window.patentResults，以便前后导航在当前列表中工作
         window.patentResults = tab.results;
+        
+        // 同时更新 appState.patentBatch.patentResults，以便问一问功能能找到专利数据
+        if (window.appState && window.appState.patentBatch) {
+            window.appState.patentBatch.patentResults = tab.results;
+        }
 
         // 调用主页面的弹窗函数
         if (window.openPatentDetailModal) {

@@ -309,7 +309,25 @@ function initModalDrag(modal) {
 }
 
 function openPatentChat(patentNumber) {
-    const patent = appState.patentBatch.patentResults.find(p => p.patent_number === patentNumber);
+    let patent = appState.patentBatch.patentResults.find(p => p.patent_number === patentNumber);
+    
+    if (!patent || !patent.success) {
+        if (window.patentResults) {
+            patent = window.patentResults.find(p => p.patent_number === patentNumber);
+        }
+    }
+    
+    if (!patent || !patent.success) {
+        if (window.patentTabManager) {
+            for (const tab of window.patentTabManager.tabs) {
+                const found = tab.results.find(r => r.patent_number === patentNumber);
+                if (found && found.success) {
+                    patent = found;
+                    break;
+                }
+            }
+        }
+    }
     
     if (!patent || !patent.success) {
         alert('未找到专利数据');

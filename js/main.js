@@ -935,7 +935,7 @@ function initPatentBatchEventListeners() {
     
     // 执行专利查询（内部函数）- 使用标签页管理器显示结果
     async function executePatentSearch(cachedPatents, patentsToCrawl, selectedFields) {
-        const results = [];
+        const resultsMap = new Map();
         const patentNumbers = [...cachedPatents, ...patentsToCrawl];
         
         // 初始化标签页管理器并显示容器
@@ -958,6 +958,19 @@ function initPatentBatchEventListeners() {
             patentResultsContainer.style.display = 'block';
         }
         
+        // 辅助函数：按用户输入顺序渲染所有结果
+        function renderResultsInOrder() {
+            const orderedResults = [];
+            for (const patentNumber of patentNumbers) {
+                const result = resultsMap.get(patentNumber.toUpperCase());
+                if (result) {
+                    orderedResults.push(result);
+                }
+            }
+            displayPatentResultsInOrder(orderedResults, patentNumbers);
+            return orderedResults;
+        }
+        
         // 1. 首先加载缓存的专利（实时显示）
         for (const patentNumber of cachedPatents) {
             const cacheData = PatentCache.get(patentNumber);
@@ -970,16 +983,16 @@ function initPatentBatchEventListeners() {
                     fromCache: true,
                     cacheTime: cacheData.timestamp
                 };
-                results.push(result);
-                
-                // 实时显示
-                displayPatentResult(result, results.length - 1, patentNumbers.length);
+                resultsMap.set(patentNumber.toUpperCase(), result);
                 
                 // 更新进度
                 appState.patentBatch.crawlProgress.current++;
                 updateCrawlProgress();
                 
-                searchStatus.textContent = `已从缓存加载 ${results.length}/${patentNumbers.length} 个专利`;
+                // 按顺序渲染所有结果
+                renderResultsInOrder();
+                
+                searchStatus.textContent = `已从缓存加载 ${resultsMap.size}/${patentNumbers.length} 个专利`;
             }
         }
         
@@ -988,7 +1001,7 @@ function initPatentBatchEventListeners() {
             const patentNumber = patentsToCrawl[i];
             
             try {
-                searchStatus.textContent = `正在爬取第 ${results.length + 1}/${patentNumbers.length} 个专利: ${patentNumber}...`;
+                searchStatus.textContent = `正在爬取第 ${i + 1}/${patentsToCrawl.length} 个专利: ${patentNumber}...`;
                 
                 // 调用API查询单个专利
                 const apiResults = await apiCall('/patent/search', {
@@ -999,7 +1012,7 @@ function initPatentBatchEventListeners() {
                 
                 if (apiResults && apiResults.length > 0) {
                     const result = apiResults[0];
-                    results.push(result);
+                    resultsMap.set(patentNumber.toUpperCase(), result);
                     
                     // 如果成功，保存到缓存
                     if (result.success && window.PatentCache) {
@@ -1013,8 +1026,8 @@ function initPatentBatchEventListeners() {
                         });
                     }
                     
-                    // 实时显示
-                    displayPatentResult(result, results.length - 1, patentNumbers.length);
+                    // 按顺序渲染所有结果
+                    renderResultsInOrder();
                 }
             } catch (error) {
                 console.error(`❌ 爬取专利 ${patentNumber} 失败:`, error);
@@ -1023,8 +1036,8 @@ function initPatentBatchEventListeners() {
                     success: false,
                     error: error.message
                 };
-                results.push(errorResult);
-                displayPatentResult(errorResult, results.length - 1, patentNumbers.length);
+                resultsMap.set(patentNumber.toUpperCase(), errorResult);
+                renderResultsInOrder();
             }
             
             // 更新进度
@@ -1035,7 +1048,7 @@ function initPatentBatchEventListeners() {
         // 按照用户输入的顺序重新排列结果
         const orderedResults = [];
         for (const patentNumber of patentNumbers) {
-            const result = results.find(r => r.patent_number.toUpperCase() === patentNumber.toUpperCase());
+            const result = resultsMap.get(patentNumber.toUpperCase());
             if (result) {
                 orderedResults.push(result);
             }
@@ -1173,6 +1186,52 @@ function initPatentBatchEventListeners() {
                 </div>
             </div>
         `;
+    }
+
+    // 按用户输入顺序显示所有专利结果
+    function displayPatentResultsInOrder(results, patentNumbers) {
+        if (!results || results.length === 0) return;
+        
+        // 更新标签页中的结果（按用户输入顺序）
+        if (window.patentTabManager && window.originalResultsTabId) {
+            const tab = window.patentTabManager.tabs.find(t => t.id === window.originalResultsTabId);
+            if (tab) {
+                tab.results = results;
+                
+                // 重新渲染标签页内容
+                const resultsContainer = document.getElementById(`${window.originalResultsTabId}_results`);
+                if (resultsContainer) {
+                    resultsContainer.innerHTML = window.patentTabManager.generateResultsHTML(tab);
+                }
+                
+                // 更新标签页标题显示数量
+                const successCount = results.filter(r => r.success).length;
+                const tabButton = document.querySelector(`[data-tab-id="${window.originalResultsTabId}"] .tab-title`);
+                if (tabButton) {
+                    tabButton.textContent = `原始查询结果 (${successCount})`;
+                }
+            }
+        }
+        
+        // 更新旧容器（按用户输入顺序）
+        if (patentResultsList) {
+            patentResultsList.innerHTML = '';
+            results.forEach(result => {
+                const stripItem = document.createElement('div');
+                stripItem.innerHTML = generatePatentStripHTML(result);
+                const newStrip = stripItem.firstElementChild;
+                
+                newStrip.addEventListener('click', (e) => {
+                    if (e.target.closest('.patent-strip-actions')) {
+                        return;
+                    }
+                    e.stopPropagation();
+                    openPatentDetailModal(result);
+                });
+                
+                patentResultsList.appendChild(newStrip);
+            });
+        }
     }
 
     // 显示单个专利结果（实时显示）- 使用统一样式，包含图片、申请人、申请日等信息
