@@ -225,7 +225,7 @@
             {
                 id: 'feature_global_search',
                 type: 'highlight',
-                target: '[data-tab="global_patent_search"]',
+                target: '[data-tab="epo_search"]',
                 title: '功能五：全球专利检索',
                 content: `
                     <div class="guide-feature-card">
@@ -244,7 +244,7 @@
                     </div>
                 `,
                 position: 'right',
-                switchTab: 'global_patent_search'
+                switchTab: 'epo_search'
             },
             {
                 id: 'feature_patent_batch',
