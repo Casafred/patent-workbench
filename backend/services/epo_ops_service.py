@@ -565,10 +565,15 @@ class EPOOPSClient:
                                 if isinstance(value_str, (int, float)):
                                     value = float(value_str)
                                 elif value_str:
-                                    value = float(str(value_str).strip())
+                                    clean_str = str(value_str).strip()
+                                    if 'E' in clean_str.upper() or 'e' in clean_str:
+                                        value = float(clean_str)
+                                    else:
+                                        value = float(clean_str)
                                 else:
                                     value = 0.0
-                            except (ValueError, TypeError):
+                            except (ValueError, TypeError) as e:
+                                logger.warning(f"无法转换值 '{value_str}': {e}")
                                 value = 0.0
                             
                             try:
