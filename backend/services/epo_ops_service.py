@@ -266,11 +266,20 @@ class EPOOPSClient:
         
         try:
             world_data = data.get('ops:world-patent-data', {})
+            
+            exchange_docs = []
             search_data = world_data.get('ops:biblio-search', {})
-            exchange_docs = search_data.get('ops:search-result', [])
+            if search_data:
+                exchange_docs = search_data.get('ops:search-result', [])
+            
+            if not exchange_docs:
+                exchange_docs = world_data.get('exchange-documents', {}).get('exchange-document', [])
+                if isinstance(exchange_docs, dict):
+                    exchange_docs = [exchange_docs]
             
             for doc in exchange_docs:
-                biblio = doc.get('exchange-document', {}).get('bibliographic-data', {})
+                if isinstance(doc, dict):
+                    biblio = doc.get('bibliographic-data', {})
                 
                 patent_number = self._extract_patent_number(doc)
                 title = self._extract_title(biblio)
@@ -314,10 +323,17 @@ class EPOOPSClient:
     def _parse_patent_detail(self, data: Dict, patent_number: str) -> Optional[EPOPatentDetail]:
         try:
             world_data = data.get('ops:world-patent-data', {})
+            
             exchange_doc = world_data.get('exchange-document', {})
+            if not exchange_doc:
+                exchange_doc = world_data.get('exchange-documents', {}).get('exchange-document', {})
             
             if isinstance(exchange_doc, list) and len(exchange_doc) > 0:
                 exchange_doc = exchange_doc[0]
+            
+            if not exchange_doc:
+                logger.warning("未找到exchange-document数据")
+                return None
             
             biblio = exchange_doc.get('bibliographic-data', {})
             
@@ -358,11 +374,17 @@ class EPOOPSClient:
     
     def _extract_patent_number(self, doc: Dict) -> str:
         try:
-            doc_id = doc.get('exchange-document', {}).get('document-id', [])
+            doc_id = doc.get('document-id', [])
             if isinstance(doc_id, list):
                 for d in doc_id:
                     if d.get('@document-id-type') == 'epodoc':
                         return d.get('doc-number', '')
+            
+            country = doc.get('@country', '')
+            doc_num = doc.get('@doc-number', '')
+            kind = doc.get('@kind', '')
+            if doc_num:
+                return f"{country}{doc_num}.{kind}" if kind else f"{country}{doc_num}"
             return ''
         except:
             return ''
