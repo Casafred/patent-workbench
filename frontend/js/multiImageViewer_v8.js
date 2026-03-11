@@ -235,13 +235,15 @@ class MultiImageViewerV8 {
             border-radius: 8px;
             position: relative;
             cursor: grab;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
         `;
         
         // Canvas
         const modalCanvas = document.createElement('canvas');
         modalCanvas.style.cssText = `
             display: block;
-            margin: 0 auto;
             transition: transform 0.1s ease-out;
         `;
         
@@ -1026,10 +1028,14 @@ class MultiImageViewerV8 {
         img.onload = () => {
             this.currentImage = img;
             this.currentImageData = imageData;
-            // 先设置canvas尺寸，再初始化标注，确保使用正确的坐标
+            // 先设置canvas尺寸
             this.setupCanvas();
-            this.initializeAnnotations();
-            if (callback) callback();
+            // 先生成当前图片的哈希值，确保 storageKey 正确
+            this.generateImageHash(imageData.url, () => {
+                // 然后初始化标注（会使用正确的 storageKey）
+                this.initializeAnnotations();
+                if (callback) callback();
+            });
         };
         img.src = imageData.url;
     }
@@ -1155,21 +1161,11 @@ class MultiImageViewerV8 {
     
     updateDisplay() {
         this.loadCurrentImage(() => {
-            // loadCurrentImage 中已经调用了 setupCanvas 和 initializeAnnotations
+            // loadCurrentImage 中已经调用了 setupCanvas、generateImageHash 和 initializeAnnotations
             // 这里只需要渲染和更新列表
             this.renderCanvas();
             this.updateAnnotationList();
             this.updateImageInfo();
-            // 切换图片时重新加载该图片的标记
-            this.generateImageHash(this.images[this.currentIndex].url, () => {
-                const loadResult = this.loadSavedAnnotations();
-                // 如果没有缓存数据，或OCR结果不同，都需要重新初始化
-                if (!loadResult.hasData || !loadResult.isSameAnalysis) {
-                    this.initializeAnnotations();
-                    this.renderCanvas();
-                    this.updateAnnotationList();
-                }
-            });
         });
     }
     
