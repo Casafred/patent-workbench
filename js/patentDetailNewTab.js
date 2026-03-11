@@ -912,7 +912,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                     Google Patents
                                 </a>
                                 ` : ''}
-                                <button id="patent-chat-btn" onclick="openPatentChatInNewTab('${patentNumber}')" title="问一问 - AI智能问答" style="color: white; text-decoration: none; font-size: 0.95em; font-weight: 500; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 6px 14px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; border: none; cursor: pointer;">
+                                <button id="patent-chat-btn" onclick="openPatentChatInNewTab('${safeStr(patentNumber)}')" title="问一问 - AI智能问答" style="color: white; text-decoration: none; font-size: 0.95em; font-weight: 500; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 6px 14px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; border: none; cursor: pointer;">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm4 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 1a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/><path d="m2.165 15.803.02-.004c1.83-.363 2.948-.842 3.468-1.105A9.06 9.06 0 0 0 8 15c4.418 0 8-3.134 8-7s-3.582-7-8-7-8 3.134-8 7c0 1.76.743 3.37 1.97 4.6a10.437 10.437 0 0 1-.524 2.318l-.003.011a10.722 10.722 0 0 1-.244.637c-.079.186.074.394.273.362a21.673 21.673 0 0 0 .693-.125zm.8-3.108a1 1 0 0 0-.287-.801C1.618 10.83 1 9.468 1 8c0-3.192 3.004-6 7-6s7 2.808 7 6c0 3.193-3.004 6-7 6a8.06 8.06 0 0 1-2.088-.272 1 1 0 0 0-.711.074c-.387.196-1.24.57-2.634.893a10.97 10.97 0 0 0 .398-2z"/></svg>
                                     问一问
                                 </button>
@@ -1202,9 +1202,9 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 <div class="timeline">
                                     ${[...data.events_timeline].reverse().map(event => `
                                     <div class="timeline-item">
-                                        <div class="timeline-date">${event.date}</div>
+                                        <div class="timeline-date">${safeStr(event.date)}</div>
                                         <div class="timeline-title">${safeStr(event.title || event.description)}</div>
-                                        ${event.type ? `<div class="timeline-type">${event.type}</div>` : ''}
+                                        ${event.type ? `<div class="timeline-type">${safeStr(event.type)}</div>` : ''}
                                     </div>
                                     `).join('')}
                                 </div>
@@ -1223,8 +1223,8 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                     <tbody>
                                         ${[...data.legal_events].reverse().map(event => `
                                         <tr>
-                                            <td>${event.date}</td>
-                                            <td>${event.code || '-'}</td>
+                                            <td>${safeStr(event.date)}</td>
+                                            <td>${safeStr(event.code) || '-'}</td>
                                             <td>${safeStr(event.description || event.title) || '-'}</td>
                                         </tr>
                                         `).join('')}
@@ -1254,12 +1254,12 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 </button>
                                 ` : ''}
                                 ${data.family_applications && data.family_applications.length > 1 ? `
-                                <button class="copy-section-btn" onclick="jumpToFamilyComparisonFromNewTab(event, '${patentNumber}')" title="跳转到功能四进行同族权利要求对比分析" style="background: linear-gradient(135deg, #9c27b0 0%, #673ab7 100%) !important;">
+                                <button class="copy-section-btn" onclick="jumpToFamilyComparisonFromNewTab(event, '${safeStr(patentNumber)}')" title="跳转到功能四进行同族权利要求对比分析" style="background: linear-gradient(135deg, #9c27b0 0%, #673ab7 100%) !important;">
                                     同族对比
                                 </button>
                                 ` : ''}
                                 ${data.family_applications && data.family_applications.length > 0 ? `
-                                <button class="copy-section-btn analyze-btn" onclick="analyzeRelationPatents(event, '${patentNumber}', 'family')">
+                                <button class="copy-section-btn analyze-btn" onclick="analyzeRelationPatents(event, '${safeStr(patentNumber)}', 'family')">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                                         <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
                                     </svg>
@@ -1270,7 +1270,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         </h2>
                         ${data.family_id && shouldShowField('family_id') ? `<div class="info-card" style="margin-bottom: 20px;"><div class="info-label">同族ID</div><div class="info-value">${safeStr(data.family_id)}</div></div>` : ''}
                         ${data.family_applications && data.family_applications.length > 0 && shouldShowField('family_applications') ? `
-                        <table class="data-table" id="family-table" data-patent-number="${patentNumber}">
+                        <table class="data-table" id="family-table" data-patent-number="${safeStr(patentNumber)}">
                             <thead>
                                 <tr>
                                     <th>申请号</th>
@@ -1316,7 +1316,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 ${data.patent_citations && data.patent_citations.length > 0 && shouldShowField('patent_citations') ? `
                                 <div class="tab-content active" id="citations-tab" style="display: block;">
                                     <div class="section-actions" style="margin-bottom: 15px; display: flex; justify-content: flex-end; gap: 8px; width: 100%;">
-                                        <button class="copy-section-btn analyze-btn" onclick="analyzeRelationPatents(event, '${patentNumber}', 'citations')">
+                                        <button class="copy-section-btn analyze-btn" onclick="analyzeRelationPatents(event, '${safeStr(patentNumber)}', 'citations')">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                                                 <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
                                             </svg>
@@ -1330,7 +1330,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                             复制专利号
                                         </button>
                                     </div>
-                                    <table class="data-table" id="citations-table" data-patent-number="${patentNumber}">
+                                    <table class="data-table" id="citations-table" data-patent-number="${safeStr(patentNumber)}">
                                         <thead>
                                             <tr>
                                                 <th>专利号</th>
@@ -1340,8 +1340,8 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                         </thead>
                                         <tbody>
                                             ${data.patent_citations.map(citation => `
-                                            <tr data-patent-number="${citation.patent_number}">
-                                                <td>${citation.patent_number}${citation.examiner_cited ? ' <span style="color: #d32f2f; font-weight: bold;">*</span>' : ''}</td>
+                                            <tr data-patent-number="${safeStr(citation.patent_number)}">
+                                                <td>${safeStr(citation.patent_number)}${citation.examiner_cited ? ' <span style="color: #d32f2f; font-weight: bold;">*</span>' : ''}</td>
                                                 <td>${safeStr(citation.title) || '-'}</td>
                                                 <td>${citation.examiner_cited ? '<span style="color: #d32f2f; font-weight: bold;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/></svg> 审查员引用</span>' : '-'}</td>
                                             </tr>
@@ -1353,7 +1353,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 ${data.cited_by && data.cited_by.length > 0 && shouldShowField('cited_by') ? `
                                 <div class="tab-content" id="cited-by-tab" style="display: none;">
                                     <div class="section-actions" style="margin-bottom: 15px; display: flex; justify-content: flex-end; gap: 8px; width: 100%;">
-                                        <button class="copy-section-btn analyze-btn" onclick="analyzeRelationPatents(event, '${patentNumber}', 'cited_by')">
+                                        <button class="copy-section-btn analyze-btn" onclick="analyzeRelationPatents(event, '${safeStr(patentNumber)}', 'cited_by')">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                                                 <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
                                             </svg>
@@ -1367,7 +1367,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                             复制专利号
                                         </button>
                                     </div>
-                                    <table class="data-table" id="cited-by-table" data-patent-number="${patentNumber}">
+                                    <table class="data-table" id="cited-by-table" data-patent-number="${safeStr(patentNumber)}">
                                         <thead>
                                             <tr>
                                                 <th>专利号</th>
@@ -1376,8 +1376,8 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                         </thead>
                                         <tbody>
                                             ${data.cited_by.map(citation => `
-                                            <tr data-patent-number="${citation.patent_number}">
-                                                <td>${citation.patent_number}</td>
+                                            <tr data-patent-number="${safeStr(citation.patent_number)}">
+                                                <td>${safeStr(citation.patent_number)}</td>
                                                 <td>${safeStr(citation.title) || '-'}</td>
                                             </tr>
                                             `).join('')}
@@ -1388,7 +1388,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 ${data.similar_documents && data.similar_documents.length > 0 && shouldShowField('similar_documents') ? `
                                 <div class="tab-content" id="similar-tab" style="display: none;">
                                     <div class="section-actions" style="margin-bottom: 15px; display: flex; justify-content: flex-end; gap: 8px; width: 100%;">
-                                        <button class="copy-section-btn analyze-btn" onclick="analyzeRelationPatents(event, '${patentNumber}', 'similar')">
+                                        <button class="copy-section-btn analyze-btn" onclick="analyzeRelationPatents(event, '${safeStr(patentNumber)}', 'similar')">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                                                 <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
                                             </svg>
@@ -1402,7 +1402,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                             复制专利号
                                         </button>
                                     </div>
-                                    <table class="data-table" id="similar-table" data-patent-number="${patentNumber}">
+                                    <table class="data-table" id="similar-table" data-patent-number="${safeStr(patentNumber)}">
                                         <thead>
                                             <tr>
                                                 <th>专利号</th>
@@ -1412,8 +1412,8 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                         </thead>
                                         <tbody>
                                             ${data.similar_documents.map(doc => `
-                                            <tr data-patent-number="${doc.patent_number}">
-                                                <td>${doc.patent_number}</td>
+                                            <tr data-patent-number="${safeStr(doc.patent_number)}">
+                                                <td>${safeStr(doc.patent_number)}</td>
                                                 <td>${doc.language || '-'}</td>
                                                 <td><a href="${doc.link}" target="_blank" style="color: #2e7d32;">查看</a></td>
                                             </tr>
