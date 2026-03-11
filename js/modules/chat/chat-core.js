@@ -334,7 +334,7 @@ async function handleStreamChatRequest() {
     // 重置终止标志
     appState.chat.stopStreaming = false;
 
-    const persona = appState.chat.personas[convo.personaId];
+    const persona = appState.chat.personas[convo.personaId] || appState.chat.personas['patent_analyzer'] || {};
     
     // Build final prompt for model
     let finalPromptForModel = message;
