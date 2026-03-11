@@ -28,9 +28,12 @@ if os.path.exists(ENV_FILE):
             for line in f:
                 line = line.strip()
                 if line and not line.startswith('#') and '=' in line:
-                    key, value = line.split('=', 1)
-                    if key and not os.environ.get(key):
-                        os.environ[key] = value
+                    parts = line.split('=', 1)
+                    if len(parts) == 2:
+                        key = parts[0].strip()
+                        value = parts[1].strip().strip('"').strip("'")
+                        if key and not os.environ.get(key):
+                            os.environ[key] = value
         print(f"✓ Manually loaded .env file from: {ENV_FILE}")
 
 # --- 用户配置 ---

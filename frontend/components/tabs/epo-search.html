@@ -287,6 +287,9 @@
     border-radius: 6px;
     font-size: 14px;
     color: #333;
+    min-width: 300px;
+    width: 100%;
+    box-sizing: border-box;
 }
 .epo-input:focus { outline: none; border-color: #1976d2; }
 
@@ -296,6 +299,7 @@
     border-radius: 4px;
     font-size: 13px;
     color: #333;
+    min-width: 120px;
 }
 .epo-input-sm:focus { outline: none; border-color: #1976d2; }
 
@@ -336,7 +340,10 @@
     margin-bottom: 10px;
     align-items: center;
 }
-.adv-row .adv-keyword { flex: 1; }
+.adv-row .adv-keyword { 
+    flex: 1; 
+    min-width: 200px;
+}
 
 /* 弹窗样式 */
 .epo-modal {
