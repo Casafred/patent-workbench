@@ -562,7 +562,12 @@ class EPOOPSClient:
                             value_str = v.get('value', '0')
                             
                             try:
-                                value = float(value_str) if value_str else 0.0
+                                if isinstance(value_str, (int, float)):
+                                    value = float(value_str)
+                                elif value_str:
+                                    value = float(str(value_str).strip())
+                                else:
+                                    value = 0.0
                             except (ValueError, TypeError):
                                 value = 0.0
                             

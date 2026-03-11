@@ -22,8 +22,8 @@
         <div class="step-header">全球专利智能检索</div>
         <p class="info">使用 CQL 检索语法搜索全球专利数据库。支持标题、摘要、申请人、发明人、分类号等多维度检索。</p>
         
-        <div class="epo-search-container" style="display: grid; grid-template-columns: 1fr 280px; gap: 20px; margin-top: 16px;">
-            <div class="epo-search-main">
+        <div class="epo-search-container" style="margin-top: 16px;">
+            <div class="epo-search-main" style="max-width: 900px;">
                 <div class="search-type-selector" style="margin-bottom: 16px;">
                     <label style="font-weight: 500; margin-bottom: 8px; display: block; color: #333;">检索类型：</label>
                     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
@@ -90,46 +90,30 @@
                     </div>
                 </div>
                 
-                <div style="margin-top: 20px; display: flex; gap: 12px;">
-                    <button type="button" id="epo-search-btn" class="epo-btn-primary" style="flex: 1;">
+                <div style="margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                    <button type="button" id="epo-search-btn" class="epo-btn-primary">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 6px; vertical-align: middle;">
                             <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
                         </svg>
                         开始检索
                     </button>
                     <button type="button" id="epo-clear-btn" class="epo-btn-secondary">清空</button>
-                </div>
-            </div>
-            
-            <div class="epo-search-sidebar">
-                <div class="sidebar-section" style="padding: 12px; background: #f8f9fa; border-radius: 6px; margin-bottom: 12px;">
-                    <label style="font-weight: 500; margin-bottom: 8px; display: block; color: #333;">每页显示：</label>
-                    <select id="results-per-page" class="epo-select">
-                        <option value="10">10 条</option>
-                        <option value="25" selected>25 条</option>
-                        <option value="50">50 条</option>
-                        <option value="100">100 条</option>
-                    </select>
-                </div>
-                
-                <div class="sidebar-section" style="padding: 12px; background: #f8f9fa; border-radius: 6px; margin-bottom: 12px;">
-                    <label style="font-weight: 500; margin-bottom: 8px; display: block; color: #333;">快捷检索：</label>
-                    <div style="display: flex; flex-direction: column; gap: 6px;">
-                        <button type="button" class="quick-search-btn epo-btn-quick" data-query="ta=artificial intelligence">🤖 AI相关专利</button>
-                        <button type="button" class="quick-search-btn epo-btn-quick" data-query="cpc=G06N">📊 G06N分类（计算）</button>
-                        <button type="button" class="quick-search-btn epo-btn-quick" data-query="cpc=H04L">📡 H04L分类（通信）</button>
-                        <button type="button" class="quick-search-btn epo-btn-quick" data-query="pd=20240101..20241231">📅 2024年公开专利</button>
+                    <div style="display: flex; gap: 12px; align-items: center; margin-left: auto;">
+                        <label style="font-size: 13px; color: #666;">每页显示：</label>
+                        <select id="results-per-page" class="epo-select-sm">
+                            <option value="10">10 条</option>
+                            <option value="25" selected>25 条</option>
+                            <option value="50">50 条</option>
+                            <option value="100">100 条</option>
+                        </select>
+                        <label style="font-size: 13px; color: #666;">AI模型：</label>
+                        <select id="epo-model-select" class="epo-select-sm">
+                            <option value="glm-4-flash">GLM-4-Flash</option>
+                            <option value="glm-4-plus">GLM-4-Plus</option>
+                            <option value="qwen-turbo">Qwen-Turbo</option>
+                            <option value="qwen-plus">Qwen-Plus</option>
+                        </select>
                     </div>
-                </div>
-                
-                <div class="sidebar-section" style="padding: 12px; background: #e8f5e9; border-radius: 6px;">
-                    <label style="font-weight: 500; margin-bottom: 8px; display: block; color: #2e7d32;">AI解读模型：</label>
-                    <select id="epo-model-select" class="epo-select" style="border-color: #81c784;">
-                        <option value="glm-4-flash">GLM-4-Flash（快速）</option>
-                        <option value="glm-4-plus">GLM-4-Plus（精准）</option>
-                        <option value="qwen-turbo">Qwen-Turbo</option>
-                        <option value="qwen-plus">Qwen-Plus</option>
-                    </select>
                 </div>
             </div>
         </div>
