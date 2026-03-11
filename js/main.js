@@ -457,9 +457,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         const loaded = await loadComponent('frontend/components/tabs/epo-search.html', 'epo-search-component', {
             retryCount: 3,
             onReady: async () => {
-                await new Promise(resolve => setTimeout(resolve, 200));
-                if (typeof window.epoSearchModule !== 'undefined') {
-                    console.log('✓ EPO Search module initialized');
+                await new Promise(resolve => setTimeout(resolve, 300));
+                if (typeof window.initEPOSearchModule === 'function') {
+                    const success = window.initEPOSearchModule();
+                    if (success) {
+                        console.log('✓ EPO Search module initialized');
+                    }
                 }
             }
         });

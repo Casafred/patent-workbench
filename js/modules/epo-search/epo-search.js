@@ -855,17 +855,26 @@ class EPOSearchModule {
 let epoSearchModule = null;
 
 function initEPOSearchModule() {
+    const container = document.getElementById('epo_search-tab');
+    if (!container) {
+        console.warn('[EPO Search] 组件容器未找到，等待组件加载...');
+        return false;
+    }
+    
     if (!epoSearchModule) {
         epoSearchModule = new EPOSearchModule();
         window.epoSearchModule = epoSearchModule;
         console.log('✓ EPO Search module initialized');
+        return true;
     }
-}
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initEPOSearchModule);
-} else {
-    initEPOSearchModule();
+    return true;
 }
 
 window.initEPOSearchModule = initEPOSearchModule;
+
+document.addEventListener('eposearchcomponentLoaded', () => {
+    console.log('[EPO Search] 组件加载完成事件触发，开始初始化...');
+    setTimeout(() => {
+        initEPOSearchModule();
+    }, 100);
+});

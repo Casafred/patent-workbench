@@ -13,8 +13,25 @@ import os
 import json
 from datetime import timedelta
 
-# --- 基础配置 ---
+# --- 加载 .env 文件 ---
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ENV_FILE = os.path.join(BASE_DIR, '.env')
+
+if os.path.exists(ENV_FILE):
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(ENV_FILE)
+        print(f"✓ Loaded .env file from: {ENV_FILE}")
+    except ImportError:
+        print("⚠ python-dotenv not installed, using system environment variables only")
+        with open(ENV_FILE, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    if key and not os.environ.get(key):
+                        os.environ[key] = value
+        print(f"✓ Manually loaded .env file from: {ENV_FILE}")
 
 # --- 用户配置 ---
 # Render Secret Files 会将文件放在 /etc/secrets/ 或根目录
