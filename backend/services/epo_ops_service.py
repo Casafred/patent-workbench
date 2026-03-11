@@ -119,15 +119,22 @@ class EPOQuotaManager:
             }
             self._save_quota_data()
     
+    def _get_weekly_usage(self) -> int:
+        usage = self.quota_data.get('weekly_usage', 0)
+        if isinstance(usage, str):
+            return int(usage) if usage else 0
+        return int(usage) if usage else 0
+    
     def track_response(self, content_length: int) -> EPOQuotaInfo:
         self._check_week_reset()
         
-        self.quota_data['weekly_usage'] += content_length
+        current_usage = self._get_weekly_usage()
+        self.quota_data['weekly_usage'] = current_usage + content_length
         self._save_quota_data()
         
-        used_bytes = self.quota_data['weekly_usage']
+        used_bytes = self._get_weekly_usage()
         used_mb = used_bytes / (1024 * 1024)
-        remaining_mb = max(0, (WEEKLY_QUOTA_BYTES - used_bytes) / (1024 * 1024))
+        remaining_mb = max(0.0, (WEEKLY_QUOTA_BYTES - used_bytes) / (1024 * 1024))
         usage_percent = (used_bytes / WEEKLY_QUOTA_BYTES) * 100
         
         week_start = datetime.fromisoformat(self.quota_data['week_start'])
@@ -145,9 +152,9 @@ class EPOQuotaManager:
     def get_quota_info(self) -> EPOQuotaInfo:
         self._check_week_reset()
         
-        used_bytes = self.quota_data['weekly_usage']
+        used_bytes = self._get_weekly_usage()
         used_mb = used_bytes / (1024 * 1024)
-        remaining_mb = max(0, (WEEKLY_QUOTA_BYTES - used_bytes) / (1024 * 1024))
+        remaining_mb = max(0.0, (WEEKLY_QUOTA_BYTES - used_bytes) / (1024 * 1024))
         usage_percent = (used_bytes / WEEKLY_QUOTA_BYTES) * 100
         
         week_start = datetime.fromisoformat(self.quota_data['week_start'])
@@ -164,7 +171,7 @@ class EPOQuotaManager:
     
     def is_quota_exceeded(self) -> bool:
         self._check_week_reset()
-        return self.quota_data['weekly_usage'] >= WEEKLY_QUOTA_BYTES
+        return self._get_weekly_usage() >= WEEKLY_QUOTA_BYTES
 
 
 class EPOOPSClient:
