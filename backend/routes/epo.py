@@ -48,8 +48,8 @@ def search_patents():
         
         data = request.get_json()
         query = data.get('query', '')
-        range_start = data.get('range_start', 1)
-        range_end = data.get('range_end', 25)
+        range_start = int(data.get('range_start', 1))
+        range_end = int(data.get('range_end', 25))
         
         if not query:
             return jsonify({
