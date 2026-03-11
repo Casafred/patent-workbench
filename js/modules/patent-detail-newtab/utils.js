@@ -8,12 +8,20 @@ window.PatentDetailUtils = {
     },
 
     safeJsonStringify: function(obj) {
-        return JSON.stringify(obj)
-            .replace(/\\/g, '\\\\')
-            .replace(/`/g, '\\`')
-            .replace(/\$/g, '\\$')
-            .replace(/\n/g, '\\n')
-            .replace(/\r/g, '\\r');
+        if (obj === null || obj === undefined) return 'null';
+        try {
+            let jsonStr = JSON.stringify(obj);
+            jsonStr = jsonStr
+                .replace(/\\/g, '\\\\')
+                .replace(/`/g, '\\`')
+                .replace(/\$/g, '\\$')
+                .replace(/\n/g, '\\n')
+                .replace(/\r/g, '\\r');
+            return jsonStr;
+        } catch (e) {
+            console.error('safeJsonStringify error:', e);
+            return '{}';
+        }
     },
 
     escapeHtml: function(text) {

@@ -326,6 +326,11 @@
         V.init();
         M.init();
         
+        const TR = window.PatentDetailTranslation;
+        const CH = window.PatentDetailChat;
+        if (TR) TR.init();
+        if (CH) CH.init();
+        
         const htmlContent = `
             <!DOCTYPE html>
             <html lang="zh-CN">
