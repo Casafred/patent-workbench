@@ -48,18 +48,18 @@
             const existingBtn = document.getElementById('start-guide-btn');
             if (existingBtn) return;
 
-            const btn = document.createElement('button');
+            const btn = document.createElement('div');
             btn.id = 'start-guide-btn';
-            btn.className = 'guide-start-btn';
+            btn.className = 'guide-float-ball';
+            btn.title = '查看系统使用引导';
             btn.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"/>
                     <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
                     <line x1="12" y1="17" x2="12.01" y2="17"/>
                 </svg>
-                <span>新手引导</span>
             `;
-            btn.title = '查看系统使用引导';
+            btn.style.cssText = 'position: fixed; right: 140px; bottom: 20px; z-index: 99997;';
             btn.onclick = function() {
                 if (window.GuideSystem) {
                     window.GuideSystem.reset();
@@ -67,14 +67,7 @@
                 }
             };
 
-            const helpBtn = document.getElementById('help-btn');
-            if (helpBtn && helpBtn.parentNode) {
-                helpBtn.parentNode.insertBefore(btn, helpBtn);
-            } else {
-                document.body.appendChild(btn);
-            }
-
-            this.addGuideButtonStyles();
+            document.body.appendChild(btn);
         },
 
         addGuideButtonStyles: function() {
@@ -83,51 +76,40 @@
             const styles = document.createElement('style');
             styles.id = 'guide-start-btn-styles';
             styles.textContent = `
-                .guide-start-btn {
-                    display: inline-flex;
+                #start-guide-btn.guide-float-ball {
+                    width: 50px;
+                    height: 50px;
+                    border-radius: 50%;
+                    background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+                    display: flex;
                     align-items: center;
-                    gap: 6px;
-                    padding: 8px 14px;
-                    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-                    border: 1px solid rgba(34, 197, 94, 0.3);
-                    border-radius: 8px;
-                    color: #166534;
-                    font-size: 13px;
-                    font-weight: 500;
+                    justify-content: center;
                     cursor: pointer;
-                    transition: all 0.2s ease;
-                    margin-right: 8px;
+                    box-shadow: 0 4px 16px rgba(34, 197, 94, 0.35);
+                    transition: all 0.3s ease;
+                    opacity: 1;
+                    visibility: visible;
+                    transform: scale(1);
                 }
                 
-                .guide-start-btn:hover {
-                    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
-                    border-color: #22C55E;
-                    transform: translateY(-1px);
-                    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
+                #start-guide-btn.guide-float-ball:hover {
+                    transform: scale(1.08);
+                    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.45);
                 }
                 
-                .guide-start-btn svg {
-                    flex-shrink: 0;
+                #start-guide-btn.guide-float-ball svg {
+                    color: white;
+                    width: 22px;
+                    height: 22px;
                 }
                 
-                [data-theme="dark"] .guide-start-btn {
+                [data-theme="dark"] #start-guide-btn.guide-float-ball {
                     background: linear-gradient(135deg, #166534 0%, #14532d 100%);
-                    border-color: rgba(34, 197, 94, 0.4);
-                    color: #4ade80;
-                }
-                
-                [data-theme="dark"] .guide-start-btn:hover {
-                    background: linear-gradient(135deg, #14532d 0%, #052e16 100%);
-                    border-color: #22C55E;
                 }
                 
                 @media (max-width: 768px) {
-                    .guide-start-btn span {
-                        display: none;
-                    }
-                    
-                    .guide-start-btn {
-                        padding: 8px;
+                    #start-guide-btn.guide-float-ball {
+                        right: 75px !important;
                     }
                 }
             `;

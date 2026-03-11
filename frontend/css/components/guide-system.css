@@ -813,21 +813,22 @@
 }
 
 [data-theme="dark"] .guide-btn-secondary {
-    background: #374151;
-    color: #e5e7eb;
-    border-color: #4b5563;
+    background: #374151 !important;
+    color: #e5e7eb !important;
+    border-color: #4b5563 !important;
 }
 
 [data-theme="dark"] .guide-btn-secondary:hover {
-    background: #4b5563;
+    background: #4b5563 !important;
 }
 
 [data-theme="dark"] .guide-btn-skip {
-    color: #6b7280;
+    color: #9ca3af !important;
 }
 
 [data-theme="dark"] .guide-btn-skip:hover {
-    color: #9ca3af;
+    color: #d1d5db !important;
+    background: rgba(255, 255, 255, 0.05) !important;
 }
 
 [data-theme="dark"] .guide-progress-dot {

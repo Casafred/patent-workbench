@@ -988,12 +988,9 @@
                 completeModal.remove();
             }
 
-            const floatBall = document.getElementById('guide-float-ball');
-            if (floatBall) {
-                floatBall.classList.remove('active');
-                setTimeout(function() {
-                    floatBall.remove();
-                }, 300);
+            const floatPanel = document.getElementById('guide-float-panel');
+            if (floatPanel) {
+                floatPanel.classList.remove('show');
             }
 
             this.hideSkipConfirm();
