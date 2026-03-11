@@ -75,12 +75,12 @@ class PatentTabManager {
             console.log(`[WARN] 标签页已存在，重置现有标签页: ${existingTab.id}`);
             existingTab.patentNumbers = options.patentNumbers || [];
             existingTab.results = [];
-            existingTab.isLoading = true;
+            existingTab.isLoading = false;
             existingTab.createdAt = new Date();
             
             const resultsContainer = document.getElementById(`${existingTab.id}_results`);
             if (resultsContainer) {
-                resultsContainer.innerHTML = this.generateLoadingHTML(existingTab);
+                resultsContainer.innerHTML = this.generateResultsHTML(existingTab);
             }
             
             const tabButton = this.headerContainer.querySelector(`[data-tab-id="${existingTab.id}"] .tab-title`);

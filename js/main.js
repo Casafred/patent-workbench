@@ -953,9 +953,24 @@ function initPatentBatchEventListeners() {
                 relationType: 'original',
                 patentNumbers: patentNumbers
             });
+            
+            // 确保标签页结果被清空
+            const tab = window.patentTabManager.tabs.find(t => t.id === window.originalResultsTabId);
+            if (tab) {
+                tab.results = [];
+                const resultsContainer = document.getElementById(`${window.originalResultsTabId}_results`);
+                if (resultsContainer) {
+                    resultsContainer.innerHTML = window.patentTabManager.generateResultsHTML(tab);
+                }
+            }
         } else if (patentResultsContainer) {
             // 回退到旧容器显示
             patentResultsContainer.style.display = 'block';
+        }
+        
+        // 清空旧容器中的结果
+        if (patentResultsList) {
+            patentResultsList.innerHTML = '';
         }
         
         // 辅助函数：按用户输入顺序渲染所有结果
