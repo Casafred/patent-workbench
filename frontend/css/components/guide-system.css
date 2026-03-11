@@ -13,16 +13,16 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(0, 0, 0, 0.6) !important;
     z-index: 99998;
-    opacity: 0;
+    opacity: ;
     visibility: hidden;
     transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
 .guide-overlay.active {
-    opacity: 1;
-    visibility: visible;
+    opacity: 0.6 !important;
+    visibility: visible !important;
 }
 
 /* 高亮区域 - 使用box-shadow模拟镂空效果 */
@@ -225,26 +225,26 @@
 }
 
 .guide-btn-secondary {
-    background: #f3f4f6 !important;
-    color: #374151 !important;
+    background: #22C55E !important;
+    color: white !important;
     border: none !important;
 }
 
 .guide-btn-secondary:hover {
-    background: #e5e7eb !important;
-    color: #1f2937 !important;
+    background: #16A34A !important;
+    color: white !important;
 }
 
 .guide-btn-skip {
-    background: transparent !important;
-    color: #9ca3af !important;
+    background: #22C55E !important;
+    color: white !important;
     padding: 4px 8px !important;
     font-size: 10px !important;
 }
 
 .guide-btn-skip:hover {
-    color: #6b7280 !important;
-    background: rgba(0, 0, 0, 0.03) !important;
+    background: #16A34A !important;
+    color: white !important;
 }
 
 .guide-btn svg {

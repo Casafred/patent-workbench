@@ -223,34 +223,10 @@
                 switchTab: 'claims_comparison'
             },
             {
-                id: 'feature_global_search',
-                type: 'highlight',
-                target: '[data-tab="epo_search"]',
-                title: '功能五：全球专利检索',
-                content: `
-                    <div class="guide-feature-card">
-                        <div class="guide-feature-card-header">
-                            <div class="guide-feature-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                            </div>
-                            <h4 class="guide-feature-title">全球专利检索</h4>
-                        </div>
-                        <p class="guide-feature-desc">全球专利数据库检索，支持多国专利查询、同族专利分析。</p>
-                        <div class="guide-feature-tags">
-                            <span class="guide-feature-tag">全球检索</span>
-                            <span class="guide-feature-tag">同族分析</span>
-                            <span class="guide-feature-tag">多数据源</span>
-                        </div>
-                    </div>
-                `,
-                position: 'right',
-                switchTab: 'epo_search'
-            },
-            {
                 id: 'feature_patent_batch',
                 type: 'highlight',
                 target: '[data-tab="patent_batch"]',
-                title: '功能六：批量专利检索与解读',
+                title: '功能五：批量专利检索与解读',
                 content: `
                     <div class="guide-feature-card">
                         <div class="guide-feature-card-header">
@@ -269,6 +245,30 @@
                 `,
                 position: 'right',
                 switchTab: 'patent_batch'
+            },
+            {
+                id: 'feature_global_search',
+                type: 'highlight',
+                target: '[data-tab="epo_search"]',
+                title: '功能六：全球专利智能检索',
+                content: `
+                    <div class="guide-feature-card">
+                        <div class="guide-feature-card-header">
+                            <div class="guide-feature-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                            </div>
+                            <h4 class="guide-feature-title">全球专利智能检索</h4>
+                        </div>
+                        <p class="guide-feature-desc">全球专利数据库检索，支持多国专利查询、同族专利分析。</p>
+                        <div class="guide-feature-tags">
+                            <span class="guide-feature-tag">全球检索</span>
+                            <span class="guide-feature-tag">同族分析</span>
+                            <span class="guide-feature-tag">多数据源</span>
+                        </div>
+                    </div>
+                `,
+                position: 'right',
+                switchTab: 'epo_search'
             },
             {
                 id: 'feature_claims_processor',

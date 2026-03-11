@@ -77,8 +77,8 @@
             styles.id = 'guide-start-btn-styles';
             styles.textContent = `
                 #start-guide-btn.guide-float-ball {
-                    width: 50px;
-                    height: 50px;
+                    width: 56px;
+                    height: 56px;
                     border-radius: 50%;
                     background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
                     display: flex;
@@ -99,8 +99,8 @@
                 
                 #start-guide-btn.guide-float-ball svg {
                     color: white;
-                    width: 22px;
-                    height: 22px;
+                    width: 24px;
+                    height: 24px;
                 }
                 
                 [data-theme="dark"] #start-guide-btn.guide-float-ball {
