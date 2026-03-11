@@ -1014,9 +1014,10 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                     const hasMoreDrawings = data.drawings.length > maxVisibleDrawings;
                                     let html = '';
                                     visibleDrawings.forEach((drawing, index) => {
+                                        const safeDrawingUrl = safeStr(drawing);
                                         html += `
                                             <div class="drawing-thumbnail" onclick="openNewTabImageViewer(${index})" style="position: relative; background: white; border-radius: 8px; overflow: hidden; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: all 0.3s; border: 2px solid transparent;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 4px 16px rgba(46,125,50,0.2)';this.style.borderColor='#2e7d32';" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';this.style.borderColor='transparent';">
-                                                <img src="${drawing}" alt="附图 ${index + 1}" style="width: 100%; height: 120px; object-fit: contain; background: #f5f5f5;" onerror="this.style.display='none'">
+                                                <img src="${safeDrawingUrl}" alt="附图 ${index + 1}" style="width: 100%; height: 120px; object-fit: contain; background: #f5f5f5;" onerror="this.style.display='none'">
                                                 <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.7)); color: white; font-size: 12px; padding: 8px 6px 4px; text-align: center;">图 ${index + 1}</div>
                                             </div>
                                         `;
@@ -1167,7 +1168,11 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         </h2>
                         <div class="section-content">
                             <div class="abstract-box" style="white-space: pre-wrap; line-height: 1.8;" data-section-content="description">
-                                ${safeStr(data.description.replace(/(\[[A-Z\s]+\])/g, '<br/><br/><strong style="font-size: 1.1em; color: #2e7d32;">$1</strong><br/><br/>').replace(/\n/g, '<br/>'))}
+                                ${(() => {
+                                    const desc = data.description || '';
+                                    const processed = desc.replace(/(\[[A-Z\s]+\])/g, '<br/><br/><strong style="font-size: 1.1em; color: #2e7d32;">$1</strong><br/><br/>').replace(/\n/g, '<br/>');
+                                    return safeStr(processed);
+                                })()}
                             </div>
                         </div>
                     </div>
