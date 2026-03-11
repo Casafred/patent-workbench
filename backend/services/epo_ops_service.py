@@ -203,7 +203,14 @@ class EPOOPSClient:
         
         token_data = response.json()
         self.access_token = token_data['access_token']
-        self.token_expires_at = time.time() + token_data.get('expires_in', 3600) - 60
+        
+        expires_in = token_data.get('expires_in', 3600)
+        if isinstance(expires_in, str):
+            expires_in = int(expires_in) if expires_in else 3600
+        else:
+            expires_in = int(expires_in) if expires_in else 3600
+        
+        self.token_expires_at = time.time() + expires_in - 60
         
         return self.access_token
     
