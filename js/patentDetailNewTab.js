@@ -91,8 +91,13 @@ window.openPatentDetailInNewTab = function(patentNumber) {
             let tableRows = '';
             Object.keys(analysisJson).forEach(key => {
                 const value = analysisJson[key];
-                const displayValue = typeof value === 'string' ? value.replace(/\n/g, '<br>') : value;
-                tableRows += `<tr><td style="border: 1px solid #ddd; padding: 12px; font-weight: 500; background-color: #f8f9fa; width: 30%;">${key}</td><td style="border: 1px solid #ddd; padding: 12px;">${displayValue}</td></tr>`;
+                let displayValue = typeof value === 'string' ? value.replace(/\n/g, '<br>') : value;
+                // 转义特殊字符以防止模板字符串解析错误
+                if (typeof displayValue === 'string') {
+                    displayValue = displayValue.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+                }
+                const escapedKey = String(key).replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+                tableRows += `<tr><td style="border: 1px solid #ddd; padding: 12px; font-weight: 500; background-color: #f8f9fa; width: 30%;">${escapedKey}</td><td style="border: 1px solid #ddd; padding: 12px;">${displayValue}</td></tr>`;
             });
             
             displayContent = `
@@ -110,12 +115,16 @@ window.openPatentDetailInNewTab = function(patentNumber) {
             `;
         } catch (e) {
             // 如果不是JSON格式，显示原始内容
+            const escapedContent = analysisResult.analysis_content
+                .replace(/\\/g, '\\\\')
+                .replace(/`/g, '\\`')
+                .replace(/\$/g, '\\$');
             displayContent = `
                 <div style="padding: 15px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; margin-bottom: 15px;">
                     解读结果未能解析为结构化格式，显示原始内容：
                 </div>
                 <div style="white-space: pre-wrap; font-family: monospace; background-color: #f5f5f5; padding: 15px; border-radius: 4px; border: 1px solid #ddd;">
-                    ${analysisResult.analysis_content}
+                    ${escapedContent}
                 </div>
             `;
         }
@@ -224,6 +233,23 @@ window.openPatentDetailInNewTab = function(patentNumber) {
         return true;
     }
     
+    // 安全的JSON序列化函数 - 转义特殊字符以防止模板字符串解析错误
+    function safeJsonStringify(obj) {
+        return JSON.stringify(obj)
+            .replace(/\\/g, '\\\\')
+            .replace(/`/g, '\\`')
+            .replace(/\$/g, '\\$');
+    }
+    
+    // 安全字符串转义函数 - 转义特殊字符以防止模板字符串解析错误
+    function safeStr(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/\\/g, '\\\\')
+            .replace(/`/g, '\\`')
+            .replace(/\$/g, '\\$');
+    }
+    
     // 生成导航项HTML
     function buildNavItem(navId, icon, label) {
         const isSelected = isNavFieldSelected(navId);
@@ -241,7 +267,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=0.9">
-            <title>${data.title || patentNumber} - 专利详情</title>
+            <title>${safeStr(data.title) || patentNumber} - 专利详情</title>
             <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
             <style>
                 * {
@@ -900,7 +926,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                             ` : ''}
                         </div>
                     </div>
-                    <h1 class="patent-title">${data.title || '专利详情'}</h1>
+                    <h1 class="patent-title">${safeStr(data.title) || '专利详情'}</h1>
                     <div class="meta-info">
                         ${data.application_date ? `<span style="display: inline-flex; align-items: center; gap: 5px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm-3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm-5 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg> 申请日期: ${data.application_date}</span>` : ''}
                         ${data.publication_date ? `<span style="display: inline-flex; align-items: center; gap: 5px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm-3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm-5 3a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1zm3 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1z"/><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg> 公开日期: ${data.publication_date}</span>` : ''}
@@ -967,7 +993,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                             </button>
                         </h2>
                         <div class="section-content">
-                            <div class="abstract-box" data-section-content="abstract">${data.abstract}</div>
+                            <div class="abstract-box" data-section-content="abstract">${safeStr(data.abstract)}</div>
                         </div>
                     </div>
                     ` : ''}
@@ -1012,7 +1038,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         </div>
                     </div>
                     <script>
-                        window.newTabDrawings = ${JSON.stringify(data.drawings)};
+                        window.newTabDrawings = ${safeJsonStringify(data.drawings)};
                     </script>
                     ` : ''}
                     
@@ -1033,7 +1059,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                     ${data.classifications.map(cls => `
                                     <div class="cpc-card">
                                         <div class="cpc-code">${cls.leaf_code || cls.code}</div>
-                                        <div class="cpc-desc">${cls.leaf_description || cls.description}</div>
+                                        <div class="cpc-desc">${safeStr(cls.leaf_description || cls.description)}</div>
                                     </div>
                                     `).join('')}
                                 </div>
@@ -1103,10 +1129,13 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                         claimClass += ' claim-dependent';
                                     }
                                     
+                                    // 转义 claimText 中的特殊字符
+                                    const safeClaimText = claimText.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+                                    
                                     return `
-                                    <div class="${claimClass}" data-claim-number="${index + 1}" data-claim-text="${claimText.replace(/"/g, '&quot;')}">
+                                    <div class="${claimClass}" data-claim-number="${index + 1}" data-claim-text="${safeClaimText.replace(/"/g, '&quot;')}">
                                         <div class="claim-number">权利要求 ${index + 1}${claimType === 'independent' ? ' <span style="color: #2e7d32; font-size: 0.85em;">(独立权利要求)</span>' : claimType === 'dependent' ? ' <span style="color: #1976d2; font-size: 0.85em;">(从属权利要求)</span>' : ''}</div>
-                                        <div class="claim-text">${claimText}</div>
+                                        <div class="claim-text">${safeClaimText}</div>
                                     </div>
                                     `;
                                 }).join('')}
@@ -1138,7 +1167,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                         </h2>
                         <div class="section-content">
                             <div class="abstract-box" style="white-space: pre-wrap; line-height: 1.8;" data-section-content="description">
-                                ${data.description.replace(/(\[[A-Z\s]+\])/g, '<br/><br/><strong style="font-size: 1.1em; color: #2e7d32;">$1</strong><br/><br/>').replace(/\n/g, '<br/>')}
+                                ${safeStr(data.description.replace(/(\[[A-Z\s]+\])/g, '<br/><br/><strong style="font-size: 1.1em; color: #2e7d32;">$1</strong><br/><br/>').replace(/\n/g, '<br/>'))}
                             </div>
                         </div>
                     </div>
@@ -1393,7 +1422,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
             
             <script>
                 // 全局数据变量 - 供所有函数使用
-                const pageData = ${JSON.stringify(data)};
+                const pageData = ${safeJsonStringify(data)};
                 window.pageData = pageData; // 挂载到window供问一问等功能使用
                 const currentPatentNumber = '${patentNumber}';
                 

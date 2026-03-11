@@ -50,7 +50,7 @@ const ChatHistorySync = {
         const newConvo = {
             id: `convo-${Date.now()}-${source.id}`,
             title: title,
-            personaId: 'synced_chat',
+            personaId: 'patent_analyzer',
             messages: [
                 { role: 'system', content: systemPrompt },
                 ...nonSystemMessages.map(m => ({
@@ -61,7 +61,7 @@ const ChatHistorySync = {
                 }))
             ],
             lastUpdate: Date.now(),
-            model: contextInfo.model || 'unknown',
+            model: contextInfo.model || '',
             temperature: '0.7',
             contextCount: '10',
             source: {
