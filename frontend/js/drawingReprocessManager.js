@@ -95,12 +95,29 @@ class DrawingReprocessManager {
         this.showProgress('正在重新处理说明书...');
 
         try {
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            
+            if (aiMode && modelName) {
+                const { zhipuApiKey, aliyunApiKey } = this.getApiKeys();
+                const isZhipuModel = modelName.startsWith('glm-') || modelName.includes('glm');
+                const isAliyunModel = modelName.startsWith('qwen-') || modelName.includes('qwen');
+                
+                if (isZhipuModel && zhipuApiKey) {
+                    headers['Authorization'] = `Bearer ${zhipuApiKey}`;
+                    headers['X-LLM-Provider'] = 'zhipu';
+                } else if (isAliyunModel && aliyunApiKey) {
+                    headers['Authorization'] = `Bearer ${aliyunApiKey}`;
+                    headers['X-LLM-Provider'] = 'aliyun';
+                } else {
+                    throw new Error('API Key not configured for selected model');
+                }
+            }
+
             const response = await fetch('/api/drawing-marker/reprocess-specification', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': localStorage.getItem('api_key') || ''
-                },
+                headers: headers,
                 body: JSON.stringify({
                     cache_keys: this.currentState.ocrCacheKeys,
                     specification: newSpecification,
@@ -128,6 +145,20 @@ class DrawingReprocessManager {
             this.hideProgress();
             throw error;
         }
+    }
+    
+    getApiKeys() {
+        const getUserStorageItem = (key) => {
+            if (window.userCacheStorage && window.userCacheStorage.isInitialized()) {
+                return window.userCacheStorage.get(key);
+            }
+            return localStorage.getItem(key);
+        };
+        
+        return {
+            zhipuApiKey: window.appState?.apiKey || getUserStorageItem('globalApiKey') || getUserStorageItem('zhipuai_api_key') || '',
+            aliyunApiKey: window.appState?.aliyunApiKey || getUserStorageItem('aliyun_api_key') || ''
+        };
     }
 
     /**

@@ -308,3 +308,78 @@ class AIComponentExtractor:
         except Exception as e:
             logger.error(f"AI model call failed: {str(e)}")
             raise
+    
+    async def extract_with_provider(
+        self,
+        description_text: str,
+        model_name: str,
+        provider,  # LLM Provider instance
+        custom_prompt: Optional[str] = None
+    ) -> List[Dict[str, str]]:
+        """
+        Extract component markers using LLM Provider.
+        
+        Args:
+            description_text: Patent description text (in Chinese)
+            model_name: AI model name to use
+            provider: LLM Provider instance (ZhipuProvider or AliyunProvider)
+            custom_prompt: Optional custom prompt template
+            
+        Returns:
+            List of dictionaries with 'marker' and 'name' keys
+            Example: [{"marker": "10", "name": "外壳"}, ...]
+            
+        Raises:
+            Exception: If AI model call fails or response parsing fails
+        """
+        if not provider:
+            raise Exception("LLM Provider not provided")
+        
+        # Use custom prompt if provided, otherwise use default
+        template = custom_prompt if custom_prompt else self.prompt_template
+        
+        # Format the prompt
+        prompt = self._format_prompt(template, description_text)
+        
+        try:
+            logger.info(f"Extracting components using {provider.provider_name} provider with model {model_name}")
+            
+            # Build messages
+            messages = [
+                {
+                    "role": "system",
+                    "content": "你是一个专业的专利文献分析助手。请严格按照要求的JSON格式返回结果。"
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+            
+            # Call provider's complete method
+            response = await asyncio.to_thread(
+                provider.complete,
+                messages=messages,
+                model=model_name,
+                temperature=0.1
+            )
+            
+            # Parse response
+            components = self._parse_ai_response(response.content)
+            
+            logger.info(f"Successfully extracted {len(components)} components using {provider.provider_name}")
+            return components
+            
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON parsing error: {str(e)}")
+            raise Exception(
+                "AI返回格式错误,请尝试修改提示词或使用规则分词模式"
+            )
+        except ValueError as e:
+            logger.error(f"Response validation error: {str(e)}")
+            raise Exception(
+                f"AI返回数据结构错误: {str(e)}"
+            )
+        except Exception as e:
+            logger.error(f"Component extraction failed: {str(e)}")
+            raise Exception(f"部件标记抽取失败: {str(e)}")

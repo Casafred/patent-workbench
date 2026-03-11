@@ -23,9 +23,62 @@ from backend.utils.ocr_utils import (
     calculate_statistics
 )
 from backend.services.api_service import get_zhipu_client
+from backend.services.llm.provider_factory import get_factory
 
 
 drawing_marker_bp = Blueprint('drawing_marker', __name__)
+
+
+def get_llm_provider(model_name: str, api_key: str):
+    """
+    Get LLM provider based on model name and API key.
+    
+    Args:
+        model_name: Model ID (e.g., 'glm-4-flash', 'qwen-plus')
+        api_key: API key for the provider
+        
+    Returns:
+        tuple: (provider_instance, error_response)
+    """
+    if not api_key:
+        return None, create_response(
+            error="API Key is required for AI mode",
+            status_code=401
+        )
+    
+    factory = get_factory()
+    provider_name = factory.get_provider_for_model(model_name)
+    
+    if not provider_name:
+        return None, create_response(
+            error=f"Unknown model: {model_name}",
+            status_code=400
+        )
+    
+    try:
+        provider = factory.get_provider(provider_name, api_key)
+        return provider, None
+    except Exception as e:
+        return None, create_response(
+            error=f"Failed to initialize {provider_name} provider: {str(e)}",
+            status_code=400
+        )
+
+
+def get_api_key_from_request(provider_hint: str = None):
+    """
+    Get API key from request headers.
+    
+    Args:
+        provider_hint: Optional provider hint ('zhipu' or 'aliyun')
+        
+    Returns:
+        str: API key or None
+    """
+    auth_header = request.headers.get('Authorization')
+    if auth_header and auth_header.startswith('Bearer '):
+        return auth_header.split(' ')[1]
+    return None
 
 
 @drawing_marker_bp.route('/drawing-marker/process', methods=['POST'])
@@ -267,8 +320,16 @@ def process_drawing_marker():
                     status_code=400
                 )
 
-            # Get ZhipuAI client from Authorization header (AI mode requires it)
-            client, error = get_zhipu_client()
+            # Get API key from request
+            api_key = get_api_key_from_request()
+            if not api_key:
+                return create_response(
+                    error="API Key is required for AI mode. Please provide Authorization header with Bearer token.",
+                    status_code=401
+                )
+
+            # Get LLM provider based on model name
+            provider, error = get_llm_provider(model_name, api_key)
             if error:
                 return error
 
@@ -305,7 +366,7 @@ def process_drawing_marker():
             asyncio.set_event_loop(loop)
             try:
                 ai_result = loop.run_until_complete(
-                    processor.process(specification_to_process, model_name, client, custom_prompt)
+                    processor.process_with_provider(specification_to_process, model_name, provider, custom_prompt)
                 )
             finally:
                 loop.close()
@@ -566,8 +627,16 @@ def extract_components():
                     status_code=400
                 )
 
-            # Get ZhipuAI client from Authorization header (AI mode requires it)
-            client, error = get_zhipu_client()
+            # Get API key from request
+            api_key = get_api_key_from_request()
+            if not api_key:
+                return create_response(
+                    error="API Key is required for AI mode. Please provide Authorization header with Bearer token.",
+                    status_code=401
+                )
+            
+            # Get LLM provider based on model name
+            provider, error = get_llm_provider(model_name, api_key)
             if error:
                 return error
 
@@ -577,13 +646,13 @@ def extract_components():
             # Create processor instance (no longer needs api_key)
             processor = AIDescriptionProcessor()
 
-            # Process description using AI, passing client directly
+            # Process description using AI, passing provider directly
             # Run async function in sync context
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             try:
                 result = loop.run_until_complete(
-                    processor.process(description_text, model_name, client, custom_prompt)
+                    processor.process_with_provider(description_text, model_name, provider, custom_prompt)
                 )
             finally:
                 loop.close()
@@ -707,7 +776,16 @@ def reprocess_specification():
                     status_code=400
                 )
             
-            client, error = get_zhipu_client()
+            # Get API key from request
+            api_key = get_api_key_from_request()
+            if not api_key:
+                return create_response(
+                    error="API Key is required for AI mode. Please provide Authorization header with Bearer token.",
+                    status_code=401
+                )
+            
+            # Get LLM provider based on model name
+            provider, error = get_llm_provider(model_name, api_key)
             if error:
                 return error
             
@@ -718,7 +796,7 @@ def reprocess_specification():
             asyncio.set_event_loop(loop)
             try:
                 ai_result = loop.run_until_complete(
-                    processor.process(specification, model_name, client, custom_prompt)
+                    processor.process_with_provider(specification, model_name, provider, custom_prompt)
                 )
             finally:
                 loop.close()
@@ -1222,7 +1300,16 @@ def process_drawing_marker_staged():
                 if not model_name:
                     return create_response(error="model_name is required when ai_mode is true", status_code=400)
                 
-                client, error = get_zhipu_client()
+                # Get API key from request
+                api_key = get_api_key_from_request()
+                if not api_key:
+                    return create_response(
+                        error="API Key is required for AI mode. Please provide Authorization header with Bearer token.",
+                        status_code=401
+                    )
+                
+                # Get LLM provider based on model name
+                provider, error = get_llm_provider(model_name, api_key)
                 if error:
                     return error
                 
@@ -1246,7 +1333,7 @@ def process_drawing_marker_staged():
                 asyncio.set_event_loop(loop)
                 try:
                     ai_result = loop.run_until_complete(
-                        processor.process(text_to_process, model_name, client, custom_prompt)
+                        processor.process_with_provider(text_to_process, model_name, provider, custom_prompt)
                     )
                 finally:
                     loop.close()

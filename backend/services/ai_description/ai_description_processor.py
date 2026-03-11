@@ -120,3 +120,76 @@ class AIDescriptionProcessor:
                 "error": f"处理过程中发生错误: {str(e)}",
                 "error_code": "PROCESSING_ERROR"
             }
+    
+    async def process_with_provider(
+        self,
+        description_text: str,
+        model_name: str,
+        provider,  # LLM Provider instance
+        custom_prompt: Optional[str] = None
+    ) -> Dict:
+        """
+        Process patent description text using LLM Provider.
+        
+        Args:
+            description_text: Patent description text
+            model_name: AI model name to use
+            provider: LLM Provider instance (ZhipuProvider or AliyunProvider)
+            custom_prompt: Optional custom prompt for extraction
+            
+        Returns:
+            Dictionary with processing results
+        """
+        start_time = time.time()
+        
+        try:
+            logger.info(f"Extracting components using {provider.provider_name} provider...")
+            try:
+                components = await self.extractor.extract_with_provider(
+                    description_text,
+                    model_name,
+                    provider,
+                    custom_prompt
+                )
+                logger.info(f"Extracted {len(components)} components")
+            except Exception as e:
+                logger.error(f"Component extraction failed: {str(e)}")
+                return {
+                    "success": False,
+                    "error": f"AI模型调用失败: {str(e)}",
+                    "error_code": "AI_CALL_FAILED"
+                }
+            
+            processing_time = time.time() - start_time
+            
+            result = {
+                "success": True,
+                "data": {
+                    "components": components,
+                    "processing_time": round(processing_time, 2)
+                }
+            }
+            
+            if len(components) == 0:
+                result["data"]["warning"] = "未能抽取到附图标记,请检查说明书内容或尝试使用规则分词模式"
+            
+            logger.info(f"Processing completed in {processing_time:.2f} seconds")
+            return result
+            
+        except Exception as e:
+            logger.error(
+                "AI processing failed",
+                extra={
+                    "error_type": "UNEXPECTED_ERROR",
+                    "model_name": model_name,
+                    "text_length": len(description_text),
+                    "timestamp": datetime.now().isoformat(),
+                    "error_details": str(e)
+                }
+            )
+            
+            return {
+                "success": False,
+                "error": f"处理过程中发生错误: {str(e)}",
+                "error_code": "PROCESSING_ERROR"
+            }

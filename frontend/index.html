@@ -1192,16 +1192,20 @@ async function startProcessing() {
         return localStorage.getItem(key);
     };
     
-    const apiKey = appState?.apiKey || getUserStorageItem('globalApiKey') || getUserStorageItem('zhipuai_api_key') || '';
+    const zhipuApiKey = appState?.apiKey || getUserStorageItem('globalApiKey') || getUserStorageItem('zhipuai_api_key') || '';
+    const aliyunApiKey = appState?.aliyunApiKey || getUserStorageItem('aliyun_api_key') || '';
     
     const headers = {
         'Content-Type': 'application/json'
     };
     
-    if (aiConfig.aiMode || ocrMode === 'glm_ocr') {
-        if (!apiKey) {
-            updateProgressStatus('error', '[错误] AI模式需要API Key');
-            alert('AI模式需要配置API Key。请点击右上角设置并保存您的智谱AI API Key。');
+    const isZhipuModel = aiConfig.model && (aiConfig.model.startsWith('glm-') || aiConfig.model.includes('glm'));
+    const isAliyunModel = aiConfig.model && (aiConfig.model.startsWith('qwen-') || aiConfig.model.includes('qwen'));
+    
+    if (ocrMode === 'glm_ocr') {
+        if (!zhipuApiKey) {
+            updateProgressStatus('error', '[错误] GLM OCR需要智谱API Key');
+            alert('GLM OCR模式需要配置智谱AI API Key。请点击右上角设置并保存您的智谱AI API Key。');
             if (startBtn) {
                 startBtn.disabled = false;
                 startBtn.style.opacity = '1';
@@ -1209,7 +1213,8 @@ async function startProcessing() {
             }
             return;
         }
-        headers['Authorization'] = `Bearer ${apiKey}`;
+        headers['Authorization'] = `Bearer ${zhipuApiKey}`;
+        headers['X-OCR-Provider'] = 'zhipu';
     }
     
     if (ocrMode === 'paddle_ocr' && !paddleToken) {
@@ -1221,6 +1226,49 @@ async function startProcessing() {
             startBtn.style.cursor = 'pointer';
         }
         return;
+    }
+    
+    if (aiConfig.aiMode) {
+        if (!aiConfig.model) {
+            updateProgressStatus('error', '[错误] 请选择AI模型');
+            alert('AI模式需要选择一个AI模型。');
+            if (startBtn) {
+                startBtn.disabled = false;
+                startBtn.style.opacity = '1';
+                startBtn.style.cursor = 'pointer';
+            }
+            return;
+        }
+        
+        if (isZhipuModel && !zhipuApiKey) {
+            updateProgressStatus('error', '[错误] 智谱模型需要智谱API Key');
+            alert('选择的智谱AI模型需要配置智谱API Key。请点击右上角设置并保存您的智谱AI API Key。');
+            if (startBtn) {
+                startBtn.disabled = false;
+                startBtn.style.opacity = '1';
+                startBtn.style.cursor = 'pointer';
+            }
+            return;
+        }
+        
+        if (isAliyunModel && !aliyunApiKey) {
+            updateProgressStatus('error', '[错误] 阿里云模型需要阿里云API Key');
+            alert('选择的阿里云模型需要配置阿里云API Key。请点击右上角设置并保存您的阿里云百炼 API Key。');
+            if (startBtn) {
+                startBtn.disabled = false;
+                startBtn.style.opacity = '1';
+                startBtn.style.cursor = 'pointer';
+            }
+            return;
+        }
+        
+        if (isZhipuModel) {
+            headers['Authorization'] = `Bearer ${zhipuApiKey}`;
+            headers['X-LLM-Provider'] = 'zhipu';
+        } else if (isAliyunModel) {
+            headers['Authorization'] = `Bearer ${aliyunApiKey}`;
+            headers['X-LLM-Provider'] = 'aliyun';
+        }
     }
     
     const drawingsData = uploadedDrawings.map(drawing => {
@@ -1538,12 +1586,16 @@ function reprocessOCR() {
         return localStorage.getItem(key);
     };
     
-    const apiKey = appState?.apiKey || getUserStorageItem('globalApiKey') || getUserStorageItem('zhipuai_api_key') || '';
+    const zhipuApiKey = appState?.apiKey || getUserStorageItem('globalApiKey') || getUserStorageItem('zhipuai_api_key') || '';
+    const aliyunApiKey = appState?.aliyunApiKey || getUserStorageItem('aliyun_api_key') || '';
     const headers = { 'Content-Type': 'application/json' };
     
-    if (aiConfig.aiMode) {
-        if (!apiKey) {
-            alert('AI模式需要配置API Key。');
+    const isZhipuModel = aiConfig.model && (aiConfig.model.startsWith('glm-') || aiConfig.model.includes('glm'));
+    const isAliyunModel = aiConfig.model && (aiConfig.model.startsWith('qwen-') || aiConfig.model.includes('qwen'));
+    
+    if (ocrMode === 'glm_ocr') {
+        if (!zhipuApiKey) {
+            alert('GLM OCR模式需要配置智谱AI API Key。');
             [reprocessOcrBtn, reprocessSpecBtn, startBtn].forEach(btn => {
                 if (btn) {
                     btn.disabled = false;
@@ -1553,7 +1605,8 @@ function reprocessOCR() {
             });
             return;
         }
-        headers['Authorization'] = `Bearer ${apiKey}`;
+        headers['Authorization'] = `Bearer ${zhipuApiKey}`;
+        headers['X-OCR-Provider'] = 'zhipu';
     }
     
     if (ocrMode === 'paddle_ocr' && !paddleToken) {
@@ -1570,6 +1623,52 @@ function reprocessOCR() {
     
     if (ocrMode === 'paddle_ocr') {
         headers['X-Paddle-Token'] = paddleToken;
+    }
+    
+    if (aiConfig.aiMode) {
+        if (!aiConfig.model) {
+            alert('AI模式需要选择一个AI模型。');
+            [reprocessOcrBtn, reprocessSpecBtn, startBtn].forEach(btn => {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                    btn.style.cursor = 'pointer';
+                }
+            });
+            return;
+        }
+        
+        if (isZhipuModel && !zhipuApiKey) {
+            alert('选择的智谱AI模型需要配置智谱API Key。');
+            [reprocessOcrBtn, reprocessSpecBtn, startBtn].forEach(btn => {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                    btn.style.cursor = 'pointer';
+                }
+            });
+            return;
+        }
+        
+        if (isAliyunModel && !aliyunApiKey) {
+            alert('选择的阿里云模型需要配置阿里云API Key。');
+            [reprocessOcrBtn, reprocessSpecBtn, startBtn].forEach(btn => {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                    btn.style.cursor = 'pointer';
+                }
+            });
+            return;
+        }
+        
+        if (isZhipuModel) {
+            headers['Authorization'] = `Bearer ${zhipuApiKey}`;
+            headers['X-LLM-Provider'] = 'zhipu';
+        } else if (isAliyunModel) {
+            headers['Authorization'] = `Bearer ${aliyunApiKey}`;
+            headers['X-LLM-Provider'] = 'aliyun';
+        }
     }
     
     fetch('/api/drawing-marker/process', {
