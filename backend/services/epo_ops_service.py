@@ -562,11 +562,25 @@ class EPOOPSClient:
                             value_str = v.get('value', '0')
                             
                             try:
+                                if isinstance(timestamp, (int, float)):
+                                    ts = float(timestamp)
+                                elif timestamp is not None:
+                                    ts = float(str(timestamp).strip())
+                                else:
+                                    ts = 0.0
+                            except (ValueError, TypeError):
+                                ts = 0.0
+                            
+                            try:
                                 if isinstance(value_str, (int, float)):
                                     value = float(value_str)
-                                elif value_str:
+                                elif value_str is not None:
                                     clean_str = str(value_str).strip()
-                                    value = float(clean_str)
+                                    if clean_str:
+                                        clean_str = clean_str.replace(',', '')
+                                        value = float(clean_str)
+                                    else:
+                                        value = 0.0
                                 else:
                                     value = 0.0
                             except (ValueError, TypeError) as e:
@@ -574,7 +588,7 @@ class EPOOPSClient:
                                 value = 0.0
                             
                             try:
-                                date_str = datetime.utcfromtimestamp(timestamp / 1000).strftime('%Y-%m-%d')
+                                date_str = datetime.utcfromtimestamp(ts / 1000).strftime('%Y-%m-%d')
                             except (ValueError, TypeError, OSError):
                                 continue
                             
@@ -583,11 +597,11 @@ class EPOOPSClient:
                             
                             if name == 'total_response_size':
                                 total_bytes += value
-                                daily_usage[date_str]['bytes'] = value
-                                daily_usage[date_str]['mb'] = round(value / (1024 * 1024), 2)
+                                daily_usage[date_str]['bytes'] += value
+                                daily_usage[date_str]['mb'] = round(daily_usage[date_str]['bytes'] / (1024 * 1024), 2)
                             elif name == 'message_count':
                                 total_requests += int(value)
-                                daily_usage[date_str]['requests'] = int(value)
+                                daily_usage[date_str]['requests'] += int(value)
             
             total_mb = total_bytes / (1024 * 1024)
             remaining_mb = max(0.0, (WEEKLY_QUOTA_BYTES - total_bytes) / (1024 * 1024))
