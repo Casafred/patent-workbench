@@ -224,7 +224,14 @@ class EPOOPSClient:
         response = requests.get(url, headers=headers, params=params)
         self.last_request_time = time.time()
         
-        content_length = int(response.headers.get('Content-Length', len(response.content)))
+        content_length_header = response.headers.get('Content-Length')
+        if content_length_header:
+            try:
+                content_length = int(content_length_header)
+            except (ValueError, TypeError):
+                content_length = len(response.content)
+        else:
+            content_length = len(response.content)
         quota_info = self.quota_manager.track_response(content_length)
         
         if response.status_code == 403:
