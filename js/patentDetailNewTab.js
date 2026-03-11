@@ -947,19 +947,19 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                             ${data.inventors && data.inventors.length > 0 ? `
                             <div class="info-card">
                                 <div class="info-label">发明人</div>
-                                <div class="info-value">${data.inventors.join(', ')}</div>
+                                <div class="info-value">${safeStr(data.inventors.join(', '))}</div>
                             </div>
                             ` : ''}
                             ${data.assignees && data.assignees.length > 0 ? `
                             <div class="info-card">
                                 <div class="info-label">申请人</div>
-                                <div class="info-value">${data.assignees.join(', ')}</div>
+                                <div class="info-value">${safeStr(data.assignees.join(', '))}</div>
                             </div>
                             ` : ''}
                             ${data.priority_date ? `
                             <div class="info-card">
                                 <div class="info-label">优先权日期</div>
-                                <div class="info-value">${data.priority_date}</div>
+                                <div class="info-value">${safeStr(data.priority_date)}</div>
                             </div>
                             ` : ''}
                             ${data.pdf_link ? `
@@ -1259,7 +1259,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                 ` : ''}
                             </div>
                         </h2>
-                        ${data.family_id && shouldShowField('family_id') ? `<div class="info-card" style="margin-bottom: 20px;"><div class="info-label">同族ID</div><div class="info-value">${data.family_id}</div></div>` : ''}
+                        ${data.family_id && shouldShowField('family_id') ? `<div class="info-card" style="margin-bottom: 20px;"><div class="info-label">同族ID</div><div class="info-value">${safeStr(data.family_id)}</div></div>` : ''}
                         ${data.family_applications && data.family_applications.length > 0 && shouldShowField('family_applications') ? `
                         <table class="data-table" id="family-table" data-patent-number="${patentNumber}">
                             <thead>
@@ -1272,9 +1272,9 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                             <tbody>
                                 ${data.family_applications.map(app => `
                                 <tr>
-                                    <td>${app.application_number}</td>
-                                    <td>${app.status || '-'}</td>
-                                    <td>${app.publication_number || '-'}</td>
+                                    <td>${safeStr(app.application_number)}</td>
+                                    <td>${safeStr(app.status) || '-'}</td>
+                                    <td>${safeStr(app.publication_number) || '-'}</td>
                                 </tr>
                                 `).join('')}
                             </tbody>
