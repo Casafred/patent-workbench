@@ -37,16 +37,23 @@ const PatentCache = {
      */
     save(patentNumber, data, selectedFields = [], url = null) {
         try {
+            // 不缓存图片，避免缓存爆满
+            const cacheDataCopy = JSON.parse(JSON.stringify(data));
+            if (cacheDataCopy.drawings) {
+                cacheDataCopy.drawings = [];
+                console.log(`🔍 专利 ${patentNumber} 图片不缓存，下次需重新爬取`);
+            }
+            
             const cacheData = {
                 patentNumber: patentNumber.toUpperCase(),
-                data: data,
+                data: cacheDataCopy,
                 url: url || `https://patents.google.com/patent/${patentNumber}`,
                 timestamp: Date.now(),
                 selectedFields: selectedFields,
                 version: '1.1'
             };
             this._getStorage().setJSON(this.getCacheKey(patentNumber), cacheData);
-            console.log(`✅ 专利 ${patentNumber} 数据已缓存`);
+            console.log(`✅ 专利 ${patentNumber} 数据已缓存（不含图片）`);
         } catch (error) {
             console.error(`❌ 缓存专利 ${patentNumber} 数据失败:`, error);
             this.cleanExpiredCache();
