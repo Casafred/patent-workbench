@@ -266,30 +266,30 @@ class EPOOPSClient:
         
         try:
             world_data = data.get('ops:world-patent-data', {})
-            
-            exchange_docs = []
             search_data = world_data.get('ops:biblio-search', {})
-            if search_data:
-                exchange_docs = search_data.get('ops:search-result', [])
             
-            if not exchange_docs:
-                exchange_docs = world_data.get('exchange-documents', {}).get('exchange-document', [])
-                if isinstance(exchange_docs, dict):
-                    exchange_docs = [exchange_docs]
+            search_result = search_data.get('ops:search-result', {})
             
-            for doc in exchange_docs:
-                if isinstance(doc, dict):
-                    biblio = doc.get('bibliographic-data', {})
+            pub_refs = search_result.get('ops:publication-reference', [])
+            if isinstance(pub_refs, dict):
+                pub_refs = [pub_refs]
+            
+            for pub_ref in pub_refs:
+                doc_ids = pub_ref.get('document-id', [])
+                if isinstance(doc_ids, dict):
+                    doc_ids = [doc_ids]
                 
-                patent_number = self._extract_patent_number(doc)
-                title = self._extract_title(biblio)
-                abstract = self._extract_abstract(biblio)
-                applicants = self._extract_parties(biblio, 'applicant')
-                inventors = self._extract_parties(biblio, 'inventor')
-                pub_date = self._extract_date(biblio, 'publication')
-                app_date = self._extract_date(biblio, 'application')
-                cpc = self._extract_classifications(biblio, 'cpc')
-                ipc = self._extract_classifications(biblio, 'ipc')
+                patent_number = self._extract_patent_number_from_search(doc_ids)
+                
+                biblio = pub_ref.get('bibliographic-data', {}) if 'bibliographic-data' in pub_ref else {}
+                title = self._extract_title(biblio) if biblio else ''
+                abstract = self._extract_abstract(biblio) if biblio else ''
+                applicants = self._extract_parties(biblio, 'applicant') if biblio else []
+                inventors = self._extract_parties(biblio, 'inventor') if biblio else []
+                pub_date = self._extract_date(biblio, 'publication') if biblio else ''
+                app_date = self._extract_date(biblio, 'application') if biblio else ''
+                cpc = self._extract_classifications(biblio, 'cpc') if biblio else []
+                ipc = self._extract_classifications(biblio, 'ipc') if biblio else []
                 
                 results.append(EPOSearchResult(
                     patent_number=patent_number,
@@ -307,6 +307,36 @@ class EPOOPSClient:
             logger.error(f"解析搜索结果失败: {e}")
         
         return results
+    
+    def _extract_patent_number_from_search(self, doc_ids: List[Dict]) -> str:
+        try:
+            for doc_id in doc_ids:
+                doc_type = doc_id.get('@document-id-type', '')
+                if doc_type == 'epodoc':
+                    doc_num = doc_id.get('doc-number', {})
+                    if isinstance(doc_num, dict):
+                        return doc_num.get('$', '')
+                    else:
+                        return str(doc_num)
+            
+            if doc_ids:
+                first_doc = doc_ids[0]
+                country = first_doc.get('country', {})
+                if isinstance(country, dict):
+                    country = country.get('$', '')
+                else:
+                    country = str(country)
+                
+                doc_num = first_doc.get('doc-number', {})
+                if isinstance(doc_num, dict):
+                    doc_num = doc_num.get('$', '')
+                else:
+                    doc_num = str(doc_num)
+                
+                return f"{country}{doc_num}"
+            return ''
+        except:
+            return ''
     
     def get_patent_detail(self, patent_number: str, endpoint: str = 'biblio') -> Dict:
         url = f"{EPO_OPS_BASE_URL}/published-data/publication/epodoc/{patent_number}/{endpoint}"
