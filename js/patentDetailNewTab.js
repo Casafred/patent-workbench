@@ -1194,7 +1194,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                     ${[...data.events_timeline].reverse().map(event => `
                                     <div class="timeline-item">
                                         <div class="timeline-date">${event.date}</div>
-                                        <div class="timeline-title">${event.title || event.description}</div>
+                                        <div class="timeline-title">${safeStr(event.title || event.description)}</div>
                                         ${event.type ? `<div class="timeline-type">${event.type}</div>` : ''}
                                     </div>
                                     `).join('')}
@@ -1216,7 +1216,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                         <tr>
                                             <td>${event.date}</td>
                                             <td>${event.code || '-'}</td>
-                                            <td>${event.description || event.title || '-'}</td>
+                                            <td>${safeStr(event.description || event.title) || '-'}</td>
                                         </tr>
                                         `).join('')}
                                     </tbody>
@@ -1333,7 +1333,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                             ${data.patent_citations.map(citation => `
                                             <tr data-patent-number="${citation.patent_number}">
                                                 <td>${citation.patent_number}${citation.examiner_cited ? ' <span style="color: #d32f2f; font-weight: bold;">*</span>' : ''}</td>
-                                                <td>${citation.title || '-'}</td>
+                                                <td>${safeStr(citation.title) || '-'}</td>
                                                 <td>${citation.examiner_cited ? '<span style="color: #d32f2f; font-weight: bold;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;"><path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/></svg> 审查员引用</span>' : '-'}</td>
                                             </tr>
                                             `).join('')}
@@ -1369,7 +1369,7 @@ window.openPatentDetailInNewTab = function(patentNumber) {
                                             ${data.cited_by.map(citation => `
                                             <tr data-patent-number="${citation.patent_number}">
                                                 <td>${citation.patent_number}</td>
-                                                <td>${citation.title || '-'}</td>
+                                                <td>${safeStr(citation.title) || '-'}</td>
                                             </tr>
                                             `).join('')}
                                         </tbody>
