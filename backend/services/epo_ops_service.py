@@ -263,7 +263,29 @@ class EPOOPSClient:
         
         data, quota_info = self._make_request(url, params)
         
-        results = self._parse_search_results(data)
+        patent_numbers = self._parse_search_results(data)
+        
+        results = []
+        for patent_number in patent_numbers:
+            if patent_number:
+                try:
+                    detail = self._get_brief_detail(patent_number)
+                    results.append(detail)
+                except Exception as e:
+                    logger.warning(f"获取专利 {patent_number} 详情失败: {e}")
+                    results.append(EPOSearchResult(
+                        patent_number=patent_number,
+                        title='',
+                        abstract='',
+                        applicants=[],
+                        inventors=[],
+                        publication_date='',
+                        application_date='',
+                        cpc_classifications=[],
+                        ipc_classifications=[],
+                        url=f"https://patents.google.com/patent/{patent_number}",
+                        first_drawing_url=''
+                    ))
         
         return {
             'results': results,
@@ -271,8 +293,78 @@ class EPOOPSClient:
             'quota_info': asdict(quota_info)
         }
     
-    def _parse_search_results(self, data: Dict) -> List[EPOSearchResult]:
-        results = []
+    def _get_brief_detail(self, patent_number: str) -> EPOSearchResult:
+        url = f"{EPO_OPS_BASE_URL}/published-data/publication/epodoc/{patent_number}/biblio"
+        
+        try:
+            data, _ = self._make_request(url)
+            
+            world_data = data.get('ops:world-patent-data', {})
+            exchange_doc = world_data.get('exchange-document', {})
+            if not exchange_doc:
+                exchange_doc = world_data.get('exchange-documents', {}).get('exchange-document', {})
+            
+            if isinstance(exchange_doc, list) and len(exchange_doc) > 0:
+                exchange_doc = exchange_doc[0]
+            
+            if not exchange_doc:
+                return EPOSearchResult(
+                    patent_number=patent_number,
+                    title='',
+                    abstract='',
+                    applicants=[],
+                    inventors=[],
+                    publication_date='',
+                    application_date='',
+                    cpc_classifications=[],
+                    ipc_classifications=[],
+                    url=f"https://patents.google.com/patent/{patent_number}",
+                    first_drawing_url=''
+                )
+            
+            biblio = exchange_doc.get('bibliographic-data', {})
+            
+            title = self._extract_title(biblio)
+            abstract = self._extract_abstract(biblio)
+            applicants = self._extract_parties(biblio, 'applicant')
+            inventors = self._extract_parties(biblio, 'inventor')
+            pub_date = self._extract_date(biblio, 'publication')
+            app_date = self._extract_date(biblio, 'application')
+            cpc = self._extract_classifications(biblio, 'cpc')
+            ipc = self._extract_classifications(biblio, 'ipc')
+            first_drawing_url = self._extract_first_drawing_url(exchange_doc, patent_number)
+            
+            return EPOSearchResult(
+                patent_number=patent_number,
+                title=title,
+                abstract=abstract,
+                applicants=applicants,
+                inventors=inventors,
+                publication_date=pub_date,
+                application_date=app_date,
+                cpc_classifications=cpc,
+                ipc_classifications=ipc,
+                url=f"https://patents.google.com/patent/{patent_number}",
+                first_drawing_url=first_drawing_url
+            )
+        except Exception as e:
+            logger.error(f"获取专利简要详情失败: {e}")
+            return EPOSearchResult(
+                patent_number=patent_number,
+                title='',
+                abstract='',
+                applicants=[],
+                inventors=[],
+                publication_date='',
+                application_date='',
+                cpc_classifications=[],
+                ipc_classifications=[],
+                url=f"https://patents.google.com/patent/{patent_number}",
+                first_drawing_url=''
+            )
+    
+    def _parse_search_results(self, data: Dict) -> List[str]:
+        patent_numbers = []
         
         try:
             world_data = data.get('ops:world-patent-data', {})
@@ -296,28 +388,16 @@ class EPOOPSClient:
             for pub_ref in pub_refs:
                 patent_number = self._extract_patent_number_from_pub_ref(pub_ref)
                 logger.info(f"EPO搜索数据结构 - 提取到专利号: {patent_number}")
-                
-                results.append(EPOSearchResult(
-                    patent_number=patent_number,
-                    title='',
-                    abstract='',
-                    applicants=[],
-                    inventors=[],
-                    publication_date='',
-                    application_date='',
-                    cpc_classifications=[],
-                    ipc_classifications=[],
-                    url=f"https://patents.google.com/patent/{patent_number}",
-                    first_drawing_url=''
-                ))
+                if patent_number:
+                    patent_numbers.append(patent_number)
             
-            logger.info(f"EPO搜索数据结构 - 最终解析结果数量: {len(results)}")
+            logger.info(f"EPO搜索数据结构 - 最终解析结果数量: {len(patent_numbers)}")
         except Exception as e:
             logger.error(f"解析搜索结果失败: {e}")
             import traceback
             traceback.print_exc()
         
-        return results
+        return patent_numbers
     
     def _extract_patent_number_from_pub_ref(self, pub_ref: Dict) -> str:
         try:

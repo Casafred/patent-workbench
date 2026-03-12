@@ -36,6 +36,8 @@ window.PatentDetailChat = {
         const patentData = window.pageData || {};
         const patentTitle = patentData.title || patentNumber;
         
+        const self = this;
+        
         const dialogHTML = `
             <div id="patent-chat-dialog" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); z-index: 10001; width: 600px; max-width: 90vw; height: 70vh; max-height: 600px; display: flex; flex-direction: column; overflow: hidden;">
                 <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
@@ -43,7 +45,7 @@ window.PatentDetailChat = {
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M5 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm4 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 1a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/><path d="m2.165 15.803.02-.004c1.83-.363 2.948-.842 3.468-1.105A9.06 9.06 0 0 0 8 15c4.418 0 8-3.134 8-7s-3.582-7-8-7-8 3.134-8 7c0 1.76.743 3.37 1.97 4.6a10.437 10.437 0 0 1-.524 2.318l-.003.011a10.722 10.722 0 0 1-.244.637c-.079.186.074.394.273.362a21.673 21.673 0 0 0 .693-.125zm.8-3.108a1 1 0 0 0-.287-.801C1.618 10.83 1 9.468 1 8c0-3.192 3.004-6 7-6s7 2.808 7 6c0 3.193-3.004 6-7 6a8.06 8.06 0 0 1-2.088-.272 1 1 0 0 0-.711.074c-.387.196-1.24.57-2.634.893a10.97 10.97 0 0 0 .398-2z"/></svg>
                         问一问 - ${patentTitle}
                     </h3>
-                    <button onclick="closePatentChatDialog()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 20px; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
+                    <button id="chat-close-btn" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 20px; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
                 </div>
                 <div id="patent-chat-messages" style="flex: 1; overflow-y: auto; padding: 15px; background: #f5f5f5;">
                     <div style="text-align: center; padding: 20px; color: #666;">
@@ -54,27 +56,44 @@ window.PatentDetailChat = {
                 </div>
                 <div style="padding: 15px; background: white; border-top: 1px solid #e0e0e0; flex-shrink: 0;">
                     <div style="display: flex; gap: 10px;">
-                        <textarea id="patent-chat-input" placeholder="输入您的问题..." style="flex: 1; padding: 10px 15px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 14px; resize: none; height: 44px; line-height: 1.4;" onkeydown="handlePatentChatKeydown(event)"></textarea>
-                        <button onclick="sendPatentChatMessage()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 10px 20px; border-radius: 12px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                        <textarea id="patent-chat-input" placeholder="输入您的问题..." style="flex: 1; padding: 10px 15px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 14px; resize: none; height: 44px; line-height: 1.4;"></textarea>
+                        <button id="chat-send-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 10px 20px; border-radius: 12px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 5px;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329-.124l-2.064-4.653-.534-.239a.75.75 0 0 1-.239-.534l-.239-.534-4.653-2.064a.75.75 0 0 1-.124-1.329L14.854.146a.5.5 0 0 1 .546.044zM5.594 7.594l2.064 4.653L12.39 2.39 5.594 7.594z"/></svg>
                             发送
                         </button>
                     </div>
                     <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
-                        <button onclick="document.getElementById('patent-chat-input').value='这个专利的核心技术是什么？'" style="background: #f0f0f0; border: none; padding: 5px 10px; border-radius: 15px; font-size: 12px; cursor: pointer; color: #666;">核心技术</button>
-                        <button onclick="document.getElementById('patent-chat-input').value='这个专利的创新点在哪里？'" style="background: #f0f0f0; border: none; padding: 5px 10px; border-radius: 15px; font-size: 12px; cursor: pointer; color: #666;">创新点</button>
-                        <button onclick="document.getElementById('patent-chat-input').value='请解释一下权利要求1'" style="background: #f0f0f0; border: none; padding: 5px 10px; border-radius: 15px; font-size: 12px; cursor: pointer; color: #666;">解释权利要求</button>
-                        <button onclick="document.getElementById('patent-chat-input').value='这个专利的应用场景有哪些？'" style="background: #f0f0f0; border: none; padding: 5px 10px; border-radius: 15px; font-size: 12px; cursor: pointer; color: #666;">应用场景</button>
+                        <button class="chat-quick-btn" data-msg="这个专利的核心技术是什么？" style="background: #f0f0f0; border: none; padding: 5px 10px; border-radius: 15px; font-size: 12px; cursor: pointer; color: #666;">核心技术</button>
+                        <button class="chat-quick-btn" data-msg="这个专利的创新点在哪里？" style="background: #f0f0f0; border: none; padding: 5px 10px; border-radius: 15px; font-size: 12px; cursor: pointer; color: #666;">创新点</button>
+                        <button class="chat-quick-btn" data-msg="请解释一下权利要求1" style="background: #f0f0f0; border: none; padding: 5px 10px; border-radius: 15px; font-size: 12px; cursor: pointer; color: #666;">解释权利要求</button>
+                        <button class="chat-quick-btn" data-msg="这个专利的应用场景有哪些？" style="background: #f0f0f0; border: none; padding: 5px 10px; border-radius: 15px; font-size: 12px; cursor: pointer; color: #666;">应用场景</button>
                     </div>
                 </div>
             </div>
-            <div id="patent-chat-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000;" onclick="closePatentChatDialog()"></div>
+            <div id="patent-chat-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000;"></div>
         `;
         
         document.body.insertAdjacentHTML('beforeend', dialogHTML);
         
         this.patentNumber = patentNumber;
         this.patentData = patentData;
+        
+        document.getElementById('chat-close-btn').onclick = function() { self.closeChat(); };
+        document.getElementById('patent-chat-overlay').onclick = function() { self.closeChat(); };
+        document.getElementById('chat-send-btn').onclick = function() { self.sendMessage(); };
+        document.getElementById('patent-chat-input').onkeydown = function(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                self.sendMessage();
+            }
+        };
+        
+        var quickBtns = document.querySelectorAll('.chat-quick-btn');
+        for (var i = 0; i < quickBtns.length; i++) {
+            quickBtns[i].onclick = function() {
+                document.getElementById('patent-chat-input').value = this.getAttribute('data-msg');
+            };
+        }
     },
 
     closeChat: function() {
