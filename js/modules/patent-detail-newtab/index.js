@@ -314,11 +314,30 @@
                     };
                     tabBtn.onclick = function() {
                         var col = columnId === 'left' ? dualColumnLeftColumn : dualColumnRightColumn;
-                        var section = col ? col.querySelector('#section-' + tab.id + ', [data-section-id="' + tab.id + '"]') : null;
+                        if (!col) return;
+                        
+                        var section = col.querySelector('[data-section-id="' + tab.id + '"]');
+                        if (!section) section = col.querySelector('#section-' + tab.id);
+                        if (!section) {
+                            var sectionByClass = col.querySelector('.section[data-section="' + tab.id + '"]');
+                            if (sectionByClass) section = sectionByClass;
+                        }
+                        
                         if (section) {
+                            var collapsedContent = section.querySelector('.section-content.collapsed');
+                            if (collapsedContent) {
+                                collapsedContent.classList.remove('collapsed');
+                            }
+                            
+                            var toggleIcon = section.querySelector('.toggle-icon');
+                            if (toggleIcon && toggleIcon.textContent === '▶') {
+                                toggleIcon.textContent = '▼';
+                            }
+                            
                             section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                            var allBtns = tabBar.querySelectorAll('.column-tab-btn');
-                            allBtns.forEach(function(b) { 
+                            
+                            var allBtnsInThisBar = tabBar.querySelectorAll('.column-tab-btn');
+                            allBtnsInThisBar.forEach(function(b) { 
                                 b.classList.remove('active');
                                 b.style.background = 'white';
                                 b.style.color = '#495057';
