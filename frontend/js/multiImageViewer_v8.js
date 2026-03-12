@@ -94,8 +94,11 @@ class MultiImageViewerV8 {
         console.log(`[MultiImageViewerV8] Cleared ${clearedCount} caches`);
 
         // images: [{ url, detectedNumbers, referenceMap, title, markerSentencesMap }]
-        console.log('[MultiImageViewerV8] Images data:', images.map(img => ({
+        console.log('[MultiImageViewerV8] Images data:', images.map((img, idx) => ({
+            index: idx,
             title: img.title,
+            urlLength: img.url ? img.url.length : 0,
+            urlPrefix: img.url ? img.url.substring(0, 100) + '...' : 'null',
             detectedNumbersCount: (img.detectedNumbers || []).length,
             detectedNumbers: (img.detectedNumbers || []).map(d => ({ number: d.number, x: Math.round(d.x), y: Math.round(d.y), is_matched: d.is_matched, original_sentence: d.original_sentence ? d.original_sentence.substring(0, 30) + '...' : '' })),
             hasMarkerSentences: !!(img.markerSentencesMap && Object.keys(img.markerSentencesMap).length > 0),
@@ -300,7 +303,9 @@ class MultiImageViewerV8 {
         
         // 初始化显示
         this.loadCurrentImage(() => {
-            this.updateDisplay();
+            this.renderCanvas();
+            this.updateAnnotationList();
+            this.updateImageInfo();
         });
         
         // 拖动功能
@@ -1024,8 +1029,19 @@ class MultiImageViewerV8 {
     
     loadCurrentImage(callback) {
         const imageData = this.images[this.currentIndex];
+        console.log('[loadCurrentImage] Loading image:', {
+            currentIndex: this.currentIndex,
+            title: imageData.title,
+            urlLength: imageData.url ? imageData.url.length : 0,
+            urlPrefix: imageData.url ? imageData.url.substring(0, 50) + '...' : 'null'
+        });
         const img = new Image();
         img.onload = () => {
+            console.log('[loadCurrentImage] Image loaded successfully:', {
+                title: imageData.title,
+                width: img.width,
+                height: img.height
+            });
             this.currentImage = img;
             this.currentImageData = imageData;
             // 先设置canvas尺寸
@@ -1036,6 +1052,9 @@ class MultiImageViewerV8 {
                 this.initializeAnnotations();
                 if (callback) callback();
             });
+        };
+        img.onerror = (e) => {
+            console.error('[loadCurrentImage] Failed to load image:', imageData.title, e);
         };
         img.src = imageData.url;
     }
@@ -1181,6 +1200,13 @@ class MultiImageViewerV8 {
     }
     
     renderCanvas() {
+        console.log('[renderCanvas] Rendering:', {
+            currentImageWidth: this.currentImage ? this.currentImage.width : 'null',
+            currentImageHeight: this.currentImage ? this.currentImage.height : 'null',
+            currentImageTitle: this.currentImageData ? this.currentImageData.title : 'null',
+            canvasWidth: this.modalCanvas.width,
+            canvasHeight: this.modalCanvas.height
+        });
         const ctx = this.modalCanvas.getContext('2d');
         ctx.clearRect(0, 0, this.modalCanvas.width, this.modalCanvas.height);
         

@@ -579,6 +579,8 @@
                 <li><a data-target="feature-claims-processor">功能六：独从权识别与可视化</a></li>
                 <li><a data-target="feature-drawing-marker">功能七：专利附图智能标记</a></li>
                 <li><a data-target="feature-pdf-ocr">功能八：文档OCR与智能分析</a></li>
+                <li><a data-target="feature-ipc-lookup">功能九：IPC分类智能查询</a></li>
+                <li><a data-target="feature-epo-search">功能十：全球专利智能检索</a></li>
                 <li><a data-target="feature-prompt-forum">提示词广场</a></li>
                 <li><a data-target="faq">常见问题 (FAQ)</a></li>
             </ul>
@@ -741,7 +743,43 @@
                     <span class="gif-label">占位符ID: session-expiration</span>
                 </div>
 
-                <h3>8. 全局智能剪贴板</h3>
+                <h3>8. 缓存管理</h3>
+                <p>系统提供统一的缓存管理功能，帮助您管理各类数据缓存，释放存储空间：</p>
+                
+                <h4>支持的缓存类型</h4>
+                <ul>
+                    <li><strong>对话历史：</strong> 即时对话的历史记录</li>
+                    <li><strong>自定义角色：</strong> 创建的对话角色配置</li>
+                    <li><strong>文件解析缓存：</strong> 上传文件的解析结果</li>
+                    <li><strong>专利数据缓存：</strong> 功能五爬取的专利数据</li>
+                    <li><strong>解读结果缓存：</strong> 功能五的AI解读结果</li>
+                    <li><strong>专利爬取历史：</strong> 功能五的爬取历史记录</li>
+                    <li><strong>专利解读模板：</strong> 功能五的自定义解读模板</li>
+                    <li><strong>大批量处理模板：</strong> 功能二大批量模式的自定义模板</li>
+                    <li><strong>附图OCR缓存：</strong> 功能七的附图OCR识别结果</li>
+                    <li><strong>PDF OCR缓存：</strong> 功能八的PDF解析结果</li>
+                </ul>
+                
+                <h4>缓存管理操作</h4>
+                <ul>
+                    <li><strong>查看缓存统计：</strong> 在设置面板中查看各类缓存的数量和大小</li>
+                    <li><strong>分类清理：</strong> 可选择性地清理特定类型的缓存</li>
+                    <li><strong>一键清理：</strong> 清理所有缓存数据</li>
+                    <li><strong>导出缓存：</strong> 将缓存数据导出为JSON文件备份</li>
+                    <li><strong>导入缓存：</strong> 从备份文件恢复缓存数据</li>
+                </ul>
+                
+                <div class="warning">
+                    <strong>注意：</strong>清理缓存后，相关功能的历史数据将无法恢复，建议在清理前导出重要数据。
+                </div>
+                
+                <!-- GIF: 缓存管理 -->
+                <div class="gif-placeholder" data-gif-id="cache-management">
+                    <span>点击右侧"GIF管理"按钮插入：缓存管理.gif</span>
+                    <span class="gif-label">占位符ID: cache-management</span>
+                </div>
+
+                <h3>9. 全局智能剪贴板</h3>
                 <p>智能剪贴板是一个强大的跨功能数据传递工具，可以在不同功能模块之间无缝传递数据。</p>
                 
                 <h4>功能特点</h4>
@@ -1606,24 +1644,92 @@
                 <h5>功能特点</h5>
                 <ul>
                     <li><strong>AI自动识别：</strong> 利用大语言模型自动分析文本内容，识别其所属类别</li>
-                    <li><strong>自定义分类体系：</strong> 支持自定义分类类别和分类标准</li>
-                    <li><strong>示例库管理：</strong> 可添加分类示例，提高分类准确性</li>
-                    <li><strong>冷启动配置：</strong> 首次使用时提供快速配置向导</li>
+                    <li><strong>多层级分类体系：</strong> 支持多级分类结构，可建立树状分类体系</li>
+                    <li><strong>自定义分类标准：</strong> 支持自定义分类类别和分类标准描述</li>
+                    <li><strong>示例库管理：</strong> 可添加正例和反例，提高分类准确性</li>
+                    <li><strong>冷启动配置：</strong> 首次使用时提供快速配置向导，自动生成分类建议</li>
+                    <li><strong>智能导入：</strong> 从Excel中智能识别分类结构并导入</li>
+                    <li><strong>置信度过滤：</strong> 支持按置信度筛选分类结果</li>
                     <li><strong>结果分析：</strong> 分类完成后提供详细的统计分析和可视化报告</li>
+                    <li><strong>导出到原Excel：</strong> 可将分类结果导出到原始Excel文件中</li>
+                </ul>
+                
+                <h5>分类体系配置</h5>
+                <p>支持建立多层级分类体系：</p>
+                <ul>
+                    <li><strong>添加一级分类：</strong> 点击"添加一级分类"按钮创建顶级分类</li>
+                    <li><strong>添加子分类：</strong> 在每个分类行点击"+"按钮添加子分类</li>
+                    <li><strong>分类名称：</strong> 输入分类的名称（必填）</li>
+                    <li><strong>分类描述：</strong> 输入分类的详细描述，帮助AI更好理解（可选）</li>
+                    <li><strong>展开/折叠：</strong> 点击分类前的箭头展开或折叠子分类</li>
+                    <li><strong>删除分类：</strong> 点击"×"按钮删除分类及其所有子分类</li>
+                </ul>
+                
+                <h5>示例库管理</h5>
+                <p>添加高质量示例可显著提高分类准确性：</p>
+                <ul>
+                    <li><strong>正例（Positive）：</strong> 符合该分类的典型示例文本</li>
+                    <li><strong>反例（Negative）：</strong> 不符合该分类的示例文本，帮助AI区分边界</li>
+                    <li><strong>添加方式：</strong>
+                        <ul>
+                            <li>手动添加：在示例库管理界面手动输入示例</li>
+                            <li>从结果添加：分类完成后，可将结果添加为示例</li>
+                            <li>批量导入：支持从Excel批量导入示例</li>
+                        </ul>
+                    </li>
+                </ul>
+                
+                <div class="note">
+                    <strong>提示：</strong> 建议每个分类至少添加3-5个高质量正例，边界模糊的分类建议添加反例。
+                </div>
+                
+                <h5>冷启动配置</h5>
+                <p>首次使用时可使用冷启动功能快速配置：</p>
+                <ol>
+                    <li>点击"冷启动配置"按钮</li>
+                    <li>输入部分待分类的样本数据</li>
+                    <li>AI会自动分析样本并建议分类体系</li>
+                    <li>确认后自动填充到分类配置中</li>
+                </ol>
+                
+                <h5>智能导入</h5>
+                <p>从Excel中智能识别分类结构：</p>
+                <ol>
+                    <li>点击"智能导入"按钮</li>
+                    <li>上传包含分类结构的Excel文件</li>
+                    <li>系统会自动识别层级结构并导入</li>
+                </ol>
+                
+                <h5>分类预检</h5>
+                <p>正式分类前可进行预检：</p>
+                <ul>
+                    <li><strong>预检功能：</strong> 先对少量样本进行分类测试</li>
+                    <li><strong>查看结果：</strong> 检查分类结果是否符合预期</li>
+                    <li><strong>调整配置：</strong> 根据预检结果调整分类体系或示例</li>
+                    <li><strong>继续分类：</strong> 确认无误后继续处理全部数据</li>
                 </ul>
                 
                 <h5>使用方法</h5>
                 <ol>
                     <li><strong>配置分类体系：</strong> 在"智能分类"标签页中定义分类类别</li>
-                    <li><strong>添加示例（可选）：</strong> 为每个类别添加示例文本，提高分类准确性</li>
+                    <li><strong>添加示例（推荐）：</strong> 为每个类别添加示例文本，提高分类准确性</li>
                     <li><strong>选择模型：</strong> 选择适合分类任务的AI模型</li>
+                    <li><strong>设置温度：</strong> 分类任务建议使用较低温度（0.1-0.3）</li>
+                    <li><strong>预检（可选）：</strong> 点击"预检"按钮测试分类效果</li>
                     <li><strong>执行分类：</strong> 点击"开始分类"，系统会自动处理所有输入数据</li>
                     <li><strong>查看结果：</strong> 分类完成后查看结果统计和详细分类列表</li>
+                    <li><strong>导出结果：</strong> 导出为Excel或导出到原始Excel文件</li>
                 </ol>
                 
-                <div class="note">
-                    <strong>提示：</strong> 添加高质量的分类示例可以显著提高分类准确性，建议每个类别至少添加3-5个典型示例。
-                </div>
+                <h5>结果分析</h5>
+                <p>分类完成后提供详细的结果分析：</p>
+                <ul>
+                    <li><strong>统计概览：</strong> 各分类的数量分布和占比</li>
+                    <li><strong>置信度分布：</strong> 高/中/低置信度结果的数量</li>
+                    <li><strong>详细列表：</strong> 每条数据的分类结果和置信度</li>
+                    <li><strong>筛选功能：</strong> 按分类或置信度筛选结果</li>
+                    <li><strong>添加到示例：</strong> 可将分类结果添加到示例库</li>
+                </ul>
                 
                 <!-- GIF: 智能分类 -->
                 <div class="gif-placeholder" data-gif-id="unified-batch-classification">
@@ -1924,11 +2030,66 @@
                 <h5>主要功能</h5>
                 <ul>
                     <li><strong>双栏对照模式：</strong> 左侧显示原文，右侧显示译文，方便对照阅读</li>
+                    <li><strong>图文对照模式：</strong> 左侧显示附图，右侧显示说明书，方便对照查看技术细节</li>
                     <li><strong>同步滚动：</strong> 左右两栏内容同步滚动，阅读更便捷</li>
                     <li><strong>导航目录：</strong> 左侧导航栏可快速跳转到各个信息区块</li>
                     <li><strong>同族对比按钮：</strong> 当专利有2个及以上同族时，显示"同族对比"快捷按钮</li>
                     <li><strong>翻译功能：</strong> 权利要求和说明书区域提供翻译按钮，支持一键翻译</li>
+                    <li><strong>问一问功能：</strong> 针对专利内容进行AI对话，快速获取技术解读</li>
+                    <li><strong>智能标记跳转：</strong> 附图查看器支持一键跳转到智能标记功能</li>
                 </ul>
+                
+                <h5>双栏对照模式</h5>
+                <p>双栏对照模式适合阅读外文专利：</p>
+                <ul>
+                    <li><strong>开启方式：</strong> 点击顶部工具栏的"双栏对照"按钮</li>
+                    <li><strong>布局说明：</strong> 左栏显示原文内容，右栏显示相同内容（可用于对照翻译）</li>
+                    <li><strong>同步滚动：</strong> 两栏内容同步滚动，方便逐段对照</li>
+                    <li><strong>退出模式：</strong> 再次点击按钮或按Esc键退出</li>
+                </ul>
+                
+                <h5>图文对照模式</h5>
+                <p>图文对照模式适合需要结合附图理解技术方案的场景：</p>
+                <ul>
+                    <li><strong>开启方式：</strong> 点击顶部工具栏的"图文对照"按钮</li>
+                    <li><strong>布局说明：</strong> 左栏显示专利附图，右栏显示说明书内容</li>
+                    <li><strong>图片导航：</strong> 底部缩略图栏可快速切换不同附图</li>
+                    <li><strong>图片操作：</strong> 支持缩放、旋转等图片操作</li>
+                    <li><strong>智能标记：</strong> 点击"智能标记"按钮可将附图和说明书传递到功能七进行OCR识别</li>
+                </ul>
+                
+                <h5>附图查看器</h5>
+                <p>点击任意附图缩略图可打开全屏附图查看器：</p>
+                <ul>
+                    <li><strong>图片导航：</strong> 左右箭头或键盘方向键切换图片</li>
+                    <li><strong>缩放功能：</strong> 点击+/-按钮或使用键盘上下键缩放</li>
+                    <li><strong>旋转功能：</strong> 点击旋转按钮或按R键旋转图片</li>
+                    <li><strong>缩略图导航：</strong> 底部显示所有附图缩略图，点击快速跳转</li>
+                    <li><strong>智能标记：</strong> 点击"智能标记"按钮将当前专利的附图和说明书传递到功能七</li>
+                </ul>
+                
+                <h5>智能翻译功能</h5>
+                <p>在专利详情页中，可以对各区块内容进行智能翻译：</p>
+                <ul>
+                    <li><strong>翻译入口：</strong> 每个内容区块右上角的翻译按钮</li>
+                    <li><strong>支持语言：</strong> 中文、英文、日文、韩文、德文、法文</li>
+                    <li><strong>一键翻译：</strong> 选择目标语言后点击"开始翻译"</li>
+                    <li><strong>复制结果：</strong> 翻译完成后可一键复制翻译结果</li>
+                </ul>
+                
+                <h5>问一问功能</h5>
+                <p>问一问是针对当前专利的智能对话功能：</p>
+                <ul>
+                    <li><strong>开启方式：</strong> 点击顶部工具栏的"问一问"按钮</li>
+                    <li><strong>上下文感知：</strong> AI已获取当前专利的完整信息，可直接提问</li>
+                    <li><strong>快捷问题：</strong> 提供"核心技术"、"创新点"、"解释权利要求"、"应用场景"等快捷问题</li>
+                    <li><strong>自由提问：</strong> 可输入任意关于该专利的问题</li>
+                    <li><strong>发送到主对话：</strong> 可将问一问对话内容发送到主页面的即时对话继续讨论</li>
+                </ul>
+                
+                <div class="note">
+                    <strong>提示：</strong> 问一问功能会自动将专利的标题、摘要、权利要求、说明书作为上下文，AI可以准确回答关于该专利的任何问题。
+                </div>
                 
                 <h5>页面刷新恢复</h5>
                 <p>专利详情页支持刷新后数据恢复功能：</p>
@@ -1940,7 +2101,7 @@
                 </ul>
                 
                 <div class="note">
-                    <strong>提示：</strong> 新标签页功能适合需要详细阅读单个专利的场景，双栏对照模式特别适合阅读外文专利。
+                    <strong>提示：</strong> 新标签页功能适合需要详细阅读单个专利的场景，双栏对照和图文对照模式特别适合阅读外文专利和复杂技术方案。
                 </div>
                 
                 <!-- GIF: 新标签页 -->
@@ -2234,6 +2395,254 @@
                 <div class="gif-placeholder" data-gif-id="pdf-ocr-export">
                     <span>点击右侧"GIF管理"按钮插入：PDF阅读与OCR-导出功能.gif</span>
                     <span class="gif-label">占位符ID: pdf-ocr-export</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 功能九：IPC分类智能查询 -->
+        <div class="content-card" id="feature-ipc-lookup">
+            <div class="card-header">
+                <h2>功能九：IPC分类智能查询</h2>
+            </div>
+            <div class="card-body">
+                <p>IPC分类智能查询功能提供三种查询模式：分类预测、分类号查询和关键词搜索，帮助您快速定位专利技术领域和分类信息。</p>
+
+                <h4>核心功能</h4>
+                <ul>
+                    <li><strong>IPC分类预测：</strong> 输入技术方案描述，AI自动预测最匹配的IPC分类号</li>
+                    <li><strong>分类号查询：</strong> 输入IPC分类号，查询其含义及完整层级路径</li>
+                    <li><strong>关键词搜索：</strong> 使用关键词搜索相关的IPC分类号</li>
+                    <li><strong>多语言支持：</strong> 支持中文、英文、日文、韩文等技术描述</li>
+                    <li><strong>层级展示：</strong> 从部到小组的完整分类层级展示</li>
+                </ul>
+                
+                <!-- GIF: 功能介绍 -->
+                <div class="gif-placeholder" data-gif-id="ipc-lookup-intro">
+                    <span>点击右侧"GIF管理"按钮插入：IPC分类查询-功能介绍.gif</span>
+                    <span class="gif-label">占位符ID: ipc-lookup-intro</span>
+                </div>
+
+                <h4>IPC分类预测</h4>
+                <p>使用AI技术自动预测技术方案的IPC分类：</p>
+                <ol>
+                    <li><strong>输入技术描述：</strong> 在文本框中输入技术方案的详细描述</li>
+                    <li><strong>选择语言：</strong> 选择输入文本的语言（中文/英文/日文/韩文）</li>
+                    <li><strong>选择分类层级：</strong>
+                        <ul>
+                            <li><strong>部 (A-H)：</strong> 最粗粒度，快速定位技术领域</li>
+                            <li><strong>大类：</strong> 如G06F，定位技术方向</li>
+                            <li><strong>大组：</strong> 如G06F 17/00，定位技术类别</li>
+                            <li><strong>小组：</strong> 最精确分类，如G06F 17/20</li>
+                        </ul>
+                    </li>
+                    <li><strong>设置结果数量：</strong> 选择返回3个或5个预测结果</li>
+                    <li><strong>开始预测：</strong> 点击按钮，AI将分析并返回最匹配的分类号</li>
+                </ol>
+                
+                <div class="note">
+                    <strong>提示：</strong>技术描述越详细，预测结果越准确。建议包含技术领域、核心特征、关键技术点等信息。
+                </div>
+                
+                <!-- GIF: 分类预测 -->
+                <div class="gif-placeholder" data-gif-id="ipc-predict-demo">
+                    <span>点击右侧"GIF管理"按钮插入：IPC分类预测演示.gif</span>
+                    <span class="gif-label">占位符ID: ipc-predict-demo</span>
+                </div>
+
+                <h4>分类号查询</h4>
+                <p>查询IPC分类号的含义和层级结构：</p>
+                <ul>
+                    <li><strong>支持格式：</strong> 支持多种格式输入，如 G06F、G06F17/00、H04L9/08 等</li>
+                    <li><strong>层级展示：</strong> 显示从部到小组的完整分类路径</li>
+                    <li><strong>分类说明：</strong> 显示每个层级的中文和英文定义</li>
+                    <li><strong>相关分类：</strong> 显示相邻和相关分类号</li>
+                </ul>
+                
+                <!-- GIF: 分类号查询 -->
+                <div class="gif-placeholder" data-gif-id="ipc-lookup-demo">
+                    <span>点击右侧"GIF管理"按钮插入：IPC分类号查询演示.gif</span>
+                    <span class="gif-label">占位符ID: ipc-lookup-demo</span>
+                </div>
+
+                <h4>关键词搜索</h4>
+                <p>通过关键词搜索相关的IPC分类号：</p>
+                <ul>
+                    <li><strong>输入关键词：</strong> 输入技术关键词，如"深度学习"、"图像识别"等</li>
+                    <li><strong>模糊匹配：</strong> 系统会搜索分类定义中包含该关键词的所有分类</li>
+                    <li><strong>结果排序：</strong> 按相关度排序显示搜索结果</li>
+                </ul>
+                
+                <!-- GIF: 关键词搜索 -->
+                <div class="gif-placeholder" data-gif-id="ipc-search-demo">
+                    <span>点击右侧"GIF管理"按钮插入：IPC关键词搜索演示.gif</span>
+                    <span class="gif-label">占位符ID: ipc-search-demo</span>
+                </div>
+
+                <h4>IPC分类体系说明</h4>
+                <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em;">
+                    <thead>
+                        <tr style="background-color: var(--primary-color); color: white;">
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: left;">层级</th>
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: left;">示例</th>
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: left;">说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background-color: rgba(34, 197, 94, 0.05);">
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>部 (Section)</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">G</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">物理 (A-H共8个部)</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>大类 (Class)</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">G06</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">计算；推算；计数</td>
+                        </tr>
+                        <tr style="background-color: rgba(34, 197, 94, 0.05);">
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>小类 (Subclass)</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">G06F</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">电数字数据处理</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>大组 (Main group)</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">G06F 17/00</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">特别适用于特定功能的数字计算或数据处理设备或方法</td>
+                        </tr>
+                        <tr style="background-color: rgba(34, 197, 94, 0.05);">
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>小组 (Subgroup)</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">G06F 17/20</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">数据库结构</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 功能十：全球专利智能检索 -->
+        <div class="content-card" id="feature-epo-search">
+            <div class="card-header">
+                <h2>功能十：全球专利智能检索</h2>
+            </div>
+            <div class="card-body">
+                <p>全球专利智能检索功能基于EPO（欧洲专利局）API，提供全球范围的专利检索能力，支持多种检索模式和高级筛选条件。</p>
+
+                <h4>核心功能</h4>
+                <ul>
+                    <li><strong>简单检索：</strong> 单字段快速检索，适合初学者</li>
+                    <li><strong>高级检索：</strong> 多字段组合检索，支持AND/OR/NOT逻辑</li>
+                    <li><strong>CQL语法检索：</strong> 专业级检索语法，支持复杂查询</li>
+                    <li><strong>日期范围筛选：</strong> 按公开日期范围筛选专利</li>
+                    <li><strong>配额管理：</strong> 实时显示API配额使用情况</li>
+                    <li><strong>结果导出：</strong> 支持导出检索结果到Excel</li>
+                </ul>
+                
+                <!-- GIF: 功能介绍 -->
+                <div class="gif-placeholder" data-gif-id="epo-search-intro">
+                    <span>点击右侧"GIF管理"按钮插入：全球专利检索-功能介绍.gif</span>
+                    <span class="gif-label">占位符ID: epo-search-intro</span>
+                </div>
+
+                <h4>检索类型说明</h4>
+                
+                <h5>简单检索</h5>
+                <p>适合快速查询单一条件的场景：</p>
+                <ol>
+                    <li><strong>选择检索字段：</strong> 标题、摘要、权利要求、说明书、申请人、发明人、公开号、CPC分类、IPC分类</li>
+                    <li><strong>输入关键词：</strong> 在输入框中输入检索词</li>
+                    <li><strong>点击搜索：</strong> 执行检索并显示结果</li>
+                </ol>
+                
+                <h5>高级检索</h5>
+                <p>支持多字段组合检索：</p>
+                <ul>
+                    <li><strong>添加条件：</strong> 点击"+ 添加检索条件"按钮添加多个检索行</li>
+                    <li><strong>逻辑运算：</strong> 每行可选择AND/OR/NOT逻辑运算符</li>
+                    <li><strong>字段组合：</strong> 不同字段可以组合使用，如"标题包含AI AND 申请人包含Google"</li>
+                </ul>
+                
+                <h5>CQL语法检索</h5>
+                <p>专业级检索，支持完整的CQL语法：</p>
+                <ul>
+                    <li><strong>字段代码：</strong>
+                        <ul>
+                            <li><code>ta</code> - 标题 (Title)</li>
+                            <li><code>ab</code> - 摘要 (Abstract)</li>
+                            <li><code>cl</code> - 权利要求 (Claims)</li>
+                            <li><code>de</code> - 说明书 (Description)</li>
+                            <li><code>pa</code> - 申请人 (Applicant)</li>
+                            <li><code>in</code> - 发明人 (Inventor)</li>
+                            <li><code>pn</code> - 公开号 (Publication Number)</li>
+                            <li><code>cpc</code> - CPC分类</li>
+                            <li><code>ipc</code> - IPC分类</li>
+                        </ul>
+                    </li>
+                    <li><strong>语法示例：</strong>
+                        <ul>
+                            <li><code>ta=machine learning</code> - 标题包含"machine learning"</li>
+                            <li><code>ta=AI AND pa=Google</code> - 标题包含AI且申请人为Google</li>
+                            <li><code>ipc=G06F AND ta=blockchain</code> - IPC分类为G06F且标题包含blockchain</li>
+                        </ul>
+                    </li>
+                </ul>
+                
+                <div class="note">
+                    <strong>提示：</strong>点击"查看CQL语法帮助"按钮可以查看详细的CQL语法说明和更多示例。
+                </div>
+                
+                <!-- GIF: 检索类型 -->
+                <div class="gif-placeholder" data-gif-id="epo-search-types">
+                    <span>点击右侧"GIF管理"按钮插入：全球专利检索-检索类型.gif</span>
+                    <span class="gif-label">占位符ID: epo-search-types</span>
+                </div>
+
+                <h4>日期范围筛选</h4>
+                <p>可以按公开日期范围筛选专利：</p>
+                <ul>
+                    <li><strong>起始日期：</strong> 设置检索的起始公开日期</li>
+                    <li><strong>结束日期：</strong> 设置检索的结束公开日期</li>
+                    <li><strong>清除日期：</strong> 点击"清除日期"按钮移除日期限制</li>
+                </ul>
+                
+                <h4>API配额管理</h4>
+                <p>页面顶部显示EPO API的配额使用情况：</p>
+                <ul>
+                    <li><strong>配额状态：</strong> 实时显示剩余配额数量</li>
+                    <li><strong>进度条：</strong> 可视化显示配额使用比例</li>
+                    <li><strong>配额重置：</strong> EPO API配额每周重置一次</li>
+                </ul>
+                
+                <div class="warning">
+                    <strong>注意：</strong>EPO API有调用频率限制，请合理使用检索功能。如果配额用尽，需要等待配额重置。
+                </div>
+                
+                <!-- GIF: 配额管理 -->
+                <div class="gif-placeholder" data-gif-id="epo-search-quota">
+                    <span>点击右侧"GIF管理"按钮插入：全球专利检索-配额管理.gif</span>
+                    <span class="gif-label">占位符ID: epo-search-quota</span>
+                </div>
+
+                <h4>检索结果</h4>
+                <p>检索结果以列表形式展示，包含以下信息：</p>
+                <ul>
+                    <li><strong>专利标题：</strong> 点击可查看专利详情</li>
+                    <li><strong>公开号：</strong> 专利的唯一标识号</li>
+                    <li><strong>申请人：</strong> 专利申请人信息</li>
+                    <li><strong>公开日期：</strong> 专利公开时间</li>
+                    <li><strong>分类号：</strong> IPC/CPC分类信息</li>
+                </ul>
+                
+                <h4>使用技巧</h4>
+                <ol>
+                    <li><strong>精确检索：</strong> 使用引号进行精确匹配，如 <code>ta="machine learning"</code></li>
+                    <li><strong>通配符：</strong> 使用星号作为通配符，如 <code>pa=Google*</code></li>
+                    <li><strong>组合检索：</strong> 使用括号组合复杂查询，如 <code>(ta=AI OR ta=ML) AND pa=Google</code></li>
+                    <li><strong>排除检索：</strong> 使用NOT排除不需要的结果，如 <code>ta=blockchain NOT pa=IBM</code></li>
+                </ol>
+                
+                <!-- GIF: 工作流程 -->
+                <div class="gif-placeholder" data-gif-id="epo-search-workflow">
+                    <span>点击右侧"GIF管理"按钮插入：全球专利检索-工作流程.gif</span>
+                    <span class="gif-label">占位符ID: epo-search-workflow</span>
                 </div>
             </div>
         </div>
@@ -2825,6 +3234,189 @@
                         </tr>
                     </tbody>
                 </table>
+
+                <h4>Q56: IPC分类预测的准确性如何提高？</h4>
+                <p><strong>A:</strong> 提高IPC分类预测准确性的方法：</p>
+                <ul>
+                    <li><strong>详细描述：</strong> 技术描述越详细，预测越准确，建议包含技术领域、核心特征、关键技术点</li>
+                    <li><strong>选择正确语言：</strong> 选择与输入文本匹配的语言选项</li>
+                    <li><strong>选择合适层级：</strong> 根据需求选择分类层级，层级越细预测难度越大</li>
+                    <li><strong>参考多个结果：</strong> 系统返回多个预测结果，建议综合参考前3个结果</li>
+                    <li><strong>结合人工判断：</strong> AI预测结果仅供参考，最终分类需结合人工专业判断</li>
+                </ul>
+
+                <h4>Q57: IPC分类号查询支持哪些格式？</h4>
+                <p><strong>A:</strong> IPC分类号查询支持的输入格式：</p>
+                <ul>
+                    <li><strong>部：</strong> 如 <code>G</code>、<code>H</code> 等单字母</li>
+                    <li><strong>大类：</strong> 如 <code>G06</code>、<code>H04</code></li>
+                    <li><strong>小类：</strong> 如 <code>G06F</code>、<code>H04L</code></li>
+                    <li><strong>大组：</strong> 如 <code>G06F17/00</code>、<code>H04L9/00</code></li>
+                    <li><strong>小组：</strong> 如 <code>G06F17/20</code>、<code>H04L9/08</code></li>
+                    <li><strong>带空格格式：</strong> 如 <code>G06F 17/20</code> 也支持</li>
+                </ul>
+
+                <h4>Q58: 全球专利检索的EPO API配额是如何计算的？</h4>
+                <p><strong>A:</strong> EPO API配额说明：</p>
+                <ul>
+                    <li><strong>配额限制：</strong> EPO API有调用频率限制，具体限制以EPO官方政策为准</li>
+                    <li><strong>配额重置：</strong> 配额每周重置一次</li>
+                    <li><strong>查看配额：</strong> 页面顶部显示实时配额使用情况和进度条</li>
+                    <li><strong>节省配额：</strong> 建议使用精确的检索条件，避免过于宽泛的查询</li>
+                    <li><strong>配额用尽：</strong> 如配额用尽，需等待配额重置后才能继续检索</li>
+                </ul>
+
+                <h4>Q59: 全球专利检索的CQL语法有哪些高级用法？</h4>
+                <p><strong>A:</strong> CQL语法高级用法：</p>
+                <ul>
+                    <li><strong>精确匹配：</strong> 使用引号，如 <code>ta="machine learning"</code></li>
+                    <li><strong>通配符：</strong> 使用星号，如 <code>pa=Google*</code> 匹配Google开头的申请人</li>
+                    <li><strong>范围查询：</strong> 使用方括号，如 <code>pd=[20230101 TO 20231231]</code></li>
+                    <li><strong>组合查询：</strong> 使用括号，如 <code>(ta=AI OR ta="artificial intelligence") AND pa=Google</code></li>
+                    <li><strong>排除查询：</strong> 使用NOT，如 <code>ta=blockchain NOT pa=IBM</code></li>
+                    <li><strong>邻近搜索：</strong> 使用波浪号，如 <code>"neural network"~3</code> 表示两词之间最多间隔3个词</li>
+                </ul>
+
+                <h4>Q60: 全球专利检索结果可以导出吗？</h4>
+                <p><strong>A:</strong> 检索结果导出功能：</p>
+                <ul>
+                    <li><strong>导出格式：</strong> 支持导出为Excel格式</li>
+                    <li><strong>导出内容：</strong> 包含专利号、标题、申请人、公开日期、分类号等信息</li>
+                    <li><strong>导出按钮：</strong> 检索结果页面提供"导出Excel"按钮</li>
+                    <li><strong>数据量限制：</strong> 单次导出有数量限制，建议分批导出大量数据</li>
+                </ul>
+
+                <h4>Q61: IPC分类预测和关键词搜索有什么区别？</h4>
+                <p><strong>A:</strong> 两种查询模式的区别：</p>
+                <ul>
+                    <li><strong>IPC分类预测：</strong>
+                        <ul>
+                            <li>输入技术方案描述，AI预测最匹配的分类号</li>
+                            <li>适合不确定分类号，需要AI辅助判断的场景</li>
+                            <li>消耗API额度</li>
+                        </ul>
+                    </li>
+                    <li><strong>关键词搜索：</strong>
+                        <ul>
+                            <li>输入关键词，搜索分类定义中包含该关键词的分类</li>
+                            <li>适合已知技术关键词，需要查找对应分类的场景</li>
+                            <li>本地搜索，不消耗API额度</li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <h4>Q62: 全球专利检索支持哪些专利数据库？</h4>
+                <p><strong>A:</strong> 全球专利检索基于EPO API，覆盖以下专利数据库：</p>
+                <ul>
+                    <li><strong>欧洲专利局 (EPO)：</strong> EP专利</li>
+                    <li><strong>世界知识产权组织 (WIPO)：</strong> WO专利</li>
+                    <li><strong>美国专利商标局 (USPTO)：</strong> US专利</li>
+                    <li><strong>中国国家知识产权局 (CNIPA)：</strong> CN专利</li>
+                    <li><strong>日本特许厅 (JPO)：</strong> JP专利</li>
+                    <li><strong>韩国特许厅 (KIPO)：</strong> KR专利</li>
+                    <li><strong>其他：</strong> 覆盖全球100+国家和地区的专利数据</li>
+                </ul>
+
+                <h4>Q63: IPC分类查询结果中的层级路径是什么意思？</h4>
+                <p><strong>A:</strong> 层级路径展示IPC分类的完整结构：</p>
+                <ul>
+                    <li><strong>层级结构：</strong> 从部→大类→小类→大组→小组，逐级展开</li>
+                    <li><strong>示例：</strong> G(物理) → G06(计算) → G06F(电数字数据处理) → G06F17/00 → G06F17/20</li>
+                    <li><strong>作用：</strong> 帮助理解分类的上下文关系，便于选择正确的分类</li>
+                    <li><strong>点击导航：</strong> 可以点击任意层级跳转到对应的分类详情</li>
+                </ul>
+
+                <h4>Q64: 全球专利检索的日期范围筛选如何使用？</h4>
+                <p><strong>A:</strong> 日期范围筛选使用方法：</p>
+                <ul>
+                    <li><strong>公开日期：</strong> 筛选条件基于专利公开日期</li>
+                    <li><strong>起始日期：</strong> 设置检索的最早公开日期</li>
+                    <li><strong>结束日期：</strong> 设置检索的最晚公开日期</li>
+                    <li><strong>清除日期：</strong> 点击"清除日期"按钮移除日期限制</li>
+                    <li><strong>建议：</strong> 缩小日期范围可以提高检索精度和速度</li>
+                </ul>
+
+                <h4>Q65: 如何在IPC分类查询和全球专利检索之间配合使用？</h4>
+                <p><strong>A:</strong> 两个功能的配合使用场景：</p>
+                <ul>
+                    <li><strong>场景一：技术领域定位</strong>
+                        <ul>
+                            <li>先用IPC分类预测确定技术方案的IPC分类</li>
+                            <li>再用全球专利检索按IPC分类号检索相关专利</li>
+                        </ul>
+                    </li>
+                    <li><strong>场景二：专利分析</strong>
+                        <ul>
+                            <li>在全球专利检索中找到相关专利</li>
+                            <li>用IPC分类查询了解专利分类的具体含义</li>
+                        </ul>
+                    </li>
+                    <li><strong>场景三：技术调研</strong>
+                        <ul>
+                            <li>用IPC关键词搜索找到相关技术分类</li>
+                            <li>用全球专利检索按分类号检索该领域的所有专利</li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <h4>Q66: 缓存管理功能如何使用？</h4>
+                <p><strong>A:</strong> 缓存管理功能使用方法：</p>
+                <ul>
+                    <li><strong>入口位置：</strong> 点击右上角设置图标，在设置面板中找到"缓存管理"选项</li>
+                    <li><strong>查看统计：</strong> 显示各类缓存的数量和占用空间</li>
+                    <li><strong>分类清理：</strong> 勾选需要清理的缓存类型，点击"清理选中"</li>
+                    <li><strong>一键清理：</strong> 点击"清理全部缓存"清除所有缓存数据</li>
+                    <li><strong>导出备份：</strong> 点击"导出缓存"将数据保存为JSON文件</li>
+                    <li><strong>导入恢复：</strong> 点击"导入缓存"从备份文件恢复数据</li>
+                </ul>
+                <div class="note">
+                    <strong>提示：</strong> 清理缓存前建议先导出重要数据，清理后历史记录将无法恢复。
+                </div>
+
+                <h4>Q67: 专利详情页的"问一问"功能如何使用？</h4>
+                <p><strong>A:</strong> 问一问功能使用方法：</p>
+                <ul>
+                    <li><strong>开启方式：</strong> 在专利详情新标签页中，点击顶部工具栏的"问一问"按钮</li>
+                    <li><strong>上下文感知：</strong> AI已自动获取当前专利的标题、摘要、权利要求、说明书等信息</li>
+                    <li><strong>快捷问题：</strong> 点击预设问题按钮快速提问，如"核心技术是什么？"、"创新点在哪里？"</li>
+                    <li><strong>自由提问：</strong> 在输入框中输入任意关于该专利的问题</li>
+                    <li><strong>发送到主对话：</strong> 点击"发送到主对话"按钮，可将当前对话内容传递到主页面的即时对话继续深入讨论</li>
+                </ul>
+
+                <h4>Q68: 专利详情页的图文对照模式如何使用？</h4>
+                <p><strong>A:</strong> 图文对照模式使用方法：</p>
+                <ul>
+                    <li><strong>开启条件：</strong> 当前专利需要有附图才能使用此功能</li>
+                    <li><strong>开启方式：</strong> 点击顶部工具栏的"图文对照"按钮</li>
+                    <li><strong>布局说明：</strong> 左侧显示专利附图，右侧显示说明书内容</li>
+                    <li><strong>图片导航：</strong> 使用底部缩略图或左右箭头切换图片</li>
+                    <li><strong>缩放旋转：</strong> 支持放大、缩小、旋转图片</li>
+                    <li><strong>智能标记：</strong> 点击"智能标记"按钮可将当前附图和说明书传递到功能七进行OCR标记</li>
+                    <li><strong>退出模式：</strong> 再次点击按钮或按Esc键退出</li>
+                </ul>
+
+                <h4>Q69: 专利详情页的智能翻译功能支持哪些语言？</h4>
+                <p><strong>A:</strong> 智能翻译支持的语言：</p>
+                <ul>
+                    <li><strong>支持语言：</strong> 中文、英文、日文、韩文、德文、法文</li>
+                    <li><strong>翻译入口：</strong> 每个内容区块（摘要、权利要求、说明书等）右上角的翻译按钮</li>
+                    <li><strong>操作步骤：</strong> 点击翻译按钮 → 选择目标语言 → 点击"开始翻译"</li>
+                    <li><strong>复制结果：</strong> 翻译完成后可点击"复制"按钮复制翻译结果</li>
+                </ul>
+
+                <h4>Q70: 智能分类的示例库如何管理？</h4>
+                <p><strong>A:</strong> 示例库管理方法：</p>
+                <ul>
+                    <li><strong>添加示例：</strong> 点击"添加示例"按钮，输入示例文本和对应分类</li>
+                    <li><strong>正例与反例：</strong> 正例表示符合该分类的典型文本，反例表示不符合的边界案例</li>
+                    <li><strong>从结果添加：</strong> 分类完成后，可选中结果并点击"添加到示例库"</li>
+                    <li><strong>批量导入：</strong> 点击"导入示例"从Excel批量导入示例</li>
+                    <li><strong>导出分享：</strong> 点击"导出示例"将示例库保存为文件，方便分享</li>
+                    <li><strong>删除示例：</strong> 在示例列表中点击删除按钮移除不需要的示例</li>
+                </ul>
+                <div class="note">
+                    <strong>提示：</strong> 每个分类建议至少添加3-5个高质量正例，边界模糊的分类建议添加反例以提高区分度。
+                </div>
             </div>
         </div>
     </main>
@@ -2935,7 +3527,24 @@
         'pdf-ocr-floating-chat': 'PDF阅读与OCR-悬浮对话.gif',
         'pdf-ocr-toolbar': 'PDF阅读与OCR-查看器工具栏.gif',
         'pdf-ocr-ai-chat': 'PDF阅读与OCR-AI对话.gif',
-        'pdf-ocr-export': 'PDF阅读与OCR-导出功能.gif'
+        'pdf-ocr-export': 'PDF阅读与OCR-导出功能.gif',
+        
+        // 功能九：IPC分类智能查询
+        'ipc-lookup-intro': 'IPC分类查询-功能介绍.gif',
+        'ipc-predict-demo': 'IPC分类预测演示.gif',
+        'ipc-lookup-demo': 'IPC分类号查询演示.gif',
+        'ipc-search-demo': 'IPC关键词搜索演示.gif',
+        
+        // 功能十：全球专利智能检索
+        'epo-search-intro': '全球专利检索-功能介绍.gif',
+        'epo-search-types': '全球专利检索-检索类型.gif',
+        'epo-search-quota': '全球专利检索-配额管理.gif',
+        'epo-search-workflow': '全球专利检索-工作流程.gif',
+        
+        // 入门指南-缓存管理
+        'cache-management': '缓存管理.gif',
+        'session-expiration': '会话过期预警.gif',
+        'provider-switch': '多服务商切换.gif'
     };
 
     // 已使用的GIF记录
