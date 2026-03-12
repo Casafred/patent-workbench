@@ -524,17 +524,28 @@ if (document.readyState === 'loading') {
 
 // ▼▼▼ 用户缓存管理器初始化 ▼▼▼
 function initUserCacheManager() {
-    // 检查是否有后端注入的用户名
     if (window.CURRENT_USERNAME && window.userCacheManager) {
         window.userCacheManager.init(window.CURRENT_USERNAME);
         console.log('[State] 用户缓存管理器已初始化:', window.CURRENT_USERNAME);
         
-        // 初始化UI
+        if (window.userCacheManager.isInitialized()) {
+            if (window.ProviderManager) {
+                window.ProviderManager.updateModelSelectors();
+                console.log('[State] 用户登录后模型列表已刷新');
+            }
+        } else {
+            window.userCacheManager.on('initialized', () => {
+                if (window.ProviderManager) {
+                    window.ProviderManager.updateModelSelectors();
+                    console.log('[State] 用户登录后模型列表已刷新');
+                }
+            });
+        }
+        
         if (window.userDataUI) {
             window.userDataUI.init();
         }
     } else {
-        // 延迟重试
         setTimeout(initUserCacheManager, 100);
     }
 }

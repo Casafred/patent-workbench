@@ -283,10 +283,10 @@
                 { id: 'claims', name: '权利要求', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M4.72 3.22a.5.5 0 0 1 .656 0l2.744 2.743 1.897-1.897a.5.5 0 0 1 .698.698l-2.318 2.318a.5.5 0 0 1-.168.11l-2.346 1.03a.5.5 0 0 1-.65-.65l1.03-2.346a.5.5 0 0 1 .11-.168l2.318-2.318a.5.5 0 0 1 .698-.698l-1.897 1.897L4.72 3.22z"/><path d="M1 7v4a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V7H1zm5 0v4h4V7H6z"/></svg>' },
                 { id: 'description', name: '说明书', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M5 0h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2 2 2 0 0 1-2 2H3a2 2 0 0 1-2-2h1a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1H1a2 2 0 0 1 2-2h2z"/><path d="M1 6v-.5a.5.5 0 0 1 1 0V6h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1zm0 3v-.5a.5.5 0 0 1 1 0V9h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1zm0 3v-.5a.5.5 0 0 1 1 0v.5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1z"/></svg>' },
                 { id: 'classifications', name: '分类', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path fill-rule="evenodd" d="M5.216 14A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216z"/><path d="M4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/></svg>' },
-                { id: 'events', name: '事件', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>' },
+                { id: 'events-combined', name: '事件', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>' },
                 { id: 'family', name: '同族', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path fill-rule="evenodd" d="M5.216 14A2.238 2.238 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1h4.216z"/><path d="M4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/></svg>' },
-                { id: 'related', name: '相关专利', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l1.828-1.829A3 3 0 0 0 8.586 5.5L8 6.086a1.002 1.002 0 0 0-.154.199 2 2 0 0 1 .861 3.337L6.88 11.45a2 2 0 1 1-2.83-2.83l.793-.792a4.018 4.018 0 0 1-.128-1.287z"/><path d="M6.586 4.672A3 3 0 0 0 7.414 9.5l.775-.776a2 2 0 0 1-.896-3.346L9.12 3.55a2 2 0 1 1 2.83 2.83l-.793.792c.112.42.155.855.128 1.287l1.372-1.372a3 3 0 1 0-4.243-4.243L6.586 4.672z"/></svg>' },
-                { id: 'analysis', name: 'AI解读', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v1h14V4a1 1 0 0 0-1-1H2zm13 4H1v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7z"/><path d="M2 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v2H2V7zm3 3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1H5V10zm5 2a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1H10v-1z"/></svg>' }
+                { id: 'related-patents', name: '相关专利', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l1.828-1.829A3 3 0 0 0 8.586 5.5L8 6.086a1.002 1.002 0 0 0-.154.199 2 2 0 0 1 .861 3.337L6.88 11.45a2 2 0 1 1-2.83-2.83l.793-.792a4.018 4.018 0 0 1-.128-1.287z"/><path d="M6.586 4.672A3 3 0 0 0 7.414 9.5l.775-.776a2 2 0 0 1-.896-3.346L9.12 3.55a2 2 0 1 1 2.83 2.83l-.793.792c.112.42.155.855.128 1.287l1.372-1.372a3 3 0 1 0-4.243-4.243L6.586 4.672z"/></svg>' },
+                { id: 'analysis-result', name: 'AI解读', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v1h14V4a1 1 0 0 0-1-1H2zm13 4H1v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7z"/><path d="M2 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v2H2V7zm3 3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1H5V10zm5 2a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1H10v-1z"/></svg>' }
             ];
             
             function handleTabClick(columnId, tabId, clickedBtn) {
@@ -433,7 +433,7 @@
                     
                     var dualColumnWrapper = document.createElement('div');
                     dualColumnWrapper.className = 'dual-column-wrapper';
-                    dualColumnWrapper.style.cssText = 'display: flex; gap: 20px; padding: 15px;';
+                    dualColumnWrapper.style.cssText = 'display: flex; gap: 20px; padding: 15px; height: calc(100vh - 100px);';
                     
                     var leftContainer = document.createElement('div');
                     leftContainer.className = 'dual-column-container';
@@ -441,7 +441,7 @@
                     
                     dualColumnLeftColumn = document.createElement('div');
                     dualColumnLeftColumn.className = 'dual-column-left';
-                    dualColumnLeftColumn.style.cssText = 'flex: 1; overflow-y: auto; display: flex; flex-direction: column;';
+                    dualColumnLeftColumn.style.cssText = 'flex: 1; overflow-y: auto;';
                     
                     var leftTabBar = createColumnTabBar('left');
                     var leftContent = document.createElement('div');
@@ -462,7 +462,7 @@
                     
                     dualColumnRightColumn = document.createElement('div');
                     dualColumnRightColumn.className = 'dual-column-right';
-                    dualColumnRightColumn.style.cssText = 'flex: 1; overflow-y: auto; display: flex; flex-direction: column;';
+                    dualColumnRightColumn.style.cssText = 'flex: 1; overflow-y: auto;';
                     
                     var rightTabBar = createColumnTabBar('right');
                     var rightContent = document.createElement('div');
