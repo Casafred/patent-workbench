@@ -332,7 +332,7 @@
                 var tabBar = document.createElement('div');
                 tabBar.className = 'column-tab-bar';
                 tabBar.id = 'tab-bar-' + columnId;
-                tabBar.style.cssText = 'display: flex; flex-wrap: wrap; gap: 4px; padding: 8px 12px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-bottom: 2px solid #dee2e6; position: sticky; top: 0; z-index: 10;';
+                tabBar.style.cssText = 'display: flex; flex-wrap: wrap; gap: 4px; padding: 8px 12px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-bottom: 2px solid #dee2e6; position: sticky; top: 0; z-index: 10; flex-shrink: 0;';
                 
                 sectionTabs.forEach(function(tab) {
                     var tabBtn = document.createElement('button');
@@ -355,35 +355,48 @@
                         var col = columnId === 'left' ? dualColumnLeftColumn : dualColumnRightColumn;
                         if (!col) return;
                         
-                        var section = col.querySelector('[data-section-id="' + tab.id + '"]');
-                        if (!section) section = col.querySelector('#section-' + tab.id);
-                        if (!section) {
-                            var sectionByClass = col.querySelector('.section[data-section="' + tab.id + '"]');
-                            if (sectionByClass) section = sectionByClass;
+                        var section = null;
+                        var selectors = [
+                            '[data-section-id="' + tab.id + '"]',
+                            '#section-' + tab.id,
+                            '.section[data-section="' + tab.id + '"]',
+                            '.section[id*="' + tab.id + '"]',
+                            '#' + tab.id
+                        ];
+                        
+                        for (var i = 0; i < selectors.length; i++) {
+                            section = col.querySelector(selectors[i]);
+                            if (section) break;
                         }
                         
                         if (section) {
-                            var collapsedContent = section.querySelector('.section-content.collapsed');
+                            var collapsedContent = section.querySelector('.section-content.collapsed, .section-body.collapsed');
                             if (collapsedContent) {
                                 collapsedContent.classList.remove('collapsed');
                             }
                             
                             var toggleIcon = section.querySelector('.toggle-icon');
-                            if (toggleIcon && toggleIcon.textContent === '▶') {
+                            if (toggleIcon && (toggleIcon.textContent === '▶' || toggleIcon.textContent.includes('▶'))) {
                                 toggleIcon.textContent = '▼';
                             }
                             
-                            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            var contentDiv = col.querySelector('.dual-column-content');
+                            if (contentDiv) {
+                                var sectionTop = section.offsetTop;
+                                contentDiv.scrollTop = sectionTop - 60;
+                            }
                             
                             var allBtnsInThisBar = tabBar.querySelectorAll('.column-tab-btn');
-                            allBtnsInThisBar.forEach(function(b) { 
-                                b.classList.remove('active');
-                                b.style.background = 'white';
-                                b.style.color = '#495057';
-                            });
+                            for (var j = 0; j < allBtnsInThisBar.length; j++) { 
+                                allBtnsInThisBar[j].classList.remove('active');
+                                allBtnsInThisBar[j].style.background = 'white';
+                                allBtnsInThisBar[j].style.color = '#495057';
+                            }
                             this.classList.add('active');
                             this.style.background = '#1976d2';
                             this.style.color = 'white';
+                        } else {
+                            console.log('Section not found for:', tab.id);
                         }
                     };
                     tabBar.appendChild(tabBtn);
