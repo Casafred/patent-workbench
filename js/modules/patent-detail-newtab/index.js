@@ -289,11 +289,50 @@
                 { id: 'analysis', name: 'AI解读', icon: '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v1h14V4a1 1 0 0 0-1-1H2zm13 4H1v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7z"/><path d="M2 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v2H2V7zm3 3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1H5V10zm5 2a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1H10v-1z"/></svg>' }
             ];
             
+            function handleTabClick(columnId, tabId, clickedBtn) {
+                var col = columnId === 'left' ? dualColumnLeftColumn : dualColumnRightColumn;
+                if (!col) return;
+                
+                var section = col.querySelector('[data-section-id="' + tabId + '"]');
+                if (!section) section = col.querySelector('#section-' + tabId);
+                if (!section) {
+                    var sectionByClass = col.querySelector('.section[data-section="' + tabId + '"]');
+                    if (sectionByClass) section = sectionByClass;
+                }
+                
+                if (section) {
+                    var collapsedContent = section.querySelector('.section-content.collapsed');
+                    if (collapsedContent) {
+                        collapsedContent.classList.remove('collapsed');
+                    }
+                    
+                    var toggleIcon = section.querySelector('.toggle-icon');
+                    if (toggleIcon && toggleIcon.textContent === '▶') {
+                        toggleIcon.textContent = '▼';
+                    }
+                    
+                    col.scrollTop = section.offsetTop - 50;
+                    
+                    var tabBar = document.getElementById('tab-bar-' + columnId);
+                    if (tabBar) {
+                        var allBtnsInThisBar = tabBar.querySelectorAll('.column-tab-btn');
+                        allBtnsInThisBar.forEach(function(b) { 
+                            b.classList.remove('active');
+                            b.style.background = 'white';
+                            b.style.color = '#495057';
+                        });
+                    }
+                    clickedBtn.classList.add('active');
+                    clickedBtn.style.background = '#1976d2';
+                    clickedBtn.style.color = 'white';
+                }
+            }
+            
             function createColumnTabBar(columnId) {
                 var tabBar = document.createElement('div');
                 tabBar.className = 'column-tab-bar';
                 tabBar.id = 'tab-bar-' + columnId;
-                tabBar.style.cssText = 'display: flex; flex-wrap: wrap; gap: 4px; padding: 8px 12px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px 8px 0 0; border-bottom: 2px solid #dee2e6; margin-bottom: 0;';
+                tabBar.style.cssText = 'display: flex; flex-wrap: wrap; gap: 4px; padding: 8px 12px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-bottom: 2px solid #dee2e6; position: sticky; top: 0; z-index: 10;';
                 
                 sectionTabs.forEach(function(tab) {
                     var tabBtn = document.createElement('button');
