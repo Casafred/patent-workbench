@@ -273,46 +273,65 @@
             var imageTextViewerIndex = 0;
             var imageTextViewerScale = 1;
             var imageTextViewerRotation = 0;
-            var navManuallyToggled = false;
             var dualColumnLeftColumn = null;
             var dualColumnRightColumn = null;
             
-            function setupSideNavHoverBehavior() {
-                var sideNav = document.getElementById('sideNav');
-                if (!sideNav) return;
-                
-                sideNav.addEventListener('mouseenter', function() {
-                    if (dualColumnMode || imageTextMode) {
-                        sideNav.classList.remove('collapsed');
-                    }
-                });
-                
-                sideNav.addEventListener('mouseleave', function() {
-                    if (dualColumnMode || imageTextMode) {
-                        sideNav.classList.add('collapsed');
-                    }
-                });
-            }
+            var sectionTabs = [
+                { id: 'basic-info', name: '基本信息', icon: '📋' },
+                { id: 'abstract', name: '摘要', icon: '📄' },
+                { id: 'drawings', name: '附图', icon: '🖼️' },
+                { id: 'claims', name: '权利要求', icon: '⚖️' },
+                { id: 'description', name: '说明书', icon: '📝' },
+                { id: 'classifications', name: '分类', icon: '🏷️' },
+                { id: 'events', name: '事件', icon: '📅' },
+                { id: 'family', name: '同族', icon: '👨‍👩‍👧‍👦' },
+                { id: 'related', name: '相关专利', icon: '🔗' },
+                { id: 'analysis', name: 'AI解读', icon: '🤖' }
+            ];
             
-            function bindDualColumnNavEvents() {
-                var navItems = document.querySelectorAll('.side-nav-item[data-section]');
+            function createColumnTabBar(columnId) {
+                var tabBar = document.createElement('div');
+                tabBar.className = 'column-tab-bar';
+                tabBar.id = 'tab-bar-' + columnId;
+                tabBar.style.cssText = 'display: flex; flex-wrap: wrap; gap: 4px; padding: 8px 12px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px 8px 0 0; border-bottom: 2px solid #dee2e6; margin-bottom: 0;';
                 
-                navItems.forEach(function(item) {
-                    item.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        var sectionId = this.getAttribute('data-section');
-                        
-                        var leftSection = dualColumnLeftColumn ? dualColumnLeftColumn.querySelector('#' + sectionId + ', [data-section-id="' + sectionId + '"]') : null;
-                        var rightSection = dualColumnRightColumn ? dualColumnRightColumn.querySelector('#' + sectionId + ', [data-section-id="' + sectionId + '"]') : null;
-                        
-                        if (leftSection) {
-                            leftSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                sectionTabs.forEach(function(tab) {
+                    var tabBtn = document.createElement('button');
+                    tabBtn.className = 'column-tab-btn';
+                    tabBtn.setAttribute('data-section', tab.id);
+                    tabBtn.setAttribute('data-column', columnId);
+                    tabBtn.style.cssText = 'padding: 6px 12px; border: none; background: white; border-radius: 6px; cursor: pointer; font-size: 12px; color: #495057; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.1); white-space: nowrap;';
+                    tabBtn.innerHTML = tab.icon + ' ' + tab.name;
+                    tabBtn.onmouseenter = function() {
+                        this.style.background = '#e3f2fd';
+                        this.style.color = '#1976d2';
+                    };
+                    tabBtn.onmouseleave = function() {
+                        if (!this.classList.contains('active')) {
+                            this.style.background = 'white';
+                            this.style.color = '#495057';
                         }
-                        if (rightSection) {
-                            rightSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    };
+                    tabBtn.onclick = function() {
+                        var col = columnId === 'left' ? dualColumnLeftColumn : dualColumnRightColumn;
+                        var section = col ? col.querySelector('#section-' + tab.id + ', [data-section-id="' + tab.id + '"]') : null;
+                        if (section) {
+                            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            var allBtns = tabBar.querySelectorAll('.column-tab-btn');
+                            allBtns.forEach(function(b) { 
+                                b.classList.remove('active');
+                                b.style.background = 'white';
+                                b.style.color = '#495057';
+                            });
+                            this.classList.add('active');
+                            this.style.background = '#1976d2';
+                            this.style.color = 'white';
                         }
-                    });
+                    };
+                    tabBar.appendChild(tabBtn);
                 });
+                
+                return tabBar;
             }
             
             window.toggleDualColumnMode = function() {
@@ -339,35 +358,50 @@
                         sideNav.classList.add('collapsed');
                     }
                     
-                    var navTrigger = document.getElementById('navTrigger');
-                    if (navTrigger) navTrigger.classList.add('visible');
-                    
                     var sections = mainContent.querySelectorAll('.section');
                     
                     var dualColumnWrapper = document.createElement('div');
                     dualColumnWrapper.className = 'dual-column-wrapper';
-                    dualColumnWrapper.style.cssText = 'display: flex; gap: 30px; padding: 20px;';
+                    dualColumnWrapper.style.cssText = 'display: flex; gap: 20px; padding: 15px;';
+                    
+                    var leftContainer = document.createElement('div');
+                    leftContainer.className = 'dual-column-container';
+                    leftContainer.style.cssText = 'flex: 1; display: flex; flex-direction: column; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden;';
+                    
+                    var leftTabBar = createColumnTabBar('left');
                     
                     dualColumnLeftColumn = document.createElement('div');
                     dualColumnLeftColumn.className = 'dual-column-left';
-                    dualColumnLeftColumn.style.cssText = 'flex: 1; overflow-y: auto; max-height: calc(100vh - 80px); padding-right: 15px;';
-                    
-                    dualColumnRightColumn = document.createElement('div');
-                    dualColumnRightColumn.className = 'dual-column-right';
-                    dualColumnRightColumn.style.cssText = 'flex: 1; overflow-y: auto; max-height: calc(100vh - 80px); padding-left: 15px; border-left: 2px solid #e0e0e0;';
+                    dualColumnLeftColumn.style.cssText = 'flex: 1; overflow-y: auto; padding: 15px;';
                     
                     sections.forEach(function(section) {
                         dualColumnLeftColumn.appendChild(section.cloneNode(true));
+                    });
+                    
+                    leftContainer.appendChild(leftTabBar);
+                    leftContainer.appendChild(dualColumnLeftColumn);
+                    
+                    var rightContainer = document.createElement('div');
+                    rightContainer.className = 'dual-column-container';
+                    rightContainer.style.cssText = 'flex: 1; display: flex; flex-direction: column; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden;';
+                    
+                    var rightTabBar = createColumnTabBar('right');
+                    
+                    dualColumnRightColumn = document.createElement('div');
+                    dualColumnRightColumn.className = 'dual-column-right';
+                    dualColumnRightColumn.style.cssText = 'flex: 1; overflow-y: auto; padding: 15px;';
+                    
+                    sections.forEach(function(section) {
                         dualColumnRightColumn.appendChild(section.cloneNode(true));
                     });
                     
+                    rightContainer.appendChild(rightTabBar);
+                    rightContainer.appendChild(dualColumnRightColumn);
+                    
                     mainContent.style.display = 'none';
                     mainContent.parentNode.insertBefore(dualColumnWrapper, mainContent);
-                    dualColumnWrapper.appendChild(dualColumnLeftColumn);
-                    dualColumnWrapper.appendChild(dualColumnRightColumn);
-                    
-                    setupSideNavHoverBehavior();
-                    bindDualColumnNavEvents();
+                    dualColumnWrapper.appendChild(leftContainer);
+                    dualColumnWrapper.appendChild(rightContainer);
                     
                 } else {
                     btn.style.background = 'rgba(255,255,255,0.2)';
@@ -375,9 +409,6 @@
                     
                     if (container) container.style.maxWidth = '1200px';
                     if (sideNav && !originalNavCollapsed) sideNav.classList.remove('collapsed');
-                    
-                    var navTrigger = document.getElementById('navTrigger');
-                    if (navTrigger) navTrigger.classList.remove('visible');
                     
                     var wrapper = document.querySelector('.dual-column-wrapper');
                     if (wrapper) wrapper.remove();
@@ -416,9 +447,6 @@
                         originalNavCollapsed = sideNav.classList.contains('collapsed');
                         sideNav.classList.add('collapsed');
                     }
-                    
-                    var navTrigger = document.getElementById('navTrigger');
-                    if (navTrigger) navTrigger.classList.add('visible');
                     
                     imageTextViewerIndex = 0;
                     imageTextViewerScale = 1;
@@ -472,8 +500,6 @@
                     mainContent.parentNode.insertBefore(imageTextWrapper, mainContent);
                     imageTextWrapper.appendChild(leftColumn);
                     imageTextWrapper.appendChild(rightColumn);
-                    
-                    setupSideNavHoverBehavior();
                     
                 } else {
                     btn.style.background = 'rgba(255,255,255,0.25)';

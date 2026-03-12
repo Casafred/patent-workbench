@@ -72,7 +72,8 @@ def search_patents():
                 'application_date': r.application_date,
                 'cpc_classifications': r.cpc_classifications[:5] if r.cpc_classifications else [],
                 'ipc_classifications': r.ipc_classifications[:5] if r.ipc_classifications else [],
-                'url': r.url
+                'url': r.url,
+                'first_drawing_url': r.first_drawing_url
             })
         
         return jsonify({
@@ -118,6 +119,28 @@ def get_patent_detail(patent_number):
         
     except Exception as e:
         logger.error(f"获取专利详情失败: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@epo_bp.route('/drawing/<patent_number>', methods=['GET'])
+def get_patent_drawing(patent_number):
+    """
+    获取专利第一张附图
+    
+    Params:
+        patent_number: 专利号
+    """
+    try:
+        client = get_epo_ops_client()
+        result = client.get_first_drawing(patent_number)
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"获取专利附图失败: {e}")
         return jsonify({
             'success': False,
             'error': str(e)

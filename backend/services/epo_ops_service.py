@@ -50,6 +50,7 @@ class EPOSearchResult:
     cpc_classifications: List[str]
     ipc_classifications: List[str]
     url: str
+    first_drawing_url: str = ''
 
 
 @dataclass
@@ -252,7 +253,7 @@ class EPOOPSClient:
         return response.json(), quota_info
     
     def search(self, query: str, range_start: int = 1, range_end: int = 25) -> Dict:
-        url = f"{EPO_OPS_BASE_URL}/published-data/search"
+        url = f"{EPO_OPS_BASE_URL}/published-data/search/biblio"
         params = {
             'q': query,
             'Range': f"{range_start}-{range_end}"
@@ -275,45 +276,90 @@ class EPOOPSClient:
             world_data = data.get('ops:world-patent-data', {})
             search_data = world_data.get('ops:biblio-search', {})
             
-            search_result = search_data.get('ops:search-result', {})
+            search_results = search_data.get('ops:search-result', [])
+            if isinstance(search_results, dict):
+                search_results = [search_results]
             
-            pub_refs = search_result.get('ops:publication-reference', [])
-            if isinstance(pub_refs, dict):
-                pub_refs = [pub_refs]
-            
-            for pub_ref in pub_refs:
-                doc_ids = pub_ref.get('document-id', [])
-                if isinstance(doc_ids, dict):
-                    doc_ids = [doc_ids]
+            for search_result in search_results:
+                exchange_docs = search_result.get('exchange-document', [])
+                if isinstance(exchange_docs, dict):
+                    exchange_docs = [exchange_docs]
                 
-                patent_number = self._extract_patent_number_from_search(doc_ids)
-                
-                biblio = pub_ref.get('bibliographic-data', {}) if 'bibliographic-data' in pub_ref else {}
-                title = self._extract_title(biblio) if biblio else ''
-                abstract = self._extract_abstract(biblio) if biblio else ''
-                applicants = self._extract_parties(biblio, 'applicant') if biblio else []
-                inventors = self._extract_parties(biblio, 'inventor') if biblio else []
-                pub_date = self._extract_date(biblio, 'publication') if biblio else ''
-                app_date = self._extract_date(biblio, 'application') if biblio else ''
-                cpc = self._extract_classifications(biblio, 'cpc') if biblio else []
-                ipc = self._extract_classifications(biblio, 'ipc') if biblio else []
-                
-                results.append(EPOSearchResult(
-                    patent_number=patent_number,
-                    title=title,
-                    abstract=abstract,
-                    applicants=applicants,
-                    inventors=inventors,
-                    publication_date=pub_date,
-                    application_date=app_date,
-                    cpc_classifications=cpc,
-                    ipc_classifications=ipc,
-                    url=f"https://patents.google.com/patent/{patent_number}"
-                ))
+                for exchange_doc in exchange_docs:
+                    biblio = exchange_doc.get('bibliographic-data', {})
+                    
+                    patent_number = self._extract_patent_number_from_exchange(exchange_doc)
+                    title = self._extract_title(biblio)
+                    abstract = self._extract_abstract(biblio)
+                    applicants = self._extract_parties(biblio, 'applicant')
+                    inventors = self._extract_parties(biblio, 'inventor')
+                    pub_date = self._extract_date(biblio, 'publication')
+                    app_date = self._extract_date(biblio, 'application')
+                    cpc = self._extract_classifications(biblio, 'cpc')
+                    ipc = self._extract_classifications(biblio, 'ipc')
+                    first_drawing_url = self._extract_first_drawing_url(exchange_doc, patent_number)
+                    
+                    results.append(EPOSearchResult(
+                        patent_number=patent_number,
+                        title=title,
+                        abstract=abstract,
+                        applicants=applicants,
+                        inventors=inventors,
+                        publication_date=pub_date,
+                        application_date=app_date,
+                        cpc_classifications=cpc,
+                        ipc_classifications=ipc,
+                        url=f"https://patents.google.com/patent/{patent_number}",
+                        first_drawing_url=first_drawing_url
+                    ))
         except Exception as e:
             logger.error(f"解析搜索结果失败: {e}")
         
         return results
+    
+    def _extract_patent_number_from_exchange(self, exchange_doc: Dict) -> str:
+        try:
+            pub_ref = exchange_doc.get('publication-reference', {})
+            doc_ids = pub_ref.get('document-id', [])
+            
+            if isinstance(doc_ids, dict):
+                doc_ids = [doc_ids]
+            
+            for doc_id in doc_ids:
+                doc_type = doc_id.get('@document-id-type', '')
+                if doc_type == 'epodoc':
+                    doc_num = doc_id.get('doc-number', {})
+                    if isinstance(doc_num, dict):
+                        return doc_num.get('$', '')
+                    else:
+                        return str(doc_num)
+            
+            if doc_ids:
+                first_doc = doc_ids[0]
+                country = first_doc.get('country', {})
+                if isinstance(country, dict):
+                    country = country.get('$', '')
+                else:
+                    country = str(country) if country else ''
+                
+                doc_num = first_doc.get('doc-number', {})
+                if isinstance(doc_num, dict):
+                    doc_num = doc_num.get('$', '')
+                else:
+                    doc_num = str(doc_num) if doc_num else ''
+                
+                kind = first_doc.get('kind', {})
+                if isinstance(kind, dict):
+                    kind = kind.get('$', '')
+                else:
+                    kind = str(kind) if kind else ''
+                
+                if country and doc_num:
+                    return f"{country}{doc_num}" + (f".{kind}" if kind else "")
+            return ''
+        except Exception as e:
+            logger.error(f"提取专利号失败: {e}")
+            return ''
     
     def _extract_patent_number_from_search(self, doc_ids: List[Dict]) -> str:
         try:
@@ -516,6 +562,76 @@ class EPOOPSClient:
             return result
         except:
             return []
+    
+    def _extract_first_drawing_url(self, exchange_doc: Dict, patent_number: str) -> str:
+        try:
+            drawings_info = exchange_doc.get('drawings-info', {})
+            if not drawings_info:
+                return ''
+            
+            drawings = drawings_info.get('drawing', [])
+            if isinstance(drawings, dict):
+                drawings = [drawings]
+            
+            if drawings:
+                first_drawing = drawings[0]
+                img = first_drawing.get('img', {})
+                if isinstance(img, dict):
+                    img_id = img.get('@id', '')
+                    if img_id:
+                        return f"{EPO_OPS_BASE_URL}/published-data/images/{patent_number}/{img_id}.png"
+            return ''
+        except Exception as e:
+            logger.debug(f"提取附图URL失败: {e}")
+            return ''
+    
+    def get_first_drawing(self, patent_number: str) -> Dict:
+        url = f"{EPO_OPS_BASE_URL}/published-data/publication/epodoc/{patent_number}/images"
+        
+        try:
+            data, quota_info = self._make_request(url)
+            
+            world_data = data.get('ops:world-patent-data', {})
+            doc_instance = world_data.get('ops:document-instance', {})
+            
+            if isinstance(doc_instance, list) and len(doc_instance) > 0:
+                doc_instance = doc_instance[0]
+            
+            links = doc_instance.get('ops:link', [])
+            if isinstance(links, dict):
+                links = [links]
+            
+            for link in links:
+                link_ref = link.get('@link', '')
+                if link_ref and 'firstpage' in link_ref.lower():
+                    drawing_url = f"{EPO_OPS_BASE_URL}{link_ref}.png"
+                    return {
+                        'success': True,
+                        'drawing_url': drawing_url,
+                        'quota_info': asdict(quota_info)
+                    }
+            
+            if links:
+                first_link = links[0].get('@link', '')
+                if first_link:
+                    drawing_url = f"{EPO_OPS_BASE_URL}{first_link}.png"
+                    return {
+                        'success': True,
+                        'drawing_url': drawing_url,
+                        'quota_info': asdict(quota_info)
+                    }
+            
+            return {
+                'success': False,
+                'error': '未找到附图',
+                'quota_info': asdict(quota_info)
+            }
+        except Exception as e:
+            logger.error(f"获取附图失败: {e}")
+            return {
+                'success': False,
+                'error': str(e)
+            }
     
     def _extract_claims(self, data: Dict) -> List[str]:
         try:

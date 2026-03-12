@@ -18,106 +18,119 @@
         </div>
     </div>
 
-    <div class="step">
-        <div class="step-header">全球专利智能检索</div>
-        <p class="info">使用 CQL 检索语法搜索全球专利数据库。支持标题、摘要、申请人、发明人、分类号等多维度检索。</p>
-        
-        <div class="epo-search-container" style="margin-top: 20px; width: 100%;">
-            <div class="epo-search-main" style="width: 100%; max-width: 100%;">
-                <div class="search-type-selector" style="margin-bottom: 20px;">
-                    <label style="font-weight: 600; margin-bottom: 10px; display: block; color: #333; font-size: 15px;">检索类型：</label>
-                    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                        <button type="button" class="search-type-btn epo-active" data-type="simple">简单检索</button>
-                        <button type="button" class="search-type-btn" data-type="advanced">高级检索</button>
-                        <button type="button" class="search-type-btn" data-type="cql">CQL语法</button>
+    <div style="display: grid; grid-template-columns: 1fr 280px; gap: 20px;">
+        <div class="step">
+            <div class="step-header">全球专利智能检索</div>
+            <p class="info">使用 CQL 检索语法搜索全球专利数据库。支持标题、摘要、申请人、发明人、分类号等多维度检索。</p>
+            
+            <div class="epo-search-container" style="margin-top: 20px; width: 100%;">
+                <div class="epo-search-main" style="width: 100%; max-width: 100%;">
+                    <div class="search-type-selector" style="margin-bottom: 20px;">
+                        <label style="font-weight: 600; margin-bottom: 10px; display: block; color: #333; font-size: 15px;">检索类型：</label>
+                        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                            <button type="button" class="search-type-btn epo-active" data-type="simple">简单检索</button>
+                            <button type="button" class="search-type-btn" data-type="advanced">高级检索</button>
+                            <button type="button" class="search-type-btn" data-type="cql">CQL语法</button>
+                        </div>
                     </div>
-                </div>
-                
-                <div id="simple-search-panel" class="search-panel">
-                    <label style="font-weight: 600; margin-bottom: 10px; display: block; color: #333; font-size: 15px;">检索条件：</label>
-                    <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
-                        <select id="simple-field-select" class="epo-select" style="min-width: 140px;">
-                            <option value="ta">标题</option>
-                            <option value="ab">摘要</option>
-                            <option value="cl">权利要求</option>
-                            <option value="de">说明书</option>
-                            <option value="pa">申请人</option>
-                            <option value="in">发明人</option>
-                            <option value="pn">公开号</option>
-                            <option value="cpc">CPC分类</option>
-                            <option value="ipc">IPC分类</option>
-                        </select>
-                        <input type="text" id="simple-keyword-input" class="epo-input" placeholder="输入检索关键词..." style="flex: 1; min-width: 300px;">
-                    </div>
-                </div>
-                
-                <div id="advanced-search-panel" class="search-panel" style="display: none;">
-                    <label style="font-weight: 600; margin-bottom: 10px; display: block; color: #333; font-size: 15px;">检索条件：</label>
-                    <div id="advanced-search-rows">
-                        <div class="adv-row">
-                            <select class="adv-field epo-select-sm" style="min-width: 130px;">
+                    
+                    <div id="simple-search-panel" class="search-panel">
+                        <label style="font-weight: 600; margin-bottom: 10px; display: block; color: #333; font-size: 15px;">检索条件：</label>
+                        <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+                            <select id="simple-field-select" class="epo-select" style="min-width: 140px;">
                                 <option value="ta">标题</option>
                                 <option value="ab">摘要</option>
                                 <option value="cl">权利要求</option>
                                 <option value="de">说明书</option>
                                 <option value="pa">申请人</option>
                                 <option value="in">发明人</option>
+                                <option value="pn">公开号</option>
                                 <option value="cpc">CPC分类</option>
                                 <option value="ipc">IPC分类</option>
                             </select>
-                            <select class="adv-operator epo-select-sm" style="min-width: 80px;">
-                                <option value="AND">AND</option>
-                                <option value="OR">OR</option>
-                                <option value="NOT">NOT</option>
-                            </select>
-                            <input type="text" class="adv-keyword epo-input-sm" placeholder="输入关键词..." style="flex: 1; min-width: 250px;">
-                            <button type="button" class="remove-row-btn epo-btn-danger" style="display: none;">×</button>
+                            <input type="text" id="simple-keyword-input" class="epo-input" placeholder="输入检索关键词..." style="flex: 1; min-width: 300px;">
                         </div>
                     </div>
-                    <button type="button" id="add-search-row-btn" class="epo-btn-link" style="margin-top: 12px;">+ 添加检索条件</button>
-                </div>
-                
-                <div id="cql-search-panel" class="search-panel" style="display: none;">
-                    <label style="font-weight: 600; margin-bottom: 10px; display: block; color: #333; font-size: 15px;">CQL检索语句：</label>
-                    <textarea id="cql-query-input" class="epo-textarea" rows="5" placeholder="输入 CQL 检索语法，例如：ta=machine learning AND pa=Google&#10;支持字段：ta(标题)、ab(摘要)、cl(权利要求)、pa(申请人)、in(发明人)、pn(公开号)、cpc(CPC分类)、ipc(IPC分类)"></textarea>
-                    <button type="button" id="show-cql-help-btn" class="epo-btn-link" style="margin-top: 10px;">查看CQL语法帮助</button>
-                </div>
-                
-                <div class="date-range-section" style="margin-top: 20px; padding: 16px; background: #f8f9fa; border-radius: 8px;">
-                    <label style="font-weight: 600; margin-bottom: 10px; display: block; color: #333; font-size: 15px;">公开日期范围（可选）：</label>
-                    <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
-                        <input type="date" id="date-from" class="epo-input-sm" style="min-width: 150px;">
-                        <span style="color: #666; font-size: 14px;">至</span>
-                        <input type="date" id="date-to" class="epo-input-sm" style="min-width: 150px;">
-                        <button type="button" id="clear-date-btn" class="epo-btn-secondary">清除日期</button>
+                    
+                    <div id="advanced-search-panel" class="search-panel" style="display: none;">
+                        <label style="font-weight: 600; margin-bottom: 10px; display: block; color: #333; font-size: 15px;">检索条件：</label>
+                        <div id="advanced-search-rows">
+                            <div class="adv-row">
+                                <select class="adv-field epo-select-sm" style="min-width: 130px;">
+                                    <option value="ta">标题</option>
+                                    <option value="ab">摘要</option>
+                                    <option value="cl">权利要求</option>
+                                    <option value="de">说明书</option>
+                                    <option value="pa">申请人</option>
+                                    <option value="in">发明人</option>
+                                    <option value="cpc">CPC分类</option>
+                                    <option value="ipc">IPC分类</option>
+                                </select>
+                                <select class="adv-operator epo-select-sm" style="min-width: 80px;">
+                                    <option value="AND">AND</option>
+                                    <option value="OR">OR</option>
+                                    <option value="NOT">NOT</option>
+                                </select>
+                                <input type="text" class="adv-keyword epo-input-sm" placeholder="输入关键词..." style="flex: 1; min-width: 250px;">
+                                <button type="button" class="remove-row-btn epo-btn-danger" style="display: none;">×</button>
+                            </div>
+                        </div>
+                        <button type="button" id="add-search-row-btn" class="epo-btn-link" style="margin-top: 12px;">+ 添加检索条件</button>
+                    </div>
+                    
+                    <div id="cql-search-panel" class="search-panel" style="display: none;">
+                        <label style="font-weight: 600; margin-bottom: 10px; display: block; color: #333; font-size: 15px;">CQL检索语句：</label>
+                        <textarea id="cql-query-input" class="epo-textarea" rows="5" placeholder="输入 CQL 检索语法，例如：ta=machine learning AND pa=Google&#10;支持字段：ta(标题)、ab(摘要)、cl(权利要求)、pa(申请人)、in(发明人)、pn(公开号)、cpc(CPC分类)、ipc(IPC分类)"></textarea>
+                        <button type="button" id="show-cql-help-btn" class="epo-btn-link" style="margin-top: 10px;">查看CQL语法帮助</button>
+                    </div>
+                    
+                    <div class="date-range-section" style="margin-top: 20px; padding: 16px; background: #f8f9fa; border-radius: 8px;">
+                        <label style="font-weight: 600; margin-bottom: 10px; display: block; color: #333; font-size: 15px;">公开日期范围（可选）：</label>
+                        <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+                            <input type="date" id="date-from" class="epo-input-sm" style="min-width: 150px;">
+                            <span style="color: #666; font-size: 14px;">至</span>
+                            <input type="date" id="date-to" class="epo-input-sm" style="min-width: 150px;">
+                            <button type="button" id="clear-date-btn" class="epo-btn-secondary">清除日期</button>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                        <button type="button" id="epo-search-btn" class="epo-btn-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 6px; vertical-align: middle;">
+                                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                            </svg>
+                            开始检索
+                        </button>
+                        <button type="button" id="epo-clear-btn" class="epo-btn-secondary">清空</button>
+                        <div style="display: flex; gap: 12px; align-items: center; margin-left: auto;">
+                            <label style="font-size: 13px; color: #666;">每页显示：</label>
+                            <select id="results-per-page" class="epo-select-sm">
+                                <option value="10">10 条</option>
+                                <option value="25" selected>25 条</option>
+                                <option value="50">50 条</option>
+                                <option value="100">100 条</option>
+                            </select>
+                            <label style="font-size: 13px; color: #666;">AI模型：</label>
+                            <select id="epo-model-select" class="epo-select-sm">
+                                <option value="glm-4-flash">GLM-4-Flash</option>
+                                <option value="glm-4-plus">GLM-4-Plus</option>
+                                <option value="qwen-turbo">Qwen-Turbo</option>
+                                <option value="qwen-plus">Qwen-Plus</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
-                
-                <div style="margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
-                    <button type="button" id="epo-search-btn" class="epo-btn-primary">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 6px; vertical-align: middle;">
-                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
-                        </svg>
-                        开始检索
-                    </button>
-                    <button type="button" id="epo-clear-btn" class="epo-btn-secondary">清空</button>
-                    <div style="display: flex; gap: 12px; align-items: center; margin-left: auto;">
-                        <label style="font-size: 13px; color: #666;">每页显示：</label>
-                        <select id="results-per-page" class="epo-select-sm">
-                            <option value="10">10 条</option>
-                            <option value="25" selected>25 条</option>
-                            <option value="50">50 条</option>
-                            <option value="100">100 条</option>
-                        </select>
-                        <label style="font-size: 13px; color: #666;">AI模型：</label>
-                        <select id="epo-model-select" class="epo-select-sm">
-                            <option value="glm-4-flash">GLM-4-Flash</option>
-                            <option value="glm-4-plus">GLM-4-Plus</option>
-                            <option value="qwen-turbo">Qwen-Turbo</option>
-                            <option value="qwen-plus">Qwen-Plus</option>
-                        </select>
-                    </div>
-                </div>
+            </div>
+        </div>
+        
+        <!-- 历史检索记录区域 -->
+        <div class="step" style="height: fit-content;">
+            <div class="step-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>检索历史</span>
+                <button type="button" id="epo-clear-history-btn" class="epo-btn-link" style="font-size: 12px; padding: 4px 8px;">清除历史</button>
+            </div>
+            <div id="epo-history-list" class="epo-history-list" style="max-height: 400px; overflow-y: auto;">
+                <div style="text-align: center; color: #999; padding: 20px;">暂无检索记录</div>
             </div>
         </div>
     </div>
@@ -398,6 +411,31 @@
     border-color: #1976d2;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
+.epo-result-content {
+    display: flex;
+    gap: 16px;
+}
+.epo-result-drawing {
+    flex-shrink: 0;
+    width: 120px;
+    height: 120px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f5f5f5;
+}
+.epo-result-drawing img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+.epo-result-info {
+    flex: 1;
+    min-width: 0;
+}
 .epo-result-header {
     display: flex;
     justify-content: space-between;
@@ -486,5 +524,37 @@
 @keyframes slideIn {
     from { transform: translateX(100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
+}
+
+/* 历史记录样式 */
+.epo-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.epo-history-item {
+    padding: 10px 12px;
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.epo-history-item:hover {
+    background: #e3f2fd;
+    border-color: #1976d2;
+}
+.epo-history-query {
+    font-size: 13px;
+    color: #333;
+    word-break: break-all;
+    margin-bottom: 4px;
+    line-height: 1.4;
+}
+.epo-history-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #999;
 }
 </style>

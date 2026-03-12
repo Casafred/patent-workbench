@@ -10,14 +10,87 @@ class EPOSearchModule {
         this.searchResults = [];
         this.currentPatentNumber = null;
         this.cqlHelpData = null;
+        this.searchHistory = this.loadSearchHistory();
         
         this.init();
+    }
+    
+    loadSearchHistory() {
+        try {
+            const saved = localStorage.getItem('epo_search_history');
+            return saved ? JSON.parse(saved) : [];
+        } catch {
+            return [];
+        }
+    }
+    
+    saveSearchHistory(query, totalResults) {
+        const historyItem = {
+            query: query,
+            total_results: totalResults,
+            timestamp: new Date().toISOString(),
+            date_str: new Date().toLocaleString('zh-CN')
+        };
+        
+        this.searchHistory = this.searchHistory.filter(h => h.query !== query);
+        this.searchHistory.unshift(historyItem);
+        
+        if (this.searchHistory.length > 20) {
+            this.searchHistory = this.searchHistory.slice(0, 20);
+        }
+        
+        localStorage.setItem('epo_search_history', JSON.stringify(this.searchHistory));
+        this.renderSearchHistory();
+    }
+    
+    clearSearchHistory() {
+        this.searchHistory = [];
+        localStorage.removeItem('epo_search_history');
+        this.renderSearchHistory();
+    }
+    
+    renderSearchHistory() {
+        const container = document.getElementById('epo-history-list');
+        if (!container) return;
+        
+        if (this.searchHistory.length === 0) {
+            container.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">暂无检索记录</div>';
+            return;
+        }
+        
+        container.innerHTML = this.searchHistory.map((item, index) => `
+            <div class="epo-history-item" data-query="${this.escapeHtml(item.query)}">
+                <div class="epo-history-query">${this.escapeHtml(item.query)}</div>
+                <div class="epo-history-meta">
+                    <span>${item.total_results.toLocaleString()} 条结果</span>
+                    <span>${item.date_str}</span>
+                </div>
+            </div>
+        `).join('');
+        
+        container.querySelectorAll('.epo-history-item').forEach(el => {
+            el.addEventListener('click', () => {
+                const query = el.dataset.query;
+                const cqlInput = document.getElementById('cql-query-input');
+                if (cqlInput) {
+                    cqlInput.value = query;
+                }
+                this.switchSearchType('cql');
+            });
+        });
+    }
+    
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
     
     init() {
         this.bindEvents();
         this.loadQuotaInfo();
         this.loadCQLHelp();
+        this.renderSearchHistory();
     }
     
     async loadQuotaInfo() {
@@ -230,6 +303,16 @@ class EPOSearchModule {
                 }
             });
         }
+        
+        const clearHistoryBtn = document.getElementById('epo-clear-history-btn');
+        if (clearHistoryBtn) {
+            clearHistoryBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (confirm('确定要清除所有检索历史记录吗？')) {
+                    this.clearSearchHistory();
+                }
+            });
+        }
     }
     
     switchSearchType(type) {
@@ -398,6 +481,7 @@ class EPOSearchModule {
                 this.searchResults = data.results;
                 this.totalResults = data.total_results;
                 this.displayResults(data.results, data.total_results);
+                this.saveSearchHistory(query, data.total_results);
             } else {
                 this.showToast(data.error || '检索失败', 'error');
             }
@@ -469,24 +553,35 @@ class EPOSearchModule {
         const applicants = result.applicants || [];
         const inventors = result.inventors || [];
         
+        const drawingHtml = result.first_drawing_url 
+            ? `<div class="epo-result-drawing">
+                <img src="${result.first_drawing_url}" alt="附图" onerror="this.parentElement.style.display='none'" />
+               </div>`
+            : '';
+        
         return `
             <div class="epo-result-item">
-                <div class="epo-result-header">
-                    <span class="epo-result-patent-number">${result.patent_number || '-'}</span>
-                    <span style="font-size: 12px; color: #999;">公开日期: ${result.publication_date || '-'}</span>
-                </div>
-                <div class="epo-result-title" data-patent-number="${result.patent_number}">
-                    ${result.title || '无标题'}
-                </div>
-                <div class="epo-result-meta">
-                    <span>申请人: ${applicants.slice(0, 2).join(', ') || '-'}${applicants.length > 2 ? ' 等' : ''}</span>
-                    <span>发明人: ${inventors.slice(0, 2).join(', ') || '-'}${inventors.length > 2 ? ' 等' : ''}</span>
-                </div>
-                <div class="epo-result-abstract">
-                    ${result.abstract || '无摘要'}
-                </div>
-                <div class="epo-result-classifications">
-                    ${classifications}
+                <div class="epo-result-content">
+                    ${drawingHtml}
+                    <div class="epo-result-info">
+                        <div class="epo-result-header">
+                            <span class="epo-result-patent-number">${result.patent_number || '-'}</span>
+                            <span style="font-size: 12px; color: #999;">公开日期: ${result.publication_date || '-'}</span>
+                        </div>
+                        <div class="epo-result-title" data-patent-number="${result.patent_number}">
+                            ${result.title || '无标题'}
+                        </div>
+                        <div class="epo-result-meta">
+                            <span>申请人: ${applicants.slice(0, 2).join(', ') || '-'}${applicants.length > 2 ? ' 等' : ''}</span>
+                            <span>发明人: ${inventors.slice(0, 2).join(', ') || '-'}${inventors.length > 2 ? ' 等' : ''}</span>
+                        </div>
+                        <div class="epo-result-abstract">
+                            ${result.abstract || '无摘要'}
+                        </div>
+                        <div class="epo-result-classifications">
+                            ${classifications}
+                        </div>
+                    </div>
                 </div>
                 <div class="epo-result-actions">
                     <button type="button" class="view-detail-btn epo-btn-primary" data-patent-number="${result.patent_number}">
