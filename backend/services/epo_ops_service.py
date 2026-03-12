@@ -281,41 +281,66 @@ class EPOOPSClient:
                 search_results = [search_results]
             
             for search_result in search_results:
-                exchange_docs = search_result.get('exchange-document', [])
-                if isinstance(exchange_docs, dict):
-                    exchange_docs = [exchange_docs]
+                pub_refs = search_result.get('ops:publication-reference', [])
+                if isinstance(pub_refs, dict):
+                    pub_refs = [pub_refs]
                 
-                for exchange_doc in exchange_docs:
-                    biblio = exchange_doc.get('bibliographic-data', {})
-                    
-                    patent_number = self._extract_patent_number_from_exchange(exchange_doc)
-                    title = self._extract_title(biblio)
-                    abstract = self._extract_abstract(biblio)
-                    applicants = self._extract_parties(biblio, 'applicant')
-                    inventors = self._extract_parties(biblio, 'inventor')
-                    pub_date = self._extract_date(biblio, 'publication')
-                    app_date = self._extract_date(biblio, 'application')
-                    cpc = self._extract_classifications(biblio, 'cpc')
-                    ipc = self._extract_classifications(biblio, 'ipc')
-                    first_drawing_url = self._extract_first_drawing_url(exchange_doc, patent_number)
+                for pub_ref in pub_refs:
+                    patent_number = self._extract_patent_number_from_pub_ref(pub_ref)
                     
                     results.append(EPOSearchResult(
                         patent_number=patent_number,
-                        title=title,
-                        abstract=abstract,
-                        applicants=applicants,
-                        inventors=inventors,
-                        publication_date=pub_date,
-                        application_date=app_date,
-                        cpc_classifications=cpc,
-                        ipc_classifications=ipc,
+                        title='',
+                        abstract='',
+                        applicants=[],
+                        inventors=[],
+                        publication_date='',
+                        application_date='',
+                        cpc_classifications=[],
+                        ipc_classifications=[],
                         url=f"https://patents.google.com/patent/{patent_number}",
-                        first_drawing_url=first_drawing_url
+                        first_drawing_url=''
                     ))
         except Exception as e:
             logger.error(f"解析搜索结果失败: {e}")
         
         return results
+    
+    def _extract_patent_number_from_pub_ref(self, pub_ref: Dict) -> str:
+        try:
+            doc_ids = pub_ref.get('document-id', [])
+            
+            if isinstance(doc_ids, dict):
+                doc_ids = [doc_ids]
+            
+            for doc_id in doc_ids:
+                doc_type = doc_id.get('@document-id-type', '')
+                if doc_type == 'epodoc':
+                    doc_num = doc_id.get('doc-number', {})
+                    if isinstance(doc_num, dict):
+                        return doc_num.get('$', '')
+                    else:
+                        return str(doc_num)
+            
+            if doc_ids:
+                first_doc = doc_ids[0]
+                country = first_doc.get('country', {})
+                if isinstance(country, dict):
+                    country = country.get('$', '')
+                else:
+                    country = str(country)
+                
+                doc_num = first_doc.get('doc-number', {})
+                if isinstance(doc_num, dict):
+                    doc_num = doc_num.get('$', '')
+                else:
+                    doc_num = str(doc_num)
+                
+                return f"{country}{doc_num}"
+        except Exception as e:
+            logger.error(f"提取专利号失败: {e}")
+        
+        return ''
     
     def _extract_patent_number_from_exchange(self, exchange_doc: Dict) -> str:
         try:
