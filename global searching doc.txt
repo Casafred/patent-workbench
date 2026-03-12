@@ -1,0 +1,285 @@
+## OPS RESTful Web Services – 常见功能请求与响应格式指南
+
+本指南基于《Open Patent Services RESTful Web Services Reference Guide Version 1.3.20》整理，旨在为开发人员提供调用 OPS 接口所需的请求构造方法和响应数据结构的核心信息。
+
+### 1. 通用请求结构
+所有 OPS 服务的 REST 请求遵循以下模式（**粗体**为必填部分，`[ ]` 为可选部分）：
+
+```
+protocol://authority/[version]/prefix/service/reference-type/input-format/input/[endpoint]/[constituent(s)]/[output-format]
+```
+
+- `protocol`：通常为 `https`
+- `authority`：生产环境为 `ops.epo.org`
+- `version`：当前版本 `3.2`（部分历史版本仍可用，但推荐使用 `3.2`）
+- `prefix`：固定为 `rest-services`
+- `service`：服务名称，如 `published-data`、`family`、`number-service`、`register`、`legal`、`classification`
+- `reference-type`：`publication`、`application` 或 `priority`
+- `input-format`：`docdb`、`epodoc` 或 `original`（仅 number-service 支持 `original`）
+- `input`：由国家代码、号码、 kind code、日期组成，各部分间用点号 `.` 分隔。特殊字符（如逗号、斜杠）需用括号 `()` 包裹。
+- `[endpoint]`：服务特定端点，如 `biblio`、`abstract`、`images`、`fulltext` 等。
+- `[constituent(s)]`：以逗号分隔的响应修饰符，如 `biblio,full-cycle`。
+- `[output-format]`：仅用于 number-service，指定输出格式（`docdb`、`epodoc`、`original`）。
+
+#### 1.1 POST 方法支持
+对于批量请求或包含特殊字符的输入，可使用 POST 方法。请求 URI 中省略 `input` 部分，输入放在请求体中（每行一个或多个逗号分隔），并设置头 `Content-Type: text/plain`。
+
+### 2. 通用响应结构
+所有 XML 响应都封装在 `<ops:world-patent-data>` 根元素内，使用以下命名空间：
+
+| 命名空间前缀 | URI                                     | 描述                                   |
+|---------------|-----------------------------------------|----------------------------------------|
+| `ops`         | `http://ops.epo.org`                    | OPS 主命名空间                         |
+| `exch`        | `http://www.epo.org/exchange`           | 交换文档（bibliographic data）         |
+| `ftxt`        | `http://www.epo.org/fulltext`           | 全文（描述、权利要求）                 |
+| `cpc`         | `http://www.epo.org/cpcexport`          | 合作专利分类                           |
+| `reg`         | `http://www.epo.org/register`           | 欧洲登记簿                             |
+
+JSON 响应可通过 Accept 头 `application/json` 获得，采用 BadgerFish 转换规则。
+
+### 3. 认证与访问令牌
+OPS 要求所有请求均使用 OAuth 2.0 认证（除已废弃的匿名访问）。流程如下：
+
+1. 在 [https://developers.epo.org](https://developers.epo.org) 注册应用，获取 `Consumer Key` 和 `Consumer Secret`。
+2. 将 `Consumer Key:Consumer Secret` 用冒号拼接后进行 Base64 编码。
+3. 向 `https://ops.epo.org/3.2/auth/accesstoken` 发送 POST 请求，携带头：
+   - `Authorization: Basic <Base64编码>`
+   - `Content-Type: application/x-www-form-urlencoded`
+   请求体：`grant_type=client_credentials`
+4. 成功返回 JSON，包含 `access_token`（有效期约 20 分钟）。
+5. 后续 OPS 请求在头中添加 `Authorization: Bearer <access_token>`。
+
+### 4. 常见服务请求与响应
+
+#### 4.1 Published-data 服务
+**服务名称**：`published-data`  
+**参考类型**：`publication`、`application`、`priority`  
+**输入格式**：`docdb` 或 `epodoc`  
+**端点**：`biblio`（默认）、`abstract`、`fulltext`、`claims`、`description`、`images`、`equivalents`  
+**构成部分**：`biblio`、`abstract`、`full-cycle`、`images`（可与端点组合）
+
+##### 4.1.1 获取书目数据（biblio）
+- **GET** `/rest-services/published-data/publication/epodoc/EP1000000.A1/biblio`  
+  或 POST `/rest-services/published-data/publication/epodoc/biblio`，请求体 `EP1000000.A1`
+- **响应**：`<exchange-documents>` 内包含一个或多个 `<exchange-document>`，含书目信息、摘要等。自动包含摘要（如有）。
+
+##### 4.1.2 获取全文信息（fulltext inquiry）
+- **GET** `/rest-services/published-data/publication/epodoc/EP1000000/fulltext`  
+  Accept: `application/fulltext+xml`
+- **响应**：`<ops:fulltext-inquiry>` 指明哪些全文可用（description/claims）及格式。
+
+##### 4.1.3 获取全文（claims / description）
+- **GET** `/rest-services/published-data/publication/epodoc/EP1000000/claims`  
+  Accept: `application/fulltext+xml`
+- **响应**：`<ftxt:fulltext-document>` 包含权利要求文本。
+
+##### 4.1.4 图像服务（images）
+- **查询**：`/rest-services/published-data/publication/epodoc/EP1000000.A1/images`，返回 `<ops:document-instance>` 包含 `link` 属性。
+- **获取**：从链接中提取路径，例如 `/rest-services/published-data/images/EP/1000000/PA/firstpage`，可指定 Accept（image/png, image/tiff, application/pdf）或通过扩展名 `.pdf` 等。支持 Range 参数获取指定页（如 `?Range=4`）。
+
+##### 4.1.5 等同专利（equivalents）
+- **GET** `/rest-services/published-data/publication/epodoc/EP1000000/equivalents`  
+  可附加构成部分：`/equivalents/abstract`、`/equivalents/biblio`、`/equivalents/biblio,full-cycle` 等。
+- **响应**：`<ops:equivalents-inquiry>` 包含多个 `<ops:inquiry-result>`，每个包含一个等同专利的引用。若请求构成，则返回对应数据。
+
+#### 4.2 Family 服务
+**服务名称**：`family`  
+**参考类型**：`publication`、`application`、`priority`  
+**输入格式**：`docdb` 或 `epodoc`（不支持 original）  
+**构成部分**：`biblio`、`legal`（可选）
+
+- **GET** `/rest-services/family/publication/docdb/EP.1000000.A1`  
+  或 `/rest-services/family/publication/docdb/EP.1000000.A1/biblio`、`/legal`、`/biblio,legal`
+- **响应**：`<ops:patent-family>` 包含 `<ops:family-member>` 列表，每个成员包含 publication/application/priority 引用，若请求构成则附加 bibliographic 或 legal 数据。
+
+#### 4.3 Number 服务
+**服务名称**：`number-service`  
+**参考类型**：`publication`、`application`、`priority`  
+**输入格式**：`docdb`、`epodoc`、`original`  
+**输出格式**：在 URI 最后指定（`/docdb`、`/epodoc`、`/original`）
+
+- **GET** `/rest-services/number-service/application/docdb/MD.20050130.A.20050130/epodoc`
+- **响应**：`<ops:standardization>` 内包含 `<ops:input>` 和 `<ops:output>`，展示转换前后的号码，并可能包含状态码（如 `pBRE001`）。
+
+#### 4.4 Register 服务
+**服务名称**：`register`  
+**参考类型**：`publication`、`application`、`priority`  
+**输入格式**：仅 `epodoc`  
+**构成部分**：`biblio`（默认）、`events`、`procedural-steps`、`upp`（Unitary Patent）
+
+- **GET** `/rest-services/register/application/epodoc/EP99203729`（默认 biblio）  
+  或添加 `/events`、`/procedural-steps` 等。
+- **响应**：`<reg:register-documents>` 内为 `<reg:register-document>`，包含书目数据、事件列表、程序步骤等（命名空间 `reg`）。
+
+**Register 搜索**（CQL）：
+- **GET** `/rest-services/register/search/?q=pa%3DIBM`  
+  可加 Range 头控制结果范围（默认 1-25，最大 100）。
+
+#### 4.5 Legal 服务
+**服务名称**：`legal`  
+**参考类型**：`publication`、`application`、`priority`  
+**输入格式**：`docdb` 或 `epodoc`
+
+- **GET** `/rest-services/legal/publication/docdb/EP.1000000.A1`
+- **响应**：`<ops:patent-family legal="true">` 内包含 family-member，每个成员带有 `<ops:legal>` 元素，描述法律事件代码及文本。
+
+#### 4.6 Classification 服务
+##### 4.6.1 CPC 检索
+- **GET** `/rest-services/classification/cpc/A`（获取顶层）  
+  可加参数 `depth`（如 `?depth=1`）、`navigation`、`ancestors`。
+- **响应**：`<cpc:class-scheme>` 包含层次结构。
+
+##### 4.6.2 CPC 媒体
+- **GET** `/rest-services/classification/cpc/media/1000.gif`  
+  从 CPC 检索响应中提取 media 链接。
+
+##### 4.6.3 CPC 搜索
+- **GET** `/rest-services/classification/cpc/search/?q=chemistry`  
+  返回带百分比的 CPC 类列表。
+
+##### 4.6.4 分类映射（Mapping）
+- **GET** `/rest-services/classification/map/ecla/A61K9/00/cpc`  
+  支持 ECLA↔CPC、IPC↔CPC 等转换。
+
+##### 4.6.5 CPC-I（国际 CPC）
+书目数据中 CPC-I 通过 `<patent-classification scheme="CPCI" office="EP">` 表示，并带有 `<generating-office>` 元素。可通过查询参数 `?cPCI=condensed` 获得压缩格式（generating-office 合并为逗号分隔）。
+
+### 5. 错误响应格式
+错误时返回 XML（内容类型 `application/xml`），结构如下：
+```xml
+<error>
+  <code>HTTP状态码</code>
+  <message>错误描述</message>
+  <moreInfo>相关链接</moreInfo>
+</error>
+```
+常见错误码：404（无效引用）、400（无效查询）、403（配额超限或机器人检测）、408（超时）、500（服务器错误）。
+
+### 6. 重要 HTTP 头
+- **认证**：`Authorization: Bearer <token>`
+- **内容类型**：POST 请求必须设置 `Content-Type: text/plain`
+- **接受类型**：根据服务设置，如表 7（p.16-17）：
+  - 书目数据：`application/exchange+xml`
+  - 全文：`application/fulltext+xml`
+  - 图像：`image/pdf`、`image/tiff`、`image/png`
+  - 号码服务：`application/ops+xml`
+  - 登记簿：`application/register+xml`
+  - 分类：`application/cpc+xml`
+  - JSON：`application/json`
+- **配额头**：
+  - `X-IndividualQuotaPerHour-Used`
+  - `X-RegisteredQuotaPerWeek-Used`
+  - `X-Rejection-Reason`（配额超限时）
+- **限流头**：`X-Throttling-Control`，指示系统负载及各服务可用请求数（绿/黄/红/黑）。
+- **范围控制**：`X-OPS-Range: begin-end` 或查询参数 `Range=begin-end`（用于分页）。
+
+---
+
+根据你提供的文档，OPS（Open Patent Services）主要通过两种方式来查询和了解配额使用情况：一种是在常规响应中通过HTTP头实时查看，另一种是通过专用的 **数据使用API** 获取详细报告。
+
+以下是为AI整理的核心信息：
+
+### 1. 实时配额监控：HTTP响应头
+
+在每一次OPS请求的响应中，都会包含特定的HTTP头，用于实时反馈当前的配额消耗状态[citation:页面40-41]。
+
+#### 请求（自动附带）
+任何标准的OPS API请求，在响应头中都会包含配额信息。你无需为此发起特定请求。
+
+#### 响应头（示例）
+```
+HTTP/1.1 200 OK
+X-IndividualQuotaPerHour-Used: 3006
+X-RegisteredQuotaPerWeek-Used: 900006
+X-Throttling-Control: idle (retrieval=green:200, search=yellow:20, ...)
+X-Rejection-Reason: RegisteredQuotaPerWeek (当配额耗尽时出现)
+```
+
+#### 关键Header说明
+*   **`X-IndividualQuotaPerHour-Used`**: 当前小时内的个人配额使用量[citation:页面40-41]。
+*   **`X-RegisteredQuotaPerWeek-Used`**: 本周内的注册用户配额使用量[citation:页面40-41]。
+*   **`X-RegisteredPayingQuotaPerWeek-Used`**: 本周内的付费用户配额使用量[citation:页面40-41]。
+*   **`X-Throttling-Control`**: 提供了更细粒度的限流状态，包括系统负载（idle/busy/overloaded）和各服务（如检索、搜索、图像）的“交通灯”状态（绿/黄/红/黑）以及剩余请求限制[citation:页面42]。
+*   **`X-Rejection-Reason`**: **关键监控项**。如果请求被拒绝（返回403），此头部会明确告知是哪种配额被耗尽（例如`RegisteredQuotaPerWeek`）[citation:页面41]。
+
+---
+
+### 2. 详细数据查询：数据使用 API (Data Usage API)
+
+这个API用于获取更详细的、可用于对账的历史用量报告。文档明确指出，调用此API**不计入配额消耗**[citation:页面45]。
+
+#### 请求格式
+*   **方法**: `GET`
+*   **协议**: `HTTPS`
+*   **认证**: 需要在请求头中包含有效的Bearer Token[citation:页面45]。
+*   **URL**:
+    ```
+    GET https://ops.epo.org/3.2/developers/me/stats/usage?timeRange=dd/mm/yyyy[~dd/mm/yyyy]
+    Authorization: Bearer <Your_Access_Token>
+    ```
+*   **参数说明**:
+    *   `timeRange`: **必填**。指定查询的日期范围。
+        *   单个日期: `30/09/2013`
+        *   日期范围: `30/09/2013~01/10/2013`（用波浪线 `~` 分隔）[citation:页面45]。
+
+#### 响应格式
+响应为JSON格式，包含了每日的用量快照。数据更新会有约10分钟的延迟[citation:页面44]。
+
+```json
+{
+  "metaData": {
+    "errors": [],
+    "notices": []
+  },
+  "environments": [
+    {
+      "name": "prod",
+      "dimensions": [
+        {
+          "metrics": [
+            {
+              "name": "total_response_size",
+              "values": [
+                {
+                  "timestamp": 1380585600000,
+                  "value": "1.1781815E7"
+                },
+                {
+                  "timestamp": 1380499200000,
+                  "value": "58579.0"
+                }
+              ]
+            },
+            {
+              "name": "message_count",
+              "values": [
+                {
+                  "timestamp": 1380585600000,
+                  "value": "420.0"
+                },
+                {
+                  "timestamp": 1380499200000,
+                  "value": "6.0"
+                }
+              ]
+            }
+          ],
+          "name": "123456,Registered Developer,4301"
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### 响应字段解析
+*   **`name` (在 `dimensions` 内)**: 包含注册用户的详细信息，格式为“EPO账户号, 开发者名称, 唯一注册记录号”[citation:页面47]。
+*   **`total_response_size`**: **关键数据**。表示该用户在指定日期实际消耗的总数据量（单位：字节）。这包括了免费和付费的数据量。**注意**：当数值很大时，会采用科学记数法（例如 `1.1781815E7` = 11,781,815 字节）[citation:页面46]。
+*   **`message_count`**: 该用户在指定日期发出的总请求次数[citation:页面47]。
+*   **`timestamp`**: Unix时间戳（毫秒级），代表该数据条目的日期[citation:页面47]。
+
+---
+
+### 总结：何时使用哪种方式？
+*   若需要在程序运行过程中**实时调整请求频率**或监控是否即将被限流，应**解析响应头**中的`X-Throttling-Control`和`X-*-Used`字段。
+*   若需要生成**日报、月报进行数据分析或核对账单**，则应调用 **Data Usage API** 获取精确的历史用量。

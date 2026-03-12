@@ -273,6 +273,15 @@
             var imageTextViewerIndex = 0;
             var imageTextViewerScale = 1;
             var imageTextViewerRotation = 0;
+            var navManuallyToggled = false;
+            
+            function toggleSideNav() {
+                var sideNav = document.getElementById('sideNav');
+                if (sideNav) {
+                    sideNav.classList.toggle('collapsed');
+                    navManuallyToggled = sideNav.classList.contains('collapsed');
+                }
+            }
             
             window.toggleDualColumnMode = function() {
                 dualColumnMode = !dualColumnMode;
@@ -299,7 +308,10 @@
                     }
                     
                     var navTrigger = document.getElementById('navTrigger');
-                    if (navTrigger) navTrigger.classList.add('visible');
+                    if (navTrigger) {
+                        navTrigger.classList.add('visible');
+                        navTrigger.onclick = toggleSideNav;
+                    }
                     
                     var sections = mainContent.querySelectorAll('.section');
                     
@@ -330,7 +342,7 @@
                     btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M0 3a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3zm2-1a1 1 0 0 0-1 1v1h2V2H2zm3 2h2V2H5v2zm3-2v2h2V2H8zm3 2v2h2V4h-2zm0 3v2h2V7h-2zm0 3v2h2v-2h-2zm-3 2v2h2v-2H8zm-3 2v2h2v-2H5zm-3-2v2h2v-2H2zm0-3v2h2V7H2zm0-3v2h2V4H2zm5 0v2h2V4H7zm2 3H7v2h2V7z"/></svg> 双栏对照';
                     
                     if (container) container.style.maxWidth = '1200px';
-                    if (sideNav && !originalNavCollapsed) sideNav.classList.remove('collapsed');
+                    if (sideNav && !originalNavCollapsed && !navManuallyToggled) sideNav.classList.remove('collapsed');
                     
                     var navTrigger = document.getElementById('navTrigger');
                     if (navTrigger) navTrigger.classList.remove('visible');
