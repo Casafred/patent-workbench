@@ -274,13 +274,45 @@
             var imageTextViewerScale = 1;
             var imageTextViewerRotation = 0;
             var navManuallyToggled = false;
+            var dualColumnLeftColumn = null;
+            var dualColumnRightColumn = null;
             
-            function toggleSideNav() {
+            function setupSideNavHoverBehavior() {
                 var sideNav = document.getElementById('sideNav');
-                if (sideNav) {
-                    sideNav.classList.toggle('collapsed');
-                    navManuallyToggled = sideNav.classList.contains('collapsed');
-                }
+                if (!sideNav) return;
+                
+                sideNav.addEventListener('mouseenter', function() {
+                    if (dualColumnMode || imageTextMode) {
+                        sideNav.classList.remove('collapsed');
+                    }
+                });
+                
+                sideNav.addEventListener('mouseleave', function() {
+                    if (dualColumnMode || imageTextMode) {
+                        sideNav.classList.add('collapsed');
+                    }
+                });
+            }
+            
+            function bindDualColumnNavEvents() {
+                var navItems = document.querySelectorAll('.side-nav-item[data-section]');
+                
+                navItems.forEach(function(item) {
+                    item.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        var sectionId = this.getAttribute('data-section');
+                        
+                        var leftSection = dualColumnLeftColumn ? dualColumnLeftColumn.querySelector('#' + sectionId + ', [data-section-id="' + sectionId + '"]') : null;
+                        var rightSection = dualColumnRightColumn ? dualColumnRightColumn.querySelector('#' + sectionId + ', [data-section-id="' + sectionId + '"]') : null;
+                        
+                        if (leftSection) {
+                            leftSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                        if (rightSection) {
+                            rightSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    });
+                });
             }
             
             window.toggleDualColumnMode = function() {
@@ -308,10 +340,7 @@
                     }
                     
                     var navTrigger = document.getElementById('navTrigger');
-                    if (navTrigger) {
-                        navTrigger.classList.add('visible');
-                        navTrigger.onclick = toggleSideNav;
-                    }
+                    if (navTrigger) navTrigger.classList.add('visible');
                     
                     var sections = mainContent.querySelectorAll('.section');
                     
@@ -319,36 +348,42 @@
                     dualColumnWrapper.className = 'dual-column-wrapper';
                     dualColumnWrapper.style.cssText = 'display: flex; gap: 30px; padding: 20px;';
                     
-                    var leftColumn = document.createElement('div');
-                    leftColumn.className = 'dual-column-left';
-                    leftColumn.style.cssText = 'flex: 1; overflow-y: auto; max-height: calc(100vh - 80px); padding-right: 15px;';
+                    dualColumnLeftColumn = document.createElement('div');
+                    dualColumnLeftColumn.className = 'dual-column-left';
+                    dualColumnLeftColumn.style.cssText = 'flex: 1; overflow-y: auto; max-height: calc(100vh - 80px); padding-right: 15px;';
                     
-                    var rightColumn = document.createElement('div');
-                    rightColumn.className = 'dual-column-right';
-                    rightColumn.style.cssText = 'flex: 1; overflow-y: auto; max-height: calc(100vh - 80px); padding-left: 15px; border-left: 2px solid #e0e0e0;';
+                    dualColumnRightColumn = document.createElement('div');
+                    dualColumnRightColumn.className = 'dual-column-right';
+                    dualColumnRightColumn.style.cssText = 'flex: 1; overflow-y: auto; max-height: calc(100vh - 80px); padding-left: 15px; border-left: 2px solid #e0e0e0;';
                     
                     sections.forEach(function(section) {
-                        leftColumn.appendChild(section.cloneNode(true));
-                        rightColumn.appendChild(section.cloneNode(true));
+                        dualColumnLeftColumn.appendChild(section.cloneNode(true));
+                        dualColumnRightColumn.appendChild(section.cloneNode(true));
                     });
                     
                     mainContent.style.display = 'none';
                     mainContent.parentNode.insertBefore(dualColumnWrapper, mainContent);
-                    dualColumnWrapper.appendChild(leftColumn);
-                    dualColumnWrapper.appendChild(rightColumn);
+                    dualColumnWrapper.appendChild(dualColumnLeftColumn);
+                    dualColumnWrapper.appendChild(dualColumnRightColumn);
+                    
+                    setupSideNavHoverBehavior();
+                    bindDualColumnNavEvents();
                     
                 } else {
                     btn.style.background = 'rgba(255,255,255,0.2)';
                     btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M0 3a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3zm2-1a1 1 0 0 0-1 1v1h2V2H2zm3 2h2V2H5v2zm3-2v2h2V2H8zm3 2v2h2V4h-2zm0 3v2h2V7h-2zm0 3v2h2v-2h-2zm-3 2v2h2v-2H8zm-3 2v2h2v-2H5zm-3-2v2h2v-2H2zm0-3v2h2V7H2zm0-3v2h2V4H2zm5 0v2h2V4H7zm2 3H7v2h2V7z"/></svg> 双栏对照';
                     
                     if (container) container.style.maxWidth = '1200px';
-                    if (sideNav && !originalNavCollapsed && !navManuallyToggled) sideNav.classList.remove('collapsed');
+                    if (sideNav && !originalNavCollapsed) sideNav.classList.remove('collapsed');
                     
                     var navTrigger = document.getElementById('navTrigger');
                     if (navTrigger) navTrigger.classList.remove('visible');
                     
                     var wrapper = document.querySelector('.dual-column-wrapper');
                     if (wrapper) wrapper.remove();
+                    
+                    dualColumnLeftColumn = null;
+                    dualColumnRightColumn = null;
                     
                     mainContent.style.display = 'block';
                 }
@@ -437,6 +472,8 @@
                     mainContent.parentNode.insertBefore(imageTextWrapper, mainContent);
                     imageTextWrapper.appendChild(leftColumn);
                     imageTextWrapper.appendChild(rightColumn);
+                    
+                    setupSideNavHoverBehavior();
                     
                 } else {
                     btn.style.background = 'rgba(255,255,255,0.25)';
