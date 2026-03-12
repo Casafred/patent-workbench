@@ -282,17 +282,18 @@
     overflow-wrap: break-word;
     position: relative;
     line-height: 1.6;
-    width: fit-content;
+    width: 100%;
     max-width: 100%;
     box-sizing: border-box;
     white-space: normal;
-    overflow-x: auto;
 }
 
 /* 防止长内容撑破布局 */
 .message-content pre {
     max-width: 100%;
     overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
 }
 
 .message-content table {
@@ -344,6 +345,8 @@
 	margin: 6px 0;
     max-width: 100%;
     box-sizing: border-box;
+    white-space: pre-wrap;
+    word-break: break-all;
 }
 
 .message-content pre code {
@@ -484,6 +487,8 @@
 	padding: 15px; 
 	border-radius: 8px; 
 	overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
 }
 
 /* 聊天输入区域 */
