@@ -380,11 +380,7 @@
                                 toggleIcon.textContent = '▼';
                             }
                             
-                            var contentDiv = col.querySelector('.dual-column-content');
-                            if (contentDiv) {
-                                var sectionTop = section.offsetTop;
-                                contentDiv.scrollTop = sectionTop - 60;
-                            }
+                            col.scrollTop = section.offsetTop - 50;
                             
                             var allBtnsInThisBar = tabBar.querySelectorAll('.column-tab-btn');
                             for (var j = 0; j < allBtnsInThisBar.length; j++) { 
