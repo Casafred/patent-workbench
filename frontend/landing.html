@@ -3279,10 +3279,21 @@
             <div class="footer-column">
                 <h4>产品功能</h4>
                 <ul class="footer-links">
-                    <li><a href="#features">即时对话</a></li>
-                    <li><a href="#features">批量分析</a></li>
-                    <li><a href="#features">专利检索</a></li>
-                    <li><a href="#features">权利要求分析</a></li>
+                    <li><a href="#features">AI智能体对话</a></li>
+                    <li><a href="#features">文本批量分析</a></li>
+                    <li><a href="#features">本地数据表管理</a></li>
+                    <li><a href="#features">权利要求比对</a></li>
+                    <li><a href="#features">批量专利检索</a></li>
+                    <li><a href="#features">全球专利检索</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>更多功能</h4>
+                <ul class="footer-links">
+                    <li><a href="#features">独从权识别</a></li>
+                    <li><a href="#features">附图智能标记</a></li>
+                    <li><a href="#features">文档OCR分析</a></li>
+                    <li><a href="#features">IPC分类查询</a></li>
                 </ul>
             </div>
             <div class="footer-column">
@@ -3307,6 +3318,20 @@
     </footer>
 
     <script>
+        // ============================================
+        // 检查登录状态 - 如果已登录则跳转到主页面
+        // ============================================
+        (function() {
+            fetch('/api/session-info')
+                .then(function(response) { return response.json(); })
+                .then(function(data) {
+                    if (data.authenticated && data.remaining_seconds > 0) {
+                        window.location.href = '/app';
+                    }
+                })
+                .catch(function() {});
+        })();
+
         // ============================================
         // 加载动画
         // ============================================

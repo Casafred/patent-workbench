@@ -623,7 +623,6 @@ def login():
         password = request.form['password']
         captcha_answer = request.form.get('captcha')
         
-        # Verify captcha
         if not captcha_answer:
             return render_template_string(
                 LOGIN_PAGE_HTML,
@@ -635,7 +634,6 @@ def login():
         try:
             captcha_answer = int(captcha_answer)
             if session.get('captcha_answer') != captcha_answer:
-                # Generate new captcha for next attempt
                 new_captcha_question, new_captcha_answer = generate_captcha()
                 session['captcha_answer'] = new_captcha_answer
                 return render_template_string(
@@ -644,7 +642,6 @@ def login():
                     captcha_question=new_captcha_question
                 )
         except ValueError:
-            # Generate new captcha for next attempt
             new_captcha_question, new_captcha_answer = generate_captcha()
             session['captcha_answer'] = new_captcha_answer
             return render_template_string(
@@ -653,29 +650,23 @@ def login():
                 captcha_question=new_captcha_question
             )
         
-        # Verify credentials
         if AuthService.verify_credentials(username, password):
-            # Manage user IP
             client_ip = AuthService.get_client_ip()
             AuthService.manage_user_ip(username, client_ip)
             
-            # Check "remember me" option
             remember_me = request.form.get('remember_me') == 'on'
             
-            # Set session
             session['user'] = username
             session.permanent = True
             from datetime import datetime
             session['_creation_time'] = datetime.now().timestamp()
             
-            # If remember me is checked, mark session for extended lifetime
             if remember_me:
                 session['_remember_me'] = True
                 session.permanent_session_lifetime = REMEMBER_ME_SESSION_LIFETIME
             
             return redirect(url_for('auth.serve_app'))
         else:
-            # Generate new captcha for next attempt
             new_captcha_question, new_captcha_answer = generate_captcha()
             session['captcha_answer'] = new_captcha_answer
             return render_template_string(
@@ -684,7 +675,31 @@ def login():
                 captcha_question=new_captcha_question
             )
     
-    # GET请求：生成新的验证码并显示登录页面
+    if 'user' in session:
+        from datetime import datetime
+        from backend.config import PERMANENT_SESSION_LIFETIME, GUEST_SESSION_LIFETIME, REMEMBER_ME_SESSION_LIFETIME
+        
+        is_guest = session.get('is_guest', False)
+        is_remember_me = session.get('_remember_me', False)
+        
+        if is_guest:
+            session_lifetime = GUEST_SESSION_LIFETIME
+        elif is_remember_me:
+            session_lifetime = REMEMBER_ME_SESSION_LIFETIME
+        else:
+            session_lifetime = PERMANENT_SESSION_LIFETIME
+        
+        session_created = session.get('_creation_time')
+        if session_created:
+            elapsed = datetime.now() - datetime.fromtimestamp(session_created)
+            if elapsed < session_lifetime:
+                return redirect(url_for('auth.serve_app'))
+            else:
+                session.clear()
+        else:
+            session['_creation_time'] = datetime.now().timestamp()
+            return redirect(url_for('auth.serve_app'))
+    
     captcha_question, captcha_answer = generate_captcha()
     session['captcha_answer'] = captcha_answer
     return render_template_string(

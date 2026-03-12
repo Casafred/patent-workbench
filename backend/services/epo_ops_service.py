@@ -276,33 +276,85 @@ class EPOOPSClient:
             world_data = data.get('ops:world-patent-data', {})
             search_data = world_data.get('ops:biblio-search', {})
             
+            logger.info(f"EPO搜索数据结构 - world_data keys: {list(world_data.keys())}")
+            logger.info(f"EPO搜索数据结构 - search_data keys: {list(search_data.keys())}")
+            
             search_results = search_data.get('ops:search-result', [])
+            logger.info(f"EPO搜索数据结构 - search_results type: {type(search_results)}, len: {len(search_results) if isinstance(search_results, list) else 'N/A'}")
+            
             if isinstance(search_results, dict):
+                logger.info(f"EPO搜索数据结构 - search_results keys: {list(search_results.keys())}")
                 search_results = [search_results]
             
-            for search_result in search_results:
-                pub_refs = search_result.get('ops:publication-reference', [])
-                if isinstance(pub_refs, dict):
-                    pub_refs = [pub_refs]
+            for idx, search_result in enumerate(search_results):
+                logger.info(f"EPO搜索数据结构 - search_result[{idx}] keys: {list(search_result.keys()) if isinstance(search_result, dict) else 'N/A'}")
                 
-                for pub_ref in pub_refs:
-                    patent_number = self._extract_patent_number_from_pub_ref(pub_ref)
+                exchange_docs = search_result.get('exchange-document', [])
+                if isinstance(exchange_docs, dict):
+                    exchange_docs = [exchange_docs]
+                
+                logger.info(f"EPO搜索数据结构 - exchange_docs type: {type(exchange_docs)}, len: {len(exchange_docs) if isinstance(exchange_docs, list) else 'N/A'}")
+                
+                if not exchange_docs:
+                    pub_refs = search_result.get('ops:publication-reference', [])
+                    if isinstance(pub_refs, dict):
+                        pub_refs = [pub_refs]
                     
-                    results.append(EPOSearchResult(
-                        patent_number=patent_number,
-                        title='',
-                        abstract='',
-                        applicants=[],
-                        inventors=[],
-                        publication_date='',
-                        application_date='',
-                        cpc_classifications=[],
-                        ipc_classifications=[],
-                        url=f"https://patents.google.com/patent/{patent_number}",
-                        first_drawing_url=''
-                    ))
+                    logger.info(f"EPO搜索数据结构 - pub_refs type: {type(pub_refs)}, len: {len(pub_refs) if isinstance(pub_refs, list) else 'N/A'}")
+                    
+                    for pub_ref in pub_refs:
+                        patent_number = self._extract_patent_number_from_pub_ref(pub_ref)
+                        logger.info(f"EPO搜索数据结构 - 提取到专利号: {patent_number}")
+                        
+                        results.append(EPOSearchResult(
+                            patent_number=patent_number,
+                            title='',
+                            abstract='',
+                            applicants=[],
+                            inventors=[],
+                            publication_date='',
+                            application_date='',
+                            cpc_classifications=[],
+                            ipc_classifications=[],
+                            url=f"https://patents.google.com/patent/{patent_number}",
+                            first_drawing_url=''
+                        ))
+                else:
+                    for exchange_doc in exchange_docs:
+                        biblio = exchange_doc.get('bibliographic-data', {})
+                        
+                        patent_number = self._extract_patent_number_from_exchange(exchange_doc)
+                        title = self._extract_title(biblio)
+                        abstract = self._extract_abstract(biblio)
+                        applicants = self._extract_parties(biblio, 'applicant')
+                        inventors = self._extract_parties(biblio, 'inventor')
+                        pub_date = self._extract_date(biblio, 'publication')
+                        app_date = self._extract_date(biblio, 'application')
+                        cpc = self._extract_classifications(biblio, 'cpc')
+                        ipc = self._extract_classifications(biblio, 'ipc')
+                        first_drawing_url = self._extract_first_drawing_url(exchange_doc, patent_number)
+                        
+                        logger.info(f"EPO搜索数据结构 - 从exchange-document提取到专利号: {patent_number}, 标题: {title[:30] if title else 'N/A'}...")
+                        
+                        results.append(EPOSearchResult(
+                            patent_number=patent_number,
+                            title=title,
+                            abstract=abstract,
+                            applicants=applicants,
+                            inventors=inventors,
+                            publication_date=pub_date,
+                            application_date=app_date,
+                            cpc_classifications=cpc,
+                            ipc_classifications=ipc,
+                            url=f"https://patents.google.com/patent/{patent_number}",
+                            first_drawing_url=first_drawing_url
+                        ))
+            
+            logger.info(f"EPO搜索数据结构 - 最终解析结果数量: {len(results)}")
         except Exception as e:
             logger.error(f"解析搜索结果失败: {e}")
+            import traceback
+            traceback.print_exc()
         
         return results
     
