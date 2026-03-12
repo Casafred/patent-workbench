@@ -426,34 +426,42 @@
                     leftContainer.className = 'dual-column-container';
                     leftContainer.style.cssText = 'flex: 1; display: flex; flex-direction: column; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden;';
                     
-                    var leftTabBar = createColumnTabBar('left');
-                    
                     dualColumnLeftColumn = document.createElement('div');
                     dualColumnLeftColumn.className = 'dual-column-left';
-                    dualColumnLeftColumn.style.cssText = 'flex: 1; overflow-y: auto; padding: 15px;';
+                    dualColumnLeftColumn.style.cssText = 'flex: 1; overflow-y: auto; display: flex; flex-direction: column;';
+                    
+                    var leftTabBar = createColumnTabBar('left');
+                    var leftContent = document.createElement('div');
+                    leftContent.className = 'dual-column-content';
+                    leftContent.style.cssText = 'padding: 15px;';
                     
                     sections.forEach(function(section) {
-                        dualColumnLeftColumn.appendChild(section.cloneNode(true));
+                        leftContent.appendChild(section.cloneNode(true));
                     });
                     
-                    leftContainer.appendChild(leftTabBar);
+                    dualColumnLeftColumn.appendChild(leftTabBar);
+                    dualColumnLeftColumn.appendChild(leftContent);
                     leftContainer.appendChild(dualColumnLeftColumn);
                     
                     var rightContainer = document.createElement('div');
                     rightContainer.className = 'dual-column-container';
                     rightContainer.style.cssText = 'flex: 1; display: flex; flex-direction: column; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden;';
                     
-                    var rightTabBar = createColumnTabBar('right');
-                    
                     dualColumnRightColumn = document.createElement('div');
                     dualColumnRightColumn.className = 'dual-column-right';
-                    dualColumnRightColumn.style.cssText = 'flex: 1; overflow-y: auto; padding: 15px;';
+                    dualColumnRightColumn.style.cssText = 'flex: 1; overflow-y: auto; display: flex; flex-direction: column;';
+                    
+                    var rightTabBar = createColumnTabBar('right');
+                    var rightContent = document.createElement('div');
+                    rightContent.className = 'dual-column-content';
+                    rightContent.style.cssText = 'padding: 15px;';
                     
                     sections.forEach(function(section) {
-                        dualColumnRightColumn.appendChild(section.cloneNode(true));
+                        rightContent.appendChild(section.cloneNode(true));
                     });
                     
-                    rightContainer.appendChild(rightTabBar);
+                    dualColumnRightColumn.appendChild(rightTabBar);
+                    dualColumnRightColumn.appendChild(rightContent);
                     rightContainer.appendChild(dualColumnRightColumn);
                     
                     mainContent.style.display = 'none';
