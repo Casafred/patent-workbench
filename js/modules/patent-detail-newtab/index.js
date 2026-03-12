@@ -357,11 +357,10 @@
                         
                         var section = null;
                         var selectors = [
+                            '#' + tab.id,
                             '[data-section-id="' + tab.id + '"]',
                             '#section-' + tab.id,
-                            '.section[data-section="' + tab.id + '"]',
-                            '.section[id*="' + tab.id + '"]',
-                            '#' + tab.id
+                            '.section[id="' + tab.id + '"]'
                         ];
                         
                         for (var i = 0; i < selectors.length; i++) {
@@ -370,17 +369,27 @@
                         }
                         
                         if (section) {
-                            var collapsedContent = section.querySelector('.section-content.collapsed, .section-body.collapsed');
-                            if (collapsedContent) {
+                            var sectionOuter = section.closest('.section') || section;
+                            
+                            if (sectionOuter.classList.contains('collapsed')) {
+                                sectionOuter.classList.remove('collapsed');
+                            }
+                            
+                            var collapsedContent = sectionOuter.querySelector('.section-content');
+                            if (collapsedContent && collapsedContent.classList.contains('collapsed')) {
                                 collapsedContent.classList.remove('collapsed');
                             }
                             
-                            var toggleIcon = section.querySelector('.toggle-icon');
-                            if (toggleIcon && (toggleIcon.textContent === '▶' || toggleIcon.textContent.includes('▶'))) {
+                            var toggleIcon = sectionOuter.querySelector('.toggle-icon');
+                            if (toggleIcon) {
                                 toggleIcon.textContent = '▼';
                             }
                             
-                            col.scrollTop = section.offsetTop - 50;
+                            setTimeout(function() {
+                                var tabBarHeight = 60;
+                                var sectionTop = sectionOuter.offsetTop;
+                                col.scrollTop = sectionTop - tabBarHeight;
+                            }, 50);
                             
                             var allBtnsInThisBar = tabBar.querySelectorAll('.column-tab-btn');
                             for (var j = 0; j < allBtnsInThisBar.length; j++) { 

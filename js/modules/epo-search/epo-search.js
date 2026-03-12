@@ -445,7 +445,9 @@ class EPOSearchModule {
     }
     
     async search(page = 1) {
+        console.log('[EPO Search] search() called, page:', page);
         const query = this.buildQuery();
+        console.log('[EPO Search] built query:', query);
         
         if (!query) {
             this.showToast('请输入检索条件', 'warning');
@@ -465,6 +467,9 @@ class EPOSearchModule {
             const rangeStart = (page - 1) * this.resultsPerPage + 1;
             const rangeEnd = page * this.resultsPerPage;
             
+            console.log('[EPO Search] Sending request to /api/epo/search');
+            console.log('[EPO Search] Request body:', { query, rangeStart, rangeEnd });
+            
             const response = await fetch('/api/epo/search', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -475,7 +480,9 @@ class EPOSearchModule {
                 })
             });
             
+            console.log('[EPO Search] Response status:', response.status);
             const data = await response.json();
+            console.log('[EPO Search] Response data:', data);
             
             if (data.success) {
                 this.searchResults = data.results;

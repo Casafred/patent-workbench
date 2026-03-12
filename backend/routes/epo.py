@@ -38,18 +38,24 @@ def search_patents():
             "quota_info": {...}
         }
     """
+    logger.info("========== EPO搜索请求开始 ==========")
     try:
         import os
         if not os.getenv('EPO_OPS_KEY') or not os.getenv('EPO_OPS_SECRET'):
+            logger.error("EPO OPS API密钥未配置")
             return jsonify({
                 'success': False,
                 'error': '专利检索服务未配置，请联系管理员配置API密钥'
             }), 400
         
         data = request.get_json()
+        logger.info(f"请求数据: {data}")
+        
         query = data.get('query', '')
         range_start = int(data.get('range_start', 1))
         range_end = int(data.get('range_end', 25))
+        
+        logger.info(f"查询: {query}, 范围: {range_start}-{range_end}")
         
         if not query:
             return jsonify({
@@ -58,7 +64,10 @@ def search_patents():
             }), 400
         
         client = get_epo_ops_client()
+        logger.info("获取EPO客户端成功，开始搜索...")
+        
         result = client.search(query, range_start, range_end)
+        logger.info(f"搜索完成，结果数量: {len(result['results'])}, 总数: {result['total_results']}")
         
         results_data = []
         for r in result['results']:
@@ -76,6 +85,7 @@ def search_patents():
                 'first_drawing_url': r.first_drawing_url
             })
         
+        logger.info(f"返回 {len(results_data)} 条结果")
         return jsonify({
             'success': True,
             'results': results_data,
