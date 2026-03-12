@@ -594,9 +594,26 @@ class EPOOPSClient:
         try:
             title_data = biblio.get('invention-title', {})
             if isinstance(title_data, dict):
-                return title_data.get('$', '')
-            return str(title_data) if title_data else ''
-        except:
+                text = title_data.get('$', '')
+                if text:
+                    return text
+                for key, value in title_data.items():
+                    if isinstance(value, str) and value:
+                        return value
+                    elif isinstance(value, dict) and value.get('$'):
+                        return value.get('$')
+                return ''
+            elif isinstance(title_data, str):
+                return title_data
+            elif isinstance(title_data, list) and len(title_data) > 0:
+                first = title_data[0]
+                if isinstance(first, dict):
+                    return first.get('$', '')
+                elif isinstance(first, str):
+                    return first
+            return ''
+        except Exception as e:
+            logger.error(f"提取标题失败: {e}")
             return ''
     
     def _extract_abstract(self, biblio: Dict) -> str:
@@ -607,30 +624,49 @@ class EPOOPSClient:
                 if isinstance(p, dict):
                     return p.get('$', '')
                 elif isinstance(p, list):
-                    texts = [item.get('$', '') for item in p if isinstance(item, dict)]
+                    texts = []
+                    for item in p:
+                        if isinstance(item, dict):
+                            text = item.get('$', '')
+                            if text:
+                                texts.append(text)
+                        elif isinstance(item, str):
+                            texts.append(item)
                     return ' '.join(texts)
+            elif isinstance(abstract_data, str):
+                return abstract_data
             return ''
-        except:
+        except Exception as e:
+            logger.error(f"提取摘要失败: {e}")
             return ''
     
     def _extract_parties(self, biblio: Dict, party_type: str) -> List[str]:
         try:
-            parties = biblio.get('parties', {}).get(f'{party_type}s', {})
-            data = parties.get(f'{party_type}', [])
+            parties = biblio.get('parties', {})
+            if not parties:
+                return []
+            
+            party_container = parties.get(f'{party_type}s', {})
+            data = party_container.get(f'{party_type}', [])
             
             if isinstance(data, dict):
                 data = [data]
             
             result = []
             for party in data:
+                if not isinstance(party, dict):
+                    continue
                 name = party.get(f'{party_type}-name', {})
                 if isinstance(name, dict):
-                    result.append(name.get('$', ''))
-                elif isinstance(name, str):
+                    text = name.get('$', '')
+                    if text:
+                        result.append(text)
+                elif isinstance(name, str) and name:
                     result.append(name)
             
             return result
-        except:
+        except Exception as e:
+            logger.error(f"提取{party_type}失败: {e}")
             return []
     
     def _extract_date(self, biblio: Dict, date_type: str) -> str:
@@ -644,11 +680,16 @@ class EPOOPSClient:
                 if isinstance(dates, dict):
                     dates = [dates]
                 for d in dates:
+                    if not isinstance(d, dict):
+                        continue
                     doc_id = d.get('document-id', [])
                     if isinstance(doc_id, list):
                         for doc in doc_id:
                             if isinstance(doc, dict) and doc.get('@document-id-type') == 'epodoc':
-                                return doc.get('date', '')
+                                date_val = doc.get('date', {})
+                                if isinstance(date_val, dict):
+                                    return date_val.get('$', '')
+                                return str(date_val) if date_val else ''
                 return ''
             else:
                 return ''
@@ -656,9 +697,13 @@ class EPOOPSClient:
             if isinstance(dates, list):
                 for d in dates:
                     if isinstance(d, dict) and d.get('@document-id-type') == 'epodoc':
-                        return d.get('date', '')
+                        date_val = d.get('date', {})
+                        if isinstance(date_val, dict):
+                            return date_val.get('$', '')
+                        return str(date_val) if date_val else ''
             return ''
-        except:
+        except Exception as e:
+            logger.error(f"提取日期失败: {e}")
             return ''
     
     def _extract_classifications(self, biblio: Dict, class_type: str) -> List[str]:
@@ -673,12 +718,27 @@ class EPOOPSClient:
             
             result = []
             for c in class_data:
-                text = c.get('text', '')
-                if text:
+                if not isinstance(c, dict):
+                    continue
+                text = c.get('text', {})
+                if isinstance(text, dict):
+                    text_val = text.get('$', '')
+                    if text_val:
+                        result.append(text_val)
+                elif isinstance(text, str) and text:
                     result.append(text)
+                else:
+                    class_symbol = c.get('classification-symbol', {})
+                    if isinstance(class_symbol, dict):
+                        symbol = class_symbol.get('$', '')
+                        if symbol:
+                            result.append(symbol)
+                    elif isinstance(class_symbol, str) and class_symbol:
+                        result.append(class_symbol)
             
             return result
-        except:
+        except Exception as e:
+            logger.error(f"提取分类号失败: {e}")
             return []
     
     def _extract_first_drawing_url(self, exchange_doc: Dict, patent_number: str) -> str:

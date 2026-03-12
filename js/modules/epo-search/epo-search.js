@@ -552,17 +552,41 @@ class EPOSearchModule {
     }
     
     renderResultItem(result) {
+        const safeText = (val) => {
+            if (val === null || val === undefined) return '-';
+            if (typeof val === 'string') return val;
+            if (typeof val === 'object') {
+                if (val.$) return val.$;
+                if (val['$']) return val['$'];
+                return JSON.stringify(val);
+            }
+            return String(val);
+        };
+        
+        const safeArray = (arr) => {
+            if (!Array.isArray(arr)) return [];
+            return arr.map(item => {
+                if (typeof item === 'string') return item;
+                if (typeof item === 'object' && item !== null) {
+                    if (item.$) return item.$;
+                    if (item['$']) return item['$'];
+                    return JSON.stringify(item);
+                }
+                return String(item);
+            }).filter(item => item && item !== '{}');
+        };
+        
         const classifications = [
-            ...(result.cpc_classifications || []).slice(0, 3),
-            ...(result.ipc_classifications || []).slice(0, 2)
+            ...safeArray(result.cpc_classifications).slice(0, 3),
+            ...safeArray(result.ipc_classifications).slice(0, 2)
         ].map(c => `<span class="epo-classification-tag">${c}</span>`).join('');
         
-        const applicants = result.applicants || [];
-        const inventors = result.inventors || [];
+        const applicants = safeArray(result.applicants);
+        const inventors = safeArray(result.inventors);
         
         const drawingHtml = result.first_drawing_url 
             ? `<div class="epo-result-drawing">
-                <img src="${result.first_drawing_url}" alt="附图" onerror="this.parentElement.style.display='none'" />
+                <img src="${safeText(result.first_drawing_url)}" alt="附图" onerror="this.parentElement.style.display='none'" />
                </div>`
             : '';
         
@@ -572,18 +596,18 @@ class EPOSearchModule {
                     ${drawingHtml}
                     <div class="epo-result-info">
                         <div class="epo-result-header">
-                            <span class="epo-result-patent-number">${result.patent_number || '-'}</span>
-                            <span style="font-size: 12px; color: #999;">公开日期: ${result.publication_date || '-'}</span>
+                            <span class="epo-result-patent-number">${safeText(result.patent_number)}</span>
+                            <span style="font-size: 12px; color: #999;">公开日期: ${safeText(result.publication_date)}</span>
                         </div>
-                        <div class="epo-result-title" data-patent-number="${result.patent_number}">
-                            ${result.title || '无标题'}
+                        <div class="epo-result-title" data-patent-number="${safeText(result.patent_number)}">
+                            ${safeText(result.title) || '无标题'}
                         </div>
                         <div class="epo-result-meta">
                             <span>申请人: ${applicants.slice(0, 2).join(', ') || '-'}${applicants.length > 2 ? ' 等' : ''}</span>
                             <span>发明人: ${inventors.slice(0, 2).join(', ') || '-'}${inventors.length > 2 ? ' 等' : ''}</span>
                         </div>
                         <div class="epo-result-abstract">
-                            ${result.abstract || '无摘要'}
+                            ${safeText(result.abstract) || '无摘要'}
                         </div>
                         <div class="epo-result-classifications">
                             ${classifications}
@@ -591,13 +615,13 @@ class EPOSearchModule {
                     </div>
                 </div>
                 <div class="epo-result-actions">
-                    <button type="button" class="view-detail-btn epo-btn-primary" data-patent-number="${result.patent_number}">
+                    <button type="button" class="view-detail-btn epo-btn-primary" data-patent-number="${safeText(result.patent_number)}">
                         查看详情
                     </button>
-                    <button type="button" class="quick-analyze-btn epo-btn-secondary" data-patent-number="${result.patent_number}">
+                    <button type="button" class="quick-analyze-btn epo-btn-secondary" data-patent-number="${safeText(result.patent_number)}">
                         AI解读
                     </button>
-                    <a href="${result.url || '#'}" target="_blank" class="epo-btn-info" style="text-decoration: none; display: inline-block;">
+                    <a href="${safeText(result.url) || '#'}" target="_blank" class="epo-btn-info" style="text-decoration: none; display: inline-block;">
                         Google Patents
                     </a>
                 </div>
