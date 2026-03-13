@@ -779,37 +779,6 @@ class EPOOPSClient:
     
     def get_quota_info(self) -> Dict:
         return asdict(self.quota_manager.get_quota_info())
-    
-    def get_first_drawing(self, patent_number: str) -> Dict:
-        """
-        获取专利第一张附图（兼容旧接口）
-        """
-        try:
-            images_result = self.get_images(patent_number)
-            images = images_result.get('images', [])
-            
-            if images:
-                first_image = images[0]
-                href = first_image.get('href', '')
-                if href:
-                    drawing_url = f"{EPO_OPS_BASE_URL}{href}.png"
-                    return {
-                        'success': True,
-                        'drawing_url': drawing_url,
-                        'quota_info': images_result.get('quota_info', {})
-                    }
-            
-            return {
-                'success': False,
-                'error': '未找到附图',
-                'quota_info': images_result.get('quota_info', {})
-            }
-        except Exception as e:
-            logger.error(f"获取附图失败: {e}")
-            return {
-                'success': False,
-                'error': str(e)
-            }
 
 
 _client_instance = None

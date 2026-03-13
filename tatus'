@@ -272,3 +272,45 @@
 [33m6196e60[m update
 [33md02d9e9[m update
 [33m63c6880[m fix: improve OCR viewer UI and block display
+warning: in the working copy of 'js/modules/patent-detail-newtab/index.js', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/js/modules/patent-detail-newtab/index.js b/js/modules/patent-detail-newtab/index.js[m
+[1mindex 5aa3c52..8a7e54f 100644[m
+[1m--- a/js/modules/patent-detail-newtab/index.js[m
+[1m+++ b/js/modules/patent-detail-newtab/index.js[m
+[36m@@ -273,6 +273,15 @@[m
+             var imageTextViewerIndex = 0;[m
+             var imageTextViewerScale = 1;[m
+             var imageTextViewerRotation = 0;[m
+[32m+[m[32m            var navManuallyToggled = false;[m
+[32m+[m[41m            [m
+[32m+[m[32m            function toggleSideNav() {[m
+[32m+[m[32m                var sideNav = document.getElementById('sideNav');[m
+[32m+[m[32m                if (sideNav) {[m
+[32m+[m[32m                    sideNav.classList.toggle('collapsed');[m
+[32m+[m[32m                    navManuallyToggled = sideNav.classList.contains('collapsed');[m
+[32m+[m[32m                }[m
+[32m+[m[32m            }[m
+             [m
+             window.toggleDualColumnMode = function() {[m
+                 dualColumnMode = !dualColumnMode;[m
+[36m@@ -299,7 +308,10 @@[m
+                     }[m
+                     [m
+                     var navTrigger = document.getElementById('navTrigger');[m
+[31m-                    if (navTrigger) navTrigger.classList.add('visible');[m
+[32m+[m[32m                    if (navTrigger) {[m
+[32m+[m[32m                        navTrigger.classList.add('visible');[m
+[32m+[m[32m                        navTrigger.onclick = toggleSideNav;[m
+[32m+[m[32m                    }[m
+                     [m
+                     var sections = mainContent.querySelectorAll('.section');[m
+                     [m
+[36m@@ -330,7 +342,7 @@[m
+                     btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M0 3a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3zm2-1a1 1 0 0 0-1 1v1h2V2H2zm3 2h2V2H5v2zm3-2v2h2V2H8zm3 2v2h2V4h-2zm0 3v2h2V7h-2zm0 3v2h2v-2h-2zm-3 2v2h2v-2H8zm-3 2v2h2v-2H5zm-3-2v2h2v-2H2zm0-3v2h2V7H2zm0-3v2h2V4H2zm5 0v2h2V4H7zm2 3H7v2h2V7z"/></svg> 双栏对照';[m
+                     [m
+                     if (container) container.style.maxWidth = '1200px';[m
+[31m-                    if (sideNav && !originalNavCollapsed) sideNav.classList.remove('collapsed');[m
+[32m+[m[32m                    if (sideNav && !originalNavCollapsed && !navManuallyToggled) sideNav.classList.remove('collapsed');[m
+                     [m
+                     var navTrigger = document.getElementById('navTrigger');[m
+                     if (navTrigger) navTrigger.classList.remove('visible');[m
