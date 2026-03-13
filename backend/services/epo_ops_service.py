@@ -761,6 +761,12 @@ class EPOOPSClient:
         return data
     
     def get_official_usage(self, date_from: str = None, date_to: str = None) -> Dict:
+        """
+        从EPO官方API获取使用量数据
+        
+        Returns:
+            Dict containing usage data compatible with old format
+        """
         if not date_from:
             today = datetime.now()
             week_start = today - timedelta(days=today.weekday())
@@ -772,9 +778,78 @@ class EPOOPSClient:
         
         data, quota_info = self._make_request(url)
         
+        total_bytes = 0.0
+        total_requests = 0
+        daily_usage = {}
+        
+        environments = data.get('environments', [])
+        for env in environments:
+            dimensions = env.get('dimensions', [])
+            for dim in dimensions:
+                metrics = dim.get('metrics', [])
+                for metric in metrics:
+                    name = metric.get('name', '')
+                    values = metric.get('values', [])
+                    
+                    for v in values:
+                        timestamp = v.get('timestamp', 0)
+                        value_str = v.get('value', '0')
+                        
+                        try:
+                            if isinstance(timestamp, (int, float)):
+                                ts = float(timestamp)
+                            elif timestamp is not None:
+                                ts = float(str(timestamp).strip())
+                            else:
+                                ts = 0.0
+                        except (ValueError, TypeError):
+                            ts = 0.0
+                        
+                        try:
+                            if isinstance(value_str, (int, float)):
+                                value = float(value_str)
+                            elif value_str is not None:
+                                clean_str = str(value_str).strip()
+                                if clean_str:
+                                    clean_str = clean_str.replace(',', '')
+                                    value = float(clean_str)
+                                else:
+                                    value = 0.0
+                            else:
+                                value = 0.0
+                        except (ValueError, TypeError) as e:
+                            logger.warning(f"Cannot convert value '{value_str}': {e}")
+                            value = 0.0
+                        
+                        try:
+                            date_str = datetime.utcfromtimestamp(ts / 1000).strftime('%Y-%m-%d')
+                        except (ValueError, TypeError, OSError):
+                            continue
+                        
+                        if date_str not in daily_usage:
+                            daily_usage[date_str] = {'date': date_str, 'bytes': 0.0, 'mb': 0.0, 'requests': 0}
+                        
+                        if name == 'total_response_size':
+                            total_bytes += value
+                            daily_usage[date_str]['bytes'] += value
+                            daily_usage[date_str]['mb'] = round(daily_usage[date_str]['bytes'] / (1024 * 1024), 2)
+                        elif name == 'message_count':
+                            total_requests += int(value)
+                            daily_usage[date_str]['requests'] += int(value)
+        
+        total_mb = total_bytes / (1024 * 1024)
+        remaining_mb = max(0.0, (WEEKLY_QUOTA_BYTES - total_bytes) / (1024 * 1024))
+        usage_percent = (total_bytes / WEEKLY_QUOTA_BYTES) * 100 if WEEKLY_QUOTA_BYTES > 0 else 0
+        
         return {
-            'usage': data,
-            'quota_info': asdict(quota_info)
+            'configured': True,
+            'total_bytes': int(total_bytes),
+            'total_mb': round(total_mb, 2),
+            'total_requests': total_requests,
+            'remaining_mb': round(remaining_mb, 2),
+            'usage_percent': round(usage_percent, 2),
+            'weekly_quota_mb': 4096,
+            'daily_usage': list(daily_usage.values())
         }
     
     def get_quota_info(self) -> Dict:
