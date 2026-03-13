@@ -9,7 +9,7 @@ import random
 from flask import Blueprint, request, session, redirect, url_for, render_template_string, Response
 from backend.services.auth_service import AuthService
 from backend.middleware.auth_middleware import login_required, guest_mode_required
-from backend.config import BASE_DIR, GUEST_MODE_ENABLED, GUEST_MODEL, REMEMBER_ME_SESSION_LIFETIME
+from backend.config import BASE_DIR, GUEST_MODE_ENABLED, GUEST_MODEL, REMEMBER_ME_SESSION_LIFETIME, PERMANENT_SESSION_LIFETIME, GUEST_SESSION_LIFETIME
 
 # Create blueprint
 auth_bp = Blueprint('auth', __name__)
@@ -677,7 +677,6 @@ def login():
     
     if 'user' in session:
         from datetime import datetime
-        from backend.config import PERMANENT_SESSION_LIFETIME, GUEST_SESSION_LIFETIME, REMEMBER_ME_SESSION_LIFETIME
         
         is_guest = session.get('is_guest', False)
         is_remember_me = session.get('_remember_me', False)
