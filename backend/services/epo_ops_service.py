@@ -70,6 +70,7 @@ class EPOPatentDetail:
     family_id: str
     legal_status: List[Dict]
     url: str
+    first_drawing_url: str = ''
 
 
 class EPOQuotaManager:
@@ -510,6 +511,14 @@ class EPOOPSClient:
             return ''
     
     def get_patent_detail(self, patent_number: str, endpoint: str = 'biblio') -> Dict:
+        """
+        获取专利详情
+        
+        如果endpoint是'biblio'，会同时获取biblio、claims、description和images数据
+        """
+        if endpoint == 'biblio':
+            return self._get_full_patent_detail(patent_number)
+        
         url = f"{EPO_OPS_BASE_URL}/published-data/publication/epodoc/{patent_number}/{endpoint}"
         
         data, quota_info = self._make_request(url)
@@ -519,6 +528,59 @@ class EPOOPSClient:
         return {
             'detail': asdict(detail) if detail else None,
             'quota_info': asdict(quota_info)
+        }
+    
+    def _get_full_patent_detail(self, patent_number: str) -> Dict:
+        """
+        获取完整的专利详情，合并biblio、claims、description和images数据
+        """
+        quota_info = None
+        biblio_data = {}
+        claims_data = {}
+        description_data = {}
+        drawing_url = ''
+        
+        try:
+            url = f"{EPO_OPS_BASE_URL}/published-data/publication/epodoc/{patent_number}/biblio"
+            biblio_data, quota_info = self._make_request(url)
+        except Exception as e:
+            logger.warning(f"获取biblio数据失败: {e}")
+        
+        try:
+            url = f"{EPO_OPS_BASE_URL}/published-data/publication/epodoc/{patent_number}/claims"
+            claims_data, _ = self._make_request(url)
+        except Exception as e:
+            logger.warning(f"获取claims数据失败: {e}")
+        
+        try:
+            url = f"{EPO_OPS_BASE_URL}/published-data/publication/epodoc/{patent_number}/description"
+            description_data, _ = self._make_request(url)
+        except Exception as e:
+            logger.warning(f"获取description数据失败: {e}")
+        
+        try:
+            drawing_result = self.get_first_drawing(patent_number)
+            if drawing_result.get('success'):
+                drawing_url = drawing_result.get('drawing_url', '')
+        except Exception as e:
+            logger.warning(f"获取附图失败: {e}")
+        
+        merged_data = {
+            'ops:world-patent-data': {
+                'exchange-document': biblio_data.get('ops:world-patent-data', {}).get('exchange-document', {}),
+                'claims': claims_data.get('ops:world-patent-data', {}).get('claims', {}),
+                'description': description_data.get('ops:world-patent-data', {}).get('description', {})
+            }
+        }
+        
+        detail = self._parse_patent_detail(merged_data, patent_number)
+        
+        if detail and drawing_url:
+            detail.first_drawing_url = drawing_url
+        
+        return {
+            'detail': asdict(detail) if detail else None,
+            'quota_info': asdict(quota_info) if quota_info else {}
         }
     
     def _parse_patent_detail(self, data: Dict, patent_number: str) -> Optional[EPOPatentDetail]:
