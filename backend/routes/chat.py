@@ -179,6 +179,13 @@ def stream_chat_aliyun(req_data):
                 if hasattr(delta, 'role') and delta.role:
                     result["choices"][0]["delta"]["role"] = delta.role
                 
+                # 处理阿里云联网搜索结果
+                if enable_search and hasattr(chunk.choices[0], 'web_search') and chunk.choices[0].web_search:
+                    web_search_data = chunk.choices[0].web_search
+                    if isinstance(web_search_data, list) and len(web_search_data) > 0:
+                        result["web_search"] = web_search_data
+                        print(f"🔍 [阿里云百炼] 返回搜索结果，共 {len(web_search_data)} 条")
+                
                 yield f"data: {json.dumps(result)}\n\n"
             
             yield "data: [DONE]\n\n"
@@ -319,6 +326,13 @@ def simple_chat_aliyun(req_data):
         
         if hasattr(response.choices[0].message, 'reasoning_content') and response.choices[0].message.reasoning_content:
             result["choices"][0]["message"]["reasoning_content"] = response.choices[0].message.reasoning_content
+        
+        # 处理阿里云联网搜索结果
+        if enable_search and hasattr(response.choices[0], 'web_search') and response.choices[0].web_search:
+            web_search_data = response.choices[0].web_search
+            if isinstance(web_search_data, list) and len(web_search_data) > 0:
+                result["web_search"] = web_search_data
+                print(f"🔍 [阿里云百炼 - 同步] 返回搜索结果，共 {len(web_search_data)} 条")
         
         return jsonify(result)
         
