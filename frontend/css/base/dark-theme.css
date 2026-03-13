@@ -210,8 +210,9 @@
 }
 
 [data-theme="dark"] .message-content pre {
-    background-color: #1e293b;
+    background-color: #0f172a;
     color: #e2e8f0;
+    border: 1px solid #334155;
 }
 
 [data-theme="dark"] .message-content blockquote {

@@ -481,6 +481,17 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
+.assistant-message .message-content pre {
+    background-color: #1a202c;
+    color: #e2e8f0;
+    border: 1px solid #e2e8f0;
+}
+
+.assistant-message .message-content pre code {
+    color: #e2e8f0;
+    background: none;
+}
+
 .message-content pre { 
 	background-color: #2D3748; 
 	color: #F7F9FC; 
