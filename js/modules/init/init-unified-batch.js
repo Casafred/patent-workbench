@@ -282,6 +282,12 @@ function switchUnifiedInput(event, type) {
 }
 
 function bindUnifiedBatchEvents() {
+    if (window._unifiedBatchEventsBound) {
+        console.log('[UnifiedBatch] 事件已绑定，跳过重复绑定');
+        return;
+    }
+    window._unifiedBatchEventsBound = true;
+    
     var excelFile = document.getElementById('unified_excel_file');
     if (excelFile) {
         excelFile.addEventListener('change', handleUnifiedExcelUpload);
@@ -346,6 +352,8 @@ function bindUnifiedBatchEvents() {
     if (downloadReportBtn) {
         downloadReportBtn.addEventListener('click', downloadUnifiedReport);
     }
+    
+    console.log('[UnifiedBatch] 事件绑定完成');
 }
 
 async function handleUnifiedExcelUpload(event) {
