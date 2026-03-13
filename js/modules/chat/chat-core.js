@@ -416,7 +416,10 @@ async function handleStreamChatRequest() {
         console.log(`[Chat] 最后一条消息角色: ${lastMessage?.role}, 内容长度: ${lastMessage?.content?.length || 0}`);
 
         const model = chatModelSelect.value;
-        const provider = appState.provider || 'zhipu';
+        // 根据模型自动判断服务商，而不是使用 appState.provider
+        const provider = window.ProviderManager && window.ProviderManager.getProviderForModel 
+            ? window.ProviderManager.getProviderForModel(model) 
+            : (appState.provider || 'zhipu');
         
         if (window.shouldEnableThinking && window.shouldEnableThinking(model, provider)) {
             requestPayload.enable_thinking = true;
