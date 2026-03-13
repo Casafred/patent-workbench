@@ -12,113 +12,124 @@ const InputHandler = {
     state: unifiedBatchState.state,
 
     async handleExcelUpload(file) {
-        return new Promise((resolve, reject) => {
-            if (!file) {
-                reject(new Error('未选择文件'));
-                return;
-            }
+        if (!file) {
+            return { success: false, message: '未选择文件' };
+        }
 
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    
-                    this.state.workbook = workbook;
-                    this.state.columnHeaders = [];
-                    this.state.currentSheetData = null;
-                    
-                    const sheets = workbook.SheetNames;
-                    resolve({
-                        success: true,
-                        sheets: sheets,
-                        message: `成功加载Excel文件，共${sheets.length}个工作表`
-                    });
-                } catch (err) {
-                    reject(new Error(`解析Excel失败: ${err.message}`));
-                }
-            };
-            reader.onerror = () => reject(new Error('读取文件失败'));
-            reader.readAsArrayBuffer(file);
-        });
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('header_row', '0');
+
+            const response = await fetch('/api/excel/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.state.excelFileId = result.data.file_id;
+                this.state.excelColumns = result.data.columns;
+                this.state.excelPreviewData = result.data.preview_data;
+                this.state.excelTotalRows = result.data.total_rows;
+                this.state.excelSheetNames = result.data.sheet_names;
+                this.state.columnHeaders = result.data.columns.map(col => col.name);
+                this.state.currentSheetData = result.data.preview_data.map(item => item.data);
+                
+                return {
+                    success: true,
+                    sheets: result.data.sheet_names,
+                    message: `成功加载Excel文件，共${result.data.sheet_names.length}个工作表，${result.data.total_rows}行数据`
+                };
+            } else {
+                return { success: false, message: result.error || '上传失败' };
+            }
+        } catch (err) {
+            console.error('Excel上传错误:', err);
+            return { success: false, message: `解析Excel失败: ${err.message}` };
+        }
     },
 
     loadSheet(sheetName) {
-        if (!this.state.workbook) {
+        if (!this.state.excelFileId) {
             return { success: false, message: '未加载Excel文件' };
         }
 
-        const worksheet = this.state.workbook.Sheets[sheetName];
-        if (!worksheet) {
-            return { success: false, message: '工作表不存在' };
-        }
-
-        const sheetData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
-        this.state.currentSheetData = sheetData;
-
-        if (sheetData.length > 0) {
-            this.state.columnHeaders = Object.keys(sheetData[0]);
-            return {
-                success: true,
-                headers: this.state.columnHeaders,
-                rowCount: sheetData.length,
-                message: `已加载${sheetData.length}行数据`
-            };
-        }
-
-        return { success: false, message: '工作表为空' };
+        return {
+            success: true,
+            headers: this.state.columnHeaders,
+            rowCount: this.state.excelTotalRows || 0,
+            message: `已加载${this.state.excelTotalRows || 0}行数据`
+        };
     },
 
-    loadInputsFromColumns(selectedColumns) {
-        if (!this.state.currentSheetData || this.state.currentSheetData.length === 0) {
-            return { success: false, message: '未加载数据', count: 0 };
+    async loadInputsFromColumns(selectedColumns) {
+        if (!this.state.excelFileId) {
+            return { success: false, message: '未加载Excel文件', count: 0 };
         }
 
         if (!selectedColumns || selectedColumns.length === 0) {
             return { success: false, message: '未选择列', count: 0 };
         }
 
-        this.state.inputs = [];
-        let loadedCount = 0;
+        try {
+            const response = await fetch(`/api/excel/${this.state.excelFileId}/data?header_row=0&page=1&page_size=10000`);
+            const result = await response.json();
 
-        this.state.currentSheetData.forEach((row, index) => {
-            if (selectedColumns.length === 1) {
-                const colName = selectedColumns[0];
-                if (row[colName]) {
-                    this.state.inputs.push({
-                        id: `I${index + 1}`,
-                        content: String(row[colName]).trim()
-                    });
-                    loadedCount++;
-                }
-            } else {
-                const multiColContent = {};
-                let hasContent = false;
-                
-                selectedColumns.forEach(colName => {
-                    if (row[colName]) {
-                        multiColContent[colName] = String(row[colName]).trim();
-                        hasContent = true;
-                    } else {
-                        multiColContent[colName] = '';
-                    }
-                });
-
-                if (hasContent) {
-                    this.state.inputs.push({
-                        id: `I${index + 1}`,
-                        content: multiColContent
-                    });
-                    loadedCount++;
-                }
+            if (!result.success) {
+                return { success: false, message: result.error || '获取数据失败', count: 0 };
             }
-        });
 
-        return {
-            success: true,
-            count: loadedCount,
-            message: `成功加载${loadedCount}条输入`
-        };
+            const sheetData = result.data.data;
+            this.state.inputs = [];
+            let loadedCount = 0;
+
+            sheetData.forEach((row, index) => {
+                const rowData = row.data;
+                if (selectedColumns.length === 1) {
+                    const colName = selectedColumns[0];
+                    if (rowData[colName]) {
+                        this.state.inputs.push({
+                            id: `I${index + 1}`,
+                            content: String(rowData[colName]).trim()
+                        });
+                        loadedCount++;
+                    }
+                } else {
+                    const multiColContent = {};
+                    let hasContent = false;
+                    
+                    selectedColumns.forEach(colName => {
+                        if (rowData[colName]) {
+                            multiColContent[colName] = String(rowData[colName]).trim();
+                            hasContent = true;
+                        } else {
+                            multiColContent[colName] = '';
+                        }
+                    });
+
+                    if (hasContent) {
+                        this.state.inputs.push({
+                            id: `I${index + 1}`,
+                            content: multiColContent
+                        });
+                        loadedCount++;
+                    }
+                }
+            });
+
+            this.state.currentSheetData = sheetData.map(item => item.data);
+
+            return {
+                success: true,
+                count: loadedCount,
+                message: `成功加载${loadedCount}条输入`
+            };
+        } catch (err) {
+            console.error('加载Excel数据错误:', err);
+            return { success: false, message: `加载数据失败: ${err.message}`, count: 0 };
+        }
     },
 
     addManualInput(text) {
@@ -172,6 +183,11 @@ const InputHandler = {
         this.state.columnHeaders = [];
         this.state.workbook = null;
         this.state.currentSheetData = null;
+        this.state.excelFileId = null;
+        this.state.excelColumns = [];
+        this.state.excelPreviewData = [];
+        this.state.excelTotalRows = 0;
+        this.state.excelSheetNames = [];
         return { success: true, message: '已清空所有输入' };
     },
 
@@ -188,7 +204,7 @@ const InputHandler = {
     },
 
     getSheetNames() {
-        return this.state.workbook ? this.state.workbook.SheetNames : [];
+        return this.state.excelSheetNames || [];
     },
 
     getInputPreview(maxLength = 50) {

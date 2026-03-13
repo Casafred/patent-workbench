@@ -406,7 +406,7 @@ function renderUnifiedColumnConfig(headers) {
     };
 }
 
-function loadUnifiedInputsFromExcel() {
+async function loadUnifiedInputsFromExcel() {
     var countInput = document.getElementById('unified_excel_column_count');
     var count = parseInt(countInput.value) || 1;
     var selectedColumns = [];
@@ -418,7 +418,7 @@ function loadUnifiedInputsFromExcel() {
         }
     }
 
-    var result = UnifiedBatch.loadInputsFromColumns(selectedColumns);
+    var result = await UnifiedBatch.loadInputsFromColumns(selectedColumns);
     if (result.success) {
         renderUnifiedInputsList();
         updateUnifiedModeRecommendation();

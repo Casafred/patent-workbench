@@ -14,6 +14,11 @@ class UnifiedBatchState {
             columnHeaders: [],
             workbook: null,
             currentSheetData: null,
+            excelFileId: null,
+            excelColumns: [],
+            excelPreviewData: [],
+            excelTotalRows: 0,
+            excelSheetNames: [],
             template: {
                 name: '',
                 systemPrompt: '你是一个高效的专利文本分析助手。',
@@ -72,6 +77,11 @@ class UnifiedBatchState {
         this.state.columnHeaders = [];
         this.state.workbook = null;
         this.state.currentSheetData = null;
+        this.state.excelFileId = null;
+        this.state.excelColumns = [];
+        this.state.excelPreviewData = [];
+        this.state.excelTotalRows = 0;
+        this.state.excelSheetNames = [];
     }
 
     getInputCount() {
@@ -220,6 +230,11 @@ class UnifiedBatchState {
         this.state.columnHeaders = [];
         this.state.workbook = null;
         this.state.currentSheetData = null;
+        this.state.excelFileId = null;
+        this.state.excelColumns = [];
+        this.state.excelPreviewData = [];
+        this.state.excelTotalRows = 0;
+        this.state.excelSheetNames = [];
         this.state.task = { status: 'idle', startTime: null, endTime: null };
         this.state.asyncTask = {
             requests: [],

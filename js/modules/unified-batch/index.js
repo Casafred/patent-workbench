@@ -38,8 +38,8 @@ const UnifiedBatch = {
         return this.input.loadSheet(sheetName);
     },
 
-    loadInputsFromColumns(columns) {
-        return this.input.loadInputsFromColumns(columns);
+    async loadInputsFromColumns(columns) {
+        return await this.input.loadInputsFromColumns(columns);
     },
 
     addManualInput(text) {

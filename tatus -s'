@@ -98,3 +98,13 @@
 [33m6d1f816[m fix: 修复获取同族专利列表API的数据访问问题
 [33mf7e90f1[m fix: 修复同族权利要求对比页面为空的问题
 [33m5ee5560[m fix: 添加调试日志并暴露 loadFamilyComparisonHTML 函数到全局
+[33me566355[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m fix-dualcolumn-scroll-position-and-expand
+[33m29fb3c1[m fix-dualcolumn-separate-scroll-and-click
+[33me52d563[m fix-dualcolumn-section-id-mapping
+[33m7e7b280[m fix-dualcolumn-scroll-and-section-finding
+[33m83cece2[m fix-dualcolumn-tabbar-sticky-and-separate-scroll
+[33ma07487c[m landing-media-manager-update
+[33m449a76a[m fix-dualcolumn-tabbar-separate-control-and-sticky-header
+[33m1a665ac[m landing-footer-demo-update
+[33ma35d294[m autologin
+[33m310f1d7[m refactor-help-order

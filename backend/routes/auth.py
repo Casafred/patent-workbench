@@ -690,12 +690,16 @@ def login():
             session_lifetime = PERMANENT_SESSION_LIFETIME
         
         session_created = session.get('_creation_time')
-        if session_created:
-            elapsed = datetime.now() - datetime.fromtimestamp(session_created)
-            if elapsed < session_lifetime:
+        if session_created and isinstance(session_created, (int, float)):
+            try:
+                elapsed = datetime.now() - datetime.fromtimestamp(session_created)
+                if elapsed < session_lifetime:
+                    return redirect(url_for('auth.serve_app'))
+                else:
+                    session.clear()
+            except (ValueError, OSError):
+                session['_creation_time'] = datetime.now().timestamp()
                 return redirect(url_for('auth.serve_app'))
-            else:
-                session.clear()
         else:
             session['_creation_time'] = datetime.now().timestamp()
             return redirect(url_for('auth.serve_app'))
