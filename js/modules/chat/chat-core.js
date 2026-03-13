@@ -428,7 +428,6 @@ async function handleStreamChatRequest() {
         }
 
         const conversationSearchMode = getCurrentConversationSearchMode();
-        const provider = appState.provider || 'zhipu';
 
         console.log('🔍 [联网搜索] 准备发送请求，当前搜索模式状态:', {
             conversationId: appState.chat.currentConversationId,
