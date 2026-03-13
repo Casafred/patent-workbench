@@ -34,7 +34,15 @@ def validate_api_request():
     username = session.get('user')
     client_ip = AuthService.get_client_ip()
     
-    if not AuthService.verify_user_ip(username, client_ip):
+    ip_valid = AuthService.verify_user_ip(username, client_ip)
+    if not ip_valid:
+        ip_result = AuthService.manage_user_ip(username, client_ip)
+        if ip_result:
+            ip_valid = True
+        else:
+            print(f"IP验证失败: 用户 {username}, IP {client_ip}")
+    
+    if not ip_valid:
         session.clear()
         return False, make_response(
             jsonify({

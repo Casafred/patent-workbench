@@ -651,12 +651,10 @@ def login():
             )
         
         if AuthService.verify_credentials(username, password):
-            client_ip = AuthService.get_client_ip()
-            AuthService.manage_user_ip(username, client_ip)
-            
             remember_me = request.form.get('remember_me') == 'on'
             
             session['user'] = username
+            session['is_guest'] = False
             session.permanent = True
             from datetime import datetime
             session['_creation_time'] = datetime.now().timestamp()
@@ -664,6 +662,11 @@ def login():
             if remember_me:
                 session['_remember_me'] = True
                 session.permanent_session_lifetime = REMEMBER_ME_SESSION_LIFETIME
+            
+            client_ip = AuthService.get_client_ip()
+            ip_result = AuthService.manage_user_ip(username, client_ip)
+            if not ip_result:
+                print(f"警告: IP管理失败，用户 {username} 从 {client_ip} 登录")
             
             return redirect(url_for('auth.serve_app'))
         else:
