@@ -593,25 +593,7 @@ class EPOOPSClient:
     def _extract_title(self, biblio: Dict) -> str:
         try:
             title_data = biblio.get('invention-title', {})
-            if isinstance(title_data, dict):
-                text = title_data.get('$', '')
-                if text:
-                    return text
-                for key, value in title_data.items():
-                    if isinstance(value, str) and value:
-                        return value
-                    elif isinstance(value, dict) and value.get('$'):
-                        return value.get('$')
-                return ''
-            elif isinstance(title_data, str):
-                return title_data
-            elif isinstance(title_data, list) and len(title_data) > 0:
-                first = title_data[0]
-                if isinstance(first, dict):
-                    return first.get('$', '')
-                elif isinstance(first, str):
-                    return first
-            return ''
+            return self._get_text_value(title_data)
         except Exception as e:
             logger.error(f"提取标题失败: {e}")
             return ''
@@ -619,26 +601,43 @@ class EPOOPSClient:
     def _extract_abstract(self, biblio: Dict) -> str:
         try:
             abstract_data = biblio.get('abstract', {})
-            if isinstance(abstract_data, dict):
-                p = abstract_data.get('p', {})
-                if isinstance(p, dict):
-                    return p.get('$', '')
-                elif isinstance(p, list):
-                    texts = []
-                    for item in p:
-                        if isinstance(item, dict):
-                            text = item.get('$', '')
-                            if text:
-                                texts.append(text)
-                        elif isinstance(item, str):
-                            texts.append(item)
-                    return ' '.join(texts)
-            elif isinstance(abstract_data, str):
+            if not abstract_data:
+                return ''
+            
+            if isinstance(abstract_data, str):
                 return abstract_data
-            return ''
+            
+            p = abstract_data.get('p', {})
+            if isinstance(p, list):
+                texts = [self._get_text_value(item) for item in p]
+                return ' '.join(text for text in texts if text)
+            return self._get_text_value(p)
         except Exception as e:
             logger.error(f"提取摘要失败: {e}")
             return ''
+    
+    def _get_text_value(self, data: Any) -> str:
+        if data is None:
+            return ''
+        if isinstance(data, str):
+            return data.strip()
+        if isinstance(data, dict):
+            if '$' in data:
+                return str(data['$']).strip()
+            for key in ['$', '#text']:
+                if key in data and data[key]:
+                    return str(data[key]).strip()
+            for key, value in data.items():
+                if not key.startswith('@'):
+                    if isinstance(value, str) and value:
+                        return value.strip()
+                    elif isinstance(value, dict):
+                        result = self._get_text_value(value)
+                        if result:
+                            return result
+        if isinstance(data, list) and len(data) > 0:
+            return self._get_text_value(data[0])
+        return ''
     
     def _extract_parties(self, biblio: Dict, party_type: str) -> List[str]:
         try:
@@ -657,12 +656,9 @@ class EPOOPSClient:
                 if not isinstance(party, dict):
                     continue
                 name = party.get(f'{party_type}-name', {})
-                if isinstance(name, dict):
-                    text = name.get('$', '')
-                    if text:
-                        result.append(text)
-                elif isinstance(name, str) and name:
-                    result.append(name)
+                text = self._get_text_value(name)
+                if text:
+                    result.append(text)
             
             return result
         except Exception as e:
@@ -709,9 +705,11 @@ class EPOOPSClient:
     def _extract_classifications(self, biblio: Dict, class_type: str) -> List[str]:
         try:
             if class_type == 'cpc':
-                class_data = biblio.get('classifications-cpc', {}).get('classification-cpc', [])
+                class_container = biblio.get('classifications-cpc', {})
+                class_data = class_container.get('classification-cpc', [])
             else:
-                class_data = biblio.get('classifications-ipcr', {}).get('classification-ipcr', [])
+                class_container = biblio.get('classifications-ipcr', {})
+                class_data = class_container.get('classification-ipcr', [])
             
             if isinstance(class_data, dict):
                 class_data = [class_data]
@@ -720,21 +718,17 @@ class EPOOPSClient:
             for c in class_data:
                 if not isinstance(c, dict):
                     continue
+                
                 text = c.get('text', {})
-                if isinstance(text, dict):
-                    text_val = text.get('$', '')
-                    if text_val:
-                        result.append(text_val)
-                elif isinstance(text, str) and text:
-                    result.append(text)
-                else:
-                    class_symbol = c.get('classification-symbol', {})
-                    if isinstance(class_symbol, dict):
-                        symbol = class_symbol.get('$', '')
-                        if symbol:
-                            result.append(symbol)
-                    elif isinstance(class_symbol, str) and class_symbol:
-                        result.append(class_symbol)
+                text_val = self._get_text_value(text)
+                if text_val:
+                    result.append(text_val)
+                    continue
+                
+                class_symbol = c.get('classification-symbol', {})
+                symbol = self._get_text_value(class_symbol)
+                if symbol:
+                    result.append(symbol)
             
             return result
         except Exception as e:
@@ -780,19 +774,9 @@ class EPOOPSClient:
                 links = [links]
             
             for link in links:
-                link_ref = link.get('@link', '')
-                if link_ref and 'firstpage' in link_ref.lower():
+                link_ref = link.get('@ref', '') or link.get('@link', '')
+                if link_ref:
                     drawing_url = f"{EPO_OPS_BASE_URL}{link_ref}.png"
-                    return {
-                        'success': True,
-                        'drawing_url': drawing_url,
-                        'quota_info': asdict(quota_info)
-                    }
-            
-            if links:
-                first_link = links[0].get('@link', '')
-                if first_link:
-                    drawing_url = f"{EPO_OPS_BASE_URL}{first_link}.png"
                     return {
                         'success': True,
                         'drawing_url': drawing_url,
@@ -813,39 +797,50 @@ class EPOOPSClient:
     
     def _extract_claims(self, data: Dict) -> List[str]:
         try:
-            claims_data = data.get('ops:world-patent-data', {}).get('claims', {})
-            claim_list = claims_data.get('claim', [])
+            world_data = data.get('ops:world-patent-data', {})
+            claims_data = world_data.get('claims', {})
+            if not claims_data:
+                return []
             
+            claim_list = claims_data.get('claim', [])
             if isinstance(claim_list, dict):
                 claim_list = [claim_list]
             
             result = []
             for claim in claim_list:
+                if not isinstance(claim, dict):
+                    continue
                 claim_text = claim.get('claim-text', {})
-                if isinstance(claim_text, dict):
-                    result.append(claim_text.get('$', ''))
-                elif isinstance(claim_text, str):
-                    result.append(claim_text)
+                text = self._get_text_value(claim_text)
+                if text:
+                    result.append(text)
             
             return result
-        except:
+        except Exception as e:
+            logger.error(f"提取权利要求失败: {e}")
             return []
     
     def _extract_description(self, data: Dict) -> str:
         try:
-            desc_data = data.get('ops:world-patent-data', {}).get('description', {})
-            p_list = desc_data.get('p', [])
+            world_data = data.get('ops:world-patent-data', {})
+            desc_data = world_data.get('description', {})
+            if not desc_data:
+                return ''
             
+            p_list = desc_data.get('p', [])
             if isinstance(p_list, dict):
                 p_list = [p_list]
             
             texts = []
             for p in p_list:
                 if isinstance(p, dict):
-                    texts.append(p.get('$', ''))
+                    text = self._get_text_value(p)
+                    if text:
+                        texts.append(text)
             
             return '\n'.join(texts)
-        except:
+        except Exception as e:
+            logger.error(f"提取说明书失败: {e}")
             return ''
     
     def _extract_legal_status(self, biblio: Dict) -> List[Dict]:
