@@ -707,11 +707,12 @@ def login():
             session['_creation_time'] = datetime.now().timestamp()
             return redirect(url_for('auth.serve_app'))
     
+    error_message = request.args.get('error')
     captcha_question, captcha_answer = generate_captcha()
     session['captcha_answer'] = captcha_answer
     return render_template_string(
         LOGIN_PAGE_HTML,
-        error=None,
+        error=error_message,
         captcha_question=captcha_question
     )
 
