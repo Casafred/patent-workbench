@@ -49,6 +49,12 @@
         "deepseek-r1",
         "deepseek-r1-distill-qwen-32b",
         "kimi-k2-thinking"
+      ],
+      "web_search_models": [
+        "qwen-flash",
+        "qwen-turbo",
+        "qwen-plus",
+        "qwen3-max"
       ]
     }
   },

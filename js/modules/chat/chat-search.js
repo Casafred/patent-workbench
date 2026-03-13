@@ -222,14 +222,26 @@ function showSearchConfig() {
     if (provider === 'aliyun') {
         infoText.innerHTML = `
             <strong>💡 功能说明：</strong><br>
-            启用后，阿里云通义千问模型将利用互联网信息丰富生成内容。
-            此功能基于夸克搜索，模型会尝试利用互联网上的信息来丰富其生成的内容。
+            启用后，阿里云通义千问模型将自动利用互联网信息增强回答内容。
+            <br><br>
+            <strong>✨ 特性：</strong><br>
+            • 自动搜索：模型根据问题自动检索相关网络信息<br>
+            • 智能整合：将搜索结果与 AI 知识无缝融合<br>
+            • 来源标注：回答中会自动标注信息来源链接<br>
+            <br>
+            <strong>📋 支持模型：</strong><br>
+            qwen-plus、qwen-turbo、qwen-flash、qwen3-max 等
         `;
     } else {
         infoText.innerHTML = `
             <strong>💡 功能说明：</strong><br>
-            启用后，AI将自动调用智谱网络搜索API获取最新信息，并结合搜索结果生成回答。
+            启用后，AI 将自动调用智谱网络搜索 API 获取最新信息，并结合搜索结果生成回答。
             搜索结果会自动标注来源链接。
+            <br><br>
+            <strong>✨ 特性：</strong><br>
+            • 多引擎选择：支持智谱基础版、高级版、搜狗、夸克等搜索引擎<br>
+            • 可配置数量：自定义返回搜索结果条数（1-50 条）<br>
+            • 内容长度：选择返回摘要或完整内容
         `;
     }
     optionsModal.appendChild(infoText);
@@ -244,17 +256,23 @@ function showSearchConfig() {
     if (provider === 'aliyun') {
         const infoDiv = document.createElement('div');
         infoDiv.style.cssText = `
-            background-color: #fff3cd;
-            border-left: 4px solid #ffc107;
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
             padding: 12px;
             font-size: 13px;
             color: #333;
-            line-height: 1.5;
+            line-height: 1.6;
         `;
         infoDiv.innerHTML = `
-            <strong>📌 注意：</strong><br>
-            阿里云联网搜索使用 <code>enable_search</code> 参数，模型会自动利用互联网信息增强回答。
-            无需额外配置搜索引擎类型。
+            <strong>📌 阿里云联网搜索说明：</strong><br>
+            • 使用方式：通过 <code>enable_search</code> 参数启用，模型自动处理搜索和整合<br>
+            • 搜索策略：基于夸克搜索引擎，智能检索相关信息<br>
+            • 引用格式：回答中使用 <code>[ref_1]</code>、<code>[ref_2]</code> 等格式标注来源<br>
+            • 适用场景：时事新闻、科技动态、政策法规等需要最新信息的场景<br>
+            <br>
+            <strong style="color: #f57c00;">⚠️ 注意事项：</strong><br>
+            • 无需手动配置搜索引擎和数量，由模型自动决定最优搜索策略<br>
+            • 部分模型（如 qwen3-max）在思考模式下搜索效果更佳
         `;
         optionsForm.appendChild(infoDiv);
     } else {

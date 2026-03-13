@@ -193,7 +193,7 @@ class AliyunProvider(BaseLLMProvider):
         
         Args:
             messages: 消息列表
-            model: 模型ID
+            model: 模型 ID
             temperature: 温度参数
             **kwargs: 其他参数
             
@@ -203,6 +203,8 @@ class AliyunProvider(BaseLLMProvider):
         model = model or self.get_default_model()
         
         search_kwargs = {**kwargs, "enable_search": True}
+        
+        print(f"🔍 [阿里云百炼 Provider] 联网搜索已启用，model={model}")
         
         yield from self.stream(
             messages=messages,

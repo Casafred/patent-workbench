@@ -428,21 +428,33 @@ async function handleStreamChatRequest() {
         }
 
         const conversationSearchMode = getCurrentConversationSearchMode();
+        const provider = appState.provider || 'zhipu';
 
         console.log('🔍 [联网搜索] 准备发送请求，当前搜索模式状态:', {
             conversationId: appState.chat.currentConversationId,
             enabled: conversationSearchMode.enabled,
+            provider: provider,
             searchEngine: conversationSearchMode.searchEngine,
             count: conversationSearchMode.count,
             contentSize: conversationSearchMode.contentSize
         });
 
         if (conversationSearchMode.enabled) {
-            requestPayload.enable_web_search = true;
-            requestPayload.search_engine = conversationSearchMode.searchEngine;
-            requestPayload.search_count = conversationSearchMode.count;
-            requestPayload.content_size = conversationSearchMode.contentSize;
-            requestPayload.search_prompt = "你是一个专业的AI助手。请基于网络搜索结果{search_result}回答用户问题，并在回答中引用来源链接。确保信息准确、及时，并标注信息来源。";
+            // 根据服务商设置不同的参数
+            if (provider === 'aliyun') {
+                // 阿里云百炼：只需设置 enable_search 参数
+                requestPayload.enable_search = true;
+                requestPayload.enable_web_search = true;
+                console.log('🔍 [阿里云联网搜索] 已启用，使用 enable_search 参数');
+            } else {
+                // 智谱 AI：需要配置详细的搜索参数
+                requestPayload.enable_web_search = true;
+                requestPayload.search_engine = conversationSearchMode.searchEngine;
+                requestPayload.search_count = conversationSearchMode.count;
+                requestPayload.content_size = conversationSearchMode.contentSize;
+                requestPayload.search_prompt = "你是一个专业的 AI 助手。请基于网络搜索结果{search_result}回答用户问题，并在回答中引用来源链接。确保信息准确、及时，并标注信息来源。";
+                console.log('🔍 [智谱联网搜索] 已启用，使用详细配置参数');
+            }
 
             console.log('🔍 [联网搜索] 已启用！请求参数:', requestPayload);
 
