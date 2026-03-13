@@ -42,6 +42,13 @@ def create_app(config_class=Config):
     app.config.from_object(config_class)
     config_class.init_app(app)
     
+    # 配置 Session Cookie - 关键！
+    # 在阿里云/生产环境下，必须正确配置这些参数
+    app.config['SESSION_COOKIE_SECURE'] = False  # 如果是 HTTPS 则设为 True
+    app.config['SESSION_COOKIE_HTTPONLY'] = True  # 防止 XSS 攻击
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # 允许跨域携带 Cookie
+    app.config['SESSION_COOKIE_PATH'] = '/'  # Cookie 路径
+    
     print("✓ Configuration loaded")
     
     # Initialize extensions (CORS, database pool, etc.)
