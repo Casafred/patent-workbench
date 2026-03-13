@@ -1123,15 +1123,15 @@ def login():
             try:
                 elapsed = datetime.now() - datetime.fromtimestamp(session_created)
                 if elapsed < session_lifetime:
-                    return redirect(url_for('auth.serve_app'))
+                    return render_app_page()
                 else:
                     session.clear()
             except (ValueError, OSError):
                 session['_creation_time'] = datetime.now().timestamp()
-                return redirect(url_for('auth.serve_app'))
+                return render_app_page()
         else:
             session['_creation_time'] = datetime.now().timestamp()
-            return redirect(url_for('auth.serve_app'))
+            return render_app_page()
     
     error_message = request.args.get('error')
     captcha_question, captcha_answer = generate_captcha()
