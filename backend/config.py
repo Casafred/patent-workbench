@@ -100,7 +100,7 @@ CORS_ORIGINS = '*'
 # --- 服务器配置 ---
 HOST = '0.0.0.0'
 PORT = int(os.environ.get('PORT', 5001))
-DEBUG = True  # 临时启用调试模式以查看详细错误
+DEBUG = False
 
 
 class Config:
