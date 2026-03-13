@@ -1089,12 +1089,15 @@ def login():
                 session['_remember_me'] = True
                 session.permanent_session_lifetime = REMEMBER_ME_SESSION_LIFETIME
             
-            client_ip = AuthService.get_client_ip()
-            ip_result = AuthService.manage_user_ip(username, client_ip)
-            if not ip_result:
-                print(f"警告: IP管理失败，用户 {username} 从 {client_ip} 登录")
+            try:
+                client_ip = AuthService.get_client_ip()
+                ip_result = AuthService.manage_user_ip(username, client_ip)
+                if not ip_result:
+                    print(f"警告: IP管理失败，用户 {username} 从 {client_ip} 登录")
+            except Exception as e:
+                print(f"IP记录失败但继续登录: {e}")
             
-            return render_app_page()
+            return redirect(url_for('auth.serve_app'))
         else:
             new_captcha_question, new_captcha_answer = generate_captcha()
             session['captcha_answer'] = new_captcha_answer
@@ -1123,15 +1126,15 @@ def login():
             try:
                 elapsed = datetime.now() - datetime.fromtimestamp(session_created)
                 if elapsed < session_lifetime:
-                    return render_app_page()
+                    return redirect(url_for('auth.serve_app'))
                 else:
                     session.clear()
             except (ValueError, OSError):
                 session['_creation_time'] = datetime.now().timestamp()
-                return render_app_page()
+                return redirect(url_for('auth.serve_app'))
         else:
             session['_creation_time'] = datetime.now().timestamp()
-            return render_app_page()
+            return redirect(url_for('auth.serve_app'))
     
     error_message = request.args.get('error')
     captcha_question, captcha_answer = generate_captcha()
@@ -1248,7 +1251,7 @@ def guest_login():
     from datetime import datetime
     session['_creation_time'] = datetime.now().timestamp()
     
-    return render_app_page()
+    return redirect(url_for('auth.serve_app'))
 
 
 @auth_bp.route('/')
