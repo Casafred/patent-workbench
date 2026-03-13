@@ -1,15 +1,18 @@
 """
 Simple but reliable patent scraper using requests and BeautifulSoup.
 This is a fallback/alternative to the Playwright-based scraper.
+Includes rate limiting, retry logic, and anti-blocking measures.
 """
 
 import time
 import json
 import logging
+import random
 import requests
 from bs4 import BeautifulSoup
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
+from backend.scraper.rate_limiter import get_rate_limiter, get_request_queue
 
 logger = logging.getLogger(__name__)
 
@@ -110,19 +113,34 @@ class SimplePatentResult:
 
 
 class SimplePatentScraper:
-    """Simple patent scraper using requests and BeautifulSoup."""
+    """Simple patent scraper using requests and BeautifulSoup with rate limiting and retry."""
     
-    def __init__(self, delay: float = 2.0):
+    USER_AGENTS = [
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15',
+    ]
+    
+    def __init__(self, delay: float = 2.0, max_retries: int = 3, use_rate_limiter: bool = True):
         """
         Initialize scraper.
         
         Args:
-            delay: Delay between requests in seconds
+            delay: Base delay between requests in seconds
+            max_retries: Maximum number of retries on failure
+            use_rate_limiter: Whether to use global rate limiter
         """
         self.delay = delay
+        self.max_retries = max_retries
+        self.use_rate_limiter = use_rate_limiter
+        self.rate_limiter = get_rate_limiter() if use_rate_limiter else None
+        self.request_queue = get_request_queue() if use_rate_limiter else None
+        
         self.session = requests.Session()
+        self._rotate_user_agent()
         self.session.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
             'Accept-Language': 'en-US,en;q=0.9',
             'Accept-Encoding': 'gzip, deflate, br',
@@ -133,16 +151,93 @@ class SimplePatentScraper:
             'Sec-Fetch-Site': 'none',
             'Sec-Fetch-User': '?1'
         })
+        
+        self._request_count = 0
+        self._blocked_count = 0
+        self._last_blocked_time = None
     
-    def scrape_patent(self, patent_number: str, crawl_specification: bool = False, crawl_full_drawings: bool = False, selected_fields: List[str] = None) -> SimplePatentResult:
+    def _rotate_user_agent(self):
+        """Rotate user agent to avoid detection."""
+        ua = random.choice(self.USER_AGENTS)
+        self.session.headers.update({'User-Agent': ua})
+        logger.debug(f"Rotated User-Agent: {ua[:50]}...")
+    
+    def _make_request_with_retry(self, url: str, user_id: str = 'anonymous') -> tuple:
         """
-        Scrape a single patent.
+        Make HTTP request with retry logic and rate limiting.
+        
+        Returns:
+            tuple: (response, error_message)
+        """
+        last_error = None
+        
+        for attempt in range(self.max_retries):
+            if self.use_rate_limiter and self.rate_limiter:
+                allowed, error_msg = self.rate_limiter.acquire(user_id, timeout=60.0)
+                if not allowed:
+                    return None, error_msg
+            
+            if self.use_rate_limiter and self.request_queue:
+                if not self.request_queue.acquire_slot(timeout=30.0):
+                    return None, "请求队列已满，请稍后再试"
+            
+            try:
+                self._request_count += 1
+                
+                if attempt > 0:
+                    self._rotate_user_agent()
+                    jitter = random.uniform(0.5, 1.5)
+                    wait_time = self.delay * (2 ** attempt) + jitter
+                    logger.info(f"重试第 {attempt} 次，等待 {wait_time:.1f} 秒...")
+                    time.sleep(wait_time)
+                
+                response = self.session.get(url, timeout=15)
+                
+                if response.status_code == 429:
+                    self._blocked_count += 1
+                    self._last_blocked_time = time.time()
+                    retry_after = int(response.headers.get('Retry-After', 60))
+                    logger.warning(f"收到429状态码，等待 {retry_after} 秒后重试...")
+                    time.sleep(retry_after + random.uniform(1, 5))
+                    continue
+                
+                if response.status_code == 403:
+                    logger.warning(f"收到403状态码，可能被封禁，尝试等待后重试...")
+                    time.sleep(30 + random.uniform(5, 15))
+                    continue
+                
+                response.raise_for_status()
+                
+                return response, None
+                
+            except requests.exceptions.Timeout:
+                last_error = f"请求超时 (尝试 {attempt + 1}/{self.max_retries})"
+                logger.warning(last_error)
+            except requests.exceptions.ConnectionError as e:
+                last_error = f"连接错误: {str(e)[:100]} (尝试 {attempt + 1}/{self.max_retries})"
+                logger.warning(last_error)
+            except requests.exceptions.HTTPError as e:
+                last_error = f"HTTP错误: {str(e)} (尝试 {attempt + 1}/{self.max_retries})"
+                logger.warning(last_error)
+            except Exception as e:
+                last_error = f"未知错误: {str(e)} (尝试 {attempt + 1}/{self.max_retries})"
+                logger.error(last_error)
+            finally:
+                if self.use_rate_limiter and self.request_queue:
+                    self.request_queue.release_slot()
+        
+        return None, last_error or "请求失败，已达最大重试次数"
+    
+    def scrape_patent(self, patent_number: str, crawl_specification: bool = False, crawl_full_drawings: bool = False, selected_fields: List[str] = None, user_id: str = 'anonymous') -> SimplePatentResult:
+        """
+        Scrape a single patent with rate limiting and retry.
         
         Args:
             patent_number: Patent number to scrape
             crawl_specification: Whether to crawl specification fields (claims and description)
             crawl_full_drawings: Whether to crawl all drawings or just the first one
             selected_fields: List of fields to crawl (if None, crawl all fields)
+            user_id: User identifier for rate limiting
             
         Returns:
             SimplePatentResult with scraped data
@@ -153,20 +248,23 @@ class SimplePatentScraper:
         try:
             url = f'https://patents.google.com/patent/{patent_number}'
             
-            # Make request
-            response = self.session.get(url, timeout=15)
-            response.raise_for_status()
+            response, error_msg = self._make_request_with_retry(url, user_id)
             
-            # Fix encoding issue - ensure UTF-8 encoding
+            if error_msg:
+                processing_time = time.time() - start_time
+                return SimplePatentResult(
+                    patent_number=patent_number,
+                    success=False,
+                    error=error_msg,
+                    processing_time=processing_time
+                )
+            
             response.encoding = 'utf-8'
             
-            # Parse HTML
             soup = BeautifulSoup(response.text, 'lxml')
             
-            # Extract data
             patent_data = self._extract_patent_data(soup, patent_number, url, crawl_specification=crawl_specification, crawl_full_drawings=crawl_full_drawings, selected_fields=selected_fields)
             
-            # 添加调试日志
             logger.info(f"专利 {patent_number} 提取结果:")
             logger.info(f"  - 标题: {patent_data.title[:50] if patent_data.title else 'None'}...")
             logger.info(f"  - 权利要求数量: {len(patent_data.claims)}")
@@ -193,14 +291,6 @@ class SimplePatentScraper:
                     processing_time=processing_time
                 )
         
-        except requests.exceptions.RequestException as e:
-            processing_time = time.time() - start_time
-            return SimplePatentResult(
-                patent_number=patent_number,
-                success=False,
-                error=f"Request error: {str(e)}",
-                processing_time=processing_time
-            )
         except Exception as e:
             processing_time = time.time() - start_time
             logger.error(f"Error scraping {patent_number}: {e}")
@@ -1410,15 +1500,16 @@ class SimplePatentScraper:
         
         return patent_data
     
-    def scrape_patents_batch(self, patent_numbers: List[str], crawl_specification: bool = False, crawl_full_drawings: bool = False, selected_fields: List[str] = None) -> List[SimplePatentResult]:
+    def scrape_patents_batch(self, patent_numbers: List[str], crawl_specification: bool = False, crawl_full_drawings: bool = False, selected_fields: List[str] = None, user_id: str = 'anonymous') -> List[SimplePatentResult]:
         """
-        Scrape multiple patents.
+        Scrape multiple patents with rate limiting.
         
         Args:
             patent_numbers: List of patent numbers to scrape
             crawl_specification: Whether to crawl specification fields (claims and description)
             crawl_full_drawings: Whether to crawl all drawings or just the first one for each patent
             selected_fields: List of fields to crawl (if None, crawl all fields)
+            user_id: User identifier for rate limiting
             
         Returns:
             List of SimplePatentResult objects
@@ -1428,14 +1519,37 @@ class SimplePatentScraper:
         for i, patent_number in enumerate(patent_numbers):
             logger.info(f"Scraping patent {i+1}/{len(patent_numbers)}: {patent_number}")
             
-            result = self.scrape_patent(patent_number, crawl_specification=crawl_specification, crawl_full_drawings=crawl_full_drawings, selected_fields=selected_fields)
+            result = self.scrape_patent(
+                patent_number, 
+                crawl_specification=crawl_specification, 
+                crawl_full_drawings=crawl_full_drawings, 
+                selected_fields=selected_fields,
+                user_id=user_id
+            )
             results.append(result)
             
-            # Add delay between requests (except for last one)
             if i < len(patent_numbers) - 1:
-                time.sleep(self.delay)
+                jitter = random.uniform(0.5, 1.5)
+                actual_delay = self.delay * jitter
+                time.sleep(actual_delay)
         
         return results
+    
+    def get_stats(self) -> Dict:
+        """Get scraper statistics."""
+        stats = {
+            'request_count': self._request_count,
+            'blocked_count': self._blocked_count,
+            'last_blocked_time': self._last_blocked_time,
+        }
+        
+        if self.rate_limiter:
+            stats['rate_limiter'] = self.rate_limiter.get_stats()
+        
+        if self.request_queue:
+            stats['queue'] = self.request_queue.get_stats()
+        
+        return stats
     
     def close(self):
         """Close the session."""

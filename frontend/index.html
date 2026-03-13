@@ -2817,6 +2817,13 @@ initPatentDrawings();
             });
         }
     })();
+
+    // 页面关闭确认提示
+    window.addEventListener('beforeunload', function(e) {
+        e.preventDefault();
+        e.returnValue = '确定要离开此页面吗？未保存的数据可能会丢失。';
+        return e.returnValue;
+    });
     </script>
 </body>
 </html>

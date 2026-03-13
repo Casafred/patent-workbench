@@ -1035,11 +1035,18 @@ def serve_app():
         <span class="user-display {'guest' if is_guest else ''}">{'游客模式' if is_guest else '当前用户'}: <strong id="current-username">{user_display}</strong></span>
         <div class="user-btns">
             {user_btns_html}
-            <a href="{url_for('auth.logout')}" class="user-btn logout">{'退出' if is_guest else '登出'}</a>
+            <a href="javascript:void(0);" onclick="confirmLogout()" class="user-btn logout">{'退出' if is_guest else '登出'}</a>
         </div>
     </div>
+    <script>
+    function confirmLogout() {{
+        var actionText = {'"退出游客模式"' if is_guest else '"登出"'};
+        if (confirm('确定要' + actionText + '吗？')) {{
+            window.location.href = '{url_for('auth.logout')}';
+        }}
+    }}
+    </script>
     """
-    
     if not is_guest:
         user_actions_html += """
     <div id="change-username-modal" class="cp-modal">

@@ -4,6 +4,7 @@ Patent search and analysis routes.
 This module handles patent search from Google Patents and AI-powered analysis.
 Uses improved scraper for better reliability.
 Supports multiple LLM providers: ZhipuAI (default) and Aliyun Bailian.
+Includes rate limiting and anti-blocking measures.
 """
 
 import json
@@ -17,6 +18,7 @@ from backend.services import get_zhipu_client
 from backend.services.llm_service import get_llm_client, is_aliyun_model
 from backend.utils import create_response
 from backend.scraper.simple_scraper import SimplePatentScraper
+from backend.scraper.rate_limiter import get_rate_limiter
 
 logger = logging.getLogger(__name__)
 
@@ -28,12 +30,23 @@ GUEST_PATENT_SEARCH_LIMIT = 5
 GUEST_PATENT_SEARCH_WINDOW_HOURS = 1
 
 
+def get_current_user_id() -> str:
+    """Get current user ID from session for rate limiting."""
+    user_id = session.get('user_id') or session.get('username') or session.get('email')
+    if not user_id:
+        if session.get('is_guest'):
+            user_id = f"guest_{session.get('session_id', 'unknown')}"
+        else:
+            user_id = 'anonymous'
+    return str(user_id)
+
+
 def get_scraper_instance() -> SimplePatentScraper:
     """Get or create the global scraper instance."""
     global _scraper_instance
     
     if _scraper_instance is None:
-        _scraper_instance = SimplePatentScraper(delay=2.0)
+        _scraper_instance = SimplePatentScraper(delay=2.0, max_retries=3, use_rate_limiter=True)
     
     return _scraper_instance
 
