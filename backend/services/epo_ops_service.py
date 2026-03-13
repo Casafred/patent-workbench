@@ -1,29 +1,21 @@
 """
-EPO OPS RESTful Web Services Client v2.0
-Based on OPS v3.2 Documentation Version 1.3.20
+欧洲专利局开放专利服务集成
 
-This module provides a comprehensive client for the European Patent Office's
-Open Patent Services (OPS) RESTful API.
-
-Key Features:
-1. OAuth 2.0 Authentication with automatic token refresh
-2. All OPS services: published-data, family, number-service, register, legal, classification
-3. Proper JSON response parsing (BadgerFish format)
-4. Quota monitoring via HTTP headers and Data Usage API
-5. Rate limiting and retry logic
-6. Comprehensive error handling
+功能：
+1. CQL 检索专利
+2. 获取专利详情（按需获取）
+3. 配额监控和管理
+4. 数据转换和缓存
 """
 
 import os
 import time
 import json
 import logging
-import re
 from datetime import datetime, timedelta
-from dataclasses import dataclass, asdict, field
-from typing import List, Dict, Optional, Any, Union, Tuple
-from enum import Enum
-from pathlib import Path
+from dataclasses import dataclass, asdict
+from typing import List, Dict, Optional, Any
+from functools import wraps
 
 import requests
 from flask import current_app
@@ -32,67 +24,8 @@ logger = logging.getLogger(__name__)
 
 EPO_OPS_BASE_URL = "https://ops.epo.org/3.2/rest-services"
 EPO_TOKEN_URL = "https://ops.epo.org/3.2/auth/accesstoken"
-EPO_USAGE_URL = "https://ops.epo.org/3.2/developers/me/stats/usage"
 
-WEEKLY_QUOTA_BYTES = 4 * 1024 * 1024 * 1024
-
-
-class ServiceType(Enum):
-    PUBLISHED_DATA = "published-data"
-    FAMILY = "family"
-    NUMBER_SERVICE = "number-service"
-    REGISTER = "register"
-    LEGAL = "legal"
-    CLASSIFICATION = "classification"
-
-
-class ReferenceType(Enum):
-    PUBLICATION = "publication"
-    APPLICATION = "application"
-    PRIORITY = "priority"
-
-
-class InputFormat(Enum):
-    DOCDB = "docdb"
-    EPODOC = "epodoc"
-    ORIGINAL = "original"
-
-
-class AcceptType(Enum):
-    JSON = "application/json"
-    EXCHANGE_XML = "application/exchange+xml"
-    FULLTEXT_XML = "application/fulltext+xml"
-    IMAGE_PNG = "image/png"
-    IMAGE_TIFF = "image/tiff"
-    IMAGE_PDF = "application/pdf"
-    OPS_XML = "application/ops+xml"
-    REGISTER_XML = "application/register+xml"
-    CPC_XML = "application/cpc+xml"
-
-
-class EPOError(Exception):
-    """Base exception for EPO OPS errors"""
-    def __init__(self, message: str, status_code: int = None, error_code: str = None):
-        super().__init__(message)
-        self.status_code = status_code
-        self.error_code = error_code
-
-
-class EPOQuotaExceededError(EPOError):
-    """Raised when quota is exceeded"""
-    pass
-
-
-class EPORateLimitError(EPOError):
-    """Raised when rate limited"""
-    def __init__(self, message: str, retry_after: int = 60):
-        super().__init__(message, status_code=429)
-        self.retry_after = retry_after
-
-
-class EPONotFoundError(EPOError):
-    """Raised when resource not found"""
-    pass
+WEEKLY_QUOTA_BYTES = 4 * 1024 * 1024 * 1024  # 4GB
 
 
 @dataclass
@@ -103,166 +36,104 @@ class EPOQuotaInfo:
     usage_percent: float = 0.0
     week_start: str = ""
     reset_date: str = ""
-    throttling_status: str = ""
-    rejection_reason: str = ""
-    hourly_used: int = 0
 
 
 @dataclass
 class EPOSearchResult:
     patent_number: str
-    title: str = ''
-    abstract: str = ''
-    applicants: List[str] = field(default_factory=list)
-    inventors: List[str] = field(default_factory=list)
-    publication_date: str = ''
-    application_date: str = ''
-    cpc_classifications: List[str] = field(default_factory=list)
-    ipc_classifications: List[str] = field(default_factory=list)
-    url: str = ''
+    title: str
+    abstract: str
+    applicants: List[str]
+    inventors: List[str]
+    publication_date: str
+    application_date: str
+    cpc_classifications: List[str]
+    ipc_classifications: List[str]
+    url: str
     first_drawing_url: str = ''
 
 
 @dataclass
 class EPOPatentDetail:
     patent_number: str
-    title: str = ''
-    abstract: str = ''
-    applicants: List[str] = field(default_factory=list)
-    inventors: List[str] = field(default_factory=list)
-    publication_date: str = ''
-    application_date: str = ''
-    priority_date: str = ''
-    claims: List[str] = field(default_factory=list)
-    description: str = ''
-    cpc_classifications: List[str] = field(default_factory=list)
-    ipc_classifications: List[str] = field(default_factory=list)
-    family_id: str = ''
-    legal_status: List[Dict] = field(default_factory=list)
-    url: str = ''
-
-
-@dataclass
-class EPOFamilyMember:
-    patent_number: str
-    publication_date: str = ''
-    application_date: str = ''
-    priority_date: str = ''
-    country: str = ''
-    kind: str = ''
-
-
-@dataclass
-class EPOFulltextInfo:
-    has_description: bool = False
-    has_claims: bool = False
-    description_format: str = ''
-    claims_format: str = ''
-
-
-class JSONParser:
-    """Helper class for parsing BadgerFish JSON responses from EPO OPS"""
-    
-    @staticmethod
-    def get_text(data: Any) -> str:
-        """Extract text from BadgerFish JSON structure"""
-        if data is None:
-            return ''
-        if isinstance(data, str):
-            return data.strip()
-        if isinstance(data, dict):
-            if '$' in data:
-                return str(data['$']).strip()
-            for key in ['$', '#text', '@value']:
-                if key in data and data[key]:
-                    return str(data[key]).strip()
-            for key, value in data.items():
-                if not key.startswith('@'):
-                    if isinstance(value, str) and value:
-                        return value.strip()
-                    elif isinstance(value, dict):
-                        result = JSONParser.get_text(value)
-                        if result:
-                            return result
-        if isinstance(data, list) and len(data) > 0:
-            return JSONParser.get_text(data[0])
-        return ''
-    
-    @staticmethod
-    def get_list(data: Any) -> List[Any]:
-        """Ensure data is a list"""
-        if data is None:
-            return []
-        if isinstance(data, list):
-            return data
-        if isinstance(data, dict):
-            return [data]
-        return [data]
-    
-    @staticmethod
-    def get_attr(data: Dict, attr: str) -> str:
-        """Get attribute value from BadgerFish JSON"""
-        if not isinstance(data, dict):
-            return ''
-        attr_key = f'@{attr}'
-        if attr_key in data:
-            return str(data[attr_key])
-        return ''
+    title: str
+    abstract: str
+    applicants: List[str]
+    inventors: List[str]
+    publication_date: str
+    application_date: str
+    priority_date: str
+    claims: List[str]
+    description: str
+    cpc_classifications: List[str]
+    ipc_classifications: List[str]
+    family_id: str
+    legal_status: List[Dict]
+    url: str
 
 
 class EPOQuotaManager:
-    """Manages EPO OPS quota tracking and monitoring"""
+    """EPO OPS 配额管理器"""
     
     def __init__(self, storage_path: str = None):
-        self.storage_path = storage_path or os.path.join(os.path.dirname(__file__), '.epo_quota.json')
+        self.storage_path = storage_path or os.path.join(
+            os.path.dirname(__file__), '..', '..', 'data', 'epo_quota.json'
+        )
+        self._ensure_storage_dir()
         self.quota_data = self._load_quota_data()
     
+    def _ensure_storage_dir(self):
+        os.makedirs(os.path.dirname(self.storage_path), exist_ok=True)
+    
+    def _get_week_start(self) -> datetime:
+        today = datetime.now()
+        return today - timedelta(days=today.weekday())
+    
     def _load_quota_data(self) -> Dict:
-        try:
-            if os.path.exists(self.storage_path):
+        if os.path.exists(self.storage_path):
+            try:
                 with open(self.storage_path, 'r') as f:
                     return json.load(f)
-        except Exception as e:
-            logger.warning(f"Could not load quota data: {e}")
+            except Exception as e:
+                logger.warning(f"加载配额数据失败: {e}")
+        
         return {
-            'week_start': self._get_week_start(),
-            'used_bytes': 0,
-            'request_count': 0,
-            'last_request': None
+            'week_start': self._get_week_start().isoformat(),
+            'weekly_usage': 0
         }
     
     def _save_quota_data(self):
         try:
             with open(self.storage_path, 'w') as f:
-                json.dump(self.quota_data, f)
+                json.dump(self.quota_data, f, indent=2)
         except Exception as e:
-            logger.warning(f"Could not save quota data: {e}")
-    
-    def _get_week_start(self) -> str:
-        today = datetime.now()
-        week_start = today - timedelta(days=today.weekday())
-        return week_start.strftime('%Y-%m-%d')
+            logger.error(f"保存配额数据失败: {e}")
     
     def _check_week_reset(self):
         current_week_start = self._get_week_start()
-        if self.quota_data.get('week_start') != current_week_start:
+        stored_week_start = datetime.fromisoformat(self.quota_data['week_start'])
+        
+        if current_week_start > stored_week_start:
             self.quota_data = {
-                'week_start': current_week_start,
-                'used_bytes': 0,
-                'request_count': 0,
-                'last_request': None
+                'week_start': current_week_start.isoformat(),
+                'weekly_usage': 0
             }
             self._save_quota_data()
     
-    def track_response(self, content_length: int, headers: Dict = None) -> EPOQuotaInfo:
+    def _get_weekly_usage(self) -> int:
+        usage = self.quota_data.get('weekly_usage', 0)
+        if isinstance(usage, str):
+            return int(usage) if usage else 0
+        return int(usage) if usage else 0
+    
+    def track_response(self, content_length: int) -> EPOQuotaInfo:
         self._check_week_reset()
         
-        self.quota_data['used_bytes'] += content_length
-        self.quota_data['request_count'] += 1
-        self.quota_data['last_request'] = datetime.now().isoformat()
+        current_usage = self._get_weekly_usage()
+        self.quota_data['weekly_usage'] = current_usage + content_length
         self._save_quota_data()
         
-        used_bytes = self.quota_data['used_bytes']
+        used_bytes = self._get_weekly_usage()
         used_mb = used_bytes / (1024 * 1024)
         remaining_mb = max(0.0, (WEEKLY_QUOTA_BYTES - used_bytes) / (1024 * 1024))
         usage_percent = (used_bytes / WEEKLY_QUOTA_BYTES) * 100
@@ -270,34 +141,19 @@ class EPOQuotaManager:
         week_start = datetime.fromisoformat(self.quota_data['week_start'])
         reset_date = week_start + timedelta(days=7)
         
-        throttling_status = ''
-        rejection_reason = ''
-        hourly_used = 0
-        
-        if headers:
-            throttling_status = headers.get('X-Throttling-Control', '')
-            rejection_reason = headers.get('X-Rejection-Reason', '')
-            try:
-                hourly_used = int(headers.get('X-IndividualQuotaPerHour-Used', '0'))
-            except (ValueError, TypeError):
-                pass
-        
         return EPOQuotaInfo(
             weekly_used_bytes=used_bytes,
             weekly_used_mb=round(used_mb, 2),
             weekly_remaining_mb=round(remaining_mb, 2),
             usage_percent=round(usage_percent, 2),
             week_start=week_start.strftime('%Y-%m-%d'),
-            reset_date=reset_date.strftime('%Y-%m-%d'),
-            throttling_status=throttling_status,
-            rejection_reason=rejection_reason,
-            hourly_used=hourly_used
+            reset_date=reset_date.strftime('%Y-%m-%d')
         )
     
     def get_quota_info(self) -> EPOQuotaInfo:
         self._check_week_reset()
         
-        used_bytes = self.quota_data['used_bytes']
+        used_bytes = self._get_weekly_usage()
         used_mb = used_bytes / (1024 * 1024)
         remaining_mb = max(0.0, (WEEKLY_QUOTA_BYTES - used_bytes) / (1024 * 1024))
         usage_percent = (used_bytes / WEEKLY_QUOTA_BYTES) * 100
@@ -316,21 +172,11 @@ class EPOQuotaManager:
     
     def is_quota_exceeded(self) -> bool:
         self._check_week_reset()
-        return self.quota_data['used_bytes'] >= WEEKLY_QUOTA_BYTES
+        return self._get_weekly_usage() >= WEEKLY_QUOTA_BYTES
 
 
 class EPOOPSClient:
-    """
-    EPO OPS RESTful API Client
-    
-    Implements all services defined in OPS v3.2 Documentation Version 1.3.20:
-    - Published-data service
-    - Family service
-    - Number service
-    - Register service
-    - Legal service
-    - Classification service
-    """
+    """EPO OPS API 客户端"""
     
     def __init__(self, consumer_key: str = None, consumer_secret: str = None):
         self.consumer_key = consumer_key or os.getenv('EPO_OPS_KEY', '')
@@ -340,122 +186,182 @@ class EPOOPSClient:
         self.quota_manager = EPOQuotaManager()
         self.request_delay = 0.5
         self.last_request_time = 0
-        self._validate_credentials()
-    
-    def _validate_credentials(self):
-        if not self.consumer_key or not self.consumer_secret:
-            raise ValueError("EPO OPS credentials not configured. Set EPO_OPS_KEY and EPO_OPS_SECRET environment variables.")
     
     def _get_access_token(self) -> str:
         if self.access_token and time.time() < self.token_expires_at:
             return self.access_token
         
-        logger.info("Requesting new EPO OPS access token...")
+        if not self.consumer_key or not self.consumer_secret:
+            raise ValueError("EPO OPS 凭证未配置，请设置 EPO_OPS_KEY 和 EPO_OPS_SECRET 环境变量")
         
         auth = (self.consumer_key, self.consumer_secret)
         data = {'grant_type': 'client_credentials'}
-        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         
-        try:
-            response = requests.post(EPO_TOKEN_URL, auth=auth, data=data, headers=headers, timeout=30)
-            
-            if response.status_code != 200:
-                raise EPOError(f"Failed to get access token: {response.status_code} - {response.text}")
-            
-            token_data = response.json()
-            self.access_token = token_data['access_token']
-            expires_in = token_data.get('expires_in', 3600)
-            self.token_expires_at = time.time() + expires_in - 60
-            
-            logger.info(f"Successfully obtained access token, expires in {expires_in} seconds")
-            return self.access_token
-            
-        except requests.RequestException as e:
-            raise EPOError(f"Network error while getting access token: {e}")
+        response = requests.post(EPO_TOKEN_URL, auth=auth, data=data)
+        
+        if response.status_code != 200:
+            raise Exception(f"获取访问令牌失败: {response.status_code} - {response.text}")
+        
+        token_data = response.json()
+        self.access_token = token_data['access_token']
+        
+        expires_in = token_data.get('expires_in', 3600)
+        if isinstance(expires_in, str):
+            expires_in = int(expires_in) if expires_in else 3600
+        else:
+            expires_in = int(expires_in) if expires_in else 3600
+        
+        self.token_expires_at = time.time() + expires_in - 60
+        
+        return self.access_token
     
-    def _make_request(self, url: str, params: Dict = None, method: str = 'GET',
-                      data: Any = None, accept: str = AcceptType.JSON.value,
-                      extra_headers: Dict = None) -> Tuple[Dict, EPOQuotaInfo]:
+    def _make_request(self, url: str, params: Dict = None) -> tuple:
         if self.quota_manager.is_quota_exceeded():
-            raise EPOQuotaExceededError("Weekly quota exceeded")
+            raise Exception("EPO OPS 周配额已用尽，请等待下周一重置")
         
         elapsed = time.time() - self.last_request_time
         if elapsed < self.request_delay:
             time.sleep(self.request_delay - elapsed)
         
         token = self._get_access_token()
-        
         headers = {
             'Authorization': f'Bearer {token}',
-            'Accept': accept
+            'Accept': 'application/json'
         }
         
-        if method == 'POST' and data:
-            headers['Content-Type'] = 'text/plain'
+        response = requests.get(url, headers=headers, params=params)
+        self.last_request_time = time.time()
         
-        if extra_headers:
-            headers.update(extra_headers)
-        
-        logger.debug(f"Making request to: {url}")
-        
-        try:
-            if method == 'GET':
-                response = requests.get(url, headers=headers, params=params, timeout=60)
-            else:
-                response = requests.post(url, headers=headers, params=params, data=data, timeout=60)
-            
-            self.last_request_time = time.time()
-            
+        content_length_header = response.headers.get('Content-Length')
+        if content_length_header:
+            try:
+                content_length = int(content_length_header)
+            except (ValueError, TypeError):
+                content_length = len(response.content)
+        else:
             content_length = len(response.content)
-            response_headers = dict(response.headers)
-            quota_info = self.quota_manager.track_response(content_length, response_headers)
-            
-            if response.status_code == 403:
-                rejection_reason = response.headers.get('X-Rejection-Reason', 'Unknown')
-                raise EPOQuotaExceededError(f"Access denied: {rejection_reason}")
-            elif response.status_code == 429:
-                retry_after = int(response.headers.get('Retry-After', 60))
-                raise EPORateLimitError(f"Rate limited, retry after {retry_after}s", retry_after)
-            elif response.status_code == 404:
-                raise EPONotFoundError(f"Resource not found: {url}")
-            elif response.status_code != 200:
-                raise EPOError(f"API request failed: {response.status_code} - {response.text[:500]}", response.status_code)
-            
-            if accept == AcceptType.JSON.value:
-                return response.json(), quota_info
-            else:
-                return response.content, quota_info
-                
-        except requests.Timeout:
-            raise EPOError("Request timeout")
-        except requests.RequestException as e:
-            raise EPOError(f"Network error: {e}")
+        quota_info = self.quota_manager.track_response(content_length)
+        
+        if response.status_code == 403:
+            raise Exception("EPO OPS 配额已用尽或访问被拒绝")
+        elif response.status_code == 429:
+            retry_after = response.headers.get('Retry-After', 60)
+            raise Exception(f"请求过于频繁，请等待 {retry_after} 秒后重试")
+        elif response.status_code != 200:
+            raise Exception(f"API 请求失败: {response.status_code} - {response.text}")
+        
+        return response.json(), quota_info
     
     def search(self, query: str, range_start: int = 1, range_end: int = 25) -> Dict:
         url = f"{EPO_OPS_BASE_URL}/published-data/search"
-        params = {'q': query, 'Range': f"{range_start}-{range_end}"}
+        params = {
+            'q': query,
+            'Range': f"{range_start}-{range_end}"
+        }
         
-        logger.info(f"Searching: {query}")
+        logger.info(f"EPO搜索URL: {url}, 参数: {params}")
+        
         data, quota_info = self._make_request(url, params)
         
         patent_numbers = self._parse_search_results(data)
         
         results = []
-        for patent_number in patent_numbers[:10]:
-            try:
-                detail = self._get_brief_detail(patent_number)
-                results.append(detail)
-            except Exception as e:
-                logger.warning(f"Could not get details for {patent_number}: {e}")
-                results.append(EPOSearchResult(patent_number=patent_number, url=f"https://patents.google.com/patent/{patent_number}"))
-        
-        total_results = data.get('ops:world-patent-data', {}).get('ops:biblio-search', {}).get('@total-result-count', 0)
+        for patent_number in patent_numbers:
+            if patent_number:
+                try:
+                    detail = self._get_brief_detail(patent_number)
+                    results.append(detail)
+                except Exception as e:
+                    logger.warning(f"获取专利 {patent_number} 详情失败: {e}")
+                    results.append(EPOSearchResult(
+                        patent_number=patent_number,
+                        title='',
+                        abstract='',
+                        applicants=[],
+                        inventors=[],
+                        publication_date='',
+                        application_date='',
+                        cpc_classifications=[],
+                        ipc_classifications=[],
+                        url=f"https://patents.google.com/patent/{patent_number}",
+                        first_drawing_url=''
+                    ))
         
         return {
             'results': results,
-            'total_results': int(total_results) if total_results else 0,
+            'total_results': data.get('ops:world-patent-data', {}).get('ops:biblio-search', {}).get('@total-result-count', 0),
             'quota_info': asdict(quota_info)
         }
+    
+    def _get_brief_detail(self, patent_number: str) -> EPOSearchResult:
+        url = f"{EPO_OPS_BASE_URL}/published-data/publication/epodoc/{patent_number}/biblio"
+        
+        try:
+            data, _ = self._make_request(url)
+            
+            world_data = data.get('ops:world-patent-data', {})
+            exchange_doc = world_data.get('exchange-document', {})
+            if not exchange_doc:
+                exchange_doc = world_data.get('exchange-documents', {}).get('exchange-document', {})
+            
+            if isinstance(exchange_doc, list) and len(exchange_doc) > 0:
+                exchange_doc = exchange_doc[0]
+            
+            if not exchange_doc:
+                return EPOSearchResult(
+                    patent_number=patent_number,
+                    title='',
+                    abstract='',
+                    applicants=[],
+                    inventors=[],
+                    publication_date='',
+                    application_date='',
+                    cpc_classifications=[],
+                    ipc_classifications=[],
+                    url=f"https://patents.google.com/patent/{patent_number}",
+                    first_drawing_url=''
+                )
+            
+            biblio = exchange_doc.get('bibliographic-data', {})
+            
+            title = self._extract_title(biblio)
+            abstract = self._extract_abstract(biblio)
+            applicants = self._extract_parties(biblio, 'applicant')
+            inventors = self._extract_parties(biblio, 'inventor')
+            pub_date = self._extract_date(biblio, 'publication')
+            app_date = self._extract_date(biblio, 'application')
+            cpc = self._extract_classifications(biblio, 'cpc')
+            ipc = self._extract_classifications(biblio, 'ipc')
+            first_drawing_url = self._extract_first_drawing_url(exchange_doc, patent_number)
+            
+            return EPOSearchResult(
+                patent_number=patent_number,
+                title=title,
+                abstract=abstract,
+                applicants=applicants,
+                inventors=inventors,
+                publication_date=pub_date,
+                application_date=app_date,
+                cpc_classifications=cpc,
+                ipc_classifications=ipc,
+                url=f"https://patents.google.com/patent/{patent_number}",
+                first_drawing_url=first_drawing_url
+            )
+        except Exception as e:
+            logger.error(f"获取专利简要详情失败: {e}")
+            return EPOSearchResult(
+                patent_number=patent_number,
+                title='',
+                abstract='',
+                applicants=[],
+                inventors=[],
+                publication_date='',
+                application_date='',
+                cpc_classifications=[],
+                ipc_classifications=[],
+                url=f"https://patents.google.com/patent/{patent_number}",
+                first_drawing_url=''
+            )
     
     def _parse_search_results(self, data: Dict) -> List[str]:
         patent_numbers = []
@@ -463,67 +369,149 @@ class EPOOPSClient:
         try:
             world_data = data.get('ops:world-patent-data', {})
             search_data = world_data.get('ops:biblio-search', {})
-            search_result = search_data.get('ops:search-result', {})
             
-            pub_refs = JSONParser.get_list(search_result.get('ops:publication-reference', []))
+            logger.info(f"EPO搜索数据结构 - world_data keys: {list(world_data.keys())}")
+            logger.info(f"EPO搜索数据结构 - search_data keys: {list(search_data.keys())}")
+            
+            search_result = search_data.get('ops:search-result', {})
+            logger.info(f"EPO搜索数据结构 - search_result type: {type(search_result)}")
+            logger.info(f"EPO搜索数据结构 - search_result keys: {list(search_result.keys()) if isinstance(search_result, dict) else 'N/A'}")
+            
+            pub_refs = search_result.get('ops:publication-reference', [])
+            logger.info(f"EPO搜索数据结构 - pub_refs type: {type(pub_refs)}, value: {pub_refs}")
+            
+            if isinstance(pub_refs, dict):
+                pub_refs = [pub_refs]
+            
+            logger.info(f"EPO搜索数据结构 - pub_refs数量: {len(pub_refs)}")
             
             for pub_ref in pub_refs:
-                doc_ids = JSONParser.get_list(pub_ref.get('document-id', []))
-                
-                for doc_id in doc_ids:
-                    if JSONParser.get_attr(doc_id, 'document-id-type') == 'epodoc':
-                        doc_num = doc_id.get('doc-number', {})
-                        patent_num = JSONParser.get_text(doc_num)
-                        if patent_num:
-                            patent_numbers.append(patent_num)
-                            break
-                else:
-                    if doc_ids:
-                        country = JSONParser.get_text(doc_ids[0].get('country', {}))
-                        doc_num = JSONParser.get_text(doc_ids[0].get('doc-number', {}))
-                        if country and doc_num:
-                            patent_numbers.append(f"{country}{doc_num}")
+                patent_number = self._extract_patent_number_from_pub_ref(pub_ref)
+                logger.info(f"EPO搜索数据结构 - 提取到专利号: {patent_number}")
+                if patent_number:
+                    patent_numbers.append(patent_number)
             
-            logger.info(f"Parsed {len(patent_numbers)} patent numbers from search results")
-            
+            logger.info(f"EPO搜索数据结构 - 最终解析结果数量: {len(patent_numbers)}")
         except Exception as e:
-            logger.error(f"Error parsing search results: {e}")
+            logger.error(f"解析搜索结果失败: {e}")
+            import traceback
+            traceback.print_exc()
         
         return patent_numbers
     
-    def _get_brief_detail(self, patent_number: str) -> EPOSearchResult:
-        url = f"{EPO_OPS_BASE_URL}/published-data/publication/epodoc/{patent_number}/biblio"
-        data, _ = self._make_request(url)
+    def _extract_patent_number_from_pub_ref(self, pub_ref: Dict) -> str:
+        try:
+            doc_ids = pub_ref.get('document-id', [])
+            
+            if isinstance(doc_ids, dict):
+                doc_ids = [doc_ids]
+            
+            for doc_id in doc_ids:
+                doc_type = doc_id.get('@document-id-type', '')
+                if doc_type == 'epodoc':
+                    doc_num = doc_id.get('doc-number', {})
+                    if isinstance(doc_num, dict):
+                        return doc_num.get('$', '')
+                    else:
+                        return str(doc_num)
+            
+            if doc_ids:
+                first_doc = doc_ids[0]
+                country = first_doc.get('country', {})
+                if isinstance(country, dict):
+                    country = country.get('$', '')
+                else:
+                    country = str(country)
+                
+                doc_num = first_doc.get('doc-number', {})
+                if isinstance(doc_num, dict):
+                    doc_num = doc_num.get('$', '')
+                else:
+                    doc_num = str(doc_num)
+                
+                return f"{country}{doc_num}"
+        except Exception as e:
+            logger.error(f"提取专利号失败: {e}")
         
-        world_data = data.get('ops:world-patent-data', {})
-        exchange_docs = world_data.get('exchange-documents', {}).get('exchange-document', [])
-        
-        if not exchange_docs:
-            exchange_docs = world_data.get('exchange-document', [])
-        
-        exchange_docs = JSONParser.get_list(exchange_docs)
-        
-        if not exchange_docs:
-            return EPOSearchResult(patent_number=patent_number, url=f"https://patents.google.com/patent/{patent_number}")
-        
-        exchange_doc = exchange_docs[0]
-        biblio = exchange_doc.get('bibliographic-data', {})
-        
-        return EPOSearchResult(
-            patent_number=patent_number,
-            title=self._extract_title(biblio),
-            abstract=self._extract_abstract(biblio),
-            applicants=self._extract_parties(biblio, 'applicant'),
-            inventors=self._extract_parties(biblio, 'inventor'),
-            publication_date=self._extract_date(biblio, 'publication'),
-            application_date=self._extract_date(biblio, 'application'),
-            cpc_classifications=self._extract_classifications(biblio, 'cpc'),
-            ipc_classifications=self._extract_classifications(biblio, 'ipc'),
-            url=f"https://patents.google.com/patent/{patent_number}"
-        )
+        return ''
+    
+    def _extract_patent_number_from_exchange(self, exchange_doc: Dict) -> str:
+        try:
+            pub_ref = exchange_doc.get('publication-reference', {})
+            doc_ids = pub_ref.get('document-id', [])
+            
+            if isinstance(doc_ids, dict):
+                doc_ids = [doc_ids]
+            
+            for doc_id in doc_ids:
+                doc_type = doc_id.get('@document-id-type', '')
+                if doc_type == 'epodoc':
+                    doc_num = doc_id.get('doc-number', {})
+                    if isinstance(doc_num, dict):
+                        return doc_num.get('$', '')
+                    else:
+                        return str(doc_num)
+            
+            if doc_ids:
+                first_doc = doc_ids[0]
+                country = first_doc.get('country', {})
+                if isinstance(country, dict):
+                    country = country.get('$', '')
+                else:
+                    country = str(country) if country else ''
+                
+                doc_num = first_doc.get('doc-number', {})
+                if isinstance(doc_num, dict):
+                    doc_num = doc_num.get('$', '')
+                else:
+                    doc_num = str(doc_num) if doc_num else ''
+                
+                kind = first_doc.get('kind', {})
+                if isinstance(kind, dict):
+                    kind = kind.get('$', '')
+                else:
+                    kind = str(kind) if kind else ''
+                
+                if country and doc_num:
+                    return f"{country}{doc_num}" + (f".{kind}" if kind else "")
+            return ''
+        except Exception as e:
+            logger.error(f"提取专利号失败: {e}")
+            return ''
+    
+    def _extract_patent_number_from_search(self, doc_ids: List[Dict]) -> str:
+        try:
+            for doc_id in doc_ids:
+                doc_type = doc_id.get('@document-id-type', '')
+                if doc_type == 'epodoc':
+                    doc_num = doc_id.get('doc-number', {})
+                    if isinstance(doc_num, dict):
+                        return doc_num.get('$', '')
+                    else:
+                        return str(doc_num)
+            
+            if doc_ids:
+                first_doc = doc_ids[0]
+                country = first_doc.get('country', {})
+                if isinstance(country, dict):
+                    country = country.get('$', '')
+                else:
+                    country = str(country)
+                
+                doc_num = first_doc.get('doc-number', {})
+                if isinstance(doc_num, dict):
+                    doc_num = doc_num.get('$', '')
+                else:
+                    doc_num = str(doc_num)
+                
+                return f"{country}{doc_num}"
+            return ''
+        except:
+            return ''
     
     def get_patent_detail(self, patent_number: str, endpoint: str = 'biblio') -> Dict:
         url = f"{EPO_OPS_BASE_URL}/published-data/publication/epodoc/{patent_number}/{endpoint}"
+        
         data, quota_info = self._make_request(url)
         
         detail = self._parse_patent_detail(data, patent_number)
@@ -536,348 +524,285 @@ class EPOOPSClient:
     def _parse_patent_detail(self, data: Dict, patent_number: str) -> Optional[EPOPatentDetail]:
         try:
             world_data = data.get('ops:world-patent-data', {})
-            exchange_docs = world_data.get('exchange-documents', {}).get('exchange-document', [])
             
-            if not exchange_docs:
-                exchange_docs = world_data.get('exchange-document', [])
+            exchange_doc = world_data.get('exchange-document', {})
+            if not exchange_doc:
+                exchange_doc = world_data.get('exchange-documents', {}).get('exchange-document', {})
             
-            exchange_docs = JSONParser.get_list(exchange_docs)
+            if isinstance(exchange_doc, list) and len(exchange_doc) > 0:
+                exchange_doc = exchange_doc[0]
             
-            if not exchange_docs:
+            if not exchange_doc:
+                logger.warning("未找到exchange-document数据")
                 return None
             
-            exchange_doc = exchange_docs[0]
             biblio = exchange_doc.get('bibliographic-data', {})
+            
+            title = self._extract_title(biblio)
+            abstract = self._extract_abstract(biblio)
+            applicants = self._extract_parties(biblio, 'applicant')
+            inventors = self._extract_parties(biblio, 'inventor')
+            pub_date = self._extract_date(biblio, 'publication')
+            app_date = self._extract_date(biblio, 'application')
+            priority_date = self._extract_date(biblio, 'priority')
+            claims = self._extract_claims(data)
+            description = self._extract_description(data)
+            cpc = self._extract_classifications(biblio, 'cpc')
+            ipc = self._extract_classifications(biblio, 'ipc')
+            family_id = exchange_doc.get('@family-id', '')
+            legal_status = self._extract_legal_status(biblio)
             
             return EPOPatentDetail(
                 patent_number=patent_number,
-                title=self._extract_title(biblio),
-                abstract=self._extract_abstract(biblio),
-                applicants=self._extract_parties(biblio, 'applicant'),
-                inventors=self._extract_parties(biblio, 'inventor'),
-                publication_date=self._extract_date(biblio, 'publication'),
-                application_date=self._extract_date(biblio, 'application'),
-                priority_date=self._extract_date(biblio, 'priority'),
-                claims=self._extract_claims(data),
-                description=self._extract_description(data),
-                cpc_classifications=self._extract_classifications(biblio, 'cpc'),
-                ipc_classifications=self._extract_classifications(biblio, 'ipc'),
-                family_id=JSONParser.get_attr(exchange_doc, 'family-id'),
-                legal_status=self._extract_legal_status(biblio),
+                title=title,
+                abstract=abstract,
+                applicants=applicants,
+                inventors=inventors,
+                publication_date=pub_date,
+                application_date=app_date,
+                priority_date=priority_date,
+                claims=claims,
+                description=description,
+                cpc_classifications=cpc,
+                ipc_classifications=ipc,
+                family_id=family_id,
+                legal_status=legal_status,
                 url=f"https://patents.google.com/patent/{patent_number}"
             )
         except Exception as e:
-            logger.error(f"Error parsing patent detail: {e}")
+            logger.error(f"解析专利详情失败: {e}")
             return None
     
+    def _extract_patent_number(self, doc: Dict) -> str:
+        try:
+            doc_id = doc.get('document-id', [])
+            if isinstance(doc_id, list):
+                for d in doc_id:
+                    if d.get('@document-id-type') == 'epodoc':
+                        return d.get('doc-number', '')
+            
+            country = doc.get('@country', '')
+            doc_num = doc.get('@doc-number', '')
+            kind = doc.get('@kind', '')
+            if doc_num:
+                return f"{country}{doc_num}.{kind}" if kind else f"{country}{doc_num}"
+            return ''
+        except:
+            return ''
+    
     def _extract_title(self, biblio: Dict) -> str:
-        title_data = biblio.get('invention-title', {})
-        return JSONParser.get_text(title_data)
+        try:
+            title_data = biblio.get('invention-title', {})
+            if isinstance(title_data, dict):
+                text = title_data.get('$', '')
+                if text:
+                    return text
+                for key, value in title_data.items():
+                    if isinstance(value, str) and value:
+                        return value
+                    elif isinstance(value, dict) and value.get('$'):
+                        return value.get('$')
+                return ''
+            elif isinstance(title_data, str):
+                return title_data
+            elif isinstance(title_data, list) and len(title_data) > 0:
+                first = title_data[0]
+                if isinstance(first, dict):
+                    return first.get('$', '')
+                elif isinstance(first, str):
+                    return first
+            return ''
+        except Exception as e:
+            logger.error(f"提取标题失败: {e}")
+            return ''
     
     def _extract_abstract(self, biblio: Dict) -> str:
-        abstract_data = biblio.get('abstract', {})
-        if isinstance(abstract_data, dict):
-            p = abstract_data.get('p', {})
-            if isinstance(p, list):
-                texts = [JSONParser.get_text(item) for item in p]
-                return ' '.join(text for text in texts if text)
-            return JSONParser.get_text(p)
-        return JSONParser.get_text(abstract_data)
+        try:
+            abstract_data = biblio.get('abstract', {})
+            if isinstance(abstract_data, dict):
+                p = abstract_data.get('p', {})
+                if isinstance(p, dict):
+                    return p.get('$', '')
+                elif isinstance(p, list):
+                    texts = []
+                    for item in p:
+                        if isinstance(item, dict):
+                            text = item.get('$', '')
+                            if text:
+                                texts.append(text)
+                        elif isinstance(item, str):
+                            texts.append(item)
+                    return ' '.join(texts)
+            elif isinstance(abstract_data, str):
+                return abstract_data
+            return ''
+        except Exception as e:
+            logger.error(f"提取摘要失败: {e}")
+            return ''
     
     def _extract_parties(self, biblio: Dict, party_type: str) -> List[str]:
-        parties = biblio.get('parties', {})
-        if not parties:
+        try:
+            parties = biblio.get('parties', {})
+            if not parties:
+                return []
+            
+            party_container = parties.get(f'{party_type}s', {})
+            data = party_container.get(f'{party_type}', [])
+            
+            if isinstance(data, dict):
+                data = [data]
+            
+            result = []
+            for party in data:
+                if not isinstance(party, dict):
+                    continue
+                name = party.get(f'{party_type}-name', {})
+                if isinstance(name, dict):
+                    text = name.get('$', '')
+                    if text:
+                        result.append(text)
+                elif isinstance(name, str) and name:
+                    result.append(name)
+            
+            return result
+        except Exception as e:
+            logger.error(f"提取{party_type}失败: {e}")
             return []
-        
-        container = parties.get(f'{party_type}s', {})
-        data = container.get(party_type, [])
-        
-        result = []
-        for party in JSONParser.get_list(data):
-            name = party.get(f'{party_type}-name', {})
-            text = JSONParser.get_text(name)
-            if text:
-                result.append(text)
-        
-        return result
     
     def _extract_date(self, biblio: Dict, date_type: str) -> str:
-        if date_type == 'publication':
-            ref = biblio.get('publication-reference', {})
-        elif date_type == 'application':
-            ref = biblio.get('application-reference', {})
-        elif date_type == 'priority':
-            claims = biblio.get('priority-claims', {})
-            claim_list = JSONParser.get_list(claims.get('priority-claim', []))
-            for claim in claim_list:
-                doc_ids = JSONParser.get_list(claim.get('document-id', []))
-                for doc_id in doc_ids:
-                    if JSONParser.get_attr(doc_id, 'document-id-type') == 'epodoc':
-                        return JSONParser.get_text(doc_id.get('date', {}))
+        try:
+            if date_type == 'publication':
+                dates = biblio.get('publication-reference', {}).get('document-id', [])
+            elif date_type == 'application':
+                dates = biblio.get('application-reference', {}).get('document-id', [])
+            elif date_type == 'priority':
+                dates = biblio.get('priority-claims', {}).get('priority-claim', [])
+                if isinstance(dates, dict):
+                    dates = [dates]
+                for d in dates:
+                    if not isinstance(d, dict):
+                        continue
+                    doc_id = d.get('document-id', [])
+                    if isinstance(doc_id, list):
+                        for doc in doc_id:
+                            if isinstance(doc, dict) and doc.get('@document-id-type') == 'epodoc':
+                                date_val = doc.get('date', {})
+                                if isinstance(date_val, dict):
+                                    return date_val.get('$', '')
+                                return str(date_val) if date_val else ''
+                return ''
+            else:
+                return ''
+            
+            if isinstance(dates, list):
+                for d in dates:
+                    if isinstance(d, dict) and d.get('@document-id-type') == 'epodoc':
+                        date_val = d.get('date', {})
+                        if isinstance(date_val, dict):
+                            return date_val.get('$', '')
+                        return str(date_val) if date_val else ''
             return ''
-        else:
+        except Exception as e:
+            logger.error(f"提取日期失败: {e}")
             return ''
-        
-        doc_ids = JSONParser.get_list(ref.get('document-id', []))
-        for doc_id in doc_ids:
-            if JSONParser.get_attr(doc_id, 'document-id-type') == 'epodoc':
-                return JSONParser.get_text(doc_id.get('date', {}))
-        
-        return ''
     
     def _extract_classifications(self, biblio: Dict, class_type: str) -> List[str]:
-        if class_type == 'cpc':
-            container = biblio.get('classifications-cpc', {})
-            class_list = container.get('classification-cpc', [])
-        else:
-            container = biblio.get('classifications-ipcr', {})
-            class_list = container.get('classification-ipcr', [])
-        
-        result = []
-        for c in JSONParser.get_list(class_list):
-            text = c.get('text', {})
-            if text:
-                extracted = JSONParser.get_text(text)
-                if extracted:
-                    result.append(extracted)
+        try:
+            if class_type == 'cpc':
+                class_data = biblio.get('classifications-cpc', {}).get('classification-cpc', [])
             else:
-                symbol = c.get('classification-symbol', {})
-                if symbol:
-                    extracted = JSONParser.get_text(symbol)
-                    if extracted:
-                        result.append(extracted)
-        
-        return result
-    
-    def _extract_claims(self, data: Dict) -> List[str]:
-        world_data = data.get('ops:world-patent-data', {})
-        claims_data = world_data.get('claims', {})
-        claim_list = JSONParser.get_list(claims_data.get('claim', []))
-        
-        result = []
-        for claim in claim_list:
-            claim_text = claim.get('claim-text', {})
-            text = JSONParser.get_text(claim_text)
-            if text:
-                result.append(text)
-        
-        return result
-    
-    def _extract_description(self, data: Dict) -> str:
-        world_data = data.get('ops:world-patent-data', {})
-        desc_data = world_data.get('description', {})
-        p_list = JSONParser.get_list(desc_data.get('p', []))
-        
-        texts = [JSONParser.get_text(p) for p in p_list]
-        return '\n'.join(text for text in texts if text)
-    
-    def _extract_legal_status(self, biblio: Dict) -> List[Dict]:
-        status_data = biblio.get('legal-status', {}).get('legal-status-data', [])
-        
-        result = []
-        for s in JSONParser.get_list(status_data):
-            result.append({
-                'date': JSONParser.get_text(s.get('date', {})),
-                'status': JSONParser.get_text(s.get('status', {})),
-                'description': JSONParser.get_text(s.get('description', {}))
-            })
-        
-        return result
-    
-    def get_family(self, patent_number: str, input_format: InputFormat = InputFormat.DOCDB,
-                   constituents: List[str] = None) -> Dict:
-        url = f"{EPO_OPS_BASE_URL}/family/publication/{input_format.value}/{patent_number}"
-        
-        if constituents:
-            url += '/' + ','.join(constituents)
-        
-        data, quota_info = self._make_request(url)
-        
-        return {
-            'family': self._parse_family(data),
-            'quota_info': asdict(quota_info)
-        }
-    
-    def _parse_family(self, data: Dict) -> List[EPOFamilyMember]:
-        world_data = data.get('ops:world-patent-data', {})
-        family = world_data.get('ops:patent-family', {})
-        members = JSONParser.get_list(family.get('ops:family-member', []))
-        
-        result = []
-        for member in members:
-            pub_ref = member.get('publication-reference', {})
-            doc_ids = JSONParser.get_list(pub_ref.get('document-id', []))
+                class_data = biblio.get('classifications-ipcr', {}).get('classification-ipcr', [])
             
-            patent_num = ''
-            country = ''
-            kind = ''
+            if isinstance(class_data, dict):
+                class_data = [class_data]
             
-            for doc_id in doc_ids:
-                if JSONParser.get_attr(doc_id, 'document-id-type') == 'epodoc':
-                    patent_num = JSONParser.get_text(doc_id.get('doc-number', {}))
-                    break
+            result = []
+            for c in class_data:
+                if not isinstance(c, dict):
+                    continue
+                text = c.get('text', {})
+                if isinstance(text, dict):
+                    text_val = text.get('$', '')
+                    if text_val:
+                        result.append(text_val)
+                elif isinstance(text, str) and text:
+                    result.append(text)
+                else:
+                    class_symbol = c.get('classification-symbol', {})
+                    if isinstance(class_symbol, dict):
+                        symbol = class_symbol.get('$', '')
+                        if symbol:
+                            result.append(symbol)
+                    elif isinstance(class_symbol, str) and class_symbol:
+                        result.append(class_symbol)
             
-            if doc_ids:
-                country = JSONParser.get_text(doc_ids[0].get('country', {}))
-                kind = JSONParser.get_text(doc_ids[0].get('kind', {}))
+            return result
+        except Exception as e:
+            logger.error(f"提取分类号失败: {e}")
+            return []
+    
+    def _extract_first_drawing_url(self, exchange_doc: Dict, patent_number: str) -> str:
+        try:
+            drawings_info = exchange_doc.get('drawings-info', {})
+            if not drawings_info:
+                return ''
             
-            result.append(EPOFamilyMember(
-                patent_number=patent_num,
-                country=country,
-                kind=kind
-            ))
-        
-        return result
-    
-    def get_images(self, patent_number: str) -> Dict:
-        url = f"{EPO_OPS_BASE_URL}/published-data/publication/epodoc/{patent_number}/images"
-        data, quota_info = self._make_request(url)
-        
-        world_data = data.get('ops:world-patent-data', {})
-        doc_instance = world_data.get('ops:document-instance', {})
-        links = JSONParser.get_list(doc_instance.get('ops:link', []))
-        
-        images = []
-        for link in links:
-            images.append({
-                'rel': JSONParser.get_attr(link, 'rel'),
-                'href': JSONParser.get_attr(link, 'href')
-            })
-        
-        return {
-            'images': images,
-            'quota_info': asdict(quota_info)
-        }
-    
-    def get_image(self, image_path: str, format: str = 'png') -> bytes:
-        url = f"{EPO_OPS_BASE_URL}{image_path}.{format}"
-        accept_map = {
-            'png': AcceptType.IMAGE_PNG.value,
-            'tiff': AcceptType.IMAGE_TIFF.value,
-            'pdf': AcceptType.IMAGE_PDF.value
-        }
-        
-        data, _ = self._make_request(url, accept=accept_map.get(format, AcceptType.IMAGE_PNG.value))
-        return data
-    
-    def get_official_usage(self, date_from: str = None, date_to: str = None) -> Dict:
-        """
-        从EPO官方API获取使用量数据
-        
-        Returns:
-            Dict containing usage data compatible with old format
-        """
-        if not date_from:
-            today = datetime.now()
-            week_start = today - timedelta(days=today.weekday())
-            date_from = week_start.strftime('%d/%m/%Y')
-            date_to = today.strftime('%d/%m/%Y')
-        
-        time_range = f"{date_from}~{date_to}" if date_to else date_from
-        url = f"{EPO_USAGE_URL}?timeRange={time_range}"
-        
-        data, quota_info = self._make_request(url)
-        
-        total_bytes = 0.0
-        total_requests = 0
-        daily_usage = {}
-        
-        environments = data.get('environments', [])
-        for env in environments:
-            dimensions = env.get('dimensions', [])
-            for dim in dimensions:
-                metrics = dim.get('metrics', [])
-                for metric in metrics:
-                    name = metric.get('name', '')
-                    values = metric.get('values', [])
-                    
-                    for v in values:
-                        timestamp = v.get('timestamp', 0)
-                        value_str = v.get('value', '0')
-                        
-                        try:
-                            if isinstance(timestamp, (int, float)):
-                                ts = float(timestamp)
-                            elif timestamp is not None:
-                                ts = float(str(timestamp).strip())
-                            else:
-                                ts = 0.0
-                        except (ValueError, TypeError):
-                            ts = 0.0
-                        
-                        try:
-                            if isinstance(value_str, (int, float)):
-                                value = float(value_str)
-                            elif value_str is not None:
-                                clean_str = str(value_str).strip()
-                                if clean_str:
-                                    clean_str = clean_str.replace(',', '')
-                                    value = float(clean_str)
-                                else:
-                                    value = 0.0
-                            else:
-                                value = 0.0
-                        except (ValueError, TypeError) as e:
-                            logger.warning(f"Cannot convert value '{value_str}': {e}")
-                            value = 0.0
-                        
-                        try:
-                            date_str = datetime.utcfromtimestamp(ts / 1000).strftime('%Y-%m-%d')
-                        except (ValueError, TypeError, OSError):
-                            continue
-                        
-                        if date_str not in daily_usage:
-                            daily_usage[date_str] = {'date': date_str, 'bytes': 0.0, 'mb': 0.0, 'requests': 0}
-                        
-                        if name == 'total_response_size':
-                            total_bytes += value
-                            daily_usage[date_str]['bytes'] += value
-                            daily_usage[date_str]['mb'] = round(daily_usage[date_str]['bytes'] / (1024 * 1024), 2)
-                        elif name == 'message_count':
-                            total_requests += int(value)
-                            daily_usage[date_str]['requests'] += int(value)
-        
-        total_mb = total_bytes / (1024 * 1024)
-        remaining_mb = max(0.0, (WEEKLY_QUOTA_BYTES - total_bytes) / (1024 * 1024))
-        usage_percent = (total_bytes / WEEKLY_QUOTA_BYTES) * 100 if WEEKLY_QUOTA_BYTES > 0 else 0
-        
-        return {
-            'configured': True,
-            'total_bytes': int(total_bytes),
-            'total_mb': round(total_mb, 2),
-            'total_requests': total_requests,
-            'remaining_mb': round(remaining_mb, 2),
-            'usage_percent': round(usage_percent, 2),
-            'weekly_quota_mb': 4096,
-            'daily_usage': list(daily_usage.values())
-        }
-    
-    def get_quota_info(self) -> Dict:
-        return asdict(self.quota_manager.get_quota_info())
+            drawings = drawings_info.get('drawing', [])
+            if isinstance(drawings, dict):
+                drawings = [drawings]
+            
+            if drawings:
+                first_drawing = drawings[0]
+                img = first_drawing.get('img', {})
+                if isinstance(img, dict):
+                    img_id = img.get('@id', '')
+                    if img_id:
+                        return f"{EPO_OPS_BASE_URL}/published-data/images/{patent_number}/{img_id}.png"
+            return ''
+        except Exception as e:
+            logger.debug(f"提取附图URL失败: {e}")
+            return ''
     
     def get_first_drawing(self, patent_number: str) -> Dict:
-        """
-        获取专利第一张附图（兼容旧接口）
-        """
+        url = f"{EPO_OPS_BASE_URL}/published-data/publication/epodoc/{patent_number}/images"
+        
         try:
-            images_result = self.get_images(patent_number)
-            images = images_result.get('images', [])
+            data, quota_info = self._make_request(url)
             
-            if images:
-                first_image = images[0]
-                href = first_image.get('href', '')
-                if href:
-                    drawing_url = f"{EPO_OPS_BASE_URL}{href}.png"
+            world_data = data.get('ops:world-patent-data', {})
+            doc_instance = world_data.get('ops:document-instance', {})
+            
+            if isinstance(doc_instance, list) and len(doc_instance) > 0:
+                doc_instance = doc_instance[0]
+            
+            links = doc_instance.get('ops:link', [])
+            if isinstance(links, dict):
+                links = [links]
+            
+            for link in links:
+                link_ref = link.get('@link', '')
+                if link_ref and 'firstpage' in link_ref.lower():
+                    drawing_url = f"{EPO_OPS_BASE_URL}{link_ref}.png"
                     return {
                         'success': True,
                         'drawing_url': drawing_url,
-                        'quota_info': images_result.get('quota_info', {})
+                        'quota_info': asdict(quota_info)
+                    }
+            
+            if links:
+                first_link = links[0].get('@link', '')
+                if first_link:
+                    drawing_url = f"{EPO_OPS_BASE_URL}{first_link}.png"
+                    return {
+                        'success': True,
+                        'drawing_url': drawing_url,
+                        'quota_info': asdict(quota_info)
                     }
             
             return {
                 'success': False,
                 'error': '未找到附图',
-                'quota_info': images_result.get('quota_info', {})
+                'quota_info': asdict(quota_info)
             }
         except Exception as e:
             logger.error(f"获取附图失败: {e}")
@@ -885,12 +810,194 @@ class EPOOPSClient:
                 'success': False,
                 'error': str(e)
             }
+    
+    def _extract_claims(self, data: Dict) -> List[str]:
+        try:
+            claims_data = data.get('ops:world-patent-data', {}).get('claims', {})
+            claim_list = claims_data.get('claim', [])
+            
+            if isinstance(claim_list, dict):
+                claim_list = [claim_list]
+            
+            result = []
+            for claim in claim_list:
+                claim_text = claim.get('claim-text', {})
+                if isinstance(claim_text, dict):
+                    result.append(claim_text.get('$', ''))
+                elif isinstance(claim_text, str):
+                    result.append(claim_text)
+            
+            return result
+        except:
+            return []
+    
+    def _extract_description(self, data: Dict) -> str:
+        try:
+            desc_data = data.get('ops:world-patent-data', {}).get('description', {})
+            p_list = desc_data.get('p', [])
+            
+            if isinstance(p_list, dict):
+                p_list = [p_list]
+            
+            texts = []
+            for p in p_list:
+                if isinstance(p, dict):
+                    texts.append(p.get('$', ''))
+            
+            return '\n'.join(texts)
+        except:
+            return ''
+    
+    def _extract_legal_status(self, biblio: Dict) -> List[Dict]:
+        try:
+            status_data = biblio.get('legal-status', {}).get('legal-status-data', [])
+            
+            if isinstance(status_data, dict):
+                status_data = [status_data]
+            
+            result = []
+            for s in status_data:
+                result.append({
+                    'date': s.get('date', ''),
+                    'status': s.get('status', ''),
+                    'description': s.get('description', '')
+                })
+            
+            return result
+        except:
+            return []
+    
+    def get_quota_info(self) -> Dict:
+        return asdict(self.quota_manager.get_quota_info())
+    
+    def get_official_usage(self, date_from: str = None, date_to: str = None) -> Dict:
+        """
+        从EPO官方API获取使用量数据
+        
+        Args:
+            date_from: 开始日期 (dd/mm/yyyy)
+            date_to: 结束日期 (dd/mm/yyyy)
+        
+        Returns:
+            包含使用量数据的字典
+        """
+        if not self.consumer_key or not self.consumer_secret:
+            return {'error': '凭证未配置', 'configured': False}
+        
+        try:
+            token = self._get_access_token()
+            
+            if not date_from or not date_to:
+                today = datetime.now()
+                week_start = today - timedelta(days=today.weekday())
+                date_from = week_start.strftime('%d/%m/%Y')
+                date_to = today.strftime('%d/%m/%Y')
+            
+            url = f"https://ops.epo.org/3.2/developers/me/stats/usage"
+            params = {'timeRange': f"{date_from}~{date_to}"}
+            
+            headers = {
+                'Authorization': f'Bearer {token}',
+                'Accept': 'application/json'
+            }
+            
+            response = requests.get(url, headers=headers, params=params)
+            
+            if response.status_code != 200:
+                return {
+                    'error': f'API请求失败: {response.status_code}',
+                    'configured': True
+                }
+            
+            data = response.json()
+            
+            total_bytes = 0.0
+            total_requests = 0
+            daily_usage = {}
+            
+            environments = data.get('environments', [])
+            for env in environments:
+                dimensions = env.get('dimensions', [])
+                for dim in dimensions:
+                    metrics = dim.get('metrics', [])
+                    for metric in metrics:
+                        name = metric.get('name', '')
+                        values = metric.get('values', [])
+                        
+                        for v in values:
+                            timestamp = v.get('timestamp', 0)
+                            value_str = v.get('value', '0')
+                            
+                            try:
+                                if isinstance(timestamp, (int, float)):
+                                    ts = float(timestamp)
+                                elif timestamp is not None:
+                                    ts = float(str(timestamp).strip())
+                                else:
+                                    ts = 0.0
+                            except (ValueError, TypeError):
+                                ts = 0.0
+                            
+                            try:
+                                if isinstance(value_str, (int, float)):
+                                    value = float(value_str)
+                                elif value_str is not None:
+                                    clean_str = str(value_str).strip()
+                                    if clean_str:
+                                        clean_str = clean_str.replace(',', '')
+                                        value = float(clean_str)
+                                    else:
+                                        value = 0.0
+                                else:
+                                    value = 0.0
+                            except (ValueError, TypeError) as e:
+                                logger.warning(f"无法转换值 '{value_str}': {e}")
+                                value = 0.0
+                            
+                            try:
+                                date_str = datetime.utcfromtimestamp(ts / 1000).strftime('%Y-%m-%d')
+                            except (ValueError, TypeError, OSError):
+                                continue
+                            
+                            if date_str not in daily_usage:
+                                daily_usage[date_str] = {'date': date_str, 'bytes': 0.0, 'mb': 0.0, 'requests': 0}
+                            
+                            if name == 'total_response_size':
+                                total_bytes += value
+                                daily_usage[date_str]['bytes'] += value
+                                daily_usage[date_str]['mb'] = round(daily_usage[date_str]['bytes'] / (1024 * 1024), 2)
+                            elif name == 'message_count':
+                                total_requests += int(value)
+                                daily_usage[date_str]['requests'] += int(value)
+            
+            total_mb = total_bytes / (1024 * 1024)
+            remaining_mb = max(0.0, (WEEKLY_QUOTA_BYTES - total_bytes) / (1024 * 1024))
+            usage_percent = (total_bytes / WEEKLY_QUOTA_BYTES) * 100 if WEEKLY_QUOTA_BYTES > 0 else 0
+            
+            return {
+                'configured': True,
+                'total_bytes': int(total_bytes),
+                'total_mb': round(total_mb, 2),
+                'total_requests': total_requests,
+                'remaining_mb': round(remaining_mb, 2),
+                'usage_percent': round(usage_percent, 2),
+                'weekly_quota_mb': 4096,
+                'daily_usage': list(daily_usage.values())
+            }
+            
+        except Exception as e:
+            logger.error(f"获取官方使用量失败: {e}")
+            return {
+                'error': str(e),
+                'configured': True
+            }
 
 
-_client_instance = None
+epo_ops_client = None
+
 
 def get_epo_ops_client() -> EPOOPSClient:
-    global _client_instance
-    if _client_instance is None:
-        _client_instance = EPOOPSClient()
-    return _client_instance
+    global epo_ops_client
+    if epo_ops_client is None:
+        epo_ops_client = EPOOPSClient()
+    return epo_ops_client
