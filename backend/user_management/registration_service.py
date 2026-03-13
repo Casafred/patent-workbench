@@ -329,6 +329,74 @@ def send_verification_code_email(email, code):
         return False
 
 
+def send_registration_code_email(email, code):
+    """
+    Send verification code email for registration.
+    
+    Args:
+        email: User email address
+        code: 6-digit verification code
+    
+    Returns:
+        bool: True if successful
+    """
+    if not ADMIN_EMAIL or not EMAIL_PASSWORD:
+        print('邮件通知未配置，跳过发送')
+        return False
+    
+    try:
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = '【专利分析智能工作台】邮箱验证码'
+        msg['From'] = ADMIN_EMAIL
+        msg['To'] = email
+        
+        text_content = f"""
+您正在申请使用专利分析智能工作台
+
+验证码：{code}
+
+验证码有效期为10分钟，请尽快完成验证。
+如果您没有进行此操作，请忽略此邮件。
+
+此邮件由系统自动发送，请勿回复。
+"""
+        
+        html_content = f"""
+<html>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <div style="max-width: 500px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #16A34A; border-bottom: 2px solid #22C55E; padding-bottom: 10px;">
+            邮箱验证码
+        </h2>
+        <p>您正在申请使用专利分析智能工作台，请使用以下验证码验证您的邮箱：</p>
+        <div style="background: #F0FDF4; padding: 20px; text-align: center; margin: 20px 0; border-radius: 8px;">
+            <span style="font-size: 32px; font-weight: bold; color: #16A34A; letter-spacing: 8px;">{code}</span>
+        </div>
+        <p style="color: #666; font-size: 14px;">验证码有效期为10分钟，请尽快完成验证。</p>
+        <p style="color: #999; font-size: 12px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+            如果您没有进行此操作，请忽略此邮件。<br>
+            此邮件由系统自动发送，请勿回复。
+        </p>
+    </div>
+</body>
+</html>
+"""
+        
+        msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
+        msg.attach(MIMEText(html_content, 'html', 'utf-8'))
+        
+        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
+            server.login(ADMIN_EMAIL, EMAIL_PASSWORD)
+            server.sendmail(ADMIN_EMAIL, email, msg.as_string())
+        
+        print(f'注册验证码邮件已发送至 {email}')
+        return True
+        
+    except Exception as e:
+        print(f'注册验证码邮件发送失败: {e}')
+        return False
+
+
 def send_account_to_user(email, name, username, password):
     """
     Send account information email to user after approval.

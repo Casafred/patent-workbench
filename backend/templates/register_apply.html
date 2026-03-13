@@ -124,6 +124,46 @@
             text-decoration: none;
         }
         .back-link a:hover { text-decoration: underline; }
+        .email-group {
+            display: flex;
+            gap: 10px;
+        }
+        .email-group input {
+            flex: 1;
+        }
+        .send-code-btn {
+            padding: 12px 16px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.3s;
+        }
+        .send-code-btn:hover {
+            background: var(--primary-color-dark);
+        }
+        .send-code-btn:disabled {
+            background: #9CA3AF;
+            cursor: not-allowed;
+        }
+        .verification-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .verification-group input {
+            flex: 1;
+        }
+        .verification-status {
+            font-size: 12px;
+            color: #666;
+        }
+        .verification-status.verified {
+            color: var(--primary-color-dark);
+        }
     </style>
 </head>
 <body>
@@ -143,7 +183,18 @@
             </div>
             <div class="form-group">
                 <label>邮箱 <span class="required">*</span></label>
-                <input type="email" name="email" required placeholder="用于接收审核结果和账号信息">
+                <div class="email-group">
+                    <input type="email" name="email" id="email" required placeholder="用于接收审核结果和账号信息">
+                    <button type="button" class="send-code-btn" id="send-code-btn">发送验证码</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>验证码 <span class="required">*</span></label>
+                <div class="verification-group">
+                    <input type="text" name="verification_code" id="verification-code" required maxlength="6" placeholder="请输入6位验证码">
+                    <span class="verification-status" id="verification-status"></span>
+                </div>
+                <small style="color: #666; font-size: 12px; margin-top: 4px; display: block;">验证码有效期10分钟</small>
             </div>
             <div class="form-group">
                 <label>手机号</label>
@@ -183,6 +234,14 @@
         const followedWechat = document.getElementById('followed-wechat');
         const wechatNicknameGroup = document.getElementById('wechat-nickname-group');
         const wechatNicknameInput = document.querySelector('input[name="wechat_nickname"]');
+        const sendCodeBtn = document.getElementById('send-code-btn');
+        const emailInput = document.getElementById('email');
+        const verificationCodeInput = document.getElementById('verification-code');
+        const verificationStatus = document.getElementById('verification-status');
+        
+        let countdown = 0;
+        let emailVerified = false;
+        let verifiedEmail = '';
 
         followedWechat.addEventListener('change', function() {
             wechatNicknameGroup.style.display = this.checked ? 'block' : 'none';
@@ -197,12 +256,120 @@
             messageEl.className = 'message ' + type + ' show';
         }
 
+        function updateCountdown() {
+            if (countdown > 0) {
+                sendCodeBtn.textContent = countdown + '秒后重发';
+                sendCodeBtn.disabled = true;
+                countdown--;
+                setTimeout(updateCountdown, 1000);
+            } else {
+                sendCodeBtn.textContent = '发送验证码';
+                sendCodeBtn.disabled = false;
+            }
+        }
+
+        sendCodeBtn.addEventListener('click', async function() {
+            const email = emailInput.value.trim();
+            if (!email) {
+                showMessage('请先输入邮箱地址', 'error');
+                return;
+            }
+            
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showMessage('请输入有效的邮箱地址', 'error');
+                return;
+            }
+
+            sendCodeBtn.disabled = true;
+            sendCodeBtn.textContent = '发送中...';
+
+            try {
+                const response = await fetch('/api/register/send-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage(result.message, 'success');
+                    countdown = 60;
+                    updateCountdown();
+                } else {
+                    showMessage(result.message, 'error');
+                    sendCodeBtn.disabled = false;
+                    sendCodeBtn.textContent = '发送验证码';
+                }
+            } catch (error) {
+                showMessage('发送失败，请稍后重试', 'error');
+                sendCodeBtn.disabled = false;
+                sendCodeBtn.textContent = '发送验证码';
+            }
+        });
+
+        verificationCodeInput.addEventListener('input', function() {
+            verificationStatus.textContent = '';
+            verificationStatus.className = 'verification-status';
+            emailVerified = false;
+        });
+
+        async function verifyCode() {
+            const email = emailInput.value.trim();
+            const code = verificationCodeInput.value.trim();
+            
+            if (!email || !code || code.length !== 6) {
+                return false;
+            }
+
+            try {
+                const response = await fetch('/api/register/verify-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email, code: code })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    verificationStatus.textContent = '✓ 验证通过';
+                    verificationStatus.className = 'verification-status verified';
+                    emailVerified = true;
+                    verifiedEmail = email;
+                    return true;
+                } else {
+                    verificationStatus.textContent = result.message;
+                    verificationStatus.className = 'verification-status';
+                    emailVerified = false;
+                    return false;
+                }
+            } catch (error) {
+                verificationStatus.textContent = '验证失败';
+                verificationStatus.className = 'verification-status';
+                return false;
+            }
+        }
+
+        verificationCodeInput.addEventListener('blur', verifyCode);
+
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
             
             if (followedWechat.checked && !wechatNicknameInput.value.trim()) {
                 showMessage('请填写微信昵称', 'error');
                 return;
+            }
+
+            const email = emailInput.value.trim();
+            const code = verificationCodeInput.value.trim();
+            
+            if (!emailVerified || verifiedEmail !== email) {
+                const verified = await verifyCode();
+                if (!verified) {
+                    showMessage('请先完成邮箱验证', 'error');
+                    return;
+                }
             }
             
             submitBtn.disabled = true;
@@ -212,6 +379,7 @@
             const data = {
                 name: formData.get('name'),
                 email: formData.get('email'),
+                verification_code: formData.get('verification_code'),
                 phone: formData.get('phone') || '',
                 company: formData.get('company') || '',
                 followed_wechat: followedWechat.checked,
@@ -232,6 +400,10 @@
                     showMessage(result.message, 'success');
                     form.reset();
                     wechatNicknameGroup.style.display = 'none';
+                    emailVerified = false;
+                    verifiedEmail = '';
+                    verificationStatus.textContent = '';
+                    verificationStatus.className = 'verification-status';
                 } else {
                     showMessage(result.message, 'error');
                 }

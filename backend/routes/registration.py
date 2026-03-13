@@ -26,12 +26,52 @@ def register_page():
     return render_template('register_apply.html')
 
 
+@registration_bp.route('/send-code', methods=['POST'])
+def send_registration_code():
+    data = request.get_json()
+    email = data.get('email', '').strip()
+    
+    if not email:
+        return jsonify({'success': False, 'message': '请输入邮箱地址'})
+    
+    import re
+    if not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', email):
+        return jsonify({'success': False, 'message': '请输入有效的邮箱地址'})
+    
+    from backend.services.auth_service import AuthService
+    code = AuthService.generate_verification_code()
+    
+    if not AuthService.save_reset_code(email, code):
+        return jsonify({'success': False, 'message': '验证码保存失败，请稍后重试'})
+    
+    if not registration_service.send_registration_code_email(email, code):
+        return jsonify({'success': False, 'message': '验证码发送失败，请检查邮箱配置'})
+    
+    return jsonify({'success': True, 'message': '验证码已发送到您的邮箱，有效期10分钟'})
+
+
+@registration_bp.route('/verify-code', methods=['POST'])
+def verify_registration_code():
+    data = request.get_json()
+    email = data.get('email', '').strip()
+    code = data.get('code', '').strip()
+    
+    if not email or not code:
+        return jsonify({'success': False, 'message': '请输入邮箱和验证码'})
+    
+    from backend.services.auth_service import AuthService
+    success, message = AuthService.verify_reset_code(email, code)
+    
+    return jsonify({'success': success, 'message': message})
+
+
 @registration_bp.route('/apply', methods=['POST'])
 def submit_application():
     data = request.get_json()
     
     name = data.get('name', '').strip()
     email = data.get('email', '').strip()
+    verification_code = data.get('verification_code', '').strip()
     phone = data.get('phone', '').strip()
     company = data.get('company', '').strip()
     followed_wechat = data.get('followed_wechat', False)
@@ -41,8 +81,16 @@ def submit_application():
     if not name or not email:
         return jsonify({'success': False, 'message': '请填写必填项'})
     
+    if not verification_code:
+        return jsonify({'success': False, 'message': '请输入邮箱验证码'})
+    
     if followed_wechat and not wechat_nickname:
         return jsonify({'success': False, 'message': '请填写微信昵称'})
+    
+    from backend.services.auth_service import AuthService
+    success, message = AuthService.verify_reset_code(email, verification_code)
+    if not success:
+        return jsonify({'success': False, 'message': message})
     
     result = registration_service.submit_application(
         name, email, phone, company, followed_wechat, wechat_nickname, reason
