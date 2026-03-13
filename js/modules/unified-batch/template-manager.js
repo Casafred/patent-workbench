@@ -236,13 +236,17 @@ const TemplateManager = {
         };
     },
 
-    buildBatchRequestItem(input, template, customId) {
+    buildBatchRequestItem(input, template, customId, provider = 'zhipu') {
         const body = this.buildRequestBody(input, template);
+        
+        const url = provider === 'aliyun' 
+            ? '/v1/chat/completions' 
+            : '/v4/chat/completions';
         
         return {
             custom_id: customId,
             method: 'POST',
-            url: '/v4/chat/completions',
+            url: url,
             body: body
         };
     }

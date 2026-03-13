@@ -1,15 +1,12 @@
 /**
- * 统一批量处理系统 - 小批量异步引擎
- * 实时异步API调用，逐条获取结果
+ * 统一批量处理系统 - 异步引擎
+ * 实时API调用，逐条处理结果
  * 支持智谱AI和阿里云百炼双服务商
  */
 
 import unifiedBatchState from '../state.js';
-import { UnifiedBatchConfig } from '../config.js';
 import TemplateManager from '../template-manager.js';
 import OutputHandler from '../output-handler.js';
-
-const { ASYNC } = UnifiedBatchConfig;
 
 const AsyncEngine = {
     state: unifiedBatchState.state,
@@ -56,67 +53,172 @@ const AsyncEngine = {
         return headers;
     },
 
-    async submitRequest(input, template) {
-        const requestBody = TemplateManager.buildRequestBody(input, template);
-        const model = requestBody.model || template.model || 'glm-4-flash';
-        const provider = this.getProviderForModel(model);
+    getConcurrencyForModel(model) {
+        if (!model) return 1;
         
-        requestBody.provider = provider;
+        const MODEL_CONCURRENCY_LIMITS = {
+            'GLM-4.6': 3,
+            'GLM-4.6V-FlashX': 3,
+            'GLM-4.7': 3,
+            'GLM-Image': 1,
+            'GLM-Z1-Air': 30,
+            'GLM-4.5': 10,
+            'embedding-3-pro': 100,
+            'GLM-4.6V': 10,
+            'GLM-4.7-Flash': 1,
+            'GLM-4.7-FlashX': 3,
+            'GLM-OCR': 2,
+            'GLM-5': 5,
+            'GLM-4-Plus': 20,
+            'GLM-Z1-Flash': 30,
+            'GLM-Z1-AirX': 30,
+            'GLM-4.5V': 10,
+            'GLM-4.6V-Flash': 1,
+            'AutoGLM-Phone': 5,
+            'AutoGLM-Phone-Multilingual': 5,
+            'GLM-4-0520': 20,
+            'Search-Pro': 5,
+            'Search-Std': 50,
+            'GLM-4.5-Air': 5,
+            'GLM-4.5-AirX': 5,
+            'GLM-4-AirX': 5,
+            'GLM-Realtime': 5,
+            'GLM-4-Flash-250414': 5,
+            'GLM-4-FlashX-250414': 50,
+            'GLM-Realtime-Flash': 5,
+            'GLM-Realtime-Air': 5,
+            'GLM-4.5-Flash': 2,
+            'GLM-4V-Plus-0111': 5,
+            'GLM-Zero-Preview': 50,
+            'GLM-4-Air': 100,
+            'GLM-4-Air-250414': 30,
+            'GLM-4-32B-0414-128K': 15,
+            'GLM-4-Long': 10,
+            'GLM-4-FlashX': 50,
+            'GLM-4.1V-Thinking-Flash': 5,
+            'GLM-4.1V-Thinking-FlashX': 30,
+            'GLM-4-Voice': 5,
+            'GLM-4-Flash': 200,
+            'GLM-Z1-FlashX': 50,
+            'GLM-4-9B': 5,
+            'GLM-4V-Plus': 5,
+            'GLM-4V-Flash': 10,
+            'GLM-4V': 5,
+            'Web-Search-Pro': 30,
+            'GLM-ASR': 5,
+            'Rerank': 50,
+            'CogView-4-250304': 5,
+            'CogView-3-Plus': 5,
+            'CogView-4': 5,
+            'CogView-3-Flash': 5,
+            'CogView-3': 5,
+            'CogVideoX-Flash': 3,
+            'CogVideoX': 5,
+            'CogVideoX-2': 5,
+            'CogTTS-Clone': 2,
+            'CogTTS': 5,
+            'GLM-TTS': 5,
+            'GLM-TTS-Clone': 2,
+            'GLM-ASR-2512': 5,
+            'ViduQ1-text': 5,
+            'Viduq1-Image': 5,
+            'Viduq1-Start-End': 5,
+            'Vidu2-Image': 5,
+            'Vidu2-Start-End': 5,
+            'Vidu2-Reference': 5,
+            'Embedding-3': 50,
+            'Embedding-2': 50,
+            'GLM-4-AllTools': 5,
+            'GLM-4-Assistant': 5,
+            'CodeGeeX-4': 50,
+            'GLM-4': 30,
+            'CharGLM-4': 5,
+            'GLM-3-Turbo': 50,
+            'Moderation': 5,
+            'CogVideoX-3': 1,
+            'GLM-Experimental-Preview': 5
+        };
         
-        try {
-            const headers = this.getApiHeaders(model);
-            
-            const response = await fetch('/api/async_submit', {
-                method: 'POST',
-                headers: headers,
-                body: JSON.stringify(requestBody)
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error || '提交失败: ' + response.status);
-            }
-
-            const result = await response.json();
-            return {
-                success: true,
-                taskId: result.task_id,
-                requestId: this.state.asyncTask.nextRequestId++,
-                provider: provider
-            };
-        } catch (error) {
-            return { success: false, error: error.message };
+        const normalizedName = model.replace(/^glm-/i, 'GLM-').replace(/^GLM-/i, 'GLM-');
+        if (MODEL_CONCURRENCY_LIMITS[normalizedName]) {
+            return MODEL_CONCURRENCY_LIMITS[normalizedName];
         }
+        for (const [key, value] of Object.entries(MODEL_CONCURRENCY_LIMITS)) {
+            if (normalizedName.toLowerCase() === key.toLowerCase()) {
+                return value;
+            }
+        }
+        return 1;
     },
 
-    async retrieveResult(taskId, model) {
-        try {
-            const headers = this.getApiHeaders(model);
-            
-            const response = await fetch('/api/async_retrieve', {
-                method: 'POST',
-                headers: headers,
-                body: JSON.stringify({ task_id: taskId })
-            });
-            
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error || '获取结果失败: ' + response.status);
+    async processSingleInputWithRetry(input, template, maxRetries = 3) {
+        let lastError = null;
+        
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                const result = await this.processSingleInput(input, template);
+                return result;
+            } catch (error) {
+                lastError = error;
+                const errorMsg = error?.message || '';
+                
+                if (errorMsg.includes('429') || errorMsg.includes('速率限制') || errorMsg.includes('rate limit')) {
+                    const waitTime = Math.min(2000 * attempt, 10000);
+                    console.log(`[AsyncEngine] Rate limited, waiting ${waitTime}ms before retry ${attempt}/${maxRetries}`);
+                    await new Promise(resolve => setTimeout(resolve, waitTime));
+                } else {
+                    throw error;
+                }
             }
-
-            const result = await response.json();
-            return {
-                success: true,
-                status: result.task_status,
-                content: result.content,
-                usage: result.usage
-            };
-        } catch (error) {
-            return { success: false, error: error.message };
         }
+        
+        throw lastError;
+    },
+
+    async processSingleInput(input, template) {
+        const requestBody = TemplateManager.buildRequestBody(input, template);
+        const model = requestBody.model || template.model || 'glm-4-flash';
+        const headers = this.getApiHeaders(model);
+        
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(requestBody)
+        });
+        
+        if (!response.ok) {
+            let errorMsg = `API请求失败: ${response.status}`;
+            try {
+                const errorData = await response.json();
+                if (errorData.error) {
+                    if (typeof errorData.error === 'string') {
+                        errorMsg = errorData.error;
+                    } else if (errorData.error.message) {
+                        errorMsg = errorData.error.message;
+                    } else {
+                        errorMsg = JSON.stringify(errorData.error);
+                    }
+                }
+            } catch (e) {
+                console.error('[AsyncEngine] Failed to parse error response:', e);
+            }
+            throw new Error(errorMsg);
+        }
+        
+        const data = await response.json();
+        const content = data.choices?.[0]?.message?.content || '';
+        const usage = data.usage || {};
+        
+        return {
+            content: content,
+            usage: usage,
+            rawResponse: data
+        };
     },
 
     async start(inputs, template, onProgress, onComplete) {
+        console.log('[AsyncEngine] Starting async processing with', inputs.length, 'inputs');
+        
         const asyncTask = this.state.asyncTask;
         asyncTask.requests = [];
         asyncTask.tasks = {};
@@ -125,168 +227,171 @@ const AsyncEngine = {
         this.state.task.status = 'running';
         this.state.task.startTime = new Date();
 
-        const batches = [];
-        for (let i = 0; i < inputs.length; i += ASYNC.CONCURRENCY) {
-            batches.push(inputs.slice(i, i + ASYNC.CONCURRENCY));
-        }
+        const model = template.model || 'glm-4-flash';
+        const concurrency = this.getConcurrencyForModel(model);
+        const requestDelay = concurrency >= 50 ? 100 : (concurrency >= 10 ? 200 : 500);
+        
+        console.log('[AsyncEngine] Model concurrency limit:', concurrency, ', request delay:', requestDelay + 'ms');
 
-        for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-            const batch = batches[batchIndex];
+        let completed = 0;
+        let failed = 0;
+
+        for (let i = 0; i < inputs.length; i++) {
+            const input = inputs[i];
+            const requestId = 'REQ-' + (asyncTask.nextRequestId++);
             
-            const submitPromises = batch.map(async (input) => {
-                const submitResult = await this.submitRequest(input, template);
-                
-                if (submitResult.success) {
-                    const requestInfo = {
-                        requestId: 'REQ-' + submitResult.requestId,
-                        inputId: input.id,
-                        taskId: submitResult.taskId,
-                        status: 'pending',
-                        retries: 0,
-                        templateName: template.name,
-                        model: template.model,
-                        provider: submitResult.provider
-                    };
-                    
-                    asyncTask.requests.push(requestInfo);
-                    asyncTask.tasks[submitResult.taskId] = requestInfo;
-                    
-                    OutputHandler.addResult({
-                        requestId: requestInfo.requestId,
-                        inputId: input.id,
-                        status: 'pending',
-                        templateName: template.name
-                    });
-                    
-                    return requestInfo;
-                } else {
-                    OutputHandler.addResult({
-                        requestId: 'REQ-' + submitResult.requestId,
-                        inputId: input.id,
-                        status: 'failed',
-                        error: submitResult.error,
-                        templateName: template.name
-                    });
-                    
-                    return null;
-                }
+            if (onProgress) {
+                onProgress({
+                    phase: 'processing',
+                    current: i + 1,
+                    total: inputs.length,
+                    completed: completed,
+                    failed: failed,
+                    message: `正在处理: ${i + 1}/${inputs.length}`
+                });
+            }
+
+            let resultItem;
+            try {
+                const result = await this.processSingleInputWithRetry(input, template, 3);
+                resultItem = {
+                    requestId: requestId,
+                    inputId: input.id,
+                    status: 'completed',
+                    result: result.content,
+                    usage: result.usage,
+                    templateName: template.name
+                };
+                completed++;
+            } catch (error) {
+                const errorMsg = error?.message || String(error);
+                console.error('[AsyncEngine] Processing failed for:', input.id, errorMsg);
+                resultItem = {
+                    requestId: requestId,
+                    inputId: input.id,
+                    status: 'failed',
+                    error: errorMsg,
+                    templateName: template.name
+                };
+                failed++;
+            }
+
+            asyncTask.requests.push({
+                requestId: requestId,
+                inputId: input.id,
+                status: resultItem.status,
+                templateName: template.name,
+                model: model
             });
 
-            await Promise.all(submitPromises);
+            OutputHandler.addResult(resultItem);
 
             if (onProgress) {
                 onProgress({
-                    phase: 'submit',
-                    batchIndex: batchIndex + 1,
-                    totalBatches: batches.length,
-                    stats: OutputHandler.getProgressStats()
-                });
-            }
-        }
-
-        await this.startPolling(template, onProgress, onComplete);
-    },
-
-    async startPolling(template, onProgress, onComplete) {
-        const asyncTask = this.state.asyncTask;
-        
-        const poll = async () => {
-            const pendingRequests = asyncTask.requests.filter(
-                r => r.status === 'pending' || r.status === 'processing' || r.status === 'retrying'
-            );
-
-            if (pendingRequests.length === 0) {
-                this.stopPolling();
-                this.state.task.status = 'completed';
-                this.state.task.endTime = new Date();
-                
-                if (onComplete) {
-                    onComplete({
-                        success: true,
-                        stats: OutputHandler.getProgressStats()
-                    });
-                }
-                return;
-            }
-
-            for (const request of pendingRequests) {
-                if (request.status === 'retrying' && request.retries >= ASYNC.MAX_RETRIES) {
-                    request.status = 'failed';
-                    OutputHandler.updateResult(request.requestId, {
-                        status: 'failed',
-                        error: '超过最大重试次数'
-                    });
-                    continue;
-                }
-
-                const result = await this.retrieveResult(request.taskId, request.model);
-                
-                if (result.success) {
-                    switch (result.status) {
-                        case 'SUCCESS':
-                            request.status = 'completed';
-                            OutputHandler.updateResult(request.requestId, {
-                                status: 'completed',
-                                result: result.content,
-                                usage: result.usage
-                            });
-                            break;
-                        case 'FAILED':
-                            request.status = 'retrying';
-                            request.retries++;
-                            OutputHandler.updateResult(request.requestId, {
-                                status: 'retrying',
-                                retries: request.retries
-                            });
-                            break;
-                        case 'PROCESSING':
-                            request.status = 'processing';
-                            OutputHandler.updateResult(request.requestId, {
-                                status: 'processing'
-                            });
-                            break;
-                    }
-                }
-            }
-
-            if (onProgress) {
-                onProgress({
-                    phase: 'poll',
+                    phase: 'processing',
+                    current: i + 1,
+                    total: inputs.length,
+                    completed: completed,
+                    failed: failed,
                     stats: OutputHandler.getProgressStats()
                 });
             }
 
-            asyncTask.pollingInterval = setTimeout(poll, ASYNC.POLL_INTERVAL);
-        };
+            if (i < inputs.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, requestDelay));
+            }
+        }
 
-        poll();
-    },
+        this.state.task.status = 'completed';
+        this.state.task.endTime = new Date();
 
-    stopPolling() {
-        const asyncTask = this.state.asyncTask;
-        if (asyncTask.pollingInterval) {
-            clearTimeout(asyncTask.pollingInterval);
-            asyncTask.pollingInterval = null;
+        console.log('[AsyncEngine] Processing completed:', completed, 'success,', failed, 'failed');
+
+        if (onComplete) {
+            onComplete({
+                success: true,
+                stats: OutputHandler.getProgressStats()
+            });
         }
     },
 
-    resume(template, onProgress, onComplete) {
+    stop() {
+        this.state.task.status = 'stopped';
+        return { success: true, message: '任务已停止' };
+    },
+
+    async resume(template, onProgress, onComplete) {
         const asyncTask = this.state.asyncTask;
         
-        if (asyncTask.requests.length === 0) {
+        if (!asyncTask.requests || asyncTask.requests.length === 0) {
             return { success: false, message: '没有可恢复的任务' };
         }
 
-        asyncTask.requests.forEach(request => {
-            if (request.status !== 'completed' && request.status !== 'failed') {
-                request.status = 'pending';
-            }
-        });
+        const failedRequests = asyncTask.requests.filter(r => r.status === 'failed');
+        if (failedRequests.length === 0) {
+            return { success: true, message: '没有需要重试的失败任务' };
+        }
+
+        console.log('[AsyncEngine] Resuming with', failedRequests.length, 'failed requests');
+
+        const model = template.model || 'glm-4-flash';
+        const concurrency = this.getConcurrencyForModel(model);
+        const requestDelay = concurrency >= 50 ? 100 : (concurrency >= 10 ? 200 : 500);
 
         this.state.task.status = 'running';
-        this.startPolling(template, onProgress, onComplete);
-        
-        return { success: true, message: '任务已恢复' };
+
+        let completed = 0;
+        let stillFailed = 0;
+
+        for (let i = 0; i < failedRequests.length; i++) {
+            const request = failedRequests[i];
+            const input = { id: request.inputId, content: request.inputId };
+
+            if (onProgress) {
+                onProgress({
+                    phase: 'resuming',
+                    current: i + 1,
+                    total: failedRequests.length,
+                    message: `正在重试: ${i + 1}/${failedRequests.length}`
+                });
+            }
+
+            try {
+                const result = await this.processSingleInputWithRetry(input, template, 3);
+                request.status = 'completed';
+                OutputHandler.updateResult(request.requestId, {
+                    status: 'completed',
+                    result: result.content,
+                    usage: result.usage
+                });
+                completed++;
+            } catch (error) {
+                const errorMsg = error?.message || String(error);
+                console.error('[AsyncEngine] Retry failed for:', request.inputId, errorMsg);
+                stillFailed++;
+            }
+
+            if (i < failedRequests.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, requestDelay));
+            }
+        }
+
+        this.state.task.status = 'completed';
+        this.state.task.endTime = new Date();
+
+        console.log('[AsyncEngine] Resume completed:', completed, 'recovered,', stillFailed, 'still failed');
+
+        if (onComplete) {
+            onComplete({
+                success: true,
+                stats: OutputHandler.getProgressStats()
+            });
+        }
+
+        return { 
+            success: true, 
+            message: `重试完成: ${completed} 成功, ${stillFailed} 仍失败` 
+        };
     },
 
     getStatus() {
@@ -295,12 +400,6 @@ const AsyncEngine = {
             stats: OutputHandler.getProgressStats(),
             requests: this.state.asyncTask.requests
         };
-    },
-
-    stop() {
-        this.stopPolling();
-        this.state.task.status = 'stopped';
-        return { success: true, message: '任务已停止' };
     },
 
     exportCurrentResults() {

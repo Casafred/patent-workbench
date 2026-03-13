@@ -55,6 +55,7 @@ const ClassificationModule = {
             'classification_export_examples_btn': this.handleExportExamples.bind(this),
             'classification_async_submit_btn': this.handleSubmitAsync.bind(this),
             'classification_async_export_btn': this.handleExportResults.bind(this),
+            'classification_async_recover_btn': this.handleRecoverBatch.bind(this),
             'classification_add_to_examples_btn': this.handleAddToExamples.bind(this),
             'classification_inputs_select_all_btn': this.handleSelectAllInputs.bind(this),
             'classification_inputs_delete_selected_btn': this.handleDeleteSelectedInputs.bind(this),
@@ -1719,6 +1720,272 @@ const ClassificationModule = {
                 btn.textContent = '开始分类';
             }
         }
+    },
+
+    async handleRecoverBatch() {
+        console.log('[ClassificationModule] Handling batch recovery');
+        
+        const batchTask = classificationState.state.batchTask;
+        if (!batchTask || !batchTask.batchId) {
+            alert('没有可恢复的批处理任务');
+            return;
+        }
+        
+        const btn = document.getElementById('classification_async_recover_btn');
+        const progressInfo = document.getElementById('classification_async_progress_info');
+        
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = '恢复中...';
+        }
+        
+        if (progressInfo) {
+            progressInfo.textContent = '正在查询批处理状态...';
+        }
+        
+        this.startBatchAutoPoll(
+            batchTask.batchId,
+            batchTask.provider || 'zhipu',
+            (progress) => {
+                if (progressInfo) {
+                    if (progress.status === 'validating') {
+                        progressInfo.textContent = `批处理验证中...`;
+                    } else if (progress.status === 'in_progress') {
+                        const completed = progress.completed || 0;
+                        const total = progress.total || '?';
+                        progressInfo.textContent = `批处理进行中... (${completed}/${total})`;
+                    } else if (progress.status === 'finalizing') {
+                        progressInfo.textContent = '批处理正在完成...';
+                    } else {
+                        progressInfo.textContent = `批处理状态: ${progress.status}`;
+                    }
+                }
+            },
+            (complete) => {
+                if (complete.success && complete.content) {
+                    this.parseBatchResults(complete.content);
+                    if (progressInfo) {
+                        progressInfo.textContent = '批处理完成！结果已加载';
+                    }
+                } else {
+                    if (progressInfo) {
+                        progressInfo.textContent = '批处理失败: ' + (complete.error || '未知错误');
+                    }
+                }
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = '恢复任务';
+                }
+            }
+        );
+    },
+
+    startBatchAutoPoll(batchId, provider, onProgress, onComplete) {
+        console.log('[ClassificationModule] Starting batch auto poll for:', batchId);
+        
+        const poll = async () => {
+            try {
+                const result = await this.checkBatchStatus(batchId, provider);
+                
+                if (!result.success) {
+                    this.stopBatchAutoPoll();
+                    if (onComplete) {
+                        onComplete({ success: false, error: result.error });
+                    }
+                    return;
+                }
+                
+                const status = result.status;
+                
+                if (onProgress) {
+                    onProgress({
+                        status: status,
+                        completed: result.request_counts?.completed,
+                        total: result.request_counts?.total
+                    });
+                }
+                
+                if (status === 'completed') {
+                    this.stopBatchAutoPoll();
+                    
+                    const downloadResult = await this.downloadBatchResult(
+                        result.output_file_id, 
+                        provider
+                    );
+                    
+                    if (downloadResult.success && onComplete) {
+                        onComplete({ success: true, content: downloadResult.content });
+                    } else if (onComplete) {
+                        onComplete({ success: false, error: downloadResult.error });
+                    }
+                    return;
+                }
+                
+                if (status === 'failed' || status === 'expired' || status === 'cancelled') {
+                    this.stopBatchAutoPoll();
+                    if (onComplete) {
+                        onComplete({ success: false, error: `批处理任务${status}` });
+                    }
+                    return;
+                }
+                
+                classificationState.state.batchTask.autoPollTimer = setTimeout(
+                    poll, 
+                    ClassificationConfig.BATCH.POLL_INTERVAL
+                );
+                
+            } catch (error) {
+                console.error('[ClassificationModule] Auto poll error:', error);
+                this.stopBatchAutoPoll();
+                if (onComplete) {
+                    onComplete({ success: false, error: error.message });
+                }
+            }
+        };
+        
+        poll();
+    },
+
+    stopBatchAutoPoll() {
+        if (classificationState.state.batchTask.autoPollTimer) {
+            clearTimeout(classificationState.state.batchTask.autoPollTimer);
+            classificationState.state.batchTask.autoPollTimer = null;
+        }
+    },
+
+    async checkBatchStatus(batchId, provider) {
+        const headers = this.getApiHeaders(classificationState.state.schema.model);
+        
+        const response = await fetch('/api/check_status', {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({
+                batch_id: batchId,
+                provider: provider
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            return { success: false, error: errorData.error || '查询状态失败' };
+        }
+        
+        const result = await response.json();
+        
+        if (result.output_file_id) {
+            classificationState.state.batchTask.outputFileId = result.output_file_id;
+        }
+        
+        return {
+            success: true,
+            status: result.status,
+            output_file_id: result.output_file_id,
+            request_counts: result.request_counts
+        };
+    },
+
+    async downloadBatchResult(fileId, provider) {
+        const headers = this.getApiHeaders(classificationState.state.schema.model);
+        
+        const response = await fetch('/api/download_result', {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({
+                file_id: fileId,
+                provider: provider
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            return { success: false, error: errorData.error || '下载结果失败' };
+        }
+        
+        const content = await response.text();
+        classificationState.state.batchTask.resultContent = content;
+        
+        return { success: true, content: content };
+    },
+
+    parseBatchResults(jsonlContent) {
+        console.log('[ClassificationModule] Parsing batch results');
+        
+        const lines = jsonlContent.trim().split('\n');
+        const results = [];
+        
+        lines.forEach(line => {
+            try {
+                const item = JSON.parse(line);
+                const customId = item.custom_id;
+                const content = item?.response?.body?.choices?.[0]?.message?.content;
+                const error = item?.error;
+                
+                let resultItem = {
+                    id: customId,
+                    status: error ? 'failed' : 'success'
+                };
+                
+                if (content) {
+                    try {
+                        const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```|({[\s\S]*"classification"[\s\S]*})/);
+                        let jsonString = jsonMatch ? (jsonMatch[1] || jsonMatch[2]) : content;
+                        
+                        if (!jsonString.includes('{')) {
+                            jsonString = '{' + jsonString;
+                        }
+                        if (!jsonString.includes('}')) {
+                            jsonString = jsonString + '}';
+                        }
+                        
+                        const parsed = JSON.parse(jsonString);
+                        
+                        let overallConfidence = 0;
+                        if (parsed.confidence !== undefined) {
+                            if (typeof parsed.confidence === 'number') {
+                                overallConfidence = parsed.confidence;
+                            } else if (typeof parsed.confidence === 'object') {
+                                const confValues = Object.values(parsed.confidence).filter(v => typeof v === 'number');
+                                if (confValues.length > 0) {
+                                    overallConfidence = confValues.reduce((a, b) => a + b, 0) / confValues.length;
+                                }
+                            }
+                        }
+                        
+                        resultItem.result = {
+                            classification: parsed.classification || {},
+                            confidence: typeof parsed.confidence === 'object' ? parsed.confidence : { overall: parsed.confidence || 0 },
+                            reasoning: parsed.reasoning || '',
+                            overallConfidence: overallConfidence,
+                            rawContent: content
+                        };
+                    } catch (parseError) {
+                        console.error('[ClassificationModule] Failed to parse result:', parseError);
+                        resultItem.result = {
+                            classification: {},
+                            confidence: {},
+                            reasoning: '',
+                            overallConfidence: 0,
+                            rawContent: content,
+                            parseError: parseError.message
+                        };
+                    }
+                } else if (error) {
+                    resultItem.error = error.message || JSON.stringify(error);
+                }
+                
+                results.push(resultItem);
+            } catch (e) {
+                console.error('[ClassificationModule] Failed to parse line:', e);
+            }
+        });
+        
+        classificationState.setResults(results);
+        this.updateResultsUI(results);
+        this.updateExportButtonState();
+        
+        console.log('[ClassificationModule] Parsed', results.length, 'results');
+        
+        return results;
     },
 
     updateResultsUI(results) {

@@ -64,17 +64,20 @@ const BatchEngine = {
 
     generateJsonl(inputs, template) {
         const lines = [];
+        const provider = this.getProviderForModel(template.model);
         
         inputs.forEach((input, index) => {
             const requestItem = TemplateManager.buildBatchRequestItem(
                 input, 
                 template, 
-                'request-' + (index + 1)
+                'request-' + (index + 1),
+                provider
             );
             lines.push(JSON.stringify(requestItem));
         });
 
         this.state.batchTask.jsonlContent = lines.join('\n');
+        this.state.batchTask.provider = provider;
         return this.state.batchTask.jsonlContent;
     },
 
