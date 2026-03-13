@@ -42,6 +42,10 @@ const UnifiedBatch = {
         return await this.input.loadInputsFromColumns(columns);
     },
 
+    async loadInputsFromConfig(indexColumn, concatColumns) {
+        return await this.input.loadInputsFromConfig(indexColumn, concatColumns);
+    },
+
     addManualInput(text) {
         return this.input.addManualInput(text);
     },

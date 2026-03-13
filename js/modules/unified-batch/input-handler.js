@@ -132,6 +132,65 @@ const InputHandler = {
         }
     },
 
+    async loadInputsFromConfig(indexColumn, concatColumns) {
+        if (!this.state.excelFileId) {
+            return { success: false, message: '未加载Excel文件', count: 0 };
+        }
+
+        if (!concatColumns || concatColumns.length === 0) {
+            return { success: false, message: '未选择拼接列', count: 0 };
+        }
+
+        try {
+            const response = await fetch(`/api/excel/${this.state.excelFileId}/data?header_row=0&page=1&page_size=10000`);
+            const result = await response.json();
+
+            if (!result.success) {
+                return { success: false, message: result.error || '获取数据失败', count: 0 };
+            }
+
+            const sheetData = result.data.data;
+            this.state.inputs = [];
+            this.state.indexColumn = indexColumn || null;
+            let loadedCount = 0;
+
+            sheetData.forEach((row, index) => {
+                const rowData = row.data;
+                
+                const contentParts = [];
+                concatColumns.forEach(colName => {
+                    if (rowData[colName]) {
+                        contentParts.push(String(rowData[colName]).trim());
+                    }
+                });
+                
+                if (contentParts.length > 0) {
+                    const inputId = indexColumn && rowData[indexColumn] 
+                        ? String(rowData[indexColumn]).trim()
+                        : `I${index + 1}`;
+                    
+                    this.state.inputs.push({
+                        id: inputId,
+                        content: contentParts.join('\n\n'),
+                        rawContent: rowData
+                    });
+                    loadedCount++;
+                }
+            });
+
+            this.state.currentSheetData = sheetData.map(item => item.data);
+
+            return {
+                success: true,
+                count: loadedCount,
+                message: `成功加载${loadedCount}条输入（拼接模式）`
+            };
+        } catch (err) {
+            console.error('加载Excel数据错误:', err);
+            return { success: false, message: `加载数据失败: ${err.message}`, count: 0 };
+        }
+    },
+
     addManualInput(text) {
         if (!text || !text.trim()) {
             return { success: false, message: '输入内容为空', count: 0 };

@@ -323,6 +323,11 @@ function bindUnifiedBatchEvents() {
         asyncSubmitBtn.addEventListener('click', startUnifiedAsyncProcessing);
     }
 
+    var addConcatColumnBtn = document.getElementById('unified_add_concat_column_btn');
+    if (addConcatColumnBtn) {
+        addConcatColumnBtn.addEventListener('click', handleUnifiedAddConcatColumn);
+    }
+
     var asyncExportBtn = document.getElementById('unified_async_export_btn');
     if (asyncExportBtn) {
         asyncExportBtn.addEventListener('click', exportUnifiedAsyncResults);
@@ -381,6 +386,14 @@ async function handleUnifiedExcelUpload(event) {
                     renderUnifiedColumnConfig(sheetResult.headers);
                 }
             };
+
+            if (result.sheets.length > 0) {
+                var sheetResult = UnifiedBatch.loadSheet(result.sheets[0]);
+                if (sheetResult.success) {
+                    document.getElementById('unified_column_config_container').style.display = 'block';
+                    renderUnifiedColumnConfig(sheetResult.headers);
+                }
+            }
         }
     } catch (error) {
         alert('加载Excel失败: ' + error.message);
@@ -389,6 +402,30 @@ async function handleUnifiedExcelUpload(event) {
 
 function renderUnifiedColumnConfig(headers) {
     var container = document.getElementById('unified_excel_column_config_area');
+    var indexColumnSelect = document.getElementById('unified_index_column');
+    var concatContainer = document.getElementById('unified_concat_columns_container');
+    
+    if (indexColumnSelect) {
+        indexColumnSelect.innerHTML = '<option value="">-- 选择索引列 --</option>';
+        headers.forEach(function(header) {
+            var option = document.createElement('option');
+            option.value = header;
+            option.textContent = header;
+            indexColumnSelect.appendChild(option);
+        });
+    }
+    
+    if (concatContainer) {
+        concatContainer.innerHTML = '';
+    }
+    
+    var previewEl = document.getElementById('unified_concat_preview');
+    if (previewEl) {
+        previewEl.textContent = '';
+    }
+    
+    if (!container) return;
+    
     var countInput = document.getElementById('unified_excel_column_count');
     var count = parseInt(countInput.value) || 1;
 
@@ -414,7 +451,112 @@ function renderUnifiedColumnConfig(headers) {
     };
 }
 
+function handleUnifiedAddConcatColumn() {
+    var container = document.getElementById('unified_concat_columns_container');
+    var headers = UnifiedBatch.getColumnHeaders();
+    
+    if (!container || !headers || headers.length === 0) return;
+    
+    var existingSelects = container.querySelectorAll('select');
+    var existingCount = existingSelects.length;
+    
+    if (existingCount >= 10) {
+        alert('最多添加10个拼接列');
+        return;
+    }
+    
+    var div = document.createElement('div');
+    div.className = 'concat-column-item';
+    div.style.cssText = 'display: flex; align-items: center; gap: 10px; margin-bottom: 8px;';
+    div.innerHTML = `
+        <span style="color: var(--text-color-secondary); min-width: 20px;">${existingCount + 1}.</span>
+        <select id="unified_concat_column_${existingCount}" style="flex: 1;">
+            <option value="">-- 选择列 --</option>
+            ${headers.map(function(h) { return '<option value="' + h + '">' + h + '</option>'; }).join('')}
+        </select>
+        <button class="small-button delete-button" type="button" onclick="removeUnifiedConcatColumn(this)">删除</button>
+    `;
+    
+    container.appendChild(div);
+    updateUnifiedConcatPreview();
+    
+    var newSelect = div.querySelector('select');
+    if (newSelect) {
+        newSelect.addEventListener('change', function() { updateUnifiedConcatPreview(); });
+    }
+}
+
+window.removeUnifiedConcatColumn = function(btn) {
+    var div = btn.closest('.concat-column-item');
+    if (div) {
+        div.remove();
+        renumberUnifiedConcatColumns();
+        updateUnifiedConcatPreview();
+    }
+};
+
+function renumberUnifiedConcatColumns() {
+    var container = document.getElementById('unified_concat_columns_container');
+    if (!container) return;
+    
+    var items = container.querySelectorAll('.concat-column-item');
+    items.forEach(function(item, index) {
+        var span = item.querySelector('span');
+        if (span) {
+            span.textContent = (index + 1) + '.';
+        }
+        var select = item.querySelector('select');
+        if (select) {
+            select.id = 'unified_concat_column_' + index;
+        }
+    });
+}
+
+function updateUnifiedConcatPreview() {
+    var previewEl = document.getElementById('unified_concat_preview');
+    if (!previewEl) return;
+    
+    var columns = getUnifiedSelectedConcatColumns();
+    if (columns.length === 0) {
+        previewEl.textContent = '';
+        return;
+    }
+    
+    previewEl.textContent = '拼接预览: ' + columns.join(' + ');
+}
+
+function getUnifiedSelectedConcatColumns() {
+    var container = document.getElementById('unified_concat_columns_container');
+    if (!container) return [];
+    
+    var selects = container.querySelectorAll('select');
+    var columns = [];
+    
+    selects.forEach(function(select) {
+        if (select.value) {
+            columns.push(select.value);
+        }
+    });
+    
+    return columns;
+}
+
 async function loadUnifiedInputsFromExcel() {
+    var indexColumn = document.getElementById('unified_index_column')?.value;
+    var concatColumns = getUnifiedSelectedConcatColumns();
+    
+    if (concatColumns.length > 0) {
+        var result = await UnifiedBatch.loadInputsFromConfig(indexColumn, concatColumns);
+        if (result.success) {
+            renderUnifiedInputsList();
+            updateUnifiedModeRecommendation();
+            alert(result.message);
+        } else {
+            alert(result.message);
+        }
+        return;
+    }
+    
     var countInput = document.getElementById('unified_excel_column_count');
     var count = parseInt(countInput.value) || 1;
     var selectedColumns = [];

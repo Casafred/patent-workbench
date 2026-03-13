@@ -53,8 +53,29 @@
                     <select id="unified_excel_sheet" disabled></select>
                 </div>
                 <div id="unified_column_config_container" style="display:none;">
+                    <div class="config-item">
+                        <label for="unified_index_column">索引列 (唯一标识):</label>
+                        <select id="unified_index_column">
+                            <option value="">-- 选择索引列 --</option>
+                        </select>
+                        <small style="color: var(--text-color-tertiary);">选择作为数据唯一标识的列，如序号、ID等</small>
+                    </div>
+                    
+                    <div class="config-item">
+                        <label>拼接列 (处理依据文本):</label>
+                        <div id="unified_concat_columns_container" style="margin-top: 8px;">
+                        </div>
+                        <div style="margin-top: 10px; display: flex; gap: 10px; align-items: center;">
+                            <button id="unified_add_concat_column_btn" class="small-button" type="button">+ 添加拼接列</button>
+                            <span id="unified_concat_preview" style="color: var(--text-color-secondary); font-size: 0.85em;"></span>
+                        </div>
+                        <small style="color: var(--text-color-tertiary);">选择多列将按顺序拼接作为处理依据文本</small>
+                    </div>
+                    
+                    <hr style="margin: 15px 0; border-color: var(--border-color);">
+                    
                     <div class="config-item row-flex">
-                        <label for="unified_excel_column_count">选择输入列数量:</label>
+                        <label for="unified_excel_column_count">或使用传统模式 (选择输入列数量):</label>
                         <input type="number" id="unified_excel_column_count" value="1" min="1" max="10" style="width: 100px;">
                     </div>
                     <div id="unified_excel_column_config_area"></div>
