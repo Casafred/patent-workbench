@@ -821,183 +821,988 @@
                 alert('请在主页面中使用此功能，或确保主页面已加载完成');
             };
             
-            window.showTranslateDialogNewTab = function(event, sectionId) {
+            window.currentTranslateColumn = null;
+            
+            window.showTranslateDialogNewTab = function(event, textType, column) {
                 event.stopPropagation();
                 
-                var existingDialog = document.getElementById('translate-dialog');
+                if (!column) {
+                    var dualLeft = event.currentTarget.closest('.dual-column-left');
+                    var dualRight = event.currentTarget.closest('.dual-column-right');
+                    if (dualLeft) {
+                        column = 'left';
+                    } else if (dualRight) {
+                        column = 'right';
+                    }
+                }
+                
+                window.currentTranslateColumn = column || null;
+                
+                var models = ['glm-4-flash', 'glm-4-long', 'glm-4.7-flash'];
+                if (window.opener && window.opener.AVAILABLE_MODELS && window.opener.AVAILABLE_MODELS.length > 0) {
+                    models = window.opener.AVAILABLE_MODELS;
+                }
+                var cacheKeyPrefix = 'translation_' + currentPatentNumber + '_' + textType + '_';
+                var cachedModel = null;
+                for (var i = 0; i < models.length; i++) {
+                    var m = models[i];
+                    var cached = localStorage.getItem(cacheKeyPrefix + m);
+                    if (cached) {
+                        try {
+                            var data = JSON.parse(cached);
+                            if (Date.now() - data.timestamp < 7 * 24 * 60 * 60 * 1000) {
+                                cachedModel = m;
+                                break;
+                            }
+                        } catch(e) {}
+                    }
+                }
+                
+                var existingDialog = document.getElementById('translate-dialog-newtab');
                 if (existingDialog) existingDialog.remove();
                 
-                var dialogHTML = '<div id="translate-dialog" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); z-index: 10001; min-width: 400px; max-width: 600px; overflow: hidden;">' +
-                    '<div style="background: linear-gradient(135deg, #00bcd4 0%, #009688 100%); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">' +
-                    '<h3 style="margin: 0; font-size: 16px;">快捷翻译</h3>' +
-                    '<button onclick="closeNewTabTranslateDialog()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 20px; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;">&times;</button>' +
-                    '</div>' +
-                    '<div style="padding: 20px;">' +
-                    '<div style="margin-bottom: 15px;">' +
-                    '<label style="display: block; margin-bottom: 8px; font-weight: 500; color: #333;">选择目标语言：</label>' +
-                    '<select id="translate-target-lang" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;">' +
-                    '<option value="zh">中文</option><option value="en">英文</option><option value="ja">日文</option><option value="ko">韩文</option><option value="de">德文</option><option value="fr">法文</option>' +
-                    '</select></div>' +
-                    '<div style="display: flex; gap: 10px;">' +
-                    '<button onclick="translateNewTabContent(\\'' + sectionId + '\\')" style="flex: 1; background: linear-gradient(135deg, #00bcd4 0%, #009688 100%); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;">开始翻译</button>' +
-                    '<button onclick="closeNewTabTranslateDialog()" style="background: #f5f5f5; color: #666; border: none; padding: 12px 20px; border-radius: 8px; font-size: 14px; cursor: pointer;">取消</button>' +
-                    '</div>' +
-                    '<div id="translate-result-container" style="margin-top: 15px; display: none;">' +
-                    '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">' +
-                    '<span style="font-weight: 500; color: #333;">翻译结果：</span>' +
-                    '<button onclick="copyNewTabTranslatedText()" style="background: #2e7d32; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer;">复制</button>' +
-                    '</div>' +
-                    '<div id="translate-result" style="background: #f5f5f5; padding: 15px; border-radius: 8px; max-height: 300px; overflow-y: auto; white-space: pre-wrap; line-height: 1.6;"></div>' +
-                    '</div></div></div>' +
-                    '<div id="translate-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000;" onclick="closeNewTabTranslateDialog()"></div>';
+                var dialog = document.createElement('div');
+                dialog.id = 'translate-dialog-newtab';
+                dialog.style.cssText = 'position: fixed; top: 20px; right: 20px; background: white; border-radius: 12px; padding: 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); z-index: 10000; min-width: 300px; cursor: move;';
                 
-                document.body.insertAdjacentHTML('beforeend', dialogHTML);
+                dialog.innerHTML = '<div class="drag-handle" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; cursor: move;">' +
+                    '<h4 style="margin: 0; color: #009688; display: flex; align-items: center; gap: 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm7.5-6.923c-.67.204-1.335.82-1.887 1.855A7.97 7.97 0 0 0 5.145 4H7.5V1.077zM4.09 4a9.267 9.267 0 0 1 .64-1.539 6.7 6.7 0 0 1 .597-.933A7.025 7.025 0 0 0 2.255 4H4.09zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a6.958 6.958 0 0 0-.656 2.5h2.49zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5H4.847zM8.5 5v2.5h2.99a12.495 12.495 0 0 0-.337-2.5H8.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5H4.51zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5H8.5zM5.145 12c.138.386.295.744.468 1.068.552 1.035 1.218 1.65 1.887 1.855V12H5.145zm.182 2.472a6.696 6.696 0 0 1-.597-.933A9.268 9.268 0 0 1 4.09 12H2.255a7.024 7.024 0 0 0 3.072 2.472zM3.82 11a13.652 13.652 0 0 1-.312-2.5h-2.49A6.95 6.95 0 0 0 1.674 11H3.82zm10.026-2.5a13.65 13.65 0 0 1-.312 2.5h2.146c.22-.765.368-1.608.426-2.5h-2.26zm-1.068 2.5c-.138.386-.295.744-.468 1.068-.552 1.035-1.218 1.65-1.887 1.855V12h2.355zm.182 2.472A6.696 6.696 0 0 0 13.91 12h1.835a7.024 7.024 0 0 1-3.072 2.472zM14.326 11a6.95 6.95 0 0 0 .656-2.5h-2.49c-.03.877-.138 1.718-.312 2.5h2.146z"/></svg> 选择翻译模型</h4>' +
+                    '<button onclick="document.getElementById(\\'translate-dialog-newtab\\').remove()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #999;">&times;</button>' +
+                    '</div>' +
+                    (cachedModel ? '<p style="margin: 0 0 8px 0; color: #28a745; font-size: 12px;">已有缓存 (模型: ' + cachedModel + ')</p>' : '') +
+                    '<select id="translate-model-select" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 12px;">' +
+                    models.map(function(m) { return '<option value="' + m + '"' + (m === cachedModel ? ' selected' : '') + '>' + m + '</option>'; }).join('') +
+                    '</select>' +
+                    '<div style="display: flex; gap: 8px;">' +
+                    '<button onclick="document.getElementById(\\'translate-dialog-newtab\\').remove()" style="flex: 1; padding: 8px; border: 1px solid #ddd; background: white; border-radius: 6px; cursor: pointer;">取消</button>' +
+                    '<button id="start-translate-btn" style="flex: 1; padding: 8px; border: none; background: linear-gradient(135deg, #00bcd4 0%, #009688 100%); color: white; border-radius: 6px; cursor: pointer; font-weight: 500;">开始翻译</button>' +
+                    '</div>';
+                
+                document.body.appendChild(dialog);
+                
+                makeNewTabDraggable(dialog);
+                
+                document.getElementById('start-translate-btn').onclick = function() {
+                    var model = document.getElementById('translate-model-select').value;
+                    dialog.remove();
+                    startTranslationNewTab(textType, model);
+                };
             };
             
-            window.closeNewTabTranslateDialog = function() {
-                var dialog = document.getElementById('translate-dialog');
-                var overlay = document.getElementById('translate-overlay');
-                if (dialog) dialog.remove();
-                if (overlay) overlay.remove();
+            window.startTranslationNewTab = async function(textType, model) {
+                var btn = document.querySelector('.translate-btn');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="animation: spin 1s linear infinite;"><path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/></svg> 翻译中...';
+                }
+                
+                var cacheKey = 'translation_' + currentPatentNumber + '_' + textType + '_' + model;
+                var cached = localStorage.getItem(cacheKey);
+                if (cached) {
+                    try {
+                        var data = JSON.parse(cached);
+                        if (Date.now() - data.timestamp < 7 * 24 * 60 * 60 * 1000) {
+                            console.log('发现翻译缓存:', cacheKey);
+                            showTranslationResultNewTab(data.translations, textType);
+                            if (btn) {
+                                btn.disabled = false;
+                                btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm7.5-6.923c-.67.204-1.335.82-1.887 1.855A7.97 7.97 0 0 0 5.145 4H7.5V1.077zM4.09 4a9.267 9.267 0 0 1 .64-1.539 6.7 6.7 0 0 1 .597-.933A7.025 7.025 0 0 0 2.255 4H4.09zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a6.958 6.958 0 0 0-.656 2.5h2.49zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5H4.847zM8.5 5v2.5h2.99a12.495 12.495 0 0 0-.337-2.5H8.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5H4.51zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5H8.5zM5.145 12c.138.386.295.744.468 1.068.552 1.035 1.218 1.65 1.887 1.855V12H5.145zm.182 2.472a6.696 6.696 0 0 1-.597-.933A9.268 9.268 0 0 1 4.09 12H2.255a7.024 7.024 0 0 0 3.072 2.472zM3.82 11a13.652 13.652 0 0 1-.312-2.5h-2.49A6.95 6.95 0 0 0 1.674 11H3.82zm10.026-2.5a13.65 13.65 0 0 1-.312 2.5h2.146c.22-.765.368-1.608.426-2.5h-2.26zm-1.068 2.5c-.138.386-.295.744-.468 1.068-.552 1.035-1.218 1.65-1.887 1.855V12h2.355zm.182 2.472A6.696 6.696 0 0 0 13.91 12h1.835a7.024 7.024 0 0 1-3.072 2.472zM14.326 11a6.95 6.95 0 0 0 .656-2.5h-2.49c-.03.877-.138 1.718-.312 2.5h2.146z"/></svg> 翻译';
+                            }
+                            return;
+                        }
+                    } catch(e) {}
+                }
+                
+                try {
+                    var openerState = window.opener && window.opener.appState ? window.opener.appState : null;
+                    var zhipuKey = openerState && openerState.apiKey ? openerState.apiKey : (localStorage.getItem('api_key') || localStorage.getItem('globalApiKey'));
+                    var aliyunKey = openerState && openerState.aliyunApiKey ? openerState.aliyunApiKey : localStorage.getItem('aliyun_api_key');
+                    
+                    if (!zhipuKey && !aliyunKey) {
+                        throw new Error('请先配置API Key');
+                    }
+                    
+                    var getProviderForModel = window.opener && window.opener.getProviderForModel ? window.opener.getProviderForModel : function(m) {
+                        if (m.startsWith('glm-') || m.startsWith('GLM-')) return 'zhipu';
+                        if (m.startsWith('qwen') || m.startsWith('Qwen') || m.startsWith('qwq') || m.startsWith('QwQ') || m.startsWith('deepseek') || m.startsWith('DeepSeek') || m.startsWith('kimi') || m.startsWith('Kimi') || m.startsWith('minimax')) return 'aliyun';
+                        return 'zhipu';
+                    };
+                    
+                    var provider = getProviderForModel(model);
+                    
+                    var headers = {
+                        'Content-Type': 'application/json'
+                    };
+                    
+                    if (provider === 'aliyun') {
+                        headers['X-LLM-Provider'] = 'aliyun';
+                        headers['Authorization'] = 'Bearer ' + aliyunKey;
+                    } else {
+                        headers['Authorization'] = 'Bearer ' + zhipuKey;
+                    }
+                    
+                    var translations = [];
+                    
+                    if (textType === 'claims') {
+                        var claims = pageData.claims || [];
+                        if (claims.length === 0) throw new Error('没有可翻译的权利要求');
+                        
+                        var formattedClaims = claims.map(function(claim, i) {
+                            var text = typeof claim === 'string' ? claim : claim.text || '';
+                            return '权利要求 ' + (i + 1) + ': ' + text;
+                        }).join('\\n\\n');
+                        
+                        var response = await fetch('/api/chat', {
+                            method: 'POST',
+                            headers: headers,
+                            body: JSON.stringify({
+                                model: model,
+                                messages: [
+                                    { role: 'system', content: '你是一位专业的专利文献翻译专家。请将以下英文专利权利要求翻译为中文。保持专利术语的准确性，保留所有数字标记，翻译要流畅自然。保持权利要求的编号和格式。只返回翻译结果，不要添加任何解释。请按照以下格式返回：权利要求 1: [翻译内容]' },
+                                    { role: 'user', content: formattedClaims }
+                                ],
+                                temperature: 0.3,
+                                max_tokens: 4096
+                            })
+                        });
+                        
+                        if (!response.ok) {
+                            var errorData = await response.json().catch(function() { return {}; });
+                            throw new Error(errorData.error && errorData.error.message ? errorData.error.message : (errorData.error || 'API请求失败: ' + response.status));
+                        }
+                        
+                        var result = await response.json();
+                        var translatedText = result.choices && result.choices[0] && result.choices[0].message && result.choices[0].message.content ? result.choices[0].message.content : '';
+                        
+                        var pattern = /权利要求\\s*(\\d+)[:：]\\s*(.*?)(?=权利要求\\s*\\d+[:：]|$)/gs;
+                        var matches = Array.from(translatedText.matchAll(pattern));
+                        
+                        if (matches.length > 0) {
+                            var translatedMap = {};
+                            matches.forEach(function(match) {
+                                translatedMap[parseInt(match[1])] = match[2].trim();
+                            });
+                            
+                            claims.forEach(function(claim, i) {
+                                var claimText = typeof claim === 'string' ? claim : claim.text || '';
+                                translations.push({
+                                    original: claimText,
+                                    translated: translatedMap[i + 1] || '[翻译解析失败]',
+                                    index: i + 1
+                                });
+                            });
+                        } else {
+                            var lines = translatedText.split('\\n').filter(function(l) { return l.trim(); });
+                            claims.forEach(function(claim, i) {
+                                var claimText = typeof claim === 'string' ? claim : claim.text || '';
+                                translations.push({
+                                    original: claimText,
+                                    translated: lines[i] || translatedText,
+                                    index: i + 1
+                                });
+                            });
+                        }
+                    } else {
+                        var description = pageData.description || '';
+                        if (!description) throw new Error('没有可翻译的说明书内容');
+                        
+                        var response = await fetch('/api/chat', {
+                            method: 'POST',
+                            headers: headers,
+                            body: JSON.stringify({
+                                model: model,
+                                messages: [
+                                    { role: 'system', content: '你是一位专业的专利文献翻译专家。请将以下英文专利说明书翻译为中文。保持专利术语的准确性，保留所有数字标记，翻译要流畅自然。只返回翻译结果，不要添加任何解释。' },
+                                    { role: 'user', content: description.substring(0, 4000) }
+                                ],
+                                temperature: 0.3,
+                                max_tokens: 4096
+                            })
+                        });
+                        
+                        if (!response.ok) {
+                            var errorData = await response.json().catch(function() { return {}; });
+                            throw new Error(errorData.error && errorData.error.message ? errorData.error.message : (errorData.error || 'API请求失败: ' + response.status));
+                        }
+                        
+                        var result = await response.json();
+                        translations.push({
+                            original: description.substring(0, 500) + '...',
+                            translated: result.choices && result.choices[0] && result.choices[0].message && result.choices[0].message.content ? result.choices[0].message.content : ''
+                        });
+                    }
+                    
+                    localStorage.setItem(cacheKey, JSON.stringify({ translations: translations, timestamp: Date.now() }));
+                    console.log('翻译结果已缓存', cacheKey);
+                    
+                    showTranslationResultNewTab(translations, textType);
+                    
+                } catch (error) {
+                    alert('翻译失败: ' + error.message);
+                    console.error('翻译错误:', error);
+                }
+                
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm7.5-6.923c-.67.204-1.335.82-1.887 1.855A7.97 7.97 0 0 0 5.145 4H7.5V1.077zM4.09 4a9.267 9.267 0 0 1 .64-1.539 6.7 6.7 0 0 1 .597-.933A7.025 7.025 0 0 0 2.255 4H4.09zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a6.958 6.958 0 0 0-.656 2.5h2.49zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5H4.847zM8.5 5v2.5h2.99a12.495 12.495 0 0 0-.337-2.5H8.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5H4.51zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5H8.5zM5.145 12c.138.386.295.744.468 1.068.552 1.035 1.218 1.65 1.887 1.855V12H5.145zm.182 2.472a6.696 6.696 0 0 1-.597-.933A9.268 9.268 0 0 1 4.09 12H2.255a7.024 7.024 0 0 0 3.072 2.472zM3.82 11a13.652 13.652 0 0 1-.312-2.5h-2.49A6.95 6.95 0 0 0 1.674 11H3.82zm10.026-2.5a13.65 13.65 0 0 1-.312 2.5h2.146c.22-.765.368-1.608.426-2.5h-2.26zm-1.068 2.5c-.138.386-.295.744-.468 1.068-.552 1.035-1.218 1.65-1.887 1.855V12h2.355zm.182 2.472A6.696 6.696 0 0 0 13.91 12h1.835a7.024 7.024 0 0 1-3.072 2.472zM14.326 11a6.95 6.95 0 0 0 .656-2.5h-2.49c-.03.877-.138 1.718-.312 2.5h2.146z"/></svg> 翻译';
+                }
             };
             
-            window.translateNewTabContent = function(sectionId) {
-                var section = document.querySelector('[data-section-content="' + sectionId + '"]');
-                if (!section) { alert('未找到要翻译的内容'); return; }
+            window.showTranslationResultNewTab = function(translations, textType) {
+                var panelId = 'translation-result-panel-' + textType + '-' + Date.now();
+                var existingPanels = document.querySelectorAll('[id^="translation-result-panel-"]');
+                var offsetIndex = existingPanels.length;
+                var offsetX = offsetIndex * 30;
+                var offsetY = offsetIndex * 30;
                 
-                var textToTranslate = section.textContent.trim();
-                if (!textToTranslate) { alert('内容为空，无法翻译'); return; }
+                var panel = document.createElement('div');
+                panel.id = panelId;
+                panel.className = 'translation-result-panel';
+                panel.style.cssText = 'position: fixed; top: ' + (80 + offsetY) + 'px; right: ' + (20 + offsetX) + 'px; width: 450px; min-width: 300px; min-height: 200px; max-height: 70vh; background: white; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); z-index: 9999; overflow: hidden; resize: both; cursor: default;';
                 
-                var targetLang = document.getElementById('translate-target-lang').value;
-                var resultContainer = document.getElementById('translate-result-container');
-                var resultDiv = document.getElementById('translate-result');
-                
-                resultContainer.style.display = 'block';
-                resultDiv.innerHTML = '<div style="text-align: center; padding: 20px;"><div style="display: inline-block; width: 20px; height: 20px; border: 2px solid #00bcd4; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div><style>@keyframes spin { to { transform: rotate(360deg); } }</style><div style="margin-top: 10px; color: #666;">正在翻译...</div></div>';
-                
-                var langMap = { 'zh': 'Chinese', 'en': 'English', 'ja': 'Japanese', 'ko': 'Korean', 'de': 'German', 'fr': 'French' };
-                var targetLangName = langMap[targetLang] || 'Chinese';
-                
-                if (window.opener && window.opener.translateText) {
-                    window.opener.translateText(textToTranslate, targetLangName).then(function(result) {
-                        resultDiv.textContent = result;
-                    }).catch(function(err) {
-                        resultDiv.innerHTML = '<div style="color: #d32f2f;">翻译失败: ' + err.message + '</div>';
+                var content = '';
+                if (textType === 'claims' && translations[0] && translations[0].index) {
+                    translations.forEach(function(t) {
+                        content += '<div style="padding: 12px; border-bottom: 1px solid #eee;">' +
+                            '<div style="font-weight: 600; color: #009688; margin-bottom: 6px;">权利要求 ' + t.index + '</div>' +
+                            '<div style="font-size: 12px; color: #666; margin-bottom: 4px;">原文:</div>' +
+                            '<div style="font-size: 13px; color: #333; margin-bottom: 8px; padding: 8px; background: #f5f5f5; border-radius: 4px;">' + escapeHtmlNewTab(t.original) + '</div>' +
+                            '<div style="font-size: 12px; color: #666; margin-bottom: 4px;">译文:</div>' +
+                            '<div style="font-size: 13px; color: #2e7d32; padding: 8px; background: #e8f5e9; border-radius: 4px;">' + escapeHtmlNewTab(t.translated) + '</div>' +
+                            '</div>';
                     });
                 } else {
-                    setTimeout(function() {
-                        resultDiv.textContent = '[模拟翻译结果]\\n\\n' + textToTranslate.substring(0, 500) + (textToTranslate.length > 500 ? '...' : '');
-                    }, 1000);
-                }
-            };
-            
-            window.copyNewTabTranslatedText = function() {
-                var resultDiv = document.getElementById('translate-result');
-                if (resultDiv && resultDiv.textContent) {
-                    navigator.clipboard.writeText(resultDiv.textContent).then(function() {
-                        alert('已复制翻译结果');
-                    }).catch(function(err) {
-                        console.error('复制失败:', err);
+                    translations.forEach(function(t, i) {
+                        content += '<div style="padding: 12px; border-bottom: 1px solid #eee;">' +
+                            '<div style="font-weight: 600; color: #009688; margin-bottom: 6px;">段落 ' + (i + 1) + '</div>' +
+                            '<div style="font-size: 13px; color: #2e7d32; padding: 8px; background: #e8f5e9; border-radius: 4px; white-space: pre-wrap;">' + escapeHtmlNewTab(t.translated) + '</div>' +
+                            '</div>';
                     });
                 }
+                
+                panel.innerHTML = '<div class="drag-handle" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: linear-gradient(135deg, #00bcd4 0%, #009688 100%); color: white; cursor: move;">' +
+                    '<h4 style="margin: 0; display: flex; align-items: center; gap: 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm7.5-6.923c-.67.204-1.335.82-1.887 1.855A7.97 7.97 0 0 0 5.145 4H7.5V1.077zM4.09 4a9.267 9.267 0 0 1 .64-1.539 6.7 6.7 0 0 1 .597-.933A7.025 7.025 0 0 0 2.255 4H4.09zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a6.958 6.958 0 0 0-.656 2.5h2.49zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5H4.847zM8.5 5v2.5h2.99a12.495 12.495 0 0 0-.337-2.5H8.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5H4.51zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5H8.5zM5.145 12c.138.386.295.744.468 1.068.552 1.035 1.218 1.65 1.887 1.855V12H5.145zm.182 2.472a6.696 6.696 0 0 1-.597-.933A9.268 9.268 0 0 1 4.09 12H2.255a7.024 7.024 0 0 0 3.072 2.472zM3.82 11a13.652 13.652 0 0 1-.312-2.5h-2.49A6.95 6.95 0 0 0 1.674 11H3.82zm10.026-2.5a13.65 13.65 0 0 1-.312 2.5h2.146c.22-.765.368-1.608.426-2.5h-2.26zm-1.068 2.5c-.138.386-.295.744-.468 1.068-.552 1.035-1.218 1.65-1.887 1.855V12h2.355zm.182 2.472A6.696 6.696 0 0 0 13.91 12h1.835a7.024 7.024 0 0 1-3.072 2.472zM14.326 11a6.95 6.95 0 0 0 .656-2.5h-2.49c-.03.877-.138 1.718-.312 2.5h2.146z"/></svg> 翻译结果 - ' + (textType === 'claims' ? '权利要求' : '说明书') + '</h4>' +
+                    '<button onclick="document.getElementById(\\'' + panelId + '\\').remove()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: white;">&times;</button>' +
+                    '</div>' +
+                    '<div style="max-height: calc(70vh - 120px); overflow-y: auto;">' +
+                    content +
+                    '</div>' +
+                    '<div style="padding: 8px 16px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 8px; background: #f9f9f9;">' +
+                    '<button onclick="replaceContentWithTranslation(\\'' + textType + '\\')" style="padding: 6px 12px; border: none; background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); color: white; border-radius: 6px; cursor: pointer; font-size: 12px;">替换原文</button>' +
+                    '<button onclick="document.getElementById(\\'' + panelId + '\\').remove()" style="padding: 6px 12px; border: 1px solid #ddd; background: white; border-radius: 6px; cursor: pointer; font-size: 12px;">关闭</button>' +
+                    '</div>';
+                
+                document.body.appendChild(panel);
+                
+                makeNewTabDraggable(panel);
+                
+                window.currentTranslations = window.currentTranslations || {};
+                window.currentTranslations[textType] = translations;
             };
             
-            window.openPatentChatInNewTab = function(patentNumber) {
-                var existingDialog = document.getElementById('patent-chat-dialog');
-                if (existingDialog) existingDialog.remove();
+            window.replaceContentWithTranslation = function(textType) {
+                var translations = window.currentTranslations && window.currentTranslations[textType];
+                if (!translations) {
+                    alert('没有可用的翻译结果');
+                    return;
+                }
                 
-                var patentData = window.pageData || {};
-                var patentTitle = patentData.title || patentNumber;
+                var column = window.currentTranslateColumn;
+                var targetContainer;
                 
-                var chatHTML = '<div id="patent-chat-dialog" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); z-index: 10001; width: 600px; max-width: 90vw; height: 70vh; max-height: 600px; display: flex; flex-direction: column; overflow: hidden;">' +
-                    '<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">' +
-                    '<h3 style="margin: 0; font-size: 16px;">问一问 - ' + patentTitle + '</h3>' +
-                    '<button onclick="closePatentChatDialog()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 20px; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;">&times;</button>' +
-                    '</div>' +
-                    '<div id="patent-chat-messages" style="flex: 1; overflow-y: auto; padding: 15px; background: #f5f5f5;">' +
-                    '<div style="text-align: center; padding: 20px; color: #666;"><div>您好！我是专利智能助手。</div><div style="font-size: 12px; margin-top: 5px;">您可以询问关于此专利的任何问题</div></div>' +
-                    '</div>' +
-                    '<div style="padding: 15px; background: white; border-top: 1px solid #e0e0e0; flex-shrink: 0;">' +
-                    '<div style="display: flex; gap: 10px;">' +
-                    '<textarea id="patent-chat-input" placeholder="输入您的问题..." style="flex: 1; padding: 10px 15px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 14px; resize: none; height: 44px; line-height: 1.4;" onkeydown="handlePatentChatKeydown(event)"></textarea>' +
-                    '<button onclick="sendPatentChatMessage()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 10px 20px; border-radius: 12px; font-size: 14px; cursor: pointer;">发送</button>' +
-                    '</div>' +
-                    '<div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">' +
-                    '<button onclick="document.getElementById(\\'patent-chat-input\\').value=\\'这个专利的核心技术是什么？\\'" style="background: #f0f0f0; border: none; padding: 5px 10px; border-radius: 15px; font-size: 12px; cursor: pointer; color: #666;">核心技术</button>' +
-                    '<button onclick="document.getElementById(\\'patent-chat-input\\').value=\\'这个专利的创新点在哪里？\\'" style="background: #f0f0f0; border: none; padding: 5px 10px; border-radius: 15px; font-size: 12px; cursor: pointer; color: #666;">创新点</button>' +
-                    '<button onclick="document.getElementById(\\'patent-chat-input\\').value=\\'请解释一下权利要求1\\'" style="background: #f0f0f0; border: none; padding: 5px 10px; border-radius: 15px; font-size: 12px; cursor: pointer; color: #666;">解释权利要求</button>' +
-                    '<button onclick="document.getElementById(\\'patent-chat-input\\').value=\\'这个专利的应用场景有哪些？\\'" style="background: #f0f0f0; border: none; padding: 5px 10px; border-radius: 15px; font-size: 12px; cursor: pointer; color: #666;">应用场景</button>' +
-                    '</div></div></div>' +
-                    '<div id="patent-chat-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000;" onclick="closePatentChatDialog()"></div>';
+                if (column === 'left' || column === 'right') {
+                    targetContainer = document.querySelector('.dual-column-' + column);
+                }
                 
-                document.body.insertAdjacentHTML('beforeend', chatHTML);
-            };
-            
-            window.closePatentChatDialog = function() {
-                var dialog = document.getElementById('patent-chat-dialog');
-                var overlay = document.getElementById('patent-chat-overlay');
-                if (dialog) dialog.remove();
-                if (overlay) overlay.remove();
-            };
-            
-            window.handlePatentChatKeydown = function(event) {
-                if (event.key === 'Enter' && !event.shiftKey) {
-                    event.preventDefault();
-                    window.sendPatentChatMessage();
+                if (textType === 'claims') {
+                    if (targetContainer) {
+                        var claimsList = targetContainer.querySelector('.claims-list');
+                        if (claimsList) {
+                            var newHtml = '';
+                            translations.forEach(function(t) {
+                                newHtml += '<div class="claim-item" data-claim-number="' + t.index + '"><div class="claim-number">权利要求 ' + t.index + '</div><div class="claim-text">' + escapeHtmlNewTab(t.translated) + '</div></div>';
+                            });
+                            claimsList.innerHTML = newHtml;
+                        }
+                    } else {
+                        var claimsList = document.querySelector('.claims-list');
+                        if (claimsList) {
+                            var newHtml = '';
+                            translations.forEach(function(t) {
+                                newHtml += '<div class="claim-item" data-claim-number="' + t.index + '"><div class="claim-number">权利要求 ' + t.index + '</div><div class="claim-text">' + escapeHtmlNewTab(t.translated) + '</div></div>';
+                            });
+                            claimsList.innerHTML = newHtml;
+                        }
+                    }
+                } else if (textType === 'description') {
+                    if (targetContainer) {
+                        var descContent = targetContainer.querySelector('.abstract-box[data-section-content="description"]');
+                        if (descContent) {
+                            var newHtml = '';
+                            translations.forEach(function(t) {
+                                newHtml += escapeHtmlNewTab(t.translated) + '<br/><br/>';
+                            });
+                            descContent.innerHTML = newHtml;
+                        }
+                    } else {
+                        var descContent = document.querySelector('.abstract-box[data-section-content="description"]');
+                        if (descContent) {
+                            var newHtml = '';
+                            translations.forEach(function(t) {
+                                newHtml += escapeHtmlNewTab(t.translated) + '<br/><br/>';
+                            });
+                            descContent.innerHTML = newHtml;
+                        }
+                    }
                 }
             };
             
-            window.sendPatentChatMessage = function() {
-                var input = document.getElementById('patent-chat-input');
-                var message = input.value.trim();
-                if (!message) return;
+            function makeNewTabDraggable(element) {
+                var dragHandle = element.querySelector('.drag-handle');
+                if (!dragHandle) return;
                 
-                var messagesContainer = document.getElementById('patent-chat-messages');
-                messagesContainer.insertAdjacentHTML('beforeend', '<div style="display: flex; justify-content: flex-end; margin-bottom: 15px;"><div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px 15px; border-radius: 12px 12px 0 12px; max-width: 80%; font-size: 14px;">' + message + '</div></div>');
-                input.value = '';
+                var isDragging = false;
+                var startX, startY, startLeft, startTop;
                 
-                messagesContainer.insertAdjacentHTML('beforeend', '<div id="chat-loading" style="display: flex; justify-content: flex-start; margin-bottom: 15px;"><div style="background: white; padding: 10px 15px; border-radius: 12px 12px 12px 0; max-width: 80%; font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">思考中...</div></div>');
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                dragHandle.addEventListener('mousedown', function(e) {
+                    if (e.target.tagName === 'BUTTON') return;
+                    isDragging = true;
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    var rect = element.getBoundingClientRect();
+                    startLeft = rect.left;
+                    startTop = rect.top;
+                    element.style.right = 'auto';
+                    element.style.left = startLeft + 'px';
+                    element.style.top = startTop + 'px';
+                    e.preventDefault();
+                });
                 
-                var patentData = window.pageData || {};
-                var patentInfo = { patent_number: currentPatentNumber, title: patentData.title || '', abstract: patentData.abstract || '', claims: patentData.claims || [], description: patentData.description || '' };
+                document.addEventListener('mousemove', function(e) {
+                    if (!isDragging) return;
+                    var dx = e.clientX - startX;
+                    var dy = e.clientY - startY;
+                    element.style.left = (startLeft + dx) + 'px';
+                    element.style.top = (startTop + dy) + 'px';
+                });
                 
-                if (window.opener && window.opener.askPatentQuestion) {
-                    window.opener.askPatentQuestion(patentInfo, message).then(function(response) {
-                        displayChatResponse(response, messagesContainer);
-                    }).catch(function(err) {
-                        displayChatResponse('抱歉，发生了错误: ' + err.message, messagesContainer);
-                    });
-                } else {
-                    setTimeout(function() {
-                        var mockResponse = generateMockChatResponse(message, patentInfo);
-                        displayChatResponse(mockResponse, messagesContainer);
-                    }, 1500);
-                }
-            };
-            
-            function displayChatResponse(response, messagesContainer) {
-                var loading = document.getElementById('chat-loading');
-                if (loading) loading.remove();
-                
-                var formattedResponse = response.replace(/\\n/g, '<br>');
-                messagesContainer.insertAdjacentHTML('beforeend', '<div style="display: flex; justify-content: flex-start; margin-bottom: 15px;"><div style="background: white; padding: 10px 15px; border-radius: 12px 12px 12px 0; max-width: 80%; font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); line-height: 1.6;">' + formattedResponse + '</div></div>');
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                document.addEventListener('mouseup', function() {
+                    isDragging = false;
+                });
             }
             
-            function generateMockChatResponse(message, patentInfo) {
-                var lowerMessage = message.toLowerCase();
-                if (lowerMessage.includes('核心') || lowerMessage.includes('技术')) {
-                    return '根据专利"' + (patentInfo.title || currentPatentNumber) + '"的内容分析，核心技术主要涉及：\\n\\n1. 创新的技术方案设计\\n2. 独特的实现方法\\n3. 优化的系统架构\\n\\n如需更详细的技术分析，请查看专利的权利要求书和说明书部分。';
-                } else if (lowerMessage.includes('创新') || lowerMessage.includes('特点')) {
-                    return '该专利的创新点主要体现在：\\n\\n1. 技术方案的创新性\\n2. 解决问题的独特方法\\n3. 相比现有技术的改进\\n\\n建议您仔细阅读权利要求书以了解具体的技术特征。';
-                } else if (lowerMessage.includes('权利要求') || lowerMessage.includes('claim')) {
-                    return '权利要求是专利保护范围的核心界定。该专利共有 ' + (patentInfo.claims ? patentInfo.claims.length : 0) + ' 项权利要求。\\n\\n独立权利要求定义了最核心的技术方案，从属权利要求则在此基础上增加了更多技术特征。';
-                } else if (lowerMessage.includes('应用') || lowerMessage.includes('场景')) {
-                    return '该专利可能的应用场景包括：\\n\\n1. 相关技术领域的实际应用\\n2. 产品开发中的技术实现\\n3. 行业解决方案的优化\\n\\n具体应用需要结合您的业务需求进行分析。';
-                } else {
-                    return '感谢您的提问！关于"' + message + '"，我建议您：\\n\\n1. 查看专利的摘要部分了解整体概况\\n2. 阅读权利要求书了解保护范围\\n3. 参考说明书了解技术细节\\n\\n如有更具体的问题，请随时提问。';
+            function escapeHtmlNewTab(text) {
+                if (!text) return '';
+                var div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+            
+            window.newTabChatState = {
+                providers: {},
+                currentProvider: 'zhipu',
+                currentModel: 'glm-4-flash',
+                patentNumber: '',
+                patentData: {},
+                messages: [],
+                isLoading: false,
+                stopStreaming: false,
+                apiKeys: {}
+            };
+            
+            function getApiKeysFromOpener() {
+                var keys = { zhipu: null, aliyun: null };
+                if (window.opener) {
+                    try {
+                        if (window.opener.localStorage) {
+                            keys.zhipu = window.opener.localStorage.getItem('globalApiKey') || window.opener.localStorage.getItem('zhipu_api_key');
+                            keys.aliyun = window.opener.localStorage.getItem('aliyun_api_key');
+                        }
+                        if (window.opener.appState) {
+                            if (!keys.zhipu && window.opener.appState.apiKey) keys.zhipu = window.opener.appState.apiKey;
+                            if (!keys.aliyun && window.opener.appState.aliyunApiKey) keys.aliyun = window.opener.appState.aliyunApiKey;
+                        }
+                    } catch (e) {
+                        console.warn('无法从主窗口获取API Key:', e);
+                    }
                 }
+                return keys;
+            }
+            
+            async function initNewTabChatProviders() {
+                window.newTabChatState.apiKeys = getApiKeysFromOpener();
+                
+                try {
+                    var response = await fetch('/api/providers');
+                    if (response.ok) {
+                        var data = await response.json();
+                        if (data.providers) {
+                            window.newTabChatState.providers = data.providers;
+                            
+                            if (window.opener && window.opener.patentChatState) {
+                                window.newTabChatState.currentProvider = window.opener.patentChatState.currentProvider || 'zhipu';
+                                window.newTabChatState.currentModel = window.opener.patentChatState.currentModel || 'glm-4-flash';
+                            } else {
+                                window.newTabChatState.currentProvider = 'zhipu';
+                                window.newTabChatState.currentModel = data.providers.zhipu && data.providers.zhipu.default_model ? data.providers.zhipu.default_model : 'glm-4-flash';
+                            }
+                            
+                            updateNewTabChatProviderSelect();
+                            updateNewTabChatModelSelect();
+                        }
+                    }
+                } catch (error) {
+                    console.warn('加载服务商配置失败，使用默认配置');
+                    window.newTabChatState.providers = {
+                        zhipu: { 
+                            name: '智谱AI', 
+                            models: [
+                                {id: 'glm-4-flash', name: 'GLM-4-Flash'}, 
+                                {id: 'glm-4-long', name: 'GLM-4-Long'},
+                                {id: 'glm-4.7-flash', name: 'GLM-4.7-Flash'}
+                            ] 
+                        },
+                        aliyun: { 
+                            name: '阿里云百炼', 
+                            models: [
+                                {id: 'qwen-turbo', name: 'Qwen-Turbo'}, 
+                                {id: 'qwen-plus', name: 'Qwen-Plus'},
+                                {id: 'qwen-max', name: 'Qwen-Max'}
+                            ] 
+                        }
+                    };
+                    updateNewTabChatProviderSelect();
+                    updateNewTabChatModelSelect();
+                }
+            }
+            
+            function updateNewTabChatProviderSelect() {
+                var providerSelect = document.getElementById('newtab_chat_provider');
+                if (!providerSelect || !window.newTabChatState.providers) return;
+                
+                var zhipuKey = window.newTabChatState.apiKeys.zhipu;
+                var aliyunKey = window.newTabChatState.apiKeys.aliyun;
+                var hasZhipuKey = !!zhipuKey;
+                var hasAliyunKey = !!aliyunKey;
+                
+                var optionsHtml = '';
+                var providerKeys = Object.keys(window.newTabChatState.providers);
+                for (var i = 0; i < providerKeys.length; i++) {
+                    var key = providerKeys[i];
+                    var val = window.newTabChatState.providers[key];
+                    var hasKey = key === 'zhipu' ? hasZhipuKey : hasAliyunKey;
+                    var isCurrent = key === window.newTabChatState.currentProvider;
+                    var disabled = !hasKey ? ' disabled' : '';
+                    var selected = isCurrent && hasKey ? ' selected' : '';
+                    var label = hasKey ? val.name : val.name + ' (未配置)';
+                    optionsHtml += '<option value="' + key + '"' + disabled + selected + '>' + label + '</option>';
+                }
+                
+                providerSelect.innerHTML = optionsHtml;
+                
+                if (!hasZhipuKey && !hasAliyunKey) {
+                    providerSelect.disabled = true;
+                } else if (window.newTabChatState.currentProvider === 'zhipu' && !hasZhipuKey && hasAliyunKey) {
+                    window.newTabChatState.currentProvider = 'aliyun';
+                    providerSelect.value = 'aliyun';
+                    updateNewTabChatModelSelect();
+                } else if (window.newTabChatState.currentProvider === 'aliyun' && !hasAliyunKey && hasZhipuKey) {
+                    window.newTabChatState.currentProvider = 'zhipu';
+                    providerSelect.value = 'zhipu';
+                    updateNewTabChatModelSelect();
+                }
+            }
+            
+            function updateNewTabChatModelSelect() {
+                var modelSelect = document.getElementById('newtab_chat_model');
+                if (!modelSelect) return;
+                
+                var provider = window.newTabChatState.currentProvider;
+                var providerConfig = window.newTabChatState.providers[provider];
+                
+                if (!providerConfig || !providerConfig.models || providerConfig.models.length === 0) {
+                    modelSelect.innerHTML = '<option value="">无可用模型</option>';
+                    return;
+                }
+                
+                var optionsHtml = '';
+                for (var i = 0; i < providerConfig.models.length; i++) {
+                    var m = providerConfig.models[i];
+                    var modelId = typeof m === 'string' ? m : m.id;
+                    var modelName = typeof m === 'string' ? m : (m.name || m.id);
+                    var selected = modelId === window.newTabChatState.currentModel ? ' selected' : '';
+                    optionsHtml += '<option value="' + modelId + '"' + selected + '>' + modelName + '</option>';
+                }
+                
+                modelSelect.innerHTML = optionsHtml;
+                
+                var modelIds = providerConfig.models.map(function(m) { return typeof m === 'string' ? m : m.id; });
+                if (modelIds.indexOf(window.newTabChatState.currentModel) === -1) {
+                    window.newTabChatState.currentModel = modelIds[0];
+                    modelSelect.value = window.newTabChatState.currentModel;
+                }
+            }
+            
+            window.openPatentChatInNewTab = async function(patentNumber) {
+                var existingBall = document.getElementById('newtab_chat_floating_ball');
+                if (existingBall) {
+                    showNewTabChatModal();
+                    return;
+                }
+                
+                var existingModal = document.getElementById('newtab_patent_chat_modal');
+                if (existingModal) {
+                    existingModal.style.display = 'flex';
+                    return;
+                }
+                
+                var patentData = window.pageData || {};
+                
+                var isSamePatent = window.newTabChatState.patentNumber === patentNumber;
+                var hasMessages = (window.newTabChatState.messages || []).length > 0;
+                
+                if (!isSamePatent || !hasMessages) {
+                    window.newTabChatState.patentNumber = patentNumber;
+                    window.newTabChatState.patentData = patentData;
+                    window.newTabChatState.messages = [];
+                }
+                window.newTabChatState.isLoading = false;
+                window.newTabChatState.stopStreaming = false;
+                
+                createNewTabChatModal(patentNumber, patentData);
+                
+                await initNewTabChatProviders();
+                
+                if (hasMessages && isSamePatent) {
+                    restoreNewTabChatHistory();
+                }
+                
+                var input = document.getElementById('newtab_chat_input');
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendNewTabPatentChatMessage();
+                    }
+                });
+                
+                input.focus();
+            };
+            
+            function createNewTabChatModal(patentNumber, patentData) {
+                var chatModal = document.createElement('div');
+                chatModal.id = 'newtab_patent_chat_modal';
+                chatModal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 10000;';
+                
+                chatModal.innerHTML = '<div style="background: white; border-radius: 12px; width: 90%; max-width: 800px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">' +
+                    '<div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #e8f5e9; background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); border-radius: 12px 12px 0 0;">' +
+                    '<div><h4 style="margin: 0; font-size: 18px; color: white;">专利对话：' + patentNumber + '</h4>' +
+                    '<p style="margin: 4px 0 0 0; font-size: 13px; color: rgba(255,255,255,0.85);">' + (patentData.title || '无标题') + '</p></div>' +
+                    '<div style="display: flex; gap: 8px;">' +
+                    '<button onclick="minimizeNewTabChat()" title="最小化为悬浮球" style="background: rgba(255,255,255,0.2); border: none; font-size: 18px; cursor: pointer; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">−</button>' +
+                    '<button onclick="closeNewTabPatentChat()" style="background: rgba(255,255,255,0.2); border: none; font-size: 24px; cursor: pointer; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">&times;</button>' +
+                    '</div></div>' +
+                    '<div style="padding: 12px 16px; background: #f1f8e9; border-bottom: 1px solid #e8f5e9;">' +
+                    '<div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">' +
+                    '<div style="display: flex; align-items: center; gap: 8px;"><label style="font-size: 13px; color: #2e7d32; font-weight: 500;">服务商:</label>' +
+                    '<select id="newtab_chat_provider" onchange="onNewTabProviderChange()" style="padding: 6px 12px; border: 1px solid #c8e6c9; border-radius: 6px; font-size: 13px; background: white; cursor: pointer;"></select></div>' +
+                    '<div style="display: flex; align-items: center; gap: 8px;"><label style="font-size: 13px; color: #2e7d32; font-weight: 500;">模型:</label>' +
+                    '<select id="newtab_chat_model" onchange="onNewTabModelChange()" style="padding: 6px 12px; border: 1px solid #c8e6c9; border-radius: 6px; font-size: 13px; background: white; cursor: pointer;"></select></div>' +
+                    '<button onclick="clearNewTabChatHistory()" style="padding: 6px 12px; background: white; border: 1px solid #c8e6c9; border-radius: 6px; font-size: 13px; color: #2e7d32; cursor: pointer;">清空对话</button>' +
+                    '</div></div>' +
+                    '<div id="newtab_chat_history" style="flex: 1; overflow-y: auto; padding: 16px; background: #fafafa;">' +
+                    '<div class="welcome-message" style="text-align: center; padding: 40px 20px; color: #666;">' +
+                    '<div style="font-size: 48px; margin-bottom: 16px;">💬</div>' +
+                    '<p style="font-size: 16px; margin: 0;">您好！我是专利智能助手。</p>' +
+                    '<p style="font-size: 14px; color: #999; margin-top: 8px;">在下方输入您的问题，开始与AI对话</p>' +
+                    '</div></div>' +
+                    '<div style="padding: 16px; background: white; border-top: 1px solid #e8f5e9;">' +
+                    '<div style="display: flex; gap: 10px;">' +
+                    '<textarea id="newtab_chat_input" placeholder="输入您的问题... (Shift+Enter换行，Enter发送)" style="flex: 1; padding: 12px 16px; border: 2px solid #c8e6c9; border-radius: 12px; font-size: 14px; resize: none; height: 48px; line-height: 1.4;"></textarea>' +
+                    '<button id="newtab_chat_send_btn" onclick="sendNewTabPatentChatMessage()" style="background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); color: white; border: none; padding: 12px 24px; border-radius: 12px; font-size: 14px; cursor: pointer; font-weight: 500;">发送</button>' +
+                    '<button id="newtab_chat_stop_btn" onclick="stopNewTabChatStream()" style="background: #ef5350; color: white; border: none; padding: 12px 24px; border-radius: 12px; font-size: 14px; cursor: pointer; font-weight: 500; display: none;">停止</button>' +
+                    '</div>' +
+                    '<div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">' +
+                    '<button onclick="document.getElementById(\\'newtab_chat_input\\').value=\\'这个专利的核心技术是什么？\\'" style="background: #e8f5e9; border: none; padding: 6px 12px; border-radius: 15px; font-size: 12px; cursor: pointer; color: #2e7d32;">核心技术</button>' +
+                    '<button onclick="document.getElementById(\\'newtab_chat_input\\').value=\\'这个专利的创新点在哪里？\\'" style="background: #e8f5e9; border: none; padding: 6px 12px; border-radius: 15px; font-size: 12px; cursor: pointer; color: #2e7d32;">创新点</button>' +
+                    '<button onclick="document.getElementById(\\'newtab_chat_input\\').value=\\'请解释一下权利要求1\\'" style="background: #e8f5e9; border: none; padding: 6px 12px; border-radius: 15px; font-size: 12px; cursor: pointer; color: #2e7d32;">解释权利要求</button>' +
+                    '<button onclick="document.getElementById(\\'newtab_chat_input\\').value=\\'这个专利的应用场景有哪些？\\'" style="background: #e8f5e9; border: none; padding: 6px 12px; border-radius: 15px; font-size: 12px; cursor: pointer; color: #2e7d32;">应用场景</button>' +
+                    '</div></div></div>';
+                
+                document.body.appendChild(chatModal);
+            }
+            
+            function restoreNewTabChatHistory() {
+                var historyEl = document.getElementById('newtab_chat_history');
+                if (!historyEl) return;
+                
+                var messages = window.newTabChatState.messages || [];
+                if (messages.length === 0) return;
+                
+                historyEl.innerHTML = '';
+                
+                for (var i = 0; i < messages.length; i++) {
+                    var msg = messages[i];
+                    if (msg.role === 'system') continue;
+                    
+                    var msgDiv = document.createElement('div');
+                    if (msg.role === 'user') {
+                        msgDiv.style.cssText = 'margin-bottom: 16px; display: flex; justify-content: flex-end;';
+                        msgDiv.innerHTML = '<div style="max-width: 70%; background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); color: white; padding: 12px 16px; border-radius: 16px 16px 4px 16px;"><div style="font-size: 14px; line-height: 1.5;">' + escapeHtmlNewTab(msg.content) + '</div></div>';
+                    } else if (msg.role === 'assistant') {
+                        msgDiv.style.cssText = 'margin-bottom: 16px; display: flex; justify-content: flex-start;';
+                        msgDiv.innerHTML = '<div style="max-width: 70%; background: white; padding: 12px 16px; border-radius: 16px 16px 16px 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e8f5e9;"><div style="font-size: 14px; line-height: 1.5;">' + formatChatContentNewTab(msg.content) + '</div></div>';
+                    }
+                    historyEl.appendChild(msgDiv);
+                }
+                
+                historyEl.scrollTop = historyEl.scrollHeight;
+            }
+            
+            function createNewTabChatFloatingBall() {
+                var ball = document.createElement('div');
+                ball.id = 'newtab_chat_floating_ball';
+                ball.style.cssText = 'position: fixed; bottom: 80px; right: 20px; width: 56px; height: 56px; background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(46,125,50,0.4); z-index: 9999; transition: transform 0.2s;';
+                ball.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="white" viewBox="0 0 16 16"><path d="M6 12.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5ZM3 8.062C3 6.76 4.235 5.765 5.53 5.886a26.58 26.58 0 0 0 4.94 0C11.765 5.765 13 6.76 13 8.062v1.157a.933.933 0 0 1-.765.935c-.845.147-2.34.346-4.235.346-1.895 0-3.39-.2-4.235-.346A.933.933 0 0 1 3 9.219V8.062Zm4.542-.827a.25.25 0 0 0-.217.068l-.92.9a24.767 24.767 0 0 1-1.871-.183.25.25 0 0 0-.068.495c.55.076 1.232.149 2.02.193a.25.25 0 0 0 .189-.071l.754-.736.847 1.71a.25.25 0 0 0 .404.062l.932-.97a25.286 25.286 0 0 0 1.922-.188.25.25 0 0 0-.068-.495c-.538.074-1.207.145-1.98.189a.25.25 0 0 0-.166.076l-.754.785-.842-1.7a.25.25 0 0 0-.182-.135Z"/><path d="M8.5 1.866a1 1 0 1 0-1 0V3h-2A4.5 4.5 0 0 0 1 7.5V8a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1v1a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1v-.5A4.5 4.5 0 0 0 10.5 3h-2V1.866ZM14 7.5V13a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7.5A3.5 3.5 0 0 1 5.5 4h5A3.5 3.5 0 0 1 14 7.5Z"/></svg>';
+                ball.title = '点击打开问一问';
+                ball.onclick = showNewTabChatModal;
+                
+                ball.onmouseenter = function() { this.style.transform = 'scale(1.1)'; };
+                ball.onmouseleave = function() { this.style.transform = 'scale(1)'; };
+                
+                var isDragging = false;
+                var startX, startY, startLeft, startTop;
+                
+                ball.onmousedown = function(e) {
+                    isDragging = false;
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    var rect = ball.getBoundingClientRect();
+                    startLeft = rect.left;
+                    startTop = rect.top;
+                    
+                    document.onmousemove = function(e) {
+                        if (Math.abs(e.clientX - startX) > 5 || Math.abs(e.clientY - startY) > 5) {
+                            isDragging = true;
+                            ball.style.left = (startLeft + e.clientX - startX) + 'px';
+                            ball.style.top = (startTop + e.clientY - startY) + 'px';
+                            ball.style.right = 'auto';
+                            ball.style.bottom = 'auto';
+                        }
+                    };
+                    
+                    document.onmouseup = function() {
+                        document.onmousemove = null;
+                        document.onmouseup = null;
+                    };
+                };
+                
+                ball.onclick = function(e) {
+                    if (!isDragging) {
+                        showNewTabChatModal();
+                    }
+                };
+                
+                document.body.appendChild(ball);
+            }
+            
+            window.minimizeNewTabChat = function() {
+                var modal = document.getElementById('newtab_patent_chat_modal');
+                if (modal) modal.style.display = 'none';
+                
+                if (!document.getElementById('newtab_chat_floating_ball')) {
+                    createNewTabChatFloatingBall();
+                } else {
+                    document.getElementById('newtab_chat_floating_ball').style.display = 'flex';
+                }
+            };
+            
+            window.showNewTabChatModal = function() {
+                var modal = document.getElementById('newtab_patent_chat_modal');
+                var ball = document.getElementById('newtab_chat_floating_ball');
+                
+                if (modal) {
+                    modal.style.display = 'flex';
+                }
+                if (ball) {
+                    ball.style.display = 'none';
+                }
+            };
+            
+            window.onNewTabProviderChange = function() {
+                var providerSelect = document.getElementById('newtab_chat_provider');
+                window.newTabChatState.currentProvider = providerSelect.value;
+                var providerConfig = window.newTabChatState.providers[window.newTabChatState.currentProvider];
+                if (providerConfig && providerConfig.default_model) {
+                    window.newTabChatState.currentModel = providerConfig.default_model;
+                } else if (providerConfig && providerConfig.models && providerConfig.models.length > 0) {
+                    window.newTabChatState.currentModel = providerConfig.models[0].id;
+                }
+                updateNewTabChatModelSelect();
+            };
+            
+            window.onNewTabModelChange = function() {
+                var modelSelect = document.getElementById('newtab_chat_model');
+                window.newTabChatState.currentModel = modelSelect.value;
+            };
+            
+            window.closeNewTabPatentChat = function() {
+                var modal = document.getElementById('newtab_patent_chat_modal');
+                var ball = document.getElementById('newtab_chat_floating_ball');
+                
+                var messages = window.newTabChatState.messages || [];
+                var nonSystemMessages = messages.filter(function(m) { return m.role !== 'system'; });
+                
+                if (nonSystemMessages.length >= 2 && window.opener && !window.opener.closed) {
+                    var shouldSync = confirm('是否将本次对话记录同步到主页面历史？\\n\\n同步后可在主页面"功能一即时对话"中查看和继续此对话。');
+                    
+                    if (shouldSync) {
+                        try {
+                            if (window.opener.ChatHistorySync) {
+                                window.opener.ChatHistorySync.syncToHistory(
+                                    messages,
+                                    'NEW_TAB_CHAT',
+                                    {
+                                        patentNumber: window.newTabChatState.patentNumber,
+                                        patentTitle: window.newTabChatState.patentData && window.newTabChatState.patentData.title ? window.newTabChatState.patentData.title : '',
+                                        model: window.newTabChatState.currentModel,
+                                        thinkingMode: window.newTabChatState.thinkingModeEnabled || false
+                                    }
+                                );
+                                alert('对话已同步到主页面历史记录！');
+                            } else {
+                                alert('主页面未加载对话同步模块，无法同步。');
+                            }
+                        } catch (e) {
+                            console.error('同步对话失败:', e);
+                            alert('同步失败，请确保主页面已加载完成。');
+                        }
+                    }
+                }
+                
+                if (modal) modal.remove();
+                if (ball) ball.remove();
+                window.newTabChatState.messages = [];
+            };
+            
+            window.clearNewTabChatHistory = function() {
+                var historyEl = document.getElementById('newtab_chat_history');
+                historyEl.innerHTML = '<div class="welcome-message" style="text-align: center; padding: 40px 20px; color: #666;"><div style="font-size: 48px; margin-bottom: 16px;">💬</div><p style="font-size: 16px; margin: 0;">暂无对话记录</p><p style="font-size: 14px; color: #999; margin-top: 8px;">在下方输入您的问题，开始与AI对话</p></div>';
+                window.newTabChatState.messages = [];
+            };
+            
+            window.stopNewTabChatStream = function() {
+                window.newTabChatState.stopStreaming = true;
+            };
+            
+            window.sendNewTabPatentChatMessage = async function() {
+                var input = document.getElementById('newtab_chat_input');
+                var message = input.value.trim();
+                
+                if (!message) return;
+                
+                input.value = '';
+                
+                var historyEl = document.getElementById('newtab_chat_history');
+                var welcomeDiv = historyEl.querySelector('.welcome-message');
+                if (welcomeDiv) welcomeDiv.remove();
+                
+                var userMsgDiv = document.createElement('div');
+                userMsgDiv.style.cssText = 'margin-bottom: 16px; display: flex; justify-content: flex-end;';
+                userMsgDiv.innerHTML = '<div style="max-width: 70%; background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); color: white; padding: 12px 16px; border-radius: 16px 16px 4px 16px;"><div style="font-size: 14px; line-height: 1.5;">' + escapeHtmlNewTab(message) + '</div></div>';
+                historyEl.appendChild(userMsgDiv);
+                historyEl.scrollTop = historyEl.scrollHeight;
+                
+                var aiMsgDiv = document.createElement('div');
+                aiMsgDiv.style.cssText = 'margin-bottom: 16px; display: flex; justify-content: flex-start;';
+                aiMsgDiv.innerHTML = '<div style="max-width: 70%; background: white; padding: 12px 16px; border-radius: 16px 16px 16px 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e8f5e9;"><div style="font-size: 14px; color: #666;">思考中...</div></div>';
+                historyEl.appendChild(aiMsgDiv);
+                historyEl.scrollTop = historyEl.scrollHeight;
+                
+                window.newTabChatState.isLoading = true;
+                window.newTabChatState.stopStreaming = false;
+                
+                var sendBtn = document.getElementById('newtab_chat_send_btn');
+                var stopBtn = document.getElementById('newtab_chat_stop_btn');
+                sendBtn.style.display = 'none';
+                stopBtn.style.display = 'inline-block';
+                
+                var contentDiv = aiMsgDiv.querySelector('div > div');
+                
+                try {
+                    window.newTabChatState.messages.push({ role: 'user', content: message, timestamp: new Date().toISOString() });
+                    
+                    var patentInfo = window.newTabChatState.patentData;
+                    var patentNumber = window.newTabChatState.patentNumber;
+                    
+                    var safeValue = function(val) {
+                        if (!val) return '未知';
+                        if (Array.isArray(val)) return val.length > 0 ? val.join(', ') : '未知';
+                        return String(val);
+                    };
+                    
+                    var safeArray = function(val, limit) {
+                        limit = limit || 10;
+                        if (!val || !Array.isArray(val) || val.length === 0) return '无';
+                        return val.slice(0, limit).map(function(item, i) { return (i + 1) + '. ' + (typeof item === 'string' ? item : JSON.stringify(item)); }).join('\\n');
+                    };
+                    
+                    var contextInfo = '你是一个专业的专利分析助手。当前正在分析专利号为 ' + patentNumber + ' 的专利。请基于以下完整的专利信息，准确、专业地回答用户的问题。\\n\\n';
+                    contextInfo += '## 专利基本信息\\n';
+                    contextInfo += '- **专利号**: ' + (patentInfo.patent_number || patentNumber) + '\\n';
+                    contextInfo += '- **标题**: ' + (patentInfo.title || '无标题') + '\\n';
+                    contextInfo += '- **申请日期**: ' + (patentInfo.application_date || patentInfo.filing_date || '未知') + '\\n';
+                    contextInfo += '- **公开日期**: ' + (patentInfo.publication_date || '未知') + '\\n';
+                    contextInfo += '- **授权日期**: ' + (patentInfo.grant_date || '未知') + '\\n';
+                    contextInfo += '- **优先权日期**: ' + (patentInfo.priority_date || '未知') + '\\n';
+                    contextInfo += '- **法律状态**: ' + (patentInfo.legal_status || '未知') + '\\n';
+                    contextInfo += '\\n## 申请人与发明人\\n';
+                    contextInfo += '- **申请人/受让人**: ' + safeValue(patentInfo.assignees || patentInfo.applicant) + '\\n';
+                    contextInfo += '- **发明人**: ' + safeValue(patentInfo.inventors || patentInfo.inventor) + '\\n';
+                    contextInfo += '\\n## 分类信息\\n';
+                    contextInfo += '- **IPC分类**: ' + safeValue(patentInfo.ipc_classification) + '\\n';
+                    contextInfo += '- **CPC分类**: ' + safeValue(patentInfo.cpc_classification) + '\\n';
+                    
+                    if (patentInfo.abstract) {
+                        contextInfo += '\\n## 摘要\\n' + patentInfo.abstract + '\\n';
+                    }
+                    
+                    if (patentInfo.claims && patentInfo.claims.length > 0) {
+                        contextInfo += '\\n## 权利要求\\n';
+                        contextInfo += safeArray(patentInfo.claims, 20) + '\\n';
+                    }
+                    
+                    if (patentInfo.description) {
+                        var descText = typeof patentInfo.description === 'string' ? patentInfo.description : JSON.stringify(patentInfo.description);
+                        var truncatedDesc = descText.length > 5000 ? descText.substring(0, 5000) + '...(内容过长已截断)' : descText;
+                        contextInfo += '\\n## 说明书\\n' + truncatedDesc + '\\n';
+                    }
+                    
+                    if (patentInfo.patent_citations && patentInfo.patent_citations.length > 0) {
+                        contextInfo += '\\n## 引用专利\\n';
+                        patentInfo.patent_citations.slice(0, 10).forEach(function(c, i) {
+                            contextInfo += (i + 1) + '. ' + (c.patent_number || c) + (c.title ? ': ' + c.title : '') + '\\n';
+                        });
+                    }
+                    
+                    if (patentInfo.cited_by && patentInfo.cited_by.length > 0) {
+                        contextInfo += '\\n## 被引用专利\\n';
+                        patentInfo.cited_by.slice(0, 10).forEach(function(c, i) {
+                            contextInfo += (i + 1) + '. ' + (c.patent_number || c) + (c.title ? ': ' + c.title : '') + '\\n';
+                        });
+                    }
+                    
+                    if (patentInfo.legal_events && patentInfo.legal_events.length > 0) {
+                        contextInfo += '\\n## 法律事件\\n';
+                        patentInfo.legal_events.slice(0, 10).forEach(function(e, i) {
+                            contextInfo += (i + 1) + '. ' + (e.date || '') + ': ' + (e.event || e.description || '') + '\\n';
+                        });
+                    }
+                    
+                    contextInfo += '\\n请基于以上完整的专利信息，准确、专业地回答用户的问题。回答时可以使用Markdown格式来组织内容，使其更易读。';
+                    
+                    var apiMessages = [
+                        { role: 'system', content: contextInfo }
+                    ];
+                    
+                    var filteredMessages = window.newTabChatState.messages.filter(function(m) { return m.role !== 'system'; });
+                    for (var i = 0; i < filteredMessages.length; i++) {
+                        apiMessages.push(filteredMessages[i]);
+                    }
+                    
+                    var requestBody = {
+                        model: window.newTabChatState.currentModel,
+                        messages: apiMessages,
+                        temperature: 0.7,
+                        stream: true
+                    };
+                    
+                    if (window.newTabChatState.currentProvider === 'aliyun') {
+                        requestBody.provider = 'aliyun';
+                    }
+                    
+                    var headers = { 'Content-Type': 'application/json' };
+                    
+                    if (window.newTabChatState.currentProvider === 'aliyun') {
+                        var aliyunKey = window.newTabChatState.apiKeys.aliyun;
+                        if (!aliyunKey) throw new Error('请先配置阿里云API密钥');
+                        headers['X-LLM-Provider'] = 'aliyun';
+                        headers['Authorization'] = 'Bearer ' + aliyunKey;
+                    } else {
+                        var apiKey = window.newTabChatState.apiKeys.zhipu;
+                        if (!apiKey) throw new Error('请先配置智谱API密钥');
+                        headers['Authorization'] = 'Bearer ' + apiKey;
+                    }
+                    
+                    var response = await fetch('/api/stream_chat', {
+                        method: 'POST',
+                        headers: headers,
+                        body: JSON.stringify(requestBody)
+                    });
+                    
+                    if (!response.ok) {
+                        var errorData = await response.json().catch(function() { return {}; });
+                        throw new Error(errorData.error || 'API请求失败: ' + response.status);
+                    }
+                    
+                    var reader = response.body.getReader();
+                    var decoder = new TextDecoder();
+                    var fullContent = '';
+                    var buffer = '';
+                    
+                    contentDiv.textContent = '';
+                    
+                    while (true) {
+                        if (window.newTabChatState.stopStreaming) break;
+                        
+                        var result = await reader.read();
+                        var value = result.value;
+                        var done = result.done;
+                        
+                        if (value) buffer += decoder.decode(value, { stream: !done });
+                        if (done) break;
+                        
+                        var lines = buffer.split('\\n\\n');
+                        buffer = lines.pop() || '';
+                        
+                        for (var i = 0; i < lines.length; i++) {
+                            var line = lines[i];
+                            if (!line.trim() || !line.startsWith('data:')) continue;
+                            
+                            var jsonStr = line.substring(5).trim();
+                            if (jsonStr === '[DONE]') continue;
+                            
+                            try {
+                                var data = JSON.parse(jsonStr);
+                                var content = data.choices && data.choices[0] && data.choices[0].delta && data.choices[0].delta.content ? data.choices[0].delta.content : (data.content || '');
+                                if (content) {
+                                    fullContent += content;
+                                    contentDiv.innerHTML = formatChatContentNewTab(fullContent);
+                                    historyEl.scrollTop = historyEl.scrollHeight;
+                                }
+                            } catch (e) {}
+                        }
+                    }
+                    
+                    if (fullContent) {
+                        window.newTabChatState.messages.push({ role: 'assistant', content: fullContent, timestamp: new Date().toISOString() });
+                    }
+                    
+                } catch (error) {
+                    console.error('发送失败:', error);
+                    contentDiv.innerHTML = '<span style="color: #c62828;">发送失败: ' + escapeHtmlNewTab(error.message) + '</span>';
+                } finally {
+                    window.newTabChatState.isLoading = false;
+                    sendBtn.style.display = 'inline-block';
+                    stopBtn.style.display = 'none';
+                }
+            };
+            
+            function formatChatContentNewTab(content) {
+                var formatted = content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                formatted = formatted.replace(/\\n/g, '<br>');
+                formatted = formatted.replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>');
+                formatted = formatted.replace(/\\*(.+?)\\*/g, '<em>$1</em>');
+                return formatted;
             }
             
             document.addEventListener('DOMContentLoaded', function() {

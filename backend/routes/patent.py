@@ -108,17 +108,60 @@ def record_guest_patent_search(count):
 def get_version():
     """Get scraper version info for debugging."""
     return create_response(data={
-        'version': '2.1-events-timeline-split',
+        'version': '2.2-rate-limited',
         'features': [
             'claims_always_extracted',
             'drawings_three_strategies',
             'patent_citations',
             'cited_by',
-            'events_timeline',  # 新增：事件时间轴（申请、公开、授权等）
-            'legal_events'  # 法律事件（USPTO法律状态代码）
+            'events_timeline',
+            'legal_events',
+            'rate_limiting',
+            'exponential_backoff_retry',
+            'user_agent_rotation'
         ],
-        'timestamp': '2026-02-05'
+        'timestamp': '2026-03-14'
     })
+
+
+@patent_bp.route('/patent/stats', methods=['GET'])
+def get_scraper_stats():
+    """Get scraper statistics for monitoring."""
+    try:
+        scraper = get_scraper_instance()
+        scraper_stats = scraper.get_stats()
+        
+        rate_limiter = get_rate_limiter()
+        user_id = get_current_user_id()
+        user_stats = rate_limiter.get_user_stats(user_id)
+        global_stats = rate_limiter.get_stats()
+        
+        return create_response(data={
+            'scraper': scraper_stats,
+            'rate_limiter': global_stats,
+            'user': user_stats
+        })
+    except Exception as e:
+        return create_response(
+            error=f"Failed to get stats: {str(e)}",
+            status_code=500
+        )
+
+
+@patent_bp.route('/patent/rate-limit/status', methods=['GET'])
+def get_rate_limit_status():
+    """Get current user's rate limit status."""
+    try:
+        user_id = get_current_user_id()
+        rate_limiter = get_rate_limiter()
+        user_stats = rate_limiter.get_user_stats(user_id)
+        
+        return create_response(data=user_stats)
+    except Exception as e:
+        return create_response(
+            error=f"Failed to get rate limit status: {str(e)}",
+            status_code=500
+        )
 
 
 @patent_bp.route('/patent/search', methods=['POST'])
@@ -144,7 +187,9 @@ def search_patents():
         crawl_specification = req_data.get('crawl_specification', False)
         selected_fields = req_data.get('selected_fields', None)
         
-        print(f"[API] 收到爬取请求: {len(patent_numbers)} 个专利")
+        user_id = get_current_user_id()
+        
+        print(f"[API] 收到爬取请求: {len(patent_numbers)} 个专利, 用户: {user_id}")
         print(f"[API] crawl_specification: {crawl_specification}")
         print(f"[API] selected_fields: {selected_fields}")
         
@@ -181,7 +226,8 @@ def search_patents():
             results = scraper.scrape_patents_batch(
                 patent_numbers, 
                 crawl_specification=crawl_specification,
-                selected_fields=selected_fields
+                selected_fields=selected_fields,
+                user_id=user_id
             )
             
             record_guest_patent_search(len(patent_numbers))
@@ -441,13 +487,13 @@ def get_patent_family(patent_number):
     try:
         print(f"[API] 获取同族专利列表: {patent_number}")
         
-        # 爬取基础专利信息（包含同族信息）
-        # 注意：crawl_specification 必须为 True 才能爬取同族信息
+        user_id = get_current_user_id()
         scraper = get_scraper_instance()
         base_patent_result = scraper.scrape_patent(
             patent_number, 
             crawl_specification=True,
-            selected_fields=['family_applications', 'country_status']
+            selected_fields=['family_applications', 'country_status'],
+            user_id=user_id
         )
         
         if not base_patent_result or not base_patent_result.success:
@@ -559,13 +605,15 @@ def get_family_claims_preview():
         
         scraper = get_scraper_instance()
         patent_claims = {}
+        user_id = get_current_user_id()
         
         for patent_number in patent_numbers:
             try:
                 result = scraper.scrape_patent(
                     patent_number,
                     crawl_specification=True,
-                    selected_fields=['claims']
+                    selected_fields=['claims'],
+                    user_id=user_id
                 )
 
                 if result and result.success and result.data:
@@ -642,13 +690,15 @@ def compare_family_claims():
         else:
             scraper = get_scraper_instance()
             patent_claims = {}
+            user_id = get_current_user_id()
             
             for patent_number in patent_numbers:
                 try:
                     result = scraper.scrape_patent(
                         patent_number,
                         crawl_specification=True,
-                        selected_fields=['claims']
+                        selected_fields=['claims'],
+                        user_id=user_id
                     )
 
                     if result and result.success and result.data:
