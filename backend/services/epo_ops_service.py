@@ -540,21 +540,26 @@ class EPOOPSClient:
         description_data = {}
         drawing_url = ''
         
+        logger.info(f"开始获取专利 {patent_number} 的完整详情")
+        
         try:
             url = f"{EPO_OPS_BASE_URL}/published-data/publication/epodoc/{patent_number}/biblio"
             biblio_data, quota_info = self._make_request(url)
+            logger.info(f"获取biblio数据成功，keys: {list(biblio_data.keys()) if biblio_data else 'empty'}")
         except Exception as e:
             logger.warning(f"获取biblio数据失败: {e}")
         
         try:
             url = f"{EPO_OPS_BASE_URL}/published-data/publication/epodoc/{patent_number}/claims"
             claims_data, _ = self._make_request(url)
+            logger.info(f"获取claims数据成功")
         except Exception as e:
             logger.warning(f"获取claims数据失败: {e}")
         
         try:
             url = f"{EPO_OPS_BASE_URL}/published-data/publication/epodoc/{patent_number}/description"
             description_data, _ = self._make_request(url)
+            logger.info(f"获取description数据成功")
         except Exception as e:
             logger.warning(f"获取description数据失败: {e}")
         
@@ -562,18 +567,29 @@ class EPOOPSClient:
             drawing_result = self.get_first_drawing(patent_number)
             if drawing_result.get('success'):
                 drawing_url = drawing_result.get('drawing_url', '')
+                logger.info(f"获取附图成功: {drawing_url}")
         except Exception as e:
             logger.warning(f"获取附图失败: {e}")
         
+        world_data = biblio_data.get('ops:world-patent-data', {})
+        logger.info(f"biblio world_data keys: {list(world_data.keys()) if world_data else 'empty'}")
+        
+        exchange_doc = world_data.get('exchange-document', {})
+        if not exchange_doc:
+            exchange_doc = world_data.get('exchange-documents', {}).get('exchange-document', {})
+        
+        logger.info(f"exchange_doc type: {type(exchange_doc)}, is_list: {isinstance(exchange_doc, list)}")
+        
         merged_data = {
             'ops:world-patent-data': {
-                'exchange-document': biblio_data.get('ops:world-patent-data', {}).get('exchange-document', {}),
+                'exchange-document': exchange_doc,
                 'claims': claims_data.get('ops:world-patent-data', {}).get('claims', {}),
                 'description': description_data.get('ops:world-patent-data', {}).get('description', {})
             }
         }
         
         detail = self._parse_patent_detail(merged_data, patent_number)
+        logger.info(f"解析详情结果: {detail is not None}")
         
         if detail and drawing_url:
             detail.first_drawing_url = drawing_url
