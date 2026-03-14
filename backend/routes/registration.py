@@ -60,7 +60,7 @@ def verify_registration_code():
         return jsonify({'success': False, 'message': '请输入邮箱和验证码'})
     
     from backend.services.auth_service import AuthService
-    success, message = AuthService.verify_reset_code(email, code)
+    success, message = AuthService.check_reset_code(email, code)
     
     return jsonify({'success': success, 'message': message})
 

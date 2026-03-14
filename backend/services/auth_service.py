@@ -605,6 +605,45 @@ class AuthService:
             return False, "验证失败，请稍后重试"
     
     @staticmethod
+    def check_reset_code(email, code):
+        """
+        Check if verification code is valid without deleting it.
+        Used for frontend real-time validation.
+        
+        Args:
+            email: User email
+            code: Verification code
+        
+        Returns:
+            tuple: (success: bool, message: str)
+        """
+        try:
+            if not os.path.exists(PASSWORD_RESET_FILE):
+                return False, "验证码已过期，请重新获取"
+            
+            with open(PASSWORD_RESET_FILE, 'r', encoding='utf-8') as f:
+                reset_data = json.load(f)
+            
+            if email not in reset_data:
+                return False, "验证码已过期，请重新获取"
+            
+            record = reset_data[email]
+            
+            if time.time() > record['expires_at']:
+                return False, "验证码已过期，请重新获取"
+            
+            if record['attempts'] >= 5:
+                return False, "验证码尝试次数过多，请重新获取"
+            
+            if record['code'] != code:
+                return False, "验证码不正确"
+            
+            return True, "验证成功"
+        except Exception as e:
+            print(f"验证码检查失败: {e}")
+            return False, "验证失败，请稍后重试"
+    
+    @staticmethod
     def reset_password_by_email(email, new_password):
         """
         Reset user password by email.
