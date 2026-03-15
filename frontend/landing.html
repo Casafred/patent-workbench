@@ -4328,7 +4328,7 @@
             updateStats();
         }
 
-        async function switchManagerMode(mode) {
+        function switchManagerMode(mode) {
             currentManagerMode = mode;
             selectedImage = null;
             
@@ -4336,16 +4336,8 @@
                 tab.classList.toggle('active', tab.dataset.mode === mode);
             });
 
-            if (mode === 'gifs') {
-                await loadGifImages();
-            } else {
-                await loadAvailableImages();
-            }
-            
-            refreshImageGrid();
+            refreshImageList();
             refreshContainerGrid();
-            updateSelectedImageInfo();
-            updateImageCount();
         }
 
         function updateStats() {
