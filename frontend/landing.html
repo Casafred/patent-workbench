@@ -3989,7 +3989,6 @@
             'demo-06-drawing': '附图智能标记'
         };
 
-        let availableImages = [];
         let selectedImage = null;
         let currentManagerMode = 'images';
         let usedImages = new Set();
@@ -4016,7 +4015,7 @@
             location.reload();
         };
 
-        async function initImageManager() {
+        function initImageManager() {
             const devMode = isLandingDevMode();
             
             if (devMode) {
@@ -4030,8 +4029,6 @@
 
             scanExistingImages();
             scanExistingGifs();
-            setupUploadZone();
-            await loadAvailableImages();
         }
 
         function scanExistingImages() {
@@ -4055,215 +4052,64 @@
         }
 
         function setupUploadZone() {
-            const uploadZone = document.getElementById('uploadZone');
-            if (!uploadZone) return;
-
-            uploadZone.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                uploadZone.classList.add('dragover');
-            });
-
-            uploadZone.addEventListener('dragleave', () => {
-                uploadZone.classList.remove('dragover');
-            });
-
-            uploadZone.addEventListener('drop', (e) => {
-                e.preventDefault();
-                uploadZone.classList.remove('dragover');
-                const files = e.dataTransfer.files;
-                if (files.length > 0) {
-                    handleImageUpload(files);
-                }
-            });
         }
 
-        async function handleImageUpload(files) {
-            const uploadZone = document.getElementById('uploadZone');
-            const originalText = uploadZone.innerHTML;
-            uploadZone.innerHTML = '<div class="loading-spinner"></div><div style="margin-top:10px;">上传中...</div>';
-            
-            for (const file of files) {
-                if (!file.type.startsWith('image/')) continue;
-                
-                try {
-                    const formData = new FormData();
-                    formData.append('file', file);
-                    
-                    const endpoint = currentManagerMode === 'gifs' ? '/api/landing/gifs/upload' : '/api/landing/images/upload';
-                    
-                    const response = await fetch(endpoint, {
-                        method: 'POST',
-                        body: formData
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (result.data) {
-                        console.log('上传成功:', result.data);
-                        await loadAvailableImages();
-                        refreshImageGrid();
-                        updateImageCount();
-                    } else {
-                        console.error('上传失败:', result.error);
-                        alert('上传失败: ' + (result.error || '未知错误'));
-                    }
-                } catch (err) {
-                    console.error('上传失败:', err);
-                    alert('上传失败: ' + err.message);
-                }
-            }
-            
-            uploadZone.innerHTML = originalText;
-        }
-
-        async function loadAvailableImages() {
-            try {
-                const response = await fetch('/api/landing/images/list');
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    const text = await response.text();
-                    console.error('API返回非JSON响应:', text.substring(0, 200));
-                    throw new Error('服务器返回非JSON格式响应，可能需要重新部署');
-                }
-                
-                const result = await response.json();
-                
-                if (result.data && result.data.images) {
-                    availableImages = result.data.images;
-                } else {
-                    availableImages = [];
-                }
-            } catch (err) {
-                console.error('加载图片列表失败:', err);
-                availableImages = [];
-            }
-        }
-
-        async function loadGifImages() {
-            try {
-                const response = await fetch('/api/landing/gifs/list');
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    const text = await response.text();
-                    console.error('API返回非JSON响应:', text.substring(0, 200));
-                    throw new Error('服务器返回非JSON格式响应，可能需要重新部署');
-                }
-                
-                const result = await response.json();
-                
-                if (result.data && result.data.gifs) {
-                    availableImages = result.data.gifs;
-                } else {
-                    availableImages = [];
-                }
-            } catch (err) {
-                console.error('加载GIF列表失败:', err);
-                availableImages = [];
-            }
-        }
-
-        async function openImageManager() {
+        function openImageManager() {
             document.getElementById('imageManagerOverlay').classList.add('active');
             document.getElementById('imageManagerPanel').classList.add('active');
-            
-            if (currentManagerMode === 'gifs') {
-                await loadGifImages();
-            } else {
-                await loadAvailableImages();
-            }
-            
-            refreshImageGrid();
+            refreshImageList();
             refreshContainerGrid();
-            updateImageCount();
             updateStats();
         }
 
-        function closeImageManager() {
-            document.getElementById('imageManagerOverlay').classList.remove('active');
-            document.getElementById('imageManagerPanel').classList.remove('active');
-        }
+        function refreshImageList() {
+            const list = document.getElementById('imageList');
+            if (!list) return;
 
-        function refreshImageGrid() {
-            const grid = document.getElementById('imageGrid');
-            if (!grid) return;
-            
-            const filter = document.getElementById('imageFilter')?.value?.toLowerCase() || '';
-            
-            const filteredImages = availableImages.filter(img => 
-                img.name.toLowerCase().includes(filter)
-            );
+            const allImages = [];
+            Object.values(imageConfig).forEach(imgs => {
+                imgs.forEach(img => {
+                    if (!allImages.includes(img)) allImages.push(img);
+                });
+            });
 
-            if (filteredImages.length === 0) {
-                grid.innerHTML = `
-                    <div class="no-images-hint" style="grid-column: 1/-1;">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                            <polyline points="21 15 16 10 5 21"></polyline>
-                        </svg>
-                        <div>${filter ? '没有匹配的图片' : '暂无图片，请上传'}</div>
-                    </div>
-                `;
-                return;
-            }
-
-            grid.innerHTML = filteredImages.map((img, index) => {
-                const isSelected = selectedImage?.name === img.name;
-                const src = img.dataUrl || img.path;
+            list.innerHTML = allImages.map(name => {
+                const imgPath = `/frontend/images/${name}`;
                 return `
-                    <div class="image-grid-item ${isSelected ? 'selected' : ''}" 
-                         onclick="selectImage(${availableImages.indexOf(img)})">
-                        <img src="${src}" alt="${img.name}" 
-                             onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23666%22 stroke-width=%221.5%22><rect x=%223%22 y=%223%22 width=%2218%22 height=%2218%22 rx=%222%22/><circle cx=%228.5%22 cy=%228.5%22 r=%221.5%22/><polyline points=%2221 15 16 10 5 21%22/></svg>'">
-                        <div class="image-name-overlay">${img.name}</div>
-                        <div class="selected-badge">✓</div>
+                    <div class="image-item" onclick="selectImageByName('${name}')">
+                        <div class="image-item-preview">
+                            <img src="${imgPath}" alt="${name}" 
+                                 onerror="this.parentElement.innerHTML='<span>?</span>'">
+                        </div>
+                        <div class="image-item-info">
+                            <div class="image-item-name">${name}</div>
+                        </div>
                     </div>
                 `;
             }).join('');
         }
 
-        function selectImage(index) {
-            selectedImage = availableImages[index];
-            refreshImageGrid();
-            updateSelectedImageInfo();
+        function selectImageByName(name) {
+            selectedImage = {
+                name: name,
+                path: `/frontend/images/${name}`
+            };
+            document.querySelectorAll('.image-item').forEach(item => {
+                const itemName = item.querySelector('.image-item-name')?.textContent;
+                if (itemName === name) {
+                    item.style.borderColor = 'var(--primary-color)';
+                    item.style.background = 'rgba(34, 197, 94, 0.1)';
+                } else {
+                    item.style.borderColor = '';
+                    item.style.background = '';
+                }
+            });
+            console.log(`已选择图片: ${name}`);
         }
 
-        function updateSelectedImageInfo() {
-            const info = document.getElementById('selectedImageInfo');
-            if (!info) return;
-
-            if (selectedImage) {
-                const src = selectedImage.dataUrl || selectedImage.path;
-                info.classList.remove('empty');
-                info.innerHTML = `
-                    <img src="${src}" class="selected-image-thumb" alt="">
-                    <span>${selectedImage.name}</span>
-                `;
-            } else {
-                info.classList.add('empty');
-                info.innerHTML = '<span>💡 先在左侧选择一张图片</span>';
-            }
-        }
-
-        function filterImages() {
-            refreshImageGrid();
-        }
-
-        function updateImageCount() {
-            const count = document.getElementById('imageCount');
-            if (count) {
-                count.textContent = `(${availableImages.length})`;
-            }
+        function closeImageManager() {
+            document.getElementById('imageManagerOverlay').classList.remove('active');
+            document.getElementById('imageManagerPanel').classList.remove('active');
         }
 
         function refreshContainerGrid() {
