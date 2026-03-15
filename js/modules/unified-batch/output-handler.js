@@ -55,6 +55,9 @@ const OutputHandler = {
             return { success: false, message: '没有数据可导出' };
         }
 
+        const indexColumn = this.state.indexColumn;
+        const sheetData = this.state.currentSheetData || [];
+
         const dataToExport = results.map(result => {
             const input = this.state.inputs.find(i => i.id === result.inputId);
             const template = result.templateName || 'N/A';
@@ -69,18 +72,37 @@ const OutputHandler = {
                 default: statusText = '未提交';
             }
 
-            const row = {
-                '请求ID': result.requestId || result.customId || '-',
-                '模板名称': template,
-                '状态': statusText,
-                '消耗Tokens': result.usage?.total_tokens || '-',
-                '结果': result.result || result.content || ''
-            };
+            const row = {};
+
+            if (indexColumn && input) {
+                const originalRow = sheetData.find(r => {
+                    const idxVal = r[indexColumn];
+                    return String(idxVal).trim() === String(input.id).trim();
+                });
+                if (originalRow) {
+                    row[indexColumn] = originalRow[indexColumn] || input.id;
+                } else {
+                    row[indexColumn] = input.id;
+                }
+            } else if (input) {
+                row['序号'] = input.id;
+            }
+
+            row['模板名称'] = template;
+            row['状态'] = statusText;
+            row['消耗Tokens'] = result.usage?.total_tokens || '-';
+            row['结果'] = result.result || result.content || '';
 
             if (input) {
-                if (typeof input.content === 'string') {
+                if (input.rawContent) {
+                    Object.entries(input.rawContent).forEach(([key, value]) => {
+                        if (key !== indexColumn) {
+                            row['原始_' + key] = value;
+                        }
+                    });
+                } else if (typeof input.content === 'string') {
                     row['输入内容'] = input.content;
-                } else {
+                } else if (typeof input.content === 'object') {
                     Object.entries(input.content).forEach(([key, value]) => {
                         row['输入列_' + key] = value;
                     });
@@ -94,13 +116,28 @@ const OutputHandler = {
             return row;
         });
 
+        if (indexColumn) {
+            dataToExport.sort((a, b) => {
+                const aVal = a[indexColumn];
+                const bVal = b[indexColumn];
+                const aNum = parseInt(aVal, 10);
+                const bNum = parseInt(bVal, 10);
+                if (!isNaN(aNum) && !isNaN(bNum)) {
+                    return aNum - bNum;
+                }
+                return String(aVal).localeCompare(String(bVal), 'zh-CN', { numeric: true });
+            });
+        }
+
         const worksheet = XLSX.utils.json_to_sheet(dataToExport);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, '批量处理结果');
 
-        const fileName = mode === 'async' 
-            ? '小批量异步结果_' + new Date().toISOString().slice(0, 16).replace('T', '_').replace(':', '-') + '.xlsx'
-            : '大批量处理结果_' + new Date().toISOString().slice(0, 16).replace('T', '_').replace(':', '-') + '.xlsx';
+        const fileName = mode === 'instant'
+            ? '极速同步结果_' + new Date().toISOString().slice(0, 16).replace('T', '_').replace(':', '-') + '.xlsx'
+            : (mode === 'async' 
+                ? '小批量异步结果_' + new Date().toISOString().slice(0, 16).replace('T', '_').replace(':', '-') + '.xlsx'
+                : '大批量处理结果_' + new Date().toISOString().slice(0, 16).replace('T', '_').replace(':', '-') + '.xlsx');
 
         XLSX.writeFile(workbook, fileName);
         return { success: true, message: 'Excel文件已下载' };
