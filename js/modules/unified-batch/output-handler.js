@@ -116,19 +116,6 @@ const OutputHandler = {
             return row;
         });
 
-        if (indexColumn) {
-            dataToExport.sort((a, b) => {
-                const aVal = a[indexColumn];
-                const bVal = b[indexColumn];
-                const aNum = parseInt(aVal, 10);
-                const bNum = parseInt(bVal, 10);
-                if (!isNaN(aNum) && !isNaN(bNum)) {
-                    return aNum - bNum;
-                }
-                return String(aVal).localeCompare(String(bVal), 'zh-CN', { numeric: true });
-            });
-        }
-
         const worksheet = XLSX.utils.json_to_sheet(dataToExport);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, '批量处理结果');
