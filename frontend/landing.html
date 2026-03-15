@@ -4119,6 +4119,18 @@
         async function loadAvailableImages() {
             try {
                 const response = await fetch('/api/landing/images/list');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('API返回非JSON响应:', text.substring(0, 200));
+                    throw new Error('服务器返回非JSON格式响应，可能需要重新部署');
+                }
+                
                 const result = await response.json();
                 
                 if (result.data && result.data.images) {
@@ -4135,6 +4147,18 @@
         async function loadGifImages() {
             try {
                 const response = await fetch('/api/landing/gifs/list');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('API返回非JSON响应:', text.substring(0, 200));
+                    throw new Error('服务器返回非JSON格式响应，可能需要重新部署');
+                }
+                
                 const result = await response.json();
                 
                 if (result.data && result.data.gifs) {
