@@ -9,7 +9,8 @@ const { MODE, MODE_THRESHOLD } = UnifiedBatchConfig;
 
 const UnifiedBatchRouter = {
     config: {
-        threshold: MODE_THRESHOLD,
+        threshold: 100,
+        instantThreshold: 20,
         smallBatchConcurrency: UnifiedBatchConfig.ASYNC.CONCURRENCY,
         smallBatchPollInterval: UnifiedBatchConfig.ASYNC.POLL_INTERVAL,
         largeBatchPollInterval: UnifiedBatchConfig.BATCH.POLL_INTERVAL,
@@ -20,41 +21,32 @@ const UnifiedBatchRouter = {
         if (userPreference && userPreference !== MODE.AUTO) {
             return userPreference;
         }
-        if (dataCount <= 5) {
+        if (dataCount <= this.config.instantThreshold) {
             return MODE.INSTANT;
         }
-        return dataCount < this.config.threshold ? MODE.ASYNC : MODE.BATCH;
+        if (dataCount < this.config.threshold) {
+            return MODE.ASYNC;
+        }
+        return MODE.BATCH;
     },
 
     getRecommendation(dataCount) {
-        if (dataCount <= 5) {
+        if (dataCount <= this.config.instantThreshold) {
             return {
                 mode: MODE.INSTANT,
-                reason: '数据量很少，建议使用极速同步模式，立即获得结果',
+                reason: '数据量较少（≤20条），建议使用极速同步模式，立即获得结果',
                 estimatedTime: this.estimateInstantTime(dataCount)
-            };
-        } else if (dataCount < 10) {
-            return {
-                mode: MODE.ASYNC,
-                reason: '数据量较小，建议使用实时异步模式，可立即获得结果',
-                estimatedTime: this.estimateAsyncTime(dataCount)
             };
         } else if (dataCount < this.config.threshold) {
             return {
                 mode: MODE.ASYNC,
-                reason: `数据量适中，建议使用异步模式，约需${this.estimateAsyncTime(dataCount)}完成`,
+                reason: `数据量适中（${this.config.instantThreshold + 1}-${this.config.threshold - 1}条），建议使用异步模式，约需${this.estimateAsyncTime(dataCount)}完成`,
                 estimatedTime: this.estimateAsyncTime(dataCount)
-            };
-        } else if (dataCount < 200) {
-            return {
-                mode: MODE.BATCH,
-                reason: '数据量较大，建议使用批处理模式，效率更高',
-                estimatedTime: this.estimateBatchTime(dataCount)
             };
         } else {
             return {
                 mode: MODE.BATCH,
-                reason: '数据量很大，必须使用批处理模式',
+                reason: '数据量较大（≥100条），建议使用批处理模式，效率更高',
                 estimatedTime: this.estimateBatchTime(dataCount)
             };
         }

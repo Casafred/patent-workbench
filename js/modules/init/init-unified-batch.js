@@ -338,6 +338,11 @@ function bindUnifiedBatchEvents() {
         instantSubmitBtn.addEventListener('click', startUnifiedInstantProcessing);
     }
 
+    var testThreeBtn = document.getElementById('unified_test_three_btn');
+    if (testThreeBtn) {
+        testThreeBtn.addEventListener('click', testUnifiedThreeInputs);
+    }
+
     var instantStopBtn = document.getElementById('unified_instant_stop_btn');
     if (instantStopBtn) {
         instantStopBtn.addEventListener('click', stopUnifiedInstantProcessing);
@@ -817,11 +822,6 @@ async function startUnifiedInstantProcessing() {
         return;
     }
 
-    if (selectedIds.length > 5) {
-        alert('极速同步模式最多支持5条数据，请选择更少的数据或切换到异步模式');
-        return;
-    }
-
     var submitBtn = document.getElementById('unified_instant_submit_btn');
     var stopBtn = document.getElementById('unified_instant_stop_btn');
     var progressInfo = document.getElementById('unified_instant_progress_info');
@@ -831,8 +831,17 @@ async function startUnifiedInstantProcessing() {
     if (stopBtn) stopBtn.disabled = false;
     if (tbody) tbody.innerHTML = '';
     
+    window._unifiedTokenStats = { total: 0, prompt: 0, completion: 0 };
+    updateUnifiedTokenDisplay();
+    
     var onProgress = function(progress) {
         updateUnifiedInstantProgress(progress);
+        if (progress.usage) {
+            window._unifiedTokenStats.total += progress.usage.total_tokens || 0;
+            window._unifiedTokenStats.prompt += progress.usage.prompt_tokens || 0;
+            window._unifiedTokenStats.completion += progress.usage.completion_tokens || 0;
+            updateUnifiedTokenDisplay();
+        }
     };
 
     var onComplete = function(result) {
@@ -852,6 +861,78 @@ async function startUnifiedInstantProcessing() {
         alert(result.message);
         if (submitBtn) submitBtn.disabled = false;
         if (stopBtn) stopBtn.disabled = true;
+    }
+}
+
+async function testUnifiedThreeInputs() {
+    var allInputs = UnifiedBatch.getInputs();
+    
+    if (allInputs.length === 0) {
+        alert('请先添加输入数据');
+        return;
+    }
+    
+    var testInputs = allInputs.slice(0, Math.min(3, allInputs.length));
+    var testIds = testInputs.map(function(input) { return input.id; });
+    
+    var submitBtn = document.getElementById('unified_instant_submit_btn');
+    var testBtn = document.getElementById('unified_test_three_btn');
+    var stopBtn = document.getElementById('unified_instant_stop_btn');
+    var progressInfo = document.getElementById('unified_instant_progress_info');
+    var tbody = document.getElementById('unified_instant_results_tbody');
+    
+    if (submitBtn) submitBtn.disabled = true;
+    if (testBtn) testBtn.disabled = true;
+    if (stopBtn) stopBtn.disabled = false;
+    if (tbody) tbody.innerHTML = '';
+    
+    window._unifiedTokenStats = { total: 0, prompt: 0, completion: 0 };
+    updateUnifiedTokenDisplay();
+    
+    if (progressInfo) {
+        progressInfo.textContent = '🧪 测试模式：处理前 ' + testInputs.length + ' 条数据...';
+    }
+    
+    var onProgress = function(progress) {
+        updateUnifiedInstantProgress(progress);
+        if (progress.usage) {
+            window._unifiedTokenStats.total += progress.usage.total_tokens || 0;
+            window._unifiedTokenStats.prompt += progress.usage.prompt_tokens || 0;
+            window._unifiedTokenStats.completion += progress.usage.completion_tokens || 0;
+            updateUnifiedTokenDisplay();
+        }
+    };
+
+    var onComplete = function(result) {
+        if (submitBtn) submitBtn.disabled = false;
+        if (testBtn) testBtn.disabled = false;
+        if (stopBtn) stopBtn.disabled = true;
+        if (progressInfo) {
+            progressInfo.textContent = '🧪 测试完成！成功: ' + (result.stats?.completed || 0) + ', 失败: ' + (result.stats?.failed || 0);
+        }
+    };
+
+    var result = await UnifiedBatch.startProcessing(onProgress, onComplete, testIds);
+    if (!result.success) {
+        alert(result.message);
+        if (submitBtn) submitBtn.disabled = false;
+        if (testBtn) testBtn.disabled = false;
+        if (stopBtn) stopBtn.disabled = true;
+    }
+}
+
+function updateUnifiedTokenDisplay() {
+    var stats = window._unifiedTokenStats || { total: 0, prompt: 0, completion: 0 };
+    var totalEl = document.getElementById('unified_total_tokens');
+    var costEl = document.getElementById('unified_estimated_cost');
+    
+    if (totalEl) {
+        totalEl.textContent = stats.total.toLocaleString();
+    }
+    
+    if (costEl) {
+        var cost = (stats.total / 1000) * 0.001;
+        costEl.textContent = cost.toFixed(4);
     }
 }
 
