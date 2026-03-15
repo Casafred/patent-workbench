@@ -58,6 +58,10 @@ const UnifiedBatch = {
         return this.input.getInputCount();
     },
 
+    getColumnHeaders() {
+        return this.input.getColumnHeaders();
+    },
+
     getMode() {
         return this.state.getMode();
     },
