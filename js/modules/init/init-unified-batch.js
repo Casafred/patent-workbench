@@ -825,22 +825,51 @@ function updateUnifiedInstantProgress(progress) {
     var tbody = document.getElementById('unified_instant_results_tbody');
     
     if (progressInfo) {
-        var statusText = progress.phase === 'processing' 
-            ? `正在处理: ${progress.current}/${progress.total}` 
-            : progress.message || '处理中...';
-        progressInfo.textContent = statusText;
+        progressInfo.textContent = `处理进度: ${progress.completed || 0} 成功 / ${progress.failed || 0} 失败 / 共 ${progress.total || 0} 条`;
     }
     
-    if (progress.lastResult && tbody) {
+    if (progress.lastResult !== undefined && tbody) {
         var tr = document.createElement('tr');
-        var statusClass = progress.failed > (progress.completed - 1) ? 'error' : 'success';
-        var statusText = progress.failed > (progress.completed - 1) ? '失败' : '成功';
+        var isSuccess = !progress.error;
+        var statusClass = isSuccess ? 'success' : 'error';
+        var statusText = isSuccess ? '✓ 成功' : '✗ 失败';
+        var resultPreview = progress.lastResult 
+            ? (progress.lastResult.length > 100 ? progress.lastResult.substring(0, 100) + '...' : progress.lastResult)
+            : '-';
         
-        tr.innerHTML = '<td>' + progress.current + '</td>' +
+        tr.innerHTML = '<td>' + (progress.current || '-') + '</td>' +
             '<td>' + (progress.inputId || '-') + '</td>' +
-            '<td class="' + statusClass + '">' + statusText + '</td>' +
-            '<td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' + 
-            (progress.lastResult ? progress.lastResult.substring(0, 100) + '...' : '-') + '</td>';
+            '<td class="' + statusClass + '"><strong>' + statusText + '</strong></td>' +
+            '<td style="max-width: 300px; word-break: break-all; white-space: pre-wrap;">' + 
+            (progress.error || resultPreview) + '</td>';
+        tbody.appendChild(tr);
+        
+        tbody.scrollTop = tbody.scrollHeight;
+    }
+}
+
+function updateUnifiedAsyncProgress(progress) {
+    var progressInfo = document.getElementById('unified_async_progress_info');
+    var tbody = document.getElementById('unified_async_results_tbody');
+    
+    if (progressInfo) {
+        progressInfo.textContent = `处理进度: ${progress.completed || 0} 成功 / ${progress.failed || 0} 失败 / 共 ${progress.total || 0} 条`;
+    }
+    
+    if (progress.lastResult !== undefined && tbody) {
+        var tr = document.createElement('tr');
+        var isSuccess = !progress.error;
+        var statusClass = isSuccess ? 'success' : 'error';
+        var statusText = isSuccess ? '✓ 成功' : '✗ 失败';
+        var resultPreview = progress.lastResult 
+            ? (progress.lastResult.length > 100 ? progress.lastResult.substring(0, 100) + '...' : progress.lastResult)
+            : '-';
+        
+        tr.innerHTML = '<td>' + (progress.current || '-') + '</td>' +
+            '<td>' + (progress.inputId || '-') + '</td>' +
+            '<td class="' + statusClass + '"><strong>' + statusText + '</strong></td>' +
+            '<td style="max-width: 300px; word-break: break-all; white-space: pre-wrap;">' + 
+            (progress.error || resultPreview) + '</td>';
         tbody.appendChild(tr);
         
         tbody.scrollTop = tbody.scrollHeight;
@@ -865,31 +894,62 @@ async function startUnifiedAsyncProcessing() {
         return;
     }
 
+    var submitBtn = document.getElementById('unified_async_submit_btn');
+    var progressInfo = document.getElementById('unified_async_progress_info');
+    var tbody = document.getElementById('unified_async_results_tbody');
+    
+    if (submitBtn) submitBtn.disabled = true;
+    if (tbody) tbody.innerHTML = '';
+    if (progressInfo) progressInfo.textContent = '正在处理...';
+
     var onProgress = function(progress) {
         updateUnifiedAsyncProgress(progress);
     };
 
     var onComplete = function(result) {
+        if (submitBtn) submitBtn.disabled = false;
+        if (progressInfo) {
+            progressInfo.textContent = `处理完成！成功: ${result.stats?.completed || 0}, 失败: ${result.stats?.failed || 0}`;
+        }
         if (result.success) {
-            alert('处理完成！');
+            var exportBtn = document.getElementById('unified_async_export_btn');
+            if (exportBtn) exportBtn.disabled = false;
         }
     };
 
     var result = await UnifiedBatch.startProcessing(onProgress, onComplete, selectedIds);
     if (!result.success) {
         alert(result.message);
+        if (submitBtn) submitBtn.disabled = false;
     }
 }
 
 function updateUnifiedAsyncProgress(progress) {
-    var stats = UnifiedBatch.getProgressStats();
-    var infoEl = document.getElementById('unified_async_progress_info');
+    var progressInfo = document.getElementById('unified_async_progress_info');
+    var tbody = document.getElementById('unified_async_results_tbody');
     
-    if (infoEl) {
-        infoEl.textContent = '进度: 已成功 ' + stats.completed + ' / ' + stats.total + ' (失败: ' + stats.failed + ')';
+    if (progressInfo) {
+        progressInfo.textContent = `处理进度: ${progress.completed || 0} 成功 / ${progress.failed || 0} 失败 / 共 ${progress.total || 0} 条`;
     }
-
-    renderUnifiedAsyncResults();
+    
+    if (progress.lastResult !== undefined && tbody) {
+        var tr = document.createElement('tr');
+        var isSuccess = !progress.error;
+        var statusClass = isSuccess ? 'success' : 'error';
+        var statusText = isSuccess ? '✓ 成功' : '✗ 失败';
+        var resultPreview = progress.lastResult 
+            ? (progress.lastResult.length > 100 ? progress.lastResult.substring(0, 100) + '...' : progress.lastResult)
+            : '-';
+        
+        tr.innerHTML = '<td>' + (progress.current || '-') + '</td>' +
+            '<td>' + (progress.inputId || '-') + '</td>' +
+            '<td class="' + statusClass + '"><strong>' + statusText + '</strong></td>' +
+            '<td style="max-width: 300px; word-break: break-all; white-space: pre-wrap;">' + 
+            (progress.error || resultPreview) + '</td>';
+        tbody.appendChild(tr);
+        
+        tbody.scrollTop = tbody.scrollHeight;
+    }
 }
 
 function renderUnifiedAsyncResults() {
