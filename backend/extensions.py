@@ -16,45 +16,61 @@ db_pool = None
 def init_extensions(app):
     """
     Initialize Flask extensions.
-
+    
     Args:
         app: Flask application instance
     """
     CORS(app)
-
+    
     init_db_pool()
-
+    
+    _init_optional_performance_monitor(app)
+    
     @app.before_request
     def set_session_lifetime():
         from flask import session
         if session.get('_remember_me'):
             session.permanent_session_lifetime = REMEMBER_ME_SESSION_LIFETIME
-
+    
     return app
+
+
+def _init_optional_performance_monitor(app):
+    """
+    Initialize optional performance monitoring.
+    Only activates when ENABLE_PERFORMANCE_MONITOR=true.
+    This is completely optional and won't affect core functionality.
+    """
+    try:
+        from backend.utils.perf_monitor import setup_request_hooks, is_enabled
+        if is_enabled():
+            setup_request_hooks(app)
+    except Exception as e:
+        print(f"Performance monitor init skipped: {e}")
 
 
 def init_db_pool():
     """Initialize PostgreSQL connection pool."""
     global db_pool
-
+    
     try:
         database_url = Config.DATABASE_URL
         if not database_url:
             print("警告: 未找到 DATABASE_URL 环境变量。IP限制功能将不会工作。")
             db_pool = None
             return
-
+        
         db_pool = psycopg2.pool.SimpleConnectionPool(
             Config.DB_POOL_MIN_CONN,
             Config.DB_POOL_MAX_CONN,
             dsn=database_url
         )
-
+        
         # Test connection
         conn = db_pool.getconn()
         print("成功连接到 PostgreSQL 服务器。")
         db_pool.putconn(conn)
-
+        
     except Exception as e:
         print(f"错误: 无法连接到 PostgreSQL 服务器: {e}")
         db_pool = None
