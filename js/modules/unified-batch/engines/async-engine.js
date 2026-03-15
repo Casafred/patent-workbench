@@ -54,12 +54,12 @@ const AsyncEngine = {
     },
 
     getConcurrencyForModel(model) {
-        if (!model) return 1;
+        if (!model) return 3;
         
         const MODEL_CONCURRENCY_LIMITS = {
             'GLM-4.6': 3,
             'GLM-4.6V-FlashX': 3,
-            'GLM-4.7': 3,
+            'GLM-4.7': 2,
             'GLM-Image': 1,
             'GLM-Z1-Air': 30,
             'GLM-4.5': 10,
@@ -68,7 +68,7 @@ const AsyncEngine = {
             'GLM-4.7-Flash': 1,
             'GLM-4.7-FlashX': 3,
             'GLM-OCR': 2,
-            'GLM-5': 5,
+            'GLM-5': 3,
             'GLM-4-Plus': 20,
             'GLM-Z1-Flash': 30,
             'GLM-Z1-AirX': 30,
@@ -148,7 +148,7 @@ const AsyncEngine = {
                 return value;
             }
         }
-        return 1;
+        return 3;
     },
 
     async processSingleInputWithRetry(input, template, maxRetries = 3) {
