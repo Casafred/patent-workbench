@@ -2133,7 +2133,7 @@
         }
 
         /* ============================================
-           图片管理工具面板
+           图片管理工具面板 - 全新设计
            ============================================ */
         .image-manager-panel {
             position: fixed;
@@ -2142,19 +2142,20 @@
             transform: translate(-50%, -50%);
             background: var(--surface-color);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            border-radius: 16px;
+            padding: 0;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
             z-index: 10000;
-            max-width: 700px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
+            width: 95%;
+            max-width: 1200px;
+            max-height: 90vh;
             display: none;
+            flex-direction: column;
+            overflow: hidden;
         }
 
         .image-manager-panel.active {
-            display: block;
+            display: flex;
         }
 
         .image-manager-overlay {
@@ -2163,7 +2164,8 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.7);
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(4px);
             z-index: 9999;
             display: none;
         }
@@ -2176,90 +2178,357 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
+            padding: 20px 24px;
+            background: rgba(34, 197, 94, 0.1);
             border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
         }
 
         .image-manager-header h3 {
             margin: 0;
             color: var(--primary-color);
-            font-size: 1.2rem;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .image-manager-close {
-            background: none;
-            border: none;
-            font-size: 1.5em;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 1.2em;
             cursor: pointer;
-            color: var(--text-color-muted);
-            transition: color 0.2s;
+            color: var(--text-color);
+            transition: all 0.2s;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .image-manager-close:hover {
-            color: var(--text-color);
+            background: rgba(255, 100, 100, 0.3);
+            border-color: rgba(255, 100, 100, 0.5);
+            color: #fff;
         }
 
-        .image-list {
-            display: grid;
-            gap: 10px;
-            max-height: 400px;
-            overflow-y: auto;
+        .image-manager-body {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
         }
 
-        .image-item {
+        .image-manager-sidebar {
+            width: 280px;
+            background: rgba(0, 0, 0, 0.3);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .image-manager-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .sidebar-section {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sidebar-section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-color-muted);
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
+            gap: 8px;
+        }
+
+        .upload-zone {
+            border: 2px dashed rgba(34, 197, 94, 0.3);
+            border-radius: 12px;
+            padding: 24px 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: rgba(34, 197, 94, 0.05);
+        }
+
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: var(--primary-color);
+            background: rgba(34, 197, 94, 0.15);
+        }
+
+        .upload-zone-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .upload-zone-text {
+            font-size: 0.85rem;
+            color: var(--text-color-secondary);
+        }
+
+        .upload-zone-hint {
+            font-size: 0.75rem;
+            color: var(--text-color-muted);
+            margin-top: 4px;
+        }
+
+        .image-filter {
             padding: 12px;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
+            color: var(--text-color);
+            width: 100%;
+            font-size: 0.85rem;
         }
 
-        .image-item:hover {
-            background: rgba(34, 197, 94, 0.1);
+        .image-filter:focus {
+            outline: none;
             border-color: var(--primary-color);
         }
 
-        .image-item-preview {
-            width: 80px;
-            height: 50px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-            margin-right: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.7em;
-            color: var(--text-color-muted);
-            overflow: hidden;
+        .image-list-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
         }
 
-        .image-item-preview img {
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 8px;
+        }
+
+        .image-grid-item {
+            position: relative;
+            aspect-ratio: 16/10;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .image-grid-item:hover {
+            border-color: rgba(34, 197, 94, 0.5);
+            transform: scale(1.02);
+        }
+
+        .image-grid-item.selected {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.3);
+        }
+
+        .image-grid-item img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
 
-        .image-item-info {
-            flex-grow: 1;
+        .image-grid-item .image-name-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 4px 6px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+            font-size: 0.65rem;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .image-item-name {
-            font-weight: 500;
+        .image-grid-item .selected-badge {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 20px;
+            height: 20px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: #fff;
+        }
+
+        .image-grid-item.selected .selected-badge {
+            display: flex;
+        }
+
+        .container-list-header {
+            padding: 16px 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .container-list-title {
+            font-size: 0.9rem;
             color: var(--text-color);
-            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .image-item-status {
-            font-size: 0.8em;
+        .selected-image-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            background: rgba(34, 197, 94, 0.15);
+            border-radius: 8px;
+            font-size: 0.8rem;
+        }
+
+        .selected-image-info.empty {
+            background: rgba(255, 255, 255, 0.05);
             color: var(--text-color-muted);
         }
 
-        .image-item-status.used {
+        .selected-image-thumb {
+            width: 40px;
+            height: 25px;
+            border-radius: 4px;
+            object-fit: cover;
+        }
+
+        .container-grid {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 20px;
+        }
+
+        .container-section {
+            margin-bottom: 24px;
+        }
+
+        .container-section-title {
+            font-size: 0.8rem;
             color: var(--primary-color);
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .container-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .container-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .container-item:hover {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .container-item.has-image {
+            border-color: rgba(34, 197, 94, 0.4);
+        }
+
+        .container-item-name {
+            font-size: 0.85rem;
+            color: var(--text-color);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .container-item-preview {
+            aspect-ratio: 16/10;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .container-item-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .container-item-preview .empty-placeholder {
+            color: var(--text-color-muted);
+            font-size: 0.75rem;
+            text-align: center;
+        }
+
+        .container-item-preview .empty-placeholder svg {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 4px;
+            opacity: 0.5;
+        }
+
+        .container-item .slot-indicator {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            color: #fff;
+        }
+
+        .container-item .remove-btn {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            width: 24px;
+            height: 24px;
+            background: rgba(255, 100, 100, 0.9);
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            color: #fff;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .container-item:hover .remove-btn {
+            display: flex;
+        }
+
+        .container-item .remove-btn:hover {
+            transform: scale(1.1);
         }
 
         .open-image-manager-btn {
@@ -2284,92 +2553,11 @@
             transform: translateY(-2px);
         }
 
-        .image-path-input {
-            width: 100%;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 6px;
-            margin-bottom: 15px;
-            font-family: monospace;
-            font-size: 0.9em;
-            color: var(--text-color);
-        }
-
-        .image-path-input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-        }
-
-        .apply-image-btn {
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: background 0.2s;
-        }
-
-        .apply-image-btn:hover {
-            background: var(--primary-color-dark);
-        }
-
-        .image-manager-section {
-            margin-bottom: 20px;
-        }
-
-        .image-manager-section h4 {
-            color: var(--text-color-secondary);
-            font-size: 0.9rem;
-            margin-bottom: 10px;
-            font-weight: 500;
-        }
-
-        .placeholder-list {
-            display: grid;
-            gap: 8px;
-        }
-
-        .placeholder-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 12px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 6px;
-            font-size: 0.9em;
-        }
-
-        .placeholder-item .placeholder-id {
-            color: var(--primary-color);
-            font-family: monospace;
-        }
-
-        .placeholder-item .placeholder-status {
-            font-size: 0.85em;
-            padding: 2px 8px;
-            border-radius: 4px;
-        }
-
-        .placeholder-item .placeholder-status.filled {
-            background: rgba(34, 197, 94, 0.2);
-            color: var(--primary-color);
-        }
-
-        .placeholder-item .placeholder-status.empty {
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--text-color-muted);
-        }
-
-        /* 管理器标签页 */
         .manager-tabs {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
+            gap: 4px;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.2);
             border-bottom: 1px solid var(--border-color);
         }
 
@@ -2381,8 +2569,9 @@
             border-radius: 8px;
             color: var(--text-color-muted);
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             transition: all 0.2s;
+            text-align: center;
         }
 
         .manager-tab:hover {
@@ -2394,6 +2583,66 @@
             background: var(--primary-color);
             border-color: var(--primary-color);
             color: white;
+        }
+
+        .status-bar {
+            padding: 12px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-top: 1px solid var(--border-color);
+            font-size: 0.8rem;
+            color: var(--text-color-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .status-bar .hint {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-bar .stats {
+            display: flex;
+            gap: 16px;
+        }
+
+        .status-bar .stat {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .status-bar .stat-value {
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        .no-images-hint {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-color-muted);
+        }
+
+        .no-images-hint svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(34, 197, 94, 0.3);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -3693,10 +3942,9 @@
         });
 
         // ============================================
-        // 图片管理器功能
+        // 图片管理器功能 - 全新设计
         // ============================================
         
-        // 图片配置 - 定义所有占位符和对应的图片文件名
         const imageConfig = {
             'feature-01-chat': ['1_chat.png', '1_chat_2.png', '1_chat_3.png'],
             'feature-02-batch': ['2_batch labeling.png', '2_batch_2.png', '2_batch_3.png'],
@@ -3710,7 +3958,6 @@
             'feature-10-ipc-lookup': ['10_ipc_lookup.png', '10_ipc_lookup_2.png', '10_ipc_lookup_3.png']
         };
 
-        // GIF配置 - 产品演示区域
         const gifConfig = {
             'demo-01-chat': 'demo_chat.gif',
             'demo-02-batch': 'demo_batch.gif',
@@ -3720,7 +3967,6 @@
             'demo-06-drawing': 'demo_drawing.gif'
         };
 
-        // 占位符名称映射
         const placeholderNames = {
             'feature-01-chat': 'AI智能体对话',
             'feature-02-batch': '文本批量智能分析',
@@ -3734,7 +3980,6 @@
             'feature-10-ipc-lookup': 'IPC分类智能查询'
         };
 
-        // GIF名称映射
         const gifNames = {
             'demo-01-chat': 'AI智能体对话',
             'demo-02-batch': '文本批量分析',
@@ -3744,20 +3989,12 @@
             'demo-06-drawing': '附图智能标记'
         };
 
-        // 已使用的图片记录
-        let usedImages = new Set();
-        // 已使用的GIF记录
-        let usedGifs = new Set();
-        // 当前选中的占位符
-        let selectedPlaceholder = null;
-        // 当前选中的图片索引
-        let selectedStackIndex = null;
-        // 当前选中的GIF
-        let selectedGif = null;
-        // 当前管理模式: 'images' 或 'gifs'
+        let availableImages = [];
+        let selectedImage = null;
         let currentManagerMode = 'images';
+        let usedImages = new Set();
+        let usedGifs = new Set();
 
-        // 开发模式检测
         const isLandingDevMode = () => {
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('dev') === '1' || urlParams.get('developer') === 'true') {
@@ -3769,21 +4006,17 @@
             return false;
         };
 
-        // 启用开发模式
         window.enableLandingDevMode = () => {
             localStorage.setItem('landing_dev_mode', 'true');
             location.reload();
         };
 
-        // 禁用开发模式
         window.disableLandingDevMode = () => {
             localStorage.removeItem('landing_dev_mode');
             location.reload();
         };
 
-        // 初始化图片管理器
         function initImageManager() {
-            // 检查开发模式
             const devMode = isLandingDevMode();
             
             if (devMode) {
@@ -3795,12 +4028,12 @@
                 console.log('💡 提示: 在控制台执行 disableLandingDevMode() 可退出开发模式');
             }
 
-            // 扫描已有图片和GIF
             scanExistingImages();
             scanExistingGifs();
+            setupUploadZone();
+            loadAvailableImages();
         }
 
-        // 扫描已有图片
         function scanExistingImages() {
             document.querySelectorAll('.feature-image-stack[data-stack-id]').forEach(container => {
                 const images = container.querySelectorAll('.stacked-image img');
@@ -3811,7 +4044,6 @@
             });
         }
 
-        // 扫描已有GIF
         function scanExistingGifs() {
             document.querySelectorAll('.demo-item[data-gif-id]').forEach(container => {
                 const img = container.querySelector('.demo-item-inner img');
@@ -3822,98 +4054,269 @@
             });
         }
 
-        // 打开图片管理器
+        function setupUploadZone() {
+            const uploadZone = document.getElementById('uploadZone');
+            if (!uploadZone) return;
+
+            uploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadZone.classList.add('dragover');
+            });
+
+            uploadZone.addEventListener('dragleave', () => {
+                uploadZone.classList.remove('dragover');
+            });
+
+            uploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadZone.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleImageUpload(files);
+                }
+            });
+        }
+
+        async function handleImageUpload(files) {
+            for (const file of files) {
+                if (!file.type.startsWith('image/')) continue;
+                
+                try {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const imageData = {
+                            name: file.name,
+                            dataUrl: e.target.result,
+                            type: 'uploaded',
+                            timestamp: Date.now()
+                        };
+                        availableImages.unshift(imageData);
+                        refreshImageGrid();
+                        updateImageCount();
+                    };
+                    reader.readAsDataURL(file);
+                } catch (err) {
+                    console.error('上传失败:', err);
+                }
+            }
+        }
+
+        function loadAvailableImages() {
+            availableImages = [];
+            
+            Object.entries(imageConfig).forEach(([stackId, filenames]) => {
+                filenames.forEach(filename => {
+                    availableImages.push({
+                        name: filename,
+                        path: `/frontend/images/${filename}`,
+                        type: 'config',
+                        stackId: stackId
+                    });
+                });
+            });
+
+            const uniqueImages = [];
+            const seen = new Set();
+            availableImages.forEach(img => {
+                if (!seen.has(img.name)) {
+                    seen.add(img.name);
+                    uniqueImages.push(img);
+                }
+            });
+            availableImages = uniqueImages;
+        }
+
         function openImageManager() {
             document.getElementById('imageManagerOverlay').classList.add('active');
             document.getElementById('imageManagerPanel').classList.add('active');
-            refreshPlaceholderList();
-            refreshImageList();
+            refreshImageGrid();
+            refreshContainerGrid();
+            updateImageCount();
+            updateStats();
         }
 
-        // 关闭图片管理器
         function closeImageManager() {
             document.getElementById('imageManagerOverlay').classList.remove('active');
             document.getElementById('imageManagerPanel').classList.remove('active');
         }
 
-        // 刷新占位符列表
-        function refreshPlaceholderList() {
-            const list = document.getElementById('placeholderList');
-            list.innerHTML = '';
+        function refreshImageGrid() {
+            const grid = document.getElementById('imageGrid');
+            if (!grid) return;
+            
+            const filter = document.getElementById('imageFilter')?.value?.toLowerCase() || '';
+            
+            const filteredImages = availableImages.filter(img => 
+                img.name.toLowerCase().includes(filter)
+            );
 
-            Object.keys(imageConfig).forEach(stackId => {
-                const container = document.querySelector(`[data-stack-id="${stackId}"]`);
-                let filledCount = 0;
-                if (container) {
-                    container.querySelectorAll('.stacked-image').forEach(slot => {
-                        if (slot.querySelector('img')) filledCount++;
-                    });
-                }
-                const isSelected = selectedPlaceholder === stackId;
-                const item = document.createElement('div');
-                item.className = 'placeholder-item';
-                if (isSelected) item.style.borderColor = 'var(--primary-color)';
-                item.innerHTML = `
-                    <span class="placeholder-id">${stackId}</span>
-                    <span>
-                        <span style="color: var(--text-color-muted); margin-right: 10px;">${placeholderNames[stackId] || ''}</span>
-                        <span class="placeholder-status ${filledCount > 0 ? 'filled' : 'empty'}">${filledCount}/3 已填充</span>
-                    </span>
+            if (filteredImages.length === 0) {
+                grid.innerHTML = `
+                    <div class="no-images-hint" style="grid-column: 1/-1;">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <div>${filter ? '没有匹配的图片' : '暂无图片，请上传'}</div>
+                    </div>
                 `;
-                item.onclick = () => selectPlaceholder(stackId);
-                list.appendChild(item);
-            });
-        }
-
-        // 选择占位符
-        function selectPlaceholder(stackId) {
-            selectedPlaceholder = stackId;
-            selectedStackIndex = null;
-            refreshPlaceholderList();
-            refreshImageList();
-            console.log(`已选择功能模块: ${stackId}`);
-        }
-
-        // 刷新图片列表
-        function refreshImageList() {
-            const list = document.getElementById('imageList');
-            list.innerHTML = '';
-
-            if (!selectedPlaceholder) {
-                list.innerHTML = '<div style="color: var(--text-color-muted); text-align: center; padding: 20px;">请先在上方选择一个功能模块</div>';
                 return;
             }
 
-            const filenames = imageConfig[selectedPlaceholder];
-            if (!filenames) return;
-
-            filenames.forEach((filename, index) => {
-                const container = document.querySelector(`[data-stack-id="${selectedPlaceholder}"]`);
-                const slot = container ? container.querySelector(`.stacked-image[data-stack-index="${index}"]`) : null;
-                const hasImage = slot ? !!slot.querySelector('img') : false;
-                const isSelected = selectedStackIndex === index;
-                
-                const item = document.createElement('div');
-                item.className = 'image-item';
-                if (isSelected) item.style.borderColor = 'var(--primary-color)';
-                item.innerHTML = `
-                    <div class="image-item-preview">
-                        <span>${index + 1}</span>
+            grid.innerHTML = filteredImages.map((img, index) => {
+                const isSelected = selectedImage?.name === img.name;
+                const src = img.dataUrl || img.path;
+                return `
+                    <div class="image-grid-item ${isSelected ? 'selected' : ''}" 
+                         onclick="selectImage(${availableImages.indexOf(img)})">
+                        <img src="${src}" alt="${img.name}" 
+                             onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23666%22 stroke-width=%221.5%22><rect x=%223%22 y=%223%22 width=%2218%22 height=%2218%22 rx=%222%22/><circle cx=%228.5%22 cy=%228.5%22 r=%221.5%22/><polyline points=%2221 15 16 10 5 21%22/></svg>'">
+                        <div class="image-name-overlay">${img.name}</div>
+                        <div class="selected-badge">✓</div>
                     </div>
-                    <div class="image-item-info">
-                        <div class="image-item-name">${filename}</div>
-                        <div class="image-item-status ${hasImage ? 'used' : ''}">
-                            ${hasImage ? '✓ 已填充' : '○ 空'} | 位置 ${index + 1}
+                `;
+            }).join('');
+        }
+
+        function selectImage(index) {
+            selectedImage = availableImages[index];
+            refreshImageGrid();
+            updateSelectedImageInfo();
+        }
+
+        function updateSelectedImageInfo() {
+            const info = document.getElementById('selectedImageInfo');
+            if (!info) return;
+
+            if (selectedImage) {
+                const src = selectedImage.dataUrl || selectedImage.path;
+                info.classList.remove('empty');
+                info.innerHTML = `
+                    <img src="${src}" class="selected-image-thumb" alt="">
+                    <span>${selectedImage.name}</span>
+                `;
+            } else {
+                info.classList.add('empty');
+                info.innerHTML = '<span>💡 先在左侧选择一张图片</span>';
+            }
+        }
+
+        function filterImages() {
+            refreshImageGrid();
+        }
+
+        function updateImageCount() {
+            const count = document.getElementById('imageCount');
+            if (count) {
+                count.textContent = `(${availableImages.length})`;
+            }
+        }
+
+        function refreshContainerGrid() {
+            const grid = document.getElementById('containerGrid');
+            if (!grid) return;
+
+            if (currentManagerMode === 'images') {
+                grid.innerHTML = renderImageContainers();
+            } else {
+                grid.innerHTML = renderGifContainers();
+            }
+        }
+
+        function renderImageContainers() {
+            let html = '<div class="container-section">';
+            html += '<div class="container-section-title">📸 功能截图位置</div>';
+            html += '<div class="container-items">';
+
+            Object.entries(imageConfig).forEach(([stackId, filenames]) => {
+                const container = document.querySelector(`[data-stack-id="${stackId}"]`);
+                
+                filenames.forEach((filename, index) => {
+                    const slot = container?.querySelector(`.stacked-image[data-stack-index="${index}"]`);
+                    const existingImg = slot?.querySelector('img');
+                    const hasImage = !!existingImg;
+                    const imgSrc = existingImg?.src || '';
+                    
+                    html += `
+                        <div class="container-item ${hasImage ? 'has-image' : ''}" 
+                             onclick="applyImageToSlot('${stackId}', ${index})">
+                            <div class="container-item-name">
+                                <span>${placeholderNames[stackId] || stackId}</span>
+                                <span style="color: var(--text-color-muted); font-size: 0.75rem;">位置 ${index + 1}</span>
+                            </div>
+                            <div class="container-item-preview">
+                                ${hasImage ? `
+                                    <img src="${imgSrc}" alt="">
+                                    <div class="slot-indicator">${index + 1}</div>
+                                    <div class="remove-btn" onclick="event.stopPropagation(); removeImageFromSlot('${stackId}', ${index})">✕</div>
+                                ` : `
+                                    <div class="empty-placeholder">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                            <line x1="12" y1="8" x2="12" y2="16"></line>
+                                            <line x1="8" y1="12" x2="16" y2="12"></line>
+                                        </svg>
+                                        <div>点击应用</div>
+                                    </div>
+                                    <div class="slot-indicator">${index + 1}</div>
+                                `}
+                            </div>
+                        </div>
+                    `;
+                });
+            });
+
+            html += '</div></div>';
+            return html;
+        }
+
+        function renderGifContainers() {
+            let html = '<div class="container-section">';
+            html += '<div class="container-section-title">🎬 产品演示GIF位置</div>';
+            html += '<div class="container-items">';
+
+            Object.entries(gifConfig).forEach(([gifId, filename]) => {
+                const container = document.querySelector(`[data-gif-id="${gifId}"] .demo-item-inner`);
+                const existingImg = container?.querySelector('img');
+                const hasGif = !!existingImg;
+                const imgSrc = existingImg?.src || '';
+                
+                html += `
+                    <div class="container-item ${hasGif ? 'has-image' : ''}" 
+                         onclick="applyGifToSlot('${gifId}')">
+                        <div class="container-item-name">
+                            <span>${gifNames[gifId] || gifId}</span>
+                        </div>
+                        <div class="container-item-preview">
+                            ${hasGif ? `
+                                <img src="${imgSrc}" alt="">
+                                <div class="remove-btn" onclick="event.stopPropagation(); removeGifFromSlot('${gifId}')">✕</div>
+                            ` : `
+                                <div class="empty-placeholder">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="12" y1="8" x2="12" y2="16"></line>
+                                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                                    </svg>
+                                    <div>点击应用</div>
+                                </div>
+                            `}
                         </div>
                     </div>
                 `;
-                item.onclick = () => insertStackedImage(selectedPlaceholder, index, filename);
-                list.appendChild(item);
             });
+
+            html += '</div></div>';
+            return html;
         }
 
-        // 插入堆叠图片
-        function insertStackedImage(stackId, stackIndex, filename) {
+        function applyImageToSlot(stackId, stackIndex) {
+            if (!selectedImage) {
+                alert('请先在左侧选择一张图片');
+                return;
+            }
+
             const container = document.querySelector(`[data-stack-id="${stackId}"]`);
             if (!container) {
                 alert(`未找到容器: ${stackId}`);
@@ -3926,15 +4329,16 @@
                 return;
             }
 
-            const imgAlt = `${placeholderNames[stackId] || filename} - 截图${stackIndex + 1}`;
+            const imgSrc = selectedImage.dataUrl || `/frontend/images/${selectedImage.name}`;
+            const imgAlt = `${placeholderNames[stackId] || selectedImage.name} - 截图${stackIndex + 1}`;
+            
             slot.innerHTML = `
-                <img src="/frontend/images/${filename}" alt="${imgAlt}" 
+                <img src="${imgSrc}" alt="${imgAlt}" 
                      onerror="this.parentElement.innerHTML='<div class=\\'stacked-image-placeholder\\'><svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'1.5\\'><rect x=\\'3\\' y=\\'3\\' width=\\'18\\' height=\\'18\\' rx=\\'2\\' ry=\\'2\\'></rect><circle cx=\\'8.5\\' cy=\\'8.5\\' r=\\'1.5\\'></circle><polyline points=\\'21 15 16 10 5 21\\'></polyline></svg><div>图片加载失败</div></div>'"
                      style="cursor: zoom-in;">
                 <span class="stacked-image-label">截图 ${stackIndex + 1}</span>
             `;
             
-            // 添加点击放大事件
             slot.addEventListener('click', function(e) {
                 e.stopPropagation();
                 const img = this.querySelector('img');
@@ -3944,221 +4348,154 @@
             });
             
             usedImages.add(stackId);
-            selectedStackIndex = stackIndex;
-            refreshPlaceholderList();
-            refreshImageList();
-            console.log(`已插入图片: ${filename} -> ${stackId}[${stackIndex}]`);
+            refreshContainerGrid();
+            updateStats();
+            console.log(`已插入图片: ${selectedImage.name} -> ${stackId}[${stackIndex}]`);
         }
 
-        // 手动应用图片
-        function applyManualImage() {
-            const path = document.getElementById('manualImagePath').value.trim();
-            if (!path) {
-                alert('请输入图片路径');
-                return;
-            }
-
-            if (!selectedPlaceholder) {
-                alert('请先选择一个功能模块');
-                return;
-            }
-
-            if (selectedStackIndex === null) {
-                alert('请先点击下方图片列表选择要填充的位置');
-                return;
-            }
-
-            const container = document.querySelector(`[data-stack-id="${selectedPlaceholder}"]`);
+        function removeImageFromSlot(stackId, stackIndex) {
+            const container = document.querySelector(`[data-stack-id="${stackId}"]`);
             if (!container) return;
 
-            const slot = container.querySelector(`.stacked-image[data-stack-index="${selectedStackIndex}"]`);
+            const slot = container.querySelector(`.stacked-image[data-stack-index="${stackIndex}"]`);
             if (!slot) return;
 
-            const imgAlt = `${placeholderNames[selectedPlaceholder]} - 截图${selectedStackIndex + 1}`;
             slot.innerHTML = `
-                <img src="${path}" alt="${imgAlt}" 
-                     onerror="this.parentElement.innerHTML='<div class=\\'stacked-image-placeholder\\'><svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'1.5\\'><rect x=\\'3\\' y=\\'3\\' width=\\'18\\' height=\\'18\\' rx=\\'2\\' ry=\\'2\\'></rect><circle cx=\\'8.5\\' cy=\\'8.5\\' r=\\'1.5\\'></circle><polyline points=\\'21 15 16 10 5 21\\'></polyline></svg><div>图片加载失败</div></div>'"
-                     style="cursor: zoom-in;">
-                <span class="stacked-image-label">截图 ${selectedStackIndex + 1}</span>
+                <div class="stacked-image-placeholder">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    <div>功能截图 ${stackIndex + 1}</div>
+                </div>
+                <span class="stacked-image-label">截图 ${stackIndex + 1}</span>
             `;
             
-            // 添加点击放大事件
-            slot.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const img = this.querySelector('img');
-                if (img) {
-                    openLightbox(img.src, imgAlt);
-                }
-            });
-            
-            usedImages.add(selectedPlaceholder);
-            document.getElementById('manualImagePath').value = '';
-            refreshPlaceholderList();
-            refreshImageList();
-            console.log(`已手动插入图片: ${path} -> ${selectedPlaceholder}[${selectedStackIndex}]`);
+            refreshContainerGrid();
+            updateStats();
         }
 
-        // ============================================
-        // GIF管理功能
-        // ============================================
-
-        // 切换管理模式
-        function switchManagerMode(mode) {
-            currentManagerMode = mode;
-            document.querySelectorAll('.manager-tab').forEach(tab => {
-                tab.classList.toggle('active', tab.dataset.mode === mode);
-            });
-            document.getElementById('imagesModeContent').style.display = mode === 'images' ? 'block' : 'none';
-            document.getElementById('gifsModeContent').style.display = mode === 'gifs' ? 'block' : 'none';
-            
-            if (mode === 'gifs') {
-                refreshGifList();
-                refreshGifFileList();
-            } else {
-                refreshPlaceholderList();
-                refreshImageList();
-            }
-        }
-
-        // 刷新GIF位置列表
-        function refreshGifList() {
-            const list = document.getElementById('gifList');
-            list.innerHTML = '';
-
-            Object.keys(gifConfig).forEach(gifId => {
-                const container = document.querySelector(`[data-gif-id="${gifId}"]`);
-                const hasGif = container ? !!container.querySelector('img') : false;
-                const isSelected = selectedGif === gifId;
-                
-                const item = document.createElement('div');
-                item.className = 'placeholder-item';
-                if (isSelected) item.style.borderColor = 'var(--primary-color)';
-                item.innerHTML = `
-                    <span class="placeholder-id">${gifId}</span>
-                    <span>
-                        <span style="color: var(--text-color-muted); margin-right: 10px;">${gifNames[gifId] || ''}</span>
-                        <span class="placeholder-status ${hasGif ? 'filled' : 'empty'}">${hasGif ? '✓ 已填充' : '○ 空'}</span>
-                    </span>
-                `;
-                item.onclick = () => selectGif(gifId);
-                list.appendChild(item);
-            });
-        }
-
-        // 选择GIF位置
-        function selectGif(gifId) {
-            selectedGif = gifId;
-            refreshGifList();
-            refreshGifFileList();
-            console.log(`已选择GIF位置: ${gifId}`);
-        }
-
-        // 刷新GIF文件列表
-        function refreshGifFileList() {
-            const list = document.getElementById('gifFileList');
-            list.innerHTML = '';
-
-            if (!selectedGif) {
-                list.innerHTML = '<div style="color: var(--text-color-muted); text-align: center; padding: 20px;">请先在上方选择一个演示位置</div>';
+        function applyGifToSlot(gifId) {
+            if (!selectedImage) {
+                alert('请先在左侧选择一张GIF');
                 return;
             }
 
-            Object.entries(gifConfig).forEach(([id, filename]) => {
-                const container = document.querySelector(`[data-gif-id="${id}"]`);
-                const hasGif = container ? !!container.querySelector('img') : false;
-                const isSelected = selectedGif === id;
-                
-                const item = document.createElement('div');
-                item.className = 'image-item';
-                if (isSelected) item.style.borderColor = 'var(--primary-color)';
-                item.innerHTML = `
-                    <div class="image-item-preview">
-                        <span>GIF</span>
-                    </div>
-                    <div class="image-item-info">
-                        <div class="image-item-name">${filename}</div>
-                        <div class="image-item-status ${hasGif ? 'used' : ''}">
-                            ${hasGif ? '✓ 已使用' : '○ 未使用'}
-                        </div>
-                    </div>
-                `;
-                item.onclick = () => insertGif(id, filename);
-                list.appendChild(item);
-            });
-        }
-
-        // 插入GIF
-        function insertGif(gifId, filename) {
             const container = document.querySelector(`[data-gif-id="${gifId}"] .demo-item-inner`);
             if (!container) {
                 alert(`未找到容器: ${gifId}`);
                 return;
             }
 
-            const gifAlt = gifNames[gifId] || filename;
+            const gifSrc = selectedImage.dataUrl || `/frontend/gifs/${selectedImage.name}`;
+            const gifAlt = gifNames[gifId] || selectedImage.name;
+            
             container.innerHTML = `
-                <img src="/frontend/gifs/${filename}" alt="${gifAlt}" 
+                <img src="${gifSrc}" alt="${gifAlt}" 
                      onerror="this.parentElement.innerHTML='<div class=\\'demo-gif-placeholder\\'><svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'1.5\\'><rect x=\\'3\\' y=\\'3\\' width=\\'18\\' height=\\'18\\' rx=\\'2\\' ry=\\'2\\'></rect><circle cx=\\'8.5\\' cy=\\'8.5\\' r=\\'1.5\\'></circle><polyline points=\\'21 15 16 10 5 21\\'></polyline></svg><div>GIF加载失败</div><span class=\\'gif-badge\\'>GIF</span></div>'"
                      style="cursor: zoom-in;">
             `;
             
-            // 添加点击放大事件
             container.querySelector('img').addEventListener('click', function(e) {
                 e.stopPropagation();
                 openLightbox(this.src, gifAlt);
             });
             
             usedGifs.add(gifId);
-            selectedGif = gifId;
-            refreshGifList();
-            refreshGifFileList();
-            console.log(`已插入GIF: ${filename} -> ${gifId}`);
+            refreshContainerGrid();
+            updateStats();
+            console.log(`已插入GIF: ${selectedImage.name} -> ${gifId}`);
         }
 
-        // 手动应用GIF
-        function applyManualGif() {
-            const path = document.getElementById('manualGifPath').value.trim();
-            if (!path) {
-                alert('请输入GIF路径');
-                return;
-            }
-
-            if (!selectedGif) {
-                alert('请先选择一个演示位置');
-                return;
-            }
-
-            const container = document.querySelector(`[data-gif-id="${selectedGif}"] .demo-item-inner`);
+        function removeGifFromSlot(gifId) {
+            const container = document.querySelector(`[data-gif-id="${gifId}"] .demo-item-inner`);
             if (!container) return;
 
-            const gifAlt = gifNames[selectedGif] || path;
             container.innerHTML = `
-                <img src="${path}" alt="${gifAlt}" 
-                     onerror="this.parentElement.innerHTML='<div class=\\'demo-gif-placeholder\\'><svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'1.5\\'><rect x=\\'3\\' y=\\'3\\' width=\\'18\\' height=\\'18\\' rx=\\'2\\' ry=\\'2\\'></rect><circle cx=\\'8.5\\' cy=\\'8.5\\' r=\\'1.5\\'></circle><polyline points=\\'21 15 16 10 5 21\\'></polyline></svg><div>GIF加载失败</div><span class=\\'gif-badge\\'>GIF</span></div>'"
-                     style="cursor: zoom-in;">
+                <div class="demo-gif-placeholder">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    <div>产品演示</div>
+                    <span class="gif-badge">GIF</span>
+                </div>
             `;
             
-            // 添加点击放大事件
-            container.querySelector('img').addEventListener('click', function(e) {
-                e.stopPropagation();
-                openLightbox(this.src, gifAlt);
-            });
-            
-            usedGifs.add(selectedGif);
-            document.getElementById('manualGifPath').value = '';
-            refreshGifList();
-            refreshGifFileList();
-            console.log(`已手动插入GIF: ${path} -> ${selectedGif}`);
+            usedGifs.delete(gifId);
+            refreshContainerGrid();
+            updateStats();
         }
 
-        // 点击遮罩关闭
+        function switchManagerMode(mode) {
+            currentManagerMode = mode;
+            selectedImage = null;
+            
+            document.querySelectorAll('.manager-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.mode === mode);
+            });
+
+            if (mode === 'gifs') {
+                loadGifImages();
+            } else {
+                loadAvailableImages();
+            }
+            
+            refreshImageGrid();
+            refreshContainerGrid();
+            updateSelectedImageInfo();
+            updateImageCount();
+        }
+
+        function loadGifImages() {
+            availableImages = [];
+            
+            Object.entries(gifConfig).forEach(([gifId, filename]) => {
+                availableImages.push({
+                    name: filename,
+                    path: `/frontend/gifs/${filename}`,
+                    type: 'gif',
+                    gifId: gifId
+                });
+            });
+        }
+
+        function updateStats() {
+            let filled = 0;
+            let empty = 0;
+
+            if (currentManagerMode === 'images') {
+                Object.keys(imageConfig).forEach(stackId => {
+                    const container = document.querySelector(`[data-stack-id="${stackId}"]`);
+                    if (container) {
+                        container.querySelectorAll('.stacked-image').forEach(slot => {
+                            if (slot.querySelector('img')) filled++;
+                            else empty++;
+                        });
+                    }
+                });
+            } else {
+                Object.keys(gifConfig).forEach(gifId => {
+                    const container = document.querySelector(`[data-gif-id="${gifId}"] .demo-item-inner`);
+                    if (container?.querySelector('img')) filled++;
+                    else empty++;
+                });
+            }
+
+            const filledEl = document.getElementById('filledCount');
+            const emptyEl = document.getElementById('emptyCount');
+            if (filledEl) filledEl.textContent = filled;
+            if (emptyEl) emptyEl.textContent = empty;
+        }
+
         document.addEventListener('click', (e) => {
             if (e.target.id === 'imageManagerOverlay') {
                 closeImageManager();
             }
         });
 
-        // 键盘快捷键
         document.addEventListener('keydown', (e) => {
             if (!isLandingDevMode()) return;
             
@@ -4166,9 +4503,12 @@
                 e.preventDefault();
                 openImageManager();
             }
+            
+            if (e.key === 'Escape') {
+                closeImageManager();
+            }
         });
 
-        // 页面加载时初始化 (等待DOM完全加载)
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
                 initImageManager();
@@ -4178,60 +4518,77 @@
         }
     </script>
 
-    <!-- 图片管理器面板 -->
+    <!-- 图片管理器面板 - 全新设计 -->
     <div class="image-manager-overlay" id="imageManagerOverlay"></div>
     <div class="image-manager-panel" id="imageManagerPanel">
         <div class="image-manager-header">
             <h3>🖼️ Landing页面媒体管理器</h3>
-            <button class="image-manager-close" onclick="closeImageManager()">&times;</button>
+            <button class="image-manager-close" onclick="closeImageManager()">✕</button>
         </div>
         
-        <!-- 标签页切换 -->
         <div class="manager-tabs">
             <button class="manager-tab active" data-mode="images" onclick="switchManagerMode('images')">📸 功能截图</button>
             <button class="manager-tab" data-mode="gifs" onclick="switchManagerMode('gifs')">🎬 产品演示GIF</button>
         </div>
         
-        <!-- 图片管理模式 -->
-        <div id="imagesModeContent">
-            <div class="image-manager-section">
-                <h4>📋 第一步：选择功能模块</h4>
-                <div class="placeholder-list" id="placeholderList"></div>
+        <div class="image-manager-body">
+            <!-- 左侧边栏：图片列表 -->
+            <div class="image-manager-sidebar">
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">📤 上传图片</div>
+                    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('imageFileInput').click()">
+                        <div class="upload-zone-icon">📁</div>
+                        <div class="upload-zone-text">点击或拖拽上传</div>
+                        <div class="upload-zone-hint">支持 PNG, JPG, WebP, GIF</div>
+                    </div>
+                    <input type="file" id="imageFileInput" accept="image/*" multiple style="display:none" onchange="handleImageUpload(this.files)">
+                </div>
+                
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">🔍 筛选图片</div>
+                    <input type="text" class="image-filter" id="imageFilter" placeholder="输入关键词筛选..." oninput="filterImages()">
+                </div>
+                
+                <div class="sidebar-section" style="flex:1; display:flex; flex-direction:column; padding-bottom:0;">
+                    <div class="sidebar-section-title">🖼️ 图片库 <span id="imageCount">(0)</span></div>
+                    <div class="image-list-container" id="imageGridContainer">
+                        <div class="image-grid" id="imageGrid"></div>
+                    </div>
+                </div>
             </div>
             
-            <div class="image-manager-section">
-                <h4>📁 第二步：点击图片填充到对应位置（每模块支持3张堆叠图）</h4>
-                <div class="image-list" id="imageList"></div>
-            </div>
-            
-            <div class="image-manager-section">
-                <h4>✏️ 手动指定图片路径</h4>
-                <input type="text" class="image-path-input" id="manualImagePath" placeholder="例如: /frontend/images/your_image.png">
-                <button class="apply-image-btn" onclick="applyManualImage()">应用到选中位置</button>
-            </div>
-        </div>
-        
-        <!-- GIF管理模式 -->
-        <div id="gifsModeContent" style="display: none;">
-            <div class="image-manager-section">
-                <h4>🎬 选择演示位置</h4>
-                <div class="placeholder-list" id="gifList"></div>
-            </div>
-            
-            <div class="image-manager-section">
-                <h4>📁 点击GIF文件填充到对应位置</h4>
-                <div class="image-list" id="gifFileList"></div>
-            </div>
-            
-            <div class="image-manager-section">
-                <h4>✏️ 手动指定GIF路径</h4>
-                <input type="text" class="image-path-input" id="manualGifPath" placeholder="例如: /frontend/gifs/demo_chat.gif">
-                <button class="apply-image-btn" onclick="applyManualGif()">应用到选中位置</button>
+            <!-- 右侧主区域：容器列表 -->
+            <div class="image-manager-main">
+                <div class="container-list-header">
+                    <div class="container-list-title">
+                        📦 目标位置
+                    </div>
+                    <div class="selected-image-info empty" id="selectedImageInfo">
+                        <span>💡 先在左侧选择一张图片</span>
+                    </div>
+                </div>
+                
+                <div class="container-grid" id="containerGrid">
+                    <!-- 动态生成 -->
+                </div>
+                
+                <div class="status-bar">
+                    <div class="hint">
+                        <span>💡 操作提示：选择左侧图片 → 点击右侧容器位置即可应用</span>
+                    </div>
+                    <div class="stats">
+                        <div class="stat">已填充: <span class="stat-value" id="filledCount">0</span></div>
+                        <div class="stat">空位: <span class="stat-value" id="emptyCount">0</span></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- 图片管理按钮 (仅开发模式显示) -->
     <button class="open-image-manager-btn" id="imageManagerBtn" onclick="openImageManager()">📷 媒体管理</button>
+    
+    <!-- 隐藏的文件输入 -->
+    <input type="file" id="hiddenFileInput" style="display:none">
 </body>
 </html>
