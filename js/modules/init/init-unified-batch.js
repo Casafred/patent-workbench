@@ -865,13 +865,13 @@ function updateUnifiedInstantProgress(progress) {
         var statusClass = isSuccess ? 'success' : 'error';
         var statusText = isSuccess ? '✓ 成功' : '✗ 失败';
         var resultPreview = progress.lastResult 
-            ? (progress.lastResult.length > 100 ? progress.lastResult.substring(0, 100) + '...' : progress.lastResult)
+            ? (progress.lastResult.length > 200 ? progress.lastResult.substring(0, 200) + '...' : progress.lastResult)
             : '-';
         
-        tr.innerHTML = '<td>' + (progress.current || '-') + '</td>' +
-            '<td>' + (progress.inputId || '-') + '</td>' +
-            '<td class="' + statusClass + '"><strong>' + statusText + '</strong></td>' +
-            '<td style="max-width: 300px; word-break: break-all; white-space: pre-wrap;">' + 
+        tr.innerHTML = '<td style="text-align: center;">' + (progress.current || '-') + '</td>' +
+            '<td style="text-align: center;">' + (progress.inputId || '-') + '</td>' +
+            '<td class="' + statusClass + '" style="text-align: center;"><strong>' + statusText + '</strong></td>' +
+            '<td style="word-break: break-word; white-space: pre-wrap; max-width: 400px;">' + 
             (progress.error || resultPreview) + '</td>';
         tbody.appendChild(tr);
         
@@ -893,13 +893,13 @@ function updateUnifiedAsyncProgress(progress) {
         var statusClass = isSuccess ? 'success' : 'error';
         var statusText = isSuccess ? '✓ 成功' : '✗ 失败';
         var resultPreview = progress.lastResult 
-            ? (progress.lastResult.length > 100 ? progress.lastResult.substring(0, 100) + '...' : progress.lastResult)
+            ? (progress.lastResult.length > 200 ? progress.lastResult.substring(0, 200) + '...' : progress.lastResult)
             : '-';
         
-        tr.innerHTML = '<td>' + (progress.current || '-') + '</td>' +
-            '<td>' + (progress.inputId || '-') + '</td>' +
-            '<td class="' + statusClass + '"><strong>' + statusText + '</strong></td>' +
-            '<td style="max-width: 300px; word-break: break-all; white-space: pre-wrap;">' + 
+        tr.innerHTML = '<td style="text-align: center;">' + (progress.current || '-') + '</td>' +
+            '<td style="text-align: center;">' + (progress.inputId || '-') + '</td>' +
+            '<td class="' + statusClass + '" style="text-align: center;"><strong>' + statusText + '</strong></td>' +
+            '<td style="word-break: break-word; white-space: pre-wrap; max-width: 400px;">' + 
             (progress.error || resultPreview) + '</td>';
         tbody.appendChild(tr);
         
