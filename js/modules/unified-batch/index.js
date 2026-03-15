@@ -9,6 +9,7 @@ import UnifiedBatchRouter from './router.js';
 import InputHandler from './input-handler.js';
 import TemplateManager from './template-manager.js';
 import OutputHandler from './output-handler.js';
+import InstantEngine from './engines/instant-engine.js';
 import AsyncEngine from './engines/async-engine.js';
 import BatchEngine from './engines/batch-engine.js';
 import ClassificationModule from './classification/index.js';
@@ -20,6 +21,7 @@ const UnifiedBatch = {
     input: InputHandler,
     template: TemplateManager,
     output: OutputHandler,
+    instantEngine: InstantEngine,
     asyncEngine: AsyncEngine,
     batchEngine: BatchEngine,
     classification: ClassificationModule,
@@ -134,7 +136,10 @@ const UnifiedBatch = {
 
         this.output.clearResults();
 
-        if (mode === 'async') {
+        if (mode === 'instant') {
+            await this.instantEngine.start(inputs, template, onProgress, onComplete);
+            return { success: true, mode: 'instant' };
+        } else if (mode === 'async') {
             await this.asyncEngine.start(inputs, template, onProgress, onComplete);
             return { success: true, mode: 'async' };
         } else {

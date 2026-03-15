@@ -6,9 +6,14 @@
 export const UnifiedBatchConfig = {
     MODE_THRESHOLD: 50,
     MODE: {
+        INSTANT: 'instant',
         ASYNC: 'async',
         BATCH: 'batch',
         AUTO: 'auto'
+    },
+    INSTANT: {
+        MAX_CONCURRENCY: 3,
+        SHOW_DELAY: 100
     },
     ASYNC: {
         POLL_INTERVAL: 5000,

@@ -12,18 +12,28 @@ const UnifiedBatchRouter = {
         threshold: MODE_THRESHOLD,
         smallBatchConcurrency: UnifiedBatchConfig.ASYNC.CONCURRENCY,
         smallBatchPollInterval: UnifiedBatchConfig.ASYNC.POLL_INTERVAL,
-        largeBatchPollInterval: UnifiedBatchConfig.BATCH.POLL_INTERVAL
+        largeBatchPollInterval: UnifiedBatchConfig.BATCH.POLL_INTERVAL,
+        instantMaxConcurrency: UnifiedBatchConfig.INSTANT?.MAX_CONCURRENCY || 3
     },
 
     determineMode(dataCount, userPreference = null) {
         if (userPreference && userPreference !== MODE.AUTO) {
             return userPreference;
         }
+        if (dataCount <= 5) {
+            return MODE.INSTANT;
+        }
         return dataCount < this.config.threshold ? MODE.ASYNC : MODE.BATCH;
     },
 
     getRecommendation(dataCount) {
-        if (dataCount < 10) {
+        if (dataCount <= 5) {
+            return {
+                mode: MODE.INSTANT,
+                reason: '数据量很少，建议使用极速同步模式，立即获得结果',
+                estimatedTime: this.estimateInstantTime(dataCount)
+            };
+        } else if (dataCount < 10) {
             return {
                 mode: MODE.ASYNC,
                 reason: '数据量较小，建议使用实时异步模式，可立即获得结果',
@@ -47,6 +57,17 @@ const UnifiedBatchRouter = {
                 reason: '数据量很大，必须使用批处理模式',
                 estimatedTime: this.estimateBatchTime(dataCount)
             };
+        }
+    },
+
+    estimateInstantTime(dataCount) {
+        const avgProcessingTime = 8;
+        const totalSeconds = dataCount * avgProcessingTime;
+        
+        if (totalSeconds < 60) {
+            return `${totalSeconds}秒`;
+        } else {
+            return `${Math.ceil(totalSeconds / 60)}分钟`;
         }
     },
 
@@ -79,6 +100,17 @@ const UnifiedBatchRouter = {
 
     getModeInfo(mode) {
         const modeInfo = {
+            [MODE.INSTANT]: {
+                name: '极速同步模式',
+                description: '实时同步调用，立即显示结果',
+                features: [
+                    '同步API调用，无需等待',
+                    '逐条实时显示结果',
+                    '适合少量数据快速处理',
+                    '无轮询延迟'
+                ],
+                maxConcurrency: this.config.instantMaxConcurrency
+            },
             [MODE.ASYNC]: {
                 name: '小批量异步模式',
                 description: '实时处理，逐个获取结果',

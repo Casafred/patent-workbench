@@ -1436,13 +1436,95 @@ const ClassificationModule = {
         }
         
         const count = inputs.length;
-        const mode = count < 50 ? 'async' : 'batch';
+        let mode;
+        if (count <= 5) {
+            mode = 'instant';
+        } else if (count < 50) {
+            mode = 'async';
+        } else {
+            mode = 'batch';
+        }
         
-        if (mode === 'batch') {
+        if (mode === 'instant') {
+            this.startInstantClassification(inputs, schema, model, temperature, provider);
+        } else if (mode === 'batch') {
             this.startBatchClassification(inputs, schema, model, temperature, provider);
         } else {
             this.startAsyncClassification(inputs, schema, model, temperature, provider);
         }
+    },
+
+    async startInstantClassification(inputs, schema, model, temperature, provider) {
+        console.log('[ClassificationModule] Starting instant classification with', inputs.length, 'inputs');
+        
+        const btn = document.getElementById('classification_async_submit_btn');
+        const progressInfo = document.getElementById('classification_async_progress_info');
+        
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = '极速处理中...';
+            btn.style.background = 'var(--success-color)';
+        }
+        
+        if (progressInfo) {
+            progressInfo.textContent = '⚡ 极速同步处理中...';
+            progressInfo.style.background = 'linear-gradient(135deg, #27ae60, #2ecc71)';
+            progressInfo.style.color = 'white';
+        }
+        
+        let completed = 0;
+        let failed = 0;
+        const results = [];
+        
+        for (let i = 0; i < inputs.length; i++) {
+            const input = inputs[i];
+            
+            try {
+                const result = await this.classifySingleInputWithRetry(input, schema, model, temperature, provider, 2);
+                
+                results.push({
+                    id: input.id,
+                    status: 'success',
+                    result: result
+                });
+                completed++;
+                
+                if (progressInfo) {
+                    progressInfo.textContent = `⚡ 正在处理: ${i + 1}/${inputs.length} - 成功`;
+                }
+                
+            } catch (error) {
+                console.error('[ClassificationModule] Instant classification failed for:', input.id, error);
+                results.push({
+                    id: input.id,
+                    status: 'failed',
+                    error: error.message || String(error)
+                });
+                failed++;
+                
+                if (progressInfo) {
+                    progressInfo.textContent = `⚡ 正在处理: ${i + 1}/${inputs.length} - 失败`;
+                }
+            }
+        }
+        
+        classificationState.setResults(results);
+        this.updateResultsUI(results);
+        this.updateExportButtonState();
+        
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = '开始分类';
+            btn.style.background = '';
+        }
+        
+        if (progressInfo) {
+            progressInfo.textContent = `⚡ 极速处理完成！成功: ${completed}, 失败: ${failed}`;
+            progressInfo.style.background = '';
+            progressInfo.style.color = '';
+        }
+        
+        console.log('[ClassificationModule] Instant classification completed:', completed, 'success,', failed, 'failed');
     },
 
     getProviderForModel(model) {

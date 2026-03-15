@@ -199,6 +199,7 @@ function updateUnifiedModeRecommendation() {
 }
 
 function updateModeCardStyles() {
+    const instantCard = document.getElementById('unified_mode_instant_card');
     const asyncCard = document.getElementById('unified_mode_async_card');
     const batchCard = document.getElementById('unified_mode_batch_card');
     
@@ -208,8 +209,13 @@ function updateModeCardStyles() {
     const userMode = UnifiedBatch.getMode();
     const mode = UnifiedBatch.router.determineMode(count, userMode);
 
-    if (asyncCard && batchCard) {
+    if (instantCard) {
+        instantCard.style.borderColor = mode === 'instant' ? 'var(--success-color)' : 'var(--border-color)';
+    }
+    if (asyncCard) {
         asyncCard.style.borderColor = mode === 'async' ? 'var(--primary-color)' : 'var(--border-color)';
+    }
+    if (batchCard) {
         batchCard.style.borderColor = mode === 'batch' ? 'var(--primary-color)' : 'var(--border-color)';
     }
 }
@@ -232,9 +238,13 @@ function updateProcessPanelVisibility() {
     const userMode = UnifiedBatch.getMode();
     const mode = UnifiedBatch.router.determineMode(count, userMode);
     
+    const instantPanel = document.getElementById('unified_instant_progress_panel');
     const asyncPanel = document.getElementById('unified_async_progress_panel');
     const batchPanel = document.getElementById('unified_batch_progress_panel');
 
+    if (instantPanel) {
+        instantPanel.style.display = mode === 'instant' ? 'block' : 'none';
+    }
     if (asyncPanel && batchPanel) {
         asyncPanel.style.display = mode === 'async' ? 'block' : 'none';
         batchPanel.style.display = mode === 'batch' ? 'block' : 'none';
@@ -321,6 +331,21 @@ function bindUnifiedBatchEvents() {
     var asyncSubmitBtn = document.getElementById('unified_async_submit_btn');
     if (asyncSubmitBtn) {
         asyncSubmitBtn.addEventListener('click', startUnifiedAsyncProcessing);
+    }
+
+    var instantSubmitBtn = document.getElementById('unified_instant_submit_btn');
+    if (instantSubmitBtn) {
+        instantSubmitBtn.addEventListener('click', startUnifiedInstantProcessing);
+    }
+
+    var instantStopBtn = document.getElementById('unified_instant_stop_btn');
+    if (instantStopBtn) {
+        instantStopBtn.addEventListener('click', stopUnifiedInstantProcessing);
+    }
+
+    var instantExportBtn = document.getElementById('unified_instant_export_btn');
+    if (instantExportBtn) {
+        instantExportBtn.addEventListener('click', exportUnifiedInstantResults);
     }
 
     var addConcatColumnBtn = document.getElementById('unified_add_concat_column_btn');
@@ -734,6 +759,100 @@ function deleteUnifiedTemplate(templateId) {
             renderUnifiedTemplatesList();
         }
         alert(result.message);
+    }
+}
+
+async function startUnifiedInstantProcessing() {
+    var checkboxes = document.querySelectorAll('.unified-input-checkbox:checked');
+    var selectedIds = Array.from(checkboxes).map(function(cb) { return cb.dataset.id; });
+    
+    if (selectedIds.length === 0) {
+        alert('请先勾选要处理的数据');
+        return;
+    }
+
+    if (selectedIds.length > 5) {
+        alert('极速同步模式最多支持5条数据，请选择更少的数据或切换到异步模式');
+        return;
+    }
+
+    var submitBtn = document.getElementById('unified_instant_submit_btn');
+    var stopBtn = document.getElementById('unified_instant_stop_btn');
+    var progressInfo = document.getElementById('unified_instant_progress_info');
+    var tbody = document.getElementById('unified_instant_results_tbody');
+    
+    if (submitBtn) submitBtn.disabled = true;
+    if (stopBtn) stopBtn.disabled = false;
+    if (tbody) tbody.innerHTML = '';
+    
+    var onProgress = function(progress) {
+        updateUnifiedInstantProgress(progress);
+    };
+
+    var onComplete = function(result) {
+        if (submitBtn) submitBtn.disabled = false;
+        if (stopBtn) stopBtn.disabled = true;
+        if (progressInfo) {
+            progressInfo.textContent = `处理完成！成功: ${result.stats?.completed || 0}, 失败: ${result.stats?.failed || 0}`;
+        }
+        if (result.success) {
+            var exportBtn = document.getElementById('unified_instant_export_btn');
+            if (exportBtn) exportBtn.disabled = false;
+        }
+    };
+
+    var result = await UnifiedBatch.startProcessing(onProgress, onComplete, selectedIds);
+    if (!result.success) {
+        alert(result.message);
+        if (submitBtn) submitBtn.disabled = false;
+        if (stopBtn) stopBtn.disabled = true;
+    }
+}
+
+function stopUnifiedInstantProcessing() {
+    UnifiedBatch.stopProcessing();
+    var submitBtn = document.getElementById('unified_instant_submit_btn');
+    var stopBtn = document.getElementById('unified_instant_stop_btn');
+    var progressInfo = document.getElementById('unified_instant_progress_info');
+    
+    if (submitBtn) submitBtn.disabled = false;
+    if (stopBtn) stopBtn.disabled = true;
+    if (progressInfo) progressInfo.textContent = '任务已停止';
+}
+
+function updateUnifiedInstantProgress(progress) {
+    var progressInfo = document.getElementById('unified_instant_progress_info');
+    var tbody = document.getElementById('unified_instant_results_tbody');
+    
+    if (progressInfo) {
+        var statusText = progress.phase === 'processing' 
+            ? `正在处理: ${progress.current}/${progress.total}` 
+            : progress.message || '处理中...';
+        progressInfo.textContent = statusText;
+    }
+    
+    if (progress.lastResult && tbody) {
+        var tr = document.createElement('tr');
+        var statusClass = progress.failed > (progress.completed - 1) ? 'error' : 'success';
+        var statusText = progress.failed > (progress.completed - 1) ? '失败' : '成功';
+        
+        tr.innerHTML = '<td>' + progress.current + '</td>' +
+            '<td>' + (progress.inputId || '-') + '</td>' +
+            '<td class="' + statusClass + '">' + statusText + '</td>' +
+            '<td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' + 
+            (progress.lastResult ? progress.lastResult.substring(0, 100) + '...' : '-') + '</td>';
+        tbody.appendChild(tr);
+        
+        tbody.scrollTop = tbody.scrollHeight;
+    }
+}
+
+function exportUnifiedInstantResults() {
+    var result = UnifiedBatch.exportCurrentResults();
+    if (result.success) {
+        alert('导出成功！');
+    } else {
+        alert(result.message || '导出失败');
     }
 }
 
