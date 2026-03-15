@@ -114,8 +114,13 @@ const UnifiedBatch = {
         return this.template.deleteTemplate(templateId);
     },
 
-    async startProcessing(onProgress, onComplete) {
-        const inputs = this.input.getInputs();
+    async startProcessing(onProgress, onComplete, selectedIds) {
+        let inputs = this.input.getInputs();
+        
+        if (selectedIds && selectedIds.length > 0) {
+            inputs = inputs.filter(input => selectedIds.includes(input.id));
+        }
+        
         const template = this.template.getCurrentTemplate();
         const mode = this.getActualMode();
 

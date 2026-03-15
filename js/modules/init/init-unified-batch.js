@@ -738,6 +738,14 @@ function deleteUnifiedTemplate(templateId) {
 }
 
 async function startUnifiedAsyncProcessing() {
+    var checkboxes = document.querySelectorAll('.unified-input-checkbox:checked');
+    var selectedIds = Array.from(checkboxes).map(function(cb) { return cb.dataset.id; });
+    
+    if (selectedIds.length === 0) {
+        alert('请先勾选要处理的数据');
+        return;
+    }
+
     var onProgress = function(progress) {
         updateUnifiedAsyncProgress(progress);
     };
@@ -748,7 +756,7 @@ async function startUnifiedAsyncProcessing() {
         }
     };
 
-    var result = await UnifiedBatch.startProcessing(onProgress, onComplete);
+    var result = await UnifiedBatch.startProcessing(onProgress, onComplete, selectedIds);
     if (!result.success) {
         alert(result.message);
     }
