@@ -228,33 +228,27 @@ const AsyncEngine = {
         this.state.task.startTime = new Date();
 
         const model = template.model || 'glm-4-flash';
-        const concurrency = this.getConcurrencyForModel(model);
-        const requestDelay = concurrency >= 50 ? 100 : (concurrency >= 10 ? 200 : 500);
+        const modelConcurrency = this.getConcurrencyForModel(model);
+        const maxConcurrency = Math.min(modelConcurrency, inputs.length);
         
-        console.log('[AsyncEngine] Model concurrency limit:', concurrency, ', request delay:', requestDelay + 'ms');
+        console.log('[AsyncEngine] Model:', model, ', Model concurrency:', modelConcurrency, ', Actual concurrency:', maxConcurrency);
 
         let completed = 0;
         let failed = 0;
+        const total = inputs.length;
+        const results = [];
 
-        for (let i = 0; i < inputs.length; i++) {
-            const input = inputs[i];
-            const requestId = 'REQ-' + (asyncTask.nextRequestId++);
-            
-            if (onProgress) {
-                onProgress({
-                    phase: 'processing',
-                    current: i + 1,
-                    total: inputs.length,
-                    completed: completed,
-                    failed: failed,
-                    message: `正在处理: ${i + 1}/${inputs.length}`
-                });
+        const processWithProgress = async (input, index) => {
+            if (this.state.task.status === 'stopped') {
+                return null;
             }
 
-            let resultItem;
+            const requestId = 'REQ-' + (asyncTask.nextRequestId++);
+
             try {
                 const result = await this.processSingleInputWithRetry(input, template, 3);
-                resultItem = {
+                
+                const resultItem = {
                     requestId: requestId,
                     inputId: input.id,
                     status: 'completed',
@@ -262,44 +256,86 @@ const AsyncEngine = {
                     usage: result.usage,
                     templateName: template.name
                 };
+                
+                asyncTask.requests.push({
+                    requestId: requestId,
+                    inputId: input.id,
+                    status: 'completed',
+                    templateName: template.name,
+                    model: model
+                });
+                
+                OutputHandler.addResult(resultItem);
                 completed++;
+                
+                if (onProgress) {
+                    onProgress({
+                        phase: 'processing',
+                        current: completed + failed,
+                        total: total,
+                        completed: completed,
+                        failed: failed,
+                        lastResult: result.content,
+                        inputId: input.id,
+                        stats: OutputHandler.getProgressStats()
+                    });
+                }
+                
+                return resultItem;
+                
             } catch (error) {
                 const errorMsg = error?.message || String(error);
                 console.error('[AsyncEngine] Processing failed for:', input.id, errorMsg);
-                resultItem = {
+                
+                const resultItem = {
                     requestId: requestId,
                     inputId: input.id,
                     status: 'failed',
                     error: errorMsg,
                     templateName: template.name
                 };
-                failed++;
-            }
-
-            asyncTask.requests.push({
-                requestId: requestId,
-                inputId: input.id,
-                status: resultItem.status,
-                templateName: template.name,
-                model: model
-            });
-
-            OutputHandler.addResult(resultItem);
-
-            if (onProgress) {
-                onProgress({
-                    phase: 'processing',
-                    current: i + 1,
-                    total: inputs.length,
-                    completed: completed,
-                    failed: failed,
-                    stats: OutputHandler.getProgressStats()
+                
+                asyncTask.requests.push({
+                    requestId: requestId,
+                    inputId: input.id,
+                    status: 'failed',
+                    templateName: template.name,
+                    model: model
                 });
+                
+                OutputHandler.addResult(resultItem);
+                failed++;
+                
+                if (onProgress) {
+                    onProgress({
+                        phase: 'processing',
+                        current: completed + failed,
+                        total: total,
+                        completed: completed,
+                        failed: failed,
+                        error: errorMsg,
+                        inputId: input.id,
+                        stats: OutputHandler.getProgressStats()
+                    });
+                }
+                
+                return resultItem;
+            }
+        };
+
+        for (let i = 0; i < inputs.length; i += maxConcurrency) {
+            if (this.state.task.status === 'stopped') {
+                console.log('[AsyncEngine] Task stopped by user');
+                break;
             }
 
-            if (i < inputs.length - 1) {
-                await new Promise(resolve => setTimeout(resolve, requestDelay));
-            }
+            const batch = inputs.slice(i, i + maxConcurrency);
+            const batchPromises = batch.map((input, batchIndex) => 
+                processWithProgress(input, i + batchIndex)
+            );
+            
+            const batchResults = await Promise.all(batchPromises);
+            results.push(...batchResults.filter(r => r !== null));
         }
 
         this.state.task.status = 'completed';
@@ -310,9 +346,17 @@ const AsyncEngine = {
         if (onComplete) {
             onComplete({
                 success: true,
-                stats: OutputHandler.getProgressStats()
+                stats: OutputHandler.getProgressStats(),
+                results: results
             });
         }
+
+        return {
+            success: true,
+            completed: completed,
+            failed: failed,
+            results: results
+        };
     },
 
     stop() {

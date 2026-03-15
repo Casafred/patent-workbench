@@ -196,9 +196,10 @@ const InstantEngine = {
         OutputHandler.clearResults();
 
         const model = template.model || 'glm-4-flash';
-        const maxConcurrency = Math.min(this.getConcurrencyForModel(model), inputs.length, 5);
+        const modelConcurrency = this.getConcurrencyForModel(model);
+        const maxConcurrency = Math.min(modelConcurrency, inputs.length);
         
-        console.log('[InstantEngine] Model:', model, ', Max concurrency:', maxConcurrency);
+        console.log('[InstantEngine] Model:', model, ', Model concurrency:', modelConcurrency, ', Actual concurrency:', maxConcurrency);
 
         let completed = 0;
         let failed = 0;
