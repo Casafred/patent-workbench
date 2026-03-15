@@ -630,48 +630,79 @@ function renderUnifiedInputsList() {
         return;
     }
 
-    container.innerHTML = inputs.map(function(input, index) {
+    var pageSize = 50;
+    var totalPages = Math.ceil(inputs.length / pageSize);
+    var currentPage = 1;
+    
+    window._unifiedInputsData = { inputs: inputs, pageSize: pageSize, totalPages: totalPages, currentPage: currentPage };
+    
+    renderUnifiedInputsPage(currentPage);
+}
+
+function renderUnifiedInputsPage(page) {
+    var data = window._unifiedInputsData;
+    if (!data) return;
+    
+    var container = document.getElementById('unified_inputs_list');
+    var inputs = data.inputs;
+    var pageSize = data.pageSize;
+    var totalPages = data.totalPages;
+    
+    var start = (page - 1) * pageSize;
+    var end = Math.min(start + pageSize, inputs.length);
+    var pageInputs = inputs.slice(start, end);
+    
+    var html = pageInputs.map(function(input, idx) {
+        var index = start + idx;
         var summary = '';
         var fullContent = '';
         
         if (input.rawContent) {
-            var entries = Object.entries(input.rawContent).filter(function(kv) { return kv[1]; });
-            summary = entries.slice(0, 2).map(function(kv) { 
-                return kv[0] + ': ' + truncateUnifiedText(String(kv[1]), 30); 
+            var keys = Object.keys(input.rawContent);
+            summary = keys.slice(0, 2).map(function(k) { 
+                return k + ': ' + truncateUnifiedText(String(input.rawContent[k] || ''), 30); 
             }).join(' | ');
-            if (entries.length > 2) summary += ' ...';
-            fullContent = entries.map(function(kv) { 
-                return '<div class="preview-row"><span class="preview-label">' + kv[0] + ':</span> <span class="preview-value">' + String(kv[1]) + '</span></div>'; 
-            }).join('');
-            if (input.content && typeof input.content === 'string') {
-                fullContent += '<div class="preview-row" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border-color);"><span class="preview-label">拼接后内容:</span><br><span class="preview-value">' + input.content + '</span></div>';
-            }
+            if (keys.length > 2) summary += ' ...';
         } else if (typeof input.content === 'string') {
             summary = truncateUnifiedText(input.content, 60);
-            fullContent = '<div class="preview-row"><span class="preview-value">' + input.content + '</span></div>';
         } else if (typeof input.content === 'object') {
-            var entries = Object.entries(input.content).filter(function(kv) { return kv[1]; });
-            summary = entries.slice(0, 2).map(function(kv) { 
-                return kv[0] + ': ' + truncateUnifiedText(kv[1], 30); 
+            var keys = Object.keys(input.content);
+            summary = keys.slice(0, 2).map(function(k) { 
+                return k + ': ' + truncateUnifiedText(String(input.content[k] || ''), 30); 
             }).join(' | ');
-            fullContent = entries.map(function(kv) { 
-                return '<div class="preview-row"><span class="preview-label">' + kv[0] + ':</span> <span class="preview-value">' + kv[1] + '</span></div>'; 
-            }).join('');
         }
         
         return '<div class="input-item-strip" data-index="' + index + '">' +
             '<input type="checkbox" class="unified-input-checkbox strip-checkbox" data-id="' + input.id + '">' +
             '<div class="strip-id">' + (input.id || (index + 1)) + '</div>' +
             '<div class="strip-summary">' + summary + '</div>' +
-            '<div class="strip-preview">' +
-                '<div class="preview-header">' +
-                    '<span class="preview-title">数据详情 - ' + (input.id || ('第' + (index + 1) + '条')) + '</span>' +
-                '</div>' +
-                '<div class="preview-body">' + fullContent + '</div>' +
-            '</div>' +
         '</div>';
     }).join('');
+    
+    var paginationHtml = '';
+    if (totalPages > 1) {
+        paginationHtml = '<div class="pagination" style="display: flex; justify-content: center; gap: 10px; margin-top: 15px; padding: 10px; border-top: 1px solid var(--border-color);">';
+        
+        if (page > 1) {
+            paginationHtml += '<button class="small-button" onclick="goToUnifiedInputsPage(' + (page - 1) + ')">上一页</button>';
+        }
+        
+        paginationHtml += '<span style="padding: 5px 15px;">第 ' + page + ' / ' + totalPages + ' 页 (共 ' + inputs.length + ' 条)</span>';
+        
+        if (page < totalPages) {
+            paginationHtml += '<button class="small-button" onclick="goToUnifiedInputsPage(' + (page + 1) + ')">下一页</button>';
+        }
+        
+        paginationHtml += '</div>';
+    }
+    
+    container.innerHTML = html + paginationHtml;
+    data.currentPage = page;
 }
+
+window.goToUnifiedInputsPage = function(page) {
+    renderUnifiedInputsPage(page);
+};
 
 function truncateUnifiedText(text, maxLength) {
     if (!text) return '';
