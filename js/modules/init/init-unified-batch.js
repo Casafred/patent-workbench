@@ -601,21 +601,57 @@ function renderUnifiedInputsList() {
     }
 
     if (inputs.length === 0) {
-        container.innerHTML = '<div class="info">暂无输入数据</div>';
+        container.innerHTML = '<div class="info" style="text-align: center; padding: 20px;">暂无输入数据</div>';
         return;
     }
 
-    container.innerHTML = '';
-    inputs.forEach(function(input, index) {
-        var preview = typeof input.content === 'string' 
-            ? (input.content.length > 50 ? input.content.substring(0, 50) + '...' : input.content)
-            : Object.keys(input.content).join(', ');
+    container.innerHTML = inputs.map(function(input, index) {
+        var summary = '';
+        var fullContent = '';
+        
+        if (input.rawContent) {
+            var entries = Object.entries(input.rawContent).filter(function(kv) { return kv[1]; });
+            summary = entries.slice(0, 2).map(function(kv) { 
+                return kv[0] + ': ' + truncateUnifiedText(String(kv[1]), 30); 
+            }).join(' | ');
+            if (entries.length > 2) summary += ' ...';
+            fullContent = entries.map(function(kv) { 
+                return '<div class="preview-row"><span class="preview-label">' + kv[0] + ':</span> <span class="preview-value">' + String(kv[1]) + '</span></div>'; 
+            }).join('');
+            if (input.content && typeof input.content === 'string') {
+                fullContent += '<div class="preview-row" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border-color);"><span class="preview-label">拼接后内容:</span><br><span class="preview-value">' + input.content + '</span></div>';
+            }
+        } else if (typeof input.content === 'string') {
+            summary = truncateUnifiedText(input.content, 60);
+            fullContent = '<div class="preview-row"><span class="preview-value">' + input.content + '</span></div>';
+        } else if (typeof input.content === 'object') {
+            var entries = Object.entries(input.content).filter(function(kv) { return kv[1]; });
+            summary = entries.slice(0, 2).map(function(kv) { 
+                return kv[0] + ': ' + truncateUnifiedText(kv[1], 30); 
+            }).join(' | ');
+            fullContent = entries.map(function(kv) { 
+                return '<div class="preview-row"><span class="preview-label">' + kv[0] + ':</span> <span class="preview-value">' + kv[1] + '</span></div>'; 
+            }).join('');
+        }
+        
+        return '<div class="input-item-strip" data-index="' + index + '">' +
+            '<input type="checkbox" class="unified-input-checkbox strip-checkbox" data-id="' + input.id + '">' +
+            '<div class="strip-id">' + (input.id || (index + 1)) + '</div>' +
+            '<div class="strip-summary">' + summary + '</div>' +
+            '<div class="strip-preview">' +
+                '<div class="preview-header">' +
+                    '<span class="preview-title">数据详情 - ' + (input.id || ('第' + (index + 1) + '条')) + '</span>' +
+                '</div>' +
+                '<div class="preview-body">' + fullContent + '</div>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+}
 
-        var item = document.createElement('div');
-        item.className = 'list-item';
-        item.innerHTML = '<input type="checkbox" class="unified-input-checkbox" data-id="' + input.id + '"><span>' + (index + 1) + '. ' + preview + '</span>';
-        container.appendChild(item);
-    });
+function truncateUnifiedText(text, maxLength) {
+    if (!text) return '';
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
 }
 
 function handleUnifiedTemplateSelect(event) {
