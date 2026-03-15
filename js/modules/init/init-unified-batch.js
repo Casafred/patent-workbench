@@ -382,6 +382,21 @@ function bindUnifiedBatchEvents() {
     if (downloadReportBtn) {
         downloadReportBtn.addEventListener('click', downloadUnifiedReport);
     }
+
+    var recoverStateBtn = document.getElementById('unified_recover_state_btn');
+    if (recoverStateBtn) {
+        recoverStateBtn.addEventListener('click', recoverUnifiedBatchState);
+    }
+
+    var manualCheckBtn = document.getElementById('unified_batch_manual_check_btn');
+    if (manualCheckBtn) {
+        manualCheckBtn.addEventListener('click', manualCheckUnifiedBatchStatus);
+    }
+
+    var stopCheckBtn = document.getElementById('unified_batch_stop_check_btn');
+    if (stopCheckBtn) {
+        stopCheckBtn.addEventListener('click', stopUnifiedBatchAutoCheck);
+    }
     
     console.log('[UnifiedBatch] 事件绑定完成');
 }
@@ -1390,6 +1405,60 @@ function switchClassificationSubTab(tabName, element) {
     } else if (tabName === 'result') {
         updateClassificationProcessPanelVisibility();
     }
+}
+
+async function recoverUnifiedBatchState() {
+    var batchIdInput = document.getElementById('unified_recover_batch_id_input');
+    var batchId = batchIdInput ? batchIdInput.value.trim() : '';
+    
+    if (!batchId) {
+        alert('请输入 Batch ID');
+        return;
+    }
+    
+    logUnifiedBatchMessage('正在恢复任务: ' + batchId);
+    
+    var result = await UnifiedBatch.batchEngine.recoverFromBatchId(
+        batchId,
+        function(progress) {
+            logUnifiedBatchProgress(progress);
+        },
+        function(result) {
+            handleUnifiedBatchComplete(result);
+        }
+    );
+    
+    if (result.success) {
+        logUnifiedBatchMessage(result.message);
+        document.getElementById('unified_batch_step3_download').disabled = false;
+        document.getElementById('unified_auto_check_container').style.display = 'block';
+    } else {
+        logUnifiedBatchMessage('恢复失败: ' + (result.message || result.error));
+    }
+}
+
+async function manualCheckUnifiedBatchStatus() {
+    logUnifiedBatchMessage('手动检查状态...');
+    
+    var result = await UnifiedBatch.batchEngine.checkStatus();
+    
+    if (result.success) {
+        logUnifiedBatchMessage('状态: ' + result.status);
+        logUnifiedBatchProgress(result);
+        
+        if (result.status === 'completed') {
+            document.getElementById('unified_batch_step3_download').disabled = false;
+            logUnifiedBatchMessage('批处理已完成，可以下载结果');
+        }
+    } else {
+        logUnifiedBatchMessage('检查失败: ' + (result.error || result.message));
+    }
+}
+
+function stopUnifiedBatchAutoCheck() {
+    UnifiedBatch.batchEngine.stopAutoCheck();
+    logUnifiedBatchMessage('已停止自动检查');
+    document.getElementById('unified_auto_check_container').style.display = 'none';
 }
 
 function switchClassificationInput(event, type) {
