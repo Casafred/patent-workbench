@@ -195,11 +195,18 @@ const UnifiedBatch = {
 
     exportResults() {
         const mode = this.getActualMode();
-        if (mode === 'async') {
-            return this.asyncEngine.exportCurrentResults();
+        if (mode === 'instant') {
+            return this.output.exportToExcel('instant');
+        } else if (mode === 'async') {
+            return this.output.exportToExcel('async');
         } else {
             return this.batchEngine.exportReport();
         }
+    },
+
+    exportCurrentResults() {
+        const mode = this.getActualMode();
+        return this.output.exportToExcel(mode || 'async');
     },
 
     generateReport(originalData) {

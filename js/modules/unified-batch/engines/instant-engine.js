@@ -1,6 +1,7 @@
 /**
  * 统一批量处理系统 - 极速同步引擎
  * 实时同步调用，立即显示结果
+ * 支持并发调用
  */
 
 import unifiedBatchState from '../state.js';
@@ -52,6 +53,104 @@ const InstantEngine = {
         return headers;
     },
 
+    getConcurrencyForModel(model) {
+        if (!model) return 3;
+        
+        const MODEL_CONCURRENCY_LIMITS = {
+            'GLM-4.6': 3,
+            'GLM-4.6V-FlashX': 3,
+            'GLM-4.7': 3,
+            'GLM-Image': 1,
+            'GLM-Z1-Air': 30,
+            'GLM-4.5': 10,
+            'embedding-3-pro': 100,
+            'GLM-4.6V': 10,
+            'GLM-4.7-Flash': 1,
+            'GLM-4.7-FlashX': 3,
+            'GLM-OCR': 2,
+            'GLM-5': 5,
+            'GLM-4-Plus': 20,
+            'GLM-Z1-Flash': 30,
+            'GLM-Z1-AirX': 30,
+            'GLM-4.5V': 10,
+            'GLM-4.6V-Flash': 1,
+            'AutoGLM-Phone': 5,
+            'AutoGLM-Phone-Multilingual': 5,
+            'GLM-4-0520': 20,
+            'Search-Pro': 5,
+            'Search-Std': 50,
+            'GLM-4.5-Air': 5,
+            'GLM-4.5-AirX': 5,
+            'GLM-4-AirX': 5,
+            'GLM-Realtime': 5,
+            'GLM-4-Flash-250414': 5,
+            'GLM-4-FlashX-250414': 50,
+            'GLM-Realtime-Flash': 5,
+            'GLM-Realtime-Air': 5,
+            'GLM-4.5-Flash': 2,
+            'GLM-4V-Plus-0111': 5,
+            'GLM-Zero-Preview': 50,
+            'GLM-4-Air': 100,
+            'GLM-4-Air-250414': 30,
+            'GLM-4-32B-0414-128K': 15,
+            'GLM-4-Long': 10,
+            'GLM-4-FlashX': 50,
+            'GLM-4.1V-Thinking-Flash': 5,
+            'GLM-4.1V-Thinking-FlashX': 30,
+            'GLM-4-Voice': 5,
+            'GLM-4-Flash': 200,
+            'GLM-Z1-FlashX': 50,
+            'GLM-4-9B': 5,
+            'GLM-4V-Plus': 5,
+            'GLM-4V-Flash': 10,
+            'GLM-4V': 5,
+            'Web-Search-Pro': 30,
+            'GLM-ASR': 5,
+            'Rerank': 50,
+            'CogView-4-250304': 5,
+            'CogView-3-Plus': 5,
+            'CogView-4': 5,
+            'CogView-3-Flash': 5,
+            'CogView-3': 5,
+            'CogVideoX-Flash': 3,
+            'CogVideoX': 5,
+            'CogVideoX-2': 5,
+            'CogTTS-Clone': 2,
+            'CogTTS': 5,
+            'GLM-TTS': 5,
+            'GLM-TTS-Clone': 2,
+            'GLM-ASR-2512': 5,
+            'ViduQ1-text': 5,
+            'Viduq1-Image': 5,
+            'Viduq1-Start-End': 5,
+            'Vidu2-Image': 5,
+            'Vidu2-Start-End': 5,
+            'Vidu2-Reference': 5,
+            'Embedding-3': 50,
+            'Embedding-2': 50,
+            'GLM-4-AllTools': 5,
+            'GLM-4-Assistant': 5,
+            'CodeGeeX-4': 50,
+            'GLM-4': 30,
+            'CharGLM-4': 5,
+            'GLM-3-Turbo': 50,
+            'Moderation': 5,
+            'CogVideoX-3': 1,
+            'GLM-Experimental-Preview': 5
+        };
+        
+        const normalizedName = model.replace(/^glm-/i, 'GLM-').replace(/^GLM-/i, 'GLM-');
+        if (MODEL_CONCURRENCY_LIMITS[normalizedName]) {
+            return MODEL_CONCURRENCY_LIMITS[normalizedName];
+        }
+        for (const [key, value] of Object.entries(MODEL_CONCURRENCY_LIMITS)) {
+            if (normalizedName.toLowerCase() === key.toLowerCase()) {
+                return value;
+            }
+        }
+        return 3;
+    },
+
     async processSingle(input, template) {
         const requestBody = TemplateManager.buildRequestBody(input, template);
         const model = requestBody.model || template.model || 'glm-4-flash';
@@ -96,35 +195,26 @@ const InstantEngine = {
         this.state.task.startTime = new Date();
         OutputHandler.clearResults();
 
+        const model = template.model || 'glm-4-flash';
+        const maxConcurrency = Math.min(this.getConcurrencyForModel(model), inputs.length, 5);
+        
+        console.log('[InstantEngine] Model:', model, ', Max concurrency:', maxConcurrency);
+
         let completed = 0;
         let failed = 0;
         const total = inputs.length;
         const results = [];
 
-        for (let i = 0; i < inputs.length; i++) {
-            const input = inputs[i];
-            
+        const processWithProgress = async (input, index) => {
             if (this.state.task.status === 'stopped') {
-                console.log('[InstantEngine] Task stopped by user');
-                break;
-            }
-
-            if (onProgress) {
-                onProgress({
-                    phase: 'processing',
-                    current: i + 1,
-                    total: total,
-                    completed: completed,
-                    failed: failed,
-                    message: `正在处理: ${i + 1}/${total}`
-                });
+                return null;
             }
 
             try {
                 const result = await this.processSingle(input, template);
                 
                 const resultItem = {
-                    requestId: `INST-${i + 1}`,
+                    requestId: `INST-${index + 1}`,
                     inputId: input.id,
                     status: 'completed',
                     result: result.content,
@@ -132,38 +222,69 @@ const InstantEngine = {
                     templateName: template.name
                 };
                 
-                results.push(resultItem);
                 OutputHandler.addResult(resultItem);
                 completed++;
                 
                 if (onProgress) {
                     onProgress({
                         phase: 'processing',
-                        current: i + 1,
+                        current: completed + failed,
                         total: total,
                         completed: completed,
                         failed: failed,
                         lastResult: result.content,
+                        inputId: input.id,
                         stats: OutputHandler.getProgressStats()
                     });
                 }
+                
+                return resultItem;
                 
             } catch (error) {
                 const errorMsg = error?.message || String(error);
                 console.error('[InstantEngine] Processing failed for:', input.id, errorMsg);
                 
                 const resultItem = {
-                    requestId: `INST-${i + 1}`,
+                    requestId: `INST-${index + 1}`,
                     inputId: input.id,
                     status: 'failed',
                     error: errorMsg,
                     templateName: template.name
                 };
                 
-                results.push(resultItem);
                 OutputHandler.addResult(resultItem);
                 failed++;
+                
+                if (onProgress) {
+                    onProgress({
+                        phase: 'processing',
+                        current: completed + failed,
+                        total: total,
+                        completed: completed,
+                        failed: failed,
+                        error: errorMsg,
+                        inputId: input.id,
+                        stats: OutputHandler.getProgressStats()
+                    });
+                }
+                
+                return resultItem;
             }
+        };
+
+        for (let i = 0; i < inputs.length; i += maxConcurrency) {
+            if (this.state.task.status === 'stopped') {
+                console.log('[InstantEngine] Task stopped by user');
+                break;
+            }
+
+            const batch = inputs.slice(i, i + maxConcurrency);
+            const batchPromises = batch.map((input, batchIndex) => 
+                processWithProgress(input, i + batchIndex)
+            );
+            
+            const batchResults = await Promise.all(batchPromises);
+            results.push(...batchResults.filter(r => r !== null));
         }
 
         this.state.task.status = 'completed';
