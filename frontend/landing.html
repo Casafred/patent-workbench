@@ -4016,7 +4016,7 @@
             location.reload();
         };
 
-        function initImageManager() {
+        async function initImageManager() {
             const devMode = isLandingDevMode();
             
             if (devMode) {
@@ -4031,7 +4031,7 @@
             scanExistingImages();
             scanExistingGifs();
             setupUploadZone();
-            loadAvailableImages();
+            await loadAvailableImages();
         }
 
         function scanExistingImages() {
@@ -4078,57 +4078,86 @@
         }
 
         async function handleImageUpload(files) {
+            const uploadZone = document.getElementById('uploadZone');
+            const originalText = uploadZone.innerHTML;
+            uploadZone.innerHTML = '<div class="loading-spinner"></div><div style="margin-top:10px;">上传中...</div>';
+            
             for (const file of files) {
                 if (!file.type.startsWith('image/')) continue;
                 
                 try {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const imageData = {
-                            name: file.name,
-                            dataUrl: e.target.result,
-                            type: 'uploaded',
-                            timestamp: Date.now()
-                        };
-                        availableImages.unshift(imageData);
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    
+                    const endpoint = currentManagerMode === 'gifs' ? '/api/landing/gifs/upload' : '/api/landing/images/upload';
+                    
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.data) {
+                        console.log('上传成功:', result.data);
+                        await loadAvailableImages();
                         refreshImageGrid();
                         updateImageCount();
-                    };
-                    reader.readAsDataURL(file);
+                    } else {
+                        console.error('上传失败:', result.error);
+                        alert('上传失败: ' + (result.error || '未知错误'));
+                    }
                 } catch (err) {
                     console.error('上传失败:', err);
+                    alert('上传失败: ' + err.message);
                 }
+            }
+            
+            uploadZone.innerHTML = originalText;
+        }
+
+        async function loadAvailableImages() {
+            try {
+                const response = await fetch('/api/landing/images/list');
+                const result = await response.json();
+                
+                if (result.data && result.data.images) {
+                    availableImages = result.data.images;
+                } else {
+                    availableImages = [];
+                }
+            } catch (err) {
+                console.error('加载图片列表失败:', err);
+                availableImages = [];
             }
         }
 
-        function loadAvailableImages() {
-            availableImages = [];
-            
-            Object.entries(imageConfig).forEach(([stackId, filenames]) => {
-                filenames.forEach(filename => {
-                    availableImages.push({
-                        name: filename,
-                        path: `/frontend/images/${filename}`,
-                        type: 'config',
-                        stackId: stackId
-                    });
-                });
-            });
-
-            const uniqueImages = [];
-            const seen = new Set();
-            availableImages.forEach(img => {
-                if (!seen.has(img.name)) {
-                    seen.add(img.name);
-                    uniqueImages.push(img);
+        async function loadGifImages() {
+            try {
+                const response = await fetch('/api/landing/gifs/list');
+                const result = await response.json();
+                
+                if (result.data && result.data.gifs) {
+                    availableImages = result.data.gifs;
+                } else {
+                    availableImages = [];
                 }
-            });
-            availableImages = uniqueImages;
+            } catch (err) {
+                console.error('加载GIF列表失败:', err);
+                availableImages = [];
+            }
         }
 
-        function openImageManager() {
+        async function openImageManager() {
             document.getElementById('imageManagerOverlay').classList.add('active');
             document.getElementById('imageManagerPanel').classList.add('active');
+            
+            if (currentManagerMode === 'gifs') {
+                await loadGifImages();
+            } else {
+                await loadAvailableImages();
+            }
+            
             refreshImageGrid();
             refreshContainerGrid();
             updateImageCount();
@@ -4429,7 +4458,7 @@
             updateStats();
         }
 
-        function switchManagerMode(mode) {
+        async function switchManagerMode(mode) {
             currentManagerMode = mode;
             selectedImage = null;
             
@@ -4438,28 +4467,15 @@
             });
 
             if (mode === 'gifs') {
-                loadGifImages();
+                await loadGifImages();
             } else {
-                loadAvailableImages();
+                await loadAvailableImages();
             }
             
             refreshImageGrid();
             refreshContainerGrid();
             updateSelectedImageInfo();
             updateImageCount();
-        }
-
-        function loadGifImages() {
-            availableImages = [];
-            
-            Object.entries(gifConfig).forEach(([gifId, filename]) => {
-                availableImages.push({
-                    name: filename,
-                    path: `/frontend/gifs/${filename}`,
-                    type: 'gif',
-                    gifId: gifId
-                });
-            });
         }
 
         function updateStats() {

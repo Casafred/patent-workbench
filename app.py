@@ -1828,9 +1828,175 @@ def get_processing_report(task_id):
             status_code=500
         )
 
+# --- Landing页面图片管理API ---
+
+@app.route('/api/landing/images/list', methods=['GET'])
+def list_landing_images():
+    """扫描并返回frontend/images目录下的所有图片文件"""
+    try:
+        images_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'frontend', 'images')
+        
+        if not os.path.exists(images_dir):
+            return create_response(data={'images': [], 'gifs': []})
+        
+        allowed_extensions = {'.png', '.jpg', '.jpeg', '.webp', '.gif'}
+        images = []
+        
+        for filename in os.listdir(images_dir):
+            ext = os.path.splitext(filename)[1].lower()
+            if ext in allowed_extensions:
+                file_path = os.path.join(images_dir, filename)
+                file_stat = os.stat(file_path)
+                images.append({
+                    'name': filename,
+                    'path': f'/frontend/images/{filename}',
+                    'size': file_stat.st_size,
+                    'modified': datetime.fromtimestamp(file_stat.st_mtime).isoformat(),
+                    'type': 'gif' if ext == '.gif' else 'image'
+                })
+        
+        images.sort(key=lambda x: x['modified'], reverse=True)
+        
+        return create_response(data={'images': images})
+        
+    except Exception as e:
+        print(f"Error listing images: {traceback.format_exc()}")
+        return create_response(error=f"获取图片列表失败: {str(e)}", status_code=500)
+
+
+@app.route('/api/landing/images/upload', methods=['POST'])
+def upload_landing_image():
+    """上传图片到frontend/images目录"""
+    try:
+        if 'file' not in request.files:
+            return create_response(error="没有找到上传的文件", status_code=400)
+        
+        file = request.files['file']
+        
+        if file.filename == '':
+            return create_response(error="没有选择文件", status_code=400)
+        
+        allowed_extensions = {'.png', '.jpg', '.jpeg', '.webp', '.gif'}
+        ext = os.path.splitext(file.filename)[1].lower()
+        
+        if ext not in allowed_extensions:
+            return create_response(error=f"不支持的文件格式: {ext}", status_code=400)
+        
+        from werkzeug.utils import secure_filename
+        filename = secure_filename(file.filename)
+        
+        if not filename:
+            filename = f"image_{int(time.time())}{ext}"
+        
+        images_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'frontend', 'images')
+        
+        if not os.path.exists(images_dir):
+            os.makedirs(images_dir)
+        
+        file_path = os.path.join(images_dir, filename)
+        
+        counter = 1
+        original_name = os.path.splitext(filename)[0]
+        while os.path.exists(file_path):
+            filename = f"{original_name}_{counter}{ext}"
+            file_path = os.path.join(images_dir, filename)
+            counter += 1
+        
+        file.save(file_path)
+        
+        return create_response(data={
+            'name': filename,
+            'path': f'/frontend/images/{filename}',
+            'message': '上传成功'
+        })
+        
+    except Exception as e:
+        print(f"Error uploading image: {traceback.format_exc()}")
+        return create_response(error=f"上传失败: {str(e)}", status_code=500)
+
+
+@app.route('/api/landing/gifs/list', methods=['GET'])
+def list_landing_gifs():
+    """扫描并返回frontend/gifs目录下的所有GIF文件"""
+    try:
+        gifs_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'frontend', 'gifs')
+        
+        if not os.path.exists(gifs_dir):
+            return create_response(data={'gifs': []})
+        
+        gifs = []
+        
+        for filename in os.listdir(gifs_dir):
+            ext = os.path.splitext(filename)[1].lower()
+            if ext == '.gif':
+                file_path = os.path.join(gifs_dir, filename)
+                file_stat = os.stat(file_path)
+                gifs.append({
+                    'name': filename,
+                    'path': f'/frontend/gifs/{filename}',
+                    'size': file_stat.st_size,
+                    'modified': datetime.fromtimestamp(file_stat.st_mtime).isoformat()
+                })
+        
+        gifs.sort(key=lambda x: x['modified'], reverse=True)
+        
+        return create_response(data={'gifs': gifs})
+        
+    except Exception as e:
+        print(f"Error listing gifs: {traceback.format_exc()}")
+        return create_response(error=f"获取GIF列表失败: {str(e)}", status_code=500)
+
+
+@app.route('/api/landing/gifs/upload', methods=['POST'])
+def upload_landing_gif():
+    """上传GIF到frontend/gifs目录"""
+    try:
+        if 'file' not in request.files:
+            return create_response(error="没有找到上传的文件", status_code=400)
+        
+        file = request.files['file']
+        
+        if file.filename == '':
+            return create_response(error="没有选择文件", status_code=400)
+        
+        ext = os.path.splitext(file.filename)[1].lower()
+        
+        if ext != '.gif':
+            return create_response(error="只支持GIF格式文件", status_code=400)
+        
+        from werkzeug.utils import secure_filename
+        filename = secure_filename(file.filename)
+        
+        if not filename:
+            filename = f"demo_{int(time.time())}.gif"
+        
+        gifs_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'frontend', 'gifs')
+        
+        if not os.path.exists(gifs_dir):
+            os.makedirs(gifs_dir)
+        
+        file_path = os.path.join(gifs_dir, filename)
+        
+        counter = 1
+        original_name = os.path.splitext(filename)[0]
+        while os.path.exists(file_path):
+            filename = f"{original_name}_{counter}{ext}"
+            file_path = os.path.join(gifs_dir, filename)
+            counter += 1
+        
+        file.save(file_path)
+        
+        return create_response(data={
+            'name': filename,
+            'path': f'/frontend/gifs/{filename}',
+            'message': '上传成功'
+        })
+        
+    except Exception as e:
+        print(f"Error uploading gif: {traceback.format_exc()}")
+        return create_response(error=f"上传失败: {str(e)}", status_code=500)
+
 # --- 启动前初始化 ---
-# 将 init_db() 移到这里。当Render的Gunicorn服务器导入这个文件时，
-# 这段代码会立即执行，确保在任何请求到来之前，数据库表就已经创建好了。
 init_db()
 
 # --- 启动命令 ---
