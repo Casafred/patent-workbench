@@ -447,10 +447,6 @@ const ClassificationModule = {
         
         const result = this.loadSheet(sheetName);
         if (result.success) {
-            const configContainer = document.getElementById('classification_column_config_container');
-            if (configContainer) {
-                configContainer.style.display = 'block';
-            }
             this.renderColumnConfig(result.headers);
         } else {
             alert('加载Sheet失败: ' + result.message);

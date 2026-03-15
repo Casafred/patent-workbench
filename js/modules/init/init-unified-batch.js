@@ -427,7 +427,6 @@ async function handleUnifiedExcelUpload(event) {
             sheetSelect.onchange = function() {
                 var sheetResult = UnifiedBatch.loadSheet(this.value);
                 if (sheetResult.success) {
-                    document.getElementById('unified_column_config_container').style.display = 'block';
                     renderUnifiedColumnConfig(sheetResult.headers);
                 }
             };
@@ -435,7 +434,6 @@ async function handleUnifiedExcelUpload(event) {
             if (result.sheets.length > 0) {
                 var sheetResult = UnifiedBatch.loadSheet(result.sheets[0]);
                 if (sheetResult.success) {
-                    document.getElementById('unified_column_config_container').style.display = 'block';
                     renderUnifiedColumnConfig(sheetResult.headers);
                 }
             }
