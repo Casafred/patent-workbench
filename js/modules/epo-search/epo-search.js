@@ -313,6 +313,14 @@ class EPOSearchModule {
                 }
             });
         }
+        
+        const exportResultsBtn = document.getElementById('export-results-btn');
+        if (exportResultsBtn) {
+            exportResultsBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.exportResults();
+            });
+        }
     }
     
     switchSearchType(type) {
@@ -708,8 +716,36 @@ class EPOSearchModule {
         const content = document.getElementById('epo-detail-content');
         if (!content) return;
         
+        const claimsHtml = (detail.claims && detail.claims.length > 0) 
+            ? `<div>
+                <h4 style="margin: 0 0 8px 0; color: #333;">权利要求</h4>
+                <div style="max-height: 300px; overflow-y: auto; font-size: 13px; line-height: 1.8; color: #555; padding: 12px; background: #f8f9fa; border-radius: 6px;">
+                    ${detail.claims.map((c, i) => `<p style="margin: 8px 0;"><strong>${i + 1}.</strong> ${c}</p>`).join('')}
+                </div>
+               </div>`
+            : '';
+        
+        const cpcHtml = (detail.cpc_classifications && detail.cpc_classifications.length > 0)
+            ? (detail.cpc_classifications).map(c => `<span class="epo-classification-tag">${c}</span>`).join('')
+            : '<span style="color: #999;">无</span>';
+        
+        const ipcHtml = (detail.ipc_classifications && detail.ipc_classifications.length > 0)
+            ? (detail.ipc_classifications).map(c => `<span class="epo-classification-tag">${c}</span>`).join('')
+            : '<span style="color: #999;">无</span>';
+        
+        const drawingHtml = detail.first_drawing_url 
+            ? `<div style="margin-bottom: 16px;">
+                <h4 style="margin: 0 0 8px 0; color: #333;">首张附图</h4>
+                <div style="max-width: 300px; border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden;">
+                    <img src="${detail.first_drawing_url}" alt="附图" style="width: 100%; display: block;" onerror="this.parentElement.style.display='none'" />
+                </div>
+               </div>`
+            : '';
+        
         content.innerHTML = `
             <div style="display: grid; gap: 16px;">
+                ${drawingHtml}
+                
                 <div>
                     <h4 style="margin: 0 0 8px 0; color: #333;">标题</h4>
                     <p style="margin: 0; font-size: 15px;">${detail.title || '-'}</p>
@@ -719,6 +755,8 @@ class EPOSearchModule {
                     <h4 style="margin: 0 0 8px 0; color: #333;">摘要</h4>
                     <p style="margin: 0; font-size: 14px; line-height: 1.8; color: #555;">${detail.abstract || '-'}</p>
                 </div>
+                
+                ${claimsHtml}
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                     <div>
@@ -750,13 +788,13 @@ class EPOSearchModule {
                     <div>
                         <h4 style="margin: 0 0 8px 0; color: #333;">CPC分类</h4>
                         <div style="display: flex; flex-wrap: wrap; gap: 4px;">
-                            ${(detail.cpc_classifications || []).map(c => `<span class="epo-classification-tag">${c}</span>`).join('')}
+                            ${cpcHtml}
                         </div>
                     </div>
                     <div>
                         <h4 style="margin: 0 0 8px 0; color: #333;">IPC分类</h4>
                         <div style="display: flex; flex-wrap: wrap; gap: 4px;">
-                            ${(detail.ipc_classifications || []).map(c => `<span class="epo-classification-tag">${c}</span>`).join('')}
+                            ${ipcHtml}
                         </div>
                     </div>
                 </div>
@@ -832,6 +870,45 @@ class EPOSearchModule {
                 this.showToast('已复制到剪贴板', 'success');
             });
         }
+    }
+    
+    exportResults() {
+        if (this.searchResults.length === 0) {
+            this.showToast('没有可导出的结果', 'warning');
+            return;
+        }
+        
+        const headers = ['专利号', '标题', '摘要', '申请人', '发明人', '公开日期', '申请日期', 'CPC分类', 'IPC分类', '链接'];
+        const rows = this.searchResults.map(r => [
+            r.patent_number || '',
+            r.title || '',
+            (r.abstract || '').replace(/[\n\r]/g, ' ').replace(/"/g, '""'),
+            (r.applicants || []).join('; '),
+            (r.inventors || []).join('; '),
+            r.publication_date || '',
+            r.application_date || '',
+            (r.cpc_classifications || []).join('; '),
+            (r.ipc_classifications || []).join('; '),
+            r.url || ''
+        ]);
+        
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+        ].join('\n');
+        
+        const BOM = '\uFEFF';
+        const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `专利检索结果_${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        this.showToast(`已导出 ${this.searchResults.length} 条结果`, 'success');
     }
     
     clearSearch() {

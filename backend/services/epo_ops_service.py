@@ -333,7 +333,16 @@ class EPOOPSClient:
             app_date = self._extract_date(biblio, 'application')
             cpc = self._extract_classifications(biblio, 'cpc')
             ipc = self._extract_classifications(biblio, 'ipc')
-            first_drawing_url = self._extract_first_drawing_url(exchange_doc, patent_number)
+            
+            first_drawing_url = ''
+            try:
+                drawing_result = self._get_first_drawing_url(patent_number)
+                if drawing_result:
+                    first_drawing_url = drawing_result
+            except Exception as e:
+                logger.debug(f"获取专利 {patent_number} 附图失败: {e}")
+            
+            logger.info(f"专利 {patent_number} 详情: 标题={title[:50] if title else 'N/A'}..., 摘要长度={len(abstract)}, CPC数量={len(cpc)}, 附图={first_drawing_url[:50] if first_drawing_url else 'N/A'}")
             
             return EPOSearchResult(
                 patent_number=patent_number,
@@ -363,6 +372,33 @@ class EPOOPSClient:
                 url=f"https://patents.google.com/patent/{patent_number}",
                 first_drawing_url=''
             )
+    
+    def _get_first_drawing_url(self, patent_number: str) -> str:
+        """获取专利首张附图URL"""
+        url = f"{EPO_OPS_BASE_URL}/published-data/publication/epodoc/{patent_number}/images"
+        
+        try:
+            data, _ = self._make_request(url)
+            
+            world_data = data.get('ops:world-patent-data', {})
+            doc_instance = world_data.get('ops:document-instance', {})
+            
+            if isinstance(doc_instance, list) and len(doc_instance) > 0:
+                doc_instance = doc_instance[0]
+            
+            links = doc_instance.get('ops:link', [])
+            if isinstance(links, dict):
+                links = [links]
+            
+            for link in links:
+                link_ref = link.get('@ref', '') or link.get('@link', '')
+                if link_ref:
+                    return f"{EPO_OPS_BASE_URL}{link_ref}.png"
+            
+            return ''
+        except Exception as e:
+            logger.debug(f"获取附图URL失败: {e}")
+            return ''
     
     def _parse_search_results(self, data: Dict) -> List[str]:
         patent_numbers = []
