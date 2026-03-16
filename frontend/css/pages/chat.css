@@ -218,6 +218,7 @@
     width: auto;
     box-sizing: border-box;
     min-width: 0;
+    flex: 0 1 auto;
     overflow: hidden;
 }
 
@@ -230,6 +231,7 @@
     flex: 0 1 auto;
     max-width: 100%;
     min-width: 0;
+    width: 0;
     overflow: hidden;
 }
 
@@ -246,6 +248,8 @@
 .user-message .message-body {
     flex: 0 1 auto;
     max-width: 100%;
+    min-width: 0;
+    width: 0;
 }
 
 .assistant-message {
@@ -273,6 +277,7 @@
     min-width: 0;
     max-width: 100%;
     overflow: hidden;
+    width: 0;
 }
 
 .message-content {
@@ -282,10 +287,11 @@
     overflow-wrap: break-word;
     position: relative;
     line-height: 1.6;
-    width: 100%;
     max-width: 100%;
     box-sizing: border-box;
     white-space: normal;
+    overflow-x: auto;
+    overflow-y: visible;
 }
 
 /* 防止长内容撑破布局 */
@@ -374,14 +380,22 @@
 /* Markdown表格样式 - 防止溢出 */
 .message-content table {
     border-collapse: collapse;
-    width: max-content;
-    min-width: 100%;
-    max-width: 100%;
+    width: 100%;
     margin: 8px 0;
     border: 1px solid var(--border-color);
-    display: block;
-    overflow-x: auto;
     font-size: 0.9em;
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: visible;
+}
+
+.message-content thead,
+.message-content tbody {
+    display: table;
+    width: max-content;
+    max-width: 100%;
+    table-layout: auto;
 }
 
 .message-content th,
