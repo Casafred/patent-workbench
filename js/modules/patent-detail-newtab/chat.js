@@ -9,6 +9,21 @@ window.PatentDetailChat = {
     stopStreaming: false,
     apiKeys: {},
     
+    estimateTokens: function(text) {
+        if (!text) return 0;
+        let chineseChars = 0;
+        let otherChars = 0;
+        for (let i = 0; i < text.length; i++) {
+            const char = text[i];
+            if (/[\u4e00-\u9fa5]/.test(char)) {
+                chineseChars++;
+            } else {
+                otherChars++;
+            }
+        }
+        return Math.ceil(chineseChars / 1.5) + Math.ceil(otherChars / 4);
+    },
+    
     init: function() {
         console.log('[PatentDetailChat] Module initialized');
     },
