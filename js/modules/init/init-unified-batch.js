@@ -852,6 +852,7 @@ async function startUnifiedInstantProcessing() {
             var exportBtn = document.getElementById('unified_instant_export_btn');
             if (exportBtn) exportBtn.disabled = false;
         }
+        renderUnifiedInstantResults();
     };
 
     var result = await UnifiedBatch.startProcessing(onProgress, onComplete, selectedIds);
@@ -908,6 +909,7 @@ async function testUnifiedThreeInputs() {
         if (progressInfo) {
             progressInfo.textContent = '🧪 测试完成！成功: ' + (result.stats?.completed || 0) + ', 失败: ' + (result.stats?.failed || 0);
         }
+        renderUnifiedInstantResults();
     };
 
     var result = await UnifiedBatch.startProcessing(onProgress, onComplete, testIds);
@@ -1010,6 +1012,64 @@ function exportUnifiedInstantResults() {
     }
 }
 
+function renderUnifiedInstantResults() {
+    var tbody = document.getElementById('unified_instant_results_tbody');
+    if (!tbody) return;
+
+    var results = UnifiedBatch.getResults();
+    var inputs = UnifiedBatch.getInputs();
+    tbody.innerHTML = '';
+
+    var inputOrderMap = {};
+    inputs.forEach(function(input, index) {
+        inputOrderMap[input.id] = index;
+    });
+
+    var sortedResults = results.slice().sort(function(a, b) {
+        var orderA = inputOrderMap[a.inputId] !== undefined ? inputOrderMap[a.inputId] : 999999;
+        var orderB = inputOrderMap[b.inputId] !== undefined ? inputOrderMap[b.inputId] : 999999;
+        return orderA - orderB;
+    });
+
+    sortedResults.forEach(function(result) {
+        var tr = document.createElement('tr');
+        
+        var statusText, statusClass;
+        switch (result.status) {
+            case 'completed':
+                statusText = '成功';
+                statusClass = 'status-success';
+                break;
+            case 'failed':
+                statusText = '失败';
+                statusClass = 'status-failed';
+                break;
+            default:
+                statusText = '处理中';
+                statusClass = 'status-processing';
+        }
+
+        var input = inputs.find(function(i) { return i.id === result.inputId; });
+        var inputPreview = input 
+            ? (typeof input.content === 'string' ? input.content.substring(0, 30) + '...' : '多列数据')
+            : '-';
+
+        tr.innerHTML = '<td style="text-align: center;">' + (result.requestId || '-') + '</td>' +
+            '<td style="text-align: center;">' + inputPreview + '</td>' +
+            '<td style="text-align: center;">' + (result.templateName || '-') + '</td>' +
+            '<td class="' + statusClass + '" style="text-align: center;">' + statusText + '</td>' +
+            '<td style="text-align: center;">' + (result.usage?.total_tokens || '-') + '</td>' +
+            '<td style="word-break: break-word; white-space: pre-wrap; max-width: 400px;">' + (result.result || result.error || '-') + '</td>';
+        
+        tbody.appendChild(tr);
+    });
+
+    var exportBtn = document.getElementById('unified_instant_export_btn');
+    if (exportBtn) {
+        exportBtn.disabled = results.length === 0;
+    }
+}
+
 async function startUnifiedAsyncProcessing() {
     var checkboxes = document.querySelectorAll('.unified-input-checkbox:checked');
     var selectedIds = Array.from(checkboxes).map(function(cb) { return cb.dataset.id; });
@@ -1040,6 +1100,7 @@ async function startUnifiedAsyncProcessing() {
             var exportBtn = document.getElementById('unified_async_export_btn');
             if (exportBtn) exportBtn.disabled = false;
         }
+        renderUnifiedAsyncResults();
     };
 
     var result = await UnifiedBatch.startProcessing(onProgress, onComplete, selectedIds);
@@ -1082,9 +1143,21 @@ function renderUnifiedAsyncResults() {
     if (!tbody) return;
 
     var results = UnifiedBatch.getResults();
+    var inputs = UnifiedBatch.getInputs();
     tbody.innerHTML = '';
 
-    results.forEach(function(result) {
+    var inputOrderMap = {};
+    inputs.forEach(function(input, index) {
+        inputOrderMap[input.id] = index;
+    });
+
+    var sortedResults = results.slice().sort(function(a, b) {
+        var orderA = inputOrderMap[a.inputId] !== undefined ? inputOrderMap[a.inputId] : 999999;
+        var orderB = inputOrderMap[b.inputId] !== undefined ? inputOrderMap[b.inputId] : 999999;
+        return orderA - orderB;
+    });
+
+    sortedResults.forEach(function(result) {
         var tr = document.createElement('tr');
         
         var statusText, statusClass;
