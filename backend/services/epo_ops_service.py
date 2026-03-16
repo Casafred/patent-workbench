@@ -616,6 +616,13 @@ class EPOOPSClient:
             'quota_info': asdict(quota_info)
         }
     
+    def _convert_docdb_to_epodoc(self, patent_number: str) -> str:
+        """将 docdb 格式转换为 epodoc 格式
+        输入: US.20260069977.A1
+        输出: US20260069977A1
+        """
+        return patent_number.replace('.', '')
+    
     def _get_full_patent_detail(self, patent_number: str) -> Dict:
         """
         获取完整的专利详情，合并biblio、claims、description和images数据
@@ -626,33 +633,37 @@ class EPOOPSClient:
         description_data = {}
         drawing_url = ''
         
-        logger.info(f"开始获取专利 {patent_number} 的完整详情")
+        # 转换专利号格式：docdb -> epodoc
+        epodoc_number = self._convert_docdb_to_epodoc(patent_number)
+        logger.info(f"专利号格式转换: {patent_number} -> {epodoc_number}")
+        
+        logger.info(f"开始获取专利 {epodoc_number} 的完整详情")
         
         try:
-            url = f"{EPO_OPS_BASE_URL}/published-data/publication/epodoc/{patent_number}/biblio"
+            url = f"{EPO_OPS_BASE_URL}/published-data/publication/epodoc/{epodoc_number}/biblio"
             biblio_data, quota_info = self._make_request(url)
             logger.info(f"获取biblio数据成功，keys: {list(biblio_data.keys()) if biblio_data else 'empty'}")
         except Exception as e:
             logger.warning(f"获取biblio数据失败: {e}")
         
         try:
-            url = f"{EPO_OPS_BASE_URL}/published-data/publication/epodoc/{patent_number}/claims"
+            url = f"{EPO_OPS_BASE_URL}/published-data/publication/epodoc/{epodoc_number}/claims"
             claims_data, _ = self._make_request(url)
             logger.info(f"获取claims数据成功")
         except Exception as e:
             logger.warning(f"获取claims数据失败: {e}")
         
         try:
-            url = f"{EPO_OPS_BASE_URL}/published-data/publication/epodoc/{patent_number}/description"
+            url = f"{EPO_OPS_BASE_URL}/published-data/publication/epodoc/{epodoc_number}/description"
             description_data, _ = self._make_request(url)
             logger.info(f"获取description数据成功")
         except Exception as e:
             logger.warning(f"获取description数据失败: {e}")
         
         try:
-            drawing_result = self.get_first_drawing(patent_number)
-            if drawing_result.get('success'):
-                drawing_url = drawing_result.get('drawing_url', '')
+            drawing_result = self._get_first_drawing_url_docdb(patent_number)
+            if drawing_result:
+                drawing_url = drawing_result
                 logger.info(f"获取附图成功: {drawing_url}")
         except Exception as e:
             logger.warning(f"获取附图失败: {e}")

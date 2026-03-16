@@ -882,7 +882,7 @@ class EPOSearchModule {
         const rows = this.searchResults.map(r => [
             r.patent_number || '',
             r.title || '',
-            (r.abstract || '').replace(/[\n\r]/g, ' ').replace(/"/g, '""'),
+            (r.abstract || '').replace(/[\n\r]/g, ' '),
             (r.applicants || []).join('; '),
             (r.inventors || []).join('; '),
             r.publication_date || '',
@@ -892,23 +892,48 @@ class EPOSearchModule {
             r.url || ''
         ]);
         
-        const csvContent = [
-            headers.join(','),
-            ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-        ].join('\n');
+        // 生成 HTML 表格格式的 Excel 文件
+        let html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
+        html += '<head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>';
+        html += '<x:Name>专利检索结果</x:Name>';
+        html += '<x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head>';
+        html += '<body><table border="1">';
         
-        const BOM = '\uFEFF';
-        const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+        // 表头
+        html += '<tr style="background-color: #4472C4; color: white; font-weight: bold;">';
+        headers.forEach(h => {
+            html += `<td style="padding: 8px;">${h}</td>`;
+        });
+        html += '</tr>';
+        
+        // 数据行
+        rows.forEach(row => {
+            html += '<tr>';
+            row.forEach(cell => {
+                html += `<td style="padding: 6px; mso-number-format:'\\@';">${this.escapeHtml(cell)}</td>`;
+            });
+            html += '</tr>';
+        });
+        
+        html += '</table></body></html>';
+        
+        const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `专利检索结果_${new Date().toISOString().slice(0, 10)}.csv`;
+        link.download = `专利检索结果_${new Date().toISOString().slice(0, 10)}.xls`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
         
-        this.showToast(`已导出 ${this.searchResults.length} 条结果`, 'success');
+        this.showToast(`已导出 ${this.searchResults.length} 条结果为 Excel 文件`, 'success');
+    }
+    
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
     
     clearSearch() {
