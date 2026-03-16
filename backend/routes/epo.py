@@ -54,8 +54,9 @@ def search_patents():
         query = data.get('query', '')
         range_start = int(data.get('range_start', 1))
         range_end = int(data.get('range_end', 25))
+        quick_mode = data.get('quick_mode', False)
         
-        logger.info(f"查询: {query}, 范围: {range_start}-{range_end}")
+        logger.info(f"查询: {query}, 范围: {range_start}-{range_end}, 快速模式: {quick_mode}")
         
         if not query:
             return jsonify({
@@ -66,7 +67,7 @@ def search_patents():
         client = get_epo_ops_client()
         logger.info("获取EPO客户端成功，开始搜索...")
         
-        result = client.search(query, range_start, range_end)
+        result = client.search(query, range_start, range_end, quick_mode)
         logger.info(f"搜索完成，结果数量: {len(result['results'])}, 总数: {result['total_results']}")
         
         results_data = []
@@ -129,6 +130,43 @@ def get_patent_detail(patent_number):
         
     except Exception as e:
         logger.error(f"获取专利详情失败: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@epo_bp.route('/brief/<patent_number>', methods=['GET'])
+def get_patent_brief(patent_number):
+    """
+    获取单个专利的简要详情（用于分段加载）
+    
+    Params:
+        patent_number: 专利号 (docdb格式，如 US.20260069977.A1)
+    """
+    try:
+        client = get_epo_ops_client()
+        result = client._get_brief_detail(patent_number)
+        
+        return jsonify({
+            'success': True,
+            'result': {
+                'patent_number': result.patent_number,
+                'title': result.title,
+                'abstract': result.abstract,
+                'applicants': result.applicants,
+                'inventors': result.inventors,
+                'publication_date': result.publication_date,
+                'application_date': result.application_date,
+                'cpc_classifications': result.cpc_classifications,
+                'ipc_classifications': result.ipc_classifications,
+                'url': result.url,
+                'first_drawing_url': result.first_drawing_url
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"获取专利简要详情失败: {e}")
         return jsonify({
             'success': False,
             'error': str(e)

@@ -253,14 +253,23 @@ class EPOOPSClient:
         
         return response.json(), quota_info
     
-    def search(self, query: str, range_start: int = 1, range_end: int = 25) -> Dict:
+    def search(self, query: str, range_start: int = 1, range_end: int = 25, quick_mode: bool = False) -> Dict:
+        """
+        搜索专利
+        
+        Args:
+            query: 搜索查询
+            range_start: 起始位置
+            range_end: 结束位置
+            quick_mode: 快速模式 - 只返回基本信息，不获取详细数据
+        """
         url = f"{EPO_OPS_BASE_URL}/published-data/search"
         params = {
             'q': query,
             'Range': f"{range_start}-{range_end}"
         }
         
-        logger.info(f"EPO搜索URL: {url}, 参数: {params}")
+        logger.info(f"EPO搜索URL: {url}, 参数: {params}, 快速模式: {quick_mode}")
         
         data, quota_info = self._make_request(url, params)
         
@@ -269,11 +278,8 @@ class EPOOPSClient:
         results = []
         for patent_number in patent_numbers:
             if patent_number:
-                try:
-                    detail = self._get_brief_detail(patent_number)
-                    results.append(detail)
-                except Exception as e:
-                    logger.warning(f"获取专利 {patent_number} 详情失败: {e}")
+                if quick_mode:
+                    # 快速模式：只返回基本信息
                     results.append(EPOSearchResult(
                         patent_number=patent_number,
                         title='',
@@ -287,6 +293,25 @@ class EPOOPSClient:
                         url=f"https://patents.google.com/patent/{patent_number}",
                         first_drawing_url=''
                     ))
+                else:
+                    try:
+                        detail = self._get_brief_detail(patent_number)
+                        results.append(detail)
+                    except Exception as e:
+                        logger.warning(f"获取专利 {patent_number} 详情失败: {e}")
+                        results.append(EPOSearchResult(
+                            patent_number=patent_number,
+                            title='',
+                            abstract='',
+                            applicants=[],
+                            inventors=[],
+                            publication_date='',
+                            application_date='',
+                            cpc_classifications=[],
+                            ipc_classifications=[],
+                            url=f"https://patents.google.com/patent/{patent_number}",
+                            first_drawing_url=''
+                        ))
         
         return {
             'results': results,
@@ -395,9 +420,6 @@ class EPOOPSClient:
             
             try:
                 root = ET.fromstring(response.content)
-                
-                # 定义命名空间
-                ns = {'ops': 'http://ops.epo.org'}
                 
                 # 查找 ops:document-instance 元素
                 doc_instances = root.findall('.//{http://ops.epo.org}document-instance')

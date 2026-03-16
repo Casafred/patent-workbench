@@ -475,28 +475,33 @@ class EPOSearchModule {
             const rangeStart = (page - 1) * this.resultsPerPage + 1;
             const rangeEnd = page * this.resultsPerPage;
             
-            console.log('[EPO Search] Sending request to /api/epo/search');
-            console.log('[EPO Search] Request body:', { query, rangeStart, rangeEnd });
+            console.log('[EPO Search] Sending request to /api/epo/search (quick mode)');
             
+            // 第一步：快速模式搜索，只获取专利号
             const response = await fetch('/api/epo/search', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     query: query,
                     range_start: rangeStart,
-                    range_end: rangeEnd
+                    range_end: rangeEnd,
+                    quick_mode: true  // 快速模式
                 })
             });
             
-            console.log('[EPO Search] Response status:', response.status);
             const data = await response.json();
-            console.log('[EPO Search] Response data:', data);
+            console.log('[EPO Search] Quick search response:', data);
             
             if (data.success) {
                 this.searchResults = data.results;
                 this.totalResults = data.total_results;
-                this.displayResults(data.results, data.total_results);
+                
+                // 立即显示基本结果（只有专利号）
+                this.displayResultsQuick(data.results, data.total_results);
                 this.saveSearchHistory(query, data.total_results);
+                
+                // 第二步：逐步加载每个专利的详细信息
+                this.loadDetailsProgressively(data.results);
             } else {
                 this.showToast(data.error || '检索失败', 'error');
             }
@@ -513,6 +518,102 @@ class EPOSearchModule {
                     开始检索
                 `;
             }
+        }
+    }
+    
+    displayResultsQuick(results, total) {
+        const resultsList = document.getElementById('epo-results-list');
+        const resultsCount = document.getElementById('epo-results-count');
+        
+        if (resultsCount) {
+            resultsCount.textContent = `找到 ${total} 条结果`;
+        }
+        
+        if (!resultsList) return;
+        
+        // 快速显示基本结果
+        resultsList.innerHTML = results.map((r, index) => `
+            <div class="epo-result-item" data-index="${index}" data-patent-number="${r.patent_number}">
+                <div class="epo-result-header">
+                    <span class="epo-result-number">${r.patent_number || '加载中...'}</span>
+                    <span class="epo-result-date">${r.publication_date || ''}</span>
+                </div>
+                <div class="epo-result-title" style="color: #666;">正在加载详细信息...</div>
+                <div class="epo-result-abstract" style="color: #999;">请稍候...</div>
+                <div class="epo-result-meta">
+                    <span class="loading-indicator">
+                        <span style="display:inline-block;animation:spin 1s linear infinite;">⏳</span> 加载中...
+                    </span>
+                </div>
+            </div>
+        `).join('');
+        
+        // 绑定点击事件
+        resultsList.querySelectorAll('.epo-result-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const index = parseInt(item.dataset.index);
+                this.showPatentDetail(index);
+            });
+        });
+    }
+    
+    async loadDetailsProgressively(results) {
+        const resultsList = document.getElementById('epo-results-list');
+        if (!resultsList) return;
+        
+        // 逐个加载详细信息
+        for (let i = 0; i < results.length; i++) {
+            const r = results[i];
+            const itemEl = resultsList.querySelector(`[data-index="${i}"]`);
+            
+            if (!itemEl) continue;
+            
+            try {
+                // 获取单个专利的详细信息
+                const response = await fetch(`/api/epo/brief/${encodeURIComponent(r.patent_number)}`);
+                const data = await response.json();
+                
+                if (data.success && data.result) {
+                    const detail = data.result;
+                    
+                    // 更新搜索结果数组
+                    this.searchResults[i] = detail;
+                    
+                    // 更新DOM
+                    const titleEl = itemEl.querySelector('.epo-result-title');
+                    const abstractEl = itemEl.querySelector('.epo-result-abstract');
+                    const metaEl = itemEl.querySelector('.epo-result-meta');
+                    const dateEl = itemEl.querySelector('.epo-result-date');
+                    
+                    if (titleEl) {
+                        titleEl.textContent = detail.title || '无标题';
+                        titleEl.style.color = '#333';
+                    }
+                    
+                    if (abstractEl) {
+                        abstractEl.textContent = detail.abstract ? 
+                            (detail.abstract.length > 200 ? detail.abstract.substring(0, 200) + '...' : detail.abstract) : 
+                            '无摘要';
+                        abstractEl.style.color = '#666';
+                    }
+                    
+                    if (dateEl) {
+                        dateEl.textContent = detail.publication_date || '';
+                    }
+                    
+                    if (metaEl) {
+                        metaEl.innerHTML = `
+                            ${(detail.applicants || []).slice(0, 2).map(a => `<span class="epo-tag">${a}</span>`).join('')}
+                            ${(detail.cpc_classifications || []).slice(0, 2).map(c => `<span class="epo-tag epo-tag-cpc">${c}</span>`).join('')}
+                        `;
+                    }
+                }
+            } catch (error) {
+                console.error(`加载专利 ${r.patent_number} 详情失败:`, error);
+            }
+            
+            // 每加载完一个，暂停一下，避免请求过快
+            await new Promise(resolve => setTimeout(resolve, 100));
         }
     }
     
@@ -910,7 +1011,7 @@ class EPOSearchModule {
         rows.forEach(row => {
             html += '<tr>';
             row.forEach(cell => {
-                html += `<td style="padding: 6px; mso-number-format:'\\@';">${this.escapeHtml(cell)}</td>`;
+                html += `<td style="padding: 6px;">${this.escapeHtml(cell)}</td>`;
             });
             html += '</tr>';
         });
