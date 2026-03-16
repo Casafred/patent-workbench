@@ -1210,6 +1210,58 @@
                 apiKeys: {}
             };
             
+            function estimateTokensNewTab(text) {
+                if (!text) return 0;
+                var chineseChars = 0;
+                var otherChars = 0;
+                for (var i = 0; i < text.length; i++) {
+                    var char = text[i];
+                    if (/[\\u4e00-\\u9fa5]/.test(char)) {
+                        chineseChars++;
+                    } else {
+                        otherChars++;
+                    }
+                }
+                return Math.ceil(chineseChars / 1.5) + Math.ceil(otherChars / 4);
+            }
+            
+            window.updateNewTabContextInfo = function() {
+                var checkbox = document.getElementById('newtab_chat_full_context');
+                var infoSpan = document.getElementById('newtab_chat_context_info');
+                
+                if (!checkbox || !infoSpan) return;
+                
+                if (checkbox.checked) {
+                    var patentInfo = window.newTabChatState.patentData || window.pageData || {};
+                    var totalText = '';
+                    
+                    if (patentInfo.description) {
+                        totalText += typeof patentInfo.description === 'string' ? patentInfo.description : JSON.stringify(patentInfo.description);
+                    }
+                    if (patentInfo.claims && patentInfo.claims.length > 0) {
+                        patentInfo.claims.forEach(function(claim) {
+                            totalText += ' ' + (typeof claim === 'string' ? claim : (claim.text || JSON.stringify(claim)));
+                        });
+                    }
+                    
+                    var tokenCount = estimateTokensNewTab(totalText);
+                    var charCount = totalText.length;
+                    
+                    infoSpan.textContent = '约 ' + tokenCount + ' Token (' + charCount + ' 字符)';
+                    infoSpan.style.display = 'inline-block';
+                    
+                    if (tokenCount > 10000) {
+                        infoSpan.style.color = '#856404';
+                        infoSpan.style.background = '#fff3cd';
+                    } else {
+                        infoSpan.style.color = '#6c757d';
+                        infoSpan.style.background = '#e9ecef';
+                    }
+                } else {
+                    infoSpan.style.display = 'none';
+                }
+            };
+            
             function getApiKeysFromOpener() {
                 var keys = { zhipu: null, aliyun: null };
                 if (window.opener) {
@@ -1407,6 +1459,8 @@
                     '<select id="newtab_chat_provider" onchange="onNewTabProviderChange()" style="padding: 6px 12px; border: 1px solid #c8e6c9; border-radius: 6px; font-size: 13px; background: white; cursor: pointer;"></select></div>' +
                     '<div style="display: flex; align-items: center; gap: 8px;"><label style="font-size: 13px; color: #2e7d32; font-weight: 500;">模型:</label>' +
                     '<select id="newtab_chat_model" onchange="onNewTabModelChange()" style="padding: 6px 12px; border: 1px solid #c8e6c9; border-radius: 6px; font-size: 13px; background: white; cursor: pointer;"></select></div>' +
+                    '<label class="checkbox-label" title="勾选后将包含完整的说明书和权利要求作为上下文" style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; color: #2e7d32;"><input type="checkbox" id="newtab_chat_full_context" onchange="updateNewTabContextInfo()"><span>包含完整内容</span></label>' +
+                    '<span id="newtab_chat_context_info" class="context-info" style="display: none; font-size: 12px; color: #6c757d; background: #e9ecef; padding: 3px 8px; border-radius: 4px;"></span>' +
                     '<button onclick="clearNewTabChatHistory()" style="padding: 6px 12px; background: white; border: 1px solid #c8e6c9; border-radius: 6px; font-size: 13px; color: #2e7d32; cursor: pointer;">清空对话</button>' +
                     '</div></div>' +
                     '<div id="newtab_chat_history" style="flex: 1; overflow-y: auto; padding: 16px; background: #fafafa;">' +
@@ -1429,6 +1483,8 @@
                     '</div></div></div>';
                 
                 document.body.appendChild(chatModal);
+                
+                updateNewTabContextInfo();
             }
             
             function restoreNewTabChatHistory() {
@@ -1666,15 +1722,29 @@
                         contextInfo += '\\n## 摘要\\n' + patentInfo.abstract + '\\n';
                     }
                     
+                    var fullContextCheckbox = document.getElementById('newtab_chat_full_context');
+                    var useFullContext = fullContextCheckbox && fullContextCheckbox.checked;
+                    
                     if (patentInfo.claims && patentInfo.claims.length > 0) {
                         contextInfo += '\\n## 权利要求\\n';
-                        contextInfo += safeArray(patentInfo.claims, 20) + '\\n';
+                        if (useFullContext) {
+                            patentInfo.claims.forEach(function(claim, i) {
+                                var claimText = typeof claim === 'string' ? claim : (claim.text || JSON.stringify(claim));
+                                contextInfo += (i + 1) + '. ' + claimText + '\\n';
+                            });
+                        } else {
+                            contextInfo += safeArray(patentInfo.claims, 20) + '\\n';
+                        }
                     }
                     
                     if (patentInfo.description) {
                         var descText = typeof patentInfo.description === 'string' ? patentInfo.description : JSON.stringify(patentInfo.description);
-                        var truncatedDesc = descText.length > 5000 ? descText.substring(0, 5000) + '...(内容过长已截断)' : descText;
-                        contextInfo += '\\n## 说明书\\n' + truncatedDesc + '\\n';
+                        if (useFullContext) {
+                            contextInfo += '\\n## 说明书\\n' + descText + '\\n';
+                        } else {
+                            var truncatedDesc = descText.length > 5000 ? descText.substring(0, 5000) + '...(内容过长已截断)' : descText;
+                            contextInfo += '\\n## 说明书\\n' + truncatedDesc + '\\n';
+                        }
                     }
                     
                     if (patentInfo.patent_citations && patentInfo.patent_citations.length > 0) {
@@ -1798,10 +1868,30 @@
             };
             
             function formatChatContentNewTab(content) {
-                var formatted = content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                formatted = formatted.replace(/\\n/g, '<br>');
+                var formatted = content;
+                
+                formatted = formatted.replace(/```(\\w*)\\n([\\s\\S]*?)```/g, function(match, lang, code) {
+                    return '<pre style="background: #f5f5f5; padding: 12px; border-radius: 6px; overflow-x: auto; margin: 8px 0;"><code style="font-family: monospace; font-size: 13px;">' + code.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</code></pre>';
+                });
+                
+                formatted = formatted.replace(/`([^`]+)`/g, '<code style="background: #f5f5f5; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 13px;">$1</code>');
+                
+                formatted = formatted.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                
+                formatted = formatted.replace(/^### (.+)$/gm, '<h4 style="margin: 12px 0 6px 0; font-weight: 600;">$1</h4>');
+                formatted = formatted.replace(/^## (.+)$/gm, '<h3 style="margin: 14px 0 8px 0; font-weight: 600;">$1</h3>');
+                formatted = formatted.replace(/^# (.+)$/gm, '<h2 style="margin: 16px 0 10px 0; font-weight: 700;">$1</h2>');
+                
                 formatted = formatted.replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>');
                 formatted = formatted.replace(/\\*(.+?)\\*/g, '<em>$1</em>');
+                
+                formatted = formatted.replace(/^[-*] (.+)$/gm, '<li style="margin-left: 20px;">$1</li>');
+                formatted = formatted.replace(/(<li.*<\\/li>\\n?)+/g, '<ul style="margin: 8px 0;">$&</ul>');
+                
+                formatted = formatted.replace(/^(\\d+)\\. (.+)$/gm, '<li style="margin-left: 20px;">$2</li>');
+                
+                formatted = formatted.replace(/\\n/g, '<br>');
+                
                 return formatted;
             }
             
