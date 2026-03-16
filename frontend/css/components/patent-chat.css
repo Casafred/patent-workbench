@@ -459,6 +459,50 @@
     box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.15);
 }
 
+/* 上下文选项样式 */
+.chat-config-bar .context-options {
+    flex-wrap: wrap;
+}
+
+.chat-config-bar .checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 0.85em;
+    color: #495057;
+    min-width: auto;
+    font-weight: normal;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.chat-config-bar .checkbox-label:hover {
+    background-color: rgba(34, 197, 94, 0.1);
+}
+
+.chat-config-bar .checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--primary-color);
+}
+
+.chat-config-bar .context-info {
+    font-size: 0.8em;
+    color: #6c757d;
+    background: #e9ecef;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-left: auto;
+}
+
+.chat-config-bar .context-info.warning {
+    color: #856404;
+    background: #fff3cd;
+}
+
 /* 深度思考按钮 */
 .thinking-btn {
     display: inline-flex;

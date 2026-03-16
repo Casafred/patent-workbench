@@ -355,10 +355,57 @@ function openPatentChat(patentNumber) {
     updatePatentChatModelSelect();
     updatePatentChatThinkingButton();
     updatePatentChatModal(patentNumber);
+    updatePatentChatContextInfo(patent.data);
     
     const input = getEl('patent_chat_input');
     if (input) {
         setTimeout(() => input.focus(), 100);
+    }
+}
+
+function estimateTokens(text) {
+    if (!text) return 0;
+    let chineseChars = 0;
+    let otherChars = 0;
+    for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        if (/[\u4e00-\u9fa5]/.test(char)) {
+            chineseChars++;
+        } else {
+            otherChars++;
+        }
+    }
+    return Math.ceil(chineseChars / 1.5) + Math.ceil(otherChars / 4);
+}
+
+function updatePatentChatContextInfo(patentData) {
+    const fullContextCheckbox = getEl('patent_chat_full_context');
+    const contextInfo = getEl('patent_chat_context_info');
+    
+    if (!fullContextCheckbox || !contextInfo) return;
+    
+    const claimsCount = patentData.claims ? patentData.claims.length : 0;
+    const claimsText = patentData.claims ? patentData.claims.join('\n') : '';
+    const descText = patentData.description || '';
+    const totalText = claimsText + descText;
+    const estimatedTokens = estimateTokens(totalText);
+    
+    fullContextCheckbox.onchange = function() {
+        if (this.checked) {
+            contextInfo.innerHTML = `将加载 <strong>${claimsCount}</strong> 条权利要求 + <strong>${estimatedTokens.toLocaleString()}</strong> Tokens 上下文`;
+            contextInfo.style.display = 'inline';
+            if (estimatedTokens > 5000) {
+                contextInfo.classList.add('warning');
+            } else {
+                contextInfo.classList.remove('warning');
+            }
+        } else {
+            contextInfo.style.display = 'none';
+        }
+    };
+    
+    if (fullContextCheckbox.checked) {
+        fullContextCheckbox.onchange();
     }
 }
 
@@ -606,11 +653,37 @@ async function sendPatentChatMessage() {
         
         const patentInfo = chatState.patentData;
         
+        const fullContextCheckbox = getEl('patent_chat_full_context');
+        const useFullContext = fullContextCheckbox && fullContextCheckbox.checked;
+        
         const safeValue = (val) => {
             if (!val) return '未知';
             if (Array.isArray(val)) return val.length > 0 ? val.join(', ') : '未知';
             return val;
         };
+        
+        let claimsContent = '无权利要求信息';
+        let descContent = '';
+        
+        if (useFullContext) {
+            if (patentInfo.claims && patentInfo.claims.length > 0) {
+                claimsContent = patentInfo.claims.map((c, i) => `${i + 1}. ${c}`).join('\n\n');
+            }
+            if (patentInfo.description) {
+                descContent = `### 说明书\n${patentInfo.description}\n`;
+            }
+        } else {
+            if (patentInfo.claims && patentInfo.claims.length > 0) {
+                claimsContent = patentInfo.claims.slice(0, 5).map((c, i) => `${i + 1}. ${c}`).join('\n\n');
+                if (patentInfo.claims.length > 5) {
+                    claimsContent += `\n\n...(共${patentInfo.claims.length}条权利要求，勾选"包含完整内容"可加载全部)`;
+                }
+            }
+            if (patentInfo.description) {
+                const descPreview = patentInfo.description.substring(0, 500);
+                descContent = `### 说明书摘要\n${descPreview}${patentInfo.description.length > 500 ? '...(勾选"包含完整内容"可加载全部)' : ''}\n`;
+            }
+        }
         
         let contextInfo = `你是一个专业的专利分析助手。当前正在分析专利号为 ${patentNumber} 的专利。
 
@@ -637,9 +710,9 @@ async function sendPatentChatMessage() {
 ${patentInfo.abstract || '无摘要'}
 
 ### 权利要求
-${patentInfo.claims ? patentInfo.claims.slice(0, 5).map((c, i) => `${i + 1}. ${c}`).join('\n\n') : '无权利要求信息'}
+${claimsContent}
 
-${patentInfo.description ? `### 说明书摘要\n${patentInfo.description.substring(0, 500)}...\n` : ''}
+${descContent}
 
 ${patentInfo.patent_citations && patentInfo.patent_citations.length > 0 ? `### 引用专利\n${patentInfo.patent_citations.slice(0, 5).map(c => `- ${c.patent_number}: ${c.title || '无标题'}`).join('\n')}\n` : ''}
 

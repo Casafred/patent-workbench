@@ -217,6 +217,10 @@ window.PatentDetailChat = {
             '<select id="newtab_chat_provider" style="padding: 6px 12px; border: 1px solid #c8e6c9; border-radius: 6px; font-size: 13px; background: white; cursor: pointer;"></select></div>' +
             '<div style="display: flex; align-items: center; gap: 8px;"><label style="font-size: 13px; color: #2e7d32; font-weight: 500;">模型:</label>' +
             '<select id="newtab_chat_model" style="padding: 6px 12px; border: 1px solid #c8e6c9; border-radius: 6px; font-size: 13px; background: white; cursor: pointer;"></select></div>' +
+            '<label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #2e7d32; cursor: pointer;" title="勾选后将包含完整的说明书和权利要求作为上下文">' +
+            '<input type="checkbox" id="newtab_chat_full_context" style="width: 16px; height: 16px; cursor: pointer; accent-color: #2e7d32;">' +
+            '<span>包含完整内容</span></label>' +
+            '<span id="newtab_chat_context_info" style="display: none; font-size: 12px; color: #6c757d; background: #e9ecef; padding: 3px 8px; border-radius: 4px;"></span>' +
             '<button id="clear-chat-btn" style="padding: 6px 12px; background: white; border: 1px solid #c8e6c9; border-radius: 6px; font-size: 13px; cursor: pointer; color: #2e7d32;">清空对话</button>' +
             '</div></div>' +
             '<div id="newtab_chat_history" style="flex: 1; overflow-y: auto; padding: 16px; background: #fafafa;">' +
@@ -236,6 +240,34 @@ window.PatentDetailChat = {
         document.getElementById('clear-chat-btn').onclick = function() { self.clearHistory(); };
         document.getElementById('newtab_chat_send_btn').onclick = function() { self.sendMessage(); };
         document.getElementById('newtab_chat_stop_btn').onclick = function() { self.stopStream(); };
+        
+        const fullContextCheckbox = document.getElementById('newtab_chat_full_context');
+        const contextInfoEl = document.getElementById('newtab_chat_context_info');
+        
+        if (fullContextCheckbox && contextInfoEl) {
+            fullContextCheckbox.onchange = function() {
+                if (this.checked) {
+                    const claimsCount = patentData.claims ? patentData.claims.length : 0;
+                    const claimsText = patentData.claims ? patentData.claims.join('\n') : '';
+                    const descText = patentData.description || '';
+                    const totalText = claimsText + descText;
+                    const estimatedTokens = self.estimateTokens(totalText);
+                    
+                    contextInfoEl.innerHTML = '将加载 <strong>' + claimsCount + '</strong> 条权利要求 + <strong>' + estimatedTokens.toLocaleString() + '</strong> Tokens 上下文';
+                    contextInfoEl.style.display = 'inline';
+                    
+                    if (estimatedTokens > 5000) {
+                        contextInfoEl.style.color = '#856404';
+                        contextInfoEl.style.background = '#fff3cd';
+                    } else {
+                        contextInfoEl.style.color = '#6c757d';
+                        contextInfoEl.style.background = '#e9ecef';
+                    }
+                } else {
+                    contextInfoEl.style.display = 'none';
+                }
+            };
+        }
         
         const providerSelect = document.getElementById('newtab_chat_provider');
         const modelSelect = document.getElementById('newtab_chat_model');
@@ -451,6 +483,9 @@ window.PatentDetailChat = {
                 return val.slice(0, limit).map(function(item, i) { return (i + 1) + '. ' + (typeof item === 'string' ? item : JSON.stringify(item)); }).join('\n');
             };
             
+            const fullContextCheckbox = document.getElementById('newtab_chat_full_context');
+            const useFullContext = fullContextCheckbox && fullContextCheckbox.checked;
+            
             let contextInfo = '你是一个专业的专利分析助手。当前正在分析专利号为 ' + patentNumber + ' 的专利。请基于以下完整的专利信息，准确、专业地回答用户的问题。\n\n';
             
             contextInfo += '## 专利基本信息\n';
@@ -476,13 +511,28 @@ window.PatentDetailChat = {
             
             if (patentInfo.claims && patentInfo.claims.length > 0) {
                 contextInfo += '\n## 权利要求\n';
-                contextInfo += safeArray(patentInfo.claims, 20) + '\n';
+                if (useFullContext) {
+                    contextInfo += safeArray(patentInfo.claims, patentInfo.claims.length) + '\n';
+                } else {
+                    contextInfo += safeArray(patentInfo.claims, 5) + '\n';
+                    if (patentInfo.claims.length > 5) {
+                        contextInfo += '\n...(共' + patentInfo.claims.length + '条权利要求，勾选"包含完整内容"可加载全部)\n';
+                    }
+                }
             }
             
             if (patentInfo.description) {
                 const descText = typeof patentInfo.description === 'string' ? patentInfo.description : JSON.stringify(patentInfo.description);
-                const truncatedDesc = descText.length > 5000 ? descText.substring(0, 5000) + '...(内容过长已截断)' : descText;
-                contextInfo += '\n## 说明书\n' + truncatedDesc + '\n';
+                if (useFullContext) {
+                    contextInfo += '\n## 说明书\n' + descText + '\n';
+                } else {
+                    const descPreview = descText.substring(0, 500);
+                    contextInfo += '\n## 说明书摘要\n' + descPreview;
+                    if (descText.length > 500) {
+                        contextInfo += '...(勾选"包含完整内容"可加载全部)';
+                    }
+                    contextInfo += '\n';
+                }
             }
             
             contextInfo += '\n请基于以上完整的专利信息，准确、专业地回答用户的问题。回答时可以使用Markdown格式来组织内容，使其更易读。';
@@ -586,6 +636,43 @@ window.PatentDetailChat = {
     },
     
     formatContent: function(content) {
+        if (typeof marked !== 'undefined') {
+            try {
+                marked.setOptions({
+                    breaks: true,
+                    gfm: true,
+                    headerIds: false,
+                    mangle: false
+                });
+                
+                const html = marked.parse(content);
+                
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+                
+                const scripts = tempDiv.querySelectorAll('script');
+                scripts.forEach(function(script) { script.remove(); });
+                
+                const allElements = tempDiv.querySelectorAll('*');
+                allElements.forEach(function(el) {
+                    Array.from(el.attributes).forEach(function(attr) {
+                        if (attr.name.startsWith('on')) {
+                            el.removeAttribute(attr.name);
+                        }
+                    });
+                });
+                
+                return tempDiv.innerHTML;
+            } catch (e) {
+                console.error('Markdown渲染失败:', e);
+                return this.simpleFormatContent(content);
+            }
+        } else {
+            return this.simpleFormatContent(content);
+        }
+    },
+    
+    simpleFormatContent: function(content) {
         let formatted = content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
         formatted = formatted.replace(/\n/g, '<br>');
         formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
