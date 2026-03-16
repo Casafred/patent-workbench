@@ -295,7 +295,7 @@ class EPOOPSClient:
         }
     
     def _get_brief_detail(self, patent_number: str) -> EPOSearchResult:
-        url = f"{EPO_OPS_BASE_URL}/published-data/publication/epodoc/{patent_number}/biblio"
+        url = f"{EPO_OPS_BASE_URL}/published-data/publication/docdb/{patent_number}/biblio"
         
         try:
             data, _ = self._make_request(url)
@@ -326,17 +326,17 @@ class EPOOPSClient:
             biblio = exchange_doc.get('bibliographic-data', {})
             
             title = self._extract_title(biblio)
-            abstract = self._extract_abstract(biblio)
+            abstract = self._extract_abstract_from_exchange(exchange_doc)
             applicants = self._extract_parties(biblio, 'applicant')
             inventors = self._extract_parties(biblio, 'inventor')
             pub_date = self._extract_date(biblio, 'publication')
             app_date = self._extract_date(biblio, 'application')
-            cpc = self._extract_classifications(biblio, 'cpc')
+            cpc = self._extract_cpc_classifications(biblio)
             ipc = self._extract_classifications(biblio, 'ipc')
             
             first_drawing_url = ''
             try:
-                drawing_result = self._get_first_drawing_url(patent_number)
+                drawing_result = self._get_first_drawing_url_docdb(patent_number)
                 if drawing_result:
                     first_drawing_url = drawing_result
             except Exception as e:
@@ -372,6 +372,52 @@ class EPOOPSClient:
                 url=f"https://patents.google.com/patent/{patent_number}",
                 first_drawing_url=''
             )
+    
+    def _get_first_drawing_url_docdb(self, patent_number: str) -> str:
+        """获取专利首张附图URL (docdb格式) - images 端点返回 XML"""
+        url = f"{EPO_OPS_BASE_URL}/published-data/publication/docdb/{patent_number}/images"
+        
+        try:
+            token = self._get_access_token()
+            headers = {
+                'Authorization': f'Bearer {token}',
+                'Accept': 'application/xml'
+            }
+            
+            response = requests.get(url, headers=headers)
+            
+            if response.status_code != 200:
+                logger.debug(f"获取附图失败: {response.status_code}")
+                return ''
+            
+            # 解析 XML 响应
+            import xml.etree.ElementTree as ET
+            
+            try:
+                root = ET.fromstring(response.content)
+                
+                # 定义命名空间
+                ns = {'ops': 'http://ops.epo.org'}
+                
+                # 查找 ops:document-instance 元素
+                doc_instances = root.findall('.//{http://ops.epo.org}document-instance')
+                
+                for doc_inst in doc_instances:
+                    # 获取 link 属性
+                    link_attr = doc_inst.get('link', '')
+                    if link_attr:
+                        # 构造完整的图片 URL
+                        drawing_url = f"{EPO_OPS_BASE_URL}/{link_attr}.png"
+                        logger.debug(f"找到附图URL: {drawing_url}")
+                        return drawing_url
+                
+                return ''
+            except Exception as e:
+                logger.debug(f"解析附图XML失败: {e}")
+                return ''
+        except Exception as e:
+            logger.debug(f"获取附图URL失败: {e}")
+            return ''
     
     def _get_first_drawing_url(self, patent_number: str) -> str:
         """获取专利首张附图URL"""
@@ -438,35 +484,39 @@ class EPOOPSClient:
     
     def _extract_patent_number_from_pub_ref(self, pub_ref: Dict) -> str:
         try:
-            doc_ids = pub_ref.get('document-id', [])
+            doc_id = pub_ref.get('document-id', {})
             
-            if isinstance(doc_ids, dict):
-                doc_ids = [doc_ids]
+            if isinstance(doc_id, list):
+                doc_id = doc_id[0] if doc_id else {}
             
-            for doc_id in doc_ids:
-                doc_type = doc_id.get('@document-id-type', '')
-                if doc_type == 'epodoc':
-                    doc_num = doc_id.get('doc-number', {})
-                    if isinstance(doc_num, dict):
-                        return doc_num.get('$', '')
-                    else:
-                        return str(doc_num)
+            if not doc_id:
+                return ''
             
-            if doc_ids:
-                first_doc = doc_ids[0]
-                country = first_doc.get('country', {})
-                if isinstance(country, dict):
-                    country = country.get('$', '')
-                else:
-                    country = str(country)
-                
-                doc_num = first_doc.get('doc-number', {})
-                if isinstance(doc_num, dict):
-                    doc_num = doc_num.get('$', '')
-                else:
-                    doc_num = str(doc_num)
-                
-                return f"{country}{doc_num}"
+            country = doc_id.get('country', {})
+            if isinstance(country, dict):
+                country = country.get('$', '')
+            else:
+                country = str(country) if country else ''
+            
+            doc_num = doc_id.get('doc-number', {})
+            if isinstance(doc_num, dict):
+                doc_num = doc_num.get('$', '')
+            else:
+                doc_num = str(doc_num) if doc_num else ''
+            
+            kind = doc_id.get('kind', {})
+            if isinstance(kind, dict):
+                kind = kind.get('$', '')
+            else:
+                kind = str(kind) if kind else ''
+            
+            if country and doc_num:
+                pn = f"{country}.{doc_num}"
+                if kind:
+                    pn = f"{pn}.{kind}"
+                return pn
+            
+            return ''
         except Exception as e:
             logger.error(f"提取专利号失败: {e}")
         
@@ -730,6 +780,220 @@ class EPOOPSClient:
             logger.error(f"提取摘要失败: {e}")
             return ''
     
+    def _extract_abstract_from_exchange(self, exchange_doc: Dict) -> str:
+        """从 exchange-document 直接提取摘要（abstract 是 exchange-document 的直接子元素）"""
+        try:
+            abstract_data = exchange_doc.get('abstract', {})
+            if not abstract_data:
+                return ''
+            
+            if isinstance(abstract_data, str):
+                return abstract_data
+            
+            p = abstract_data.get('p', {})
+            if isinstance(p, list):
+                texts = [self._get_text_value(item) for item in p]
+                return ' '.join(text for text in texts if text)
+            return self._get_text_value(p)
+        except Exception as e:
+            logger.error(f"提取摘要失败: {e}")
+            return ''
+    
+    def _extract_cpc_classifications(self, biblio: Dict) -> List[str]:
+        """提取 CPC 分类号 - 使用 patent-classifications 字段（复数）"""
+        try:
+            # 优先使用 patent-classifications（复数形式）
+            classifications = biblio.get('patent-classifications', {})
+            if classifications:
+                patent_class_list = classifications.get('patent-classification', [])
+                if isinstance(patent_class_list, dict):
+                    patent_class_list = [patent_class_list]
+                
+                result = []
+                for c in patent_class_list:
+                    if not isinstance(c, dict):
+                        continue
+                    
+                    # 检查 classification-scheme 是否为 CPC
+                    scheme = c.get('classification-scheme', {})
+                    scheme_value = self._get_text_value(scheme)
+                    
+                    if scheme_value and scheme_value.upper() in ['CPC', 'CPCI', 'CPCY']:
+                        # 组合分类号
+                        section = self._get_text_value(c.get('section', {}))
+                        pc_class = self._get_text_value(c.get('class', {}))
+                        subclass = self._get_text_value(c.get('subclass', {}))
+                        main_group = self._get_text_value(c.get('main-group', {}))
+                        sub_group = self._get_text_value(c.get('subgroup', {}))
+                        
+                        symbol = ''
+                        if section:
+                            symbol += section
+                        if pc_class:
+                            symbol += pc_class
+                        if subclass:
+                            symbol += subclass
+                        if main_group:
+                            symbol += main_group
+                        if sub_group:
+                            symbol += '/' + sub_group
+                        
+                        if symbol:
+                            result.append(symbol)
+                
+                if result:
+                    return result
+            
+            # 备用：尝试 patent-classification（单数形式）
+            classifications = biblio.get('patent-classification', [])
+            if isinstance(classifications, dict):
+                classifications = [classifications]
+            
+            result = []
+            for c in classifications:
+                if not isinstance(c, dict):
+                    continue
+                
+                scheme = c.get('classification-scheme', {})
+                scheme_value = self._get_text_value(scheme)
+                
+                if scheme_value and scheme_value.upper() in ['CPC', 'CPCI', 'CPCY']:
+                    section = self._get_text_value(c.get('section', {}))
+                    pc_class = self._get_text_value(c.get('class', {}))
+                    subclass = self._get_text_value(c.get('subclass', {}))
+                    main_group = self._get_text_value(c.get('main-group', {}))
+                    sub_group = self._get_text_value(c.get('subgroup', {}))
+                    
+                    symbol = ''
+                    if section:
+                        symbol += section
+                    if pc_class:
+                        symbol += pc_class
+                    if subclass:
+                        symbol += subclass
+                    if main_group:
+                        symbol += main_group
+                    if sub_group:
+                        symbol += '/' + sub_group
+                    
+                    if symbol:
+                        result.append(symbol)
+            
+            if result:
+                return result
+            
+            # 最后尝试 classifications-cpc
+            class_container = biblio.get('classifications-cpc', {})
+            class_data = class_container.get('classification-cpc', [])
+            
+            if isinstance(class_data, dict):
+                class_data = [class_data]
+            
+            for c in class_data:
+                if not isinstance(c, dict):
+                    continue
+                
+                text = c.get('text', {})
+                text_val = self._get_text_value(text)
+                if text_val:
+                    result.append(text_val)
+                    continue
+                
+                class_symbol = c.get('classification-symbol', {})
+                symbol = self._get_text_value(class_symbol)
+                if symbol:
+                    result.append(symbol)
+            
+            return result
+        except Exception as e:
+            logger.error(f"提取CPC分类号失败: {e}")
+            return []
+    
+    def _extract_abstract_from_exchange(self, exchange_doc: Dict) -> str:
+        """从 exchange-document 直接提取摘要（abstract 是 exchange-document 的直接子元素）"""
+        try:
+            abstract_data = exchange_doc.get('abstract', {})
+            if not abstract_data:
+                return ''
+            
+            if isinstance(abstract_data, str):
+                return abstract_data
+            
+            p = abstract_data.get('p', {})
+            if isinstance(p, list):
+                texts = [self._get_text_value(item) for item in p]
+                return ' '.join(text for text in texts if text)
+            return self._get_text_value(p)
+        except Exception as e:
+            logger.error(f"提取摘要失败: {e}")
+            return ''
+    
+    def _extract_cpc_classifications(self, biblio: Dict) -> List[str]:
+        """提取 CPC 分类号 - 使用 patent-classification 字段"""
+        try:
+            classifications = biblio.get('patent-classification', [])
+            
+            if isinstance(classifications, dict):
+                classifications = [classifications]
+            
+            result = []
+            for c in classifications:
+                if not isinstance(c, dict):
+                    continue
+                
+                scheme = c.get('classification-scheme', {})
+                scheme_value = self._get_text_value(scheme)
+                
+                if scheme_value and scheme_value.upper() in ['CPC', 'CPCI', 'CPCY']:
+                    section = self._get_text_value(c.get('section', {}))
+                    pc_class = self._get_text_value(c.get('class', {}))
+                    subclass = self._get_text_value(c.get('subclass', {}))
+                    main_group = self._get_text_value(c.get('main-group', {}))
+                    sub_group = self._get_text_value(c.get('subgroup', {}))
+                    
+                    symbol_parts = []
+                    if section:
+                        symbol_parts.append(section)
+                    if pc_class:
+                        symbol_parts.append(pc_class)
+                    if subclass:
+                        symbol_parts.append(subclass)
+                    if main_group:
+                        symbol_parts.append(main_group)
+                    if sub_group:
+                        symbol_parts.append('/' + sub_group)
+                    
+                    if symbol_parts:
+                        symbol = ''.join(symbol_parts[:2]) + ''.join(symbol_parts[2:])
+                        result.append(symbol)
+            
+            if not result:
+                class_container = biblio.get('classifications-cpc', {})
+                class_data = class_container.get('classification-cpc', [])
+                
+                if isinstance(class_data, dict):
+                    class_data = [class_data]
+                
+                for c in class_data:
+                    if not isinstance(c, dict):
+                        continue
+                    
+                    text = c.get('text', {})
+                    text_val = self._get_text_value(text)
+                    if text_val:
+                        result.append(text_val)
+                        continue
+                    
+                    class_symbol = c.get('classification-symbol', {})
+                    symbol = self._get_text_value(class_symbol)
+                    if symbol:
+                        result.append(symbol)
+            
+            return result
+        except Exception as e:
+            logger.error(f"提取CPC分类号失败: {e}")
+            return []
+    
     def _get_text_value(self, data: Any) -> str:
         if data is None:
             return ''
@@ -912,7 +1176,20 @@ class EPOOPSClient:
     def _extract_claims(self, data: Dict) -> List[str]:
         try:
             world_data = data.get('ops:world-patent-data', {})
-            claims_data = world_data.get('claims', {})
+            
+            # 正确路径: fulltext-documents -> fulltext-document -> claims
+            fulltext_docs = world_data.get('fulltext-documents', {})
+            if not fulltext_docs:
+                return []
+            
+            fulltext_doc = fulltext_docs.get('fulltext-document', {})
+            if isinstance(fulltext_doc, list) and fulltext_doc:
+                fulltext_doc = fulltext_doc[0]
+            
+            if not fulltext_doc:
+                return []
+            
+            claims_data = fulltext_doc.get('claims', {})
             if not claims_data:
                 return []
             
