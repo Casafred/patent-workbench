@@ -402,6 +402,16 @@ function bindUnifiedBatchEvents() {
     if (stopCheckBtn) {
         stopCheckBtn.addEventListener('click', stopUnifiedBatchAutoCheck);
     }
+
+    var selectAllBtn = document.getElementById('unified_inputs_select_all_btn');
+    if (selectAllBtn) {
+        selectAllBtn.addEventListener('click', handleUnifiedSelectAll);
+    }
+
+    var deleteSelectedBtn = document.getElementById('unified_inputs_delete_selected_btn');
+    if (deleteSelectedBtn) {
+        deleteSelectedBtn.addEventListener('click', handleUnifiedDeleteSelected);
+    }
     
     console.log('[UnifiedBatch] 事件绑定完成');
 }
@@ -673,7 +683,6 @@ function renderUnifiedInputsPage(page) {
     var html = pageInputs.map(function(input, idx) {
         var index = start + idx;
         var summary = '';
-        var fullContent = '';
         
         if (input.rawContent) {
             var keys = Object.keys(input.rawContent);
@@ -690,8 +699,8 @@ function renderUnifiedInputsPage(page) {
             }).join(' | ');
         }
         
-        return '<div class="input-item-strip" data-index="' + index + '">' +
-            '<input type="checkbox" class="unified-input-checkbox strip-checkbox" data-id="' + input.id + '">' +
+        return '<div class="input-item-strip" data-index="' + index + '" onclick="showUnifiedInputPreview(' + index + ')">' +
+            '<input type="checkbox" class="unified-input-checkbox strip-checkbox" data-id="' + input.id + '" onclick="event.stopPropagation()">' +
             '<div class="strip-id">' + (input.id || (index + 1)) + '</div>' +
             '<div class="strip-summary">' + summary + '</div>' +
         '</div>';
@@ -716,6 +725,7 @@ function renderUnifiedInputsPage(page) {
     
     container.innerHTML = html + paginationHtml;
     data.currentPage = page;
+    updateUnifiedInputsCount();
 }
 
 window.goToUnifiedInputsPage = function(page) {
@@ -727,6 +737,127 @@ function truncateUnifiedText(text, maxLength) {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
 }
+
+function handleUnifiedSelectAll() {
+    var selectAllBtn = document.getElementById('unified_inputs_select_all_btn');
+    var checkboxes = document.querySelectorAll('.unified-input-checkbox');
+    
+    if (!selectAllBtn || checkboxes.length === 0) return;
+    
+    var isChecked = selectAllBtn.textContent === '全选';
+    
+    checkboxes.forEach(function(checkbox) {
+        checkbox.checked = isChecked;
+    });
+    
+    selectAllBtn.textContent = isChecked ? '取消全选' : '全选';
+    updateUnifiedInputsCount();
+}
+
+function handleUnifiedDeleteSelected() {
+    var selectedCheckboxes = document.querySelectorAll('.unified-input-checkbox:checked');
+    
+    if (selectedCheckboxes.length === 0) {
+        alert('请先勾选要删除的数据');
+        return;
+    }
+    
+    if (!confirm('确定要删除选中的 ' + selectedCheckboxes.length + ' 条数据吗？')) {
+        return;
+    }
+    
+    var selectedIds = Array.from(selectedCheckboxes).map(function(cb) {
+        return cb.dataset.id;
+    });
+    
+    var result = UnifiedBatch.removeSelectedInputs(selectedIds);
+    if (result.success) {
+        renderUnifiedInputsList();
+        updateUnifiedModeRecommendation();
+    }
+    alert(result.message);
+}
+
+function updateUnifiedInputsCount() {
+    var countEl = document.getElementById('unified_inputs_count');
+    var checkboxes = document.querySelectorAll('.unified-input-checkbox');
+    var checkedCount = document.querySelectorAll('.unified-input-checkbox:checked').length;
+    
+    if (countEl) {
+        countEl.textContent = checkedCount + '/' + checkboxes.length;
+    }
+}
+
+function showUnifiedInputPreview(index) {
+    var data = window._unifiedInputsData;
+    if (!data || !data.inputs[index]) return;
+    
+    var input = data.inputs[index];
+    var fullContent = '';
+    
+    if (input.rawContent) {
+        var entries = Object.entries(input.rawContent);
+        fullContent = entries.map(function([k, v]) {
+            return '<div class="preview-row">' +
+                '<span class="preview-label">' + k + ':</span>' +
+                '<span class="preview-value">' + String(v || '') + '</span>' +
+            '</div>';
+        }).join('');
+    } else if (typeof input.content === 'string') {
+        fullContent = '<div class="preview-row"><span class="preview-value">' + input.content + '</span></div>';
+    } else if (typeof input.content === 'object') {
+        var entries = Object.entries(input.content);
+        fullContent = entries.map(function([k, v]) {
+            return '<div class="preview-row">' +
+                '<span class="preview-label">' + k + ':</span>' +
+                '<span class="preview-value">' + String(v || '') + '</span>' +
+            '</div>';
+        }).join('');
+    }
+    
+    var previewPanel = document.getElementById('unified_input_preview_panel');
+    if (!previewPanel) {
+        previewPanel = document.createElement('div');
+        previewPanel.id = 'unified_input_preview_panel';
+        previewPanel.className = 'strip-preview';
+        previewPanel.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; max-width: 800px; max-height: 80vh; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: none;';
+        document.body.appendChild(previewPanel);
+        
+        var overlay = document.createElement('div');
+        overlay.id = 'unified_input_preview_overlay';
+        overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 999; display: none;';
+        overlay.onclick = function() { hideUnifiedInputPreview(); };
+        document.body.appendChild(overlay);
+    }
+    
+    previewPanel.innerHTML = `
+        <div class="preview-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
+            <span class="preview-title" style="font-weight: bold; font-size: 16px;">数据详情 - ${input.id || '第' + (index + 1) + '条'}</span>
+            <button class="close-preview" onclick="hideUnifiedInputPreview()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-color);">&times;</button>
+        </div>
+        <div class="preview-body" style="max-height: 60vh; overflow-y: auto;">
+            ${fullContent}
+        </div>
+    `;
+    
+    previewPanel.style.display = 'block';
+    document.getElementById('unified_input_preview_overlay').style.display = 'block';
+}
+
+function hideUnifiedInputPreview() {
+    var previewPanel = document.getElementById('unified_input_preview_panel');
+    var overlay = document.getElementById('unified_input_preview_overlay');
+    
+    if (previewPanel) {
+        previewPanel.style.display = 'none';
+    }
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
+}
+
+window.showUnifiedInputPreview = showUnifiedInputPreview;
+window.hideUnifiedInputPreview = hideUnifiedInputPreview;
 
 function handleUnifiedTemplateSelect(event) {
     var templateId = event.target.value;
