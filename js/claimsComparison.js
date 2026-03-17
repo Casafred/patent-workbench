@@ -17,14 +17,16 @@ let couplingSelector, couplingAnalyzeBtn;
  * 初始化功能五
  */
 function initClaimsComparison() {
-    // 获取DOM元素（使用dom.js中已声明的全局变量）
+    // 获取 DOM 元素（重新获取，因为功能五的 HTML 是动态加载的）
     comparisonModelSelect = document.getElementById('comparison_model_select');
     addClaimBtn = document.getElementById('add_claim_btn');
     claimsInputContainer = document.getElementById('claims_input_container');
     claimsCountDisplay = document.getElementById('claims_count_display');
-    // claimsAnalyzeBtn 已在 dom.js 中声明
+    // claimsAnalyzeBtn 需要重新获取，因为 HTML 是动态加载的
+    const claimsAnalyzeBtnLocal = document.getElementById('claims_analyze_btn');
     viewModeBtns = document.querySelectorAll('.view-btn');
-    // toggleLanguageBtn 已在 dom.js 中声明
+    // toggleLanguageBtn 需要重新获取
+    const toggleLanguageBtnLocal = document.getElementById('toggle_language_btn');
     exportComparisonBtn = document.getElementById('export_comparison_btn');
     comparisonStatsPanel = document.getElementById('comparison_stats_panel');
     // comparisonResultContainer 使用 dom.js 中的 comparisonResultContainerRefactored
@@ -54,16 +56,16 @@ function initClaimsComparison() {
     comparisonModelSelect.addEventListener('change', handleModelChange);
     addClaimBtn.addEventListener('click', addNewClaim);
     
-    if (claimsAnalyzeBtn) {
-        claimsAnalyzeBtn.addEventListener('click', runAnalysisWorkflow);
+    if (claimsAnalyzeBtnLocal) {
+        claimsAnalyzeBtnLocal.addEventListener('click', runAnalysisWorkflow);
     }
     
     viewModeBtns.forEach(btn => {
         btn.addEventListener('click', () => handleViewModeChange(btn.dataset.view));
     });
     
-    if (toggleLanguageBtn) {
-        toggleLanguageBtn.addEventListener('click', toggleDisplayLanguage);
+    if (toggleLanguageBtnLocal) {
+        toggleLanguageBtnLocal.addEventListener('click', toggleDisplayLanguage);
     }
     
     if (exportComparisonBtn) {
@@ -400,8 +402,14 @@ async function runAnalysisWorkflow() {
         renderResults();
         
         // 7. 显示控制按钮
-        toggleLanguageBtn.style.display = 'inline-block';
-        exportComparisonBtn.style.display = 'inline-block';
+        const toggleLangBtn = document.getElementById('toggle_language_btn');
+        if (toggleLangBtn) {
+            toggleLangBtn.style.display = 'inline-block';
+        }
+        const exportBtn = document.getElementById('export_comparison_btn');
+        if (exportBtn) {
+            exportBtn.style.display = 'inline-block';
+        }
         comparisonStatsPanel.style.display = 'flex';
         
         setLoadingState(false);
@@ -587,16 +595,19 @@ function renderResults() {
  * 渲染卡片视图
  */
 function renderCardView() {
+    const container = getResultContainer();
+    if (!container) return;
+    
     const data = appState.claimsComparison.analysisResult;
     if (!data || !data.comparison_matrix) {
-        comparisonResultContainerRefactored.innerHTML = '<div class="info error">无对比数据</div>';
+        container.innerHTML = '<div class="info error">无对比数据</div>';
         return;
     }
     
-    // 添加AI生成声明
-    const disclaimer = createAIDisclaimer('default', '<strong>AI生成内容：</strong>以下对比分析由AI生成，仅供参考，请结合实际情况判断使用。');
-    comparisonResultContainerRefactored.innerHTML = '';
-    comparisonResultContainerRefactored.appendChild(disclaimer);
+    // 添加 AI 生成声明
+    const disclaimer = createAIDisclaimer('default', '<strong>AI 生成内容：</strong>以下对比分析由 AI 生成，仅供参考，请结合实际情况判断使用。');
+    container.innerHTML = '';
+    container.appendChild(disclaimer);
     
     let html = '';
     
@@ -668,7 +679,10 @@ function renderCardView() {
     
     const contentDiv = document.createElement('div');
     contentDiv.innerHTML = html;
-    comparisonResultContainerRefactored.appendChild(contentDiv);
+    const container = getResultContainer();
+    if (container) {
+        container.appendChild(contentDiv);
+    }
 }
 
 /**
@@ -693,7 +707,10 @@ function renderSideBySideView() {
     html += '</div>';
     html += '</div>';
     
-    comparisonResultContainerRefactored.innerHTML = html;
+    const container = getResultContainer();
+    if (container) {
+        container.innerHTML = html;
+    }
     
     // 添加同步滚动功能
     setupSyncScroll();
@@ -772,11 +789,14 @@ function formatClaimTextForDisplay(text) {
  * 渲染矩阵视图
  */
 function renderMatrixView() {
+    const container = getResultContainer();
+    if (!container) return;
+    
     const data = appState.claimsComparison.analysisResult;
     const claims = appState.claimsComparison.claims;
     
     if (!data || !data.comparison_matrix) {
-        comparisonResultContainerRefactored.innerHTML = '<div class="info error">无对比数据</div>';
+        container.innerHTML = '<div class="info error">无对比数据</div>';
         return;
     }
     
@@ -817,7 +837,10 @@ function renderMatrixView() {
     });
     
     html += '</tbody></table></div>';
-    comparisonResultContainerRefactored.innerHTML = html;
+    const container = getResultContainer();
+    if (container) {
+        container.innerHTML = html;
+    }
 }
 
 /**
@@ -1129,7 +1152,10 @@ function displayCouplingResult(result, selectedClaims) {
     comparisonResultContainerRefactored.appendChild(contentDiv);
     
     // 显示控制按钮
-    exportComparisonBtn.style.display = 'inline-block';
+    const exportBtn2 = document.getElementById('export_comparison_btn');
+    if (exportBtn2) {
+        exportBtn2.style.display = 'inline-block';
+    }
     comparisonStatsPanel.style.display = 'none'; // 耦合分析不显示统计面板
 }
 
@@ -1224,19 +1250,32 @@ function exportComparisonReport() {
 }
 
 /**
+ * 获取结果容器元素
+ */
+function getResultContainer() {
+    return document.getElementById('comparison_result_container_refactored');
+}
+
+/**
  * 设置加载状态
  */
 function setLoadingState(isLoading, message = '', error = '') {
+    const btn = document.getElementById('claims_analyze_btn');
+    if (!btn) return;
+    
+    const container = getResultContainer();
+    if (!container) return;
+    
     appState.claimsComparison.isLoading = isLoading;
-    claimsAnalyzeBtn.disabled = isLoading;
+    btn.disabled = isLoading;
     
     if (isLoading) {
-        claimsAnalyzeBtn.textContent = '分析中...';
-        comparisonResultContainerRefactored.innerHTML = `<div class="info"><div class="loading-spinner"></div> ${message}</div>`;
+        btn.textContent = '分析中...';
+        container.innerHTML = `<div class="info"><div class="loading-spinner"></div> ${message}</div>`;
     } else {
-        claimsAnalyzeBtn.textContent = '开始分析';
+        btn.textContent = '开始分析';
         if (error) {
-            comparisonResultContainerRefactored.innerHTML = `<div class="info error">${error}</div>`;
+            container.innerHTML = `<div class="info error">${error}</div>`;
         }
     }
 }
