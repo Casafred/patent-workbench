@@ -1062,12 +1062,14 @@ ${claimsText}
  * 显示耦合分析结果
  */
 function displayCouplingResult(result, selectedClaims) {
+    const container = getResultContainer();
+    if (!container) return;
+    
     const data = result.coupling_analysis;
     
-    // 添加AI生成声明
-    const disclaimer = createAIDisclaimer('default', '<strong>AI生成内容：</strong>以下耦合分析由AI生成，仅供参考，请结合实际情况判断使用。');
-    comparisonResultContainerRefactored.innerHTML = '';
-    comparisonResultContainerRefactored.appendChild(disclaimer);
+    // 添加 AI 生成声明
+    container.innerHTML = '';
+    container.appendChild(disclaimer);
     
     const couplingScore = Math.round(data.overall_coupling_score * 100);
     
@@ -1149,7 +1151,10 @@ function displayCouplingResult(result, selectedClaims) {
     
     const contentDiv = document.createElement('div');
     contentDiv.innerHTML = html;
-    comparisonResultContainerRefactored.appendChild(contentDiv);
+    const container = getResultContainer();
+    if (container) {
+        container.appendChild(contentDiv);
+    }
     
     // 显示控制按钮
     const exportBtn2 = document.getElementById('export_comparison_btn');
