@@ -34,7 +34,7 @@ def register_blueprints(app: Flask):
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(chat_bp, url_prefix='/api')
-    app.register_blueprint(async_batch_bp, url_prefix='/api')
+    app.register_blueprint(async_batch_bp, url_prefix='/api/async_batch')
     app.register_blueprint(file_parser_bp, url_prefix='/api')
     app.register_blueprint(patent_bp, url_prefix='/api')
     app.register_blueprint(claims_bp, url_prefix='/api')
