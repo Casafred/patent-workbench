@@ -13,6 +13,17 @@
         'chat.js',
         'index.js'
     ];
+
+    let isLoaded = false;
+    let pendingCalls = [];
+
+    window.openPatentDetailInNewTab = function(patentNumber) {
+        if (isLoaded && typeof window._openPatentDetailInNewTabImpl === 'function') {
+            return window._openPatentDetailInNewTabImpl(patentNumber);
+        }
+        pendingCalls.push(patentNumber);
+        console.log('[PatentDetailNewTab] 模块加载中，请求已排队:', patentNumber);
+    };
     
     function loadScript(src) {
         return new Promise((resolve, reject) => {
@@ -39,6 +50,16 @@
         }
         if (window.PatentDetailChat) {
             window.PatentDetailChat.init();
+        }
+        
+        isLoaded = true;
+        
+        if (typeof window._openPatentDetailInNewTabImpl === 'function') {
+            pendingCalls.forEach(patentNumber => {
+                console.log('[PatentDetailNewTab] 执行排队的请求:', patentNumber);
+                window._openPatentDetailInNewTabImpl(patentNumber);
+            });
+            pendingCalls = [];
         }
         
         console.log('[PatentDetailNewTab] All modules loaded successfully');

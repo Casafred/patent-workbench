@@ -112,13 +112,21 @@
     border-collapse: collapse; 
     width: 100%; 
     margin: 1em 0; 
-    border: 1px solid var(--border-color); 
+    border: 1px solid var(--border-color);
+    table-layout: fixed;
+    max-width: 100%;
+    display: block;
+    overflow-x: auto;
 }
 
 .message-content th, .message-content td { 
     border: 1px solid var(--border-color); 
     padding: 8px 12px; 
-    text-align: left; 
+    text-align: left;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    min-width: 50px;
 }
 
 .message-content th { 

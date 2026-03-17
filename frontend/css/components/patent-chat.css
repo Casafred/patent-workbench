@@ -151,16 +151,25 @@
 .chat-history {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 15px;
     background: #f8f9fa;
     border-radius: 8px;
     margin-bottom: 15px;
     min-height: 300px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .chat-message {
     margin-bottom: 15px;
     animation: messageSlideIn 0.3s ease-out;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.chat-message.assistant-message {
+    max-width: 100%;
 }
 
 @keyframes messageSlideIn {
@@ -189,6 +198,9 @@
 .chat-message.assistant-message .message-content {
     background: white;
     border: 1px solid #e0e0e0;
+    max-width: 100%;
+    width: fit-content;
+    min-width: 100px;
 }
 
 .chat-message.system-message .message-content {
@@ -222,6 +234,9 @@
     border-radius: 12px;
     line-height: 1.6;
     word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    box-sizing: border-box;
 }
 
 /* Markdown渲染样式 */
@@ -288,6 +303,10 @@
     border-collapse: collapse;
     width: 100%;
     margin: 10px 0;
+    table-layout: fixed;
+    max-width: 100%;
+    display: block;
+    overflow-x: auto;
 }
 
 .message-content table th,
@@ -295,11 +314,29 @@
     border: 1px solid #ddd;
     padding: 8px;
     text-align: left;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    hyphens: auto;
+    min-width: 50px;
+    max-width: 300px;
+    vertical-align: top;
 }
 
 .message-content table th {
     background: #f6f8fa;
     font-weight: 600;
+}
+
+.message-content table thead,
+.message-content table tbody {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+}
+
+.message-content table tr {
+    display: table-row;
 }
 
 .message-content a {

@@ -1870,7 +1870,7 @@
             function formatChatContentNewTab(content) {
                 var formatted = content;
                 
-                formatted = formatted.replace(/```(\\w*)\\n([\\s\\S]*?)```/g, function(match, lang, code) {
+                formatted = formatted.replace(/```(\\\\w*)\\\\n([\\\\s\\\\S]*?)```/g, function(match, lang, code) {
                     return '<pre style="background: #f5f5f5; padding: 12px; border-radius: 6px; overflow-x: auto; margin: 8px 0;"><code style="font-family: monospace; font-size: 13px;">' + code.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</code></pre>';
                 });
                 
@@ -1882,15 +1882,15 @@
                 formatted = formatted.replace(/^## (.+)$/gm, '<h3 style="margin: 14px 0 8px 0; font-weight: 600;">$1</h3>');
                 formatted = formatted.replace(/^# (.+)$/gm, '<h2 style="margin: 16px 0 10px 0; font-weight: 700;">$1</h2>');
                 
-                formatted = formatted.replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>');
-                formatted = formatted.replace(/\\*(.+?)\\*/g, '<em>$1</em>');
+                formatted = formatted.replace(/\\\\*\\\\*(.+?)\\\\*\\\\*/g, '<strong>$1</strong>');
+                formatted = formatted.replace(/\\\\*(.+?)\\\\*/g, '<em>$1</em>');
                 
                 formatted = formatted.replace(/^[-*] (.+)$/gm, '<li style="margin-left: 20px;">$1</li>');
-                formatted = formatted.replace(/(<li.*<\\/li>\\n?)+/g, '<ul style="margin: 8px 0;">$&</ul>');
+                formatted = formatted.replace(/(<li.*<\\\\/li>\\\\n?)+/g, '<ul style="margin: 8px 0;">$&</ul>');
                 
-                formatted = formatted.replace(/^(\\d+)\\. (.+)$/gm, '<li style="margin-left: 20px;">$2</li>');
+                formatted = formatted.replace(/^(\\\\d+)\\\\. (.+)$/gm, '<li style="margin-left: 20px;">$2</li>');
                 
-                formatted = formatted.replace(/\\n/g, '<br>');
+                formatted = formatted.replace(/\\\\n/g, '<br>');
                 
                 return formatted;
             }
@@ -1939,7 +1939,7 @@
         `;
     }
 
-    window.openPatentDetailInNewTab = function(patentNumber) {
+    window._openPatentDetailInNewTabImpl = function(patentNumber) {
         const patentResult = findPatentResult(patentNumber);
         
         if (!patentResult || !patentResult.success) {

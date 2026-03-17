@@ -155,50 +155,54 @@ function initLocalPatentLib() {
         if (!data || data.length === 0) return;
 
         const rowCount = data.length;
-        // 确保表头顺序一致
         const headers = Object.keys(data.reduce((acc, row) => ({...acc, ...row }), {}));
         const colCount = headers.length;
 
-        lplResultSummary.textContent = `最终报告包含 ${rowCount} 行数据和 ${colCount} 个字段。`;
-        lplResultSummary.style.display = 'block';
+        const lplResultSummary = getEl('lpl_result_summary');
+        const lplResultPreviewTable = getEl('lpl_result_preview_table');
+        const lplResultPreviewArea = getEl('lpl_result_preview_area');
+        const lplDownloadFinalBtn = getEl('lpl_download_final_btn');
+
+        if (lplResultSummary) {
+            lplResultSummary.textContent = `最终报告包含 ${rowCount} 行数据和 ${colCount} 个字段。`;
+            lplResultSummary.style.display = 'block';
+        }
 
         const previewData = data.slice(0, 10);
-        if (previewData.length > 0) {
+        if (previewData.length > 0 && lplResultPreviewTable) {
             let tableHTML = '<table>';
             
-            // 1. 添加 <colgroup> 和 <col> 元素，为每列设置一个初始宽度
             tableHTML += '<colgroup>';
             headers.forEach(() => {
-                // 设置一个合理的初始列宽
                 tableHTML += `<col style="width: 200px;">`; 
             });
             tableHTML += '</colgroup>';
 
-            // 2. 添加 <thead>
             tableHTML += '<thead><tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr></thead>';
             
-            // 3. 添加 <tbody>，并为每个单元格内容包裹一个div
             tableHTML += '<tbody>';
             previewData.forEach(row => {
                 tableHTML += '<tr>' + headers.map(h => {
                     const cellContent = row[h] == null ? '' : String(row[h]);
-                    // 将内容放入div中，以支持单元格内部滚动
                     return `<td><div>${cellContent.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div></td>`;
                 }).join('') + '</tr>';
             });
             tableHTML += '</tbody></table>';
             
-            // 4. 将HTML注入DOM并调用拖动功能
             lplResultPreviewTable.innerHTML = tableHTML;
             const tableElement = lplResultPreviewTable.querySelector('table');
             if (tableElement) {
                 makeTableResizable(tableElement);
             }
 
-            lplResultPreviewArea.style.display = 'block';
+            if (lplResultPreviewArea) {
+                lplResultPreviewArea.style.display = 'block';
+            }
         }
         
-        lplDownloadFinalBtn.disabled = false;
+        if (lplDownloadFinalBtn) {
+            lplDownloadFinalBtn.disabled = false;
+        }
     }
     // ▲▲▲ 需求 1: 修改完成 ▲▲▲
 
