@@ -126,11 +126,18 @@ class UnifiedBatchState {
 
     loadCustomTemplates() {
         try {
-            const stored = window.userCacheStorage 
-                ? window.userCacheStorage.getJSON(STORAGE_KEYS.CUSTOM_TEMPLATES)
-                : JSON.parse(localStorage.getItem(STORAGE_KEYS.CUSTOM_TEMPLATES) || '[]');
-            if (stored) {
-                this.state.customTemplates = stored;
+            const canUseUserStorage = window.userCacheStorage && window.userCacheStorage.isInitialized();
+            
+            if (canUseUserStorage) {
+                const stored = window.userCacheStorage.getJSON(STORAGE_KEYS.CUSTOM_TEMPLATES);
+                if (stored) {
+                    this.state.customTemplates = stored;
+                }
+            } else {
+                const stored = localStorage.getItem(STORAGE_KEYS.CUSTOM_TEMPLATES);
+                if (stored) {
+                    this.state.customTemplates = JSON.parse(stored);
+                }
             }
         } catch (e) {
             console.error('加载自定义模板失败:', e);
@@ -140,11 +147,13 @@ class UnifiedBatchState {
 
     saveCustomTemplates() {
         try {
-            if (window.userCacheStorage) {
+            const canUseUserStorage = window.userCacheStorage && window.userCacheStorage.isInitialized();
+            
+            if (canUseUserStorage) {
                 window.userCacheStorage.setJSON(STORAGE_KEYS.CUSTOM_TEMPLATES, this.state.customTemplates);
-            } else {
-                localStorage.setItem(STORAGE_KEYS.CUSTOM_TEMPLATES, JSON.stringify(this.state.customTemplates));
             }
+            
+            localStorage.setItem(STORAGE_KEYS.CUSTOM_TEMPLATES, JSON.stringify(this.state.customTemplates));
         } catch (e) {
             console.error('保存自定义模板失败:', e);
         }

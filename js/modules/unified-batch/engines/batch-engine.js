@@ -130,11 +130,12 @@ const BatchEngine = {
             }
 
             const result = await response.json();
-            this.state.batchTask.fileId = result.file_id;
+            const fileId = result.data?.file_id || result.file_id;
+            this.state.batchTask.fileId = fileId;
             
             return { 
                 success: true, 
-                fileId: result.file_id,
+                fileId: fileId,
                 message: '文件上传成功'
             };
         } catch (error) {
@@ -176,7 +177,8 @@ const BatchEngine = {
             }
 
             const result = await response.json();
-            this.state.batchTask.batchId = result.id;
+            const data = result.data || result;
+            this.state.batchTask.batchId = data.id;
             this.state.batchTask.provider = this.currentProvider;
             this.state.task.status = 'running';
             this.state.task.startTime = new Date();
@@ -185,7 +187,7 @@ const BatchEngine = {
             
             return { 
                 success: true, 
-                batchId: result.id,
+                batchId: data.id,
                 provider: this.currentProvider,
                 message: '批处理任务已创建'
             };
@@ -220,35 +222,36 @@ const BatchEngine = {
             }
 
             const result = await response.json();
+            const data = result.data || result;
             
             const statusInfo = {
                 success: true,
-                id: result.id,
-                object: result.object,
-                endpoint: result.endpoint,
-                status: result.status,
-                inputFileId: result.input_file_id,
-                outputFileId: result.output_file_id,
-                errorFileId: result.error_file_id,
-                completionWindow: result.completion_window,
-                requestCounts: result.request_counts,
-                total: result.total,
-                completed: result.completed,
-                failed: result.failed,
-                createdAt: result.created_at,
-                inProgressAt: result.in_progress_at,
-                expiresAt: result.expires_at,
-                finalizingAt: result.finalizing_at,
-                completedAt: result.completed_at,
-                failedAt: result.failed_at,
-                expiredAt: result.expired_at,
-                cancellingAt: result.cancelling_at,
-                cancelledAt: result.cancelled_at,
-                metadata: result.metadata
+                id: data.id,
+                object: data.object,
+                endpoint: data.endpoint,
+                status: data.status,
+                inputFileId: data.input_file_id,
+                outputFileId: data.output_file_id,
+                errorFileId: data.error_file_id,
+                completionWindow: data.completion_window,
+                requestCounts: data.request_counts,
+                total: data.total,
+                completed: data.completed,
+                failed: data.failed,
+                createdAt: data.created_at,
+                inProgressAt: data.in_progress_at,
+                expiresAt: data.expires_at,
+                finalizingAt: data.finalizing_at,
+                completedAt: data.completed_at,
+                failedAt: data.failed_at,
+                expiredAt: data.expired_at,
+                cancellingAt: data.cancelling_at,
+                cancelledAt: data.cancelled_at,
+                metadata: data.metadata
             };
 
-            if (result.output_file_id) {
-                this.state.batchTask.outputFileId = result.output_file_id;
+            if (data.output_file_id) {
+                this.state.batchTask.outputFileId = data.output_file_id;
             }
             
             if (result.input_file_id) {
