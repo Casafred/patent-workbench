@@ -836,7 +836,6 @@ function renderMatrixView() {
     });
     
     html += '</tbody></table></div>';
-    const container = getResultContainer();
     if (container) {
         container.innerHTML = html;
     }
@@ -1150,7 +1149,6 @@ function displayCouplingResult(result, selectedClaims) {
     
     const contentDiv = document.createElement('div');
     contentDiv.innerHTML = html;
-    const container = getResultContainer();
     if (container) {
         container.appendChild(contentDiv);
     }
