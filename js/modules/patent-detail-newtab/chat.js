@@ -208,7 +208,12 @@ window.PatentDetailChat = {
             }
         });
         
+        input.addEventListener('input', function() {
+            self.updateTokenCount();
+        });
+        
         input.focus();
+        self.updateTokenCount();
     },
     
     createModal: function(patentNumber, patentData) {
@@ -242,9 +247,17 @@ window.PatentDetailChat = {
             '<div class="welcome-message" style="text-align: center; padding: 40px 20px; color: #666;">' +
             '<div style="font-size: 48px; margin-bottom: 16px;">💬</div>' +
             '<p style="font-size: 16px; margin: 0;">暂无对话记录</p>' +
-            '<p style="font-size: 14px; color: #999; margin-top: 8px;">在下方输入您的问题，开始与AI对话</p></div></div>' +
+            '<p style="font-size: 14px; color: #999; margin-top: 8px;">在下方输入您的问题，开始与 AI 对话</p></div></div>' +
             '<div style="padding: 16px; background: white; border-top: 1px solid #e8f5e9; border-radius: 0 0 12px 12px;">' +
-            '<div style="display: flex; gap: 12px;"><textarea id="newtab_chat_input" placeholder="输入您的问题，按Enter发送..." style="flex: 1; padding: 12px 16px; border: 2px solid #c8e6c9; border-radius: 8px; font-size: 14px; resize: none; height: 48px; line-height: 1.4;"></textarea>' +
+            '<div style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">' +
+            '<button class="newtab-quick-question-btn" data-question="这个专利的核心技术是什么？" style="padding: 6px 12px; background: #f1f8e9; border: 1px solid #c8e6c9; border-radius: 16px; font-size: 12px; cursor: pointer; color: #2e7d32; transition: all 0.2s;">核心技术</button>' +
+            '<button class="newtab-quick-question-btn" data-question="这个专利的创新点在哪里？" style="padding: 6px 12px; background: #f1f8e9; border: 1px solid #c8e6c9; border-radius: 16px; font-size: 12px; cursor: pointer; color: #2e7d32; transition: all 0.2s;">创新点</button>' +
+            '<button class="newtab-quick-question-btn" data-question="请解释这个专利的权利要求" style="padding: 6px 12px; background: #f1f8e9; border: 1px solid #c8e6c9; border-radius: 16px; font-size: 12px; cursor: pointer; color: #2e7d32; transition: all 0.2s;">解释权利要求</button>' +
+            '<button class="newtab-quick-question-btn" data-question="这个专利的应用场景有哪些？" style="padding: 6px 12px; background: #f1f8e9; border: 1px solid #c8e6c9; border-radius: 16px; font-size: 12px; cursor: pointer; color: #2e7d32; transition: all 0.2s;">应用场景</button>' +
+            '</div>' +
+            '<div style="display: flex; gap: 12px; position: relative;">' +
+            '<textarea id="newtab_chat_input" placeholder="输入您的问题，按 Enter 发送..." style="flex: 1; padding: 12px 16px; border: 2px solid #c8e6c9; border-radius: 8px; font-size: 14px; resize: none; height: 48px; line-height: 1.4; padding-bottom: 32px;"></textarea>' +
+            '<span id="newtab_chat_token_count" style="position: absolute; bottom: 20px; right: 140px; font-size: 11px; color: #999; background: rgba(255,255,255,0.9); padding: 2px 6px; border-radius: 4px; pointer-events: none;">0 Tokens</span>' +
             '<button id="newtab_chat_send_btn" style="padding: 12px 24px; background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 500;">发送</button>' +
             '<button id="newtab_chat_stop_btn" style="padding: 12px 24px; background: #c62828; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 500; display: none;">停止</button></div></div></div>';
         
@@ -301,6 +314,27 @@ window.PatentDetailChat = {
         modelSelect.onchange = function() {
             self.currentModel = modelSelect.value;
         };
+        
+        const quickQuestionBtns = chatModal.querySelectorAll('.newtab-quick-question-btn');
+        quickQuestionBtns.forEach(function(btn) {
+            btn.onclick = function() {
+                const question = this.getAttribute('data-question');
+                input.value = question;
+                self.updateTokenCount();
+                input.focus();
+            };
+        });
+    },
+    
+    updateTokenCount: function() {
+        const input = document.getElementById('newtab_chat_input');
+        const tokenCountEl = document.getElementById('newtab_chat_token_count');
+        
+        if (!input || !tokenCountEl) return;
+        
+        const text = input.value || '';
+        const tokens = this.estimateTokens(text);
+        tokenCountEl.textContent = tokens + ' Tokens';
     },
     
     restoreHistory: function() {
@@ -319,7 +353,7 @@ window.PatentDetailChat = {
             const msgDiv = document.createElement('div');
             if (msg.role === 'user') {
                 msgDiv.style.cssText = 'margin-bottom: 16px; display: flex; justify-content: flex-end;';
-                msgDiv.innerHTML = '<div style="max-width: 70%; background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); color: white; padding: 12px 16px; border-radius: 16px 16px 4px 16px;"><div style="font-size: 14px; line-height: 1.5;">' + self.escapeHtml(msg.content) + '</div></div>';
+                msgDiv.innerHTML = '<div style="max-width: 70%; background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); color: white; padding: 12px 16px; border-radius: 16px 16px 4px 16px;"><div style="font-size: 14px; line-height: 1.5;">' + self.escapeHtmlAdvanced(msg.content) + '</div></div>';
             } else if (msg.role === 'assistant') {
                 msgDiv.style.cssText = 'margin-bottom: 16px; display: flex; justify-content: flex-start;';
                 msgDiv.innerHTML = '<div style="max-width: 70%; background: white; padding: 12px 16px; border-radius: 16px 16px 16px 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e8f5e9;"><div style="font-size: 14px; line-height: 1.5;">' + self.formatContent(msg.content) + '</div></div>';
@@ -460,7 +494,7 @@ window.PatentDetailChat = {
         
         const userMsgDiv = document.createElement('div');
         userMsgDiv.style.cssText = 'margin-bottom: 16px; display: flex; justify-content: flex-end;';
-        userMsgDiv.innerHTML = '<div style="max-width: 70%; background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); color: white; padding: 12px 16px; border-radius: 16px 16px 4px 16px;"><div style="font-size: 14px; line-height: 1.5;">' + this.escapeHtml(message) + '</div></div>';
+        userMsgDiv.innerHTML = '<div style="max-width: 70%; background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); color: white; padding: 12px 16px; border-radius: 16px 16px 4px 16px;"><div style="font-size: 14px; line-height: 1.5;">' + this.escapeHtmlAdvanced(message) + '</div></div>';
         historyEl.appendChild(userMsgDiv);
         historyEl.scrollTop = historyEl.scrollHeight;
         
@@ -642,7 +676,7 @@ window.PatentDetailChat = {
             
         } catch (error) {
             console.error('发送失败:', error);
-            contentDiv.innerHTML = '<span style="color: #c62828;">发送失败: ' + self.escapeHtml(error.message) + '</span>';
+            contentDiv.innerHTML = '<span style="color: #c62828;">发送失败: ' + self.escapeHtmlAdvanced(error.message) + '</span>';
         } finally {
             self.isLoading = false;
             sendBtn.style.display = 'inline-block';
@@ -700,5 +734,18 @@ window.PatentDetailChat = {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    },
+    
+    escapeHtmlAdvanced: function(text) {
+        if (!text) return '';
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;')
+            .replace(/\n/g, '<br>')
+            .replace(/\r/g, '')
+            .replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;');
     }
 };

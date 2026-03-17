@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新标签页问一问功能增强测试</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .test-container {
+            background: white;
+            color: #333;
+            border-radius: 12px;
+            padding: 30px;
+            margin-top: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #764ba2;
+            margin-top: 30px;
+        }
+        .test-section {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .test-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status.pending { background: #ffeaa7; color: #d63031; }
+        .status.pass { background: #55efc4; color: #00b894; }
+        .status.fail { background: #fab1a0; color: #d63031; }
+        .feature-list {
+            list-style: none;
+            padding-left: 20px;
+        }
+        .feature-list li:before {
+            content: "✓ ";
+            color: #00b894;
+            font-weight: bold;
+        }
+        .code-block {
+            background: #2d3436;
+            color: #dfe6e9;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        .note {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .quick-question-demo {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+        .quick-question-btn {
+            padding: 8px 16px;
+            background: #f1f8e9;
+            border: 1px solid #c8e6c9;
+            border-radius: 16px;
+            font-size: 13px;
+            cursor: pointer;
+            color: #2e7d32;
+            transition: all 0.2s;
+        }
+        .quick-question-btn:hover {
+            background: #43a047;
+            color: white;
+            border-color: #43a047;
+        }
+        .token-count-demo {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .token-count-display {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 新标签页问一问功能增强测试</h1>
+    
+    <div class="test-container">
+        <h2>测试概述</h2>
+        <p>本测试页面用于验证新标签页专利详情中"问一问"功能的增强特性：</p>
+        <ul>
+            <li>Token 统计功能</li>
+            <li>快捷问题按钮（全部内容添加）</li>
+            <li>文本转义处理</li>
+            <li>与弹窗详情功能的一致性</li>
+        </ul>
+
+        <div class="test-section">
+            <h3>1. Token 统计功能 <span class="status pending">待测试</span></h3>
+            <div class="test-item">
+                <strong>测试步骤：</strong>
+                <ol>
+                    <li>在功能六中查询任意专利</li>
+                    <li>点击"新标签页打开"按钮</li>
+                    <li>在新标签页中点击顶部工具栏的"问一问"按钮</li>
+                    <li>在输入框中输入文字</li>
+                    <li>观察 Token 计数器是否实时更新</li>
+                </ol>
+                <strong>预期结果：</strong>
+                <ul class="feature-list">
+                    <li>输入框右下方显示 Token 计数器</li>
+                    <li>输入文字时 Token 数量实时更新</li>
+                    <li>Token 计算规则：中文汉字每 1.5 个字符=1 Token，其他字符每 4 个=1 Token</li>
+                    <li>计数器格式："X Tokens"</li>
+                </ul>
+            </div>
+            
+            <div class="token-count-demo">
+                <strong>Token 计算示例：</strong>
+                <div style="margin-top: 10px;">
+                    <p>输入：<code>这个专利的核心技术是什么？</code></p>
+                    <p>字符数：13 个汉字 + 1 个标点 = 14 字符</p>
+                    <p>估算 Token 数：<span class="token-count-display">10 Tokens</span> (13/1.5 ≈ 9 + 1/4 = 1 → 10 Tokens)</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. 快捷问题按钮（全部内容添加） <span class="status pending">待测试</span></h3>
+            <div class="test-item">
+                <strong>测试步骤：</strong>
+                <ol>
+                    <li>打开新标签页的问一问弹窗</li>
+                    <li>查看输入框上方的快捷问题按钮</li>
+                    <li>点击任意快捷问题按钮</li>
+                    <li>观察输入框是否自动填充对应问题</li>
+                </ol>
+                <strong>预期结果：</strong>
+                <ul class="feature-list">
+                    <li>输入框上方显示 4 个快捷问题按钮</li>
+                    <li>按钮分别为："核心技术"、"创新点"、"解释权利要求"、"应用场景"</li>
+                    <li>点击按钮后，输入框自动填充完整问题</li>
+                    <li>同时更新 Token 计数器</li>
+                    <li>光标自动聚焦到输入框</li>
+                </ul>
+            </div>
+            
+            <div class="quick-question-demo">
+                <strong>快捷问题按钮示例：</strong>
+                <button class="quick-question-btn" onclick="alert('核心技术')">核心技术</button>
+                <button class="quick-question-btn" onclick="alert('创新点')">创新点</button>
+                <button class="quick-question-btn" onclick="alert('解释权利要求')">解释权利要求</button>
+                <button class="quick-question-btn" onclick="alert('应用场景')">应用场景</button>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. 文本转义处理 <span class="status pending">待测试</span></h3>
+            <div class="test-item">
+                <strong>测试步骤：</strong>
+                <ol>
+                    <li>在问一问输入框中输入包含特殊字符的问题</li>
+                    <li>测试以下特殊字符：</li>
+                    <ul>
+                        <li>HTML 标签：<code>&lt;div&gt;test&lt;/div&gt;</code></li>
+                        <li>引号：<code>"test"</code> 和 <code>'test'</code></li>
+                        <li>&符号：<code>&amp;nbsp;</code></li>
+                        <li>换行符：按 Shift+Enter</li>
+                        <li>Tab 符：按 Tab 键</li>
+                    </ul>
+                    <li>发送消息并观察显示效果</li>
+                </ol>
+                <strong>预期结果：</strong>
+                <ul class="feature-list">
+                    <li>HTML 标签正确转义显示，不会被解析为 HTML</li>
+                    <li>引号正确显示，不会破坏 HTML 结构</li>
+                    <li>&符号正确显示为 &amp;</li>
+                    <li>换行符正确显示为换行</li>
+                    <li>Tab 符正确显示为 4 个空格</li>
+                    <li>无 JavaScript 错误</li>
+                </ul>
+            </div>
+            
+            <div class="code-block">
+                <strong>转义测试用例：</strong>
+                &lt;script&gt;alert('XSS')&lt;/script&gt;<br>
+                "双引号" 和 '单引号'<br>
+                &amp;lt; 和 &amp;gt;<br>
+                换行测试<br>
+                Tab 测试
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. 功能一致性测试 <span class="status pending">待测试</span></h3>
+            <div class="test-item">
+                <strong>测试步骤：</strong>
+                <ol>
+                    <li>打开弹窗详情的问一问功能</li>
+                    <li>打开新标签页的问一问功能</li>
+                    <li>对比两者的视觉呈现和用户体验</li>
+                </ol>
+                <strong>预期结果：</strong>
+                <ul class="feature-list">
+                    <li>Token 统计功能在两者中均存在</li>
+                    <li>快捷问题按钮在两者中均存在</li>
+                    <li>视觉风格一致（颜色、字体、间距）</li>
+                    <li>交互逻辑一致（点击反应、hover 效果）</li>
+                    <li>文本转义处理逻辑一致</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="note">
+            <strong>测试环境要求：</strong>
+            <ul>
+                <li>浏览器：Chrome 90+ / Firefox 88+ / Safari 14+ / Edge 90+</li>
+                <li>屏幕分辨率：1920x1080 或更高</li>
+                <li>已配置智谱 AI 或阿里云百炼 API Key</li>
+                <li>主页面已正常加载</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>测试报告</h3>
+            <div class="test-item">
+                <strong>测试日期：</strong> ____________<br>
+                <strong>测试人员：</strong> ____________<br>
+                <strong>浏览器：</strong> ____________<br>
+                <br>
+                <strong>测试结果：</strong><br>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                    <tr style="background: #667eea; color: white;">
+                        <th style="padding: 10px; border: 1px solid #ddd;">测试项</th>
+                        <th style="padding: 10px; border: 1px solid #ddd;">结果</th>
+                        <th style="padding: 10px; border: 1px solid #ddd;">备注</th>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;">Token 统计功能</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">[ ] 通过 [ ] 失败</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;"></td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;">快捷问题按钮</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">[ ] 通过 [ ] 失败</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;"></td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;">文本转义处理</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">[ ] 通过 [ ] 失败</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;"></td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;">功能一致性</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">[ ] 通过 [ ] 失败</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;"></td>
+                    </tr>
+                </table>
+                <br>
+                <strong>总体评价：</strong> [ ] 优秀 [ ] 良好 [ ] 需改进<br>
+                <br>
+                <strong>问题与建议：</strong><br>
+                ___________________________________________________________<br>
+                ___________________________________________________________<br>
+                ___________________________________________________________
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Token 计算演示
+        function estimateTokens(text) {
+            if (!text) return 0;
+            let chineseChars = 0;
+            let otherChars = 0;
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                if (/[\u4e00-\u9fa5]/.test(char)) {
+                    chineseChars++;
+                } else {
+                    otherChars++;
+                }
+            }
+            return Math.ceil(chineseChars / 1.5) + Math.ceil(otherChars / 4);
+        }
+
+        // 快捷问题按钮演示
+        document.querySelectorAll('.quick-question-btn').forEach(btn => {
+            btn.onclick = function() {
+                const question = this.textContent;
+                alert('点击了快捷问题：' + question);
+            };
+        });
+    </script>
+</body>
+</html>
