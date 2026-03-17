@@ -1341,7 +1341,28 @@ function exportUnifiedAsyncResults() {
 }
 
 async function unifiedBatchStep1Upload() {
-    var result = await UnifiedBatch.batchEngine.uploadJsonl();
+    var checkboxes = document.querySelectorAll('.unified-input-checkbox:checked');
+    var selectedIds = Array.from(checkboxes).map(function(cb) { return cb.dataset.id; });
+    
+    var inputs = UnifiedBatch.getInputs();
+    if (selectedIds.length > 0) {
+        inputs = inputs.filter(function(input) { return selectedIds.includes(input.id); });
+    }
+    
+    if (inputs.length === 0) {
+        logUnifiedBatchMessage('上传失败: 没有选中任何输入数据');
+        return;
+    }
+    
+    var template = UnifiedBatch.template.getCurrentTemplate();
+    if (!template || !template.systemPrompt) {
+        logUnifiedBatchMessage('上传失败: 请先配置模板');
+        return;
+    }
+    
+    UnifiedBatch.batchEngine.generateJsonl(inputs, template);
+    
+    var result = await UnifiedBatch.batchEngine.uploadJsonl(template.model);
     if (result.success) {
         document.getElementById('unified_batch_step2_create').disabled = false;
         logUnifiedBatchMessage('文件上传成功，File ID: ' + result.fileId);
