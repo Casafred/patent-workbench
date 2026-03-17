@@ -679,7 +679,6 @@ function renderCardView() {
     
     const contentDiv = document.createElement('div');
     contentDiv.innerHTML = html;
-    const container = getResultContainer();
     if (container) {
         container.appendChild(contentDiv);
     }
