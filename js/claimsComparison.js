@@ -35,6 +35,9 @@ function initClaimsComparison() {
     statSimilarity = document.getElementById('stat_similarity');
     couplingSelector = document.getElementById('coupling_selector');
     couplingAnalyzeBtn = document.getElementById('coupling_analyze_btn');
+    
+    // 分析模式选择器
+    const analysisModeSelect = document.getElementById('analysis_mode_select');
 
     // Check if required elements exist
     if (!comparisonModelSelect) {
@@ -74,6 +77,14 @@ function initClaimsComparison() {
     
     if (couplingAnalyzeBtn) {
         couplingAnalyzeBtn.addEventListener('click', runCouplingAnalysis);
+    }
+    
+    // 绑定分析模式切换事件
+    if (analysisModeSelect) {
+        analysisModeSelect.addEventListener('change', handleAnalysisModeChange);
+        // 初始化时设置正确的模式
+        analysisModeSelect.value = appState.claimsComparison.analysisMode || 'independent';
+        handleAnalysisModeChange();
     }
 
     // 初始化输入区（默认2个）
@@ -198,6 +209,49 @@ function handleModelChange() {
 }
 
 /**
+ * 处理分析模式切换
+ */
+function handleAnalysisModeChange() {
+    const modeSelect = document.getElementById('analysis_mode_select');
+    if (!modeSelect) return;
+    
+    const mode = modeSelect.value;
+    appState.claimsComparison.analysisMode = mode;
+    
+    // 更新模式说明
+    const modeDescriptions = {
+        'independent': '仅对比独立权利要求，需要输入独权序号',
+        'full': '对比完整权利要求文本，无需输入序号'
+    };
+    const descEl = document.getElementById('analysis_mode_description');
+    if (descEl) {
+        descEl.textContent = modeDescriptions[mode];
+    }
+    
+    // 更新输入区域显示
+    updateInputAreaForMode(mode);
+}
+
+/**
+ * 根据分析模式更新输入区域
+ */
+function updateInputAreaForMode(mode) {
+    const numberInputs = document.querySelectorAll('.claim-number-input');
+    numberInputs.forEach(input => {
+        input.style.display = mode === 'independent' ? 'flex' : 'none';
+    });
+    
+    // 更新提示文本
+    const textareas = document.querySelectorAll('.comparison-input-group textarea');
+    textareas.forEach(textarea => {
+        const placeholder = mode === 'independent' 
+            ? '在此处粘贴权利要求全文...' 
+            : '在此处粘贴完整的权利要求文本（包含独权和从权）...';
+        textarea.placeholder = placeholder;
+    });
+}
+
+/**
  * 添加新的权利要求输入框
  */
 function addNewClaim() {
@@ -314,10 +368,16 @@ function handleCountChange(count) {
  */
 function renderInputGroups() {
     const claims = appState.claimsComparison.claims;
+    const analysisMode = appState.claimsComparison.analysisMode || 'independent';
     let html = '';
     
     claims.forEach((claim, index) => {
         const showRemoveBtn = claims.length > 2;
+        const showNumberInput = analysisMode === 'independent';
+        const placeholder = analysisMode === 'independent' 
+            ? `在此处粘贴${claim.label}的权利要求全文...` 
+            : `在此处粘贴${claim.label}的完整权利要求文本（包含独权和从权）...`;
+        
         html += `
             <div class="comparison-input-group" data-id="${claim.id}">
                 <div class="version-label">
@@ -327,9 +387,9 @@ function renderInputGroups() {
                 <textarea 
                     id="claim_text_${claim.id}" 
                     rows="12" 
-                    placeholder="在此处粘贴${claim.label}的权利要求全文..."
+                    placeholder="${placeholder}"
                 >${claim.fullText}</textarea>
-                <div class="claim-number-input">
+                <div class="claim-number-input" style="display: ${showNumberInput ? 'flex' : 'none'}">
                     <label for="claim_numbers_${claim.id}">独立权利要求序号:</label>
                     <input 
                         type="text" 
@@ -370,18 +430,34 @@ async function runAnalysisWorkflow() {
     try {
         // 1. 验证输入
         const claims = appState.claimsComparison.claims;
+        const analysisMode = appState.claimsComparison.analysisMode || 'independent';
+        
         for (const claim of claims) {
-            if (!claim.fullText || !claim.numbers) {
-                throw new Error(`请确保${claim.label}的文本和序号都已填写`);
+            if (analysisMode === 'independent') {
+                // 独立权利要求模式：需要文本和序号
+                if (!claim.fullText || !claim.numbers) {
+                    throw new Error(`请确保${claim.label}的文本和序号都已填写`);
+                }
+            } else {
+                // 完整权利要求模式：只需要文本
+                if (!claim.fullText || !claim.fullText.trim()) {
+                    throw new Error(`请确保${claim.label}的权利要求文本不为空`);
+                }
             }
         }
         
-        // 2. 提取权利要求
-        setLoadingState(true, '提取权利要求文本...');
+        // 2. 提取权利要求（根据模式）
+        setLoadingState(true, '准备权利要求文本...');
         for (const claim of claims) {
-            claim.original = extractClaims(claim.fullText, claim.numbers);
-            if (!claim.original) {
-                throw new Error(`${claim.label}未能提取到有效的独立权利要求`);
+            if (analysisMode === 'independent') {
+                // 独立权利要求模式：提取指定序号的权利要求
+                claim.original = extractClaims(claim.fullText, claim.numbers);
+                if (!claim.original) {
+                    throw new Error(`${claim.label}未能提取到有效的独立权利要求`);
+                }
+            } else {
+                // 完整权利要求模式：直接使用全文
+                claim.original = claim.fullText.trim();
             }
         }
         
@@ -395,7 +471,7 @@ async function runAnalysisWorkflow() {
         
         // 5. 执行对比分析
         setLoadingState(true, '执行对比分析...');
-        const result = await performMultiComparison(claims);
+        const result = await performMultiComparison(claims, analysisMode);
         appState.claimsComparison.analysisResult = result;
         
         // 6. 渲染结果
@@ -503,14 +579,67 @@ ${claim.original}`;
 /**
  * 执行多权利要求对比
  */
-async function performMultiComparison(claims) {
+async function performMultiComparison(claims, analysisMode = 'independent') {
     const claimsText = claims.map((c, i) => 
         `<CLAIM_${i + 1} LABEL="${c.label}">\n${c.translated}\n</CLAIM_${i + 1}>`
     ).join('\n\n');
     
-    const system_prompt = `You are a world-class patent comparison AI. Your task is to compare multiple independent claims and generate a structured JSON analysis. All analytical text must be in Chinese.`;
+    let system_prompt, user_prompt;
     
-    const user_prompt = `
+    if (analysisMode === 'full') {
+        // 完整权利要求对比模式
+        system_prompt = `You are a world-class patent comparison AI. Your task is to compare complete sets of patent claims (including independent and dependent claims) and generate a comprehensive structured JSON analysis. All analytical text must be in Chinese.`;
+        
+        user_prompt = `
+<TASK>
+Compare the following ${claims.length} complete claim sets and output a JSON object with detailed analysis. Each claim set may contain multiple independent claims and their dependent claims.
+</TASK>
+
+<INPUT_CLAIMS>
+${claimsText}
+</INPUT_CLAIMS>
+
+<OUTPUT_SCHEMA>
+{
+  "comparison_matrix": [
+    {
+      "claim_pair": ["版本A", "版本B"],
+      "similarity_score": 0.75,
+      "similar_features": [
+        {"feature": "共同特征描述（包括独立权利要求和从属权利要求中的共同特征）"}
+      ],
+      "different_features": [
+        {
+          "claim_1_feature": "版本A的特征（标注是独权还是从权）",
+          "claim_2_feature": "版本B的特征（标注是独权还是从权）",
+          "analysis": "差异分析（中文）"
+        }
+      ],
+      "independent_claim_comparison": "独立权利要求对比分析",
+      "dependent_claim_comparison": "从属权利要求对比分析"
+    }
+  ],
+  "overall_summary": "整体对比总结（中文）",
+  "coverage_analysis": "权利要求覆盖范围分析"
+}
+</OUTPUT_SCHEMA>
+
+<INSTRUCTIONS>
+1. Analyze both independent claims and dependent claims
+2. Compare the scope and coverage of each claim set
+3. Calculate similarity scores (0-1) considering all claims
+4. Identify similar and different features across all claims
+5. Provide detailed analysis for independent and dependent claims separately
+6. Analyze the coverage range of each claim set
+7. Provide analysis in Chinese
+8. Return only the JSON object
+</INSTRUCTIONS>
+`;
+    } else {
+        // 独立权利要求对比模式（原有逻辑）
+        system_prompt = `You are a world-class patent comparison AI. Your task is to compare multiple independent claims and generate a structured JSON analysis. All analytical text must be in Chinese.`;
+        
+        user_prompt = `
 <TASK>
 Compare the following ${claims.length} independent claims and output a JSON object with pairwise comparisons.
 </TASK>
@@ -549,6 +678,7 @@ ${claimsText}
 5. Return only the JSON object
 </INSTRUCTIONS>
 `;
+    }
     
     const response = await apiCall('/chat', {
         model: appState.claimsComparison.model,

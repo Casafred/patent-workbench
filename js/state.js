@@ -94,6 +94,7 @@ const appState = {
     // ▼▼▼ 权利要求对比功能的状态 (v3.0) ▼▼▼
     claimsComparison: {
         model: 'GLM-4.7-Flash', // 可选模型
+        analysisMode: 'independent', // 'independent' 或 'full'
         comparisonCount: 2, // 2-4个权利要求
         claims: [
             { id: 1, label: '版本A', fullText: '', numbers: '', original: '', translated: '', lang: '' },

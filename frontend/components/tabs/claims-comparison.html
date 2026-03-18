@@ -26,6 +26,14 @@
                         <span class="model-description" id="model_description">模型将从配置文件加载</span>
                     </div>
                     <div class="config-item">
+                        <label for="analysis_mode_select">分析模式：</label>
+                        <select id="analysis_mode_select">
+                            <option value="independent">独立权利要求对比</option>
+                            <option value="full">完整权利要求对比</option>
+                        </select>
+                        <span class="model-description" id="analysis_mode_description">仅对比独立权利要求</span>
+                    </div>
+                    <div class="config-item">
                         <label>权利要求数量：</label>
                         <div class="comparison-count-selector">
                             <span id="claims_count_display">当前：2个</span>
