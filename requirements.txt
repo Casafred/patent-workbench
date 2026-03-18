@@ -20,9 +20,15 @@ psycopg2-binary
 beautifulsoup4
 lxml
 
-# Excel Processing
+# Excel Processing - High Performance
 pandas>=1.5.0
 openpyxl>=3.0.0
+fastexcel>=0.11.0
+polars>=1.0.0
+python-calamine>=0.2.0
+
+# System monitoring
+psutil>=5.9.0
 
 # Language Detection
 langdetect>=1.0.9

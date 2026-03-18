@@ -241,7 +241,70 @@ const InputHandler = {
         }
 
         try {
-            const CHUNK_SIZE = 500;
+            const totalRows = this.state.excelTotalRows || 0;
+            
+            if (onProgress) {
+                onProgress({ status: 'loading', progress: 10, message: '正在使用高性能引擎加载...' });
+            }
+            
+            this.state.inputs = [];
+            this.state.indexColumn = indexColumn || null;
+
+            const response = await fetch(`/api/excel/${this.state.excelFileId}/concat_columns`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    columns: concatColumns,
+                    separator: '\n\n',
+                    header_row: 0,
+                    index_column: indexColumn
+                })
+            });
+
+            const result = await response.json();
+
+            if (!result.success) {
+                return { success: false, message: result.error || '列拼接失败', count: 0 };
+            }
+
+            const data = result.data;
+            
+            this.state.inputs = data.results.map(item => ({
+                id: item.id,
+                content: item.content,
+                rawContent: item.raw
+            }));
+
+            if (onProgress) {
+                onProgress({ 
+                    status: 'completed', 
+                    progress: 100, 
+                    message: `拼接完成，共 ${data.total_count} 条 (${data.elapsed_time.toFixed(2)}秒, ${data.engine}引擎)` 
+                });
+            }
+
+            return {
+                success: true,
+                count: data.total_count,
+                message: `成功加载${data.total_count}条输入（${data.engine}引擎，耗时${data.elapsed_time.toFixed(2)}秒）`
+            };
+        } catch (err) {
+            console.error('加载Excel数据错误:', err);
+            return { success: false, message: `加载数据失败: ${err.message}`, count: 0 };
+        }
+    },
+
+    async loadInputsFromConfigLegacy(indexColumn, concatColumns, onProgress) {
+        if (!this.state.excelFileId) {
+            return { success: false, message: '未加载Excel文件', count: 0 };
+        }
+
+        if (!concatColumns || concatColumns.length === 0) {
+            return { success: false, message: '未选择拼接列', count: 0 };
+        }
+
+        try {
+            const CHUNK_SIZE = 1000;
             const totalRows = this.state.excelTotalRows || 0;
             const isLargeDataset = totalRows > 1000;
             
@@ -257,7 +320,7 @@ const InputHandler = {
 
             while (hasMore) {
                 const response = await fetch(
-                    `/api/excel/${this.state.excelFileId}/data?header_row=0&page=1&page_size=${CHUNK_SIZE}&offset=${offset}`
+                    `/api/excel/${this.state.excelFileId}/load_more?header_row=0&offset=${offset}&limit=${CHUNK_SIZE}`
                 );
                 const result = await response.json();
 
