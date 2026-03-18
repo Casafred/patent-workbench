@@ -136,12 +136,59 @@
                             <label for="unified_user_prompt">用户提示模板:</label>
                             <div class="help-icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"></path></svg>
-                                <span class="tooltip-text">请务必使用 {{INPUT}} 作为占位符。当从Excel导入多列时，系统会自动将多列内容及列名填充到 {{INPUT}} 的位置。</span>
+                                <span class="tooltip-text">
+                                    <strong>合并模式：</strong>使用 {{INPUT}} 占位符，所有字段合并插入<br>
+                                    <strong>分离模式：</strong>使用 {{字段名}} 占位符，各字段独立插入<br>
+                                    可在下方选择插入模式并配置字段映射
+                                </span>
                             </div>
                         </div>
                         <textarea id="unified_user_prompt" rows="4">请根据以下文本，总结其核心技术点：
 
 {{INPUT}}</textarea>
+                    </div>
+                    
+                    <hr style="margin: 15px 0; border-color: var(--border-color);">
+                    
+                    <div class="config-item">
+                        <label>字段插入模式:</label>
+                        <select id="unified_insert_mode" onchange="handleUnifiedInsertModeChange()" style="margin-bottom: 10px;">
+                            <option value="merged">合并模式 - 所有字段合并为 {{INPUT}}</option>
+                            <option value="separate">分离模式 - 各字段独立占位符</option>
+                        </select>
+                    </div>
+                    
+                    <div id="unified_merged_config" style="background: var(--bg-color-secondary); padding: 12px; border-radius: 8px; margin-bottom: 15px;">
+                        <div class="config-item" style="margin-bottom: 0;">
+                            <label for="unified_merged_intro" style="font-size: 0.9em;">字段介绍文本 (合并时显示):</label>
+                            <input type="text" id="unified_merged_intro" value="以下是相关内容：" placeholder="例如：以下是专利的摘要和权利要求">
+                            <small style="color: var(--text-color-tertiary);">多字段合并时，会在内容前添加此介绍文本</small>
+                        </div>
+                    </div>
+                    
+                    <div id="unified_separate_config" style="display: none; background: var(--bg-color-secondary); padding: 12px; border-radius: 8px; margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <label style="margin: 0; font-size: 0.9em;">字段映射配置:</label>
+                            <button class="small-button" onclick="autoGenerateUnifiedFieldMappings()" type="button">自动生成映射</button>
+                        </div>
+                        <div id="unified_field_mappings_container" style="max-height: 200px; overflow-y: auto;">
+                            <div class="info-text" style="color: var(--text-color-tertiary); padding: 10px; text-align: center;">
+                                请先在Excel列配置中选择要使用的列，然后点击"自动生成映射"
+                            </div>
+                        </div>
+                        <small style="color: var(--text-color-tertiary); margin-top: 8px; display: block;">
+                            分离模式下，每个Excel列对应一个占位符，可在模板中使用 {{字段名}} 插入
+                        </small>
+                    </div>
+                    
+                    <div class="config-item">
+                        <label>快速插入占位符:</label>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
+                            <button class="small-button" onclick="insertPlaceholderToPrompt('{{INPUT}}')" type="button" style="font-size: 0.85em;">{{INPUT}}</button>
+                            <button class="small-button" onclick="insertPlaceholderToPrompt('{{字段1}}')" type="button" style="font-size: 0.85em;">{{字段1}}</button>
+                            <button class="small-button" onclick="insertPlaceholderToPrompt('{{字段2}}')" type="button" style="font-size: 0.85em;">{{字段2}}</button>
+                            <button class="small-button" onclick="insertPlaceholderToPrompt('{{字段3}}')" type="button" style="font-size: 0.85em;">{{字段3}}</button>
+                        </div>
                     </div>
                 </div>
             </div>

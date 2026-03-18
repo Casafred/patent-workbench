@@ -2222,10 +2222,11 @@ async function handleUnifiedRepExcelUpload(event) {
         var arrayBuffer = await file.arrayBuffer();
         var workbook = XLSX.read(arrayBuffer, { type: 'array' });
         
-        var state = UnifiedBatch.state;
-        if (state && state.reporter) {
-            state.reporter.workbook = workbook;
-            state.reporter.sheetData = null;
+        var stateObj = UnifiedBatch.state;
+        var actualState = stateObj ? stateObj.state : null;
+        if (actualState && actualState.reporter) {
+            actualState.reporter.workbook = workbook;
+            actualState.reporter.sheetData = null;
         }
         
         var sheetSelector = document.getElementById('unified_rep_sheet_selector');
@@ -2244,8 +2245,8 @@ async function handleUnifiedRepExcelUpload(event) {
                 var worksheet = workbook.Sheets[sheetName];
                 var data = XLSX.utils.sheet_to_json(worksheet);
                 
-                if (state && state.reporter) {
-                    state.reporter.sheetData = data;
+                if (actualState && actualState.reporter) {
+                    actualState.reporter.sheetData = data;
                 }
                 
                 checkUnifiedReportReady();
@@ -2254,8 +2255,8 @@ async function handleUnifiedRepExcelUpload(event) {
             if (workbook.SheetNames.length > 0) {
                 var firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                 var data = XLSX.utils.sheet_to_json(firstSheet);
-                if (state && state.reporter) {
-                    state.reporter.sheetData = data;
+                if (actualState && actualState.reporter) {
+                    actualState.reporter.sheetData = data;
                 }
             }
         }
@@ -2273,9 +2274,10 @@ async function handleUnifiedRepJsonlUpload(event) {
     
     try {
         var text = await file.text();
-        var state = UnifiedBatch.state;
-        if (state && state.reporter) {
-            state.reporter.jsonlData = text;
+        var stateObj = UnifiedBatch.state;
+        var actualState = stateObj ? stateObj.state : null;
+        if (actualState && actualState.reporter) {
+            actualState.reporter.jsonlData = text;
         }
         
         var infoBox = document.getElementById('unified_reporter_info_box');
@@ -2291,16 +2293,24 @@ async function handleUnifiedRepJsonlUpload(event) {
 }
 
 function checkUnifiedReportReady() {
-    var state = UnifiedBatch.state;
-    var reporter = state ? state.reporter : null;
+    var stateObj = UnifiedBatch.state;
+    var actualState = stateObj ? stateObj.state : null;
+    var reporter = actualState ? actualState.reporter : null;
     
     var hasSheetData = reporter && reporter.sheetData && reporter.sheetData.length > 0;
     var hasJsonlData = reporter && reporter.jsonlData;
-    var hasBatchResult = state && state.batchTask && state.batchTask.resultContent;
+    var hasBatchResult = actualState && actualState.batchTask && actualState.batchTask.resultContent;
     
     var generateBtn = document.getElementById('unified_generate_report_btn');
     if (generateBtn) {
         var hasAnyJsonl = hasJsonlData || hasBatchResult;
         generateBtn.disabled = !(hasSheetData && hasAnyJsonl);
     }
+    
+    console.log('[UnifiedBatch] 报告就绪检查:', {
+        hasSheetData: hasSheetData,
+        hasJsonlData: hasJsonlData,
+        hasBatchResult: hasBatchResult,
+        buttonDisabled: generateBtn ? generateBtn.disabled : 'button not found'
+    });
 }
