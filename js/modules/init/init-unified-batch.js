@@ -1790,23 +1790,8 @@ async function generateUnifiedReport() {
         return;
     }
 
-    var results = [];
-    try {
-        results = jsonlContent.trim().split('\n').map(function(line) {
-            try {
-                return JSON.parse(line);
-            } catch (e) {
-                return null;
-            }
-        }).filter(function(item) { return item; });
-    } catch (e) {
-        alert('解析JSONL文件失败: ' + e.message);
-        return;
-    }
-
-    if (results.length === 0) {
-        alert('没有有效的结果数据');
-        return;
+    if (!reporter || !reporter.jsonlData) {
+        state.batchTask.resultContent = jsonlContent;
     }
 
     var result = UnifiedBatch.batchEngine.generateReport(originalData);
