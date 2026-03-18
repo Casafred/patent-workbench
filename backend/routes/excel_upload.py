@@ -590,25 +590,6 @@ def benchmark_file(file_id):
     except Exception as e:
         print(f"基准测试失败: {traceback.format_exc()}")
         return create_response(error=f"基准测试失败: {str(e)}", status_code=500)
-            max_rows=offset + limit
-        )
-        
-        if not parse_result['success']:
-            return create_response(error=parse_result['error'], status_code=400)
-        
-        data = parse_result['data'][offset:offset + limit]
-        
-        return create_response(data={
-            'data': data,
-            'offset': offset,
-            'limit': limit,
-            'total_rows': parse_result['total_rows'],
-            'has_more': offset + limit < parse_result['total_rows']
-        })
-        
-    except Exception as e:
-        print(f"加载更多数据失败: {traceback.format_exc()}")
-        return create_response(error=f"加载数据失败: {str(e)}", status_code=500)
 
 
 @excel_upload_bp.route('/api/excel/<file_id>/columns', methods=['GET'])
