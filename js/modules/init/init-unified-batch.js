@@ -71,85 +71,53 @@ function populateUnifiedModelSelect() {
     if (window.ProviderManager && typeof ProviderManager.getAvailableModels === 'function') {
         availableModels = ProviderManager.getAvailableModels();
     } else {
-        const getUserStorageItem = (key) => {
-            if (window.userCacheStorage && window.userCacheStorage.isInitialized()) {
-                return window.userCacheStorage.get(key);
-            }
-            return localStorage.getItem(key);
-        };
-        
-        const zhipuKey = window.appState?.apiKey || getUserStorageItem('globalApiKey');
-        const aliyunKey = window.appState?.aliyunApiKey || getUserStorageItem('aliyun_api_key');
-        
         const defaultZhipuModels = [
             { id: 'glm-4-flash', name: 'GLM-4-Flash', provider: 'zhipu' },
             { id: 'glm-4-long', name: 'GLM-4-Long', provider: 'zhipu' },
-            { id: 'glm-4.7-flash', name: 'GLM-4.7-Flash', provider: 'zhipu' }
+            { id: 'glm-4-plus', name: 'GLM-4-Plus', provider: 'zhipu' },
+            { id: 'glm-4-air', name: 'GLM-4-Air', provider: 'zhipu' },
+            { id: 'glm-z1-flash', name: 'GLM-Z1-Flash', provider: 'zhipu' },
+            { id: 'glm-z1-air', name: 'GLM-Z1-Air', provider: 'zhipu' },
+            { id: 'glm-5', name: 'GLM-5', provider: 'zhipu' }
         ];
         
         const defaultAliyunModels = [
+            { id: 'qwen-flash', name: 'Qwen-Flash', provider: 'aliyun' },
             { id: 'qwen-turbo', name: 'Qwen-Turbo', provider: 'aliyun' },
             { id: 'qwen-plus', name: 'Qwen-Plus', provider: 'aliyun' },
-            { id: 'qwen-max', name: 'Qwen-Max', provider: 'aliyun' }
+            { id: 'qwen3-max', name: 'Qwen3-Max', provider: 'aliyun' },
+            { id: 'qwq-plus', name: 'QwQ-Plus', provider: 'aliyun' },
+            { id: 'deepseek-v3', name: 'DeepSeek-V3', provider: 'aliyun' },
+            { id: 'kimi-k2.5', name: 'Kimi-K2.5', provider: 'aliyun' }
         ];
         
-        if (zhipuKey) {
-            availableModels = availableModels.concat(defaultZhipuModels);
-        }
-        if (aliyunKey) {
-            availableModels = availableModels.concat(defaultAliyunModels);
-        }
+        availableModels = [...defaultZhipuModels, ...defaultAliyunModels];
     }
     
-    if (availableModels.length === 0) {
-        var option = document.createElement('option');
-        option.value = '';
-        option.textContent = '请先配置API Key';
-        option.disabled = true;
-        option.selected = true;
-        select.appendChild(option);
-        return;
-    }
-    
-    const grouped = { zhipu: [], aliyun: [] };
     availableModels.forEach(function(model) {
-        const provider = model.provider || 'zhipu';
-        if (grouped[provider]) {
-            grouped[provider].push(model);
-        }
+        const option = document.createElement('option');
+        option.value = model.id;
+        option.textContent = model.name;
+        option.dataset.provider = model.provider;
+        select.appendChild(option);
     });
     
-    if (grouped.zhipu.length > 0) {
-        var optgroup = document.createElement('optgroup');
-        optgroup.label = '智谱AI';
-        grouped.zhipu.forEach(function(m) {
-            var option = document.createElement('option');
-            option.value = m.id;
-            option.textContent = m.name || m.id;
-            optgroup.appendChild(option);
-        });
-        select.appendChild(optgroup);
-    }
+    select.onchange = function() {
+        var selectedModel = this.value;
+        var template = UnifiedBatch.template.getCurrentTemplate();
+        template.model = selectedModel;
+        UnifiedBatch.template.setCurrentTemplate(template);
+        console.log('[UnifiedBatch] 模型已实时更新为:', selectedModel);
+    };
     
-    if (grouped.aliyun.length > 0) {
-        var optgroup = document.createElement('optgroup');
-        optgroup.label = '阿里云百炼';
-        grouped.aliyun.forEach(function(m) {
-            var option = document.createElement('option');
-            option.value = m.id;
-            option.textContent = m.name || m.id;
-            optgroup.appendChild(option);
-        });
-        select.appendChild(optgroup);
-    }
-    
-    if (select.options.length === 0) {
-        availableModels.forEach(function(m) {
-            var option = document.createElement('option');
-            option.value = m.id;
-            option.textContent = m.name || m.id;
-            select.appendChild(option);
-        });
+    var currentTemplate = UnifiedBatch.template.getCurrentTemplate();
+    if (currentTemplate && currentTemplate.model) {
+        select.value = currentTemplate.model;
+    } else if (availableModels.length > 0) {
+        select.value = availableModels[0].id;
+        var template = UnifiedBatch.template.getCurrentTemplate();
+        template.model = availableModels[0].id;
+        UnifiedBatch.template.setCurrentTemplate(template);
     }
 }
 
