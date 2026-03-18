@@ -380,6 +380,16 @@ function bindUnifiedBatchEvents() {
     if (deleteSelectedBtn) {
         deleteSelectedBtn.addEventListener('click', handleUnifiedDeleteSelected);
     }
+
+    var repExcelInput = document.getElementById('unified_rep_excel_input');
+    if (repExcelInput) {
+        repExcelInput.addEventListener('change', handleUnifiedRepExcelUpload);
+    }
+
+    var repJsonlInput = document.getElementById('unified_rep_jsonl_input');
+    if (repJsonlInput) {
+        repJsonlInput.addEventListener('change', handleUnifiedRepJsonlUpload);
+    }
     
     console.log('[UnifiedBatch] 事件绑定完成');
 }
@@ -994,9 +1004,97 @@ function handleUnifiedTemplateSelect(event) {
             var modelSelect = document.getElementById('unified_template_model_select');
             modelSelect.value = template.model;
         }
+        
+        var insertModeSelect = document.getElementById('unified_insert_mode');
+        if (insertModeSelect) {
+            insertModeSelect.value = template.insertMode || 'merged';
+            handleUnifiedInsertModeChange();
+        }
+        
+        var mergedIntroInput = document.getElementById('unified_merged_intro');
+        if (mergedIntroInput) {
+            mergedIntroInput.value = template.mergedIntro || '以下是相关内容：';
+        }
 
         renderUnifiedOutputFields(template.outputFields || []);
+        renderUnifiedFieldMappings(template.fieldMappings || []);
     }
+}
+
+function handleUnifiedInsertModeChange() {
+    var insertMode = document.getElementById('unified_insert_mode')?.value || 'merged';
+    var separateConfig = document.getElementById('unified_separate_config');
+    var mergedConfig = document.getElementById('unified_merged_config');
+    
+    if (separateConfig) {
+        separateConfig.style.display = insertMode === 'separate' ? 'block' : 'none';
+    }
+    if (mergedConfig) {
+        mergedConfig.style.display = insertMode === 'merged' ? 'block' : 'none';
+    }
+    
+    UnifiedBatch.template.setInsertMode(insertMode);
+}
+
+function renderUnifiedFieldMappings(mappings) {
+    var container = document.getElementById('unified_field_mappings_container');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (!mappings || mappings.length === 0) {
+        container.innerHTML = '<div class="info-text">请先在Excel列配置中选择要使用的列，然后点击"自动生成映射"</div>';
+        return;
+    }
+    
+    mappings.forEach(function(mapping, index) {
+        var div = document.createElement('div');
+        div.className = 'field-mapping-item';
+        div.innerHTML = 
+            '<div class="mapping-row">' +
+            '<span class="mapping-column">列: ' + mapping.column + '</span>' +
+            '<span class="mapping-arrow">→</span>' +
+            '<input type="text" class="mapping-placeholder" value="' + mapping.placeholder + '" ' +
+            'onchange="updateUnifiedFieldMapping(' + index + ', \'placeholder\', this.value)" placeholder="占位符">' +
+            '</div>' +
+            '<input type="text" class="mapping-desc" value="' + (mapping.description || '') + '" ' +
+            'onchange="updateUnifiedFieldMapping(' + index + ', \'description\', this.value)" placeholder="字段描述（可选）">' +
+            '<button class="small-button delete-button" onclick="removeUnifiedFieldMapping(' + index + ')">删除</button>';
+        container.appendChild(div);
+    });
+}
+
+function autoGenerateUnifiedFieldMappings() {
+    var selectedColumns = getUnifiedSelectedConcatColumns();
+    if (selectedColumns.length === 0) {
+        alert('请先在Excel列配置中选择要使用的列');
+        return;
+    }
+    
+    UnifiedBatch.template.autoGenerateFieldMappings(selectedColumns);
+    renderUnifiedFieldMappings(UnifiedBatch.template.getFieldMappings());
+}
+
+function updateUnifiedFieldMapping(index, property, value) {
+    var mappings = UnifiedBatch.template.getFieldMappings();
+    if (mappings[index]) {
+        mappings[index][property] = value;
+    }
+}
+
+function removeUnifiedFieldMapping(index) {
+    UnifiedBatch.template.removeFieldMappingByIndex(index);
+    renderUnifiedFieldMappings(UnifiedBatch.template.getFieldMappings());
+}
+
+function insertPlaceholderToPrompt(placeholder) {
+    var textarea = document.getElementById('unified_user_prompt');
+    var start = textarea.selectionStart;
+    var end = textarea.selectionEnd;
+    var text = textarea.value;
+    textarea.value = text.substring(0, start) + placeholder + text.substring(end);
+    textarea.focus();
+    textarea.selectionStart = textarea.selectionEnd = start + placeholder.length;
 }
 
 function renderUnifiedOutputFields(fields) {
@@ -1030,13 +1128,19 @@ function removeUnifiedOutputField(index) {
 }
 
 function saveUnifiedTemplate() {
+    var insertMode = document.getElementById('unified_insert_mode')?.value || 'merged';
+    var mergedIntro = document.getElementById('unified_merged_intro')?.value || '以下是相关内容：';
+    
     var template = {
         name: document.getElementById('unified_template_name').value,
         systemPrompt: document.getElementById('unified_system_prompt').value,
         userPromptTemplate: document.getElementById('unified_user_prompt').value,
         model: document.getElementById('unified_template_model_select').value,
         temperature: parseFloat(document.getElementById('unified_template_temperature').value),
-        outputFields: UnifiedBatch.template.getOutputFields()
+        outputFields: UnifiedBatch.template.getOutputFields(),
+        insertMode: insertMode,
+        fieldMappings: UnifiedBatch.template.getFieldMappings(),
+        mergedIntro: mergedIntro
     };
 
     UnifiedBatch.setCurrentTemplate(template);
@@ -1671,9 +1775,37 @@ function handleUnifiedBatchComplete(result) {
 }
 
 async function generateUnifiedReport() {
-    var originalData = UnifiedBatch.state.state.currentSheetData;
+    var state = UnifiedBatch.state;
+    var reporter = state ? state.reporter : null;
+    
+    var originalData = reporter && reporter.sheetData ? reporter.sheetData : state.currentSheetData;
     if (!originalData) {
         alert('请先上传原始Excel文件');
+        return;
+    }
+
+    var jsonlContent = reporter && reporter.jsonlData ? reporter.jsonlData : state.batchTask.resultContent;
+    if (!jsonlContent) {
+        alert('请先加载Batch响应结果文件');
+        return;
+    }
+
+    var results = [];
+    try {
+        results = jsonlContent.trim().split('\n').map(function(line) {
+            try {
+                return JSON.parse(line);
+            } catch (e) {
+                return null;
+            }
+        }).filter(function(item) { return item; });
+    } catch (e) {
+        alert('解析JSONL文件失败: ' + e.message);
+        return;
+    }
+
+    if (results.length === 0) {
+        alert('没有有效的结果数据');
         return;
     }
 
@@ -1685,6 +1817,7 @@ async function generateUnifiedReport() {
             previewEl.textContent = '解析完成！共 ' + result.data.length + ' 条结果\n字段: ' + result.headers.join(', ');
         }
         document.getElementById('unified_download_report_btn').style.display = 'inline-block';
+        logUnifiedBatchMessage('报告生成成功，共 ' + result.data.length + ' 条结果');
     } else {
         alert(result.message);
     }
@@ -2058,4 +2191,131 @@ function updateClassificationBatchDetails(progress) {
     
     detailsEl.innerHTML = html;
     detailsEl.style.display = 'block';
+}
+
+function handleUnifiedDeleteSelected() {
+    var checkboxes = document.querySelectorAll('.unified-input-checkbox:checked');
+    var selectedIds = Array.from(checkboxes).map(function(cb) { return cb.dataset.id; });
+    
+    if (selectedIds.length === 0) {
+        alert('请先勾选要删除的数据');
+        return;
+    }
+    
+    if (!confirm('确定要删除选中的 ' + selectedIds.length + ' 条数据吗？')) {
+        return;
+    }
+    
+    var allInputs = UnifiedBatch.getInputs();
+    var remainingInputs = allInputs.filter(function(input) {
+        return !selectedIds.includes(input.id);
+    });
+    
+    UnifiedBatch.setInputs(remainingInputs);
+    
+    var state = UnifiedBatch.state;
+    if (state) {
+        state.selectAllMode = false;
+        state.selectedInputIds = [];
+    }
+    
+    var selectAllBtn = document.getElementById('unified_inputs_select_all_btn');
+    if (selectAllBtn) {
+        selectAllBtn.textContent = '全选';
+        selectAllBtn.style.background = '';
+    }
+    
+    renderUnifiedInputsList();
+    updateUnifiedModeRecommendation();
+}
+
+async function handleUnifiedRepExcelUpload(event) {
+    var file = event.target.files[0];
+    if (!file) return;
+    
+    try {
+        var arrayBuffer = await file.arrayBuffer();
+        var workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        
+        var state = UnifiedBatch.state;
+        if (state && state.reporter) {
+            state.reporter.workbook = workbook;
+            state.reporter.sheetData = null;
+        }
+        
+        var sheetSelector = document.getElementById('unified_rep_sheet_selector');
+        if (sheetSelector) {
+            sheetSelector.innerHTML = '';
+            workbook.SheetNames.forEach(function(name) {
+                var option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                sheetSelector.appendChild(option);
+            });
+            sheetSelector.style.display = 'block';
+            
+            sheetSelector.onchange = function() {
+                var sheetName = this.value;
+                var worksheet = workbook.Sheets[sheetName];
+                var data = XLSX.utils.sheet_to_json(worksheet);
+                
+                if (state && state.reporter) {
+                    state.reporter.sheetData = data;
+                }
+                
+                checkUnifiedReportReady();
+            };
+            
+            if (workbook.SheetNames.length > 0) {
+                var firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                var data = XLSX.utils.sheet_to_json(firstSheet);
+                if (state && state.reporter) {
+                    state.reporter.sheetData = data;
+                }
+            }
+        }
+        
+        checkUnifiedReportReady();
+        logUnifiedBatchMessage('原始Excel已加载: ' + file.name);
+    } catch (error) {
+        alert('加载Excel失败: ' + error.message);
+    }
+}
+
+async function handleUnifiedRepJsonlUpload(event) {
+    var file = event.target.files[0];
+    if (!file) return;
+    
+    try {
+        var text = await file.text();
+        var state = UnifiedBatch.state;
+        if (state && state.reporter) {
+            state.reporter.jsonlData = text;
+        }
+        
+        var infoBox = document.getElementById('unified_reporter_info_box');
+        if (infoBox) {
+            infoBox.style.display = 'none';
+        }
+        
+        checkUnifiedReportReady();
+        logUnifiedBatchMessage('Batch结果文件已加载: ' + file.name);
+    } catch (error) {
+        alert('加载JSONL文件失败: ' + error.message);
+    }
+}
+
+function checkUnifiedReportReady() {
+    var state = UnifiedBatch.state;
+    var reporter = state ? state.reporter : null;
+    
+    var hasSheetData = reporter && reporter.sheetData && reporter.sheetData.length > 0;
+    var hasJsonlData = reporter && reporter.jsonlData;
+    var hasBatchResult = state && state.batchTask && state.batchTask.resultContent;
+    
+    var generateBtn = document.getElementById('unified_generate_report_btn');
+    if (generateBtn) {
+        var hasAnyJsonl = hasJsonlData || hasBatchResult;
+        generateBtn.disabled = !(hasSheetData && hasAnyJsonl);
+    }
 }

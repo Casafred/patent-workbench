@@ -44,41 +44,72 @@ export const PRESET_TEMPLATES = [
         name: '技术文本翻译',
         systemPrompt: '你是一个专业精通各技术领域术语的、精通多国语言的翻译引擎。你的任务是自动检测用户输入文本的语言并将其翻译成中文。请直接返回翻译后的文本，不要添加任何额外的解释或说明。',
         userPromptTemplate: '请翻译以下文本：\n\n{{INPUT}}',
-        model: 'GLM-4.7-Flash',
+        model: 'glm-4-flash',
         temperature: 0.1,
-        outputFields: []
+        outputFields: [],
+        insertMode: 'merged',
+        fieldMappings: [],
+        mergedIntro: '以下是待翻译的内容：'
     },
     {
         id: 'preset_tech_analysis',
         name: '技术方案解读',
         systemPrompt: '你是一位资深的专利技术分析师。你的任务是基于专利内容，梳理总结其要解决的技术问题，采用的核心方案内容、以及实现的技术效果和最重要的核心关键词短语。',
         userPromptTemplate: '请分析此专利并按以下要求输出：\n\n{{INPUT}}',
-        model: 'GLM-4.7-Flash',
+        model: 'glm-4-flash',
         temperature: 0.3,
         outputFields: [
             { name: '技术方案', description: '总结专利的主要方案内容' },
             { name: '技术问题', description: '该专利主要解决的技术问题' },
             { name: '技术效果', description: '该专利带来的技术效果' },
             { name: '技术关键词', description: '按照重要程度输出15个关键词或短语' }
-        ]
+        ],
+        insertMode: 'merged',
+        fieldMappings: [],
+        mergedIntro: '以下是专利的相关内容：'
+    },
+    {
+        id: 'preset_separate_analysis',
+        name: '分字段分析模板',
+        systemPrompt: '你是一位资深的专利技术分析师。请分别对摘要和权利要求进行分析，并给出综合评估。',
+        userPromptTemplate: '请对以下专利内容进行分析：\n\n【摘要部分】\n{{摘要}}\n\n【权利要求部分】\n{{权利要求}}\n\n请分别分析摘要和权利要求的技术要点，并给出综合评估。',
+        model: 'glm-4-flash',
+        temperature: 0.3,
+        outputFields: [
+            { name: '摘要要点', description: '摘要中的核心技术要点' },
+            { name: '权利要求要点', description: '权利要求的核心技术要点' },
+            { name: '综合评估', description: '对专利整体技术方案的综合评估' }
+        ],
+        insertMode: 'separate',
+        fieldMappings: [
+            { column: '摘要', placeholder: '{{摘要}}', description: '专利摘要内容' },
+            { column: '权利要求', placeholder: '{{权利要求}}', description: '专利权利要求内容' }
+        ],
+        mergedIntro: '以下是专利的相关内容：'
     },
     {
         id: 'preset_search_expand',
         name: '检索词拓展',
         systemPrompt: '你是一个专业的专利检索分析师。你的任务是根据用户提供的关键词，生成相关的拓展检索词。请确保生成的检索词与原关键词相关且具有多样性，能够覆盖不同的表达方式和相关领域。',
         userPromptTemplate: '请为以下关键词生成10个相关的拓展检索词：\n\n{{INPUT}}',
-        model: 'GLM-4.7-Flash',
+        model: 'glm-4-flash',
         temperature: 0.7,
-        outputFields: []
+        outputFields: [],
+        insertMode: 'merged',
+        fieldMappings: [],
+        mergedIntro: '以下是关键词内容：'
     },
     {
         id: 'preset_summary',
         name: '技术文本总结',
         systemPrompt: '你是一位资深的技术分析师。你的任务是基于提供的技术文本，总结其核心内容、技术要点和关键数据。请保持总结简洁明了，不超过200字。',
         userPromptTemplate: '请总结以下技术文本的核心内容（不超过200字）：\n\n{{INPUT}}',
-        model: 'GLM-4.7-Flash',
+        model: 'glm-4-flash',
         temperature: 0.3,
-        outputFields: []
+        outputFields: [],
+        insertMode: 'merged',
+        fieldMappings: [],
+        mergedIntro: '以下是技术文本内容：'
     }
 ];
 

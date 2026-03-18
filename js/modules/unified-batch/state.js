@@ -25,9 +25,12 @@ class UnifiedBatchState {
                 name: '',
                 systemPrompt: '你是一个高效的专利文本分析助手。',
                 userPromptTemplate: '请根据以下文本，总结其核心技术点：\n\n{{INPUT}}',
-                model: 'GLM-4.7-Flash',
+                model: 'glm-4-flash',
                 temperature: 0.1,
-                outputFields: []
+                outputFields: [],
+                insertMode: 'merged',
+                fieldMappings: [],
+                mergedIntro: '以下是相关内容：'
             },
             customTemplates: [],
             task: {
