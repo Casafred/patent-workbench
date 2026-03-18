@@ -882,51 +882,60 @@ function truncateUnifiedText(text, maxLength) {
 
 function handleUnifiedSelectAll() {
     var selectAllBtn = document.getElementById('unified_inputs_select_all_btn');
+    
+    if (!selectAllBtn) return;
+    
+    var allInputs = window.UnifiedBatch ? UnifiedBatch.getInputs() : [];
+    
+    if (allInputs.length === 0) {
+        alert('没有可选择的输入数据');
+        return;
+    }
+    
+    var state = window.UnifiedBatch ? UnifiedBatch.state : null;
+    if (!state) return;
+    
+    var isAllSelected = state.selectAllMode === true;
+    
+    if (isAllSelected) {
+        state.selectAllMode = false;
+        state.selectedInputIds = [];
+        selectAllBtn.textContent = '全选';
+        selectAllBtn.style.background = '';
+    } else {
+        state.selectAllMode = true;
+        state.selectedInputIds = allInputs.map(function(input) {
+            return input.id;
+        });
+        selectAllBtn.textContent = '取消全选(' + allInputs.length + ')';
+        selectAllBtn.style.background = '#e6f7ff';
+    }
+    
     var checkboxes = document.querySelectorAll('.unified-input-checkbox');
-    
-    if (!selectAllBtn || checkboxes.length === 0) return;
-    
-    var isChecked = selectAllBtn.textContent === '全选';
-    
     checkboxes.forEach(function(checkbox) {
-        checkbox.checked = isChecked;
+        checkbox.checked = state.selectAllMode;
     });
     
-    selectAllBtn.textContent = isChecked ? '取消全选' : '全选';
     updateUnifiedInputsCount();
-}
-
-function handleUnifiedDeleteSelected() {
-    var selectedCheckboxes = document.querySelectorAll('.unified-input-checkbox:checked');
-    
-    if (selectedCheckboxes.length === 0) {
-        alert('请先勾选要删除的数据');
-        return;
-    }
-    
-    if (!confirm('确定要删除选中的 ' + selectedCheckboxes.length + ' 条数据吗？')) {
-        return;
-    }
-    
-    var selectedIds = Array.from(selectedCheckboxes).map(function(cb) {
-        return cb.dataset.id;
-    });
-    
-    var result = UnifiedBatch.removeSelectedInputs(selectedIds);
-    if (result.success) {
-        renderUnifiedInputsList();
-        updateUnifiedModeRecommendation();
-    }
-    alert(result.message);
 }
 
 function updateUnifiedInputsCount() {
     var countEl = document.getElementById('unified_inputs_count');
-    var checkboxes = document.querySelectorAll('.unified-input-checkbox');
-    var checkedCount = document.querySelectorAll('.unified-input-checkbox:checked').length;
+    var allInputs = window.UnifiedBatch ? UnifiedBatch.getInputs() : [];
+    var state = window.UnifiedBatch ? UnifiedBatch.state : null;
+    
+    var checkedCount = 0;
+    var totalCount = allInputs.length;
+    
+    if (state && state.selectAllMode) {
+        checkedCount = state.selectedInputIds.length;
+    } else {
+        var checkboxes = document.querySelectorAll('.unified-input-checkbox:checked');
+        checkedCount = checkboxes.length;
+    }
     
     if (countEl) {
-        countEl.textContent = checkedCount + '/' + checkboxes.length;
+        countEl.textContent = checkedCount + '/' + totalCount;
     }
 }
 

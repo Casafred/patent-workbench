@@ -19,6 +19,8 @@ class UnifiedBatchState {
             excelPreviewData: [],
             excelTotalRows: 0,
             excelSheetNames: [],
+            selectAllMode: false,
+            selectedInputIds: [],
             template: {
                 name: '',
                 systemPrompt: '你是一个高效的专利文本分析助手。',

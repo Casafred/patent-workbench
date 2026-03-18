@@ -421,79 +421,85 @@ class FastExcelReader:
     ) -> Tuple[bool, List[Dict[str, str]], str]:
         """使用fastexcel+polars进行高性能列拼接"""
         start_time = time.time()
-        reader = fastexcel.read_excel(self.file_path)
         
-        if isinstance(sheet_name_or_index, int):
-            sheet = reader.load_sheet(sheet_name_or_index)
-        else:
-            sheet = reader.load_sheet(sheet_name_or_index)
-        
-        df = sheet.to_polars()
-        original_row_count = len(df)
-        
-        if header_row > 0 and len(df) > header_row:
-            new_columns = df.row(header_row)
-            df = df.slice(header_row + 1)
-        
-        available_cols = [c for c in column_names if c in df.columns]
-        if not available_cols:
-            return False, [], f'指定的列不存在。可用列: {", ".join(df.columns[:10])}...'
-        
-        df = df.select(available_cols)
-        
-        df = df.with_columns([
-            pl.col(col).cast(pl.Utf8).fill_null('').str.strip_chars()
-            for col in df.columns
-        ])
-        
-        separator_pl = pl.lit(separator)
-        concat_expr = None
-        for i, col in enumerate(df.columns):
-            if i == 0:
-                concat_expr = pl.col(col)
+        try:
+            reader = fastexcel.read_excel(self.file_path)
+            
+            if isinstance(sheet_name_or_index, int):
+                sheet = reader.load_sheet(sheet_name_or_index)
             else:
-                concat_expr = pl.concat_str([concat_expr, separator_pl, pl.col(col)], separator='')
-        
-        non_empty_condition = None
-        for col in df.columns:
-            if non_empty_condition is None:
-                non_empty_condition = pl.col(col) != ''
-            else:
-                non_empty_condition = non_empty_condition | (pl.col(col) != '')
-        
-        df = df.filter(non_empty_condition)
-        
-        df = df.with_columns([
-            pl.concat_str(
-                [pl.col(col) for col in df.columns],
-                separator=separator
-            ).alias('__concat_content__')
-        ])
-        
-        df = df.filter(pl.col('__concat_content__').str.strip_chars() != '')
-        
-        df = df.with_columns([
-            pl.col('__concat_content__').str.strip_chars().alias('__concat_content__')
-        ])
-        
-        valid_row_count = len(df)
-        
-        results = []
-        id_col = pl.arange(1, len(df) + 1).alias('id')
-        df = df.with_columns([id_col])
-        
-        for row in df.iter_rows(named=True):
-            content = row['__concat_content__']
-            if content:
-                raw_data = {col: str(row.get(col, '')) for col in df.columns if col not in ['id', '__concat_content__']}
-                results.append({
-                    'id': f'I{row["id"]}',
-                    'content': content,
-                    'raw': raw_data
-                })
-        
-        elapsed = time.time() - start_time
-        return True, results, f'成功拼接 {len(results)} 行（原始{original_row_count}行，过滤空行后{valid_row_count}行），耗时 {elapsed:.2f}秒 (fastexcel引擎)'
+                sheet = reader.load_sheet(sheet_name_or_index)
+            
+            df = sheet.to_polars()
+            original_row_count = len(df)
+            
+            if header_row > 0 and len(df) > header_row:
+                new_columns = [str(c) if c else f'col_{i}' for i, c in enumerate(df.row(header_row))]
+                df = df.slice(header_row + 1)
+                df = df.rename({old: new for old, new in zip(df.columns, new_columns)})
+            
+            available_cols = [c for c in column_names if c in df.columns]
+            if not available_cols:
+                all_cols = list(df.columns)
+                return False, [], f'指定的列不存在。可用列: {", ".join(all_cols[:10])}...'
+            
+            df = df.select(available_cols)
+            
+            for col in df.columns:
+                df = df.with_columns([
+                    pl.col(col).cast(pl.Utf8).fill_null('').str.strip_chars()
+                ])
+            
+            non_empty_condition = None
+            for col in df.columns:
+                if non_empty_condition is None:
+                    non_empty_condition = (pl.col(col) != '') & (pl.col(col) != 'nan') & (pl.col(col) != 'None')
+                else:
+                    non_empty_condition = non_empty_condition | ((pl.col(col) != '') & (pl.col(col) != 'nan') & (pl.col(col) != 'None'))
+            
+            df = df.filter(non_empty_condition)
+            
+            if len(df) == 0:
+                return True, [], f'没有有效数据（原始{original_row_count}行全部为空）'
+            
+            df = df.with_columns([
+                pl.concat_str(
+                    [pl.col(col) for col in df.columns],
+                    separator=separator
+                ).alias('__concat_content__')
+            ])
+            
+            df = df.filter(pl.col('__concat_content__').str.strip_chars() != '')
+            df = df.filter(~pl.col('__concat_content__').str.contains(r'^nan(\s*nan)*$'))
+            
+            df = df.with_columns([
+                pl.col('__concat_content__').str.strip_chars().alias('__concat_content__')
+            ])
+            
+            valid_row_count = len(df)
+            
+            df = df.with_columns([
+                pl.arange(1, len(df) + 1).alias('__id__')
+            ])
+            
+            results = []
+            for row in df.iter_rows(named=True):
+                content = row['__concat_content__']
+                if content and content.strip():
+                    raw_data = {col: str(row.get(col, '')) for col in available_cols}
+                    results.append({
+                        'id': f'I{row["__id__"]}',
+                        'content': content.strip(),
+                        'raw': raw_data
+                    })
+            
+            elapsed = time.time() - start_time
+            return True, results, f'成功拼接 {len(results)} 行（原始{original_row_count}行，过滤空行后{valid_row_count}行），耗时 {elapsed:.2f}秒 (fastexcel引擎)'
+            
+        except Exception as e:
+            elapsed = time.time() - start_time
+            print(f"[FastExcel] fastexcel引擎失败: {e}，尝试pandas降级")
+            return self._concat_columns_pandas(column_names, sheet_name_or_index, header_row, separator)
     
     def _concat_columns_polars_csv(
         self,
@@ -572,7 +578,7 @@ class FastExcelReader:
             'header': header_row,
             'dtype': str,
             'usecols': column_names,
-            'na_values': ['', 'NA', 'N/A'],
+            'na_values': ['', 'NA', 'N/A', 'NULL', 'null', 'None', 'nan'],
             'keep_default_na': False
         }
         
@@ -592,27 +598,33 @@ class FastExcelReader:
         
         original_row_count = len(df)
         
-        df = df.fillna('')
         for col in df.columns:
             df[col] = df[col].astype(str).str.strip()
+            df[col] = df[col].replace(['nan', 'None', 'NaN', 'null', ''], '')
         
         def is_valid_row(row):
             for val in row.values:
-                if str(val).strip():
+                val_str = str(val).strip()
+                if val_str and val_str not in ['nan', 'None', 'NaN', 'null', '']:
                     return True
             return False
         
         df = df[df.apply(is_valid_row, axis=1)]
         
+        if len(df) == 0:
+            return True, [], f'没有有效数据（原始{original_row_count}行全部为空)'
+        
         results = []
         valid_idx = 0
         for idx, row in df.iterrows():
-            content_parts = [str(v).strip() for v in row.values if str(v).strip()]
+            content_parts = [str(v).strip() for v in row.values if str(v).strip() and str(v).strip() not in ['nan', 'None', 'NaN']]
             if not content_parts:
                 continue
-                
+            
             content = separator.join(content_parts)
-            if not content.strip():
+            content = content.strip()
+            
+            if not content or content in ['nan', 'None', 'NaN', '']:
                 continue
             
             valid_idx += 1
@@ -627,9 +639,8 @@ class FastExcelReader:
         del df
         gc.collect()
         
-        valid_row_count = len(results)
         elapsed = time.time() - start_time
-        return True, results, f'成功拼接 {valid_row_count} 行（原始{original_row_count}行），耗时 {elapsed:.2f}秒 (pandas引擎)'
+        return True, results, f'成功拼接 {len(results)} 行（原始{original_row_count}行），耗时 {elapsed:.2f}秒 (pandas引擎)'
 
 
 def benchmark_excel_readers(file_path: str) -> Dict[str, Any]:
