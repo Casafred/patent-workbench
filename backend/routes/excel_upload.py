@@ -2,160 +2,175 @@
 Excel文件上传和处理功能的API路由
 
 提供Excel文件上传、解析和专利号搜索的API端点。
+支持大数据量分片加载和流式处理。
 """
 
 import os
 import json
 import traceback
+import time
+import gc
 from datetime import datetime
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, Response, stream_with_context
 from werkzeug.utils import secure_filename
 import pandas as pd
 from backend.middleware import validate_api_request
 from backend.utils import create_response
 from backend.utils.column_detector import ColumnDetector
 
-# 创建蓝图
 excel_upload_bp = Blueprint('excel_upload', __name__)
 
-# 配置
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'xlsx', 'xls', 'csv'}
-MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB - 主要通过行数限制（1000行）控制
+MAX_FILE_SIZE = 100 * 1024 * 1024
+CHUNK_SIZE = 500
+MAX_ROWS_FOR_FULL_PARSE = 5000
+PROGRESS_UPDATE_INTERVAL = 100
 
-# 确保上传目录存在
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+_parse_progress_store = {}
 
 def allowed_file(filename):
-    """检查文件扩展名是否允许"""
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def update_parse_progress(file_id, progress_data):
+    _parse_progress_store[file_id] = {
+        **progress_data,
+        'last_update': time.time()
+    }
 
-def parse_excel_file(file_path, header_row=0):
+def get_parse_progress(file_id):
+    return _parse_progress_store.get(file_id, {
+        'status': 'not_found',
+        'progress': 0
+    })
+
+def clear_parse_progress(file_id):
+    if file_id in _parse_progress_store:
+        del _parse_progress_store[file_id]
+
+def parse_excel_file_optimized(file_path, header_row=0, file_id=None, max_rows=None):
     """
-    解析Excel文件（增强版，包含详细错误处理）
+    优化的Excel文件解析函数，支持大数据量处理
     
     Args:
         file_path: Excel文件路径
         header_row: 标题行索引（从0开始）
+        file_id: 文件ID，用于进度跟踪
+        max_rows: 最大解析行数（用于预览）
     
     Returns:
         dict: 包含列信息和数据的字典
     """
+    start_time = time.time()
+    
+    if file_id:
+        update_parse_progress(file_id, {
+            'status': 'starting',
+            'progress': 0,
+            'message': '正在初始化解析...'
+        })
+    
     try:
-        # 验证文件存在
         if not os.path.exists(file_path):
-            return {
-                'success': False,
-                'error': f"文件不存在: {file_path}"
-            }
+            return {'success': False, 'error': f"文件不存在: {file_path}"}
         
-        # 获取文件信息
         file_size = os.path.getsize(file_path)
         file_ext = os.path.splitext(file_path)[1].lower()
         
         print(f"[Excel解析] 开始解析文件: {os.path.basename(file_path)}")
         print(f"[Excel解析] 文件大小: {file_size:,} 字节")
-        print(f"[Excel解析] 文件扩展名: {file_ext}")
-        print(f"[Excel解析] 标题行: {header_row}")
         
-        # 读取Excel文件
+        if file_id:
+            update_parse_progress(file_id, {
+                'status': 'reading',
+                'progress': 10,
+                'message': '正在读取文件...'
+            })
+        
+        read_options = {
+            'header': header_row,
+            'dtype': str,
+            'na_values': ['', 'NA', 'N/A', 'NULL', 'null', 'None', 'none'],
+            'keep_default_na': False
+        }
+        
         if file_ext == '.csv':
             try:
-                df = pd.read_csv(file_path, header=header_row, encoding='utf-8')
-                sheet_names = ['Sheet1']  # CSV只有一个工作表
+                df = pd.read_csv(file_path, **read_options, encoding='utf-8', chunksize=CHUNK_SIZE)
+                if hasattr(df, '__iter__'):
+                    chunks = []
+                    total_rows = 0
+                    for i, chunk in enumerate(df):
+                        chunks.append(chunk)
+                        total_rows += len(chunk)
+                        if max_rows and total_rows >= max_rows:
+                            break
+                        if file_id:
+                            update_parse_progress(file_id, {
+                                'status': 'reading',
+                                'progress': 10 + min(30, int(30 * i / 10)),
+                                'message': f'正在读取数据... 已处理 {total_rows} 行'
+                            })
+                    df = pd.concat(chunks, ignore_index=True) if chunks else pd.DataFrame()
+                sheet_names = ['Sheet1']
             except UnicodeDecodeError:
-                # 尝试其他编码
-                print(f"[Excel解析] UTF-8编码失败，尝试GBK编码")
-                df = pd.read_csv(file_path, header=header_row, encoding='gbk')
+                df = pd.read_csv(file_path, **read_options, encoding='gbk')
                 sheet_names = ['Sheet1']
         else:
-            # 先获取所有工作表名称
             try:
-                # 尝试使用openpyxl引擎（适用于.xlsx）
+                df = pd.read_excel(file_path, sheet_name=0, **read_options, engine='openpyxl')
                 excel_file = pd.ExcelFile(file_path, engine='openpyxl')
                 sheet_names = excel_file.sheet_names
-                print(f"[Excel解析] 工作表数量: {len(sheet_names)}")
-                print(f"[Excel解析] 工作表名称: {sheet_names}")
-                
-                # 读取第一个工作表
-                df = pd.read_excel(file_path, sheet_name=sheet_names[0], header=header_row, engine='openpyxl')
             except Exception as e1:
-                # 如果openpyxl失败，尝试xlrd引擎（适用于.xls）
                 print(f"[Excel解析] openpyxl引擎失败: {str(e1)}")
-                print(f"[Excel解析] 尝试使用xlrd引擎")
                 try:
+                    df = pd.read_excel(file_path, sheet_name=0, **read_options, engine='xlrd')
                     excel_file = pd.ExcelFile(file_path, engine='xlrd')
                     sheet_names = excel_file.sheet_names
-                    df = pd.read_excel(file_path, sheet_name=sheet_names[0], header=header_row, engine='xlrd')
                 except Exception as e2:
                     print(f"[Excel解析] xlrd引擎也失败: {str(e2)}")
-                    # 最后尝试不指定引擎，让pandas自动选择
-                    print(f"[Excel解析] 尝试自动选择引擎")
+                    df = pd.read_excel(file_path, sheet_name=0, **read_options)
                     excel_file = pd.ExcelFile(file_path)
                     sheet_names = excel_file.sheet_names
-                    df = pd.read_excel(file_path, sheet_name=sheet_names[0], header=header_row)
         
-        # 验证数据框
-        if df is None:
-            return {
-                'success': False,
-                'error': "读取Excel文件后数据为空"
-            }
+        if df is None or df.empty:
+            return {'success': False, 'error': "读取Excel文件后数据为空"}
         
-        print(f"[Excel解析] 成功读取数据")
-        print(f"[Excel解析] 行数: {len(df)}")
-        print(f"[Excel解析] 列数: {len(df.columns)}")
-        print(f"[Excel解析] 列名: {list(df.columns)}")
+        total_rows = len(df)
+        print(f"[Excel解析] 行数: {total_rows}, 列数: {len(df.columns)}")
         
-        # 检查是否有重复列名
-        if len(df.columns) != len(set(df.columns)):
-            print(f"[Excel解析] 警告: 检测到重复列名")
-            # pandas会自动处理重复列名，添加.1, .2等后缀
+        if file_id:
+            update_parse_progress(file_id, {
+                'status': 'analyzing',
+                'progress': 50,
+                'message': f'正在分析列结构... 共 {total_rows} 行数据'
+            })
         
-        # 检查空值情况
-        null_counts = df.isnull().sum()
-        total_nulls = null_counts.sum()
-        if total_nulls > 0:
-            print(f"[Excel解析] 空值统计: 总计 {total_nulls} 个空值")
-            for col in df.columns:
-                if null_counts[col] > 0:
-                    print(f"[Excel解析]   - {col}: {null_counts[col]} 个空值")
-        
-        # 获取列信息
         columns = []
         for i, col in enumerate(df.columns):
-            try:
-                # 安全地获取样本值
-                sample_values = []
-                col_data = df[col].dropna()
-                if len(col_data) > 0:
-                    sample_values = col_data.head(3).tolist()
-                
-                columns.append({
-                    'index': i,
-                    'name': col,
-                    'type': str(df[col].dtype),
-                    'sample_values': sample_values
-                })
-            except Exception as col_error:
-                print(f"[Excel解析] 警告: 处理列 '{col}' 时出错: {str(col_error)}")
-                columns.append({
-                    'index': i,
-                    'name': col,
-                    'type': 'unknown',
-                    'sample_values': []
-                })
+            sample_values = df[col].dropna().head(3).tolist() if not df[col].dropna().empty else []
+            columns.append({
+                'index': i,
+                'name': col,
+                'type': str(df[col].dtype),
+                'sample_values': sample_values
+            })
         
-        # 智能列识别
+        if file_id:
+            update_parse_progress(file_id, {
+                'status': 'detecting',
+                'progress': 60,
+                'message': '正在进行智能列识别...'
+            })
+        
         try:
             detector = ColumnDetector()
             column_analysis = detector.analyze_all_columns(df)
-            print(f"[Excel解析] 智能列识别完成")
         except Exception as detect_error:
-            print(f"[Excel解析] 警告: 智能列识别失败: {str(detect_error)}")
+            print(f"[Excel解析] 智能列识别失败: {str(detect_error)}")
             column_analysis = {
                 'patent_number_column': None,
                 'claims_column': None,
@@ -163,39 +178,65 @@ def parse_excel_file(file_path, header_row=0):
                 'column_names': list(df.columns)
             }
         
-        # 转换数据为字典列表
+        if file_id:
+            update_parse_progress(file_id, {
+                'status': 'converting',
+                'progress': 70,
+                'message': f'正在转换数据格式... 共 {total_rows} 行'
+            })
+        
         data = []
+        processed_rows = 0
+        
         for index, row in df.iterrows():
+            if max_rows and processed_rows >= max_rows:
+                break
+                
             row_data = {
-                'row_index': index + header_row + 1,  # Excel行号（从1开始）
+                'row_index': index + header_row + 1,
                 'data': {}
             }
             
             for col in df.columns:
-                try:
-                    value = row[col]
-                    # 处理各种类型的空值
-                    if pd.isna(value) or value is None or (isinstance(value, str) and value.strip() == ''):
-                        row_data['data'][col] = None
-                    else:
-                        # 安全地转换为字符串
-                        row_data['data'][col] = str(value).strip()
-                except Exception as cell_error:
-                    print(f"[Excel解析] 警告: 处理单元格 [{index}, {col}] 时出错: {str(cell_error)}")
+                value = row[col]
+                if pd.isna(value) or value is None or (isinstance(value, str) and value.strip() == ''):
                     row_data['data'][col] = None
+                else:
+                    row_data['data'][col] = str(value).strip()
             
             data.append(row_data)
+            processed_rows += 1
+            
+            if file_id and processed_rows % PROGRESS_UPDATE_INTERVAL == 0:
+                progress = 70 + int(25 * processed_rows / total_rows)
+                update_parse_progress(file_id, {
+                    'status': 'converting',
+                    'progress': progress,
+                    'message': f'正在转换数据... {processed_rows}/{total_rows} 行'
+                })
         
-        print(f"[Excel解析] 数据转换完成，共 {len(data)} 行")
+        del df
+        gc.collect()
+        
+        elapsed_time = time.time() - start_time
+        print(f"[Excel解析] 解析完成，耗时: {elapsed_time:.2f}秒，共 {len(data)} 行")
+        
+        if file_id:
+            update_parse_progress(file_id, {
+                'status': 'completed',
+                'progress': 100,
+                'message': f'解析完成，共 {len(data)} 行，耗时 {elapsed_time:.2f}秒'
+            })
         
         return {
             'success': True,
             'columns': columns,
-            'column_analysis': column_analysis,  # 新增：智能列识别结果
+            'column_analysis': column_analysis,
             'data': data,
             'total_rows': len(data),
             'sheet_names': sheet_names,
             'original_filename': os.path.basename(file_path),
+            'parse_time': elapsed_time,
             'file_info': {
                 'name': os.path.basename(file_path),
                 'size': os.path.getsize(file_path),
@@ -204,10 +245,16 @@ def parse_excel_file(file_path, header_row=0):
         }
         
     except Exception as e:
-        # 详细的错误日志
         error_msg = f"解析Excel文件失败: {str(e)}"
         print(f"[Excel解析] 错误: {error_msg}")
         print(f"[Excel解析] 错误详情:\n{traceback.format_exc()}")
+        
+        if file_id:
+            update_parse_progress(file_id, {
+                'status': 'error',
+                'progress': 0,
+                'message': error_msg
+            })
         
         return {
             'success': False,
@@ -271,33 +318,23 @@ def upload_excel_file():
         return error_response
     
     try:
-        # 检查是否有文件
         if 'file' not in request.files:
-            return create_response(
-                error="未选择文件",
-                status_code=400
-            )
+            return create_response(error="未选择文件", status_code=400)
         
         file = request.files['file']
         
-        # 检查文件名
         if file.filename == '':
-            return create_response(
-                error="未选择文件",
-                status_code=400
-            )
+            return create_response(error="未选择文件", status_code=400)
         
-        # 检查文件类型
         if not allowed_file(file.filename):
             return create_response(
                 error=f"不支持的文件类型。支持的格式: {', '.join(ALLOWED_EXTENSIONS)}",
                 status_code=400
             )
         
-        # 检查文件大小
-        file.seek(0, 2)  # 移动到文件末尾
+        file.seek(0, 2)
         file_size = file.tell()
-        file.seek(0)  # 重置到文件开头
+        file.seek(0)
         
         if file_size > MAX_FILE_SIZE:
             return create_response(
@@ -305,62 +342,128 @@ def upload_excel_file():
                 status_code=400
             )
         
-        # 生成安全的文件名
-        # 处理中文文件名：先提取扩展名，再生成安全文件名
         original_filename = file.filename
-        file_ext = os.path.splitext(original_filename)[1].lower()  # 获取扩展名（如 .xlsx）
+        file_ext = os.path.splitext(original_filename)[1].lower()
         
-        # 使用secure_filename处理文件名
         safe_name = secure_filename(original_filename)
         
-        # 如果secure_filename删除了所有字符（纯中文文件名），使用时间戳作为文件名
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         if not safe_name or safe_name == file_ext.lstrip('.'):
             safe_filename = f"{timestamp}{file_ext}"
         else:
-            # 确保文件名有正确的扩展名
             if not safe_name.endswith(file_ext):
                 safe_name = os.path.splitext(safe_name)[0] + file_ext
             safe_filename = f"{timestamp}_{safe_name}"
         
-        # 保存文件
         file_path = os.path.join(UPLOAD_FOLDER, safe_filename)
         file.save(file_path)
         
-        # 获取标题行参数
         header_row = int(request.form.get('header_row', 0))
         
-        # 解析文件
-        parse_result = parse_excel_file(file_path, header_row)
+        parse_result = parse_excel_file_optimized(
+            file_path, 
+            header_row, 
+            file_id=safe_filename,
+            max_rows=MAX_ROWS_FOR_FULL_PARSE
+        )
         
         if not parse_result['success']:
-            # 删除上传的文件
             if os.path.exists(file_path):
                 os.remove(file_path)
-            return create_response(
-                error=parse_result['error'],
-                status_code=400
-            )
+            return create_response(error=parse_result['error'], status_code=400)
         
-        # 返回成功结果
         return create_response(data={
             'file_id': safe_filename,
             'file_path': file_path,
             'columns': parse_result['columns'],
-            'column_analysis': parse_result['column_analysis'],  # 新增：智能列识别结果
+            'column_analysis': parse_result['column_analysis'],
             'total_rows': parse_result['total_rows'],
             'sheet_names': parse_result['sheet_names'],
             'original_filename': parse_result['original_filename'],
+            'parse_time': parse_result.get('parse_time', 0),
             'file_info': parse_result['file_info'],
-            'preview_data': parse_result['data'][:10]  # 返回前10行作为预览
+            'preview_data': parse_result['data'][:10],
+            'is_large_file': parse_result['total_rows'] > MAX_ROWS_FOR_FULL_PARSE
         })
         
     except Exception as e:
         print(f"上传Excel文件失败: {traceback.format_exc()}")
-        return create_response(
-            error=f"上传文件失败: {str(e)}",
-            status_code=500
+        return create_response(error=f"上传文件失败: {str(e)}", status_code=500)
+
+
+@excel_upload_bp.route('/api/excel/<file_id>/progress', methods=['GET'])
+def get_parse_progress_api(file_id):
+    """
+    获取文件解析进度
+    
+    Args:
+        file_id: 文件ID
+    
+    Returns:
+        解析进度信息
+    """
+    is_valid, error_response = validate_api_request()
+    if not is_valid:
+        return error_response
+    
+    progress = get_parse_progress(file_id)
+    return create_response(data=progress)
+
+
+@excel_upload_bp.route('/api/excel/<file_id>/load_more', methods=['GET'])
+def load_more_data(file_id):
+    """
+    分片加载更多数据
+    
+    Args:
+        file_id: 文件ID
+    
+    Query parameters:
+        - offset: 起始行偏移
+        - limit: 加载行数
+        - header_row: 标题行索引
+    
+    Returns:
+        分片数据
+    """
+    is_valid, error_response = validate_api_request()
+    if not is_valid:
+        return error_response
+    
+    try:
+        file_path = os.path.join(UPLOAD_FOLDER, file_id)
+        
+        if not os.path.exists(file_path):
+            return create_response(error="文件不存在", status_code=404)
+        
+        offset = int(request.args.get('offset', 0))
+        limit = int(request.args.get('limit', 500))
+        header_row = int(request.args.get('header_row', 0))
+        
+        limit = min(limit, 1000)
+        
+        parse_result = parse_excel_file_optimized(
+            file_path, 
+            header_row,
+            max_rows=offset + limit
         )
+        
+        if not parse_result['success']:
+            return create_response(error=parse_result['error'], status_code=400)
+        
+        data = parse_result['data'][offset:offset + limit]
+        
+        return create_response(data={
+            'data': data,
+            'offset': offset,
+            'limit': limit,
+            'total_rows': parse_result['total_rows'],
+            'has_more': offset + limit < parse_result['total_rows']
+        })
+        
+    except Exception as e:
+        print(f"加载更多数据失败: {traceback.format_exc()}")
+        return create_response(error=f"加载数据失败: {str(e)}", status_code=500)
 
 
 @excel_upload_bp.route('/api/excel/<file_id>/columns', methods=['GET'])
@@ -382,22 +485,14 @@ def get_excel_columns(file_id):
         file_path = os.path.join(UPLOAD_FOLDER, file_id)
         
         if not os.path.exists(file_path):
-            return create_response(
-                error="文件不存在",
-                status_code=404
-            )
+            return create_response(error="文件不存在", status_code=404)
         
-        # 获取标题行参数
         header_row = int(request.args.get('header_row', 0))
         
-        # 解析文件
-        parse_result = parse_excel_file(file_path, header_row)
+        parse_result = parse_excel_file_optimized(file_path, header_row)
         
         if not parse_result['success']:
-            return create_response(
-                error=parse_result['error'],
-                status_code=400
-            )
+            return create_response(error=parse_result['error'], status_code=400)
         
         return create_response(data={
             'columns': parse_result['columns'],
@@ -406,10 +501,7 @@ def get_excel_columns(file_id):
         
     except Exception as e:
         print(f"获取Excel列信息失败: {traceback.format_exc()}")
-        return create_response(
-            error=f"获取列信息失败: {str(e)}",
-            status_code=500
-        )
+        return create_response(error=f"获取列信息失败: {str(e)}", status_code=500)
 
 
 @excel_upload_bp.route('/api/excel/<file_id>/search', methods=['POST'])
@@ -437,39 +529,26 @@ def search_excel_data(file_id):
         file_path = os.path.join(UPLOAD_FOLDER, file_id)
         
         if not os.path.exists(file_path):
-            return create_response(
-                error="文件不存在",
-                status_code=404
-            )
+            return create_response(error="文件不存在", status_code=404)
         
         req_data = request.get_json()
         
-        # 验证必填字段
         if 'column_name' not in req_data:
-            return create_response(
-                error="缺少必填字段: column_name",
-                status_code=400
-            )
+            return create_response(error="缺少必填字段: column_name", status_code=400)
         
         column_name = req_data['column_name']
         query = req_data.get('query', '').strip()
         limit = int(req_data.get('limit', 50))
         header_row = int(req_data.get('header_row', 0))
         
-        # 限制搜索结果数量
         if limit > 100:
             limit = 100
         
-        # 解析文件
-        parse_result = parse_excel_file(file_path, header_row)
+        parse_result = parse_excel_file_optimized(file_path, header_row)
         
         if not parse_result['success']:
-            return create_response(
-                error=parse_result['error'],
-                status_code=400
-            )
+            return create_response(error=parse_result['error'], status_code=400)
         
-        # 检查列是否存在
         column_names = [col['name'] for col in parse_result['columns']]
         if column_name not in column_names:
             return create_response(
@@ -477,7 +556,6 @@ def search_excel_data(file_id):
                 status_code=400
             )
         
-        # 搜索数据
         results = search_patent_numbers(
             parse_result['data'], 
             column_name, 
@@ -530,30 +608,20 @@ def get_excel_data(file_id):
         file_path = os.path.join(UPLOAD_FOLDER, file_id)
         
         if not os.path.exists(file_path):
-            return create_response(
-                error="文件不存在",
-                status_code=404
-            )
+            return create_response(error="文件不存在", status_code=404)
         
-        # 获取参数
         header_row = int(request.args.get('header_row', 0))
         page = int(request.args.get('page', 1))
         page_size = int(request.args.get('page_size', 100))
         
-        # 限制页面大小
         if page_size > 500:
             page_size = 500
         
-        # 解析文件
-        parse_result = parse_excel_file(file_path, header_row)
+        parse_result = parse_excel_file_optimized(file_path, header_row)
         
         if not parse_result['success']:
-            return create_response(
-                error=parse_result['error'],
-                status_code=400
-            )
+            return create_response(error=parse_result['error'], status_code=400)
         
-        # 分页处理
         total_rows = len(parse_result['data'])
         start_index = (page - 1) * page_size
         end_index = start_index + page_size
@@ -569,20 +637,15 @@ def get_excel_data(file_id):
                 'total_rows': total_rows,
                 'total_pages': (total_rows + page_size - 1) // page_size
             },
-            'file_info': parse_result['file_info']
+            'file_info': parse_result['file_info'],
+            'has_more': end_index < total_rows
         })
         
     except ValueError as e:
-        return create_response(
-            error=f"参数格式错误: {str(e)}",
-            status_code=400
-        )
+        return create_response(error=f"参数格式错误: {str(e)}", status_code=400)
     except Exception as e:
         print(f"获取Excel数据失败: {traceback.format_exc()}")
-        return create_response(
-            error=f"获取数据失败: {str(e)}",
-            status_code=500
-        )
+        return create_response(error=f"获取数据失败: {str(e)}", status_code=500)
 
 
 @excel_upload_bp.route('/api/excel/<file_id>', methods=['DELETE'])
@@ -604,13 +667,10 @@ def delete_excel_file(file_id):
         file_path = os.path.join(UPLOAD_FOLDER, file_id)
         
         if not os.path.exists(file_path):
-            return create_response(
-                error="文件不存在",
-                status_code=404
-            )
+            return create_response(error="文件不存在", status_code=404)
         
-        # 删除文件
         os.remove(file_path)
+        clear_parse_progress(file_id)
         
         return create_response(data={
             'success': True,
@@ -619,13 +679,8 @@ def delete_excel_file(file_id):
         
     except Exception as e:
         print(f"删除Excel文件失败: {traceback.format_exc()}")
-        return create_response(
-            error=f"删除文件失败: {str(e)}",
-            status_code=500
-        )
+        return create_response(error=f"删除文件失败: {str(e)}", status_code=500)
 
-
-# ==================== 健康检查API ====================
 
 @excel_upload_bp.route('/api/excel/health', methods=['GET'])
 def health_check():
@@ -636,7 +691,6 @@ def health_check():
         服务状态信息
     """
     try:
-        # 检查上传目录
         upload_dir_exists = os.path.exists(UPLOAD_FOLDER)
         upload_dir_writable = os.access(UPLOAD_FOLDER, os.W_OK) if upload_dir_exists else False
         
@@ -647,11 +701,9 @@ def health_check():
             'upload_dir_writable': upload_dir_writable,
             'max_file_size': f"{MAX_FILE_SIZE // (1024*1024)}MB",
             'allowed_extensions': list(ALLOWED_EXTENSIONS),
-            'version': '1.0.0'
+            'version': '2.0.0',
+            'features': ['chunk_loading', 'progress_tracking', 'optimized_parsing']
         })
     
     except Exception as e:
-        return create_response(
-            error=f"健康检查失败: {str(e)}",
-            status_code=500
-        )
+        return create_response(error=f"健康检查失败: {str(e)}", status_code=500)

@@ -13,6 +13,7 @@ import InstantEngine from './engines/instant-engine.js';
 import AsyncEngine from './engines/async-engine.js';
 import BatchEngine from './engines/batch-engine.js';
 import ClassificationModule from './classification/index.js';
+import ModelValidator from './model-validator.js';
 
 const UnifiedBatch = {
     config: UnifiedBatchConfig,
@@ -25,6 +26,7 @@ const UnifiedBatch = {
     asyncEngine: AsyncEngine,
     batchEngine: BatchEngine,
     classification: ClassificationModule,
+    modelValidator: ModelValidator,
 
     init() {
         this.state.loadState();
@@ -34,6 +36,14 @@ const UnifiedBatch = {
 
     async loadExcel(file) {
         return await this.input.handleExcelUpload(file);
+    },
+
+    async replaceExcelFile(file) {
+        return await this.input.replaceExcelFile(file);
+    },
+
+    getFileUploadState() {
+        return this.input.getFileUploadState();
     },
 
     loadSheet(sheetName) {
@@ -246,5 +256,6 @@ export {
     OutputHandler,
     AsyncEngine,
     BatchEngine,
+    ModelValidator,
     PRESET_TEMPLATES
 };

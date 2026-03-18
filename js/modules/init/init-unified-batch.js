@@ -422,7 +422,23 @@ async function handleUnifiedExcelUpload(event) {
 
     try {
         var result = await UnifiedBatch.loadExcel(file);
+        
+        if (result.needsConfirmation) {
+            var confirmMsg = result.message + '\n\n';
+            confirmMsg += '现有文件: ' + result.existingFile.name + ' (' + result.existingFile.rows + '行)\n';
+            confirmMsg += '新文件: ' + result.newFile.name + ' (' + formatFileSize(result.newFile.size) + ')';
+            
+            if (confirm(confirmMsg + '\n\n确定要替换吗？此操作不可撤销。')) {
+                result = await UnifiedBatch.replaceExcelFile(file);
+            } else {
+                event.target.value = '';
+                return;
+            }
+        }
+        
         if (result.success) {
+            updateUnifiedFileStatusDisplay(result.uploadState || result);
+            
             var sheetSelect = document.getElementById('unified_excel_sheet');
             sheetSelect.innerHTML = '';
             result.sheets.forEach(function(sheet) {
@@ -447,9 +463,44 @@ async function handleUnifiedExcelUpload(event) {
                     renderUnifiedColumnConfig(sheetResult.headers);
                 }
             }
+        } else {
+            alert(result.message || '加载Excel失败');
         }
     } catch (error) {
         alert('加载Excel失败: ' + error.message);
+    }
+}
+
+function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function updateUnifiedFileStatusDisplay(uploadState) {
+    var statusEl = document.getElementById('unified_file_status');
+    if (!statusEl) {
+        var container = document.getElementById('unified-input-excel');
+        if (container) {
+            statusEl = document.createElement('div');
+            statusEl.id = 'unified_file_status';
+            statusEl.className = 'file-status-info';
+            statusEl.style.cssText = 'margin-top: 10px; padding: 10px; background: var(--bg-color-secondary); border-radius: 6px; font-size: 13px;';
+            container.insertBefore(statusEl, container.firstChild.nextSibling);
+        }
+    }
+    
+    if (statusEl && uploadState) {
+        var uploadTime = uploadState.uploadTime ? new Date(uploadState.uploadTime).toLocaleString() : '未知';
+        statusEl.innerHTML = 
+            '<div style="display: flex; justify-content: space-between; align-items: center;">' +
+            '<span><strong>📄 当前文件:</strong> ' + (uploadState.currentFileName || '未加载') + '</span>' +
+            '<span><strong>数据行数:</strong> ' + (uploadState.totalRows || 0) + '</span>' +
+            '</div>' +
+            '<div style="margin-top: 5px; color: var(--text-color-secondary);">' +
+            '<span>上传时间: ' + uploadTime + '</span>' +
+            (uploadState.version > 1 ? '<span style="margin-left: 15px;">版本: v' + uploadState.version + '</span>' : '') +
+            '</div>';
     }
 }
 
@@ -598,8 +649,20 @@ async function loadUnifiedInputsFromExcel() {
     var indexColumn = document.getElementById('unified_index_column')?.value;
     var concatColumns = getUnifiedSelectedConcatColumns();
     
+    var warning = UnifiedBatch.input.getDataVolumeWarning();
+    if (warning) {
+        showUnifiedDataWarning(warning);
+    }
+    
+    showUnifiedLoadingProgress('正在加载数据...');
+    
+    var onProgress = function(progress) {
+        updateUnifiedLoadingProgress(progress);
+    };
+    
     if (concatColumns.length > 0) {
-        var result = await UnifiedBatch.loadInputsFromConfig(indexColumn, concatColumns);
+        var result = await UnifiedBatch.loadInputsFromConfig(indexColumn, concatColumns, onProgress);
+        hideUnifiedLoadingProgress();
         if (result.success) {
             renderUnifiedInputsList();
             updateUnifiedModeRecommendation();
@@ -621,13 +684,92 @@ async function loadUnifiedInputsFromExcel() {
         }
     }
 
-    var result = await UnifiedBatch.loadInputsFromColumns(selectedColumns);
+    var result = await UnifiedBatch.loadInputsFromColumns(selectedColumns, onProgress);
+    hideUnifiedLoadingProgress();
     if (result.success) {
         renderUnifiedInputsList();
         updateUnifiedModeRecommendation();
         alert(result.message);
     } else {
         alert(result.message);
+    }
+}
+
+function showUnifiedDataWarning(warning) {
+    var warningEl = document.getElementById('unified_data_warning');
+    if (!warningEl) {
+        var container = document.getElementById('unified-input-excel');
+        if (container) {
+            warningEl = document.createElement('div');
+            warningEl.id = 'unified_data_warning';
+            warningEl.className = 'data-warning';
+            warningEl.style.cssText = 'margin: 10px 0; padding: 12px; border-radius: 6px; font-size: 13px;';
+            container.insertBefore(warningEl, container.firstChild.nextSibling);
+        }
+    }
+    
+    if (warningEl) {
+        var bgColor = warning.level === 'high' ? 'var(--error-color-light, #fff3cd)' : 'var(--warning-color-light, #e7f3ff)';
+        var borderColor = warning.level === 'high' ? 'var(--error-color)' : 'var(--warning-color, #0066cc)';
+        
+        warningEl.style.background = bgColor;
+        warningEl.style.border = '1px solid ' + borderColor;
+        warningEl.innerHTML = 
+            '<div style="display: flex; align-items: center; gap: 8px;">' +
+            '<span style="font-size: 16px;">⚠️</span>' +
+            '<div>' +
+            '<strong>数据量提示</strong><br>' +
+            warning.message +
+            (warning.recommendation ? '<br><small style="color: var(--text-color-secondary);">推荐模式: ' + 
+                (warning.recommendation === 'batch' ? '大批量延时模式' : '异步处理模式') + '</small>' : '') +
+            '</div></div>';
+    }
+}
+
+function showUnifiedLoadingProgress(message) {
+    var progressEl = document.getElementById('unified_loading_progress');
+    if (!progressEl) {
+        var container = document.getElementById('unified_batch-tab');
+        if (container) {
+            progressEl = document.createElement('div');
+            progressEl.id = 'unified_loading_progress';
+            progressEl.className = 'loading-progress-overlay';
+            progressEl.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;';
+            document.body.appendChild(progressEl);
+        }
+    }
+    
+    if (progressEl) {
+        progressEl.innerHTML = 
+            '<div style="background: var(--bg-color); padding: 24px 32px; border-radius: 12px; text-align: center; min-width: 300px;">' +
+            '<div class="spinner" style="width: 40px; height: 40px; margin: 0 auto 16px; border: 3px solid var(--border-color); border-top-color: var(--primary-color); border-radius: 50%; animation: spin 1s linear infinite;"></div>' +
+            '<div id="unified_loading_message" style="font-size: 14px; color: var(--text-color);">' + message + '</div>' +
+            '<div id="unified_loading_detail" style="font-size: 12px; color: var(--text-color-secondary); margin-top: 8px;"></div>' +
+            '</div>';
+        progressEl.style.display = 'flex';
+    }
+}
+
+function updateUnifiedLoadingProgress(progress) {
+    var messageEl = document.getElementById('unified_loading_message');
+    var detailEl = document.getElementById('unified_loading_detail');
+    
+    if (messageEl && progress.message) {
+        messageEl.textContent = progress.message;
+    }
+    
+    if (detailEl && progress.progress !== undefined) {
+        detailEl.innerHTML = '<div style="background: var(--bg-color-secondary); border-radius: 4px; height: 8px; margin-top: 12px; overflow: hidden;">' +
+            '<div style="background: var(--primary-color); height: 100%; width: ' + progress.progress + '%; transition: width 0.3s;"></div>' +
+            '</div>' +
+            '<span style="margin-top: 4px; display: inline-block;">' + progress.progress + '%</span>';
+    }
+}
+
+function hideUnifiedLoadingProgress() {
+    var progressEl = document.getElementById('unified_loading_progress');
+    if (progressEl) {
+        progressEl.style.display = 'none';
     }
 }
 

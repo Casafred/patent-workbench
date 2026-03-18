@@ -7,6 +7,7 @@ import unifiedBatchState from '../state.js';
 import { UnifiedBatchConfig } from '../config.js';
 import TemplateManager from '../template-manager.js';
 import OutputHandler from '../output-handler.js';
+import ModelValidator from '../model-validator.js';
 
 const { BATCH } = UnifiedBatchConfig;
 
@@ -16,23 +17,37 @@ const BatchEngine = {
     currentModel: 'glm-4-flash',
 
     getProviderForModel(model) {
-        if (window.getProviderForModel) {
-            return window.getProviderForModel(model);
+        return ModelValidator.getProviderForModel(model);
+    },
+
+    validateModel(model) {
+        return ModelValidator.validateModel(model);
+    },
+
+    validateBeforeRequest(model, template) {
+        const provider = this.getProviderForModel(model);
+        const validation = ModelValidator.validateBatchRequest(model, provider, template);
+        
+        if (!validation.valid) {
+            const errorMessages = validation.errors.map(e => 
+                ModelValidator.formatErrorMessage(e)
+            ).join('\n');
+            
+            ModelValidator.logError(validation, { model, provider });
+            
+            return {
+                valid: false,
+                errors: validation.errors,
+                warnings: validation.warnings,
+                message: errorMessages
+            };
         }
-        if (window.ProviderManager && ProviderManager.getProviderForModel) {
-            return ProviderManager.getProviderForModel(model);
-        }
-        if (model.startsWith('glm-') || model.startsWith('GLM-')) {
-            return 'zhipu';
-        }
-        if (model.startsWith('qwen') || model.startsWith('Qwen') || 
-            model.startsWith('qwq') || model.startsWith('QwQ') ||
-            model.startsWith('deepseek') || model.startsWith('DeepSeek') ||
-            model.startsWith('kimi') || model.startsWith('Kimi') ||
-            model.startsWith('minimax') || model.startsWith('MiniMax')) {
-            return 'aliyun';
-        }
-        return 'zhipu';
+        
+        return {
+            valid: true,
+            warnings: validation.warnings,
+            model: validation.model
+        };
     },
 
     getApiHeaders(model) {
@@ -58,11 +73,20 @@ const BatchEngine = {
     },
 
     setModel(model) {
+        const validation = this.validateModel(model);
+        if (!validation.valid) {
+            console.warn('[BatchEngine] 模型验证失败:', validation.message);
+        }
         this.currentModel = model;
         this.currentProvider = this.getProviderForModel(model);
     },
 
     generateJsonl(inputs, template) {
+        const validation = this.validateBeforeRequest(template.model, template);
+        if (!validation.valid) {
+            throw new Error(validation.message);
+        }
+        
         const lines = [];
         const provider = this.getProviderForModel(template.model);
         
@@ -126,7 +150,9 @@ const BatchEngine = {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error || '上传失败: ' + response.status);
+                const errorMsg = errorData.error || '上传失败: ' + response.status;
+                ModelValidator.logError(errorMsg, { status: response.status, model });
+                throw new Error(errorMsg);
             }
 
             const result = await response.json();
@@ -139,6 +165,7 @@ const BatchEngine = {
                 message: '文件上传成功'
             };
         } catch (error) {
+            ModelValidator.logError(error.message, { model, operation: 'uploadJsonl' });
             return { success: false, error: error.message };
         }
     },
@@ -151,6 +178,11 @@ const BatchEngine = {
 
         if (model) {
             this.setModel(model);
+        }
+
+        const validation = this.validateModel(model || this.currentModel);
+        if (!validation.valid) {
+            return { success: false, message: validation.message };
         }
 
         try {
@@ -173,7 +205,13 @@ const BatchEngine = {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error || '创建批处理失败: ' + response.status);
+                const errorMsg = errorData.error || '创建批处理失败: ' + response.status;
+                ModelValidator.logError(errorMsg, { 
+                    status: response.status, 
+                    model, 
+                    provider: this.currentProvider 
+                });
+                throw new Error(errorMsg);
             }
 
             const result = await response.json();
@@ -192,6 +230,11 @@ const BatchEngine = {
                 message: '批处理任务已创建'
             };
         } catch (error) {
+            ModelValidator.logError(error.message, { 
+                model, 
+                provider: this.currentProvider,
+                operation: 'createBatch' 
+            });
             return { success: false, error: error.message };
         }
     },
