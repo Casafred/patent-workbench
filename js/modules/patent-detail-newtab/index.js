@@ -1407,6 +1407,10 @@
                     '<select id="newtab_chat_provider" onchange="onNewTabProviderChange()" style="padding: 6px 12px; border: 1px solid #c8e6c9; border-radius: 6px; font-size: 13px; background: white; cursor: pointer;"></select></div>' +
                     '<div style="display: flex; align-items: center; gap: 8px;"><label style="font-size: 13px; color: #2e7d32; font-weight: 500;">模型:</label>' +
                     '<select id="newtab_chat_model" onchange="onNewTabModelChange()" style="padding: 6px 12px; border: 1px solid #c8e6c9; border-radius: 6px; font-size: 13px; background: white; cursor: pointer;"></select></div>' +
+                    '<label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #2e7d32; cursor: pointer;" title="勾选后将包含完整的说明书和权利要求作为上下文">' +
+                    '<input type="checkbox" id="newtab_chat_full_context" style="width: 16px; height: 16px; cursor: pointer; accent-color: #2e7d32;">' +
+                    '<span>包含完整内容</span></label>' +
+                    '<span id="newtab_chat_context_info" style="display: none; font-size: 12px; color: #6c757d; background: #e9ecef; padding: 3px 8px; border-radius: 4px;"></span>' +
                     '<button onclick="clearNewTabChatHistory()" style="padding: 6px 12px; background: white; border: 1px solid #c8e6c9; border-radius: 6px; font-size: 13px; color: #2e7d32; cursor: pointer;">清空对话</button>' +
                     '</div></div>' +
                     '<div id="newtab_chat_history" style="flex: 1; overflow-y: auto; padding: 16px; background: #fafafa;">' +
@@ -1429,6 +1433,31 @@
                     '</div></div></div>';
                 
                 document.body.appendChild(chatModal);
+                
+                var fullContextCheckbox = document.getElementById('newtab_chat_full_context');
+                var contextInfoEl = document.getElementById('newtab_chat_context_info');
+                
+                if (fullContextCheckbox && contextInfoEl) {
+                    fullContextCheckbox.onchange = function() {
+                        var patentData = window.newTabChatState.patentData || window.pageData || {};
+                        if (this.checked) {
+                            var claimsCount = patentData.claims ? patentData.claims.length : 0;
+                            var descLength = patentData.description ? (typeof patentData.description === 'string' ? patentData.description.length : JSON.stringify(patentData.description).length) : 0;
+                            var estimatedTokens = Math.ceil(claimsCount * 50 + descLength / 4);
+                            contextInfoEl.textContent = claimsCount + '条权利要求, 约' + estimatedTokens + ' Tokens';
+                            contextInfoEl.style.display = 'inline-block';
+                            if (estimatedTokens > 5000) {
+                                contextInfoEl.style.background = '#fff3cd';
+                                contextInfoEl.style.color = '#856404';
+                            } else {
+                                contextInfoEl.style.background = '#e9ecef';
+                                contextInfoEl.style.color = '#6c757d';
+                            }
+                        } else {
+                            contextInfoEl.style.display = 'none';
+                        }
+                    };
+                }
             }
             
             function restoreNewTabChatHistory() {
@@ -1634,6 +1663,9 @@
                     var patentInfo = window.newTabChatState.patentData;
                     var patentNumber = window.newTabChatState.patentNumber;
                     
+                    var fullContextCheckbox = document.getElementById('newtab_chat_full_context');
+                    var useFullContext = fullContextCheckbox ? fullContextCheckbox.checked : false;
+                    
                     var safeValue = function(val) {
                         if (!val) return '未知';
                         if (Array.isArray(val)) return val.length > 0 ? val.join(', ') : '未知';
@@ -1668,13 +1700,29 @@
                     
                     if (patentInfo.claims && patentInfo.claims.length > 0) {
                         contextInfo += '\\n## 权利要求\\n';
-                        contextInfo += safeArray(patentInfo.claims, 20) + '\\n';
+                        if (useFullContext) {
+                            for (var i = 0; i < patentInfo.claims.length; i++) {
+                                contextInfo += (i + 1) + '. ' + (typeof patentInfo.claims[i] === 'string' ? patentInfo.claims[i] : JSON.stringify(patentInfo.claims[i])) + '\\n';
+                            }
+                        } else {
+                            var claimsLimit = Math.min(5, patentInfo.claims.length);
+                            for (var i = 0; i < claimsLimit; i++) {
+                                contextInfo += (i + 1) + '. ' + (typeof patentInfo.claims[i] === 'string' ? patentInfo.claims[i] : JSON.stringify(patentInfo.claims[i])) + '\\n';
+                            }
+                            if (patentInfo.claims.length > 5) {
+                                contextInfo += '...(共' + patentInfo.claims.length + '条权利要求，勾选"包含完整内容"可加载全部)\\n';
+                            }
+                        }
                     }
                     
                     if (patentInfo.description) {
                         var descText = typeof patentInfo.description === 'string' ? patentInfo.description : JSON.stringify(patentInfo.description);
-                        var truncatedDesc = descText.length > 5000 ? descText.substring(0, 5000) + '...(内容过长已截断)' : descText;
-                        contextInfo += '\\n## 说明书\\n' + truncatedDesc + '\\n';
+                        if (useFullContext) {
+                            contextInfo += '\\n## 说明书\\n' + descText + '\\n';
+                        } else {
+                            var truncatedDesc = descText.length > 500 ? descText.substring(0, 500) + '...(勾选"包含完整内容"可加载全部)' : descText;
+                            contextInfo += '\\n## 说明书\\n' + truncatedDesc + '\\n';
+                        }
                     }
                     
                     if (patentInfo.patent_citations && patentInfo.patent_citations.length > 0) {
