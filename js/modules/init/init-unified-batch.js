@@ -1775,23 +1775,24 @@ function handleUnifiedBatchComplete(result) {
 }
 
 async function generateUnifiedReport() {
-    var state = UnifiedBatch.state;
-    var reporter = state ? state.reporter : null;
+    var stateObj = UnifiedBatch.state;
+    var actualState = stateObj ? stateObj.state : null;
+    var reporter = actualState ? actualState.reporter : null;
     
-    var originalData = reporter && reporter.sheetData ? reporter.sheetData : state.currentSheetData;
+    var originalData = reporter && reporter.sheetData ? reporter.sheetData : actualState.currentSheetData;
     if (!originalData) {
         alert('请先上传原始Excel文件');
         return;
     }
 
-    var jsonlContent = reporter && reporter.jsonlData ? reporter.jsonlData : state.batchTask.resultContent;
+    var jsonlContent = reporter && reporter.jsonlData ? reporter.jsonlData : (actualState.batchTask ? actualState.batchTask.resultContent : null);
     if (!jsonlContent) {
         alert('请先加载Batch响应结果文件');
         return;
     }
 
     if (!reporter || !reporter.jsonlData) {
-        state.batchTask.resultContent = jsonlContent;
+        actualState.batchTask.resultContent = jsonlContent;
     }
 
     var result = UnifiedBatch.batchEngine.generateReport(originalData);
