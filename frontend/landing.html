@@ -2228,6 +2228,7 @@
             display: flex;
             flex-direction: column;
             flex-shrink: 0;
+            overflow: hidden;
         }
 
         .image-manager-main {
@@ -2240,6 +2241,15 @@
         .sidebar-section {
             padding: 16px;
             border-bottom: 1px solid var(--border-color);
+        }
+        
+        .sidebar-section:last-child {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 0;
+            min-height: 0;
+            overflow: hidden;
         }
 
         .sidebar-section-title {
@@ -4265,7 +4275,7 @@
                 
                 if (result.success && result.data) {
                     cachedImages = result.data.images || [];
-                    lastImageTimestamp = result.data.timestamp || null;
+                    lastImageTimestamp = generateImageHash(cachedImages);
                     updateImageCount();
                     console.log(`[图片管理器] 已加载 ${cachedImages.length} 张图片`);
                 }
@@ -4274,19 +4284,25 @@
             }
         }
 
+        function generateImageHash(images) {
+            if (!images || images.length === 0) return '';
+            const sortedImages = [...images].sort((a, b) => a.name.localeCompare(b.name));
+            return sortedImages.map(img => `${img.name}:${img.size}`).join('|');
+        }
+
         async function checkForImageChanges() {
             try {
                 const response = await fetch('/api/landing/images/refresh');
                 const result = await response.json();
                 
                 if (result.success && result.data) {
-                    const newTimestamp = result.data.timestamp;
                     const newImages = result.data.images || [];
+                    const newHash = generateImageHash(newImages);
                     
-                    if (lastImageTimestamp !== newTimestamp || newImages.length !== cachedImages.length) {
-                        const isFirstLoad = (lastImageTimestamp === null);
+                    if (lastImageTimestamp !== newHash) {
+                        const isFirstLoad = (lastImageTimestamp === null || lastImageTimestamp === '');
                         cachedImages = newImages;
-                        lastImageTimestamp = newTimestamp;
+                        lastImageTimestamp = newHash;
                         updateImageCount();
                         
                         const panel = document.getElementById('imageManagerPanel');
