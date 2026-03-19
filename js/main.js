@@ -111,7 +111,7 @@ async function extendSession() {
 // 加载进度管理
 // =================================================================================
 window.LoadingManager = {
-    totalSteps: 11,
+    totalSteps: 14,
     currentStep: 0,
     progressElement: null,
     overlayElement: null,
@@ -468,7 +468,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         
         if (loaded) {
-            LoadingManager.updateProgress('初始化EPO专利检索');
+            LoadingManager.updateProgress('初始化全球专利检索');
         }
     } catch (error) {
         console.error('❌ Failed to load Feature 11 (EPO Search) component:', error);
