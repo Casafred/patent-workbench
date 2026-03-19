@@ -5,6 +5,12 @@
 
 // 处理文件选择
 export async function handleClaimsFileSelect(event, state, showMessage) {
+    if (window.guestModeRestrictions && window.guestModeRestrictions.isGuestMode()) {
+        alert('游客模式限制\n\n文件上传功能不可用\n\n请注册账号以使用完整功能');
+        event.target.value = '';
+        return;
+    }
+    
     const file = event.target.files[0];
     if (!file) return;
     

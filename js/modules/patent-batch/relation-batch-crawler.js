@@ -12,7 +12,6 @@
 window.openRelationAnalysisTab = function(sourcePatentNumber, relationType, relationData) {
     console.log(`🔍 打开关系分析标签页: ${sourcePatentNumber} - ${relationType}`, relationData);
 
-    // 提取专利号列表
     const patentNumbers = extractPatentNumbers(relationData, relationType);
     
     if (!patentNumbers || patentNumbers.length === 0) {
@@ -20,12 +19,17 @@ window.openRelationAnalysisTab = function(sourcePatentNumber, relationType, rela
         return;
     }
 
-    // 如果数量过多，提示用户确认
-    if (patentNumbers.length > 50) {
+    if (window.guestModeRestrictions && window.guestModeRestrictions.isGuestMode()) {
+        if (patentNumbers.length > 1) {
+            if (!confirm(`游客模式仅允许查询 1 条专利。\n\n当前共 ${patentNumbers.length} 条，将只查询第一条。\n\n是否继续？`)) {
+                return;
+            }
+            patentNumbers.splice(1);
+        }
+    } else if (patentNumbers.length > 50) {
         if (!confirm(`发现 ${patentNumbers.length} 个${getRelationTypeName(relationType)}，数量较多可能导致爬取时间较长。\n是否继续？`)) {
             return;
         }
-        // 限制最多50个
         patentNumbers.splice(50);
     }
 
@@ -227,6 +231,15 @@ window.crawlRelationPatents = async function(tabId, sourcePatentNumber, relation
  * @returns {Promise<Array>} 爬取结果
  */
 window.crawlPatentsBatch = async function(patentNumbers, onProgress) {
+    if (window.guestModeRestrictions && window.guestModeRestrictions.isGuestMode()) {
+        if (patentNumbers.length > 1) {
+            if (!confirm(`游客模式仅允许查询 1 条专利。\n\n当前共 ${patentNumbers.length} 条，将只查询第一条。\n\n是否继续？`)) {
+                return [];
+            }
+            patentNumbers = patentNumbers.slice(0, 1);
+        }
+    }
+    
     const results = [];
     const total = patentNumbers.length;
 

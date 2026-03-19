@@ -370,6 +370,12 @@ const ClassificationModule = {
     },
 
     handleExcelUpload(e) {
+        if (window.guestModeRestrictions && window.guestModeRestrictions.isGuestMode()) {
+            alert('游客模式限制\n\n文件上传功能不可用\n\n请注册账号以使用完整功能');
+            e.target.value = '';
+            return;
+        }
+        
         const file = e.target.files[0];
         if (!file) return;
         this.loadExcelFile(file);
@@ -1395,6 +1401,10 @@ const ClassificationModule = {
 
     handleSubmitAsync() {
         console.log('[ClassificationModule] Starting async classification');
+        
+        if (window.guestModeRestrictions && !window.guestModeRestrictions.checkClassificationProcess()) {
+            return;
+        }
         
         const allInputs = classificationState.getInputs();
         const schema = classificationState.getSchema();

@@ -868,6 +868,15 @@ function initPatentBatchEventListeners() {
     
     // 定义批量查询专利的执行函数（增强版：支持缓存、实时显示、自动解读）
     async function performPatentSearch(patentNumbers, options = {}) {
+        if (window.guestModeRestrictions && window.guestModeRestrictions.isGuestMode()) {
+            if (patentNumbers.length > 1) {
+                if (!confirm(`游客模式仅允许查询 1 条专利。\n\n当前共 ${patentNumbers.length} 条，将只查询第一条。\n\n是否继续？`)) {
+                    return;
+                }
+                patentNumbers = patentNumbers.slice(0, 1);
+            }
+        }
+        
         const { skipCacheCheck = false, forceRefresh = false } = options;
         
         // 首先检查后端版本

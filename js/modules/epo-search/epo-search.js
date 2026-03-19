@@ -454,6 +454,11 @@ class EPOSearchModule {
     
     async search(page = 1) {
         console.log('[EPO Search] search() called, page:', page);
+        
+        if (window.guestModeRestrictions && !window.guestModeRestrictions.checkEPOSearch()) {
+            return;
+        }
+        
         const query = this.buildQuery();
         console.log('[EPO Search] built query:', query);
         
@@ -916,6 +921,10 @@ class EPOSearchModule {
     }
     
     async analyzePatent() {
+        if (window.guestModeRestrictions && !window.guestModeRestrictions.checkEPOAnalyze()) {
+            return;
+        }
+        
         if (!this.currentPatentNumber) {
             this.showToast('请先选择要解读的专利', 'warning');
             return;

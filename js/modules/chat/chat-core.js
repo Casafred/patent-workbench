@@ -303,7 +303,11 @@ function buildMessagesForApi(conversation, contextCount, currentUserPrompt) {
  * Main function for sending chat messages and receiving streaming responses
  */
 async function handleStreamChatRequest() {
-    // Get DOM elements
+    if (window.guestModeRestrictions && window.guestModeRestrictions.isGuestMode()) {
+        alert('游客模式限制\n\n对话功能不可用\n\n请注册账号以使用完整功能');
+        return;
+    }
+    
     const chatInput = document.getElementById('chat_input');
     const chatSendBtn = document.getElementById('chat_send_btn');
     const chatStopBtn = document.getElementById('chat_stop_btn');

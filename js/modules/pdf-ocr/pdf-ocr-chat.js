@@ -306,6 +306,10 @@ class PDFOCRChat {
     }
 
     async sendMessage() {
+        if (window.guestModeRestrictions && !window.guestModeRestrictions.checkPDFChat()) {
+            return;
+        }
+        
         const input = document.getElementById('ocr-chat-input');
         const message = input?.value.trim();
 

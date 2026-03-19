@@ -8,6 +8,12 @@
  * @param {boolean} skipCache - Whether to skip cache and reprocess
  */
 async function handleChatFileUpload(event, fileFromReuse = null, skipCache = false) {
+    if (window.guestModeRestrictions && window.guestModeRestrictions.isGuestMode()) {
+        alert('游客模式限制\n\n文件上传功能不可用\n\n请注册账号以使用完整功能');
+        if (event.target) event.target.value = '';
+        return;
+    }
+    
     const file = fileFromReuse || (event.target ? event.target.files[0] : null);
     if (!file) return;
 

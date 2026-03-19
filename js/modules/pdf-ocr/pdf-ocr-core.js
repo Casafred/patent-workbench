@@ -203,6 +203,11 @@ class PDFOCRCore {
      * 处理上传的文件
      */
     async handleFile(file) {
+        if (window.guestModeRestrictions && window.guestModeRestrictions.isGuestMode()) {
+            alert('游客模式限制\n\n文件上传功能不可用\n\n请注册账号以使用完整功能');
+            return;
+        }
+        
         const fileName = file.name.toLowerCase();
         
         // 检查文件类型

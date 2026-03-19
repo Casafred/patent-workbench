@@ -598,6 +598,10 @@ function escapeHtml(text) {
 }
 
 async function sendPatentChatMessage() {
+    if (window.guestModeRestrictions && !window.guestModeRestrictions.checkPatentChat()) {
+        return;
+    }
+    
     const modal = getEl('patent_chat_modal');
     const input = getEl('patent_chat_input');
     const sendBtn = getEl('patent_chat_send_btn');

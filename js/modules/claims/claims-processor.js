@@ -5,6 +5,10 @@
 
 // 开始处理
 export async function handleClaimsProcess(state, showMessage, updateProgress, loadResults) {
+    if (window.guestModeRestrictions && !window.guestModeRestrictions.checkClaimsProcess()) {
+        return;
+    }
+    
     const sheetSelect = document.getElementById('claims_sheet_selector');
     const columnSelect = document.getElementById('claims_column_selector');
     const processBtn = document.getElementById('claims_process_btn');

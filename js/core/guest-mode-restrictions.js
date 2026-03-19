@@ -260,6 +260,65 @@ class GuestModeRestrictions {
     recordPDFParse() {
         this.limits.pdfParse.parsedPages.push(Date.now());
     }
+    
+    checkBatchAnalysis() {
+        if (!this.isGuest) return true;
+        alert('游客模式限制\n\n批量分析功能不可用\n\n请注册账号以使用完整功能');
+        return false;
+    }
+    
+    checkBatchCrawl(patentCount) {
+        if (!this.isGuest) return true;
+        if (patentCount > 1) {
+            alert('游客模式限制\n\n批量爬取功能仅限查询 1 条专利\n\n请注册账号以使用完整功能');
+            return false;
+        }
+        return true;
+    }
+    
+    checkClaimsProcess() {
+        if (!this.isGuest) return true;
+        alert('游客模式限制\n\n权利要求处理功能不可用\n\n请注册账号以使用完整功能');
+        return false;
+    }
+    
+    checkEPOSearch() {
+        if (!this.isGuest) return true;
+        alert('游客模式限制\n\n全球专利检索功能不可用\n\n请注册账号以使用完整功能');
+        return false;
+    }
+    
+    checkEPOAnalyze() {
+        if (!this.isGuest) return true;
+        alert('游客模式限制\n\nAI解读功能不可用\n\n请注册账号以使用完整功能');
+        return false;
+    }
+    
+    checkPatentChat() {
+        if (!this.isGuest) return true;
+        alert('游客模式限制\n\n专利对话功能不可用\n\n请注册账号以使用完整功能');
+        return false;
+    }
+    
+    checkClassificationProcess() {
+        if (!this.isGuest) return true;
+        alert('游客模式限制\n\n分类标引功能不可用\n\n请注册账号以使用完整功能');
+        return false;
+    }
+    
+    checkPDFChat() {
+        if (!this.isGuest) return true;
+        alert('游客模式限制\n\nPDF对话功能不可用\n\n请注册账号以使用完整功能');
+        return false;
+    }
+    
+    isGuestMode() {
+        return this.isGuest;
+    }
+    
+    showGuestLimitAlert(featureName) {
+        alert(`游客模式限制\n\n${featureName}功能不可用\n\n请注册账号以使用完整功能`);
+    }
 }
 
 window.guestModeRestrictions = new GuestModeRestrictions();

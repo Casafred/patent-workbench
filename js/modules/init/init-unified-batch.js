@@ -395,6 +395,12 @@ function bindUnifiedBatchEvents() {
 }
 
 async function handleUnifiedExcelUpload(event) {
+    if (window.guestModeRestrictions && window.guestModeRestrictions.isGuestMode()) {
+        alert('游客模式限制\n\n文件上传功能不可用\n\n请注册账号以使用完整功能');
+        event.target.value = '';
+        return;
+    }
+    
     var file = event.target.files[0];
     if (!file) return;
 
@@ -1166,6 +1172,10 @@ function deleteUnifiedTemplate(templateId) {
 }
 
 async function startUnifiedInstantProcessing() {
+    if (window.guestModeRestrictions && !window.guestModeRestrictions.checkBatchAnalysis()) {
+        return;
+    }
+    
     var checkboxes = document.querySelectorAll('.unified-input-checkbox:checked');
     var selectedIds = Array.from(checkboxes).map(function(cb) { return cb.dataset.id; });
     
@@ -1218,6 +1228,10 @@ async function startUnifiedInstantProcessing() {
 }
 
 async function testUnifiedThreeInputs() {
+    if (window.guestModeRestrictions && !window.guestModeRestrictions.checkBatchAnalysis()) {
+        return;
+    }
+    
     var allInputs = UnifiedBatch.getInputs();
     
     if (allInputs.length === 0) {
@@ -1425,6 +1439,10 @@ function renderUnifiedInstantResults() {
 }
 
 async function startUnifiedAsyncProcessing() {
+    if (window.guestModeRestrictions && !window.guestModeRestrictions.checkBatchAnalysis()) {
+        return;
+    }
+    
     var checkboxes = document.querySelectorAll('.unified-input-checkbox:checked');
     var selectedIds = Array.from(checkboxes).map(function(cb) { return cb.dataset.id; });
     
@@ -1564,6 +1582,10 @@ function exportUnifiedAsyncResults() {
 }
 
 async function unifiedBatchStep1Upload() {
+    if (window.guestModeRestrictions && !window.guestModeRestrictions.checkBatchAnalysis()) {
+        return;
+    }
+    
     var checkboxes = document.querySelectorAll('.unified-input-checkbox:checked');
     var selectedIds = Array.from(checkboxes).map(function(cb) { return cb.dataset.id; });
     
