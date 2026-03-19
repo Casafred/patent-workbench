@@ -2303,6 +2303,8 @@
             flex: 1;
             overflow-y: auto;
             padding: 12px;
+            min-height: 0;
+            max-height: 100%;
         }
 
         .image-grid {
@@ -2320,6 +2322,13 @@
             border: 2px solid transparent;
             transition: all 0.2s;
             background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .image-grid-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            cursor: zoom-in;
         }
 
         .image-grid-item:hover {
@@ -4136,11 +4145,11 @@
             'feature-03-local-lib': ['3_local_lib.png', '3_local_lib_2.png', '3_local_lib_3.png'],
             'feature-04-claims-comparison': ['4_claim comparison.png', '4_claims_2.png', '4_claims_3.png'],
             'feature-05-patent-query': ['5_patent_query.png', '5_patent_query_2.png', '5_patent_query_3.png'],
-            'feature-06-epo-search': ['6_epo_search.png', '6_epo_search_2.png', '6_epo_search_3.png'],
-            'feature-07-claims-analyzer': ['7_claims_analyzer.png', '7_claims_analyzer_2.png', '7_claims_analyzer_3.png'],
-            'feature-08-drawing-marker': ['8_drawing_marker.png', '8_drawing_marker_2.png', '8_drawing_marker_3.png'],
-            'feature-09-pdf-ocr': ['9_doc layout OCR.png', '9_pdf_ocr_2.png', '9_pdf_ocr_3.png'],
-            'feature-10-ipc-lookup': ['10_ipc_lookup.png', '10_ipc_lookup_2.png', '10_ipc_lookup_3.png']
+            'feature-06-claims-analyzer': ['7_claim analysis.png', '7_claims_2.png', '7_claims_3.png'],
+            'feature-07-drawing-marker': ['8_pic auto labeling.png', '8_drawing_marker_2.png', '8_drawing_marker_3.png'],
+            'feature-08-pdf-ocr': ['8_doc layout OCR.png', '9_pdf_ocr_2.png', '9_pdf_ocr_3.png'],
+            'feature-09-ipc-lookup': ['9_ipc prediction.png', '10_ipc_lookup_2.png', '10_ipc_lookup_3.png'],
+            'feature-10-epo-search': ['10_IPC searching.png', '6_epo_search_2.png', '6_epo_search_3.png']
         };
 
         const gifConfig = {
@@ -4158,11 +4167,11 @@
             'feature-03-local-lib': '本地数据表管理',
             'feature-04-claims-comparison': '权利要求智能比对',
             'feature-05-patent-query': '批量专利检索与解读',
-            'feature-06-epo-search': '全球专利智能检索',
-            'feature-07-claims-analyzer': '独从权识别与可视化',
-            'feature-08-drawing-marker': '专利附图智能标记',
-            'feature-09-pdf-ocr': '文档OCR与智能分析',
-            'feature-10-ipc-lookup': 'IPC分类智能查询'
+            'feature-06-claims-analyzer': '独从权识别与可视化',
+            'feature-07-drawing-marker': '专利附图智能标记',
+            'feature-08-pdf-ocr': '文档OCR与智能分析',
+            'feature-09-ipc-lookup': 'IPC分类智能查询',
+            'feature-10-epo-search': '全球专利智能检索'
         };
 
         const gifNames = {
@@ -4275,6 +4284,7 @@
                     const newImages = result.data.images || [];
                     
                     if (lastImageTimestamp !== newTimestamp || newImages.length !== cachedImages.length) {
+                        const isFirstLoad = (lastImageTimestamp === null);
                         cachedImages = newImages;
                         lastImageTimestamp = newTimestamp;
                         updateImageCount();
@@ -4284,8 +4294,12 @@
                             refreshImageList();
                         }
                         
-                        console.log(`[图片管理器] 检测到图片变化，共 ${cachedImages.length} 张图片`);
-                        showImageChangeNotification();
+                        if (!isFirstLoad) {
+                            console.log(`[图片管理器] 检测到图片变化，共 ${cachedImages.length} 张图片`);
+                            showImageChangeNotification();
+                        } else {
+                            console.log(`[图片管理器] 已加载 ${cachedImages.length} 张图片`);
+                        }
                     }
                 }
             } catch (error) {
@@ -4399,7 +4413,8 @@
 
             grid.innerHTML = filteredImages.map(img => `
                 <div class="image-grid-item ${selectedImage?.name === img.name ? 'selected' : ''}" 
-                     onclick="selectImageFromGrid('${img.name}', '${img.path}')"
+                     data-img-name="${img.name}"
+                     data-img-path="${img.path}"
                      title="${img.name}">
                     <img src="${img.path}" alt="${img.name}" loading="lazy"
                          onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23666%22 stroke-width=%221.5%22><rect x=%223%22 y=%223%22 width=%2218%22 height=%2218%22 rx=%222%22 ry=%222%22></rect><text x=%2212%22 y=%2216%22 text-anchor=%22middle%22 font-size=%228%22 fill=%22%23666%22>?</text></svg>'">
@@ -4407,19 +4422,33 @@
                     <div class="selected-badge">✓</div>
                 </div>
             `).join('');
+            
+            grid.querySelectorAll('.image-grid-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    if (e.shiftKey || e.ctrlKey) {
+                        const path = this.dataset.imgPath;
+                        const name = this.dataset.imgName;
+                        openLightbox(path, name);
+                    } else {
+                        selectImageFromGrid(this.dataset.imgName, this.dataset.imgPath, this);
+                    }
+                });
+            });
         }
 
         function filterImages() {
             refreshImageList();
         }
 
-        function selectImageFromGrid(name, path) {
+        function selectImageFromGrid(name, path, element) {
             selectedImage = { name, path };
             
             document.querySelectorAll('.image-grid-item').forEach(item => {
                 item.classList.remove('selected');
             });
-            event.currentTarget.classList.add('selected');
+            if (element) {
+                element.classList.add('selected');
+            }
             
             updateSelectedImageInfo();
             console.log(`[图片管理器] 已选择图片: ${name}`);
