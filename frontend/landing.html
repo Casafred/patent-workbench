@@ -2644,6 +2644,191 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .upload-zone.uploading {
+            border-color: var(--primary-color);
+            background: rgba(34, 197, 94, 0.2);
+        }
+
+        .upload-zone.uploading::after {
+            content: '上传中...';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        .manager-tabs {
+            display: flex;
+            gap: 8px;
+            padding: 12px 24px;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .manager-tab {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: var(--text-color-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .manager-tab:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .manager-tab.active {
+            background: rgba(34, 197, 94, 0.2);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-top: 1px solid var(--border-color);
+            font-size: 0.85rem;
+        }
+
+        .status-bar .hint {
+            color: var(--text-color-muted);
+        }
+
+        .status-bar .stats {
+            display: flex;
+            gap: 16px;
+        }
+
+        .status-bar .stat {
+            color: var(--text-color-secondary);
+        }
+
+        .status-bar .stat-value {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .container-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
+        }
+
+        .container-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .container-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .container-item.has-image {
+            border-color: rgba(34, 197, 94, 0.5);
+            background: rgba(34, 197, 94, 0.05);
+        }
+
+        .container-item-name {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+        }
+
+        .container-item-preview {
+            position: relative;
+            aspect-ratio: 16/10;
+            border-radius: 6px;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .container-item-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .empty-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-color-muted);
+            font-size: 0.75rem;
+        }
+
+        .empty-placeholder svg {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 4px;
+            opacity: 0.5;
+        }
+
+        .slot-indicator {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 20px;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: white;
+        }
+
+        .remove-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 20px;
+            height: 20px;
+            background: rgba(239, 68, 68, 0.8);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: white;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .container-item:hover .remove-btn {
+            opacity: 1;
+        }
+
+        .remove-btn:hover {
+            background: rgba(239, 68, 68, 1);
+        }
     </style>
 </head>
 <body>
@@ -3942,7 +4127,7 @@
         });
 
         // ============================================
-        // 图片管理器功能 - 全新设计
+        // 图片管理器功能 - 全新设计（支持自动检测和实时更新）
         // ============================================
         
         const imageConfig = {
@@ -3993,6 +4178,9 @@
         let currentManagerMode = 'images';
         let usedImages = new Set();
         let usedGifs = new Set();
+        let cachedImages = [];
+        let lastImageTimestamp = null;
+        let autoRefreshInterval = null;
 
         const isLandingDevMode = () => {
             const urlParams = new URLSearchParams(window.location.search);
@@ -4025,10 +4213,134 @@
                 }
                 console.log('🖼️ Landing页面 - 开发模式已启用');
                 console.log('💡 提示: 在控制台执行 disableLandingDevMode() 可退出开发模式');
+                
+                loadImagesFromServer();
+                startAutoRefresh();
+                setupDragAndDrop();
             }
 
             scanExistingImages();
             scanExistingGifs();
+            loadImageBindings();
+            loadGifBindings();
+        }
+
+        function setupDragAndDrop() {
+            const uploadZone = document.getElementById('uploadZone');
+            if (!uploadZone) return;
+            
+            uploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadZone.classList.add('dragover');
+            });
+            
+            uploadZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                uploadZone.classList.remove('dragover');
+            });
+            
+            uploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadZone.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleImageUpload(files);
+                }
+            });
+        }
+
+        async function loadImagesFromServer() {
+            try {
+                const response = await fetch('/api/landing/images');
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    cachedImages = result.data.images || [];
+                    lastImageTimestamp = result.data.timestamp || null;
+                    updateImageCount();
+                    console.log(`[图片管理器] 已加载 ${cachedImages.length} 张图片`);
+                }
+            } catch (error) {
+                console.error('[图片管理器] 加载图片列表失败:', error);
+            }
+        }
+
+        async function checkForImageChanges() {
+            try {
+                const response = await fetch('/api/landing/images/refresh');
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    const newTimestamp = result.data.timestamp;
+                    const newImages = result.data.images || [];
+                    
+                    if (lastImageTimestamp !== newTimestamp || newImages.length !== cachedImages.length) {
+                        cachedImages = newImages;
+                        lastImageTimestamp = newTimestamp;
+                        updateImageCount();
+                        
+                        const panel = document.getElementById('imageManagerPanel');
+                        if (panel && panel.classList.contains('active')) {
+                            refreshImageList();
+                        }
+                        
+                        console.log(`[图片管理器] 检测到图片变化，共 ${cachedImages.length} 张图片`);
+                        showImageChangeNotification();
+                    }
+                }
+            } catch (error) {
+                console.error('[图片管理器] 检查图片变化失败:', error);
+            }
+        }
+
+        function startAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+            autoRefreshInterval = setInterval(checkForImageChanges, 5000);
+        }
+
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+
+        function showImageChangeNotification() {
+            const existing = document.querySelector('.image-change-notification');
+            if (existing) existing.remove();
+            
+            const notification = document.createElement('div');
+            notification.className = 'image-change-notification';
+            notification.innerHTML = `
+                <span>🔄 检测到图片更新</span>
+                <button onclick="this.parentElement.remove(); refreshImageList();">刷新列表</button>
+            `;
+            notification.style.cssText = `
+                position: fixed;
+                bottom: 80px;
+                right: 20px;
+                background: rgba(34, 197, 94, 0.9);
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                z-index: 10001;
+                animation: slideIn 0.3s ease;
+            `;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => notification.remove(), 5000);
+        }
+
+        function updateImageCount() {
+            const countEl = document.getElementById('imageCount');
+            if (countEl) {
+                countEl.textContent = `(${cachedImages.length})`;
+            }
         }
 
         function scanExistingImages() {
@@ -4051,60 +4363,158 @@
             });
         }
 
-        function setupUploadZone() {
-        }
-
         function openImageManager() {
             document.getElementById('imageManagerOverlay').classList.add('active');
             document.getElementById('imageManagerPanel').classList.add('active');
-            refreshImageList();
-            refreshContainerGrid();
-            updateStats();
+            loadImagesFromServer().then(() => {
+                refreshImageList();
+                refreshContainerGrid();
+                updateStats();
+            });
         }
 
         function refreshImageList() {
-            const list = document.getElementById('imageList');
-            if (!list) return;
+            const grid = document.getElementById('imageGrid');
+            if (!grid) return;
 
-            const allImages = [];
-            Object.values(imageConfig).forEach(imgs => {
-                imgs.forEach(img => {
-                    if (!allImages.includes(img)) allImages.push(img);
-                });
-            });
-
-            list.innerHTML = allImages.map(name => {
-                const imgPath = `/frontend/images/${name}`;
-                return `
-                    <div class="image-item" onclick="selectImageByName('${name}')">
-                        <div class="image-item-preview">
-                            <img src="${imgPath}" alt="${name}" 
-                                 onerror="this.parentElement.innerHTML='<span>?</span>'">
-                        </div>
-                        <div class="image-item-info">
-                            <div class="image-item-name">${name}</div>
-                        </div>
+            if (cachedImages.length === 0) {
+                grid.innerHTML = `
+                    <div class="no-images-hint">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <div>暂无图片</div>
+                        <div style="font-size: 0.7rem; margin-top: 4px;">点击上方上传图片</div>
                     </div>
                 `;
-            }).join('');
+                return;
+            }
+
+            const filterText = (document.getElementById('imageFilter')?.value || '').toLowerCase();
+            const filteredImages = filterText 
+                ? cachedImages.filter(img => img.name.toLowerCase().includes(filterText))
+                : cachedImages;
+
+            grid.innerHTML = filteredImages.map(img => `
+                <div class="image-grid-item ${selectedImage?.name === img.name ? 'selected' : ''}" 
+                     onclick="selectImageFromGrid('${img.name}', '${img.path}')"
+                     title="${img.name}">
+                    <img src="${img.path}" alt="${img.name}" loading="lazy"
+                         onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23666%22 stroke-width=%221.5%22><rect x=%223%22 y=%223%22 width=%2218%22 height=%2218%22 rx=%222%22 ry=%222%22></rect><text x=%2212%22 y=%2216%22 text-anchor=%22middle%22 font-size=%228%22 fill=%22%23666%22>?</text></svg>'">
+                    <div class="image-name-overlay">${img.name}</div>
+                    <div class="selected-badge">✓</div>
+                </div>
+            `).join('');
+        }
+
+        function filterImages() {
+            refreshImageList();
+        }
+
+        function selectImageFromGrid(name, path) {
+            selectedImage = { name, path };
+            
+            document.querySelectorAll('.image-grid-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            event.currentTarget.classList.add('selected');
+            
+            updateSelectedImageInfo();
+            console.log(`[图片管理器] 已选择图片: ${name}`);
+        }
+
+        function updateSelectedImageInfo() {
+            const infoEl = document.getElementById('selectedImageInfo');
+            if (!infoEl) return;
+            
+            if (selectedImage) {
+                infoEl.classList.remove('empty');
+                infoEl.innerHTML = `
+                    <img src="${selectedImage.path}" class="selected-image-thumb" alt="">
+                    <span>${selectedImage.name}</span>
+                `;
+            } else {
+                infoEl.classList.add('empty');
+                infoEl.innerHTML = '<span>💡 先在左侧选择一张图片</span>';
+            }
+        }
+
+        async function handleImageUpload(files) {
+            if (!files || files.length === 0) return;
+            
+            const uploadZone = document.getElementById('uploadZone');
+            uploadZone.classList.add('uploading');
+            
+            let successCount = 0;
+            let failCount = 0;
+            
+            for (const file of files) {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                try {
+                    const response = await fetch('/api/landing/images/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        successCount++;
+                        console.log(`[图片管理器] 上传成功: ${file.name}`);
+                    } else {
+                        failCount++;
+                        console.error(`[图片管理器] 上传失败: ${result.error}`);
+                    }
+                } catch (error) {
+                    failCount++;
+                    console.error(`[图片管理器] 上传出错: ${error}`);
+                }
+            }
+            
+            uploadZone.classList.remove('uploading');
+            
+            await loadImagesFromServer();
+            refreshImageList();
+            
+            if (successCount > 0) {
+                showUploadResult(`成功上传 ${successCount} 张图片${failCount > 0 ? `，${failCount} 张失败` : ''}`);
+            } else {
+                showUploadResult('上传失败，请重试', true);
+            }
+        }
+
+        function showUploadResult(message, isError = false) {
+            const existing = document.querySelector('.upload-result-toast');
+            if (existing) existing.remove();
+            
+            const toast = document.createElement('div');
+            toast.className = 'upload-result-toast';
+            toast.textContent = message;
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${isError ? 'rgba(239, 68, 68, 0.9)' : 'rgba(34, 197, 94, 0.9)'};
+                color: white;
+                padding: 12px 24px;
+                border-radius: 8px;
+                z-index: 10002;
+                animation: slideIn 0.3s ease;
+            `;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => toast.remove(), 3000);
         }
 
         function selectImageByName(name) {
-            selectedImage = {
-                name: name,
-                path: `/frontend/images/${name}`
-            };
-            document.querySelectorAll('.image-item').forEach(item => {
-                const itemName = item.querySelector('.image-item-name')?.textContent;
-                if (itemName === name) {
-                    item.style.borderColor = 'var(--primary-color)';
-                    item.style.background = 'rgba(34, 197, 94, 0.1)';
-                } else {
-                    item.style.borderColor = '';
-                    item.style.background = '';
-                }
-            });
-            console.log(`已选择图片: ${name}`);
+            const img = cachedImages.find(i => i.name === name);
+            if (img) {
+                selectedImage = { name: img.name, path: img.path };
+                updateSelectedImageInfo();
+            }
         }
 
         function closeImageManager() {
@@ -4212,23 +4622,23 @@
 
         function applyImageToSlot(stackId, stackIndex) {
             if (!selectedImage) {
-                alert('请先在左侧选择一张图片');
+                showUploadResult('请先在左侧选择一张图片', true);
                 return;
             }
 
             const container = document.querySelector(`[data-stack-id="${stackId}"]`);
             if (!container) {
-                alert(`未找到容器: ${stackId}`);
+                showUploadResult(`未找到容器: ${stackId}`, true);
                 return;
             }
 
             const slot = container.querySelector(`.stacked-image[data-stack-index="${stackIndex}"]`);
             if (!slot) {
-                alert(`未找到位置 ${stackIndex}`);
+                showUploadResult(`未找到位置 ${stackIndex}`, true);
                 return;
             }
 
-            const imgSrc = selectedImage.dataUrl || `/frontend/images/${selectedImage.name}`;
+            const imgSrc = selectedImage.path;
             const imgAlt = `${placeholderNames[stackId] || selectedImage.name} - 截图${stackIndex + 1}`;
             
             slot.innerHTML = `
@@ -4249,7 +4659,45 @@
             usedImages.add(stackId);
             refreshContainerGrid();
             updateStats();
-            console.log(`已插入图片: ${selectedImage.name} -> ${stackId}[${stackIndex}]`);
+            saveImageBinding(stackId, stackIndex, selectedImage.name);
+            showUploadResult(`已绑定图片: ${selectedImage.name} -> ${placeholderNames[stackId]}`);
+            console.log(`[图片管理器] 已绑定图片: ${selectedImage.name} -> ${stackId}[${stackIndex}]`);
+        }
+
+        function saveImageBinding(stackId, stackIndex, imageName) {
+            const bindings = JSON.parse(localStorage.getItem('landing_image_bindings') || '{}');
+            if (!bindings[stackId]) bindings[stackId] = {};
+            bindings[stackId][stackIndex] = imageName;
+            localStorage.setItem('landing_image_bindings', JSON.stringify(bindings));
+        }
+
+        function loadImageBindings() {
+            const bindings = JSON.parse(localStorage.getItem('landing_image_bindings') || '{}');
+            Object.entries(bindings).forEach(([stackId, slots]) => {
+                const container = document.querySelector(`[data-stack-id="${stackId}"]`);
+                if (!container) return;
+                
+                Object.entries(slots).forEach(([index, imageName]) => {
+                    const slot = container.querySelector(`.stacked-image[data-stack-index="${index}"]`);
+                    if (!slot) return;
+                    
+                    const imgSrc = `/frontend/images/${imageName}`;
+                    const imgAlt = `${placeholderNames[stackId] || imageName} - 截图${parseInt(index) + 1}`;
+                    
+                    slot.innerHTML = `
+                        <img src="${imgSrc}" alt="${imgAlt}" 
+                             onerror="this.parentElement.innerHTML='<div class=\\'stacked-image-placeholder\\'><svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'1.5\\'><rect x=\\'3\\' y=\\'3\\' width=\\'18\\' height=\\'18\\' rx=\\'2\\' ry=\\'2\\'></rect><circle cx=\\'8.5\\' cy=\\'8.5\\' r=\\'1.5\\'></circle><polyline points=\\'21 15 16 10 5 21\\'></polyline></svg><div>图片加载失败</div></div>'"
+                             style="cursor: zoom-in;">
+                        <span class="stacked-image-label">截图 ${parseInt(index) + 1}</span>
+                    `;
+                    
+                    slot.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const img = this.querySelector('img');
+                        if (img) openLightbox(img.src, imgAlt);
+                    });
+                });
+            });
         }
 
         function removeImageFromSlot(stackId, stackIndex) {
@@ -4271,23 +4719,36 @@
                 <span class="stacked-image-label">截图 ${stackIndex + 1}</span>
             `;
             
+            removeImageBinding(stackId, stackIndex);
             refreshContainerGrid();
             updateStats();
+            showUploadResult(`已移除图片绑定: ${placeholderNames[stackId]}`);
+        }
+
+        function removeImageBinding(stackId, stackIndex) {
+            const bindings = JSON.parse(localStorage.getItem('landing_image_bindings') || '{}');
+            if (bindings[stackId]) {
+                delete bindings[stackId][stackIndex];
+                if (Object.keys(bindings[stackId]).length === 0) {
+                    delete bindings[stackId];
+                }
+                localStorage.setItem('landing_image_bindings', JSON.stringify(bindings));
+            }
         }
 
         function applyGifToSlot(gifId) {
             if (!selectedImage) {
-                alert('请先在左侧选择一张GIF');
+                showUploadResult('请先在左侧选择一张GIF', true);
                 return;
             }
 
             const container = document.querySelector(`[data-gif-id="${gifId}"] .demo-item-inner`);
             if (!container) {
-                alert(`未找到容器: ${gifId}`);
+                showUploadResult(`未找到容器: ${gifId}`, true);
                 return;
             }
 
-            const gifSrc = selectedImage.dataUrl || `/frontend/gifs/${selectedImage.name}`;
+            const gifSrc = selectedImage.path;
             const gifAlt = gifNames[gifId] || selectedImage.name;
             
             container.innerHTML = `
@@ -4302,9 +4763,39 @@
             });
             
             usedGifs.add(gifId);
+            saveGifBinding(gifId, selectedImage.name);
             refreshContainerGrid();
             updateStats();
-            console.log(`已插入GIF: ${selectedImage.name} -> ${gifId}`);
+            showUploadResult(`已绑定GIF: ${selectedImage.name} -> ${gifNames[gifId]}`);
+            console.log(`[图片管理器] 已绑定GIF: ${selectedImage.name} -> ${gifId}`);
+        }
+
+        function saveGifBinding(gifId, imageName) {
+            const bindings = JSON.parse(localStorage.getItem('landing_gif_bindings') || '{}');
+            bindings[gifId] = imageName;
+            localStorage.setItem('landing_gif_bindings', JSON.stringify(bindings));
+        }
+
+        function loadGifBindings() {
+            const bindings = JSON.parse(localStorage.getItem('landing_gif_bindings') || '{}');
+            Object.entries(bindings).forEach(([gifId, imageName]) => {
+                const container = document.querySelector(`[data-gif-id="${gifId}"] .demo-item-inner`);
+                if (!container) return;
+                
+                const gifSrc = `/frontend/images/${imageName}`;
+                const gifAlt = gifNames[gifId] || imageName;
+                
+                container.innerHTML = `
+                    <img src="${gifSrc}" alt="${gifAlt}" 
+                         onerror="this.parentElement.innerHTML='<div class=\\'demo-gif-placeholder\\'><svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'1.5\\'><rect x=\\'3\\' y=\\'3\\' width=\\'18\\' height=\\'18\\' rx=\\'2\\' ry=\\'2\\'></rect><circle cx=\\'8.5\\' cy=\\'8.5\\' r=\\'1.5\\'></circle><polyline points=\\'21 15 16 10 5 21\\'></polyline></svg><div>GIF加载失败</div><span class=\\'gif-badge\\'>GIF</span></div>'"
+                         style="cursor: zoom-in;">
+                `;
+                
+                container.querySelector('img')?.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    openLightbox(this.src, gifAlt);
+                });
+            });
         }
 
         function removeGifFromSlot(gifId) {
@@ -4323,9 +4814,14 @@
                 </div>
             `;
             
+            const bindings = JSON.parse(localStorage.getItem('landing_gif_bindings') || '{}');
+            delete bindings[gifId];
+            localStorage.setItem('landing_gif_bindings', JSON.stringify(bindings));
+            
             usedGifs.delete(gifId);
             refreshContainerGrid();
             updateStats();
+            showUploadResult(`已移除GIF绑定: ${gifNames[gifId]}`);
         }
 
         function switchManagerMode(mode) {
