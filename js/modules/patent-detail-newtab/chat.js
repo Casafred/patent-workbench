@@ -178,7 +178,37 @@ window.PatentDetailChat = {
             return;
         }
         
-        const patentData = window.pageData || {};
+        let patentData = window.pageData || {};
+        
+        if (window.opener && !window.opener.closed) {
+            try {
+                let originalPatent = null;
+                
+                if (window.opener.patentResults) {
+                    originalPatent = window.opener.patentResults.find(r => r.patent_number === patentNumber);
+                }
+                
+                if (!originalPatent && window.opener.patentTabManager) {
+                    for (let i = 0; i < window.opener.patentTabManager.tabs.length; i++) {
+                        const tab = window.opener.patentTabManager.tabs[i];
+                        const found = tab.results.find(r => r.patent_number === patentNumber);
+                        if (found && found.success) {
+                            originalPatent = found;
+                            break;
+                        }
+                    }
+                }
+                
+                if (originalPatent && originalPatent.success && originalPatent.data) {
+                    patentData = originalPatent.data;
+                    console.log('[PatentDetailChat.openChat] 从主窗口获取原始专利数据，description存在:', !!patentData.description, '长度:', patentData.description ? patentData.description.length : 0);
+                }
+            } catch (e) {
+                console.warn('[PatentDetailChat.openChat] 无法从主窗口获取专利数据:', e);
+            }
+        }
+        
+        console.log('[PatentDetailChat.openChat] patentData.description exists:', !!patentData.description, 'length:', patentData.description ? patentData.description.length : 0);
         
         const isSamePatent = this.patentNumber === patentNumber;
         const hasMessages = (this.messages || []).length > 0;
@@ -519,6 +549,7 @@ window.PatentDetailChat = {
             
             const patentInfo = this.patentData;
             const patentNumber = this.patentNumber;
+            console.log('[PatentDetailChat.sendMessage] patentInfo.description exists:', !!patentInfo.description, 'length:', patentInfo.description ? patentInfo.description.length : 0);
             
             const safeValue = function(val) {
                 if (!val) return '未知';

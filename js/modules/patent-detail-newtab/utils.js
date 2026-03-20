@@ -14,9 +14,7 @@ window.PatentDetailUtils = {
             jsonStr = jsonStr
                 .replace(/\\/g, '\\\\')
                 .replace(/`/g, '\\`')
-                .replace(/\$/g, '\\$')
-                .replace(/\n/g, '\\n')
-                .replace(/\r/g, '\\r');
+                .replace(/\$/g, '\\$');
             return jsonStr;
         } catch (e) {
             console.error('safeJsonStringify error:', e);

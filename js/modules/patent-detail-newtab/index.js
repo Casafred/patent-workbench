@@ -28,9 +28,11 @@
     }
 
     function buildPageScripts(patentNumber, data) {
+        console.log('[buildPageScripts] data.description exists:', !!data.description, 'length:', data.description ? data.description.length : 0);
         return `
             const pageData = ${U.safeJsonStringify(data)};
             window.pageData = pageData;
+            console.log('[buildPageScripts] pageData.description exists:', !!pageData.description, 'length:', pageData.description ? pageData.description.length : 0);
             const currentPatentNumber = '${U.safeStr(patentNumber)}';
             
             window.newTabDrawings = ${U.safeJsonStringify(data.drawings || [])};
@@ -1358,6 +1360,40 @@
                 
                 var patentData = window.pageData || {};
                 
+                if (window.opener && !window.opener.closed) {
+                    try {
+                        var originalPatent = null;
+                        
+                        if (window.opener.appState && window.opener.appState.patentBatch && window.opener.appState.patentBatch.patentResults) {
+                            originalPatent = window.opener.appState.patentBatch.patentResults.find(function(p) { return p.patent_number === patentNumber; });
+                        }
+                        
+                        if (!originalPatent && window.opener.patentResults) {
+                            originalPatent = window.opener.patentResults.find(function(p) { return p.patent_number === patentNumber; });
+                        }
+                        
+                        if (!originalPatent && window.opener.patentTabManager) {
+                            for (var i = 0; i < window.opener.patentTabManager.tabs.length; i++) {
+                                var tab = window.opener.patentTabManager.tabs[i];
+                                var found = tab.results.find(function(r) { return r.patent_number === patentNumber; });
+                                if (found && found.success) {
+                                    originalPatent = found;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        if (originalPatent && originalPatent.success && originalPatent.data) {
+                            patentData = originalPatent.data;
+                            console.log('[openPatentChatInNewTab] 从主窗口获取原始专利数据，description存在:', !!patentData.description, '长度:', patentData.description ? patentData.description.length : 0);
+                        }
+                    } catch (e) {
+                        console.warn('[openPatentChatInNewTab] 无法从主窗口获取专利数据:', e);
+                    }
+                }
+                
+                console.log('[openPatentChatInNewTab] patentData.description exists:', !!patentData.description, 'length:', patentData.description ? patentData.description.length : 0);
+                
                 var isSamePatent = window.newTabChatState.patentNumber === patentNumber;
                 var hasMessages = (window.newTabChatState.messages || []).length > 0;
                 
@@ -1662,9 +1698,11 @@
                     
                     var patentInfo = window.newTabChatState.patentData;
                     var patentNumber = window.newTabChatState.patentNumber;
+                    console.log('[sendNewTabPatentChatMessage] patentInfo.description exists:', !!patentInfo.description, 'length:', patentInfo.description ? patentInfo.description.length : 0);
                     
                     var fullContextCheckbox = document.getElementById('newtab_chat_full_context');
                     var useFullContext = fullContextCheckbox ? fullContextCheckbox.checked : false;
+                    console.log('[sendNewTabPatentChatMessage] useFullContext:', useFullContext);
                     
                     var safeValue = function(val) {
                         if (!val) return '未知';
@@ -1906,6 +1944,7 @@
         }
         
         const data = patentResult.data;
+        console.log('[openPatentDetailInNewTab] data.description exists:', !!data.description, 'length:', data.description ? data.description.length : 0);
         const selectedFields = window.getSelectedFields ? window.getSelectedFields() : null;
         const analysisResult = findAnalysisResult(patentNumber);
         
