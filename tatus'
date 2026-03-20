@@ -360,3 +360,46 @@ warning: in the working copy of 'js/modules/patent-detail-newtab/index.js', LF w
                                      if li_text:[m
                                          text_parts.append(li_text + '\n')[m
                          [m
+[1mdiff --git a/frontend/landing.html b/frontend/landing.html[m
+[1mindex 624e91e..6d7261f 100644[m
+[1m--- a/frontend/landing.html[m
+[1m+++ b/frontend/landing.html[m
+[36m@@ -4265,7 +4265,7 @@[m
+                 [m
+                 if (result.success && result.data) {[m
+                     cachedImages = result.data.images || [];[m
+[31m-                    lastImageTimestamp = result.data.timestamp || null;[m
+[32m+[m[32m                    lastImageTimestamp = generateImageHash(cachedImages);[m
+                     updateImageCount();[m
+                     console.log(`[图片管理器] 已加载 ${cachedImages.length} 张图片`);[m
+                 }[m
+[36m@@ -4274,19 +4274,25 @@[m
+             }[m
+         }[m
+ [m
+[32m+[m[32m        function generateImageHash(images) {[m
+[32m+[m[32m            if (!images || images.length === 0) return '';[m
+[32m+[m[32m            const sortedImages = [...images].sort((a, b) => a.name.localeCompare(b.name));[m
+[32m+[m[32m            return sortedImages.map(img => `${img.name}:${img.size}`).join('|');[m
+[32m+[m[32m        }[m
+[32m+[m
+         async function checkForImageChanges() {[m
+             try {[m
+                 const response = await fetch('/api/landing/images/refresh');[m
+                 const result = await response.json();[m
+                 [m
+                 if (result.success && result.data) {[m
+[31m-                    const newTimestamp = result.data.timestamp;[m
+                     const newImages = result.data.images || [];[m
+[32m+[m[32m                    const newHash = generateImageHash(newImages);[m
+                     [m
+[31m-                    if (lastImageTimestamp !== newTimestamp || newImages.length !== cachedImages.length) {[m
+[31m-                        const isFirstLoad = (lastImageTimestamp === null);[m
+[32m+[m[32m                    if (lastImageTimestamp !== newHash) {[m
+[32m+[m[32m                        const isFirstLoad = (lastImageTimestamp === null || lastImageTimestamp === '');[m
+                         cachedImages = newImages;[m
+[31m-                        lastImageTimestamp = newTimestamp;[m
+[32m+[m[32m                        lastImageTimestamp = newHash;[m
+                         updateImageCount();[m
+                         [m
+                         const panel = document.getElementById('imageManagerPanel');[m
