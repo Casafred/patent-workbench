@@ -446,6 +446,36 @@ def process_drawing_marker():
         else:
             print(f"[DEBUG] extraction_result 为空或没有 marker_sentences")
             print(f"[DEBUG] extraction_result: {extraction_result}")
+        
+        # 对于未在说明书中找到的标记，在原文中搜索包含该标记的句子
+        not_found_markers = extraction_result.get('not_found_markers', set()) if extraction_result else set()
+        if not_found_markers:
+            print(f"[DEBUG] 未在说明书中找到的标记: {not_found_markers}，尝试在原文中搜索")
+            import re
+            for marker in not_found_markers:
+                escaped_marker = re.escape(marker)
+                pattern = re.compile(rf'(?<![0-9A-Za-z])({escaped_marker})(?![0-9A-Za-z])')
+                match = pattern.search(specification)
+                if match:
+                    start = max(0, match.start() - 100)
+                    end = min(len(specification), match.end() + 100)
+                    context = specification[start:end].strip()
+                    marker_sentences_map[marker] = context
+                    print(f"[DEBUG] 为标记 {marker} 找到原文上下文: {context[:80]}...")
+        
+        # 对于所有OCR识别到的标记，确保都有原文上下文
+        import re
+        for marker in all_ocr_markers:
+            if marker not in marker_sentences_map:
+                escaped_marker = re.escape(marker)
+                pattern = re.compile(rf'(?<![0-9A-Za-z])({escaped_marker})(?![0-9A-Za-z])')
+                match = pattern.search(specification)
+                if match:
+                    start = max(0, match.start() - 100)
+                    end = min(len(specification), match.end() + 100)
+                    context = specification[start:end].strip()
+                    marker_sentences_map[marker] = context
+                    print(f"[DEBUG] 为OCR标记 {marker} 补充原文上下文: {context[:80]}...")
 
         for drawing_result in processed_results:
             if 'error' in drawing_result:
@@ -839,6 +869,27 @@ def reprocess_specification():
         
         print(f"[DEBUG] Extracted reference_map: {len(reference_map)} markers")
         
+        # 收集所有OCR标记并构建标记-句子映射
+        all_ocr_markers = set()
+        for drawing_result in processed_results:
+            ocr_results = drawing_result.get('ocr_results', [])
+            for ocr_item in ocr_results:
+                all_ocr_markers.add(ocr_item['number'])
+        
+        # 构建标记-句子映射
+        import re
+        marker_sentences_map = {}
+        for marker in all_ocr_markers:
+            escaped_marker = re.escape(marker)
+            pattern = re.compile(rf'(?<![0-9A-Za-z])({escaped_marker})(?![0-9A-Za-z])')
+            match = pattern.search(specification)
+            if match:
+                start = max(0, match.start() - 100)
+                end = min(len(specification), match.end() + 100)
+                context = specification[start:end].strip()
+                marker_sentences_map[marker] = context
+                print(f"[DEBUG] reprocess: 为标记 {marker} 找到原文上下文")
+        
         # Match OCR results with new reference_map
         from backend.utils.ocr_utils import match_with_reference_map
         
@@ -857,10 +908,12 @@ def reprocess_specification():
             unmatched_ocr = []
             for ocr_item in ocr_results:
                 if ocr_item['number'] not in reference_map:
+                    original_sentence = marker_sentences_map.get(ocr_item['number'], '')
                     unmatched_ocr.append({
                         **ocr_item,
                         'name': '(说明书未匹配)',
-                        'is_matched': False
+                        'is_matched': False,
+                        'original_sentence': original_sentence
                     })
             
             for item in detected_numbers:
@@ -1398,6 +1451,20 @@ def process_drawing_marker_staged():
                     if marker not in marker_sentences_map:
                         marker_sentences_map[marker] = sentence
             
+            # 对于所有OCR识别到的标记，确保都有原文上下文
+            import re
+            for marker in all_ocr_markers:
+                if marker not in marker_sentences_map:
+                    escaped_marker = re.escape(marker)
+                    pattern = re.compile(rf'(?<![0-9A-Za-z])({escaped_marker})(?![0-9A-Za-z])')
+                    match = pattern.search(specification)
+                    if match:
+                        start = max(0, match.start() - 100)
+                        end = min(len(specification), match.end() + 100)
+                        context = specification[start:end].strip()
+                        marker_sentences_map[marker] = context
+                        print(f"[STAGED] 为OCR标记 {marker} 补充原文上下文")
+
             total_numbers = 0
             for drawing_result in processed_results:
                 if 'error' in drawing_result:
