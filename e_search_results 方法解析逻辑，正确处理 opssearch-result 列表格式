@@ -1,0 +1,51 @@
+[1mdiff --git a/js/modules/patent-detail-newtab/chat.js b/js/modules/patent-detail-newtab/chat.js[m
+[1mindex a3ebfb1..a830ba6 100644[m
+[1m--- a/js/modules/patent-detail-newtab/chat.js[m
+[1m+++ b/js/modules/patent-detail-newtab/chat.js[m
+[36m@@ -178,7 +178,37 @@[m [mwindow.PatentDetailChat = {[m
+             return;[m
+         }[m
+         [m
+[31m-        const patentData = window.pageData || {};[m
+[32m+[m[32m        let patentData = window.pageData || {};[m
+[32m+[m[41m        [m
+[32m+[m[32m        if (window.opener && !window.opener.closed) {[m
+[32m+[m[32m            try {[m
+[32m+[m[32m                let originalPatent = null;[m
+[32m+[m[41m                [m
+[32m+[m[32m                if (window.opener.patentResults) {[m
+[32m+[m[32m                    originalPatent = window.opener.patentResults.find(r => r.patent_number === patentNumber);[m
+[32m+[m[32m                }[m
+[32m+[m[41m                [m
+[32m+[m[32m                if (!originalPatent && window.opener.patentTabManager) {[m
+[32m+[m[32m                    for (let i = 0; i < window.opener.patentTabManager.tabs.length; i++) {[m
+[32m+[m[32m                        const tab = window.opener.patentTabManager.tabs[i];[m
+[32m+[m[32m                        const found = tab.results.find(r => r.patent_number === patentNumber);[m
+[32m+[m[32m                        if (found && found.success) {[m
+[32m+[m[32m                            originalPatent = found;[m
+[32m+[m[32m                            break;[m
+[32m+[m[32m                        }[m
+[32m+[m[32m                    }[m
+[32m+[m[32m                }[m
+[32m+[m[41m                [m
+[32m+[m[32m                if (originalPatent && originalPatent.success && originalPatent.data) {[m
+[32m+[m[32m                    patentData = originalPatent.data;[m
+[32m+[m[32m                    console.log('[PatentDetailChat.openChat] 从主窗口获取原始专利数据，description存在:', !!patentData.description, '长度:', patentData.description ? patentData.description.length : 0);[m
+[32m+[m[32m                }[m
+[32m+[m[32m            } catch (e) {[m
+[32m+[m[32m                console.warn('[PatentDetailChat.openChat] 无法从主窗口获取专利数据:', e);[m
+[32m+[m[32m            }[m
+[32m+[m[32m        }[m
+[32m+[m[41m        [m
+[32m+[m[32m        console.log('[PatentDetailChat.openChat] patentData.description exists:', !!patentData.description, 'length:', patentData.description ? patentData.description.length : 0);[m
+         [m
+         const isSamePatent = this.patentNumber === patentNumber;[m
+         const hasMessages = (this.messages || []).length > 0;[m
+[36m@@ -519,6 +549,7 @@[m [mwindow.PatentDetailChat = {[m
+             [m
+             const patentInfo = this.patentData;[m
+             const patentNumber = this.patentNumber;[m
+[32m+[m[32m            console.log('[PatentDetailChat.sendMessage] patentInfo.description exists:', !!patentInfo.description, 'length:', patentInfo.description ? patentInfo.description.length : 0);[m
+             [m
+             const safeValue = function(val) {[m
+                 if (!val) return '未知';[m

@@ -527,14 +527,28 @@ class EPOSearchModule {
     }
     
     displayResultsQuick(results, total) {
+        const resultsSection = document.getElementById('epo-results-section');
         const resultsList = document.getElementById('epo-results-list');
         const resultsCount = document.getElementById('epo-results-count');
+        const totalCount = document.getElementById('epo-total-count');
         
+        if (resultsSection) resultsSection.style.display = 'block';
         if (resultsCount) {
             resultsCount.textContent = `找到 ${total} 条结果`;
         }
+        if (totalCount) totalCount.textContent = `(共 ${total.toLocaleString()} 条结果)`;
         
         if (!resultsList) return;
+        
+        if (results.length === 0) {
+            resultsList.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #666;">
+                    <p>未找到匹配的专利</p>
+                    <p style="font-size: 13px; margin-top: 8px;">请尝试调整检索条件</p>
+                </div>
+            `;
+            return;
+        }
         
         // 快速显示基本结果
         resultsList.innerHTML = results.map((r, index) => `

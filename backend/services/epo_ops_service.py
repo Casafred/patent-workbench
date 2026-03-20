@@ -478,23 +478,33 @@ class EPOOPSClient:
             logger.info(f"EPO搜索数据结构 - world_data keys: {list(world_data.keys())}")
             logger.info(f"EPO搜索数据结构 - search_data keys: {list(search_data.keys())}")
             
-            search_result = search_data.get('ops:search-result', {})
-            logger.info(f"EPO搜索数据结构 - search_result type: {type(search_result)}")
-            logger.info(f"EPO搜索数据结构 - search_result keys: {list(search_result.keys()) if isinstance(search_result, dict) else 'N/A'}")
+            search_results = search_data.get('ops:search-result', [])
+            logger.info(f"EPO搜索数据结构 - search_results type: {type(search_results)}")
             
-            pub_refs = search_result.get('ops:publication-reference', [])
-            logger.info(f"EPO搜索数据结构 - pub_refs type: {type(pub_refs)}, value: {pub_refs}")
-            
-            if isinstance(pub_refs, dict):
-                pub_refs = [pub_refs]
-            
-            logger.info(f"EPO搜索数据结构 - pub_refs数量: {len(pub_refs)}")
-            
-            for pub_ref in pub_refs:
-                patent_number = self._extract_patent_number_from_pub_ref(pub_ref)
-                logger.info(f"EPO搜索数据结构 - 提取到专利号: {patent_number}")
-                if patent_number:
-                    patent_numbers.append(patent_number)
+            # ops:search-result 可能是一个列表（每个元素是一个搜索结果）
+            # 也可能是一个字典（包含 ops:publication-reference）
+            if isinstance(search_results, dict):
+                # 单个结果的情况
+                pub_refs = search_results.get('ops:publication-reference', [])
+                if isinstance(pub_refs, dict):
+                    pub_refs = [pub_refs]
+                for pub_ref in pub_refs:
+                    patent_number = self._extract_patent_number_from_pub_ref(pub_ref)
+                    if patent_number:
+                        patent_numbers.append(patent_number)
+            elif isinstance(search_results, list):
+                # 多个结果的情况
+                for search_result in search_results:
+                    if not isinstance(search_result, dict):
+                        continue
+                    pub_refs = search_result.get('ops:publication-reference', [])
+                    if isinstance(pub_refs, dict):
+                        pub_refs = [pub_refs]
+                    for pub_ref in pub_refs:
+                        patent_number = self._extract_patent_number_from_pub_ref(pub_ref)
+                        logger.info(f"EPO搜索数据结构 - 提取到专利号: {patent_number}")
+                        if patent_number:
+                            patent_numbers.append(patent_number)
             
             logger.info(f"EPO搜索数据结构 - 最终解析结果数量: {len(patent_numbers)}")
         except Exception as e:
@@ -936,91 +946,6 @@ class EPOOPSClient:
                 symbol = self._get_text_value(class_symbol)
                 if symbol:
                     result.append(symbol)
-            
-            return result
-        except Exception as e:
-            logger.error(f"提取CPC分类号失败: {e}")
-            return []
-    
-    def _extract_abstract_from_exchange(self, exchange_doc: Dict) -> str:
-        """从 exchange-document 直接提取摘要（abstract 是 exchange-document 的直接子元素）"""
-        try:
-            abstract_data = exchange_doc.get('abstract', {})
-            if not abstract_data:
-                return ''
-            
-            if isinstance(abstract_data, str):
-                return abstract_data
-            
-            p = abstract_data.get('p', {})
-            if isinstance(p, list):
-                texts = [self._get_text_value(item) for item in p]
-                return ' '.join(text for text in texts if text)
-            return self._get_text_value(p)
-        except Exception as e:
-            logger.error(f"提取摘要失败: {e}")
-            return ''
-    
-    def _extract_cpc_classifications(self, biblio: Dict) -> List[str]:
-        """提取 CPC 分类号 - 使用 patent-classification 字段"""
-        try:
-            classifications = biblio.get('patent-classification', [])
-            
-            if isinstance(classifications, dict):
-                classifications = [classifications]
-            
-            result = []
-            for c in classifications:
-                if not isinstance(c, dict):
-                    continue
-                
-                scheme = c.get('classification-scheme', {})
-                scheme_value = self._get_text_value(scheme)
-                
-                if scheme_value and scheme_value.upper() in ['CPC', 'CPCI', 'CPCY']:
-                    section = self._get_text_value(c.get('section', {}))
-                    pc_class = self._get_text_value(c.get('class', {}))
-                    subclass = self._get_text_value(c.get('subclass', {}))
-                    main_group = self._get_text_value(c.get('main-group', {}))
-                    sub_group = self._get_text_value(c.get('subgroup', {}))
-                    
-                    symbol_parts = []
-                    if section:
-                        symbol_parts.append(section)
-                    if pc_class:
-                        symbol_parts.append(pc_class)
-                    if subclass:
-                        symbol_parts.append(subclass)
-                    if main_group:
-                        symbol_parts.append(main_group)
-                    if sub_group:
-                        symbol_parts.append('/' + sub_group)
-                    
-                    if symbol_parts:
-                        symbol = ''.join(symbol_parts[:2]) + ''.join(symbol_parts[2:])
-                        result.append(symbol)
-            
-            if not result:
-                class_container = biblio.get('classifications-cpc', {})
-                class_data = class_container.get('classification-cpc', [])
-                
-                if isinstance(class_data, dict):
-                    class_data = [class_data]
-                
-                for c in class_data:
-                    if not isinstance(c, dict):
-                        continue
-                    
-                    text = c.get('text', {})
-                    text_val = self._get_text_value(text)
-                    if text_val:
-                        result.append(text_val)
-                        continue
-                    
-                    class_symbol = c.get('classification-symbol', {})
-                    symbol = self._get_text_value(class_symbol)
-                    if symbol:
-                        result.append(symbol)
             
             return result
         except Exception as e:

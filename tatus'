@@ -314,3 +314,49 @@ warning: in the working copy of 'js/modules/patent-detail-newtab/index.js', LF w
                      [m
                      var navTrigger = document.getElementById('navTrigger');[m
                      if (navTrigger) navTrigger.classList.remove('visible');[m
+[1mdiff --git a/backend/scraper/simple_scraper.py b/backend/scraper/simple_scraper.py[m
+[1mindex 4538689..0a70a1c 100644[m
+[1m--- a/backend/scraper/simple_scraper.py[m
+[1m+++ b/backend/scraper/simple_scraper.py[m
+[36m@@ -497,7 +497,7 @@[m [mclass SimplePatentScraper:[m
+                             claim_texts = claim_div.find_all('div', {'class': 'claim-text'})[m
+ [m
+                             if claim_texts:[m
+[31m-                                full_claim_text = ' '.join([ct.get_text(strip=True) for ct in claim_texts])[m
+[32m+[m[32m                                full_claim_text = ' '.join([ct.get_text(separator=' ', strip=True) for ct in claim_texts])[m
+                                 if full_claim_text and len(full_claim_text) > 10:[m
+                                     # Format as string with claim number and type indicator[m
+                                     prefix = f"[{claim_num}] "[m
+[36m@@ -527,7 +527,7 @@[m [mclass SimplePatentScraper:[m
+                             [m
+                             if claim_texts:[m
+                                 # Combine all claim-text divs[m
+[31m-                                full_claim_text = ' '.join([ct.get_text(strip=True) for ct in claim_texts])[m
+[32m+[m[32m                                full_claim_text = ' '.join([ct.get_text(separator=' ', strip=True) for ct in claim_texts])[m
+                                 if full_claim_text and len(full_claim_text) > 10:[m
+                                     # Fallback: treat as string for backward compatibility[m
+                                     claims.append(full_claim_text)[m
+[36m@@ -601,7 +601,7 @@[m [mclass SimplePatentScraper:[m
+                                 continue[m
+                             [m
+                             if child.name == 'heading':[m
+[31m-                                heading_text = child.get_text(strip=True)[m
+[32m+[m[32m                                heading_text = child.get_text(separator=' ', strip=True)[m
+                                 if heading_text:[m
+                                     text_parts.append(f"\n\n## {heading_text}\n")[m
+                             elif child.name == 'li':[m
+[36m@@ -609,12 +609,12 @@[m [mclass SimplePatentScraper:[m
+                                 desc_lines = child.find_all('div', {'class': 'description-line'})[m
+                                 if desc_lines:[m
+                                     for line in desc_lines:[m
+[31m-                                        line_text = line.get_text(strip=True)[m
+[32m+[m[32m                                        line_text = line.get_text(separator=' ', strip=True)[m
+                                         if line_text:[m
+                                             text_parts.append(line_text + '\n')[m
+                                 else:[m
+                                     # 如果没有 description-line，直接提取文本[m
+[31m-                                    li_text = child.get_text(strip=True)[m
+[32m+[m[32m                                    li_text = child.get_text(separator=' ', strip=True)[m
+                                     if li_text:[m
+                                         text_parts.append(li_text + '\n')[m
+                         [m
