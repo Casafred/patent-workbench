@@ -29,13 +29,14 @@ from backend.services.llm.provider_factory import get_factory
 drawing_marker_bp = Blueprint('drawing_marker', __name__)
 
 
-def get_llm_provider(model_name: str, api_key: str):
+def get_llm_provider(model_name: str, api_key: str, provider_hint: str = None):
     """
     Get LLM provider based on model name and API key.
     
     Args:
         model_name: Model ID (e.g., 'glm-4-flash', 'qwen-plus')
         api_key: API key for the provider
+        provider_hint: Optional provider hint from request header ('zhipu' or 'aliyun')
         
     Returns:
         tuple: (provider_instance, error_response)
@@ -47,7 +48,11 @@ def get_llm_provider(model_name: str, api_key: str):
         )
     
     factory = get_factory()
-    provider_name = factory.get_provider_for_model(model_name)
+    
+    provider_name = provider_hint
+    
+    if not provider_name:
+        provider_name = factory.get_provider_for_model(model_name)
     
     if not provider_name:
         return None, create_response(
@@ -79,6 +84,16 @@ def get_api_key_from_request(provider_hint: str = None):
     if auth_header and auth_header.startswith('Bearer '):
         return auth_header.split(' ')[1]
     return None
+
+
+def get_provider_hint_from_request():
+    """
+    Get provider hint from request headers.
+    
+    Returns:
+        str: Provider name ('zhipu' or 'aliyun') or None
+    """
+    return request.headers.get('X-LLM-Provider')
 
 
 @drawing_marker_bp.route('/drawing-marker/process', methods=['POST'])
@@ -328,8 +343,11 @@ def process_drawing_marker():
                     status_code=401
                 )
 
-            # Get LLM provider based on model name
-            provider, error = get_llm_provider(model_name, api_key)
+            # Get provider hint from request header
+            provider_hint = get_provider_hint_from_request()
+
+            # Get LLM provider based on model name and provider hint
+            provider, error = get_llm_provider(model_name, api_key, provider_hint)
             if error:
                 return error
 
@@ -635,8 +653,11 @@ def extract_components():
                     status_code=401
                 )
             
-            # Get LLM provider based on model name
-            provider, error = get_llm_provider(model_name, api_key)
+            # Get provider hint from request header
+            provider_hint = get_provider_hint_from_request()
+            
+            # Get LLM provider based on model name and provider hint
+            provider, error = get_llm_provider(model_name, api_key, provider_hint)
             if error:
                 return error
 
@@ -784,8 +805,11 @@ def reprocess_specification():
                     status_code=401
                 )
             
-            # Get LLM provider based on model name
-            provider, error = get_llm_provider(model_name, api_key)
+            # Get provider hint from request header
+            provider_hint = get_provider_hint_from_request()
+            
+            # Get LLM provider based on model name and provider hint
+            provider, error = get_llm_provider(model_name, api_key, provider_hint)
             if error:
                 return error
             
@@ -1308,8 +1332,11 @@ def process_drawing_marker_staged():
                         status_code=401
                     )
                 
-                # Get LLM provider based on model name
-                provider, error = get_llm_provider(model_name, api_key)
+                # Get provider hint from request header
+                provider_hint = get_provider_hint_from_request()
+                
+                # Get LLM provider based on model name and provider hint
+                provider, error = get_llm_provider(model_name, api_key, provider_hint)
                 if error:
                     return error
                 

@@ -1199,8 +1199,9 @@ async function startProcessing() {
         'Content-Type': 'application/json'
     };
     
-    const isZhipuModel = aiConfig.model && (aiConfig.model.startsWith('glm-') || aiConfig.model.includes('glm'));
-    const isAliyunModel = aiConfig.model && (aiConfig.model.startsWith('qwen-') || aiConfig.model.includes('qwen'));
+    const modelProvider = aiConfig.provider;
+    const isZhipuModel = modelProvider === 'zhipu';
+    const isAliyunModel = modelProvider === 'aliyun';
     
     if (ocrMode === 'glm_ocr') {
         if (!zhipuApiKey) {
@@ -1590,8 +1591,9 @@ function reprocessOCR() {
     const aliyunApiKey = appState?.aliyunApiKey || getUserStorageItem('aliyun_api_key') || '';
     const headers = { 'Content-Type': 'application/json' };
     
-    const isZhipuModel = aiConfig.model && (aiConfig.model.startsWith('glm-') || aiConfig.model.includes('glm'));
-    const isAliyunModel = aiConfig.model && (aiConfig.model.startsWith('qwen-') || aiConfig.model.includes('qwen'));
+    const modelProvider = aiConfig.provider;
+    const isZhipuModel = modelProvider === 'zhipu';
+    const isAliyunModel = modelProvider === 'aliyun';
     
     if (ocrMode === 'glm_ocr') {
         if (!zhipuApiKey) {
@@ -1779,8 +1781,9 @@ function reprocessSpecification() {
     // 使用 DrawingReprocessManager 重新匹配说明书
     if (window.reprocessManager) {
         const newSpecification = specificationInput.value.trim();
+        const aiConfig = window.aiProcessingPanel ? window.aiProcessingPanel.getConfig() : { aiMode: false };
         
-        window.reprocessManager.reprocessSpecification(newSpecification)
+        window.reprocessManager.reprocessSpecification(newSpecification, aiConfig)
             .then(result => {
                 if (result) {
                     displayProcessingResult(result, false);

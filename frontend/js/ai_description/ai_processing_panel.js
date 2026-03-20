@@ -15,6 +15,7 @@ class AIProcessingPanel {
         
         this.isAIMode = false;
         this.selectedModel = null;
+        this.selectedProvider = null;
         this.models = [];
         this.customPrompt = null;
         
@@ -32,6 +33,7 @@ class AIProcessingPanel {
                 const state = JSON.parse(savedState);
                 this.isAIMode = state.isAIMode || false;
                 this.selectedModel = state.selectedModel || null;
+                this.selectedProvider = state.selectedProvider || null;
                 this.customPrompt = state.customPrompt || null;
             }
         } catch (e) {
@@ -47,6 +49,7 @@ class AIProcessingPanel {
             const state = {
                 isAIMode: this.isAIMode,
                 selectedModel: this.selectedModel,
+                selectedProvider: this.selectedProvider,
                 customPrompt: this.customPrompt
             };
             localStorage.setItem('aiProcessingState', JSON.stringify(state));
@@ -232,7 +235,13 @@ class AIProcessingPanel {
             
             if (!this.selectedModel && availableModels.length > 0) {
                 this.selectedModel = availableModels[0].id;
+                this.selectedProvider = availableModels[0].provider;
                 this.saveState();
+            }
+            
+            // Ensure selectedProvider is set if we have a selectedModel
+            if (this.selectedModel && !this.selectedProvider) {
+                this.selectedProvider = this.getProviderForModel(this.selectedModel);
             }
             
         } catch (e) {
@@ -249,13 +258,22 @@ class AIProcessingPanel {
      */
     selectModel(modelName) {
         this.selectedModel = modelName;
+        this.selectedProvider = this.getProviderForModel(modelName);
         this.saveState();
         
         // Trigger custom event
         const event = new CustomEvent('modelSelected', {
-            detail: { model: modelName }
+            detail: { model: modelName, provider: this.selectedProvider }
         });
         document.dispatchEvent(event);
+    }
+    
+    /**
+     * Get provider for a model
+     */
+    getProviderForModel(modelId) {
+        const model = this.models.find(m => m.id === modelId);
+        return model ? model.provider : null;
     }
     
     /**
@@ -265,6 +283,7 @@ class AIProcessingPanel {
         return {
             aiMode: this.isAIMode,
             model: this.selectedModel,
+            provider: this.selectedProvider || this.getProviderForModel(this.selectedModel),
             prompt: this.customPrompt
         };
     }

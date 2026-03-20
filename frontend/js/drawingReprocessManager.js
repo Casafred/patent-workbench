@@ -63,12 +63,10 @@ class DrawingReprocessManager {
     /**
      * Reprocess specification only (use cached OCR results)
      * @param {string} newSpecification - New specification text
-     * @param {boolean} aiMode - Use AI mode
-     * @param {string} modelName - AI model name
-     * @param {string} customPrompt - Custom prompt (optional)
+     * @param {Object} aiConfig - AI configuration { aiMode, model, provider, prompt }
      * @returns {Promise<Object>} Processing result
      */
-    async reprocessSpecification(newSpecification, aiMode = false, modelName = null, customPrompt = null) {
+    async reprocessSpecification(newSpecification, aiConfig = { aiMode: false }) {
         if (!this.currentState.hasOCRCache) {
             throw new Error('No OCR cache available. Please process drawings first.');
         }
@@ -99,10 +97,11 @@ class DrawingReprocessManager {
                 'Content-Type': 'application/json'
             };
             
-            if (aiMode && modelName) {
+            if (aiConfig.aiMode && aiConfig.model) {
                 const { zhipuApiKey, aliyunApiKey } = this.getApiKeys();
-                const isZhipuModel = modelName.startsWith('glm-') || modelName.includes('glm');
-                const isAliyunModel = modelName.startsWith('qwen-') || modelName.includes('qwen');
+                const modelProvider = aiConfig.provider;
+                const isZhipuModel = modelProvider === 'zhipu';
+                const isAliyunModel = modelProvider === 'aliyun';
                 
                 if (isZhipuModel && zhipuApiKey) {
                     headers['Authorization'] = `Bearer ${zhipuApiKey}`;
@@ -111,7 +110,7 @@ class DrawingReprocessManager {
                     headers['Authorization'] = `Bearer ${aliyunApiKey}`;
                     headers['X-LLM-Provider'] = 'aliyun';
                 } else {
-                    throw new Error('API Key not configured for selected model');
+                    throw new Error('API Key not configured for selected model provider');
                 }
             }
 
@@ -121,9 +120,9 @@ class DrawingReprocessManager {
                 body: JSON.stringify({
                     cache_keys: this.currentState.ocrCacheKeys,
                     specification: newSpecification,
-                    ai_mode: aiMode,
-                    model_name: modelName,
-                    custom_prompt: customPrompt
+                    ai_mode: aiConfig.aiMode,
+                    model_name: aiConfig.model,
+                    custom_prompt: aiConfig.prompt
                 })
             });
 

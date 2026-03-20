@@ -496,14 +496,15 @@ class InteractiveDrawingMarkerV8 {
             `;
             
             const sentenceContent = annotation.originalSentence || '（未找到该标记在说明书中的原始段落）';
+            const highlightedContent = highlightMarkerInText(sentenceContent, annotation.number);
             
             content.innerHTML = `
                 <div style="margin-bottom: 15px; padding: 10px; background: #fff3e0; border-radius: 8px; border-left: 4px solid #FFA500;">
                     <div style="font-size: 12px; color: #666; margin-bottom: 5px;">💡 提示</div>
-                    <div style="font-size: 14px; color: #333;">该标记在OCR识别中检测到，但AI未能匹配到部件名称。以下是说明书中包含该标记的原始段落，供您参考。</div>
+                    <div style="font-size: 14px; color: #333;">该标记在OCR识别中检测到，但AI未能匹配到部件名称。以下是说明书中包含该标记的原始段落，供您参考。<span style="background: #ffeb3b; padding: 0 4px; border-radius: 2px;">高亮</span>显示为该序号位置。</div>
                 </div>
                 <div style="padding: 15px; background: #f5f5f5; border-radius: 8px; line-height: 1.8; font-size: 15px; color: #333;">
-                    ${sentenceContent}
+                    ${highlightedContent}
                 </div>
             `;
             
@@ -518,6 +519,37 @@ class InteractiveDrawingMarkerV8 {
                 if (e.target === popup) closePopup();
             });
         };
+        
+        function highlightMarkerInText(text, marker) {
+            if (!text || !marker) return text;
+            
+            const escapedMarker = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            
+            const patterns = [
+                new RegExp(`(${escapedMarker})\\s*[、,，]?\\s*(?=[^\\d]|$)`, 'g'),
+                new RegExp(`(?<=[^\\d])\\s*(${escapedMarker})\\s*(?=[^\\d]|$)`, 'g'),
+                new RegExp(`(${escapedMarker})`, 'g')
+            ];
+            
+            let result = text;
+            let highlighted = false;
+            
+            for (const pattern of patterns) {
+                const match = pattern.exec(result);
+                if (match && !highlighted) {
+                    result = result.replace(pattern, '<span style="background: #ffeb3b; color: #d32f2f; font-weight: bold; padding: 2px 6px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">$1</span>');
+                    highlighted = true;
+                    break;
+                }
+            }
+            
+            if (!highlighted) {
+                result = text.replace(new RegExp(escapedMarker, 'g'), 
+                    '<span style="background: #ffeb3b; color: #d32f2f; font-weight: bold; padding: 2px 6px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">' + marker + '</span>');
+            }
+            
+            return result;
+        }
         
         this.annotations.forEach(annotation => {
             const item = document.createElement('div');

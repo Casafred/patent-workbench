@@ -1420,12 +1420,13 @@ class MultiImageViewerV8 {
         `;
         
         if (annotation.originalSentence) {
+            const highlightedText = this.highlightMarkerInText(annotation.originalSentence, annotation.number);
             content.innerHTML = `
                 <div style="background: #fff8e1; padding: 15px; border-radius: 8px; border-left: 4px solid #FF9800;">
-                    ${annotation.originalSentence}
+                    ${highlightedText}
                 </div>
                 <div style="margin-top: 15px; font-size: 12px; color: #666;">
-                    <strong>提示：</strong>这是说明书原文中标记 ${annotation.number} 附近的内容，AI未能匹配到具体部件名称。
+                    <strong>提示：</strong>这是说明书原文中标记 ${annotation.number} 附近的内容，AI未能匹配到具体部件名称。<span style="background: #ffeb3b; padding: 0 4px; border-radius: 2px;">高亮</span>显示为该序号位置。
                 </div>
             `;
         } else {
@@ -1447,6 +1448,37 @@ class MultiImageViewerV8 {
         });
         
         document.body.appendChild(popup);
+    }
+    
+    highlightMarkerInText(text, marker) {
+        if (!text || !marker) return text;
+        
+        const escapedMarker = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        
+        const patterns = [
+            new RegExp(`(${escapedMarker})\\s*[、,，]?\\s*(?=[^\\d]|$)`, 'g'),
+            new RegExp(`(?<=[^\\d])\\s*(${escapedMarker})\\s*(?=[^\\d]|$)`, 'g'),
+            new RegExp(`(${escapedMarker})`, 'g')
+        ];
+        
+        let result = text;
+        let highlighted = false;
+        
+        for (const pattern of patterns) {
+            const match = pattern.exec(result);
+            if (match && !highlighted) {
+                result = result.replace(pattern, '<span style="background: #ffeb3b; color: #d32f2f; font-weight: bold; padding: 2px 6px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">$1</span>');
+                highlighted = true;
+                break;
+            }
+        }
+        
+        if (!highlighted) {
+            result = text.replace(new RegExp(escapedMarker, 'g'), 
+                '<span style="background: #ffeb3b; color: #d32f2f; font-weight: bold; padding: 2px 6px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">' + marker + '</span>');
+        }
+        
+        return result;
     }
     
     updateImageInfo() {
