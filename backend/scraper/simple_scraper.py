@@ -497,7 +497,7 @@ class SimplePatentScraper:
                             claim_texts = claim_div.find_all('div', {'class': 'claim-text'})
 
                             if claim_texts:
-                                full_claim_text = ' '.join([ct.get_text(strip=True) for ct in claim_texts])
+                                full_claim_text = ' '.join([ct.get_text(separator=' ', strip=True) for ct in claim_texts])
                                 if full_claim_text and len(full_claim_text) > 10:
                                     # Format as string with claim number and type indicator
                                     prefix = f"[{claim_num}] "
@@ -527,7 +527,7 @@ class SimplePatentScraper:
                             
                             if claim_texts:
                                 # Combine all claim-text divs
-                                full_claim_text = ' '.join([ct.get_text(strip=True) for ct in claim_texts])
+                                full_claim_text = ' '.join([ct.get_text(separator=' ', strip=True) for ct in claim_texts])
                                 if full_claim_text and len(full_claim_text) > 10:
                                     # Fallback: treat as string for backward compatibility
                                     claims.append(full_claim_text)
@@ -601,7 +601,7 @@ class SimplePatentScraper:
                                 continue
                             
                             if child.name == 'heading':
-                                heading_text = child.get_text(strip=True)
+                                heading_text = child.get_text(separator=' ', strip=True)
                                 if heading_text:
                                     text_parts.append(f"\n\n## {heading_text}\n")
                             elif child.name == 'li':
@@ -609,12 +609,12 @@ class SimplePatentScraper:
                                 desc_lines = child.find_all('div', {'class': 'description-line'})
                                 if desc_lines:
                                     for line in desc_lines:
-                                        line_text = line.get_text(strip=True)
+                                        line_text = line.get_text(separator=' ', strip=True)
                                         if line_text:
                                             text_parts.append(line_text + '\n')
                                 else:
                                     # 如果没有 description-line，直接提取文本
-                                    li_text = child.get_text(strip=True)
+                                    li_text = child.get_text(separator=' ', strip=True)
                                     if li_text:
                                         text_parts.append(li_text + '\n')
                         
