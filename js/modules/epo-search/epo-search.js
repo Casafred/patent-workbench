@@ -570,8 +570,8 @@ class EPOSearchModule {
         // 绑定点击事件
         resultsList.querySelectorAll('.epo-result-item').forEach(item => {
             item.addEventListener('click', () => {
-                const index = parseInt(item.dataset.index);
-                this.showPatentDetail(index);
+                const patentNumber = item.dataset.patentNumber;
+                this.showDetail(patentNumber);
             });
         });
     }
