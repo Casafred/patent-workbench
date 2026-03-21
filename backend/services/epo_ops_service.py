@@ -740,12 +740,11 @@ class EPOOPSClient:
         
         # 从 claims_data 中提取正确的结构
         claims_world_data = claims_data.get('ops:world-patent-data', {})
+        logger.info(f"claims_world_data keys: {list(claims_world_data.keys()) if claims_world_data else 'empty'}")
         
-        # claims 可能在 fulltext-documents 下
+        # claims 在 fulltext-documents -> fulltext-document -> claims 下
         fulltext_docs = claims_world_data.get('fulltext-documents', {})
-        if not fulltext_docs:
-            # 也可能直接在 claims 下
-            fulltext_docs = {'fulltext-document': {'claims': claims_world_data.get('claims', {})}}
+        logger.info(f"fulltext_docs type: {type(fulltext_docs)}, keys: {list(fulltext_docs.keys()) if isinstance(fulltext_docs, dict) else 'N/A'}")
         
         merged_data = {
             'ops:world-patent-data': {
@@ -1208,6 +1207,7 @@ class EPOOPSClient:
             
             logger.debug(f"fulltext-documents keys: {list(fulltext_docs.keys()) if isinstance(fulltext_docs, dict) else 'N/A'}")
             
+            # fulltext-document 可能是列表或字典
             fulltext_doc = fulltext_docs.get('fulltext-document', {})
             if isinstance(fulltext_doc, list) and fulltext_doc:
                 fulltext_doc = fulltext_doc[0]
@@ -1218,6 +1218,7 @@ class EPOOPSClient:
             
             logger.debug(f"fulltext-document keys: {list(fulltext_doc.keys()) if isinstance(fulltext_doc, dict) else 'N/A'}")
             
+            # claims 可能在 claims 字段下
             claims_data = fulltext_doc.get('claims', {})
             if not claims_data:
                 logger.debug("未找到 claims")
@@ -1225,6 +1226,7 @@ class EPOOPSClient:
             
             logger.debug(f"claims keys: {list(claims_data.keys()) if isinstance(claims_data, dict) else 'N/A'}")
             
+            # claim 可能是列表或字典
             claim_list = claims_data.get('claim', [])
             if isinstance(claim_list, dict):
                 claim_list = [claim_list]
