@@ -399,7 +399,13 @@ class EPOOPSClient:
             )
     
     def _get_first_drawing_url_docdb(self, patent_number: str) -> str:
-        """获取专利首张附图URL (docdb格式) - images 端点返回 XML"""
+        """获取专利首张附图URL (docdb格式) - images 端点返回 XML
+        
+        根据 EPO OPS API 文档，images 端点返回的结构：
+        - ops:document-instance desc="FullDocument" - 完整文档
+        - ops:document-instance desc="Drawing" - 附图（缩略图）
+        - ops:document-instance desc="FirstPageClipping" - 首页裁剪
+        """
         url = f"{EPO_OPS_BASE_URL}/published-data/publication/docdb/{patent_number}/images"
         
         try:
@@ -420,48 +426,44 @@ class EPOOPSClient:
             try:
                 root = ET.fromstring(response.content)
                 
-                # EPO OPS 使用多个命名空间
-                namespaces = {
-                    'ops': 'http://ops.epo.org',
-                    'epo': 'http://www.epo.org/exchange',
-                    '': ''  # 无命名空间
-                }
+                # EPO OPS 使用 ops 命名空间
+                OPS_NS = '{http://ops.epo.org}'
                 
-                # 尝试不同的命名空间组合
-                doc_instances = []
+                # 查找所有 document-instance 元素
+                doc_instances = root.findall(f'.//{OPS_NS}document-instance')
                 
-                # 1. 尝试 ops 命名空间
-                doc_instances = root.findall('.//{http://ops.epo.org}document-instance')
-                
-                # 2. 如果没找到，尝试无命名空间
                 if not doc_instances:
+                    # 尝试无命名空间
                     doc_instances = root.findall('.//document-instance')
-                
-                # 3. 尝试 epo 命名空间
-                if not doc_instances:
-                    doc_instances = root.findall('.//{http://www.epo.org/exchange}document-instance')
                 
                 logger.debug(f"找到 {len(doc_instances)} 个 document-instance 元素")
                 
+                # 优先查找 desc="Drawing" 的元素（附图缩略图）
+                drawing_link = None
+                first_page_link = None
+                
                 for doc_inst in doc_instances:
-                    # 获取 link 属性
-                    link_attr = doc_inst.get('link', '')
-                    if link_attr:
-                        # 构造完整的图片 URL
-                        drawing_url = f"{EPO_OPS_BASE_URL}/{link_attr}.png"
-                        logger.info(f"找到附图URL: {drawing_url}")
-                        return drawing_url
+                    desc = doc_inst.get('desc', '')
+                    link = doc_inst.get('link', '')
+                    
+                    logger.debug(f"document-instance: desc={desc}, link={link}")
+                    
+                    if desc == 'Drawing' and link:
+                        drawing_link = link
+                    elif desc == 'FirstPageClipping' and link:
+                        first_page_link = link
                 
-                # 如果没有找到 link 属性，尝试查找其他可能的路径
-                # 查找所有带有 link 属性的元素
-                for elem in root.iter():
-                    link = elem.get('link', '')
-                    if link and 'drawing' in link.lower():
-                        drawing_url = f"{EPO_OPS_BASE_URL}/{link}.png"
-                        logger.info(f"找到附图URL (通过遍历): {drawing_url}")
-                        return drawing_url
+                # 优先使用 Drawing，其次使用 FirstPageClipping
+                final_link = drawing_link or first_page_link
                 
-                logger.debug(f"XML内容预览: {response.text[:500]}")
+                if final_link:
+                    # 构造完整的图片 URL
+                    # 格式: https://ops.epo.org/3.2/rest-services/{link}.png
+                    drawing_url = f"{EPO_OPS_BASE_URL}/{final_link}.png"
+                    logger.info(f"找到附图URL: {drawing_url}")
+                    return drawing_url
+                
+                logger.debug(f"未找到附图链接")
                 return ''
             except Exception as e:
                 logger.debug(f"解析附图XML失败: {e}")
