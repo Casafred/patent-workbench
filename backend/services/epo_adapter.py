@@ -93,6 +93,7 @@ class EPOAdapter:
         self._client = epo_ops.Client(
             key=consumer_key,
             secret=consumer_secret,
+            accept_type='json',
             middlewares=middlewares
         )
         
