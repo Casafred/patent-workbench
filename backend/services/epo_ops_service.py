@@ -814,14 +814,18 @@ class EPOOPSClient:
         claims_world_data = claims_data.get('ops:world-patent-data', {})
         logger.info(f"claims_world_data keys: {list(claims_world_data.keys()) if claims_world_data else 'empty'}")
         
-        # claims 在 fulltext-documents -> fulltext-document -> claims 下
-        fulltext_docs = claims_world_data.get('fulltext-documents', {})
+        # claims 在 ftxt:fulltext-documents -> ftxt:fulltext-document -> claims 下
+        # JSON 格式使用 ftxt: 命名空间
+        fulltext_docs = claims_world_data.get('ftxt:fulltext-documents', {})
+        if not fulltext_docs:
+            # 也尝试无命名空间的键名
+            fulltext_docs = claims_world_data.get('fulltext-documents', {})
         logger.info(f"fulltext_docs type: {type(fulltext_docs)}, keys: {list(fulltext_docs.keys()) if isinstance(fulltext_docs, dict) else 'N/A'}")
         
         merged_data = {
             'ops:world-patent-data': {
                 'exchange-document': exchange_doc,
-                'fulltext-documents': fulltext_docs,
+                'ftxt:fulltext-documents': fulltext_docs,
                 'description': description_data.get('ops:world-patent-data', {}).get('description', {})
             }
         }
