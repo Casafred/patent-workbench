@@ -753,7 +753,8 @@ class EPOAdapter:
             doc_instances = [doc_instances] if doc_instances else []
         
         drawing_link = None
-        first_page_link = None
+        full_document_link = None
+        thumbnail_link = None
         
         for doc_inst in doc_instances:
             if not isinstance(doc_inst, dict):
@@ -764,17 +765,20 @@ class EPOAdapter:
             
             if desc == 'Drawing' and link:
                 drawing_link = link
-            elif desc == 'FirstPageClipping' and link:
-                first_page_link = link
+            elif desc == 'FullDocument' and link:
+                full_document_link = link
+            elif 'thumbnail' in link.lower() if link else False:
+                thumbnail_link = link
         
-        final_link = drawing_link or first_page_link
+        final_link = drawing_link or thumbnail_link or full_document_link
         
         if final_link:
             base_url = "https://ops.epo.org/3.2/rest-services"
             return {
                 'drawing_url': f"{base_url}/{final_link}.png",
                 'drawing_link': drawing_link,
-                'first_page_link': first_page_link
+                'full_document_link': full_document_link,
+                'thumbnail_link': thumbnail_link
             }, metadata
         
         return None, metadata

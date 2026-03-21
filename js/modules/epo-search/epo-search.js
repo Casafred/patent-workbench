@@ -867,7 +867,14 @@ class EPOSearchModule {
                     ${detail.claims.map((c, i) => `<p style="margin: 8px 0;"><strong>${i + 1}.</strong> ${c}</p>`).join('')}
                 </div>
                </div>`
-            : '<div style="padding: 12px; background: #f8f9fa; border-radius: 6px; color: #666;"><span style="display:inline-block;animation:spin 1s linear infinite;">⏳</span> 正在加载权利要求...</div>';
+            : '';
+        
+        const descriptionHtml = detail.description 
+            ? `<div>
+                <h4 style="margin: 0 0 8px 0; color: #333;">说明书</h4>
+                <div style="max-height: 400px; overflow-y: auto; font-size: 13px; line-height: 1.8; color: #555; padding: 12px; background: #f8f9fa; border-radius: 6px; white-space: pre-wrap;">${detail.description}</div>
+               </div>`
+            : '';
         
         const cpcHtml = (detail.cpc_classifications && detail.cpc_classifications.length > 0)
             ? (detail.cpc_classifications).map(c => `<span class="epo-classification-tag">${c}</span>`).join('')
@@ -902,6 +909,8 @@ class EPOSearchModule {
                 </div>
                 
                 ${claimsHtml}
+                
+                ${descriptionHtml}
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                     <div>
