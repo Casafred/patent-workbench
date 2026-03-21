@@ -313,11 +313,8 @@ class EPOOPSClient:
         if not self.is_configured():
             raise ValueError("EPO OPS 凭证未配置")
         
-        format_type = 'epodoc'
-        epodoc_number = patent_number.replace('.', '')
-        
         if endpoint == 'claims':
-            claims, metadata = self.adapter.get_claims(epodoc_number, format_type)
+            claims, metadata = self.adapter.get_claims(patent_number, 'docdb')
             self.quota_manager.track_response(metadata.get('content_length', 0))
             
             return {
@@ -342,7 +339,7 @@ class EPOOPSClient:
             }
         
         if endpoint == 'description':
-            description, metadata = self.adapter.get_description(epodoc_number, format_type)
+            description, metadata = self.adapter.get_description(patent_number, 'docdb')
             self.quota_manager.track_response(metadata.get('content_length', 0))
             
             return {
@@ -376,8 +373,7 @@ class EPOOPSClient:
         if not self.is_configured():
             raise ValueError("EPO OPS 凭证未配置")
         
-        epodoc_number = patent_number.replace('.', '')
-        logger.info(f"获取专利完整详情: {epodoc_number}")
+        logger.info(f"获取专利完整详情: {patent_number}")
         
         biblio_data = {}
         claims = []
@@ -385,21 +381,21 @@ class EPOOPSClient:
         first_drawing_url = ''
         
         try:
-            biblio_data, biblio_meta = self.adapter.get_biblio(epodoc_number, 'epodoc')
+            biblio_data, biblio_meta = self.adapter.get_biblio(patent_number, 'docdb')
             self.quota_manager.track_response(biblio_meta.get('content_length', 0))
             logger.info(f"获取biblio数据成功")
         except Exception as e:
             logger.warning(f"获取biblio数据失败: {e}")
         
         try:
-            claims, claims_meta = self.adapter.get_claims(epodoc_number, 'epodoc')
+            claims, claims_meta = self.adapter.get_claims(patent_number, 'docdb')
             self.quota_manager.track_response(claims_meta.get('content_length', 0))
             logger.info(f"获取claims数据成功: {len(claims)} 条")
         except Exception as e:
             logger.warning(f"获取claims数据失败: {e}")
         
         try:
-            description, desc_meta = self.adapter.get_description(epodoc_number, 'epodoc')
+            description, desc_meta = self.adapter.get_description(patent_number, 'docdb')
             self.quota_manager.track_response(desc_meta.get('content_length', 0))
             logger.info(f"获取description数据成功")
         except Exception as e:
