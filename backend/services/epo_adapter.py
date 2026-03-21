@@ -49,6 +49,8 @@ class EPOAdapter:
         consumer_key = os.getenv('EPO_OPS_KEY', '')
         consumer_secret = os.getenv('EPO_OPS_SECRET', '')
         
+        logger.info(f"EPO OPS 初始化: KEY={'已设置' if consumer_key else '未设置'}, SECRET={'已设置' if consumer_secret else '未设置'}")
+        
         if not consumer_key or not consumer_secret:
             logger.warning("EPO OPS 凭证未配置")
             return
@@ -67,21 +69,24 @@ class EPOAdapter:
                     )
                     logger.info("EPO 缓存中间件已启用 (内存模式 - Windows)")
                 else:
+                    cache_dir = os.path.join(
+                        os.path.dirname(__file__), 
+                        '..', '..', 'data'
+                    )
+                    os.makedirs(cache_dir, exist_ok=True)
+                    
                     cache_region = make_region().configure(
                         'dogpile.cache.dbm',
                         expiration_time=self.config.cache_timeout,
                         arguments={
-                            'filename': os.path.join(
-                                os.path.dirname(__file__), 
-                                '..', '..', 'data', 'epo_cache.dbm'
-                            )
+                            'filename': os.path.join(cache_dir, 'epo_cache.dbm')
                         }
                     )
                     logger.info("EPO 缓存中间件已启用 (文件模式)")
                 
                 middlewares.append(epo_ops.middlewares.Dogpile(region=cache_region))
-            except ImportError:
-                logger.warning("dogpile.cache 未安装，缓存功能禁用")
+            except ImportError as e:
+                logger.warning(f"dogpile.cache 未安装，缓存功能禁用: {e}")
             except Exception as e:
                 logger.warning(f"缓存初始化失败: {e}")
         
@@ -89,14 +94,17 @@ class EPOAdapter:
             middlewares.append(epo_ops.middlewares.Throttler())
             logger.info("EPO 节流中间件已启用")
         
-        self._client = epo_ops.Client(
-            key=consumer_key,
-            secret=consumer_secret,
-            accept_type='json',
-            middlewares=middlewares
-        )
-        
-        logger.info("EPO OPS 客户端初始化成功")
+        try:
+            self._client = epo_ops.Client(
+                key=consumer_key,
+                secret=consumer_secret,
+                accept_type='json',
+                middlewares=middlewares
+            )
+            logger.info("EPO OPS 客户端初始化成功")
+        except Exception as e:
+            logger.error(f"EPO OPS 客户端初始化失败: {e}")
+            self._client = None
     
     def is_configured(self) -> bool:
         return self._client is not None
