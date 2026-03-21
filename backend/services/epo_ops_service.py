@@ -792,10 +792,10 @@ class EPOOPSClient:
             logger.warning(f"获取biblio数据失败: {e}")
         
         try:
-            # Claims 端点返回 XML 格式，需要特殊处理
+            # Claims 端点支持 JSON 格式
             claims_url = f"{EPO_OPS_BASE_URL}/published-data/publication/epodoc/{epodoc_number}/claims"
-            claims_data = self._get_claims_xml(claims_url)
-            logger.info(f"获取claims数据成功")
+            claims_data, _ = self._make_request(claims_url)
+            logger.info(f"获取claims数据成功，keys: {list(claims_data.keys()) if claims_data else 'empty'}")
         except Exception as e:
             logger.warning(f"获取claims数据失败: {e}")
             claims_data = {}
@@ -1285,8 +1285,13 @@ class EPOOPSClient:
         try:
             world_data = data.get('ops:world-patent-data', {})
             
-            # 正确路径: fulltext-documents -> fulltext-document -> claims
-            fulltext_docs = world_data.get('fulltext-documents', {})
+            # JSON 格式使用 ftxt: 命名空间
+            # 路径: ftxt:fulltext-documents -> ftxt:fulltext-document -> claims
+            fulltext_docs = world_data.get('ftxt:fulltext-documents', {})
+            if not fulltext_docs:
+                # 也尝试无命名空间的键名
+                fulltext_docs = world_data.get('fulltext-documents', {})
+            
             if not fulltext_docs:
                 logger.debug("未找到 fulltext-documents")
                 return []
@@ -1294,7 +1299,10 @@ class EPOOPSClient:
             logger.debug(f"fulltext-documents keys: {list(fulltext_docs.keys()) if isinstance(fulltext_docs, dict) else 'N/A'}")
             
             # fulltext-document 可能是列表或字典
-            fulltext_doc = fulltext_docs.get('fulltext-document', {})
+            fulltext_doc = fulltext_docs.get('ftxt:fulltext-document', {})
+            if not fulltext_doc:
+                fulltext_doc = fulltext_docs.get('fulltext-document', {})
+            
             if isinstance(fulltext_doc, list) and fulltext_doc:
                 fulltext_doc = fulltext_doc[0]
             
@@ -1313,48 +1321,30 @@ class EPOOPSClient:
             logger.debug(f"claims keys: {list(claims_data.keys()) if isinstance(claims_data, dict) else 'N/A'}")
             
             # claim 可能是列表或字典
-            claim_list = claims_data.get('claim', [])
-            if isinstance(claim_list, dict):
-                claim_list = [claim_list]
+            claim_obj = claims_data.get('claim', {})
             
-            logger.debug(f"找到 {len(claim_list)} 条权利要求")
+            # claim-text 是数组，包含所有权利要求
+            claim_texts = claim_obj.get('claim-text', [])
+            if not isinstance(claim_texts, list):
+                claim_texts = [claim_texts]
+            
+            logger.debug(f"找到 {len(claim_texts)} 条权利要求")
             
             result = []
-            for i, claim in enumerate(claim_list):
-                if isinstance(claim, str):
-                    # 直接是字符串
-                    result.append(claim)
+            for i, ct in enumerate(claim_texts):
+                if isinstance(ct, str):
+                    result.append(ct)
                     continue
                 
-                if not isinstance(claim, dict):
-                    continue
-                
-                # 尝试多种可能的 claim text 字段
-                claim_text = claim.get('claim-text', {})
-                
-                # claim-text 可能是字符串或字典
-                if isinstance(claim_text, str):
-                    result.append(claim_text)
-                    continue
-                
-                if not claim_text:
-                    # 尝试直接获取文本
-                    claim_text = claim.get('$', '')
-                    if isinstance(claim_text, str) and claim_text:
-                        result.append(claim_text)
+                if isinstance(ct, dict):
+                    # 提取 $ 字段的值
+                    text = ct.get('$', '')
+                    if text:
+                        result.append(text)
                         continue
-                    # 尝试其他可能的字段
-                    for key in ['text', 'p', 'content']:
-                        if key in claim:
-                            claim_text = claim.get(key, {})
-                            break
-                
-                text = self._get_text_value(claim_text)
-                if text:
-                    result.append(text)
-                else:
-                    # 如果还是获取不到，尝试递归提取所有文本
-                    text = self._extract_all_text(claim)
+                    
+                    # 尝试其他方式提取
+                    text = self._get_text_value(ct)
                     if text:
                         result.append(text)
             
