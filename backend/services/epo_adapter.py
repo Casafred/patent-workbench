@@ -40,19 +40,9 @@ class EPOAdapter:
     - 统一的数据解析接口
     """
     
-    _instance = None
-    _client = None
-    
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-    
     def __init__(self, config: EPOAdapterConfig = None):
-        if self._client is not None:
-            return
-            
         self.config = config or EPOAdapterConfig()
+        self._client = None
         self._init_client()
     
     def _init_client(self):
