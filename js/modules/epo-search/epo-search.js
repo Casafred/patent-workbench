@@ -818,6 +818,15 @@ class EPOSearchModule {
         content.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">加载中...</div>';
         if (title) title.textContent = patentNumber;
         
+        // 先检查是否已有该专利的数据（从分段加载中获取的）
+        const existingResult = this.searchResults.find(r => r.patent_number === patentNumber);
+        if (existingResult && existingResult.title) {
+            // 已有数据，直接显示
+            this.displayDetail(existingResult);
+            return;
+        }
+        
+        // 没有数据，尝试从后端获取
         try {
             const response = await fetch(`/api/epo/detail/${patentNumber}?endpoint=biblio`);
             const data = await response.json();
