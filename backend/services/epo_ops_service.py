@@ -470,6 +470,88 @@ class EPOOPSClient:
             logger.debug(f"获取附图URL失败: {e}")
             return ''
     
+    def _get_claims_xml(self, url: str) -> Dict:
+        """获取 Claims 数据（XML 格式）并转换为字典结构"""
+        try:
+            token = self._get_access_token()
+            headers = {
+                'Authorization': f'Bearer {token}',
+                'Accept': 'application/xml'
+            }
+            
+            response = requests.get(url, headers=headers)
+            
+            if response.status_code != 200:
+                logger.warning(f"获取claims失败: {response.status_code}")
+                return {}
+            
+            import xml.etree.ElementTree as ET
+            
+            try:
+                root = ET.fromstring(response.content)
+                
+                # EPO OPS Claims 使用的命名空间
+                namespaces = {
+                    'ops': 'http://ops.epo.org',
+                    'ftxt': 'http://www.epo.org/fulltext',
+                    'epo': 'http://www.epo.org/exchange'
+                }
+                
+                # 查找 claims 元素
+                claims_list = []
+                
+                # 尝试 ftxt 命名空间
+                claims_elements = root.findall('.//{http://www.epo.org/fulltext}claim')
+                
+                if not claims_elements:
+                    # 尝试无命名空间
+                    claims_elements = root.findall('.//claim')
+                
+                logger.info(f"找到 {len(claims_elements)} 个 claim 元素")
+                
+                for claim in claims_elements:
+                    # 查找 claim-text 元素
+                    claim_texts = claim.findall('{http://www.epo.org/fulltext}claim-text')
+                    if not claim_texts:
+                        claim_texts = claim.findall('claim-text')
+                    if not claim_texts:
+                        claim_texts = claim.findall('.//{http://www.epo.org/fulltext}claim-text')
+                    
+                    for ct in claim_texts:
+                        text = ''.join(ct.itertext())
+                        if text.strip():
+                            claims_list.append(text.strip())
+                
+                # 如果没有找到 claim-text，尝试直接获取 claim 的文本
+                if not claims_list:
+                    for claim in claims_elements:
+                        text = ''.join(claim.itertext())
+                        if text.strip():
+                            claims_list.append(text.strip())
+                
+                logger.info(f"解析出 {len(claims_list)} 条权利要求")
+                
+                # 返回与 JSON 格式兼容的结构
+                return {
+                    'ops:world-patent-data': {
+                        'fulltext-documents': {
+                            'fulltext-document': {
+                                'claims': {
+                                    'claim': [{'claim-text': c} for c in claims_list]
+                                }
+                            }
+                        }
+                    }
+                }
+                
+            except ET.ParseError as e:
+                logger.error(f"解析claims XML失败: {e}")
+                return {}
+                
+        except Exception as e:
+            logger.error(f"获取claims XML失败: {e}")
+            return {}
+    
     def _get_first_drawing_url(self, patent_number: str) -> str:
         """获取专利首张附图URL"""
         url = f"{EPO_OPS_BASE_URL}/published-data/publication/epodoc/{patent_number}/images"
@@ -708,11 +790,13 @@ class EPOOPSClient:
             logger.warning(f"获取biblio数据失败: {e}")
         
         try:
-            url = f"{EPO_OPS_BASE_URL}/published-data/publication/epodoc/{epodoc_number}/claims"
-            claims_data, _ = self._make_request(url)
+            # Claims 端点返回 XML 格式，需要特殊处理
+            claims_url = f"{EPO_OPS_BASE_URL}/published-data/publication/epodoc/{epodoc_number}/claims"
+            claims_data = self._get_claims_xml(claims_url)
             logger.info(f"获取claims数据成功")
         except Exception as e:
             logger.warning(f"获取claims数据失败: {e}")
+            claims_data = {}
         
         try:
             url = f"{EPO_OPS_BASE_URL}/published-data/publication/epodoc/{epodoc_number}/description"
@@ -1235,20 +1319,33 @@ class EPOOPSClient:
             
             result = []
             for i, claim in enumerate(claim_list):
+                if isinstance(claim, str):
+                    # 直接是字符串
+                    result.append(claim)
+                    continue
+                
                 if not isinstance(claim, dict):
                     continue
                 
                 # 尝试多种可能的 claim text 字段
                 claim_text = claim.get('claim-text', {})
+                
+                # claim-text 可能是字符串或字典
+                if isinstance(claim_text, str):
+                    result.append(claim_text)
+                    continue
+                
                 if not claim_text:
                     # 尝试直接获取文本
                     claim_text = claim.get('$', '')
-                    if not claim_text:
-                        # 尝试其他可能的字段
-                        for key in ['text', 'p', 'content']:
-                            if key in claim:
-                                claim_text = claim.get(key, {})
-                                break
+                    if isinstance(claim_text, str) and claim_text:
+                        result.append(claim_text)
+                        continue
+                    # 尝试其他可能的字段
+                    for key in ['text', 'p', 'content']:
+                        if key in claim:
+                            claim_text = claim.get(key, {})
+                            break
                 
                 text = self._get_text_value(claim_text)
                 if text:
