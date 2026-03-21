@@ -68,19 +68,28 @@ class EPOAdapter:
         if self.config.cache_enabled:
             try:
                 from dogpile.cache import make_region
+                import platform
                 
-                cache_region = make_region().configure(
-                    'dogpile.cache.dbm',
-                    expiration_time=self.config.cache_timeout,
-                    arguments={
-                        'filename': os.path.join(
-                            os.path.dirname(__file__), 
-                            '..', '..', 'data', 'epo_cache.dbm'
-                        )
-                    }
-                )
+                if platform.system() == 'Windows':
+                    cache_region = make_region().configure(
+                        'dogpile.cache.memory',
+                        expiration_time=self.config.cache_timeout
+                    )
+                    logger.info("EPO 缓存中间件已启用 (内存模式 - Windows)")
+                else:
+                    cache_region = make_region().configure(
+                        'dogpile.cache.dbm',
+                        expiration_time=self.config.cache_timeout,
+                        arguments={
+                            'filename': os.path.join(
+                                os.path.dirname(__file__), 
+                                '..', '..', 'data', 'epo_cache.dbm'
+                            )
+                        }
+                    )
+                    logger.info("EPO 缓存中间件已启用 (文件模式)")
+                
                 middlewares.append(epo_ops.middlewares.Dogpile(region=cache_region))
-                logger.info("EPO 缓存中间件已启用")
             except ImportError:
                 logger.warning("dogpile.cache 未安装，缓存功能禁用")
             except Exception as e:
@@ -335,6 +344,19 @@ class EPOAdapter:
         
         if isinstance(abstract_data, str):
             return abstract_data
+        
+        if isinstance(abstract_data, list):
+            texts = []
+            for item in abstract_data:
+                if isinstance(item, str):
+                    texts.append(item)
+                elif isinstance(item, dict):
+                    p = item.get('p', {})
+                    if isinstance(p, list):
+                        texts.extend(self._get_text_value(x) for x in p)
+                    else:
+                        texts.append(self._get_text_value(p))
+            return ' '.join(t for t in texts if t)
         
         p = abstract_data.get('p', {})
         if isinstance(p, list):
