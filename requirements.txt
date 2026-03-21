@@ -43,6 +43,7 @@ Pillow>=8.0.0
 
 # EPO OPS API Client
 python-epo-ops-client>=3.0.0
+dogpile.cache>=1.2.0
 
 # Testing (Property-Based Testing)
 hypothesis>=6.0.0
