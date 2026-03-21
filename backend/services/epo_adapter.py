@@ -264,16 +264,27 @@ class EPOAdapter:
     
     def _create_input_model(self, patent_number: str, format_type: str):
         """创建输入模型"""
-        parts = patent_number.replace('.', ' ').split()
+        import re
         
-        if len(parts) >= 2:
-            country = parts[0]
-            doc_num = parts[1]
-            kind = parts[2] if len(parts) > 2 else ''
+        patent_number = patent_number.strip().replace('.', '')
+        
+        match = re.match(r'^([A-Z]{2})(\d+)([A-Z]\d?)?$', patent_number, re.IGNORECASE)
+        
+        if match:
+            country = match.group(1).upper()
+            doc_num = match.group(2)
+            kind = match.group(3) or ''
         else:
-            country = patent_number[:2]
-            doc_num = patent_number[2:]
-            kind = ''
+            parts = patent_number.replace('.', ' ').split()
+            
+            if len(parts) >= 2:
+                country = parts[0].upper()
+                doc_num = parts[1]
+                kind = parts[2] if len(parts) > 2 else ''
+            else:
+                country = patent_number[:2].upper()
+                doc_num = patent_number[2:]
+                kind = ''
         
         if format_type == 'epodoc':
             return Epodoc(f"{country}{doc_num}{kind}")
@@ -656,7 +667,23 @@ class EPOAdapter:
             return '', metadata
         
         world_data = data.get('ops:world-patent-data', {})
+        
         desc_data = world_data.get('description', {})
+        
+        if not desc_data:
+            fulltext_docs = world_data.get('ftxt:fulltext-documents', {})
+            if not fulltext_docs:
+                fulltext_docs = world_data.get('fulltext-documents', {})
+            
+            fulltext_doc = fulltext_docs.get('ftxt:fulltext-document', {})
+            if not fulltext_doc:
+                fulltext_doc = fulltext_docs.get('fulltext-document', {})
+            
+            if isinstance(fulltext_doc, list) and fulltext_doc:
+                fulltext_doc = fulltext_doc[0]
+            
+            if fulltext_doc:
+                desc_data = fulltext_doc.get('description', {})
         
         if not desc_data:
             return '', metadata
