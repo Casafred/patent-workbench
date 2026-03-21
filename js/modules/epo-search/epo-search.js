@@ -820,24 +820,39 @@ class EPOSearchModule {
         
         // 先检查是否已有该专利的数据（从分段加载中获取的）
         const existingResult = this.searchResults.find(r => r.patent_number === patentNumber);
-        if (existingResult && existingResult.title) {
-            // 已有数据，直接显示
+        if (existingResult && existingResult.title && existingResult.claims && existingResult.claims.length > 0) {
+            // 已有完整数据（包含权利要求），直接显示
             this.displayDetail(existingResult);
             return;
         }
         
-        // 没有数据，尝试从后端获取
+        // 需要获取完整详情（包括权利要求）
+        // 先显示已有的基本信息
+        if (existingResult && existingResult.title) {
+            this.displayDetail(existingResult);
+        }
+        
+        // 然后从后端获取完整详情
         try {
             const response = await fetch(`/api/epo/detail/${patentNumber}?endpoint=biblio`);
             const data = await response.json();
             
             if (data.success && data.detail) {
+                // 更新 searchResults 中的数据
+                const idx = this.searchResults.findIndex(r => r.patent_number === patentNumber);
+                if (idx >= 0) {
+                    this.searchResults[idx] = data.detail;
+                }
                 this.displayDetail(data.detail);
             } else {
-                content.innerHTML = `<p style="color: #f44336;">获取详情失败: ${data.error || '未知错误'}</p>`;
+                if (!existingResult) {
+                    content.innerHTML = `<p style="color: #f44336;">获取详情失败: ${data.error || '未知错误'}</p>`;
+                }
             }
         } catch (error) {
-            content.innerHTML = `<p style="color: #f44336;">请求失败: ${error.message}</p>`;
+            if (!existingResult) {
+                content.innerHTML = `<p style="color: #f44336;">请求失败: ${error.message}</p>`;
+            }
         }
     }
     
@@ -852,7 +867,7 @@ class EPOSearchModule {
                     ${detail.claims.map((c, i) => `<p style="margin: 8px 0;"><strong>${i + 1}.</strong> ${c}</p>`).join('')}
                 </div>
                </div>`
-            : '';
+            : '<div style="padding: 12px; background: #f8f9fa; border-radius: 6px; color: #666;"><span style="display:inline-block;animation:spin 1s linear infinite;">⏳</span> 正在加载权利要求...</div>';
         
         const cpcHtml = (detail.cpc_classifications && detail.cpc_classifications.length > 0)
             ? (detail.cpc_classifications).map(c => `<span class="epo-classification-tag">${c}</span>`).join('')
@@ -862,11 +877,12 @@ class EPOSearchModule {
             ? (detail.ipc_classifications).map(c => `<span class="epo-classification-tag">${c}</span>`).join('')
             : '<span style="color: #999;">无</span>';
         
+        // 使用代理端点加载图片（EPO OPS图片需要认证）
         const drawingHtml = detail.first_drawing_url 
             ? `<div style="margin-bottom: 16px;">
                 <h4 style="margin: 0 0 8px 0; color: #333;">首张附图</h4>
                 <div style="max-width: 300px; border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden;">
-                    <img src="${detail.first_drawing_url}" alt="附图" style="width: 100%; display: block;" onerror="this.parentElement.style.display='none'" />
+                    <img src="/api/epo/image-proxy?url=${encodeURIComponent(detail.first_drawing_url)}" alt="附图" style="width: 100%; display: block;" onerror="this.parentElement.innerHTML='<span style=\\'color:#999;padding:20px;display:block;text-align:center;\\'>附图加载失败</span>'" />
                 </div>
                </div>`
             : '';

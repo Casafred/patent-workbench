@@ -8,8 +8,9 @@
 4. AI 解读集成
 """
 
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, Response
 import logging
+import requests
 
 from backend.services.epo_ops_service import get_epo_ops_client, EPOOPSClient
 
@@ -189,6 +190,62 @@ def get_patent_drawing(patent_number):
         
     except Exception as e:
         logger.error(f"获取专利附图失败: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@epo_bp.route('/image-proxy', methods=['GET'])
+def proxy_epo_image():
+    """
+    代理 EPO OPS 图片请求（因为图片需要 Bearer Token 认证）
+    
+    Params:
+        url: 图片URL (完整URL)
+    """
+    try:
+        image_url = request.args.get('url')
+        if not image_url:
+            return jsonify({
+                'success': False,
+                'error': '缺少图片URL参数'
+            }), 400
+        
+        # 验证URL是否来自EPO OPS
+        if not image_url.startswith('https://ops.epo.org/'):
+            return jsonify({
+                'success': False,
+                'error': '只允许代理EPO OPS的图片'
+            }), 403
+        
+        client = get_epo_ops_client()
+        token = client._get_access_token()
+        
+        headers = {
+            'Authorization': f'Bearer {token}',
+            'Accept': 'image/png'
+        }
+        
+        response = requests.get(image_url, headers=headers, stream=True)
+        
+        if response.status_code != 200:
+            logger.error(f"获取图片失败: {response.status_code}")
+            return jsonify({
+                'success': False,
+                'error': f'获取图片失败: {response.status_code}'
+            }), response.status_code
+        
+        return Response(
+            response.iter_content(chunk_size=8192),
+            content_type=response.headers.get('Content-Type', 'image/png'),
+            headers={
+                'Cache-Control': 'public, max-age=86400'
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"代理图片请求失败: {e}")
         return jsonify({
             'success': False,
             'error': str(e)
