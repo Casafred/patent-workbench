@@ -415,14 +415,33 @@ class EPOOPSClient:
                 logger.debug(f"获取附图失败: {response.status_code}")
                 return ''
             
-            # 解析 XML 响应
             import xml.etree.ElementTree as ET
             
             try:
                 root = ET.fromstring(response.content)
                 
-                # 查找 ops:document-instance 元素
+                # EPO OPS 使用多个命名空间
+                namespaces = {
+                    'ops': 'http://ops.epo.org',
+                    'epo': 'http://www.epo.org/exchange',
+                    '': ''  # 无命名空间
+                }
+                
+                # 尝试不同的命名空间组合
+                doc_instances = []
+                
+                # 1. 尝试 ops 命名空间
                 doc_instances = root.findall('.//{http://ops.epo.org}document-instance')
+                
+                # 2. 如果没找到，尝试无命名空间
+                if not doc_instances:
+                    doc_instances = root.findall('.//document-instance')
+                
+                # 3. 尝试 epo 命名空间
+                if not doc_instances:
+                    doc_instances = root.findall('.//{http://www.epo.org/exchange}document-instance')
+                
+                logger.debug(f"找到 {len(doc_instances)} 个 document-instance 元素")
                 
                 for doc_inst in doc_instances:
                     # 获取 link 属性
@@ -430,9 +449,19 @@ class EPOOPSClient:
                     if link_attr:
                         # 构造完整的图片 URL
                         drawing_url = f"{EPO_OPS_BASE_URL}/{link_attr}.png"
-                        logger.debug(f"找到附图URL: {drawing_url}")
+                        logger.info(f"找到附图URL: {drawing_url}")
                         return drawing_url
                 
+                # 如果没有找到 link 属性，尝试查找其他可能的路径
+                # 查找所有带有 link 属性的元素
+                for elem in root.iter():
+                    link = elem.get('link', '')
+                    if link and 'drawing' in link.lower():
+                        drawing_url = f"{EPO_OPS_BASE_URL}/{link}.png"
+                        logger.info(f"找到附图URL (通过遍历): {drawing_url}")
+                        return drawing_url
+                
+                logger.debug(f"XML内容预览: {response.text[:500]}")
                 return ''
             except Exception as e:
                 logger.debug(f"解析附图XML失败: {e}")
@@ -709,10 +738,19 @@ class EPOOPSClient:
         
         logger.info(f"exchange_doc type: {type(exchange_doc)}, is_list: {isinstance(exchange_doc, list)}")
         
+        # 从 claims_data 中提取正确的结构
+        claims_world_data = claims_data.get('ops:world-patent-data', {})
+        
+        # claims 可能在 fulltext-documents 下
+        fulltext_docs = claims_world_data.get('fulltext-documents', {})
+        if not fulltext_docs:
+            # 也可能直接在 claims 下
+            fulltext_docs = {'fulltext-document': {'claims': claims_world_data.get('claims', {})}}
+        
         merged_data = {
             'ops:world-patent-data': {
                 'exchange-document': exchange_doc,
-                'claims': claims_data.get('ops:world-patent-data', {}).get('claims', {}),
+                'fulltext-documents': fulltext_docs,
                 'description': description_data.get('ops:world-patent-data', {}).get('description', {})
             }
         }
@@ -1008,27 +1046,54 @@ class EPOOPSClient:
             elif date_type == 'application':
                 dates = biblio.get('application-reference', {}).get('document-id', [])
             elif date_type == 'priority':
-                dates = biblio.get('priority-claims', {}).get('priority-claim', [])
+                priority_claims = biblio.get('priority-claims', {})
+                if not priority_claims:
+                    logger.debug("未找到 priority-claims")
+                    return ''
+                
+                dates = priority_claims.get('priority-claim', [])
                 if isinstance(dates, dict):
                     dates = [dates]
+                
+                logger.debug(f"找到 {len(dates)} 个 priority-claim")
+                
                 for d in dates:
                     if not isinstance(d, dict):
                         continue
                     doc_id = d.get('document-id', [])
-                    if isinstance(doc_id, list):
-                        for doc in doc_id:
-                            if isinstance(doc, dict) and doc.get('@document-id-type') == 'epodoc':
-                                date_val = doc.get('date', {})
-                                if isinstance(date_val, dict):
-                                    return date_val.get('$', '')
-                                return str(date_val) if date_val else ''
+                    if isinstance(doc_id, dict):
+                        doc_id = [doc_id]
+                    
+                    for doc in doc_id:
+                        if not isinstance(doc, dict):
+                            continue
+                        # 检查 document-id-type 属性
+                        doc_type = doc.get('@document-id-type', '')
+                        logger.debug(f"priority document-id-type: {doc_type}")
+                        
+                        # 优先使用 epodoc 格式，如果没有就用 docdb 格式
+                        date_val = doc.get('date', {})
+                        if isinstance(date_val, dict):
+                            date_str = date_val.get('$', '')
+                        else:
+                            date_str = str(date_val) if date_val else ''
+                        
+                        if date_str:
+                            logger.debug(f"找到优先权日: {date_str}")
+                            return date_str
                 return ''
             else:
                 return ''
             
+            if isinstance(dates, dict):
+                dates = [dates]
+            
             if isinstance(dates, list):
                 for d in dates:
-                    if isinstance(d, dict) and d.get('@document-id-type') == 'epodoc':
+                    if not isinstance(d, dict):
+                        continue
+                    doc_type = d.get('@document-id-type', '')
+                    if doc_type == 'epodoc':
                         date_val = d.get('date', {})
                         if isinstance(date_val, dict):
                             return date_val.get('$', '')
@@ -1138,36 +1203,91 @@ class EPOOPSClient:
             # 正确路径: fulltext-documents -> fulltext-document -> claims
             fulltext_docs = world_data.get('fulltext-documents', {})
             if not fulltext_docs:
+                logger.debug("未找到 fulltext-documents")
                 return []
+            
+            logger.debug(f"fulltext-documents keys: {list(fulltext_docs.keys()) if isinstance(fulltext_docs, dict) else 'N/A'}")
             
             fulltext_doc = fulltext_docs.get('fulltext-document', {})
             if isinstance(fulltext_doc, list) and fulltext_doc:
                 fulltext_doc = fulltext_doc[0]
             
             if not fulltext_doc:
+                logger.debug("未找到 fulltext-document")
                 return []
+            
+            logger.debug(f"fulltext-document keys: {list(fulltext_doc.keys()) if isinstance(fulltext_doc, dict) else 'N/A'}")
             
             claims_data = fulltext_doc.get('claims', {})
             if not claims_data:
+                logger.debug("未找到 claims")
                 return []
+            
+            logger.debug(f"claims keys: {list(claims_data.keys()) if isinstance(claims_data, dict) else 'N/A'}")
             
             claim_list = claims_data.get('claim', [])
             if isinstance(claim_list, dict):
                 claim_list = [claim_list]
             
+            logger.debug(f"找到 {len(claim_list)} 条权利要求")
+            
             result = []
-            for claim in claim_list:
+            for i, claim in enumerate(claim_list):
                 if not isinstance(claim, dict):
                     continue
+                
+                # 尝试多种可能的 claim text 字段
                 claim_text = claim.get('claim-text', {})
+                if not claim_text:
+                    # 尝试直接获取文本
+                    claim_text = claim.get('$', '')
+                    if not claim_text:
+                        # 尝试其他可能的字段
+                        for key in ['text', 'p', 'content']:
+                            if key in claim:
+                                claim_text = claim.get(key, {})
+                                break
+                
                 text = self._get_text_value(claim_text)
                 if text:
                     result.append(text)
+                else:
+                    # 如果还是获取不到，尝试递归提取所有文本
+                    text = self._extract_all_text(claim)
+                    if text:
+                        result.append(text)
             
+            logger.info(f"成功提取 {len(result)} 条权利要求")
             return result
         except Exception as e:
             logger.error(f"提取权利要求失败: {e}")
+            import traceback
+            traceback.print_exc()
             return []
+    
+    def _extract_all_text(self, data: Any) -> str:
+        """递归提取所有文本内容"""
+        if isinstance(data, str):
+            return data.strip()
+        elif isinstance(data, dict):
+            if '$' in data:
+                return str(data['$']).strip()
+            texts = []
+            for key, value in data.items():
+                if key.startswith('@'):
+                    continue
+                text = self._extract_all_text(value)
+                if text:
+                    texts.append(text)
+            return ' '.join(texts)
+        elif isinstance(data, list):
+            texts = []
+            for item in data:
+                text = self._extract_all_text(item)
+                if text:
+                    texts.append(text)
+            return ' '.join(texts)
+        return ''
     
     def _extract_description(self, data: Dict) -> str:
         try:
