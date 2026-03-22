@@ -429,7 +429,7 @@ function showClaimEditModal(claim, index, state) {
     `;
     
     modalContent.innerHTML = `
-        <div style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px 12px 0 0;">
+        <div style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(90deg, #2e7d32, #4CAF50); border-radius: 12px 12px 0 0;">
             <h3 style="margin: 0; color: white; font-size: 18px;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                 编辑权利要求 ${claim.claim_number}
@@ -442,7 +442,7 @@ function showClaimEditModal(claim, index, state) {
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                     权利要求类型
                 </label>
-                <select id="edit_claim_type" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;">
+                <select id="edit_claim_type" style="width: 100%; padding: 12px; border: 2px solid #c8e6c9; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;">
                     <option value="independent" ${claim.claim_type === 'independent' ? 'selected' : ''}>独立权利要求</option>
                     <option value="dependent" ${claim.claim_type === 'dependent' ? 'selected' : ''}>从属权利要求</option>
                 </select>
@@ -453,9 +453,9 @@ function showClaimEditModal(claim, index, state) {
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><line x1="10" y1="6" x2="21" y2="6"></line><line x1="10" y1="12" x2="21" y2="12"></line><line x1="10" y1="18" x2="21" y2="18"></line><polyline points="3 6 3 6 3 6"></polyline><polyline points="3 12 3 12 3 12"></polyline><polyline points="3 18 3 18 3 18"></polyline></svg>
                     引用的权利要求（可多选）
                 </label>
-                <div id="edit_references_container" style="display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; min-height: 50px; background: #fafafa;">
+                <div id="edit_references_container" style="display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; border: 2px solid #c8e6c9; border-radius: 8px; min-height: 50px; background: #f1f8e9;">
                     ${allClaimNumbers.filter(n => n !== currentClaimNumber).map(num => `
-                        <label style="display: flex; align-items: center; padding: 6px 12px; background: ${claim.referenced_claims.includes(num) ? '#e3f2fd' : '#f5f5f5'}; border-radius: 20px; cursor: pointer; border: 2px solid ${claim.referenced_claims.includes(num) ? '#2196F3' : '#e0e0e0'}; transition: all 0.2s;">
+                        <label style="display: flex; align-items: center; padding: 6px 12px; background: ${claim.referenced_claims.includes(num) ? '#c8e6c9' : '#fff'}; border-radius: 20px; cursor: pointer; border: 2px solid ${claim.referenced_claims.includes(num) ? '#4CAF50' : '#c8e6c9'}; transition: all 0.2s; color: #333;">
                             <input type="checkbox" class="ref-checkbox" value="${num}" ${claim.referenced_claims.includes(num) ? 'checked' : ''} style="margin-right: 6px;">
                             权${num}
                         </label>
@@ -473,14 +473,14 @@ function showClaimEditModal(claim, index, state) {
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
                     权利要求内容
                 </label>
-                <textarea id="edit_claim_text" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; min-height: 120px; line-height: 1.6; resize: vertical;">${claim.full_text || ''}</textarea>
+                <textarea id="edit_claim_text" style="width: 100%; padding: 12px; border: 2px solid #c8e6c9; border-radius: 8px; font-size: 14px; min-height: 120px; line-height: 1.6; resize: vertical;">${claim.full_text || ''}</textarea>
             </div>
             
             <div style="display: flex; gap: 12px; justify-content: flex-end; padding-top: 10px; border-top: 1px solid #eee;">
-                <button id="cancel_edit_btn" style="padding: 10px 24px; border: 2px solid #e0e0e0; background: #f5f5f5; color: #333; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 14px; transition: all 0.2s;">
+                <button id="cancel_edit_btn" style="padding: 10px 24px; border: 2px solid #ef5350; background: #fff; color: #ef5350; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 14px; transition: all 0.2s;">
                     取消
                 </button>
-                <button id="save_edit_btn" style="padding: 10px 24px; border: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 14px; transition: all 0.2s;">
+                <button id="save_edit_btn" style="padding: 10px 24px; border: none; background: linear-gradient(90deg, #2e7d32, #4CAF50); color: white; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 14px; transition: all 0.2s;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
                     保存修改
                 </button>
@@ -513,11 +513,11 @@ function showClaimEditModal(claim, index, state) {
         checkbox.addEventListener('change', (e) => {
             const label = e.target.parentElement;
             if (e.target.checked) {
-                label.style.background = '#e3f2fd';
-                label.style.borderColor = '#2196F3';
+                label.style.background = '#c8e6c9';
+                label.style.borderColor = '#4CAF50';
             } else {
-                label.style.background = '#f5f5f5';
-                label.style.borderColor = '#e0e0e0';
+                label.style.background = '#fff';
+                label.style.borderColor = '#c8e6c9';
             }
             
             const checkedCount = document.querySelectorAll('.ref-checkbox:checked').length;
@@ -531,8 +531,8 @@ function showClaimEditModal(claim, index, state) {
         if (e.target.value === 'independent') {
             refCheckboxes.forEach(cb => {
                 cb.checked = false;
-                cb.parentElement.style.background = '#f5f5f5';
-                cb.parentElement.style.borderColor = '#e0e0e0';
+                cb.parentElement.style.background = '#fff';
+                cb.parentElement.style.borderColor = '#c8e6c9';
             });
         }
     });
