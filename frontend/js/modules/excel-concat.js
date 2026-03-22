@@ -759,5 +759,9 @@ window.switchLPLMode = function(mode) {
         document.getElementById('lpl-concat-mode-panel').style.display = 'block';
         document.getElementById('lpl-concat-mode-panel').classList.add('active');
         document.getElementById('lpl-mode-tab-concat').classList.add('active');
+        
+        if (window.ExcelConcatModule && typeof window.ExcelConcatModule.goToStep === 'function') {
+            window.ExcelConcatModule.goToStep('files');
+        }
     }
 };
