@@ -303,20 +303,37 @@
     padding: 12px 15px;
     cursor: pointer;
     transition: all 0.2s ease;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
 }
 
 .ipc-search-item:hover {
     border-color: var(--primary-color);
     background: var(--primary-color-hover-bg);
+    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.15);
+}
+
+.ipc-search-main {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
 .ipc-search-symbol {
     font-weight: 600;
     color: var(--primary-color-dark);
     font-size: 16px;
+    font-family: monospace;
+}
+
+.ipc-search-title {
+    font-size: 13px;
+    color: var(--text-color);
+    line-height: 1.5;
+}
+
+.ipc-search-title:empty::after {
+    content: '(无标题)';
+    color: var(--text-color-secondary);
+    font-style: italic;
 }
 
 .ipc-search-score {

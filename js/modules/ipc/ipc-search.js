@@ -66,10 +66,13 @@ const IPCSearch = (function() {
 
         let html = '';
         data.results.forEach((item, index) => {
+            const title = item.title || item.titleCn || '';
             html += `
-                <div class="ipc-search-item" onclick="IPCSearch.viewInLookup('${item.symbol}')">
-                    <span class="ipc-search-symbol">${IPCCore.formatSymbol(item.symbol)}</span>
-                    <span class="ipc-search-score">${item.score || 0}</span>
+                <div class="ipc-search-item" onclick="IPCSearch.viewInLookup('${item.symbol}')" title="点击查看详情">
+                    <div class="ipc-search-main">
+                        <span class="ipc-search-symbol">${IPCCore.formatSymbol(item.symbol)}</span>
+                        <span class="ipc-search-title">${title}</span>
+                    </div>
                 </div>
             `;
         });
