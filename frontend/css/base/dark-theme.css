@@ -2685,6 +2685,46 @@
     color: #94a3b8 !important;
 }
 
+[data-theme="dark"] .epo-modal-content {
+    background: #1e293b !important;
+    border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .epo-modal-header {
+    border-bottom-color: #334155 !important;
+}
+
+[data-theme="dark"] .epo-modal-header h3 {
+    color: var(--text-color) !important;
+}
+
+[data-theme="dark"] .epo-modal-close {
+    color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .epo-modal-close:hover {
+    color: var(--text-color) !important;
+}
+
+[data-theme="dark"] .epo-modal-body {
+    background: transparent !important;
+    color: var(--text-color) !important;
+}
+
+[data-theme="dark"] .epo-modal-footer {
+    border-top-color: #334155 !important;
+}
+
+[data-theme="dark"] .epo-btn-secondary {
+    background: #334155 !important;
+    color: var(--text-color) !important;
+    border-color: #475569 !important;
+}
+
+[data-theme="dark"] .epo-btn-secondary:hover {
+    background: #475569 !important;
+}
+
 /* ========================================
    58. 历史面板暗黑模式覆盖
    ======================================== */
