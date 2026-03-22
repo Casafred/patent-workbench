@@ -135,6 +135,7 @@ def fetch_from_incopat_query(symbol):
     """从 incoPat ipcquery API 获取 IPC 数据
     
     这是 incoPat 网站使用的真实 API，返回完整的层级数据。
+    支持分类号输入。
     """
     cache_key = f"incopat_query_{normalize_symbol(symbol)}"
     cached = get_cached(cache_key)
@@ -183,6 +184,71 @@ def fetch_from_incopat_query(symbol):
         return None
     except Exception as e:
         print(f'incoPat ipcquery API error: {e}')
+        return None
+
+
+def fetch_from_incopat_keyword_search(keyword):
+    """从 incoPat recommendIpcGroup API 获取 IPC 数据
+    
+    支持关键词搜索，返回匹配的IPC分类列表。
+    这是 incoPat 网站使用的真实关键词搜索API。
+    通过专利数据库检索关键词，返回相关的IPC分类号。
+    """
+    cache_key = f"incopat_keyword_{keyword.upper()}"
+    cached = get_cached(cache_key)
+    if cached:
+        return cached
+    
+    try:
+        session = get_incopat_session()
+        
+        # 使用 recommendIpcGroup API 进行关键词搜索
+        # 这个API通过在专利数据库中搜索关键词，返回相关的IPC分类
+        resp = session.post(
+            f'{INCOPAT_API_BASE}/ipcFindTool/recommendIpcGroup',
+            data={
+                'formerQuery': f'ti=({keyword})',
+                'database': 'all',
+                'rows': '30',
+                'facetFields': 'IPC-GROUP',
+                'version': '2026',
+                'format': 'zh'
+            },
+            headers={
+                **HEADERS,
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            timeout=30
+        )
+        
+        if resp.status_code == 200:
+            data = resp.json()
+            if data.get('status') and data.get('data'):
+                items = data.get('data', [])
+                
+                # 转换为统一格式
+                results = []
+                for item in items:
+                    code = item.get('code', '')
+                    title = item.get('title', '')
+                    
+                    # 清理标题
+                    title = re.sub(r'\s*\[\d+\]', '', title).strip()
+                    
+                    results.append({
+                        'code': code,
+                        'name': title,
+                        'nameNew': title
+                    })
+                
+                if results:
+                    set_cache(cache_key, results)
+                    return results
+        
+        return None
+    except Exception as e:
+        print(f'incoPat recommendIpcGroup API error: {e}')
         return None
 
 
@@ -1069,6 +1135,7 @@ def get_tree():
 def search():
     """
     Search IPC symbols using incoPat API.
+    支持关键词搜索和分类号搜索。
     """
     query = request.args.get('q', '').strip()
     limit = request.args.get('limit', 20, type=int)
@@ -1076,29 +1143,78 @@ def search():
     if not query:
         return create_response(error="请输入搜索关键词")
     
-    query = query.upper()
+    query_upper = query.upper()
     
-    items = fetch_from_incopat_query(query)
+    # 判断是分类号搜索还是关键词搜索
+    # 分类号格式：以字母开头，包含数字，可能包含斜杠
+    is_ipc_code = bool(re.match(r'^[A-H][0-9]+[A-Z]?[0-9]*(/[0-9]+)?$', query_upper))
     
     results = []
+    
+    # 使用关键词搜索API（支持分类号和关键词）
+    items = fetch_from_incopat_keyword_search(query)
     
     if items:
         for item in items:
             code = item.get('code', '')
-            name = item.get('name', '')
+            name = item.get('nameNew', item.get('name', ''))
             if name:
                 name = re.sub(r'^[A-Z0-9/]+\s*', '', name).strip()
                 name = re.sub(r'\[.*?\]', '', name).strip()
             
-            if query.upper() in code.upper() or query.lower() in name.lower():
-                results.append({
-                    'symbol': code,
-                    'code': code,
-                    'title': name,
-                    'titleCn': name,
-                    'score': 100 if query.upper() in code.upper() else 50
-                })
+            # 计算匹配分数
+            score = 0
+            code_upper = code.upper()
+            name_lower = name.lower() if name else ''
+            query_lower = query.lower()
+            
+            if code_upper == query_upper:
+                score = 100
+            elif code_upper.startswith(query_upper):
+                score = 90
+            elif query_upper in code_upper:
+                score = 80
+            elif query_lower in name_lower:
+                # 关键词在名称中，根据位置计算分数
+                pos = name_lower.find(query_lower)
+                if pos == 0:
+                    score = 70
+                else:
+                    score = 60 - min(pos, 30)
+            else:
+                score = 30
+            
+            results.append({
+                'symbol': code,
+                'code': code,
+                'title': name,
+                'titleCn': name,
+                'score': score
+            })
     
+    # 如果关键词搜索结果不够，尝试分类号搜索
+    if len(results) < limit and is_ipc_code:
+        code_items = fetch_from_incopat_query(query_upper)
+        if code_items:
+            existing_codes = {r['symbol'] for r in results}
+            for item in code_items:
+                code = item.get('code', '')
+                if code.upper() not in existing_codes:
+                    name = item.get('name', '')
+                    if name:
+                        name = re.sub(r'^[A-Z0-9/]+\s*', '', name).strip()
+                        name = re.sub(r'\[.*?\]', '', name).strip()
+                    
+                    results.append({
+                        'symbol': code,
+                        'code': code,
+                        'title': name,
+                        'titleCn': name,
+                        'score': 50
+                    })
+                    existing_codes.add(code.upper())
+    
+    # 去重并排序
     seen = set()
     unique_results = []
     for r in results:
