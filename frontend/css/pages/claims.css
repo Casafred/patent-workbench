@@ -892,3 +892,157 @@
     );
     pointer-events: none;
 }
+
+/* ====================================================================== */
+/* 权利要求编辑功能样式 */
+/* ====================================================================== */
+
+.claim-item {
+    position: relative;
+    padding: 15px;
+    margin-bottom: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--surface-color);
+    transition: all 0.2s ease;
+}
+
+.claim-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.claim-item.independent {
+    border-left: 4px solid #4CAF50;
+    background: linear-gradient(90deg, rgba(76, 175, 80, 0.05) 0%, var(--surface-color) 100%);
+}
+
+.claim-item.dependent {
+    border-left: 4px solid #2196F3;
+    background: linear-gradient(90deg, rgba(33, 150, 243, 0.05) 0%, var(--surface-color) 100%);
+}
+
+.claim-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.claim-number {
+    font-weight: 600;
+    font-size: 1em;
+    color: var(--text-color);
+}
+
+.claim-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: 500;
+}
+
+.claim-badge.independent {
+    background: rgba(76, 175, 80, 0.15);
+    color: #2e7d32;
+}
+
+.claim-badge.dependent {
+    background: rgba(33, 150, 243, 0.15);
+    color: #1565c0;
+}
+
+.claim-edit-btn {
+    margin-left: auto;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85em;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s ease;
+    opacity: 0.7;
+}
+
+.claim-item:hover .claim-edit-btn {
+    opacity: 1;
+}
+
+.claim-edit-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+}
+
+.claim-edit-btn:active {
+    transform: translateY(0);
+}
+
+.claim-text {
+    color: var(--text-color-secondary);
+    font-size: 0.9em;
+    line-height: 1.6;
+    padding: 10px 12px;
+    background: var(--bg-color);
+    border-radius: 6px;
+    margin-bottom: 8px;
+}
+
+.claim-references {
+    font-size: 0.85em;
+    color: var(--text-color-secondary);
+    padding: 8px 12px;
+    background: rgba(33, 150, 243, 0.08);
+    border-radius: 6px;
+    border-left: 3px solid #2196F3;
+}
+
+.claim-references strong {
+    color: #1565c0;
+}
+
+/* 编辑弹窗内的复选框标签样式 */
+#edit_references_container label {
+    transition: all 0.2s ease;
+}
+
+#edit_references_container label:hover {
+    transform: scale(1.02);
+}
+
+#edit_references_container input[type="checkbox"] {
+    cursor: pointer;
+}
+
+/* 深色主题适配 */
+@media (prefers-color-scheme: dark) {
+    .claim-item.independent {
+        background: linear-gradient(90deg, rgba(76, 175, 80, 0.1) 0%, var(--surface-color) 100%);
+    }
+    
+    .claim-item.dependent {
+        background: linear-gradient(90deg, rgba(33, 150, 243, 0.1) 0%, var(--surface-color) 100%);
+    }
+    
+    .claim-badge.independent {
+        background: rgba(76, 175, 80, 0.25);
+        color: #81c784;
+    }
+    
+    .claim-badge.dependent {
+        background: rgba(33, 150, 243, 0.25);
+        color: #64b5f6;
+    }
+    
+    .claim-references {
+        background: rgba(33, 150, 243, 0.12);
+    }
+    
+    .claim-references strong {
+        color: #64b5f6;
+    }
+}

@@ -336,7 +336,7 @@ export function displayClaimsTextResults(state) {
     document.getElementById('claims_text_stat_independent').textContent = independentClaims;
     document.getElementById('claims_text_stat_dependent').textContent = dependentClaims;
     
-    displayClaimsTextList(state.textAnalyzedData);
+    displayClaimsTextList(state.textAnalyzedData, state);
     renderClaimsTextVisualization(state);
     
     document.getElementById('claims_text_results').style.display = 'block';
@@ -344,13 +344,14 @@ export function displayClaimsTextResults(state) {
 }
 
 // 显示权利要求列表
-function displayClaimsTextList(claims) {
+function displayClaimsTextList(claims, state) {
     const container = document.getElementById('claims_text_list');
     container.innerHTML = '';
     
-    claims.forEach(claim => {
+    claims.forEach((claim, index) => {
         const claimDiv = document.createElement('div');
         claimDiv.className = `claim-item ${claim.claim_type}`;
+        claimDiv.dataset.index = index;
         
         const headerDiv = document.createElement('div');
         headerDiv.className = 'claim-header';
@@ -363,8 +364,14 @@ function displayClaimsTextList(claims) {
         badgeSpan.className = `claim-badge ${claim.claim_type}`;
         badgeSpan.textContent = claim.claim_type === 'independent' ? '独立权利要求' : '从属权利要求';
         
+        const editBtn = document.createElement('button');
+        editBtn.className = 'claim-edit-btn';
+        editBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg> 编辑`;
+        editBtn.onclick = () => showClaimEditModal(claim, index, state);
+        
         headerDiv.appendChild(numberSpan);
         headerDiv.appendChild(badgeSpan);
+        headerDiv.appendChild(editBtn);
         
         const textDiv = document.createElement('div');
         textDiv.className = 'claim-text';
@@ -382,6 +389,187 @@ function displayClaimsTextList(claims) {
         
         container.appendChild(claimDiv);
     });
+}
+
+// 显示权利要求编辑弹窗
+function showClaimEditModal(claim, index, state) {
+    const oldModal = document.getElementById('claim_edit_modal');
+    if (oldModal) {
+        oldModal.remove();
+    }
+    
+    const allClaimNumbers = state.textAnalyzedData.map(c => c.claim_number);
+    const currentClaimNumber = claim.claim_number;
+    
+    const modal = document.createElement('div');
+    modal.id = 'claim_edit_modal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        z-index: 10000;
+        align-items: center;
+        justify-content: center;
+    `;
+    
+    const modalContent = document.createElement('div');
+    modalContent.style.cssText = `
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        max-width: 700px;
+        width: 90%;
+        max-height: 85vh;
+        overflow-y: auto;
+        position: relative;
+    `;
+    
+    modalContent.innerHTML = `
+        <div style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px 12px 0 0;">
+            <h3 style="margin: 0; color: white; font-size: 18px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                编辑权利要求 ${claim.claim_number}
+            </h3>
+            <button id="close_edit_modal" style="background: rgba(255,255,255,0.2); border: none; font-size: 24px; cursor: pointer; color: white; padding: 5px 12px; border-radius: 50%; transition: background-color 0.2s;">&times;</button>
+        </div>
+        <div style="padding: 25px;">
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    权利要求类型
+                </label>
+                <select id="edit_claim_type" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; transition: border-color 0.2s;">
+                    <option value="independent" ${claim.claim_type === 'independent' ? 'selected' : ''}>独立权利要求</option>
+                    <option value="dependent" ${claim.claim_type === 'dependent' ? 'selected' : ''}>从属权利要求</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><line x1="10" y1="6" x2="21" y2="6"></line><line x1="10" y1="12" x2="21" y2="12"></line><line x1="10" y1="18" x2="21" y2="18"></line><polyline points="3 6 3 6 3 6"></polyline><polyline points="3 12 3 12 3 12"></polyline><polyline points="3 18 3 18 3 18"></polyline></svg>
+                    引用的权利要求（可多选）
+                </label>
+                <div id="edit_references_container" style="display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; min-height: 50px; background: #fafafa;">
+                    ${allClaimNumbers.filter(n => n !== currentClaimNumber).map(num => `
+                        <label style="display: flex; align-items: center; padding: 6px 12px; background: ${claim.referenced_claims.includes(num) ? '#e3f2fd' : '#f5f5f5'}; border-radius: 20px; cursor: pointer; border: 2px solid ${claim.referenced_claims.includes(num) ? '#2196F3' : '#e0e0e0'}; transition: all 0.2s;">
+                            <input type="checkbox" class="ref-checkbox" value="${num}" ${claim.referenced_claims.includes(num) ? 'checked' : ''} style="margin-right: 6px;">
+                            权${num}
+                        </label>
+                    `).join('')}
+                    ${allClaimNumbers.filter(n => n !== currentClaimNumber).length === 0 ? '<span style="color: #999;">无其他权利要求可引用</span>' : ''}
+                </div>
+                <p style="margin-top: 8px; font-size: 12px; color: #666;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                    提示：可同时引用多个权利要求，如"权利要求1-5"请勾选1、2、3、4、5
+                </p>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                    权利要求内容
+                </label>
+                <textarea id="edit_claim_text" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; min-height: 120px; line-height: 1.6; resize: vertical;">${claim.full_text || ''}</textarea>
+            </div>
+            
+            <div style="display: flex; gap: 12px; justify-content: flex-end; padding-top: 10px; border-top: 1px solid #eee;">
+                <button id="cancel_edit_btn" style="padding: 10px 24px; border: 2px solid #e0e0e0; background: #f5f5f5; color: #333; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 14px; transition: all 0.2s;">
+                    取消
+                </button>
+                <button id="save_edit_btn" style="padding: 10px 24px; border: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 14px; transition: all 0.2s;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    保存修改
+                </button>
+            </div>
+        </div>
+    `;
+    
+    modal.appendChild(modalContent);
+    document.body.appendChild(modal);
+    document.body.style.overflow = 'hidden';
+    
+    const closeBtn = document.getElementById('close_edit_modal');
+    const cancelBtn = document.getElementById('cancel_edit_btn');
+    const saveBtn = document.getElementById('save_edit_btn');
+    const claimTypeSelect = document.getElementById('edit_claim_type');
+    const refCheckboxes = document.querySelectorAll('.ref-checkbox');
+    
+    const closeModal = () => {
+        modal.remove();
+        document.body.style.overflow = 'auto';
+    };
+    
+    closeBtn.onclick = closeModal;
+    cancelBtn.onclick = closeModal;
+    modal.onclick = (e) => {
+        if (e.target === modal) closeModal();
+    };
+    
+    refCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', (e) => {
+            const label = e.target.parentElement;
+            if (e.target.checked) {
+                label.style.background = '#e3f2fd';
+                label.style.borderColor = '#2196F3';
+            } else {
+                label.style.background = '#f5f5f5';
+                label.style.borderColor = '#e0e0e0';
+            }
+            
+            const checkedCount = document.querySelectorAll('.ref-checkbox:checked').length;
+            if (checkedCount > 0) {
+                claimTypeSelect.value = 'dependent';
+            }
+        });
+    });
+    
+    claimTypeSelect.addEventListener('change', (e) => {
+        if (e.target.value === 'independent') {
+            refCheckboxes.forEach(cb => {
+                cb.checked = false;
+                cb.parentElement.style.background = '#f5f5f5';
+                cb.parentElement.style.borderColor = '#e0e0e0';
+            });
+        }
+    });
+    
+    saveBtn.onclick = () => {
+        const newType = claimTypeSelect.value;
+        const newText = document.getElementById('edit_claim_text').value.trim();
+        const newRefs = Array.from(document.querySelectorAll('.ref-checkbox:checked')).map(cb => parseInt(cb.value));
+        
+        if (!newText) {
+            alert('权利要求内容不能为空');
+            return;
+        }
+        
+        state.textAnalyzedData[index].claim_type = newType;
+        state.textAnalyzedData[index].referenced_claims = newRefs;
+        state.textAnalyzedData[index].full_text = newText;
+        state.textAnalyzedData[index].claim_text = newText;
+        
+        if (newType === 'independent') {
+            state.textAnalyzedData[index].referenced_claims = [];
+        }
+        
+        displayClaimsTextList(state.textAnalyzedData, state);
+        renderClaimsTextVisualization(state);
+        
+        const totalClaims = state.textAnalyzedData.length;
+        const independentClaims = state.textAnalyzedData.filter(c => c.claim_type === 'independent').length;
+        const dependentClaims = totalClaims - independentClaims;
+        
+        document.getElementById('claims_text_stat_total').textContent = totalClaims;
+        document.getElementById('claims_text_stat_independent').textContent = independentClaims;
+        document.getElementById('claims_text_stat_dependent').textContent = dependentClaims;
+        
+        closeModal();
+        showClaimsTextMessage('权利要求已更新！', 'success');
+    };
 }
 
 // 渲染可视化
