@@ -614,6 +614,9 @@
         <!-- Feature 11 (EPO Search) (loaded dynamically) -->
         <div id="epo-search-component"></div>
         
+        <!-- Feature 12 (Excel Concat) (loaded dynamically) -->
+        <div id="excel-concat-component"></div>
+        
 
 <!-- 功能八：专利附图标记功能 -->
 <script src="frontend/js/multiImageViewer_v8.js?v=20260201"></script>
@@ -2493,6 +2496,13 @@ initPatentDrawings();
     <script src="js/core/user-cache-exporter.js?v=20260221"></script>
     <script src="js/core/user-cache-importer.js?v=20260221"></script>
     <script src="js/core/user-cache-merger.js?v=20260221"></script>
+    
+    <!-- Global Data Pipeline - 全局数据管道模块 -->
+    <script src="js/core/excel-function-index.js?v=20260322"></script>
+    <script src="js/core/pipeline-config.js?v=20260322"></script>
+    <script src="js/core/global-data-pipeline.js?v=20260322"></script>
+    <script src="js/core/pipeline-integration.js?v=20260322"></script>
+    
     <script src="js/modules/user-data/user-data-ui.js?v=20260221"></script>
     <script src="js/modules/user-data/user-data-modal.js?v=20260221"></script>
     
@@ -2590,6 +2600,9 @@ initPatentDrawings();
     
     <!-- Feature 11: EPO Patent Search -->
     <script src="js/modules/epo-search/epo-search.js?v=20260310"></script>
+    
+    <!-- Feature 12: Excel Concat -->
+    <script src="js/modules/excel-concat.js?v=20260322"></script>
     
     <!-- Other feature scripts -->
     <script src="js/patentDetailNewTab.js?v=20260316"></script>
