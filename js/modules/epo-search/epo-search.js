@@ -968,14 +968,42 @@ class EPOSearchModule {
         const viewOnGoogleBtn = document.getElementById('view-on-google-btn');
         if (viewOnGoogleBtn) {
             viewOnGoogleBtn.onclick = () => {
-                window.open(`https://patents.google.com/patent/${this.currentPatentNumber}`, '_blank');
+                const patentNumber = this.currentPatentNumber;
+                if (!patentNumber) return;
+                
+                const modal = document.getElementById('epo-detail-modal');
+                if (modal) modal.style.display = 'none';
+                
+                if (typeof switchTab === 'function') {
+                    switchTab('patent_batch');
+                }
+                
+                setTimeout(() => {
+                    const input = document.getElementById('patent_numbers_input');
+                    if (input) {
+                        input.value = patentNumber;
+                        input.dispatchEvent(new Event('input'));
+                    }
+                    
+                    const crawlBtn = document.getElementById('search_patents_btn');
+                    if (crawlBtn) {
+                        crawlBtn.click();
+                    }
+                }, 300);
             };
         }
     }
     
     async quickAnalyze(patentNumber) {
         this.currentPatentNumber = patentNumber;
-        await this.analyzePatent();
+        this.showDetailAndAnalyze(patentNumber);
+    }
+    
+    async showDetailAndAnalyze(patentNumber) {
+        await this.showDetail(patentNumber);
+        setTimeout(() => {
+            this.analyzePatent();
+        }, 500);
     }
     
     async analyzePatent() {
