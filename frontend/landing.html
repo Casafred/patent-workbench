@@ -1215,34 +1215,47 @@
             transform: rotate(-1deg);
         }
 
+        .feature-image-stack .stacked-image:nth-child(4) {
+            top: 45px;
+            z-index: 0;
+            transform: rotate(2deg);
+        }
+
+        .feature-image-stack .stacked-image:nth-child(5) {
+            top: 60px;
+            z-index: -1;
+            transform: rotate(-1.5deg);
+        }
+
         .feature-image-stack:hover .stacked-image:nth-child(1) {
-            transform: translateX(-30px) rotate(-8deg) translateY(-5px);
-            box-shadow: 0 15px 40px rgba(34, 197, 94, 0.3);
+            transform: translateX(-60px) rotate(-12deg) translateY(-15px) scale(1.1);
+            box-shadow: 0 20px 50px rgba(34, 197, 94, 0.35);
         }
 
         .feature-image-stack:hover .stacked-image:nth-child(2) {
-            transform: translateX(0px) rotate(0deg) translateY(-10px);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            transform: translateX(-25px) rotate(-4deg) translateY(-20px) scale(1.08);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
         }
 
         .feature-image-stack:hover .stacked-image:nth-child(3) {
-            transform: translateX(30px) rotate(6deg) translateY(-5px);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+            transform: translateX(20px) rotate(4deg) translateY(-15px) scale(1.08);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
         }
 
-        .feature-image-stack .stacked-image:nth-child(1):hover {
-            transform: translateX(-30px) rotate(-8deg) translateY(-5px) scale(1.05) !important;
-            z-index: 10;
+        .feature-image-stack:hover .stacked-image:nth-child(4) {
+            transform: translateX(55px) rotate(8deg) translateY(-10px) scale(1.06);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
         }
 
-        .feature-image-stack .stacked-image:nth-child(2):hover {
-            transform: translateX(0px) rotate(0deg) translateY(-10px) scale(1.05) !important;
-            z-index: 10;
+        .feature-image-stack:hover .stacked-image:nth-child(5) {
+            transform: translateX(85px) rotate(10deg) translateY(-5px) scale(1.05);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
         }
 
-        .feature-image-stack .stacked-image:nth-child(3):hover {
-            transform: translateX(30px) rotate(6deg) translateY(-5px) scale(1.05) !important;
-            z-index: 10;
+        .feature-image-stack .stacked-image:hover {
+            z-index: 100 !important;
+            transform: scale(1.15) !important;
+            box-shadow: 0 25px 60px rgba(34, 197, 94, 0.4) !important;
         }
 
         .stacked-image-placeholder {
@@ -2998,34 +3011,7 @@
                 </div>
                 <h3 class="feature-title">即时对话</h3>
                 <p class="feature-desc">支持智谱AI、阿里云百炼等多服务商，海量模型自由切换，专利知识问答、技术方案分析、联网搜索一应俱全。</p>
-                <div class="feature-image-stack" data-stack-id="feature-01-chat">
-                    <div class="stacked-image" data-stack-index="0">
-                        <img src="/frontend/images/1_chat.png" alt="即时对话截图1" onerror="this.parentElement.innerHTML='<div class=\'stacked-image-placeholder\'><svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.5\'><rect x=\'3\' y=\'3\' width=\'18\' height=\'18\' rx=\'2\' ry=\'2\'></rect><circle cx=\'8.5\' cy=\'8.5\' r=\'1.5\'></circle><polyline points=\'21 15 16 10 5 21\'></polyline></svg><div>截图 1</div></div>'">
-                        <span class="stacked-image-label">截图 1</span>
-                    </div>
-                    <div class="stacked-image" data-stack-index="1">
-                        <div class="stacked-image-placeholder">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                <polyline points="21 15 16 10 5 21"></polyline>
-                            </svg>
-                            <div>截图 2</div>
-                        </div>
-                        <span class="stacked-image-label">截图 2</span>
-                    </div>
-                    <div class="stacked-image" data-stack-index="2">
-                        <div class="stacked-image-placeholder">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                <polyline points="21 15 16 10 5 21"></polyline>
-                            </svg>
-                            <div>截图 3</div>
-                        </div>
-                        <span class="stacked-image-label">截图 3</span>
-                    </div>
-                </div>
+                <div class="feature-image-stack" data-stack-id="feature-01-chat"></div>
             </div>
 
             <!-- 功能二：文本批量智能分析 -->
@@ -4602,8 +4588,10 @@
 
             Object.entries(imageConfig).forEach(([stackId, filenames]) => {
                 const container = document.querySelector(`[data-stack-id="${stackId}"]`);
+                const existingSlots = container?.querySelectorAll('.stacked-image') || [];
+                const maxSlots = 5;
                 
-                filenames.forEach((filename, index) => {
+                for (let index = 0; index < maxSlots; index++) {
                     const slot = container?.querySelector(`.stacked-image[data-stack-index="${index}"]`);
                     const existingImg = slot?.querySelector('img');
                     const hasImage = !!existingImg;
@@ -4635,7 +4623,7 @@
                             </div>
                         </div>
                     `;
-                });
+                }
             });
 
             html += '</div></div>';
@@ -4694,20 +4682,23 @@
                 return;
             }
 
-            const slot = container.querySelector(`.stacked-image[data-stack-index="${stackIndex}"]`);
+            let slot = container.querySelector(`.stacked-image[data-stack-index="${stackIndex}"]`);
+            
             if (!slot) {
-                showUploadResult(`未找到位置 ${stackIndex}`, true);
-                return;
+                slot = document.createElement('div');
+                slot.className = 'stacked-image';
+                slot.dataset.stackIndex = stackIndex;
+                container.appendChild(slot);
             }
 
             const imgSrc = selectedImage.path;
-            const imgAlt = `${placeholderNames[stackId] || selectedImage.name} - 截图${stackIndex + 1}`;
+            const imgAlt = `${placeholderNames[stackId] || selectedImage.name} - 截图${parseInt(stackIndex) + 1}`;
             
             slot.innerHTML = `
                 <img src="${imgSrc}" alt="${imgAlt}" 
                      onerror="this.parentElement.innerHTML='<div class=\\'stacked-image-placeholder\\'><svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'1.5\\'><rect x=\\'3\\' y=\\'3\\' width=\\'18\\' height=\\'18\\' rx=\\'2\\' ry=\\'2\\'></rect><circle cx=\\'8.5\\' cy=\\'8.5\\' r=\\'1.5\\'></circle><polyline points=\\'21 15 16 10 5 21\\'></polyline></svg><div>图片加载失败</div></div>'"
                      style="cursor: zoom-in;">
-                <span class="stacked-image-label">截图 ${stackIndex + 1}</span>
+                <span class="stacked-image-label">截图 ${parseInt(stackIndex) + 1}</span>
             `;
             
             slot.addEventListener('click', function(e) {
@@ -4755,13 +4746,17 @@
                         const container = document.querySelector(`[data-stack-id="${stackId}"]`);
                         if (!container) return;
                         
-                        Object.entries(slots).forEach(([index, imageName]) => {
-                            const slot = container.querySelector(`.stacked-image[data-stack-index="${index}"]`);
-                            if (!slot) return;
-                            
+                        container.innerHTML = '';
+                        
+                        const sortedSlots = Object.entries(slots).sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
+                        
+                        sortedSlots.forEach(([index, imageName]) => {
                             const imgSrc = `/frontend/images/${imageName}`;
                             const imgAlt = `${placeholderNames[stackId] || imageName} - 截图${parseInt(index) + 1}`;
                             
+                            const slot = document.createElement('div');
+                            slot.className = 'stacked-image';
+                            slot.dataset.stackIndex = index;
                             slot.innerHTML = `
                                 <img src="${imgSrc}" alt="${imgAlt}" 
                                      onerror="this.parentElement.innerHTML='<div class=\\'stacked-image-placeholder\\'><svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'1.5\\'><rect x=\\'3\\' y=\\'3\\' width=\\'18\\' height=\\'18\\' rx=\\'2\\' ry=\\'2\\'></rect><circle cx=\\'8.5\\' cy=\\'8.5\\' r=\\'1.5\\'></circle><polyline points=\\'21 15 16 10 5 21\\'></polyline></svg><div>图片加载失败</div></div>'"
@@ -4774,7 +4769,11 @@
                                 const img = this.querySelector('img');
                                 if (img) openLightbox(img.src, imgAlt);
                             });
+                            
+                            container.appendChild(slot);
                         });
+                        
+                        usedImages.add(stackId);
                     });
                     console.log('[图片管理器] 已从服务器加载图片绑定配置');
                 }
@@ -4790,17 +4789,7 @@
             const slot = container.querySelector(`.stacked-image[data-stack-index="${stackIndex}"]`);
             if (!slot) return;
 
-            slot.innerHTML = `
-                <div class="stacked-image-placeholder">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                        <polyline points="21 15 16 10 5 21"></polyline>
-                    </svg>
-                    <div>功能截图 ${stackIndex + 1}</div>
-                </div>
-                <span class="stacked-image-label">截图 ${stackIndex + 1}</span>
-            `;
+            slot.remove();
             
             removeImageBinding(stackId, stackIndex);
             refreshContainerGrid();
