@@ -311,13 +311,14 @@ class PipelineIntegration {
             
             const btn = document.createElement('button');
             btn.className = 'pipeline-quick-export';
-            btn.innerHTML = '🔄 导出到管道';
+            btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>导出`;
+            btn.title = '导出数据到管道';
             btn.style.cssText = `
                 position: absolute;
                 top: 10px;
                 right: 10px;
                 padding: 6px 12px;
-                background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -325,6 +326,8 @@ class PipelineIntegration {
                 cursor: pointer;
                 z-index: 10;
                 transition: all 0.2s;
+                display: flex;
+                align-items: center;
             `;
             
             btn.addEventListener('click', () => {
@@ -342,8 +345,7 @@ class PipelineIntegration {
         const targetInputs = [
             { selector: '#patent_numbers_input', target: 'patent-batch' },
             { selector: '#async_manual_input', target: 'async-batch' },
-            { selector: '#claims_text_input', target: 'claims-processor' },
-            { selector: '#chat_input', target: 'instant-chat' }
+            { selector: '#claims_text_input', target: 'claims-processor' }
         ];
         
         targetInputs.forEach(({ selector, target }) => {
@@ -355,7 +357,7 @@ class PipelineIntegration {
             
             const btn = document.createElement('button');
             btn.className = 'pipeline-receive-btn';
-            btn.innerHTML = '🔄';
+            btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>`;
             btn.title = '从数据管道接收';
             btn.style.cssText = `
                 position: absolute;
@@ -364,7 +366,7 @@ class PipelineIntegration {
                 transform: translateY(-50%);
                 width: 28px;
                 height: 28px;
-                background: #6366f1;
+                background: #10b981;
                 color: white;
                 border: none;
                 border-radius: 50%;
