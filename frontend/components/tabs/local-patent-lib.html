@@ -723,7 +723,7 @@
 </style>
 
 <script>
-function switchLPLMode(mode) {
+window.switchLPLMode = function(mode) {
     document.querySelectorAll('.lpl-mode-panel').forEach(el => {
         el.style.display = 'none';
         el.classList.remove('active');
@@ -742,5 +742,5 @@ function switchLPLMode(mode) {
         document.getElementById('lpl-concat-mode-panel').classList.add('active');
         document.getElementById('lpl-mode-tab-concat').classList.add('active');
     }
-}
+};
 </script>
