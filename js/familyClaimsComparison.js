@@ -619,19 +619,65 @@ function renderOriginalClaimsPreview(patentClaims) {
 
     const patentNumbers = Object.keys(patentClaims);
 
-    const infoBox = document.createElement('div');
-    infoBox.className = 'original-claims-info';
-    infoBox.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 10px; background: #e3f2fd; border-left: 4px solid #1976d2; border-radius: 4px; padding: 10px 16px; margin-bottom: 16px;">
+    const actionDiv = document.createElement('div');
+    actionDiv.className = 'ai-comparison-action';
+    actionDiv.style.cssText = 'display: flex; justify-content: center; align-items: center; gap: 20px; padding: 20px; background: linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%); border-radius: 12px; border: 1px solid #e0e0e0; margin-bottom: 16px; position: sticky; top: 0; z-index: 10;';
+    actionDiv.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px; background: #e3f2fd; border-left: 4px solid #1976d2; border-radius: 4px; padding: 10px 16px;">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1976d2" stroke-width="2">
                 <circle cx="12" cy="12" r="10"></circle>
                 <line x1="12" y1="16" x2="12" y2="12"></line>
                 <line x1="12" y1="8" x2="12.01" y2="8"></line>
             </svg>
-            <span style="color: #1565c0; font-size: 14px;">权利要求原文预览 - 请确认内容后点击下方按钮开始AI对比分析</span>
+            <span style="color: #1565c0; font-size: 14px;">权利要求原文预览 - 确认内容后点击按钮开始AI对比分析</span>
         </div>
+        <button id="start_ai_comparison_btn" class="ai-start-btn" style="
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 14px 32px;
+            font-size: 15px;
+            font-weight: 600;
+            color: white;
+            background: linear-gradient(135deg, #2e7d32 0%, #388e3c 50%, #1b5e20 100%);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(46, 125, 50, 0.35);
+            position: relative;
+            overflow: hidden;
+        ">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            <span>开始AI对比分析</span>
+        </button>
+        <button id="cancel_comparison_btn" class="ai-cancel-btn" style="
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #555 !important;
+            background: #f5f5f5;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        ">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+            <span style="color: #555;">取消</span>
+        </button>
     `;
-    familyComparisonResultContainer.appendChild(infoBox);
+    familyComparisonResultContainer.appendChild(actionDiv);
 
     let html = '<div class="original-claims-preview" style="border: 1px solid #ddd; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">';
 
@@ -657,64 +703,12 @@ function renderOriginalClaimsPreview(patentClaims) {
     contentDiv.innerHTML = html;
     familyComparisonResultContainer.appendChild(contentDiv);
 
-    const actionDiv = document.createElement('div');
-    actionDiv.className = 'ai-comparison-action';
-    actionDiv.style.cssText = 'display: flex; justify-content: center; gap: 20px; margin-top: 25px; padding: 25px; background: linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%); border-radius: 12px; border: 1px solid #e0e0e0;';
-    actionDiv.innerHTML = `
-        <button id="start_ai_comparison_btn" class="ai-start-btn" style="
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            padding: 16px 40px;
-            font-size: 16px;
-            font-weight: 600;
-            color: white;
-            background: linear-gradient(135deg, #2e7d32 0%, #388e3c 50%, #1b5e20 100%);
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 4px 15px rgba(46, 125, 50, 0.35);
-            position: relative;
-            overflow: hidden;
-        ">
-            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-            </svg>
-            <span>开始AI对比分析</span>
-        </button>
-        <button id="cancel_comparison_btn" class="ai-cancel-btn" style="
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 16px 32px;
-            font-size: 15px;
-            font-weight: 500;
-            color: #555 !important;
-            background: #f5f5f5;
-            border: 2px solid #ccc;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        ">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-            <span style="color: #555;">取消</span>
-        </button>
-    `;
-    familyComparisonResultContainer.appendChild(actionDiv);
-
     const startBtn = document.getElementById('start_ai_comparison_btn');
     const cancelBtn = document.getElementById('cancel_comparison_btn');
 
     startBtn.addEventListener('mouseenter', function() {
-        this.style.transform = 'translateY(-3px)';
-        this.style.boxShadow = '0 8px 25px rgba(46, 125, 50, 0.45)';
+        this.style.transform = 'translateY(-2px)';
+        this.style.boxShadow = '0 6px 20px rgba(46, 125, 50, 0.45)';
         this.style.filter = 'brightness(1.05)';
     });
     startBtn.addEventListener('mouseleave', function() {
@@ -1410,17 +1404,46 @@ function clearFamilyComparisonResult() {
 }
 
 /**
- * 显示加载状态
+ * 显示加载状态（局部显示，不使用全局遮罩）
  */
 function showFamilyLoading(text) {
     familyLoadingText.textContent = text;
-    familyLoadingOverlay.style.display = 'flex';
+    
+    const existingOverlay = document.getElementById('family_local_loading');
+    if (existingOverlay) {
+        existingOverlay.remove();
+    }
+    
+    const localLoading = document.createElement('div');
+    localLoading.id = 'family_local_loading';
+    localLoading.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+        background: linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%);
+        border-radius: 12px;
+        border: 1px solid #e0e0e0;
+        margin: 20px 0;
+    `;
+    localLoading.innerHTML = `
+        <div class="spinner" style="width: 40px; height: 40px; border: 3px solid #e0e0e0; border-top-color: #2e7d32; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        <p id="family_loading_text" style="margin-top: 16px; color: #333; font-size: 14px;">${text}</p>
+    `;
+    
+    familyComparisonResultContainer.innerHTML = '';
+    familyComparisonResultContainer.appendChild(localLoading);
 }
 
 /**
  * 隐藏加载状态
  */
 function hideFamilyLoading() {
+    const localLoading = document.getElementById('family_local_loading');
+    if (localLoading) {
+        localLoading.remove();
+    }
     familyLoadingOverlay.style.display = 'none';
 }
 
