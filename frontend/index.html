@@ -797,13 +797,13 @@ function clearCacheOnInputChange(changeType) {
     // 清空标注结果显示
     const annotatedDrawingsContainer = document.getElementById('annotated_drawings_container');
     if (annotatedDrawingsContainer) {
-        annotatedDrawingsContainer.innerHTML = '<div style="color: #6c757d; font-size: 14px; text-align: center; padding: 40px; background-color: #f8f9fa; border-radius: 6px; border: 2px dashed #dee2e6;"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom: 10px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><div>处理完成后，标注后的附图将显示在此处</div></div>';
+        annotatedDrawingsContainer.innerHTML = '<div class="annotated-drawings-placeholder" style="color: #6c757d; font-size: 14px; text-align: center; padding: 40px; background-color: #f8f9fa; border-radius: 6px; border: 2px dashed #dee2e6;"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom: 10px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><div>处理完成后，标注后的附图将显示在此处</div></div>';
     }
     
     // 清空处理结果
     const processingResult = document.getElementById('processing_result');
     if (processingResult) {
-        processingResult.innerHTML = '<div style="color: #6c757d; font-size: 14px; text-align: center; padding: 20px; background-color: #f8f9fa; border-radius: 6px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> 请上传图片和输入说明书，然后点击"开始处理"</div>';
+        processingResult.innerHTML = '<div class="processing-result-placeholder" style="color: #6c757d; font-size: 14px; text-align: center; padding: 20px; background-color: #f8f9fa; border-radius: 6px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> 请上传图片和输入说明书，然后点击"开始处理"</div>';
     }
 }
 
@@ -822,7 +822,7 @@ function updateUploadedDrawingsList() {
         const sizeKB = (drawing.size / 1024).toFixed(1);
         const rotation = drawing.rotation || 0;
         html += `
-            <div style="display: flex; align-items: center; gap: 10px; padding: 8px; background-color: white; border: 1px solid #dee2e6; border-radius: 6px; position: relative;">
+            <div class="drawing-item-card" style="display: flex; align-items: center; gap: 10px; padding: 8px; background-color: white; border: 1px solid #dee2e6; border-radius: 6px; position: relative;">
                 <div style="position: relative; width: 40px; height: 40px; flex-shrink: 0;">
                     <img src="${drawing.dataUrl}" 
                          alt="${drawing.name}" 
@@ -1070,13 +1070,13 @@ function clearAllDrawings() {
     // 清空处理结果
     const processingResult = document.getElementById('processing_result');
     if (processingResult) {
-        processingResult.innerHTML = '<div style="color: #6c757d; font-size: 14px; text-align: center; padding: 20px; background-color: #f8f9fa; border-radius: 6px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> 请上传图片和输入说明书，然后点击"开始处理"</div>';
+        processingResult.innerHTML = '<div class="processing-result-placeholder" style="color: #6c757d; font-size: 14px; text-align: center; padding: 20px; background-color: #f8f9fa; border-radius: 6px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> 请上传图片和输入说明书，然后点击"开始处理"</div>';
     }
     
     // 清空标注后的附图
     const annotatedDrawingsContainer = document.getElementById('annotated_drawings_container');
     if (annotatedDrawingsContainer) {
-        annotatedDrawingsContainer.innerHTML = '<div style="color: #6c757d; font-size: 14px; text-align: center; padding: 40px; background-color: #f8f9fa; border-radius: 6px; border: 2px dashed #dee2e6;"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom: 10px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><div>处理完成后，标注后的附图将显示在此处</div></div>';
+        annotatedDrawingsContainer.innerHTML = '<div class="annotated-drawings-placeholder" style="color: #6c757d; font-size: 14px; text-align: center; padding: 40px; background-color: #f8f9fa; border-radius: 6px; border: 2px dashed #dee2e6;"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom: 10px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><div>处理完成后，标注后的附图将显示在此处</div></div>';
     }
     
     // 清空处理状态
@@ -1891,7 +1891,7 @@ function displayProcessingResult(data, isAIMode = false) {
             '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
         
         let html = `
-            <div style="padding: 15px; background-color: ${statusColor}; border-radius: 6px; border: 1px solid ${borderColor}; color: ${textColor};">
+            <div class="processing-result-content" style="padding: 15px; background-color: ${statusColor}; border-radius: 6px; border: 1px solid ${borderColor}; color: ${textColor};">
                 <h4 style="margin: 0 0 10px 0; font-size: 16px;">${icon} ${data.message || '处理完成'}</h4>
         `;
         

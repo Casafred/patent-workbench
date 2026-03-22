@@ -2575,6 +2575,60 @@
 }
 
 /* ========================================
+   57.2 功能八附图标记面板暗黑模式覆盖
+   ======================================== */
+
+[data-theme="dark"] .drawing-marker-left-panel {
+    background: #1e293b !important;
+    border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .drawing-marker-right-panel {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+}
+
+[data-theme="dark"] .drawing-paste-area {
+    background: #1e293b !important;
+    border-color: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .drawing-paste-area p {
+    color: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .processing-result-placeholder,
+[data-theme="dark"] .annotated-drawings-placeholder {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+    color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .processing-result-content {
+    background: rgba(74, 222, 128, 0.1) !important;
+    border-color: rgba(74, 222, 128, 0.3) !important;
+    color: var(--text-color) !important;
+}
+
+[data-theme="dark"] .processing-result-content h4 {
+    color: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .drawing-item-card {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+[data-theme="dark"] .drawing-item-card:hover {
+    border-color: var(--primary-color) !important;
+    background: rgba(74, 222, 128, 0.1) !important;
+}
+
+[data-theme="dark"] .drawing-item-card div {
+    color: var(--text-color) !important;
+}
+
+/* ========================================
    58. 历史面板暗黑模式覆盖
    ======================================== */
 
