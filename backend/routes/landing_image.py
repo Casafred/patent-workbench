@@ -50,7 +50,7 @@ def load_bindings_config():
                 return json.load(f)
     except Exception as e:
         print(f"[Landing Image] Load bindings error: {e}")
-    return {'imageBindings': {}, 'gifBindings': {}}
+    return {'imageBindings': {}, 'gifBindings': {}, 'displaySettings': {}}
 
 
 def save_bindings_config(config):
@@ -291,6 +291,8 @@ def save_bindings():
             config['imageBindings'] = data['imageBindings']
         if 'gifBindings' in data:
             config['gifBindings'] = data['gifBindings']
+        if 'displaySettings' in data:
+            config['displaySettings'] = data['displaySettings']
         
         if save_bindings_config(config):
             return create_response(data={'message': '绑定配置保存成功', 'config': config})
