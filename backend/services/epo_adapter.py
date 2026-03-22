@@ -720,7 +720,22 @@ class EPOAdapter:
         logger.info(f"获取图片信息: {patent_number}")
         
         try:
-            response = self._client.image(path=f"published-data/publication/{format_type}/{patent_number}/images")
+            import re
+            clean_number = patent_number.strip().replace('.', '')
+            match = re.match(r'^([A-Z]{2})(\d+)([A-Z]\d?)?$', clean_number, re.IGNORECASE)
+            
+            if match:
+                country = match.group(1).upper()
+                doc_num = match.group(2)
+                kind = match.group(3) or ''
+            else:
+                country = clean_number[:2].upper()
+                doc_num = clean_number[2:]
+                kind = ''
+            
+            path = f"published-data/publication/{format_type}/{country}.{doc_num}.{kind}/images"
+            
+            response = self._client.image(path=path)
             
             return self._parse_images_response(response)
         except Exception as e:

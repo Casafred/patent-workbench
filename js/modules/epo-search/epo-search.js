@@ -860,11 +860,21 @@ class EPOSearchModule {
         const content = document.getElementById('epo-detail-content');
         if (!content) return;
         
+        const escapeHtml = (text) => {
+            if (!text) return '';
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        };
+        
         const claimsHtml = (detail.claims && detail.claims.length > 0) 
             ? `<div>
                 <h4 style="margin: 0 0 8px 0; color: #333;">权利要求</h4>
                 <div style="max-height: 300px; overflow-y: auto; font-size: 13px; line-height: 1.8; color: #555; padding: 12px; background: #f8f9fa; border-radius: 6px;">
-                    ${detail.claims.map((c, i) => `<p style="margin: 8px 0;"><strong>${i + 1}.</strong> ${c}</p>`).join('')}
+                    ${detail.claims.map((c, i) => `<p style="margin: 8px 0;"><strong>${i + 1}.</strong> ${escapeHtml(c)}</p>`).join('')}
                 </div>
                </div>`
             : '';
@@ -872,7 +882,7 @@ class EPOSearchModule {
         const descriptionHtml = detail.description 
             ? `<div>
                 <h4 style="margin: 0 0 8px 0; color: #333;">说明书</h4>
-                <div style="max-height: 400px; overflow-y: auto; font-size: 13px; line-height: 1.8; color: #555; padding: 12px; background: #f8f9fa; border-radius: 6px; white-space: pre-wrap;">${detail.description}</div>
+                <div style="max-height: 400px; overflow-y: auto; font-size: 13px; line-height: 1.8; color: #555; padding: 12px; background: #f8f9fa; border-radius: 6px; white-space: pre-wrap;">${escapeHtml(detail.description)}</div>
                </div>`
             : '';
         
