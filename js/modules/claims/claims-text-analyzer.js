@@ -278,30 +278,90 @@ function parseClaimsText(text) {
 function extractClaimReferences(text) {
     const references = [];
     
-    const patterns = [
-        /根据(?:权利要求|前述权利要求|上述权利要求|前面的权利要求|前所述的权利要求|前权利要求)\s*(\d+(?:\s*[-至或、和,]\s*\d+)*)/g,
-        /如(?:权利要求|前述权利要求|上述权利要求|前面的权利要求|前所述的权利要求|前权利要求)\s*(\d+(?:\s*[-至或、和,]\s*\d+)*)/g,
-        /按照(?:权利要求|前述权利要求|上述权利要求|前面的权利要求|前所述的权利要求|前权利要求)\s*(\d+(?:\s*[-至或、和,]\s*\d+)*)/g,
-        /依据(?:权利要求|前述权利要求|上述权利要求|前面的权利要求|前所述的权利要求|前权利要求)\s*(\d+(?:\s*[-至或、和,]\s*\d+)*)/g,
-        /according\s+to\s+(?:claim|preceding\s+claim|above\s+claim|aforementioned\s+claim|said\s+preceding\s+claim)\s*(\d+(?:\s*[-or,and\s]+\d+)*)/gi,
-        /of\s+(?:claim|preceding\s+claim|above\s+claim|aforementioned\s+claim|said\s+preceding\s+claim)\s*(\d+(?:\s*[-or,and\s]+\d+)*)/gi,
-        /gemäß\s+(?:anspruch|vorstehender\s+anspruch|obiger\s+anspruch|vorgenannter\s+anspruch)\s*(\d+(?:\s*[-oder,und\s]+\d+)*)/gi,
-        /請求項\s*(\d+(?:\s*[-または、及び,]\s*\d+)*)/g,
-        /(?:claim|claims|anspruch|ansprüche)\s*(\d+(?:\s*[-or,and,oder,und,または、及び]\s*\d+)*)/gi
+    const rangePatterns = [
+        /根据(?:权利要求|前述权利要求|上述权利要求|前面的权利要求|前所述的权利要求|前权利要求)\s*(\d+)\s*(?:至|[-—–])\s*(\d+)/g,
+        /如(?:权利要求|前述权利要求|上述权利要求|前面的权利要求|前所述的权利要求|前权利要求)\s*(\d+)\s*(?:至|[-—–])\s*(\d+)/g,
+        /按照(?:权利要求|前述权利要求|上述权利要求|前面的权利要求|前所述的权利要求|前权利要求)\s*(\d+)\s*(?:至|[-—–])\s*(\d+)/g,
+        /依据(?:权利要求|前述权利要求|上述权利要求|前面的权利要求|前所述的权利要求|前权利要求)\s*(\d+)\s*(?:至|[-—–])\s*(\d+)/g,
+        /according\s+to\s+(?:claim|claims|preceding\s+claim|above\s+claim|aforementioned\s+claim)\s*(\d+)\s+(?:to|through|[-—–])\s*(\d+)/gi,
+        /of\s+(?:claim|claims|preceding\s+claim|above\s+claim|aforementioned\s+claim)\s*(\d+)\s+(?:to|through|[-—–])\s*(\d+)/gi,
+        /(?:claim|claims)\s*(\d+)\s+(?:to|through)\s*(\d+)/gi,
+        /(?:claim|claims)\s*(\d+)\s*[-—–]\s*(\d+)/gi,
+        /described\s+in\s+(?:any\s+one\s+of\s+)?(?:claim|claims)\s*(\d+)\s+(?:to|through|[-—–])\s*(\d+)/gi,
+        /as\s+(?:set\s+forth\s+)?in\s+(?:claim|claims)\s*(\d+)\s+(?:to|through|[-—–])\s*(\d+)/gi,
+        /gemäß\s+(?:anspruch|ansprüche)\s*(\d+)\s+(?:bis|[-—–])\s*(\d+)/gi,
+        /(?:anspruch|ansprüche)\s*(\d+)\s*[-—–]\s*(\d+)/gi,
+        /請求項\s*(\d+)\s*(?:至|[-—–])\s*(\d+)/g
     ];
     
-    patterns.forEach(pattern => {
+    rangePatterns.forEach(pattern => {
         let match;
         while ((match = pattern.exec(text)) !== null) {
-            const refText = match[1];
-            const numbers = refText.match(/\d+/g);
-            if (numbers) {
-                numbers.forEach(num => {
+            const start = parseInt(match[1]);
+            const end = parseInt(match[2]);
+            if (start <= end) {
+                for (let i = start; i <= end; i++) {
+                    if (!references.includes(i)) {
+                        references.push(i);
+                    }
+                }
+            }
+        }
+    });
+    
+    const singlePatterns = [
+        /根据(?:权利要求|前述权利要求|上述权利要求|前面的权利要求|前所述的权利要求|前权利要求)\s*(\d+)/g,
+        /如(?:权利要求|前述权利要求|上述权利要求|前面的权利要求|前所述的权利要求|前权利要求)\s*(\d+)/g,
+        /按照(?:权利要求|前述权利要求|上述权利要求|前面的权利要求|前所述的权利要求|前权利要求)\s*(\d+)/g,
+        /依据(?:权利要求|前述权利要求|上述权利要求|前面的权利要求|前所述的权利要求|前权利要求)\s*(\d+)/g,
+        /according\s+to\s+(?:claim|claims|preceding\s+claim|above\s+claim|aforementioned\s+claim)\s*(\d+)/gi,
+        /of\s+(?:claim|claims|preceding\s+claim|above\s+claim|aforementioned\s+claim)\s*(\d+)/gi,
+        /described\s+in\s+(?:any\s+one\s+of\s+)?(?:claim|claims)\s*(\d+)/gi,
+        /as\s+(?:set\s+forth\s+)?in\s+(?:claim|claims)\s*(\d+)/gi,
+        /(?:claim|claims)\s*(\d+)/gi,
+        /gemäß\s+(?:anspruch|ansprüche)\s*(\d+)/gi,
+        /(?:anspruch|ansprüche)\s*(\d+)/gi,
+        /請求項\s*(\d+)/g
+    ];
+    
+    const andOrCommaPattern = /(\d+)\s*(?:,|and|or|或|和)\s*(\d+)(?:\s*(?:,|and|or|或|和)\s*(\d+))*/gi;
+    let andMatch;
+    while ((andMatch = andOrCommaPattern.exec(text)) !== null) {
+        const contextBefore = text.substring(Math.max(0, andMatch.index - 30), andMatch.index).toLowerCase();
+        const contextAfter = text.substring(andMatch.index + andMatch[0].length, Math.min(text.length, andMatch.index + andMatch[0].length + 20)).toLowerCase();
+        
+        const isClaimContext = /claim|权利要求|anspruch|請求項/.test(contextBefore) || /claim|权利要求|anspruch|請求項/.test(contextAfter);
+        
+        if (isClaimContext) {
+            const nums = andMatch[0].match(/\d+/g);
+            if (nums) {
+                nums.forEach(num => {
                     const n = parseInt(num);
                     if (!references.includes(n)) {
                         references.push(n);
                     }
                 });
+            }
+        }
+    }
+    
+    singlePatterns.forEach(pattern => {
+        let match;
+        while ((match = pattern.exec(text)) !== null) {
+            const fullMatch = match[0];
+            const num = parseInt(match[1]);
+            
+            const beforeIndex = match.index;
+            const afterIndex = match.index + fullMatch.length;
+            
+            const beforeText = text.substring(Math.max(0, beforeIndex - 20), beforeIndex);
+            const afterText = text.substring(afterIndex, Math.min(text.length, afterIndex + 20));
+            
+            const isPartOfRange = /\d+\s*(?:to|through|[-—–]|bis)\s*$/.test(beforeText) || 
+                                  /^\s*(?:to|through|[-—–]|bis)\s*\d+/.test(afterText);
+            
+            if (!isPartOfRange && !references.includes(num)) {
+                references.push(num);
             }
         }
     });
@@ -310,8 +370,7 @@ function extractClaimReferences(text) {
         const forwardReferenceKeywords = [
             '前述', '上述', '前面', '前所述', '前',
             'preceding', 'above', 'aforementioned', 'said preceding',
-            'vorstehender', 'obiger', 'vorgenannter',
-            'aforementioned'
+            'vorstehender', 'obiger', 'vorgenannter'
         ];
         
         for (const keyword of forwardReferenceKeywords) {
@@ -322,6 +381,12 @@ function extractClaimReferences(text) {
             }
         }
     }
+    
+    references.sort((a, b) => {
+        if (a === 'all_prev') return 1;
+        if (b === 'all_prev') return -1;
+        return a - b;
+    });
     
     return references;
 }
