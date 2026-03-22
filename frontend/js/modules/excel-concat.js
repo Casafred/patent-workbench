@@ -740,3 +740,24 @@ const ExcelConcatModule = (function() {
         openFolder
     };
 })();
+
+window.switchLPLMode = function(mode) {
+    document.querySelectorAll('.lpl-mode-panel').forEach(el => {
+        el.style.display = 'none';
+        el.classList.remove('active');
+    });
+    
+    document.querySelectorAll('#local_patent_lib-tab .mode-switcher-tab').forEach(el => {
+        el.classList.remove('active');
+    });
+    
+    if (mode === 'lib') {
+        document.getElementById('lpl-lib-mode-panel').style.display = 'block';
+        document.getElementById('lpl-lib-mode-panel').classList.add('active');
+        document.getElementById('lpl-mode-tab-lib').classList.add('active');
+    } else if (mode === 'concat') {
+        document.getElementById('lpl-concat-mode-panel').style.display = 'block';
+        document.getElementById('lpl-concat-mode-panel').classList.add('active');
+        document.getElementById('lpl-mode-tab-concat').classList.add('active');
+    }
+};
