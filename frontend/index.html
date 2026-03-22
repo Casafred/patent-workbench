@@ -1929,15 +1929,15 @@ function displayProcessingResult(data, isAIMode = false) {
         
         html += `
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px;">
-                    <div style="text-align: center; padding: 10px; background-color: white; border-radius: 4px;">
+                    <div class="ocr-stat-card" style="text-align: center; padding: 10px; background-color: white; border-radius: 4px;">
                         <div style="font-size: 24px; font-weight: bold; color: #2196F3;">${data.ocr_detected_count || data.total_numbers}</div>
                         <div style="font-size: 12px; color: #6c757d;">OCR识别</div>
                     </div>
-                    <div style="text-align: center; padding: 10px; background-color: white; border-radius: 4px;">
+                    <div class="ocr-stat-card" style="text-align: center; padding: 10px; background-color: white; border-radius: 4px;">
                         <div style="font-size: 24px; font-weight: bold; color: #28a745;">${data.matched_count || data.total_numbers}</div>
                         <div style="font-size: 12px; color: #6c757d;">说明书匹配</div>
                     </div>
-                    <div style="text-align: center; padding: 10px; background-color: white; border-radius: 4px;">
+                    <div class="ocr-stat-card" style="text-align: center; padding: 10px; background-color: white; border-radius: 4px;">
                         <div style="font-size: 24px; font-weight: bold; color: #ffc107;">${Math.round(data.avg_confidence || 0)}%</div>
                         <div style="font-size: 12px; color: #6c757d;">平均置信度</div>
                     </div>

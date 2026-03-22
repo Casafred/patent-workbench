@@ -2558,6 +2558,23 @@
 }
 
 /* ========================================
+   57.1 OCR统计卡片暗黑模式覆盖
+   ======================================== */
+
+[data-theme="dark"] .ocr-stat-card {
+    background: #1e293b !important;
+    border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .ocr-stat-card div:first-child {
+    color: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .ocr-stat-card div:last-child {
+    color: #94a3b8 !important;
+}
+
+/* ========================================
    58. 历史面板暗黑模式覆盖
    ======================================== */
 
