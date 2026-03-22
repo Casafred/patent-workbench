@@ -30,12 +30,12 @@ class GlobalDataPipeline {
         this.panel = null;
         
         this.theme = {
-            primary: '#6366f1',
-            primaryDark: '#4f46e5',
-            primaryLight: '#818cf8',
-            bg: '#eef2ff',
-            text: '#312e81',
-            border: '#a5b4fc',
+            primary: '#10b981',
+            primaryDark: '#059669',
+            primaryLight: '#34d399',
+            bg: '#ecfdf5',
+            text: '#065f46',
+            border: '#6ee7b7',
             success: '#10b981',
             warning: '#f59e0b',
             error: '#ef4444'
@@ -764,7 +764,11 @@ class GlobalDataPipeline {
         ball.id = 'gdp-floating-ball';
         ball.className = 'gdp-floating-ball';
         ball.innerHTML = `
-            <div class="gdp-ball-icon">🔄</div>
+            <div class="gdp-ball-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/>
+                </svg>
+            </div>
             <div class="gdp-ball-badge" style="display: none;">0</div>
         `;
         
@@ -808,7 +812,7 @@ class GlobalDataPipeline {
         panel.className = 'gdp-panel';
         panel.innerHTML = `
             <div class="gdp-panel-header">
-                <span class="gdp-panel-title">🔄 数据管道</span>
+                <span class="gdp-panel-title">数据管道</span>
                 <button class="gdp-panel-close" title="关闭">×</button>
             </div>
             <div class="gdp-panel-body">
@@ -1201,9 +1205,9 @@ class GlobalDataPipeline {
                 right: 20px;
                 width: 52px;
                 height: 52px;
-                background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
                 border-radius: 50%;
-                box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+                box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
                 cursor: pointer;
                 z-index: 9998;
                 display: flex;
@@ -1215,7 +1219,7 @@ class GlobalDataPipeline {
             
             .gdp-floating-ball:hover {
                 transform: scale(1.1);
-                box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+                box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
             }
             
             .gdp-floating-ball.has-data {
@@ -1223,13 +1227,24 @@ class GlobalDataPipeline {
             }
             
             @keyframes gdp-pulse {
-                0%, 100% { box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4); }
-                50% { box-shadow: 0 4px 25px rgba(99, 102, 241, 0.7); }
+                0%, 100% { box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); }
+                50% { box-shadow: 0 4px 25px rgba(16, 185, 129, 0.7); }
             }
             
             .gdp-ball-icon {
-                font-size: 22px;
-                filter: brightness(2);
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .gdp-ball-icon svg {
+                animation: gdp-rotate 8s linear infinite;
+            }
+            
+            @keyframes gdp-rotate {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
             }
             
             .gdp-ball-badge {
@@ -1277,7 +1292,7 @@ class GlobalDataPipeline {
                 justify-content: space-between;
                 align-items: center;
                 padding: 14px 16px;
-                background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
                 color: white;
             }
             
@@ -1312,8 +1327,8 @@ class GlobalDataPipeline {
             }
             
             .gdp-current {
-                background: #eef2ff;
-                border: 1px solid #a5b4fc;
+                background: #ecfdf5;
+                border: 1px solid #6ee7b7;
                 border-radius: 8px;
                 padding: 12px;
                 margin-bottom: 12px;
@@ -1339,7 +1354,7 @@ class GlobalDataPipeline {
             
             .gdp-data-source {
                 font-weight: 600;
-                color: #312e81;
+                color: #065f46;
                 font-size: 13px;
             }
             
@@ -1351,8 +1366,8 @@ class GlobalDataPipeline {
             
             .gdp-data-type {
                 font-size: 11px;
-                color: #4f46e5;
-                background: #c7d2fe;
+                color: #059669;
+                background: #d1fae5;
                 padding: 2px 8px;
                 border-radius: 10px;
             }
@@ -1403,7 +1418,7 @@ class GlobalDataPipeline {
             
             .gdp-section-title {
                 font-weight: 600;
-                color: #312e81;
+                color: #065f46;
                 margin-bottom: 8px;
                 font-size: 12px;
                 display: flex;
@@ -1415,7 +1430,7 @@ class GlobalDataPipeline {
                 content: '';
                 width: 3px;
                 height: 14px;
-                background: #6366f1;
+                background: #10b981;
                 border-radius: 2px;
             }
             
@@ -1448,8 +1463,8 @@ class GlobalDataPipeline {
             
             .gdp-target-btn:hover,
             .gdp-source-btn:hover {
-                background: #eef2ff;
-                border-color: #6366f1;
+                background: #ecfdf5;
+                border-color: #10b981;
             }
             
             .gdp-target-btn.visible {
@@ -1480,7 +1495,7 @@ class GlobalDataPipeline {
             
             .gdp-source-action {
                 font-size: 11px;
-                color: #6366f1;
+                color: #10b981;
                 font-weight: 500;
             }
             
@@ -1506,7 +1521,7 @@ class GlobalDataPipeline {
             
             .gdp-history-header span {
                 font-weight: 600;
-                color: #312e81;
+                color: #065f46;
                 font-size: 12px;
             }
             
@@ -1540,7 +1555,7 @@ class GlobalDataPipeline {
             }
             
             .gdp-history-item:hover {
-                background: #eef2ff;
+                background: #ecfdf5;
             }
             
             .gdp-history-icon {
@@ -1590,7 +1605,7 @@ class GlobalDataPipeline {
                 opacity: 0;
                 transform: translateX(20px);
                 transition: all 0.3s ease;
-                border-left: 4px solid #6366f1;
+                border-left: 4px solid #10b981;
             }
             
             .gdp-store-notification.show {
@@ -1601,7 +1616,7 @@ class GlobalDataPipeline {
             .gdp-store-icon {
                 width: 32px;
                 height: 32px;
-                background: #6366f1;
+                background: #10b981;
                 color: white;
                 border-radius: 50%;
                 display: flex;
@@ -1618,12 +1633,12 @@ class GlobalDataPipeline {
             
             .gdp-store-title {
                 font-weight: 600;
-                color: #312e81;
+                color: #065f46;
                 font-size: 13px;
             }
             
             .gdp-store-info {
-                color: #6366f1;
+                color: #10b981;
                 font-size: 11px;
             }
             
@@ -1694,7 +1709,7 @@ class GlobalDataPipeline {
                 width: 16px;
                 height: 16px;
                 border: 2px solid #e5e7eb;
-                border-top-color: #6366f1;
+                border-top-color: #10b981;
                 border-radius: 50%;
                 animation: gdp-spin 0.8s linear infinite;
             }
