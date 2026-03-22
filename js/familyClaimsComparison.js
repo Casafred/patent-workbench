@@ -760,14 +760,31 @@ async function startAIComparison() {
         const model = familyComparisonModelSelect.value;
         const patentNumbers = Object.keys(patentClaims);
 
-        const apiKey = appState.apiKey || localStorage.getItem('api_key') || '';
+        const isAliyunModel = model.startsWith('qwen') || model.startsWith('deepseek') || model.startsWith('qwq');
+        
+        const getUserStorageItem = (key) => {
+            if (window.userCacheStorage && window.userCacheStorage.isInitialized()) {
+                return window.userCacheStorage.get(key);
+            }
+            return localStorage.getItem(key);
+        };
+        
+        let apiKey;
+        let headers = {
+            'Content-Type': 'application/json'
+        };
+        
+        if (isAliyunModel) {
+            apiKey = window.appState?.aliyunApiKey || getUserStorageItem('aliyun_api_key') || '';
+            headers['X-Aliyun-API-Key'] = apiKey;
+        } else {
+            apiKey = window.appState?.apiKey || getUserStorageItem('globalApiKey') || localStorage.getItem('api_key') || '';
+            headers['Authorization'] = `Bearer ${apiKey}`;
+        }
 
         const response = await fetch('/api/patent/family/compare', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
-            },
+            headers: headers,
             credentials: 'include',
             body: JSON.stringify({
                 patent_numbers: patentNumbers,

@@ -663,10 +663,6 @@ def compare_family_claims():
     if not is_valid:
         return error_response
     
-    client, error_response = get_zhipu_client()
-    if error_response:
-        return error_response
-    
     try:
         req_data = request.get_json()
         patent_numbers = req_data.get('patent_numbers', [])
@@ -679,7 +675,15 @@ def compare_family_claims():
                 status_code=400
             )
         
-        print(f"[API] 对比同族专利权利要求: {len(patent_numbers)} 个专利")
+        print(f"[API] 对比同族专利权利要求: {len(patent_numbers)} 个专利, 模型: {model}")
+        
+        if is_aliyun_model(model):
+            client, error_response, provider = get_llm_client('aliyun')
+        else:
+            client, error_response, provider = get_llm_client('zhipu')
+        
+        if error_response:
+            return error_response
         
         if pre_fetched_claims and len(pre_fetched_claims) >= 2:
             patent_claims = pre_fetched_claims
