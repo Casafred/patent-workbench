@@ -6,9 +6,11 @@ This module handles image management for the landing page:
 - Upload new images
 - Delete images
 - Get image info
+- Save/Load image bindings configuration
 """
 
 import os
+import json
 import uuid
 import traceback
 from datetime import datetime
@@ -20,6 +22,8 @@ from backend.config import Config, BASE_DIR
 landing_image_bp = Blueprint('landing_image', __name__)
 
 IMAGES_FOLDER = os.path.join(BASE_DIR, 'frontend', 'images')
+CONFIG_FOLDER = os.path.join(BASE_DIR, 'backend', 'config')
+BINDINGS_FILE = os.path.join(CONFIG_FOLDER, 'landing_image_bindings.json')
 ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp'}
 MAX_IMAGE_SIZE = 10 * 1024 * 1024
 
@@ -37,6 +41,28 @@ def get_image_info(filepath):
         }
     except Exception:
         return {'size': 0, 'modified': ''}
+
+
+def load_bindings_config():
+    try:
+        if os.path.exists(BINDINGS_FILE):
+            with open(BINDINGS_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+    except Exception as e:
+        print(f"[Landing Image] Load bindings error: {e}")
+    return {'imageBindings': {}, 'gifBindings': {}}
+
+
+def save_bindings_config(config):
+    try:
+        if not os.path.exists(CONFIG_FOLDER):
+            os.makedirs(CONFIG_FOLDER, exist_ok=True)
+        with open(BINDINGS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(config, f, ensure_ascii=False, indent=2)
+        return True
+    except Exception as e:
+        print(f"[Landing Image] Save bindings error: {e}")
+        return False
 
 
 @landing_image_bp.route('/landing/images', methods=['GET'])
@@ -242,3 +268,135 @@ def refresh_images():
     except Exception as e:
         print(f"[Landing Image] Refresh error: {traceback.format_exc()}")
         return create_response(error=f'刷新失败: {str(e)}', status_code=500)
+
+
+@landing_image_bp.route('/landing/bindings', methods=['GET'])
+def get_bindings():
+    try:
+        config = load_bindings_config()
+        return create_response(data=config)
+    except Exception as e:
+        print(f"[Landing Image] Get bindings error: {traceback.format_exc()}")
+        return create_response(error=f'获取绑定配置失败: {str(e)}', status_code=500)
+
+
+@landing_image_bp.route('/landing/bindings', methods=['POST'])
+def save_bindings():
+    try:
+        data = request.get_json() or {}
+        
+        config = load_bindings_config()
+        
+        if 'imageBindings' in data:
+            config['imageBindings'] = data['imageBindings']
+        if 'gifBindings' in data:
+            config['gifBindings'] = data['gifBindings']
+        
+        if save_bindings_config(config):
+            return create_response(data={'message': '绑定配置保存成功', 'config': config})
+        else:
+            return create_response(error='保存绑定配置失败', status_code=500)
+        
+    except Exception as e:
+        print(f"[Landing Image] Save bindings error: {traceback.format_exc()}")
+        return create_response(error=f'保存绑定配置失败: {str(e)}', status_code=500)
+
+
+@landing_image_bp.route('/landing/bindings/image', methods=['POST'])
+def save_image_binding():
+    try:
+        data = request.get_json() or {}
+        stack_id = data.get('stackId')
+        stack_index = data.get('stackIndex')
+        image_name = data.get('imageName')
+        
+        if not all([stack_id, stack_index is not None, image_name]):
+            return create_response(error='缺少必要参数', status_code=400)
+        
+        config = load_bindings_config()
+        
+        if stack_id not in config['imageBindings']:
+            config['imageBindings'][stack_id] = {}
+        
+        config['imageBindings'][stack_id][str(stack_index)] = image_name
+        
+        if save_bindings_config(config):
+            return create_response(data={'message': '图片绑定保存成功'})
+        else:
+            return create_response(error='保存失败', status_code=500)
+        
+    except Exception as e:
+        print(f"[Landing Image] Save image binding error: {traceback.format_exc()}")
+        return create_response(error=f'保存图片绑定失败: {str(e)}', status_code=500)
+
+
+@landing_image_bp.route('/landing/bindings/gif', methods=['POST'])
+def save_gif_binding():
+    try:
+        data = request.get_json() or {}
+        gif_id = data.get('gifId')
+        image_name = data.get('imageName')
+        
+        if not all([gif_id, image_name]):
+            return create_response(error='缺少必要参数', status_code=400)
+        
+        config = load_bindings_config()
+        config['gifBindings'][gif_id] = image_name
+        
+        if save_bindings_config(config):
+            return create_response(data={'message': 'GIF绑定保存成功'})
+        else:
+            return create_response(error='保存失败', status_code=500)
+        
+    except Exception as e:
+        print(f"[Landing Image] Save gif binding error: {traceback.format_exc()}")
+        return create_response(error=f'保存GIF绑定失败: {str(e)}', status_code=500)
+
+
+@landing_image_bp.route('/landing/bindings/image', methods=['DELETE'])
+def remove_image_binding():
+    try:
+        data = request.get_json() or {}
+        stack_id = data.get('stackId')
+        stack_index = data.get('stackIndex')
+        
+        if not all([stack_id, stack_index is not None]):
+            return create_response(error='缺少必要参数', status_code=400)
+        
+        config = load_bindings_config()
+        
+        if stack_id in config['imageBindings']:
+            config['imageBindings'][stack_id].pop(str(stack_index), None)
+            if not config['imageBindings'][stack_id]:
+                del config['imageBindings'][stack_id]
+        
+        if save_bindings_config(config):
+            return create_response(data={'message': '图片绑定已移除'})
+        else:
+            return create_response(error='移除失败', status_code=500)
+        
+    except Exception as e:
+        print(f"[Landing Image] Remove image binding error: {traceback.format_exc()}")
+        return create_response(error=f'移除图片绑定失败: {str(e)}', status_code=500)
+
+
+@landing_image_bp.route('/landing/bindings/gif', methods=['DELETE'])
+def remove_gif_binding():
+    try:
+        data = request.get_json() or {}
+        gif_id = data.get('gifId')
+        
+        if not gif_id:
+            return create_response(error='缺少必要参数', status_code=400)
+        
+        config = load_bindings_config()
+        config['gifBindings'].pop(gif_id, None)
+        
+        if save_bindings_config(config):
+            return create_response(data={'message': 'GIF绑定已移除'})
+        else:
+            return create_response(error='移除失败', status_code=500)
+        
+    except Exception as e:
+        print(f"[Landing Image] Remove gif binding error: {traceback.format_exc()}")
+        return create_response(error=f'移除GIF绑定失败: {str(e)}', status_code=500)
