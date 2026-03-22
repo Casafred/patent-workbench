@@ -5,10 +5,11 @@
         {"id": "local_patent_lib", "name": "功能三：本地数据表管理"},
         {"id": "claims_comparison", "name": "功能四：权利要求智能比对"},
         {"id": "patent_batch", "name": "功能五：批量专利检索与解读"},
-        {"id": "epo_search", "name": "功能十：全球专利智能检索"},
         {"id": "claims_processor", "name": "功能六：独从权识别与可视化"},
         {"id": "drawing_marker", "name": "功能七：专利附图智能标记"},
         {"id": "pdf_ocr_reader", "name": "功能八：文档OCR与智能分析"},
-        {"id": "ipc_lookup", "name": "功能九：IPC分类智能查询"}
+        {"id": "ipc_lookup", "name": "功能九：IPC分类智能查询"},
+        {"id": "epo_search", "name": "功能十：全球专利智能检索"},
+        {"id": "excel_concat", "name": "功能十一：Excel数据拼接"}
     ]
 }

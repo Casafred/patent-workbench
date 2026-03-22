@@ -1,0 +1,539 @@
+<!-- Excel数据拼接功能 -->
+<div id="excel_concat-tab" class="tab-content">
+    <div class="progress-stepper" id="concat-stepper">
+        <div class="step-item active" onclick="ExcelConcatModule.switchStep('files', this)">
+            <div class="step-number">1</div>
+            <div class="step-title">选择文件</div>
+        </div>
+        <div class="step-item" onclick="ExcelConcatModule.switchStep('config', this)">
+            <div class="step-number">2</div>
+            <div class="step-title">配置范围</div>
+        </div>
+        <div class="step-item" onclick="ExcelConcatModule.switchStep('preview', this)">
+            <div class="step-number">3</div>
+            <div class="step-title">数据预览</div>
+        </div>
+        <div class="step-item" onclick="ExcelConcatModule.switchStep('output', this)">
+            <div class="step-number">4</div>
+            <div class="step-title">输出设置</div>
+        </div>
+        <div class="step-item" onclick="ExcelConcatModule.switchStep('result', this)">
+            <div class="step-number">5</div>
+            <div class="step-title">执行拼接</div>
+        </div>
+        <div class="progress-bar"></div>
+    </div>
+
+    <!-- 步骤1: 选择文件 -->
+    <div id="concat-step-files" class="sub-tab-content active">
+        <div class="step">
+            <div class="step-header">步骤 1: 选择Excel文件</div>
+            
+            <div class="info-box" style="background: linear-gradient(135deg, rgba(74, 222, 128, 0.12) 0%, rgba(34, 197, 94, 0.08) 100%); border: 1px solid rgba(74, 222, 128, 0.25); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="var(--primary-color)"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M12.9,14.5L15.8,19H14L12,15.6L10,19H8.2L11.1,14.5L8.2,10H10L12,13.4L14,10H15.8L12.9,14.5Z"/></svg>
+                    <span style="font-weight: 600;">批量选择Excel文件</span>
+                </div>
+                <p style="margin: 0 0 15px; color: var(--text-color-secondary); font-size: 0.9em;">
+                    支持批量选择多个Excel文件(.xlsx, .xls)，每个文件可选择不同的工作表和行数范围进行拼接。
+                </p>
+                <div class="config-item" style="margin-bottom: 0;">
+                    <label for="concat_file_input">选择文件:</label>
+                    <input type="file" id="concat_file_input" accept=".xlsx, .xls" multiple style="margin-top: 8px;">
+                    <small style="color: var(--text-color-tertiary); display: block; margin-top: 5px;">
+                        提示：可按住Ctrl键多选文件，单个文件最大200MB
+                    </small>
+                </div>
+            </div>
+
+            <div id="concat_upload_progress" style="display: none; margin-bottom: 20px;">
+                <div style="background: var(--bg-color-secondary); border-radius: 8px; padding: 15px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span id="concat_upload_status">正在上传文件...</span>
+                        <span id="concat_upload_percent">0%</span>
+                    </div>
+                    <div style="background: var(--border-color); border-radius: 4px; height: 8px; overflow: hidden;">
+                        <div id="concat_upload_bar" style="background: linear-gradient(90deg, var(--primary-color), var(--primary-color-dark)); height: 100%; width: 0%; transition: width 0.3s;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <hr style="margin: 20px 0; border-color: var(--border-color);">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <label style="font-weight: 600;">已选择的文件 (<span id="concat_files_count">0</span>):</label>
+                <div style="display: flex; gap: 10px;">
+                    <button id="concat_clear_all_btn" class="small-button delete-button" disabled>清空全部</button>
+                </div>
+            </div>
+            
+            <div id="concat_files_list" class="concat-files-list" style="min-height: 100px;">
+                <div class="empty-state" style="text-align: center; padding: 40px; color: var(--text-color-tertiary);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="currentColor" style="opacity: 0.3; margin-bottom: 10px;"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/></svg>
+                    <p>尚未选择任何文件</p>
+                    <p style="font-size: 0.85em;">请点击上方按钮选择Excel文件</p>
+                </div>
+            </div>
+
+            <div style="text-align: right; margin-top: 20px;">
+                <button id="concat_next_step1_btn" class="small-button" disabled onclick="ExcelConcatModule.goToStep('config')">
+                    下一步：配置范围 →
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 步骤2: 配置范围 -->
+    <div id="concat-step-config" class="sub-tab-content">
+        <div class="step">
+            <div class="step-header">步骤 2: 配置工作表和行范围</div>
+            
+            <div class="info-box" style="background: var(--bg-color-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                <p style="margin: 0; color: var(--text-color-secondary); font-size: 0.9em;">
+                    为每个文件选择要提取的工作表，并设置起始行和结束行。可通过拖拽调整文件顺序。
+                </p>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <span style="font-weight: 600;">文件配置列表:</span>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <span style="color: var(--text-color-tertiary); font-size: 0.85em;">拖拽可调整顺序</span>
+                </div>
+            </div>
+            
+            <div id="concat_config_list" class="concat-config-list" style="min-height: 200px;">
+                <!-- 动态渲染 -->
+            </div>
+
+            <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+                <button class="small-button" onclick="ExcelConcatModule.goToStep('files')">← 上一步</button>
+                <button id="concat_next_step2_btn" class="small-button" onclick="ExcelConcatModule.goToStep('preview')">下一步：数据预览 →</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 步骤3: 数据预览 -->
+    <div id="concat-step-preview" class="sub-tab-content">
+        <div class="step">
+            <div class="step-header">步骤 3: 数据预览</div>
+            
+            <div class="info-box" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(118, 75, 162, 0.08) 100%); border: 1px solid rgba(102, 126, 234, 0.25); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="var(--accent-color, #667eea)"><path d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z"/></svg>
+                    <span style="font-weight: 600;">预览拼接数据</span>
+                </div>
+                <p style="margin: 0; color: var(--text-color-secondary); font-size: 0.9em;">
+                    以下显示各文件选定范围的数据样例（每文件最多显示5行），确认无误后进入输出设置。
+                </p>
+            </div>
+
+            <button id="concat_refresh_preview_btn" class="small-button" style="margin-bottom: 15px;" onclick="ExcelConcatModule.refreshPreview()">
+                刷新预览
+            </button>
+
+            <div id="concat_preview_container" style="min-height: 200px;">
+                <div class="loading-state" style="text-align: center; padding: 40px;">
+                    <div class="spinner" style="width: 40px; height: 40px; border: 3px solid var(--border-color); border-top-color: var(--primary-color); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px;"></div>
+                    <p style="color: var(--text-color-secondary);">正在加载预览数据...</p>
+                </div>
+            </div>
+
+            <div id="concat_preview_summary" style="display: none; background: var(--bg-color-secondary); border-radius: 8px; padding: 15px; margin-top: 20px;">
+                <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
+                    <div>
+                        <span style="color: var(--text-color-tertiary);">总文件数:</span>
+                        <span id="concat_summary_files" style="font-weight: 600; margin-left: 5px;">0</span>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-color-tertiary);">预计总行数:</span>
+                        <span id="concat_summary_rows" style="font-weight: 600; margin-left: 5px; color: var(--primary-color);">0</span>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-color-tertiary);">合并后列数:</span>
+                        <span id="concat_summary_cols" style="font-weight: 600; margin-left: 5px;">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+                <button class="small-button" onclick="ExcelConcatModule.goToStep('config')">← 上一步</button>
+                <button id="concat_next_step3_btn" class="small-button" onclick="ExcelConcatModule.goToStep('output')">下一步：输出设置 →</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 步骤4: 输出设置 -->
+    <div id="concat-step-output" class="sub-tab-content">
+        <div class="step">
+            <div class="step-header">步骤 4: 输出设置</div>
+            
+            <div class="config-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="config-item">
+                    <label for="concat_output_filename">输出文件名:</label>
+                    <input type="text" id="concat_output_filename" placeholder="例如：拼接结果">
+                    <small style="color: var(--text-color-tertiary);">无需填写扩展名，自动保存为.xlsx格式</small>
+                </div>
+                <div class="config-item">
+                    <label for="concat_output_sheet">目标工作表名称:</label>
+                    <input type="text" id="concat_output_sheet" value="Sheet1" placeholder="例如：合并数据">
+                    <small style="color: var(--text-color-tertiary);">拼接后数据所在的工作表名称</small>
+                </div>
+            </div>
+
+            <hr style="margin: 25px 0; border-color: var(--border-color);">
+
+            <div class="info-box" style="background: var(--bg-color-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                <div style="font-weight: 500; margin-bottom: 10px;">拼接说明</div>
+                <ul style="margin: 0; padding-left: 20px; color: var(--text-color-secondary); font-size: 0.9em;">
+                    <li>所有文件的数据将按配置顺序依次拼接</li>
+                    <li>以第一个文件的列结构为基准，其他文件缺失列将填充空值</li>
+                    <li>拼接完成后可下载结果文件或直接打开</li>
+                </ul>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+                <button class="small-button" onclick="ExcelConcatModule.goToStep('preview')">← 上一步</button>
+                <button id="concat_execute_btn" class="small-button" style="background: linear-gradient(135deg, var(--primary-color-dark), var(--primary-color)); color: white; padding: 12px 30px; font-size: 1.05em;" onclick="ExcelConcatModule.goToStep('result')">
+                    开始拼接 →
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 步骤5: 执行拼接 -->
+    <div id="concat-step-result" class="sub-tab-content">
+        <div class="step">
+            <div class="step-header">步骤 5: 执行拼接</div>
+            
+            <div id="concat_executing_panel" style="display: none;">
+                <div style="text-align: center; padding: 40px;">
+                    <div class="spinner" style="width: 50px; height: 50px; border: 4px solid var(--border-color); border-top-color: var(--primary-color); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+                    <p style="font-size: 1.1em; font-weight: 500; margin-bottom: 10px;">正在拼接数据...</p>
+                    <p id="concat_executing_status" style="color: var(--text-color-secondary);">请稍候，这可能需要几秒钟</p>
+                </div>
+            </div>
+
+            <div id="concat_result_success" style="display: none;">
+                <div class="info success" style="text-align: center; padding: 30px; border-radius: 12px; margin-bottom: 20px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="var(--success-color)" style="margin-bottom: 15px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                    <h3 style="margin: 0 0 10px; color: var(--success-color);">拼接完成!</h3>
+                    <p style="margin: 0; color: var(--text-color-secondary);">
+                        成功拼接 <span id="concat_result_rows" style="font-weight: 600; color: var(--primary-color);">0</span> 行数据，
+                        耗时 <span id="concat_result_time" style="font-weight: 600;">0</span> 秒
+                    </p>
+                </div>
+
+                <div style="background: var(--bg-color-secondary); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                    <div style="font-weight: 500; margin-bottom: 15px;">输出文件信息</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <span style="color: var(--text-color-tertiary);">文件名:</span>
+                            <span id="concat_result_filename" style="font-weight: 500; margin-left: 5px;">-</span>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-color-tertiary);">文件大小:</span>
+                            <span id="concat_result_size" style="font-weight: 500; margin-left: 5px;">-</span>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-color-tertiary);">工作表:</span>
+                            <span id="concat_result_sheet" style="font-weight: 500; margin-left: 5px;">-</span>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-color-tertiary);">源文件数:</span>
+                            <span id="concat_result_files" style="font-weight: 500; margin-left: 5px;">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 15px; justify-content: center; margin-bottom: 20px;">
+                    <button id="concat_download_btn" class="small-button" style="background: var(--success-color); color: white; padding: 12px 25px;">
+                        下载文件
+                    </button>
+                    <button id="concat_open_folder_btn" class="small-button" style="padding: 12px 25px;">
+                        打开所在文件夹
+                    </button>
+                </div>
+
+                <details style="margin-top: 20px;">
+                    <summary style="cursor: pointer; font-weight: 500; padding: 10px; background: var(--bg-color-secondary); border-radius: 8px;">
+                        查看拼接日志
+                    </summary>
+                    <div id="concat_result_log" style="margin-top: 10px; max-height: 300px; overflow-y: auto; background: var(--bg-color-secondary); border-radius: 8px; padding: 15px;">
+                        <!-- 动态渲染 -->
+                    </div>
+                </details>
+            </div>
+
+            <div id="concat_result_error" style="display: none;">
+                <div class="info error" style="text-align: center; padding: 30px; border-radius: 12px; margin-bottom: 20px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="#ef4444" style="margin-bottom: 15px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                    <h3 style="margin: 0 0 10px; color: #ef4444;">拼接失败</h3>
+                    <p id="concat_error_message" style="margin: 0; color: var(--text-color-secondary);"></p>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: center; gap: 15px; margin-top: 20px;">
+                <button class="small-button" onclick="ExcelConcatModule.resetAll()">
+                    重新开始
+                </button>
+                <button class="small-button" onclick="ExcelConcatModule.goToStep('output')">
+                    返回修改
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <hr style="margin: 30px 0; border-color: var(--border-color);">
+
+    <details>
+        <summary style="cursor: pointer; font-weight: 500; padding: 10px; background: var(--bg-color-secondary); border-radius: 8px;">
+            拼接历史记录
+        </summary>
+        <div style="margin-top: 15px;">
+            <button class="small-button" onclick="ExcelConcatModule.loadHistory()" style="margin-bottom: 15px;">
+                刷新历史记录
+            </button>
+            <div id="concat_history_list" class="scrollable-list" style="max-height: 300px;">
+                <div style="text-align: center; color: var(--text-color-tertiary); padding: 20px;">
+                    暂无历史记录
+                </div>
+            </div>
+        </div>
+    </details>
+</div>
+
+<style>
+.concat-files-list {
+    background: var(--bg-color-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 15px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.concat-file-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px 15px;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    transition: all 0.2s ease;
+}
+
+.concat-file-item:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.15);
+}
+
+.concat-file-item:last-child {
+    margin-bottom: 0;
+}
+
+.concat-file-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.concat-file-icon svg {
+    width: 24px;
+    height: 24px;
+    fill: white;
+}
+
+.concat-file-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.concat-file-name {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+}
+
+.concat-file-meta {
+    font-size: 0.85em;
+    color: var(--text-color-tertiary);
+}
+
+.concat-file-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.concat-config-list {
+    background: var(--bg-color-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 15px;
+}
+
+.concat-config-item {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 12px;
+    cursor: grab;
+    transition: all 0.2s ease;
+}
+
+.concat-config-item:hover {
+    border-color: var(--primary-color);
+}
+
+.concat-config-item.dragging {
+    opacity: 0.5;
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
+}
+
+.concat-config-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.concat-config-filename {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+}
+
+.concat-config-order {
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(135deg, var(--primary-color-dark), var(--primary-color));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 0.85em;
+}
+
+.concat-config-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 15px;
+}
+
+.concat-config-body .config-item {
+    margin-bottom: 0;
+}
+
+.concat-config-body select,
+.concat-config-body input {
+    width: 100%;
+}
+
+.concat-preview-item {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    margin-bottom: 15px;
+    overflow: hidden;
+}
+
+.concat-preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background: var(--bg-color-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.concat-preview-filename {
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.concat-preview-meta {
+    font-size: 0.85em;
+    color: var(--text-color-tertiary);
+}
+
+.concat-preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85em;
+}
+
+.concat-preview-table th,
+.concat-preview-table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.concat-preview-table th {
+    background: var(--bg-color-tertiary);
+    font-weight: 500;
+}
+
+.concat-preview-table td {
+    color: var(--text-color-secondary);
+}
+
+.concat-history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.concat-history-info {
+    flex: 1;
+}
+
+.concat-history-filename {
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.concat-history-meta {
+    font-size: 0.85em;
+    color: var(--text-color-tertiary);
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+    .concat-config-body {
+        grid-template-columns: 1fr;
+    }
+    
+    .config-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+</style>

@@ -474,6 +474,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('❌ Failed to load Feature 11 (EPO Search) component:', error);
     }
     
+    // Load Feature 12 (Excel Concat) component and initialize
+    try {
+        const loaded = await loadComponent('frontend/components/tabs/excel-concat.html', 'excel-concat-component', {
+            retryCount: 3,
+            onReady: async () => {
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+        });
+        
+        if (loaded) {
+            LoadingManager.updateProgress('初始化Excel数据拼接');
+        }
+    } catch (error) {
+        console.error('❌ Failed to load Feature 12 (Excel Concat) component:', error);
+    }
+    
     // Initialize API Key Config (global, not tied to a specific component)
     initApiKeyConfig();
     LoadingManager.updateProgress('初始化API配置');
