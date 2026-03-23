@@ -4749,13 +4749,15 @@
                 loadImagesFromServer();
                 startAutoRefresh();
                 setupDragAndDrop();
+                loadImageBindings();
+                loadGifBindings();
+                loadDisplaySettings();
+            } else {
+                scanExistingImages();
+                scanExistingGifs();
+                lazyLoadImages();
+                lazyLoadGifs();
             }
-
-            scanExistingImages();
-            scanExistingGifs();
-            loadImageBindings();
-            loadGifBindings();
-            loadDisplaySettings();
         }
 
         function setupDragAndDrop() {
@@ -4905,6 +4907,130 @@
                     usedGifs.add(gifId);
                 }
             });
+        }
+
+        function lazyLoadImages() {
+            const containers = document.querySelectorAll('.feature-image-stack[data-stack-id]');
+            const imageMap = {
+                'feature-01-chat': ['1_chat.png', '1_chat_2.png', '1_chat_3.png'],
+                'feature-02-batch': ['2_batch labeling.png', '2_batch_2.png', '2_batch_3.png'],
+                'feature-03-local-lib': ['3_local_lib.png', '3_local_lib_2.png', '3_local_lib_3.png'],
+                'feature-04-claims-comparison': ['4_claim comparison.png', '4_claims_2.png', '4_claims_3.png'],
+                'feature-05-patent-query': ['5_patent_query.png', '5_patent_query_2.png', '5_patent_query_3.png'],
+                'feature-06-claims-analyzer': ['7_claim analysis.png', '7_claims_2.png', '7_claims_3.png'],
+                'feature-07-drawing-marker': ['8_pic auto labeling.png', '8_drawing_marker_2.png', '8_drawing_marker_3.png'],
+                'feature-08-ipc-predictor': ['9_IPC predictor.png', '9_ipc_2.png', '9_ipc_3.png'],
+                'feature-09-patent-detail': ['10_patent detail.png', '10_patent_detail_2.png', '10_patent_detail_3.png'],
+                'feature-10-epo-search': ['11_epo_search.png', '11_epo_search_2.png', '11_epo_search_3.png']
+            };
+
+            containers.forEach(container => {
+                const stackId = container.getAttribute('data-stack-id');
+                const images = imageMap[stackId];
+                if (!images || images.length === 0) return;
+
+                container.innerHTML = '';
+
+                const firstSlot = document.createElement('div');
+                firstSlot.className = 'stacked-image';
+                firstSlot.dataset.stackIndex = '0';
+                firstSlot.innerHTML = `
+                    <img src="/frontend/images/${images[0]}" alt="截图 1" loading="lazy"
+                         onerror="this.parentElement.innerHTML='<div class=\\'stacked-image-placeholder\\'><svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'1.5\\'><rect x=\\'3\\' y=\\'3\\' width=\\'18\\' height=\\'18\\' rx=\\'2\\' ry=\\'2\\'></rect><circle cx=\\'8.5\\' cy=\\'8.5\\' r=\\'1.5\\'></circle><polyline points=\\'21 15 16 10 5 21\\'></polyline></svg><div>截图 1</div></div>'"
+                         style="cursor: zoom-in;">
+                    <span class="stacked-image-label">截图 1</span>
+                `;
+                firstSlot.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const img = this.querySelector('img');
+                    if (img) openLightbox(img.src, '截图 1');
+                });
+                container.appendChild(firstSlot);
+
+                usedImages.add(stackId);
+            });
+
+            setTimeout(() => {
+                containers.forEach(container => {
+                    const stackId = container.getAttribute('data-stack-id');
+                    const images = imageMap[stackId];
+                    if (!images || images.length <= 1) return;
+
+                    for (let i = 1; i < images.length; i++) {
+                        const slot = document.createElement('div');
+                        slot.className = 'stacked-image';
+                        slot.dataset.stackIndex = i.toString();
+                        slot.innerHTML = `
+                            <img src="/frontend/images/${images[i]}" alt="截图 ${i + 1}" loading="lazy"
+                                 onerror="this.parentElement.innerHTML='<div class=\\'stacked-image-placeholder\\'><svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'1.5\\'><rect x=\\'3\\' y=\\'3\\' width=\\'18\\' height=\\'18\\' rx=\\'2\\' ry=\\'2\\'></rect><circle cx=\\'8.5\\' cy=\\'8.5\\' r=\\'1.5\\'></circle><polyline points=\\'21 15 16 10 5 21\\'></polyline></svg><div>截图 ${i + 1}</div></div>'"
+                                 style="cursor: zoom-in;">
+                            <span class="stacked-image-label">截图 ${i + 1}</span>
+                        `;
+                        slot.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            const img = this.querySelector('img');
+                            if (img) openLightbox(img.src, `截图 ${i + 1}`);
+                        });
+                        container.appendChild(slot);
+                    }
+                });
+            }, 500);
+        }
+
+        function lazyLoadGifs() {
+            const gifContainers = document.querySelectorAll('.demo-item[data-gif-id]');
+            const gifMap = {
+                'demo-01-chat': 'demo_chat.gif',
+                'demo-02-batch': 'demo_batch.gif',
+                'demo-03-patent': 'demo_patent.gif',
+                'demo-04-global': 'demo_global.gif',
+                'demo-05-claims': 'demo_claims.gif'
+            };
+
+            gifContainers.forEach(container => {
+                const gifId = container.getAttribute('data-gif-id');
+                const gifName = gifMap[gifId];
+                if (!gifName) return;
+
+                const inner = container.querySelector('.demo-item-inner');
+                if (!inner) return;
+
+                const placeholder = inner.querySelector('.demo-gif-placeholder');
+                if (placeholder) {
+                    placeholder.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <div>加载中...</div>
+                        <span class="gif-badge">GIF</span>
+                    `;
+                }
+            });
+
+            setTimeout(() => {
+                gifContainers.forEach(container => {
+                    const gifId = container.getAttribute('data-gif-id');
+                    const gifName = gifMap[gifId];
+                    if (!gifName) return;
+
+                    const inner = container.querySelector('.demo-item-inner');
+                    if (!inner) return;
+
+                    inner.innerHTML = `
+                        <img src="/frontend/images/${gifName}" alt="${gifId}" loading="lazy"
+                             onerror="this.parentElement.innerHTML='<div class=\\'demo-gif-placeholder\\'><svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'1.5\\'><rect x=\\'3\\' y=\\'3\\' width=\\'18\\' height=\\'18\\' rx=\\'2\\' ry=\\'2\\'></rect><circle cx=\\'8.5\\' cy=\\'8.5\\' r=\\'1.5\\'></circle><polyline points=\\'21 15 16 10 5 21\\'></polyline></svg><div>GIF加载失败</div><span class=\\'gif-badge\\'>GIF</span></div>'"
+                             style="cursor: zoom-in;">
+                    `;
+                    inner.querySelector('img').addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        openLightbox(this.src, gifId);
+                    });
+
+                    usedGifs.add(gifId);
+                });
+            }, 1000);
         }
 
         function openImageManager() {
