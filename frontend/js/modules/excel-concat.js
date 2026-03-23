@@ -631,7 +631,7 @@ const ExcelConcatModule = (function() {
     function goToStep(stepName) {
         currentStep = stepName;
         
-        document.querySelectorAll('.sub-tab-content').forEach(el => {
+        document.querySelectorAll('#lpl-concat-mode-panel .sub-tab-content').forEach(el => {
             el.classList.remove('active');
         });
         
@@ -760,8 +760,10 @@ window.switchLPLMode = function(mode) {
         document.getElementById('lpl-concat-mode-panel').classList.add('active');
         document.getElementById('lpl-mode-tab-concat').classList.add('active');
         
-        if (window.ExcelConcatModule && typeof window.ExcelConcatModule.goToStep === 'function') {
-            window.ExcelConcatModule.goToStep('files');
-        }
+        setTimeout(() => {
+            if (window.ExcelConcatModule && typeof window.ExcelConcatModule.goToStep === 'function') {
+                window.ExcelConcatModule.goToStep('files');
+            }
+        }, 50);
     }
 };
