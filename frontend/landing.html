@@ -1376,8 +1376,9 @@
         }
 
         .models-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
             gap: 16px;
         }
 
@@ -1388,6 +1389,8 @@
             padding: 20px;
             position: relative;
             transition: all 0.3s ease;
+            width: 220px;
+            flex-shrink: 0;
         }
 
         .model-card:hover {
@@ -1489,7 +1492,12 @@
             }
 
             .models-grid {
-                grid-template-columns: 1fr;
+                justify-content: center;
+            }
+
+            .model-card {
+                width: 100%;
+                max-width: 280px;
             }
         }
 
