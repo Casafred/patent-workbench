@@ -229,7 +229,7 @@ function initOCRModeSelect() {
                     ocrModeHint.innerHTML = '💡 PP-OCRv5需要百度AI Studio Token，请在下方输入';
                     ocrModeHint.style.color = '#856404';
                 } else {
-                    ocrModeHint.innerHTML = '💡 内置RapidOCR无需联网，云端OCR可能更精准但需配置密钥';
+                    ocrModeHint.innerHTML = '💡 内置OCR引擎无需联网，云端OCR可能更精准但需配置密钥';
                     ocrModeHint.style.color = '#6c757d';
                 }
             }

@@ -169,19 +169,12 @@ def process_drawing_marker():
         if not specification or not isinstance(specification, str) or specification.strip() == '':
             return create_response(error="specification is required and must be a non-empty string", status_code=400)
         
-        import base64
-        import hashlib
-        from backend.utils.ocr_utils import perform_ocr
         from backend.utils.component_extractor import extract_reference_markers
         from backend.utils.text_preprocessor import TextPreprocessor
-
         from backend.utils.drawing_cache import DrawingCacheManager
+        from backend.utils.ocr_concurrent import process_drawings_concurrent, get_ocr_mode_display
+        
         cache_manager = DrawingCacheManager()
-
-        processed_results = []
-        total_numbers = 0
-        all_ocr_markers = set()
-        cache_info = {}
 
         glm_api_key = None
         paddle_token = None
@@ -207,118 +200,18 @@ def process_drawing_marker():
                     status_code=401
                 )
 
-        print(f"[DEBUG] Step 1: Processing {len(drawings)} drawings with OCR (mode: {ocr_mode})...")
+        print(f"[DEBUG] Step 1: Processing {len(drawings)} drawings with concurrent OCR (mode: {ocr_mode})...")
 
-        for drawing in drawings:
-            try:
-                print(f"[DEBUG] Processing drawing: {drawing['name']}")
-
-                # 解析base64图片数据
-                image_data = base64.b64decode(drawing['data'])
-                
-                image_hash = hashlib.md5(image_data).hexdigest()
-                cache_key = f"{ocr_mode}_{drawing['name']}_{image_hash}"
-                
-                cached_result = None
-                if not force_refresh:
-                    cached_result = cache_manager.get_cache(cache_key)
-                    if cached_result:
-                        print(f"[DEBUG] Found cached result for {drawing['name']}")
-                        cache_info[drawing['name']] = {
-                            'has_cache': True,
-                            'cache_key': cache_key,
-                            'cached_at': cached_result.get('timestamp'),
-                            'ocr_mode': cached_result.get('ocr_mode', 'rapidocr')
-                        }
-
-                if cached_result and not force_refresh:
-                    all_detected_numbers = cached_result['ocr_results']
-                    print(f"[DEBUG] Using cached OCR results: {len(all_detected_numbers)} markers")
-                else:
-                    if ocr_mode == 'glm_ocr':
-                        from backend.utils.glm_ocr_utils import perform_glm_ocr
-                        try:
-                            all_detected_numbers = perform_glm_ocr(
-                                image_data,
-                                glm_api_key,
-                                ocr_type="handwriting",
-                                language_type="CHN_ENG"
-                            )
-                            print(f"[DEBUG] GLM OCR detected {len(all_detected_numbers)} items")
-                        except Exception as e:
-                            print(f"[WARN] GLM OCR failed, falling back to RapidOCR: {str(e)}")
-                            all_detected_numbers = perform_ocr(image_data)
-                    elif ocr_mode == 'paddle_ocr':
-                        from backend.utils.paddle_ocr_utils import perform_pp_ocr
-                        try:
-                            all_detected_numbers = perform_pp_ocr(
-                                image_data,
-                                paddle_token
-                            )
-                            print(f"[DEBUG] PP-OCRv5 detected {len(all_detected_numbers)} items")
-                        except Exception as e:
-                            print(f"[WARN] PP-OCRv5 failed, falling back to RapidOCR: {str(e)}")
-                            all_detected_numbers = perform_ocr(image_data)
-                    else:
-                        all_detected_numbers = perform_ocr(image_data)
-                    
-                    cache_manager.set_cache(cache_key, {
-                        'drawing_name': drawing['name'],
-                        'ocr_results': all_detected_numbers,
-                        'image_hash': image_hash,
-                        'ocr_mode': ocr_mode
-                    })
-                    print(f"[DEBUG] Cached OCR results for {drawing['name']}")
-                    
-                    cache_info[drawing['name']] = {
-                        'has_cache': False,
-                        'cache_key': cache_key,
-                        'cached_at': None,
-                        'ocr_mode': ocr_mode
-                    }
-
-                print(f"[DEBUG] OCR detected {len(all_detected_numbers)} markers")
-                print(f"[DEBUG] Detected numbers: {[d['number'] for d in all_detected_numbers]}")
-
-                # 保存原始OCR结果（用于调试）
-                raw_ocr_results = [
-                    {
-                        'number': d['number'],
-                        'x': d['x'],
-                        'y': d['y'],
-                        'confidence': d.get('confidence', 0)
-                    }
-                    for d in all_detected_numbers
-                ]
-
-                # 应用去重和置信度过滤（提高阈值以过滤低置信度结果）
-                all_detected_numbers = deduplicate_results(all_detected_numbers, position_threshold=25)
-                all_detected_numbers = filter_by_confidence(all_detected_numbers, min_confidence=80)
-                print(f"[DEBUG] After filtering: {len(all_detected_numbers)} detections remain")
-
-                # 收集OCR检测到的所有标记（用于预处理说明书）
-                for detection in all_detected_numbers:
-                    all_ocr_markers.add(detection['number'])
-
-                # 暂存处理结果（标注信息稍后匹配）
-                processed_results.append({
-                    'name': drawing['name'],
-                    'type': drawing['type'],
-                    'size': drawing['size'],
-                    'ocr_results': all_detected_numbers,  # 暂存OCR结果
-                    'raw_ocr_results': raw_ocr_results
-                })
-
-            except Exception as e:
-                print(f"Error processing drawing {drawing['name']}: {traceback.format_exc()}")
-                processed_results.append({
-                    'name': drawing['name'],
-                    'type': drawing['type'],
-                    'size': drawing['size'],
-                    'ocr_results': [],
-                    'error': str(e)
-                })
-
+        processed_results, cache_info, all_ocr_markers = process_drawings_concurrent(
+            drawings=drawings,
+            ocr_mode=ocr_mode,
+            cache_manager=cache_manager,
+            force_refresh=force_refresh,
+            glm_api_key=glm_api_key,
+            paddle_token=paddle_token
+        )
+        
+        total_numbers = 0
         print(f"[DEBUG] Step 1 complete: Collected {len(all_ocr_markers)} unique markers from OCR: {all_ocr_markers}")
 
         # 🚀 STEP 2: 解析说明书，提取附图标记和部件名称
@@ -574,7 +467,7 @@ def process_drawing_marker():
             'rapidocr': 'RapidOCR (内置)',
             'glm_ocr': 'GLM OCR API',
             'paddle_ocr': 'PP-OCRv5 (百度)'
-        }.get(ocr_mode, 'RapidOCR (内置)')
+        }.get(ocr_mode, '内置OCR引擎')
         
         if total_ocr_detected > 0:
             if total_matched > 0:
@@ -1517,10 +1410,10 @@ def process_drawing_marker_staged():
             total_unmatched = sum(d.get('unmatched_count', 0) for d in processed_results)
             
             ocr_mode_display = {
-                'rapidocr': 'RapidOCR (内置)',
+                'rapidocr': '内置OCR引擎',
                 'glm_ocr': 'GLM OCR API',
                 'paddle_ocr': 'PP-OCRv5 (百度)'
-            }.get(ocr_mode, 'RapidOCR (内置)')
+            }.get(ocr_mode, '内置OCR引擎')
             
             if total_ocr_detected > 0:
                 message = f"✅ [{ocr_mode_display}] 识别: {total_ocr_detected}个 | 匹配: {total_matched}个 | 未匹配: {total_unmatched}个"
