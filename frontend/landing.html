@@ -4752,12 +4752,10 @@
                 loadImageBindings();
                 loadGifBindings();
                 loadDisplaySettings();
-            } else {
-                scanExistingImages();
-                scanExistingGifs();
-                lazyLoadImages();
-                lazyLoadGifs();
             }
+
+            scanExistingImages();
+            scanExistingGifs();
         }
 
         function setupDragAndDrop() {
