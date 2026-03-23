@@ -1932,6 +1932,292 @@
                 window.addEventListener('scroll', highlightNav);
                 highlightNav();
             });
+            
+            window.exportPatentDetailToWordFromNewTab = function(patentNumber) {
+                if (typeof docx === 'undefined') {
+                    alert('Word导出库未加载，请刷新页面后重试');
+                    return;
+                }
+                
+                const patentData = window.pageData;
+                if (!patentData) {
+                    alert('未找到专利数据');
+                    return;
+                }
+                
+                let analysisResult = null;
+                if (window.opener && window.opener.patentBatchAnalysisResults) {
+                    analysisResult = window.opener.patentBatchAnalysisResults.find(item => item.patent_number === patentNumber);
+                }
+                
+                const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType } = docx;
+                
+                const sections = [];
+                
+                sections.push(
+                    new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: '专利详情报告',
+                                bold: true,
+                                size: 36,
+                                color: '2E7D32'
+                            })
+                        ],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 400 }
+                    })
+                );
+                
+                sections.push(
+                    new Paragraph({
+                        children: [
+                            new TextRun({ text: '专利号: ', bold: true }),
+                            new TextRun({ text: patentNumber || '-' })
+                        ],
+                        spacing: { after: 200 }
+                    })
+                );
+                
+                if (patentData.title) {
+                    sections.push(
+                        new Paragraph({
+                            children: [
+                                new TextRun({ text: '标题: ', bold: true }),
+                                new TextRun({ text: patentData.title })
+                            ],
+                            spacing: { after: 200 }
+                        })
+                    );
+                }
+                
+                sections.push(
+                    new Paragraph({
+                        children: [
+                            new TextRun({ text: '导出时间: ', bold: true }),
+                            new TextRun({ text: new Date().toLocaleString('zh-CN') })
+                        ],
+                        spacing: { after: 400 }
+                    })
+                );
+                
+                sections.push(new Paragraph({ text: '' }));
+                
+                sections.push(
+                    new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: '一、基本信息',
+                                bold: true,
+                                size: 28,
+                                color: '2E7D32'
+                            })
+                        ],
+                        spacing: { before: 200, after: 200 }
+                    })
+                );
+                
+                const basicInfoRows = [];
+                
+                if (patentData.inventors && patentData.inventors.length > 0) {
+                    basicInfoRows.push(
+                        new TableRow({
+                            children: [
+                                new TableCell({
+                                    children: [new Paragraph({ children: [new TextRun({ text: '发明人', bold: true })] })],
+                                    width: { size: 25, type: WidthType.PERCENTAGE },
+                                    shading: { fill: 'F5F5F5' }
+                                }),
+                                new TableCell({
+                                    children: [new Paragraph({ children: [new TextRun({ text: patentData.inventors.join(', ') })] })],
+                                    width: { size: 75, type: WidthType.PERCENTAGE }
+                                })
+                            ]
+                        })
+                    );
+                }
+                if (patentData.assignees && patentData.assignees.length > 0) {
+                    basicInfoRows.push(
+                        new TableRow({
+                            children: [
+                                new TableCell({
+                                    children: [new Paragraph({ children: [new TextRun({ text: '申请人', bold: true })] })],
+                                    width: { size: 25, type: WidthType.PERCENTAGE },
+                                    shading: { fill: 'F5F5F5' }
+                                }),
+                                new TableCell({
+                                    children: [new Paragraph({ children: [new TextRun({ text: patentData.assignees.join(', ') })] })],
+                                    width: { size: 75, type: WidthType.PERCENTAGE }
+                                })
+                            ]
+                        })
+                    );
+                }
+                if (patentData.application_date) {
+                    basicInfoRows.push(
+                        new TableRow({
+                            children: [
+                                new TableCell({
+                                    children: [new Paragraph({ children: [new TextRun({ text: '申请日期', bold: true })] })],
+                                    width: { size: 25, type: WidthType.PERCENTAGE },
+                                    shading: { fill: 'F5F5F5' }
+                                }),
+                                new TableCell({
+                                    children: [new Paragraph({ children: [new TextRun({ text: patentData.application_date })] })],
+                                    width: { size: 75, type: WidthType.PERCENTAGE }
+                                })
+                            ]
+                        })
+                    );
+                }
+                if (patentData.publication_date) {
+                    basicInfoRows.push(
+                        new TableRow({
+                            children: [
+                                new TableCell({
+                                    children: [new Paragraph({ children: [new TextRun({ text: '公开日期', bold: true })] })],
+                                    width: { size: 25, type: WidthType.PERCENTAGE },
+                                    shading: { fill: 'F5F5F5' }
+                                }),
+                                new TableCell({
+                                    children: [new Paragraph({ children: [new TextRun({ text: patentData.publication_date })] })],
+                                    width: { size: 75, type: WidthType.PERCENTAGE }
+                                })
+                            ]
+                        })
+                    );
+                }
+                
+                if (basicInfoRows.length > 0) {
+                    sections.push(new Table({
+                        rows: basicInfoRows,
+                        width: { size: 100, type: WidthType.PERCENTAGE }
+                    }));
+                }
+                
+                sections.push(new Paragraph({ text: '' }));
+                
+                if (patentData.abstract) {
+                    sections.push(
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: '二、摘要',
+                                    bold: true,
+                                    size: 28,
+                                    color: '2E7D32'
+                                })
+                            ],
+                            spacing: { before: 200, after: 200 }
+                        })
+                    );
+                    
+                    sections.push(
+                        new Paragraph({
+                            children: [
+                                new TextRun({ text: patentData.abstract })
+                            ],
+                            spacing: { after: 200 }
+                        })
+                    );
+                }
+                
+                sections.push(new Paragraph({ text: '' }));
+                
+                if (patentData.claims && patentData.claims.length > 0) {
+                    sections.push(
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: '三、权利要求',
+                                    bold: true,
+                                    size: 28,
+                                    color: '2E7D32'
+                                })
+                            ],
+                            spacing: { before: 200, after: 200 }
+                        })
+                    );
+                    
+                    patentData.claims.forEach((claim, index) => {
+                        let claimText = typeof claim === 'string' ? claim : claim.text || '';
+                        claimText = claimText.replace(/\\[\\d+\\]\\[从属\\]\\s*/g, '').replace(/\\[\\d+\\]\\s*/g, '');
+                        
+                        sections.push(
+                            new Paragraph({
+                                children: [
+                                    new TextRun({
+                                        text: '权利要求 ' + (index + 1),
+                                        bold: true,
+                                        color: '2E7D32'
+                                    })
+                                ],
+                                spacing: { before: 150, after: 100 }
+                            })
+                        );
+                        
+                        sections.push(
+                            new Paragraph({
+                                children: [
+                                    new TextRun({ text: claimText })
+                                ],
+                                spacing: { after: 100 }
+                            })
+                        );
+                    });
+                }
+                
+                sections.push(new Paragraph({ text: '' }));
+                
+                if (patentData.description) {
+                    sections.push(
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: '四、说明书',
+                                    bold: true,
+                                    size: 28,
+                                    color: '2E7D32'
+                                })
+                            ],
+                            spacing: { before: 200, after: 200 }
+                        })
+                    );
+                    
+                    const descParagraphs = patentData.description.split(/\\n\\n+/);
+                    descParagraphs.forEach(para => {
+                        if (para.trim()) {
+                            sections.push(
+                                new Paragraph({
+                                    children: [
+                                        new TextRun({ text: para.trim() })
+                                    ],
+                                    spacing: { after: 100 }
+                                })
+                            );
+                        }
+                    });
+                }
+                
+                const doc = new Document({
+                    sections: [{
+                        properties: {},
+                        children: sections
+                    }]
+                });
+                
+                Packer.toBlob(doc).then(blob => {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = '专利详情_' + patentNumber + '_' + new Date().toISOString().slice(0, 10) + '.docx';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }).catch(error => {
+                    console.error('Word导出失败:', error);
+                    alert('Word导出失败: ' + error.message);
+                });
+            };
         `;
     }
 
@@ -1964,6 +2250,7 @@
                 <meta name="viewport" content="width=device-width, initial-scale=0.9">
                 <title>${U.safeStr(data.title) || patentNumber} - 专利详情</title>
                 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+                <script src="https://unpkg.com/docx@8.2.0/build/index.umd.js"></script>
                 <style>
                     ${S.getMainStyles()}
                 </style>
@@ -2008,6 +2295,14 @@
             window.PatentDetailCache.save(patentNumber, patentResult, analysisResult);
             newWindow.document.write(htmlContent);
             newWindow.document.close();
+        }
+    };
+
+    window.exportPatentDetailToWordFromNewTab = function(patentNumber) {
+        if (window.PatentDetailWordExport) {
+            window.PatentDetailWordExport.exportFromNewTab(patentNumber);
+        } else {
+            alert('Word导出模块未加载，请刷新页面后重试');
         }
     };
 
