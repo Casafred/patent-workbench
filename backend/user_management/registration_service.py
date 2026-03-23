@@ -19,6 +19,8 @@ APPLICATIONS_FILE = SCRIPT_DIR / 'applications.json'
 
 from backend.config import USERS_FILE
 
+USERS_FILE_PATH = Path(USERS_FILE) if isinstance(USERS_FILE, str) else USERS_FILE
+
 STATUS_PENDING = 'pending'
 STATUS_APPROVED = 'approved'
 STATUS_REJECTED = 'rejected'
@@ -57,10 +59,10 @@ def save_applications(applications):
 
 
 def load_users():
-    if not USERS_FILE.exists():
+    if not USERS_FILE_PATH.exists():
         return {}
     try:
-        with open(USERS_FILE, 'r', encoding='utf-8') as f:
+        with open(USERS_FILE_PATH, 'r', encoding='utf-8') as f:
             data = json.load(f)
             
             if isinstance(data, dict) and 'users' in data:
@@ -76,20 +78,25 @@ def load_users():
 
 def save_users(users):
     try:
-        if os.path.exists(USERS_FILE):
-            with open(USERS_FILE, 'r', encoding='utf-8') as f:
-                existing_data = json.load(f)
-                if isinstance(existing_data, dict) and 'users' in existing_data:
-                    existing_data['users'].update(users)
-                    data = existing_data
-                else:
-                    data = {'users': users, 'metadata': {}}
+        existing_data = {}
+        if USERS_FILE_PATH.exists():
+            try:
+                with open(USERS_FILE_PATH, 'r', encoding='utf-8') as f:
+                    existing_data = json.load(f)
+            except Exception:
+                existing_data = {}
+        
+        if isinstance(existing_data, dict) and 'users' in existing_data:
+            existing_data['users'].update(users)
+            data = existing_data
+        else:
+            if existing_data:
+                data = {'users': existing_data, 'metadata': {}}
+                data['users'].update(users)
             else:
                 data = {'users': users, 'metadata': {}}
-        else:
-            data = {'users': users, 'metadata': {}}
         
-        with open(USERS_FILE, 'w', encoding='utf-8') as f:
+        with open(USERS_FILE_PATH, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
         return True
     except Exception as e:
@@ -239,7 +246,10 @@ def approve_application(application_id):
                 username = generate_username()
             
             users[username] = generate_password_hash(password)
-            save_users(users)
+            
+            save_success = save_users(users)
+            if not save_success:
+                return {'success': False, 'message': '保存用户数据失败'}
             
             app['status'] = STATUS_APPROVED
             app['processed_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
