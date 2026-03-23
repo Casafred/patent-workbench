@@ -164,6 +164,33 @@
         .verification-status.verified {
             color: var(--primary-color-dark);
         }
+        .invite-code-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .invite-code-group input {
+            flex: 1;
+        }
+        .invite-code-status {
+            font-size: 12px;
+            color: #666;
+        }
+        .invite-code-status.valid {
+            color: var(--primary-color-dark);
+        }
+        .invite-code-status.invalid {
+            color: var(--error-color);
+        }
+        .invite-hint {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+        .invite-hint.highlight {
+            color: var(--primary-color-dark);
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -176,6 +203,15 @@
         <div id="message" class="message"></div>
         
         <form id="register-form">
+            <div class="form-group">
+                <label>邀请码 <span style="color:#F59E0B;">(可选)</span></label>
+                <div class="invite-code-group">
+                    <input type="text" name="invite_code" id="invite-code" placeholder="如有邀请码可直接跳过审核" maxlength="14">
+                    <span class="invite-code-status" id="invite-code-status"></span>
+                </div>
+                <p class="invite-hint">填写有效邀请码可跳过审核流程，立即获得账号</p>
+            </div>
+            
             <div class="form-group">
                 <label>昵称 <span class="required">*</span></label>
                 <input type="text" name="name" required placeholder="仅用于方便沟通交流称呼用">
@@ -238,10 +274,13 @@
         const emailInput = document.getElementById('email');
         const verificationCodeInput = document.getElementById('verification-code');
         const verificationStatus = document.getElementById('verification-status');
+        const inviteCodeInput = document.getElementById('invite-code');
+        const inviteCodeStatus = document.getElementById('invite-code-status');
         
         let countdown = 0;
         let emailVerified = false;
         let verifiedEmail = '';
+        let inviteCodeValid = false;
 
         followedWechat.addEventListener('change', function() {
             wechatNicknameGroup.style.display = this.checked ? 'block' : 'none';
@@ -353,6 +392,56 @@
 
         verificationCodeInput.addEventListener('blur', verifyCode);
 
+        // 邀请码验证
+        inviteCodeInput.addEventListener('input', function() {
+            inviteCodeStatus.textContent = '';
+            inviteCodeStatus.className = 'invite-code-status';
+            inviteCodeValid = false;
+        });
+
+        async function verifyInviteCode() {
+            const code = inviteCodeInput.value.trim();
+            
+            if (!code) {
+                inviteCodeStatus.textContent = '';
+                inviteCodeStatus.className = 'invite-code-status';
+                inviteCodeValid = false;
+                return false;
+            }
+
+            if (code.length < 10) {
+                return false;
+            }
+
+            try {
+                const response = await fetch('/api/register/validate-invite-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: code })
+                });
+                
+                const result = await response.json();
+                
+                if (result.valid) {
+                    inviteCodeStatus.textContent = '✓ 邀请码有效';
+                    inviteCodeStatus.className = 'invite-code-status valid';
+                    inviteCodeValid = true;
+                    return true;
+                } else {
+                    inviteCodeStatus.textContent = result.message;
+                    inviteCodeStatus.className = 'invite-code-status invalid';
+                    inviteCodeValid = false;
+                    return false;
+                }
+            } catch (error) {
+                inviteCodeStatus.textContent = '验证失败';
+                inviteCodeStatus.className = 'invite-code-status invalid';
+                return false;
+            }
+        }
+
+        inviteCodeInput.addEventListener('blur', verifyInviteCode);
+
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -384,7 +473,8 @@
                 company: formData.get('company') || '',
                 followed_wechat: followedWechat.checked,
                 wechat_nickname: formData.get('wechat_nickname') || '',
-                reason: formData.get('reason') || ''
+                reason: formData.get('reason') || '',
+                invite_code: formData.get('invite_code') || ''
             };
 
             try {
@@ -397,13 +487,22 @@
                 const result = await response.json();
                 
                 if (result.success) {
+                    if (result.auto_approved) {
+                    showMessage('注册成功！账号信息已发送到您的邮箱', 'success');
+                    let accountInfo = '您的账号信息：\n用户名: ' + result.username + '\n密码: ' + result.password;
+                    alert(accountInfo);
+                } else {
                     showMessage(result.message, 'success');
+                }
                     form.reset();
                     wechatNicknameGroup.style.display = 'none';
                     emailVerified = false;
                     verifiedEmail = '';
                     verificationStatus.textContent = '';
                     verificationStatus.className = 'verification-status';
+                    inviteCodeValid = false;
+                    inviteCodeStatus.textContent = '';
+                    inviteCodeStatus.className = 'invite-code-status';
                 } else {
                     showMessage(result.message, 'error');
                 }

@@ -5,6 +5,7 @@
 """
 from flask import Blueprint, request, jsonify, render_template, session
 from backend.user_management import registration_service
+from backend.user_management import invite_code_service
 from functools import wraps
 
 registration_bp = Blueprint('registration', __name__)
@@ -77,6 +78,7 @@ def submit_application():
     followed_wechat = data.get('followed_wechat', False)
     wechat_nickname = data.get('wechat_nickname', '').strip()
     reason = data.get('reason', '').strip()
+    invite_code = data.get('invite_code', '').strip()
     
     if not name or not email:
         return jsonify({'success': False, 'message': '请填写必填项'})
@@ -91,6 +93,40 @@ def submit_application():
     success, message = AuthService.verify_reset_code(email, verification_code)
     if not success:
         return jsonify({'success': False, 'message': message})
+    
+    if invite_code:
+        validation = invite_code_service.validate_code(invite_code)
+        if not validation['valid']:
+            return jsonify({'success': False, 'message': validation['message']})
+        
+        result = registration_service.submit_application(
+            name, email, phone, company, followed_wechat, wechat_nickname, reason
+        )
+        
+        if result.get('success'):
+            approve_result = registration_service.approve_application(result['application_id'])
+            if approve_result.get('success'):
+                invite_code_service.use_code(invite_code, approve_result['username'], email)
+                
+                send_email_result = registration_service.send_account_to_user(
+                    approve_result['email'],
+                    approve_result['name'],
+                    approve_result['username'],
+                    approve_result['password']
+                )
+                
+                return jsonify({
+                    'success': True,
+                    'message': '注册成功！账号信息已发送到您的邮箱',
+                    'auto_approved': True,
+                    'username': approve_result['username'],
+                    'password': approve_result['password'],
+                    'email_sent': send_email_result
+                })
+            else:
+                return jsonify({'success': False, 'message': '自动审批失败：' + approve_result.get('message', '未知错误')})
+        else:
+            return jsonify(result)
     
     result = registration_service.submit_application(
         name, email, phone, company, followed_wechat, wechat_nickname, reason
@@ -247,3 +283,60 @@ def delete_user(username):
     from backend.services.auth_service import AuthService
     success, message = AuthService.delete_user(username)
     return jsonify({'success': success, 'message': message})
+
+
+@registration_bp.route('/validate-invite-code', methods=['POST'])
+def validate_invite_code():
+    data = request.get_json()
+    code = data.get('code', '').strip()
+    
+    result = invite_code_service.validate_code(code)
+    return jsonify(result)
+
+
+@registration_bp.route('/admin/invite-codes', methods=['GET'])
+def get_invite_codes():
+    if not session.get('admin_logged_in'):
+        return jsonify({'success': False, 'message': '未登录'}), 401
+    
+    codes = invite_code_service.get_all_codes()
+    stats = invite_code_service.get_stats()
+    return jsonify({'success': True, 'codes': codes, 'stats': stats})
+
+
+@registration_bp.route('/admin/invite-codes/generate', methods=['POST'])
+def generate_invite_codes():
+    if not session.get('admin_logged_in'):
+        return jsonify({'success': False, 'message': '未登录'}), 401
+    
+    data = request.get_json() or {}
+    count = data.get('count', 1)
+    expire_days = data.get('expire_days', 30)
+    
+    try:
+        count = int(count)
+        if count < 1:
+            count = 1
+        if count > 100:
+            count = 100
+    except (ValueError, TypeError):
+        count = 1
+    
+    try:
+        expire_days = int(expire_days)
+        if expire_days < 0:
+            expire_days = 0
+    except (ValueError, TypeError):
+        expire_days = 30
+    
+    result = invite_code_service.generate_codes(count, expire_days)
+    return jsonify(result)
+
+
+@registration_bp.route('/admin/invite-codes/delete/<code>', methods=['POST'])
+def delete_invite_code(code):
+    if not session.get('admin_logged_in'):
+        return jsonify({'success': False, 'message': '未登录'}), 401
+    
+    result = invite_code_service.delete_code(code)
+    return jsonify(result)
