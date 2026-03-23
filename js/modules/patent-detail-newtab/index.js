@@ -2250,7 +2250,7 @@
                 <meta name="viewport" content="width=device-width, initial-scale=0.9">
                 <title>${U.safeStr(data.title) || patentNumber} - 专利详情</title>
                 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
-                <script src="https://unpkg.com/docx@8.2.0/build/index.umd.js"></script>
+                <script src="https://cdn.jsdelivr.net/npm/docx@8.2.0/build/index.umd.js"></script>
                 <style>
                     ${S.getMainStyles()}
                 </style>
