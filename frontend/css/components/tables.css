@@ -123,10 +123,12 @@
     border: 1px solid var(--border-color); 
     padding: 8px 12px; 
     text-align: left;
+    white-space: normal;
     word-wrap: break-word;
     overflow-wrap: break-word;
     word-break: break-word;
     min-width: 50px;
+    vertical-align: top;
 }
 
 .message-content th { 

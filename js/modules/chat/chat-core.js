@@ -479,7 +479,30 @@ async function handleStreamChatRequest() {
         const decoder = new TextDecoder();
         let buffer = '';
         let lastChunkTime = Date.now();
-        const CHUNK_TIMEOUT = 60000; // 60秒没有收到数据则认为超时
+        const CHUNK_TIMEOUT = 60000;
+        let renderTimer = null;
+        let lastRenderTime = 0;
+        const RENDER_INTERVAL = 50;
+        
+        function scheduleMarkdownRender(content, targetEl) {
+            const now = Date.now();
+            if (now - lastRenderTime >= RENDER_INTERVAL) {
+                lastRenderTime = now;
+                targetEl.innerHTML = window.marked.parse(content + '<span class="blinking-cursor">|</span>', { gfm: true, breaks: true });
+                if (!userScrolled) {
+                    chatWindow.scrollTop = chatWindow.scrollHeight;
+                }
+            } else {
+                if (renderTimer) clearTimeout(renderTimer);
+                renderTimer = setTimeout(() => {
+                    lastRenderTime = Date.now();
+                    targetEl.innerHTML = window.marked.parse(content + '<span class="blinking-cursor">|</span>', { gfm: true, breaks: true });
+                    if (!userScrolled) {
+                        chatWindow.scrollTop = chatWindow.scrollHeight;
+                    }
+                }, RENDER_INTERVAL - (now - lastRenderTime));
+            }
+        }
 
         while (true) {
             // 检查是否被终止
@@ -609,11 +632,7 @@ async function handleStreamChatRequest() {
                         }
                         
                         if (targetEl) {
-                            targetEl.innerHTML = window.marked.parse(fullResponse + '<span class="blinking-cursor">|</span>', { gfm: true, breaks: true });
-                        }
-                        
-                        if (!userScrolled) {
-                            chatWindow.scrollTop = chatWindow.scrollHeight;
+                            scheduleMarkdownRender(fullResponse, targetEl);
                         }
                     }
                 } catch(e) { /* Ignore stream parsing errors */ }
@@ -648,6 +667,8 @@ async function handleStreamChatRequest() {
             }
         }
 
+        if (renderTimer) clearTimeout(renderTimer);
+        
         let renderedContent = window.marked.parse(fullResponse, { gfm: true, breaks: true });
 
         if (webSearchResults && webSearchResults.length > 0) {

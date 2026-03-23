@@ -666,8 +666,27 @@ window.PatentDetailChat = {
             const decoder = new TextDecoder();
             let fullContent = '';
             let buffer = '';
+            let renderTimer = null;
+            let lastRenderTime = 0;
+            const RENDER_INTERVAL = 50;
             
             contentDiv.textContent = '';
+            
+            function scheduleRender() {
+                const now = Date.now();
+                if (now - lastRenderTime >= RENDER_INTERVAL) {
+                    lastRenderTime = now;
+                    contentDiv.innerHTML = self.formatContentStreaming(fullContent);
+                    historyEl.scrollTop = historyEl.scrollHeight;
+                } else {
+                    if (renderTimer) clearTimeout(renderTimer);
+                    renderTimer = setTimeout(function() {
+                        lastRenderTime = Date.now();
+                        contentDiv.innerHTML = self.formatContentStreaming(fullContent);
+                        historyEl.scrollTop = historyEl.scrollHeight;
+                    }, RENDER_INTERVAL - (now - lastRenderTime));
+                }
+            }
             
             while (true) {
                 if (self.stopStreaming) break;
@@ -694,12 +713,14 @@ window.PatentDetailChat = {
                         const content = data.choices && data.choices[0] && data.choices[0].delta && data.choices[0].delta.content ? data.choices[0].delta.content : (data.content || '');
                         if (content) {
                             fullContent += content;
-                            contentDiv.innerHTML = self.formatContent(fullContent);
-                            historyEl.scrollTop = historyEl.scrollHeight;
+                            scheduleRender();
                         }
                     } catch (e) {}
                 }
             }
+            
+            if (renderTimer) clearTimeout(renderTimer);
+            contentDiv.innerHTML = self.formatContent(fullContent);
             
             if (fullContent) {
                 self.messages.push({ role: 'assistant', content: fullContent, timestamp: new Date().toISOString() });
@@ -749,6 +770,47 @@ window.PatentDetailChat = {
             }
         } else {
             return this.simpleFormatContent(content);
+        }
+    },
+    
+    formatContentStreaming: function(content) {
+        if (typeof marked !== 'undefined') {
+            try {
+                let processedContent = content;
+                
+                const codeBlockCount = (content.match(/```/g) || []).length;
+                if (codeBlockCount % 2 !== 0) {
+                    processedContent += '\n```';
+                }
+                
+                const tableLineMatch = content.match(/^\|.*\|$/gm);
+                if (tableLineMatch && tableLineMatch.length > 0) {
+                    const lastLine = content.split('\n').pop();
+                    if (lastLine.startsWith('|') && !lastLine.endsWith('|')) {
+                        processedContent += '|';
+                    }
+                }
+                
+                marked.setOptions({
+                    breaks: true,
+                    gfm: true,
+                    headerIds: false,
+                    mangle: false
+                });
+                
+                let html = marked.parse(processedContent);
+                
+                html = html.replace(/<\/code><\/pre>/g, '</code><span class="blinking-cursor">|</span></pre>');
+                html = html.replace(/<\/p>/g, '<span class="blinking-cursor">|</span></p>');
+                html = html.replace(/<\/li>/g, '<span class="blinking-cursor">|</span></li>');
+                html = html.replace(/<\/td>/g, '<span class="blinking-cursor">|</span></td>');
+                
+                return html;
+            } catch (e) {
+                return this.simpleFormatContent(content) + '<span class="blinking-cursor">|</span>';
+            }
+        } else {
+            return this.simpleFormatContent(content) + '<span class="blinking-cursor">|</span>';
         }
     },
     
