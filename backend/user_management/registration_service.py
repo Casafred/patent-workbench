@@ -16,7 +16,8 @@ from email.mime.multipart import MIMEMultipart
 
 SCRIPT_DIR = Path(__file__).parent.absolute()
 APPLICATIONS_FILE = SCRIPT_DIR / 'applications.json'
-USERS_FILE = SCRIPT_DIR / 'users.json'
+
+from backend.config import USERS_FILE
 
 STATUS_PENDING = 'pending'
 STATUS_APPROVED = 'approved'
@@ -60,14 +61,40 @@ def load_users():
         return {}
     try:
         with open(USERS_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
+            data = json.load(f)
+            
+            if isinstance(data, dict) and 'users' in data:
+                users = data['users']
+                metadata = data.get('metadata', {})
+            else:
+                users = data
+            
+            return users
     except (json.JSONDecodeError, Exception):
         return {}
 
 
 def save_users(users):
-    with open(USERS_FILE, 'w', encoding='utf-8') as f:
-        json.dump(users, f, indent=4)
+    try:
+        if os.path.exists(USERS_FILE):
+            with open(USERS_FILE, 'r', encoding='utf-8') as f:
+                existing_data = json.load(f)
+                if isinstance(existing_data, dict) and 'users' in existing_data:
+                    existing_data['users'].update(users)
+                    data = existing_data
+                else:
+                    data = {'users': users, 'metadata': {}}
+            else:
+                data = {'users': users, 'metadata': {}}
+        else:
+            data = {'users': users, 'metadata': {}}
+        
+        with open(USERS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        return True
+    except Exception as e:
+        print(f"保存用户数据失败: {e}")
+        return False
 
 
 def send_notification_email(application):
