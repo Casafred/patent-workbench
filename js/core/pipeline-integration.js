@@ -343,7 +343,6 @@ class PipelineIntegration {
 
     addTargetReceiveButtons() {
         const targetInputs = [
-            { selector: '#patent_numbers_input', target: 'patent-batch' },
             { selector: '#async_manual_input', target: 'async-batch' },
             { selector: '#claims_text_input', target: 'claims-processor' }
         ];
