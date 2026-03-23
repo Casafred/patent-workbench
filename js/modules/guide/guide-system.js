@@ -56,10 +56,11 @@
                         <li><strong>功能三</strong>：本地数据表管理</li>
                         <li><strong>功能四</strong>：权利要求智能比对</li>
                         <li><strong>功能五</strong>：批量专利检索与解读</li>
-                        <li><strong>功能六</strong>：独从权识别与可视化</li>
-                        <li><strong>功能七</strong>：专利附图智能标记</li>
-                        <li><strong>功能八</strong>：文档OCR与智能分析</li>
-                        <li><strong>功能九</strong>：IPC分类智能查询</li>
+                        <li><strong>功能六</strong>：全球专利智能检索</li>
+                        <li><strong>功能七</strong>：独从权识别与可视化</li>
+                        <li><strong>功能八</strong>：专利附图智能标记</li>
+                        <li><strong>功能九</strong>：文档OCR与智能分析</li>
+                        <li><strong>功能十</strong>：IPC分类智能查询</li>
                     </ul>
                 `,
                 position: 'right'
@@ -146,11 +147,12 @@
                             </div>
                             <h4 class="guide-feature-title">AI智能体对话</h4>
                         </div>
-                        <p class="guide-feature-desc">与AI进行智能对话，支持专利分析、技术问答、文本处理等多种场景。</p>
+                        <p class="guide-feature-desc">与AI进行智能对话，支持专利分析、技术问答、文本处理等多种场景。内置资深专利分析师、技术翻译、检索词拓展专家等角色预设。</p>
                         <div class="guide-feature-tags">
                             <span class="guide-feature-tag">多模型支持</span>
-                            <span class="guide-feature-tag">流式输出</span>
+                            <span class="guide-feature-tag">角色预设</span>
                             <span class="guide-feature-tag">历史记录</span>
+                            <span class="guide-feature-tag">流式输出</span>
                         </div>
                     </div>
                 `,
@@ -170,10 +172,11 @@
                             </div>
                             <h4 class="guide-feature-title">文本批量智能分析</h4>
                         </div>
-                        <p class="guide-feature-desc">批量处理文本数据，支持Excel导入导出、智能分类标引、批量翻译等功能。</p>
+                        <p class="guide-feature-desc">批量处理文本数据，支持Excel导入导出、智能分类标引、批量翻译等功能。提供多层分类体系管理、示例库、冷启动和智能导入等高级功能。</p>
                         <div class="guide-feature-tags">
                             <span class="guide-feature-tag">Excel导入导出</span>
-                            <span class="guide-feature-tag">智能分类</span>
+                            <span class="guide-feature-tag">智能分类标引</span>
+                            <span class="guide-feature-tag">Schema管理</span>
                             <span class="guide-feature-tag">批量处理</span>
                         </div>
                     </div>
@@ -242,11 +245,12 @@
                             </div>
                             <h4 class="guide-feature-title">批量专利检索与解读</h4>
                         </div>
-                        <p class="guide-feature-desc">批量检索专利信息，支持Google专利、CNIPA专利查询，AI智能解读专利内容。</p>
+                        <p class="guide-feature-desc">批量检索专利信息，支持Google专利、CNIPA专利查询，AI智能解读专利内容。支持同族、引用、被引用、相似专利的并列分析，专利详情新标签页展示完整信息。</p>
                         <div class="guide-feature-tags">
                             <span class="guide-feature-tag">专利检索</span>
                             <span class="guide-feature-tag">AI解读</span>
-                            <span class="guide-feature-tag">批量处理</span>
+                            <span class="guide-feature-tag">同族分析</span>
+                            <span class="guide-feature-tag">标签页管理</span>
                         </div>
                     </div>
                 `,
@@ -266,11 +270,12 @@
                             </div>
                             <h4 class="guide-feature-title">全球专利智能检索</h4>
                         </div>
-                        <p class="guide-feature-desc">全球专利数据库检索，支持多国专利查询、同族专利分析。</p>
+                        <p class="guide-feature-desc">全球专利数据库检索，支持多国专利查询、同族专利分析。提供CQL高级检索语法、配额管理、检索历史记录等功能。</p>
                         <div class="guide-feature-tags">
                             <span class="guide-feature-tag">全球检索</span>
+                            <span class="guide-feature-tag">CQL高级检索</span>
                             <span class="guide-feature-tag">同族分析</span>
-                            <span class="guide-feature-tag">多数据源</span>
+                            <span class="guide-feature-tag">检索历史</span>
                         </div>
                     </div>
                 `,
@@ -290,10 +295,11 @@
                             </div>
                             <h4 class="guide-feature-title">独从权识别与可视化</h4>
                         </div>
-                        <p class="guide-feature-desc">自动识别独立权利要求和从属权利要求，可视化展示权利要求关系。</p>
+                        <p class="guide-feature-desc">自动识别独立权利要求和从属权利要求，可视化展示权利要求关系。支持Excel批量处理、专利搜索集成和多种可视化样式。</p>
                         <div class="guide-feature-tags">
                             <span class="guide-feature-tag">权利要求分析</span>
                             <span class="guide-feature-tag">可视化</span>
+                            <span class="guide-feature-tag">Excel批量处理</span>
                             <span class="guide-feature-tag">关系图谱</span>
                         </div>
                     </div>
@@ -314,11 +320,12 @@
                             </div>
                             <h4 class="guide-feature-title">专利附图智能标记</h4>
                         </div>
-                        <p class="guide-feature-desc">智能识别专利附图中的标记，自动关联说明书内容。</p>
+                        <p class="guide-feature-desc">智能识别专利附图中的标记，自动关联说明书内容。支持AI处理面板、自定义提示词编辑和重新处理管理。</p>
                         <div class="guide-feature-tags">
                             <span class="guide-feature-tag">OCR识别</span>
+                            <span class="guide-feature-tag">AI处理面板</span>
+                            <span class="guide-feature-tag">提示词编辑</span>
                             <span class="guide-feature-tag">智能匹配</span>
-                            <span class="guide-feature-tag">交互查看</span>
                         </div>
                     </div>
                 `,
@@ -338,11 +345,12 @@
                             </div>
                             <h4 class="guide-feature-title">文档OCR与智能分析</h4>
                         </div>
-                        <p class="guide-feature-desc">PDF文档OCR识别，支持智能分析和对话，快速理解文档内容。</p>
+                        <p class="guide-feature-desc">PDF文档OCR识别，支持智能分析和对话，快速理解文档内容。提供悬浮对话窗口、多服务商切换、深度思考模式和翻译功能。</p>
                         <div class="guide-feature-tags">
                             <span class="guide-feature-tag">PDF处理</span>
                             <span class="guide-feature-tag">OCR识别</span>
-                            <span class="guide-feature-tag">智能对话</span>
+                            <span class="guide-feature-tag">悬浮对话</span>
+                            <span class="guide-feature-tag">深度思考</span>
                         </div>
                     </div>
                 `,
