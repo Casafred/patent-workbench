@@ -343,10 +343,12 @@ class PipelineIntegration {
 
     addTargetReceiveButtons() {
         const targetInputs = [
-            { selector: '#async_manual_input', target: 'async-batch' }
+            { selector: '#unified_excel_file', target: 'async-batch', type: 'file' },
+            { selector: '#lpl_new_file_input', target: 'local-patent-lib', type: 'file' },
+            { selector: '#claims_excel_file', target: 'claims-processor', type: 'file' }
         ];
         
-        targetInputs.forEach(({ selector, target }) => {
+        targetInputs.forEach(({ selector, target, type }) => {
             const input = document.querySelector(selector);
             if (!input) return;
             
@@ -356,38 +358,30 @@ class PipelineIntegration {
             const btn = document.createElement('button');
             btn.className = 'pipeline-receive-btn';
             btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>`;
-            btn.title = '从数据管道接收';
+            btn.title = '从数据管道接收Excel';
             btn.style.cssText = `
-                position: absolute;
-                right: 8px;
-                top: 50%;
-                transform: translateY(-50%);
-                width: 28px;
-                height: 28px;
+                padding: 8px 12px;
                 background: #10b981;
                 color: white;
                 border: none;
-                border-radius: 50%;
-                font-size: 14px;
+                border-radius: 6px;
+                font-size: 12px;
                 cursor: pointer;
-                display: flex;
+                display: inline-flex;
                 align-items: center;
                 justify-content: center;
                 transition: all 0.2s;
-                z-index: 5;
+                margin-left: 8px;
             `;
             
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', async () => {
                 if (window.globalDataPipeline?.currentData) {
-                    window.globalDataPipeline.sendToTarget(target);
+                    await window.globalDataPipeline.sendToTarget(target);
                 } else {
                     window.globalDataPipeline?.showPanel();
                 }
             });
             
-            if (getComputedStyle(parent).position === 'static') {
-                parent.style.position = 'relative';
-            }
             parent.appendChild(btn);
         });
     }
