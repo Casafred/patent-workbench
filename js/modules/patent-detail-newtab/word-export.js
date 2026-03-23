@@ -308,19 +308,20 @@ window.PatentDetailWordExport = {
             let analysisJson = {};
             try {
                 let cleanContent = analysisResult.analysis_content.trim();
-                if (cleanContent.startsWith('```json')) {
-                    cleanContent = cleanContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-                } else if (cleanContent.startsWith('```')) {
-                    cleanContent = cleanContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
+                const tripleBacktick = String.fromCharCode(96,96,96);
+                const jsonPrefix = tripleBacktick + 'json';
+                if (cleanContent.startsWith(jsonPrefix)) {
+                    cleanContent = cleanContent.substring(jsonPrefix.length).trim();
+                    if (cleanContent.endsWith(tripleBacktick)) {
+                        cleanContent = cleanContent.substring(0, cleanContent.length - 3).trim();
+                    }
+                } else if (cleanContent.startsWith(tripleBacktick)) {
+                    cleanContent = cleanContent.substring(3).trim();
+                    if (cleanContent.endsWith(tripleBacktick)) {
+                        cleanContent = cleanContent.substring(0, cleanContent.length - 3).trim();
+                    }
                 }
                 analysisJson = JSON.parse(cleanContent);
-            } catch (e) {
-                html += `    <p>${this.escapeHtml(analysisResult.analysis_content)}</p>
-`;
-                analysisJson = null;
-            }
-            
-            if (analysisJson) {
                 html += `    <table>
         <tr><th>字段</th><th>内容</th></tr>
 `;
@@ -331,6 +332,9 @@ window.PatentDetailWordExport = {
 `;
                 });
                 html += `    </table>`;
+            } catch (e) {
+                html += `    <p>${this.escapeHtml(analysisResult.analysis_content)}</p>
+`;
             }
         }
         
