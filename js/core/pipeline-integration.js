@@ -343,8 +343,7 @@ class PipelineIntegration {
 
     addTargetReceiveButtons() {
         const targetInputs = [
-            { selector: '#async_manual_input', target: 'async-batch' },
-            { selector: '#claims_text_input', target: 'claims-processor' }
+            { selector: '#async_manual_input', target: 'async-batch' }
         ];
         
         targetInputs.forEach(({ selector, target }) => {
