@@ -2058,9 +2058,9 @@
                     let analysisJson = {};
                     try {
                         let cleanContent = analysisResult.analysis_content.trim();
-                        if (cleanContent.indexOf('```json') === 0) {
+                        if (cleanContent.indexOf(String.fromCharCode(96,96,96,106,115,111,110)) === 0) {
                             cleanContent = cleanContent.replace(/^```json\\s*/, '').replace(/\\s*```$/, '');
-                        } else if (cleanContent.indexOf('```') === 0) {
+                        } else if (cleanContent.indexOf(String.fromCharCode(96,96,96)) === 0) {
                             cleanContent = cleanContent.replace(/^```\\s*/, '').replace(/\\s*```$/, '');
                         }
                         analysisJson = JSON.parse(cleanContent);
