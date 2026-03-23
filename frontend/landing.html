@@ -1442,10 +1442,11 @@
             color: white;
         }
 
-        .model-context {
+        .model-desc {
             font-size: 0.85rem;
             color: var(--text-secondary);
             margin-bottom: 6px;
+            line-height: 1.4;
         }
 
         .model-price {
@@ -3925,7 +3926,7 @@
             <div class="section-header">
                 <span class="section-tag">AI MODELS</span>
                 <h2 class="section-title">支持的AI模型</h2>
-                <p class="section-subtitle">双服务商、37+模型，满足各类专利分析场景需求</p>
+                <p class="section-subtitle">精选优质模型，满足各类专利分析场景</p>
             </div>
             
             <div class="models-tabs">
@@ -3937,84 +3938,37 @@
                 <!-- 智谱AI模型 -->
                 <div class="models-panel active" id="zhipu-models">
                     <div class="models-category">
-                        <h4 class="category-title">
-                            <span class="category-icon">⚡</span>
-                            免费模型
-                        </h4>
+                        <h4 class="category-title">免费模型</h4>
                         <div class="models-grid">
                             <div class="model-card free">
                                 <div class="model-name">GLM-4-Flash</div>
                                 <div class="model-badge free">免费</div>
-                                <div class="model-context">128K 上下文</div>
+                                <div class="model-desc">128K上下文，适合日常对话和轻量任务</div>
                             </div>
                             <div class="model-card free">
                                 <div class="model-name">GLM-Z1-Flash</div>
                                 <div class="model-badge free">免费</div>
-                                <div class="model-context">128K 上下文 · 推理模型</div>
+                                <div class="model-desc">128K上下文，推理模型，适合复杂分析</div>
                             </div>
                         </div>
                     </div>
                     <div class="models-category">
-                        <h4 class="category-title">
-                            <span class="category-icon">🚀</span>
-                            高性价比模型
-                        </h4>
-                        <div class="models-grid">
-                            <div class="model-card">
-                                <div class="model-name">GLM-4-FlashX</div>
-                                <div class="model-context">128K 上下文</div>
-                                <div class="model-price">¥0.5/M 输入</div>
-                            </div>
-                            <div class="model-card">
-                                <div class="model-name">GLM-4.5-Air</div>
-                                <div class="model-context">128K 上下文</div>
-                                <div class="model-price">¥0.8/M 输入</div>
-                            </div>
-                            <div class="model-card">
-                                <div class="model-name">GLM-4.7-FlashX</div>
-                                <div class="model-context">200K 上下文</div>
-                                <div class="model-price">¥0.5/M 输入</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="models-category">
-                        <h4 class="category-title">
-                            <span class="category-icon">👑</span>
-                            旗舰模型
-                        </h4>
+                        <h4 class="category-title">推荐模型</h4>
                         <div class="models-grid">
                             <div class="model-card featured">
                                 <div class="model-name">GLM-4-Plus</div>
-                                <div class="model-context">128K 上下文</div>
-                                <div class="model-price">¥5/M 输入</div>
+                                <div class="model-desc">128K上下文，旗舰级智能，复杂任务首选</div>
+                                <div class="model-price">¥5/M tokens</div>
                             </div>
                             <div class="model-card featured">
                                 <div class="model-name">GLM-4-Long</div>
-                                <div class="model-context">1M 上下文</div>
-                                <div class="model-price">¥1/M 输入</div>
+                                <div class="model-desc">1M上下文，超长文档处理专家</div>
+                                <div class="model-price">¥1/M tokens</div>
                             </div>
                             <div class="model-card featured">
-                                <div class="model-name">GLM-4.7</div>
-                                <div class="model-context">128K 上下文</div>
-                                <div class="model-price">¥2/M 输入</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="models-category">
-                        <h4 class="category-title">
-                            <span class="category-icon">🧠</span>
-                            推理模型
-                        </h4>
-                        <div class="models-grid">
-                            <div class="model-card reasoning">
-                                <div class="model-name">GLM-Z1-Air</div>
-                                <div class="model-context">128K 上下文</div>
-                                <div class="model-price">¥0.5/M 输入</div>
-                            </div>
-                            <div class="model-card reasoning">
-                                <div class="model-name">GLM-Z1-AirX</div>
-                                <div class="model-context">32K 上下文</div>
-                                <div class="model-price">¥5/M 输入</div>
+                                <div class="model-name">GLM-4.7-FlashX</div>
+                                <div class="model-desc">200K上下文，高速低价，性价比之选</div>
+                                <div class="model-price">¥0.5/M tokens</div>
                             </div>
                         </div>
                     </div>
@@ -4023,124 +3977,64 @@
                 <!-- 阿里云百炼模型 -->
                 <div class="models-panel" id="aliyun-models">
                     <div class="models-category">
-                        <h4 class="category-title">
-                            <span class="category-icon">⚡</span>
-                            千问商业版
-                        </h4>
+                        <h4 class="category-title">千问系列</h4>
                         <div class="models-grid">
-                            <div class="model-card">
-                                <div class="model-name">Qwen-Flash</div>
-                                <div class="model-badge thinking">支持思考</div>
-                                <div class="model-context">1M 上下文</div>
-                                <div class="model-price">¥0.15/M 输入</div>
-                            </div>
-                            <div class="model-card">
-                                <div class="model-name">Qwen-Turbo</div>
-                                <div class="model-badge thinking">支持思考</div>
-                                <div class="model-context">1M 上下文</div>
-                                <div class="model-price">¥0.3/M 输入</div>
-                            </div>
                             <div class="model-card featured">
                                 <div class="model-name">Qwen-Plus</div>
-                                <div class="model-badge thinking">支持思考</div>
-                                <div class="model-context">1M 上下文</div>
-                                <div class="model-price">¥0.8/M 输入</div>
-                            </div>
-                            <div class="model-card featured">
-                                <div class="model-name">Qwen3.5-Flash</div>
-                                <div class="model-badge thinking">默认思考</div>
-                                <div class="model-context">1M 上下文</div>
-                                <div class="model-price">¥0.2/M 输入</div>
+                                <div class="model-badge thinking">支持思考模式</div>
+                                <div class="model-desc">1M上下文，性价比首选，支持联网搜索</div>
+                                <div class="model-price">¥0.8/M tokens</div>
                             </div>
                             <div class="model-card featured">
                                 <div class="model-name">Qwen3.5-Plus</div>
-                                <div class="model-badge thinking">默认思考</div>
-                                <div class="model-context">1M 上下文</div>
-                                <div class="model-price">¥0.8/M 输入</div>
+                                <div class="model-badge thinking">默认思考模式</div>
+                                <div class="model-desc">1M上下文，最新旗舰，深度推理能力强</div>
+                                <div class="model-price">¥0.8/M tokens</div>
                             </div>
-                            <div class="model-card">
-                                <div class="model-name">Qwen-Max</div>
-                                <div class="model-context">131K 上下文</div>
-                                <div class="model-price">¥2.4/M 输入</div>
-                            </div>
-                            <div class="model-card">
+                            <div class="model-card featured">
                                 <div class="model-name">Qwen3-Max</div>
-                                <div class="model-badge thinking">支持思考</div>
-                                <div class="model-context">262K 上下文</div>
-                                <div class="model-price">¥2.5/M 输入</div>
+                                <div class="model-badge thinking">支持思考模式</div>
+                                <div class="model-desc">262K上下文，千问最强，复杂分析首选</div>
+                                <div class="model-price">¥2.5/M tokens</div>
                             </div>
                             <div class="model-card">
                                 <div class="model-name">Qwen-Long</div>
-                                <div class="model-context">10M 上下文</div>
-                                <div class="model-price">¥0.5/M 输入</div>
+                                <div class="model-desc">10M上下文，超长文档处理专家</div>
+                                <div class="model-price">¥0.5/M tokens</div>
                             </div>
                         </div>
                     </div>
                     <div class="models-category">
-                        <h4 class="category-title">
-                            <span class="category-icon">🧠</span>
-                            推理模型
-                        </h4>
+                        <h4 class="category-title">推理模型</h4>
                         <div class="models-grid">
                             <div class="model-card reasoning">
                                 <div class="model-name">QwQ-Plus</div>
-                                <div class="model-badge reasoning-only">仅思考模式</div>
-                                <div class="model-context">131K 上下文</div>
-                                <div class="model-price">¥1.6/M 输入</div>
-                            </div>
-                            <div class="model-card reasoning">
-                                <div class="model-name">QwQ-32B</div>
-                                <div class="model-badge reasoning-only">仅思考模式</div>
-                                <div class="model-context">131K 上下文</div>
-                                <div class="model-price">¥2/M 输入</div>
+                                <div class="model-badge reasoning-only">深度推理</div>
+                                <div class="model-desc">131K上下文，复杂问题推理，思考过程可视化</div>
+                                <div class="model-price">¥1.6/M tokens</div>
                             </div>
                             <div class="model-card reasoning">
                                 <div class="model-name">DeepSeek-R1</div>
-                                <div class="model-badge reasoning-only">仅思考模式</div>
-                                <div class="model-context">16K 上下文</div>
-                                <div class="model-price">¥4/M 输入</div>
-                            </div>
-                            <div class="model-card reasoning">
-                                <div class="model-name">Kimi-K2-Thinking</div>
-                                <div class="model-badge reasoning-only">仅思考模式</div>
-                                <div class="model-context">262K 上下文</div>
-                                <div class="model-price">¥4/M 输入</div>
+                                <div class="model-badge reasoning-only">深度推理</div>
+                                <div class="model-desc">16K上下文，深度思考，适合复杂分析任务</div>
+                                <div class="model-price">¥4/M tokens</div>
                             </div>
                         </div>
                     </div>
                     <div class="models-category">
-                        <h4 class="category-title">
-                            <span class="category-icon">🌐</span>
-                            第三方模型
-                        </h4>
+                        <h4 class="category-title">第三方模型</h4>
                         <div class="models-grid">
                             <div class="model-card">
-                                <div class="model-name">DeepSeek-V3</div>
-                                <div class="model-context">131K 上下文</div>
-                                <div class="model-price">¥2/M 输入</div>
-                            </div>
-                            <div class="model-card">
                                 <div class="model-name">DeepSeek-V3.2</div>
-                                <div class="model-badge thinking">支持思考</div>
-                                <div class="model-context">131K 上下文</div>
-                                <div class="model-price">¥2/M 输入</div>
+                                <div class="model-badge thinking">支持思考模式</div>
+                                <div class="model-desc">131K上下文，通用能力强，性价比高</div>
+                                <div class="model-price">¥2/M tokens</div>
                             </div>
                             <div class="model-card">
                                 <div class="model-name">Kimi-K2.5</div>
-                                <div class="model-badge thinking">支持思考</div>
-                                <div class="model-context">262K 上下文</div>
-                                <div class="model-price">¥4/M 输入</div>
-                            </div>
-                            <div class="model-card">
-                                <div class="model-name">GLM-5</div>
-                                <div class="model-badge thinking">支持思考</div>
-                                <div class="model-context">203K 上下文</div>
-                                <div class="model-price">¥4/M 输入</div>
-                            </div>
-                            <div class="model-card">
-                                <div class="model-name">MiniMax-M2.5</div>
-                                <div class="model-context">197K 上下文</div>
-                                <div class="model-price">¥2.1/M 输入</div>
+                                <div class="model-badge thinking">支持思考模式</div>
+                                <div class="model-desc">262K上下文，长文本处理能力强</div>
+                                <div class="model-price">¥4/M tokens</div>
                             </div>
                         </div>
                     </div>
@@ -4153,7 +4047,7 @@
                     <line x1="12" y1="16" x2="12" y2="12"></line>
                     <line x1="12" y1="8" x2="12.01" y2="8"></line>
                 </svg>
-                <span>模型价格仅供参考，以官方最新定价为准。部分模型支持联网搜索功能。</span>
+                <span>以上为精选推荐模型，平台支持更多模型可选。价格仅供参考，以官方最新定价为准。</span>
             </div>
         </div>
     </section>
