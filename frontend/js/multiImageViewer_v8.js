@@ -123,7 +123,7 @@ class MultiImageViewerV8 {
         this.currentColor = '#4CAF50'; // 默认绿色
         this.markersVisible = true; // 标记是否显示
 
-        this.minZoom = 0.5;
+        this.minZoom = 0.1;
         this.maxZoom = 5.0;
         this.zoomStep = 0.2;
 
