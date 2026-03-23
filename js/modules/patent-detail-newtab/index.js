@@ -2027,10 +2027,10 @@
                 if (patentData.claims && patentData.claims.length > 0) {
                     html += '<h2>三、权利要求</h2><div class="section">';
                     patentData.claims.forEach(function(claim, index) {
-                        let claimText = typeof claim === 'string' ? claim : claim.text || '';
-                        claimText = claimText.replace(/\\[\\d+\\]\\[从属\\]\\s*/g, '').replace(/\\[\\d+\\]\\s*/g, '');
-                        const isDependent = typeof claim === 'object' ? claim.type === 'dependent' : 
-                            (claimText.indexOf('[从属]') !== -1 || claimText.indexOf('<claim-ref') !== -1 || /claim\\s*\\d+/i.test(claimText));
+                        var claimText = typeof claim === 'string' ? claim : claim.text || '';
+                        claimText = claimText.replace(/\[\d+\]\[从属\]\s*/g, '').replace(/\[\d+\]\s*/g, '');
+                        var isDependent = typeof claim === 'object' ? claim.type === 'dependent' : 
+                            (claimText.indexOf('[从属]') !== -1 || claimText.indexOf('<claim-ref') !== -1 || /claim\s*\d+/i.test(claimText));
                         html += '<div class="claim-item"><p class="claim-title' + (isDependent ? ' claim-dependent' : '') + '">权利要求 ' + (index + 1) + (isDependent ? ' (从属权利要求)' : ' (独立权利要求)') + '</p>';
                         html += '<p>' + escapeHtml(claimText) + '</p></div>';
                     });
@@ -2039,10 +2039,10 @@
                 
                 if (patentData.description) {
                     html += '<h2>四、说明书</h2><div class="section">';
-                    const descParagraphs = patentData.description.split(/\\n\\n+/);
+                    var descParagraphs = patentData.description.split(/\n\n+/);
                     descParagraphs.forEach(function(para) {
                         if (para.trim()) {
-                            const isSectionHeader = /^\\[[A-Z\\s]+\\]$/.test(para.trim());
+                            var isSectionHeader = /^\[[A-Z\s]+\]$/.test(para.trim());
                             if (isSectionHeader) {
                                 html += '<p><strong>' + escapeHtml(para.trim()) + '</strong></p>';
                             } else {
