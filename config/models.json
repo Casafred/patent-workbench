@@ -30,16 +30,23 @@
         "qwen-flash",
         "qwen-turbo",
         "qwen-plus",
+        "qwen3.5-plus",
+        "qwen3.5-flash",
+        "qwen-max",
+        "qwen-max-latest",
         "qwen3-max",
         "qwen-long",
         "qwq-plus",
         "qwq-32b",
         "deepseek-v3",
+        "deepseek-v3.1",
         "deepseek-v3.2",
         "deepseek-r1",
         "deepseek-r1-distill-qwen-32b",
         "kimi-k2.5",
         "kimi-k2-thinking",
+        "glm-5",
+        "MiniMax-M2.5",
         "minimax-text-01"
       ],
       "default_model": "qwen-plus",
@@ -54,7 +61,9 @@
         "qwen-flash",
         "qwen-turbo",
         "qwen-plus",
-        "qwen3-max"
+        "qwen3-max",
+        "qwen3.5-plus",
+        "qwen3.5-flash"
       ]
     }
   },
@@ -75,20 +84,26 @@
     "glm-z1-flashx": "zhipu",
     "glm-z1-air": "zhipu",
     "glm-z1-airx": "zhipu",
-    "glm-5": "zhipu",
+    "glm-5": "aliyun",
     "qwen-flash": "aliyun",
     "qwen-turbo": "aliyun",
     "qwen-plus": "aliyun",
+    "qwen3.5-plus": "aliyun",
+    "qwen3.5-flash": "aliyun",
+    "qwen-max": "aliyun",
+    "qwen-max-latest": "aliyun",
     "qwen3-max": "aliyun",
     "qwen-long": "aliyun",
     "qwq-plus": "aliyun",
     "qwq-32b": "aliyun",
     "deepseek-v3": "aliyun",
+    "deepseek-v3.1": "aliyun",
     "deepseek-v3.2": "aliyun",
     "deepseek-r1": "aliyun",
     "deepseek-r1-distill-qwen-32b": "aliyun",
     "kimi-k2.5": "aliyun",
     "kimi-k2-thinking": "aliyun",
+    "MiniMax-M2.5": "aliyun",
     "minimax-text-01": "aliyun"
   },
   "all_models": [
@@ -108,20 +123,26 @@
     {"id": "glm-z1-flashx", "provider": "zhipu", "name": "GLM-Z1-FlashX"},
     {"id": "glm-z1-air", "provider": "zhipu", "name": "GLM-Z1-Air"},
     {"id": "glm-z1-airx", "provider": "zhipu", "name": "GLM-Z1-AirX"},
-    {"id": "glm-5", "provider": "zhipu", "name": "GLM-5"},
     {"id": "qwen-flash", "provider": "aliyun", "name": "Qwen-Flash"},
     {"id": "qwen-turbo", "provider": "aliyun", "name": "Qwen-Turbo"},
     {"id": "qwen-plus", "provider": "aliyun", "name": "Qwen-Plus"},
+    {"id": "qwen3.5-plus", "provider": "aliyun", "name": "Qwen3.5-Plus"},
+    {"id": "qwen3.5-flash", "provider": "aliyun", "name": "Qwen3.5-Flash"},
+    {"id": "qwen-max", "provider": "aliyun", "name": "Qwen-Max"},
+    {"id": "qwen-max-latest", "provider": "aliyun", "name": "Qwen-Max-Latest"},
     {"id": "qwen3-max", "provider": "aliyun", "name": "Qwen3-Max"},
     {"id": "qwen-long", "provider": "aliyun", "name": "Qwen-Long"},
     {"id": "qwq-plus", "provider": "aliyun", "name": "QwQ-Plus"},
     {"id": "qwq-32b", "provider": "aliyun", "name": "QwQ-32B"},
     {"id": "deepseek-v3", "provider": "aliyun", "name": "DeepSeek-V3"},
+    {"id": "deepseek-v3.1", "provider": "aliyun", "name": "DeepSeek-V3.1"},
     {"id": "deepseek-v3.2", "provider": "aliyun", "name": "DeepSeek-V3.2"},
     {"id": "deepseek-r1", "provider": "aliyun", "name": "DeepSeek-R1"},
     {"id": "deepseek-r1-distill-qwen-32b", "provider": "aliyun", "name": "DeepSeek-R1-Distill-32B"},
     {"id": "kimi-k2.5", "provider": "aliyun", "name": "Kimi-K2.5"},
     {"id": "kimi-k2-thinking", "provider": "aliyun", "name": "Kimi-K2-Thinking"},
+    {"id": "glm-5", "provider": "aliyun", "name": "GLM-5(阿里云)"},
+    {"id": "MiniMax-M2.5", "provider": "aliyun", "name": "MiniMax-M2.5"},
     {"id": "minimax-text-01", "provider": "aliyun", "name": "MiniMax-Text-01"}
   ],
   "models": [
@@ -257,11 +278,11 @@
       "description": "极速推理模型"
     },
     "glm-5": {
-      "name": "GLM-5",
-      "context": "128K",
+      "name": "GLM-5(阿里云)",
+      "context": "203K",
       "input_price": "4-6元/百万tokens",
       "output_price": "18-22元/百万tokens",
-      "description": "最新旗舰，能力最强"
+      "description": "阿里云-GLM最新旗舰，支持思考模式"
     },
     "qwen-flash": {
       "name": "Qwen-Flash",
@@ -272,7 +293,7 @@
     },
     "qwen-turbo": {
       "name": "Qwen-Turbo",
-      "context": "128K",
+      "context": "1M",
       "input_price": "0.3元/百万tokens",
       "output_price": "0.6元/百万tokens",
       "description": "阿里云-快速响应，支持思考模式"
@@ -284,19 +305,47 @@
       "output_price": "2元/百万tokens",
       "description": "阿里云-性价比首选，支持思考模式"
     },
+    "qwen3.5-plus": {
+      "name": "Qwen3.5-Plus",
+      "context": "1M",
+      "input_price": "0.8元/百万tokens",
+      "output_price": "4.8元/百万tokens",
+      "description": "阿里云-Qwen3.5旗舰，默认开启思考模式"
+    },
+    "qwen3.5-flash": {
+      "name": "Qwen3.5-Flash",
+      "context": "1M",
+      "input_price": "0.2元/百万tokens",
+      "output_price": "2元/百万tokens",
+      "description": "阿里云-Qwen3.5快速版，默认开启思考模式"
+    },
+    "qwen-max": {
+      "name": "Qwen-Max",
+      "context": "131K",
+      "input_price": "2.4元/百万tokens",
+      "output_price": "9.6元/百万tokens",
+      "description": "阿里云-千问Max稳定版"
+    },
+    "qwen-max-latest": {
+      "name": "Qwen-Max-Latest",
+      "context": "131K",
+      "input_price": "2.4元/百万tokens",
+      "output_price": "9.6元/百万tokens",
+      "description": "阿里云-千问Max最新版"
+    },
     "qwen3-max": {
       "name": "Qwen3-Max",
       "context": "262K",
       "input_price": "2.5元/百万tokens",
       "output_price": "10元/百万tokens",
-      "description": "阿里云-最新旗舰，支持思考模式"
+      "description": "阿里云-Qwen3旗舰，支持思考模式"
     },
     "qwen-long": {
       "name": "Qwen-Long",
-      "context": "1M",
+      "context": "10M",
       "input_price": "0.5元/百万tokens",
       "output_price": "2元/百万tokens",
-      "description": "阿里云-超长上下文"
+      "description": "阿里云-超长上下文(1000万)"
     },
     "qwq-plus": {
       "name": "QwQ-Plus",
@@ -305,18 +354,32 @@
       "output_price": "4元/百万tokens",
       "description": "阿里云-推理模型(仅思考模式)"
     },
+    "qwq-32b": {
+      "name": "QwQ-32B",
+      "context": "131K",
+      "input_price": "2元/百万tokens",
+      "output_price": "6元/百万tokens",
+      "description": "阿里云-开源推理模型(仅思考模式)"
+    },
     "deepseek-v3": {
       "name": "DeepSeek-V3",
-      "context": "64K",
-      "input_price": "1元/百万tokens",
-      "output_price": "4元/百万tokens",
-      "description": "阿里云-DeepSeek通用模型"
+      "context": "131K",
+      "input_price": "2元/百万tokens",
+      "output_price": "8元/百万tokens",
+      "description": "阿里云-DeepSeek V3通用模型"
+    },
+    "deepseek-v3.1": {
+      "name": "DeepSeek-V3.1",
+      "context": "131K",
+      "input_price": "4元/百万tokens",
+      "output_price": "12元/百万tokens",
+      "description": "阿里云-DeepSeek V3.1版本"
     },
     "deepseek-v3.2": {
       "name": "DeepSeek-V3.2",
       "context": "131K",
-      "input_price": "1元/百万tokens",
-      "output_price": "4元/百万tokens",
+      "input_price": "2元/百万tokens",
+      "output_price": "3元/百万tokens",
       "description": "阿里云-DeepSeek最新版，支持思考模式"
     },
     "deepseek-r1": {
@@ -325,6 +388,41 @@
       "input_price": "4元/百万tokens",
       "output_price": "16元/百万tokens",
       "description": "阿里云-深度推理模型(仅思考模式)"
+    },
+    "deepseek-r1-distill-qwen-32b": {
+      "name": "DeepSeek-R1-Distill-32B",
+      "context": "32K",
+      "input_price": "2元/百万tokens",
+      "output_price": "6元/百万tokens",
+      "description": "阿里云-DeepSeek蒸馏版(仅思考模式)"
+    },
+    "kimi-k2.5": {
+      "name": "Kimi-K2.5",
+      "context": "262K",
+      "input_price": "4元/百万tokens",
+      "output_price": "21元/百万tokens",
+      "description": "阿里云-Kimi最新版，支持思考模式"
+    },
+    "kimi-k2-thinking": {
+      "name": "Kimi-K2-Thinking",
+      "context": "262K",
+      "input_price": "4元/百万tokens",
+      "output_price": "16元/百万tokens",
+      "description": "阿里云-Kimi推理模型(仅思考模式)"
+    },
+    "MiniMax-M2.5": {
+      "name": "MiniMax-M2.5",
+      "context": "197K",
+      "input_price": "2.1元/百万tokens",
+      "output_price": "8.4元/百万tokens",
+      "description": "阿里云-MiniMax M2.5，擅长编程和Agent任务"
+    },
+    "minimax-text-01": {
+      "name": "MiniMax-Text-01",
+      "context": "205K",
+      "input_price": "按官网定价",
+      "output_price": "按官网定价",
+      "description": "阿里云-MiniMax文本模型"
     }
   },
   "description": "统一的模型配置文件，支持智谱AI和阿里云百炼双服务商",
