@@ -213,7 +213,81 @@ function initApiKeyConfig() {
         }
     });
 
+    // 获取API Key按钮事件
+    initGetApiKeyButton();
+
     console.log('[API] API Key配置初始化完成');
+}
+
+/**
+ * 初始化获取API Key按钮
+ */
+function initGetApiKeyButton() {
+    const getApiKeyBtn = document.getElementById('get_api_key_btn');
+    if (!getApiKeyBtn) return;
+
+    getApiKeyBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showGetApiKeyModal();
+    });
+
+    console.log('[API] 获取API Key按钮初始化完成');
+}
+
+/**
+ * 显示获取API Key的模态窗口
+ */
+function showGetApiKeyModal() {
+    const existingModal = document.querySelector('.get-api-key-modal');
+    if (existingModal) {
+        existingModal.remove();
+        return;
+    }
+
+    const modal = document.createElement('div');
+    modal.className = 'get-api-key-modal';
+    modal.innerHTML = `
+        <div class="get-api-key-modal-content">
+            <div class="get-api-key-modal-header">
+                <h3>获取 API Key</h3>
+                <button class="get-api-key-modal-close" title="关闭">&times;</button>
+            </div>
+            <div class="get-api-key-modal-body">
+                <button class="get-api-key-provider-btn" onclick="window.open('https://open.bigmodel.cn/', '_blank');">
+                    <div class="get-api-key-provider-icon zhipu">智</div>
+                    <div class="get-api-key-provider-info">
+                        <h4>智谱AI开放平台</h4>
+                        <p>注册获取智谱AI API Key，支持GLM系列模型</p>
+                    </div>
+                </button>
+                <button class="get-api-key-provider-btn" onclick="window.open('https://bailian.console.aliyun.com/', '_blank');">
+                    <div class="get-api-key-provider-icon aliyun">阿</div>
+                    <div class="get-api-key-provider-info">
+                        <h4>阿里云百炼平台</h4>
+                        <p>注册获取阿里云百炼 API Key，新用户享100万Tokens免费额度</p>
+                    </div>
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const closeBtn = modal.querySelector('.get-api-key-modal-close');
+    closeBtn.addEventListener('click', () => modal.remove());
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+
+    document.addEventListener('keydown', function escHandler(e) {
+        if (e.key === 'Escape') {
+            modal.remove();
+            document.removeEventListener('keydown', escHandler);
+        }
+    });
 }
 
 /**

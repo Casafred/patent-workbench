@@ -224,6 +224,180 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
     stroke: var(--primary-color-dark);
 }
 
+/* 获取API Key按钮 - 与API KEY按钮样式一致 */
+#get_api_key_btn.get-api-key-toggle {
+    all: unset;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 2px solid var(--primary-color);
+    border-radius: 50%;
+    background-color: white;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    position: relative;
+    z-index: 10;
+    margin-right: 10px;
+}
+
+#get_api_key_btn.get-api-key-toggle svg {
+    width: 20px;
+    height: 20px;
+    stroke: var(--primary-color);
+    fill: none;
+    transition: stroke 0.2s ease;
+}
+
+#get_api_key_btn.get-api-key-toggle:hover {
+    background-color: var(--primary-color-hover-bg);
+    animation: swing 0.6s ease-in-out;
+}
+
+#get_api_key_btn.get-api-key-toggle:hover svg {
+    stroke: var(--primary-color-dark);
+}
+
+/* 获取API Key弹窗样式 */
+.get-api-key-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.get-api-key-modal-content {
+    background: white;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 420px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    animation: slideUp 0.3s ease;
+    overflow: hidden;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.get-api-key-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%);
+    color: white;
+}
+
+.get-api-key-modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.get-api-key-modal-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease;
+}
+
+.get-api-key-modal-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.get-api-key-modal-body {
+    padding: 24px;
+}
+
+.get-api-key-provider-btn {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    border: 2px solid #e8f5e9;
+    border-radius: 12px;
+    background: #fafafa;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.get-api-key-provider-btn:last-child {
+    margin-bottom: 0;
+}
+
+.get-api-key-provider-btn:hover {
+    border-color: #2e7d32;
+    background: #f1f8e9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.15);
+}
+
+.get-api-key-provider-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.get-api-key-provider-icon.zhipu {
+    background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+    color: white;
+}
+
+.get-api-key-provider-icon.aliyun {
+    background: linear-gradient(135deg, #ff6a00 0%, #ff9500 100%);
+    color: white;
+}
+
+.get-api-key-provider-info h4 {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    color: #333;
+    font-weight: 600;
+}
+
+.get-api-key-provider-info p {
+    margin: 0;
+    font-size: 13px;
+    color: #666;
+}
+
 /* 主题切换按钮 - 与API KEY按钮样式一致 */
 #theme_toggle_btn.theme-toggle-btn {
     all: unset;

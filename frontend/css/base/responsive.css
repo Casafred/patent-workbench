@@ -54,10 +54,15 @@
 
     .api-config-section {
         width: 100%;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
     }
 
-    .api-config-toggle {
-        width: 100%;
+    .api-config-toggle,
+    .get-api-key-toggle {
+        flex: 1;
+        max-width: 50px;
         justify-content: center;
     }
 
@@ -484,6 +489,42 @@
     select,
     textarea {
         font-size: 16px; /* 防止iOS自动缩放 */
+    }
+
+    /* 获取API Key弹窗适配 */
+    .get-api-key-modal-content {
+        width: 95%;
+        max-width: 100%;
+    }
+
+    .get-api-key-modal-header {
+        padding: 16px 18px;
+    }
+
+    .get-api-key-modal-header h3 {
+        font-size: 16px;
+    }
+
+    .get-api-key-modal-body {
+        padding: 18px;
+    }
+
+    .get-api-key-provider-btn {
+        padding: 14px 16px;
+    }
+
+    .get-api-key-provider-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+    }
+
+    .get-api-key-provider-info h4 {
+        font-size: 14px;
+    }
+
+    .get-api-key-provider-info p {
+        font-size: 12px;
     }
 }
 
