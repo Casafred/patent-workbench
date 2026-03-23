@@ -344,7 +344,13 @@ class PipelineIntegration {
     addTargetReceiveButtons() {
         const targetInputs = [
             { selector: '#unified_excel_file', target: 'async-batch', type: 'file' },
+            { selector: '#unified_rep_excel_input', target: 'async-batch', type: 'file' },
+            { selector: '#classification_excel_file', target: 'async-batch', type: 'file' },
+            { selector: '#classification_rep_excel_input', target: 'async-batch', type: 'file' },
+            { selector: '#lpl_original_file_input', target: 'local-patent-lib', type: 'file' },
+            { selector: '#lpl_original_reupload_input', target: 'local-patent-lib', type: 'file' },
             { selector: '#lpl_new_file_input', target: 'local-patent-lib', type: 'file' },
+            { selector: '#concat_file_input', target: 'local-patent-lib', type: 'file' },
             { selector: '#claims_excel_file', target: 'claims-processor', type: 'file' }
         ];
         
