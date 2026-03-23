@@ -2055,19 +2055,27 @@
                 
                 if (analysisResult) {
                     html += '<h2>五、AI解读结果</h2><p style="color:#666;font-style:italic;">以下解读由AI生成，仅供参考</p>';
-                    let analysisJson = {};
+                    var analysisJson = {};
                     try {
-                        let cleanContent = analysisResult.analysis_content.trim();
-                        if (cleanContent.indexOf(String.fromCharCode(96,96,96,106,115,111,110)) === 0) {
-                            cleanContent = cleanContent.replace(/^```json\\s*/, '').replace(/\\s*```$/, '');
-                        } else if (cleanContent.indexOf(String.fromCharCode(96,96,96)) === 0) {
-                            cleanContent = cleanContent.replace(/^```\\s*/, '').replace(/\\s*```$/, '');
+                        var cleanContent = analysisResult.analysis_content.trim();
+                        var tripleBacktick = String.fromCharCode(96,96,96);
+                        var jsonPrefix = tripleBacktick + 'json';
+                        if (cleanContent.indexOf(jsonPrefix) === 0) {
+                            cleanContent = cleanContent.substring(jsonPrefix.length).trim();
+                            if (cleanContent.endsWith(tripleBacktick)) {
+                                cleanContent = cleanContent.substring(0, cleanContent.length - 3).trim();
+                            }
+                        } else if (cleanContent.indexOf(tripleBacktick) === 0) {
+                            cleanContent = cleanContent.substring(3).trim();
+                            if (cleanContent.endsWith(tripleBacktick)) {
+                                cleanContent = cleanContent.substring(0, cleanContent.length - 3).trim();
+                            }
                         }
                         analysisJson = JSON.parse(cleanContent);
                         html += '<table><tr><th>字段</th><th>内容</th></tr>';
                         Object.keys(analysisJson).forEach(function(key) {
-                            const value = analysisJson[key];
-                            const displayValue = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+                            var value = analysisJson[key];
+                            var displayValue = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
                             html += '<tr><td class="label-cell">' + escapeHtml(key) + '</td><td>' + escapeHtml(displayValue) + '</td></tr>';
                         });
                         html += '</table>';
