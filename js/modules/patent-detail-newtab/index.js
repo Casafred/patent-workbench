@@ -976,7 +976,7 @@
                         var result = await response.json();
                         var translatedText = result.choices && result.choices[0] && result.choices[0].message && result.choices[0].message.content ? result.choices[0].message.content : '';
                         
-                        var pattern = /权利要求\\s*(\\d+)[:：]\\s*(.*?)(?=权利要求\\s*\\d+[:：]|$)/gs;
+                        var pattern = /权利要求\s*(\d+)[:：]\s*(.*?)(?=权利要求\s*\d+[:：]|$)/gs;
                         var matches = Array.from(translatedText.matchAll(pattern));
                         
                         if (matches.length > 0) {
@@ -1885,9 +1885,9 @@
             
             function formatChatContentNewTab(content) {
                 var formatted = content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                formatted = formatted.replace(/\\n/g, '<br>');
-                formatted = formatted.replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>');
-                formatted = formatted.replace(/\\*(.+?)\\*/g, '<em>$1</em>');
+                formatted = formatted.replace(/\n/g, '<br>');
+                formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+                formatted = formatted.replace(/\*(.+?)\*/g, '<em>$1</em>');
                 return formatted;
             }
             
