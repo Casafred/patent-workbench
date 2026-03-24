@@ -1977,8 +1977,8 @@
             max-width: 1400px;
             margin: 0 auto;
             display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr;
-            gap: 60px;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+            gap: 40px;
         }
 
         .footer-brand {
@@ -2165,7 +2165,11 @@
             }
 
             .footer-content {
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: 1fr 1fr 1fr;
+            }
+
+            .footer-brand {
+                grid-column: span 3;
             }
         }
 
@@ -2209,6 +2213,14 @@
             .footer-content {
                 grid-template-columns: 1fr;
                 text-align: center;
+            }
+
+            .footer-brand {
+                grid-column: span 1;
+            }
+
+            .footer-qrcode {
+                align-items: center;
             }
 
             .footer-bottom {
