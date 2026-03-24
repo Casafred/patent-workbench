@@ -29,13 +29,15 @@
 
     function buildPageScripts(patentNumber, data) {
         console.log('[buildPageScripts] data.description exists:', !!data.description, 'length:', data.description ? data.description.length : 0);
+        const pageDataJson = U.safeJsonStringify(data);
+        const drawingsJson = U.safeJsonStringify(data.drawings || []);
         return `
-            const pageData = ${U.safeJsonStringify(data)};
+            const pageData = ` + pageDataJson + `;
             window.pageData = pageData;
             console.log('[buildPageScripts] pageData.description exists:', !!pageData.description, 'length:', pageData.description ? pageData.description.length : 0);
             const currentPatentNumber = '${U.safeStr(patentNumber)}';
             
-            window.newTabDrawings = ${U.safeJsonStringify(data.drawings || [])};
+            window.newTabDrawings = ` + drawingsJson + `;
             
             function scrollToTop(event) {
                 event.preventDefault();
