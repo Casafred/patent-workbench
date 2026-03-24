@@ -227,11 +227,14 @@
             if (!parent.querySelector('.image-skeleton')) {
                 var skeleton = document.createElement('div');
                 skeleton.className = 'image-skeleton';
-                skeleton.style.cssText = 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(90deg, rgba(34, 197, 94, 0.05) 25%, rgba(34, 197, 94, 0.1) 50%, rgba(34, 197, 94, 0.05) 75%); background-size: 200% 100%; animation: skeletonShimmer 1.5s infinite; border-radius: inherit;';
+                skeleton.style.cssText = 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(90deg, rgba(34, 197, 94, 0.05) 25%, rgba(34, 197, 94, 0.1) 50%, rgba(34, 197, 94, 0.05) 75%); background-size: 200% 100%; animation: skeletonShimmer 1.5s infinite; border-radius: inherit; z-index: 0;';
                 
                 if (getComputedStyle(parent).position === 'static') {
                     parent.style.position = 'relative';
                 }
+                
+                img.style.position = 'relative';
+                img.style.zIndex = '1';
                 
                 parent.insertBefore(skeleton, img);
             }
