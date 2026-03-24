@@ -240,7 +240,7 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
     position: relative;
     z-index: 10;
     margin-left: 10px;
-    transform: translateY(-2px);
+    transform: translateY(-1px);
 }
 
 #get_api_key_btn.get-api-key-toggle svg {
