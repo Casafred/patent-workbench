@@ -12,6 +12,7 @@ window.PatentDetailUtils = {
         try {
             let jsonStr = JSON.stringify(obj);
             jsonStr = jsonStr
+                .replace(/\\/g, '\\\\')
                 .replace(/`/g, '\\`')
                 .replace(/\$/g, '\\$');
             return jsonStr;
