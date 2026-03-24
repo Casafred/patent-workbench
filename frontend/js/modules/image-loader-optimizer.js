@@ -292,19 +292,6 @@
         },
 
         _setupLayoutShiftPrevention: function() {
-            var images = document.querySelectorAll('.feature-image img, .stacked-image img, .hero-bg-image');
-            
-            images.forEach(function(img) {
-                if (!img.hasAttribute('width') || !img.hasAttribute('height')) {
-                    img.style.aspectRatio = '16 / 10';
-                }
-                
-                img.style.objectFit = img.style.objectFit || 'cover';
-            });
-
-            var style = document.createElement('style');
-            style.textContent = '.feature-image, .stacked-image { contain: layout style paint; }';
-            document.head.appendChild(style);
         },
 
         _setupPerformanceMonitoring: function() {
@@ -496,15 +483,6 @@
             }\
             .image-error-placeholder {\
                 min-height: 100px;\
-            }\
-            .feature-image-stack .stacked-image,\
-            .feature-image {\
-                contain: layout style paint;\
-            }\
-            .feature-image img,\
-            .stacked-image img {\
-                aspect-ratio: 16 / 10;\
-                object-fit: cover;\
             }\
             .image-skeleton {\
                 pointer-events: none;\
