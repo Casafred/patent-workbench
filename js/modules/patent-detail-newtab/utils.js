@@ -12,7 +12,6 @@ window.PatentDetailUtils = {
         try {
             let jsonStr = JSON.stringify(obj);
             jsonStr = jsonStr
-                .replace(/\\/g, '\\\\')
                 .replace(/`/g, '\\`')
                 .replace(/\$/g, '\\$');
             return jsonStr;
@@ -31,7 +30,7 @@ window.PatentDetailUtils = {
 
     formatContent: function(content) {
         let formatted = content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        formatted = formatted.replace(/\\n/g, '<br>');
+        formatted = formatted.replace(/\n/g, '<br>');
         formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
         formatted = formatted.replace(/\*(.+?)\*/g, '<em>$1</em>');
         return formatted;
