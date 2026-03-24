@@ -2020,14 +2020,41 @@
                 if (patentData.publication_date) {
                     html += '<tr><td class="label-cell">公开日期</td><td>' + escapeHtml(patentData.publication_date) + '</td></tr>';
                 }
+                if (patentData.priority_date) {
+                    html += '<tr><td class="label-cell">优先权日期</td><td>' + escapeHtml(patentData.priority_date) + '</td></tr>';
+                }
+                if (patentData.grant_date) {
+                    html += '<tr><td class="label-cell">授权日期</td><td>' + escapeHtml(patentData.grant_date) + '</td></tr>';
+                }
+                if (patentData.legal_status) {
+                    html += '<tr><td class="label-cell">法律状态</td><td>' + escapeHtml(patentData.legal_status) + '</td></tr>';
+                }
+                if (patentData.ipc_classification) {
+                    html += '<tr><td class="label-cell">IPC分类</td><td>' + escapeHtml(Array.isArray(patentData.ipc_classification) ? patentData.ipc_classification.join(', ') : patentData.ipc_classification) + '</td></tr>';
+                }
+                if (patentData.pdf_link) {
+                    html += '<tr><td class="label-cell">PDF链接</td><td>' + escapeHtml(patentData.pdf_link) + '</td></tr>';
+                }
                 html += '</table>';
                 
                 if (patentData.abstract) {
                     html += '<h2>二、摘要</h2><div class="section"><p>' + escapeHtml(patentData.abstract) + '</p></div>';
                 }
                 
+                if (patentData.classifications && patentData.classifications.length > 0) {
+                    html += '<h2>三、CPC分类</h2><table><tr><th>分类号</th><th>描述</th></tr>';
+                    patentData.classifications.forEach(function(cls) {
+                        html += '<tr><td>' + escapeHtml(cls.leaf_code || cls.code || '-') + '</td><td>' + escapeHtml(cls.leaf_description || cls.description || '-') + '</td></tr>';
+                    });
+                    html += '</table>';
+                }
+                
+                if (patentData.landscapes && patentData.landscapes.length > 0) {
+                    html += '<h2>四、技术领域</h2><div class="section"><p>' + escapeHtml(patentData.landscapes.map(function(l) { return l.name; }).join('、')) + '</p></div>';
+                }
+                
                 if (patentData.claims && patentData.claims.length > 0) {
-                    html += '<h2>三、权利要求</h2><div class="section">';
+                    html += '<h2>五、权利要求</h2><div class="section">';
                     patentData.claims.forEach(function(claim, index) {
                         var claimText = typeof claim === 'string' ? claim : claim.text || '';
                         claimText = claimText.replace(/\[\d+\]\[从属\]\s*/g, '').replace(/\[\d+\]\s*/g, '');
@@ -2040,7 +2067,7 @@
                 }
                 
                 if (patentData.description) {
-                    html += '<h2>四、说明书</h2><div class="section">';
+                    html += '<h2>六、说明书</h2><div class="section">';
                     var descParagraphs = patentData.description.split(/\\n\\n+/);
                     descParagraphs.forEach(function(para) {
                         if (para.trim()) {
@@ -2055,8 +2082,54 @@
                     html += '</div>';
                 }
                 
+                if (patentData.family_applications && patentData.family_applications.length > 0) {
+                    html += '<h2>七、同族信息</h2>';
+                    if (patentData.family_id) {
+                        html += '<p><strong>同族ID:</strong> ' + escapeHtml(patentData.family_id) + '</p>';
+                    }
+                    html += '<table><tr><th>申请号</th><th>状态</th><th>公开号</th></tr>';
+                    patentData.family_applications.forEach(function(app) {
+                        html += '<tr><td>' + escapeHtml(app.application_number || '-') + '</td><td>' + escapeHtml(app.status || '-') + '</td><td>' + escapeHtml(app.publication_number || '-') + '</td></tr>';
+                    });
+                    html += '</table>';
+                }
+                
+                if (patentData.patent_citations && patentData.patent_citations.length > 0) {
+                    html += '<h2>八、引用专利</h2><table><tr><th>专利号</th><th>标题</th><th>审查员引用</th></tr>';
+                    patentData.patent_citations.forEach(function(citation) {
+                        html += '<tr><td>' + escapeHtml(citation.patent_number || '-') + '</td><td>' + escapeHtml(citation.title || '-') + '</td><td>' + (citation.examiner_cited ? '是' : '否') + '</td></tr>';
+                    });
+                    html += '</table>';
+                }
+                
+                if (patentData.cited_by && patentData.cited_by.length > 0) {
+                    html += '<h2>九、被引用专利</h2><table><tr><th>专利号</th><th>标题</th></tr>';
+                    patentData.cited_by.forEach(function(citation) {
+                        html += '<tr><td>' + escapeHtml(citation.patent_number || '-') + '</td><td>' + escapeHtml(citation.title || '-') + '</td></tr>';
+                    });
+                    html += '</table>';
+                }
+                
+                if (patentData.events_timeline && patentData.events_timeline.length > 0) {
+                    html += '<h2>十、事件时间轴</h2><table><tr><th>日期</th><th>事件</th></tr>';
+                    var reversedEvents = patentData.events_timeline.slice().reverse();
+                    reversedEvents.forEach(function(event) {
+                        html += '<tr><td>' + escapeHtml(event.date || '-') + '</td><td>' + escapeHtml(event.title || event.description || '-') + '</td></tr>';
+                    });
+                    html += '</table>';
+                }
+                
+                if (patentData.legal_events && patentData.legal_events.length > 0) {
+                    html += '<h2>十一、法律事件</h2><table><tr><th>日期</th><th>代码</th><th>描述</th></tr>';
+                    var reversedLegalEvents = patentData.legal_events.slice().reverse();
+                    reversedLegalEvents.forEach(function(event) {
+                        html += '<tr><td>' + escapeHtml(event.date || '-') + '</td><td>' + escapeHtml(event.code || '-') + '</td><td>' + escapeHtml(event.description || event.title || '-') + '</td></tr>';
+                    });
+                    html += '</table>';
+                }
+                
                 if (analysisResult) {
-                    html += '<h2>五、AI解读结果</h2><p style="color:#666;font-style:italic;">以下解读由AI生成，仅供参考</p>';
+                    html += '<h2>十二、AI解读结果</h2><p style="color:#666;font-style:italic;">以下解读由AI生成，仅供参考</p>';
                     var analysisJson = {};
                     try {
                         var cleanContent = analysisResult.analysis_content.trim();
