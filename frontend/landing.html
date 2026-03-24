@@ -4484,8 +4484,8 @@
                 threshold: 0.01,
                 fadeInDuration: 400,
                 enablePerformanceMonitor: true,
-                criticalImagesSelector: '.hero-section img, .navbar-logo, .hero-bg-image',
-                lazyImagesSelector: '.feature-image img, .feature-image-stack img, .stacked-image img, .about-photo',
+                criticalImagesSelector: '.navbar-logo',
+                lazyImagesSelector: '.feature-image img, .feature-image-stack img, .stacked-image img',
                 debugMode: false
             };
 
@@ -5030,20 +5030,6 @@
             }
         }
 
-        function getImagesFromCard(card) {
-            const images = [];
-            const imgElements = card.querySelectorAll('.feature-image-stack img, .feature-image img');
-            imgElements.forEach(function(img, idx) {
-                if (img.src && !img.src.includes('data:')) {
-                    images.push({
-                        src: img.src,
-                        caption: img.alt || '截图 ' + (idx + 1)
-                    });
-                }
-            });
-            return images;
-        }
-
         document.querySelectorAll('.feature-image img').forEach(img => {
             img.style.cursor = 'zoom-in';
             img.addEventListener('click', function(e) {
@@ -5076,7 +5062,7 @@
             });
         });
 
-        document.querySelectorAll('.feature-image-stack .stacked-image').forEach(function(stackItem, stackIndex) {
+        document.querySelectorAll('.feature-image-stack .stacked-image').forEach(function(stackItem) {
             stackItem.addEventListener('click', function(e) {
                 e.stopPropagation();
                 const img = this.querySelector('img');
@@ -5085,10 +5071,13 @@
                     const images = card ? getImagesFromCard(card) : [];
                     const caption = img.alt || card?.querySelector('.feature-title')?.textContent || '';
                     
-                    let clickIndex = stackIndex;
-                    if (images.length > 0 && clickIndex >= images.length) {
-                        clickIndex = images.length - 1;
-                    }
+                    let clickIndex = 0;
+                    const allStackedImages = card ? card.querySelectorAll('.stacked-image') : [];
+                    allStackedImages.forEach(function(item, idx) {
+                        if (item === stackItem) {
+                            clickIndex = idx;
+                        }
+                    });
                     
                     openLightbox(img.src, caption, images, clickIndex);
                 }
