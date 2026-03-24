@@ -31,6 +31,8 @@ const ExcelConcatModule = (function() {
         
         bindEvents();
         loadHistory();
+        renderFilesList();
+        updateButtons();
     }
     
     function bindEvents() {
@@ -650,7 +652,10 @@ const ExcelConcatModule = (function() {
             }
         });
         
-        if (stepName === 'config') {
+        if (stepName === 'files') {
+            renderFilesList();
+            updateButtons();
+        } else if (stepName === 'config') {
             renderConfigList();
         } else if (stepName === 'preview') {
             refreshPreview();
