@@ -11,7 +11,9 @@
             enablePerformanceMonitor: true,
             criticalImagesSelector: '.hero-section img, .navbar-logo',
             lazyImagesSelector: '.feature-image img, .feature-image-stack img, .stacked-image img',
-            debugMode: false
+            debugMode: false,
+            maxRetries: 3,
+            retryDelay: 1000
         },
 
         state: {
@@ -32,7 +34,8 @@
                 performanceObserver: false,
                 customEvent: false,
                 aspectRatio: false
-            }
+            },
+            retryCount: {}
         },
 
         init: function(options) {
@@ -147,6 +150,36 @@
         },
 
         _handleImageError: function(img, isCritical) {
+            var self = this;
+            var imgSrc = img.src || img.dataset.src;
+            
+            if (!imgSrc) {
+                this._showErrorPlaceholder(img, isCritical);
+                return;
+            }
+            
+            var retryKey = imgSrc.replace(/[^a-zA-Z0-9]/g, '_');
+            var currentRetry = this.state.retryCount[retryKey] || 0;
+            
+            if (currentRetry < this.config.maxRetries) {
+                this.state.retryCount[retryKey] = currentRetry + 1;
+                
+                if (this.config.debugMode) {
+                    console.log('[ImageLoader] Retrying image (' + (currentRetry + 1) + '/' + this.config.maxRetries + '):', imgSrc);
+                }
+                
+                setTimeout(function() {
+                    var timestamp = imgSrc.indexOf('?') > -1 ? '&t=' : '?t=';
+                    img.src = imgSrc + timestamp + Date.now();
+                }, this.config.retryDelay * (currentRetry + 1));
+                
+                return;
+            }
+            
+            this._showErrorPlaceholder(img, isCritical);
+        },
+
+        _showErrorPlaceholder: function(img, isCritical) {
             img.classList.add('image-error');
             img.classList.remove('image-loading');
 
