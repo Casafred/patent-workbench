@@ -239,12 +239,13 @@ button:not(.color-button):not(.icon-button):not(.new-chat-btn):not(.small-button
     transition: background-color 0.2s ease;
     position: relative;
     z-index: 10;
-    margin-right: 10px;
+    margin-left: 10px;
+    transform: translateY(-3px);
 }
 
 #get_api_key_btn.get-api-key-toggle svg {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     stroke: var(--primary-color);
     fill: none;
     transition: stroke 0.2s ease;
