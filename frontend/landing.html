@@ -2420,6 +2420,59 @@
             white-space: nowrap;
         }
 
+        .lightbox-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .lightbox-arrow:hover {
+            background: rgba(34, 197, 94, 0.3);
+            border-color: rgba(34, 197, 94, 0.5);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .lightbox-arrow svg {
+            width: 24px;
+            height: 24px;
+            color: white;
+        }
+
+        .lightbox-arrow-left {
+            left: -70px;
+        }
+
+        .lightbox-arrow-right {
+            right: -70px;
+        }
+
+        .lightbox-arrow.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .lightbox-counter {
+            position: absolute;
+            bottom: -80px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
         .feature-image {
             cursor: zoom-in;
         }
@@ -3329,8 +3382,19 @@
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
             </div>
+            <div class="lightbox-arrow lightbox-arrow-left" id="lightbox-prev">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </div>
+            <div class="lightbox-arrow lightbox-arrow-right" id="lightbox-next">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </div>
             <img id="lightbox-img" src="" alt="">
             <div class="lightbox-caption" id="lightbox-caption"></div>
+            <div class="lightbox-counter" id="lightbox-counter"></div>
         </div>
     </div>
 
@@ -4867,17 +4931,80 @@
         })();
 
         // ============================================
-        // Lightbox 图片放大功能
+        // Lightbox 图片放大功能（支持左右切换）
         // ============================================
         const lightbox = document.getElementById('lightbox');
         const lightboxImg = document.getElementById('lightbox-img');
         const lightboxCaption = document.getElementById('lightbox-caption');
         const lightboxClose = document.getElementById('lightbox-close');
+        const lightboxPrev = document.getElementById('lightbox-prev');
+        const lightboxNext = document.getElementById('lightbox-next');
+        const lightboxCounter = document.getElementById('lightbox-counter');
 
-        function openLightbox(src, caption) {
+        let currentImages = [];
+        let currentIndex = 0;
+
+        function getImagesFromCard(card) {
+            if (!card) return [];
+            const images = [];
+            const imgElements = card.querySelectorAll('.feature-image img, .stacked-image img');
+            imgElements.forEach(function(img) {
+                if (img.src) {
+                    images.push({
+                        src: img.src,
+                        caption: img.alt || ''
+                    });
+                }
+            });
+            return images;
+        }
+
+        function updateLightboxState() {
+            if (currentImages.length <= 1) {
+                lightboxPrev.style.display = 'none';
+                lightboxNext.style.display = 'none';
+                lightboxCounter.style.display = 'none';
+            } else {
+                lightboxPrev.style.display = 'flex';
+                lightboxNext.style.display = 'flex';
+                lightboxCounter.style.display = 'block';
+                lightboxCounter.textContent = (currentIndex + 1) + ' / ' + currentImages.length;
+                
+                if (currentIndex === 0) {
+                    lightboxPrev.classList.add('disabled');
+                } else {
+                    lightboxPrev.classList.remove('disabled');
+                }
+                
+                if (currentIndex === currentImages.length - 1) {
+                    lightboxNext.classList.add('disabled');
+                } else {
+                    lightboxNext.classList.remove('disabled');
+                }
+            }
+        }
+
+        function showImage(index) {
+            if (index < 0 || index >= currentImages.length) return;
+            currentIndex = index;
+            const imgData = currentImages[index];
+            lightboxImg.src = imgData.src;
+            lightboxCaption.textContent = imgData.caption || '';
+            updateLightboxState();
+        }
+
+        function openLightbox(src, caption, images, index) {
             if (!lightbox || !lightboxImg) return;
-            lightboxImg.src = src;
-            lightboxCaption.textContent = caption || '';
+            
+            if (images && images.length > 0) {
+                currentImages = images;
+                currentIndex = index !== undefined ? index : 0;
+            } else {
+                currentImages = [{ src: src, caption: caption || '' }];
+                currentIndex = 0;
+            }
+            
+            showImage(currentIndex);
             lightbox.classList.add('active');
             document.body.style.overflow = 'hidden';
         }
@@ -4886,14 +5013,53 @@
             if (!lightbox) return;
             lightbox.classList.remove('active');
             document.body.style.overflow = '';
+            currentImages = [];
+            currentIndex = 0;
+        }
+
+        function prevImage() {
+            if (currentIndex > 0) {
+                showImage(currentIndex - 1);
+            }
+        }
+
+        function nextImage() {
+            if (currentIndex < currentImages.length - 1) {
+                showImage(currentIndex + 1);
+            }
+        }
+
+        function getImagesFromCard(card) {
+            const images = [];
+            const imgElements = card.querySelectorAll('.feature-image-stack img, .feature-image img');
+            imgElements.forEach(function(img, idx) {
+                if (img.src && !img.src.includes('data:')) {
+                    images.push({
+                        src: img.src,
+                        caption: img.alt || '截图 ' + (idx + 1)
+                    });
+                }
+            });
+            return images;
         }
 
         document.querySelectorAll('.feature-image img').forEach(img => {
             img.style.cursor = 'zoom-in';
             img.addEventListener('click', function(e) {
                 e.stopPropagation();
-                const caption = this.alt || this.closest('.feature-card')?.querySelector('.feature-title')?.textContent || '';
-                openLightbox(this.src, caption);
+                const card = this.closest('.feature-card');
+                const images = card ? getImagesFromCard(card) : [];
+                const caption = this.alt || card?.querySelector('.feature-title')?.textContent || '';
+                
+                let clickIndex = 0;
+                if (images.length > 0) {
+                    clickIndex = images.findIndex(function(imgData) {
+                        return imgData.src === e.target.src;
+                    });
+                    if (clickIndex === -1) clickIndex = 0;
+                }
+                
+                openLightbox(this.src, caption, images, clickIndex);
             });
         });
 
@@ -4901,20 +5067,29 @@
             container.addEventListener('click', function(e) {
                 const img = this.querySelector('img');
                 if (img) {
-                    const caption = img.alt || this.closest('.feature-card')?.querySelector('.feature-title')?.textContent || '';
-                    openLightbox(img.src, caption);
+                    const card = this.closest('.feature-card');
+                    const images = card ? getImagesFromCard(card) : [];
+                    const caption = img.alt || card?.querySelector('.feature-title')?.textContent || '';
+                    openLightbox(img.src, caption, images, 0);
                 }
             });
         });
 
-        // 堆叠图片点击放大
-        document.querySelectorAll('.feature-image-stack .stacked-image').forEach(stackItem => {
+        document.querySelectorAll('.feature-image-stack .stacked-image').forEach(function(stackItem, stackIndex) {
             stackItem.addEventListener('click', function(e) {
                 e.stopPropagation();
                 const img = this.querySelector('img');
                 if (img) {
-                    const caption = img.alt || this.closest('.feature-card')?.querySelector('.feature-title')?.textContent || '';
-                    openLightbox(img.src, caption);
+                    const card = this.closest('.feature-card');
+                    const images = card ? getImagesFromCard(card) : [];
+                    const caption = img.alt || card?.querySelector('.feature-title')?.textContent || '';
+                    
+                    let clickIndex = stackIndex;
+                    if (images.length > 0 && clickIndex >= images.length) {
+                        clickIndex = images.length - 1;
+                    }
+                    
+                    openLightbox(img.src, caption, images, clickIndex);
                 }
             });
         });
@@ -4931,10 +5106,30 @@
             lightboxClose.addEventListener('click', closeLightbox);
         }
 
+        if (lightboxPrev) {
+            lightboxPrev.addEventListener('click', function(e) {
+                e.stopPropagation();
+                prevImage();
+            });
+        }
+
+        if (lightboxNext) {
+            lightboxNext.addEventListener('click', function(e) {
+                e.stopPropagation();
+                nextImage();
+            });
+        }
+
         document.addEventListener('keydown', function(e) {
+            if (!lightbox || !lightbox.classList.contains('active')) return;
+            
             if (e.key === 'Escape') {
                 closeLightbox();
                 closeImageManager();
+            } else if (e.key === 'ArrowLeft') {
+                prevImage();
+            } else if (e.key === 'ArrowRight') {
+                nextImage();
             }
         });
 
