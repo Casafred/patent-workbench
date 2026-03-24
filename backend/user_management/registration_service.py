@@ -104,6 +104,43 @@ def save_users(users):
         return False
 
 
+def save_user_with_metadata(username, password_hash, email=None, nickname=None):
+    try:
+        existing_data = {}
+        if USERS_FILE_PATH.exists():
+            try:
+                with open(USERS_FILE_PATH, 'r', encoding='utf-8') as f:
+                    existing_data = json.load(f)
+            except Exception:
+                existing_data = {}
+        
+        if isinstance(existing_data, dict) and 'users' in existing_data:
+            users = existing_data['users']
+            metadata = existing_data.get('metadata', {})
+        else:
+            if existing_data:
+                users = existing_data
+            else:
+                users = {}
+            metadata = {}
+        
+        users[username] = password_hash
+        metadata[username] = {
+            'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'email': email or '',
+            'nickname': nickname or ''
+        }
+        
+        data = {'users': users, 'metadata': metadata}
+        
+        with open(USERS_FILE_PATH, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        return True
+    except Exception as e:
+        print(f"保存用户数据失败: {e}")
+        return False
+
+
 def send_notification_email(application):
     if not ADMIN_EMAIL or not EMAIL_PASSWORD:
         print('邮件通知未配置，跳过发送')
@@ -245,9 +282,14 @@ def approve_application(application_id):
             while username in users:
                 username = generate_username()
             
-            users[username] = generate_password_hash(password)
+            password_hash = generate_password_hash(password)
             
-            save_success = save_users(users)
+            save_success = save_user_with_metadata(
+                username, 
+                password_hash, 
+                email=app.get('email'),
+                nickname=app.get('name')
+            )
             if not save_success:
                 return {'success': False, 'message': '保存用户数据失败'}
             
