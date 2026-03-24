@@ -70,11 +70,11 @@
             {
                 id: 'api_config',
                 type: 'highlight',
-                target: '#api_config_toggle_btn',
+                target: '#api_config_toggle_btn, #get_api_key_btn',
                 title: 'API密钥配置',
                 content: `
-                    <p>点击此按钮可以<strong>配置AI模型的API密钥</strong>。</p>
-                    <p>展开后可以看到各服务商的快捷注册入口，方便快速获取API密钥。</p>
+                    <p>左侧两个按钮分别用于<strong>配置API密钥</strong>和<strong>快捷获取API密钥</strong>。</p>
+                    <p>点击锁图标展开配置面板，点击钥匙图标可快速跳转到各服务商注册页面。</p>
                     <div class="guide-api-config">
                         <h4>
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
@@ -127,17 +127,6 @@
                 position: 'left'
             },
             {
-                id: 'help_button',
-                type: 'highlight',
-                target: '.sidebar-footer',
-                title: '帮助文档',
-                content: `
-                    <p>点击这里可以打开<strong>帮助文档</strong>。</p>
-                    <p>帮助文档包含详细的功能说明、操作指南和常见问题解答。</p>
-                `,
-                position: 'right'
-            },
-            {
                 id: 'prompt_forum',
                 type: 'highlight',
                 target: '#prompt_forum_btn',
@@ -147,6 +136,17 @@
                     <p>提示词广场汇集了各类优质提示词模板，您可以浏览、收藏、使用他人分享的提示词，也可以发布自己的提示词供他人参考。</p>
                 `,
                 position: 'left'
+            },
+            {
+                id: 'help_button',
+                type: 'highlight',
+                target: '.sidebar-footer',
+                title: '帮助文档',
+                content: `
+                    <p>点击这里可以打开<strong>帮助文档</strong>。</p>
+                    <p>帮助文档包含详细的功能说明、操作指南和常见问题解答。</p>
+                `,
+                position: 'right'
             },
             {
                 id: 'feature_instant_chat',
@@ -625,24 +625,45 @@
             const tryShowHighlight = function(attempts) {
                 attempts = attempts || 0;
                 
-                const target = document.querySelector(step.target);
-                if (!target) {
-                    if (attempts < 5) {
-                        setTimeout(function() {
-                            tryShowHighlight(attempts + 1);
-                        }, 200);
-                    } else {
-                        console.warn('[GuideSystem] 重试后仍未找到目标元素:', step.target);
-                        self.next();
+                const isMultiple = step.target.indexOf(',') !== -1;
+                
+                if (isMultiple) {
+                    const combinedRect = self.highlightMultipleElements(step.target);
+                    if (!combinedRect) {
+                        if (attempts < 5) {
+                            setTimeout(function() {
+                                tryShowHighlight(attempts + 1);
+                            }, 200);
+                        } else {
+                            console.warn('[GuideSystem] 重试后仍未找到目标元素:', step.target);
+                            self.next();
+                        }
+                        return;
                     }
-                    return;
-                }
+                    setTimeout(function() {
+                        self.positionTooltipByRect(combinedRect, step);
+                        self.updateProgressBar();
+                    }, 350);
+                } else {
+                    const target = document.querySelector(step.target);
+                    if (!target) {
+                        if (attempts < 5) {
+                            setTimeout(function() {
+                                tryShowHighlight(attempts + 1);
+                            }, 200);
+                        } else {
+                            console.warn('[GuideSystem] 重试后仍未找到目标元素:', step.target);
+                            self.next();
+                        }
+                        return;
+                    }
 
-                setTimeout(function() {
-                    self.highlightElement(target);
-                    self.positionTooltip(target, step);
-                    self.updateProgressBar();
-                }, 350);
+                    setTimeout(function() {
+                        self.highlightElement(target);
+                        self.positionTooltip(target, step);
+                        self.updateProgressBar();
+                    }, 350);
+                }
             };
 
             tryShowHighlight(0);
@@ -660,9 +681,96 @@
             element.scrollIntoView({ behavior: 'smooth', block: 'center' });
         },
 
+        highlightMultipleElements: function(selectors) {
+            const selectorList = selectors.split(',').map(function(s) { return s.trim(); });
+            const elements = [];
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            
+            for (let i = 0; i < selectorList.length; i++) {
+                const el = document.querySelector(selectorList[i]);
+                if (el) {
+                    elements.push(el);
+                    const rect = el.getBoundingClientRect();
+                    minX = Math.min(minX, rect.left);
+                    minY = Math.min(minY, rect.top);
+                    maxX = Math.max(maxX, rect.right);
+                    maxY = Math.max(maxY, rect.bottom);
+                }
+            }
+            
+            if (elements.length === 0) {
+                console.warn('[GuideSystem] 未找到任何目标元素:', selectors);
+                return null;
+            }
+            
+            const padding = 8;
+            this.highlight.style.display = 'block';
+            this.highlight.style.top = (minY - padding) + 'px';
+            this.highlight.style.left = (minX - padding) + 'px';
+            this.highlight.style.width = (maxX - minX + padding * 2) + 'px';
+            this.highlight.style.height = (maxY - minY + padding * 2) + 'px';
+
+            if (elements.length > 0) {
+                elements[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            
+            return {
+                top: minY - padding,
+                left: minX - padding,
+                right: maxX + padding,
+                bottom: maxY + padding,
+                width: maxX - minX + padding * 2,
+                height: maxY - minY + padding * 2
+            };
+        },
+
         
         positionTooltip: function(target, step) {
             const rect = target.getBoundingClientRect();
+            const tooltipWidth = 420;
+            const tooltipHeight = 300;
+            const margin = 20;
+
+            let top, left;
+            const position = step.position || 'right';
+
+            switch(position) {
+                case 'right':
+                    left = rect.right + margin;
+                    top = rect.top;
+                    if (left + tooltipWidth > window.innerWidth) {
+                        left = rect.left - tooltipWidth - margin;
+                    }
+                    break;
+                case 'left':
+                    left = rect.left - tooltipWidth - margin;
+                    top = rect.top;
+                    if (left < 0) {
+                        left = rect.right + margin;
+                    }
+                    break;
+                case 'top':
+                    left = rect.left;
+                    top = rect.top - tooltipHeight - margin;
+                    if (top < 0) {
+                        top = rect.bottom + margin;
+                    }
+                    break;
+                case 'bottom':
+                    left = rect.left;
+                    top = rect.bottom + margin;
+                    if (top + tooltipHeight > window.innerHeight) {
+                        top = rect.top - tooltipHeight - margin;
+                    }
+                    break;
+            }
+
+            top = Math.max(10, Math.min(top, window.innerHeight - tooltipHeight - 10));
+            left = Math.max(10, Math.min(left, window.innerWidth - tooltipWidth - 10));
+            this.renderTooltip(step, top, left);
+        },
+
+        positionTooltipByRect: function(rect, step) {
             const tooltipWidth = 420;
             const tooltipHeight = 300;
             const margin = 20;
