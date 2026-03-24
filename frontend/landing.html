@@ -4847,7 +4847,16 @@
             document.addEventListener('imageLoader.allImagesLoaded', updatePerfPanel);
             document.addEventListener('imageLoader.pageInteractive', updatePerfPanel);
 
-            var devMode = isLandingDevMode();
+            var devMode = (function() {
+                var urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('dev') === '1' || urlParams.get('developer') === 'true') {
+                    return true;
+                }
+                if (localStorage.getItem('landing_dev_mode') === 'true') {
+                    return true;
+                }
+                return false;
+            })();
             if (devMode) {
                 var perfBtn = document.createElement('button');
                 perfBtn.innerHTML = '📊 性能';

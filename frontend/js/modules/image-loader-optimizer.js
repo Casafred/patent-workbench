@@ -93,7 +93,7 @@
 
         _preloadImage: function(img, isCritical) {
             var self = this;
-            var startTime = performance.now();
+            var startTime = this._getPerformanceNow();
 
             if (img.complete && img.naturalHeight !== 0) {
                 this._handleImageLoad(img, isCritical, startTime);
@@ -114,7 +114,7 @@
         },
 
         _handleImageLoad: function(img, isCritical, startTime) {
-            var loadTime = performance.now() - startTime;
+            var loadTime = this._getPerformanceNow() - startTime;
             
             this.state.performanceMetrics.imageLoadTimes.push({
                 src: img.src,
@@ -128,13 +128,13 @@
             if (isCritical) {
                 this.state.criticalImagesLoaded++;
                 if (this.state.criticalImagesLoaded >= this.state.totalCriticalImages) {
-                    this.state.performanceMetrics.criticalImagesComplete = performance.now();
+                    this.state.performanceMetrics.criticalImagesComplete = this._getPerformanceNow();
                     this._markPageInteractive();
                 }
             } else {
                 this.state.lazyImagesLoaded++;
                 if (this.state.lazyImagesLoaded >= this.state.totalLazyImages) {
-                    this.state.performanceMetrics.allImagesComplete = performance.now();
+                    this.state.performanceMetrics.allImagesComplete = this._getPerformanceNow();
                     this._dispatchEvent('allImagesLoaded');
                 }
             }
@@ -194,6 +194,12 @@
                     if (img.dataset.src && !img.src) {
                         img.src = img.dataset.src;
                     }
+                    
+                    if (img.complete && img.naturalHeight !== 0) {
+                        img.classList.add('image-loaded');
+                        return;
+                    }
+                    
                     self._addSkeletonPlaceholder(img);
                     img.classList.add('image-loading');
                     self.state.observer.observe(img);
@@ -210,35 +216,8 @@
                 if (img.dataset.src && !img.src) {
                     img.src = img.dataset.src;
                 }
+                img.classList.add('image-loaded');
             });
-            
-            function loadVisibleImages() {
-                lazyImages.forEach(function(img) {
-                    var rect = img.getBoundingClientRect();
-                    var isVisible = (
-                        rect.top < (window.innerHeight + 200) &&
-                        rect.bottom > -200
-                    );
-                    
-                    if (isVisible) {
-                        self._loadLazyImage(img);
-                    }
-                });
-            }
-
-            loadVisibleImages();
-
-            var scrollTimeout;
-            window.addEventListener('scroll', function() {
-                if (scrollTimeout) {
-                    clearTimeout(scrollTimeout);
-                }
-                scrollTimeout = setTimeout(loadVisibleImages, 100);
-            }, { passive: true });
-
-            window.addEventListener('resize', function() {
-                loadVisibleImages();
-            }, { passive: true });
         },
 
         _addSkeletonPlaceholder: function(img) {
@@ -275,34 +254,38 @@
 
         _loadLazyImage: function(img) {
             var self = this;
-            var startTime = performance.now();
+            var startTime = this._getPerformanceNow();
 
-            if (img.dataset.src) {
+            if (img.dataset.src && !img.src) {
                 img.src = img.dataset.src;
-                delete img.dataset.src;
             }
 
-            if (img.complete && img.naturalHeight !== 0) {
-                this._handleImageLoad(img, false, startTime);
+            if (img.complete) {
+                if (img.naturalHeight !== 0) {
+                    this._handleImageLoad(img, false, startTime);
+                }
                 this._removeSkeletonPlaceholder(img);
+                img.classList.remove('image-loading');
+                img.classList.add('image-loaded');
                 return;
             }
 
-            img.addEventListener('load', function() {
+            img.addEventListener('load', function onLoad() {
+                img.removeEventListener('load', onLoad);
+                img.removeEventListener('error', onError);
                 self._handleImageLoad(img, false, startTime);
                 self._removeSkeletonPlaceholder(img);
-                
-                img.style.opacity = '0';
-                img.style.transition = 'opacity ' + self.config.fadeInDuration + 'ms ease';
-                requestAnimationFrame(function() {
-                    img.style.opacity = '1';
-                });
+                img.classList.remove('image-loading');
+                img.classList.add('image-loaded');
             });
 
-            img.addEventListener('error', function() {
+            var onError = function() {
+                img.removeEventListener('load', onLoad);
+                img.removeEventListener('error', onError);
                 self._handleImageError(img, false);
                 self._removeSkeletonPlaceholder(img);
-            });
+            };
+            img.addEventListener('error', onError);
         },
 
         _setupLayoutShiftPrevention: function() {
@@ -451,8 +434,8 @@
                 webVitals: {
                     lcp: metrics.largestContentfulPaint,
                     cls: metrics.cumulativeLayoutShift,
-                    fp: metrics.timing?.firstPaint,
-                    fcp: metrics.timing?.firstContentfulPaint
+                    fp: metrics.timing ? metrics.timing.firstPaint : 0,
+                    fcp: metrics.timing ? metrics.timing.firstContentfulPaint : 0
                 },
                 counts: {
                     criticalImagesLoaded: this.state.criticalImagesLoaded,
@@ -502,31 +485,24 @@
                 0% { background-position: -200% 0; }\
                 100% { background-position: 200% 0; }\
             }\
-            \
             .image-loading {\
-                opacity: 0;\
-                transition: opacity 0.4s ease;\
+                opacity: 1;\
             }\
-            \
             .image-loaded {\
                 opacity: 1;\
             }\
-            \
             .image-error-placeholder {\
                 min-height: 100px;\
             }\
-            \
             .feature-image-stack .stacked-image,\
             .feature-image {\
                 contain: layout style paint;\
             }\
-            \
             .feature-image img,\
             .stacked-image img {\
                 aspect-ratio: 16 / 10;\
                 object-fit: cover;\
             }\
-            \
             .image-skeleton {\
                 pointer-events: none;\
             }\
