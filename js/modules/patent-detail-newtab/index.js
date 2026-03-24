@@ -1887,7 +1887,7 @@
             
             function formatChatContentNewTab(content) {
                 var formatted = content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                formatted = formatted.replace(/\n/g, '<br>');
+                formatted = formatted.replace(/\\n/g, '<br>');
                 formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
                 formatted = formatted.replace(/\*(.+?)\*/g, '<em>$1</em>');
                 return formatted;
@@ -2041,7 +2041,7 @@
                 
                 if (patentData.description) {
                     html += '<h2>四、说明书</h2><div class="section">';
-                    var descParagraphs = patentData.description.split(/\n\n+/);
+                    var descParagraphs = patentData.description.split(/\\n\\n+/);
                     descParagraphs.forEach(function(para) {
                         if (para.trim()) {
                             var isSectionHeader = /^\[[A-Z\s]+\]$/.test(para.trim());
