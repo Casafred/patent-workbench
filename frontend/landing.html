@@ -2421,7 +2421,7 @@
         }
 
         .lightbox-arrow {
-            position: absolute;
+            position: fixed;
             top: 50%;
             transform: translateY(-50%);
             width: 50px;
@@ -2434,7 +2434,7 @@
             justify-content: center;
             cursor: pointer;
             transition: all 0.3s ease;
-            z-index: 10;
+            z-index: 100001;
         }
 
         .lightbox-arrow:hover {
@@ -2450,11 +2450,11 @@
         }
 
         .lightbox-arrow-left {
-            left: -70px;
+            left: 20px;
         }
 
         .lightbox-arrow-right {
-            right: -70px;
+            right: 20px;
         }
 
         .lightbox-arrow.disabled {
@@ -2464,13 +2464,14 @@
         }
 
         .lightbox-counter {
-            position: absolute;
-            bottom: -80px;
+            position: fixed;
+            bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
             color: rgba(255, 255, 255, 0.6);
             font-size: 0.85rem;
             text-align: center;
+            z-index: 100001;
         }
 
         .feature-image {
