@@ -19,6 +19,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js"></script>
     
+    <!-- 图片加载优化模块 -->
+    <script src="/frontend/js/modules/image-loader-optimizer.js"></script>
+    
     <style>
         :root {
             --primary-color: #22C55E;
@@ -2117,6 +2120,91 @@
         }
 
         /* ============================================
+           图片加载优化 - 骨架屏和占位符
+           ============================================ */
+        
+        @keyframes skeletonShimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        @keyframes imageFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .image-skeleton {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg, 
+                rgba(34, 197, 94, 0.03) 25%, 
+                rgba(34, 197, 94, 0.08) 50%, 
+                rgba(34, 197, 94, 0.03) 75%
+            );
+            background-size: 200% 100%;
+            animation: skeletonShimmer 1.5s infinite;
+            border-radius: inherit;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .image-loading {
+            opacity: 0;
+        }
+
+        .image-loaded {
+            animation: imageFadeIn 0.4s ease forwards;
+        }
+
+        .image-error-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 100, 100, 0.05);
+            border: 1px dashed rgba(255, 100, 100, 0.3);
+            border-radius: 8px;
+            min-height: 100px;
+            color: var(--text-color-muted);
+        }
+
+        .feature-image,
+        .feature-image-stack .stacked-image {
+            contain: layout style paint;
+            position: relative;
+        }
+
+        .feature-image img,
+        .stacked-image img {
+            aspect-ratio: 16 / 10;
+            object-fit: cover;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+
+        .hero-bg-image {
+            contain: strict;
+        }
+
+        .navbar-logo {
+            contain: layout;
+        }
+
+        /* 低分辨率占位符样式 */
+        .low-res-placeholder {
+            filter: blur(10px);
+            transform: scale(1.1);
+            transition: filter 0.3s ease, transform 0.3s ease;
+        }
+
+        .low-res-placeholder.replaced {
+            filter: none;
+            transform: none;
+        }
+
+        /* ============================================
            响应式设计
            ============================================ */
         @media (max-width: 1200px) {
@@ -3264,7 +3352,7 @@
     <!-- 导航栏 -->
     <nav class="navbar" id="navbar">
         <a href="/" class="navbar-brand">
-            <img src="/frontend/images/landing_logo.webp" alt="ALFRED X IP Logo" class="navbar-logo">
+            <img src="/frontend/images/landing_logo.webp" alt="ALFRED X IP Logo" class="navbar-logo" fetchpriority="high">
             <span class="navbar-title">ALFRED X IP</span>
         </a>
         <div class="navbar-nav">
@@ -3397,11 +3485,11 @@
                 <p class="feature-desc">支持Excel批量上传，自定义分析模板，智能分类功能，一键完成大量文本的智能分析与处理。</p>
                 <div class="feature-image-stack" data-stack-id="feature-02-batch">
                     <div class="stacked-image" data-stack-index="0">
-                        <img src="/frontend/images/2_batch.png" alt="文本批量分析截图1" onerror="this.parentElement.innerHTML='<div class=\'stacked-image-placeholder\'><svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.5\'><rect x=\'3\' y=\'3\' width=\'18\' height=\'18\' rx=\'2\' ry=\'2\'></rect><circle cx=\'8.5\' cy=\'8.5\' r=\'1.5\'></circle><polyline points=\'21 15 16 10 5 21\'></polyline></svg><div>截图 1</div></div>'">
+                        <img src="/frontend/images/2_batch.png" alt="文本批量分析截图1" loading="lazy" class="lazy-image" onerror="this.parentElement.innerHTML='<div class=\'stacked-image-placeholder\'><svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.5\'><rect x=\'3\' y=\'3\' width=\'18\' height=\'18\' rx=\'2\' ry=\'2\'></rect><circle cx=\'8.5\' cy=\'8.5\' r=\'1.5\'></circle><polyline points=\'21 15 16 10 5 21\'></polyline></svg><div>截图 1</div></div>'">
                         <span class="stacked-image-label">截图 1</span>
                     </div>
                     <div class="stacked-image" data-stack-index="1">
-                        <img src="/frontend/images/2_batch labeling.png" alt="文本批量分析截图2" onerror="this.parentElement.innerHTML='<div class=\'stacked-image-placeholder\'><svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.5\'><rect x=\'3\' y=\'3\' width=\'18\' height=\'18\' rx=\'2\' ry=\'2\'></rect><circle cx=\'8.5\' cy=\'8.5\' r=\'1.5\'></circle><polyline points=\'21 15 16 10 5 21\'></polyline></svg><div>截图 2</div></div>'">
+                        <img src="/frontend/images/2_batch labeling.png" alt="文本批量分析截图2" loading="lazy" class="lazy-image" onerror="this.parentElement.innerHTML='<div class=\'stacked-image-placeholder\'><svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.5\'><rect x=\'3\' y=\'3\' width=\'18\' height=\'18\' rx=\'2\' ry=\'2\'></rect><circle cx=\'8.5\' cy=\'8.5\' r=\'1.5\'></circle><polyline points=\'21 15 16 10 5 21\'></polyline></svg><div>截图 2</div></div>'">
                         <span class="stacked-image-label">截图 2</span>
                     </div>
                     <div class="stacked-image" data-stack-index="2">
@@ -3480,7 +3568,7 @@
                 <p class="feature-desc">智能对比不同专利的权利要求，可视化展示差异，支持同族专利对比分析。</p>
                 <div class="feature-image-stack" data-stack-id="feature-04-claims-comparison">
                     <div class="stacked-image" data-stack-index="0">
-                        <img src="/frontend/images/4_claim comparison.png" alt="权利要求对比截图1" onerror="this.parentElement.innerHTML='<div class=\'stacked-image-placeholder\'><svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.5\'><rect x=\'3\' y=\'3\' width=\'18\' height=\'18\' rx=\'2\' ry=\'2\'></rect><circle cx=\'8.5\' cy=\'8.5\' r=\'1.5\'></circle><polyline points=\'21 15 16 10 5 21\'></polyline></svg><div>截图 1</div></div>'">
+                        <img src="/frontend/images/4_claim comparison.png" alt="权利要求对比截图1" loading="lazy" class="lazy-image" onerror="this.parentElement.innerHTML='<div class=\'stacked-image-placeholder\'><svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.5\'><rect x=\'3\' y=\'3\' width=\'18\' height=\'18\' rx=\'2\' ry=\'2\'></rect><circle cx=\'8.5\' cy=\'8.5\' r=\'1.5\'></circle><polyline points=\'21 15 16 10 5 21\'></polyline></svg><div>截图 1</div></div>'">
                         <span class="stacked-image-label">截图 1</span>
                     </div>
                     <div class="stacked-image" data-stack-index="1">
@@ -3667,7 +3755,7 @@
                 <p class="feature-desc">上传PDF自动OCR识别，支持划词翻译、智能问答、内容提取。</p>
                 <div class="feature-image-stack" data-stack-id="feature-08-pdf-ocr">
                     <div class="stacked-image" data-stack-index="0">
-                        <img src="/frontend/images/8_doc layout OCR.png" alt="PDF-OCR截图1" onerror="this.parentElement.innerHTML='<div class=\'stacked-image-placeholder\'><svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.5\'><rect x=\'3\' y=\'3\' width=\'18\' height=\'18\' rx=\'2\' ry=\'2\'></rect><circle cx=\'8.5\' cy=\'8.5\' r=\'1.5\'></circle><polyline points=\'21 15 16 10 5 21\'></polyline></svg><div>截图 1</div></div>'">
+                        <img src="/frontend/images/8_doc layout OCR.png" alt="PDF-OCR截图1" loading="lazy" class="lazy-image" onerror="this.parentElement.innerHTML='<div class=\'stacked-image-placeholder\'><svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.5\'><rect x=\'3\' y=\'3\' width=\'18\' height=\'18\' rx=\'2\' ry=\'2\'></rect><circle cx=\'8.5\' cy=\'8.5\' r=\'1.5\'></circle><polyline points=\'21 15 16 10 5 21\'></polyline></svg><div>截图 1</div></div>'">
                         <span class="stacked-image-label">截图 1</span>
                     </div>
                     <div class="stacked-image" data-stack-index="1">
@@ -4230,7 +4318,7 @@
                 </div>
                 <div class="about-image">
                     <div class="about-image-wrapper">
-                        <img src="/frontend/images/selfie.jpg" alt="Alfred" class="about-photo" onerror="this.style.display='none'">
+                        <img src="/frontend/images/selfie.jpg" alt="Alfred" class="about-photo lazy-image" loading="lazy" onerror="this.style.display='none'">
                     </div>
                 </div>
             </div>
@@ -4261,7 +4349,7 @@
                 <p class="footer-desc">专利分析智能工作台，专注于为知识产权从业者提供高效、智能的专利检索、分析与解读服务。</p>
                 <div class="footer-contact">
                     <div class="footer-qrcode">
-                        <img src="/frontend/images/QRcode.jpg" alt="公众号二维码" onerror="this.style.display='none'">
+                        <img src="/frontend/images/QRcode.jpg" alt="公众号二维码" loading="lazy" class="lazy-image" onerror="this.style.display='none'">
                         <span>关注公众号「IP智友」</span>
                     </div>
                 </div>
@@ -4323,12 +4411,67 @@
         })();
 
         // ============================================
-        // 加载动画
+        // 图片加载优化初始化
         // ============================================
+        (function() {
+            var imageLoaderConfig = {
+                rootMargin: '150px 0px',
+                threshold: 0.01,
+                fadeInDuration: 400,
+                enablePerformanceMonitor: true,
+                criticalImagesSelector: '.hero-section img, .navbar-logo, .hero-bg-image',
+                lazyImagesSelector: '.feature-image img, .feature-image-stack img, .stacked-image img, .about-photo',
+                debugMode: false
+            };
+
+            function initImageLoader() {
+                if (typeof ImageLoaderOptimizer !== 'undefined') {
+                    ImageLoaderOptimizer.init(imageLoaderConfig);
+                    
+                    document.addEventListener('imageLoader.pageInteractive', function() {
+                        var loader = document.getElementById('loader');
+                        if (loader && !loader.classList.contains('hidden')) {
+                            loader.classList.add('hidden');
+                        }
+                    });
+
+                    document.addEventListener('imageLoader.allImagesLoaded', function(e) {
+                        if (typeof console !== 'undefined' && console.log) {
+                            console.log('[Landing] All images loaded:', e.detail);
+                        }
+                    });
+                }
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initImageLoader);
+            } else {
+                initImageLoader();
+            }
+        })();
+
+        // ============================================
+        // 加载动画 - 优化：关键内容加载后立即显示
+        // ============================================
+        var loaderHidden = false;
+        
+        function hideLoader() {
+            if (loaderHidden) return;
+            loaderHidden = true;
+            var loader = document.getElementById('loader');
+            if (loader) {
+                loader.classList.add('hidden');
+            }
+        }
+
         window.addEventListener('load', function() {
             setTimeout(function() {
-                document.getElementById('loader').classList.add('hidden');
+                hideLoader();
             }, 2000);
+        });
+
+        document.addEventListener('imageLoader.pageInteractive', function() {
+            setTimeout(hideLoader, 100);
         });
 
         // ============================================
@@ -4597,6 +4740,122 @@
                 scrollTicking = true;
             }
         }, { passive: true });
+
+        // ============================================
+        // 性能监控面板 (开发模式)
+        // ============================================
+        (function() {
+            var perfPanel = null;
+            var isPerfPanelVisible = false;
+
+            function createPerfPanel() {
+                if (perfPanel) return;
+                
+                perfPanel = document.createElement('div');
+                perfPanel.id = 'perf-monitor-panel';
+                perfPanel.style.cssText = 'position: fixed; bottom: 80px; right: 20px; width: 320px; max-height: 400px; background: rgba(10, 10, 10, 0.95); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 12px; padding: 16px; z-index: 9999; font-family: monospace; font-size: 12px; color: #fff; overflow-y: auto; display: none; backdrop-filter: blur(10px);';
+                
+                perfPanel.innerHTML = '\
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(34, 197, 94, 0.2);">\
+                        <span style="color: #22C55E; font-weight: bold;">📊 性能监控</span>\
+                        <button onclick="togglePerfPanel()" style="background: none; border: none; color: #fff; cursor: pointer; font-size: 16px;">✕</button>\
+                    </div>\
+                    <div id="perf-content">加载中...</div>\
+                ';
+                
+                document.body.appendChild(perfPanel);
+            }
+
+            function updatePerfPanel() {
+                if (!perfPanel || !isPerfPanelVisible) return;
+                
+                var content = document.getElementById('perf-content');
+                if (!content) return;
+
+                var report = {};
+                if (typeof ImageLoaderOptimizer !== 'undefined') {
+                    report = ImageLoaderOptimizer.getPerformanceReport();
+                }
+
+                var paintEntries = performance.getEntriesByType('paint');
+                var fp = paintEntries.find(function(e) { return e.name === 'first-paint'; });
+                var fcp = paintEntries.find(function(e) { return e.name === 'first-contentful-paint'; });
+
+                var html = '\
+                    <div style="margin-bottom: 12px;">\
+                        <div style="color: #22C55E; margin-bottom: 4px;">核心指标</div>\
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">\
+                            <div style="background: rgba(34, 197, 94, 0.1); padding: 8px; border-radius: 6px;">\
+                                <div style="color: #888; font-size: 10px;">FP</div>\
+                                <div style="font-size: 14px; font-weight: bold;">' + (fp ? fp.startTime.toFixed(0) : '-') + 'ms</div>\
+                            </div>\
+                            <div style="background: rgba(34, 197, 94, 0.1); padding: 8px; border-radius: 6px;">\
+                                <div style="color: #888; font-size: 10px;">FCP</div>\
+                                <div style="font-size: 14px; font-weight: bold;">' + (fcp ? fcp.startTime.toFixed(0) : '-') + 'ms</div>\
+                            </div>\
+                            <div style="background: rgba(34, 197, 94, 0.1); padding: 8px; border-radius: 6px;">\
+                                <div style="color: #888; font-size: 10px;">LCP</div>\
+                                <div style="font-size: 14px; font-weight: bold;">' + (report.webVitals?.lcp ? report.webVitals.lcp.toFixed(0) : '-') + 'ms</div>\
+                            </div>\
+                            <div style="background: rgba(34, 197, 94, 0.1); padding: 8px; border-radius: 6px;">\
+                                <div style="color: #888; font-size: 10px;">CLS</div>\
+                                <div style="font-size: 14px; font-weight: bold;">' + (report.webVitals?.cls ? report.webVitals.cls.toFixed(4) : '-') + '</div>\
+                            </div>\
+                        </div>\
+                    </div>\
+                    <div style="margin-bottom: 12px;">\
+                        <div style="color: #22C55E; margin-bottom: 4px;">图片加载状态</div>\
+                        <div style="background: rgba(34, 197, 94, 0.1); padding: 8px; border-radius: 6px;">\
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">\
+                                <span>关键图片:</span>\
+                                <span>' + (report.counts?.criticalImagesLoaded || 0) + '/' + (report.counts?.totalCriticalImages || 0) + '</span>\
+                            </div>\
+                            <div style="display: flex; justify-content: space-between;">\
+                                <span>懒加载图片:</span>\
+                                <span>' + (report.counts?.lazyImagesLoaded || 0) + '/' + (report.counts?.totalLazyImages || 0) + '</span>\
+                            </div>\
+                        </div>\
+                    </div>\
+                    <div style="margin-bottom: 12px;">\
+                        <div style="color: #22C55E; margin-bottom: 4px;">加载时间</div>\
+                        <div style="background: rgba(34, 197, 94, 0.1); padding: 8px; border-radius: 6px;">\
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">\
+                                <span>关键图片完成:</span>\
+                                <span>' + (report.criticalImagesTime ? report.criticalImagesTime.toFixed(0) : '-') + 'ms</span>\
+                            </div>\
+                            <div style="display: flex; justify-content: space-between;">\
+                                <span>全部图片完成:</span>\
+                                <span>' + (report.totalImagesTime ? report.totalImagesTime.toFixed(0) : '-') + 'ms</span>\
+                            </div>\
+                        </div>\
+                    </div>\
+                ';
+
+                content.innerHTML = html;
+            }
+
+            window.togglePerfPanel = function() {
+                createPerfPanel();
+                isPerfPanelVisible = !isPerfPanelVisible;
+                perfPanel.style.display = isPerfPanelVisible ? 'block' : 'none';
+                if (isPerfPanelVisible) {
+                    updatePerfPanel();
+                }
+            };
+
+            document.addEventListener('imageLoader.imageLoaded', updatePerfPanel);
+            document.addEventListener('imageLoader.allImagesLoaded', updatePerfPanel);
+            document.addEventListener('imageLoader.pageInteractive', updatePerfPanel);
+
+            var devMode = isLandingDevMode();
+            if (devMode) {
+                var perfBtn = document.createElement('button');
+                perfBtn.innerHTML = '📊 性能';
+                perfBtn.style.cssText = 'position: fixed; bottom: 60px; right: 20px; background: rgba(34, 197, 94, 0.8); color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; z-index: 9998; font-size: 12px;';
+                perfBtn.onclick = window.togglePerfPanel;
+                document.body.appendChild(perfBtn);
+            }
+        })();
 
         // ============================================
         // Lightbox 图片放大功能
