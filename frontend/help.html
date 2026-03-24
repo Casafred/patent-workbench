@@ -571,16 +571,16 @@
                 <li><a data-target="getting-started" class="active">入门指南</a></li>
                 <li><a data-target="zhipu-apikey-guide">智谱API Key获取指南</a></li>
                 <li><a data-target="aliyun-bailian-guide">阿里云百炼模型指南</a></li>
-                <li><a data-target="feature-instant-chat">AI智能体对话</a></li>
-                <li><a data-target="feature-unified-batch">文本批量智能分析</a></li>
-                <li><a data-target="feature-local-lib">本地数据表管理</a></li>
-                <li><a data-target="feature-claims-comparison">权利要求智能比对</a></li>
-                <li><a data-target="feature-patent-batch">批量专利检索与解读</a></li>
-                <li><a data-target="feature-epo-search">全球专利智能检索</a></li>
-                <li><a data-target="feature-claims-processor">独从权识别与可视化</a></li>
-                <li><a data-target="feature-drawing-marker">专利附图智能标记</a></li>
-                <li><a data-target="feature-pdf-ocr">文档OCR与智能分析</a></li>
-                <li><a data-target="feature-ipc-lookup">IPC分类智能查询</a></li>
+                <li><a data-target="feature-instant-chat">功能一：AI智能体对话</a></li>
+                <li><a data-target="feature-unified-batch">功能二：文本批量智能分析</a></li>
+                <li><a data-target="feature-local-lib">功能三：本地数据表管理</a></li>
+                <li><a data-target="feature-claims-comparison">功能四：权利要求智能比对</a></li>
+                <li><a data-target="feature-patent-batch">功能五：批量专利检索与解读</a></li>
+                <li><a data-target="feature-claims-processor">功能六：独从权识别与可视化</a></li>
+                <li><a data-target="feature-drawing-marker">功能七：专利附图智能标记</a></li>
+                <li><a data-target="feature-pdf-ocr">功能八：文档OCR与智能分析</a></li>
+                <li><a data-target="feature-ipc-lookup">功能九：IPC分类智能查询</a></li>
+                <li><a data-target="feature-epo-search">功能十：全球专利智能检索</a></li>
                 <li><a data-target="feature-prompt-forum">提示词广场</a></li>
                 <li><a data-target="faq">常见问题 (FAQ)</a></li>
             </ul>
@@ -636,9 +636,72 @@
                 <p>登录后，您将看到主工作界面，主要分为三个区域：</p>
                 <ul>
                     <li><strong>顶部导航栏：</strong> 显示Logo、版本号，以及右上角的"帮助"和"API Key设置"按钮。</li>
-                    <li><strong>功能页签区：</strong> 切换八个核心功能模块。</li>
+                    <li><strong>功能页签区：</strong> 切换十个核心功能模块。</li>
                     <li><strong>主内容区：</strong> 显示当前选中功能模块的具体操作界面。</li>
                 </ul>
+                
+                <h4>十大核心功能概览</h4>
+                <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.95em;">
+                    <thead>
+                        <tr style="background-color: var(--primary-color); color: white;">
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: left;">功能</th>
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: left;">名称</th>
+                            <th style="padding: 12px; border: 1px solid var(--border-color); text-align: left;">核心用途</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background-color: rgba(34, 197, 94, 0.05);">
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>功能一</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">AI智能体对话</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">类似ChatGPT的智能对话，支持文件解析、联网搜索、角色扮演</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>功能二</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">文本批量智能分析</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">批量文本处理，支持智能分类标引、模板管理、断点续查</td>
+                        </tr>
+                        <tr style="background-color: rgba(34, 197, 94, 0.05);">
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>功能三</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">本地数据表管理</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">离线Excel处理，同族展开、新旧库合并，不消耗API额度</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>功能四</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">权利要求智能比对</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">多权利要求对比分析，支持同族权利要求对比、多种可视化视图</td>
+                        </tr>
+                        <tr style="background-color: rgba(34, 197, 94, 0.05);">
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>功能五</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">批量专利检索与解读</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">批量爬取专利信息，AI智能解读，支持标签页模式展示</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>功能六</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">独从权识别与可视化</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">自动识别独立/从属权利要求，生成引用关系可视化图</td>
+                        </tr>
+                        <tr style="background-color: rgba(34, 197, 94, 0.05);">
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>功能七</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">专利附图智能标记</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">OCR识别附图标记，智能匹配说明书，生成标注附图</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>功能八</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">文档OCR与智能分析</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">PDF/图片OCR解析，支持划词选择、悬浮AI对话、智能缓存</td>
+                        </tr>
+                        <tr style="background-color: rgba(34, 197, 94, 0.05);">
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>功能九</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">IPC分类智能查询</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">AI预测IPC分类、分类号查询、关键词搜索，多语言支持</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);"><strong>功能十</strong></td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">全球专利智能检索</td>
+                            <td style="padding: 10px; border: 1px solid var(--border-color);">对接全球专利数据库，支持CQL语法检索、高级筛选、结果导出</td>
+                        </tr>
+                    </tbody>
+                </table>
                 
                 <!-- GIF: 界面概览 -->
                 <div class="gif-placeholder" data-gif-id="interface-overview">
@@ -1506,10 +1569,10 @@
             </div>
         </div>
 
-        <!-- AI智能体对话 -->
+        <!-- 功能一：AI智能体对话 -->
         <div class="content-card" id="feature-instant-chat">
             <div class="card-header">
-                <h2>AI智能体对话</h2>
+                <h2>功能一：AI智能体对话</h2>
             </div>
             <div class="card-body">
                 <p>本功能提供了一个强大的、类似ChatGPT的交互界面，专为专利分析场景优化，支持多轮对话、角色扮演、文件上传解析和历史记录管理。</p>
@@ -1599,10 +1662,10 @@
             </div>
         </div>
 
-        <!-- 文本批量智能分析 -->
+        <!-- 功能二：文本批量智能分析 -->
         <div class="content-card" id="feature-unified-batch">
             <div class="card-header">
-                <h2>文本批量智能分析</h2>
+                <h2>功能二：文本批量智能分析</h2>
             </div>
             <div class="card-body">
                 <p>本功能将原有的"小批量异步"和"大批量处理"整合为统一的工作流程，系统会根据数据量自动推荐最优处理模式，让您无需关心技术细节，专注于业务本身。</p>
@@ -1861,10 +1924,10 @@
             </div>
         </div>
 
-        <!-- 本地数据表管理 -->
+        <!-- 功能三：本地数据表管理 -->
         <div class="content-card" id="feature-local-lib">
             <div class="card-header">
-                <h2>本地数据表管理</h2>
+                <h2>功能三：本地数据表管理</h2>
             </div>
             <div class="card-body">
                 <p>这是一个纯粹的、离线的Excel数据处理工具，专注于专利建库过程中常见的两个痛点：同族展开和新旧库合并。<strong>此功能不消耗任何API额度。</strong></p>
@@ -1915,10 +1978,10 @@
             </div>
         </div>
 
-        <!-- 权利要求智能比对 -->
+        <!-- 功能四：权利要求智能比对 -->
         <div class="content-card" id="feature-claims-comparison">
             <div class="card-header">
-                <h2>权利要求智能比对</h2>
+                <h2>功能四：权利要求智能比对</h2>
             </div>
             <div class="card-body">
                 <p>此功能用于智能对比不同专利的权利要求，自动识别语言、按需翻译，提供多种可视化展示方式。包含两个子功能：<strong>多权利要求对比</strong>和<strong>同族权利要求对比</strong>。</p>
@@ -1997,10 +2060,10 @@
             </div>
         </div>
 
-        <!-- 批量专利检索与解读 -->
+        <!-- 功能五：批量专利检索与解读 -->
         <div class="content-card" id="feature-patent-batch">
             <div class="card-header">
-                <h2>批量专利检索与解读</h2>
+                <h2>功能五：批量专利检索与解读</h2>
             </div>
             <div class="card-body">
                 <p>此功能用于批量查询专利详情并提供AI解读功能，最多支持50个专利号。支持智能缓存、历史记录管理、标签页模式展示等高级功能。</p>
@@ -2226,10 +2289,10 @@
             </div>
         </div>
 
-        <!-- 独从权识别与可视化 -->
+        <!-- 功能六：独从权识别与可视化 -->
         <div class="content-card" id="feature-claims-processor">
             <div class="card-header">
-                <h2>独从权识别与可视化</h2>
+                <h2>功能六：独从权识别与可视化</h2>
             </div>
             <div class="card-body">
                 <p>此功能用于处理专利权利要求，支持Excel批量分析和文本输入分析两种模式，能够自动解析、分类并提取权利要求信息，生成可视化的引用关系图。</p>
@@ -2264,10 +2327,10 @@
             </div>
         </div>
 
-        <!-- 专利附图智能标记 -->
+        <!-- 功能七：专利附图智能标记 -->
         <div class="content-card" id="feature-drawing-marker">
             <div class="card-header">
-                <h2>专利附图智能标记</h2>
+                <h2>功能七：专利附图智能标记</h2>
             </div>
             <div class="card-body">
                 <p>此功能用于自动识别专利附图中的标记数字，并与说明书中的标记说明进行智能匹配，生成带有标注的附图。</p>
@@ -2314,10 +2377,10 @@
             </div>
         </div>
 
-        <!-- 文档OCR与智能分析 -->
+        <!-- 功能八：文档OCR与智能分析 -->
         <div class="content-card" id="feature-pdf-ocr">
             <div class="card-header">
-                <h2>文档OCR与智能分析</h2>
+                <h2>功能八：文档OCR与智能分析</h2>
             </div>
             <div class="card-body">
                 <p>此功能集成了PDF阅读器与智能OCR识别，支持PDF和图片文件的文字识别、结构化解析、划词选择和AI对话功能。</p>
@@ -2513,10 +2576,10 @@
             </div>
         </div>
 
-        <!-- IPC分类智能查询 -->
+        <!-- 功能九：IPC分类智能查询 -->
         <div class="content-card" id="feature-ipc-lookup">
             <div class="card-header">
-                <h2>IPC分类智能查询</h2>
+                <h2>功能九：IPC分类智能查询</h2>
             </div>
             <div class="card-body">
                 <p>IPC分类智能查询功能提供三种查询模式：分类预测、分类号查询和关键词搜索，帮助您快速定位专利技术领域和分类信息。</p>
@@ -2632,10 +2695,10 @@
             </div>
         </div>
 
-        <!-- 全球专利智能检索 -->
+        <!-- 功能十：全球专利智能检索 -->
         <div class="content-card" id="feature-epo-search">
             <div class="card-header">
-                <h2>全球专利智能检索</h2>
+                <h2>功能十：全球专利智能检索</h2>
             </div>
             <div class="card-body">
                 <p>全球专利智能检索功能对接全球专利数据库，提供全球范围的专利检索能力，支持多种检索模式和高级筛选条件。</p>
