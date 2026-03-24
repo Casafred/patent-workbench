@@ -128,10 +128,16 @@ def save_user_with_metadata(username, password_hash, email=None, nickname=None):
         metadata[username] = {
             'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'email': email or '',
-            'nickname': nickname or ''
+            'nickname': nickname or '',
+            'disabled': False
         }
         
-        data = {'users': users, 'metadata': metadata}
+        if isinstance(existing_data, dict) and 'users' in existing_data:
+            data = existing_data.copy()
+            data['users'] = users
+            data['metadata'] = metadata
+        else:
+            data = {'users': users, 'metadata': metadata}
         
         with open(USERS_FILE_PATH, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
