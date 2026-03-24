@@ -36,10 +36,12 @@
                 `,
                 position: 'center',
                 features: [
-                    { icon: 'chat', text: 'AI智能对话' },
+                    { icon: 'chat', text: 'AI智能体对话' },
+                    { icon: 'batch', text: '文本批量分析' },
                     { icon: 'search', text: '专利检索分析' },
                     { icon: 'compare', text: '权利要求比对' },
-                    { icon: 'ocr', text: '文档OCR识别' }
+                    { icon: 'ocr', text: '文档OCR识别' },
+                    { icon: 'ipc', text: 'IPC分类查询' }
                 ]
             },
             {
@@ -72,6 +74,7 @@
                 title: 'API密钥配置',
                 content: `
                     <p>点击此按钮可以<strong>配置AI模型的API密钥</strong>。</p>
+                    <p>展开后可以看到各服务商的快捷注册入口，方便快速获取API密钥。</p>
                     <div class="guide-api-config">
                         <h4>
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
@@ -133,6 +136,17 @@
                     <p>帮助文档包含详细的功能说明、操作指南和常见问题解答。</p>
                 `,
                 position: 'right'
+            },
+            {
+                id: 'prompt_forum',
+                type: 'highlight',
+                target: '#prompt_forum_btn',
+                title: '提示词广场',
+                content: `
+                    <p>点击这里可以打开<strong>提示词广场</strong>。</p>
+                    <p>提示词广场汇集了各类优质提示词模板，您可以浏览、收藏、使用他人分享的提示词，也可以发布自己的提示词供他人参考。</p>
+                `,
+                position: 'left'
             },
             {
                 id: 'feature_instant_chat',
@@ -197,10 +211,10 @@
                             </div>
                             <h4 class="guide-feature-title">本地数据表管理</h4>
                         </div>
-                        <p class="guide-feature-desc">管理本地专利数据，支持数据导入导出、智能检索和批量操作。</p>
+                        <p class="guide-feature-desc">管理本地专利数据，支持数据导入导出、批量文件拼接和数据筛选。</p>
                         <div class="guide-feature-tags">
                             <span class="guide-feature-tag">数据管理</span>
-                            <span class="guide-feature-tag">智能检索</span>
+                            <span class="guide-feature-tag">文件拼接</span>
                             <span class="guide-feature-tag">批量操作</span>
                         </div>
                     </div>
@@ -221,11 +235,11 @@
                             </div>
                             <h4 class="guide-feature-title">权利要求智能比对</h4>
                         </div>
-                        <p class="guide-feature-desc">智能比对不同专利的权利要求，分析差异和相似性，支持侵权分析。</p>
+                        <p class="guide-feature-desc">智能比对不同专利的权利要求，分析差异和相似性，生成对比报告。</p>
                         <div class="guide-feature-tags">
                             <span class="guide-feature-tag">智能比对</span>
                             <span class="guide-feature-tag">差异分析</span>
-                            <span class="guide-feature-tag">侵权分析</span>
+                            <span class="guide-feature-tag">对比报告</span>
                         </div>
                     </div>
                 `,
@@ -245,7 +259,7 @@
                             </div>
                             <h4 class="guide-feature-title">批量专利检索与解读</h4>
                         </div>
-                        <p class="guide-feature-desc">批量检索专利信息，支持Google专利、CNIPA专利查询，AI智能解读专利内容。支持同族、引用、被引用、相似专利的并列分析，专利详情新标签页展示完整信息。</p>
+                        <p class="guide-feature-desc">批量检索专利信息，支持Google专利查询，AI智能解读专利内容。支持同族、引用、被引用、相似专利的并列分析，专利详情新标签页展示完整信息。</p>
                         <div class="guide-feature-tags">
                             <span class="guide-feature-tag">专利检索</span>
                             <span class="guide-feature-tag">AI解读</span>
@@ -503,9 +517,11 @@
         showWelcomeModal: function(step) {
             const featureIcons = {
                 chat: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+                batch: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
                 search: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
                 compare: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
-                ocr: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'
+                ocr: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+                ipc: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>'
             };
 
             let featuresHtml = '';
