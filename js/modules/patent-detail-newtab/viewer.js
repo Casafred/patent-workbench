@@ -1,7 +1,10 @@
 window.PatentDetailViewer = {
     viewerIndex: 0,
-    viewerScale: 1,
+    viewerScale: 0.6,
     viewerRotation: 0,
+    minScale: 0.3,
+    maxScale: 3,
+    zoomStep: 0.1,
 
     init: function() {
         const self = this;
@@ -44,7 +47,7 @@ window.PatentDetailViewer = {
         if (drawings.length === 0) return;
         
         this.viewerIndex = startIndex;
-        this.viewerScale = 1;
+        this.viewerScale = 0.6;
         this.viewerRotation = 0;
         
         const viewerHTML = `
@@ -66,7 +69,7 @@ window.PatentDetailViewer = {
                     <button onclick="sendNewTabDrawingsToMarker()" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border: none; color: white; font-size: 12px; width: 56px; height: 56px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; font-weight: bold; line-height: 1.1; text-align: center;" title="将附图和说明书传递到功能七进行OCR智能标记">智能<br>标记</button>
                 </div>
                 <div id="viewer-image-container" style="position: relative; display: flex; align-items: center; justify-content: center;">
-                    <img id="viewer-image" src="${drawings[this.viewerIndex]}" style="max-width: 88%; max-height: 78%; object-fit: contain; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.6); transition: transform 0.3s ease;">
+                    <img id="viewer-image" src="${drawings[this.viewerIndex]}" style="max-width: 85%; max-height: 60%; object-fit: contain; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.6); transition: transform 0.3s ease;">
                 </div>
                 <div style="position: absolute; bottom: 25px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; max-width: 88%; max-height: 90px; overflow-y: auto; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 12px;">
                     ${drawings.map((d, i) => `
@@ -81,11 +84,19 @@ window.PatentDetailViewer = {
         document.body.insertAdjacentHTML('beforeend', viewerHTML);
         document.body.style.overflow = 'hidden';
         document.addEventListener('keydown', this.handleKeydown.bind(this));
+        
+        const overlay = document.getElementById('image-viewer-overlay');
+        if (overlay) {
+            overlay.addEventListener('wheel', this.handleWheel.bind(this), { passive: false });
+        }
     },
 
     close: function() {
         const overlay = document.getElementById('image-viewer-overlay');
-        if (overlay) overlay.remove();
+        if (overlay) {
+            overlay.removeEventListener('wheel', this.handleWheel.bind(this));
+            overlay.remove();
+        }
         document.body.style.overflow = '';
         document.removeEventListener('keydown', this.handleKeydown.bind(this));
     },
@@ -102,7 +113,7 @@ window.PatentDetailViewer = {
     },
 
     zoom: function(delta) {
-        this.viewerScale = Math.max(0.5, Math.min(3, this.viewerScale + delta));
+        this.viewerScale = Math.max(this.minScale, Math.min(this.maxScale, this.viewerScale + delta));
         this.updateImage();
     },
 
@@ -138,9 +149,15 @@ window.PatentDetailViewer = {
         if (e.key === 'Escape') this.close();
         else if (e.key === 'ArrowLeft') this.navigate(-1);
         else if (e.key === 'ArrowRight') this.navigate(1);
-        else if (e.key === 'ArrowUp' || e.key === '+') this.zoom(0.2);
-        else if (e.key === 'ArrowDown' || e.key === '-') this.zoom(-0.2);
+        else if (e.key === 'ArrowUp' || e.key === '+') this.zoom(this.zoomStep);
+        else if (e.key === 'ArrowDown' || e.key === '-') this.zoom(-this.zoomStep);
         else if (e.key === 'r' || e.key === 'R') this.rotate(90);
+    },
+
+    handleWheel: function(e) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -this.zoomStep : this.zoomStep;
+        this.zoom(delta);
     },
 
     sendToMarker: function() {

@@ -790,8 +790,26 @@ ${patentInfo.legal_events && patentInfo.legal_events.length > 0 ? `### 法律事
         let fullContent = '';
         let reasoningContent = '';
         let buffer = '';
+        let renderTimer = null;
         let lastRenderTime = 0;
-        const RENDER_INTERVAL = 100;
+        const RENDER_INTERVAL = 50;
+        let pendingRender = false;
+        
+        function schedulePatentChatRender(content, reasoning, isThinking) {
+            const now = Date.now();
+            if (now - lastRenderTime >= RENDER_INTERVAL) {
+                lastRenderTime = now;
+                updatePatentChatMessageContent(contentDiv, content, reasoning, isThinking);
+            } else if (!pendingRender) {
+                pendingRender = true;
+                if (renderTimer) clearTimeout(renderTimer);
+                renderTimer = setTimeout(() => {
+                    lastRenderTime = Date.now();
+                    pendingRender = false;
+                    updatePatentChatMessageContent(contentDiv, content, reasoning, isThinking);
+                }, RENDER_INTERVAL - (now - lastRenderTime));
+            }
+        }
         
         while (true) {
             if (patentChatState.stopStreaming) {
@@ -826,24 +844,21 @@ ${patentInfo.legal_events && patentInfo.legal_events.length > 0 ? `### 法律事
                     
                     if (delta.reasoning_content) {
                         reasoningContent += delta.reasoning_content;
-                        updatePatentChatMessageContent(contentDiv, fullContent, reasoningContent, true);
+                        schedulePatentChatRender(fullContent, reasoningContent, true);
                     }
                     
                     if (delta.content) {
                         const contentStr = typeof delta.content === 'string' ? delta.content : String(delta.content);
                         fullContent += contentStr;
-                        
-                        const now = Date.now();
-                        if (now - lastRenderTime > RENDER_INTERVAL) {
-                            updatePatentChatMessageContent(contentDiv, fullContent, reasoningContent, reasoningContent ? false : undefined);
-                            lastRenderTime = now;
-                        }
+                        schedulePatentChatRender(fullContent, reasoningContent, reasoningContent ? false : undefined);
                     }
                 } catch (e) {
                     console.warn('解析流式数据失败:', e, 'data:', data);
                 }
             }
         }
+        
+        if (renderTimer) clearTimeout(renderTimer);
         
         assistantDiv.classList.remove('streaming');
         finalizePatentChatMessage(contentDiv, fullContent, reasoningContent);
@@ -878,6 +893,43 @@ ${patentInfo.legal_events && patentInfo.legal_events.length > 0 ? `### 法律事
     }
 }
 
+function renderStreamingMarkdown(content, includeCursor = true) {
+    if (typeof marked !== 'undefined') {
+        try {
+            let processedContent = content;
+            
+            const codeBlockCount = (content.match(/```/g) || []).length;
+            if (codeBlockCount % 2 !== 0) {
+                processedContent += '\n```';
+            }
+            
+            const tableLineMatch = content.match(/^\|.*\|$/gm);
+            if (tableLineMatch && tableLineMatch.length > 0) {
+                const lastLine = content.split('\n').pop();
+                if (lastLine.startsWith('|') && !lastLine.endsWith('|')) {
+                    processedContent += '|';
+                }
+            }
+            
+            const cursor = includeCursor ? '<span class="blinking-cursor">|</span>' : '';
+            let html = marked.parse(processedContent + cursor, { gfm: true, breaks: true });
+            
+            if (includeCursor) {
+                html = html.replace(/<\/code><\/pre>/g, '</code><span class="blinking-cursor">|</span></pre>');
+                html = html.replace(/<\/p>/g, '<span class="blinking-cursor">|</span></p>');
+                html = html.replace(/<\/li>/g, '<span class="blinking-cursor">|</span></li>');
+                html = html.replace(/<\/td>/g, '<span class="blinking-cursor">|</span></td>');
+            }
+            
+            return html;
+        } catch (e) {
+            console.warn('Markdown实时渲染失败:', e);
+            return escapeHtml(content) + (includeCursor ? '<span class="blinking-cursor">|</span>' : '');
+        }
+    }
+    return escapeHtml(content) + (includeCursor ? '<span class="blinking-cursor">|</span>' : '');
+}
+
 function updatePatentChatMessageContent(contentDiv, content, reasoningContent = '', isThinking = false) {
     if (!contentDiv) return;
     
@@ -899,11 +951,10 @@ function updatePatentChatMessageContent(contentDiv, content, reasoningContent = 
     } else if (reasoningContent) {
         const responseEl = contentDiv.querySelector('.response-content');
         if (responseEl) {
-            responseEl.innerHTML = formatMessageContent(content) + '<span class="blinking-cursor">|</span>';
+            responseEl.innerHTML = renderStreamingMarkdown(content, true);
         }
     } else {
-        contentDiv.textContent = content;
-        contentDiv.innerHTML += '<span class="blinking-cursor">|</span>';
+        contentDiv.innerHTML = renderStreamingMarkdown(content, true);
     }
     
     const historyEl = getEl('patent_chat_history');

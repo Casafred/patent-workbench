@@ -108,6 +108,7 @@ function populateUnifiedModelSelect() {
         template.model = selectedModel;
         UnifiedBatch.template.setCurrentTemplate(template);
         console.log('[UnifiedBatch] 模型已实时更新为:', selectedModel);
+        updateBatchProviderLabel(selectedModel);
     };
     
     var currentTemplate = UnifiedBatch.template.getCurrentTemplate();
@@ -139,6 +140,19 @@ function renderUnifiedTemplatesList() {
         item.innerHTML = '<span>' + template.name + '</span><button class="small-button delete-button" onclick="deleteUnifiedTemplate(\'' + template.id + '\')">删除</button>';
         container.appendChild(item);
     });
+}
+
+function updateBatchProviderLabel(model) {
+    var label = document.getElementById('unified_batch_provider_label');
+    if (!label) return;
+    
+    var provider = 'zhipu';
+    if (window.UnifiedBatch && UnifiedBatch.batchEngine) {
+        provider = UnifiedBatch.batchEngine.getProviderForModel(model);
+    }
+    
+    var providerName = provider === 'aliyun' ? '阿里云百炼' : '智谱AI';
+    label.textContent = '(' + providerName + ' Batch API)';
 }
 
 function updateUnifiedModeRecommendation() {
@@ -1586,15 +1600,29 @@ async function unifiedBatchStep1Upload() {
         return;
     }
     
-    var checkboxes = document.querySelectorAll('.unified-input-checkbox:checked');
-    var selectedIds = Array.from(checkboxes).map(function(cb) { return cb.dataset.id; });
+    var state = UnifiedBatch.state;
+    var allInputs = state ? state.inputs : [];
+    var selectAllMode = state.selectAllMode;
     
-    var inputs = UnifiedBatch.getInputs();
-    if (selectedIds.length > 0) {
-        inputs = inputs.filter(function(input) { return selectedIds.includes(input.id); });
+    var selectedInputs = [];
+    var selectedIds = [];
+    
+    if (selectAllMode && state.selectedInputIds && state.selectedInputIds.length > 0) {
+        selectedInputs = allInputs.filter(function(input) {
+            return state.selectedInputIds.includes(input.id);
+        });
+        selectedIds = state.selectedInputIds.slice();
+    }
+    else {
+        var checkboxes = document.querySelectorAll('.unified-input-checkbox:checked');
+        selectedIds = Array.from(checkboxes).map(function(cb) { return cb.dataset.id; });
+        
+        selectedInputs = allInputs.filter(function(input) {
+            return selectedIds.includes(input.id);
+        });
     }
     
-    if (inputs.length === 0) {
+    if (selectedInputs.length === 0) {
         logUnifiedBatchMessage('上传失败: 没有选中任何输入数据');
         return;
     }
@@ -1605,15 +1633,104 @@ async function unifiedBatchStep1Upload() {
         return;
     }
     
-    UnifiedBatch.batchEngine.generateJsonl(inputs, template);
+    var confirmed = await showBatchUploadConfirmation(selectedInputs, template);
+    if (!confirmed) {
+        logUnifiedBatchMessage('用户取消上传');
+        return;
+    }
+    
+    UnifiedBatch.batchEngine.generateJsonl(selectedInputs, template);
     
     var result = await UnifiedBatch.batchEngine.uploadJsonl(template.model);
     if (result.success) {
         document.getElementById('unified_batch_step2_create').disabled = false;
-        logUnifiedBatchMessage('文件上传成功，File ID: ' + result.fileId);
+        logUnifiedBatchMessage('文件上传成功，File ID: ' + result.fileId + '，共 ' + selectedInputs.length + ' 条数据');
     } else {
         logUnifiedBatchMessage('上传失败: ' + (result.error || result.message));
     }
+}
+
+function showBatchUploadConfirmation(inputs, template) {
+    return new Promise(function(resolve) {
+        var previewCount = Math.min(3, inputs.length);
+        var previewHtml = '';
+        
+        for (var i = 0; i < previewCount; i++) {
+            var input = inputs[i];
+            var contentPreview = '';
+            
+            if (typeof input.content === 'string') {
+                contentPreview = input.content.length > 200 
+                    ? input.content.substring(0, 200) + '...' 
+                    : input.content;
+            } else if (typeof input.content === 'object') {
+                var parts = [];
+                Object.keys(input.content).forEach(function(key) {
+                    var val = String(input.content[key] || '');
+                    if (val.length > 100) val = val.substring(0, 100) + '...';
+                    parts.push('<strong>' + key + ':</strong> ' + val);
+                });
+                contentPreview = parts.join('<br>');
+            }
+            
+            previewHtml += '<div class="preview-item" style="background: var(--bg-color-secondary); padding: 12px; border-radius: 6px; margin-bottom: 10px;">';
+            previewHtml += '<div style="font-weight: 500; margin-bottom: 8px; color: var(--primary-color);">第 ' + (i + 1) + ' 条 (ID: ' + input.id + ')</div>';
+            previewHtml += '<div style="font-size: 0.9em; color: var(--text-color-secondary); white-space: pre-wrap; word-break: break-all;">' + contentPreview + '</div>';
+            previewHtml += '</div>';
+        }
+        
+        var modelSelect = document.getElementById('unified_template_model_select');
+        var modelName = modelSelect ? modelSelect.options[modelSelect.selectedIndex]?.text || template.model : template.model;
+        var provider = UnifiedBatch.batchEngine.getProviderForModel(template.model);
+        var providerName = provider === 'aliyun' ? '阿里云百炼' : '智谱AI';
+        
+        var modalHtml = '<div id="batch_upload_confirm_modal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;">';
+        modalHtml += '<div style="background: var(--bg-color); border-radius: 12px; padding: 24px; max-width: 700px; max-height: 80vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">';
+        modalHtml += '<h3 style="margin: 0 0 16px; color: var(--primary-color); display: flex; align-items: center; gap: 8px;">';
+        modalHtml += '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16"><path d="M9.05.435c-.58-.621-1.595-.481-1.986.36l-.578 1.159a1.28 1.28 0 0 1-.898.658l-1.285.213a1.25 1.25 0 0 0-.912 1.788l.643 1.143a1.25 1.25 0 0 1 0 1.248l-.643 1.143a1.25 1.25 0 0 0 .912 1.788l1.285.213a1.28 1.28 0 0 1 .898.658l.578 1.159c.39.84 1.406.98 1.986.36l.944-.944a1.28 1.28 0 0 1 .912-.373h1.285c.84 0 1.468-.804 1.267-1.62l-.344-1.372a1.25 1.25 0 0 1 .344-1.18l.944-.944c.621-.58.481-1.595-.36-1.986l-1.159-.578a1.28 1.28 0 0 1-.658-.898l-.213-1.285A1.25 1.25 0 0 0 11.9.435h-1.285a1.28 1.28 0 0 1-.912-.373L9.05.435ZM8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4Z"/></svg>';
+        modalHtml += '批量请求确认</h3>';
+        
+        modalHtml += '<div style="background: linear-gradient(135deg, var(--primary-color), var(--accent-color, #667eea)); color: white; padding: 16px; border-radius: 8px; margin-bottom: 16px;">';
+        modalHtml += '<div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px;">';
+        modalHtml += '<div><span style="opacity: 0.8;">请求数量</span><div style="font-size: 1.5em; font-weight: bold;">' + inputs.length + ' 条</div></div>';
+        modalHtml += '<div><span style="opacity: 0.8;">服务商</span><div style="font-size: 1.2em; font-weight: bold;">' + providerName + '</div></div>';
+        modalHtml += '<div><span style="opacity: 0.8;">模型</span><div style="font-size: 1.2em; font-weight: bold;">' + modelName + '</div></div>';
+        modalHtml += '</div></div>';
+        
+        modalHtml += '<div style="margin-bottom: 16px;">';
+        modalHtml += '<div style="font-weight: 500; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">';
+        modalHtml += '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.54 3.87.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3H14a2 2 0 0 1 2 2v3H0V5a2 2 0 0 1 1.54-1.95ZM0 9h16v5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V9Z"/></svg>';
+        modalHtml += '前 ' + previewCount + ' 条请求预览';
+        modalHtml += '</div>';
+        modalHtml += previewHtml;
+        if (inputs.length > 3) {
+            modalHtml += '<div style="text-align: center; color: var(--text-color-tertiary); font-size: 0.9em;">... 还有 ' + (inputs.length - 3) + ' 条数据</div>';
+        }
+        modalHtml += '</div>';
+        
+        modalHtml += '<div style="display: flex; gap: 12px; justify-content: flex-end;">';
+        modalHtml += '<button id="batch_confirm_cancel" class="small-button" style="padding: 10px 24px;">取消</button>';
+        modalHtml += '<button id="batch_confirm_ok" class="small-button" style="background: var(--primary-color); color: white; padding: 10px 24px;">确认上传</button>';
+        modalHtml += '</div></div></div>';
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        var modal = document.getElementById('batch_upload_confirm_modal');
+        document.getElementById('batch_confirm_cancel').onclick = function() {
+            modal.remove();
+            resolve(false);
+        };
+        document.getElementById('batch_confirm_ok').onclick = function() {
+            modal.remove();
+            resolve(true);
+        };
+        modal.onclick = function(e) {
+            if (e.target === modal) {
+                modal.remove();
+                resolve(false);
+            }
+        };
+    });
 }
 
 async function unifiedBatchStep2Create() {

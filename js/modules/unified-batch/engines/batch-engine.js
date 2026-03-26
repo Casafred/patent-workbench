@@ -245,10 +245,11 @@ const BatchEngine = {
             return { success: false, message: '没有批处理任务' };
         }
 
-        const provider = this.state.batchTask.provider || this.currentProvider;
+        const provider = this.state.batchTask.provider || this.currentProvider || 'zhipu';
+        const model = this.currentModel || this.state.template?.model || 'glm-4-flash';
 
         try {
-            const headers = this.getApiHeaders(this.currentModel);
+            const headers = this.getApiHeaders(model);
             
             const response = await fetch('/api/async_batch/check_status', {
                 method: 'POST',
@@ -290,15 +291,20 @@ const BatchEngine = {
                 expiredAt: data.expired_at,
                 cancellingAt: data.cancelling_at,
                 cancelledAt: data.cancelled_at,
-                metadata: data.metadata
+                metadata: data.metadata,
+                provider: provider
             };
 
             if (data.output_file_id) {
                 this.state.batchTask.outputFileId = data.output_file_id;
             }
             
-            if (result.input_file_id) {
-                this.state.batchTask.inputFileId = result.input_file_id;
+            if (data.input_file_id) {
+                this.state.batchTask.inputFileId = data.input_file_id;
+            }
+            
+            if (!this.state.batchTask.provider && provider) {
+                this.state.batchTask.provider = provider;
             }
 
             return statusInfo;
@@ -421,10 +427,19 @@ const BatchEngine = {
 
         this.state.task.status = 'running';
         
-        if (statusResult.status === 'completed') {
+        if (statusResult.status === 'completed' || statusResult.status === 'finalizing') {
+            var outputFileId = statusResult.outputFileId || this.state.batchTask.outputFileId;
+            
+            if (!outputFileId) {
+                return { success: false, message: '任务已完成但没有输出文件ID' };
+            }
+            
+            this.state.batchTask.outputFileId = outputFileId;
+            
             const downloadResult = await this.downloadResult();
             
             if (downloadResult.success) {
+                this.state.task.status = 'completed';
                 if (onComplete) {
                     onComplete({
                         success: true,
@@ -432,12 +447,17 @@ const BatchEngine = {
                     });
                 }
                 return { success: true, message: '任务已完成，结果已下载' };
+            } else {
+                return { success: false, message: '下载结果失败: ' + downloadResult.error };
             }
+        } else if (statusResult.status === 'failed' || statusResult.status === 'expired') {
+            this.state.task.status = 'failed';
+            return { success: false, message: '任务已失败或过期' };
         } else {
             this.startAutoCheck(onProgress, onComplete);
         }
 
-        return { success: true, message: '任务已恢复' };
+        return { success: true, message: '任务已恢复，当前状态: ' + statusResult.status };
     },
 
     parseResults() {
