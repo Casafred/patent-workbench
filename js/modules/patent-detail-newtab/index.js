@@ -2195,6 +2195,7 @@
                 <title>${U.safeStr(data.title) || patentNumber} - 专利详情</title>
                 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
                 <script src="https://cdn.jsdelivr.net/npm/html-docx-js/dist/html-docx.js"></script>
+                <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
                 <style>
                     ${S.getMainStyles()}
                 </style>

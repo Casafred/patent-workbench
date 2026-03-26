@@ -461,13 +461,18 @@ window.PatentDetailChat = {
     },
     
     close: function() {
+        console.log('[PatentDetailChat.close] 关闭对话框');
         const modal = document.getElementById('newtab_patent_chat_modal');
         const ball = document.getElementById('newtab_chat_floating_ball');
         
         const messages = this.messages || [];
         const nonSystemMessages = messages.filter(function(m) { return m.role !== 'system'; });
         
+        console.log('[PatentDetailChat.close] messages数量:', messages.length, 'nonSystemMessages数量:', nonSystemMessages.length);
+        console.log('[PatentDetailChat.close] window.opener:', !!window.opener, 'window.opener.closed:', window.opener ? window.opener.closed : 'N/A');
+        
         if (nonSystemMessages.length >= 2 && window.opener && !window.opener.closed) {
+            console.log('[PatentDetailChat.close] 满足同步条件，显示确认对话框');
             const shouldSync = confirm('是否将本次对话记录同步到主页面历史？\n\n同步后可在主页面"功能一即时对话"中查看和继续此对话。');
             
             if (shouldSync) {
@@ -485,6 +490,7 @@ window.PatentDetailChat = {
                         );
                         alert('对话已同步到主页面历史记录！');
                     } else {
+                        console.warn('[PatentDetailChat.close] window.opener.ChatHistorySync不存在');
                         alert('主页面未加载对话同步模块，无法同步。');
                     }
                 } catch (e) {
@@ -492,6 +498,8 @@ window.PatentDetailChat = {
                     alert('同步失败，请确保主页面已加载完成。');
                 }
             }
+        } else {
+            console.log('[PatentDetailChat.close] 不满足同步条件: nonSystemMessages.length=', nonSystemMessages.length, 'window.opener=', !!window.opener);
         }
         
         if (modal) modal.remove();
@@ -543,6 +551,7 @@ window.PatentDetailChat = {
         stopBtn.style.display = 'inline-block';
         
         const contentDiv = aiMsgDiv.querySelector('div > div');
+        console.log('[PatentDetailChat] contentDiv:', contentDiv, '初始内容:', contentDiv ? contentDiv.innerHTML : 'N/A');
         
         try {
             this.messages.push({ role: 'user', content: message, timestamp: new Date().toISOString() });
@@ -672,17 +681,23 @@ window.PatentDetailChat = {
             
             contentDiv.textContent = '';
             
+            console.log('[PatentDetailChat] 开始流式接收...');
+            
             function scheduleRender() {
                 const now = Date.now();
                 if (now - lastRenderTime >= RENDER_INTERVAL) {
                     lastRenderTime = now;
-                    contentDiv.innerHTML = self.formatContentStreaming(fullContent);
+                    const renderedHtml = self.formatContentStreaming(fullContent);
+                    console.log('[PatentDetailChat] scheduleRender: fullContent长度=', fullContent.length, '渲染HTML长度=', renderedHtml.length);
+                    contentDiv.innerHTML = renderedHtml;
                     historyEl.scrollTop = historyEl.scrollHeight;
                 } else {
                     if (renderTimer) clearTimeout(renderTimer);
                     renderTimer = setTimeout(function() {
                         lastRenderTime = Date.now();
-                        contentDiv.innerHTML = self.formatContentStreaming(fullContent);
+                        const renderedHtml = self.formatContentStreaming(fullContent);
+                        console.log('[PatentDetailChat] scheduleRender(delayed): fullContent长度=', fullContent.length, '渲染HTML长度=', renderedHtml.length);
+                        contentDiv.innerHTML = renderedHtml;
                         historyEl.scrollTop = historyEl.scrollHeight;
                     }, RENDER_INTERVAL - (now - lastRenderTime));
                 }
@@ -705,25 +720,46 @@ window.PatentDetailChat = {
                     const line = lines[i];
                     if (!line.trim() || !line.startsWith('data:')) continue;
                     
-                    const jsonStr = line.substring(6).trim();
+                    let jsonStr = line.substring(5).trim();
+                    if (jsonStr.startsWith(' ')) jsonStr = jsonStr.substring(1);
+                    
+                    console.log('[PatentDetailChat] SSE行:', line.substring(0, 100), 'jsonStr:', jsonStr.substring(0, 100));
                     if (jsonStr === '[DONE]') continue;
                     
                     try {
                         const data = JSON.parse(jsonStr);
-                        const content = data.choices && data.choices[0] && data.choices[0].delta && data.choices[0].delta.content ? data.choices[0].delta.content : (data.content || '');
-                        if (content) {
-                            fullContent += content;
+                        
+                        if (data.error) {
+                            console.error('[PatentDetailChat] API返回错误:', data.error);
+                            throw new Error(data.error.message || JSON.stringify(data.error));
+                        }
+                        
+                        const delta = data.choices && data.choices[0] && data.choices[0].delta;
+                        const content = delta && delta.content ? delta.content : (data.content || '');
+                        const contentStr = typeof content === 'string' ? content : String(content);
+                        
+                        console.log('[PatentDetailChat] 解析内容:', contentStr.substring(0, 50), 'fullContent当前长度:', fullContent.length);
+                        if (contentStr) {
+                            fullContent += contentStr;
                             scheduleRender();
                         }
-                    } catch (e) {}
+                    } catch (e) {
+                        console.error('[PatentDetailChat] JSON解析失败:', e, 'jsonStr:', jsonStr.substring(0, 100));
+                    }
                 }
             }
             
             if (renderTimer) clearTimeout(renderTimer);
-            contentDiv.innerHTML = self.formatContent(fullContent);
+            
+            console.log('[PatentDetailChat] 流式接收完成，fullContent长度:', fullContent.length, '内容:', fullContent.substring(0, 200));
+            
+            const finalHtml = self.formatContent(fullContent);
+            console.log('[PatentDetailChat] 最终渲染HTML长度:', finalHtml.length, 'HTML:', finalHtml.substring(0, 200));
+            contentDiv.innerHTML = finalHtml;
             
             if (fullContent) {
                 self.messages.push({ role: 'assistant', content: fullContent, timestamp: new Date().toISOString() });
+                console.log('[PatentDetailChat] 已保存消息到messages，当前messages数量:', self.messages.length);
             }
             
         } catch (error) {
@@ -787,7 +823,10 @@ window.PatentDetailChat = {
     },
     
     formatContentStreaming: function(content) {
+        console.log('[PatentDetailChat] formatContentStreaming 输入:', content ? content.substring(0, 100) : 'empty', '长度:', content ? content.length : 0);
+        
         if (!content) {
+            console.log('[PatentDetailChat] formatContentStreaming: 内容为空，返回光标');
             return '<span class="blinking-cursor">|</span>';
         }
         
@@ -815,18 +854,26 @@ window.PatentDetailChat = {
                 });
                 
                 let html = marked.parse(processedContent);
+                console.log('[PatentDetailChat] formatContentStreaming: marked.parse返回长度=', html ? html.length : 0);
+                
+                if (!html || html.trim() === '') {
+                    console.warn('[PatentDetailChat] formatContentStreaming: marked.parse返回空，使用simpleFormatContent');
+                    return this.simpleFormatContent(content) + '<span class="blinking-cursor">|</span>';
+                }
                 
                 html = html.replace(/<\/code><\/pre>/g, '</code><span class="blinking-cursor">|</span></pre>');
                 html = html.replace(/<\/p>/g, '<span class="blinking-cursor">|</span></p>');
                 html = html.replace(/<\/li>/g, '<span class="blinking-cursor">|</span></li>');
                 html = html.replace(/<\/td>/g, '<span class="blinking-cursor">|</span></td>');
                 
+                console.log('[PatentDetailChat] formatContentStreaming: 最终HTML长度=', html.length);
                 return html;
             } catch (e) {
                 console.error('[PatentDetailChat] formatContentStreaming error:', e);
                 return this.simpleFormatContent(content) + '<span class="blinking-cursor">|</span>';
             }
         } else {
+            console.warn('[PatentDetailChat] formatContentStreaming: marked未加载');
             return this.simpleFormatContent(content) + '<span class="blinking-cursor">|</span>';
         }
     },
