@@ -754,8 +754,11 @@ window.PatentDetailChat = {
                 });
                 
                 const html = marked.parse(content);
-                console.log('[PatentDetailChat] formatContent: 渲染后HTML:', html.substring(0, 50));
-                console.log('[PatentDetailChat] formatContent: 渲染后HTML长度=', html.length);
+                console.log('[PatentDetailChat] formatContent: 渲染后HTML长度=', html ? html.length : 0);
+                
+                if (!html) {
+                    return '<span style="color: #999;">暂无内容</span>';
+                }
                 
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = html;
@@ -784,21 +787,24 @@ window.PatentDetailChat = {
     },
     
     formatContentStreaming: function(content) {
+        if (!content) {
+            return '<span class="blinking-cursor">|</span>';
+        }
+        
         if (typeof marked !== 'undefined') {
             try {
                 let processedContent = content;
                 
-                const codeBlockCount = (content.match(/```/g) || []).length;
+                const codeBlockMatches = content.match(/```/g);
+                const codeBlockCount = codeBlockMatches ? codeBlockMatches.length : 0;
                 if (codeBlockCount % 2 !== 0) {
                     processedContent += '\n```';
                 }
                 
-                const tableLineMatch = content.match(/^\|.*\|$/gm);
-                if (tableLineMatch && tableLineMatch.length > 0) {
-                    const lastLine = content.split('\n').pop();
-                    if (lastLine.startsWith('|') && !lastLine.endsWith('|')) {
-                        processedContent += '|';
-                    }
+                const lines = content.split('\n');
+                const lastLine = lines.length > 0 ? lines[lines.length - 1] : '';
+                if (lastLine.startsWith('|') && !lastLine.endsWith('|')) {
+                    processedContent += '|';
                 }
                 
                 marked.setOptions({
@@ -817,6 +823,7 @@ window.PatentDetailChat = {
                 
                 return html;
             } catch (e) {
+                console.error('[PatentDetailChat] formatContentStreaming error:', e);
                 return this.simpleFormatContent(content) + '<span class="blinking-cursor">|</span>';
             }
         } else {
