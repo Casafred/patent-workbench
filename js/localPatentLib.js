@@ -350,11 +350,11 @@ function initLocalPatentLib() {
     function performExpansion() {
         if (!appState.lpl.originalFile.jsonData) return alert('请先上传并选择有效的原始文件和工作表！');
         
-        const lplFamilyColNameInput = getEl('lpl_family_col_name_input');
-        const lplDelimiterInput = getEl('lpl_delimiter_input');
+        const lplFamilyColNameInput = getEl('lpl_family_col_name');
+        const lplDelimiterInput = getEl('lpl_delimiter');
         const lplExpandStatus = getEl('lpl_expand_status');
         const lplExpandResultArea = getEl('lpl_expand_result_area');
-        const lplUniqueCountSpan = getEl('lpl_unique_count_span');
+        const lplUniqueCountSpan = getEl('lpl_unique_count');
         const lplExpandedListOutput = getEl('lpl_expanded_list_output');
         
         if (!lplFamilyColNameInput || !lplDelimiterInput) {
