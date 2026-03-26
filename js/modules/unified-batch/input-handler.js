@@ -1,6 +1,9 @@
 /**
  * 统一批量处理系统 - 输入处理模块
  * 处理Excel导入和手动添加输入
+ * 
+ * 优化版本：直接加载原始列数据，不再进行前端拼接
+ * 支持高性能大数据量处理
  */
 
 import unifiedBatchState from './state.js';
@@ -18,6 +21,9 @@ const InputHandler = {
         totalRows: 0,
         version: 0
     },
+    
+    rawColumnData: null,
+    selectedColumns: null,
 
     getFileUploadState() {
         return { ...this.uploadState };
@@ -35,6 +41,8 @@ const InputHandler = {
             totalRows: 0,
             version: 0
         };
+        this.rawColumnData = null;
+        this.selectedColumns = null;
     },
 
     async handleExcelUpload(file, forceReplace = false) {
@@ -92,6 +100,8 @@ const InputHandler = {
                 };
                 
                 this.state.inputs = [];
+                this.rawColumnData = null;
+                this.selectedColumns = null;
                 this.state.task.status = 'idle';
                 
                 return {
@@ -138,97 +148,61 @@ const InputHandler = {
         }
 
         try {
-            const CHUNK_SIZE = 500;
-            const totalRows = this.state.excelTotalRows || 0;
-            const isLargeDataset = totalRows > 1000;
-            
-            if (isLargeDataset && onProgress) {
-                onProgress({ status: 'loading', progress: 0, message: '开始加载数据...' });
+            if (onProgress) {
+                onProgress({ status: 'loading', progress: 10, message: '正在使用高性能引擎加载列数据...' });
             }
             
-            this.state.inputs = [];
-            let loadedCount = 0;
-            let offset = 0;
-            let hasMore = true;
-            
-            while (hasMore) {
-                const response = await fetch(
-                    `/api/excel/${this.state.excelFileId}/data?header_row=0&page=1&page_size=${CHUNK_SIZE}&offset=${offset}`
-                );
-                const result = await response.json();
+            const response = await fetch(`/api/excel/${this.state.excelFileId}/load_columns_fast`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    columns: selectedColumns,
+                    header_row: 0
+                })
+            });
 
-                if (!result.success) {
-                    return { success: false, message: result.error || '获取数据失败', count: 0 };
-                }
+            const result = await response.json();
 
-                const sheetData = result.data.data;
-                
-                sheetData.forEach((row, index) => {
-                    const rowData = row.data;
-                    const globalIndex = offset + index;
-                    
-                    if (selectedColumns.length === 1) {
-                        const colName = selectedColumns[0];
-                        if (rowData[colName]) {
-                            this.state.inputs.push({
-                                id: `I${globalIndex + 1}`,
-                                content: String(rowData[colName]).trim()
-                            });
-                            loadedCount++;
-                        }
-                    } else {
-                        const multiColContent = {};
-                        let hasContent = false;
-                        
-                        selectedColumns.forEach(colName => {
-                            if (rowData[colName]) {
-                                multiColContent[colName] = String(rowData[colName]).trim();
-                                hasContent = true;
-                            } else {
-                                multiColContent[colName] = '';
-                            }
-                        });
-
-                        if (hasContent) {
-                            this.state.inputs.push({
-                                id: `I${globalIndex + 1}`,
-                                content: multiColContent
-                            });
-                            loadedCount++;
-                        }
-                    }
-                });
-
-                hasMore = result.data.has_more || (sheetData.length === CHUNK_SIZE);
-                offset += sheetData.length;
-                
-                if (isLargeDataset && onProgress) {
-                    const progress = totalRows > 0 ? Math.round((offset / totalRows) * 100) : 50;
-                    onProgress({
-                        status: 'loading',
-                        progress: progress,
-                        message: `正在加载数据... ${offset}/${totalRows || offset} 行`
-                    });
-                }
-                
-                if (!hasMore || offset >= 10000) {
-                    break;
-                }
+            if (!result.success) {
+                return { success: false, message: result.error || '获取数据失败', count: 0 };
             }
+
+            this.rawColumnData = result.data.results;
+            this.selectedColumns = selectedColumns;
+            
+            this.state.inputs = result.data.results.map((item, index) => ({
+                id: item.id || `I${index + 1}`,
+                data: item.data,
+                rawContent: item.data
+            }));
+            
+            const loadedCount = this.state.inputs.length;
 
             if (onProgress) {
-                onProgress({ status: 'completed', progress: 100, message: `加载完成，共 ${loadedCount} 条` });
+                onProgress({ 
+                    status: 'completed', 
+                    progress: 100, 
+                    message: `加载完成，共 ${loadedCount} 条 (${result.data.elapsed_time.toFixed(2)}秒, ${result.data.engine}引擎)` 
+                });
             }
 
             return {
                 success: true,
                 count: loadedCount,
-                message: `成功加载${loadedCount}条输入`
+                message: `成功加载${loadedCount}条输入（${result.data.engine}引擎，耗时${result.data.elapsed_time.toFixed(2)}秒）`
             };
         } catch (err) {
             console.error('加载Excel数据错误:', err);
             return { success: false, message: `加载数据失败: ${err.message}`, count: 0 };
         }
+    },
+    
+    getRawColumnData() {
+        return this.rawColumnData;
+    },
+    
+    getSelectedColumns() {
+        return this.selectedColumns;
     },
 
     async loadInputsFromConfig(indexColumn, concatColumns, onProgress) {

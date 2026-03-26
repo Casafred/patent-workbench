@@ -100,6 +100,10 @@ const OutputHandler = {
                             row['原始_' + key] = value;
                         }
                     });
+                } else if (input.data) {
+                    Object.entries(input.data).forEach(([key, value]) => {
+                        row['输入_' + key] = value;
+                    });
                 } else if (typeof input.content === 'string') {
                     row['输入内容'] = input.content;
                 } else if (typeof input.content === 'object') {

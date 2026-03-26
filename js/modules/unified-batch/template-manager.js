@@ -284,10 +284,12 @@ const TemplateManager = {
         let userPrompt = template.userPromptTemplate || '';
         const insertMode = template.insertMode || this.INSERT_MODE.MERGED;
         
-        if (insertMode === this.INSERT_MODE.SEPARATE && typeof input.content === 'object') {
-            userPrompt = this._buildSeparatePrompt(userPrompt, input.content, template);
+        const contentData = input.data || input.content;
+        
+        if (insertMode === this.INSERT_MODE.SEPARATE && typeof contentData === 'object') {
+            userPrompt = this._buildSeparatePrompt(userPrompt, contentData, template);
         } else {
-            userPrompt = this._buildMergedPrompt(userPrompt, input, template);
+            userPrompt = this._buildMergedPrompt(userPrompt, contentData, template);
         }
 
         if (template.outputFields && template.outputFields.length > 0) {
@@ -333,22 +335,22 @@ const TemplateManager = {
         return result;
     },
     
-    _buildMergedPrompt(template, input, templateConfig) {
+    _buildMergedPrompt(template, contentData, templateConfig) {
         let inputContent;
         const mergedIntro = templateConfig.mergedIntro || '以下是相关内容：';
         
-        if (typeof input.content === 'string') {
-            inputContent = input.content;
+        if (typeof contentData === 'string') {
+            inputContent = contentData;
         } else {
             const parts = [];
-            const entries = Object.entries(input.content);
+            const entries = Object.entries(contentData);
             
             if (entries.length > 1) {
                 parts.push(mergedIntro);
             }
             
             entries.forEach(([key, value]) => {
-                if (value && value.trim()) {
+                if (value && String(value).trim()) {
                     parts.push(`【${key}】\n${value}`);
                 }
             });

@@ -562,6 +562,110 @@ def concat_columns_fast(file_id):
         return create_response(error=f"列拼接失败: {str(e)}", status_code=500)
 
 
+@excel_upload_bp.route('/api/excel/<file_id>/load_columns_fast', methods=['POST'])
+def load_columns_fast(file_id):
+    """
+    高性能列数据加载API（优化版）
+    
+    直接加载原始列数据，不进行拼接处理
+    适用于模板占位符替换场景，性能更优
+    
+    Args:
+        file_id: 文件ID
+    
+    Request body:
+        - columns: 需要加载的列名列表 (必填)
+        - header_row: 标题行索引 (可选，默认0)
+        - index_column: 索引列名 (可选)
+    
+    Returns:
+        列数据列表，每行包含原始数据字典
+    """
+    is_valid, error_response = validate_api_request()
+    if not is_valid:
+        return error_response
+    
+    start_time = time.time()
+    
+    try:
+        file_path = os.path.join(UPLOAD_FOLDER, file_id)
+        
+        if not os.path.exists(file_path):
+            return create_response(error="文件不存在", status_code=404)
+        
+        req_data = request.get_json()
+        
+        if 'columns' not in req_data or not req_data['columns']:
+            return create_response(error="缺少必填字段: columns", status_code=400)
+        
+        columns = req_data['columns']
+        header_row = int(req_data.get('header_row', 0))
+        index_column = req_data.get('index_column', None)
+        
+        print(f"[列数据加载] 开始处理: {file_id}, 列: {columns}")
+        
+        reader = FastExcelReader(file_path)
+        
+        all_columns = list(columns)
+        if index_column and index_column not in all_columns:
+            all_columns.insert(0, index_column)
+        
+        result = reader.read_sheet_fast(
+            sheet_name_or_index=0,
+            header_row=header_row,
+            columns=all_columns
+        )
+        
+        if not result.success:
+            return create_response(error=result.error, status_code=400)
+        
+        results = []
+        for idx, row_item in enumerate(result.data):
+            row_data = row_item.get('data', {})
+            
+            has_content = False
+            for col in columns:
+                val = row_data.get(col, '')
+                if val and str(val).strip() and str(val).strip() not in ['nan', 'None', 'null', 'NaN', '']:
+                    has_content = True
+                    break
+            
+            if not has_content:
+                continue
+            
+            item_id = f'I{len(results) + 1}'
+            if index_column and row_data.get(index_column):
+                item_id = str(row_data.get(index_column)).strip()
+            
+            filtered_data = {col: str(row_data.get(col, '')).strip() for col in columns}
+            
+            results.append({
+                'id': item_id,
+                'data': filtered_data,
+                'row_index': row_item.get('row_index', idx + 1)
+            })
+        
+        elapsed = time.time() - start_time
+        file_size_mb = os.path.getsize(file_path) / (1024 * 1024)
+        
+        print(f"[列数据加载] 完成: {len(results)} 行, 耗时 {elapsed:.2f}秒, 文件大小 {file_size_mb:.2f}MB")
+        
+        return create_response(data={
+            'success': True,
+            'results': results,
+            'total_count': len(results),
+            'columns': columns,
+            'elapsed_time': elapsed,
+            'file_size_mb': file_size_mb,
+            'engine': result.engine,
+            'message': f'成功加载 {len(results)} 行数据'
+        })
+        
+    except Exception as e:
+        print(f"列数据加载失败: {traceback.format_exc()}")
+        return create_response(error=f"列数据加载失败: {str(e)}", status_code=500)
+
+
 @excel_upload_bp.route('/api/excel/<file_id>/benchmark', methods=['GET'])
 def benchmark_file(file_id):
     """
