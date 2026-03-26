@@ -2268,8 +2268,11 @@ window.openImageViewer = function(startIndex, patentNumber) {
     if (drawings.length === 0) return;
     
     let currentIndex = startIndex;
-    let scale = 1;
+    let scale = 0.6;
     let rotation = 0;
+    const minScale = 0.3;
+    const maxScale = 3;
+    const zoomStep = 0.1;
     
     const viewerHTML = `
         <div id="image-viewer-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center;">
@@ -2289,7 +2292,7 @@ window.openImageViewer = function(startIndex, patentNumber) {
                 <button onclick="rotateImage(90)" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 20px; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;" title="向右旋转90度">↻</button>
             </div>
             <div id="viewer-image-container" style="position: relative; display: flex; align-items: center; justify-content: center;">
-                <img id="viewer-image" src="${drawings[currentIndex]}" style="max-width: 90%; max-height: 80%; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); transition: transform 0.3s ease;">
+                <img id="viewer-image" src="${drawings[currentIndex]}" style="max-width: 85%; max-height: 55%; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); transition: transform 0.3s ease;">
             </div>
             <div style="position: absolute; bottom: 20px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; max-width: 90%; max-height: 80px; overflow-y: auto;">
                 ${drawings.map((d, i) => `
@@ -2308,13 +2311,24 @@ window.openImageViewer = function(startIndex, patentNumber) {
     window.currentViewerIndex = currentIndex;
     window.currentViewerScale = scale;
     window.currentViewerRotation = rotation;
+    window.currentViewerMinScale = minScale;
+    window.currentViewerMaxScale = maxScale;
+    window.currentViewerZoomStep = zoomStep;
     
     document.addEventListener('keydown', handleViewerKeydown);
+    
+    const overlay = document.getElementById('image-viewer-overlay');
+    if (overlay) {
+        overlay.addEventListener('wheel', handleViewerWheel, { passive: false });
+    }
 };
 
 window.closeImageViewer = function() {
     const overlay = document.getElementById('image-viewer-overlay');
-    if (overlay) overlay.remove();
+    if (overlay) {
+        overlay.removeEventListener('wheel', handleViewerWheel);
+        overlay.remove();
+    }
     document.body.style.overflow = '';
     document.removeEventListener('keydown', handleViewerKeydown);
 };
@@ -2354,7 +2368,7 @@ function updateViewerImage() {
 }
 
 window.zoomImage = function(delta) {
-    window.currentViewerScale = Math.max(0.5, Math.min(3, window.currentViewerScale + delta));
+    window.currentViewerScale = Math.max(window.currentViewerMinScale || 0.3, Math.min(window.currentViewerMaxScale || 3, window.currentViewerScale + delta));
     updateViewerImage();
 };
 
@@ -2367,9 +2381,15 @@ function handleViewerKeydown(e) {
     if (e.key === 'Escape') closeImageViewer();
     else if (e.key === 'ArrowLeft') navigateImageViewer(-1);
     else if (e.key === 'ArrowRight') navigateImageViewer(1);
-    else if (e.key === 'ArrowUp' || e.key === '+') zoomImage(0.2);
-    else if (e.key === 'ArrowDown' || e.key === '-') zoomImage(-0.2);
+    else if (e.key === 'ArrowUp' || e.key === '+') zoomImage(window.currentViewerZoomStep || 0.1);
+    else if (e.key === 'ArrowDown' || e.key === '-') zoomImage(-(window.currentViewerZoomStep || 0.1));
     else if (e.key === 'r' || e.key === 'R') rotateImage(90);
+}
+
+function handleViewerWheel(e) {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -(window.currentViewerZoomStep || 0.1) : (window.currentViewerZoomStep || 0.1);
+    zoomImage(delta);
 }
 
 // 从弹窗分析关系专利

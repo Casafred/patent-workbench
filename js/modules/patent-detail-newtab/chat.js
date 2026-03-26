@@ -705,7 +705,7 @@ window.PatentDetailChat = {
                     const line = lines[i];
                     if (!line.trim() || !line.startsWith('data:')) continue;
                     
-                    const jsonStr = line.substring(5).trim();
+                    const jsonStr = line.substring(6).trim();
                     if (jsonStr === '[DONE]') continue;
                     
                     try {
@@ -737,8 +737,15 @@ window.PatentDetailChat = {
     },
     
     formatContent: function(content) {
+        if (!content) {
+            console.warn('[PatentDetailChat] formatContent: 内容为空');
+            return '<span style="color: #999;">暂无内容</span>';
+        }
+        
         if (typeof marked !== 'undefined') {
             try {
+                console.log('[PatentDetailChat] formatContent: 内容长度=', content.length);
+                
                 marked.setOptions({
                     breaks: true,
                     gfm: true,
@@ -747,6 +754,8 @@ window.PatentDetailChat = {
                 });
                 
                 const html = marked.parse(content);
+                console.log('[PatentDetailChat] formatContent: 渲染后HTML:', html.substring(0, 50));
+                console.log('[PatentDetailChat] formatContent: 渲染后HTML长度=', html.length);
                 
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = html;
@@ -765,10 +774,11 @@ window.PatentDetailChat = {
                 
                 return tempDiv.innerHTML;
             } catch (e) {
-                console.error('Markdown渲染失败:', e);
+                console.error('[PatentDetailChat] Markdown渲染失败:', e);
                 return this.simpleFormatContent(content);
             }
         } else {
+            console.warn('[PatentDetailChat] marked库未加载');
             return this.simpleFormatContent(content);
         }
     },
