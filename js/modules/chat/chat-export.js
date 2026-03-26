@@ -223,15 +223,20 @@ async function exportToPNG(convo, conversationTitle, personaName, filename) {
         return;
     }
     
+    const chatWindow = document.getElementById('chat_window');
+    const chatWindowStyles = chatWindow ? getComputedStyle(chatWindow) : null;
+    const bgColor = chatWindowStyles?.backgroundColor || '#ffffff';
+    const fontFamily = chatWindowStyles?.fontFamily || 'Arial, sans-serif';
+    
     const tempContainer = document.createElement('div');
     tempContainer.style.cssText = `
         position: absolute;
         left: -9999px;
         top: 0;
         width: 800px;
-        background-color: ${getComputedStyle(chatWindow).backgroundColor};
+        background-color: ${bgColor};
         padding: 20px;
-        font-family: ${getComputedStyle(chatWindow).fontFamily};
+        font-family: ${fontFamily};
     `;
     
     // Add title
@@ -286,7 +291,7 @@ async function exportToPNG(convo, conversationTitle, personaName, filename) {
         const canvas = await html2canvas(tempContainer, {
             scale: 2,
             useCORS: true,
-            backgroundColor: getComputedStyle(chatWindow).backgroundColor,
+            backgroundColor: bgColor,
             logging: false
         });
         
