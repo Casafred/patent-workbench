@@ -653,6 +653,7 @@ def login():
         if AuthService.verify_credentials(username, password):
             client_ip = AuthService.get_client_ip()
             AuthService.manage_user_ip(username, client_ip)
+            AuthService.record_login(username, client_ip)
             
             remember_me = request.form.get('remember_me') == 'on'
             

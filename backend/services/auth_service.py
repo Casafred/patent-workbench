@@ -147,10 +147,54 @@ class AuthService:
                 'disabled': user_meta.get('disabled', False),
                 'created_at': user_meta.get('created_at'),
                 'email': user_meta.get('email'),
-                'nickname': user_meta.get('nickname')
+                'nickname': user_meta.get('nickname'),
+                'last_login_at': user_meta.get('last_login_at'),
+                'last_login_ip': user_meta.get('last_login_ip')
             })
         
         return users_list
+    
+    @staticmethod
+    def record_login(username, client_ip):
+        """
+        Record user's last login time and IP address.
+        
+        Args:
+            username: Username
+            client_ip: Client IP address
+        
+        Returns:
+            bool: True if successful
+        """
+        try:
+            data = AuthService.load_users_data()
+            
+            if isinstance(data, dict) and 'users' in data:
+                users = data.get('users', {})
+                metadata = data.get('metadata', {})
+            else:
+                users = data
+                metadata = {}
+            
+            if username not in users:
+                return False
+            
+            if username not in metadata:
+                metadata[username] = {}
+            
+            metadata[username]['last_login_at'] = time.strftime('%Y-%m-%d %H:%M:%S')
+            metadata[username]['last_login_ip'] = client_ip
+            
+            if isinstance(data, dict) and 'users' in data:
+                data['metadata'] = metadata
+            else:
+                data = {'users': users, 'metadata': metadata}
+            
+            AuthService.save_users_data(data)
+            return True
+        except Exception as e:
+            print(f"记录登录信息失败: {e}")
+            return False
     
     @staticmethod
     def toggle_user_status(username):

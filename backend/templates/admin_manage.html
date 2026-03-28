@@ -681,7 +681,7 @@
             let html = '<div class="card"><div class="card-header"><span class="card-title">用户列表</span>';
             html += '<button class="btn btn-primary btn-sm" onclick="showAddUserModal()">+ 添加用户</button></div>';
             html += '<table class="user-table"><thead><tr>';
-            html += '<th>用户名</th><th>状态</th><th>创建时间</th><th>邮箱</th><th>操作</th>';
+            html += '<th>用户名</th><th>状态</th><th>创建时间</th><th>最后登录</th><th>登录IP</th><th>邮箱</th><th>操作</th>';
             html += '</tr></thead><tbody>';
             
             users.forEach(user => {
@@ -691,6 +691,8 @@
                 html += '<td><strong>' + user.username + '</strong></td>';
                 html += '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>';
                 html += '<td>' + (user.created_at || '-') + '</td>';
+                html += '<td>' + (user.last_login_at || '-') + '</td>';
+                html += '<td>' + (user.last_login_ip || '-') + '</td>';
                 html += '<td>' + (user.email || '-') + '</td>';
                 html += '<td>';
                 html += '<button class="btn btn-sm ' + (user.disabled ? 'btn-primary' : 'btn-warning') + '" onclick="toggleUser(\'' + user.username + '\')">' + (user.disabled ? '启用' : '停用') + '</button> ';
