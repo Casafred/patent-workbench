@@ -99,6 +99,66 @@
       },
       "batch_discount": 0.5,
       "enabled": false
+    },
+    "baidu": {
+      "name": "百度AI Studio",
+      "api_base": "https://aistudio.baidu.com/serving/online",
+      "models": [
+        {"id": "paddle_ocr_vl", "name": "PaddleOCR-VL-1.5", "type": "ocr", "context": "-", "free": true, "description": "百度飞桨文档OCR引擎，支持版面分析、公式表格识别"}
+      ],
+      "default_model": "paddle_ocr_vl",
+      "features": {
+        "ocr": true,
+        "layout_parsing": true,
+        "formula_recognition": true,
+        "table_recognition": true,
+        "chart_recognition": true,
+        "markdown_output": true
+      },
+      "ocr_engines": {
+        "paddle_ocr_vl": {
+          "name": "PaddleOCR-VL-1.5",
+          "description": "百度飞桨文档OCR引擎，94.5%精度，支持版面分析、公式表格识别",
+          "features": {
+            "layout_parsing": true,
+            "formula_recognition": true,
+            "table_recognition": true,
+            "chart_recognition": true,
+            "markdown_output": true,
+            "multi_page": true
+          },
+          "requires_api_key": false,
+          "preconfigured": true
+        }
+      }
+    }
+  },
+  "ocr_engines": {
+    "glm_ocr": {
+      "name": "GLM OCR",
+      "provider": "智谱AI",
+      "description": "智谱AI文档OCR引擎，需要API Key",
+      "requires_api_key": true,
+      "features": {
+        "layout_parsing": true,
+        "formula_recognition": true,
+        "table_recognition": true
+      }
+    },
+    "paddle_ocr_vl": {
+      "name": "PaddleOCR-VL-1.5",
+      "provider": "百度AI Studio",
+      "description": "百度飞桨文档OCR引擎，94.5%精度，支持版面分析、公式表格识别，预置API无需配置",
+      "requires_api_key": false,
+      "preconfigured": true,
+      "features": {
+        "layout_parsing": true,
+        "formula_recognition": true,
+        "table_recognition": true,
+        "chart_recognition": true,
+        "markdown_output": true,
+        "multi_page": true
+      }
     }
   },
   "default_provider": "zhipu",

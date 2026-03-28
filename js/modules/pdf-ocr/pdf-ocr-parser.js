@@ -1,26 +1,31 @@
 /**
  * PDF-OCR 解析模块
- * 处理GLM-OCR API调用和结果解析
+ * 处理GLM-OCR和PaddleOCR-VL API调用和结果解析
  * 支持智能缓存和页面范围解析
  */
 
 class PDFOCRParser {
     constructor() {
-        this.apiUrl = 'https://open.bigmodel.cn/api/paas/v4/layout_parsing';
+        this.glmApiUrl = 'https://open.bigmodel.cn/api/paas/v4/layout_parsing';
+        this.backendApiUrl = '/api/pdf-ocr/parse';
         this.isParsing = false;
         this.currentTask = null;
         this.currentFileHash = null;
+        this.currentEngine = 'glm_ocr';
         this.init();
     }
 
     init() {
         this.initElements();
         this.bindEvents();
+        this.loadSavedEngine();
     }
 
     initElements() {
         this.elements = {
             startBtn: document.getElementById('start-ocr-btn'),
+            engineSelect: document.getElementById('ocr-engine-select'),
+            engineHint: document.getElementById('ocr-engine-hint'),
             parseMode: document.getElementById('ocr-parse-mode'),
             pageRangeGroup: document.getElementById('ocr-page-range-group'),
             pageRangeInput: document.getElementById('ocr-page-range-input'),
@@ -35,12 +40,46 @@ class PDFOCRParser {
         };
     }
 
+    loadSavedEngine() {
+        const savedEngine = localStorage.getItem('pdf_ocr_engine');
+        if (savedEngine && this.elements.engineSelect) {
+            const option = this.elements.engineSelect.querySelector(`option[value="${savedEngine}"]`);
+            if (option) {
+                this.elements.engineSelect.value = savedEngine;
+                this.currentEngine = savedEngine;
+            }
+        }
+        this.updateEngineHint();
+    }
+
+    updateEngineHint() {
+        if (!this.elements.engineHint) return;
+        
+        if (this.currentEngine === 'paddle_ocr_vl') {
+            this.elements.engineHint.innerHTML = 'PaddleOCR-VL预置API，无需配置，支持版面分析、公式表格识别';
+            this.elements.engineHint.style.color = '#16a34a';
+        } else {
+            this.elements.engineHint.innerHTML = 'GLM OCR需要API Key，请在设置中配置';
+            this.elements.engineHint.style.color = '#6c757d';
+        }
+    }
+
     bindEvents() {
         const startBtn = document.getElementById('start-ocr-btn');
         if (startBtn) {
             startBtn.addEventListener('click', (e) => {
                 const forceRefresh = e.shiftKey;
                 this.startOCR(forceRefresh);
+            });
+        }
+
+        const engineSelect = document.getElementById('ocr-engine-select');
+        if (engineSelect) {
+            engineSelect.addEventListener('change', () => {
+                this.currentEngine = engineSelect.value;
+                localStorage.setItem('pdf_ocr_engine', this.currentEngine);
+                this.updateEngineHint();
+                this.updateCacheStatus();
             });
         }
 
@@ -196,11 +235,16 @@ class PDFOCRParser {
             }
         }
 
-        const apiKey = await this.getAPIKey();
-        if (!apiKey) {
-            this.showToast('请先配置智谱AI API密钥', 'error');
-            this.openSettingsPanel();
-            return;
+        const engine = this.currentEngine || 'glm_ocr';
+        let apiKey = null;
+        
+        if (engine === 'glm_ocr') {
+            apiKey = await this.getAPIKey();
+            if (!apiKey) {
+                this.showToast('请先配置智谱AI API密钥', 'error');
+                this.openSettingsPanel();
+                return;
+            }
         }
 
         const settings = this.getSettings();
@@ -213,6 +257,7 @@ class PDFOCRParser {
         const fileHash = this.currentFileHash || await window.pdfOCRCache?.generateFileHash(file);
         
         console.log('[PDF-OCR-Parser] startOCR:');
+        console.log('  - engine:', engine);
         console.log('  - settings.mode:', settings.mode);
         console.log('  - useCache:', useCache);
         console.log('  - forceRefresh:', forceRefresh);
@@ -223,19 +268,19 @@ class PDFOCRParser {
             this.updateUIState('parsing');
 
             if (settings.mode === 'page') {
-                await this.parseCurrentPage(file, apiKey, fileHash, useCache, forceRefresh);
+                await this.parseCurrentPage(file, apiKey, fileHash, useCache, forceRefresh, engine);
             } else if (settings.mode === 'range') {
                 if (window.IS_GUEST_MODE) {
                     this.showToast('游客模式不支持自定义范围解析', 'error');
                     return;
                 }
-                await this.parsePageRange(file, apiKey, fileHash, useCache, forceRefresh, settings.pageRange);
+                await this.parsePageRange(file, apiKey, fileHash, useCache, forceRefresh, settings.pageRange, engine);
             } else {
                 if (window.IS_GUEST_MODE) {
                     this.showToast('游客模式不支持全部页面解析', 'error');
                     return;
                 }
-                await this.parseAllPages(file, apiKey, fileHash, useCache, forceRefresh);
+                await this.parseAllPages(file, apiKey, fileHash, useCache, forceRefresh, engine);
             }
 
         } catch (error) {
@@ -248,11 +293,13 @@ class PDFOCRParser {
         }
     }
 
-    async parseCurrentPage(file, apiKey, fileHash, useCache, forceRefresh) {
+    async parseCurrentPage(file, apiKey, fileHash, useCache, forceRefresh, engine = 'glm_ocr') {
         const pageNum = window.pdfOCRCore?.currentPage || 1;
         const totalPages = window.pdfOCRCore?.totalPages || 1;
         
-        if (useCache && !forceRefresh && window.pdfOCRCache?.hasCache(fileHash, pageNum)) {
+        const cacheKey = `${engine}_${fileHash}_${pageNum}`;
+        
+        if (useCache && !forceRefresh && window.pdfOCRCache?.hasCache(fileHash, pageNum, engine)) {
             console.log(`[PDF-OCR-Parser] 使用缓存: 第${pageNum}页`);
             this.updateProgress(50, `使用缓存: 第${pageNum}页...`);
             
@@ -264,22 +311,22 @@ class PDFOCRParser {
             }
         }
 
-        this.updateProgress(10, `正在解析第${pageNum}页...`);
+        this.updateProgress(10, `正在解析第${pageNum}页 (${engine === 'paddle_ocr_vl' ? 'PaddleOCR-VL' : 'GLM OCR'})...`);
         
         const fileData = await this.prepareFileDataForPage(file, pageNum);
-        const result = await this.callGLMOCR(fileData, apiKey, {});
+        const result = await this.callOCR(fileData, apiKey, engine, {});
         const normalizedResult = this.normalizeResult(result, pageNum);
         
         if (useCache && window.pdfOCRCache && !window.IS_GUEST_MODE) {
-            window.pdfOCRCache.setCache(fileHash, pageNum, normalizedResult);
-            console.log(`[PDF-OCR-Parser] 已缓存: 第${pageNum}页`);
+            window.pdfOCRCache.setCache(fileHash, pageNum, normalizedResult, engine);
+            console.log(`[PDF-OCR-Parser] 已缓存: 第${pageNum}页 (引擎: ${engine})`);
         }
         
         this.handleParseResult(normalizedResult, true);
-        this.showToast(`第${pageNum}页OCR解析完成`, 'success');
+        this.showToast(`第${pageNum}页OCR解析完成 (${engine === 'paddle_ocr_vl' ? 'PaddleOCR-VL' : 'GLM OCR'})`, 'success');
     }
 
-    async parsePageRange(file, apiKey, fileHash, useCache, forceRefresh, pageRangeStr) {
+    async parsePageRange(file, apiKey, fileHash, useCache, forceRefresh, pageRangeStr, engine = 'glm_ocr') {
         const totalPages = window.pdfOCRCore?.totalPages || 1;
         const pages = window.pdfOCRCache?.parsePageRange(pageRangeStr, totalPages) || [];
         
@@ -287,7 +334,7 @@ class PDFOCRParser {
             throw new Error('请输入有效的页面范围');
         }
         
-        console.log(`[PDF-OCR-Parser] 解析页面范围: ${pages.join(', ')}`);
+        console.log(`[PDF-OCR-Parser] 解析页面范围: ${pages.join(', ')} (引擎: ${engine})`);
         
         let cachedCount = 0;
         let newParseCount = 0;
@@ -296,10 +343,10 @@ class PDFOCRParser {
             const pageNum = pages[i];
             const progress = Math.round(((i + 1) / pages.length) * 100);
             
-            if (useCache && !forceRefresh && window.pdfOCRCache?.hasCache(fileHash, pageNum)) {
+            if (useCache && !forceRefresh && window.pdfOCRCache?.hasCache(fileHash, pageNum, engine)) {
                 this.updateProgress(progress, `使用缓存: 第${pageNum}页 (${i + 1}/${pages.length})`);
                 
-                const cachedResult = window.pdfOCRCache.getCache(fileHash, pageNum);
+                const cachedResult = window.pdfOCRCache.getCache(fileHash, pageNum, engine);
                 if (cachedResult) {
                     this.handleParseResult(cachedResult, true);
                     cachedCount++;
@@ -310,11 +357,11 @@ class PDFOCRParser {
             this.updateProgress(progress, `正在解析第${pageNum}页 (${i + 1}/${pages.length})...`);
             
             const fileData = await this.prepareFileDataForPage(file, pageNum);
-            const result = await this.callGLMOCR(fileData, apiKey, {});
+            const result = await this.callOCR(fileData, apiKey, engine, {});
             const normalizedResult = this.normalizeResult(result, pageNum);
             
             if (useCache && window.pdfOCRCache) {
-                window.pdfOCRCache.setCache(fileHash, pageNum, normalizedResult);
+                window.pdfOCRCache.setCache(fileHash, pageNum, normalizedResult, engine);
             }
             
             this.handleParseResult(normalizedResult, true);
@@ -336,10 +383,10 @@ class PDFOCRParser {
         this.showToast(message, 'success');
     }
 
-    async parseAllPages(file, apiKey, fileHash, useCache, forceRefresh) {
+    async parseAllPages(file, apiKey, fileHash, useCache, forceRefresh, engine = 'glm_ocr') {
         const totalPages = window.pdfOCRCore?.totalPages || 1;
         
-        console.log(`[PDF-OCR-Parser] 解析全部页面: 共${totalPages}页`);
+        console.log(`[PDF-OCR-Parser] 解析全部页面: 共${totalPages}页 (引擎: ${engine})`);
         
         let cachedCount = 0;
         let newParseCount = 0;
@@ -347,7 +394,7 @@ class PDFOCRParser {
         for (let i = 1; i <= totalPages; i++) {
             const progress = Math.round((i / totalPages) * 100);
             
-            if (useCache && !forceRefresh && window.pdfOCRCache?.hasCache(fileHash, i)) {
+            if (useCache && !forceRefresh && window.pdfOCRCache?.hasCache(fileHash, i, engine)) {
                 this.updateProgress(progress, `使用缓存: 第${i}页 (${i}/${totalPages})`);
                 
                 const cachedResult = window.pdfOCRCache.getCache(fileHash, i);
@@ -465,6 +512,53 @@ class PDFOCRParser {
                 resolve(blob);
             }, 'image/png', 0.95);
         });
+    }
+
+    async callOCR(fileData, apiKey, engine = 'glm_ocr', settings = {}) {
+        if (engine === 'paddle_ocr_vl') {
+            return await this.callPaddleOCRVL(fileData, settings);
+        } else {
+            return await this.callGLMOCR(fileData, apiKey, settings);
+        }
+    }
+
+    async callPaddleOCRVL(fileData, settings = {}) {
+        const base64Data = await this.fileToBase64(fileData.data);
+        const base64Content = base64Data.split(',')[1] || base64Data;
+        
+        const requestBody = {
+            file: base64Content,
+            engine: 'paddle_ocr_vl',
+            options: {
+                use_doc_orientation_classify: settings.useDocOrientationClassify ?? true,
+                use_layout_detection: settings.useLayoutDetection ?? true,
+                use_chart_recognition: settings.useChartRecognition ?? false,
+                prettify_markdown: settings.prettifyMarkdown ?? true
+            }
+        };
+
+        console.log('[PDF-OCR-Parser] 调用PaddleOCR-VL API...');
+
+        const response = await fetch(this.backendApiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `PaddleOCR-VL API请求失败: ${response.status}`);
+        }
+
+        const result = await response.json();
+        
+        if (!result.success) {
+            throw new Error(result.error || 'PaddleOCR-VL解析失败');
+        }
+
+        return result.data?.result || result.result || result;
     }
 
     async callGLMOCR(fileData, apiKey, settings) {

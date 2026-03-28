@@ -1996,6 +1996,34 @@ def upload_landing_gif():
         print(f"Error uploading gif: {traceback.format_exc()}")
         return create_response(error=f"上传失败: {str(e)}", status_code=500)
 
+
+# --- PDF OCR API路由 ---
+@app.route('/api/pdf-ocr/parse', methods=['POST'])
+def parse_pdf_ocr():
+    """使用指定OCR引擎解析文档"""
+    is_valid, error_response = validate_api_request()
+    if not is_valid:
+        return error_response
+    
+    try:
+        from backend.routes.pdf_ocr import parse_document
+        return parse_document()
+    except Exception as e:
+        print(f"Error in parse_pdf_ocr: {traceback.format_exc()}")
+        return create_response(error=f"文档解析失败: {str(e)}", status_code=500)
+
+
+@app.route('/api/pdf-ocr/engines', methods=['GET'])
+def get_pdf_ocr_engines():
+    """获取可用的OCR引擎列表"""
+    try:
+        from backend.routes.pdf_ocr import get_available_engines
+        return get_available_engines()
+    except Exception as e:
+        print(f"Error getting OCR engines: {traceback.format_exc()}")
+        return create_response(error=f"获取OCR引擎列表失败: {str(e)}", status_code=500)
+
+
 # --- 启动前初始化 ---
 init_db()
 
