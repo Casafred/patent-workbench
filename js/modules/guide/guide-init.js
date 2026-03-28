@@ -166,6 +166,10 @@
             const self = this;
             
             setTimeout(function() {
+                if (window.FirstLoginTip) {
+                    window.FirstLoginTip.autoShow();
+                }
+                
                 if (window.GuideSystem && !window.GuideSystem.isCompleted()) {
                     const hasApiKey = self.checkHasApiKey();
                     
