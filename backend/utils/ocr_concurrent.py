@@ -162,7 +162,8 @@ def process_drawings_concurrent(
     force_refresh: bool = False,
     glm_api_key: str = None,
     paddle_token: str = None,
-    max_workers: int = None
+    max_workers: int = None,
+    timeout_per_image: int = 60
 ) -> Tuple[List[Dict], Dict[str, Dict], set]:
     if not drawings:
         return [], {}, set()
@@ -171,7 +172,7 @@ def process_drawings_concurrent(
         max_workers = OCR_CONCURRENCY_LIMITS.get(ocr_mode, 3)
     
     logger.info(f"[ConcurrentOCR] Starting concurrent processing of {len(drawings)} drawings")
-    logger.info(f"[ConcurrentOCR] OCR mode: {ocr_mode}, Max workers: {max_workers}")
+    logger.info(f"[ConcurrentOCR] OCR mode: {ocr_mode}, Max workers: {max_workers}, Timeout per image: {timeout_per_image}s")
     
     processed_results = []
     cache_info = {}
@@ -196,7 +197,7 @@ def process_drawings_concurrent(
             drawing_name = drawing.get('name', 'unknown')
             
             try:
-                result = future.result()
+                result = future.result(timeout=timeout_per_image)
                 
                 if result.get('success', False):
                     cache_info[drawing_name] = result.get('cache_info', {})
@@ -218,6 +219,16 @@ def process_drawings_concurrent(
                 if not result.get('success', False):
                     processed_results[-1]['error'] = result.get('error', 'Unknown error')
                     
+            except TimeoutError:
+                logger.error(f"[ConcurrentOCR] Timeout processing {drawing_name} after {timeout_per_image}s")
+                future.cancel()
+                processed_results.append({
+                    'name': drawing_name,
+                    'type': drawing.get('type', ''),
+                    'size': drawing.get('size', 0),
+                    'ocr_results': [],
+                    'error': f'OCR处理超时 ({timeout_per_image}秒)'
+                })
             except Exception as e:
                 logger.error(f"[ConcurrentOCR] Exception getting result for {drawing_name}: {traceback.format_exc()}")
                 processed_results.append({

@@ -1293,13 +1293,26 @@ async function startProcessing() {
         
         const ocrStartTime = Date.now();
         
-        // 根据OCR模式设置不同的超时时间
-        const ocrTimeouts = {
-            'rapidocr': 60000,    // RapidOCR本地处理，60秒
-            'glm_ocr': 90000,     // GLM OCR API，90秒
-            'paddle_ocr': 90000   // Paddle OCR API，90秒
+        // 根据OCR模式和图片数量动态计算超时时间
+        // 并发限制: rapidocr=5, glm_ocr=2, paddle_ocr=3
+        // 每张图片OCR约需15秒
+        const ocrConcurrency = {
+            'rapidocr': 5,
+            'glm_ocr': 2,
+            'paddle_ocr': 3
         };
-        const ocrTimeout = ocrTimeouts[ocrMode] || 60000;
+        const ocrTimePerImage = 15000; // 每张图片约15秒
+        const ocrBaseTime = 30000; // 基础时间30秒（网络开销等）
+        const concurrency = ocrConcurrency[ocrMode] || 5;
+        const imageCount = drawingsData.length;
+        // 计算批次数量，向上取整
+        const batches = Math.ceil(imageCount / concurrency);
+        // 总超时 = 基础时间 + 批次数 * 每张图时间 + 缓冲时间(20%)
+        const ocrTimeout = Math.min(
+            Math.ceil(ocrBaseTime + batches * ocrTimePerImage * 1.2),
+            300000 // 最大5分钟
+        );
+        console.log(`[OCR超时计算] 图片数: ${imageCount}, 并发: ${concurrency}, 批次: ${batches}, 超时: ${ocrTimeout/1000}秒`);
         
         const ocrResponse = await fetchWithTimeout('/api/drawing-marker/process-staged', {
             method: 'POST',
