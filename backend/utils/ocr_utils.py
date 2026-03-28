@@ -372,8 +372,9 @@ def perform_ocr(
             processed_images = preprocess_image_for_ocr(image)
             logger.info(f"Generated {len(processed_images)} preprocessed variants")
             
-            # 对每个预处理图像进行OCR，合并结果
+            # 优化策略：先用原图识别，效果不好再用增强版本
             all_results = []
+            min_markers_threshold = 3  # 最少识别到的标记数，低于此值才尝试增强版本
             
             for idx, proc_img in enumerate(processed_images):
                 try:
@@ -392,6 +393,11 @@ def perform_ocr(
                         transformed = transform_rapidocr_result(result)
                         all_results.extend(transformed)
                         logger.info(f"Variant {idx+1} detected {len(transformed)} items")
+                        
+                        # 优化：如果原图识别效果已经足够好，跳过后续变体
+                        if idx == 0 and len(transformed) >= min_markers_threshold:
+                            logger.info(f"Original image detected {len(transformed)} markers, skipping enhancement variants")
+                            break
                         
                 except Exception as e:
                     logger.warning(f"OCR variant {idx+1} failed: {str(e)}")

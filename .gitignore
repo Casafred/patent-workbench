@@ -88,6 +88,9 @@ docs/USER_MANAGEMENT_QUICK_REFERENCE.md
 tmp/
 temp/
 
+# OCR Cache (drawing marker)
+data/drawing_ocr_cache/
+
 # Certificates and private keys
 *.key
 *.pem

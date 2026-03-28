@@ -173,8 +173,12 @@ def process_drawing_marker():
         from backend.utils.text_preprocessor import TextPreprocessor
         from backend.utils.drawing_cache import DrawingCacheManager
         from backend.utils.ocr_concurrent import process_drawings_concurrent, get_ocr_mode_display
+        import os
         
-        cache_manager = DrawingCacheManager()
+        # 配置持久化缓存目录
+        cache_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'data', 'drawing_ocr_cache')
+        os.makedirs(cache_dir, exist_ok=True)
+        cache_manager = DrawingCacheManager(cache_dir=cache_dir, max_age_days=7)
 
         glm_api_key = None
         paddle_token = None
@@ -681,7 +685,10 @@ def reprocess_specification():
         
         # Import cache manager
         from backend.utils.drawing_cache import DrawingCacheManager
-        cache_manager = DrawingCacheManager()
+        import os
+        cache_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'data', 'drawing_ocr_cache')
+        os.makedirs(cache_dir, exist_ok=True)
+        cache_manager = DrawingCacheManager(cache_dir=cache_dir, max_age_days=7)
         
         # Load cached OCR results
         processed_results = []
@@ -905,8 +912,10 @@ def reprocess_drawings():
             match_with_reference_map
         )
         from backend.utils.drawing_cache import DrawingCacheManager
-        
-        cache_manager = DrawingCacheManager()
+        import os
+        cache_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'data', 'drawing_ocr_cache')
+        os.makedirs(cache_dir, exist_ok=True)
+        cache_manager = DrawingCacheManager(cache_dir=cache_dir, max_age_days=7)
         processed_results = []
         total_ocr_detected = 0
         total_matched = 0
@@ -1069,8 +1078,10 @@ def process_drawing_marker_staged():
         from backend.utils.drawing_cache import DrawingCacheManager
         from backend.utils.text_segment_extractor import extract_relevant_segments
         from backend.utils.component_extractor import extract_reference_markers
-        
-        cache_manager = DrawingCacheManager()
+        import os
+        cache_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'data', 'drawing_ocr_cache')
+        os.makedirs(cache_dir, exist_ok=True)
+        cache_manager = DrawingCacheManager(cache_dir=cache_dir, max_age_days=7)
         
         glm_api_key = None
         if ocr_mode == 'glm_ocr':
