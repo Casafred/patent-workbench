@@ -84,8 +84,7 @@ def parse_document():
             result = _parse_with_glm_ocr(file_base64, options)
         
         return create_response(
-            data={"result": result, "engine": engine},
-            message="Document parsed successfully"
+            data={"result": result, "engine": engine, "message": "Document parsed successfully"}
         )
         
     except Exception as e:
@@ -492,6 +491,5 @@ def get_available_engines():
     ]
     
     return create_response(
-        data={'engines': engines},
-        message="Available OCR engines retrieved"
+        data={'engines': engines, 'message': "Available OCR engines retrieved"}
     )
