@@ -264,6 +264,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('❌ Failed to load sidebar navigation component:', error);
     }
     
+    // Load notification center component
+    try {
+        await loadComponent('frontend/components/notification-center.html', 'notification-center-component');
+        LoadingManager.updateProgress('加载通知中心');
+    } catch (error) {
+        console.error('❌ Failed to load notification center component:', error);
+    }
+    
     // Load instant chat component and initialize
     try {
         await loadComponent('frontend/components/tabs/instant-chat.html', 'instant-chat-component');

@@ -1,0 +1,661 @@
+<!-- 通知中心模态框 -->
+<div id="notification_center_modal" class="notification-center-modal" style="display: none;">
+    <div class="notification-center-overlay" onclick="closeNotificationCenter()"></div>
+    <div class="notification-center-container">
+        <div class="notification-center-header">
+            <h3>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                通知中心
+            </h3>
+            <button class="notification-center-close" onclick="closeNotificationCenter()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="notification-center-tabs">
+            <button class="notification-center-tab active" data-tab="announcements" onclick="switchNotificationCenterTab('announcements')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                </svg>
+                公告
+            </button>
+            <button class="notification-center-tab" data-tab="updates" onclick="switchNotificationCenterTab('updates')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M23 4v6h-6M1 20v-6h6"></path>
+                    <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"></path>
+                </svg>
+                更新日志
+            </button>
+        </div>
+        
+        <div class="notification-center-body">
+            <div id="announcements_tab" class="notification-center-tab-content active">
+                <div id="announcements_list" class="notification-list">
+                    <div class="notification-loading">加载中...</div>
+                </div>
+            </div>
+            
+            <div id="updates_tab" class="notification-center-tab-content" style="display: none;">
+                <div id="updates_list" class="notification-list">
+                    <div class="notification-loading">加载中...</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="notification-center-footer">
+            <span class="notification-last-update" id="notification_last_update"></span>
+        </div>
+    </div>
+</div>
+
+<style>
+    .notification-center-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 10001;
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-end;
+        padding: 60px 20px 20px 20px;
+    }
+
+    .notification-center-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(2px);
+    }
+
+    .notification-center-container {
+        position: relative;
+        width: 420px;
+        max-width: 90vw;
+        max-height: 70vh;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        animation: slideInRight 0.3s ease-out;
+    }
+
+    @keyframes slideInRight {
+        from {
+            transform: translateX(20px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    .notification-center-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+        color: white;
+    }
+
+    .notification-center-header h3 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .notification-center-close {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        transition: all 0.2s ease;
+    }
+
+    .notification-center-close:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: rotate(90deg);
+    }
+
+    .notification-center-tabs {
+        display: flex;
+        gap: 8px;
+        padding: 12px 16px;
+        background: #F9FAFB;
+        border-bottom: 1px solid #E5E7EB;
+    }
+
+    .notification-center-tab {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #6B7280;
+        background: white;
+        border: 1px solid #E5E7EB;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .notification-center-tab:hover {
+        background: #F3F4F6;
+        color: #374151;
+    }
+
+    .notification-center-tab.active {
+        background: #22C55E;
+        color: white;
+        border-color: #22C55E;
+    }
+
+    .notification-center-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+    }
+
+    .notification-center-tab-content {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .notification-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .notification-loading {
+        text-align: center;
+        padding: 40px 20px;
+        color: #9CA3AF;
+    }
+
+    .notification-item-card {
+        background: #F9FAFB;
+        border-radius: 12px;
+        padding: 16px;
+        border: 1px solid #E5E7EB;
+        transition: all 0.2s ease;
+    }
+
+    .notification-item-card:hover {
+        background: #F3F4F6;
+        border-color: #D1D5DB;
+    }
+
+    .notification-item-card.priority-high {
+        border-left: 4px solid #EF4444;
+        background: #FEF2F2;
+    }
+
+    .notification-item-card.priority-medium {
+        border-left: 4px solid #F59E0B;
+    }
+
+    .notification-item-card.priority-low {
+        border-left: 4px solid #3B82F6;
+    }
+
+    .notification-item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 8px;
+    }
+
+    .notification-item-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1F2937;
+        margin: 0;
+    }
+
+    .notification-item-date {
+        font-size: 11px;
+        color: #9CA3AF;
+        white-space: nowrap;
+    }
+
+    .notification-item-content {
+        font-size: 13px;
+        color: #4B5563;
+        line-height: 1.5;
+    }
+
+    .notification-item-meta {
+        display: flex;
+        gap: 12px;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid #E5E7EB;
+        font-size: 12px;
+        color: #6B7280;
+    }
+
+    .notification-item-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .notification-item-meta-item svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .notification-badge {
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        font-size: 11px;
+        font-weight: 600;
+        color: white;
+        background: #EF4444;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .notification-bell-btn {
+        position: relative;
+        background: transparent;
+        border: none;
+        width: 40px;
+        height: 40px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        transition: all 0.2s ease;
+        color: #374151;
+    }
+
+    .notification-bell-btn:hover {
+        background: rgba(34, 197, 94, 0.1);
+        color: #22C55E;
+    }
+
+    .notification-center-footer {
+        padding: 12px 20px;
+        background: #F9FAFB;
+        border-top: 1px solid #E5E7EB;
+        text-align: center;
+    }
+
+    .notification-last-update {
+        font-size: 12px;
+        color: #9CA3AF;
+    }
+
+    .notification-empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #9CA3AF;
+    }
+
+    .notification-empty-state svg {
+        width: 48px;
+        height: 48px;
+        margin-bottom: 12px;
+        color: #D1D5DB;
+    }
+
+    .notification-empty-state p {
+        font-size: 14px;
+    }
+
+    .update-section {
+        margin-bottom: 20px;
+    }
+
+    .update-section:last-child {
+        margin-bottom: 0;
+    }
+
+    .update-section-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 10px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #E5E7EB;
+    }
+
+    .update-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .update-list-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 8px 12px;
+        margin-bottom: 6px;
+        background: white;
+        border-radius: 6px;
+        font-size: 13px;
+        color: #4B5563;
+    }
+
+    .update-list-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .update-list-icon {
+        flex-shrink: 0;
+        width: 16px;
+        height: 16px;
+        margin-top: 2px;
+    }
+
+    .update-list-icon.new {
+        color: #22C55E;
+    }
+
+    .update-list-icon.improved {
+        color: #3B82F6;
+    }
+
+    .update-list-icon.developing {
+        color: #F59E0B;
+    }
+
+    @media (max-width: 480px) {
+        .notification-center-modal {
+            padding: 50px 10px 10px 10px;
+        }
+
+        .notification-center-container {
+            width: 100%;
+            max-height: 80vh;
+        }
+
+        .notification-center-tabs {
+            flex-direction: column;
+        }
+
+        .notification-center-tab {
+            justify-content: center;
+        }
+    }
+</style>
+
+<script>
+    (function() {
+        let notificationCenterInitialized = false;
+        let notificationsData = {
+            announcements: [],
+            updates: null
+        };
+
+        function initNotificationCenter() {
+            if (notificationCenterInitialized) return;
+            
+            const bellBtn = document.getElementById('notification_center_btn');
+            if (bellBtn) {
+                bellBtn.addEventListener('click', openNotificationCenter);
+            }
+            
+            notificationCenterInitialized = true;
+            loadNotificationsData();
+        }
+
+        function openNotificationCenter() {
+            const modal = document.getElementById('notification_center_modal');
+            if (modal) {
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+                loadNotificationsData();
+            }
+        }
+
+        window.closeNotificationCenter = function() {
+            const modal = document.getElementById('notification_center_modal');
+            if (modal) {
+                modal.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        }
+
+        window.switchNotificationCenterTab = function(tabName) {
+            document.querySelectorAll('.notification-center-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.tab === tabName);
+            });
+            
+            document.getElementById('announcements_tab').style.display = tabName === 'announcements' ? 'block' : 'none';
+            document.getElementById('updates_tab').style.display = tabName === 'updates' ? 'block' : 'none';
+        }
+
+        async function loadNotificationsData() {
+            try {
+                const response = await fetch('/api/admin/notifications');
+                const result = await response.json();
+                
+                if (result.success) {
+                    notificationsData.announcements = result.data.global_announcements || [];
+                    notificationsData.updates = result.data.login_notifications?.[0] || null;
+                    
+                    renderAnnouncements();
+                    renderUpdates();
+                    updateBadge();
+                    updateLastUpdateTime(result.data.last_updated);
+                }
+            } catch (error) {
+                console.error('加载通知数据失败:', error);
+                document.getElementById('announcements_list').innerHTML = '<div class="notification-empty-state"><p>加载失败，请稍后重试</p></div>';
+            }
+        }
+
+        function renderAnnouncements() {
+            const container = document.getElementById('announcements_list');
+            const announcements = notificationsData.announcements.filter(a => a.is_active);
+            
+            if (announcements.length === 0) {
+                container.innerHTML = `
+                    <div class="notification-empty-state">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                        </svg>
+                        <p>暂无公告</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = announcements.map(a => `
+                <div class="notification-item-card priority-${a.priority || 'medium'}">
+                    <div class="notification-item-header">
+                        <h4 class="notification-item-title">${escapeHtml(a.title)}</h4>
+                        <span class="notification-item-date">${a.created_at || ''}</span>
+                    </div>
+                    <div class="notification-item-content">${escapeHtml(a.message)}</div>
+                    ${a.start_time || a.duration || a.impact ? `
+                        <div class="notification-item-meta">
+                            ${a.start_time ? `
+                                <span class="notification-item-meta-item">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                                    </svg>
+                                    ${escapeHtml(a.start_time)}
+                                </span>
+                            ` : ''}
+                            ${a.duration ? `
+                                <span class="notification-item-meta-item">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                    ${escapeHtml(a.duration)}
+                                </span>
+                            ` : ''}
+                            ${a.impact ? `
+                                <span class="notification-item-meta-item">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                    </svg>
+                                    ${escapeHtml(a.impact)}
+                                </span>
+                            ` : ''}
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        function renderUpdates() {
+            const container = document.getElementById('updates_list');
+            const update = notificationsData.updates;
+            
+            if (!update) {
+                container.innerHTML = `
+                    <div class="notification-empty-state">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M23 4v6h-6M1 20v-6h6"></path>
+                            <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"></path>
+                        </svg>
+                        <p>暂无更新日志</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = `
+                <div class="notification-item-card">
+                    <div class="notification-item-header">
+                        <h4 class="notification-item-title">${escapeHtml(update.title)}</h4>
+                        <span class="notification-item-date">v${escapeHtml(update.version || '1.0.0')} · ${update.created_at || ''}</span>
+                    </div>
+                </div>
+            `;
+            
+            if (update.content && Array.isArray(update.content)) {
+                update.content.forEach(section => {
+                    html += `
+                        <div class="update-section">
+                            <div class="update-section-title">
+                                ${getSectionIcon(section.section)}
+                                ${escapeHtml(section.section)}
+                            </div>
+                            <ul class="update-list">
+                                ${section.items.map(item => `
+                                    <li class="update-list-item">
+                                        <span class="update-list-icon ${getItemClass(section.section)}">
+                                            ${getItemIcon(section.section)}
+                                        </span>
+                                        <span>${escapeHtml(item)}</span>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    `;
+                });
+            }
+            
+            container.innerHTML = html;
+        }
+
+        function getSectionIcon(section) {
+            const icons = {
+                '新增功能': '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>',
+                '功能改进': '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"></path></svg>',
+                '开发中功能': '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"></path></svg>'
+            };
+            return icons[section] || '';
+        }
+
+        function getItemClass(section) {
+            const classes = {
+                '新增功能': 'new',
+                '功能改进': 'improved',
+                '开发中功能': 'developing'
+            };
+            return classes[section] || 'new';
+        }
+
+        function getItemIcon(section) {
+            const icons = {
+                '新增功能': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>',
+                '功能改进': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>',
+                '开发中功能': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>'
+            };
+            return icons[section] || '';
+        }
+
+        function updateBadge() {
+            const badge = document.getElementById('notification_badge');
+            const activeAnnouncements = notificationsData.announcements.filter(a => a.is_active && a.priority === 'high');
+            
+            if (badge) {
+                if (activeAnnouncements.length > 0) {
+                    badge.textContent = activeAnnouncements.length;
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        }
+
+        function updateLastUpdateTime(lastUpdated) {
+            const el = document.getElementById('notification_last_update');
+            if (el && lastUpdated) {
+                el.textContent = `最后更新: ${lastUpdated}`;
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initNotificationCenter);
+        } else {
+            initNotificationCenter();
+        }
+    })();
+</script>
