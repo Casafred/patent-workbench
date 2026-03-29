@@ -1998,6 +1998,9 @@ def upload_landing_gif():
 
 
 # --- PDF OCR API路由 ---
+PADDLE_OCR_VL_API_URL = "https://k2neb1qcy1u6g4k5.aistudio-app.com/layout-parsing"
+PADDLE_OCR_VL_TOKEN = "70b270c8275606a7a97f8c4e8617cdeb935ed74c"
+
 @app.route('/api/pdf-ocr/parse', methods=['POST'])
 def parse_pdf_ocr():
     """使用指定OCR引擎解析文档"""
@@ -2006,22 +2009,175 @@ def parse_pdf_ocr():
         return error_response
     
     try:
-        from backend.routes.pdf_ocr import parse_document
-        return parse_document()
+        import requests as requests_module
+        import time
+        
+        req_data = request.get_json()
+        
+        if not req_data:
+            return create_response(error="Request body is required", status_code=400)
+        
+        file_base64 = req_data.get('file')
+        engine = req_data.get('engine', 'glm_ocr')
+        options = req_data.get('options', {})
+        
+        if not file_base64:
+            return create_response(error="file is required", status_code=400)
+        
+        if engine == 'paddle_ocr_vl':
+            headers = {
+                "Authorization": f"token {PADDLE_OCR_VL_TOKEN}",
+                "Content-Type": "application/json"
+            }
+            
+            payload = {
+                "file": file_base64,
+                "fileType": 1,
+                "useDocOrientationClassify": options.get('use_doc_orientation_classify', True),
+                "useDocUnwarping": options.get('use_doc_unwarping', False),
+                "useLayoutDetection": options.get('use_layout_detection', True),
+                "useChartRecognition": options.get('use_chart_recognition', False),
+                "layoutThreshold": options.get('layout_threshold', 0.5),
+                "prettifyMarkdown": options.get('prettify_markdown', True),
+                "showFormulaNumber": options.get('show_formula_number', False),
+                "visualize": False
+            }
+            
+            print(f"[PDF-OCR] Calling PaddleOCR-VL-1.5 API...")
+            start_time = time.time()
+            
+            response = requests_module.post(
+                PADDLE_OCR_VL_API_URL,
+                json=payload,
+                headers=headers,
+                timeout=180
+            )
+            
+            elapsed_time = time.time() - start_time
+            print(f"[PDF-OCR] PaddleOCR-VL-1.5 API response time: {elapsed_time:.2f}s")
+            
+            if response.status_code != 200:
+                error_msg = f"PaddleOCR-VL-1.5 API call failed: {response.status_code}"
+                try:
+                    error_detail = response.json()
+                    error_msg = f"{error_msg} - {error_detail}"
+                except:
+                    error_msg = f"{error_msg} - {response.text[:200]}"
+                return create_response(error=error_msg, status_code=500)
+            
+            result = response.json()
+            
+            if result.get('errorCode', 0) != 0:
+                return create_response(error=f"PaddleOCR-VL-1.5 failed: {result.get('errorMsg', 'Unknown error')}", status_code=500)
+            
+            transformed_result = _transform_paddle_ocr_vl_response(result)
+            
+            return create_response(data={"result": transformed_result, "engine": engine}, message="Document parsed successfully")
+        else:
+            return create_response(error="GLM OCR engine not implemented in this route", status_code=400)
+        
     except Exception as e:
         print(f"Error in parse_pdf_ocr: {traceback.format_exc()}")
         return create_response(error=f"文档解析失败: {str(e)}", status_code=500)
 
 
+def _transform_paddle_ocr_vl_response(response):
+    """Transform PaddleOCR-VL-1.5 response to unified format."""
+    import time
+    
+    if not response or 'result' not in response:
+        return {
+            'pages': [],
+            'markdown': '',
+            'images': {},
+            'engine': 'paddle_ocr_vl',
+            'md_results': ''
+        }
+    
+    result = response.get('result', {})
+    layout_results = result.get('layoutParsingResults', [])
+    
+    if not layout_results:
+        return {
+            'pages': [],
+            'markdown': '',
+            'images': {},
+            'engine': 'paddle_ocr_vl',
+            'md_results': ''
+        }
+    
+    pages = []
+    all_markdown = []
+    all_images = {}
+    
+    for i, page_result in enumerate(layout_results):
+        markdown_data = page_result.get('markdown', {})
+        markdown_text = markdown_data.get('text', '')
+        markdown_images = markdown_data.get('images', {})
+        
+        page_info = result.get('dataInfo', {}).get('pages', [{}])[i] if i < len(result.get('dataInfo', {}).get('pages', [{}])) else {}
+        
+        page = {
+            'pageIndex': i + 1,
+            'width': page_info.get('width', 1224),
+            'height': page_info.get('height', 1584),
+            'blocks': [],
+            'markdown': markdown_text
+        }
+        
+        pages.append(page)
+        all_markdown.append(markdown_text)
+        
+        for img_path, img_data in markdown_images.items():
+            all_images[img_path] = img_data
+    
+    combined_markdown = '\n\n---\n\n'.join(all_markdown)
+    
+    return {
+        'pages': pages,
+        'markdown': combined_markdown,
+        'images': all_images,
+        'engine': 'paddle_ocr_vl',
+        'md_results': combined_markdown,
+        'request_id': response.get('logId', ''),
+        'created': int(time.time()),
+        'model': 'PaddleOCR-VL-1.5'
+    }
+
+
 @app.route('/api/pdf-ocr/engines', methods=['GET'])
 def get_pdf_ocr_engines():
     """获取可用的OCR引擎列表"""
-    try:
-        from backend.routes.pdf_ocr import get_available_engines
-        return get_available_engines()
-    except Exception as e:
-        print(f"Error getting OCR engines: {traceback.format_exc()}")
-        return create_response(error=f"获取OCR引擎列表失败: {str(e)}", status_code=500)
+    engines = [
+        {
+            'id': 'glm_ocr',
+            'name': 'GLM OCR',
+            'provider': '智谱AI',
+            'description': '智谱AI文档OCR引擎，需要API Key',
+            'requires_api_key': True,
+            'features': {
+                'layout_parsing': True,
+                'formula_recognition': True,
+                'table_recognition': True
+            }
+        },
+        {
+            'id': 'paddle_ocr_vl',
+            'name': 'PaddleOCR-VL-1.5',
+            'provider': '百度AI Studio',
+            'description': '百度飞桨文档OCR引擎，支持版面分析、公式表格识别，预置API无需配置',
+            'requires_api_key': False,
+            'features': {
+                'layout_parsing': True,
+                'formula_recognition': True,
+                'table_recognition': True,
+                'chart_recognition': True,
+                'markdown_output': True
+            }
+        }
+    ]
+    
+    return create_response(data={'engines': engines}, message="Available OCR engines retrieved")
 
 
 # --- 启动前初始化 ---
