@@ -671,10 +671,14 @@ class PDFOCRParser {
                 const pageInfo = result.data_info?.pages?.[apiPageIndex] || {};
                 const actualPageNum = currentPageNum;
                 
+                const firstBlock = pageBlocks[0] || {};
+                const pageWidth = firstBlock.width || pageInfo.width || 1224;
+                const pageHeight = firstBlock.height || pageInfo.height || 1584;
+                
                 const page = {
                     pageIndex: actualPageNum,
-                    width: pageInfo.width || 1224,
-                    height: pageInfo.height || 1584,
+                    width: pageWidth,
+                    height: pageHeight,
                     blocks: []
                 };
 
@@ -691,8 +695,8 @@ class PDFOCRParser {
                             bbox: {
                                 lt: [bbox[0], bbox[1]],
                                 rb: [bbox[2], bbox[3]],
-                                page_width: block.width || pageInfo.width,
-                                page_height: block.height || pageInfo.height
+                                page_width: block.width || pageWidth,
+                                page_height: block.height || pageHeight
                             },
                             pageIndex: actualPageNum
                         };
