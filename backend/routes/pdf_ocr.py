@@ -151,6 +151,9 @@ def _parse_with_paddle_ocr_vl(file_base64: str, options: dict) -> dict:
     
     result = response.json()
     
+    logger.info(f"PaddleOCR-VL-1.5 API response keys: {result.keys()}")
+    logger.info(f"PaddleOCR-VL-1.5 API result: {result}")
+    
     if result.get('errorCode', 0) != 0:
         raise RuntimeError(f"PaddleOCR-VL-1.5 failed: {result.get('errorMsg', 'Unknown error')}")
     
@@ -163,7 +166,10 @@ def _transform_paddle_ocr_vl_response(response: dict) -> dict:
     """
     import time
     
+    logger.info(f"Transforming response: {response.keys() if response else 'None'}")
+    
     if not response or 'result' not in response:
+        logger.warning("No response or no 'result' key")
         return {
             'pages': [],
             'markdown': '',
@@ -173,9 +179,13 @@ def _transform_paddle_ocr_vl_response(response: dict) -> dict:
         }
     
     result = response.get('result', {})
+    logger.info(f"Result keys: {result.keys()}")
+    
     layout_results = result.get('layoutParsingResults', [])
+    logger.info(f"Layout results count: {len(layout_results)}")
     
     if not layout_results:
+        logger.warning("No layoutParsingResults found")
         return {
             'pages': [],
             'markdown': '',
