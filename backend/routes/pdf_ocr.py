@@ -163,6 +163,33 @@ def _parse_with_paddle_ocr_vl(file_base64: str, options: dict) -> dict:
 def _transform_paddle_ocr_vl_response(response: dict) -> dict:
     """
     Transform PaddleOCR-VL-1.5 response to unified format.
+    
+    PaddleOCR-VL-1.5 response structure:
+    {
+        'logId': 'xxx',
+        'errorCode': 0,
+        'errorMsg': 'Success',
+        'result': {
+            'layoutParsingResults': [
+                {
+                    'prunedResult': {
+                        'width': 1190,
+                        'height': 1684,
+                        'parsing_res_list': [
+                            {
+                                'block_label': 'text',
+                                'block_content': '...',
+                                'block_bbox': [x1, y1, x2, y2],
+                                'block_polygon_points': [[x1,y1], [x2,y1], [x2,y2], [x1,y2]]
+                            }
+                        ]
+                    },
+                    'markdown': {'text': '...', 'images': {}}
+                }
+            ],
+            'dataInfo': {...}
+        }
+    }
     """
     import time
     
@@ -204,15 +231,40 @@ def _transform_paddle_ocr_vl_response(response: dict) -> dict:
         markdown_images = markdown_data.get('images', {})
         
         pruned_result = page_result.get('prunedResult', {})
+        page_width = pruned_result.get('width', 1224)
+        page_height = pruned_result.get('height', 1584)
         
-        blocks = _extract_blocks_from_pruned_result(pruned_result, i + 1)
+        parsing_res_list = pruned_result.get('parsing_res_list', [])
+        logger.info(f"Page {i+1}: parsing_res_list count: {len(parsing_res_list)}")
         
-        page_info = result.get('dataInfo', {}).get('pages', [{}])[i] if i < len(result.get('dataInfo', {}).get('pages', [{}])) else {}
+        blocks = []
+        for block in parsing_res_list:
+            block_label = block.get('block_label', 'text')
+            block_content = block.get('block_content', '')
+            block_bbox = block.get('block_bbox', [0, 0, 100, 100])
+            block_polygon = block.get('block_polygon_points', [])
+            
+            blocks.append({
+                'index': block.get('block_id', len(blocks)),
+                'type': block_label,
+                'label': block_label,
+                'text': block_content,
+                'content': block_content,
+                'bbox': {
+                    'lt': [block_bbox[0], block_bbox[1]],
+                    'rb': [block_bbox[2], block_bbox[3]]
+                },
+                'bbox_2d': block_bbox,
+                'polygon_points': block_polygon,
+                'order': block.get('block_order'),
+                'group_id': block.get('group_id'),
+                'pageIndex': i + 1
+            })
         
         page = {
             'pageIndex': i + 1,
-            'width': page_info.get('width', 1224),
-            'height': page_info.get('height', 1584),
+            'width': page_width,
+            'height': page_height,
             'blocks': blocks,
             'markdown': markdown_text
         }
@@ -225,24 +277,26 @@ def _transform_paddle_ocr_vl_response(response: dict) -> dict:
     
     combined_markdown = '\n\n---\n\n'.join(all_markdown)
     
+    layout_details = []
+    for page in pages:
+        page_blocks = []
+        for block in page.get('blocks', []):
+            page_blocks.append({
+                'label': block.get('label', 'text'),
+                'content': block.get('content', ''),
+                'bbox_2d': block.get('bbox_2d', [0, 0, 1, 1]),
+                'width': page.get('width', 1224),
+                'height': page.get('height', 1584)
+            })
+        layout_details.append(page_blocks)
+    
     return {
         'pages': pages,
         'markdown': combined_markdown,
         'images': all_images,
         'engine': 'paddle_ocr_vl',
         'md_results': combined_markdown,
-        'layout_details': [[{
-            'label': block.get('type', 'text'),
-            'content': block.get('text', ''),
-            'bbox_2d': [
-                block.get('bbox', {}).get('lt', [0, 0])[0],
-                block.get('bbox', {}).get('lt', [0, 0])[1],
-                block.get('bbox', {}).get('rb', [1, 1])[0],
-                block.get('bbox', {}).get('rb', [1, 1])[1]
-            ],
-            'width': page.get('width', 1224),
-            'height': page.get('height', 1584)
-        } for block in page.get('blocks', [])] for page in pages],
+        'layout_details': layout_details,
         'data_info': result.get('dataInfo', {}),
         'request_id': response.get('logId', ''),
         'created': int(time.time()),
