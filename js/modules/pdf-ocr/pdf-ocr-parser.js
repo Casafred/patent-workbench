@@ -570,7 +570,7 @@ class PDFOCRParser {
             file: base64Data
         };
 
-        const response = await fetch(this.apiUrl, {
+        const response = await fetch(this.glmApiUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
