@@ -484,7 +484,7 @@ const PromptForum = (function() {
         container.innerHTML = html;
     }
     
-    function showPublishForm() {
+    function showPublishForm(prefillData = null) {
         showView('publish');
         
         const container = document.getElementById('forum_publish_form');
@@ -498,13 +498,13 @@ const PromptForum = (function() {
             <form id="prompt_publish_form" onsubmit="return PromptForum.submitPrompt(event)">
                 <div class="form-row">
                     <div class="form-group">
-                        <label>标题</label>
-                        <input type="text" id="prompt_title" maxlength="100" placeholder="给提示词起个名字（可选）">
+                        <label>标题 *</label>
+                        <input type="text" id="prompt_title" maxlength="100" placeholder="给提示词起个名字" required>
                     </div>
                     <div class="form-group">
-                        <label>分类</label>
-                        <select id="prompt_category">
-                            <option value="">选择分类（可选）</option>
+                        <label>分类 *</label>
+                        <select id="prompt_category" required>
+                            <option value="">选择分类</option>
                             ${categoryOptions}
                         </select>
                     </div>
@@ -522,8 +522,20 @@ const PromptForum = (function() {
                 </div>
                 
                 <div class="form-group">
-                    <label>提示词内容 *</label>
-                    <textarea id="prompt_content" required rows="8" placeholder="输入提示词内容，可使用 {{INPUT}} 作为输入占位符"></textarea>
+                    <div class="prompt-content-header-row">
+                        <label>提示词内容 *</label>
+                        <div class="quick-import-actions">
+                            <button type="button" class="quick-import-btn" onclick="PromptForum.importFromClipboard()" title="从智能剪贴板导入">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                                从剪贴板导入
+                            </button>
+                            <button type="button" class="quick-import-btn secondary" onclick="PromptForum.importFromSmartClipboard()" title="查看智能剪贴板历史">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                剪贴板历史
+                            </button>
+                        </div>
+                    </div>
+                    <textarea id="prompt_content" required rows="10" placeholder="输入提示词内容，可使用 {{INPUT}} 作为输入占位符&#10;&#10;支持从智能剪贴板一键导入"></textarea>
                 </div>
                 
                 <div class="form-notice">
@@ -536,6 +548,150 @@ const PromptForum = (function() {
                 </div>
             </form>
         `;
+        
+        if (prefillData) {
+            setTimeout(() => {
+                if (prefillData.title) {
+                    const titleInput = document.getElementById('prompt_title');
+                    if (titleInput) titleInput.value = prefillData.title;
+                }
+                if (prefillData.content) {
+                    const contentInput = document.getElementById('prompt_content');
+                    if (contentInput) contentInput.value = prefillData.content;
+                }
+                if (prefillData.description) {
+                    const descInput = document.getElementById('prompt_description');
+                    if (descInput) descInput.value = prefillData.description;
+                }
+                if (prefillData.categoryId) {
+                    const categorySelect = document.getElementById('prompt_category');
+                    if (categorySelect) categorySelect.value = prefillData.categoryId;
+                }
+                if (prefillData.tags) {
+                    const tagsInput = document.getElementById('prompt_tags');
+                    if (tagsInput) tagsInput.value = prefillData.tags;
+                }
+            }, 50);
+        }
+    }
+    
+    function importFromClipboard() {
+        navigator.clipboard.readText().then(text => {
+            if (text && text.trim()) {
+                const contentInput = document.getElementById('prompt_content');
+                if (contentInput) {
+                    contentInput.value = text.trim();
+                    contentInput.focus();
+                }
+            } else {
+                alert('剪贴板为空');
+            }
+        }).catch(err => {
+            console.error('读取剪贴板失败:', err);
+            alert('无法读取剪贴板，请手动粘贴');
+        });
+    }
+    
+    function importFromSmartClipboard() {
+        if (!window.smartClipboard) {
+            alert('智能剪贴板未初始化');
+            return;
+        }
+        
+        const current = window.smartClipboard.getCurrent();
+        const history = window.smartClipboard.getHistory();
+        
+        if (!current && (!history || history.length === 0)) {
+            alert('智能剪贴板中没有内容，请先复制提示词');
+            return;
+        }
+        
+        const popup = document.createElement('div');
+        popup.className = 'sc-import-popup';
+        popup.innerHTML = `
+            <div class="sc-import-popup-content">
+                <div class="sc-import-popup-header">
+                    <h4>选择要导入的内容</h4>
+                    <button type="button" class="sc-import-close" onclick="this.closest('.sc-import-popup').remove()">×</button>
+                </div>
+                <div class="sc-import-list">
+                    ${current ? `
+                        <div class="sc-import-item current" data-source="current">
+                            <div class="sc-import-item-header">
+                                <span class="sc-import-badge">当前</span>
+                                <span class="sc-import-type">${current.typeIcon} ${current.typeName}</span>
+                            </div>
+                            <div class="sc-import-preview">${escapeHtml(current.text.slice(0, 100))}${current.text.length > 100 ? '...' : ''}</div>
+                        </div>
+                    ` : ''}
+                    ${history && history.length > 0 ? history.slice(0, 5).map((item, index) => `
+                        <div class="sc-import-item" data-source="history" data-index="${index}">
+                            <div class="sc-import-item-header">
+                                <span class="sc-import-badge history">历史</span>
+                                <span class="sc-import-type">${item.typeIcon} ${item.typeName}</span>
+                            </div>
+                            <div class="sc-import-preview">${escapeHtml(item.text.slice(0, 100))}${item.text.length > 100 ? '...' : ''}</div>
+                        </div>
+                    `).join('') : ''}
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(popup);
+        
+        popup.querySelectorAll('.sc-import-item').forEach(item => {
+            item.addEventListener('click', () => {
+                let text;
+                if (item.dataset.source === 'current') {
+                    text = current.text;
+                } else {
+                    const index = parseInt(item.dataset.index);
+                    text = history[index].text;
+                }
+                
+                const contentInput = document.getElementById('prompt_content');
+                if (contentInput && text) {
+                    contentInput.value = text;
+                    contentInput.focus();
+                }
+                popup.remove();
+            });
+        });
+        
+        setTimeout(() => {
+            const closeHandler = (e) => {
+                if (!popup.contains(e.target)) {
+                    popup.remove();
+                    document.removeEventListener('click', closeHandler);
+                }
+            };
+            document.addEventListener('click', closeHandler);
+        }, 100);
+    }
+    
+    function quickPublish(promptData) {
+        if (!promptData || !promptData.content) {
+            console.warn('PromptForum.quickPublish: 无效的提示词数据');
+            return false;
+        }
+        
+        if (!document.getElementById('prompt_forum_modal')) {
+            init();
+        }
+        
+        open();
+        
+        setTimeout(() => {
+            showPublishForm({
+                title: promptData.title || '',
+                content: promptData.content,
+                description: promptData.description || '',
+                categoryId: promptData.categoryId || '',
+                tags: promptData.tags || ''
+            });
+        }, 100);
+        
+        return true;
     }
     
     function onTargetFeatureChange() {
@@ -946,9 +1102,13 @@ const PromptForum = (function() {
         open,
         close,
         showView,
+        showPublishForm,
         toggleLike,
         toggleFavorite,
         importPrompt,
+        importFromClipboard,
+        importFromSmartClipboard,
+        quickPublish,
         copyPrompt,
         submitPrompt,
         submitComment,
