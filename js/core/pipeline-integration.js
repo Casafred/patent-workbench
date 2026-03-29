@@ -359,28 +359,169 @@ class PipelineIntegration {
             if (!input) return;
             
             const parent = input.parentElement;
-            if (!parent || parent.querySelector('.pipeline-receive-btn')) return;
+            if (!parent || parent.querySelector('.pipeline-upload-wrapper')) return;
             
-            const btn = document.createElement('button');
-            btn.className = 'pipeline-receive-btn';
-            btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>`;
-            btn.title = '从数据管道接收Excel';
-            btn.style.cssText = `
-                padding: 8px 12px;
-                background: #10b981;
+            const wrapper = document.createElement('div');
+            wrapper.className = 'pipeline-upload-wrapper';
+            wrapper.style.cssText = `
+                display: inline-flex;
+                align-items: center;
+                position: relative;
+                flex-wrap: wrap;
+                gap: 8px;
+            `;
+            
+            input.style.display = 'none';
+            
+            const uploadBtn = document.createElement('button');
+            uploadBtn.className = 'pipeline-upload-btn';
+            uploadBtn.type = 'button';
+            uploadBtn.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                选择文件来源
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: 4px;">
+                    <polyline points="6 9 12 15 18 9"/>
+                </svg>
+            `;
+            uploadBtn.style.cssText = `
+                padding: 8px 16px;
+                background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
                 color: white;
                 border: none;
                 border-radius: 6px;
-                font-size: 12px;
+                font-size: 13px;
                 cursor: pointer;
                 display: inline-flex;
                 align-items: center;
-                justify-content: center;
+                gap: 6px;
                 transition: all 0.2s;
-                margin-left: 8px;
+                position: relative;
             `;
             
-            btn.addEventListener('click', async () => {
+            const dropdown = document.createElement('div');
+            dropdown.className = 'pipeline-upload-dropdown';
+            dropdown.style.cssText = `
+                position: absolute;
+                top: 100%;
+                left: 0;
+                margin-top: 4px;
+                background: white;
+                border: 1px solid #e5e7eb;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 1000;
+                min-width: 200px;
+                display: none;
+                overflow: hidden;
+            `;
+            
+            const localOption = document.createElement('div');
+            localOption.className = 'pipeline-dropdown-option';
+            localOption.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                <span>从本地上传文件</span>
+            `;
+            localOption.style.cssText = `
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 12px 14px;
+                cursor: pointer;
+                transition: background 0.2s;
+                font-size: 13px;
+                color: #374151;
+            `;
+            
+            const pipelineOption = document.createElement('div');
+            pipelineOption.className = 'pipeline-dropdown-option pipeline-receive-option';
+            pipelineOption.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/>
+                </svg>
+                <span>从数据管道接收</span>
+                <span class="pipeline-status" style="margin-left: auto; font-size: 11px; color: #9ca3af;">暂无数据</span>
+            `;
+            pipelineOption.style.cssText = `
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 12px 14px;
+                cursor: pointer;
+                transition: background 0.2s;
+                font-size: 13px;
+                color: #374151;
+                border-top: 1px solid #f3f4f6;
+            `;
+            
+            dropdown.appendChild(localOption);
+            dropdown.appendChild(pipelineOption);
+            
+            const fileNameDisplay = document.createElement('span');
+            fileNameDisplay.className = 'pipeline-file-name';
+            fileNameDisplay.style.cssText = `
+                color: var(--text-color-secondary, #6b7280);
+                font-size: 12px;
+                max-width: 200px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            `;
+            
+            let dropdownVisible = false;
+            
+            const updatePipelineStatus = () => {
+                const statusSpan = pipelineOption.querySelector('.pipeline-status');
+                if (window.globalDataPipeline?.currentData) {
+                    const dataInfo = window.globalDataPipeline.currentData.dataInfo || {};
+                    statusSpan.textContent = `${dataInfo.rowCount || 0}条数据`;
+                    statusSpan.style.color = '#10b981';
+                } else {
+                    statusSpan.textContent = '暂无数据';
+                    statusSpan.style.color = '#9ca3af';
+                }
+            };
+            
+            uploadBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (dropdownVisible) {
+                    dropdown.style.display = 'none';
+                    dropdownVisible = false;
+                } else {
+                    updatePipelineStatus();
+                    dropdown.style.display = 'block';
+                    dropdownVisible = true;
+                }
+            });
+            
+            localOption.addEventListener('mouseenter', () => {
+                localOption.style.background = '#f3f4f6';
+            });
+            localOption.addEventListener('mouseleave', () => {
+                localOption.style.background = 'transparent';
+            });
+            localOption.addEventListener('click', () => {
+                input.click();
+                dropdown.style.display = 'none';
+                dropdownVisible = false;
+            });
+            
+            pipelineOption.addEventListener('mouseenter', () => {
+                pipelineOption.style.background = '#ecfdf5';
+            });
+            pipelineOption.addEventListener('mouseleave', () => {
+                pipelineOption.style.background = 'transparent';
+            });
+            pipelineOption.addEventListener('click', async () => {
+                dropdown.style.display = 'none';
+                dropdownVisible = false;
                 if (window.globalDataPipeline?.currentData) {
                     await window.globalDataPipeline.sendToTarget(target);
                 } else {
@@ -388,7 +529,28 @@ class PipelineIntegration {
                 }
             });
             
-            parent.appendChild(btn);
+            document.addEventListener('click', (e) => {
+                if (!wrapper.contains(e.target)) {
+                    dropdown.style.display = 'none';
+                    dropdownVisible = false;
+                }
+            });
+            
+            input.addEventListener('change', () => {
+                if (input.files && input.files.length > 0) {
+                    fileNameDisplay.textContent = input.files[0].name;
+                    fileNameDisplay.style.color = 'var(--success-color, #10b981)';
+                } else {
+                    fileNameDisplay.textContent = '';
+                }
+            });
+            
+            wrapper.appendChild(uploadBtn);
+            wrapper.appendChild(dropdown);
+            wrapper.appendChild(fileNameDisplay);
+            
+            parent.insertBefore(wrapper, input);
+            wrapper.appendChild(input);
         });
     }
 

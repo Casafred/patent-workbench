@@ -2456,6 +2456,42 @@ function selectClassificationMode(mode) {
     updateClassificationProcessPanelVisibility();
 }
 
+function updateClassificationModeCardStyles() {
+    var currentMode = 'async';
+    if (typeof ClassificationModule !== 'undefined') {
+        currentMode = ClassificationModule.state.getMode();
+    }
+    
+    var modes = ['instant', 'async', 'batch'];
+    modes.forEach(function(m) {
+        var card = document.getElementById('classification_mode_' + m + '_card');
+        if (card) {
+            if (m === currentMode) {
+                card.style.borderColor = 'var(--primary-color)';
+                card.style.background = 'rgba(var(--primary-color-rgb), 0.05)';
+            } else {
+                card.style.borderColor = 'var(--border-color)';
+                card.style.background = 'transparent';
+            }
+        }
+    });
+}
+
+function updateClassificationProcessPanelVisibility() {
+    var currentMode = 'async';
+    if (typeof ClassificationModule !== 'undefined') {
+        currentMode = ClassificationModule.state.getMode();
+    }
+    
+    var instantPanel = document.getElementById('classification_instant_progress_panel');
+    var asyncPanel = document.getElementById('classification_async_progress_panel');
+    var batchPanel = document.getElementById('classification_batch_progress_panel');
+    
+    if (instantPanel) instantPanel.style.display = currentMode === 'instant' ? 'block' : 'none';
+    if (asyncPanel) asyncPanel.style.display = currentMode === 'async' ? 'block' : 'none';
+    if (batchPanel) batchPanel.style.display = currentMode === 'batch' ? 'block' : 'none';
+}
+
 function updateClassificationModeRecommendation() {
     var count = 0;
     var recommendation = { mode: 'async', reason: '' };
@@ -2470,9 +2506,13 @@ function updateClassificationModeRecommendation() {
             count = allInputs.length;
         }
         
-        recommendation = count < 50 
-            ? { mode: 'async', reason: '数据量较少，适合实时处理' }
-            : { mode: 'batch', reason: '数据量较大，建议使用批处理' };
+        if (count <= 20) {
+            recommendation = { mode: 'instant', reason: '数据量少，适合极速同步处理' };
+        } else if (count < 100) {
+            recommendation = { mode: 'async', reason: '数据量适中，适合实时处理' };
+        } else {
+            recommendation = { mode: 'batch', reason: '数据量较大，建议使用批处理' };
+        }
     }
     
     var textEl = document.getElementById('classification_recommendation_text');
@@ -2481,7 +2521,10 @@ function updateClassificationModeRecommendation() {
         if (count === 0) {
             textEl.textContent = '请先添加输入数据...';
         } else {
-            textEl.innerHTML = '<strong>推荐模式:</strong> ' + (recommendation.mode === 'async' ? '小批量异步模式' : '大批量延时模式') + '<br><strong>原因:</strong> ' + recommendation.reason;
+            var modeName = recommendation.mode === 'instant' ? '⚡ 极速同步模式' 
+                         : recommendation.mode === 'async' ? '小批量异步模式' 
+                         : '大批量延时模式';
+            textEl.innerHTML = '<strong>推荐模式:</strong> ' + modeName + '<br><strong>原因:</strong> ' + recommendation.reason;
         }
     }
 
