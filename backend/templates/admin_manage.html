@@ -511,6 +511,7 @@
                 <div class="tab" data-tab="invite-codes" onclick="switchTab('invite-codes')" style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); color: white; border-color: #3B82F6;">🎫 邀请码</div>
                 <div class="tab" data-tab="prompt-forum" onclick="switchTab('prompt-forum')" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: white; border-color: #059669;">💡 提示词审核</div>
                 <div class="tab lock-tab" data-tab="feature-lock" onclick="switchTab('feature-lock')">🔒 功能锁定</div>
+                <div class="tab" data-tab="notifications" onclick="switchTab('notifications')" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); color: white; border-color: #F59E0B;">🔔 通知管理</div>
             </div>
             
             <div id="tab-content"></div>
@@ -627,6 +628,9 @@
             }
             if (currentTab === 'invite-codes') {
                 loadInviteCodes();
+            }
+            if (currentTab === 'notifications') {
+                loadNotifications();
             }
         }
 
@@ -1377,6 +1381,406 @@
         });
 
         checkLogin();
+
+        // ===== 通知管理功能 =====
+        let currentNotificationTab = 'login';
+
+        function loadNotifications() {
+            if (currentNotificationTab === 'login') {
+                loadLoginNotifications();
+            } else {
+                loadGlobalAnnouncements();
+            }
+        }
+
+        function switchNotificationTab(tab) {
+            currentNotificationTab = tab;
+            document.querySelectorAll('.notification-tab').forEach(t => {
+                t.classList.toggle('active', t.dataset.notificationTab === tab);
+            });
+            loadNotifications();
+        }
+
+        function loadLoginNotifications() {
+            fetch('/api/admin/notifications')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        renderLoginNotifications(data.data.login_notifications || []);
+                    }
+                });
+        }
+
+        function loadGlobalAnnouncements() {
+            fetch('/api/admin/notifications')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        renderGlobalAnnouncements(data.data.global_announcements || []);
+                    }
+                });
+        }
+
+        function renderLoginNotifications(notifications) {
+            const container = document.getElementById('tab-content');
+            
+            let html = '<div class="prompt-tabs" style="display: flex; gap: 8px; margin-bottom: 16px;">';
+            html += '<button class="prompt-tab active notification-tab" data-notification-tab="login" onclick="switchNotificationTab(\'login\')">登录通知</button>';
+            html += '<button class="prompt-tab notification-tab" data-notification-tab="global" onclick="switchNotificationTab(\'global\')">全局公告</button>';
+            html += '</div>';
+
+            html += '<div class="card" style="margin-bottom: 20px;">';
+            html += '<div class="card-header"><span class="card-title">编辑登录通知</span></div>';
+            html += '<div style="padding: 20px;">';
+            
+            const notification = notifications[0] || {};
+            
+            html += '<div style="margin-bottom: 16px;">';
+            html += '<label style="display: block; font-size: 13px; color: #666; margin-bottom: 6px;">通知标题</label>';
+            html += '<input type="text" id="notif-title" value="' + escapeHtml(notification.title || '') + '" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">';
+            html += '</div>';
+            
+            html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">';
+            html += '<div><label style="display: block; font-size: 13px; color: #666; margin-bottom: 6px;">版本号</label>';
+            html += '<input type="text" id="notif-version" value="' + escapeHtml(notification.version || '1.0.0') + '" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;"></div>';
+            html += '<div><label style="display: block; font-size: 13px; color: #666; margin-bottom: 6px;">优先级</label>';
+            html += '<select id="notif-priority" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">';
+            html += '<option value="high" ' + (notification.priority === 'high' ? 'selected' : '') + '>高</option>';
+            html += '<option value="medium" ' + (notification.priority === 'medium' ? 'selected' : '') + '>中</option>';
+            html += '<option value="low" ' + (notification.priority === 'low' ? 'selected' : '') + '>低</option>';
+            html += '</select></div>';
+            html += '</div>';
+            
+            html += '<div style="margin-bottom: 16px;">';
+            html += '<label style="display: block; font-size: 13px; color: #666; margin-bottom: 6px;">通知内容（JSON格式）</label>';
+            html += '<textarea id="notif-content" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; min-height: 150px; font-family: monospace;">' + escapeHtml(JSON.stringify(notification.content || [], null, 2)) + '</textarea>';
+            html += '<p style="font-size: 12px; color: #999; margin-top: 4px;">格式: [{"section": "区块标题", "items": ["项目1", "项目2"]}]</p>';
+            html += '</div>';
+            
+            html += '<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">';
+            html += '<input type="checkbox" id="notif-active" ' + (notification.is_active !== false ? 'checked' : '') + '>';
+            html += '<label for="notif-active">启用此通知</label>';
+            html += '</div>';
+            
+            html += '<div style="display: flex; gap: 10px;">';
+            html += '<button class="btn btn-primary" onclick="saveLoginNotification()">保存通知</button>';
+            html += '<button class="btn btn-secondary" onclick="previewLoginNotification()">预览效果</button>';
+            if (notification.id) {
+                html += '<button class="btn btn-danger" onclick="deleteLoginNotification(\'' + notification.id + '\')">删除通知</button>';
+            }
+            html += '</div>';
+            
+            html += '</div></div>';
+
+            if (notifications.length > 1) {
+                html += '<div class="card">';
+                html += '<div class="card-header"><span class="card-title">历史通知</span></div>';
+                html += '<table class="user-table"><thead><tr>';
+                html += '<th>标题</th><th>版本</th><th>状态</th><th>创建时间</th><th>操作</th>';
+                html += '</tr></thead><tbody>';
+                
+                for (let i = 1; i < notifications.length; i++) {
+                    const n = notifications[i];
+                    html += '<tr>';
+                    html += '<td>' + escapeHtml(n.title) + '</td>';
+                    html += '<td>' + escapeHtml(n.version) + '</td>';
+                    html += '<td><span class="status-badge ' + (n.is_active ? 'status-active' : 'status-disabled') + '">' + (n.is_active ? '启用' : '停用') + '</span></td>';
+                    html += '<td>' + (n.created_at || '-') + '</td>';
+                    html += '<td>';
+                    html += '<button class="btn btn-sm btn-secondary" onclick="editLoginNotification(\'' + n.id + '\')">编辑</button> ';
+                    html += '<button class="btn btn-sm btn-danger" onclick="deleteLoginNotification(\'' + n.id + '\')">删除</button>';
+                    html += '</td></tr>';
+                }
+                
+                html += '</tbody></table></div>';
+            }
+            
+            container.innerHTML = html;
+        }
+
+        function renderGlobalAnnouncements(announcements) {
+            const container = document.getElementById('tab-content');
+            
+            let html = '<div class="prompt-tabs" style="display: flex; gap: 8px; margin-bottom: 16px;">';
+            html += '<button class="prompt-tab notification-tab" data-notification-tab="login" onclick="switchNotificationTab(\'login\')">登录通知</button>';
+            html += '<button class="prompt-tab active notification-tab" data-notification-tab="global" onclick="switchNotificationTab(\'global\')">全局公告</button>';
+            html += '</div>';
+
+            html += '<div class="card" style="margin-bottom: 20px;">';
+            html += '<div class="card-header"><span class="card-title">发布新公告</span></div>';
+            html += '<div style="padding: 20px;">';
+            
+            html += '<div style="margin-bottom: 16px;">';
+            html += '<label style="display: block; font-size: 13px; color: #666; margin-bottom: 6px;">公告标题 *</label>';
+            html += '<input type="text" id="announcement-title" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" placeholder="请输入公告标题">';
+            html += '</div>';
+            
+            html += '<div style="margin-bottom: 16px;">';
+            html += '<label style="display: block; font-size: 13px; color: #666; margin-bottom: 6px;">公告内容 *</label>';
+            html += '<textarea id="announcement-message" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; min-height: 80px;" placeholder="请输入公告内容"></textarea>';
+            html += '</div>';
+            
+            html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">';
+            html += '<div><label style="display: block; font-size: 13px; color: #666; margin-bottom: 6px;">类型</label>';
+            html += '<select id="announcement-type" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">';
+            html += '<option value="maintenance">维护通知</option>';
+            html += '<option value="info">信息通知</option>';
+            html += '<option value="warning">警告通知</option>';
+            html += '<option value="success">成功通知</option>';
+            html += '</select></div>';
+            html += '<div><label style="display: block; font-size: 13px; color: #666; margin-bottom: 6px;">优先级</label>';
+            html += '<select id="announcement-priority" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">';
+            html += '<option value="high">高 - 强制展示</option>';
+            html += '<option value="medium">中</option>';
+            html += '<option value="low">低</option>';
+            html += '</select></div>';
+            html += '</div>';
+            
+            html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">';
+            html += '<div><label style="display: block; font-size: 13px; color: #666; margin-bottom: 6px;">开始时间</label>';
+            html += '<input type="text" id="announcement-start" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" placeholder="如: 2024-01-01 02:00"></div>';
+            html += '<div><label style="display: block; font-size: 13px; color: #666; margin-bottom: 6px;">预计时长</label>';
+            html += '<input type="text" id="announcement-duration" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" placeholder="如: 约2小时"></div>';
+            html += '</div>';
+            
+            html += '<div style="margin-bottom: 16px;">';
+            html += '<label style="display: block; font-size: 13px; color: #666; margin-bottom: 6px;">影响范围</label>';
+            html += '<input type="text" id="announcement-impact" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" placeholder="请描述影响范围">';
+            html += '</div>';
+            
+            html += '<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">';
+            html += '<input type="checkbox" id="announcement-active" checked>';
+            html += '<label for="announcement-active">立即启用</label>';
+            html += '</div>';
+            
+            html += '<button class="btn btn-primary" onclick="createAnnouncement()">发布公告</button>';
+            
+            html += '</div></div>';
+
+            html += '<div class="card">';
+            html += '<div class="card-header"><span class="card-title">公告列表</span></div>';
+            
+            if (announcements.length === 0) {
+                html += '<div class="empty-state">暂无公告</div></div>';
+            } else {
+                html += '<table class="user-table"><thead><tr>';
+                html += '<th>标题</th><th>类型</th><th>优先级</th><th>状态</th><th>创建时间</th><th>操作</th>';
+                html += '</tr></thead><tbody>';
+                
+                announcements.forEach(a => {
+                    const priorityClass = a.priority === 'high' ? 'status-disabled' : (a.priority === 'medium' ? 'status-pending' : 'status-active');
+                    const priorityText = a.priority === 'high' ? '高' : (a.priority === 'medium' ? '中' : '低');
+                    
+                    html += '<tr>';
+                    html += '<td>' + escapeHtml(a.title) + '</td>';
+                    html += '<td>' + escapeHtml(a.type) + '</td>';
+                    html += '<td><span class="status-badge ' + priorityClass + '">' + priorityText + '</span></td>';
+                    html += '<td><span class="status-badge ' + (a.is_active ? 'status-active' : 'status-disabled') + '">' + (a.is_active ? '启用' : '停用') + '</span></td>';
+                    html += '<td>' + (a.created_at || '-') + '</td>';
+                    html += '<td>';
+                    html += '<button class="btn btn-sm ' + (a.is_active ? 'btn-warning' : 'btn-primary') + '" onclick="toggleAnnouncement(\'' + a.id + '\', ' + !a.is_active + ')">' + (a.is_active ? '停用' : '启用') + '</button> ';
+                    html += '<button class="btn btn-sm btn-danger" onclick="deleteAnnouncement(\'' + a.id + '\')">删除</button>';
+                    html += '</td></tr>';
+                });
+                
+                html += '</tbody></table></div>';
+            }
+            
+            container.innerHTML = html;
+        }
+
+        function saveLoginNotification() {
+            const title = document.getElementById('notif-title').value.trim();
+            const version = document.getElementById('notif-version').value.trim();
+            const priority = document.getElementById('notif-priority').value;
+            const contentStr = document.getElementById('notif-content').value.trim();
+            const isActive = document.getElementById('notif-active').checked;
+
+            if (!title) {
+                alert('请输入通知标题');
+                return;
+            }
+
+            let content;
+            try {
+                content = JSON.parse(contentStr);
+            } catch (e) {
+                alert('通知内容格式错误，请检查JSON格式');
+                return;
+            }
+
+            fetch('/api/admin/notifications/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title,
+                    version,
+                    priority,
+                    content,
+                    is_active: isActive
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('登录通知保存成功');
+                    loadLoginNotifications();
+                } else {
+                    alert(data.error || '保存失败');
+                }
+            });
+        }
+
+        function previewLoginNotification() {
+            const title = document.getElementById('notif-title').value || '通知标题';
+            const version = document.getElementById('notif-version').value || '1.0.0';
+            const contentStr = document.getElementById('notif-content').value;
+            
+            let content;
+            try {
+                content = JSON.parse(contentStr);
+            } catch (e) {
+                alert('通知内容格式错误');
+                return;
+            }
+
+            let contentHtml = '';
+            if (Array.isArray(content)) {
+                content.forEach(section => {
+                    contentHtml += '<div style="margin-bottom: 16px;">';
+                    contentHtml += '<h4 style="color: #166534; margin-bottom: 8px;">' + escapeHtml(section.section) + '</h4>';
+                    contentHtml += '<ul style="margin: 0; padding-left: 20px;">';
+                    if (section.items && Array.isArray(section.items)) {
+                        section.items.forEach(item => {
+                            contentHtml += '<li style="margin-bottom: 4px;">' + escapeHtml(item) + '</li>';
+                        });
+                    }
+                    contentHtml += '</ul></div>';
+                });
+            }
+
+            const previewHtml = `
+                <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;" onclick="this.remove()">
+                    <div style="background: white; border-radius: 16px; max-width: 500px; width: 90%; max-height: 80vh; overflow: auto;" onclick="event.stopPropagation()">
+                        <div style="background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%); color: white; padding: 24px; border-radius: 16px 16px 0 0;">
+                            <h2 style="margin: 0 0 8px 0;">${escapeHtml(title)}</h2>
+                            <div style="font-size: 13px; opacity: 0.9;">版本 ${escapeHtml(version)}</div>
+                        </div>
+                        <div style="padding: 20px;">
+                            ${contentHtml || '<p style="color: #666;">暂无内容</p>'}
+                        </div>
+                        <div style="padding: 16px 20px; background: #f9fafb; border-top: 1px solid #e5e7eb; text-align: center;">
+                            <button onclick="this.closest(\'div[style*=position]\').remove()" style="padding: 12px 48px; background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%); color: white; border: none; border-radius: 10px; cursor: pointer;">我已阅读</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', previewHtml);
+        }
+
+        function deleteLoginNotification(id) {
+            if (!confirm('确定要删除此通知吗？')) return;
+            
+            fetch('/api/admin/notifications/login/' + id, {
+                method: 'DELETE'
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('通知已删除');
+                    loadLoginNotifications();
+                } else {
+                    alert(data.error || '删除失败');
+                }
+            });
+        }
+
+        function editLoginNotification(id) {
+            fetch('/api/admin/notifications')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        const notification = data.data.login_notifications.find(n => n.id === id);
+                        if (notification) {
+                            document.getElementById('notif-title').value = notification.title || '';
+                            document.getElementById('notif-version').value = notification.version || '1.0.0';
+                            document.getElementById('notif-priority').value = notification.priority || 'high';
+                            document.getElementById('notif-content').value = JSON.stringify(notification.content || [], null, 2);
+                            document.getElementById('notif-active').checked = notification.is_active !== false;
+                        }
+                    }
+                });
+        }
+
+        function createAnnouncement() {
+            const title = document.getElementById('announcement-title').value.trim();
+            const message = document.getElementById('announcement-message').value.trim();
+
+            if (!title || !message) {
+                alert('请填写公告标题和内容');
+                return;
+            }
+
+            const data = {
+                title,
+                message,
+                type: document.getElementById('announcement-type').value,
+                priority: document.getElementById('announcement-priority').value,
+                start_time: document.getElementById('announcement-start').value.trim(),
+                duration: document.getElementById('announcement-duration').value.trim(),
+                impact: document.getElementById('announcement-impact').value.trim(),
+                is_active: document.getElementById('announcement-active').checked
+            };
+
+            fetch('/api/admin/announcements', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(r => r.json())
+            .then(result => {
+                if (result.success) {
+                    alert('公告发布成功');
+                    loadGlobalAnnouncements();
+                } else {
+                    alert(result.error || '发布失败');
+                }
+            });
+        }
+
+        function toggleAnnouncement(id, isActive) {
+            fetch('/api/admin/announcements/' + id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_active: isActive })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    loadGlobalAnnouncements();
+                } else {
+                    alert(data.error || '操作失败');
+                }
+            });
+        }
+
+        function deleteAnnouncement(id) {
+            if (!confirm('确定要删除此公告吗？')) return;
+            
+            fetch('/api/admin/announcements/' + id, {
+                method: 'DELETE'
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('公告已删除');
+                    loadGlobalAnnouncements();
+                } else {
+                    alert(data.error || '删除失败');
+                }
+            });
+        }
     </script>
 </body>
 </html>
