@@ -475,6 +475,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     
     // Initialize API Key Config (global, not tied to a specific component)
+    
+    // Initialize Notification System
+    try {
+        const notificationModule = await import('./modules/notification-system.js');
+        const notificationSystem = notificationModule.default;
+        await notificationSystem.init();
+        console.log('✓ Notification system initialized');
+    } catch (error) {
+        console.error('❌ Failed to initialize notification system:', error);
+    }
     initApiKeyConfig();
     LoadingManager.updateProgress('初始化API配置');
     
