@@ -9,7 +9,6 @@ function initUnifiedBatchModule() {
     const requiredElements = [
         'unified_excel_file',
         'unified_excel_sheet',
-        'unified_inputs_list',
         'unified_preset_template_select',
         'unified_add_output_field_btn',
         'unified_output_fields_container'

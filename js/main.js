@@ -502,7 +502,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // 默认激活各个功能内部的第一个步骤
     const unifiedFirstStep = document.querySelector('#unified_batch-tab .step-item');
-    if (unifiedFirstStep) switchUnifiedSubTab('input', unifiedFirstStep);
+    if (unifiedFirstStep) switchUnifiedSubTab('config', unifiedFirstStep);
     
     const lplFirstStep = document.querySelector('#local_patent_lib-tab .step-item');
     if (lplFirstStep) switchLPLSubTab('expand', lplFirstStep);
