@@ -282,11 +282,11 @@ class NotificationSystem {
                     ` : ''}
                 </div>
             </div>
-            <button class="banner-close" aria-label="关闭公告">
+            <button class="banner-close" aria-label="已知晓">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="18" y1="6" x2="6" y2="18"/>
-                    <line x1="6" y1="6" x2="18" y2="18"/>
+                    <polyline points="20 6 9 17 4 12"/>
                 </svg>
+                <span>已知晓</span>
             </button>
         `;
 

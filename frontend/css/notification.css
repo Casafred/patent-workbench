@@ -98,27 +98,39 @@
     top: 50%;
     right: 15px;
     transform: translateY(-50%);
-    background: transparent;
-    border: none;
-    width: 32px;
-    height: 32px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 6px 14px 6px 10px;
     cursor: pointer;
     display: flex;
     align-items: center;
-    justify-content: center;
-    border-radius: 6px;
+    gap: 6px;
+    border-radius: 20px;
     transition: all 0.2s ease;
-    color: #6B7280;
+    color: #374151;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .banner-close:hover {
-    background: rgba(0, 0, 0, 0.1);
-    color: #1F2937;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-50%) scale(1.02);
+}
+
+.banner-close:active {
+    transform: translateY(-50%) scale(0.98);
 }
 
 .banner-close svg {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
+    color: #22C55E;
+}
+
+.banner-close span {
+    white-space: nowrap;
 }
 
 /* 登录通知模态框 */
@@ -160,7 +172,7 @@
 }
 
 .notification-header.update {
-    background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+    background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
 }
 
 .notification-header.important {
@@ -276,7 +288,7 @@
 }
 
 .notification-list-icon.improved {
-    color: #3B82F6;
+    color: #22C55E;
 }
 
 .notification-list-icon.developing {
