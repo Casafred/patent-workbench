@@ -252,7 +252,9 @@ def _transform_paddle_ocr_vl_response(response: dict) -> dict:
                 'content': block_content,
                 'bbox': {
                     'lt': [block_bbox[0], block_bbox[1]],
-                    'rb': [block_bbox[2], block_bbox[3]]
+                    'rb': [block_bbox[2], block_bbox[3]],
+                    'page_width': page_width,
+                    'page_height': page_height
                 },
                 'bbox_2d': block_bbox,
                 'polygon_points': block_polygon,
@@ -281,10 +283,16 @@ def _transform_paddle_ocr_vl_response(response: dict) -> dict:
     for page in pages:
         page_blocks = []
         for block in page.get('blocks', []):
+            bbox_2d = block.get('bbox_2d') or [
+                block.get('bbox', {}).get('lt', [0, 0])[0],
+                block.get('bbox', {}).get('lt', [0, 0])[1],
+                block.get('bbox', {}).get('rb', [1, 1])[0],
+                block.get('bbox', {}).get('rb', [1, 1])[1]
+            ]
             page_blocks.append({
                 'label': block.get('label', 'text'),
                 'content': block.get('content', ''),
-                'bbox_2d': block.get('bbox_2d', [0, 0, 1, 1]),
+                'bbox_2d': bbox_2d,
                 'width': page.get('width', 1224),
                 'height': page.get('height', 1584)
             })
