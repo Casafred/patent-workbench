@@ -2300,12 +2300,12 @@ function switchUnifiedMode(mode) {
                 });
             }
             
-            var inputTab = document.getElementById('classification-sub-tab-input');
-            if (inputTab) {
+            var configTab = document.getElementById('classification-sub-tab-config');
+            if (configTab) {
                 document.querySelectorAll('#unified-classification-mode-panel .sub-tab-content').forEach(function(content) {
                     content.classList.remove('active');
                 });
-                inputTab.classList.add('active');
+                configTab.classList.add('active');
             }
         });
     }

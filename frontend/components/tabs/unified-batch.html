@@ -394,35 +394,32 @@
     <!-- ========== 智能分类标引模式 ========== -->
     <div id="unified-classification-mode-panel" class="unified-mode-panel" style="display:none;">
     <div class="progress-stepper" id="classification-stepper">
-        <div class="step-item active" onclick="switchClassificationSubTab('input', this)">
+        <div class="step-item active" onclick="switchClassificationSubTab('config', this)">
             <div class="step-number">1</div>
-            <div class="step-title">输入数据</div>
-        </div>
-        <div class="step-item" onclick="switchClassificationSubTab('schema', this)">
-            <div class="step-number">2</div>
-            <div class="step-title">配置分类</div>
+            <div class="step-title">数据与分类配置</div>
         </div>
         <div class="step-item" onclick="switchClassificationSubTab('mode', this)">
-            <div class="step-number">3</div>
+            <div class="step-number">2</div>
             <div class="step-title">选择模式</div>
         </div>
         <div class="step-item" onclick="switchClassificationSubTab('result', this)">
-            <div class="step-number">4</div>
+            <div class="step-number">3</div>
             <div class="step-title">标引结果</div>
         </div>
         <div class="progress-bar"></div>
     </div>
 
-    <!-- 分类步骤1: 输入数据 -->
-    <div id="classification-sub-tab-input" class="sub-tab-content active">
+    <!-- 分类步骤1: 数据与分类配置（融合） -->
+    <div id="classification-sub-tab-config" class="sub-tab-content active">
         <div class="step">
-            <div class="step-header">步骤 1: 添加待标引数据</div>
-            <div class="sub-tab-container" style="border-bottom:none; margin-bottom: 20px;">
-                <button class="sub-tab-button active" onclick="switchClassificationInput(event, 'excel')">Excel导入</button>
-                <button class="sub-tab-button" onclick="switchClassificationInput(event, 'manual')">手动添加</button>
-            </div>
+            <div class="step-header">步骤 1: 数据与分类配置</div>
             
-            <div id="classification-input-excel" class="sub-tab-content active">
+            <!-- 1.1 Excel数据源配置 -->
+            <div class="config-section" style="background: var(--bg-color-secondary); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                <h4 style="margin: 0 0 15px; display: flex; align-items: center; gap: 8px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M5.884 6.68a.5.5 0 1 0-.768.64L7.349 10l-2.233 2.68a.5.5 0 0 0 .768.64L8 10.781l2.116 2.54a.5.5 0 0 0 .768-.641L8.651 10l2.233-2.68a.5.5 0 0 0-.768-.64L8 9.219l-2.116-2.54z"/><path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/></svg>
+                    Excel数据源
+                </h4>
                 <div class="config-item">
                     <label for="classification_excel_file">上传Excel文件:</label>
                     <input type="file" id="classification_excel_file" accept=".xlsx, .xls">
@@ -431,116 +428,55 @@
                     <label for="classification_excel_sheet">选择Sheet:</label>
                     <select id="classification_excel_sheet" disabled></select>
                 </div>
-                <div id="classification_column_config_container">
-                    <hr style="margin: 15px 0; border-color: var(--border-color);">
-                    <div class="info-box" style="background: var(--bg-color-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-                        <div style="font-weight: 500; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4 11H2v3h2v-3zm5-4H7v7h2V7zm5-5v12h-2V2h2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1h-2zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-3z"/></svg> 数据列配置</div>
-                        <p style="margin: 0 0 10px; color: var(--text-color-secondary); font-size: 0.9em;">
-                            配置数据列用于分类标引。索引列用于标识每条数据，拼接列将合并作为分类依据的文本。
-                        </p>
-                    </div>
-                    
-                    <div class="config-item">
-                        <label for="classification_index_column">索引列 (唯一标识):</label>
-                        <select id="classification_index_column">
-                            <option value="">-- 选择索引列 --</option>
-                        </select>
-                        <small style="color: var(--text-color-tertiary);">选择作为数据唯一标识的列，如序号、ID等</small>
-                    </div>
-                    
-                    <div class="config-item">
-                        <label>拼接列 (分类依据文本):</label>
-                        <div id="classification_concat_columns_container" style="margin-top: 8px;">
-                        </div>
-                        <div style="margin-top: 10px; display: flex; gap: 10px; align-items: center;">
-                            <button id="classification_add_concat_column_btn" class="small-button" type="button">+ 添加拼接列</button>
-                            <span id="classification_concat_preview" style="color: var(--text-color-secondary); font-size: 0.85em;"></span>
-                        </div>
-                        <small style="color: var(--text-color-tertiary);">选择多列将按顺序拼接作为分类依据文本</small>
-                    </div>
-                    
-                    <hr style="margin: 15px 0; border-color: var(--border-color);">
-                    
-                    <div class="config-item row-flex">
-                        <label for="classification_excel_column_count">或使用传统模式 (选择输入列数量):</label>
-                        <input type="number" id="classification_excel_column_count" value="1" min="1" max="10" style="width: 100px;">
-                    </div>
-                    <div id="classification_excel_column_config_area"></div>
-                </div>
-                <button id="classification_load_excel_btn" class="small-button" disabled>从Excel加载输入</button>
-            </div>
-
-            <div id="classification-input-manual" class="sub-tab-content">
                 <div class="config-item">
-                    <label for="classification_manual_input">新输入 (每行一条):</label>
-                    <textarea id="classification_manual_input" rows="5" placeholder="请输入需要分类标引的内容..."></textarea>
-                </div>
-                <button id="classification_add_input_btn" class="small-button">添加输入</button>
-            </div>
-
-            <hr style="margin: 20px 0; border-color: var(--border-color);">
-            <label><strong>已添加的输入 (<span id="classification_inputs_count">0</span>):</strong></label>
-            <div id="classification_inputs_management">
-                <button id="classification_inputs_select_all_btn" class="small-button">全选</button>
-                <button id="classification_inputs_delete_selected_btn" class="small-button delete-button">删除选中</button>
-            </div>
-            <div id="classification_inputs_list" class="scrollable-list"></div>
-        </div>
-    </div>
-
-    <!-- 分类步骤2: 配置分类体系 -->
-    <div id="classification-sub-tab-schema" class="sub-tab-content">
-        <div class="step">
-            <div class="step-header">步骤 2: 配置分类体系</div>
-            
-            <!-- 分类体系选择 -->
-            <div class="config-item">
-                <label for="classification_schema_select">选择已有分类体系或新建:</label>
-                <div style="display: flex; gap: 8px; align-items: center;">
-                    <select id="classification_schema_select" style="flex: 1;">
-                        <option value="">选择已有分类体系</option>
+                    <label for="classification_index_column">索引列 (唯一标识，可选):</label>
+                    <select id="classification_index_column">
+                        <option value="">-- 请先上传Excel --</option>
                     </select>
-                    <button id="classification_delete_schema_btn" class="small-button" style="background: #ef4444; color: white; padding: 6px 12px;" title="删除选中的分类体系">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                    </button>
-                    <button id="classification_rename_schema_btn" class="small-button" style="background: #6b7280; color: white; padding: 6px 12px;" title="重命名选中的分类体系">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                    </button>
+                    <small style="color: var(--text-color-tertiary);">选择作为数据唯一标识的列，如序号、ID等（可选）</small>
                 </div>
             </div>
-
-            <!-- 智能冷启动选项 -->
-            <div class="info-box" style="background: var(--bg-color-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="var(--primary-color)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-                    <span style="font-weight: 500;">智能冷启动</span>
+            
+            <!-- 1.2 列映射配置 -->
+            <div class="config-section" id="classification_column_mapping_section" style="background: var(--bg-color-secondary); padding: 20px; border-radius: 12px; margin-bottom: 20px; display: none;">
+                <h4 style="margin: 0 0 15px; display: flex; align-items: center; gap: 8px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 12.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5ZM3 8.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5Zm-2 4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5Z"/><path d="M3.854 1.146a.5.5 0 0 0-.708 0l-2 2a.5.5 0 0 0 0 .708l2 2a.5.5 0 1 0 .708-.708L2.707 3.5H8a2.5 2.5 0 0 1 2.5 2.5v6a.5.5 0 0 0 1 0V6A3.5 3.5 0 0 0 8 2.5H2.707l1.147-1.146a.5.5 0 0 0 0-.708Z"/></svg>
+                    列映射配置
+                    <small style="color: var(--text-color-tertiary); font-weight: normal;">选择要使用的列，系统将自动生成占位符</small>
+                </h4>
+                <div id="classification_column_mapping_container">
+                    <!-- 动态生成的列映射项 -->
                 </div>
-                <p style="margin: 0 0 10px; color: var(--text-color-secondary); font-size: 0.9em;">没有现成的分类体系？让AI帮您分析数据特征，自动生成初步分类建议。</p>
-                <button id="classification_cold_start_btn" class="small-button" style="background: var(--primary-color); color: white;">
-                    开始智能冷启动
-                </button>
-            </div>
-
-            <!-- 智能导入体系选项 -->
-            <div class="info-box" style="background: linear-gradient(135deg, var(--bg-color-secondary) 0%, rgba(var(--accent-color-rgb, 102, 126, 234), 0.1) 100%); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="var(--accent-color, #667eea)"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-                    <span style="font-weight: 500;">智能导入体系</span>
-                    <span style="background: var(--accent-color, #667eea); color: white; font-size: 0.7em; padding: 2px 6px; border-radius: 10px;">NEW</span>
+                <div style="margin-top: 15px; display: flex; gap: 10px; align-items: center;">
+                    <button id="classification_add_column_mapping_btn" class="small-button" type="button">+ 添加列映射</button>
+                    <span id="classification_column_mapping_status" style="color: var(--text-color-secondary); font-size: 0.85em;"></span>
                 </div>
-                <p style="margin: 0 0 10px; color: var(--text-color-secondary); font-size: 0.9em;">用自然语言描述您的分类体系，AI将智能解析并生成标准格式。支持多层级结构描述。</p>
-                <button id="classification_smart_import_btn" class="small-button" style="background: var(--accent-color, #667eea); color: white;">
-                    开始智能导入
-                </button>
             </div>
-
-            <!-- 分类体系配置区 -->
-            <div id="classification_schema_config_area">
+            
+            <!-- 1.3 分类体系配置 -->
+            <div class="config-section" style="background: var(--bg-color-secondary); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                <h4 style="margin: 0 0 15px; display: flex; align-items: center; gap: 8px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811V2.828zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"/></svg>
+                    分类体系配置
+                </h4>
+                
+                <div class="config-item">
+                    <label for="classification_schema_select">选择已有分类体系或新建:</label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <select id="classification_schema_select" style="flex: 1;">
+                            <option value="">选择已有分类体系</option>
+                        </select>
+                        <button id="classification_delete_schema_btn" class="small-button" style="background: #ef4444; color: white; padding: 6px 12px;" title="删除选中的分类体系">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                    </div>
+                </div>
+                
                 <div class="config-item">
                     <label for="classification_schema_name">分类体系名称:</label>
                     <input type="text" id="classification_schema_name" placeholder="例如：专利技术领域分类">
                 </div>
-
+                
                 <div class="model-temp-group">
                     <div class="config-item">
                         <label for="classification_model_select">选择模型:</label>
@@ -551,14 +487,19 @@
                         <input type="number" id="classification_temperature" min="0" max="1" step="0.1" value="0.1">
                     </div>
                 </div>
-
-                <div class="config-item">
-                    <label>分类体系配置:</label>
-                    <p style="font-size: 0.85em; color: var(--text-color-secondary); margin: 8px 0;">
-                        配置多层级分类体系。每个分类项包含名称和描述，可无限添加子层级。
-                    </p>
+                
+                <!-- 智能冷启动选项 -->
+                <div class="info-box" style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin: 15px 0;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="var(--primary-color)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                        <span style="font-weight: 500;">智能冷启动</span>
+                    </div>
+                    <p style="margin: 0 0 10px; color: var(--text-color-secondary); font-size: 0.9em;">让AI分析数据特征，自动生成分类建议。</p>
+                    <button id="classification_cold_start_btn" class="small-button" style="background: var(--primary-color); color: white;">
+                        开始智能冷启动
+                    </button>
                 </div>
-
+                
                 <!-- 分类体系树状配置 -->
                 <div id="classification_tree_container" class="classification-tree-container">
                     <!-- 动态渲染 -->
@@ -568,59 +509,37 @@
                     + 添加一级分类
                 </button>
             </div>
-
-            <hr style="margin: 25px 0 20px; border-color: var(--border-color);">
-
-            <!-- AI优化提示词 -->
-            <div class="config-item">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <label>生成的分类提示词预览:</label>
-                    <div style="display: flex; gap: 8px;">
-                        <button id="classification_copy_prompt_btn" class="small-button" style="background: var(--primary-color); color: white; display: inline-flex; align-items: center; gap: 4px;" title="复制到智能剪贴板">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg> 复制
-                        </button>
-                        <button id="classification_publish_prompt_btn" class="small-button" style="background: var(--success-color); color: white; display: inline-flex; align-items: center; gap: 4px;" title="发布到提示词广场">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M15.5 1.5a.5.5 0 0 1 .5.5v3.5a.5.5 0 0 1-.5.5h-3.5a.5.5 0 0 1 0-1h2.19l-3.54-3.54a.5.5 0 0 1 .708-.708L15 4.31V1.5a.5.5 0 0 1 .5-.5zM0 14.5a.5.5 0 0 0 .5.5h3.5a.5.5 0 0 0 0-1H1.81l3.54-3.54a.5.5 0 0 0-.708-.708L1 13.69V10.5a.5.5 0 0 0-1 0v4z"/></svg> 发布到广场
-                        </button>
-                        <button id="classification_optimize_prompt_btn" class="small-button" style="background: var(--accent-color); color: white;">
-                            AI一键优化提示词
-                        </button>
-                    </div>
+            
+            <!-- 1.4 数据预览 -->
+            <div class="config-section" id="classification_data_preview_section" style="background: var(--bg-color-secondary); padding: 20px; border-radius: 12px; margin-bottom: 20px; display: none;">
+                <h4 style="margin: 0 0 15px; display: flex; align-items: center; gap: 8px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/><path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/></svg>
+                    数据预览
+                    <span id="classification_preview_count" style="color: var(--text-color-tertiary); font-weight: normal; font-size: 0.9em;"></span>
+                </h4>
+                <div id="classification_data_preview_container" style="max-height: 300px; overflow-y: auto;">
+                    <!-- 动态生成预览 -->
                 </div>
-                <textarea id="classification_prompt_preview" rows="6" readonly style="background: var(--bg-color-secondary); margin-top: 10px;" placeholder="配置分类层级后，将自动生成分类提示词..."></textarea>
             </div>
-
-            <div style="display: flex; justify-content: space-between; margin-top: 20px;">
-                <button id="classification_save_schema_btn" class="small-button">保存分类体系</button>
-                <div style="display: flex; gap: 10px;">
-                    <button id="classification_import_schema_btn" class="small-button">导入体系</button>
-                    <button id="classification_export_schema_btn" class="small-button">导出体系</button>
-                </div>
+            
+            <!-- 操作按钮 -->
+            <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px;">
+                <button id="classification_load_data_btn" class="action-button" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 6px;"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/></svg>
+                    加载数据并继续
+                </button>
+                <button id="classification_save_schema_btn" class="small-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 4px;"><path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H2zm0-1h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2z"/><path d="M4.5 11.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5z"/></svg>
+                    保存分类体系
+                </button>
             </div>
         </div>
-
-        <!-- 示例库管理 -->
-        <details style="margin-top: 20px;">
-            <summary style="cursor: pointer; font-weight: 500; padding: 10px; background: var(--bg-color-secondary); border-radius: 8px;">
-                示例库管理
-            </summary>
-            <div class="step" style="border-top: none; margin-top: 10px;">
-                <div style="margin-bottom: 15px;">
-                    <button id="classification_add_example_btn" class="small-button">添加示例</button>
-                    <button id="classification_import_examples_btn" class="small-button">导入示例</button>
-                    <button id="classification_export_examples_btn" class="small-button">导出示例</button>
-                </div>
-                <div id="classification_examples_list" class="scrollable-list" style="max-height: 300px;">
-                    <div style="text-align: center; color: var(--text-color-tertiary); padding: 20px;">暂无示例，请在标引结果页面将有问题的数据条添加为例示</div>
-                </div>
-            </div>
-        </details>
     </div>
 
-    <!-- 分类步骤3: 选择模式 -->
+    <!-- 分类步骤2: 选择模式 -->
     <div id="classification-sub-tab-mode" class="sub-tab-content">
         <div class="step">
-            <div class="step-header">步骤 3: 选择处理模式</div>
+            <div class="step-header">步骤 2: 选择处理模式</div>
             
             <!-- 前置校验区域 -->
             <div id="classification_precheck_container" class="info-box" style="background: linear-gradient(135deg, var(--bg-color-secondary) 0%, rgba(var(--primary-color-rgb), 0.05) 100%); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
