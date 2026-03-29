@@ -126,8 +126,8 @@
     content: '';
     position: absolute;
     top: 18px;
-    left: -30px;
-    width: 30px;
+    left: -45px;
+    width: 45px;
     height: 3px;
     background-color: #E5E7EB;
     z-index: -1;
@@ -136,6 +136,10 @@
 
 .step-item:first-child::before {
     display: none;
+}
+
+.step-item:first-child {
+    margin-left: 15px;
 }
 
 .step-item.completed::before {
