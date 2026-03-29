@@ -794,7 +794,7 @@
     border-bottom: 1px solid #e2e8f0;
     background: #f8fafc;
     position: relative;
-    z-index: 100;
+    z-index: 10;
     flex-shrink: 0;
 }
 
