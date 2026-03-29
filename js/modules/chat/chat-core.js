@@ -237,6 +237,10 @@ function initChat() {
     if (chatSavePersonaBtn) {
         chatSavePersonaBtn.addEventListener('click', saveCurrentPersona);
     }
+    const chatPublishPersonaBtn = document.getElementById('chat_publish_persona_btn');
+    if (chatPublishPersonaBtn) {
+        chatPublishPersonaBtn.addEventListener('click', publishCurrentPersona);
+    }
     if (chatPersonaSelect) {
         chatPersonaSelect.addEventListener('change', updatePersonaEditor);
     }

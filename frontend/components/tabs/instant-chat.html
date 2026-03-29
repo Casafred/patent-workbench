@@ -29,7 +29,13 @@
                         <div class="config-item"><label for="persona_name_input">角色名称:</label><input type="text" id="persona_name_input" placeholder="输入角色名称"></div>
                         <div class="config-item"><label for="persona_system_input">系统提示:</label><textarea id="persona_system_input" rows="4" placeholder="输入系统提示"></textarea></div>
                         <div class="config-item"><label for="persona_template_input">用户模板 (使用 {{INPUT}} 作为占位符):</label><textarea id="persona_template_input" rows="2" placeholder="输入用户模板"></textarea></div>
-                        <button id="chat_save_persona_btn" class="small-button">保存当前角色</button>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button id="chat_save_persona_btn" class="small-button">保存当前角色</button>
+                            <button id="chat_publish_persona_btn" class="small-button" style="background: var(--primary-color); color: white; border-color: var(--primary-color);" title="发布到提示词广场">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="margin-right: 4px;"><path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.5.5 0 0 0 .955.296l.805-2.414a.5.5 0 0 0 .121-.196l6.858-6.858z"/><path d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg>
+                                发布到广场
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

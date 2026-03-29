@@ -300,6 +300,11 @@ function bindUnifiedBatchEvents() {
         saveTemplateBtn.addEventListener('click', saveUnifiedTemplate);
     }
 
+    var publishTemplateBtn = document.getElementById('unified_publish_template_btn');
+    if (publishTemplateBtn) {
+        publishTemplateBtn.addEventListener('click', publishUnifiedTemplate);
+    }
+
     var addColumnMappingBtn = document.getElementById('unified_add_column_mapping_btn');
     if (addColumnMappingBtn) {
         addColumnMappingBtn.addEventListener('click', handleAddColumnMapping);
@@ -1460,6 +1465,65 @@ function saveUnifiedTemplate() {
     }
     
     alert(result.message);
+}
+
+function publishUnifiedTemplate() {
+    var templateName = document.getElementById('unified_template_name').value;
+    var systemPrompt = document.getElementById('unified_system_prompt').value;
+    var userPromptTemplate = document.getElementById('unified_user_prompt').value;
+    var outputFields = UnifiedBatch.template.getOutputFields();
+    var model = document.getElementById('unified_template_model_select').value;
+    var temperature = parseFloat(document.getElementById('unified_template_temperature').value) || 0.1;
+    var columnMappings = getColumnMappings();
+    var validMappings = columnMappings.filter(function(m) { return m.source && m.placeholder; });
+    
+    if (!systemPrompt && !userPromptTemplate) {
+        alert('请先配置系统提示或用户提示模板');
+        return;
+    }
+    
+    var content = '';
+    if (systemPrompt) {
+        content += '【系统提示】\n' + systemPrompt;
+    }
+    if (userPromptTemplate) {
+        if (content) content += '\n\n';
+        content += '【用户提示模板】\n' + userPromptTemplate;
+    }
+    if (validMappings.length > 0) {
+        content += '\n\n【占位符映射】\n';
+        validMappings.forEach(function(m) {
+            content += '{{' + m.placeholder + '}} ← Excel列: ' + m.source + '\n';
+        });
+    }
+    if (outputFields && outputFields.length > 0) {
+        content += '\n\n【输出字段】\n';
+        outputFields.forEach(function(f) {
+            content += '- ' + f.name + (f.description ? ': ' + f.description : '') + '\n';
+        });
+    }
+    if (model) {
+        content += '\n\n【模型配置】\n';
+        content += '模型: ' + model + '\n';
+        content += '温度: ' + temperature;
+    }
+    
+    if (!content.trim()) {
+        alert('模板内容为空，无法发布');
+        return;
+    }
+    
+    if (window.PromptForum && window.PromptForum.quickPublish) {
+        window.PromptForum.quickPublish({
+            title: templateName || '批量处理模板',
+            content: content,
+            description: '通用批量处理模板 - 适用于Excel数据批量处理',
+            categoryId: '',
+            tags: '批量处理,模板' + (model ? ',' + model : '')
+        });
+    } else {
+        alert('提示词广场模块未加载，请刷新页面后重试');
+    }
 }
 
 function deleteUnifiedTemplate(templateId) {

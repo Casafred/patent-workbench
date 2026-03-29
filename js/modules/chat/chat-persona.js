@@ -333,28 +333,17 @@ window.saveCurrentPersona = saveCurrentPersona;
 window.saveLastUsedPersona = saveLastUsedPersona;
 window.getLastUsedPersona = getLastUsedPersona;
 window.updatePersonaIndicator = updatePersonaIndicator;
+window.publishCurrentPersona = publishCurrentPersona;
 
-/**
- * Save the last used persona ID to localStorage
- * @param {string} personaId - The persona ID to save
- */
 function saveLastUsedPersona(personaId) {
     if (!personaId) return;
     window.userCacheStorage.set('lastUsedPersonaId', personaId);
 }
 
-/**
- * Get the last used persona ID from localStorage
- * @returns {string|null} The last used persona ID or null if not set
- */
 function getLastUsedPersona() {
     return window.userCacheStorage.get('lastUsedPersonaId');
 }
 
-/**
- * Update the persona indicator display
- * Shows the current persona name in the floating indicator
- */
 function updatePersonaIndicator() {
     const indicatorText = document.getElementById('chat_persona_indicator_text');
     const chatPersonaSelect = document.getElementById('chat_persona_select');
@@ -378,4 +367,38 @@ function updatePersonaIndicator() {
     }
     
     indicatorText.textContent = `当前角色：${personaName}`;
+}
+
+function publishCurrentPersona() {
+    const chatPersonaSelect = document.getElementById('chat_persona_select');
+    if (!chatPersonaSelect) return;
+    
+    const personaId = chatPersonaSelect.value;
+    const persona = appState.chat.personas[personaId];
+    if (!persona) {
+        alert('请先选择一个角色');
+        return;
+    }
+    
+    let content = persona.system || '';
+    if (persona.userTemplate && persona.userTemplate.trim()) {
+        content += '\n\n--- 用户模板 ---\n' + persona.userTemplate;
+    }
+    
+    if (!content.trim()) {
+        alert('角色内容为空，无法发布');
+        return;
+    }
+    
+    if (window.PromptForum && window.PromptForum.quickPublish) {
+        window.PromptForum.quickPublish({
+            title: persona.name || '未命名角色',
+            content: content,
+            description: `即时聊天角色 - ${persona.isCustom ? '自定义角色' : '预设角色'}`,
+            categoryId: '',
+            tags: '即时聊天,角色'
+        });
+    } else {
+        alert('提示词广场模块未加载，请刷新页面后重试');
+    }
 }
