@@ -1,0 +1,204 @@
+[1mdiff --git a/backend/services/epo_ops_service.py b/backend/services/epo_ops_service.py[m
+[1mindex 94a38fc..4cdb500 100644[m
+[1m--- a/backend/services/epo_ops_service.py[m
+[1m+++ b/backend/services/epo_ops_service.py[m
+[36m@@ -478,23 +478,33 @@[m [mclass EPOOPSClient:[m
+             logger.info(f"EPO搜索数据结构 - world_data keys: {list(world_data.keys())}")[m
+             logger.info(f"EPO搜索数据结构 - search_data keys: {list(search_data.keys())}")[m
+             [m
+[31m-            search_result = search_data.get('ops:search-result', {})[m
+[31m-            logger.info(f"EPO搜索数据结构 - search_result type: {type(search_result)}")[m
+[31m-            logger.info(f"EPO搜索数据结构 - search_result keys: {list(search_result.keys()) if isinstance(search_result, dict) else 'N/A'}")[m
+[31m-            [m
+[31m-            pub_refs = search_result.get('ops:publication-reference', [])[m
+[31m-            logger.info(f"EPO搜索数据结构 - pub_refs type: {type(pub_refs)}, value: {pub_refs}")[m
+[31m-            [m
+[31m-            if isinstance(pub_refs, dict):[m
+[31m-                pub_refs = [pub_refs][m
+[31m-            [m
+[31m-            logger.info(f"EPO搜索数据结构 - pub_refs数量: {len(pub_refs)}")[m
+[31m-            [m
+[31m-            for pub_ref in pub_refs:[m
+[31m-                patent_number = self._extract_patent_number_from_pub_ref(pub_ref)[m
+[31m-                logger.info(f"EPO搜索数据结构 - 提取到专利号: {patent_number}")[m
+[31m-                if patent_number:[m
+[31m-                    patent_numbers.append(patent_number)[m
+[32m+[m[32m            search_results = search_data.get('ops:search-result', [])[m
+[32m+[m[32m            logger.info(f"EPO搜索数据结构 - search_results type: {type(search_results)}")[m
+[32m+[m[41m            [m
+[32m+[m[32m            # ops:search-result 可能是一个列表（每个元素是一个搜索结果）[m
+[32m+[m[32m            # 也可能是一个字典（包含 ops:publication-reference）[m
+[32m+[m[32m            if isinstance(search_results, dict):[m
+[32m+[m[32m                # 单个结果的情况[m
+[32m+[m[32m                pub_refs = search_results.get('ops:publication-reference', [])[m
+[32m+[m[32m                if isinstance(pub_refs, dict):[m
+[32m+[m[32m                    pub_refs = [pub_refs][m
+[32m+[m[32m                for pub_ref in pub_refs:[m
+[32m+[m[32m                    patent_number = self._extract_patent_number_from_pub_ref(pub_ref)[m
+[32m+[m[32m                    if patent_number:[m
+[32m+[m[32m                        patent_numbers.append(patent_number)[m
+[32m+[m[32m            elif isinstance(search_results, list):[m
+[32m+[m[32m                # 多个结果的情况[m
+[32m+[m[32m                for search_result in search_results:[m
+[32m+[m[32m                    if not isinstance(search_result, dict):[m
+[32m+[m[32m                        continue[m
+[32m+[m[32m                    pub_refs = search_result.get('ops:publication-reference', [])[m
+[32m+[m[32m                    if isinstance(pub_refs, dict):[m
+[32m+[m[32m                        pub_refs = [pub_refs][m
+[32m+[m[32m                    for pub_ref in pub_refs:[m
+[32m+[m[32m                        patent_number = self._extract_patent_number_from_pub_ref(pub_ref)[m
+[32m+[m[32m                        logger.info(f"EPO搜索数据结构 - 提取到专利号: {patent_number}")[m
+[32m+[m[32m                        if patent_number:[m
+[32m+[m[32m                            patent_numbers.append(patent_number)[m
+             [m
+             logger.info(f"EPO搜索数据结构 - 最终解析结果数量: {len(patent_numbers)}")[m
+         except Exception as e:[m
+[36m@@ -942,91 +952,6 @@[m [mclass EPOOPSClient:[m
+             logger.error(f"提取CPC分类号失败: {e}")[m
+             return [][m
+     [m
+[31m-    def _extract_abstract_from_exchange(self, exchange_doc: Dict) -> str:[m
+[31m-        """从 exchange-document 直接提取摘要（abstract 是 exchange-document 的直接子元素）"""[m
+[31m-        try:[m
+[31m-            abstract_data = exchange_doc.get('abstract', {})[m
+[31m-            if not abstract_data:[m
+[31m-                return ''[m
+[31m-            [m
+[31m-            if isinstance(abstract_data, str):[m
+[31m-                return abstract_data[m
+[31m-            [m
+[31m-            p = abstract_data.get('p', {})[m
+[31m-            if isinstance(p, list):[m
+[31m-                texts = [self._get_text_value(item) for item in p][m
+[31m-                return ' '.join(text for text in texts if text)[m
+[31m-            return self._get_text_value(p)[m
+[31m-        except Exception as e:[m
+[31m-            logger.error(f"提取摘要失败: {e}")[m
+[31m-            return ''[m
+[31m-    [m
+[31m-    def _extract_cpc_classifications(self, biblio: Dict) -> List[str]:[m
+[31m-        """提取 CPC 分类号 - 使用 patent-classification 字段"""[m
+[31m-        try:[m
+[31m-            classifications = biblio.get('patent-classification', [])[m
+[31m-            [m
+[31m-            if isinstance(classifications, dict):[m
+[31m-                classifications = [classifications][m
+[31m-            [m
+[31m-            result = [][m
+[31m-            for c in classifications:[m
+[31m-                if not isinstance(c, dict):[m
+[31m-                    continue[m
+[31m-                [m
+[31m-                scheme = c.get('classification-scheme', {})[m
+[31m-                scheme_value = self._get_text_value(scheme)[m
+[31m-                [m
+[31m-                if scheme_value and scheme_value.upper() in ['CPC', 'CPCI', 'CPCY']:[m
+[31m-                    section = self._get_text_value(c.get('section', {}))[m
+[31m-                    pc_class = self._get_text_value(c.get('class', {}))[m
+[31m-                    subclass = self._get_text_value(c.get('subclass', {}))[m
+[31m-                    main_group = self._get_text_value(c.get('main-group', {}))[m
+[31m-                    sub_group = self._get_text_value(c.get('subgroup', {}))[m
+[31m-                    [m
+[31m-                    symbol_parts = [][m
+[31m-                    if section:[m
+[31m-                        symbol_parts.append(section)[m
+[31m-                    if pc_class:[m
+[31m-                        symbol_parts.append(pc_class)[m
+[31m-                    if subclass:[m
+[31m-                        symbol_parts.append(subclass)[m
+[31m-                    if main_group:[m
+[31m-                        symbol_parts.append(main_group)[m
+[31m-                    if sub_group:[m
+[31m-                        symbol_parts.append('/' + sub_group)[m
+[31m-                    [m
+[31m-                    if symbol_parts:[m
+[31m-                        symbol = ''.join(symbol_parts[:2]) + ''.join(symbol_parts[2:])[m
+[31m-                        result.append(symbol)[m
+[31m-            [m
+[31m-            if not result:[m
+[31m-                class_container = biblio.get('classifications-cpc', {})[m
+[31m-                class_data = class_container.get('classification-cpc', [])[m
+[31m-                [m
+[31m-                if isinstance(class_data, dict):[m
+[31m-                    class_data = [class_data][m
+[31m-                [m
+[31m-                for c in class_data:[m
+[31m-                    if not isinstance(c, dict):[m
+[31m-                        continue[m
+[31m-                    [m
+[31m-                    text = c.get('text', {})[m
+[31m-                    text_val = self._get_text_value(text)[m
+[31m-                    if text_val:[m
+[31m-                        result.append(text_val)[m
+[31m-                        continue[m
+[31m-                    [m
+[31m-                    class_symbol = c.get('classification-symbol', {})[m
+[31m-                    symbol = self._get_text_value(class_symbol)[m
+[31m-                    if symbol:[m
+[31m-                        result.append(symbol)[m
+[31m-            [m
+[31m-            return result[m
+[31m-        except Exception as e:[m
+[31m-            logger.error(f"提取CPC分类号失败: {e}")[m
+[31m-            return [][m
+[31m-    [m
+     def _get_text_value(self, data: Any) -> str:[m
+         if data is None:[m
+             return ''[m
+[1mdiff --git a/js/modules/epo-search/epo-search.js b/js/modules/epo-search/epo-search.js[m
+[1mindex 7ca40ae..9becd4b 100644[m
+[1m--- a/js/modules/epo-search/epo-search.js[m
+[1m+++ b/js/modules/epo-search/epo-search.js[m
+[36m@@ -454,6 +454,11 @@[m [mclass EPOSearchModule {[m
+     [m
+     async search(page = 1) {[m
+         console.log('[EPO Search] search() called, page:', page);[m
+[32m+[m[41m        [m
+[32m+[m[32m        if (window.guestModeRestrictions && !window.guestModeRestrictions.checkEPOSearch()) {[m
+[32m+[m[32m            return;[m
+[32m+[m[32m        }[m
+[32m+[m[41m        [m
+         const query = this.buildQuery();[m
+         console.log('[EPO Search] built query:', query);[m
+         [m
+[36m@@ -522,15 +527,29 @@[m [mclass EPOSearchModule {[m
+     }[m
+     [m
+     displayResultsQuick(results, total) {[m
+[32m+[m[32m        const resultsSection = document.getElementById('epo-results-section');[m
+         const resultsList = document.getElementById('epo-results-list');[m
+         const resultsCount = document.getElementById('epo-results-count');[m
+[32m+[m[32m        const totalCount = document.getElementById('epo-total-count');[m
+         [m
+[32m+[m[32m        if (resultsSection) resultsSection.style.display = 'block';[m
+         if (resultsCount) {[m
+             resultsCount.textContent = `找到 ${total} 条结果`;[m
+         }[m
+[32m+[m[32m        if (totalCount) totalCount.textContent = `(共 ${total.toLocaleString()} 条结果)`;[m
+         [m
+         if (!resultsList) return;[m
+         [m
+[32m+[m[32m        if (results.length === 0) {[m
+[32m+[m[32m            resultsList.innerHTML = `[m
+[32m+[m[32m                <div style="text-align: center; padding: 40px; color: #666;">[m
+[32m+[m[32m                    <p>未找到匹配的专利</p>[m
+[32m+[m[32m                    <p style="font-size: 13px; margin-top: 8px;">请尝试调整检索条件</p>[m
+[32m+[m[32m                </div>[m
+[32m+[m[32m            `;[m
+[32m+[m[32m            return;[m
+[32m+[m[32m        }[m
+[32m+[m[41m        [m
+         // 快速显示基本结果[m
+         resultsList.innerHTML = results.map((r, index) => `[m
+             <div class="epo-result-item" data-index="${index}" data-patent-number="${r.patent_number}">[m
+[36m@@ -916,6 +935,10 @@[m [mclass EPOSearchModule {[m
+     }[m
+     [m
+     async analyzePatent() {[m
+[32m+[m[32m        if (window.guestModeRestrictions && !window.guestModeRestrictions.checkEPOAnalyze()) {[m
+[32m+[m[32m            return;[m
+[32m+[m[32m        }[m
+[32m+[m[41m        [m
+         if (!this.currentPatentNumber) {[m
+             this.showToast('请先选择要解读的专利', 'warning');[m
+             return;[m

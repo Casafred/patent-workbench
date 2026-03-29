@@ -9,7 +9,6 @@ function initUnifiedBatchModule() {
     const requiredElements = [
         'unified_excel_file',
         'unified_excel_sheet',
-        'unified_load_excel_btn',
         'unified_inputs_list',
         'unified_preset_template_select',
         'unified_add_output_field_btn',
@@ -43,6 +42,13 @@ function initUnifiedBatchUI() {
     populateUnifiedModelSelect();
     renderUnifiedTemplatesList();
     updateUnifiedModeRecommendation();
+    initColumnMappingState();
+}
+
+function initColumnMappingState() {
+    if (!UnifiedBatch.state.columnMappings) {
+        UnifiedBatch.state.columnMappings = [];
+    }
 }
 
 function populateUnifiedTemplateSelect() {
@@ -285,24 +291,24 @@ function bindUnifiedBatchEvents() {
         excelFile.addEventListener('change', handleUnifiedExcelUpload);
     }
 
-    var loadExcelBtn = document.getElementById('unified_load_excel_btn');
-    if (loadExcelBtn) {
-        loadExcelBtn.addEventListener('click', loadUnifiedInputsFromExcel);
+    var loadDataBtn = document.getElementById('unified_load_data_btn');
+    if (loadDataBtn) {
+        loadDataBtn.addEventListener('click', handleUnifiedLoadData);
     }
 
-    var addInputBtn = document.getElementById('unified_add_input_btn');
-    if (addInputBtn) {
-        addInputBtn.addEventListener('click', addUnifiedManualInput);
+    var saveTemplateBtn = document.getElementById('unified_save_template_btn');
+    if (saveTemplateBtn) {
+        saveTemplateBtn.addEventListener('click', saveUnifiedTemplate);
+    }
+
+    var addColumnMappingBtn = document.getElementById('unified_add_column_mapping_btn');
+    if (addColumnMappingBtn) {
+        addColumnMappingBtn.addEventListener('click', handleAddColumnMapping);
     }
 
     var presetSelect = document.getElementById('unified_preset_template_select');
     if (presetSelect) {
         presetSelect.addEventListener('change', handleUnifiedTemplateSelect);
-    }
-
-    var saveTemplateBtn = document.getElementById('unified_add_template_btn');
-    if (saveTemplateBtn) {
-        saveTemplateBtn.addEventListener('click', saveUnifiedTemplate);
     }
 
     var addFieldBtn = document.getElementById('unified_add_output_field_btn');
@@ -333,11 +339,6 @@ function bindUnifiedBatchEvents() {
     var instantExportBtn = document.getElementById('unified_instant_export_btn');
     if (instantExportBtn) {
         instantExportBtn.addEventListener('click', exportUnifiedInstantResults);
-    }
-
-    var addConcatColumnBtn = document.getElementById('unified_add_concat_column_btn');
-    if (addConcatColumnBtn) {
-        addConcatColumnBtn.addEventListener('click', handleUnifiedAddConcatColumn);
     }
 
     var asyncExportBtn = document.getElementById('unified_async_export_btn');
@@ -446,19 +447,18 @@ async function handleUnifiedExcelUpload(event) {
                 sheetSelect.appendChild(option);
             });
             sheetSelect.disabled = false;
-            document.getElementById('unified_load_excel_btn').disabled = false;
 
             sheetSelect.onchange = function() {
                 var sheetResult = UnifiedBatch.loadSheet(this.value);
                 if (sheetResult.success) {
-                    renderUnifiedColumnConfig(sheetResult.headers);
+                    renderUnifiedColumnMapping(sheetResult.headers);
                 }
             };
 
             if (result.sheets.length > 0) {
                 var sheetResult = UnifiedBatch.loadSheet(result.sheets[0]);
                 if (sheetResult.success) {
-                    renderUnifiedColumnConfig(sheetResult.headers);
+                    renderUnifiedColumnMapping(sheetResult.headers);
                 }
             }
         } else {
@@ -467,6 +467,296 @@ async function handleUnifiedExcelUpload(event) {
     } catch (error) {
         alert('加载Excel失败: ' + error.message);
     }
+}
+
+function renderUnifiedColumnMapping(headers) {
+    var indexColumnSelect = document.getElementById('unified_index_column');
+    var mappingSection = document.getElementById('unified_column_mapping_section');
+    var mappingContainer = document.getElementById('unified_column_mapping_container');
+    
+    if (indexColumnSelect) {
+        indexColumnSelect.innerHTML = '<option value="">-- 选择索引列（可选）--</option>';
+        headers.forEach(function(header) {
+            var option = document.createElement('option');
+            option.value = header;
+            option.textContent = header;
+            indexColumnSelect.appendChild(option);
+        });
+    }
+    
+    if (mappingSection) {
+        mappingSection.style.display = 'block';
+    }
+    
+    if (mappingContainer) {
+        mappingContainer.innerHTML = '';
+        UnifiedBatch.state.columnMappings = [];
+        UnifiedBatch.state.excelHeaders = headers;
+    }
+    
+    updatePlaceholderButtons(headers);
+    updateColumnMappingStatus();
+}
+
+function handleAddColumnMapping() {
+    var container = document.getElementById('unified_column_mapping_container');
+    var headers = UnifiedBatch.state.excelHeaders || [];
+    
+    if (!container || headers.length === 0) return;
+    
+    var existingMappings = UnifiedBatch.state.columnMappings || [];
+    var newIndex = existingMappings.length;
+    
+    if (newIndex >= 10) {
+        alert('最多添加10个列映射');
+        return;
+    }
+    
+    var div = document.createElement('div');
+    div.className = 'column-mapping-item';
+    div.dataset.index = newIndex;
+    div.style.cssText = 'display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding: 10px; background: var(--bg-color); border-radius: 8px;';
+    
+    var headerOptions = headers.map(function(h) { 
+        return '<option value="' + h + '">' + h + '</option>'; 
+    }).join('');
+    
+    div.innerHTML = `
+        <span style="color: var(--text-color-secondary); min-width: 20px;">${newIndex + 1}.</span>
+        <select class="column-source" style="flex: 1;" onchange="updateColumnMappingPlaceholder(this)">
+            <option value="">-- 选择Excel列 --</option>
+            ${headerOptions}
+        </select>
+        <span style="color: var(--text-color-tertiary);">→</span>
+        <input type="text" class="column-placeholder" placeholder="占位符名称" style="width: 120px;" onchange="updateColumnMappingStatus()">
+        <button class="small-button delete-button" type="button" onclick="removeColumnMapping(this)">删除</button>
+    `;
+    
+    container.appendChild(div);
+    
+    existingMappings.push({ source: '', placeholder: '' });
+    UnifiedBatch.state.columnMappings = existingMappings;
+    
+    updateColumnMappingStatus();
+}
+
+window.updateColumnMappingPlaceholder = function(select) {
+    var div = select.closest('.column-mapping-item');
+    var index = parseInt(div.dataset.index);
+    var placeholderInput = div.querySelector('.column-placeholder');
+    
+    if (select.value && !placeholderInput.value) {
+        placeholderInput.value = select.value;
+    }
+    
+    updateColumnMappingStatus();
+};
+
+window.removeColumnMapping = function(btn) {
+    var div = btn.closest('.column-mapping-item');
+    var index = parseInt(div.dataset.index);
+    
+    if (div) {
+        div.remove();
+        var mappings = UnifiedBatch.state.columnMappings || [];
+        mappings.splice(index, 1);
+        UnifiedBatch.state.columnMappings = mappings;
+        
+        renumberColumnMappings();
+        updateColumnMappingStatus();
+        updatePlaceholderButtons(UnifiedBatch.state.excelHeaders || []);
+    }
+};
+
+function renumberColumnMappings() {
+    var container = document.getElementById('unified_column_mapping_container');
+    if (!container) return;
+    
+    var items = container.querySelectorAll('.column-mapping-item');
+    items.forEach(function(item, index) {
+        item.dataset.index = index;
+        var span = item.querySelector('span');
+        if (span) {
+            span.textContent = (index + 1) + '.';
+        }
+    });
+}
+
+function updateColumnMappingStatus() {
+    var statusEl = document.getElementById('unified_column_mapping_status');
+    var loadDataBtn = document.getElementById('unified_load_data_btn');
+    
+    var mappings = getColumnMappings();
+    var validMappings = mappings.filter(function(m) { return m.source && m.placeholder; });
+    
+    if (statusEl) {
+        if (validMappings.length === 0) {
+            statusEl.textContent = '请添加列映射';
+            statusEl.style.color = 'var(--text-color-tertiary)';
+        } else {
+            statusEl.textContent = '已配置 ' + validMappings.length + ' 个列映射';
+            statusEl.style.color = 'var(--success-color)';
+        }
+    }
+    
+    if (loadDataBtn) {
+        loadDataBtn.disabled = validMappings.length === 0;
+    }
+    
+    UnifiedBatch.state.columnMappings = mappings;
+    updatePlaceholderButtons(UnifiedBatch.state.excelHeaders || []);
+}
+
+function getColumnMappings() {
+    var container = document.getElementById('unified_column_mapping_container');
+    if (!container) return [];
+    
+    var items = container.querySelectorAll('.column-mapping-item');
+    var mappings = [];
+    
+    items.forEach(function(item) {
+        var source = item.querySelector('.column-source')?.value || '';
+        var placeholder = item.querySelector('.column-placeholder')?.value || '';
+        mappings.push({ source: source, placeholder: placeholder });
+    });
+    
+    return mappings;
+}
+
+function updatePlaceholderButtons(headers) {
+    var section = document.getElementById('unified_placeholder_buttons_section');
+    var container = document.getElementById('unified_placeholder_buttons');
+    
+    if (!section || !container) return;
+    
+    var mappings = getColumnMappings();
+    var validMappings = mappings.filter(function(m) { return m.source && m.placeholder; });
+    
+    if (validMappings.length === 0) {
+        section.style.display = 'none';
+        return;
+    }
+    
+    section.style.display = 'block';
+    container.innerHTML = '';
+    
+    validMappings.forEach(function(mapping) {
+        var btn = document.createElement('button');
+        btn.className = 'small-button';
+        btn.type = 'button';
+        btn.style.fontSize = '0.85em';
+        btn.textContent = '{{' + mapping.placeholder + '}}';
+        btn.onclick = function() {
+            insertPlaceholderToPrompt('{{' + mapping.placeholder + '}}');
+        };
+        container.appendChild(btn);
+    });
+}
+
+async function handleUnifiedLoadData() {
+    var indexColumn = document.getElementById('unified_index_column')?.value || '';
+    var mappings = getColumnMappings();
+    var validMappings = mappings.filter(function(m) { return m.source && m.placeholder; });
+    
+    if (validMappings.length === 0) {
+        alert('请至少配置一个列映射');
+        return;
+    }
+    
+    var template = UnifiedBatch.template.getCurrentTemplate();
+    if (!template.systemPrompt) {
+        alert('请配置系统提示');
+        return;
+    }
+    
+    var userPrompt = document.getElementById('unified_user_prompt')?.value || '';
+    if (!userPrompt) {
+        alert('请配置用户提示模板');
+        return;
+    }
+    
+    var warning = UnifiedBatch.input.getDataVolumeWarning();
+    if (warning) {
+        showUnifiedDataWarning(warning);
+    }
+    
+    showUnifiedLoadingProgress('正在加载数据...');
+    
+    var sourceColumns = validMappings.map(function(m) { return m.source; });
+    
+    var onProgress = function(progress) {
+        updateUnifiedLoadingProgress(progress);
+    };
+    
+    var result = await UnifiedBatch.loadInputsFromColumns(sourceColumns, onProgress);
+    
+    if (result.success) {
+        UnifiedBatch.state.columnMappings = validMappings;
+        UnifiedBatch.state.indexColumn = indexColumn;
+        
+        template.columnMappings = validMappings;
+        template.indexColumn = indexColumn;
+        UnifiedBatch.template.setCurrentTemplate(template);
+        
+        showDataPreview();
+        hideUnifiedLoadingProgress();
+        
+        switchUnifiedSubTab('mode', document.querySelector('.step-item:nth-child(2)'));
+        updateUnifiedModeRecommendation();
+    } else {
+        hideUnifiedLoadingProgress();
+        alert(result.message);
+    }
+}
+
+function showDataPreview() {
+    var section = document.getElementById('unified_data_preview_section');
+    var container = document.getElementById('unified_data_preview_container');
+    var countEl = document.getElementById('unified_preview_count');
+    
+    if (!section || !container) return;
+    
+    var inputs = UnifiedBatch.getInputs();
+    var mappings = UnifiedBatch.state.columnMappings || [];
+    
+    section.style.display = 'block';
+    
+    if (countEl) {
+        countEl.textContent = '(共 ' + inputs.length + ' 条数据)';
+    }
+    
+    var previewCount = Math.min(5, inputs.length);
+    var html = '';
+    
+    for (var i = 0; i < previewCount; i++) {
+        var input = inputs[i];
+        html += '<div style="background: var(--bg-color); padding: 12px; border-radius: 8px; margin-bottom: 10px;">';
+        html += '<div style="font-weight: 500; margin-bottom: 8px; color: var(--primary-color);">第 ' + (i + 1) + ' 条';
+        if (input.id) {
+            html += ' (ID: ' + input.id + ')';
+        }
+        html += '</div>';
+        
+        if (typeof input.content === 'object') {
+            Object.keys(input.content).forEach(function(key) {
+                var val = String(input.content[key] || '');
+                if (val.length > 100) val = val.substring(0, 100) + '...';
+                html += '<div style="font-size: 0.9em; margin-bottom: 4px;"><strong>' + key + ':</strong> ' + val + '</div>';
+            });
+        } else {
+            var content = String(input.content || '');
+            if (content.length > 200) content = content.substring(0, 200) + '...';
+            html += '<div style="font-size: 0.9em; color: var(--text-color-secondary);">' + content + '</div>';
+        }
+        
+        html += '</div>';
+    }
+    
+    if (inputs.length > 5) {
+        html += '<div style="text-align: center; color: var(--text-color-tertiary); font-size: 0.9em;">... 还有 ' + (inputs.length - 5) + ' 条数据</div>';
+    }
+    
+    container.innerHTML = html;
 }
 
 function formatFileSize(bytes) {
@@ -1148,19 +1438,18 @@ function removeUnifiedOutputField(index) {
 }
 
 function saveUnifiedTemplate() {
-    var insertMode = document.getElementById('unified_insert_mode')?.value || 'merged';
-    var mergedIntro = document.getElementById('unified_merged_intro')?.value || '以下是相关内容：';
+    var columnMappings = getColumnMappings();
+    var validMappings = columnMappings.filter(function(m) { return m.source && m.placeholder; });
     
     var template = {
         name: document.getElementById('unified_template_name').value,
         systemPrompt: document.getElementById('unified_system_prompt').value,
         userPromptTemplate: document.getElementById('unified_user_prompt').value,
         model: document.getElementById('unified_template_model_select').value,
-        temperature: parseFloat(document.getElementById('unified_template_temperature').value),
+        temperature: parseFloat(document.getElementById('unified_template_temperature').value) || 0.1,
         outputFields: UnifiedBatch.template.getOutputFields(),
-        insertMode: insertMode,
-        fieldMappings: UnifiedBatch.template.getFieldMappings(),
-        mergedIntro: mergedIntro
+        columnMappings: validMappings,
+        indexColumn: document.getElementById('unified_index_column')?.value || ''
     };
 
     UnifiedBatch.setCurrentTemplate(template);
