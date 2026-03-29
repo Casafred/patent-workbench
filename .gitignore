@@ -91,6 +91,9 @@ temp/
 # OCR Cache (drawing marker)
 data/drawing_ocr_cache/
 
+# EPO Cache
+data/epo_cache.dbm
+
 # Certificates and private keys
 *.key
 *.pem
