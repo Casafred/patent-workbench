@@ -8,6 +8,8 @@ class PipelineIntegration {
         this.initialized = false;
         this.hooks = new Map();
         this.monitors = new Map();
+        this.observer = null;
+        this.checkInterval = null;
     }
 
     init() {
@@ -83,7 +85,7 @@ class PipelineIntegration {
             onChange: () => this.captureClaimsData()
         });
         
-        setInterval(() => this.checkMonitors(), 2000);
+        this.checkInterval = setInterval(() => this.checkMonitors(), 3000);
     }
 
     checkMonitors() {
@@ -127,7 +129,7 @@ class PipelineIntegration {
             badge = document.createElement('div');
             badge.className = 'pipeline-export-badge';
             badge.innerHTML = `
-                <span class="badge-icon">🔄</span>
+                <span class="badge-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg></span>
                 <span class="badge-count">${count}</span>
                 <span class="badge-text">条数据可导出</span>
                 <button class="badge-action" title="导出到数据管道">导出</button>
@@ -142,7 +144,6 @@ class PipelineIntegration {
                 border-radius: 8px;
                 font-size: 12px;
                 margin: 10px 0;
-                animation: slideIn 0.3s ease;
             `;
             
             badge.querySelector('.badge-action').addEventListener('click', () => {
@@ -284,15 +285,24 @@ class PipelineIntegration {
         this.addQuickExportButtons();
         this.addTargetReceiveButtons();
         
-        const observer = new MutationObserver(() => {
+        this.observer = new MutationObserver(this.debounce(() => {
             this.addQuickExportButtons();
             this.addTargetReceiveButtons();
-        });
+        }, 500));
         
-        observer.observe(document.body, {
+        const mainContent = document.querySelector('.main-content') || document.querySelector('#main-content') || document.body;
+        this.observer.observe(mainContent, {
             childList: true,
-            subtree: true
+            subtree: false
         });
+    }
+
+    debounce(fn, delay) {
+        let timer = null;
+        return (...args) => {
+            if (timer) clearTimeout(timer);
+            timer = setTimeout(() => fn.apply(this, args), delay);
+        };
     }
 
     addQuickExportButtons() {
@@ -427,16 +437,16 @@ class PipelineIntegration {
             <div class="modal-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;">
                 <div class="modal-content" style="background: white; border-radius: 12px; width: 500px; max-height: 80vh; overflow: hidden;">
                     <div class="modal-header" style="padding: 16px; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; display: flex; justify-content: space-between; align-items: center;">
-                        <h3 style="margin: 0; font-size: 16px;">📊 数据传递历史</h3>
+                        <h3 style="margin: 0; font-size: 16px; display: flex; align-items: center; gap: 8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>数据传递历史</h3>
                         <button class="modal-close" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">&times;</button>
                     </div>
                     <div class="modal-body" style="padding: 16px; max-height: 400px; overflow-y: auto;">
                         ${history.map(item => `
                             <div class="history-item" style="display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid #e5e7eb;">
-                                <div class="history-icon" style="font-size: 20px;">${item.success ? '✅' : '❌'}</div>
+                                <div class="history-icon" style="display: flex; align-items: center; justify-content: center; width: 24px; height: 24px;">${item.success ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'}</div>
                                 <div class="history-info" style="flex: 1;">
-                                    <div style="font-weight: 500; color: #1f2937;">${item.sourceName} → ${item.targetName}</div>
-                                    <div style="font-size: 12px; color: #6b7280;">${item.dataInfo?.rowCount || 0} 行数据 · ${this.formatTime(item.timestamp)}</div>
+                                    <div style="font-weight: 500; color: #1f2937;">${item.sourceName} -> ${item.targetName}</div>
+                                    <div style="font-size: 12px; color: #6b7280;">${item.dataInfo?.rowCount || 0} 行数据 - ${this.formatTime(item.timestamp)}</div>
                                 </div>
                                 <div style="font-size: 11px; color: #9ca3af;">${item.method}</div>
                             </div>
@@ -472,20 +482,43 @@ class PipelineIntegration {
         if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
         return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
     }
+
+    destroy() {
+        if (this.checkInterval) {
+            clearInterval(this.checkInterval);
+            this.checkInterval = null;
+        }
+        if (this.observer) {
+            this.observer.disconnect();
+            this.observer = null;
+        }
+        this.initialized = false;
+    }
 }
 
 const pipelineIntegration = new PipelineIntegration();
 
-document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-        pipelineIntegration.init();
-    }, 1000);
-});
+let initAttempts = 0;
+const maxInitAttempts = 5;
 
-if (document.readyState === 'complete') {
-    setTimeout(() => {
-        pipelineIntegration.init();
-    }, 1000);
+function tryInit() {
+    if (pipelineIntegration.initialized) return;
+    
+    initAttempts++;
+    
+    if (document.readyState === 'complete') {
+        setTimeout(() => {
+            pipelineIntegration.init();
+        }, 500);
+    } else if (initAttempts < maxInitAttempts) {
+        setTimeout(tryInit, 1000);
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', tryInit);
+} else {
+    tryInit();
 }
 
 window.pipelineIntegration = pipelineIntegration;
