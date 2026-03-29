@@ -32,6 +32,7 @@ def register_blueprints(app: Flask):
     from .epo import epo_bp
     from .landing_image import landing_image_bp
     from .excel_concat import excel_concat_bp
+    from .pdf_ocr import pdf_ocr_bp
     from backend.user_management.user_management import user_management_bp
 
     app.register_blueprint(auth_bp)
@@ -53,6 +54,7 @@ def register_blueprints(app: Flask):
     app.register_blueprint(epo_bp, url_prefix='/api/epo')
     app.register_blueprint(landing_image_bp, url_prefix='/api')
     app.register_blueprint(excel_concat_bp)
+    app.register_blueprint(pdf_ocr_bp, url_prefix='/api')
 
     print("✓ All blueprints registered successfully")
 
