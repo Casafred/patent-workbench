@@ -240,15 +240,23 @@ function updateProcessPanelVisibility() {
 
 function switchUnifiedSubTab(tabName, element) {
     var stepper = document.getElementById('unified-stepper');
-    if (stepper) {
-        stepper.querySelectorAll('.step-item').forEach(function(item) {
-            item.classList.remove('active');
-        });
-    }
+    var steps = stepper ? stepper.querySelectorAll('.step-item') : [];
+    var currentIndex = -1;
     
-    if (element) {
-        element.classList.add('active');
-    }
+    steps.forEach(function(item, index) {
+        if (item === element) {
+            currentIndex = index;
+        }
+    });
+    
+    steps.forEach(function(item, index) {
+        item.classList.remove('active', 'completed');
+        if (index < currentIndex) {
+            item.classList.add('completed');
+        } else if (index === currentIndex) {
+            item.classList.add('active');
+        }
+    });
 
     document.querySelectorAll('#unified_batch-tab .sub-tab-content').forEach(function(content) {
         content.classList.remove('active');
@@ -2438,15 +2446,23 @@ function waitForClassificationModule(timeout) {
 
 function switchClassificationSubTab(tabName, element) {
     var stepper = document.getElementById('classification-stepper');
-    if (stepper) {
-        stepper.querySelectorAll('.step-item').forEach(function(item) {
-            item.classList.remove('active');
-        });
-    }
+    var steps = stepper ? stepper.querySelectorAll('.step-item') : [];
+    var currentIndex = -1;
     
-    if (element) {
-        element.classList.add('active');
-    }
+    steps.forEach(function(item, index) {
+        if (item === element) {
+            currentIndex = index;
+        }
+    });
+    
+    steps.forEach(function(item, index) {
+        item.classList.remove('active', 'completed');
+        if (index < currentIndex) {
+            item.classList.add('completed');
+        } else if (index === currentIndex) {
+            item.classList.add('active');
+        }
+    });
 
     document.querySelectorAll('#unified-classification-mode-panel .sub-tab-content').forEach(function(content) {
         content.classList.remove('active');
