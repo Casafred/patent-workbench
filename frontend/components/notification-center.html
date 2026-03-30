@@ -432,10 +432,12 @@
             const bellBtn = document.getElementById('notification_center_btn');
             if (bellBtn) {
                 bellBtn.addEventListener('click', openNotificationCenter);
+                notificationCenterInitialized = true;
+                loadNotificationsData();
+            } else {
+                // 如果按钮还不存在，稍后重试
+                setTimeout(initNotificationCenter, 100);
             }
-            
-            notificationCenterInitialized = true;
-            loadNotificationsData();
         }
 
         function openNotificationCenter() {
@@ -444,6 +446,8 @@
                 modal.style.display = 'flex';
                 document.body.style.overflow = 'hidden';
                 loadNotificationsData();
+            } else {
+                console.error('Modal not found: notification_center_modal');
             }
         }
 

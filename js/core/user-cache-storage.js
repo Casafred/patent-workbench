@@ -1,8 +1,13 @@
 /**
  * 用户缓存存储层
- * 封装 localStorage 操作，实现用户数据隔离
+ * 封装 IndexedDB 操作，实现用户数据隔离
  * 
  * 所有数据存储格式: user_{username}_{key}
+ * 
+ * v2.0 - 使用 IndexedDB 替代 localStorage
+ * - 容量大（250MB+）
+ * - 支持过期时间
+ * - 自动清理旧数据
  */
 
 class UserCacheStorage {
@@ -10,13 +15,12 @@ class UserCacheStorage {
         this._username = null;
         this._prefix = null;
         this._initialized = false;
+        this._useIndexedDB = true;
+        this._ready = false;
+        this._syncFallback = {};
     }
 
-    /**
-     * 初始化存储层
-     * @param {string} username - 当前登录用户名
-     */
-    init(username) {
+    async init(username) {
         if (!username || typeof username !== 'string') {
             console.error('[UserCacheStorage] 初始化失败: 用户名无效');
             return false;
@@ -24,45 +28,85 @@ class UserCacheStorage {
         
         this._username = username;
         this._prefix = `user_${username}_`;
+
+        if (this._useIndexedDB && window.indexedDBStorage) {
+            const success = await window.indexedDBStorage.init(username);
+            if (success) {
+                this._initialized = true;
+                this._ready = true;
+                
+                await this._migrateFromLocalStorage();
+                
+                console.log(`[UserCacheStorage] 已初始化 (IndexedDB)，用户: ${username}`);
+                return true;
+            }
+        }
+
+        console.warn('[UserCacheStorage] IndexedDB 不可用，回退到 localStorage');
+        this._useIndexedDB = false;
         this._initialized = true;
-        
-        console.log(`[UserCacheStorage] 已初始化，用户: ${username}`);
+        this._ready = true;
+        console.log(`[UserCacheStorage] 已初始化 (localStorage)，用户: ${username}`);
         return true;
     }
 
-    /**
-     * 检查是否已初始化
-     */
+    async _migrateFromLocalStorage() {
+        if (!this._useIndexedDB || !window.indexedDBStorage) return;
+
+        const migrationKey = `migration_done_${this._username}`;
+        const migrated = localStorage.getItem(migrationKey);
+        
+        if (migrated === 'true') return;
+
+        console.log('[UserCacheStorage] 开始从 localStorage 迁移数据到 IndexedDB...');
+        
+        let migratedCount = 0;
+        const keysToMigrate = [];
+
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith(this._prefix)) {
+                keysToMigrate.push(key);
+            }
+        }
+
+        for (const fullKey of keysToMigrate) {
+            try {
+                const value = localStorage.getItem(fullKey);
+                if (value) {
+                    const shortKey = fullKey.substring(this._prefix.length);
+                    await window.indexedDBStorage.set(shortKey, value);
+                    localStorage.removeItem(fullKey);
+                    migratedCount++;
+                }
+            } catch (e) {
+                console.warn(`[UserCacheStorage] 迁移失败: ${fullKey}`, e);
+            }
+        }
+
+        localStorage.setItem(migrationKey, 'true');
+        console.log(`[UserCacheStorage] 迁移完成，共 ${migratedCount} 条数据`);
+    }
+
     isInitialized() {
         return this._initialized;
     }
 
-    /**
-     * 获取当前用户名
-     */
     getUsername() {
         return this._username;
     }
 
-    /**
-     * 生成带用户前缀的键名
-     * @param {string} key - 原始键名
-     * @returns {string} 带前缀的键名
-     */
     getKey(key) {
         if (!this._initialized) {
-            console.warn('[UserCacheStorage] 未初始化，返回原始键名');
             return key;
         }
         return `${this._prefix}${key}`;
     }
 
-    /**
-     * 获取数据
-     * @param {string} key - 键名
-     * @returns {string|null} 数据或null
-     */
-    get(key) {
+    async get(key) {
+        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
+            return await window.indexedDBStorage.get(key);
+        }
         try {
             return localStorage.getItem(this.getKey(key));
         } catch (e) {
@@ -71,15 +115,23 @@ class UserCacheStorage {
         }
     }
 
-    /**
-     * 获取并解析JSON数据
-     * @param {string} key - 键名
-     * @param {*} defaultValue - 解析失败时的默认值
-     * @returns {*} 解析后的数据
-     */
-    getJSON(key, defaultValue = null) {
+    getSync(key) {
+        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
+            const cached = this._syncFallback[key];
+            if (cached !== undefined) return cached;
+            return null;
+        }
         try {
-            const data = this.get(key);
+            return localStorage.getItem(this.getKey(key));
+        } catch (e) {
+            console.error(`[UserCacheStorage] 读取失败: ${key}`, e);
+            return null;
+        }
+    }
+
+    async getJSON(key, defaultValue = null) {
+        try {
+            const data = await this.get(key);
             if (data === null) return defaultValue;
             return JSON.parse(data);
         } catch (e) {
@@ -88,40 +140,77 @@ class UserCacheStorage {
         }
     }
 
-    /**
-     * 存储数据
-     * @param {string} key - 键名
-     * @param {string} value - 数据
-     */
-    set(key, value) {
+    getJSONSync(key, defaultValue = null) {
+        try {
+            const data = this.getSync(key);
+            if (data === null) return defaultValue;
+            return JSON.parse(data);
+        } catch (e) {
+            console.error(`[UserCacheStorage] JSON解析失败: ${key}`, e);
+            return defaultValue;
+        }
+    }
+
+    async set(key, value, options = {}) {
+        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
+            this._syncFallback[key] = value;
+            return await window.indexedDBStorage.set(key, value, options);
+        }
         try {
             localStorage.setItem(this.getKey(key), value);
             return true;
         } catch (e) {
             console.error(`[UserCacheStorage] 存储失败: ${key}`, e);
+            if (e.name === 'QuotaExceededError') {
+                this._handleQuotaExceeded();
+            }
             return false;
         }
     }
 
-    /**
-     * 存储JSON数据
-     * @param {string} key - 键名
-     * @param {*} value - 数据对象
-     */
-    setJSON(key, value) {
+    setSync(key, value) {
+        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
+            this._syncFallback[key] = value;
+            window.indexedDBStorage.set(key, value).catch(() => {});
+            return true;
+        }
         try {
-            return this.set(key, JSON.stringify(value));
+            localStorage.setItem(this.getKey(key), value);
+            return true;
+        } catch (e) {
+            console.error(`[UserCacheStorage] 存储失败: ${key}`, e);
+            if (e.name === 'QuotaExceededError') {
+                this._handleQuotaExceeded();
+            }
+            return false;
+        }
+    }
+
+    async setJSON(key, value, options = {}) {
+        try {
+            const jsonStr = JSON.stringify(value);
+            return await this.set(key, jsonStr, options);
         } catch (e) {
             console.error(`[UserCacheStorage] JSON序列化失败: ${key}`, e);
             return false;
         }
     }
 
-    /**
-     * 删除数据
-     * @param {string} key - 键名
-     */
-    remove(key) {
+    setJSONSync(key, value) {
+        try {
+            const jsonStr = JSON.stringify(value);
+            return this.setSync(key, jsonStr);
+        } catch (e) {
+            console.error(`[UserCacheStorage] JSON序列化失败: ${key}`, e);
+            return false;
+        }
+    }
+
+    async remove(key) {
+        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
+            delete this._syncFallback[key];
+            return await window.indexedDBStorage.remove(key);
+        }
         try {
             localStorage.removeItem(this.getKey(key));
             return true;
@@ -131,19 +220,37 @@ class UserCacheStorage {
         }
     }
 
-    /**
-     * 检查键是否存在
-     * @param {string} key - 键名
-     */
-    has(key) {
-        return this.get(key) !== null;
+    removeSync(key) {
+        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
+            delete this._syncFallback[key];
+            window.indexedDBStorage.remove(key).catch(() => {});
+            return true;
+        }
+        try {
+            localStorage.removeItem(this.getKey(key));
+            return true;
+        } catch (e) {
+            console.error(`[UserCacheStorage] 删除失败: ${key}`, e);
+            return false;
+        }
     }
 
-    /**
-     * 获取当前用户的所有键名（不含前缀）
-     * @returns {string[]} 键名列表
-     */
-    getAllKeys() {
+    async has(key) {
+        const data = await this.get(key);
+        return data !== null;
+    }
+
+    hasSync(key) {
+        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
+            return this._syncFallback[key] !== undefined;
+        }
+        return localStorage.getItem(this.getKey(key)) !== null;
+    }
+
+    async getAllKeys() {
+        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
+            return await window.indexedDBStorage.getAllKeys();
+        }
         const keys = [];
         try {
             for (let i = 0; i < localStorage.length; i++) {
@@ -158,60 +265,75 @@ class UserCacheStorage {
         return keys;
     }
 
-    /**
-     * 获取当前用户的所有数据
-     * @returns {Object} 数据对象 {key: value}
-     */
-    getAllData() {
+    getAllKeysSync() {
+        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
+            return Object.keys(this._syncFallback);
+        }
+        const keys = [];
+        try {
+            for (let i = 0; i < localStorage.length; i++) {
+                const fullKey = localStorage.key(i);
+                if (fullKey && fullKey.startsWith(this._prefix)) {
+                    keys.push(fullKey.substring(this._prefix.length));
+                }
+            }
+        } catch (e) {
+            console.error('[UserCacheStorage] 获取键列表失败', e);
+        }
+        return keys;
+    }
+
+    async getAllData() {
+        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
+            return await window.indexedDBStorage.getAllData();
+        }
         const data = {};
-        const keys = this.getAllKeys();
-        keys.forEach(key => {
-            data[key] = this.get(key);
-        });
+        const keys = this.getAllKeysSync();
+        for (const key of keys) {
+            data[key] = localStorage.getItem(this.getKey(key));
+        }
         return data;
     }
 
-    /**
-     * 获取当前用户的所有JSON数据
-     * @returns {Object} 数据对象 {key: parsedValue}
-     */
-    getAllJSONData() {
+    async getAllJSONData() {
+        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
+            return await window.indexedDBStorage.getAllJSONData();
+        }
         const data = {};
-        const keys = this.getAllKeys();
-        keys.forEach(key => {
-            data[key] = this.getJSON(key);
-        });
+        const keys = this.getAllKeysSync();
+        for (const key of keys) {
+            data[key] = this.getJSONSync(key);
+        }
         return data;
     }
 
-    /**
-     * 清除当前用户的所有数据
-     * @returns {number} 清除的数据条数
-     */
-    clearUserData() {
-        const keys = this.getAllKeys();
+    async clearUserData() {
+        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
+            this._syncFallback = {};
+            return await window.indexedDBStorage.clearUserData();
+        }
+        const keys = this.getAllKeysSync();
         let count = 0;
-        keys.forEach(key => {
-            if (this.remove(key)) {
+        for (const key of keys) {
+            if (this.removeSync(key)) {
                 count++;
             }
-        });
+        }
         console.log(`[UserCacheStorage] 已清除 ${count} 条用户数据`);
         return count;
     }
 
-    /**
-     * 获取当前用户数据大小统计
-     * @returns {Object} 统计信息
-     */
-    getStorageStats() {
-        const keys = this.getAllKeys();
+    async getStorageStats() {
+        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
+            return await window.indexedDBStorage.getStorageStats();
+        }
+        const keys = this.getAllKeysSync();
         let totalSize = 0;
         const itemStats = {};
 
         keys.forEach(key => {
-            const value = this.get(key);
-            const size = value ? value.length * 2 : 0; // UTF-16 编码
+            const value = localStorage.getItem(this.getKey(key));
+            const size = value ? value.length * 2 : 0;
             totalSize += size;
             itemStats[key] = {
                 size: size,
@@ -229,11 +351,6 @@ class UserCacheStorage {
         };
     }
 
-    /**
-     * 格式化大小显示
-     * @param {number} bytes - 字节数
-     * @returns {string} 格式化字符串
-     */
     _formatSize(bytes) {
         if (bytes < 1024) {
             return `${bytes} B`;
@@ -244,95 +361,122 @@ class UserCacheStorage {
         }
     }
 
-    /**
-     * 批量设置数据
-     * @param {Object} data - 数据对象 {key: value}
-     */
-    setBatch(data) {
+    async setBatch(data, options = {}) {
+        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
+            Object.assign(this._syncFallback, data);
+            return await window.indexedDBStorage.setBatch(data, options);
+        }
         let success = 0;
         let failed = 0;
-        Object.entries(data).forEach(([key, value]) => {
-            if (this.set(key, value)) {
+        for (const [key, value] of Object.entries(data)) {
+            if (this.setSync(key, value)) {
                 success++;
             } else {
                 failed++;
             }
-        });
+        }
         return { success, failed };
     }
 
-    /**
-     * 批量设置JSON数据
-     * @param {Object} data - 数据对象 {key: value}
-     */
-    setJSONBatch(data) {
+    async setJSONBatch(data, options = {}) {
+        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
+            for (const [key, value] of Object.entries(data)) {
+                this._syncFallback[key] = JSON.stringify(value);
+            }
+            return await window.indexedDBStorage.setJSONBatch(data, options);
+        }
         let success = 0;
         let failed = 0;
-        Object.entries(data).forEach(([key, value]) => {
-            if (this.setJSON(key, value)) {
+        for (const [key, value] of Object.entries(data)) {
+            if (this.setJSONSync(key, value)) {
                 success++;
             } else {
                 failed++;
             }
-        });
+        }
         return { success, failed };
     }
 
-    /**
-     * 重置存储层（登出时调用）
-     */
     reset() {
+        if (this._useIndexedDB && window.indexedDBStorage) {
+            window.indexedDBStorage.reset();
+        }
+        this._syncFallback = {};
         this._username = null;
         this._prefix = null;
         this._initialized = false;
+        this._ready = false;
         console.log('[UserCacheStorage] 已重置');
     }
 
-    /**
-     * 检查特定前缀的键是否存在（用于缓存键前缀匹配）
-     * @param {string} keyPrefix - 键前缀
-     * @returns {string[]} 匹配的键名列表
-     */
-    getKeysByPrefix(keyPrefix) {
-        const allKeys = this.getAllKeys();
+    async getKeysByPrefix(keyPrefix) {
+        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
+            return await window.indexedDBStorage.getKeysByPrefix(keyPrefix);
+        }
+        const allKeys = this.getAllKeysSync();
         return allKeys.filter(key => key.startsWith(keyPrefix));
     }
 
-    /**
-     * 获取特定前缀的所有数据
-     * @param {string} keyPrefix - 键前缀
-     * @returns {Object} 数据对象
-     */
-    getDataByPrefix(keyPrefix) {
-        const keys = this.getKeysByPrefix(keyPrefix);
+    getKeysByPrefixSync(keyPrefix) {
+        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
+            return Object.keys(this._syncFallback).filter(key => key.startsWith(keyPrefix));
+        }
+        const allKeys = this.getAllKeysSync();
+        return allKeys.filter(key => key.startsWith(keyPrefix));
+    }
+
+    async getDataByPrefix(keyPrefix) {
+        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
+            return await window.indexedDBStorage.getDataByPrefix(keyPrefix);
+        }
+        const keys = this.getKeysByPrefixSync(keyPrefix);
         const data = {};
-        keys.forEach(key => {
-            data[key] = this.getJSON(key);
-        });
+        for (const key of keys) {
+            data[key] = this.getJSONSync(key);
+        }
         return data;
     }
 
-    /**
-     * 删除特定前缀的所有数据
-     * @param {string} keyPrefix - 键前缀
-     * @returns {number} 删除的数据条数
-     */
-    removeByPrefix(keyPrefix) {
-        const keys = this.getKeysByPrefix(keyPrefix);
+    async removeByPrefix(keyPrefix) {
+        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
+            const keys = Object.keys(this._syncFallback).filter(k => k.startsWith(keyPrefix));
+            keys.forEach(k => delete this._syncFallback[k]);
+            return await window.indexedDBStorage.removeByPrefix(keyPrefix);
+        }
+        const keys = this.getKeysByPrefixSync(keyPrefix);
         let count = 0;
-        keys.forEach(key => {
-            if (this.remove(key)) {
+        for (const key of keys) {
+            if (this.removeSync(key)) {
                 count++;
             }
-        });
+        }
         return count;
+    }
+
+    _handleQuotaExceeded() {
+        console.warn('[UserCacheStorage] localStorage 配额已满，建议清理数据');
+        window.dispatchEvent(new CustomEvent('storage:quotaExceeded', {
+            detail: { storage: 'localStorage' }
+        }));
+    }
+
+    async getQuotaInfo() {
+        if (this._useIndexedDB && window.indexedDBStorage) {
+            return await window.indexedDBStorage.getQuotaInfo();
+        }
+        return null;
+    }
+
+    async requestPersistentStorage() {
+        if (this._useIndexedDB && window.indexedDBStorage) {
+            return await window.indexedDBStorage.requestPersistentStorage();
+        }
+        return false;
     }
 }
 
-// 创建全局单例
 const userCacheStorage = new UserCacheStorage();
 
-// 导出
 window.UserCacheStorage = UserCacheStorage;
 window.userCacheStorage = userCacheStorage;
 
