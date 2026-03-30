@@ -1973,7 +1973,7 @@ async function unifiedBatchStep1Upload() {
     }
     
     var state = UnifiedBatch.state;
-    var allInputs = state ? state.inputs : [];
+    var allInputs = (state && state.inputs) || [];
     var selectAllMode = state.selectAllMode;
     
     var selectedInputs = [];
@@ -2876,7 +2876,7 @@ function checkUnifiedReportReady() {
 
 function showUnifiedBatchPreview() {
     var state = UnifiedBatch.state;
-    var allInputs = state ? state.inputs : [];
+    var allInputs = (state && state.inputs) || [];
     var selectAllMode = state.selectAllMode;
     
     var selectedInputs = [];

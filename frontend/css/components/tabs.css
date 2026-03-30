@@ -154,8 +154,7 @@
 }
 
 .step-item.active::before {
-    background: linear-gradient(90deg, var(--primary-color), var(--primary-color-dark));
-    box-shadow: 0 0 6px rgba(34, 197, 94, 0.25);
+    background-color: #E5E7EB;
 }
 
 .step-item.active ~ .step-item::before {

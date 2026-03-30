@@ -166,8 +166,8 @@
         border-radius: 2px;
     }
 
-    .step-item:last-child::after {
-        display: none;
+    .step-item:nth-last-child(2)::after {
+        display: none !important;
     }
 
     .step-item.completed::after {
@@ -176,8 +176,7 @@
     }
 
     .step-item.active::after {
-        background: linear-gradient(180deg, var(--primary-color), var(--primary-color-dark));
-        box-shadow: 0 0 4px rgba(34, 197, 94, 0.25);
+        background-color: #E5E7EB;
     }
 
     .step-item.active ~ .step-item::after {
