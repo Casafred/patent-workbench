@@ -761,14 +761,33 @@ window.switchLPLMode = function(mode) {
         document.getElementById('lpl-lib-mode-panel').classList.add('active');
         document.getElementById('lpl-mode-tab-lib').classList.add('active');
     } else if (mode === 'concat') {
-        document.getElementById('lpl-concat-mode-panel').style.display = 'block';
-        document.getElementById('lpl-concat-mode-panel').classList.add('active');
+        const concatPanel = document.getElementById('lpl-concat-mode-panel');
+        concatPanel.style.display = 'block';
+        concatPanel.classList.add('active');
         document.getElementById('lpl-mode-tab-concat').classList.add('active');
         
-        setTimeout(() => {
-            if (window.ExcelConcatModule && typeof window.ExcelConcatModule.goToStep === 'function') {
-                window.ExcelConcatModule.goToStep('files');
+        const stepFilesContent = document.getElementById('concat-step-files');
+        if (stepFilesContent) {
+            document.querySelectorAll('#lpl-concat-mode-panel .sub-tab-content').forEach(el => {
+                el.classList.remove('active');
+            });
+            stepFilesContent.classList.add('active');
+        }
+        
+        document.querySelectorAll('#concat-stepper .step-item').forEach((el, index) => {
+            el.classList.remove('active', 'completed');
+            if (index === 0) {
+                el.classList.add('active');
             }
-        }, 50);
+        });
+        
+        if (window.ExcelConcatModule) {
+            if (typeof window.ExcelConcatModule.renderFilesList === 'function') {
+                window.ExcelConcatModule.renderFilesList();
+            }
+            if (typeof window.ExcelConcatModule.updateButtons === 'function') {
+                window.ExcelConcatModule.updateButtons();
+            }
+        }
     }
 };

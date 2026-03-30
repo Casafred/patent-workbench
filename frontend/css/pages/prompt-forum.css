@@ -1086,7 +1086,6 @@
 
 /* Notification Center Button - 与其他头部按钮样式一致 */
 #notification_center_btn {
-    all: unset;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1101,6 +1100,18 @@
     z-index: 10;
     margin-right: 10px;
     transform: translateY(-3px);
+    pointer-events: auto;
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0 10px 0 0;
+    font: inherit;
+    color: inherit;
+    text-transform: none;
+    text-indent: 0;
+    text-shadow: none;
+    line-height: normal;
+    letter-spacing: normal;
+    word-spacing: normal;
 }
 
 #notification_center_btn svg {
