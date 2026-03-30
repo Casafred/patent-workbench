@@ -22,6 +22,13 @@ const PromptForum = (function() {
         bindEvents();
     }
     
+    async function ensureCategoriesLoaded() {
+        if (categories.length === 0) {
+            await loadCategories();
+        }
+        return categories;
+    }
+    
     function createForumModal() {
         const modal = document.createElement('div');
         modal.id = 'prompt_forum_modal';
@@ -117,7 +124,7 @@ const PromptForum = (function() {
         document.getElementById('forum_back_btn').addEventListener('click', () => showView('list'));
         document.getElementById('forum_publish_back_btn').addEventListener('click', () => showView('list'));
         document.getElementById('forum_user_back_btn').addEventListener('click', () => showView('list'));
-        document.getElementById('forum_publish_btn').addEventListener('click', () => showPublishForm());
+        document.getElementById('forum_publish_btn').addEventListener('click', async () => await showPublishForm());
         document.getElementById('forum_my_prompts_btn').addEventListener('click', () => showUserPrompts());
         document.getElementById('forum_my_favorites_btn').addEventListener('click', () => showUserFavorites());
         
@@ -484,7 +491,9 @@ const PromptForum = (function() {
         container.innerHTML = html;
     }
     
-    function showPublishForm(prefillData = null) {
+    async function showPublishForm(prefillData = null) {
+        await ensureCategoriesLoaded();
+        
         showView('publish');
         
         const container = document.getElementById('forum_publish_form');
@@ -669,7 +678,7 @@ const PromptForum = (function() {
         }, 100);
     }
     
-    function quickPublish(promptData) {
+    async function quickPublish(promptData) {
         if (!promptData || !promptData.content) {
             console.warn('PromptForum.quickPublish: 无效的提示词数据');
             return false;
@@ -681,8 +690,10 @@ const PromptForum = (function() {
         
         open();
         
-        setTimeout(() => {
-            showPublishForm({
+        await ensureCategoriesLoaded();
+        
+        setTimeout(async () => {
+            await showPublishForm({
                 title: promptData.title || '',
                 content: promptData.content,
                 description: promptData.description || '',
