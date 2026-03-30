@@ -106,7 +106,7 @@ class UserCacheManager {
      * 初始化管理器
      * @param {string} username - 当前登录用户名
      */
-    init(username) {
+    async init(username) {
         if (!username) {
             console.error('[UserCacheManager] 初始化失败: 用户名无效');
             return false;
@@ -121,7 +121,8 @@ class UserCacheManager {
             return false;
         }
 
-        if (!window.userCacheStorage.init(username)) {
+        const success = await window.userCacheStorage.init(username);
+        if (!success) {
             return false;
         }
 

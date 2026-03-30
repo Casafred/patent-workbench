@@ -524,7 +524,7 @@ class UserDataUI {
         }
     }
 
-    _loadStats() {
+    async _loadStats() {
         const overlay = this._panelOverlay;
         if (!overlay) return;
 
@@ -538,6 +538,24 @@ class UserDataUI {
 
         const stats = window.userCacheManager.getStats();
         const categoryStats = window.userCacheManager.getCategoryStats();
+        
+        let quotaHTML = '';
+        if (window.indexedDBStorage) {
+            const quotaInfo = await window.indexedDBStorage.getQuotaInfo();
+            if (quotaInfo) {
+                const percentColor = quotaInfo.ratio > 0.9 ? '#EF4444' : quotaInfo.ratio > 0.7 ? '#F59E0B' : '#16A34A';
+                quotaHTML = `
+                    <div class="udu-stat-item">
+                        <div class="udu-stat-value" style="color: ${percentColor}">${(quotaInfo.ratio * 100).toFixed(1)}%</div>
+                        <div class="udu-stat-label">存储使用率</div>
+                    </div>
+                    <div class="udu-stat-item">
+                        <div class="udu-stat-value">${quotaInfo.quotaFormatted}</div>
+                        <div class="udu-stat-label">可用空间</div>
+                    </div>
+                `;
+            }
+        }
 
         statsGrid.innerHTML = `
             <div class="udu-stat-item">
@@ -546,8 +564,9 @@ class UserDataUI {
             </div>
             <div class="udu-stat-item">
                 <div class="udu-stat-value">${stats.totalSizeFormatted}</div>
-                <div class="udu-stat-label">总大小</div>
+                <div class="udu-stat-label">已使用</div>
             </div>
+            ${quotaHTML}
         `;
 
         const categoryHTML = Object.entries(categoryStats)

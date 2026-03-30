@@ -524,9 +524,9 @@ if (document.readyState === 'loading') {
 // ▲▲▲ 统一模型配置结束 ▲▲▲
 
 // ▼▼▼ 用户缓存管理器初始化 ▼▼▼
-function initUserCacheManager() {
+async function initUserCacheManager() {
     if (window.CURRENT_USERNAME && window.userCacheManager) {
-        window.userCacheManager.init(window.CURRENT_USERNAME);
+        await window.userCacheManager.init(window.CURRENT_USERNAME);
         console.log('[State] 用户缓存管理器已初始化:', window.CURRENT_USERNAME);
         
         if (window.userCacheManager.isInitialized()) {
@@ -545,6 +545,13 @@ function initUserCacheManager() {
         
         if (window.userDataUI) {
             window.userDataUI.init();
+        }
+        
+        if (window.indexedDBStorage) {
+            const quotaInfo = await window.indexedDBStorage.getQuotaInfo();
+            if (quotaInfo) {
+                console.log(`[State] IndexedDB 存储状态: ${quotaInfo.usageFormatted} / ${quotaInfo.quotaFormatted} (${(quotaInfo.ratio * 100).toFixed(1)}%)`);
+            }
         }
     } else {
         setTimeout(initUserCacheManager, 100);

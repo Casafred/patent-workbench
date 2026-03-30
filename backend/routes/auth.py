@@ -1247,8 +1247,9 @@ def serve_app():
     window.CURRENT_USERNAME = '{username}';
     window.IS_GUEST_MODE = {str(is_guest).lower()};
     if (window.userCacheManager && !window.IS_GUEST_MODE) {{
-        window.userCacheManager.init('{username}');
-        console.log('[Auth] 用户缓存管理器已初始化:', '{username}');
+        window.userCacheManager.init('{username}').then(() => {{
+            console.log('[Auth] 用户缓存管理器已初始化:', '{username}');
+        }});
     }}
     </script>
     {guest_script}
