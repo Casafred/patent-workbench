@@ -2005,8 +2005,14 @@ const ClassificationModule = {
             try {
                 const item = JSON.parse(line);
                 const customId = item.custom_id;
-                const content = item?.response?.body?.choices?.[0]?.message?.content;
+                const message = item?.response?.body?.choices?.[0]?.message;
+                let content = message?.content;
+                const reasoningContent = message?.reasoning_content;
                 const error = item?.error;
+                
+                if (!content && reasoningContent) {
+                    content = reasoningContent;
+                }
                 
                 let resultItem = {
                     id: customId,
@@ -2044,7 +2050,8 @@ const ClassificationModule = {
                             confidence: typeof parsed.confidence === 'object' ? parsed.confidence : { overall: parsed.confidence || 0 },
                             reasoning: parsed.reasoning || '',
                             overallConfidence: overallConfidence,
-                            rawContent: content
+                            rawContent: content,
+                            reasoningContent: reasoningContent
                         };
                     } catch (parseError) {
                         console.error('[ClassificationModule] Failed to parse result:', parseError);
@@ -2054,6 +2061,7 @@ const ClassificationModule = {
                             reasoning: '',
                             overallConfidence: 0,
                             rawContent: content,
+                            reasoningContent: reasoningContent,
                             parseError: parseError.message
                         };
                     }
@@ -2502,7 +2510,13 @@ const ClassificationModule = {
         }
         
         const data = await response.json();
-        const content = data.choices?.[0]?.message?.content || '';
+        const message = data.choices?.[0]?.message;
+        let content = message?.content || '';
+        const reasoningContent = message?.reasoning_content;
+        
+        if (!content && reasoningContent) {
+            content = reasoningContent;
+        }
         
         try {
             const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```|({[\s\S]*"classification"[\s\S]*})/);
@@ -2534,7 +2548,8 @@ const ClassificationModule = {
                 confidence: typeof result.confidence === 'object' ? result.confidence : { overall: result.confidence || 0 },
                 reasoning: result.reasoning || '',
                 overallConfidence: overallConfidence,
-                rawContent: content
+                rawContent: content,
+                reasoningContent: reasoningContent
             };
         } catch (parseError) {
             console.error('[ClassificationModule] Failed to parse classification result:', parseError);
@@ -2544,6 +2559,7 @@ const ClassificationModule = {
                 reasoning: '',
                 overallConfidence: 0,
                 rawContent: content,
+                reasoningContent: reasoningContent,
                 parseError: parseError.message
             };
         }

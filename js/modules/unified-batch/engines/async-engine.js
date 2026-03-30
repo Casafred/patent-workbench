@@ -206,11 +206,19 @@ const AsyncEngine = {
         }
         
         const data = await response.json();
-        const content = data.choices?.[0]?.message?.content || '';
+        const message = data.choices?.[0]?.message;
+        let content = message?.content || '';
+        const reasoningContent = message?.reasoning_content;
+        
+        if (!content && reasoningContent) {
+            content = reasoningContent;
+        }
+        
         const usage = data.usage || {};
         
         return {
             content: content,
+            reasoningContent: reasoningContent,
             usage: usage,
             rawResponse: data
         };

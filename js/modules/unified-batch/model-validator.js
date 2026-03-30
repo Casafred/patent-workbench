@@ -30,6 +30,42 @@ const ModelValidator = {
         'deepseek-r1-distill-qwen-32b', 'kimi-k2-thinking'
     ],
     
+    THINKING_CAPABLE_MODELS: [
+        'qwen-flash', 'qwen-turbo', 'qwen-plus', 'qwen3-max', 'qwen-long',
+        'qwq-plus', 'qwq-32b', 'deepseek-r1', 'deepseek-r1-distill-qwen-32b',
+        'deepseek-v3', 'deepseek-v3.2', 'kimi-k2-thinking', 'kimi-k2.5',
+        'glm-z1-flash', 'glm-z1-flashx', 'glm-z1-air', 'glm-z1-airx'
+    ],
+    
+    isThinkingModel(model) {
+        if (!model) return false;
+        const normalizedModel = model.toLowerCase().trim();
+        return this.THINKING_CAPABLE_MODELS.includes(normalizedModel);
+    },
+    
+    isThinkingOnlyModel(model) {
+        if (!model) return false;
+        const normalizedModel = model.toLowerCase().trim();
+        return this.THINKING_ONLY_MODELS.includes(normalizedModel);
+    },
+    
+    getModelResponseInfo(model) {
+        const isThinking = this.isThinkingModel(model);
+        const isThinkingOnly = this.isThinkingOnlyModel(model);
+        
+        return {
+            model: model,
+            isThinkingModel: isThinking,
+            isThinkingOnlyModel: isThinkingOnly,
+            needsReasoningContentHandling: isThinking || isThinkingOnly,
+            description: isThinkingOnly 
+                ? '仅推理模型，响应包含 reasoning_content 和 content'
+                : isThinking 
+                    ? '支持深度思考的模型，可能返回 reasoning_content'
+                    : '普通模型，仅返回 content'
+        };
+    },
+    
     FREE_MODELS: ['glm-4-flash', 'glm-4-flash-250414', 'glm-z1-flash'],
 
     validateModel(model) {

@@ -140,10 +140,17 @@ const OutputHandler = {
         }
 
         const resultMap = new Map(
-            jsonlResults.map(item => [
-                item.custom_id, 
-                item?.response?.body?.choices?.[0]?.message?.content?.trim()
-            ])
+            jsonlResults.map(item => {
+                const message = item?.response?.body?.choices?.[0]?.message;
+                let content = message?.content?.trim();
+                const reasoningContent = message?.reasoning_content?.trim();
+                
+                if (!content && reasoningContent) {
+                    content = reasoningContent;
+                }
+                
+                return [item.custom_id, content];
+            })
         );
 
         const allGeneratedHeaders = new Set();

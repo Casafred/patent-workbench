@@ -483,14 +483,22 @@ const BatchEngine = {
         
         results.forEach(item => {
             const customId = item.custom_id;
-            const content = item?.response?.body?.choices?.[0]?.message?.content;
+            const message = item?.response?.body?.choices?.[0]?.message;
+            const responseContent = message?.content;
+            const reasoningContent = message?.reasoning_content;
             const usage = item?.response?.body?.usage;
             const error = item?.error;
+
+            let finalContent = responseContent;
+            if (!finalContent && reasoningContent) {
+                finalContent = reasoningContent;
+            }
 
             OutputHandler.addResult({
                 customId: customId,
                 status: error ? 'failed' : 'completed',
-                content: content,
+                content: finalContent,
+                reasoningContent: reasoningContent,
                 usage: usage,
                 error: error?.message
             });
