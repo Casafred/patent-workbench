@@ -1084,6 +1084,58 @@
     stroke: var(--primary-color-dark);
 }
 
+/* Notification Center Button - 与其他头部按钮样式一致 */
+#notification_center_btn {
+    all: unset;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 2px solid var(--primary-color);
+    border-radius: 50%;
+    background-color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    z-index: 10;
+    margin-right: 10px;
+    transform: translateY(-3px);
+}
+
+#notification_center_btn svg {
+    width: 20px;
+    height: 20px;
+    stroke: var(--primary-color);
+    fill: none;
+    transition: stroke 0.2s ease;
+}
+
+#notification_center_btn:hover {
+    background-color: var(--primary-color-hover-bg);
+}
+
+#notification_center_btn:hover svg {
+    stroke: var(--primary-color-dark);
+}
+
+[data-theme="dark"] #notification_center_btn {
+    background-color: var(--bg-color-secondary, #1e1e2e);
+    border-color: var(--primary-color);
+}
+
+[data-theme="dark"] #notification_center_btn svg {
+    stroke: var(--primary-color);
+}
+
+[data-theme="dark"] #notification_center_btn:hover {
+    background-color: var(--primary-color-hover-bg, #2d2d44);
+}
+
+[data-theme="dark"] #notification_center_btn:hover svg {
+    stroke: var(--primary-color-dark);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .forum-modal-content {
