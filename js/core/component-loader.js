@@ -6,6 +6,28 @@
  */
 
 /**
+ * 执行元素内的所有脚本标签
+ * @param {HTMLElement} container - 包含脚本的容器元素
+ */
+function executeScripts(container) {
+    const scripts = container.querySelectorAll('script');
+    scripts.forEach(oldScript => {
+        const newScript = document.createElement('script');
+        
+        // 复制所有属性
+        Array.from(oldScript.attributes).forEach(attr => {
+            newScript.setAttribute(attr.name, attr.value);
+        });
+        
+        // 复制脚本内容
+        newScript.textContent = oldScript.textContent;
+        
+        // 替换旧脚本
+        oldScript.parentNode.replaceChild(newScript, oldScript);
+    });
+}
+
+/**
  * 异步加载HTML组件并注入到目标元素
  * @param {string} componentPath - 组件文件的相对路径 (相对于项目根目录)
  * @param {string} targetElementId - 目标DOM元素的ID
@@ -51,6 +73,9 @@ async function loadComponent(componentPath, targetElementId, retryCountOrOptions
             
             // 注入HTML内容
             targetElement.innerHTML = html;
+            
+            // 执行注入的脚本标签
+            executeScripts(targetElement);
             
             console.log(`[Component Loader] ✓ 组件加载成功: ${componentPath}`);
             
@@ -192,6 +217,8 @@ function loadComponentSync(componentPath, targetElementId) {
         
         if (xhr.status === 200) {
             targetElement.innerHTML = xhr.responseText;
+            // 执行注入的脚本标签
+            executeScripts(targetElement);
             console.log(`[Component Loader] ✓ 组件同步加载成功: ${componentPath}`);
             return true;
         } else {

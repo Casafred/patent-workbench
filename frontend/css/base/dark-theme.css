@@ -1826,6 +1826,10 @@
     background-color: #1e293b !important;
 }
 
+[data-theme="dark"] #notification_center_btn.notification-toggle-btn {
+    background-color: #1e293b !important;
+}
+
 /* 获取API Key弹窗暗黑模式 */
 [data-theme="dark"] .get-api-key-modal {
     background: rgba(0, 0, 0, 0.7);
