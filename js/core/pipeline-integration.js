@@ -639,23 +639,51 @@ class PipelineIntegration {
                         window.unifiedBatchState.state.excelData = null;
                         window.unifiedBatchState.state.excelHeaders = [];
                         window.unifiedBatchState.state.selectedSheet = null;
-                        const sheetSelector = document.querySelector('#unified_sheet_selector');
-                        const columnSelector = document.querySelector('#unified_column_selector');
-                        if (sheetSelector) sheetSelector.innerHTML = '<option value="">-- 请先上传Excel --</option>';
-                        if (columnSelector) columnSelector.innerHTML = '';
+                        const sheetSelector = document.querySelector('#unified_excel_sheet');
+                        const columnSelector = document.querySelector('#unified_index_column');
+                        if (sheetSelector) {
+                            sheetSelector.innerHTML = '';
+                            sheetSelector.disabled = true;
+                        }
+                        if (columnSelector) {
+                            columnSelector.innerHTML = '<option value="">-- 请先上传Excel --</option>';
+                        }
+                        const columnMappingSection = document.querySelector('#unified_column_mapping_section');
+                        const columnMappingContainer = document.querySelector('#unified_column_mapping_container');
+                        if (columnMappingSection) columnMappingSection.style.display = 'none';
+                        if (columnMappingContainer) columnMappingContainer.innerHTML = '';
                     } else if (selector === '#unified_rep_excel_input' || selector === '#unified_rep_jsonl_input') {
                         window.unifiedBatchState.state.repExcelData = null;
                         window.unifiedBatchState.state.repJsonlData = null;
+                        const sheetSelector = document.querySelector('#unified_rep_sheet_selector');
+                        if (sheetSelector) {
+                            sheetSelector.innerHTML = '';
+                            sheetSelector.style.display = 'none';
+                        }
                     } else if (selector === '#classification_excel_file') {
                         window.unifiedBatchState.state.classificationExcelData = null;
                         window.unifiedBatchState.state.classificationHeaders = [];
-                        const sheetSelector = document.querySelector('#classification_sheet_selector');
-                        const columnSelector = document.querySelector('#classification_column_selector');
-                        if (sheetSelector) sheetSelector.innerHTML = '<option value="">-- 请先上传Excel --</option>';
-                        if (columnSelector) columnSelector.innerHTML = '';
+                        const sheetSelector = document.querySelector('#classification_excel_sheet');
+                        const columnSelector = document.querySelector('#classification_index_column');
+                        if (sheetSelector) {
+                            sheetSelector.innerHTML = '';
+                            sheetSelector.disabled = true;
+                        }
+                        if (columnSelector) {
+                            columnSelector.innerHTML = '<option value="">-- 请先上传Excel --</option>';
+                        }
+                        const columnMappingSection = document.querySelector('#classification_column_mapping_section');
+                        const columnMappingContainer = document.querySelector('#classification_column_mapping_container');
+                        if (columnMappingSection) columnMappingSection.style.display = 'none';
+                        if (columnMappingContainer) columnMappingContainer.innerHTML = '';
                     } else if (selector === '#classification_rep_excel_input' || selector === '#classification_rep_jsonl_input') {
                         window.unifiedBatchState.state.classificationRepExcelData = null;
                         window.unifiedBatchState.state.classificationRepJsonlData = null;
+                        const sheetSelector = document.querySelector('#classification_rep_sheet_selector');
+                        if (sheetSelector) {
+                            sheetSelector.innerHTML = '';
+                            sheetSelector.style.display = 'none';
+                        }
                     }
                 }
                 break;
@@ -666,9 +694,21 @@ class PipelineIntegration {
                         window.localPatentLibState.originalHeaders = [];
                         const fileConfirm = document.querySelector('#lpl_original_file_confirm');
                         if (fileConfirm) fileConfirm.value = '';
+                        const sheetSelector = document.querySelector('#lpl_original_merge_sheet_select');
+                        if (sheetSelector) {
+                            sheetSelector.innerHTML = '<option>请先加载或上传文件</option>';
+                            sheetSelector.disabled = true;
+                        }
+                        const colsArea = document.querySelector('#lpl_old_cols_selection_area');
+                        if (colsArea) colsArea.style.display = 'none';
                     } else if (selector === '#lpl_new_file_input') {
                         window.localPatentLibState.newData = null;
                         window.localPatentLibState.newHeaders = [];
+                        const sheetSelector = document.querySelector('#lpl_new_merge_sheet_select');
+                        if (sheetSelector) {
+                            sheetSelector.innerHTML = '<option>请先上传文件</option>';
+                            sheetSelector.disabled = true;
+                        }
                     } else if (selector === '#concat_file_input') {
                         window.localPatentLibState.concatFiles = [];
                     }
@@ -682,6 +722,10 @@ class PipelineIntegration {
                     const columnSelector = document.querySelector('#claims_column_selector');
                     if (sheetSelector) sheetSelector.innerHTML = '';
                     if (columnSelector) columnSelector.innerHTML = '';
+                    const sheetContainer = document.querySelector('#claims_sheet_selector_container');
+                    const columnContainer = document.querySelector('#claims_column_selector_container');
+                    if (sheetContainer) sheetContainer.style.display = 'none';
+                    if (columnContainer) columnContainer.style.display = 'none';
                 }
                 break;
         }
