@@ -483,6 +483,53 @@ class PipelineIntegration {
                 white-space: nowrap;
             `;
             
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'pipeline-delete-btn';
+            deleteBtn.type = 'button';
+            deleteBtn.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    <line x1="10" y1="11" x2="10" y2="17"/>
+                    <line x1="14" y1="11" x2="14" y2="17"/>
+                </svg>
+            `;
+            deleteBtn.title = '删除已加载的表格';
+            deleteBtn.style.cssText = `
+                padding: 6px 8px;
+                background: #ef4444;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                font-size: 12px;
+                cursor: pointer;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s;
+                margin-left: 8px;
+            `;
+            
+            const clearFileInput = () => {
+                input.value = '';
+                fileNameDisplay.textContent = '';
+                fileNameDisplay.style.color = 'var(--text-color-secondary, #6b7280)';
+                deleteBtn.style.display = 'none';
+                
+                const clearEvent = new CustomEvent('fileCleared', {
+                    detail: { selector: selector },
+                    bubbles: true
+                });
+                input.dispatchEvent(clearEvent);
+                
+                this.clearRelatedData(selector);
+            };
+            
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                clearFileInput();
+            });
+            
             let dropdownVisible = false;
             
             const updatePipelineStatus = () => {
@@ -532,6 +579,7 @@ class PipelineIntegration {
                 dropdownVisible = false;
                 if (window.globalDataPipeline?.currentData) {
                     await window.globalDataPipeline.sendToTarget(target);
+                    deleteBtn.style.display = 'inline-flex';
                 } else {
                     window.globalDataPipeline?.showPanel();
                 }
@@ -548,18 +596,85 @@ class PipelineIntegration {
                 if (input.files && input.files.length > 0) {
                     fileNameDisplay.textContent = input.files[0].name;
                     fileNameDisplay.style.color = 'var(--success-color, #10b981)';
+                    deleteBtn.style.display = 'inline-flex';
                 } else {
                     fileNameDisplay.textContent = '';
+                    deleteBtn.style.display = 'none';
                 }
             });
             
             wrapper.appendChild(uploadBtn);
             wrapper.appendChild(dropdown);
             wrapper.appendChild(fileNameDisplay);
+            wrapper.appendChild(deleteBtn);
             
             parent.insertBefore(wrapper, input);
             wrapper.appendChild(input);
         });
+    }
+
+    clearRelatedData(selector) {
+        const selectorToStateMap = {
+            '#unified_excel_file': 'unifiedBatchState',
+            '#unified_rep_excel_input': 'unifiedBatchState',
+            '#classification_excel_file': 'unifiedBatchState',
+            '#classification_rep_excel_input': 'unifiedBatchState',
+            '#lpl_original_file_input': 'localPatentLibState',
+            '#lpl_original_reupload_input': 'localPatentLibState',
+            '#lpl_new_file_input': 'localPatentLibState',
+            '#concat_file_input': 'localPatentLibState',
+            '#claims_excel_file': 'claimsProcessorState'
+        };
+        
+        const stateKey = selectorToStateMap[selector];
+        
+        switch (stateKey) {
+            case 'unifiedBatchState':
+                if (window.unifiedBatchState?.state) {
+                    if (selector === '#unified_excel_file') {
+                        window.unifiedBatchState.state.excelData = null;
+                        window.unifiedBatchState.state.excelHeaders = [];
+                        window.unifiedBatchState.state.selectedSheet = null;
+                        const sheetSelector = document.querySelector('#unified_sheet_selector');
+                        const columnSelector = document.querySelector('#unified_column_selector');
+                        if (sheetSelector) sheetSelector.innerHTML = '<option value="">-- 请先上传Excel --</option>';
+                        if (columnSelector) columnSelector.innerHTML = '';
+                    } else if (selector === '#classification_excel_file') {
+                        window.unifiedBatchState.state.classificationExcelData = null;
+                        window.unifiedBatchState.state.classificationHeaders = [];
+                        const sheetSelector = document.querySelector('#classification_sheet_selector');
+                        const columnSelector = document.querySelector('#classification_column_selector');
+                        if (sheetSelector) sheetSelector.innerHTML = '<option value="">-- 请先上传Excel --</option>';
+                        if (columnSelector) columnSelector.innerHTML = '';
+                    }
+                }
+                break;
+            case 'localPatentLibState':
+                if (window.localPatentLibState) {
+                    if (selector === '#lpl_original_file_input') {
+                        window.localPatentLibState.originalData = null;
+                        window.localPatentLibState.originalHeaders = [];
+                    } else if (selector === '#lpl_new_file_input') {
+                        window.localPatentLibState.newData = null;
+                        window.localPatentLibState.newHeaders = [];
+                    } else if (selector === '#concat_file_input') {
+                        window.localPatentLibState.concatFiles = [];
+                    }
+                }
+                break;
+            case 'claimsProcessorState':
+                if (window.claimsProcessorState) {
+                    window.claimsProcessorState.excelData = null;
+                    window.claimsProcessorState.headers = [];
+                    const sheetSelector = document.querySelector('#claims_sheet_selector');
+                    const columnSelector = document.querySelector('#claims_column_selector');
+                    if (sheetSelector) sheetSelector.innerHTML = '';
+                    if (columnSelector) columnSelector.innerHTML = '';
+                }
+                break;
+        }
+        
+        console.log(`[PipelineIntegration] Cleared data for: ${selector}`);
     }
 
     setupKeyboardShortcuts() {
