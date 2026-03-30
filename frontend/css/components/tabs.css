@@ -142,8 +142,8 @@
     border-radius: 2px;
 }
 
-.step-item:last-child::before {
-    display: none;
+.step-item:last-of-type::before {
+    display: none !important;
 }
 
 .step-item.completed::before {
