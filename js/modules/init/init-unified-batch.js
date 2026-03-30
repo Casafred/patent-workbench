@@ -355,6 +355,26 @@ function bindUnifiedBatchEvents() {
         batchStep1.addEventListener('click', unifiedBatchStep1Upload);
     }
 
+    var batchPreviewBtn = document.getElementById('unified_batch_preview_btn');
+    if (batchPreviewBtn) {
+        batchPreviewBtn.addEventListener('click', showUnifiedBatchPreview);
+    }
+
+    var batchCopyPreviewBtn = document.getElementById('unified_batch_copy_preview_btn');
+    if (batchCopyPreviewBtn) {
+        batchCopyPreviewBtn.addEventListener('click', copyUnifiedBatchPreview);
+    }
+
+    var batchDownloadPreviewBtn = document.getElementById('unified_batch_download_preview_btn');
+    if (batchDownloadPreviewBtn) {
+        batchDownloadPreviewBtn.addEventListener('click', downloadUnifiedBatchPreview);
+    }
+
+    var batchClosePreviewBtn = document.getElementById('unified_batch_close_preview_btn');
+    if (batchClosePreviewBtn) {
+        batchClosePreviewBtn.addEventListener('click', closeUnifiedBatchPreview);
+    }
+
     var batchStep2 = document.getElementById('unified_batch_step2_create');
     if (batchStep2) {
         batchStep2.addEventListener('click', unifiedBatchStep2Create);
@@ -2318,6 +2338,10 @@ if (typeof window !== 'undefined') {
     window.switchClassificationInput = switchClassificationInput;
     window.selectClassificationMode = selectClassificationMode;
     window.initClassificationModule = initClassificationModule;
+    window.showUnifiedBatchPreview = showUnifiedBatchPreview;
+    window.copyUnifiedBatchPreview = copyUnifiedBatchPreview;
+    window.downloadUnifiedBatchPreview = downloadUnifiedBatchPreview;
+    window.closeUnifiedBatchPreview = closeUnifiedBatchPreview;
 }
 
 function switchUnifiedMode(mode) {
@@ -2848,4 +2872,125 @@ function checkUnifiedReportReady() {
         hasBatchResult: hasBatchResult,
         buttonDisabled: generateBtn ? generateBtn.disabled : 'button not found'
     });
+}
+
+function showUnifiedBatchPreview() {
+    var state = UnifiedBatch.state;
+    var allInputs = state ? state.inputs : [];
+    var selectAllMode = state.selectAllMode;
+    
+    var selectedInputs = [];
+    if (selectAllMode && state.selectedInputIds && state.selectedInputIds.length > 0) {
+        selectedInputs = allInputs.filter(function(input) {
+            return state.selectedInputIds.includes(input.id);
+        });
+    } else {
+        var checkboxes = document.querySelectorAll('.unified-input-checkbox:checked');
+        var selectedIds = Array.from(checkboxes).map(function(cb) { return cb.dataset.id; });
+        selectedInputs = allInputs.filter(function(input) {
+            return selectedIds.includes(input.id);
+        });
+    }
+    
+    if (selectedInputs.length === 0) {
+        alert('请先选择要处理的数据');
+        return;
+    }
+    
+    var template = UnifiedBatch.template.getCurrentTemplate();
+    if (!template || !template.systemPrompt) {
+        alert('请先配置模板');
+        return;
+    }
+    
+    try {
+        UnifiedBatch.batchEngine.generateJsonl(selectedInputs, template);
+        
+        var jsonlContent = UnifiedBatch.batchEngine.state.batchTask.jsonlContent;
+        if (!jsonlContent) {
+            alert('生成请求内容失败');
+            return;
+        }
+        
+        var lines = jsonlContent.split('\n').filter(function(line) { return line.trim(); });
+        var previewLines = lines.slice(0, 5);
+        
+        var previewContent = document.getElementById('unified_batch_preview_content');
+        var previewStats = document.getElementById('unified_batch_preview_stats');
+        var previewContainer = document.getElementById('unified_batch_preview_container');
+        
+        if (previewContent) {
+            var formattedPreview = previewLines.map(function(line, index) {
+                try {
+                    var parsed = JSON.parse(line);
+                    return '【请求 ' + (index + 1) + '】\n' + JSON.stringify(parsed, null, 2);
+                } catch (e) {
+                    return line;
+                }
+            }).join('\n\n');
+            
+            previewContent.textContent = formattedPreview;
+        }
+        
+        if (previewStats) {
+            var modelSelect = document.getElementById('unified_template_model_select');
+            var modelName = modelSelect ? (modelSelect.options[modelSelect.selectedIndex]?.text || template.model) : template.model;
+            var provider = UnifiedBatch.batchEngine.getProviderForModel(template.model);
+            var providerName = provider === 'aliyun' ? '阿里云百炼' : '智谱AI';
+            
+            previewStats.innerHTML = 
+                '<strong>总请求数:</strong> ' + lines.length + ' 条 | ' +
+                '<strong>模型:</strong> ' + modelName + ' | ' +
+                '<strong>服务商:</strong> ' + providerName + 
+                (lines.length > 5 ? ' | <span style="color: var(--text-color-tertiary);">显示前 5 条</span>' : '');
+        }
+        
+        if (previewContainer) {
+            previewContainer.style.display = 'block';
+        }
+        
+    } catch (error) {
+        alert('生成预览失败: ' + error.message);
+        console.error('[UnifiedBatch] 预览生成错误:', error);
+    }
+}
+
+function copyUnifiedBatchPreview() {
+    var jsonlContent = UnifiedBatch.batchEngine.state.batchTask.jsonlContent;
+    if (!jsonlContent) {
+        alert('没有可复制的内容');
+        return;
+    }
+    
+    navigator.clipboard.writeText(jsonlContent).then(function() {
+        alert('请求内容已复制到剪贴板！');
+    }).catch(function(err) {
+        console.error('复制失败:', err);
+        alert('复制失败，请手动复制');
+    });
+}
+
+function downloadUnifiedBatchPreview() {
+    var jsonlContent = UnifiedBatch.batchEngine.state.batchTask.jsonlContent;
+    if (!jsonlContent) {
+        alert('没有可下载的内容');
+        return;
+    }
+    
+    var blob = new Blob([jsonlContent], { type: 'application/jsonl' });
+    var url = URL.createObjectURL(blob);
+    
+    var link = document.createElement('a');
+    link.href = url;
+    link.download = 'batch_requests_' + new Date().toISOString().slice(0, 10) + '.jsonl';
+    link.click();
+    
+    URL.revokeObjectURL(url);
+}
+
+function closeUnifiedBatchPreview() {
+    var previewContainer = document.getElementById('unified_batch_preview_container');
+    if (previewContainer) {
+        previewContainer.style.display = 'none';
+    }
 }

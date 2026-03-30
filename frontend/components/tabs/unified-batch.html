@@ -331,9 +331,26 @@
                 <div class="step-header">大批量批处理 <span id="unified_batch_provider_label" style="font-size: 0.8em; color: var(--text-color-secondary);">(智谱AI/阿里云百炼 Batch API)</span></div>
                 <p>请按照1-3的顺序执行。点击步骤2后将启动自动状态检查。</p>
                 <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px; justify-content: center;">
+                    <button id="unified_batch_preview_btn" class="small-button" style="background: var(--accent-color, #667eea); color: white;">👁️ 预览请求内容</button>
                     <button id="unified_batch_step1_upload" class="action-button">1. 上传请求文件</button>
                     <button id="unified_batch_step2_create" class="action-button" disabled>2. 创建Batch任务</button>
                     <button id="unified_batch_step3_download" class="action-button" disabled>3. 获取结果内容</button>
+                </div>
+                <div id="unified_batch_preview_container" style="display: none; margin-top: 20px;">
+                    <div style="background: var(--bg-color-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <h4 style="margin: 0; color: var(--primary-color);">📋 请求内容预览</h4>
+                            <div style="display: flex; gap: 10px;">
+                                <button id="unified_batch_copy_preview_btn" class="small-button">复制全部</button>
+                                <button id="unified_batch_download_preview_btn" class="small-button">下载JSONL</button>
+                                <button id="unified_batch_close_preview_btn" class="small-button delete-button">关闭</button>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 10px; padding: 8px; background: var(--bg-color); border-radius: 6px; font-size: 0.85em;">
+                            <span id="unified_batch_preview_stats" style="color: var(--text-color-secondary);"></span>
+                        </div>
+                        <pre id="unified_batch_preview_content" style="max-height: 400px; overflow-y: auto; background: var(--bg-color); padding: 12px; border-radius: 6px; font-size: 12px; white-space: pre-wrap; word-break: break-all; margin: 0;"></pre>
+                    </div>
                 </div>
                 <div id="unified_batch_id_reminder" class="info" style="display: none; margin-top: 20px; text-align: center;"></div>
 

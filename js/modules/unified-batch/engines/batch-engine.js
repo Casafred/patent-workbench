@@ -138,9 +138,22 @@ const BatchEngine = {
             const formData = new FormData();
             formData.append('file', blob, 'batch_requests.jsonl');
 
-            const headers = this.getApiHeaders(model || this.currentModel);
-            delete headers['Content-Type'];
-            headers['X-LLM-Provider'] = this.currentProvider;
+            const headers = {};
+            const getUserItem = (key) => {
+                if (window.userCacheStorage && window.userCacheStorage.isInitialized()) {
+                    return window.userCacheStorage.get(key);
+                }
+                return localStorage.getItem(key);
+            };
+            
+            if (this.currentProvider === 'aliyun') {
+                const aliyunKey = window.appState?.aliyunApiKey || getUserItem('aliyun_api_key');
+                headers['X-LLM-Provider'] = 'aliyun';
+                headers['Authorization'] = `Bearer ${aliyunKey}`;
+            } else {
+                const zhipuKey = window.appState?.apiKey || getUserItem('api_key') || getUserItem('globalApiKey');
+                headers['Authorization'] = `Bearer ${zhipuKey}`;
+            }
 
             const response = await fetch('/api/async_batch/upload', {
                 method: 'POST',
