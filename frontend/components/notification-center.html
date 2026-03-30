@@ -652,10 +652,8 @@
             return div.innerHTML;
         }
 
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initNotificationCenter);
-        } else {
-            initNotificationCenter();
-        }
+        // 立即初始化，不等待DOMContentLoaded
+        // 因为组件是在页面加载后动态加载的
+        initNotificationCenter();
     })();
 </script>
