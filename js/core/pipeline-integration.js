@@ -355,8 +355,10 @@ class PipelineIntegration {
         const targetInputs = [
             { selector: '#unified_excel_file', target: 'async-batch', type: 'file' },
             { selector: '#unified_rep_excel_input', target: 'async-batch', type: 'file' },
+            { selector: '#unified_rep_jsonl_input', target: 'async-batch', type: 'file' },
             { selector: '#classification_excel_file', target: 'async-batch', type: 'file' },
             { selector: '#classification_rep_excel_input', target: 'async-batch', type: 'file' },
+            { selector: '#classification_rep_jsonl_input', target: 'async-batch', type: 'file' },
             { selector: '#lpl_original_file_input', target: 'local-patent-lib', type: 'file' },
             { selector: '#lpl_original_reupload_input', target: 'local-patent-lib', type: 'file' },
             { selector: '#lpl_new_file_input', target: 'local-patent-lib', type: 'file' },
@@ -617,8 +619,10 @@ class PipelineIntegration {
         const selectorToStateMap = {
             '#unified_excel_file': 'unifiedBatchState',
             '#unified_rep_excel_input': 'unifiedBatchState',
+            '#unified_rep_jsonl_input': 'unifiedBatchState',
             '#classification_excel_file': 'unifiedBatchState',
             '#classification_rep_excel_input': 'unifiedBatchState',
+            '#classification_rep_jsonl_input': 'unifiedBatchState',
             '#lpl_original_file_input': 'localPatentLibState',
             '#lpl_original_reupload_input': 'localPatentLibState',
             '#lpl_new_file_input': 'localPatentLibState',
@@ -639,6 +643,9 @@ class PipelineIntegration {
                         const columnSelector = document.querySelector('#unified_column_selector');
                         if (sheetSelector) sheetSelector.innerHTML = '<option value="">-- 请先上传Excel --</option>';
                         if (columnSelector) columnSelector.innerHTML = '';
+                    } else if (selector === '#unified_rep_excel_input' || selector === '#unified_rep_jsonl_input') {
+                        window.unifiedBatchState.state.repExcelData = null;
+                        window.unifiedBatchState.state.repJsonlData = null;
                     } else if (selector === '#classification_excel_file') {
                         window.unifiedBatchState.state.classificationExcelData = null;
                         window.unifiedBatchState.state.classificationHeaders = [];
@@ -646,14 +653,19 @@ class PipelineIntegration {
                         const columnSelector = document.querySelector('#classification_column_selector');
                         if (sheetSelector) sheetSelector.innerHTML = '<option value="">-- 请先上传Excel --</option>';
                         if (columnSelector) columnSelector.innerHTML = '';
+                    } else if (selector === '#classification_rep_excel_input' || selector === '#classification_rep_jsonl_input') {
+                        window.unifiedBatchState.state.classificationRepExcelData = null;
+                        window.unifiedBatchState.state.classificationRepJsonlData = null;
                     }
                 }
                 break;
             case 'localPatentLibState':
                 if (window.localPatentLibState) {
-                    if (selector === '#lpl_original_file_input') {
+                    if (selector === '#lpl_original_file_input' || selector === '#lpl_original_reupload_input') {
                         window.localPatentLibState.originalData = null;
                         window.localPatentLibState.originalHeaders = [];
+                        const fileConfirm = document.querySelector('#lpl_original_file_confirm');
+                        if (fileConfirm) fileConfirm.value = '';
                     } else if (selector === '#lpl_new_file_input') {
                         window.localPatentLibState.newData = null;
                         window.localPatentLibState.newHeaders = [];
