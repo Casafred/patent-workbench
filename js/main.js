@@ -251,6 +251,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         await loadComponent('frontend/components/header.html', 'header-component');
         LoadingManager.updateProgress('加载头部组件');
+        
+        // 初始化通知中心按钮（header加载后立即初始化）
+        if (window.NotificationCenter) {
+            window.NotificationCenter.init();
+            console.log('✓ Notification center button initialized');
+        }
     } catch (error) {
         console.error('❌ Failed to load header component:', error);
     }
@@ -268,6 +274,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         await loadComponent('frontend/components/notification-center.html', 'notification-center-component');
         LoadingManager.updateProgress('加载通知中心');
+        
+        // 再次初始化通知中心（确保按钮绑定成功）
+        if (window.NotificationCenter) {
+            window.NotificationCenter.init();
+        }
     } catch (error) {
         console.error('❌ Failed to load notification center component:', error);
     }
