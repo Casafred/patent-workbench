@@ -133,16 +133,20 @@ class UnifiedBatchState {
         try {
             const canUseUserStorage = window.userCacheStorage && window.userCacheStorage.isInitialized();
             
+            let stored = null;
             if (canUseUserStorage) {
-                const stored = window.userCacheStorage.getJSON(STORAGE_KEYS.CUSTOM_TEMPLATES);
-                if (stored) {
-                    this.state.customTemplates = stored;
-                }
+                stored = window.userCacheStorage.getJSON(STORAGE_KEYS.CUSTOM_TEMPLATES);
             } else {
-                const stored = localStorage.getItem(STORAGE_KEYS.CUSTOM_TEMPLATES);
-                if (stored) {
-                    this.state.customTemplates = JSON.parse(stored);
+                const raw = localStorage.getItem(STORAGE_KEYS.CUSTOM_TEMPLATES);
+                if (raw) {
+                    stored = JSON.parse(raw);
                 }
+            }
+            
+            if (Array.isArray(stored)) {
+                this.state.customTemplates = stored;
+            } else {
+                this.state.customTemplates = [];
             }
         } catch (e) {
             console.error('加载自定义模板失败:', e);

@@ -4,10 +4,10 @@
  * 
  * 所有数据存储格式: user_{username}_{key}
  * 
- * v2.0 - 使用 IndexedDB 替代 localStorage
- * - 容量大（250MB+）
- * - 支持过期时间
- * - 自动清理旧数据
+ * v2.1 - 使用 IndexedDB + 内存缓存
+ * - 初始化时预加载数据到内存
+ * - 提供完全同步的 API
+ * - 后台异步持久化到 IndexedDB
  */
 
 class UserCacheStorage {
@@ -16,8 +16,9 @@ class UserCacheStorage {
         this._prefix = null;
         this._initialized = false;
         this._useIndexedDB = true;
-        this._ready = false;
-        this._syncFallback = {};
+        this._memoryCache = {};
+        this._pendingWrites = [];
+        this._writeInProgress = false;
     }
 
     async init(username) {
@@ -30,24 +31,57 @@ class UserCacheStorage {
         this._prefix = `user_${username}_`;
 
         if (this._useIndexedDB && window.indexedDBStorage) {
-            const success = await window.indexedDBStorage.init(username);
-            if (success) {
-                this._initialized = true;
-                this._ready = true;
-                
-                await this._migrateFromLocalStorage();
-                
-                console.log(`[UserCacheStorage] 已初始化 (IndexedDB)，用户: ${username}`);
-                return true;
+            try {
+                const success = await window.indexedDBStorage.init(username);
+                if (success) {
+                    await this._loadAllToMemory();
+                    await this._migrateFromLocalStorage();
+                    this._initialized = true;
+                    console.log(`[UserCacheStorage] 已初始化 (IndexedDB)，用户: ${username}`);
+                    return true;
+                }
+            } catch (e) {
+                console.error('[UserCacheStorage] IndexedDB 初始化失败:', e);
             }
         }
 
         console.warn('[UserCacheStorage] IndexedDB 不可用，回退到 localStorage');
         this._useIndexedDB = false;
+        this._loadFromLocalStorage();
         this._initialized = true;
-        this._ready = true;
         console.log(`[UserCacheStorage] 已初始化 (localStorage)，用户: ${username}`);
         return true;
+    }
+
+    async _loadAllToMemory() {
+        if (!window.indexedDBStorage || !window.indexedDBStorage.isInitialized()) return;
+        
+        try {
+            const allData = await window.indexedDBStorage.getAllData();
+            for (const [key, value] of Object.entries(allData)) {
+                this._memoryCache[key] = value;
+            }
+            console.log(`[UserCacheStorage] 已加载 ${Object.keys(allData).length} 条数据到内存`);
+        } catch (e) {
+            console.error('[UserCacheStorage] 加载数据到内存失败:', e);
+        }
+    }
+
+    _loadFromLocalStorage() {
+        try {
+            for (let i = 0; i < localStorage.length; i++) {
+                const fullKey = localStorage.key(i);
+                if (fullKey && fullKey.startsWith(this._prefix)) {
+                    const shortKey = fullKey.substring(this._prefix.length);
+                    const value = localStorage.getItem(fullKey);
+                    if (value !== null) {
+                        this._memoryCache[shortKey] = value;
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('[UserCacheStorage] 从 localStorage 加载失败:', e);
+        }
     }
 
     async _migrateFromLocalStorage() {
@@ -76,6 +110,7 @@ class UserCacheStorage {
                 if (value) {
                     const shortKey = fullKey.substring(this._prefix.length);
                     await window.indexedDBStorage.set(shortKey, value);
+                    this._memoryCache[shortKey] = value;
                     localStorage.removeItem(fullKey);
                     migratedCount++;
                 }
@@ -103,35 +138,20 @@ class UserCacheStorage {
         return `${this._prefix}${key}`;
     }
 
-    async get(key) {
+    get(key) {
+        return this._memoryCache[key] !== undefined ? this._memoryCache[key] : null;
+    }
+
+    async getAsync(key) {
         if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
             return await window.indexedDBStorage.get(key);
         }
-        try {
-            return localStorage.getItem(this.getKey(key));
-        } catch (e) {
-            console.error(`[UserCacheStorage] 读取失败: ${key}`, e);
-            return null;
-        }
+        return this.get(key);
     }
 
-    getSync(key) {
-        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
-            const cached = this._syncFallback[key];
-            if (cached !== undefined) return cached;
-            return null;
-        }
+    getJSON(key, defaultValue = null) {
         try {
-            return localStorage.getItem(this.getKey(key));
-        } catch (e) {
-            console.error(`[UserCacheStorage] 读取失败: ${key}`, e);
-            return null;
-        }
-    }
-
-    async getJSON(key, defaultValue = null) {
-        try {
-            const data = await this.get(key);
+            const data = this.get(key);
             if (data === null) return defaultValue;
             return JSON.parse(data);
         } catch (e) {
@@ -140,9 +160,9 @@ class UserCacheStorage {
         }
     }
 
-    getJSONSync(key, defaultValue = null) {
+    async getJSONAsync(key, defaultValue = null) {
         try {
-            const data = this.getSync(key);
+            const data = await this.getAsync(key);
             if (data === null) return defaultValue;
             return JSON.parse(data);
         } catch (e) {
@@ -151,9 +171,15 @@ class UserCacheStorage {
         }
     }
 
-    async set(key, value, options = {}) {
+    set(key, value, options = {}) {
+        this._memoryCache[key] = value;
+        this._scheduleWrite(key, value, options);
+        return true;
+    }
+
+    async setAsync(key, value, options = {}) {
+        this._memoryCache[key] = value;
         if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
-            this._syncFallback[key] = value;
             return await window.indexedDBStorage.set(key, value, options);
         }
         try {
@@ -161,54 +187,65 @@ class UserCacheStorage {
             return true;
         } catch (e) {
             console.error(`[UserCacheStorage] 存储失败: ${key}`, e);
-            if (e.name === 'QuotaExceededError') {
-                this._handleQuotaExceeded();
-            }
             return false;
         }
     }
 
-    setSync(key, value) {
-        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
-            this._syncFallback[key] = value;
-            window.indexedDBStorage.set(key, value).catch(() => {});
-            return true;
-        }
-        try {
-            localStorage.setItem(this.getKey(key), value);
-            return true;
-        } catch (e) {
-            console.error(`[UserCacheStorage] 存储失败: ${key}`, e);
-            if (e.name === 'QuotaExceededError') {
-                this._handleQuotaExceeded();
-            }
-            return false;
-        }
-    }
-
-    async setJSON(key, value, options = {}) {
+    setJSON(key, value, options = {}) {
         try {
             const jsonStr = JSON.stringify(value);
-            return await this.set(key, jsonStr, options);
+            return this.set(key, jsonStr, options);
         } catch (e) {
             console.error(`[UserCacheStorage] JSON序列化失败: ${key}`, e);
             return false;
         }
     }
 
-    setJSONSync(key, value) {
+    async setJSONAsync(key, value, options = {}) {
         try {
             const jsonStr = JSON.stringify(value);
-            return this.setSync(key, jsonStr);
+            return await this.setAsync(key, jsonStr, options);
         } catch (e) {
             console.error(`[UserCacheStorage] JSON序列化失败: ${key}`, e);
             return false;
         }
     }
 
-    async remove(key) {
+    _scheduleWrite(key, value, options = {}) {
+        this._pendingWrites.push({ key, value, options });
+        this._processPendingWrites();
+    }
+
+    async _processPendingWrites() {
+        if (this._writeInProgress || this._pendingWrites.length === 0) return;
+        
+        this._writeInProgress = true;
+        
+        while (this._pendingWrites.length > 0) {
+            const { key, value, options } = this._pendingWrites.shift();
+            try {
+                if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
+                    await window.indexedDBStorage.set(key, value, options);
+                } else {
+                    localStorage.setItem(this.getKey(key), value);
+                }
+            } catch (e) {
+                console.error(`[UserCacheStorage] 异步写入失败: ${key}`, e);
+            }
+        }
+        
+        this._writeInProgress = false;
+    }
+
+    remove(key) {
+        delete this._memoryCache[key];
+        this._scheduleRemove(key);
+        return true;
+    }
+
+    async removeAsync(key) {
+        delete this._memoryCache[key];
         if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
-            delete this._syncFallback[key];
             return await window.indexedDBStorage.remove(key);
         }
         try {
@@ -220,134 +257,77 @@ class UserCacheStorage {
         }
     }
 
-    removeSync(key) {
+    _scheduleRemove(key) {
         if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
-            delete this._syncFallback[key];
             window.indexedDBStorage.remove(key).catch(() => {});
-            return true;
-        }
-        try {
+        } else {
             localStorage.removeItem(this.getKey(key));
-            return true;
-        } catch (e) {
-            console.error(`[UserCacheStorage] 删除失败: ${key}`, e);
-            return false;
         }
     }
 
-    async has(key) {
-        const data = await this.get(key);
-        return data !== null;
+    has(key) {
+        return this._memoryCache[key] !== undefined;
     }
 
-    hasSync(key) {
-        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
-            return this._syncFallback[key] !== undefined;
-        }
-        return localStorage.getItem(this.getKey(key)) !== null;
+    getAllKeys() {
+        return Object.keys(this._memoryCache);
     }
 
-    async getAllKeys() {
-        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
-            return await window.indexedDBStorage.getAllKeys();
-        }
-        const keys = [];
-        try {
-            for (let i = 0; i < localStorage.length; i++) {
-                const fullKey = localStorage.key(i);
-                if (fullKey && fullKey.startsWith(this._prefix)) {
-                    keys.push(fullKey.substring(this._prefix.length));
-                }
-            }
-        } catch (e) {
-            console.error('[UserCacheStorage] 获取键列表失败', e);
-        }
-        return keys;
+    getAllData() {
+        return { ...this._memoryCache };
     }
 
-    getAllKeysSync() {
-        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
-            return Object.keys(this._syncFallback);
-        }
-        const keys = [];
-        try {
-            for (let i = 0; i < localStorage.length; i++) {
-                const fullKey = localStorage.key(i);
-                if (fullKey && fullKey.startsWith(this._prefix)) {
-                    keys.push(fullKey.substring(this._prefix.length));
-                }
-            }
-        } catch (e) {
-            console.error('[UserCacheStorage] 获取键列表失败', e);
-        }
-        return keys;
-    }
-
-    async getAllData() {
-        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
-            return await window.indexedDBStorage.getAllData();
-        }
+    getAllJSONData() {
         const data = {};
-        const keys = this.getAllKeysSync();
-        for (const key of keys) {
-            data[key] = localStorage.getItem(this.getKey(key));
+        for (const [key, value] of Object.entries(this._memoryCache)) {
+            try {
+                data[key] = JSON.parse(value);
+            } catch (e) {
+                data[key] = value;
+            }
         }
         return data;
     }
 
-    async getAllJSONData() {
+    clearUserData() {
+        const count = Object.keys(this._memoryCache).length;
+        this._memoryCache = {};
+        
         if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
-            return await window.indexedDBStorage.getAllJSONData();
-        }
-        const data = {};
-        const keys = this.getAllKeysSync();
-        for (const key of keys) {
-            data[key] = this.getJSONSync(key);
-        }
-        return data;
-    }
-
-    async clearUserData() {
-        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
-            this._syncFallback = {};
-            return await window.indexedDBStorage.clearUserData();
-        }
-        const keys = this.getAllKeysSync();
-        let count = 0;
-        for (const key of keys) {
-            if (this.removeSync(key)) {
-                count++;
+            window.indexedDBStorage.clearUserData().catch(() => {});
+        } else {
+            const keys = Object.keys(localStorage);
+            for (const fullKey of keys) {
+                if (fullKey.startsWith(this._prefix)) {
+                    localStorage.removeItem(fullKey);
+                }
             }
         }
+        
         console.log(`[UserCacheStorage] 已清除 ${count} 条用户数据`);
         return count;
     }
 
-    async getStorageStats() {
-        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
-            return await window.indexedDBStorage.getStorageStats();
-        }
-        const keys = this.getAllKeysSync();
+    getStorageStats() {
         let totalSize = 0;
         const itemStats = {};
 
-        keys.forEach(key => {
-            const value = localStorage.getItem(this.getKey(key));
+        for (const [key, value] of Object.entries(this._memoryCache)) {
             const size = value ? value.length * 2 : 0;
             totalSize += size;
             itemStats[key] = {
                 size: size,
                 sizeFormatted: this._formatSize(size)
             };
-        });
+        }
 
         return {
             username: this._username,
-            totalItems: keys.length,
+            totalItems: Object.keys(this._memoryCache).length,
             totalSize: totalSize,
             totalSizeFormatted: this._formatSize(totalSize),
             items: itemStats,
-            keys: keys
+            keys: Object.keys(this._memoryCache)
         };
     }
 
@@ -361,103 +341,71 @@ class UserCacheStorage {
         }
     }
 
-    async setBatch(data, options = {}) {
-        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
-            Object.assign(this._syncFallback, data);
-            return await window.indexedDBStorage.setBatch(data, options);
-        }
-        let success = 0;
-        let failed = 0;
+    setBatch(data, options = {}) {
         for (const [key, value] of Object.entries(data)) {
-            if (this.setSync(key, value)) {
-                success++;
-            } else {
-                failed++;
-            }
+            this._memoryCache[key] = value;
+            this._scheduleWrite(key, value, options);
         }
-        return { success, failed };
+        return { success: Object.keys(data).length, failed: 0 };
     }
 
-    async setJSONBatch(data, options = {}) {
-        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
-            for (const [key, value] of Object.entries(data)) {
-                this._syncFallback[key] = JSON.stringify(value);
-            }
-            return await window.indexedDBStorage.setJSONBatch(data, options);
-        }
-        let success = 0;
-        let failed = 0;
+    setJSONBatch(data, options = {}) {
         for (const [key, value] of Object.entries(data)) {
-            if (this.setJSONSync(key, value)) {
-                success++;
-            } else {
-                failed++;
+            try {
+                const jsonStr = JSON.stringify(value);
+                this._memoryCache[key] = jsonStr;
+                this._scheduleWrite(key, jsonStr, options);
+            } catch (e) {
+                console.error(`[UserCacheStorage] JSON序列化失败: ${key}`, e);
             }
         }
-        return { success, failed };
+        return { success: Object.keys(data).length, failed: 0 };
     }
 
     reset() {
+        this._memoryCache = {};
+        this._pendingWrites = [];
+        this._writeInProgress = false;
+        
         if (this._useIndexedDB && window.indexedDBStorage) {
             window.indexedDBStorage.reset();
         }
-        this._syncFallback = {};
+        
         this._username = null;
         this._prefix = null;
         this._initialized = false;
-        this._ready = false;
         console.log('[UserCacheStorage] 已重置');
     }
 
-    async getKeysByPrefix(keyPrefix) {
-        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
-            return await window.indexedDBStorage.getKeysByPrefix(keyPrefix);
-        }
-        const allKeys = this.getAllKeysSync();
-        return allKeys.filter(key => key.startsWith(keyPrefix));
+    getKeysByPrefix(keyPrefix) {
+        return Object.keys(this._memoryCache).filter(key => key.startsWith(keyPrefix));
     }
 
-    getKeysByPrefixSync(keyPrefix) {
-        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
-            return Object.keys(this._syncFallback).filter(key => key.startsWith(keyPrefix));
-        }
-        const allKeys = this.getAllKeysSync();
-        return allKeys.filter(key => key.startsWith(keyPrefix));
-    }
-
-    async getDataByPrefix(keyPrefix) {
-        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
-            return await window.indexedDBStorage.getDataByPrefix(keyPrefix);
-        }
-        const keys = this.getKeysByPrefixSync(keyPrefix);
+    getDataByPrefix(keyPrefix) {
         const data = {};
-        for (const key of keys) {
-            data[key] = this.getJSONSync(key);
+        for (const [key, value] of Object.entries(this._memoryCache)) {
+            if (key.startsWith(keyPrefix)) {
+                try {
+                    data[key] = JSON.parse(value);
+                } catch (e) {
+                    data[key] = value;
+                }
+            }
         }
         return data;
     }
 
-    async removeByPrefix(keyPrefix) {
-        if (this._useIndexedDB && window.indexedDBStorage && window.indexedDBStorage.isInitialized()) {
-            const keys = Object.keys(this._syncFallback).filter(k => k.startsWith(keyPrefix));
-            keys.forEach(k => delete this._syncFallback[k]);
-            return await window.indexedDBStorage.removeByPrefix(keyPrefix);
-        }
-        const keys = this.getKeysByPrefixSync(keyPrefix);
+    removeByPrefix(keyPrefix) {
         let count = 0;
-        for (const key of keys) {
-            if (this.removeSync(key)) {
-                count++;
-            }
+        const keysToRemove = Object.keys(this._memoryCache).filter(key => key.startsWith(keyPrefix));
+        
+        for (const key of keysToRemove) {
+            delete this._memoryCache[key];
+            this._scheduleRemove(key);
+            count++;
         }
+        
         return count;
-    }
-
-    _handleQuotaExceeded() {
-        console.warn('[UserCacheStorage] localStorage 配额已满，建议清理数据');
-        window.dispatchEvent(new CustomEvent('storage:quotaExceeded', {
-            detail: { storage: 'localStorage' }
-        }));
     }
 
     async getQuotaInfo() {

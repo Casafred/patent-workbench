@@ -16,7 +16,41 @@ const PatentCache = {
      * @returns {Object} 存储实例
      */
     _getStorage() {
-        return window.userCacheStorage;
+        if (window.userCacheStorage && window.userCacheStorage.isInitialized()) {
+            return window.userCacheStorage;
+        }
+        return {
+            get: (key) => localStorage.getItem(key),
+            getJSON: (key, def = null) => {
+                try {
+                    const v = localStorage.getItem(key);
+                    return v ? JSON.parse(v) : def;
+                } catch (e) { return def; }
+            },
+            set: (key, val) => { localStorage.setItem(key, val); return true; },
+            setJSON: (key, val) => { localStorage.setItem(key, JSON.stringify(val)); return true; },
+            remove: (key) => { localStorage.removeItem(key); return true; },
+            has: (key) => localStorage.getItem(key) !== null,
+            getKeysByPrefix: (prefix) => {
+                const keys = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const k = localStorage.key(i);
+                    if (k && k.startsWith(prefix)) keys.push(k);
+                }
+                return keys;
+            },
+            removeByPrefix: (prefix) => {
+                const keys = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const k = localStorage.key(i);
+                    if (k && k.startsWith(prefix)) {
+                        localStorage.removeItem(k);
+                        keys.push(k);
+                    }
+                }
+                return keys.length;
+            }
+        };
     },
 
     /**
@@ -158,6 +192,8 @@ const PatentCache = {
         
         try {
             const keys = storage.getKeysByPrefix(this.CACHE_KEY_PREFIX);
+            if (!Array.isArray(keys)) return 0;
+            
             keys.forEach(key => {
                 try {
                     const cached = storage.getJSON(key);

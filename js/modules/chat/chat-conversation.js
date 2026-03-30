@@ -7,16 +7,16 @@
 function loadConversations() {
     const storage = window.userCacheStorage;
     const savedConvos = storage.getJSON('chatConversations', []);
-    appState.chat.conversations = savedConvos;
+    appState.chat.conversations = Array.isArray(savedConvos) ? savedConvos : [];
     appState.chat.currentConversationId = storage.get('currentConversationId');
-    if (savedConvos.length > 0 && (!appState.chat.currentConversationId || !savedConvos.find(c => c.id === appState.chat.currentConversationId))) {
-        appState.chat.currentConversationId = savedConvos.sort((a,b) => b.lastUpdate - a.lastUpdate)[0].id;
+    if (appState.chat.conversations.length > 0 && (!appState.chat.currentConversationId || !appState.chat.conversations.find(c => c.id === appState.chat.currentConversationId))) {
+        appState.chat.currentConversationId = appState.chat.conversations.sort((a,b) => b.lastUpdate - a.lastUpdate)[0].id;
     }
     
     // Load file cache
     try {
         const savedCache = storage.getJSON('parsedFilesCache', {});
-        appState.chat.parsedFilesCache = savedCache;
+        appState.chat.parsedFilesCache = savedCache || {};
         console.log('✅ 已加载文件缓存，共', Object.keys(appState.chat.parsedFilesCache).length, '个文件');
     } catch (e) {
         console.warn('⚠️ 无法加载文件缓存:', e);

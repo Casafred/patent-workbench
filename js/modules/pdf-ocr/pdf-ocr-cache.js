@@ -9,17 +9,42 @@ class PDFOCRCache {
         this.metaKey = 'pdf_ocr_cache_meta';
         this.maxAgeDays = 7;
         this.maxCacheSize = 100;
-        this.init();
+        this._initialized = false;
     }
 
     /**
      * 获取用户隔离存储实例
      */
     _getStorage() {
-        return window.userCacheStorage;
+        if (window.userCacheStorage && window.userCacheStorage.isInitialized()) {
+            return window.userCacheStorage;
+        }
+        return {
+            get: (key) => localStorage.getItem(key),
+            getJSON: (key, def = null) => {
+                try {
+                    const v = localStorage.getItem(key);
+                    return v ? JSON.parse(v) : def;
+                } catch (e) { return def; }
+            },
+            set: (key, val) => { localStorage.setItem(key, val); return true; },
+            setJSON: (key, val) => { localStorage.setItem(key, JSON.stringify(val)); return true; },
+            remove: (key) => { localStorage.removeItem(key); return true; },
+            has: (key) => localStorage.getItem(key) !== null,
+            getKeysByPrefix: (prefix) => {
+                const keys = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const k = localStorage.key(i);
+                    if (k && k.startsWith(prefix)) keys.push(k);
+                }
+                return keys;
+            }
+        };
     }
 
     init() {
+        if (this._initialized) return;
+        this._initialized = true;
         this.cleanupExpired();
     }
 
@@ -230,12 +255,15 @@ class PDFOCRCache {
     cleanupExpired() {
         const storage = this._getStorage();
         const keys = storage.getKeysByPrefix(this.cachePrefix);
+        
+        if (!Array.isArray(keys)) return;
+        
         const keysToRemove = [];
 
         keys.forEach(key => {
             try {
                 const data = storage.getJSON(key);
-                if (this.isExpired(data.timestamp)) {
+                if (data && this.isExpired(data.timestamp)) {
                     keysToRemove.push(key);
                 }
             } catch (e) {
