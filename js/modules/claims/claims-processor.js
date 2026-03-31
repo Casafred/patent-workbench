@@ -135,9 +135,10 @@ function startClaimsPolling(state, showMessage, updateProgress, loadResults) {
                 
                 if (status === 'completed') {
                     clearInterval(state.processingInterval);
+                    showMessage('处理完成，正在加载结果...', 'info');
                     setTimeout(() => {
                         loadResults(state, showMessage);
-                    }, 1500);
+                    }, 3000);
                     return;
                 } else if (status === 'failed') {
                     clearInterval(state.processingInterval);
@@ -198,7 +199,8 @@ export function updateClaimsProgress(progress) {
 
 // 加载结果
 export async function loadClaimsResults(state, showMessage, displayResults, retryCount = 0) {
-    const MAX_RETRIES = 3;
+    const MAX_RETRIES = 5;
+    const RETRY_DELAY = 3000;
     
     try {
         console.log(`[loadClaimsResults] Fetching result for task: ${state.currentTaskId} (尝试 ${retryCount + 1}/${MAX_RETRIES + 1})`);
@@ -214,11 +216,26 @@ export async function loadClaimsResults(state, showMessage, displayResults, retr
             const errorText = await response.text();
             console.error(`[loadClaimsResults] Error response:`, errorText);
             
-            if (response.status === 400 && errorText.includes('尚未完成') && retryCount < MAX_RETRIES) {
-                console.log(`[loadClaimsResults] 任务尚未完成，2秒后重试...`);
+            let isTaskNotCompleted = false;
+            try {
+                const errorJson = JSON.parse(errorText);
+                isTaskNotCompleted = errorJson.error && (
+                    errorJson.error.includes('尚未完成') ||
+                    errorJson.error.includes('processing') ||
+                    errorJson.status === 'processing'
+                );
+            } catch (e) {
+                isTaskNotCompleted = errorText.includes('尚未完成') || 
+                                     errorText.includes('processing') ||
+                                     errorText.includes('\\u5c1a\\u672a\\u5b8c\\u6210');
+            }
+            
+            if (response.status === 400 && isTaskNotCompleted && retryCount < MAX_RETRIES) {
+                console.log(`[loadClaimsResults] 任务尚未完成，${RETRY_DELAY/1000}秒后重试... (重试 ${retryCount + 1}/${MAX_RETRIES})`);
+                showMessage(`任务处理中，请稍候... (${retryCount + 1}/${MAX_RETRIES})`, 'info');
                 setTimeout(() => {
                     loadClaimsResults(state, showMessage, displayResults, retryCount + 1);
-                }, 2000);
+                }, RETRY_DELAY);
                 return;
             }
             
