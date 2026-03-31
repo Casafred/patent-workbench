@@ -114,13 +114,17 @@
 }
 
 .banner-close:hover {
-    background: white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    transform: translateY(-50%) scale(1.02);
+    background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.35);
+}
+
+.banner-close:hover svg {
+    color: white;
 }
 
 .banner-close:active {
-    transform: translateY(-50%) scale(0.98);
+    background: linear-gradient(135deg, #16A34A 0%, #15803D 100%);
 }
 
 .banner-close svg {

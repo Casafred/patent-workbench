@@ -158,11 +158,12 @@ def get_global_announcements():
 @notification_bp.route('/api/announcements/global/dismiss', methods=['POST'])
 def dismiss_global_announcement():
     """
-    Dismiss a global announcement for current session.
+    Dismiss a global announcement for current user (persisted).
     
     Returns:
         JSON response with success status
     """
+    username = session.get('user', 'guest')
     data = request.get_json() or {}
     announcement_id = data.get('id')
     
@@ -172,10 +173,17 @@ def dismiss_global_announcement():
             'error': '缺少公告ID'
         }), 400
     
-    dismissed = session.get('dismissed_announcements', [])
-    if announcement_id not in dismissed:
-        dismissed.append(announcement_id)
-        session['dismissed_announcements'] = dismissed
+    notifications_data = load_notifications()
+    
+    if 'user_dismissed_announcements' not in notifications_data:
+        notifications_data['user_dismissed_announcements'] = {}
+    
+    if username not in notifications_data['user_dismissed_announcements']:
+        notifications_data['user_dismissed_announcements'][username] = []
+    
+    if announcement_id not in notifications_data['user_dismissed_announcements'][username]:
+        notifications_data['user_dismissed_announcements'][username].append(announcement_id)
+        save_notifications(notifications_data)
     
     return jsonify({
         'success': True,
@@ -186,12 +194,16 @@ def dismiss_global_announcement():
 @notification_bp.route('/api/announcements/global/dismissed', methods=['GET'])
 def get_dismissed_announcements():
     """
-    Get list of dismissed announcement IDs for current session.
+    Get list of dismissed announcement IDs for current user (from persisted storage).
     
     Returns:
         JSON response with list of dismissed IDs
     """
-    dismissed = session.get('dismissed_announcements', [])
+    username = session.get('user', 'guest')
+    notifications_data = load_notifications()
+    
+    dismissed = notifications_data.get('user_dismissed_announcements', {}).get(username, [])
+    
     return jsonify({
         'success': True,
         'data': {
