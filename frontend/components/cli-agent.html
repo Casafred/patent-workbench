@@ -1,0 +1,830 @@
+<!-- CLI Agent 终端界面 -->
+<div id="cli-agent-container" class="cli-container hidden">
+    <div class="cli-header">
+        <div class="cli-title">
+            <span class="cli-icon">⌨️</span>
+            <span>CLI Agent</span>
+            <span class="cli-subtitle">智能命令行终端</span>
+        </div>
+        <div class="cli-controls">
+            <button class="cli-btn cli-btn-minimize" onclick="cliAgent.toggleMinimize()">−</button>
+            <button class="cli-btn cli-btn-close" onclick="cliAgent.close()">×</button>
+        </div>
+    </div>
+    
+    <div class="cli-body" id="cli-body">
+        <div class="cli-output" id="cli-output">
+            <div class="cli-welcome">
+                <pre>
+╔═══════════════════════════════════════════════════════════════╗
+║                                                               ║
+║     ██████╗██╗      █████╗ ██╗    ██╗██████╗ ███████╗        ║
+║    ██╔════╝██║     ██╔══██╗██║    ██║██╔══██╗██╔════╝        ║
+║    ██║     ██║     ███████║██║ █╗ ██║██║  ██║█████╗          ║
+║    ██║     ██║     ██╔══██║██║███╗██║██║  ██║██╔══╝          ║
+║    ╚██████╗███████╗██║  ██║╚███╔███╔╝██████╔╝███████╗        ║
+║     ╚═════╝╚══════╝╚═╝  ╚═╝ ╚══╝╚══╝ ╚═════╝ ╚══════╝        ║
+║                                                               ║
+║              智能命令行代理 v1.0.0                            ║
+║                                                               ║
+╚═══════════════════════════════════════════════════════════════╝
+                </pre>
+                <p class="cli-welcome-text">
+                    输入 <span class="cli-cmd">help</span> 查看可用命令 | 
+                    输入 <span class="cli-cmd">&lt;命令&gt; --help</span> 查看命令帮助
+                </p>
+            </div>
+        </div>
+        
+        <div class="cli-input-area">
+            <span class="cli-prompt">❯</span>
+            <input type="text" 
+                   id="cli-input" 
+                   class="cli-input" 
+                   placeholder="输入命令或自然语言描述..."
+                   autocomplete="off"
+                   spellcheck="false">
+            <button class="cli-send-btn" onclick="cliAgent.executeCommand()">
+                <span>发送</span>
+            </button>
+        </div>
+        
+        <div class="cli-suggestions" id="cli-suggestions"></div>
+    </div>
+    
+    <div class="cli-footer">
+        <div class="cli-status">
+            <span class="cli-status-item" id="cli-status-provider">
+                <span class="status-dot"></span>
+                AI: 就绪
+            </span>
+            <span class="cli-status-item" id="cli-status-history">
+                历史: 0
+            </span>
+        </div>
+        <div class="cli-shortcuts">
+            <span>↑↓ 历史</span>
+            <span>Tab 补全</span>
+            <span>Ctrl+L 清屏</span>
+        </div>
+    </div>
+</div>
+
+<!-- CLI 启动按钮 -->
+<div id="cli-launcher" class="cli-launcher" onclick="cliAgent.open()">
+    <span class="cli-launcher-icon">⌨️</span>
+    <span class="cli-launcher-text">CLI Agent</span>
+</div>
+
+<style>
+.cli-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 700px;
+    height: 500px;
+    background: #1a1a2e;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    z-index: 10000;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.cli-container.hidden {
+    display: none;
+}
+
+.cli-container.minimized {
+    height: 40px;
+}
+
+.cli-container.minimized .cli-body,
+.cli-container.minimized .cli-footer {
+    display: none;
+}
+
+.cli-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background: linear-gradient(135deg, #16213e 0%, #1a1a2e 100%);
+    border-bottom: 1px solid #0f3460;
+}
+
+.cli-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #e94560;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.cli-icon {
+    font-size: 18px;
+}
+
+.cli-subtitle {
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: normal;
+}
+
+.cli-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.cli-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.cli-btn-minimize {
+    background: #fbbf24;
+    color: #1a1a2e;
+}
+
+.cli-btn-minimize:hover {
+    background: #f59e0b;
+}
+
+.cli-btn-close {
+    background: #ef4444;
+    color: white;
+}
+
+.cli-btn-close:hover {
+    background: #dc2626;
+}
+
+.cli-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.cli-output {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    color: #e2e8f0;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.cli-output::-webkit-scrollbar {
+    width: 8px;
+}
+
+.cli-output::-webkit-scrollbar-track {
+    background: #16213e;
+}
+
+.cli-output::-webkit-scrollbar-thumb {
+    background: #0f3460;
+    border-radius: 4px;
+}
+
+.cli-welcome {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.cli-welcome pre {
+    color: #e94560;
+    font-size: 10px;
+    line-height: 1.2;
+    margin: 0;
+}
+
+.cli-welcome-text {
+    color: #6b7280;
+    font-size: 12px;
+    margin-top: 10px;
+}
+
+.cli-cmd {
+    color: #22d3ee;
+    font-weight: bold;
+}
+
+.cli-input-area {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    background: #16213e;
+    border-top: 1px solid #0f3460;
+    gap: 10px;
+}
+
+.cli-prompt {
+    color: #22d3ee;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.cli-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #e2e8f0;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+}
+
+.cli-input::placeholder {
+    color: #4b5563;
+}
+
+.cli-send-btn {
+    padding: 6px 16px;
+    background: linear-gradient(135deg, #e94560 0%, #c73659 100%);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.cli-send-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(233, 69, 96, 0.4);
+}
+
+.cli-suggestions {
+    max-height: 150px;
+    overflow-y: auto;
+    background: #16213e;
+    border-top: 1px solid #0f3460;
+}
+
+.cli-suggestion-item {
+    padding: 8px 15px;
+    color: #9ca3af;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.cli-suggestion-item:hover {
+    background: #0f3460;
+    color: #e2e8f0;
+}
+
+.cli-suggestion-item .cmd-name {
+    color: #22d3ee;
+    font-weight: bold;
+}
+
+.cli-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 15px;
+    background: #0f3460;
+    font-size: 11px;
+    color: #6b7280;
+}
+
+.cli-status {
+    display: flex;
+    gap: 15px;
+}
+
+.cli-status-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    background: #22c55e;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.cli-shortcuts {
+    display: flex;
+    gap: 15px;
+}
+
+/* 输出样式 */
+.cli-output-line {
+    margin-bottom: 8px;
+    padding: 4px 0;
+}
+
+.cli-output-line.success {
+    color: #22c55e;
+}
+
+.cli-output-line.error {
+    color: #ef4444;
+}
+
+.cli-output-line.warning {
+    color: #fbbf24;
+}
+
+.cli-output-line.info {
+    color: #22d3ee;
+}
+
+.cli-output-line.command {
+    color: #a78bfa;
+}
+
+.cli-output-line .prefix {
+    margin-right: 8px;
+}
+
+.cli-output-table {
+    margin: 10px 0;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.cli-output-table th,
+.cli-output-table td {
+    padding: 6px 12px;
+    border: 1px solid #0f3460;
+    text-align: left;
+}
+
+.cli-output-table th {
+    background: #16213e;
+    color: #22d3ee;
+}
+
+.cli-output-table td {
+    color: #e2e8f0;
+}
+
+.cli-output-json {
+    background: #16213e;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    overflow-x: auto;
+}
+
+.cli-loading {
+    display: inline-flex;
+    gap: 4px;
+}
+
+.cli-loading span {
+    width: 6px;
+    height: 6px;
+    background: #22d3ee;
+    border-radius: 50%;
+    animation: loading 1s infinite;
+}
+
+.cli-loading span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.cli-loading span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes loading {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+}
+
+/* 启动按钮 */
+.cli-launcher {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #e94560 0%, #c73659 100%);
+    border-radius: 30px;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: bold;
+    box-shadow: 0 4px 20px rgba(233, 69, 96, 0.4);
+    transition: all 0.3s;
+    z-index: 9999;
+}
+
+.cli-launcher:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(233, 69, 96, 0.5);
+}
+
+.cli-launcher-icon {
+    font-size: 18px;
+}
+
+.cli-launcher.hidden {
+    display: none;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .cli-container {
+        width: calc(100% - 20px);
+        height: calc(100vh - 100px);
+        bottom: 10px;
+        right: 10px;
+    }
+    
+    .cli-launcher {
+        bottom: 10px;
+        right: 10px;
+    }
+}
+</style>
+
+<script>
+// CLI Agent 前端控制器
+class CLIAgent {
+    constructor() {
+        this.history = [];
+        this.historyIndex = -1;
+        this.isOpen = false;
+        this.isMinimized = false;
+        
+        this.init();
+    }
+    
+    init() {
+        const input = document.getElementById('cli-input');
+        if (input) {
+            input.addEventListener('keydown', (e) => this.handleKeyDown(e));
+            input.addEventListener('input', (e) => this.handleInput(e));
+        }
+        
+        this.loadHistory();
+    }
+    
+    open() {
+        const container = document.getElementById('cli-agent-container');
+        const launcher = document.getElementById('cli-launcher');
+        if (container) {
+            container.classList.remove('hidden');
+            launcher?.classList.add('hidden');
+            this.isOpen = true;
+            document.getElementById('cli-input')?.focus();
+        }
+    }
+    
+    close() {
+        const container = document.getElementById('cli-agent-container');
+        const launcher = document.getElementById('cli-launcher');
+        if (container) {
+            container.classList.add('hidden');
+            launcher?.classList.remove('hidden');
+            this.isOpen = false;
+        }
+    }
+    
+    toggleMinimize() {
+        const container = document.getElementById('cli-agent-container');
+        if (container) {
+            container.classList.toggle('minimized');
+            this.isMinimized = !this.isMinimized;
+        }
+    }
+    
+    handleKeyDown(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            this.executeCommand();
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            this.navigateHistory(-1);
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            this.navigateHistory(1);
+        } else if (e.key === 'Tab') {
+            e.preventDefault();
+            this.autoComplete();
+        } else if (e.key === 'l' && e.ctrlKey) {
+            e.preventDefault();
+            this.clearOutput();
+        }
+    }
+    
+    handleInput(e) {
+        const value = e.target.value;
+        if (value.length > 0) {
+            this.showSuggestions(value);
+        } else {
+            this.hideSuggestions();
+        }
+    }
+    
+    async executeCommand() {
+        const input = document.getElementById('cli-input');
+        const command = input?.value.trim();
+        
+        if (!command) return;
+        
+        input.value = '';
+        this.hideSuggestions();
+        
+        this.history.push(command);
+        this.historyIndex = this.history.length;
+        this.saveHistory();
+        this.updateHistoryStatus();
+        
+        this.printCommand(command);
+        
+        this.showLoading();
+        
+        try {
+            const response = await fetch('/api/cli/execute', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ command })
+            });
+            
+            const data = await response.json();
+            
+            this.hideLoading();
+            
+            if (data.success) {
+                this.printResult(data.result);
+            } else {
+                this.printError(data.error || '执行失败');
+            }
+        } catch (error) {
+            this.hideLoading();
+            this.printError(`网络错误: ${error.message}`);
+        }
+    }
+    
+    printCommand(command) {
+        const output = document.getElementById('cli-output');
+        const line = document.createElement('div');
+        line.className = 'cli-output-line command';
+        line.innerHTML = `<span class="prefix">❯</span>${this.escapeHtml(command)}`;
+        output?.appendChild(line);
+        this.scrollToBottom();
+    }
+    
+    printResult(result) {
+        const output = document.getElementById('cli-output');
+        
+        if (result.message) {
+            const line = document.createElement('div');
+            line.className = 'cli-output-line success';
+            line.innerHTML = `<span class="prefix">✓</span>${this.escapeHtml(result.message)}`;
+            output?.appendChild(line);
+        }
+        
+        if (result.data) {
+            if (Array.isArray(result.data)) {
+                this.printTable(result.data.slice(0, 10));
+                if (result.data.length > 10) {
+                    const more = document.createElement('div');
+                    more.className = 'cli-output-line info';
+                    more.textContent = `... 还有 ${result.data.length - 10} 条数据`;
+                    output?.appendChild(more);
+                }
+            } else if (typeof result.data === 'object') {
+                this.printJson(result.data);
+            } else {
+                const line = document.createElement('div');
+                line.className = 'cli-output-line';
+                line.textContent = String(result.data);
+                output?.appendChild(line);
+            }
+        }
+        
+        if (result.suggestions && result.suggestions.length > 0) {
+            result.suggestions.forEach(s => {
+                const line = document.createElement('div');
+                line.className = 'cli-output-line info';
+                line.innerHTML = `<span class="prefix">💡</span>${this.escapeHtml(s)}`;
+                output?.appendChild(line);
+            });
+        }
+        
+        this.scrollToBottom();
+    }
+    
+    printError(error) {
+        const output = document.getElementById('cli-output');
+        const line = document.createElement('div');
+        line.className = 'cli-output-line error';
+        line.innerHTML = `<span class="prefix">✗</span>${this.escapeHtml(error)}`;
+        output?.appendChild(line);
+        this.scrollToBottom();
+    }
+    
+    printTable(data) {
+        if (!data || data.length === 0) return;
+        
+        const output = document.getElementById('cli-output');
+        const table = document.createElement('table');
+        table.className = 'cli-output-table';
+        
+        const headers = Object.keys(data[0]);
+        const thead = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+        headers.forEach(h => {
+            const th = document.createElement('th');
+            th.textContent = h;
+            headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+        
+        const tbody = document.createElement('tbody');
+        data.forEach(row => {
+            const tr = document.createElement('tr');
+            headers.forEach(h => {
+                const td = document.createElement('td');
+                const value = row[h];
+                td.textContent = typeof value === 'object' ? JSON.stringify(value) : String(value);
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        
+        output?.appendChild(table);
+    }
+    
+    printJson(data) {
+        const output = document.getElementById('cli-output');
+        const pre = document.createElement('pre');
+        pre.className = 'cli-output-json';
+        pre.textContent = JSON.stringify(data, null, 2);
+        output?.appendChild(pre);
+    }
+    
+    showLoading() {
+        const output = document.getElementById('cli-output');
+        const loading = document.createElement('div');
+        loading.id = 'cli-loading';
+        loading.className = 'cli-loading';
+        loading.innerHTML = '<span></span><span></span><span></span>';
+        output?.appendChild(loading);
+        this.scrollToBottom();
+    }
+    
+    hideLoading() {
+        const loading = document.getElementById('cli-loading');
+        loading?.remove();
+    }
+    
+    showSuggestions(input) {
+        const suggestions = document.getElementById('cli-suggestions');
+        if (!suggestions) return;
+        
+        const commands = [
+            'patent search', 'patent analyze', 'patent translate', 'patent family', 'patent compare',
+            'claims upload', 'claims process', 'claims status', 'claims result', 'claims export',
+            'classify analyze', 'classify optimize', 'classify import',
+            'ai chat', 'ai models',
+            'help', 'status', 'clear'
+        ];
+        
+        const matches = commands.filter(cmd => cmd.startsWith(input.toLowerCase()));
+        
+        if (matches.length > 0) {
+            suggestions.innerHTML = matches.map(cmd => 
+                `<div class="cli-suggestion-item" onclick="cliAgent.selectSuggestion('${cmd}')">
+                    <span class="cmd-name">${cmd}</span>
+                </div>`
+            ).join('');
+            suggestions.style.display = 'block';
+        } else {
+            this.hideSuggestions();
+        }
+    }
+    
+    hideSuggestions() {
+        const suggestions = document.getElementById('cli-suggestions');
+        if (suggestions) {
+            suggestions.style.display = 'none';
+        }
+    }
+    
+    selectSuggestion(cmd) {
+        const input = document.getElementById('cli-input');
+        if (input) {
+            input.value = cmd;
+            input.focus();
+        }
+        this.hideSuggestions();
+    }
+    
+    navigateHistory(direction) {
+        if (this.history.length === 0) return;
+        
+        this.historyIndex += direction;
+        
+        if (this.historyIndex < 0) {
+            this.historyIndex = 0;
+        } else if (this.historyIndex >= this.history.length) {
+            this.historyIndex = this.history.length;
+            document.getElementById('cli-input').value = '';
+            return;
+        }
+        
+        document.getElementById('cli-input').value = this.history[this.historyIndex];
+    }
+    
+    autoComplete() {
+        const input = document.getElementById('cli-input');
+        const value = input?.value;
+        
+        if (!value) return;
+        
+        const commands = [
+            'patent search ', 'patent analyze ', 'patent translate ', 'patent family ', 'patent compare ',
+            'claims upload ', 'claims process ', 'claims status ', 'claims result ', 'claims export ',
+            'classify analyze ', 'classify optimize ', 'classify import ',
+            'ai chat ', 'ai models', 'help', 'status', 'clear'
+        ];
+        
+        const match = commands.find(cmd => cmd.startsWith(value) && cmd !== value);
+        if (match) {
+            input.value = match;
+        }
+    }
+    
+    clearOutput() {
+        const output = document.getElementById('cli-output');
+        if (output) {
+            output.innerHTML = '';
+        }
+    }
+    
+    scrollToBottom() {
+        const output = document.getElementById('cli-output');
+        if (output) {
+            output.scrollTop = output.scrollHeight;
+        }
+    }
+    
+    saveHistory() {
+        try {
+            localStorage.setItem('cli_history', JSON.stringify(this.history.slice(-100)));
+        } catch (e) {}
+    }
+    
+    loadHistory() {
+        try {
+            const saved = localStorage.getItem('cli_history');
+            if (saved) {
+                this.history = JSON.parse(saved);
+                this.updateHistoryStatus();
+            }
+        } catch (e) {}
+    }
+    
+    updateHistoryStatus() {
+        const status = document.getElementById('cli-status-history');
+        if (status) {
+            status.textContent = `历史: ${this.history.length}`;
+        }
+    }
+    
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+}
+
+// 初始化
+const cliAgent = new CLIAgent();
+</script>
