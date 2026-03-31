@@ -283,6 +283,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('❌ Failed to load notification center component:', error);
     }
     
+    // Load CLI Agent component
+    try {
+        await loadComponent('frontend/components/cli-agent.html', 'cli-agent-component');
+        LoadingManager.updateProgress('加载CLI Agent');
+    } catch (error) {
+        console.error('❌ Failed to load CLI Agent component:', error);
+    }
+    
     // Load instant chat component and initialize
     try {
         await loadComponent('frontend/components/tabs/instant-chat.html', 'instant-chat-component');

@@ -34,9 +34,11 @@ def register_blueprints(app: Flask):
     from .excel_concat import excel_concat_bp
     from .pdf_ocr import pdf_ocr_bp
     from .notification import notification_bp
+    from .cli_agent import cli_agent_bp
     from backend.user_management.user_management import user_management_bp
 
     app.register_blueprint(auth_bp)
+    app.register_blueprint(cli_agent_bp, url_prefix='/api')
     app.register_blueprint(chat_bp, url_prefix='/api')
     app.register_blueprint(async_batch_bp, url_prefix='/api/async_batch')
     app.register_blueprint(file_parser_bp, url_prefix='/api')
