@@ -324,7 +324,7 @@ function extractClaimReferences(text) {
         /請求項\s*(\d+)/g
     ];
     
-    const andOrCommaPattern = /(\d+)\s*(?:,|and|or|或|和)\s*(\d+)(?:\s*(?:,|and|or|或|和)\s*(\d+))*/gi;
+    const andOrCommaPattern = /(\d+)\s*(?:,|and|or|或(?:者)?|和|以及)\s*(\d+)(?:\s*(?:,|and|or|或(?:者)?|和|以及)\s*(\d+))*/gi;
     let andMatch;
     while ((andMatch = andOrCommaPattern.exec(text)) !== null) {
         const contextBefore = text.substring(Math.max(0, andMatch.index - 30), andMatch.index).toLowerCase();

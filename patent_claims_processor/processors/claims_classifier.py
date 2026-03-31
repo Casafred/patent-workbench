@@ -219,8 +219,8 @@ class ClaimsClassifier(ClaimsClassifierInterface):
 
         # 专门处理中文"权利要求1或2"格式
         if language in ['zh', 'other']:
-            # 匹配"权利要求1或2"、"权利要求1或2或3"等格式
-            chinese_or_pattern = re.search(r'权利要求\s*(\d+(?:\s*或\s*\d+)+)', cleaned_text, re.IGNORECASE)
+            # 匹配"权利要求1或2"、"权利要求1或者2"、"权利要求1或2或3"等格式
+            chinese_or_pattern = re.search(r'权利要求\s*(\d+(?:\s*或(?:者)?\s*\d+)+)', cleaned_text, re.IGNORECASE)
             if chinese_or_pattern:
                 numbers_str = chinese_or_pattern.group(1)
                 # 分割并提取所有数字
@@ -448,8 +448,8 @@ class ClaimsClassifier(ClaimsClassifierInterface):
         """
         numbers = []
 
-        # 处理连接词：将"or"、"und"、"and"、"bis"、"或"替换为逗号，以便后续处理
-        processed_string = re.sub(r'\s*(?:or|und|and|bis|或)\s*', ',', number_string, flags=re.IGNORECASE)
+        # 处理连接词：将"or"、"und"、"and"、"bis"、"或"、"或者"、"和"、"以及"替换为逗号，以便后续处理
+        processed_string = re.sub(r'\s*(?:or|und|and|bis|或(?:者)?|和|以及)\s*', ',', number_string, flags=re.IGNORECASE)
 
         # 分割逗号分隔的部分
         parts = re.split(r'[,，]', processed_string)
