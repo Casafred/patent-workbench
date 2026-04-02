@@ -1,12 +1,5 @@
 """
-CLI orchestration service.
-
-Provides a higher-level natural language workflow for the embedded CLI:
-1. Detect patent numbers and user intent from natural language
-2. Scrape patent data when needed
-3. Persist lightweight conversation context in memory
-4. Route the final QA request to the selected LLM provider/model
-5. Return a terminal-friendly structured payload for rendering
+CLI orchestration service for the embedded patent terminal.
 """
 
 from __future__ import annotations
@@ -16,12 +9,12 @@ import re
 import threading
 import time
 from collections import deque
-from typing import Any, Deque, Dict, List, Optional, Tuple
+from typing import Any, Deque, Dict, Generator, List, Optional, Tuple
 
 from backend.routes.patent import get_scraper_instance
-from backend.services.llm_service import get_api_key
 from backend.services.llm.provider_factory import get_factory
 from backend.services.llm.llm_service import create_service
+from backend.services.llm_service import get_api_key
 
 
 PATENT_NUMBER_PATTERN = re.compile(
@@ -38,7 +31,7 @@ MAX_CONTEXT_MESSAGES = 12
 
 
 class CLIContextStore:
-    """Thread-safe in-memory store for CLI conversation context."""
+    """Thread-safe in-memory store for CLI sessions."""
 
     def __init__(self):
         self._lock = threading.Lock()
@@ -80,8 +73,7 @@ class CLIContextStore:
     def add_message(self, key: str, role: str, content: str) -> None:
         with self._lock:
             payload = self._get_or_create_unlocked(key)
-            history: Deque[Dict[str, str]] = payload["message_history"]
-            history.append({"role": role, "content": content})
+            payload["message_history"].append({"role": role, "content": content})
 
     def snapshot(self, key: str) -> Dict[str, Any]:
         payload = self.get(key)
@@ -96,7 +88,7 @@ context_store = CLIContextStore()
 
 
 class CLIOrchestrator:
-    """Higher-level NL -> scraper -> context -> model orchestration."""
+    """Natural language -> scraper -> context -> model orchestration."""
 
     def __init__(self):
         self.factory = get_factory()
@@ -109,6 +101,7 @@ class CLIOrchestrator:
         provider: Optional[str] = None,
         model: Optional[str] = None,
     ) -> Dict[str, Any]:
+        started_at = time.time()
         normalized = (user_input or "").strip()
         if not normalized:
             return {"success": False, "error": "请输入命令或自然语言请求"}
@@ -131,19 +124,23 @@ class CLIOrchestrator:
         context_snapshot = context_store.snapshot(context_key)
         patent_context = list(context_snapshot["patents"].values())
 
+        llm_meta = self.default_llm_meta(provider_name, model_name)
         ai_answer = None
         ai_error = None
+
         if intent.get("should_answer_with_ai", True):
             try:
-                ai_answer = self.ask_llm(
+                llm_result = self.ask_llm(
                     user_input=normalized,
                     provider=provider_name,
                     model=model_name,
                     patent_context=patent_context,
                     message_history=context_snapshot["message_history"],
                 )
+                ai_answer = llm_result.get("answer")
+                llm_meta.update(llm_result.get("meta", {}))
             except Exception as exc:
-                ai_error = str(exc)
+                ai_error = self.normalize_error_message(exc)
 
         context_store.add_message(context_key, "user", normalized)
         if ai_answer:
@@ -152,14 +149,15 @@ class CLIOrchestrator:
         render_payload = self.build_render_payload(
             user_input=normalized,
             intent=intent,
-            provider=provider_name,
-            model=model_name,
+            provider=llm_meta.get("provider", provider_name),
+            model=llm_meta.get("model", model_name),
             patent_numbers=patent_numbers,
             scraped_patents=scraped_patents,
             patent_context=patent_context,
             scrape_errors=scrape_errors,
             ai_answer=ai_answer,
             ai_error=ai_error,
+            stats=self.build_stats(started_at, patent_context, scrape_errors, llm_meta),
         )
 
         return {
@@ -171,12 +169,136 @@ class CLIOrchestrator:
             "suggestions": self.build_suggestions(intent, patent_numbers),
         }
 
+    def stream_execute(
+        self,
+        user_input: str,
+        session_key: str,
+        user_id: str,
+        provider: Optional[str] = None,
+        model: Optional[str] = None,
+    ) -> Generator[Dict[str, Any], None, None]:
+        started_at = time.time()
+        normalized = (user_input or "").strip()
+        if not normalized:
+            yield {"type": "error", "error": "请输入命令或自然语言请求"}
+            return
+
+        yield {"type": "trace", "stage": "intent", "message": "开始解析用户意图"}
+        patent_numbers = self.extract_patent_numbers(normalized)
+        intent = self.detect_intent(normalized, patent_numbers)
+        provider_name, model_name = self.resolve_model(provider=provider, model=model)
+        llm_meta = self.default_llm_meta(provider_name, model_name)
+
+        yield {
+            "type": "trace",
+            "stage": "routing",
+            "message": f"已路由到模型 {provider_name}/{model_name}",
+            "routing": {"provider": provider_name, "model": model_name},
+        }
+
+        context_key = f"{user_id}:{session_key}"
+        scraped_patents: List[Dict[str, Any]] = []
+        scrape_errors: List[Dict[str, str]] = []
+
+        if patent_numbers:
+            yield {
+                "type": "trace",
+                "stage": "scrape",
+                "message": f"识别到专利号 {', '.join(patent_numbers)}，开始抓取",
+            }
+            scraped_patents, scrape_errors = self.fetch_patent_context(
+                patent_numbers=patent_numbers,
+                user_id=user_id,
+                context_key=context_key,
+            )
+            yield {
+                "type": "context",
+                "stage": "scrape_complete",
+                "message": f"已抓取 {len(scraped_patents)} 篇专利，失败 {len(scrape_errors)} 篇",
+                "scraped_patents": [self.build_patent_view(item) for item in scraped_patents],
+                "scrape_errors": scrape_errors,
+            }
+        else:
+            yield {"type": "trace", "stage": "scrape_skip", "message": "未识别到新专利号，直接使用现有上下文"}
+
+        context_snapshot = context_store.snapshot(context_key)
+        patent_context = list(context_snapshot["patents"].values())
+        yield {
+            "type": "trace",
+            "stage": "context",
+            "message": f"当前会话上下文中共有 {len(patent_context)} 篇专利",
+        }
+
+        answer_parts: List[str] = []
+        ai_error = None
+        context_store.add_message(context_key, "user", normalized)
+
+        if intent.get("should_answer_with_ai", True):
+            try:
+                yield {"type": "trace", "stage": "llm", "message": "开始调用模型生成回答"}
+                for event in self.stream_llm_answer(
+                    user_input=normalized,
+                    provider=provider_name,
+                    model=model_name,
+                    patent_context=patent_context,
+                    message_history=context_snapshot["message_history"],
+                ):
+                    if event.get("type") == "trace" and event.get("stage") == "fallback":
+                        llm_meta["fallback_used"] = True
+                        llm_meta["fallback_reason"] = event.get("message")
+                        llm_meta["provider"] = event.get("provider", llm_meta["provider"])
+                        llm_meta["model"] = event.get("model", llm_meta["model"])
+                    if event.get("type") == "content":
+                        delta = event.get("delta", "")
+                        if delta:
+                            answer_parts.append(delta)
+                    if event.get("type") == "trace" and event.get("stage") == "llm_complete":
+                        llm_meta["usage"] = event.get("usage")
+                        llm_meta["provider"] = event.get("provider", llm_meta["provider"])
+                        llm_meta["model"] = event.get("model", llm_meta["model"])
+                    yield event
+            except Exception as exc:
+                ai_error = self.normalize_error_message(exc)
+                yield {"type": "error", "stage": "llm", "error": ai_error}
+        else:
+            yield {"type": "trace", "stage": "llm_skip", "message": "当前意图无需模型回答"}
+
+        ai_answer = "".join(answer_parts).strip() or None
+        if ai_answer:
+            context_store.add_message(context_key, "assistant", ai_answer)
+
+        render_payload = self.build_render_payload(
+            user_input=normalized,
+            intent=intent,
+            provider=llm_meta.get("provider", provider_name),
+            model=llm_meta.get("model", model_name),
+            patent_numbers=patent_numbers,
+            scraped_patents=scraped_patents,
+            patent_context=list(context_store.snapshot(context_key)["patents"].values()),
+            scrape_errors=scrape_errors,
+            ai_answer=ai_answer,
+            ai_error=ai_error,
+            stats=self.build_stats(started_at, patent_context, scrape_errors, llm_meta),
+        )
+
+        yield {"type": "final", "data": render_payload}
+        yield {"type": "done"}
+
+    def default_llm_meta(self, provider: str, model: str) -> Dict[str, Any]:
+        return {
+            "provider": provider,
+            "model": model,
+            "usage": None,
+            "fallback_used": False,
+            "fallback_reason": None,
+        }
+
     def is_builtin_or_command_style(self, text: str) -> bool:
         first = (text or "").strip().split(" ", 1)[0].lower()
         return first in BUILTIN_COMMANDS or first in COMMAND_PREFIXES
 
     def extract_patent_numbers(self, text: str) -> List[str]:
-        seen = []
+        seen: List[str] = []
         for match in PATENT_NUMBER_PATTERN.findall(text or ""):
             patent_number = match.upper().replace(" ", "")
             if patent_number not in seen:
@@ -184,10 +306,10 @@ class CLIOrchestrator:
         return seen
 
     def detect_intent(self, text: str, patent_numbers: List[str]) -> Dict[str, Any]:
-        lowered = (text or "").lower()
         detail_keywords = ["详情", "详细", "全文", "专利详情", "信息", "查看"]
         qa_keywords = ["问答", "分析", "总结", "解释", "对比", "评估", "风险", "创新点", "回答"]
         follow_up_keywords = ["这个", "该专利", "上述", "上面", "继续", "进一步", "它"]
+        lowered = (text or "").lower()
 
         if patent_numbers and any(keyword in text for keyword in detail_keywords):
             return {"name": "patent_detail", "should_answer_with_ai": True}
@@ -204,13 +326,22 @@ class CLIOrchestrator:
     def resolve_model(self, provider: Optional[str], model: Optional[str]) -> Tuple[str, str]:
         if model:
             inferred_provider = self.factory.get_provider_for_model(model)
-            provider = inferred_provider or provider or self.factory.get_default_provider_name()
-            return provider, model
+            resolved_provider = inferred_provider or provider or self.factory.get_default_provider_name()
+            return resolved_provider, model
 
-        provider = provider or self.factory.get_default_provider_name()
-        provider_config = self.factory.get_provider_config(provider) or {}
-        default_model = provider_config.get("default_model") or "glm-4-flash"
-        return provider, default_model
+        resolved_provider = provider or self.factory.get_default_provider_name()
+        provider_config = self.factory.get_provider_config(resolved_provider) or {}
+        resolved_model = provider_config.get("default_model") or "glm-4-flash"
+        return resolved_provider, resolved_model
+
+    def get_provider_candidates(self, provider: str, model: str) -> List[Dict[str, str]]:
+        candidates = [{"provider": provider, "model": model}]
+        default_provider = self.factory.get_default_provider_name()
+        default_config = self.factory.get_provider_config(default_provider) or {}
+        default_model = default_config.get("default_model") or "glm-4-flash"
+        if default_provider != provider:
+            candidates.append({"provider": default_provider, "model": default_model})
+        return candidates
 
     def fetch_patent_context(
         self,
@@ -249,13 +380,115 @@ class CLIOrchestrator:
         model: str,
         patent_context: List[Dict[str, Any]],
         message_history: List[Dict[str, str]],
-    ) -> str:
-        api_key, error_response = get_api_key(provider)
-        if error_response:
-            raise ValueError("缺少对应模型服务的 API Key")
+    ) -> Dict[str, Any]:
+        messages = self.build_llm_messages(
+            user_input=user_input,
+            patent_context=patent_context,
+            message_history=message_history,
+        )
+        last_error: Optional[Exception] = None
 
-        service = create_service(api_key=api_key, provider=provider, model=model)
+        for index, candidate in enumerate(self.get_provider_candidates(provider, model)):
+            candidate_provider = candidate["provider"]
+            candidate_model = candidate["model"]
+            api_key, error_response = get_api_key(candidate_provider)
+            if error_response:
+                last_error = ValueError(f"{candidate_provider} API key unavailable")
+                continue
 
+            try:
+                service = create_service(api_key=api_key, provider=candidate_provider, model=candidate_model)
+                response = service.complete(
+                    messages=messages,
+                    provider=candidate_provider,
+                    model=candidate_model,
+                    temperature=0.3,
+                    enable_search=False,
+                )
+                return {
+                    "answer": response.content.strip(),
+                    "meta": {
+                        "provider": candidate_provider,
+                        "model": candidate_model,
+                        "usage": response.usage,
+                        "fallback_used": index > 0,
+                        "fallback_reason": self.normalize_error_message(last_error) if index > 0 and last_error else None,
+                    },
+                }
+            except Exception as exc:
+                last_error = exc
+
+        raise ValueError(self.normalize_error_message(last_error) if last_error else "模型调用失败")
+
+    def stream_llm_answer(
+        self,
+        user_input: str,
+        provider: str,
+        model: str,
+        patent_context: List[Dict[str, Any]],
+        message_history: List[Dict[str, str]],
+    ) -> Generator[Dict[str, Any], None, None]:
+        messages = self.build_llm_messages(
+            user_input=user_input,
+            patent_context=patent_context,
+            message_history=message_history,
+        )
+        last_error: Optional[Exception] = None
+
+        for index, candidate in enumerate(self.get_provider_candidates(provider, model)):
+            candidate_provider = candidate["provider"]
+            candidate_model = candidate["model"]
+            api_key, error_response = get_api_key(candidate_provider)
+            if error_response:
+                last_error = ValueError(f"{candidate_provider} API key unavailable")
+                continue
+
+            if index > 0:
+                yield {
+                    "type": "trace",
+                    "stage": "fallback",
+                    "message": f"主模型不可用，已切换到 {candidate_provider}/{candidate_model}",
+                    "provider": candidate_provider,
+                    "model": candidate_model,
+                }
+
+            try:
+                service = create_service(api_key=api_key, provider=candidate_provider, model=candidate_model)
+                for event in service.stream(
+                    messages=messages,
+                    provider=candidate_provider,
+                    model=candidate_model,
+                    temperature=0.3,
+                    enable_search=False,
+                ):
+                    event_type = getattr(getattr(event, "type", None), "value", None)
+                    if event_type == "reasoning":
+                        yield {"type": "trace", "stage": "reasoning", "message": event.delta}
+                    elif event_type == "content":
+                        yield {"type": "content", "delta": event.delta}
+                    elif event_type == "done":
+                        yield {
+                            "type": "trace",
+                            "stage": "llm_complete",
+                            "message": "模型回答完成",
+                            "usage": event.usage,
+                            "provider": candidate_provider,
+                            "model": candidate_model,
+                        }
+                    elif event_type == "error":
+                        yield {"type": "error", "stage": "llm", "error": event.error or "模型流式调用失败"}
+                return
+            except Exception as exc:
+                last_error = exc
+
+        raise ValueError(self.normalize_error_message(last_error) if last_error else "模型流式调用失败")
+
+    def build_llm_messages(
+        self,
+        user_input: str,
+        patent_context: List[Dict[str, Any]],
+        message_history: List[Dict[str, str]],
+    ) -> List[Dict[str, str]]:
         patent_context_json = json.dumps(
             [self.compact_patent_context(item) for item in patent_context],
             ensure_ascii=False,
@@ -264,29 +497,47 @@ class CLIOrchestrator:
         history_text = json.dumps(message_history[-6:], ensure_ascii=False, indent=2)
         system_prompt = (
             "你是网站内嵌 CLI 的专利智能助理。"
-            "你的任务是基于当前上下文，用清晰、分段、可读性强的中文回答用户。"
-            "如果上下文中已有专利抓取结果，优先引用这些结果，不要凭空编造。"
-            "输出时尽量包含：结论、关键信息、后续建议。"
-            "如果用户是在查询专利详情，先概括标题、摘要、申请/公开日期、申请人/发明人、权利要求概览。"
+            "请基于上下文，用清晰、分段、可读性强的中文回答。"
+            "如果已有专利抓取结果，优先基于抓取结果回答，不要编造。"
+            "如果用户在查询专利详情，优先概括标题、摘要、申请日、公开日、申请人、发明人和权利要求概览。"
         )
         user_prompt = (
             f"用户输入:\n{user_input}\n\n"
             f"最近会话摘要:\n{history_text}\n\n"
             f"当前专利上下文:\n{patent_context_json}\n\n"
-            "请结合上下文直接回答。如果缺少必要专利数据，要明确指出。"
+            "请直接回答。如果缺少必要专利数据，请明确说明。"
         )
+        return [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
 
-        response = service.complete(
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            provider=provider,
-            model=model,
-            temperature=0.3,
-            enable_search=False,
-        )
-        return response.content.strip()
+    def normalize_error_message(self, exc: Optional[Exception]) -> str:
+        if exc is None:
+            return "未知错误"
+        text = str(exc)
+        lowered = text.lower()
+        if "invalid_api_key" in lowered or "incorrect api key" in lowered:
+            return "所选模型服务的 API Key 无效，请检查阿里云 Key，或切换到其他 Provider。"
+        if "api key unavailable" in lowered:
+            return "未找到所选模型服务的 API Key，请先在页面配置。"
+        return text
+
+    def build_stats(
+        self,
+        started_at: float,
+        patent_context: List[Dict[str, Any]],
+        scrape_errors: List[Dict[str, str]],
+        llm_meta: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        return {
+            "duration_ms": int((time.time() - started_at) * 1000),
+            "context_patents": len(patent_context),
+            "scrape_error_count": len(scrape_errors),
+            "fallback_used": bool(llm_meta.get("fallback_used")),
+            "fallback_reason": llm_meta.get("fallback_reason"),
+            "usage": llm_meta.get("usage") or {},
+        }
 
     def compact_patent_context(self, patent_data: Dict[str, Any]) -> Dict[str, Any]:
         claims = patent_data.get("claims") or []
@@ -322,6 +573,7 @@ class CLIOrchestrator:
         scrape_errors: List[Dict[str, str]],
         ai_answer: Optional[str],
         ai_error: Optional[str],
+        stats: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         summary_title = "CLI 智能链路执行完成" if not ai_error else "CLI 智能链路部分失败"
         summary_lines = [
@@ -336,26 +588,17 @@ class CLIOrchestrator:
             summary_lines.append(f"模型调用异常: {ai_error}")
 
         patents_view = [self.build_patent_view(item) for item in patent_context]
-
         return {
             "type": "cli_orchestration",
-            "summary": {
-                "title": summary_title,
-                "lines": summary_lines,
-            },
+            "summary": {"title": summary_title, "lines": summary_lines},
             "input": user_input,
             "intent": intent.get("name"),
-            "routing": {
-                "provider": provider,
-                "model": model,
-            },
+            "routing": {"provider": provider, "model": model},
             "detected_patents": patent_numbers,
             "scraped_patents": patents_view,
             "scrape_errors": scrape_errors,
-            "qa": {
-                "answer": ai_answer,
-                "error": ai_error,
-            },
+            "qa": {"answer": ai_answer, "error": ai_error},
+            "stats": stats or {},
             "raw": {
                 "scraped_patents_count": len(scraped_patents),
                 "context_patents_count": len(patent_context),

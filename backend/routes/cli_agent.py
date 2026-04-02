@@ -9,10 +9,11 @@ Provides:
 
 from __future__ import annotations
 
+import json
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from flask import Blueprint, request, session
+from flask import Blueprint, Response, request, session, stream_with_context
 
 from backend.middleware import validate_api_request
 from backend.services import get_aliyun_client, get_zhipu_client
@@ -284,6 +285,60 @@ def execute_command():
 
     except Exception as exc:
         return create_response(error=f"执行失败: {str(exc)}")
+
+
+@cli_agent_bp.route("/cli/stream", methods=["POST"])
+def stream_execute_command():
+    """Stream CLI orchestration and execution traces via SSE."""
+    is_valid, error_response = validate_api_request()
+    if not is_valid:
+        error_json = json.dumps(
+            {"type": "error", "error": error_response.get_json().get("error", "request error")},
+            ensure_ascii=False,
+        )
+        return Response(f"data: {error_json}\n\n", mimetype="text/event-stream", status=error_response.status_code)
+
+    req_data = request.get_json() or {}
+    user_input = (req_data.get("input") or "").strip()
+    provider = req_data.get("provider")
+    model = req_data.get("model")
+
+    if not user_input:
+        error_json = json.dumps({"type": "error", "error": "请输入命令"}, ensure_ascii=False)
+        return Response(f"data: {error_json}\n\n", mimetype="text/event-stream", status=400)
+
+    request_context = get_request_context()
+
+    def generate():
+        try:
+            if orchestrator.is_builtin_or_command_style(user_input):
+                parsed = parse_legacy_command(user_input, provider=provider, model=model)
+                result = executor.execute(parsed, request_context)
+                yield f"data: {json.dumps({'type': 'trace', 'stage': 'command', 'message': '执行命令模式'}, ensure_ascii=False)}\n\n"
+                yield f"data: {json.dumps({'type': 'final', 'data': result}, ensure_ascii=False)}\n\n"
+                yield "data: [DONE]\n\n"
+                return
+
+            for event in orchestrator.stream_execute(
+                user_input=user_input,
+                session_key=str(request_context['session_id']),
+                user_id=str(request_context['user_id']),
+                provider=provider,
+                model=model,
+            ):
+                yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+
+            yield "data: [DONE]\n\n"
+        except Exception as exc:
+            payload = {"type": "error", "error": str(exc)}
+            yield f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
+            yield "data: [DONE]\n\n"
+
+    return Response(
+        stream_with_context(generate()),
+        mimetype="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @cli_agent_bp.route("/cli/parse", methods=["POST"])

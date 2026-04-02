@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 from backend.routes.cli_agent import list_models_data, parse_legacy_command
 from backend.services.cli_orchestrator import CLIOrchestrator
@@ -37,6 +38,39 @@ class TestCLIOrchestrator(unittest.TestCase):
         providers = result["data"]["providers"]
         provider_ids = [provider["id"] for provider in providers]
         self.assertIn("aliyun", provider_ids)
+
+    def test_stream_execute_for_model_listing(self):
+        events = list(
+            self.orchestrator.stream_execute(
+                user_input="ai models",
+                session_key="test_session",
+                user_id="test_user",
+                provider="aliyun",
+                model="qwen-plus",
+            )
+        )
+        event_types = [event["type"] for event in events]
+        self.assertIn("trace", event_types)
+        self.assertIn("final", event_types)
+        self.assertEqual(events[-1]["type"], "done")
+
+    def test_normalize_invalid_api_key_message(self):
+        error = ValueError("Error code: 401 - {'error': {'code': 'invalid_api_key'}}")
+        message = self.orchestrator.normalize_error_message(error)
+        self.assertIn("API Key", message)
+
+    @patch("backend.services.cli_orchestrator.get_api_key")
+    def test_ask_llm_reports_missing_key(self, mock_get_api_key):
+        mock_get_api_key.return_value = (None, object())
+        with self.assertRaises(ValueError) as ctx:
+            self.orchestrator.ask_llm(
+                user_input="查询 CN104154208B 专利详情",
+                provider="aliyun",
+                model="qwen-plus",
+                patent_context=[],
+                message_history=[],
+            )
+        self.assertIn("API Key", str(ctx.exception))
 
 
 if __name__ == "__main__":

@@ -296,6 +296,31 @@
     white-space: pre-wrap;
 }
 
+.cli-details {
+    margin-bottom: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.03);
+    overflow: hidden;
+}
+
+.cli-details summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 14px 15px;
+    color: #ffcfab;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.cli-details summary::-webkit-details-marker {
+    display: none;
+}
+
+.cli-details__body {
+    padding: 0 15px 15px;
+}
+
 .cli-patent-card {
     margin-bottom: 12px;
     padding: 14px;
@@ -387,6 +412,7 @@
             this.historyIndex = -1;
             this.initialized = false;
             this.modelData = { providers: [], default_provider: null };
+            this.currentStreamAnswer = '';
             this.suggestionDefaults = [
                 '查询 CN104154208B 专利详情',
                 '查询 US12390907B2 专利详情',
@@ -495,10 +521,41 @@
 
         buildHeaders() {
             const headers = { 'Content-Type': 'application/json' };
-            const zhipuApiKey = localStorage.getItem('globalApiKey') || localStorage.getItem('zhipuai_api_key');
-            const aliyunApiKey = localStorage.getItem('aliyun_api_key');
-            if (zhipuApiKey) headers.Authorization = `Bearer ${zhipuApiKey}`;
-            if (aliyunApiKey) headers['X-Aliyun-API-Key'] = aliyunApiKey;
+            const model = this.modelSelect?.value || null;
+            const selectedProvider = this.providerSelect?.value || null;
+
+            if (typeof window.getProviderHeaders === 'function') {
+                const providerHeaders = window.getProviderHeaders(model) || {};
+                Object.assign(headers, providerHeaders);
+                return headers;
+            }
+
+            const getUserItem = typeof window.getUserStorageItem === 'function'
+                ? window.getUserStorageItem.bind(window)
+                : (key) => localStorage.getItem(key);
+
+            const zhipuApiKey =
+                window.appState?.apiKey ||
+                getUserItem('api_key') ||
+                getUserItem('globalApiKey') ||
+                getUserItem('zhipuai_api_key') ||
+                localStorage.getItem('globalApiKey') ||
+                localStorage.getItem('zhipuai_api_key');
+
+            const aliyunApiKey =
+                window.appState?.aliyunApiKey ||
+                getUserItem('aliyun_api_key') ||
+                localStorage.getItem('aliyun_api_key');
+
+            const useAliyun = selectedProvider === 'aliyun' || (model && /^qwen|^qwq|^deepseek|^kimi|^minimax|^glm-5$/i.test(model));
+
+            if (useAliyun && aliyunApiKey) {
+                headers['X-LLM-Provider'] = 'aliyun';
+                headers['X-Aliyun-API-Key'] = aliyunApiKey;
+                headers.Authorization = `Bearer ${aliyunApiKey}`;
+            } else if (zhipuApiKey) {
+                headers.Authorization = `Bearer ${zhipuApiKey}`;
+            }
             return headers;
         }
 
@@ -513,33 +570,144 @@
             this.showLoading();
 
             try {
-                const response = await fetch('/api/cli/execute', {
-                    method: 'POST',
-                    headers: this.buildHeaders(),
-                    body: JSON.stringify({
-                        input: value,
-                        mode: 'auto',
-                        provider: this.providerSelect?.value || null,
-                        model: this.modelSelect?.value || null
-                    })
-                });
-
-                const payload = await response.json();
-                this.hideLoading();
-
-                if (!payload.success) {
-                    this.printError(payload.error || '执行失败');
-                    return;
+                const streamed = await this.executeCommandStream(value);
+                if (!streamed) {
+                    await this.executeCommandFallback(value);
                 }
-
-                this.renderPayload(payload.data || {});
             } catch (error) {
                 this.hideLoading();
                 this.printError(`网络错误: ${error.message}`);
             }
         }
 
+        async executeCommandStream(value) {
+            const response = await fetch('/api/cli/stream', {
+                method: 'POST',
+                headers: this.buildHeaders(),
+                body: JSON.stringify({
+                    input: value,
+                    provider: this.providerSelect?.value || null,
+                    model: this.modelSelect?.value || null
+                })
+            });
+
+            if (!response.ok || !response.body) {
+                return false;
+            }
+
+            this.currentStreamAnswer = '';
+            const decoder = new TextDecoder('utf-8');
+            const reader = response.body.getReader();
+            let buffer = '';
+            let receivedAny = false;
+
+            while (true) {
+                const { value: chunk, done } = await reader.read();
+                if (done) break;
+                receivedAny = true;
+                buffer += decoder.decode(chunk, { stream: true });
+
+                let boundaryIndex = buffer.indexOf('\n\n');
+                while (boundaryIndex !== -1) {
+                    const rawEvent = buffer.slice(0, boundaryIndex);
+                    buffer = buffer.slice(boundaryIndex + 2);
+                    this.consumeSSEEvent(rawEvent);
+                    boundaryIndex = buffer.indexOf('\n\n');
+                }
+            }
+
+            this.hideLoading();
+            return receivedAny;
+        }
+
+        async executeCommandFallback(value) {
+            const response = await fetch('/api/cli/execute', {
+                method: 'POST',
+                headers: this.buildHeaders(),
+                body: JSON.stringify({
+                    input: value,
+                    mode: 'auto',
+                    provider: this.providerSelect?.value || null,
+                    model: this.modelSelect?.value || null
+                })
+            });
+
+            const payload = await response.json();
+            this.hideLoading();
+
+            if (!payload.success) {
+                this.printError(payload.error || '执行失败');
+                return;
+            }
+
+            this.renderPayload(payload.data || {});
+        }
+
+        consumeSSEEvent(rawEvent) {
+            const line = rawEvent
+                .split('\n')
+                .find((item) => item.startsWith('data: '));
+
+            if (!line) return;
+            const data = line.slice(6);
+            if (data === '[DONE]') {
+                this.hideLoading();
+                return;
+            }
+
+            let payload = null;
+            try {
+                payload = JSON.parse(data);
+            } catch (error) {
+                return;
+            }
+
+            this.handleStreamEvent(payload);
+        }
+
+        handleStreamEvent(event) {
+            if (!event || !event.type) return;
+
+            if (event.type === 'trace') {
+                this.hideLoading();
+                this.printTrace(event.message || event.stage || '处理中');
+                return;
+            }
+
+            if (event.type === 'context') {
+                this.hideLoading();
+                this.printTrace(event.message || '上下文已更新');
+                if (Array.isArray(event.scraped_patents) && event.scraped_patents.length) {
+                    this.renderOrchestration({
+                        scraped_patents: event.scraped_patents,
+                        scrape_errors: event.scrape_errors || []
+                    });
+                }
+                return;
+            }
+
+            if (event.type === 'content') {
+                this.hideLoading();
+                this.appendStreamAnswer(event.delta || '');
+                return;
+            }
+
+            if (event.type === 'final') {
+                this.hideLoading();
+                this.renderPayload(event.data || {});
+                return;
+            }
+
+            if (event.type === 'error') {
+                this.hideLoading();
+                this.printError(event.error || '执行失败');
+            }
+        }
+
         renderPayload(payload) {
+            document.getElementById('cli-stream-answer')?.remove();
+            this.currentStreamAnswer = '';
+
             if (payload.mode === 'legacy_cli_command' && payload.result) {
                 this.renderLegacyResult(payload.result);
                 return;
@@ -574,6 +742,25 @@
                 this.printBlock(data.summary.title || '执行摘要', (data.summary.lines || []).join('\n'));
             }
 
+            if (data.stats && Object.keys(data.stats).length) {
+                const usage = data.stats.usage || {};
+                const lines = [
+                    `总耗时: ${this.formatDuration(data.stats.duration_ms)}`,
+                    `上下文专利数: ${data.stats.context_patents ?? 0}`,
+                    `抓取失败数: ${data.stats.scrape_error_count ?? 0}`,
+                    `Prompt Tokens: ${usage.prompt_tokens ?? 0}`,
+                    `Completion Tokens: ${usage.completion_tokens ?? 0}`,
+                    `Total Tokens: ${usage.total_tokens ?? 0}`
+                ];
+                if (data.stats.fallback_used) {
+                    lines.push(`自动回退: 是`);
+                    if (data.stats.fallback_reason) {
+                        lines.push(`回退原因: ${data.stats.fallback_reason}`);
+                    }
+                }
+                this.printBlock('执行统计', lines.join('\n'));
+            }
+
             if (data.routing) {
                 this.printBlock(
                     '模型路由',
@@ -586,11 +773,13 @@
             }
 
             if (Array.isArray(data.scraped_patents) && data.scraped_patents.length) {
-                const wrapper = document.createElement('div');
-                wrapper.className = 'cli-block';
-                wrapper.innerHTML = '<div class="cli-block__title">专利上下文</div>';
+                const wrapper = document.createElement('details');
+                wrapper.className = 'cli-details';
+                wrapper.open = true;
+                wrapper.innerHTML = '<summary>专利上下文</summary><div class="cli-details__body"></div>';
+                const body = wrapper.querySelector('.cli-details__body');
                 data.scraped_patents.forEach((patent) => {
-                    wrapper.appendChild(this.createPatentCard(patent));
+                    body?.appendChild(this.createPatentCard(patent));
                 });
                 this.output.appendChild(wrapper);
             }
@@ -611,6 +800,37 @@
             }
 
             this.scrollToBottom();
+        }
+
+        appendStreamAnswer(delta) {
+            this.currentStreamAnswer += delta;
+            let block = document.getElementById('cli-stream-answer');
+            if (!block) {
+                block = document.createElement('div');
+                block.id = 'cli-stream-answer';
+                block.className = 'cli-block';
+                block.innerHTML = `
+                    <div class="cli-block__title">AI 解答生成中</div>
+                    <div class="cli-block__text" data-stream-text></div>
+                `;
+                this.output.appendChild(block);
+            }
+
+            const textNode = block.querySelector('[data-stream-text]');
+            if (textNode) {
+                textNode.textContent = this.currentStreamAnswer;
+            }
+            this.scrollToBottom();
+        }
+
+        printTrace(message) {
+            this.printLine(`[trace] ${message}`, 'muted');
+        }
+
+        formatDuration(durationMs) {
+            const safe = Number(durationMs || 0);
+            if (safe < 1000) return `${safe} ms`;
+            return `${(safe / 1000).toFixed(2)} s`;
         }
 
         createPatentCard(patent) {
