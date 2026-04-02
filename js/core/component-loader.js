@@ -6,6 +6,38 @@
  */
 
 /**
+ * 执行组件中的脚本
+ * 由于innerHTML插入的<script>标签不会自动执行，需要手动处理
+ * @param {HTMLElement} container - 包含脚本的容器元素
+ */
+function executeScripts(container) {
+    const scripts = container.querySelectorAll('script');
+    scripts.forEach(oldScript => {
+        const newScript = document.createElement('script');
+        
+        if (oldScript.src) {
+            newScript.src = oldScript.src;
+        } else {
+            newScript.textContent = oldScript.textContent;
+        }
+        
+        if (oldScript.type) {
+            newScript.type = oldScript.type;
+        }
+        
+        if (oldScript.async) {
+            newScript.async = true;
+        }
+        
+        if (oldScript.defer) {
+            newScript.defer = true;
+        }
+        
+        oldScript.parentNode.replaceChild(newScript, oldScript);
+    });
+}
+
+/**
  * 异步加载HTML组件并注入到目标元素
  * @param {string} componentPath - 组件文件的相对路径 (相对于项目根目录)
  * @param {string} targetElementId - 目标DOM元素的ID
@@ -27,7 +59,8 @@ async function loadComponent(componentPath, targetElementId, retryCountOrOptions
     const {
         requiredElements = [],  // 必须存在的元素ID列表
         timeout = 5000,          // 等待元素的最大时间(毫秒)
-        onReady = null           // DOM准备好后的回调函数
+        onReady = null,          // DOM准备好后的回调函数
+        executeScripts: shouldExecuteScripts = true  // 是否执行组件中的脚本
     } = options;
     
     const targetElement = document.getElementById(targetElementId);
@@ -51,6 +84,11 @@ async function loadComponent(componentPath, targetElementId, retryCountOrOptions
             
             // 注入HTML内容
             targetElement.innerHTML = html;
+            
+            // 执行组件中的脚本
+            if (shouldExecuteScripts) {
+                executeScripts(targetElement);
+            }
             
             console.log(`[Component Loader] ✓ 组件加载成功: ${componentPath}`);
             
@@ -173,9 +211,10 @@ function waitForElements(elementIds, timeout = 5000) {
  * 注意: 仅在必要时使用,推荐使用异步loadComponent
  * @param {string} componentPath - 组件文件的相对路径
  * @param {string} targetElementId - 目标DOM元素的ID
+ * @param {boolean} shouldExecuteScripts - 是否执行组件中的脚本 (默认true)
  * @returns {boolean} - 成功返回true,失败返回false
  */
-function loadComponentSync(componentPath, targetElementId) {
+function loadComponentSync(componentPath, targetElementId, shouldExecuteScripts = true) {
     const targetElement = document.getElementById(targetElementId);
     
     if (!targetElement) {
@@ -192,6 +231,12 @@ function loadComponentSync(componentPath, targetElementId) {
         
         if (xhr.status === 200) {
             targetElement.innerHTML = xhr.responseText;
+            
+            // 执行组件中的脚本
+            if (shouldExecuteScripts) {
+                executeScripts(targetElement);
+            }
+            
             console.log(`[Component Loader] ✓ 组件同步加载成功: ${componentPath}`);
             return true;
         } else {
