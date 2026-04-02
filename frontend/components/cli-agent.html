@@ -2,9 +2,10 @@
     <div class="cli-shell__header">
         <div>
             <div class="cli-shell__title">Patent CLI</div>
-            <div class="cli-shell__subtitle">自然语言 -> 专利抓取 -> 上下文问答</div>
+            <div class="cli-shell__subtitle">自然语言 -> 服务流程 -> 上下文问答</div>
         </div>
         <div class="cli-shell__actions">
+            <button id="cli-btn-expand" class="cli-shell__icon" title="全屏">□</button>
             <button id="cli-btn-minimize" class="cli-shell__icon" title="最小化">-</button>
             <button id="cli-btn-close" class="cli-shell__icon cli-shell__icon--danger" title="关闭">x</button>
         </div>
@@ -19,7 +20,7 @@
             <span>Model</span>
             <select id="cli-model-select"></select>
         </label>
-        <div id="cli-status-provider" class="cli-badge">AI: 未连接</div>
+        <div id="cli-status-provider" class="cli-badge">AI: 初始化中</div>
     </div>
 
     <div id="cli-output" class="cli-shell__output">
@@ -27,10 +28,11 @@
             <div class="cli-block__title">CLI 已就绪</div>
             <div class="cli-block__text">示例: 查询 CN104154208B 专利详情</div>
             <div class="cli-block__text">示例: 基于刚才专利结果分析创新点和保护范围</div>
+            <div class="cli-block__text">示例: flow list</div>
         </div>
     </div>
 
-    <div class="cli-shell__suggestions" id="cli-suggestions"></div>
+    <div id="cli-suggestions" class="cli-shell__suggestions"></div>
 
     <div class="cli-shell__inputbar">
         <span class="cli-shell__prompt">&gt;</span>
@@ -53,8 +55,8 @@
     position: fixed;
     right: 96px;
     bottom: 20px;
-    width: min(820px, calc(100vw - 24px));
-    height: min(76vh, 760px);
+    width: min(860px, calc(100vw - 24px));
+    height: min(78vh, 800px);
     display: flex;
     flex-direction: column;
     background:
@@ -75,6 +77,16 @@
 
 .cli-shell.minimized {
     height: 68px;
+}
+
+.cli-shell.fullscreen {
+    top: 18px;
+    right: 18px;
+    bottom: 18px;
+    left: 18px;
+    width: auto;
+    height: auto;
+    border-radius: 22px;
 }
 
 .cli-shell.minimized .cli-shell__toolbar,
@@ -189,6 +201,7 @@
     align-items: center;
     padding: 6px 10px;
     border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
     background: rgba(255, 255, 255, 0.06);
     color: #dbe5f6;
     font-size: 12px;
@@ -294,6 +307,7 @@
     font-size: 13px;
     line-height: 1.7;
     white-space: pre-wrap;
+    word-break: break-word;
 }
 
 .cli-details {
@@ -321,7 +335,8 @@
     padding: 0 15px 15px;
 }
 
-.cli-patent-card {
+.cli-patent-card,
+.cli-flow-card {
     margin-bottom: 12px;
     padding: 14px;
     border-radius: 14px;
@@ -336,13 +351,15 @@
     margin-bottom: 10px;
 }
 
-.cli-patent-card__title {
+.cli-patent-card__title,
+.cli-flow-card__title {
     color: #f6f8fc;
     font-size: 14px;
     font-weight: 700;
 }
 
-.cli-patent-card__meta {
+.cli-patent-card__meta,
+.cli-flow-card__meta {
     color: #8fa2bd;
     font-size: 12px;
 }
@@ -352,6 +369,7 @@
     color: #d6e0f0;
     font-size: 13px;
     line-height: 1.7;
+    white-space: pre-wrap;
 }
 
 .cli-kv strong {
@@ -386,11 +404,15 @@
 }
 
 @media (max-width: 768px) {
-    .cli-shell {
+    .cli-shell,
+    .cli-shell.fullscreen {
         right: 12px;
         bottom: 12px;
-        width: calc(100vw - 24px);
-        height: calc(100vh - 96px);
+        left: 12px;
+        top: 72px;
+        width: auto;
+        height: auto;
+        border-radius: 18px;
     }
 
     .cli-shell__toolbar {
@@ -412,12 +434,14 @@
             this.historyIndex = -1;
             this.initialized = false;
             this.modelData = { providers: [], default_provider: null };
+            this.flowData = { flows: [] };
             this.currentStreamAnswer = '';
             this.suggestionDefaults = [
                 '查询 CN104154208B 专利详情',
                 '查询 US12390907B2 专利详情',
                 '基于刚才专利结果总结创新点',
-                '对比 CN104154208B 和 US12390907B2 的保护范围'
+                '对比 CN104154208B 和 US12390907B2 的保护范围',
+                'flow list'
             ];
         }
 
@@ -426,7 +450,8 @@
             this.cacheElements();
             this.bindEvents();
             this.loadHistory();
-            this.loadModels();
+            this.loadBootstrapData();
+            this.renderSuggestions();
             this.initialized = true;
         }
 
@@ -446,7 +471,10 @@
             this.launcher?.addEventListener('click', () => this.open());
             document.getElementById('cli-btn-close')?.addEventListener('click', () => this.close());
             document.getElementById('cli-btn-minimize')?.addEventListener('click', () => this.toggleMinimize());
+            document.getElementById('cli-btn-expand')?.addEventListener('click', () => this.toggleFullscreen());
             this.sendBtn?.addEventListener('click', () => this.executeCommand());
+            this.providerSelect?.addEventListener('change', () => this.refreshModelOptions());
+            this.input?.addEventListener('input', () => this.renderSuggestions());
 
             this.input?.addEventListener('keydown', (event) => {
                 if (event.key === 'Enter') {
@@ -467,20 +495,31 @@
                 if (event.key.toLowerCase() === 'l' && event.ctrlKey) {
                     event.preventDefault();
                     this.clearOutput();
+                    return;
+                }
+                if (event.key === 'Escape' && this.container?.classList.contains('fullscreen')) {
+                    event.preventDefault();
+                    this.toggleFullscreen(false);
                 }
             });
 
-            this.input?.addEventListener('input', () => this.renderSuggestions());
-            this.providerSelect?.addEventListener('change', () => this.refreshModelOptions());
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && this.container?.classList.contains('fullscreen')) {
+                    this.toggleFullscreen(false);
+                }
+            });
+        }
+
+        async loadBootstrapData() {
+            await Promise.allSettled([this.loadModels(), this.loadFlows()]);
+            this.renderSuggestions();
         }
 
         async loadModels() {
-            const headers = this.buildHeaders();
             try {
-                const response = await fetch('/api/cli/models', { headers });
+                const response = await fetch('/api/cli/models', { headers: this.buildHeaders() });
                 const payload = await response.json();
-                const data = payload?.data || {};
-                this.modelData = data;
+                this.modelData = payload?.data || { providers: [], default_provider: null };
                 this.populateProviderOptions();
                 this.refreshModelOptions();
                 this.providerStatus.textContent = 'AI: 可用';
@@ -489,8 +528,17 @@
             }
         }
 
+        async loadFlows() {
+            try {
+                const response = await fetch('/api/cli/flows', { headers: this.buildHeaders() });
+                const payload = await response.json();
+                this.flowData = payload?.data || { flows: [] };
+            } catch (error) {
+                this.flowData = { flows: [] };
+            }
+        }
+
         populateProviderOptions() {
-            if (!this.providerSelect) return;
             const providers = this.modelData.providers || [];
             this.providerSelect.innerHTML = providers.map((provider) => (
                 `<option value="${provider.id}">${this.escapeHtml(provider.id)}</option>`
@@ -504,7 +552,6 @@
         }
 
         refreshModelOptions() {
-            if (!this.modelSelect) return;
             const providerId = this.providerSelect?.value;
             const provider = (this.modelData.providers || []).find((item) => item.id === providerId);
             const models = provider?.models || [];
@@ -522,32 +569,19 @@
         buildHeaders() {
             const headers = { 'Content-Type': 'application/json' };
             const model = this.modelSelect?.value || null;
-            const selectedProvider = this.providerSelect?.value || null;
 
             if (typeof window.getProviderHeaders === 'function') {
-                const providerHeaders = window.getProviderHeaders(model) || {};
-                Object.assign(headers, providerHeaders);
-                return headers;
+                return Object.assign(headers, window.getProviderHeaders(model) || {});
             }
 
             const getUserItem = typeof window.getUserStorageItem === 'function'
                 ? window.getUserStorageItem.bind(window)
                 : (key) => localStorage.getItem(key);
 
-            const zhipuApiKey =
-                window.appState?.apiKey ||
-                getUserItem('api_key') ||
-                getUserItem('globalApiKey') ||
-                getUserItem('zhipuai_api_key') ||
-                localStorage.getItem('globalApiKey') ||
-                localStorage.getItem('zhipuai_api_key');
-
-            const aliyunApiKey =
-                window.appState?.aliyunApiKey ||
-                getUserItem('aliyun_api_key') ||
-                localStorage.getItem('aliyun_api_key');
-
-            const useAliyun = selectedProvider === 'aliyun' || (model && /^qwen|^qwq|^deepseek|^kimi|^minimax|^glm-5$/i.test(model));
+            const provider = this.providerSelect?.value || window.appState?.provider || 'zhipu';
+            const zhipuApiKey = window.appState?.apiKey || getUserItem('api_key') || getUserItem('globalApiKey');
+            const aliyunApiKey = window.appState?.aliyunApiKey || getUserItem('aliyun_api_key');
+            const useAliyun = provider === 'aliyun' || (model && /^(qwen|qwq|deepseek|kimi|minimax)/i.test(model));
 
             if (useAliyun && aliyunApiKey) {
                 headers['X-LLM-Provider'] = 'aliyun';
@@ -556,6 +590,7 @@
             } else if (zhipuApiKey) {
                 headers.Authorization = `Bearer ${zhipuApiKey}`;
             }
+
             return headers;
         }
 
@@ -644,29 +679,24 @@
         }
 
         consumeSSEEvent(rawEvent) {
-            const line = rawEvent
-                .split('\n')
-                .find((item) => item.startsWith('data: '));
-
+            const line = rawEvent.split('\n').find((item) => item.startsWith('data: '));
             if (!line) return;
+
             const data = line.slice(6);
             if (data === '[DONE]') {
                 this.hideLoading();
                 return;
             }
 
-            let payload = null;
             try {
-                payload = JSON.parse(data);
+                this.handleStreamEvent(JSON.parse(data));
             } catch (error) {
-                return;
+                this.printError('流式响应解析失败');
             }
-
-            this.handleStreamEvent(payload);
         }
 
         handleStreamEvent(event) {
-            if (!event || !event.type) return;
+            if (!event?.type) return;
 
             if (event.type === 'trace') {
                 this.hideLoading();
@@ -678,10 +708,10 @@
                 this.hideLoading();
                 this.printTrace(event.message || '上下文已更新');
                 if (Array.isArray(event.scraped_patents) && event.scraped_patents.length) {
-                    this.renderOrchestration({
-                        scraped_patents: event.scraped_patents,
-                        scrape_errors: event.scrape_errors || []
-                    });
+                    this.renderPatentContext(event.scraped_patents);
+                }
+                if (Array.isArray(event.scrape_errors) && event.scrape_errors.length) {
+                    this.printBlock('抓取异常', event.scrape_errors.map((item) => `${item.patent_number || 'unknown'}: ${item.error || '抓取失败'}`).join('\n'));
                 }
                 return;
             }
@@ -713,6 +743,11 @@
                 return;
             }
 
+            if (payload.type === 'embedded_flow' || payload.data?.flow_id) {
+                this.renderFlowCard(payload.data || payload);
+                return;
+            }
+
             if (payload.type !== 'cli_orchestration' && payload.data?.type === 'cli_orchestration') {
                 this.renderOrchestration(payload.data);
                 return;
@@ -733,13 +768,42 @@
 
         renderLegacyResult(result) {
             if (result.message) this.printBlock('执行结果', result.message);
-            if (result.data) this.printBlock('数据', JSON.stringify(result.data, null, 2));
+            if (result.data) {
+                if (result.type === 'embedded_flow' || result.data?.flow_id) {
+                    this.renderFlowCard(result.data || result);
+                } else {
+                    this.printBlock('数据', JSON.stringify(result.data, null, 2));
+                }
+            }
             if (result.error) this.printError(result.error);
+            if (Array.isArray(result.suggestions) && result.suggestions.length) {
+                this.renderSuggestions(result.suggestions);
+            }
         }
 
         renderOrchestration(data) {
             if (data.summary) {
                 this.printBlock(data.summary.title || '执行摘要', (data.summary.lines || []).join('\n'));
+            }
+
+            if (data.routing) {
+                this.printBlock('模型路由', `Provider: ${data.routing.provider || '-'}\nModel: ${data.routing.model || '-'}`);
+            }
+
+            if (Array.isArray(data.detected_patents) && data.detected_patents.length) {
+                this.printBlock('识别到的专利号', data.detected_patents.join('\n'));
+            }
+
+            if (Array.isArray(data.trace) && data.trace.length) {
+                this.printBlock('执行轨迹', data.trace.join('\n'));
+            }
+
+            if (Array.isArray(data.scraped_patents) && data.scraped_patents.length) {
+                this.renderPatentContext(data.scraped_patents);
+            }
+
+            if (Array.isArray(data.scrape_errors) && data.scrape_errors.length) {
+                this.printBlock('抓取异常', data.scrape_errors.map((item) => `${item.patent_number || 'unknown'}: ${item.error || '抓取失败'}`).join('\n'));
             }
 
             if (data.stats && Object.keys(data.stats).length) {
@@ -753,42 +817,12 @@
                     `Total Tokens: ${usage.total_tokens ?? 0}`
                 ];
                 if (data.stats.fallback_used) {
-                    lines.push(`自动回退: 是`);
+                    lines.push('自动回退: 是');
                     if (data.stats.fallback_reason) {
                         lines.push(`回退原因: ${data.stats.fallback_reason}`);
                     }
                 }
                 this.printBlock('执行统计', lines.join('\n'));
-            }
-
-            if (data.routing) {
-                this.printBlock(
-                    '模型路由',
-                    `Provider: ${data.routing.provider || '-'}\nModel: ${data.routing.model || '-'}`
-                );
-            }
-
-            if (Array.isArray(data.detected_patents) && data.detected_patents.length) {
-                this.printBlock('识别到的专利号', data.detected_patents.join('\n'));
-            }
-
-            if (Array.isArray(data.scraped_patents) && data.scraped_patents.length) {
-                const wrapper = document.createElement('details');
-                wrapper.className = 'cli-details';
-                wrapper.open = true;
-                wrapper.innerHTML = '<summary>专利上下文</summary><div class="cli-details__body"></div>';
-                const body = wrapper.querySelector('.cli-details__body');
-                data.scraped_patents.forEach((patent) => {
-                    body?.appendChild(this.createPatentCard(patent));
-                });
-                this.output.appendChild(wrapper);
-            }
-
-            if (Array.isArray(data.scrape_errors) && data.scrape_errors.length) {
-                const text = data.scrape_errors
-                    .map((item) => `${item.patent_number || 'unknown'}: ${item.error || '抓取失败'}`)
-                    .join('\n');
-                this.printBlock('抓取异常', text);
             }
 
             if (data.qa?.answer) {
@@ -798,7 +832,32 @@
             if (data.qa?.error) {
                 this.printError(data.qa.error);
             }
+        }
 
+        renderPatentContext(patents) {
+            const wrapper = document.createElement('details');
+            wrapper.className = 'cli-details';
+            wrapper.open = true;
+            wrapper.innerHTML = '<summary>专利上下文</summary><div class="cli-details__body"></div>';
+            const body = wrapper.querySelector('.cli-details__body');
+            patents.forEach((patent) => body?.appendChild(this.createPatentCard(patent)));
+            this.output.appendChild(wrapper);
+            this.scrollToBottom();
+        }
+
+        renderFlowCard(flow) {
+            const data = flow?.data?.flow_id ? flow.data : flow;
+            const card = document.createElement('div');
+            card.className = 'cli-flow-card';
+            const steps = Array.isArray(data.steps) ? data.steps.join('\n') : '';
+            card.innerHTML = `
+                <div class="cli-flow-card__title">${this.escapeHtml(data.title || data.flow_id || '服务流程')}</div>
+                <div class="cli-flow-card__meta">${this.escapeHtml(data.flow_id || '')}</div>
+                <div class="cli-kv"><strong>说明:</strong> ${this.escapeHtml(data.description || '-')}</div>
+                ${data.api_endpoint ? `<div class="cli-kv"><strong>端点:</strong> ${this.escapeHtml(data.api_endpoint)}</div>` : ''}
+                ${steps ? `<div class="cli-divider"></div><div class="cli-kv"><strong>步骤:</strong>\n${this.escapeHtml(steps)}</div>` : ''}
+            `;
+            this.output.appendChild(card);
             this.scrollToBottom();
         }
 
@@ -809,10 +868,7 @@
                 block = document.createElement('div');
                 block.id = 'cli-stream-answer';
                 block.className = 'cli-block';
-                block.innerHTML = `
-                    <div class="cli-block__title">AI 解答生成中</div>
-                    <div class="cli-block__text" data-stream-text></div>
-                `;
+                block.innerHTML = '<div class="cli-block__title">AI 解答生成中</div><div class="cli-block__text" data-stream-text></div>';
                 this.output.appendChild(block);
             }
 
@@ -827,48 +883,17 @@
             this.printLine(`[trace] ${message}`, 'muted');
         }
 
-        formatDuration(durationMs) {
-            const safe = Number(durationMs || 0);
-            if (safe < 1000) return `${safe} ms`;
-            return `${(safe / 1000).toFixed(2)} s`;
-        }
-
-        createPatentCard(patent) {
-            const card = document.createElement('div');
-            card.className = 'cli-patent-card';
-            const claimsPreview = Array.isArray(patent.claims_preview) ? patent.claims_preview.join('\n\n') : '';
-            card.innerHTML = `
-                <div class="cli-patent-card__head">
-                    <div>
-                        <div class="cli-patent-card__title">${this.escapeHtml(patent.patent_number || '')}</div>
-                        <div class="cli-patent-card__meta">${this.escapeHtml(patent.title || '未抓取到标题')}</div>
-                    </div>
-                    <div class="cli-patent-card__meta">${this.escapeHtml(patent.publication_date || '-')}</div>
-                </div>
-                <div class="cli-kv"><strong>申请日:</strong> ${this.escapeHtml(patent.application_date || '-')}</div>
-                <div class="cli-kv"><strong>申请人:</strong> ${this.escapeHtml((patent.assignees || []).join(', ') || '-')}</div>
-                <div class="cli-kv"><strong>发明人:</strong> ${this.escapeHtml((patent.inventors || []).join(', ') || '-')}</div>
-                <div class="cli-kv"><strong>摘要:</strong> ${this.escapeHtml(patent.abstract || '-')}</div>
-                <div class="cli-kv"><strong>权利要求数量:</strong> ${this.escapeHtml(String(patent.claims_count || 0))}</div>
-                ${claimsPreview ? `<div class="cli-divider"></div><div class="cli-kv"><strong>权利要求预览:</strong>\n${this.escapeHtml(claimsPreview)}</div>` : ''}
-            `;
-            return card;
-        }
-
         printBlock(title, text) {
             const block = document.createElement('div');
             block.className = 'cli-block';
-            block.innerHTML = `
-                <div class="cli-block__title">${this.escapeHtml(title)}</div>
-                <div class="cli-block__text">${this.escapeHtml(text)}</div>
-            `;
+            block.innerHTML = `<div class="cli-block__title">${this.escapeHtml(title)}</div><div class="cli-block__text">${this.escapeHtml(text)}</div>`;
             this.output.appendChild(block);
             this.scrollToBottom();
         }
 
-        printLine(text, type = 'muted') {
+        printLine(text, type) {
             const line = document.createElement('div');
-            line.className = `cli-line cli-line--${type}`;
+            line.className = `cli-line cli-line--${type || 'muted'}`;
             line.textContent = text;
             this.output.appendChild(line);
             this.scrollToBottom();
@@ -883,10 +908,7 @@
             const wrapper = document.createElement('div');
             wrapper.id = 'cli-loading';
             wrapper.className = 'cli-block';
-            wrapper.innerHTML = `
-                <div class="cli-block__title">处理中</div>
-                <div class="cli-loading"><span></span><span></span><span></span></div>
-            `;
+            wrapper.innerHTML = '<div class="cli-block__title">处理中</div><div class="cli-loading"><span></span><span></span><span></span></div>';
             this.output.appendChild(wrapper);
             this.scrollToBottom();
         }
@@ -896,11 +918,12 @@
         }
 
         renderSuggestions(custom) {
-            const text = (this.input?.value || '').trim();
-            const defaults = Array.isArray(custom) ? custom : this.suggestionDefaults;
-            const items = text
-                ? defaults.filter((item) => item.toLowerCase().includes(text.toLowerCase()))
-                : defaults;
+            const text = (this.input?.value || '').trim().toLowerCase();
+            const flowExamples = (this.flowData.flows || []).flatMap((flow) => flow.entry_examples || []);
+            const defaults = Array.isArray(custom) && custom.length
+                ? custom
+                : [...new Set([...this.suggestionDefaults, ...flowExamples])];
+            const items = text ? defaults.filter((item) => item.toLowerCase().includes(text)) : defaults;
 
             if (!items.length) {
                 this.suggestions.style.display = 'none';
@@ -909,7 +932,7 @@
             }
 
             this.suggestions.style.display = 'flex';
-            this.suggestions.innerHTML = items.slice(0, 4).map((item) => (
+            this.suggestions.innerHTML = items.slice(0, 8).map((item) => (
                 `<button type="button" class="cli-chip" data-suggestion="${this.escapeHtml(item)}">${this.escapeHtml(item)}</button>`
             )).join('');
 
@@ -961,6 +984,7 @@
         }
 
         close() {
+            this.toggleFullscreen(false);
             this.container?.classList.add('hidden');
             this.launcher?.classList.remove('hidden');
         }
@@ -969,8 +993,51 @@
             this.container?.classList.toggle('minimized');
         }
 
+        toggleFullscreen(force) {
+            if (!this.container) return;
+            const shouldOpen = typeof force === 'boolean' ? force : !this.container.classList.contains('fullscreen');
+            this.container.classList.toggle('fullscreen', shouldOpen);
+            document.body.style.overflow = shouldOpen ? 'hidden' : '';
+            const expandBtn = document.getElementById('cli-btn-expand');
+            if (expandBtn) {
+                expandBtn.textContent = shouldOpen ? '↙' : '□';
+                expandBtn.title = shouldOpen ? '退出全屏' : '全屏';
+            }
+            this.scrollToBottom();
+        }
+
+        createPatentCard(patent) {
+            const card = document.createElement('div');
+            card.className = 'cli-patent-card';
+            const claimsPreview = Array.isArray(patent.claims_preview) ? patent.claims_preview.join('\n\n') : '';
+            card.innerHTML = `
+                <div class="cli-patent-card__head">
+                    <div>
+                        <div class="cli-patent-card__title">${this.escapeHtml(patent.patent_number || '')}</div>
+                        <div class="cli-patent-card__meta">${this.escapeHtml(patent.title || '未抓取到标题')}</div>
+                    </div>
+                    <div class="cli-patent-card__meta">${this.escapeHtml(patent.publication_date || '-')}</div>
+                </div>
+                <div class="cli-kv"><strong>申请日:</strong> ${this.escapeHtml(patent.application_date || '-')}</div>
+                <div class="cli-kv"><strong>申请人:</strong> ${this.escapeHtml((patent.assignees || []).join(', ') || '-')}</div>
+                <div class="cli-kv"><strong>发明人:</strong> ${this.escapeHtml((patent.inventors || []).join(', ') || '-')}</div>
+                <div class="cli-kv"><strong>摘要:</strong> ${this.escapeHtml(patent.abstract || '-')}</div>
+                <div class="cli-kv"><strong>权利要求数量:</strong> ${this.escapeHtml(String(patent.claims_count || 0))}</div>
+                ${claimsPreview ? `<div class="cli-divider"></div><div class="cli-kv"><strong>权利要求预览:</strong>\n${this.escapeHtml(claimsPreview)}</div>` : ''}
+            `;
+            return card;
+        }
+
+        formatDuration(durationMs) {
+            const safe = Number(durationMs || 0);
+            if (safe < 1000) return `${safe} ms`;
+            return `${(safe / 1000).toFixed(2)} s`;
+        }
+
         scrollToBottom() {
-            this.output.scrollTop = this.output.scrollHeight;
+            if (this.output) {
+                this.output.scrollTop = this.output.scrollHeight;
+            }
         }
 
         escapeHtml(value) {
