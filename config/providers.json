@@ -98,7 +98,7 @@
         "description": "新用户100万Tokens免费额度，有效期90天"
       },
       "batch_discount": 0.5,
-      "enabled": false
+      "enabled": true
     },
     "baidu": {
       "name": "百度AI Studio",
