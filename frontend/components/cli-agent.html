@@ -850,12 +850,18 @@
             const card = document.createElement('div');
             card.className = 'cli-flow-card';
             const steps = Array.isArray(data.steps) ? data.steps.join('\n') : '';
+            const outputs = Array.isArray(data.outputs)
+                ? data.outputs.map((item) => (
+                    `<div class="cli-divider"></div><div class="cli-kv"><strong>${this.escapeHtml(item.title || '结果')}:</strong>\n${this.escapeHtml(item.text || '')}</div>`
+                )).join('')
+                : '';
             card.innerHTML = `
                 <div class="cli-flow-card__title">${this.escapeHtml(data.title || data.flow_id || '服务流程')}</div>
                 <div class="cli-flow-card__meta">${this.escapeHtml(data.flow_id || '')}</div>
                 <div class="cli-kv"><strong>说明:</strong> ${this.escapeHtml(data.description || '-')}</div>
                 ${data.api_endpoint ? `<div class="cli-kv"><strong>端点:</strong> ${this.escapeHtml(data.api_endpoint)}</div>` : ''}
                 ${steps ? `<div class="cli-divider"></div><div class="cli-kv"><strong>步骤:</strong>\n${this.escapeHtml(steps)}</div>` : ''}
+                ${outputs}
             `;
             this.output.appendChild(card);
             this.scrollToBottom();
