@@ -864,13 +864,10 @@
     // 创建全局实例
     window.cliAgent = new CLIAgent();
     
-    // DOM加载完成后初始化
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            window.cliAgent.init();
-        });
-    } else {
+    // 延迟初始化，确保DOM已渲染
+    setTimeout(() => {
         window.cliAgent.init();
-    }
+        console.log('[CLI Agent] 初始化完成，事件已绑定');
+    }, 100);
 })();
 </script>
