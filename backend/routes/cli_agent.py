@@ -16,7 +16,7 @@ from typing import Dict, List, Any, Optional, Callable
 from flask import Blueprint, request, jsonify, session
 
 from backend.middleware import validate_api_request
-from backend.services import get_zhipu_client
+from backend.services import get_zhipu_client, get_aliyun_client
 from backend.services.llm_service import get_llm_client, is_aliyun_model
 from backend.utils import create_response
 
@@ -236,9 +236,17 @@ class AICommandParser:
 输出: {"command": "patent", "subcommand": "translate", "params": {"text_type": "claims"}, "confidence": 0.8}
 """
 
-    def __init__(self, client, model: str = "GLM-4.7-Flash"):
+    def __init__(self, client, model: str = None, provider: str = 'zhipu'):
         self.client = client
-        self.model = model
+        self.provider = provider
+        # 根据提供商选择默认模型
+        if model is None:
+            if provider == 'aliyun':
+                self.model = "qwen-plus"
+            else:
+                self.model = "GLM-4.7-Flash"
+        else:
+            self.model = model
     
     def parse(self, user_input: str) -> Dict[str, Any]:
         """解析用户输入"""
@@ -636,11 +644,25 @@ def execute_command():
         if not user_input:
             return create_response(error="请输入命令")
         
-        client, error = get_zhipu_client()
-        if error:
-            return create_response(error="AI服务不可用")
+        # 尝试获取可用的AI客户端（智谱或阿里云）
+        client = None
+        error_msg = None
+        provider = None
         
-        parser = AICommandParser(client)
+        # 首先尝试智谱AI
+        client, error_msg = get_zhipu_client()
+        if client:
+            provider = 'zhipu'
+        else:
+            # 如果智谱不可用，尝试阿里云
+            client, error_msg = get_aliyun_client()
+            if client:
+                provider = 'aliyun'
+        
+        if not client:
+            return create_response(error="AI服务不可用，请配置智谱AI或阿里云API Key")
+        
+        parser = AICommandParser(client, provider=provider)
         parsed = parser.parse(user_input)
         
         if parsed.get("confidence", 0) < 0.5:
@@ -691,11 +713,22 @@ def parse_command():
         if not user_input:
             return create_response(error="请输入命令")
         
-        client, error = get_zhipu_client()
-        if error:
-            return create_response(error="AI服务不可用")
+        # 尝试获取可用的AI客户端（智谱或阿里云）
+        client = None
+        provider = None
         
-        parser = AICommandParser(client)
+        client, error = get_zhipu_client()
+        if client:
+            provider = 'zhipu'
+        else:
+            client, error = get_aliyun_client()
+            if client:
+                provider = 'aliyun'
+        
+        if not client:
+            return create_response(error="AI服务不可用，请配置智谱AI或阿里云API Key")
+        
+        parser = AICommandParser(client, provider=provider)
         parsed = parser.parse(user_input)
         
         return create_response(data={
@@ -746,9 +779,23 @@ def chat():
         if not messages:
             return create_response(error="请提供对话消息")
         
+        # 尝试获取可用的AI客户端（智谱或阿里云）
+        client = None
+        provider = None
+        model = None
+        
         client, error = get_zhipu_client()
-        if error:
-            return create_response(error="AI服务不可用")
+        if client:
+            provider = 'zhipu'
+            model = "GLM-4.7-Flash"
+        else:
+            client, error = get_aliyun_client()
+            if client:
+                provider = 'aliyun'
+                model = "qwen-plus"
+        
+        if not client:
+            return create_response(error="AI服务不可用，请配置智谱AI或阿里云API Key")
         
         system_prompt = f"""你是一个智能助手，帮助用户使用CLI Agent系统。
 
@@ -781,7 +828,7 @@ def chat():
         full_messages = [{"role": "system", "content": system_prompt}] + messages
         
         response = client.chat.completions.create(
-            model="GLM-4.7-Flash",
+            model=model,
             messages=full_messages,
             temperature=0.7
         )

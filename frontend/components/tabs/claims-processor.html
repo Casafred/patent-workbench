@@ -314,12 +314,16 @@
 <!-- Note: This component is loaded dynamically by frontend/index.html -->
 <!-- All required scripts are loaded in the main HTML file -->
 <!-- No additional scripts needed here -->
-<!-- 功能六增强脚本 -->
-<script src="../js/patentTemplate.js"></script>
-<script src="../js/patentChat.js"></script>
-<script src="../js/main.js?v=20260206"></script>
-<!-- 功能六：新标签页打开专利详情 - 绿色主题 + 左侧导航 + 复制按钮 -->
-<script src="../js/patentDetailNewTab.js?v=20260204"></script>
+<!-- 
+  警告：不要在动态加载的组件中重复加载脚本！
+  这些脚本已在 frontend/index.html 中加载：
+  - patentTemplate.js
+  - patentChat.js
+  - main.js
+  - patentDetailNewTab.js
+  
+  重复加载会导致变量重复声明错误。
+-->
 
 <!-- 新增：专利附图弹窗组件 -->
 <div id="drawings_modal" class="modal" style="display: none;">
