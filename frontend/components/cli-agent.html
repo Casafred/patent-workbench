@@ -7,8 +7,9 @@
             <span class="cli-subtitle">智能命令行终端</span>
         </div>
         <div class="cli-controls">
-            <button class="cli-btn cli-btn-minimize" id="cli-btn-minimize">−</button>
-            <button class="cli-btn cli-btn-close" id="cli-btn-close">×</button>
+            <button class="cli-btn cli-btn-fullscreen" id="cli-btn-fullscreen" title="全屏">⛶</button>
+            <button class="cli-btn cli-btn-minimize" id="cli-btn-minimize" title="最小化">−</button>
+            <button class="cli-btn cli-btn-close" id="cli-btn-close" title="关闭">×</button>
         </div>
     </div>
     
@@ -16,18 +17,18 @@
         <div class="cli-output" id="cli-output">
             <div class="cli-welcome">
                 <pre>
-╔═══════════════════════════════════════════════════════════════╗
-║                                                               ║
-║     █████╗ ██╗     ███████╗██████╗ ███████╗██████╗           ║
-║    ██╔══██╗██║     ██╔════╝██╔══██╗██╔════╝██╔══██╗          ║
-║    ███████║██║     █████╗  ██║  ██║█████╗  ██║  ██║          ║
-║    ██╔══██║██║     ██╔══╝  ██║  ██║██╔══╝  ██║  ██║          ║
-║    ██║  ██║███████╗██║     ██████╔╝███████╗██████╔╝          ║
-║    ╚═╝  ╚═╝╚══════╝╚═╝     ╚═════╝ ╚══════╝╚═════╝            ║
-║                                                               ║
-║              智能命令行代理 v1.0.0                            ║
-║                                                               ║
-╚═══════════════════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════════════════╗
+║                                                                  ║
+║    █████╗ ██╗      ██████╗ ██████╗ ███████╗██████╗               ║
+║   ██╔══██╗██║     ██╔═══██╗██╔══██╗██╔════╝██╔══██╗              ║
+║   ███████║██║     ██║   ██║██████╔╝█████╗  ██║  ██║              ║
+║   ██╔══██║██║     ██║   ██║██╔══██╗██╔══╝  ██║  ██║              ║
+║   ██║  ██║███████╗╚██████╔╝██║  ██║███████╗██████╔╝              ║
+║   ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═════╝               ║
+║                                                                  ║
+║                 智能命令行代理 v1.0.0                            ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
                 </pre>
                 <p class="cli-welcome-text">
                     输入 <span class="cli-cmd">help</span> 查看可用命令 | 
@@ -80,7 +81,7 @@
 .cli-container {
     position: fixed;
     bottom: 20px;
-    right: 20px;
+    right: 100px; /* 向右移动，避免遮挡二维码 */
     width: 700px;
     height: 500px;
     background: #1a1a2e;
@@ -153,6 +154,16 @@
     transition: all 0.2s;
 }
 
+.cli-btn-fullscreen {
+    background: #22c55e;
+    color: white;
+    font-size: 14px;
+}
+
+.cli-btn-fullscreen:hover {
+    background: #16a34a;
+}
+
 .cli-btn-minimize {
     background: #fbbf24;
     color: #1a1a2e;
@@ -169,6 +180,16 @@
 
 .cli-btn-close:hover {
     background: #dc2626;
+}
+
+/* 全屏模式样式 */
+.cli-container.fullscreen {
+    width: calc(100vw - 40px);
+    height: calc(100vh - 40px);
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    bottom: 20px;
 }
 
 .cli-body {
@@ -477,6 +498,7 @@
             this.historyIndex = -1;
             this.isOpen = false;
             this.isMinimized = false;
+            this.isFullscreen = false;
             this.initialized = false;
         }
         
@@ -500,6 +522,7 @@
             const launcher = document.getElementById('cli-launcher');
             const closeBtn = document.getElementById('cli-btn-close');
             const minimizeBtn = document.getElementById('cli-btn-minimize');
+            const fullscreenBtn = document.getElementById('cli-btn-fullscreen');
             const sendBtn = document.getElementById('cli-send-btn');
             
             if (launcher) {
@@ -514,8 +537,36 @@
                 minimizeBtn.addEventListener('click', () => this.toggleMinimize());
             }
             
+            if (fullscreenBtn) {
+                fullscreenBtn.addEventListener('click', () => this.toggleFullscreen());
+            }
+            
             if (sendBtn) {
                 sendBtn.addEventListener('click', () => this.executeCommand());
+            }
+            
+            // ESC键退出全屏
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && this.isFullscreen) {
+                    this.toggleFullscreen();
+                }
+            });
+        }
+        
+        toggleFullscreen() {
+            const container = document.getElementById('cli-agent-container');
+            const fullscreenBtn = document.getElementById('cli-btn-fullscreen');
+            
+            if (container) {
+                container.classList.toggle('fullscreen');
+                this.isFullscreen = !this.isFullscreen;
+                
+                if (fullscreenBtn) {
+                    fullscreenBtn.textContent = this.isFullscreen ? '⛶' : '⛶';
+                    fullscreenBtn.title = this.isFullscreen ? '退出全屏 (ESC)' : '全屏';
+                }
+                
+                console.log('[CLI Agent] 全屏模式:', this.isFullscreen ? '开启' : '关闭');
             }
         }
         
@@ -595,11 +646,25 @@
             this.showLoading();
             
             try {
+                // 从 localStorage 获取 API Key
+                const zhipuApiKey = localStorage.getItem('globalApiKey') || localStorage.getItem('zhipuai_api_key');
+                const aliyunApiKey = localStorage.getItem('aliyun_api_key');
+                
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                
+                // 添加 API Key 到请求头
+                if (zhipuApiKey) {
+                    headers['Authorization'] = `Bearer ${zhipuApiKey}`;
+                }
+                if (aliyunApiKey) {
+                    headers['X-Aliyun-API-Key'] = aliyunApiKey;
+                }
+                
                 const response = await fetch('/api/cli/execute', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: headers,
                     body: JSON.stringify({ input: command })
                 });
                 
