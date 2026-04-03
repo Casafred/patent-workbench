@@ -36,6 +36,8 @@
 
     <div class="cli-shell__inputbar">
         <span class="cli-shell__prompt">&gt;</span>
+        <button id="cli-file-btn" class="cli-shell__attach" type="button" title="选择文件">📎</button>
+        <input id="cli-file-input" type="file" hidden />
         <input
             id="cli-input"
             class="cli-shell__input"
@@ -44,6 +46,10 @@
             spellcheck="false"
             placeholder="输入命令或自然语言，例如：查询 CNXXXXXXA 专利详情"
         />
+        <select id="cli-ocr-engine" class="cli-shell__engine">
+            <option value="paddle_ocr_vl">Paddle OCR</option>
+            <option value="glm_ocr">GLM OCR</option>
+        </select>
         <button id="cli-send-btn" class="cli-shell__send">发送</button>
     </div>
 </div>
@@ -210,7 +216,7 @@
 
 .cli-shell__inputbar {
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto auto 1fr auto auto;
     gap: 12px;
     align-items: center;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
@@ -232,6 +238,41 @@
 
 .cli-shell__input::placeholder {
     color: #667991;
+}
+
+.cli-shell__attach,
+.cli-shell__engine {
+    height: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    color: #edf3ff;
+}
+
+.cli-shell__attach {
+    width: 40px;
+    cursor: pointer;
+}
+
+.cli-file-chip {
+    margin-bottom: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(120, 180, 255, 0.1);
+    color: #dbe5f6;
+    font-size: 12px;
+}
+
+.cli-file-chip button {
+    border: 0;
+    background: transparent;
+    color: #ffb4b4;
+    cursor: pointer;
+    font: inherit;
 }
 
 .cli-shell__send {
@@ -436,6 +477,7 @@
             this.modelData = { providers: [], default_provider: null };
             this.flowData = { flows: [] };
             this.currentStreamAnswer = '';
+            this.pendingAttachment = null;
             this.suggestionDefaults = [
                 '查询 CN104154208B 专利详情',
                 '查询 US12390907B2 专利详情',
@@ -461,6 +503,9 @@
             this.output = document.getElementById('cli-output');
             this.input = document.getElementById('cli-input');
             this.sendBtn = document.getElementById('cli-send-btn');
+            this.fileBtn = document.getElementById('cli-file-btn');
+            this.fileInput = document.getElementById('cli-file-input');
+            this.ocrEngineSelect = document.getElementById('cli-ocr-engine');
             this.providerSelect = document.getElementById('cli-provider-select');
             this.modelSelect = document.getElementById('cli-model-select');
             this.providerStatus = document.getElementById('cli-status-provider');
@@ -473,6 +518,8 @@
             document.getElementById('cli-btn-minimize')?.addEventListener('click', () => this.toggleMinimize());
             document.getElementById('cli-btn-expand')?.addEventListener('click', () => this.toggleFullscreen());
             this.sendBtn?.addEventListener('click', () => this.executeCommand());
+            this.fileBtn?.addEventListener('click', () => this.fileInput?.click());
+            this.fileInput?.addEventListener('change', (event) => this.handleFileSelect(event));
             this.providerSelect?.addEventListener('change', () => this.refreshModelOptions());
             this.input?.addEventListener('input', () => this.renderSuggestions());
 
@@ -594,6 +641,53 @@
             return headers;
         }
 
+        async handleFileSelect(event) {
+            const file = event?.target?.files?.[0];
+            if (!file) return;
+
+            const dataUrl = await this.readFileAsDataUrl(file);
+            this.pendingAttachment = {
+                name: file.name,
+                size: file.size,
+                mime_type: file.type || '',
+                data: dataUrl
+            };
+            this.renderAttachmentChip();
+            this.printTrace(`已选择附件: ${file.name}`);
+        }
+
+        readFileAsDataUrl(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(new Error('文件读取失败'));
+                reader.readAsDataURL(file);
+            });
+        }
+
+        renderAttachmentChip() {
+            document.getElementById('cli-file-chip')?.remove();
+            if (!this.pendingAttachment) return;
+
+            const chip = document.createElement('div');
+            chip.id = 'cli-file-chip';
+            chip.className = 'cli-file-chip';
+            chip.innerHTML = `
+                <span>附件: ${this.escapeHtml(this.pendingAttachment.name || 'file')}</span>
+                <button type="button" data-clear-file>移除</button>
+            `;
+            this.output.appendChild(chip);
+            chip.querySelector('[data-clear-file]')?.addEventListener('click', () => {
+                this.pendingAttachment = null;
+                if (this.fileInput) {
+                    this.fileInput.value = '';
+                }
+                chip.remove();
+                this.printTrace('已移除附件');
+            });
+            this.scrollToBottom();
+        }
+
         async executeCommand() {
             const value = (this.input?.value || '').trim();
             if (!value) return;
@@ -622,7 +716,9 @@
                 body: JSON.stringify({
                     input: value,
                     provider: this.providerSelect?.value || null,
-                    model: this.modelSelect?.value || null
+                    model: this.modelSelect?.value || null,
+                    attachment: this.pendingAttachment,
+                    ocr_engine: this.ocrEngineSelect?.value || null
                 })
             });
 
@@ -663,7 +759,9 @@
                     input: value,
                     mode: 'auto',
                     provider: this.providerSelect?.value || null,
-                    model: this.modelSelect?.value || null
+                    model: this.modelSelect?.value || null,
+                    attachment: this.pendingAttachment,
+                    ocr_engine: this.ocrEngineSelect?.value || null
                 })
             });
 

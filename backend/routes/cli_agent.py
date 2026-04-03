@@ -18,6 +18,7 @@ from backend.routes.ipc import (
     fetch_from_incopat_query,
     normalize_symbol,
 )
+from backend.routes.pdf_ocr import _parse_with_glm_ocr, _parse_with_paddle_ocr_vl
 from backend.routes.patent import get_current_user_id, get_scraper_instance
 from backend.services import get_aliyun_client, get_zhipu_client
 from backend.services.cli_orchestrator import CLIOrchestrator
@@ -439,6 +440,46 @@ def run_ipc_lookup_flow(flow_input: str) -> Dict[str, Any]:
     }
 
 
+def run_pdf_ocr_flow(flow_input: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    attachment = params.get("attachment") or {}
+    file_data = attachment.get("data")
+    file_name = attachment.get("name") or "uploaded-file"
+    mime_type = attachment.get("mime_type") or ""
+    engine = params.get("ocr_engine") or ("glm_ocr" if params.get("model", "").lower().startswith("glm") else "paddle_ocr_vl")
+
+    if not file_data:
+        return {"success": False, "error": "请先在 CLI 中选择文件，再执行 pdf_ocr_pipeline"}
+
+    if engine == "glm_ocr":
+        result = _parse_with_glm_ocr(file_data, {})
+    else:
+        result = _parse_with_paddle_ocr_vl(file_data, {})
+
+    markdown = result.get("markdown") or result.get("md_results") or ""
+    preview = markdown[:3000] if markdown else "未提取到正文"
+    pages = result.get("pages") or []
+
+    return {
+        "success": True,
+        "type": "embedded_flow",
+        "message": "PDF OCR 解析完成",
+        "data": {
+            "flow_id": "pdf_ocr_pipeline",
+            "title": "PDF OCR 阅读流程",
+            "description": "已完成文档解析，可继续围绕结果追问。",
+            "steps": ["读取附件", "调用 OCR 引擎", "抽取版面文本", "回填 CLI 上下文"],
+            "outputs": [
+                {
+                    "title": "附件信息",
+                    "text": "\n".join([f"文件名: {file_name}", f"MIME: {mime_type or '-'}", f"引擎: {engine}", f"页数: {len(pages)}"]),
+                },
+                {"title": "OCR 预览", "text": preview},
+            ],
+            "ocr_result": result,
+        },
+    }
+
+
 class CommandRegistry:
     def __init__(self):
         self._commands = {
@@ -595,10 +636,7 @@ class SimpleCommandExecutor:
             return run_ipc_lookup_flow(flow_input or "")
 
         if flow_id == "pdf_ocr_pipeline":
-            return {
-                "success": False,
-                "error": "CLI 当前还没有文件输入能力，PDF OCR flow 需要先补文件上传入口",
-            }
+            return run_pdf_ocr_flow(flow_input or "", params)
 
         return {"success": False, "error": f"未注册的 flow: {flow_id}"}
 
@@ -633,6 +671,8 @@ def parse_legacy_command(text: str, provider: Optional[str], model: Optional[str
     elif command == "flow" and subcommand == "launch":
         params["flow_id"] = remaining[0] if remaining else ""
         params["flow_input"] = " ".join(remaining[1:]) if len(remaining) > 1 else ""
+    elif command == "flow" and subcommand == "attach":
+        params["message"] = " ".join(remaining)
 
     if provider:
         params["provider"] = provider
@@ -693,6 +733,12 @@ def execute_command():
             return create_response(data=result, status_code=200 if result.get("success", False) else 400)
 
         parsed = parse_legacy_command(user_input, provider=provider, model=model)
+        attachment = req_data.get("attachment")
+        if attachment:
+            parsed.setdefault("params", {})["attachment"] = attachment
+        ocr_engine = req_data.get("ocr_engine")
+        if ocr_engine:
+            parsed.setdefault("params", {})["ocr_engine"] = ocr_engine
         result = executor.execute(parsed, request_context)
         return create_response(
             data={"success": result.get("success", False), "mode": "legacy_cli_command", "parsed": parsed, "result": result},
@@ -727,6 +773,12 @@ def stream_execute_command():
         try:
             if orchestrator.is_builtin_or_command_style(user_input):
                 parsed = parse_legacy_command(user_input, provider=provider, model=model)
+                attachment = req_data.get("attachment")
+                if attachment:
+                    parsed.setdefault("params", {})["attachment"] = attachment
+                ocr_engine = req_data.get("ocr_engine")
+                if ocr_engine:
+                    parsed.setdefault("params", {})["ocr_engine"] = ocr_engine
                 result = executor.execute(parsed, request_context)
                 yield f"data: {json.dumps({'type': 'trace', 'stage': 'command', 'message': '执行命令模式'}, ensure_ascii=False)}\n\n"
                 yield f"data: {json.dumps({'type': 'final', 'data': result}, ensure_ascii=False)}\n\n"
