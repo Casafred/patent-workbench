@@ -41,6 +41,7 @@ PATENT_NUMBER_REGEX = re.compile(
     re.IGNORECASE,
 )
 IPC_CODE_REGEX = re.compile(r"^[A-H][0-9]{2}[A-Z][0-9]+(?:/[0-9]+)?$", re.IGNORECASE)
+IPC_PREFIX_REGEX = re.compile(r"\b[A-H][0-9]{2}[A-Z](?:[0-9]+(?:/[0-9]+)?)?\b", re.IGNORECASE)
 
 
 def list_flows_data() -> Dict[str, Any]:
@@ -165,6 +166,73 @@ def should_auto_run_claims_excel(user_input: str, attachment: Optional[Dict[str,
         return True
     keywords = ["excel", "表格", "claims", "权利要求", "处理", "解析这个表", "分析这个excel"]
     return any(keyword in normalized for keyword in keywords)
+
+
+def detect_auto_flow_command(
+    user_input: str,
+    attachment: Optional[Dict[str, Any]],
+    provider: Optional[str],
+    model: Optional[str],
+    ocr_engine: Optional[str] = None,
+) -> Optional[Dict[str, Any]]:
+    text = (user_input or "").strip()
+    lowered = text.lower()
+
+    if should_auto_run_claims_excel(text, attachment):
+        return {
+            "command": "flow",
+            "subcommand": "launch",
+            "params": {
+                "flow_id": "claims_excel_pipeline",
+                "flow_input": text,
+                "provider": provider,
+                "model": model,
+                "attachment": attachment,
+                "ocr_engine": ocr_engine,
+            },
+        }
+
+    if should_auto_run_pdf_ocr(text, attachment):
+        return {
+            "command": "flow",
+            "subcommand": "launch",
+            "params": {
+                "flow_id": "pdf_ocr_pipeline",
+                "flow_input": text,
+                "provider": provider,
+                "model": model,
+                "attachment": attachment,
+            },
+        }
+
+    ipc_match = IPC_PREFIX_REGEX.search(text)
+    ipc_keywords = ["ipc", "分类号", "分类", "分类编码", "检索号", "分类检索"]
+    if ipc_match and any(keyword in text for keyword in ipc_keywords):
+        return {
+            "command": "flow",
+            "subcommand": "launch",
+            "params": {
+                "flow_id": "ipc_lookup",
+                "flow_input": ipc_match.group(0).upper(),
+                "provider": provider,
+                "model": model,
+            },
+        }
+
+    if any(keyword in lowered for keyword in ["ipc", "分类号"]) and text:
+        query = ipc_match.group(0).upper() if ipc_match else text.replace("查询一下", "").replace("查询", "").replace("一下", "").strip()
+        return {
+            "command": "flow",
+            "subcommand": "launch",
+            "params": {
+                "flow_id": "ipc_lookup",
+                "flow_input": query,
+                "provider": provider,
+                "model": model,
+            },
+        }
+
+    return None
 
 
 def resolve_model_choice(model: Optional[str]) -> Tuple[str, str]:
@@ -896,37 +964,9 @@ def execute_command():
 
         request_context = get_request_context()
 
-        if should_auto_run_claims_excel(user_input, attachment):
-            parsed = {
-                "command": "flow",
-                "subcommand": "launch",
-                "params": {
-                    "flow_id": "claims_excel_pipeline",
-                    "flow_input": user_input,
-                    "provider": provider,
-                    "model": model,
-                    "attachment": attachment,
-                },
-            }
-            result = executor.execute(parsed, request_context)
-            return create_response(
-                data={"success": result.get("success", False), "mode": "legacy_cli_command", "parsed": parsed, "result": result},
-                status_code=200 if result.get("success", False) else 400,
-            )
-
-        if should_auto_run_pdf_ocr(user_input, attachment):
-            parsed = {
-                "command": "flow",
-                "subcommand": "launch",
-                "params": {
-                    "flow_id": "pdf_ocr_pipeline",
-                    "flow_input": user_input,
-                    "provider": provider,
-                    "model": model,
-                    "attachment": attachment,
-                    "ocr_engine": ocr_engine,
-                },
-            }
+        auto_flow = detect_auto_flow_command(user_input, attachment, provider, model, ocr_engine)
+        if auto_flow:
+            parsed = auto_flow
             result = executor.execute(parsed, request_context)
             return create_response(
                 data={"success": result.get("success", False), "mode": "legacy_cli_command", "parsed": parsed, "result": result},
@@ -982,39 +1022,17 @@ def stream_execute_command():
 
     def generate():
         try:
-            if should_auto_run_claims_excel(user_input, attachment):
-                parsed = {
-                    "command": "flow",
-                    "subcommand": "launch",
-                    "params": {
-                        "flow_id": "claims_excel_pipeline",
-                        "flow_input": user_input,
-                        "provider": provider,
-                        "model": model,
-                        "attachment": attachment,
-                    },
-                }
+            auto_flow = detect_auto_flow_command(user_input, attachment, provider, model, ocr_engine)
+            if auto_flow:
+                parsed = auto_flow
                 result = executor.execute(parsed, request_context)
-                yield f"data: {json.dumps({'type': 'trace', 'stage': 'attachment', 'message': '检测到 Excel 附件，自动进入 Claims Excel 工作流'}, ensure_ascii=False)}\n\n"
-                yield f"data: {json.dumps({'type': 'final', 'data': result}, ensure_ascii=False)}\n\n"
-                yield "data: [DONE]\n\n"
-                return
-
-            if should_auto_run_pdf_ocr(user_input, attachment):
-                parsed = {
-                    "command": "flow",
-                    "subcommand": "launch",
-                    "params": {
-                        "flow_id": "pdf_ocr_pipeline",
-                        "flow_input": user_input,
-                        "provider": provider,
-                        "model": model,
-                        "attachment": attachment,
-                        "ocr_engine": ocr_engine,
-                    },
-                }
-                result = executor.execute(parsed, request_context)
-                yield f"data: {json.dumps({'type': 'trace', 'stage': 'attachment', 'message': '检测到附件，自动进入 PDF OCR 工作流'}, ensure_ascii=False)}\n\n"
+                flow_id = parsed.get("params", {}).get("flow_id", "flow")
+                trace_message = {
+                    "claims_excel_pipeline": "检测到 Excel 附件，自动进入 Claims Excel 工作流",
+                    "pdf_ocr_pipeline": "检测到附件，自动进入 PDF OCR 工作流",
+                    "ipc_lookup": "识别到 IPC/分类号查询，自动进入 IPC 工作流",
+                }.get(flow_id, f"自动进入 {flow_id} 工作流")
+                yield f"data: {json.dumps({'type': 'trace', 'stage': 'auto_flow', 'message': trace_message}, ensure_ascii=False)}\n\n"
                 yield f"data: {json.dumps({'type': 'final', 'data': result}, ensure_ascii=False)}\n\n"
                 yield "data: [DONE]\n\n"
                 return

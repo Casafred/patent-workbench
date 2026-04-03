@@ -357,6 +357,47 @@
     word-break: break-word;
 }
 
+.cli-markdown h1,
+.cli-markdown h2,
+.cli-markdown h3,
+.cli-markdown h4,
+.cli-markdown h5,
+.cli-markdown h6 {
+    margin: 0 0 10px;
+    color: #ffcfab;
+}
+
+.cli-markdown p,
+.cli-markdown ul,
+.cli-markdown ol,
+.cli-markdown pre,
+.cli-markdown blockquote {
+    margin: 0 0 10px;
+}
+
+.cli-markdown ul,
+.cli-markdown ol {
+    padding-left: 20px;
+}
+
+.cli-markdown code {
+    padding: 1px 5px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.cli-markdown pre code {
+    display: block;
+    padding: 10px 12px;
+    overflow-x: auto;
+}
+
+.cli-markdown blockquote {
+    padding-left: 12px;
+    border-left: 3px solid rgba(255, 255, 255, 0.16);
+    color: #b8c7de;
+}
+
 .cli-details {
     margin-bottom: 14px;
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -647,6 +688,18 @@
             }
 
             return headers;
+        }
+
+        renderRichText(text) {
+            const content = text == null ? '' : String(text);
+            if (typeof window.marked !== 'undefined') {
+                try {
+                    return window.marked.parse(content, { gfm: true, breaks: true });
+                } catch (error) {
+                    return this.escapeHtml(content);
+                }
+            }
+            return this.escapeHtml(content);
         }
 
         async handleFileSelect(event) {
@@ -1041,7 +1094,7 @@
             const steps = Array.isArray(data.steps) ? data.steps.join('\n') : '';
             const outputs = Array.isArray(data.outputs)
                 ? data.outputs.map((item) => (
-                    `<div class="cli-divider"></div><div class="cli-kv"><strong>${this.escapeHtml(item.title || '结果')}:</strong>\n${this.escapeHtml(item.text || '')}</div>`
+                    `<div class="cli-divider"></div><div class="cli-kv"><strong>${this.escapeHtml(item.title || '结果')}:</strong><div class="cli-markdown">${this.renderRichText(item.text || '')}</div></div>`
                 )).join('')
                 : '';
             card.innerHTML = `
@@ -1063,13 +1116,13 @@
                 block = document.createElement('div');
                 block.id = 'cli-stream-answer';
                 block.className = 'cli-block';
-                block.innerHTML = '<div class="cli-block__title">AI 解答生成中</div><div class="cli-block__text" data-stream-text></div>';
+                block.innerHTML = '<div class="cli-block__title">AI 解答生成中</div><div class="cli-block__text cli-markdown" data-stream-text></div>';
                 this.output.appendChild(block);
             }
 
             const textNode = block.querySelector('[data-stream-text]');
             if (textNode) {
-                textNode.textContent = this.currentStreamAnswer;
+                textNode.innerHTML = this.renderRichText(this.currentStreamAnswer);
             }
             this.scrollToBottom();
         }
@@ -1081,7 +1134,7 @@
         printBlock(title, text) {
             const block = document.createElement('div');
             block.className = 'cli-block';
-            block.innerHTML = `<div class="cli-block__title">${this.escapeHtml(title)}</div><div class="cli-block__text">${this.escapeHtml(text)}</div>`;
+            block.innerHTML = `<div class="cli-block__title">${this.escapeHtml(title)}</div><div class="cli-block__text cli-markdown">${this.renderRichText(text)}</div>`;
             this.output.appendChild(block);
             this.scrollToBottom();
         }
