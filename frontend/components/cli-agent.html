@@ -5,9 +5,21 @@
             <div class="cli-shell__subtitle">自然语言 -> 服务流程 -> 上下文问答</div>
         </div>
         <div class="cli-shell__actions">
-            <button id="cli-btn-expand" class="cli-shell__icon" title="全屏">□</button>
-            <button id="cli-btn-minimize" class="cli-shell__icon" title="最小化">-</button>
-            <button id="cli-btn-close" class="cli-shell__icon cli-shell__icon--danger" title="关闭">x</button>
+            <button id="cli-btn-minimize" class="cli-shell__icon-btn cli-shell__icon-btn--minimize" title="最小化">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M2 6h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+            <button id="cli-btn-expand" class="cli-shell__icon-btn cli-shell__icon-btn--expand" title="全屏">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M2 2h8v8H2V2z" stroke="currentColor" stroke-width="2" fill="none"/>
+                </svg>
+            </button>
+            <button id="cli-btn-close" class="cli-shell__icon-btn cli-shell__icon-btn--close" title="关闭">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
         </div>
     </div>
 
@@ -37,7 +49,15 @@
 
     <div class="cli-shell__inputbar">
         <span class="cli-shell__prompt">&gt;</span>
-        <button id="cli-file-btn" class="cli-shell__attach" type="button" title="选择文件">📎</button>
+        <button id="cli-file-btn" class="cli-shell__attach" type="button" title="选择文件">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" 
+                      stroke="currentColor" 
+                      stroke-width="2" 
+                      stroke-linecap="round" 
+                      stroke-linejoin="round"/>
+            </svg>
+        </button>
         <input id="cli-file-input" type="file" hidden />
         <input
             id="cli-input"
@@ -136,21 +156,55 @@
 
 .cli-shell__actions {
     display: flex;
-    gap: 8px;
+    gap: 6px;
 }
 
-.cli-shell__icon {
-    width: 30px;
-    height: 30px;
-    border: 0;
-    border-radius: 9px;
+.cli-shell__icon-btn {
+    width: 32px;
+    height: 32px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
     cursor: pointer;
-    color: #e8eef9;
-    background: rgba(255, 255, 255, 0.08);
+    color: #b8c7de;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 0;
 }
 
-.cli-shell__icon--danger {
-    background: rgba(209, 77, 77, 0.75);
+.cli-shell__icon-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #e8eef9;
+    transform: translateY(-1px);
+}
+
+.cli-shell__icon-btn:active {
+    transform: translateY(0) scale(0.95);
+}
+
+.cli-shell__icon-btn--minimize:hover {
+    background: rgba(255, 193, 7, 0.15);
+    border-color: rgba(255, 193, 7, 0.3);
+    color: #ffc107;
+}
+
+.cli-shell__icon-btn--expand:hover {
+    background: rgba(33, 150, 243, 0.15);
+    border-color: rgba(33, 150, 243, 0.3);
+    color: #2196f3;
+}
+
+.cli-shell__icon-btn--close {
+    border-color: rgba(239, 83, 80, 0.2);
+}
+
+.cli-shell__icon-btn--close:hover {
+    background: rgba(239, 83, 80, 0.9);
+    border-color: rgba(239, 83, 80, 1);
+    color: #ffffff;
 }
 
 .cli-shell__toolbar {
@@ -249,15 +303,31 @@
 .cli-shell__attach,
 .cli-shell__engine {
     height: 40px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 10px;
-    background: rgba(255, 255, 255, 0.06);
-    color: #edf3ff;
+    background: transparent;
+    color: #b8c7de;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .cli-shell__attach {
     width: 40px;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.cli-shell__attach:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #e8eef9;
+    transform: translateY(-1px);
+}
+
+.cli-shell__attach:active {
+    transform: translateY(0) scale(0.95);
 }
 
 .cli-file-chip {
@@ -1249,8 +1319,16 @@
             document.body.style.overflow = shouldOpen ? 'hidden' : '';
             const expandBtn = document.getElementById('cli-btn-expand');
             if (expandBtn) {
-                expandBtn.textContent = shouldOpen ? '↙' : '□';
                 expandBtn.title = shouldOpen ? '退出全屏' : '全屏';
+                if (shouldOpen) {
+                    expandBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <path d="M4 2v3H2v5h5V8h3V2H4z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                    </svg>`;
+                } else {
+                    expandBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <path d="M2 2h8v8H2V2z" stroke="currentColor" stroke-width="2" fill="none"/>
+                    </svg>`;
+                }
             }
             this.scrollToBottom();
         }

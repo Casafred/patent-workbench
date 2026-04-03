@@ -94,6 +94,16 @@ def list_flows_data() -> Dict[str, Any]:
             "entry_examples": ["flow launch ipc_lookup H04L", "flow launch ipc_lookup 人工智能"],
             "status": "ready",
         },
+        {
+            "id": "ipc_predict",
+            "name": "IPC 分类预测",
+            "description": "根据技术描述文本预测IPC分类号，使用WIPO IPCCAT服务",
+            "entry_examples": [
+                "预测IPC分类：一种基于深度学习的图像识别方法",
+                "flow launch ipc_predict 一种数据处理装置，包括存储器和处理器",
+            ],
+            "status": "ready",
+        },
     ]
     return {"success": True, "data": {"flows": flows}}
 
@@ -231,6 +241,38 @@ def detect_auto_flow_command(
                 "model": model,
             },
         }
+
+    predict_keywords = ["预测ipc", "ipc预测", "分类预测", "预测分类", "预测一下ipc", "ipc分类预测"]
+    if any(keyword in lowered for keyword in predict_keywords):
+        predict_text = text
+        for keyword in predict_keywords:
+            predict_text = predict_text.replace(keyword, "").replace(keyword.upper(), "")
+        predict_text = predict_text.replace("：", "").replace(":", "").strip()
+        if predict_text:
+            return {
+                "command": "flow",
+                "subcommand": "launch",
+                "params": {
+                    "flow_id": "ipc_predict",
+                    "flow_input": predict_text,
+                    "provider": provider,
+                    "model": model,
+                },
+            }
+
+    if lowered.startswith("flow launch ipc_predict"):
+        predict_text = text.replace("flow launch ipc_predict", "").strip()
+        if predict_text:
+            return {
+                "command": "flow",
+                "subcommand": "launch",
+                "params": {
+                    "flow_id": "ipc_predict",
+                    "flow_input": predict_text,
+                    "provider": provider,
+                    "model": model,
+                },
+            }
 
     return None
 
@@ -554,6 +596,127 @@ def run_ipc_lookup_flow(flow_input: str) -> Dict[str, Any]:
     }
 
 
+def run_ipc_predict_flow(flow_input: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    import requests
+    
+    text = (flow_input or "").strip()
+    if not text:
+        return {"success": False, "error": "请提供技术描述文本"}
+    
+    if len(text) > 1500:
+        return {"success": False, "error": "文本长度不能超过1500字符"}
+    
+    lang = params.get("lang", "zh")
+    level = params.get("level", "subgroup")
+    limit = params.get("limit", 5)
+    
+    level_map = {
+        "class": "CLASS",
+        "subclass": "SUBCLASS",
+        "maingroup": "MAINGROUP",
+        "subgroup": "SUBGROUP"
+    }
+    
+    request_params = {
+        "text": text,
+        "lang": lang,
+        "numberofpredictions": limit,
+        "hierarchiclevel": level_map.get(level, "SUBGROUP")
+    }
+    
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Accept": "application/json",
+    }
+    
+    try:
+        response = requests.get(
+            "https://ipcpub.wipo.int/api/v1/search/ipccat",
+            params=request_params,
+            headers=headers,
+            timeout=30
+        )
+        
+        if response.status_code == 500:
+            return {
+                "success": False,
+                "error": "WIPO IPCCAT 服务暂时不可用，请稍后再试",
+                "data": {
+                    "flow_id": "ipc_predict",
+                    "title": "IPC 分类预测",
+                    "fallback_hint": "您可以尝试使用关键词搜索功能：输入 'ipc 关键词' 进行检索"
+                }
+            }
+        
+        if response.status_code != 200:
+            return {"success": False, "error": f"WIPO API 请求失败: {response.status_code}"}
+        
+        data = response.json()
+        
+        if data.get("code", 0) != 0:
+            return {"success": False, "error": f"IPCCAT 错误: {data.get('message', '未知错误')}"}
+        
+        results = []
+        for item in data.get("results", []):
+            results.append({
+                "score": item.get("score", 0),
+                "symbol": item.get("display", ""),
+                "code": item.get("code", "")
+            })
+        
+        outputs: List[Dict[str, str]] = []
+        outputs.append({
+            "title": "技术描述",
+            "text": text[:200] + "..." if len(text) > 200 else text
+        })
+        
+        if results:
+            result_lines = []
+            for item in results:
+                score = item.get("score", 0)
+                symbol = item.get("symbol", "")
+                code = item.get("code", "")
+                score_display = "★" * min(score, 5) if score > 0 else "-"
+                result_lines.append(f"{symbol} | 相关度: {score} {score_display}")
+            
+            outputs.append({
+                "title": "预测结果",
+                "text": "\n".join(result_lines)
+            })
+            
+            outputs.append({
+                "title": "提示",
+                "text": "点击分类号可在 IPC 检索中查看详情"
+            })
+        else:
+            outputs.append({
+                "title": "预测结果",
+                "text": "未能预测出 IPC 分类，请尝试更详细的技术描述"
+            })
+        
+        return {
+            "success": True,
+            "type": "embedded_flow",
+            "message": "IPC 分类预测完成",
+            "data": {
+                "flow_id": "ipc_predict",
+                "title": "IPC 分类预测",
+                "description": f"基于 WIPO IPCCAT 服务，预测了 {len(results)} 个候选分类",
+                "steps": ["接收技术描述", "调用 WIPO IPCCAT API", "返回预测结果"],
+                "outputs": outputs,
+                "query": text[:100] + "..." if len(text) > 100 else text,
+                "lang": data.get("lang", lang),
+                "count": len(results),
+                "results": results,
+            },
+        }
+        
+    except requests.Timeout:
+        return {"success": False, "error": "WIPO API 请求超时，请稍后再试"}
+    except Exception as e:
+        return {"success": False, "error": f"预测失败: {str(e)}"}
+
+
 def run_pdf_ocr_flow(flow_input: str, params: Dict[str, Any]) -> Dict[str, Any]:
     attachment = params.get("attachment") or {}
     file_name = attachment.get("name") or "uploaded-file"
@@ -874,6 +1037,9 @@ class SimpleCommandExecutor:
 
         if flow_id == "ipc_lookup":
             return run_ipc_lookup_flow(flow_input or "")
+
+        if flow_id == "ipc_predict":
+            return run_ipc_predict_flow(flow_input or "", params)
 
         if flow_id == "pdf_ocr_pipeline":
             return run_pdf_ocr_flow(flow_input or "", params)
