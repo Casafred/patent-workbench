@@ -97,7 +97,7 @@ def list_flows_data() -> Dict[str, Any]:
         {
             "id": "ipc_predict",
             "name": "IPC 分类预测",
-            "description": "根据技术描述文本预测IPC分类号，使用WIPO IPCCAT服务",
+            "description": "根据技术描述文本预测IPC分类号",
             "entry_examples": [
                 "预测IPC分类：一种基于深度学习的图像识别方法",
                 "flow launch ipc_predict 一种数据处理装置，包括存储器和处理器",
@@ -640,7 +640,7 @@ def run_ipc_predict_flow(flow_input: str, params: Dict[str, Any]) -> Dict[str, A
         if response.status_code == 500:
             return {
                 "success": False,
-                "error": "WIPO IPCCAT 服务暂时不可用，请稍后再试",
+                "error": "IPC分类预测服务暂时不可用，请稍后再试",
                 "data": {
                     "flow_id": "ipc_predict",
                     "title": "IPC 分类预测",
@@ -649,12 +649,12 @@ def run_ipc_predict_flow(flow_input: str, params: Dict[str, Any]) -> Dict[str, A
             }
         
         if response.status_code != 200:
-            return {"success": False, "error": f"WIPO API 请求失败: {response.status_code}"}
+            return {"success": False, "error": f"IPC分类预测服务请求失败: {response.status_code}"}
         
         data = response.json()
         
         if data.get("code", 0) != 0:
-            return {"success": False, "error": f"IPCCAT 错误: {data.get('message', '未知错误')}"}
+            return {"success": False, "error": f"预测服务错误: {data.get('message', '未知错误')}"}
         
         results = []
         for item in data.get("results", []):
@@ -701,8 +701,8 @@ def run_ipc_predict_flow(flow_input: str, params: Dict[str, Any]) -> Dict[str, A
             "data": {
                 "flow_id": "ipc_predict",
                 "title": "IPC 分类预测",
-                "description": f"基于 WIPO IPCCAT 服务，预测了 {len(results)} 个候选分类",
-                "steps": ["接收技术描述", "调用 WIPO IPCCAT API", "返回预测结果"],
+                "description": f"已预测 {len(results)} 个候选分类",
+                "steps": ["接收技术描述", "调用分类预测服务", "返回预测结果"],
                 "outputs": outputs,
                 "query": text[:100] + "..." if len(text) > 100 else text,
                 "lang": data.get("lang", lang),
@@ -712,7 +712,7 @@ def run_ipc_predict_flow(flow_input: str, params: Dict[str, Any]) -> Dict[str, A
         }
         
     except requests.Timeout:
-        return {"success": False, "error": "WIPO API 请求超时，请稍后再试"}
+        return {"success": False, "error": "IPC分类预测服务请求超时，请稍后再试"}
     except Exception as e:
         return {"success": False, "error": f"预测失败: {str(e)}"}
 
