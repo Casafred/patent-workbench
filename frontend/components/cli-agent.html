@@ -42,8 +42,13 @@
         <input
             id="cli-input"
             class="cli-shell__input"
-            type="text"
+            type="search"
+            name="cli_query_input"
             autocomplete="off"
+            autocapitalize="off"
+            autocorrect="off"
+            data-lpignore="true"
+            data-1p-ignore="true"
             spellcheck="false"
             placeholder="输入命令或自然语言，例如：查询 CNXXXXXXA 专利详情"
         />
@@ -484,7 +489,9 @@
                 '查询 US12390907B2 专利详情',
                 '基于刚才专利结果总结创新点',
                 '对比 CN104154208B 和 US12390907B2 的保护范围',
-                'flow list'
+                'flow list',
+                '请解析这个文件',
+                '处理这个Excel'
             ];
         }
 
@@ -646,16 +653,40 @@
             const file = event?.target?.files?.[0];
             if (!file) return;
 
-            const dataUrl = await this.readFileAsDataUrl(file);
-            this.pendingAttachment = {
-                name: file.name,
-                size: file.size,
-                mime_type: file.type || '',
-                data: dataUrl
-            };
+            this.pendingAttachment = await this.buildAttachmentPayload(file);
             this.renderAttachmentChip();
             this.printTrace(`已选择附件: ${file.name}`);
-            this.printBlock('文件工作流提示', '现在可以直接输入自然语言，例如：请解析这个文件、帮我识别这份 PDF、总结这个文档。也可以继续使用 flow launch pdf_ocr_pipeline。');
+            const isExcel = /\.(xlsx|xls)$/i.test(file.name || '');
+            const hint = isExcel
+                ? '现在可以直接输入：处理这个Excel、分析这个表格、识别其中的权利要求。也可以使用 flow launch claims_excel_pipeline。'
+                : '现在可以直接输入自然语言，例如：请解析这个文件、帮我识别这份 PDF、总结这个文档。也可以继续使用 flow launch pdf_ocr_pipeline。';
+            this.printBlock('文件工作流提示', hint);
+        }
+
+        async buildAttachmentPayload(file) {
+            const lowerName = (file.name || '').toLowerCase();
+            const mimeType = file.type || '';
+
+            if (mimeType === 'application/pdf' || lowerName.endsWith('.pdf')) {
+                const pages = await this.convertPdfToImages(file);
+                return {
+                    name: file.name,
+                    size: file.size,
+                    mime_type: mimeType || 'application/pdf',
+                    kind: 'pdf_pages',
+                    page_count: pages.length,
+                    pages
+                };
+            }
+
+            const dataUrl = await this.readFileAsDataUrl(file);
+            return {
+                name: file.name,
+                size: file.size,
+                mime_type: mimeType,
+                kind: 'file',
+                data: dataUrl
+            };
         }
 
         readFileAsDataUrl(file) {
@@ -667,6 +698,59 @@
             });
         }
 
+        async ensurePdfJs() {
+            if (typeof window.pdfjsLib !== 'undefined') {
+                return window.pdfjsLib;
+            }
+
+            await new Promise((resolve, reject) => {
+                const existing = document.querySelector('script[data-cli-pdfjs]');
+                if (existing) {
+                    existing.addEventListener('load', () => resolve(), { once: true });
+                    existing.addEventListener('error', () => reject(new Error('PDF.js 加载失败')), { once: true });
+                    return;
+                }
+
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+                script.dataset.cliPdfjs = 'true';
+                script.onload = resolve;
+                script.onerror = () => reject(new Error('PDF.js 加载失败'));
+                document.head.appendChild(script);
+            });
+
+            if (window.pdfjsLib) {
+                window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+            }
+
+            return window.pdfjsLib;
+        }
+
+        async convertPdfToImages(file) {
+            const pdfjsLib = await this.ensurePdfJs();
+            const arrayBuffer = await file.arrayBuffer();
+            const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+            const pdf = await loadingTask.promise;
+            const pages = [];
+
+            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum += 1) {
+                const page = await pdf.getPage(pageNum);
+                const viewport = page.getViewport({ scale: 1.6 });
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                await page.render({ canvasContext: context, viewport }).promise;
+                pages.push({
+                    page: pageNum,
+                    data: canvas.toDataURL('image/png', 0.92),
+                    mime_type: 'image/png'
+                });
+            }
+
+            return pages;
+        }
+
         renderAttachmentChip() {
             document.getElementById('cli-file-chip')?.remove();
             if (!this.pendingAttachment) return;
@@ -674,8 +758,9 @@
             const chip = document.createElement('div');
             chip.id = 'cli-file-chip';
             chip.className = 'cli-file-chip';
+            const pageInfo = this.pendingAttachment?.page_count ? ` (${this.pendingAttachment.page_count} 页)` : '';
             chip.innerHTML = `
-                <span>附件: ${this.escapeHtml(this.pendingAttachment.name || 'file')}</span>
+                <span>附件: ${this.escapeHtml(this.pendingAttachment.name || 'file')}${this.escapeHtml(pageInfo)}</span>
                 <button type="button" data-clear-file>移除</button>
             `;
             this.output.appendChild(chip);
@@ -691,7 +776,11 @@
         }
 
         async executeCommand() {
-            const value = (this.input?.value || '').trim();
+            const rawValue = (this.input?.value || '').trim();
+            const defaultAttachmentCommand = this.pendingAttachment?.name && /\.(xlsx|xls)$/i.test(this.pendingAttachment.name)
+                ? '处理这个Excel'
+                : '请解析这个文件';
+            const value = rawValue || (this.pendingAttachment ? defaultAttachmentCommand : '');
             if (!value) return;
 
             this.input.value = '';

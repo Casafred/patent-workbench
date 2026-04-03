@@ -5,7 +5,10 @@ Embedded CLI routes.
 from __future__ import annotations
 
 import json
+import os
 import re
+import tempfile
+import base64
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -25,6 +28,9 @@ from backend.services.cli_orchestrator import CLIOrchestrator
 from backend.services.llm.provider_factory import get_factory
 from backend.services.llm_service import get_default_model, get_llm_client, is_aliyun_model
 from backend.utils import create_response
+from backend.utils.column_detector import ColumnDetector
+from patent_claims_processor.services import ProcessingService
+from patent_claims_processor.processors import ExcelProcessor
 from patent_claims_processor.processors import ClaimsClassifier, ClaimsParser, LanguageDetector
 
 cli_agent_bp = Blueprint("cli_agent", __name__)
@@ -64,6 +70,13 @@ def list_flows_data() -> Dict[str, Any]:
                 "flow launch claims_pipeline 权利要求1. 一种装置...",
                 "flow launch claims_pipeline Claim 1. A device...",
             ],
+            "status": "ready",
+        },
+        {
+            "id": "claims_excel_pipeline",
+            "name": "Claims Excel 处理",
+            "description": "上传 Excel 后自动识别 sheet 和 claims 列，并直接启动处理",
+            "entry_examples": ["上传 claims.xlsx 后输入：处理这个Excel", "flow launch claims_excel_pipeline"],
             "status": "ready",
         },
         {
@@ -121,6 +134,14 @@ def parse_possible_json(text: str) -> Dict[str, Any]:
         return {"raw_response": text}
 
 
+def data_url_to_bytes(data: str) -> bytes:
+    if data.startswith("data:"):
+        _, encoded = data.split(",", 1)
+    else:
+        encoded = data
+    return base64.b64decode(encoded)
+
+
 def should_auto_run_pdf_ocr(user_input: str, attachment: Optional[Dict[str, Any]]) -> bool:
     if not attachment or not attachment.get("data"):
         return False
@@ -128,6 +149,21 @@ def should_auto_run_pdf_ocr(user_input: str, attachment: Optional[Dict[str, Any]
     if not normalized:
         return True
     keywords = ["pdf", "ocr", "文档", "文件", "解析", "读取", "识别", "帮我看", "总结这个文件", "分析这个文件"]
+    return any(keyword in normalized for keyword in keywords)
+
+
+def should_auto_run_claims_excel(user_input: str, attachment: Optional[Dict[str, Any]]) -> bool:
+    if not attachment:
+        return False
+    name = (attachment.get("name") or "").lower()
+    mime_type = (attachment.get("mime_type") or "").lower()
+    is_excel = name.endswith((".xlsx", ".xls")) or "spreadsheet" in mime_type or "excel" in mime_type
+    if not is_excel:
+        return False
+    normalized = (user_input or "").strip().lower()
+    if not normalized:
+        return True
+    keywords = ["excel", "表格", "claims", "权利要求", "处理", "解析这个表", "分析这个excel"]
     return any(keyword in normalized for keyword in keywords)
 
 
@@ -452,18 +488,38 @@ def run_ipc_lookup_flow(flow_input: str) -> Dict[str, Any]:
 
 def run_pdf_ocr_flow(flow_input: str, params: Dict[str, Any]) -> Dict[str, Any]:
     attachment = params.get("attachment") or {}
-    file_data = attachment.get("data")
     file_name = attachment.get("name") or "uploaded-file"
     mime_type = attachment.get("mime_type") or ""
     engine = params.get("ocr_engine") or ("glm_ocr" if params.get("model", "").lower().startswith("glm") else "paddle_ocr_vl")
+    pages = attachment.get("pages") or []
+    file_data = attachment.get("data")
 
-    if not file_data:
+    if not file_data and not pages:
         return {"success": False, "error": "请先在 CLI 中选择文件，再执行 pdf_ocr_pipeline"}
 
-    if engine == "glm_ocr":
-        result = _parse_with_glm_ocr(file_data, {})
+    parsed_pages: List[Dict[str, Any]] = []
+    markdown_parts: List[str] = []
+
+    def parse_single(data: str) -> Dict[str, Any]:
+        if engine == "glm_ocr":
+            return _parse_with_glm_ocr(data, {})
+        return _parse_with_paddle_ocr_vl(data, {})
+
+    if pages:
+        for item in pages:
+            page_result = parse_single(item.get("data", ""))
+            parsed_pages.extend(page_result.get("pages") or [])
+            page_markdown = page_result.get("markdown") or page_result.get("md_results") or ""
+            if page_markdown:
+                markdown_parts.append(page_markdown)
+        result = {
+            "pages": parsed_pages,
+            "markdown": "\n\n---\n\n".join(markdown_parts),
+            "engine": engine,
+            "md_results": "\n\n---\n\n".join(markdown_parts),
+        }
     else:
-        result = _parse_with_paddle_ocr_vl(file_data, {})
+        result = parse_single(file_data)
 
     markdown = result.get("markdown") or result.get("md_results") or ""
     preview = markdown[:3000] if markdown else "未提取到正文"
@@ -488,6 +544,109 @@ def run_pdf_ocr_flow(flow_input: str, params: Dict[str, Any]) -> Dict[str, Any]:
             "ocr_result": result,
         },
     }
+
+
+def run_claims_excel_flow(params: Dict[str, Any]) -> Dict[str, Any]:
+    attachment = params.get("attachment") or {}
+    file_data = attachment.get("data")
+    file_name = attachment.get("name") or "claims.xlsx"
+    if not file_data:
+        return {"success": False, "error": "请先在 CLI 中选择 Excel 文件"}
+
+    suffix = ".xlsx" if file_name.lower().endswith(".xlsx") else ".xls"
+    temp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            temp_path = tmp.name
+            tmp.write(data_url_to_bytes(file_data))
+
+        excel_processor = ExcelProcessor()
+        sheet_names = excel_processor.get_sheet_names(temp_path)
+        sheet_name = sheet_names[0] if sheet_names else None
+        df_preview = excel_processor.read_excel_file(temp_path, sheet_name=sheet_name, nrows=10)
+        columns = list(df_preview.columns)
+        detector = ColumnDetector()
+        column_analysis = detector.analyze_all_columns(df_preview)
+
+        claims_column = None
+        patent_column = None
+        if isinstance(column_analysis, dict):
+            claims_column = (column_analysis.get("claims_column") or {}).get("column_name")
+            patent_column = (column_analysis.get("patent_column") or {}).get("column_name")
+
+        outputs = [
+            {"title": "文件信息", "text": "\n".join([f"文件名: {file_name}", f"工作表: {sheet_name or '-'}", f"列数: {len(columns)}"])},
+            {"title": "识别列", "text": "\n".join([f"Claims列: {claims_column or '-'}", f"专利号列: {patent_column or '-'}"])},
+        ]
+
+        if not claims_column:
+            outputs.append({"title": "候选列", "text": "\n".join(columns[:20]) or "无"})
+            return {
+                "success": True,
+                "type": "embedded_flow",
+                "message": "已读取 Excel，但未自动识别 claims 列",
+                "data": {
+                    "flow_id": "claims_excel_pipeline",
+                    "title": "Claims Excel 处理",
+                    "description": "已读取 Excel 结构，请根据候选列继续指定 claims 列。",
+                    "steps": ["读取 Excel", "识别工作表", "分析列类型"],
+                    "outputs": outputs,
+                    "column_analysis": column_analysis,
+                },
+            }
+
+        service = ProcessingService()
+        result = service.process_excel_file(
+            file_path=temp_path,
+            column_name=claims_column,
+            sheet_name=sheet_name,
+            patent_column_name=patent_column,
+        )
+        preview_claims = []
+        for claim in (result.claims_data or [])[:8]:
+            refs = ",".join(str(value) for value in getattr(claim, "referenced_claims", []) or []) or "-"
+            preview_claims.append(
+                f"#{claim.claim_number} | {claim.claim_type} | patent={getattr(claim, 'patent_number', None) or '-'} | refs={refs}"
+            )
+
+        outputs.extend(
+            [
+                {
+                    "title": "处理摘要",
+                    "text": "\n".join(
+                        [
+                            f"处理单元格: {result.total_cells_processed}",
+                            f"抽取权利要求: {result.total_claims_extracted}",
+                            f"独立权利要求: {result.independent_claims_count}",
+                            f"从属权利要求: {result.dependent_claims_count}",
+                        ]
+                    ),
+                },
+                {"title": "结果预览", "text": "\n".join(preview_claims) or "无"},
+            ]
+        )
+
+        return {
+            "success": True,
+            "type": "embedded_flow",
+            "message": "Claims Excel 处理完成",
+            "data": {
+                "flow_id": "claims_excel_pipeline",
+                "title": "Claims Excel 处理",
+                "description": "已自动识别 claims 列并完成整表处理。",
+                "steps": ["读取 Excel", "识别 sheet/列", "抽取 claims", "生成结构化结果"],
+                "outputs": outputs,
+                "summary": {
+                    "total_cells_processed": result.total_cells_processed,
+                    "total_claims_extracted": result.total_claims_extracted,
+                    "independent_claims_count": result.independent_claims_count,
+                    "dependent_claims_count": result.dependent_claims_count,
+                },
+            },
+        }
+    finally:
+        if temp_path and os.path.exists(temp_path):
+            os.remove(temp_path)
 
 
 class CommandRegistry:
@@ -642,6 +801,9 @@ class SimpleCommandExecutor:
         if flow_id == "claims_pipeline":
             return run_claims_text_flow(flow_input or "")
 
+        if flow_id == "claims_excel_pipeline":
+            return run_claims_excel_flow(params)
+
         if flow_id == "ipc_lookup":
             return run_ipc_lookup_flow(flow_input or "")
 
@@ -734,6 +896,24 @@ def execute_command():
 
         request_context = get_request_context()
 
+        if should_auto_run_claims_excel(user_input, attachment):
+            parsed = {
+                "command": "flow",
+                "subcommand": "launch",
+                "params": {
+                    "flow_id": "claims_excel_pipeline",
+                    "flow_input": user_input,
+                    "provider": provider,
+                    "model": model,
+                    "attachment": attachment,
+                },
+            }
+            result = executor.execute(parsed, request_context)
+            return create_response(
+                data={"success": result.get("success", False), "mode": "legacy_cli_command", "parsed": parsed, "result": result},
+                status_code=200 if result.get("success", False) else 400,
+            )
+
         if should_auto_run_pdf_ocr(user_input, attachment):
             parsed = {
                 "command": "flow",
@@ -802,6 +982,24 @@ def stream_execute_command():
 
     def generate():
         try:
+            if should_auto_run_claims_excel(user_input, attachment):
+                parsed = {
+                    "command": "flow",
+                    "subcommand": "launch",
+                    "params": {
+                        "flow_id": "claims_excel_pipeline",
+                        "flow_input": user_input,
+                        "provider": provider,
+                        "model": model,
+                        "attachment": attachment,
+                    },
+                }
+                result = executor.execute(parsed, request_context)
+                yield f"data: {json.dumps({'type': 'trace', 'stage': 'attachment', 'message': '检测到 Excel 附件，自动进入 Claims Excel 工作流'}, ensure_ascii=False)}\n\n"
+                yield f"data: {json.dumps({'type': 'final', 'data': result}, ensure_ascii=False)}\n\n"
+                yield "data: [DONE]\n\n"
+                return
+
             if should_auto_run_pdf_ocr(user_input, attachment):
                 parsed = {
                     "command": "flow",
