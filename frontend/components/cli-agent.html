@@ -218,11 +218,27 @@
 
 .cli-field select {
     height: 38px;
-    border: 1px solid rgba(255, 255, 255, 0.09);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 10px;
-    background: rgba(255, 255, 255, 0.04);
-    color: #ecf2ff;
+    background: rgba(255, 255, 255, 0.08);
+    color: #e8eef9;
     padding: 0 12px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cli-field select:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.cli-field select:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(234, 112, 72, 0.6);
+    box-shadow: 0 0 0 2px rgba(234, 112, 72, 0.2);
 }
 
 .cli-badge {
@@ -310,11 +326,27 @@
 .cli-shell__attach,
 .cli-shell__engine {
     height: 40px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 10px;
-    background: transparent;
-    color: #b8c7de;
+    background: rgba(255, 255, 255, 0.08);
+    color: #e8eef9;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 0 12px;
+    cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cli-shell__engine:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.cli-shell__engine:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(234, 112, 72, 0.6);
+    box-shadow: 0 0 0 2px rgba(234, 112, 72, 0.2);
 }
 
 .cli-shell__attach {
