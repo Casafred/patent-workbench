@@ -121,6 +121,16 @@ def parse_possible_json(text: str) -> Dict[str, Any]:
         return {"raw_response": text}
 
 
+def should_auto_run_pdf_ocr(user_input: str, attachment: Optional[Dict[str, Any]]) -> bool:
+    if not attachment or not attachment.get("data"):
+        return False
+    normalized = (user_input or "").strip().lower()
+    if not normalized:
+        return True
+    keywords = ["pdf", "ocr", "文档", "文件", "解析", "读取", "识别", "帮我看", "总结这个文件", "分析这个文件"]
+    return any(keyword in normalized for keyword in keywords)
+
+
 def resolve_model_choice(model: Optional[str]) -> Tuple[str, str]:
     if model:
         provider = "aliyun" if is_aliyun_model(model) else "zhipu"
@@ -716,11 +726,32 @@ def execute_command():
         mode = req_data.get("mode", "auto")
         provider = req_data.get("provider")
         model = req_data.get("model")
+        attachment = req_data.get("attachment")
+        ocr_engine = req_data.get("ocr_engine")
 
-        if not user_input:
+        if not user_input and not attachment:
             return create_response(error="请输入命令")
 
         request_context = get_request_context()
+
+        if should_auto_run_pdf_ocr(user_input, attachment):
+            parsed = {
+                "command": "flow",
+                "subcommand": "launch",
+                "params": {
+                    "flow_id": "pdf_ocr_pipeline",
+                    "flow_input": user_input,
+                    "provider": provider,
+                    "model": model,
+                    "attachment": attachment,
+                    "ocr_engine": ocr_engine,
+                },
+            }
+            result = executor.execute(parsed, request_context)
+            return create_response(
+                data={"success": result.get("success", False), "mode": "legacy_cli_command", "parsed": parsed, "result": result},
+                status_code=200 if result.get("success", False) else 400,
+            )
 
         if mode == "orchestrate" or (mode == "auto" and not orchestrator.is_builtin_or_command_style(user_input)):
             result = orchestrator.execute(
@@ -733,10 +764,8 @@ def execute_command():
             return create_response(data=result, status_code=200 if result.get("success", False) else 400)
 
         parsed = parse_legacy_command(user_input, provider=provider, model=model)
-        attachment = req_data.get("attachment")
         if attachment:
             parsed.setdefault("params", {})["attachment"] = attachment
-        ocr_engine = req_data.get("ocr_engine")
         if ocr_engine:
             parsed.setdefault("params", {})["ocr_engine"] = ocr_engine
         result = executor.execute(parsed, request_context)
@@ -762,8 +791,10 @@ def stream_execute_command():
     user_input = (req_data.get("input") or "").strip()
     provider = req_data.get("provider")
     model = req_data.get("model")
+    attachment = req_data.get("attachment")
+    ocr_engine = req_data.get("ocr_engine")
 
-    if not user_input:
+    if not user_input and not attachment:
         error_json = json.dumps({"type": "error", "error": "请输入命令"}, ensure_ascii=False)
         return Response(f"data: {error_json}\n\n", mimetype="text/event-stream", status=400)
 
@@ -771,12 +802,29 @@ def stream_execute_command():
 
     def generate():
         try:
+            if should_auto_run_pdf_ocr(user_input, attachment):
+                parsed = {
+                    "command": "flow",
+                    "subcommand": "launch",
+                    "params": {
+                        "flow_id": "pdf_ocr_pipeline",
+                        "flow_input": user_input,
+                        "provider": provider,
+                        "model": model,
+                        "attachment": attachment,
+                        "ocr_engine": ocr_engine,
+                    },
+                }
+                result = executor.execute(parsed, request_context)
+                yield f"data: {json.dumps({'type': 'trace', 'stage': 'attachment', 'message': '检测到附件，自动进入 PDF OCR 工作流'}, ensure_ascii=False)}\n\n"
+                yield f"data: {json.dumps({'type': 'final', 'data': result}, ensure_ascii=False)}\n\n"
+                yield "data: [DONE]\n\n"
+                return
+
             if orchestrator.is_builtin_or_command_style(user_input):
                 parsed = parse_legacy_command(user_input, provider=provider, model=model)
-                attachment = req_data.get("attachment")
                 if attachment:
                     parsed.setdefault("params", {})["attachment"] = attachment
-                ocr_engine = req_data.get("ocr_engine")
                 if ocr_engine:
                     parsed.setdefault("params", {})["ocr_engine"] = ocr_engine
                 result = executor.execute(parsed, request_context)

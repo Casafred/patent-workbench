@@ -24,7 +24,7 @@ PATENT_NUMBER_PATTERN = re.compile(
 )
 
 BUILTIN_COMMANDS = {"help", "status", "clear", "exit", "quit"}
-COMMAND_PREFIXES = {"patent", "claims", "classify", "ai", "config"}
+COMMAND_PREFIXES = {"patent", "claims", "classify", "ai", "config", "flow"}
 
 MAX_CONTEXT_PATENTS = 5
 MAX_CONTEXT_MESSAGES = 12

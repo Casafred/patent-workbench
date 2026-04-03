@@ -29,6 +29,7 @@
             <div class="cli-block__text">示例: 查询 CN104154208B 专利详情</div>
             <div class="cli-block__text">示例: 基于刚才专利结果分析创新点和保护范围</div>
             <div class="cli-block__text">示例: flow list</div>
+            <div class="cli-block__text">上传文件后可直接输入：请解析这个文件 / 帮我识别这份 PDF / 总结这个文档</div>
         </div>
     </div>
 
@@ -654,6 +655,7 @@
             };
             this.renderAttachmentChip();
             this.printTrace(`已选择附件: ${file.name}`);
+            this.printBlock('文件工作流提示', '现在可以直接输入自然语言，例如：请解析这个文件、帮我识别这份 PDF、总结这个文档。也可以继续使用 flow launch pdf_ocr_pipeline。');
         }
 
         readFileAsDataUrl(file) {
@@ -1045,6 +1047,7 @@
                     this.input.value = node.getAttribute('data-suggestion') || '';
                     this.input.focus();
                     this.renderSuggestions([]);
+                    this.executeCommand();
                 });
             });
         }
