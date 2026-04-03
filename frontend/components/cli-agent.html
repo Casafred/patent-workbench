@@ -80,7 +80,25 @@
     </div>
 </div>
 
-<button id="cli-launcher" class="cli-launcher" type="button">CLI</button>
+<button id="cli-launcher" class="cli-launcher" type="button">
+    <svg class="cli-launcher__icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- 像素风格机器人头部 -->
+        <rect x="6" y="4" width="12" height="2" fill="currentColor"/>
+        <rect x="4" y="6" width="16" height="2" fill="currentColor"/>
+        <rect x="4" y="8" width="4" height="4" fill="currentColor"/>
+        <rect x="10" y="8" width="4" height="4" fill="currentColor"/>
+        <rect x="16" y="8" width="4" height="4" fill="currentColor"/>
+        <rect x="4" y="12" width="16" height="2" fill="currentColor"/>
+        <rect x="8" y="14" width="8" height="2" fill="currentColor"/>
+        <rect x="10" y="16" width="4" height="2" fill="currentColor"/>
+        <rect x="2" y="8" width="2" height="2" fill="currentColor"/>
+        <rect x="20" y="8" width="2" height="2" fill="currentColor"/>
+        <!-- 眼睛 -->
+        <rect x="6" y="10" width="2" height="2" fill="#101521"/>
+        <rect x="16" y="10" width="2" height="2" fill="#101521"/>
+    </svg>
+    <span class="cli-launcher__text">ALFRED CLI</span>
+</button>
 
 <style>
 .cli-shell {
@@ -444,27 +462,45 @@
     position: fixed;
     right: 84px;
     bottom: 20px;
-    height: 44px;
-    padding: 0 18px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 999px;
-    background: transparent;
-    color: #b8c7de;
+    height: 48px;
+    padding: 0 20px;
+    border: 1px solid rgba(234, 112, 72, 0.3);
+    border-radius: 24px;
+    background: linear-gradient(135deg, rgba(234, 112, 72, 0.15) 0%, rgba(255, 140, 97, 0.1) 100%);
+    color: #ea7048;
     font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.5px;
     cursor: pointer;
     z-index: 9998;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 16px rgba(234, 112, 72, 0.2);
+}
+
+.cli-launcher__icon {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.cli-launcher__text {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    white-space: nowrap;
 }
 
 .cli-launcher:hover {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.2);
-    color: #e8eef9;
-    transform: translateY(-1px);
+    background: linear-gradient(135deg, rgba(234, 112, 72, 0.25) 0%, rgba(255, 140, 97, 0.2) 100%);
+    border-color: rgba(234, 112, 72, 0.5);
+    color: #ff8c61;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(234, 112, 72, 0.35);
 }
 
 .cli-launcher:active {
-    transform: translateY(0) scale(0.95);
+    transform: translateY(0) scale(0.98);
 }
 
 .cli-launcher.hidden {
