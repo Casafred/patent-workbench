@@ -160,10 +160,10 @@
 }
 
 .cli-shell__icon-btn {
-    width: 32px;
-    height: 32px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 6px;
+    width: auto;
+    height: auto;
+    border: none;
+    border-radius: 0;
     cursor: pointer;
     color: #b8c7de;
     background: transparent;
@@ -171,40 +171,28 @@
     align-items: center;
     justify-content: center;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    padding: 0;
+    padding: 4px;
 }
 
 .cli-shell__icon-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.2);
     color: #e8eef9;
-    transform: translateY(-1px);
+    transform: scale(1.1);
 }
 
 .cli-shell__icon-btn:active {
-    transform: translateY(0) scale(0.95);
+    transform: scale(0.95);
 }
 
 .cli-shell__icon-btn--minimize:hover {
-    background: rgba(255, 193, 7, 0.15);
-    border-color: rgba(255, 193, 7, 0.3);
     color: #ffc107;
 }
 
 .cli-shell__icon-btn--expand:hover {
-    background: rgba(33, 150, 243, 0.15);
-    border-color: rgba(33, 150, 243, 0.3);
     color: #2196f3;
 }
 
-.cli-shell__icon-btn--close {
-    border-color: rgba(239, 83, 80, 0.2);
-}
-
 .cli-shell__icon-btn--close:hover {
-    background: rgba(239, 83, 80, 0.9);
-    border-color: rgba(239, 83, 80, 1);
-    color: #ffffff;
+    color: #ef5350;
 }
 
 .cli-shell__toolbar {
@@ -273,13 +261,24 @@
 .cli-chip {
     display: inline-flex;
     align-items: center;
-    padding: 6px 10px;
+    padding: 6px 12px;
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.06);
-    color: #dbe5f6;
+    border: 1px solid rgba(76, 175, 80, 0.5);
+    background: transparent;
+    color: #90e1a8;
     font-size: 12px;
     cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cli-chip:hover {
+    border-color: rgba(76, 175, 80, 0.8);
+    color: #a8e6b8;
+    transform: translateY(-1px);
+}
+
+.cli-chip:active {
+    transform: translateY(0);
 }
 
 .cli-shell__inputbar {
@@ -319,23 +318,24 @@
 }
 
 .cli-shell__attach {
-    width: 40px;
+    width: auto;
+    height: auto;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0;
+    padding: 4px;
+    border: none;
+    background: transparent;
 }
 
 .cli-shell__attach:hover {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.2);
     color: #e8eef9;
-    transform: translateY(-1px);
+    transform: scale(1.1);
 }
 
 .cli-shell__attach:active {
-    transform: translateY(0) scale(0.95);
+    transform: scale(0.95);
 }
 
 .cli-file-chip {
