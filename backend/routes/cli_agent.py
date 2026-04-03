@@ -215,33 +215,6 @@ def detect_auto_flow_command(
             },
         }
 
-    ipc_match = IPC_PREFIX_REGEX.search(text)
-    ipc_keywords = ["ipc", "分类号", "分类", "分类编码", "检索号", "分类检索"]
-    if ipc_match and any(keyword in text for keyword in ipc_keywords):
-        return {
-            "command": "flow",
-            "subcommand": "launch",
-            "params": {
-                "flow_id": "ipc_lookup",
-                "flow_input": ipc_match.group(0).upper(),
-                "provider": provider,
-                "model": model,
-            },
-        }
-
-    if any(keyword in lowered for keyword in ["ipc", "分类号"]) and text:
-        query = ipc_match.group(0).upper() if ipc_match else text.replace("查询一下", "").replace("查询", "").replace("一下", "").strip()
-        return {
-            "command": "flow",
-            "subcommand": "launch",
-            "params": {
-                "flow_id": "ipc_lookup",
-                "flow_input": query,
-                "provider": provider,
-                "model": model,
-            },
-        }
-
     predict_keywords = ["预测ipc", "ipc预测", "分类预测", "预测分类", "预测一下ipc", "ipc分类预测"]
     if any(keyword in lowered for keyword in predict_keywords):
         predict_text = text
@@ -273,6 +246,33 @@ def detect_auto_flow_command(
                     "model": model,
                 },
             }
+
+    ipc_match = IPC_PREFIX_REGEX.search(text)
+    ipc_keywords = ["ipc", "分类号", "分类", "分类编码", "检索号", "分类检索"]
+    if ipc_match and any(keyword in text for keyword in ipc_keywords):
+        return {
+            "command": "flow",
+            "subcommand": "launch",
+            "params": {
+                "flow_id": "ipc_lookup",
+                "flow_input": ipc_match.group(0).upper(),
+                "provider": provider,
+                "model": model,
+            },
+        }
+
+    if any(keyword in lowered for keyword in ["ipc", "分类号"]) and text:
+        query = ipc_match.group(0).upper() if ipc_match else text.replace("查询一下", "").replace("查询", "").replace("一下", "").strip()
+        return {
+            "command": "flow",
+            "subcommand": "launch",
+            "params": {
+                "flow_id": "ipc_lookup",
+                "flow_input": query,
+                "provider": provider,
+                "model": model,
+            },
+        }
 
     return None
 

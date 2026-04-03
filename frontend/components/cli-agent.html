@@ -244,9 +244,17 @@
     min-width: 120px;
     height: 38px;
     border-radius: 999px;
-    background: rgba(83, 171, 110, 0.16);
-    color: #90e1a8;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: transparent;
+    color: #b8c7de;
     font-size: 12px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cli-badge:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #e8eef9;
 }
 
 .cli-shell__output {
@@ -367,14 +375,25 @@
     bottom: 20px;
     height: 44px;
     padding: 0 18px;
-    border: 0;
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 999px;
-    background: linear-gradient(135deg, #ea7048 0%, #c74635 100%);
-    color: #fff;
+    background: transparent;
+    color: #b8c7de;
     font-weight: 700;
     cursor: pointer;
     z-index: 9998;
-    box-shadow: 0 12px 30px rgba(199, 70, 53, 0.35);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cli-launcher:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #e8eef9;
+    transform: translateY(-1px);
+}
+
+.cli-launcher:active {
+    transform: translateY(0) scale(0.95);
 }
 
 .cli-launcher.hidden {
