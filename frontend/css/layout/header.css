@@ -37,21 +37,13 @@
     position: relative;
     display: flex;
     align-items: center;
-    min-height: 104px;
-    padding: 12px 18px 12px 58px;
+    min-height: auto;
+    padding: 6px 0;
     isolation: isolate;
 }
 
 .brand-wordmark::before {
-    content: "";
-    position: absolute;
-    inset: 8px 0;
-    border-radius: 24px;
-    background:
-        radial-gradient(circle at 18% 48%, rgba(34, 197, 94, 0.22), transparent 32%),
-        linear-gradient(135deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.16));
-    border: 1px solid rgba(34, 197, 94, 0.14);
-    z-index: -1;
+    content: none;
 }
 
 .banner-text-logo {
@@ -101,20 +93,20 @@
 /* Alfred Robot */
 .alfred-robot-container {
     position: absolute;
-    left: -2px;
-    top: 50%;
-    width: clamp(94px, 8vw, 132px);
-    transform: translateY(-44%);
+    right: -18px;
+    top: 18px;
+    width: clamp(88px, 7vw, 116px);
+    transform: translateY(-52%);
     cursor: pointer;
-    z-index: 1;
+    z-index: 4;
     outline: none;
-    transition: transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1), z-index 0s linear 0.18s;
+    transition: transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1), right 0.45s ease;
 }
 
 .alfred-robot-container::after {
     content: "";
     position: absolute;
-    inset: 8px 12px 16px 4px;
+    inset: 10px 10px 12px 10px;
     border: 2px solid transparent;
     border-radius: 20px;
     transition: border-color 0.25s ease, box-shadow 0.25s ease;
@@ -145,7 +137,7 @@
 
 .robot-frame {
     transform-origin: 56px 96px;
-    transform: translate(8px, 18px) rotate(18deg);
+    transform: translate(12px, 54px) rotate(6deg);
     transition: transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
@@ -159,32 +151,32 @@
 
 .robot-head {
     transform-origin: 56px 34px;
-    transform: translateY(5px);
+    transform: translateY(8px);
 }
 
 .robot-body {
     transform-origin: 56px 70px;
-    transform: skewX(-5deg);
+    transform: skewX(-2deg);
 }
 
 .robot-leg--left {
     transform-origin: 46px 78px;
-    transform: rotate(12deg);
+    transform: rotate(6deg);
 }
 
 .robot-leg--right {
     transform-origin: 66px 78px;
-    transform: rotate(-10deg);
+    transform: rotate(-6deg);
 }
 
 .robot-arm--left {
     transform-origin: 42px 48px;
-    transform: rotate(84deg) translate(-2px, 3px);
+    transform: rotate(72deg) translate(-1px, 7px);
 }
 
 .robot-arm--right {
     transform-origin: 78px 48px;
-    transform: rotate(-108deg) translate(4px, 4px);
+    transform: rotate(-84deg) translate(4px, 8px);
 }
 
 .robot-metal {
@@ -227,7 +219,7 @@
 
 .alfred-robot-container:hover .robot-frame,
 .alfred-robot-container:focus-visible .robot-frame {
-    transform: translate(14px, -2px) rotate(0deg);
+    transform: translate(-2px, 6px) rotate(0deg);
 }
 
 .alfred-robot-container:hover .robot-shadow,
@@ -238,8 +230,9 @@
 
 .alfred-robot-container:hover,
 .alfred-robot-container:focus-visible {
-    z-index: 5;
-    transform: translateY(-56%);
+    right: -8px;
+    z-index: 7;
+    transform: translateY(0);
 }
 
 .alfred-robot-container:hover .alfred-robot,
@@ -298,8 +291,8 @@
 
 .robot-tooltip {
     position: absolute;
-    left: 30px;
-    bottom: -22px;
+    right: 72px;
+    top: 26px;
     padding: 10px 14px;
     background: linear-gradient(180deg, rgba(21, 128, 61, 0.96), rgba(22, 101, 52, 0.96));
     color: #f0fdf4;
@@ -315,7 +308,7 @@
     white-space: nowrap;
     opacity: 0;
     visibility: hidden;
-    transform: translateY(8px);
+    transform: translateX(8px);
     transition: opacity 0.28s ease, transform 0.28s ease, visibility 0.28s ease;
     z-index: 6;
     pointer-events: none;
@@ -324,12 +317,12 @@
 .robot-tooltip::before {
     content: "";
     position: absolute;
-    left: 16px;
-    top: -8px;
+    right: -8px;
+    top: 18px;
     width: 12px;
     height: 12px;
     background: inherit;
-    border-left: 2px solid rgba(187, 247, 208, 0.55);
+    border-right: 2px solid rgba(187, 247, 208, 0.55);
     border-top: 2px solid rgba(187, 247, 208, 0.55);
     transform: rotate(45deg);
 }
@@ -338,7 +331,7 @@
 .alfred-robot-container:focus-visible .robot-tooltip {
     opacity: 1;
     visibility: visible;
-    transform: translateY(0);
+    transform: translateX(0);
 }
 
 [data-theme="dark"] .brand-wordmark::before {
@@ -375,8 +368,8 @@
     }
 
     .brand-wordmark {
-        min-height: 92px;
-        padding-left: 54px;
+        min-height: auto;
+        padding-left: 0;
     }
 
     .wordmark-main {
@@ -395,14 +388,15 @@
 
     .brand-wordmark {
         width: 100%;
-        min-height: 82px;
-        padding: 10px 12px 12px 42px;
+        min-height: auto;
+        padding: 6px 0;
     }
 
     .alfred-robot-container {
-        left: -8px;
+        right: -16px;
+        top: 20px;
         width: 84px;
-        transform: translateY(-42%);
+        transform: translateY(-54%);
     }
 
     .wordmark-main {
@@ -416,12 +410,12 @@
     }
 
     .robot-tooltip {
-        left: 8px;
-        bottom: -32px;
+        right: 60px;
+        top: 18px;
         font-size: 0.64rem;
         white-space: normal;
         width: max-content;
-        max-width: min(220px, 70vw);
+        max-width: min(220px, 58vw);
     }
 
     .image-logo {
@@ -439,14 +433,15 @@
     }
 
     .brand-wordmark {
-        min-height: 72px;
-        padding-left: 34px;
+        min-height: auto;
+        padding-left: 0;
     }
 
     .alfred-robot-container {
-        left: -10px;
+        right: -14px;
+        top: 22px;
         width: 72px;
-        transform: translateY(-40%);
+        transform: translateY(-56%);
     }
 
     .wordmark-main {
@@ -461,5 +456,11 @@
 
     .image-logo {
         height: 56px;
+    }
+
+    .robot-tooltip {
+        right: 52px;
+        top: 12px;
+        max-width: min(180px, 54vw);
     }
 }
