@@ -1,53 +1,53 @@
 <header class="app-header">
     <div class="app-branding">
         <div class="logo-container">
-            <div class="alfred-robot-container" id="alfred-robot" title="点击进入CLI智能助手">
-                <svg class="alfred-robot" width="50" height="65" viewBox="0 0 16 20" xmlns="http://www.w3.org/2000/svg">
-                    <!-- 像素机器人 - 更可爱的设计 -->
-                    <g class="robot-body" transform="rotate(12 8 10)">
-                        <!-- 头部 - 6x5像素 -->
-                        <rect x="5" y="0" width="6" height="5" fill="#4CAF50"/>
-                        <!-- 眼睛 - 2x2像素，更紧凑 -->
-                        <rect class="robot-eye left-eye" x="6" y="1" width="2" height="2" fill="#ffffff"/>
-                        <rect class="robot-eye right-eye" x="8" y="1" width="2" height="2" fill="#ffffff"/>
-                        <!-- 嘴巴 - 2x1像素 -->
-                        <rect x="7" y="3" width="2" height="1" fill="#ffffff"/>
-                        <!-- 天线 -->
-                        <rect x="7" y="-1" width="2" height="1" fill="#4CAF50"/>
-                        <rect x="7" y="-2" width="2" height="1" fill="#66BB6A"/>
-                        
-                        <!-- 身体 - 6x6像素 -->
-                        <rect x="5" y="6" width="6" height="6" fill="#4CAF50"/>
-                        <!-- 胸部装饰 -->
-                        <rect x="6" y="7" width="4" height="1" fill="#ffffff"/>
-                        <rect x="7" y="9" width="2" height="2" fill="#ffffff"/>
-                        
-                        <!-- 手臂 - 举起状态 -->
-                        <g class="robot-arms">
-                            <!-- 左臂 - 举起 -->
-                            <g class="left-arm" transform="rotate(-45 5 8)">
-                                <rect x="2" y="6" width="3" height="2" fill="#4CAF50"/>
-                                <rect x="1" y="5" width="2" height="2" fill="#66BB6A"/>
+            <div class="brand-wordmark">
+                <div class="alfred-robot-container" id="alfred-robot" title="点击进入 CLI 界面">
+                    <svg class="alfred-robot" viewBox="0 0 120 128" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <ellipse class="robot-shadow" cx="55" cy="114" rx="30" ry="10" />
+                        <g class="robot-frame">
+                            <g class="robot-leg robot-leg--left">
+                                <rect x="42" y="78" width="8" height="18" class="robot-metal" />
+                                <rect x="40" y="94" width="14" height="8" class="robot-accent" />
                             </g>
-                            <!-- 右臂 - 举起 -->
-                            <g class="right-arm" transform="rotate(45 11 8)">
-                                <rect x="11" y="6" width="3" height="2" fill="#4CAF50"/>
-                                <rect x="13" y="5" width="2" height="2" fill="#66BB6A"/>
+                            <g class="robot-leg robot-leg--right">
+                                <rect x="62" y="78" width="8" height="18" class="robot-metal" />
+                                <rect x="60" y="94" width="14" height="8" class="robot-accent" />
+                            </g>
+                            <g class="robot-arm robot-arm--left">
+                                <rect x="30" y="46" width="12" height="8" class="robot-metal" />
+                                <rect x="22" y="50" width="12" height="8" class="robot-metal-light" />
+                                <rect x="18" y="54" width="8" height="8" class="robot-accent" />
+                            </g>
+                            <g class="robot-arm robot-arm--right">
+                                <rect x="70" y="46" width="12" height="8" class="robot-metal" />
+                                <rect x="78" y="50" width="12" height="8" class="robot-metal-light" />
+                                <rect x="86" y="54" width="8" height="8" class="robot-accent" />
+                            </g>
+                            <g class="robot-body">
+                                <rect x="38" y="34" width="36" height="36" class="robot-metal" />
+                                <rect x="42" y="38" width="28" height="14" class="robot-panel" />
+                                <rect x="46" y="42" width="8" height="6" class="robot-light" />
+                                <rect x="58" y="42" width="8" height="6" class="robot-light robot-light--alt" />
+                                <rect x="48" y="56" width="16" height="6" class="robot-heart" />
+                            </g>
+                            <g class="robot-head">
+                                <rect x="36" y="8" width="40" height="24" class="robot-metal" />
+                                <rect x="44" y="2" width="4" height="8" class="robot-metal-light" />
+                                <rect x="64" y="2" width="4" height="8" class="robot-metal-light" />
+                                <rect x="46" y="14" width="8" height="8" class="robot-eye" />
+                                <rect x="58" y="14" width="8" height="8" class="robot-eye" />
+                                <rect x="48" y="24" width="16" height="4" class="robot-mouth" />
                             </g>
                         </g>
-                        
-                        <!-- 腿部 - 2x5像素 -->
-                        <rect x="5" y="13" width="2" height="5" fill="#4CAF50"/>
-                        <rect x="9" y="13" width="2" height="5" fill="#4CAF50"/>
-                        <!-- 脚 -->
-                        <rect x="4" y="18" width="3" height="2" fill="#66BB6A"/>
-                        <rect x="9" y="18" width="3" height="2" fill="#66BB6A"/>
-                    </g>
-                </svg>
-                <div class="robot-tooltip" id="robot-tooltip">Hi! 我是Alfred</div>
+                    </svg>
+                    <div class="robot-tooltip" id="robot-tooltip">点击机器人进入 CLI 界面</div>
+                </div>
+                <h1 class="banner-text-logo">
+                    <span class="wordmark-main">ALFRED X IP</span>
+                    <span class="wordmark-sub">PIXEL CLI PORTAL</span>
+                </h1>
             </div>
-            <h1 class="banner-text-logo">ALFRED X IP</h1>
-            <img src="frontend/images/ALFRED X IP LOGO.webp" alt="Alfred X IP Logo" class="image-logo">
         </div>
         <div class="version-number">版本号: v26</div>
     </div>
