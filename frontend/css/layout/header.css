@@ -8,6 +8,7 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 18px;
+    overflow: visible;
 }
 
 .app-branding {
@@ -93,8 +94,8 @@
 /* Alfred Robot */
 .alfred-robot-container {
     position: absolute;
-    right: -18px;
-    top: 18px;
+    right: -42px;
+    top: 16px;
     width: clamp(88px, 7vw, 116px);
     transform: translateY(-52%);
     cursor: pointer;
@@ -230,7 +231,7 @@
 
 .alfred-robot-container:hover,
 .alfred-robot-container:focus-visible {
-    right: -8px;
+    right: -28px;
     z-index: 7;
     transform: translateY(0);
 }
@@ -393,7 +394,7 @@
     }
 
     .alfred-robot-container {
-        right: -16px;
+        right: -34px;
         top: 20px;
         width: 84px;
         transform: translateY(-54%);
@@ -438,7 +439,7 @@
     }
 
     .alfred-robot-container {
-        right: -14px;
+        right: -28px;
         top: 22px;
         width: 72px;
         transform: translateY(-56%);
