@@ -84,6 +84,29 @@
             <span>停止</span>
         </button>
     </div>
+
+    <div id="cli-page-picker" class="cli-page-picker hidden">
+        <div class="cli-page-picker__dialog">
+            <div class="cli-page-picker__title">选择 PDF 解析页数</div>
+            <div class="cli-page-picker__desc" id="cli-page-picker-desc">默认解析整份 PDF。</div>
+            <label class="cli-field">
+                <span>解析范围</span>
+                <select id="cli-page-picker-mode">
+                    <option value="all">全部页</option>
+                    <option value="custom">自定义页码</option>
+                </select>
+            </label>
+            <label class="cli-field cli-field--wide" id="cli-page-picker-input-wrap">
+                <span>页码范围</span>
+                <input id="cli-page-picker-input" class="cli-page-picker__input" type="text" placeholder="如: 1,3,5-8" />
+            </label>
+            <div class="cli-page-picker__hint">支持单页 `5`、范围 `5-8`、组合 `1,3,5-8`。</div>
+            <div class="cli-page-picker__actions">
+                <button id="cli-page-picker-cancel" type="button" class="cli-page-picker__btn cli-page-picker__btn--ghost">取消</button>
+                <button id="cli-page-picker-apply" type="button" class="cli-page-picker__btn">应用</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <button id="cli-launcher" class="cli-launcher" type="button">
@@ -539,6 +562,10 @@
     font: inherit;
 }
 
+.cli-file-chip__meta {
+    opacity: 0.85;
+}
+
 .cli-shell__send {
     height: 40px;
     padding: 0 16px;
@@ -803,9 +830,126 @@
 .cli-loading span:nth-child(2) { animation-delay: 0.15s; }
 .cli-loading span:nth-child(3) { animation-delay: 0.3s; }
 
+.cli-progress {
+    display: grid;
+    gap: 10px;
+}
+
+.cli-progress__meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--cli-block-text);
+    font-size: 12px;
+}
+
+.cli-progress__bar {
+    position: relative;
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(127, 148, 135, 0.18);
+    overflow: hidden;
+}
+
+.cli-progress__fill {
+    height: 100%;
+    width: 18%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #ea7048 0%, #f3b16d 100%);
+    transition: width 0.25s ease;
+}
+
+.cli-progress__fill.indeterminate {
+    width: 32%;
+    animation: cliProgressSlide 1.4s ease-in-out infinite;
+}
+
+.cli-progress__hint {
+    color: var(--cli-line-muted);
+    font-size: 12px;
+}
+
+.cli-page-picker {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(10, 16, 25, 0.42);
+    backdrop-filter: blur(6px);
+    z-index: 2;
+}
+
+.cli-page-picker.hidden {
+    display: none;
+}
+
+.cli-page-picker__dialog {
+    width: min(420px, 100%);
+    padding: 18px;
+    border-radius: 18px;
+    border: 1px solid var(--cli-card-border);
+    background: var(--cli-card-bg);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+}
+
+.cli-page-picker__title {
+    color: var(--cli-card-title);
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.cli-page-picker__desc,
+.cli-page-picker__hint {
+    margin-top: 8px;
+    color: var(--cli-card-meta);
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.cli-page-picker__input {
+    height: 38px;
+    border: 1px solid var(--cli-select-border);
+    border-radius: 10px;
+    background: var(--cli-select-bg);
+    color: var(--cli-shell-text);
+    padding: 0 12px;
+    font: inherit;
+}
+
+.cli-page-picker__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.cli-page-picker__btn {
+    height: 38px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #ea7048 0%, #c74635 100%);
+    color: #fff;
+    cursor: pointer;
+}
+
+.cli-page-picker__btn--ghost {
+    border: 1px solid var(--cli-select-border);
+    background: transparent;
+    color: var(--cli-shell-text);
+}
+
 @keyframes cliPulse {
     0%, 100% { opacity: 0.25; transform: translateY(0); }
     50% { opacity: 1; transform: translateY(-2px); }
+}
+
+@keyframes cliProgressSlide {
+    0% { transform: translateX(-110%); }
+    60% { transform: translateX(210%); }
+    100% { transform: translateX(210%); }
 }
 
 @media (max-width: 768px) {
@@ -844,6 +988,8 @@
             this.pendingAttachment = null;
             this.currentReader = null;
             this.isStreaming = false;
+            this.progressStartedAt = 0;
+            this.progressTimer = null;
             this.suggestionDefaults = [
                 '查询 CN104154208B 专利详情',
                 '查询 US12390907B2 专利详情',
@@ -875,6 +1021,11 @@
             this.fileBtn = document.getElementById('cli-file-btn');
             this.fileInput = document.getElementById('cli-file-input');
             this.ocrEngineSelect = document.getElementById('cli-ocr-engine');
+            this.pagePicker = document.getElementById('cli-page-picker');
+            this.pagePickerDesc = document.getElementById('cli-page-picker-desc');
+            this.pagePickerMode = document.getElementById('cli-page-picker-mode');
+            this.pagePickerInputWrap = document.getElementById('cli-page-picker-input-wrap');
+            this.pagePickerInput = document.getElementById('cli-page-picker-input');
             this.providerSelect = document.getElementById('cli-provider-select');
             this.modelSelect = document.getElementById('cli-model-select');
             this.providerStatus = document.getElementById('cli-status-provider');
@@ -890,6 +1041,9 @@
             this.stopBtn?.addEventListener('click', () => this.stopStreaming());
             this.fileBtn?.addEventListener('click', () => this.fileInput?.click());
             this.fileInput?.addEventListener('change', (event) => this.handleFileSelect(event));
+            document.getElementById('cli-page-picker-cancel')?.addEventListener('click', () => this.closePagePicker());
+            document.getElementById('cli-page-picker-apply')?.addEventListener('click', () => this.applyPageSelection());
+            this.pagePickerMode?.addEventListener('change', () => this.syncPagePickerMode());
             this.providerSelect?.addEventListener('change', () => this.refreshModelOptions());
             this.input?.addEventListener('input', () => this.renderSuggestions());
 
@@ -1044,19 +1198,39 @@
             this.printBlock('文件工作流提示', hint);
         }
 
+        async handleFileSelect(event) {
+            const file = event?.target?.files?.[0];
+            if (!file) return;
+
+            this.pendingAttachment = await this.buildAttachmentPayload(file);
+            this.renderAttachmentChip();
+            this.printTrace(`已选择附件: ${file.name}`);
+            if (this.pendingAttachment?.kind === 'pdf_pages') {
+                this.openPagePicker();
+            }
+            const isExcel = /\.(xlsx|xls)$/i.test(file.name || '');
+            const hint = isExcel
+                ? '现在可以直接输入：处理这个 Excel、分析这个表格、识别其中的权利要求。也可以使用 flow launch claims_excel_pipeline。'
+                : '现在可以直接输入自然语言，例如：请解析这个文件、帮我识别这份 PDF、总结这个文档。也可以继续使用 flow launch pdf_ocr_pipeline。';
+            this.printBlock('文件工作流提示', hint);
+        }
+
         async buildAttachmentPayload(file) {
             const lowerName = (file.name || '').toLowerCase();
             const mimeType = file.type || '';
 
             if (mimeType === 'application/pdf' || lowerName.endsWith('.pdf')) {
                 const pages = await this.convertPdfToImages(file);
+                const selectedPages = pages.map((item) => item.page);
                 return {
                     name: file.name,
                     size: file.size,
                     mime_type: mimeType || 'application/pdf',
                     kind: 'pdf_pages',
                     page_count: pages.length,
-                    pages
+                    pages,
+                    selected_pages: selectedPages,
+                    selected_page_label: this.formatPageSelectionLabel(selectedPages, pages.length)
                 };
             }
 
@@ -1132,6 +1306,131 @@
             return pages;
         }
 
+        formatPageSelectionLabel(selectedPages, totalPages) {
+            if (!totalPages) return '未选择页数';
+            if (!Array.isArray(selectedPages) || !selectedPages.length || selectedPages.length >= totalPages) {
+                return `全部 ${totalPages} 页`;
+            }
+            return `${selectedPages.length}/${totalPages} 页: ${selectedPages.join(', ')}`;
+        }
+
+        parsePageRangeInput(rawValue, totalPages) {
+            const values = [];
+            const seen = new Set();
+            const segments = String(rawValue || '').split(',').map((item) => item.trim()).filter(Boolean);
+            for (const segment of segments) {
+                if (segment.includes('-')) {
+                    const [startRaw, endRaw] = segment.split('-', 2);
+                    const start = Number.parseInt(startRaw, 10);
+                    const end = Number.parseInt(endRaw, 10);
+                    if (!Number.isInteger(start) || !Number.isInteger(end) || start < 1 || end < start || end > totalPages) {
+                        throw new Error(`无效页码范围: ${segment}`);
+                    }
+                    for (let page = start; page <= end; page += 1) {
+                        if (!seen.has(page)) {
+                            seen.add(page);
+                            values.push(page);
+                        }
+                    }
+                    continue;
+                }
+
+                const page = Number.parseInt(segment, 10);
+                if (!Number.isInteger(page) || page < 1 || page > totalPages) {
+                    throw new Error(`无效页码: ${segment}`);
+                }
+                if (!seen.has(page)) {
+                    seen.add(page);
+                    values.push(page);
+                }
+            }
+
+            if (!values.length) {
+                throw new Error('请输入至少一个页码');
+            }
+            return values;
+        }
+
+        openPagePicker() {
+            if (!this.pendingAttachment || this.pendingAttachment.kind !== 'pdf_pages') return;
+            const totalPages = this.pendingAttachment.page_count || (this.pendingAttachment.pages || []).length || 0;
+            const selectedPages = this.pendingAttachment.selected_pages || [];
+            const isAllPages = !selectedPages.length || selectedPages.length >= totalPages;
+            if (this.pagePickerDesc) {
+                this.pagePickerDesc.textContent = `当前文件共 ${totalPages} 页，可选择全部或自定义页码范围。`;
+            }
+            if (this.pagePickerMode) {
+                this.pagePickerMode.value = isAllPages ? 'all' : 'custom';
+            }
+            if (this.pagePickerInput) {
+                this.pagePickerInput.value = isAllPages ? '' : selectedPages.join(',');
+            }
+            this.syncPagePickerMode();
+            this.pagePicker?.classList.remove('hidden');
+        }
+
+        closePagePicker() {
+            this.pagePicker?.classList.add('hidden');
+        }
+
+        syncPagePickerMode() {
+            const isCustom = this.pagePickerMode?.value === 'custom';
+            if (this.pagePickerInputWrap) {
+                this.pagePickerInputWrap.style.display = isCustom ? 'flex' : 'none';
+            }
+        }
+
+        applyPageSelection() {
+            if (!this.pendingAttachment || this.pendingAttachment.kind !== 'pdf_pages') {
+                this.closePagePicker();
+                return;
+            }
+
+            const totalPages = this.pendingAttachment.page_count || (this.pendingAttachment.pages || []).length || 0;
+            let selectedPages = Array.from({ length: totalPages }, (_, index) => index + 1);
+            if (this.pagePickerMode?.value === 'custom') {
+                selectedPages = this.parsePageRangeInput(this.pagePickerInput?.value || '', totalPages);
+            }
+
+            this.pendingAttachment.selected_pages = selectedPages;
+            this.pendingAttachment.selected_page_label = this.formatPageSelectionLabel(selectedPages, totalPages);
+            this.renderAttachmentChip();
+            this.closePagePicker();
+            this.printTrace(`PDF 解析范围已更新: ${this.pendingAttachment.selected_page_label}`);
+        }
+
+        applyPageSelection() {
+            if (!this.pendingAttachment || this.pendingAttachment.kind !== 'pdf_pages') {
+                this.closePagePicker();
+                return;
+            }
+
+            try {
+                const totalPages = this.pendingAttachment.page_count || (this.pendingAttachment.pages || []).length || 0;
+                let selectedPages = Array.from({ length: totalPages }, (_, index) => index + 1);
+                if (this.pagePickerMode?.value === 'custom') {
+                    selectedPages = this.parsePageRangeInput(this.pagePickerInput?.value || '', totalPages);
+                }
+
+                this.pendingAttachment.selected_pages = selectedPages;
+                this.pendingAttachment.selected_page_label = this.formatPageSelectionLabel(selectedPages, totalPages);
+                this.renderAttachmentChip();
+                this.closePagePicker();
+                this.printTrace(`PDF 解析范围已更新: ${this.pendingAttachment.selected_page_label}`);
+            } catch (error) {
+                this.printError(error.message || '页码范围无效');
+            }
+        }
+
+        getRequestAttachment() {
+            if (!this.pendingAttachment) return null;
+            return {
+                ...this.pendingAttachment,
+                selected_pages: this.pendingAttachment.selected_pages || [],
+                selected_page_label: this.pendingAttachment.selected_page_label || null
+            };
+        }
+
         renderAttachmentChip() {
             document.getElementById('cli-file-chip')?.remove();
             if (!this.pendingAttachment) return;
@@ -1151,6 +1450,35 @@
                     this.fileInput.value = '';
                 }
                 chip.remove();
+                this.printTrace('已移除附件');
+            });
+            this.scrollToBottom();
+        }
+
+        renderAttachmentChip() {
+            document.getElementById('cli-file-chip')?.remove();
+            if (!this.pendingAttachment) return;
+
+            const chip = document.createElement('div');
+            chip.id = 'cli-file-chip';
+            chip.className = 'cli-file-chip';
+            const pageInfo = this.pendingAttachment?.page_count ? ` (${this.pendingAttachment.page_count} 页)` : '';
+            const selectionLabel = this.pendingAttachment?.selected_page_label || '';
+            chip.innerHTML = `
+                <span>附件: ${this.escapeHtml(this.pendingAttachment.name || 'file')}${this.escapeHtml(pageInfo)}</span>
+                ${selectionLabel ? `<span class="cli-file-chip__meta">范围: ${this.escapeHtml(selectionLabel)}</span>` : ''}
+                ${this.pendingAttachment?.kind === 'pdf_pages' ? '<button type="button" data-pick-pages>页数</button>' : ''}
+                <button type="button" data-clear-file>移除</button>
+            `;
+            this.output.appendChild(chip);
+            chip.querySelector('[data-pick-pages]')?.addEventListener('click', () => this.openPagePicker());
+            chip.querySelector('[data-clear-file]')?.addEventListener('click', () => {
+                this.pendingAttachment = null;
+                if (this.fileInput) {
+                    this.fileInput.value = '';
+                }
+                chip.remove();
+                this.closePagePicker();
                 this.printTrace('已移除附件');
             });
             this.scrollToBottom();
@@ -1193,7 +1521,7 @@
                     input: value,
                     provider: this.providerSelect?.value || null,
                     model: this.modelSelect?.value || null,
-                    attachment: this.pendingAttachment,
+                    attachment: this.getRequestAttachment(),
                     ocr_engine: this.ocrEngineSelect?.value || null
                 })
             });
@@ -1248,7 +1576,7 @@
                     mode: 'auto',
                     provider: this.providerSelect?.value || null,
                     model: this.modelSelect?.value || null,
-                    attachment: this.pendingAttachment,
+                    attachment: this.getRequestAttachment(),
                     ocr_engine: this.ocrEngineSelect?.value || null
                 })
             });
@@ -1309,6 +1637,46 @@
             }
 
             if (event.type === 'final') {
+                this.hideLoading();
+                this.renderPayload(event.data || {});
+                return;
+            }
+
+            if (event.type === 'error') {
+                this.hideLoading();
+                this.printError(event.error || '执行失败');
+            }
+        }
+
+        handleStreamEvent(event) {
+            if (!event?.type) return;
+
+            if (event.type === 'trace') {
+                this.updateProgress(event.progress || null, event.message || event.stage || '处理中');
+                this.printTrace(event.message || event.stage || '处理中');
+                return;
+            }
+
+            if (event.type === 'context') {
+                this.updateProgress({ percent: 72, label: 'Context updated' }, event.message || '上下文已更新');
+                this.printTrace(event.message || '上下文已更新');
+                if (Array.isArray(event.scraped_patents) && event.scraped_patents.length) {
+                    this.renderPatentContext(event.scraped_patents);
+                }
+                if (Array.isArray(event.scrape_errors) && event.scrape_errors.length) {
+                    this.printBlock('抓取异常', event.scrape_errors.map((item) => `${item.patent_number || 'unknown'}: ${item.error || '抓取失败'}`).join('\n'));
+                }
+                return;
+            }
+
+            if (event.type === 'content') {
+                this.updateProgress({ percent: 88, label: 'Generating answer' }, '模型正在生成回答');
+                this.appendStreamAnswer(event.delta || '');
+                return;
+            }
+
+            if (event.type === 'final') {
+                this.updateProgress({ percent: 100, label: 'Completed' }, '执行完成');
                 this.hideLoading();
                 this.renderPayload(event.data || {});
                 return;
@@ -1506,6 +1874,71 @@
         }
 
         hideLoading() {
+            document.getElementById('cli-loading')?.remove();
+        }
+
+        showLoading() {
+            this.hideLoading();
+            this.progressStartedAt = Date.now();
+            const wrapper = document.createElement('div');
+            wrapper.id = 'cli-loading';
+            wrapper.className = 'cli-block';
+            wrapper.innerHTML = `
+                <div class="cli-block__title">处理中</div>
+                <div class="cli-progress">
+                    <div class="cli-progress__meta">
+                        <span data-progress-label>Preparing request</span>
+                        <span data-progress-time>0s</span>
+                    </div>
+                    <div class="cli-progress__bar">
+                        <div class="cli-progress__fill indeterminate" data-progress-fill></div>
+                    </div>
+                    <div class="cli-progress__hint" data-progress-hint>请求已发送，后台正在执行。</div>
+                </div>
+            `;
+            this.output.appendChild(wrapper);
+            this.progressTimer = window.setInterval(() => {
+                const timeNode = wrapper.querySelector('[data-progress-time]');
+                if (timeNode) {
+                    timeNode.textContent = this.formatDuration(Date.now() - this.progressStartedAt);
+                }
+            }, 500);
+            this.scrollToBottom();
+        }
+
+        updateProgress(progress, hintText) {
+            const wrapper = document.getElementById('cli-loading');
+            if (!wrapper) {
+                this.showLoading();
+            }
+            const panel = document.getElementById('cli-loading');
+            if (!panel) return;
+            const fill = panel.querySelector('[data-progress-fill]');
+            const label = panel.querySelector('[data-progress-label]');
+            const hint = panel.querySelector('[data-progress-hint]');
+            if (label) {
+                label.textContent = progress?.label || 'Processing';
+            }
+            if (hint && hintText) {
+                hint.textContent = hintText;
+            }
+            if (fill) {
+                const percent = Number.isFinite(progress?.percent) ? Math.max(0, Math.min(100, progress.percent)) : null;
+                if (percent === null) {
+                    fill.classList.add('indeterminate');
+                    fill.style.width = '32%';
+                } else {
+                    fill.classList.remove('indeterminate');
+                    fill.style.width = `${percent}%`;
+                }
+            }
+        }
+
+        hideLoading() {
+            if (this.progressTimer) {
+                window.clearInterval(this.progressTimer);
+                this.progressTimer = null;
+            }
             document.getElementById('cli-loading')?.remove();
         }
 

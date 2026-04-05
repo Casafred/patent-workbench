@@ -920,6 +920,47 @@ def run_ipc_predict_flow(flow_input: str, params: Dict[str, Any]) -> Dict[str, A
     except Exception as e:
         return {"success": False, "error": f"预测失败: {str(e)}"}
 
+def resolve_selected_pdf_pages(attachment: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List[int], int]:
+    pages = attachment.get("pages") or []
+    total_pages = len(pages)
+    selected_pages = attachment.get("selected_pages") or []
+    normalized_selection: List[int] = []
+    for value in selected_pages:
+        try:
+            page_number = int(value)
+        except (TypeError, ValueError):
+            continue
+        if 1 <= page_number <= total_pages and page_number not in normalized_selection:
+            normalized_selection.append(page_number)
+
+    if normalized_selection:
+        selection_lookup = set(normalized_selection)
+        filtered_pages = [item for item in pages if int(item.get("page") or 0) in selection_lookup]
+        if filtered_pages:
+            return filtered_pages, normalized_selection, total_pages
+
+    fallback_selection = [int(item.get("page") or index + 1) for index, item in enumerate(pages)]
+    return pages, fallback_selection, total_pages
+
+
+def build_pdf_selection_label(selected_pages: List[int], total_pages: int) -> str:
+    if not total_pages:
+        return "0 pages"
+    if len(selected_pages) >= total_pages:
+        return f"all {total_pages} pages"
+    return f"{len(selected_pages)}/{total_pages} pages: " + ", ".join(str(page) for page in selected_pages)
+
+
+def apply_page_number_to_ocr_result(page_result: Dict[str, Any], page_number: int) -> Dict[str, Any]:
+    for page in page_result.get("pages") or []:
+        page["pageIndex"] = page_number
+        for block in page.get("blocks") or []:
+            block["pageIndex"] = page_number
+    for page_blocks in page_result.get("layout_details") or []:
+        for block in page_blocks or []:
+            block["pageIndex"] = page_number
+    return page_result
+
 
 def run_pdf_ocr_flow(flow_input: str, params: Dict[str, Any]) -> Dict[str, Any]:
     attachment = params.get("attachment") or {}
@@ -941,24 +982,34 @@ def run_pdf_ocr_flow(flow_input: str, params: Dict[str, Any]) -> Dict[str, Any]:
         return _parse_with_paddle_ocr_vl(data, {})
 
     if pages:
-        for item in pages:
-            page_result = parse_single(item.get("data", ""))
+        selected_page_items, selected_page_numbers, total_pages = resolve_selected_pdf_pages(attachment)
+        for item in selected_page_items:
+            page_number = int(item.get("page") or len(parsed_pages) + 1)
+            page_result = apply_page_number_to_ocr_result(parse_single(item.get("data", "")), page_number)
             parsed_pages.extend(page_result.get("pages") or [])
             page_markdown = page_result.get("markdown") or page_result.get("md_results") or ""
             if page_markdown:
-                markdown_parts.append(page_markdown)
+                markdown_parts.append(f"## Page {page_number}\n\n{page_markdown}")
         result = {
             "pages": parsed_pages,
             "markdown": "\n\n---\n\n".join(markdown_parts),
             "engine": engine,
             "md_results": "\n\n---\n\n".join(markdown_parts),
+            "selected_pages": selected_page_numbers,
+            "total_pages": total_pages,
         }
     else:
+        selected_page_numbers = []
+        total_pages = 1 if file_data else 0
         result = parse_single(file_data)
 
     markdown = result.get("markdown") or result.get("md_results") or ""
     preview = markdown[:3000] if markdown else "未提取到正文"
     pages = result.get("pages") or []
+    selection_label = build_pdf_selection_label(
+        result.get("selected_pages") or selected_page_numbers,
+        result.get("total_pages") or total_pages or len(pages),
+    )
 
     return {
         "success": True,
@@ -979,6 +1030,57 @@ def run_pdf_ocr_flow(flow_input: str, params: Dict[str, Any]) -> Dict[str, Any]:
             "ocr_result": result,
         },
     }
+
+def stream_pdf_ocr_flow_events(params: Dict[str, Any]):
+    attachment = params.get("attachment") or {}
+    file_name = attachment.get("name") or "uploaded-file"
+    engine = params.get("ocr_engine") or ("glm_ocr" if (params.get("model") or "").lower().startswith("glm") else "paddle_ocr_vl")
+    pages = attachment.get("pages") or []
+    file_data = attachment.get("data")
+
+    if not file_data and not pages:
+        yield {"type": "error", "error": "请先在 CLI 中选择文件，再执行 pdf_ocr_pipeline"}
+        return
+
+    if pages:
+        selected_page_items, selected_page_numbers, total_pages = resolve_selected_pdf_pages(attachment)
+        total_selected = max(len(selected_page_items), 1)
+        yield {
+            "type": "trace",
+            "stage": "pdf_ocr_prepare",
+            "message": f"PDF OCR 已启动，准备解析 {build_pdf_selection_label(selected_page_numbers, total_pages)}",
+            "progress": {"label": "Preparing OCR", "current": 0, "total": total_selected, "percent": 4},
+        }
+
+        for index, item in enumerate(selected_page_items, start=1):
+            page_number = int(item.get("page") or index)
+            yield {
+                "type": "trace",
+                "stage": "pdf_ocr_page",
+                "message": f"正在解析第 {page_number} 页 ({index}/{total_selected})",
+                "progress": {
+                    "label": f"OCR page {page_number}",
+                    "current": index,
+                    "total": total_selected,
+                    "percent": min(96, max(8, int(index * 100 / total_selected))),
+                },
+            }
+    else:
+        yield {
+            "type": "trace",
+            "stage": "pdf_ocr_whole_file",
+            "message": f"正在解析整份文件 {file_name}",
+            "progress": {"label": "Uploading to OCR engine", "current": 1, "total": 1, "percent": 20},
+        }
+
+    result = run_pdf_ocr_flow("", params)
+    yield {
+        "type": "trace",
+        "stage": "pdf_ocr_complete",
+        "message": "PDF OCR 完成，正在整理结果",
+        "progress": {"label": "Finalizing", "current": 1, "total": 1, "percent": 100},
+    }
+    yield {"type": "final", "data": result}
 
 
 def run_claims_excel_flow(params: Dict[str, Any]) -> Dict[str, Any]:
@@ -1465,6 +1567,11 @@ def stream_execute_command():
                             },
                             "confidence": llm_route.get("confidence") or 0.0,
                         }
+                        if parsed.get("params", {}).get("flow_id") == "pdf_ocr_pipeline":
+                            for event in stream_pdf_ocr_flow_events(parsed.get("params", {})):
+                                yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+                            yield "data: [DONE]\n\n"
+                            return
                         result = executor.execute(parsed, request_context)
                         yield f"data: {json.dumps({'type': 'final', 'data': result}, ensure_ascii=False)}\n\n"
                         yield "data: [DONE]\n\n"
@@ -1475,7 +1582,6 @@ def stream_execute_command():
             auto_flow = detect_auto_flow_command(user_input, attachment, provider, model, ocr_engine)
             if auto_flow:
                 parsed = auto_flow
-                result = executor.execute(parsed, request_context)
                 flow_id = parsed.get("params", {}).get("flow_id", "flow")
                 trace_message = {
                     "claims_excel_pipeline": "检测到 Excel 附件，自动进入 Claims Excel 工作流",
@@ -1483,6 +1589,12 @@ def stream_execute_command():
                     "ipc_lookup": "识别到 IPC/分类号查询，自动进入 IPC 工作流",
                 }.get(flow_id, f"自动进入 {flow_id} 工作流")
                 yield f"data: {json.dumps({'type': 'trace', 'stage': 'auto_flow', 'message': trace_message}, ensure_ascii=False)}\n\n"
+                if flow_id == "pdf_ocr_pipeline":
+                    for event in stream_pdf_ocr_flow_events(parsed.get("params", {})):
+                        yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+                    yield "data: [DONE]\n\n"
+                    return
+                result = executor.execute(parsed, request_context)
                 yield f"data: {json.dumps({'type': 'final', 'data': result}, ensure_ascii=False)}\n\n"
                 yield "data: [DONE]\n\n"
                 return
