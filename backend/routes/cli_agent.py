@@ -110,9 +110,17 @@ def list_flows_data() -> Dict[str, Any]:
 
 
 def get_request_context() -> Dict[str, Any]:
+    session_id = session.get("session_id") or session.get("_id") or "web_cli"
+    try:
+        req_data = request.get_json(silent=True) or {}
+    except Exception:
+        req_data = {}
+    override_session = req_data.get("session_id") or req_data.get("cli_session_id")
+    if override_session:
+        session_id = str(override_session)
     return {
         "user_id": session.get("user_id", "anonymous"),
-        "session_id": session.get("session_id") or session.get("_id") or "web_cli",
+        "session_id": session_id,
     }
 
 

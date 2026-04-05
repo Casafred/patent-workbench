@@ -33,56 +33,72 @@
             <select id="cli-model-select"></select>
         </label>
         <div id="cli-status-provider" class="cli-badge">AI: 初始化中</div>
+        <div id="cli-status-node" class="cli-badge cli-badge--node">任务: 默认</div>
     </div>
 
-    <div id="cli-output" class="cli-shell__output">
-        <div class="cli-block cli-block--welcome">
-            <div class="cli-block__title">CLI 已就绪</div>
-            <div class="cli-block__text">示例: 查询 CN104154208B 专利详情</div>
-            <div class="cli-block__text">示例: 基于刚才专利结果分析创新点和保护范围</div>
-            <div class="cli-block__text">示例: flow list</div>
-            <div class="cli-block__text">上传文件后可直接输入：请解析这个文件 / 帮我识别这份 PDF / 总结这个文档。</div>
+    <div class="cli-shell__body">
+        <aside class="cli-workflow">
+            <div class="cli-workflow__header">
+                <div>
+                    <div class="cli-workflow__title">任务切换</div>
+                    <div class="cli-workflow__subtitle">按主题分离上下文</div>
+                </div>
+                <button id="cli-node-create" class="cli-workflow__btn" type="button" title="新建任务">+ 新建</button>
+            </div>
+            <div id="cli-workflow-list" class="cli-workflow__list"></div>
+        </aside>
+
+        <div class="cli-shell__main">
+            <div id="cli-output" class="cli-shell__output">
+                <div class="cli-block cli-block--welcome">
+                    <div class="cli-block__title">CLI 已就绪</div>
+                    <div class="cli-block__text">示例: 查询 CN104154208B 专利详情</div>
+                    <div class="cli-block__text">示例: 基于刚才专利结果分析创新点和保护范围</div>
+                    <div class="cli-block__text">示例: flow list</div>
+                    <div class="cli-block__text">上传文件后可直接输入：请解析这个文件 / 帮我识别这份 PDF / 总结这个文档。</div>
+                </div>
+            </div>
+
+            <div id="cli-suggestions" class="cli-shell__suggestions"></div>
+
+            <div class="cli-shell__inputbar">
+                <span class="cli-shell__prompt">&gt;</span>
+                <button id="cli-file-btn" class="cli-shell__attach" type="button" title="选择文件">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" 
+                              stroke="currentColor" 
+                              stroke-width="2" 
+                              stroke-linecap="round" 
+                              stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <input id="cli-file-input" type="file" hidden />
+                <input
+                    id="cli-input"
+                    class="cli-shell__input"
+                    type="search"
+                    name="cli_query_input"
+                    autocomplete="off"
+                    autocapitalize="off"
+                    autocorrect="off"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    spellcheck="false"
+                    placeholder="输入命令或自然语言，例如：查询 CNXXXXXXA 专利详情"
+                />
+                <select id="cli-ocr-engine" class="cli-shell__engine">
+                    <option value="paddle_ocr_vl">Paddle OCR</option>
+                    <option value="glm_ocr">GLM OCR</option>
+                </select>
+                <button id="cli-send-btn" class="cli-shell__send">发送</button>
+                <button id="cli-stop-btn" class="cli-shell__stop" style="display: none;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <rect x="6" y="6" width="12" height="12" rx="2"/>
+                    </svg>
+                    <span>停止</span>
+                </button>
+            </div>
         </div>
-    </div>
-
-    <div id="cli-suggestions" class="cli-shell__suggestions"></div>
-
-    <div class="cli-shell__inputbar">
-        <span class="cli-shell__prompt">&gt;</span>
-        <button id="cli-file-btn" class="cli-shell__attach" type="button" title="选择文件">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" 
-                      stroke="currentColor" 
-                      stroke-width="2" 
-                      stroke-linecap="round" 
-                      stroke-linejoin="round"/>
-            </svg>
-        </button>
-        <input id="cli-file-input" type="file" hidden />
-        <input
-            id="cli-input"
-            class="cli-shell__input"
-            type="search"
-            name="cli_query_input"
-            autocomplete="off"
-            autocapitalize="off"
-            autocorrect="off"
-            data-lpignore="true"
-            data-1p-ignore="true"
-            spellcheck="false"
-            placeholder="输入命令或自然语言，例如：查询 CNXXXXXXA 专利详情"
-        />
-        <select id="cli-ocr-engine" class="cli-shell__engine">
-            <option value="paddle_ocr_vl">Paddle OCR</option>
-            <option value="glm_ocr">GLM OCR</option>
-        </select>
-        <button id="cli-send-btn" class="cli-shell__send">发送</button>
-        <button id="cli-stop-btn" class="cli-shell__stop" style="display: none;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <rect x="6" y="6" width="12" height="12" rx="2"/>
-            </svg>
-            <span>停止</span>
-        </button>
     </div>
 
     <div id="cli-page-picker" class="cli-page-picker hidden">
@@ -174,6 +190,14 @@
     --cli-card-meta: #6f8577;
     --cli-kv-strong: #2d7b52;
     --cli-divider: rgba(20, 83, 45, 0.08);
+    --cli-node-bg: rgba(255, 255, 255, 0.7);
+    --cli-node-border: rgba(20, 83, 45, 0.1);
+    --cli-node-hover: rgba(234, 112, 72, 0.08);
+    --cli-node-active: rgba(234, 112, 72, 0.16);
+    --cli-node-muted: #6a7d70;
+    --cli-node-tag-bg: rgba(234, 112, 72, 0.12);
+    --cli-node-tag-color: #b24f32;
+    --cli-node-important: #f97316;
 }
 
 [data-theme="dark"] {
@@ -220,6 +244,14 @@
     --cli-card-meta: #8fa2bd;
     --cli-kv-strong: #8ab8ff;
     --cli-divider: rgba(255, 255, 255, 0.06);
+    --cli-node-bg: rgba(17, 26, 40, 0.88);
+    --cli-node-border: rgba(255, 255, 255, 0.08);
+    --cli-node-hover: rgba(255, 255, 255, 0.06);
+    --cli-node-active: rgba(255, 157, 108, 0.22);
+    --cli-node-muted: #8ba0bd;
+    --cli-node-tag-bg: rgba(255, 157, 108, 0.18);
+    --cli-node-tag-color: #ffd2b6;
+    --cli-node-important: #ffb14a;
 }
 
 .cli-shell {
@@ -259,9 +291,7 @@
 }
 
 .cli-shell.minimized .cli-shell__toolbar,
-.cli-shell.minimized .cli-shell__output,
-.cli-shell.minimized .cli-shell__inputbar,
-.cli-shell.minimized .cli-shell__suggestions {
+.cli-shell.minimized .cli-shell__body {
     display: none;
 }
 
@@ -341,7 +371,7 @@
 
 .cli-shell__toolbar {
     display: grid;
-    grid-template-columns: 160px minmax(0, 1fr) auto;
+    grid-template-columns: 160px minmax(0, 1fr) auto auto;
     gap: 12px;
     align-items: end;
     border-bottom: 1px solid var(--cli-shell-line);
@@ -415,10 +445,191 @@
     color: var(--cli-control-hover);
 }
 
+.cli-badge--node {
+    min-width: 140px;
+    justify-content: flex-start;
+    padding: 0 14px;
+    font-weight: 600;
+}
+
+.cli-shell__body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+}
+
+.cli-shell__main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+}
+
+.cli-workflow {
+    width: 220px;
+    border-right: 1px solid var(--cli-shell-line);
+    background: var(--cli-shell-panel-bg);
+    display: flex;
+    flex-direction: column;
+    padding: 12px 12px 10px;
+    gap: 10px;
+}
+
+.cli-workflow__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.cli-workflow__title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.cli-workflow__subtitle {
+    margin-top: 3px;
+    font-size: 11px;
+    color: var(--cli-shell-muted);
+}
+
+.cli-workflow__btn {
+    border: 1px solid var(--cli-select-border);
+    border-radius: 999px;
+    background: var(--cli-select-bg);
+    color: var(--cli-shell-text);
+    font-size: 11px;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cli-workflow__btn:hover {
+    border-color: var(--cli-select-hover-border);
+    transform: translateY(-1px);
+}
+
+.cli-workflow__list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.cli-node {
+    border: 1px solid var(--cli-node-border);
+    border-radius: 12px;
+    padding: 10px;
+    background: var(--cli-node-bg);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.cli-node:hover {
+    background: var(--cli-node-hover);
+    border-color: rgba(234, 112, 72, 0.3);
+}
+
+.cli-node.active {
+    background: var(--cli-node-active);
+    border-color: rgba(234, 112, 72, 0.5);
+    box-shadow: 0 8px 18px rgba(234, 112, 72, 0.2);
+}
+
+.cli-node__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.cli-node__identity {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.cli-node__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--node-accent, #ea7048);
+    box-shadow: 0 0 0 3px rgba(234, 112, 72, 0.15);
+    flex-shrink: 0;
+}
+
+.cli-node__index {
+    font-size: 11px;
+    color: var(--cli-node-muted);
+    letter-spacing: 0.02em;
+}
+
+.cli-node__title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--cli-shell-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cli-node__summary {
+    font-size: 11px;
+    color: var(--cli-node-muted);
+    line-height: 1.4;
+    max-height: 2.8em;
+    overflow: hidden;
+}
+
+.cli-node__tag {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: var(--cli-node-tag-bg);
+    color: var(--cli-node-tag-color);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+}
+
+.cli-node__actions {
+    display: flex;
+    gap: 6px;
+}
+
+.cli-node__action {
+    border: 0;
+    background: transparent;
+    color: var(--cli-node-muted);
+    cursor: pointer;
+    padding: 2px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.cli-node__action:hover {
+    color: var(--cli-shell-text);
+    transform: scale(1.08);
+}
+
+.cli-node__action--important {
+    color: var(--cli-node-important);
+}
+
 .cli-shell__output {
     flex: 1;
     overflow-y: auto;
     padding: 16px;
+    min-height: 0;
 }
 
 .cli-shell__suggestions {
@@ -968,6 +1179,26 @@
         grid-template-columns: 1fr;
     }
 
+    .cli-shell__body {
+        flex-direction: column;
+    }
+
+    .cli-workflow {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--cli-shell-line);
+    }
+
+    .cli-workflow__list {
+        flex-direction: row;
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+
+    .cli-node {
+        min-width: 200px;
+    }
+
     .cli-launcher {
         right: 12px;
         bottom: 12px;
@@ -990,6 +1221,12 @@
             this.isStreaming = false;
             this.progressStartedAt = 0;
             this.progressTimer = null;
+            this.workflowNodes = [];
+            this.activeNodeId = null;
+            this.nodeColors = ['#f97316', '#22c55e', '#38bdf8', '#a78bfa', '#f43f5e', '#eab308', '#14b8a6', '#c084fc'];
+            this.nodeColorIndex = 0;
+            this.commandSnapshot = null;
+            this.defaultWelcomeHtml = '';
             this.suggestionDefaults = [
                 '查询 CN104154208B 专利详情',
                 '查询 US12390907B2 专利详情',
@@ -1004,6 +1241,8 @@
         init() {
             if (this.initialized) return;
             this.cacheElements();
+            this.defaultWelcomeHtml = this.output?.innerHTML || '';
+            this.initWorkflowBar();
             this.bindEvents();
             this.loadHistory();
             this.loadBootstrapData();
@@ -1029,7 +1268,10 @@
             this.providerSelect = document.getElementById('cli-provider-select');
             this.modelSelect = document.getElementById('cli-model-select');
             this.providerStatus = document.getElementById('cli-status-provider');
+            this.nodeStatus = document.getElementById('cli-status-node');
             this.suggestions = document.getElementById('cli-suggestions');
+            this.workflowList = document.getElementById('cli-workflow-list');
+            this.nodeCreateBtn = document.getElementById('cli-node-create');
         }
 
         bindEvents() {
@@ -1046,6 +1288,22 @@
             this.pagePickerMode?.addEventListener('change', () => this.syncPagePickerMode());
             this.providerSelect?.addEventListener('change', () => this.refreshModelOptions());
             this.input?.addEventListener('input', () => this.renderSuggestions());
+            this.nodeCreateBtn?.addEventListener('click', () => this.createManualNode());
+
+            this.workflowList?.addEventListener('click', (event) => {
+                const actionNode = event.target.closest('[data-node-action]');
+                const nodeEl = event.target.closest('[data-node-id]');
+                if (!nodeEl) return;
+                const nodeId = nodeEl.getAttribute('data-node-id');
+                if (!nodeId) return;
+                if (actionNode) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    this.handleNodeAction(nodeId, actionNode.getAttribute('data-node-action'));
+                    return;
+                }
+                this.switchNode(nodeId);
+            });
 
             this.input?.addEventListener('keydown', (event) => {
                 if (event.key === 'Enter') {
@@ -1079,6 +1337,175 @@
                     this.toggleFullscreen(false);
                 }
             });
+        }
+
+        initWorkflowBar() {
+            if (!this.workflowList) return;
+            if (!this.workflowNodes.length) {
+                const node = this.createWorkflowNode({
+                    title: '默认任务',
+                    summary: '等待输入',
+                    signature: 'intent:general_chat',
+                    intentName: 'general_chat',
+                    tag: 'CHAT'
+                });
+                node.outputHtml = this.defaultWelcomeHtml;
+                this.activeNodeId = node.id;
+            }
+            this.renderWorkflowNodes();
+            this.applyActiveNodeOutput();
+        }
+
+        createManualNode() {
+            const node = this.createWorkflowNode({
+                title: `新任务 ${this.workflowNodes.length + 1}`,
+                summary: '等待输入',
+                signature: `manual:${Date.now()}`,
+                tag: 'TASK'
+            });
+            node.outputHtml = this.defaultWelcomeHtml;
+            this.switchNode(node.id, { skipSave: false });
+        }
+
+        createWorkflowNode({ title, summary, signature, intentName, flowId, tag }) {
+            const id = `cli_task_${Date.now()}_${Math.random().toString(16).slice(2, 6)}`;
+            const color = this.nodeColors[this.nodeColorIndex % this.nodeColors.length];
+            this.nodeColorIndex += 1;
+            const node = {
+                id,
+                sessionId: `web_cli_${id}`,
+                color,
+                title: title || '任务',
+                summary: summary || '等待输入',
+                signature: signature || null,
+                intentName: intentName || null,
+                flowId: flowId || null,
+                tag: tag || 'TASK',
+                important: false,
+                manualTitle: false,
+                createdAt: Date.now(),
+                outputHtml: ''
+            };
+            this.workflowNodes.push(node);
+            return node;
+        }
+
+        handleNodeAction(nodeId, action) {
+            const node = this.workflowNodes.find((item) => item.id === nodeId);
+            if (!node) return;
+            if (action === 'rename') {
+                const nextName = window.prompt('重命名任务', node.title);
+                if (nextName && nextName.trim()) {
+                    node.title = nextName.trim();
+                    node.manualTitle = true;
+                    this.renderWorkflowNodes();
+                    this.updateNodeStatusBadge(node);
+                }
+                return;
+            }
+            if (action === 'pin') {
+                node.important = !node.important;
+                this.renderWorkflowNodes();
+                return;
+            }
+            if (action === 'delete') {
+                const confirmed = window.confirm('确定删除该任务节点？');
+                if (!confirmed) return;
+                const index = this.workflowNodes.findIndex((item) => item.id === nodeId);
+                if (index === -1) return;
+                this.workflowNodes.splice(index, 1);
+                if (this.activeNodeId === nodeId) {
+                    const fallback = this.workflowNodes[index] || this.workflowNodes[index - 1];
+                    if (fallback) {
+                        this.switchNode(fallback.id, { skipSave: true });
+                    } else {
+                        this.createManualNode();
+                    }
+                } else {
+                    this.renderWorkflowNodes();
+                }
+            }
+        }
+
+        renderWorkflowNodes() {
+            if (!this.workflowList) return;
+            this.workflowList.innerHTML = this.workflowNodes.map((node, index) => {
+                const activeClass = node.id === this.activeNodeId ? 'active' : '';
+                const importantClass = node.important ? 'cli-node__action--important' : '';
+                return `
+                    <div class="cli-node ${activeClass}" data-node-id="${node.id}" style="--node-accent: ${node.color || '#ea7048'}">
+                        <div class="cli-node__row">
+                            <div class="cli-node__identity">
+                                <span class="cli-node__dot"></span>
+                                <span class="cli-node__index">#${index + 1}</span>
+                                <span class="cli-node__title">${this.escapeHtml(node.title)}</span>
+                            </div>
+                            <span class="cli-node__tag">${this.escapeHtml(node.tag || 'TASK')}</span>
+                        </div>
+                        <div class="cli-node__summary">${this.escapeHtml(node.summary || '等待输入')}</div>
+                        <div class="cli-node__row">
+                            <div class="cli-node__actions">
+                                <button type="button" class="cli-node__action" data-node-action="rename" title="重命名">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                                        <path d="M4 20h4l10-10-4-4L4 16v4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                                        <path d="M14 6l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                                    </svg>
+                                </button>
+                                <button type="button" class="cli-node__action ${importantClass}" data-node-action="pin" title="标记重要">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                                        <path d="M12 3l2.7 5.5 6.1.9-4.4 4.2 1 6.1L12 17.8 6.6 19.7l1-6.1-4.4-4.2 6.1-.9L12 3z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+                                    </svg>
+                                </button>
+                                <button type="button" class="cli-node__action" data-node-action="delete" title="删除">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                                        <path d="M5 7h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                                        <path d="M9 7V5h6v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                                        <path d="M8 7l1 12h6l1-12" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        applyActiveNodeOutput() {
+            const node = this.getActiveNode();
+            if (!node || !this.output) return;
+            this.output.innerHTML = node.outputHtml || this.defaultWelcomeHtml;
+            this.updateNodeStatusBadge(node);
+        }
+
+        switchNode(nodeId, { skipSave } = {}) {
+            if (this.activeNodeId === nodeId) return;
+            const currentNode = this.getActiveNode();
+            if (currentNode && !skipSave) {
+                currentNode.outputHtml = this.output?.innerHTML || '';
+            }
+            const nextNode = this.workflowNodes.find((node) => node.id === nodeId);
+            if (!nextNode) return;
+            this.activeNodeId = nodeId;
+            if (this.output) {
+                this.output.innerHTML = nextNode.outputHtml || this.defaultWelcomeHtml;
+            }
+            this.renderWorkflowNodes();
+            this.updateNodeStatusBadge(nextNode);
+            this.scrollToBottom();
+        }
+
+        updateNodeStatusBadge(node) {
+            if (!this.nodeStatus) return;
+            const label = node?.title || '默认任务';
+            this.nodeStatus.textContent = `任务: ${label}`;
+        }
+
+        getActiveNode() {
+            return this.workflowNodes.find((node) => node.id === this.activeNodeId) || null;
+        }
+
+        getActiveSessionId() {
+            return this.getActiveNode()?.sessionId || 'web_cli';
         }
 
         async loadBootstrapData() {
@@ -1427,6 +1854,9 @@
 
         async executeCommand() {
             if (this.isStreaming) return;
+            if (!this.getActiveNode()) {
+                this.initWorkflowBar();
+            }
             
             const rawValue = (this.input?.value || '').trim();
             const defaultAttachmentCommand = this.pendingAttachment?.name && /\.(xlsx|xls)$/i.test(this.pendingAttachment.name)
@@ -1438,6 +1868,11 @@
             this.input.value = '';
             this.pushHistory(value);
             this.renderSuggestions([]);
+            this.commandSnapshot = {
+                nodeId: this.activeNodeId,
+                previousHtml: this.output?.innerHTML || '',
+                command: value
+            };
             this.printLine(`> ${value}`, 'command');
             this.setStreamingState(true);
             this.showLoading();
@@ -1451,6 +1886,7 @@
                 this.hideLoading();
                 this.setStreamingState(false);
                 this.printError(`网络错误: ${error.message}`);
+                this.commandSnapshot = null;
             }
         }
 
@@ -1460,6 +1896,7 @@
                 headers: this.buildHeaders(),
                 body: JSON.stringify({
                     input: value,
+                    session_id: this.getActiveSessionId(),
                     provider: this.providerSelect?.value || null,
                     model: this.modelSelect?.value || null,
                     attachment: this.getRequestAttachment(),
@@ -1515,6 +1952,7 @@
                 body: JSON.stringify({
                     input: value,
                     mode: 'auto',
+                    session_id: this.getActiveSessionId(),
                     provider: this.providerSelect?.value || null,
                     model: this.modelSelect?.value || null,
                     attachment: this.getRequestAttachment(),
@@ -1527,6 +1965,7 @@
 
             if (!payload.success) {
                 this.printError(payload.error || '执行失败');
+                this.commandSnapshot = null;
                 return;
             }
 
@@ -1586,10 +2025,12 @@
             if (event.type === 'error') {
                 this.hideLoading();
                 this.printError(event.error || '执行失败');
+                this.commandSnapshot = null;
             }
         }
 
         renderPayload(payload) {
+            this.finalizeWorkflowSwitch(payload);
             document.getElementById('cli-stream-answer')?.remove();
             this.currentStreamAnswer = '';
 
@@ -1619,6 +2060,147 @@
             }
 
             this.printBlock('返回结果', JSON.stringify(payload, null, 2));
+        }
+
+        finalizeWorkflowSwitch(payload) {
+            if (!this.commandSnapshot) return;
+            const taskMeta = this.extractTaskMeta(payload);
+            if (!taskMeta.signature) {
+                this.commandSnapshot = null;
+                return;
+            }
+            const activeNode = this.getActiveNode();
+            const shouldSwitch = this.shouldCreateNewNode(taskMeta.signature, taskMeta.intentName);
+            if (shouldSwitch) {
+                const newNode = this.createWorkflowNode(taskMeta);
+                newNode.outputHtml = this.output?.innerHTML || '';
+                if (this.commandSnapshot.nodeId) {
+                    const prevNode = this.workflowNodes.find((node) => node.id === this.commandSnapshot.nodeId);
+                    if (prevNode) {
+                        prevNode.outputHtml = this.commandSnapshot.previousHtml || this.defaultWelcomeHtml;
+                    }
+                }
+                this.activeNodeId = newNode.id;
+                this.renderWorkflowNodes();
+                this.updateNodeStatusBadge(newNode);
+            } else if (activeNode) {
+                this.updateNodeFromPayload(activeNode, taskMeta);
+            }
+            this.commandSnapshot = null;
+        }
+
+        shouldCreateNewNode(signature, intentName) {
+            const activeNode = this.getActiveNode();
+            if (!activeNode) return true;
+            if (intentName === 'context_follow_up') return false;
+            if (!signature) return false;
+            return activeNode.signature !== signature;
+        }
+
+        extractTaskMeta(payload) {
+            const meta = {
+                title: '',
+                summary: '',
+                signature: null,
+                intentName: null,
+                flowId: null,
+                tag: 'TASK'
+            };
+
+            const commandText = this.commandSnapshot?.command || '';
+            const fallbackSummary = commandText ? commandText.slice(0, 32) : '等待输入';
+
+            const orchestration = payload?.type === 'cli_orchestration'
+                ? payload
+                : payload?.data?.type === 'cli_orchestration'
+                    ? payload.data
+                    : null;
+
+            if (orchestration) {
+                const intentName = orchestration.intent || 'general_chat';
+                meta.intentName = intentName;
+                meta.signature = `intent:${intentName}`;
+                meta.tag = this.getIntentTag(intentName);
+                meta.title = this.getIntentTitle(intentName);
+                const input = orchestration.input || commandText;
+                meta.summary = input ? input.slice(0, 36) : fallbackSummary;
+                return meta;
+            }
+
+            const flowData = payload?.type === 'embedded_flow' || payload?.data?.flow_id
+                ? (payload.data?.flow_id ? payload.data : payload)
+                : payload?.result?.data?.flow_id
+                    ? payload.result.data
+                    : null;
+
+            if (flowData) {
+                const flowId = flowData.flow_id || flowData.id || 'flow';
+                meta.flowId = flowId;
+                meta.signature = `flow:${flowId}`;
+                meta.tag = 'FLOW';
+                meta.title = this.getFlowTitle(flowId);
+                meta.summary = flowData.description || flowData.title || fallbackSummary;
+                return meta;
+            }
+
+            return {
+                ...meta,
+                summary: fallbackSummary,
+                title: '任务'
+            };
+        }
+
+        updateNodeFromPayload(node, meta) {
+            if (!node) return;
+            if (meta.signature) node.signature = meta.signature;
+            if (meta.intentName) node.intentName = meta.intentName;
+            if (meta.flowId) node.flowId = meta.flowId;
+            if (meta.tag) node.tag = meta.tag;
+            if (!node.manualTitle && meta.title) {
+                node.title = meta.title;
+            }
+            if (meta.summary) {
+                node.summary = meta.summary;
+            }
+            this.renderWorkflowNodes();
+            this.updateNodeStatusBadge(node);
+        }
+
+        getFlowTitle(flowId) {
+            const mapping = {
+                patent_lookup: '专利查询',
+                patent_family_compare: '同族对比',
+                claims_pipeline: '权利要求分析',
+                claims_excel_pipeline: 'Claims Excel',
+                pdf_ocr_pipeline: 'PDF OCR',
+                ipc_lookup: 'IPC 检索',
+                ipc_predict: 'IPC 预测'
+            };
+            return mapping[flowId] || `流程 ${flowId}`;
+        }
+
+        getIntentTitle(intentName) {
+            const mapping = {
+                patent_detail: '专利详情',
+                patent_qa: '专利问答',
+                patent_lookup: '专利查询',
+                context_follow_up: '上下文追问',
+                general_chat: '自由对话',
+                model_listing: '模型列表'
+            };
+            return mapping[intentName] || '任务对话';
+        }
+
+        getIntentTag(intentName) {
+            const mapping = {
+                patent_detail: 'DETAIL',
+                patent_qa: 'QA',
+                patent_lookup: 'LOOK',
+                context_follow_up: 'FOLLOW',
+                general_chat: 'CHAT',
+                model_listing: 'MODEL'
+            };
+            return mapping[intentName] || 'TASK';
         }
 
         renderLegacyResult(result) {
@@ -1848,6 +2430,7 @@
             this.setStreamingState(false);
             this.hideLoading();
             this.printLine('[已停止', 'muted');
+            this.commandSnapshot = null;
         }
 
         renderSuggestions(custom) {
@@ -1909,6 +2492,10 @@
 
         clearOutput() {
             this.output.innerHTML = '';
+            const node = this.getActiveNode();
+            if (node) {
+                node.outputHtml = '';
+            }
         }
 
         open() {
@@ -1916,6 +2503,7 @@
             this.container.classList.remove('hidden', 'minimized');
             this.toggleFullscreen(false);
             this.launcher?.classList.add('hidden');
+            this.applyActiveNodeOutput();
             this.input?.focus();
         }
 
