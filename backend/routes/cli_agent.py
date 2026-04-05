@@ -154,7 +154,20 @@ def data_url_to_bytes(data: str) -> bytes:
 
 
 def should_auto_run_pdf_ocr(user_input: str, attachment: Optional[Dict[str, Any]]) -> bool:
-    if not attachment or not attachment.get("data"):
+    if not attachment:
+        return False
+    name = (attachment.get("name") or "").lower()
+    mime_type = (attachment.get("mime_type") or "").lower()
+    kind = (attachment.get("kind") or "").lower()
+    pages = attachment.get("pages") or []
+    has_pdf_payload = bool(
+        attachment.get("data")
+        or pages
+        or kind == "pdf_pages"
+        or name.endswith(".pdf")
+        or "pdf" in mime_type
+    )
+    if not has_pdf_payload:
         return False
     normalized = (user_input or "").strip().lower()
     if not normalized:
@@ -212,6 +225,7 @@ def detect_auto_flow_command(
                 "provider": provider,
                 "model": model,
                 "attachment": attachment,
+                "ocr_engine": ocr_engine,
             },
         }
 

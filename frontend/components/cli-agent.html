@@ -474,7 +474,7 @@
 
 .cli-shell__engine:focus {
     outline: none;
-    background: rgba(40, 50, 70, 0.98);
+    background: var(--cli-select-bg);
     border-color: rgba(234, 112, 72, 0.8);
     box-shadow: 0 0 0 3px rgba(234, 112, 72, 0.3);
 }
@@ -971,7 +971,11 @@
         refreshModelOptions() {
             const providerId = this.providerSelect?.value;
             const provider = (this.modelData.providers || []).find((item) => item.id === providerId);
-            const models = provider?.models || [];
+            const allModels = provider?.models || [];
+            const models = allModels.filter((model) => {
+                const modelType = model.type || 'chat';
+                return modelType !== 'ocr';
+            });
             this.modelSelect.innerHTML = models.map((model) => {
                 const modelId = model.id || model;
                 const modelName = model.name || modelId;
