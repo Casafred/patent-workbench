@@ -77,6 +77,12 @@
             <option value="glm_ocr">GLM OCR</option>
         </select>
         <button id="cli-send-btn" class="cli-shell__send">发送</button>
+        <button id="cli-stop-btn" class="cli-shell__stop" style="display: none;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="6" y="6" width="12" height="12" rx="2"/>
+            </svg>
+            <span>停止</span>
+        </button>
     </div>
 </div>
 
@@ -456,6 +462,36 @@
     background: linear-gradient(135deg, #ea7048 0%, #c74635 100%);
     color: #fff;
     cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cli-shell__send:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(234, 112, 72, 0.3);
+}
+
+.cli-shell__send:active {
+    transform: translateY(0);
+}
+
+.cli-shell__stop {
+    height: 40px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #dc3545 0%, #a71d1d 100%);
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cli-shell__stop:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.cli-shell__stop:active {
+    transform: translateY(0);
 }
 
 .cli-launcher {
@@ -721,6 +757,8 @@
             this.flowData = { flows: [] };
             this.currentStreamAnswer = '';
             this.pendingAttachment = null;
+            this.currentReader = null;
+            this.isStreaming = false;
             this.suggestionDefaults = [
                 '查询 CN104154208B 专利详情',
                 '查询 US12390907B2 专利详情',
@@ -748,6 +786,7 @@
             this.output = document.getElementById('cli-output');
             this.input = document.getElementById('cli-input');
             this.sendBtn = document.getElementById('cli-send-btn');
+            this.stopBtn = document.getElementById('cli-stop-btn');
             this.fileBtn = document.getElementById('cli-file-btn');
             this.fileInput = document.getElementById('cli-file-input');
             this.ocrEngineSelect = document.getElementById('cli-ocr-engine');
@@ -763,6 +802,7 @@
             document.getElementById('cli-btn-minimize')?.addEventListener('click', () => this.toggleMinimize());
             document.getElementById('cli-btn-expand')?.addEventListener('click', () => this.toggleFullscreen());
             this.sendBtn?.addEventListener('click', () => this.executeCommand());
+            this.stopBtn?.addEventListener('click', () => this.stopStreaming());
             this.fileBtn?.addEventListener('click', () => this.fileInput?.click());
             this.fileInput?.addEventListener('change', (event) => this.handleFileSelect(event));
             this.providerSelect?.addEventListener('change', () => this.refreshModelOptions());
@@ -1025,6 +1065,8 @@
         }
 
         async executeCommand() {
+            if (this.isStreaming) return;
+            
             const rawValue = (this.input?.value || '').trim();
             const defaultAttachmentCommand = this.pendingAttachment?.name && /\.(xlsx|xls)$/i.test(this.pendingAttachment.name)
                 ? '处理这个Excel'
@@ -1036,6 +1078,7 @@
             this.pushHistory(value);
             this.renderSuggestions([]);
             this.printLine(`> ${value}`, 'command');
+            this.setStreamingState(true);
             this.showLoading();
 
             try {
@@ -1045,6 +1088,7 @@
                 }
             } catch (error) {
                 this.hideLoading();
+                this.setStreamingState(false);
                 this.printError(`网络错误: ${error.message}`);
             }
         }
@@ -1068,26 +1112,38 @@
 
             this.currentStreamAnswer = '';
             const decoder = new TextDecoder('utf-8');
-            const reader = response.body.getReader();
+            this.currentReader = response.body.getReader();
             let buffer = '';
             let receivedAny = false;
 
-            while (true) {
-                const { value: chunk, done } = await reader.read();
-                if (done) break;
-                receivedAny = true;
-                buffer += decoder.decode(chunk, { stream: true });
+            try {
+                while (true) {
+                    if (!this.isStreaming) {
+                        this.currentReader.cancel();
+                        break;
+                    }
+                    const { value: chunk, done } = await this.currentReader.read();
+                    if (done) break;
+                    receivedAny = true;
+                    buffer += decoder.decode(chunk, { stream: true });
 
-                let boundaryIndex = buffer.indexOf('\n\n');
-                while (boundaryIndex !== -1) {
-                    const rawEvent = buffer.slice(0, boundaryIndex);
-                    buffer = buffer.slice(boundaryIndex + 2);
-                    this.consumeSSEEvent(rawEvent);
-                    boundaryIndex = buffer.indexOf('\n\n');
+                    let boundaryIndex = buffer.indexOf('\n\n');
+                    while (boundaryIndex !== -1) {
+                        const rawEvent = buffer.slice(0, boundaryIndex);
+                        buffer = buffer.slice(boundaryIndex + 2);
+                        this.consumeSSEEvent(rawEvent);
+                        boundaryIndex = buffer.indexOf('\n\n');
+                    }
+                }
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    console.error('Stream error:', error);
                 }
             }
 
             this.hideLoading();
+            this.setStreamingState(false);
+            this.currentReader = null;
             return receivedAny;
         }
 
@@ -1361,6 +1417,27 @@
             document.getElementById('cli-loading')?.remove();
         }
 
+        setStreamingState(streaming) {
+            this.isStreaming = streaming;
+            if (this.sendBtn) {
+                this.sendBtn.style.display = streaming ? 'none' : 'block';
+            }
+            if (this.stopBtn) {
+                this.stopBtn.style.display = streaming ? 'flex' : 'none';
+            }
+        }
+
+        stopStreaming() {
+            if (this.currentReader) {
+                this.isStreaming = false;
+                this.currentReader.cancel();
+                this.currentReader = null;
+            }
+            this.setStreamingState(false);
+            this.hideLoading();
+            this.printLine('[已停止]', 'muted');
+        }
+
         renderSuggestions(custom) {
             const text = (this.input?.value || '').trim().toLowerCase();
             const flowExamples = (this.flowData.flows || []).flatMap((flow) => flow.entry_examples || []);
@@ -1423,23 +1500,28 @@
         }
 
         open() {
-            this.container?.classList.remove('hidden');
+            if (!this.container) return;
+            this.container.classList.remove('hidden', 'minimized');
+            this.toggleFullscreen(false);
             this.launcher?.classList.add('hidden');
             this.input?.focus();
         }
 
         close() {
+            if (!this.container) return;
+            this.container.classList.remove('minimized');
             this.toggleFullscreen(false);
-            this.container?.classList.add('hidden');
+            this.container.classList.add('hidden');
             this.launcher?.classList.remove('hidden');
         }
 
         toggleMinimize() {
-            this.container?.classList.toggle('minimized');
+            this.close();
         }
 
         toggleFullscreen(force) {
             if (!this.container) return;
+            this.container.classList.remove('minimized');
             const shouldOpen = typeof force === 'boolean' ? force : !this.container.classList.contains('fullscreen');
             this.container.classList.toggle('fullscreen', shouldOpen);
             document.body.style.overflow = shouldOpen ? 'hidden' : '';
@@ -1455,6 +1537,8 @@
                         <path d="M2 2h8v8H2V2z" stroke="currentColor" stroke-width="2" fill="none"/>
                     </svg>`;
                 }
+                expandBtn.setAttribute('title', shouldOpen ? '退出全屏' : '全屏');
+                expandBtn.setAttribute('aria-label', shouldOpen ? '退出全屏' : '全屏');
             }
             this.scrollToBottom();
         }
