@@ -107,6 +107,98 @@
 </button>
 
 <style>
+:root {
+    --cli-shell-bg:
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.12), transparent 34%),
+        linear-gradient(180deg, #ffffff 0%, #f6fbf7 100%);
+    --cli-shell-border: rgba(20, 83, 45, 0.12);
+    --cli-shell-shadow: 0 24px 80px rgba(20, 83, 45, 0.14);
+    --cli-shell-text: #163322;
+    --cli-shell-muted: #56705f;
+    --cli-shell-soft: #6f8577;
+    --cli-shell-header-bg: rgba(255, 255, 255, 0.72);
+    --cli-shell-panel-bg: rgba(255, 255, 255, 0.65);
+    --cli-shell-line: rgba(20, 83, 45, 0.1);
+    --cli-control-color: #5c7465;
+    --cli-control-hover: #173524;
+    --cli-select-bg: #ffffff;
+    --cli-select-border: rgba(22, 101, 52, 0.22);
+    --cli-select-hover-border: rgba(22, 101, 52, 0.36);
+    --cli-select-option-bg: #f4fbf6;
+    --cli-badge-bg: rgba(34, 197, 94, 0.08);
+    --cli-badge-border: rgba(22, 101, 52, 0.12);
+    --cli-chip-color: #1e7a44;
+    --cli-chip-border: rgba(34, 197, 94, 0.42);
+    --cli-prompt-color: #d45e38;
+    --cli-input-color: #173524;
+    --cli-placeholder-color: #7e9286;
+    --cli-file-chip-bg: rgba(59, 130, 246, 0.08);
+    --cli-file-chip-border: rgba(59, 130, 246, 0.18);
+    --cli-file-chip-color: #26435f;
+    --cli-line-color: #294030;
+    --cli-line-command: #c65b34;
+    --cli-line-error: #c53d4a;
+    --cli-line-muted: #61786c;
+    --cli-block-bg: rgba(255, 255, 255, 0.62);
+    --cli-block-border: rgba(20, 83, 45, 0.08);
+    --cli-block-title: #b55633;
+    --cli-block-text: #234030;
+    --cli-code-bg: rgba(22, 101, 52, 0.08);
+    --cli-quote-border: rgba(22, 101, 52, 0.2);
+    --cli-card-bg: rgba(246, 251, 247, 0.96);
+    --cli-card-border: rgba(20, 83, 45, 0.08);
+    --cli-card-title: #173524;
+    --cli-card-meta: #6f8577;
+    --cli-kv-strong: #2d7b52;
+    --cli-divider: rgba(20, 83, 45, 0.08);
+}
+
+[data-theme="dark"] {
+    --cli-shell-bg:
+        radial-gradient(circle at top right, rgba(233, 111, 68, 0.18), transparent 35%),
+        linear-gradient(180deg, #101521 0%, #0a1019 100%);
+    --cli-shell-border: rgba(255, 255, 255, 0.08);
+    --cli-shell-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+    --cli-shell-text: #e8eef9;
+    --cli-shell-muted: #91a1bb;
+    --cli-shell-soft: #8ca0bf;
+    --cli-shell-header-bg: rgba(255, 255, 255, 0.02);
+    --cli-shell-panel-bg: rgba(255, 255, 255, 0.03);
+    --cli-shell-line: rgba(255, 255, 255, 0.08);
+    --cli-control-color: #b8c7de;
+    --cli-control-hover: #e8eef9;
+    --cli-select-bg: rgba(30, 40, 60, 0.95);
+    --cli-select-border: rgba(255, 255, 255, 0.25);
+    --cli-select-hover-border: rgba(255, 255, 255, 0.35);
+    --cli-select-option-bg: rgba(20, 30, 50, 0.98);
+    --cli-badge-bg: transparent;
+    --cli-badge-border: rgba(255, 255, 255, 0.12);
+    --cli-chip-color: #90e1a8;
+    --cli-chip-border: rgba(76, 175, 80, 0.5);
+    --cli-prompt-color: #ff9d6c;
+    --cli-input-color: #edf3ff;
+    --cli-placeholder-color: #667991;
+    --cli-file-chip-bg: rgba(120, 180, 255, 0.1);
+    --cli-file-chip-border: rgba(255, 255, 255, 0.08);
+    --cli-file-chip-color: #dbe5f6;
+    --cli-line-color: #cfd9ea;
+    --cli-line-command: #ffb485;
+    --cli-line-error: #ff8b8b;
+    --cli-line-muted: #8ca0bf;
+    --cli-block-bg: rgba(255, 255, 255, 0.03);
+    --cli-block-border: rgba(255, 255, 255, 0.08);
+    --cli-block-title: #ffcfab;
+    --cli-block-text: #d8e2f3;
+    --cli-code-bg: rgba(255, 255, 255, 0.08);
+    --cli-quote-border: rgba(255, 255, 255, 0.16);
+    --cli-card-bg: rgba(14, 24, 39, 0.88);
+    --cli-card-border: rgba(255, 255, 255, 0.07);
+    --cli-card-title: #f6f8fc;
+    --cli-card-meta: #8fa2bd;
+    --cli-kv-strong: #8ab8ff;
+    --cli-divider: rgba(255, 255, 255, 0.06);
+}
+
 .cli-shell {
     position: fixed;
     right: 96px;
@@ -115,15 +207,13 @@
     height: min(78vh, 800px);
     display: flex;
     flex-direction: column;
-    background:
-        radial-gradient(circle at top right, rgba(233, 111, 68, 0.18), transparent 35%),
-        linear-gradient(180deg, #101521 0%, #0a1019 100%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--cli-shell-bg);
+    border: 1px solid var(--cli-shell-border);
     border-radius: 20px;
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+    box-shadow: var(--cli-shell-shadow);
     z-index: 10000;
     overflow: hidden;
-    color: #e8eef9;
+    color: var(--cli-shell-text);
     font-family: Consolas, "SFMono-Regular", Menlo, monospace;
 }
 
@@ -162,8 +252,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid var(--cli-shell-line);
+    background: var(--cli-shell-header-bg);
 }
 
 .cli-shell__title {
@@ -174,7 +264,7 @@
 
 .cli-shell__subtitle {
     margin-top: 4px;
-    color: #91a1bb;
+    color: var(--cli-shell-muted);
     font-size: 12px;
 }
 
@@ -189,7 +279,7 @@
     border: none !important;
     border-radius: 0 !important;
     cursor: pointer !important;
-    color: #b8c7de !important;
+    color: var(--cli-control-color) !important;
     background: transparent !important;
     display: flex !important;
     align-items: center !important;
@@ -201,7 +291,7 @@
 }
 
 .cli-shell__icon-btn:hover {
-    color: #e8eef9 !important;
+    color: var(--cli-control-hover) !important;
     transform: scale(1.1) !important;
     background: transparent !important;
 }
@@ -231,7 +321,7 @@
     grid-template-columns: 160px minmax(0, 1fr) auto;
     gap: 12px;
     align-items: end;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--cli-shell-line);
 }
 
 .cli-field {
@@ -241,7 +331,7 @@
 }
 
 .cli-field span {
-    color: #8ca0bf;
+    color: var(--cli-shell-soft);
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -249,10 +339,10 @@
 
 .cli-field select {
     height: 38px;
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    border: 1px solid var(--cli-select-border);
     border-radius: 10px;
-    background: rgba(30, 40, 60, 0.95);
-    color: #ffffff;
+    background: var(--cli-select-bg);
+    color: var(--cli-shell-text);
     padding: 0 12px;
     font-size: 13px;
     font-weight: 500;
@@ -261,20 +351,18 @@
 }
 
 .cli-field select:hover {
-    background: rgba(40, 50, 70, 0.98);
-    border-color: rgba(255, 255, 255, 0.35);
+    border-color: var(--cli-select-hover-border);
 }
 
 .cli-field select:focus {
     outline: none;
-    background: rgba(40, 50, 70, 0.98);
     border-color: rgba(234, 112, 72, 0.8);
     box-shadow: 0 0 0 3px rgba(234, 112, 72, 0.3);
 }
 
 .cli-field select option {
-    background: rgba(20, 30, 50, 0.98);
-    color: #ffffff;
+    background: var(--cli-select-option-bg);
+    color: var(--cli-shell-text);
     padding: 8px 12px;
     font-size: 13px;
     font-weight: 500;
@@ -293,17 +381,15 @@
     min-width: 120px;
     height: 38px;
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: transparent;
-    color: #b8c7de;
+    border: 1px solid var(--cli-badge-border);
+    background: var(--cli-badge-bg);
+    color: var(--cli-control-color);
     font-size: 12px;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .cli-badge:hover {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.2);
-    color: #e8eef9;
+    color: var(--cli-control-hover);
 }
 
 .cli-shell__output {
@@ -324,9 +410,9 @@
     align-items: center;
     padding: 6px 12px;
     border-radius: 999px;
-    border: 1px solid rgba(76, 175, 80, 0.5);
+    border: 1px solid var(--cli-chip-border);
     background: transparent;
-    color: #90e1a8;
+    color: var(--cli-chip-color);
     font-size: 12px;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -347,12 +433,12 @@
     grid-template-columns: auto auto 1fr auto auto;
     gap: 12px;
     align-items: center;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.03);
+    border-top: 1px solid var(--cli-shell-line);
+    background: var(--cli-shell-panel-bg);
 }
 
 .cli-shell__prompt {
-    color: #ff9d6c;
+    color: var(--cli-prompt-color);
     font-size: 20px;
 }
 
@@ -360,21 +446,21 @@
     border: 0;
     outline: 0;
     background: transparent;
-    color: #edf3ff;
+    color: var(--cli-input-color);
     font: inherit;
 }
 
 .cli-shell__input::placeholder {
-    color: #667991;
+    color: var(--cli-placeholder-color);
 }
 
 .cli-shell__attach,
 .cli-shell__engine {
     height: 40px;
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    border: 1px solid var(--cli-select-border);
     border-radius: 10px;
-    background: rgba(30, 40, 60, 0.95);
-    color: #ffffff;
+    background: var(--cli-select-bg);
+    color: var(--cli-shell-text);
     font-size: 13px;
     font-weight: 500;
     padding: 0 12px;
@@ -383,8 +469,7 @@
 }
 
 .cli-shell__engine:hover {
-    background: rgba(40, 50, 70, 0.98);
-    border-color: rgba(255, 255, 255, 0.35);
+    border-color: var(--cli-select-hover-border);
 }
 
 .cli-shell__engine:focus {
@@ -395,8 +480,8 @@
 }
 
 .cli-shell__engine option {
-    background: rgba(20, 30, 50, 0.98);
-    color: #ffffff;
+    background: var(--cli-select-option-bg);
+    color: var(--cli-shell-text);
     padding: 8px 12px;
     font-size: 13px;
     font-weight: 500;
@@ -423,7 +508,7 @@
 }
 
 .cli-shell__attach:hover {
-    color: #e8eef9 !important;
+    color: var(--cli-control-hover) !important;
     transform: scale(1.1) !important;
     background: transparent !important;
 }
@@ -440,9 +525,9 @@
     gap: 8px;
     padding: 8px 12px;
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(120, 180, 255, 0.1);
-    color: #dbe5f6;
+    border: 1px solid var(--cli-file-chip-border);
+    background: var(--cli-file-chip-bg);
+    color: var(--cli-file-chip-color);
     font-size: 12px;
 }
 
@@ -545,29 +630,29 @@
 
 .cli-line {
     margin-bottom: 12px;
-    color: #cfd9ea;
+    color: var(--cli-line-color);
     white-space: pre-wrap;
     word-break: break-word;
 }
 
 .cli-line--command {
-    color: #ffb485;
+    color: var(--cli-line-command);
 }
 
 .cli-line--error {
-    color: #ff8b8b;
+    color: var(--cli-line-error);
 }
 
 .cli-line--muted {
-    color: #8ca0bf;
+    color: var(--cli-line-muted);
 }
 
 .cli-block {
     margin-bottom: 14px;
     padding: 14px 15px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--cli-block-border);
     border-radius: 14px;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--cli-block-bg);
 }
 
 .cli-block--welcome {
@@ -576,13 +661,13 @@
 
 .cli-block__title {
     margin-bottom: 8px;
-    color: #ffcfab;
+    color: var(--cli-block-title);
     font-size: 13px;
     font-weight: 700;
 }
 
 .cli-block__text {
-    color: #d8e2f3;
+    color: var(--cli-block-text);
     font-size: 13px;
     line-height: 1.7;
     white-space: pre-wrap;
@@ -596,7 +681,7 @@
 .cli-markdown h5,
 .cli-markdown h6 {
     margin: 0 0 10px;
-    color: #ffcfab;
+    color: var(--cli-block-title);
 }
 
 .cli-markdown p,
@@ -615,7 +700,7 @@
 .cli-markdown code {
     padding: 1px 5px;
     border-radius: 6px;
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--cli-code-bg);
 }
 
 .cli-markdown pre code {
@@ -626,15 +711,15 @@
 
 .cli-markdown blockquote {
     padding-left: 12px;
-    border-left: 3px solid rgba(255, 255, 255, 0.16);
-    color: #b8c7de;
+    border-left: 3px solid var(--cli-quote-border);
+    color: var(--cli-line-muted);
 }
 
 .cli-details {
     margin-bottom: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--cli-block-border);
     border-radius: 14px;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--cli-block-bg);
     overflow: hidden;
 }
 
@@ -642,7 +727,7 @@
     cursor: pointer;
     list-style: none;
     padding: 14px 15px;
-    color: #ffcfab;
+    color: var(--cli-block-title);
     font-size: 13px;
     font-weight: 700;
 }
@@ -660,8 +745,8 @@
     margin-bottom: 12px;
     padding: 14px;
     border-radius: 14px;
-    background: rgba(14, 24, 39, 0.88);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: var(--cli-card-bg);
+    border: 1px solid var(--cli-card-border);
 }
 
 .cli-patent-card__head {
@@ -673,33 +758,33 @@
 
 .cli-patent-card__title,
 .cli-flow-card__title {
-    color: #f6f8fc;
+    color: var(--cli-card-title);
     font-size: 14px;
     font-weight: 700;
 }
 
 .cli-patent-card__meta,
 .cli-flow-card__meta {
-    color: #8fa2bd;
+    color: var(--cli-card-meta);
     font-size: 12px;
 }
 
 .cli-kv {
     margin-bottom: 8px;
-    color: #d6e0f0;
+    color: var(--cli-block-text);
     font-size: 13px;
     line-height: 1.7;
     white-space: pre-wrap;
 }
 
 .cli-kv strong {
-    color: #8ab8ff;
+    color: var(--cli-kv-strong);
 }
 
 .cli-divider {
     margin: 14px 0;
     height: 1px;
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--cli-divider);
 }
 
 .cli-loading {
