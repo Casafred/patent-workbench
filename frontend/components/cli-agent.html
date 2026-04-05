@@ -1004,6 +1004,9 @@
             const aliyunApiKey = window.appState?.aliyunApiKey || getUserItem('aliyun_api_key');
             const useAliyun = provider === 'aliyun' || (model && /^(qwen|qwq|deepseek|kimi|minimax)/i.test(model));
 
+            if (zhipuApiKey) {
+                headers['X-Zhipu-API-Key'] = zhipuApiKey;
+            }
             if (useAliyun && aliyunApiKey) {
                 headers['X-LLM-Provider'] = 'aliyun';
                 headers['X-Aliyun-API-Key'] = aliyunApiKey;

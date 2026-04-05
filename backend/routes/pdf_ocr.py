@@ -14,6 +14,7 @@ import logging
 from flask import Blueprint, request
 
 from backend.middleware.auth_middleware import validate_api_request
+from backend.services.llm_service import get_api_key
 from backend.utils.response import create_response
 
 logger = logging.getLogger(__name__)
@@ -24,12 +25,30 @@ PADDLE_OCR_VL_API_URL = "https://k2neb1qcy1u6g4k5.aistudio-app.com/layout-parsin
 PADDLE_OCR_VL_TOKEN = "70b270c8275606a7a97f8c4e8617cdeb935ed74c"
 
 
-def get_api_key_from_request():
-    """Get API key from request headers."""
-    auth_header = request.headers.get('Authorization')
-    if auth_header and auth_header.startswith('Bearer '):
-        return auth_header.split(' ')[1]
-    return None
+def get_api_key_from_request(provider: str = 'zhipu'):
+    """Get API key from request headers or shared provider config."""
+    if provider == 'zhipu':
+        explicit_key = request.headers.get('X-Zhipu-API-Key')
+        if explicit_key:
+            return explicit_key
+    elif provider == 'aliyun':
+        explicit_key = request.headers.get('X-Aliyun-API-Key')
+        if explicit_key:
+            return explicit_key
+
+    api_key, _ = get_api_key(provider)
+    return api_key
+
+
+def normalize_base64_payload(file_base64: str) -> str:
+    """Strip optional data URL prefix and return raw base64 payload."""
+    if not file_base64:
+        return file_base64
+    if file_base64.startswith('data:'):
+        parts = file_base64.split(',', 1)
+        if len(parts) == 2:
+            return parts[1]
+    return file_base64
 
 
 @pdf_ocr_bp.route('/pdf-ocr/parse', methods=['POST'])
@@ -109,13 +128,15 @@ def _parse_with_paddle_ocr_vl(file_base64: str, options: dict) -> dict:
     import requests
     import time
     
+    normalized_file_base64 = normalize_base64_payload(file_base64)
+
     headers = {
         "Authorization": f"token {PADDLE_OCR_VL_TOKEN}",
         "Content-Type": "application/json"
     }
     
     payload = {
-        "file": file_base64,
+        "file": normalized_file_base64,
         "fileType": 1,
         "useDocOrientationClassify": options.get('use_doc_orientation_classify', True),
         "useDocUnwarping": options.get('use_doc_unwarping', False),
@@ -397,7 +418,7 @@ def _parse_with_glm_ocr(file_base64: str, options: dict) -> dict:
     """
     import requests
     
-    api_key = get_api_key_from_request()
+    api_key = get_api_key_from_request('zhipu')
     
     if not api_key:
         raise ValueError("API key is required for GLM OCR")
