@@ -180,7 +180,7 @@ function waitForElements(elementIds, timeout = 5000) {
             // 如果所有元素都找到了，停止观察并resolve
             if (foundElements.size === elementIds.length) {
                 observer.disconnect();
-                resolve;
+                resolve();
             } else if (Date.now() - startTime > timeout) {
                 // 超时
                 observer.disconnect();
