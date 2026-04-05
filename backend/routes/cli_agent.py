@@ -26,7 +26,8 @@ from backend.routes.patent import get_current_user_id, get_scraper_instance
 from backend.services import get_aliyun_client, get_zhipu_client
 from backend.services.cli_orchestrator import CLIOrchestrator
 from backend.services.llm.provider_factory import get_factory
-from backend.services.llm_service import get_default_model, get_llm_client, is_aliyun_model
+from backend.services.llm_service import get_default_model, get_llm_client, is_aliyun_model, get_api_key
+from backend.services.llm.llm_service import create_service
 from backend.utils import create_response
 from backend.utils.column_detector import ColumnDetector
 from patent_claims_processor.services import ProcessingService
@@ -289,6 +290,195 @@ def detect_auto_flow_command(
         }
 
     return None
+
+
+def build_attachment_router_summary(attachment: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    if not attachment:
+        return {"has_attachment": False}
+    pages = attachment.get("pages") or []
+    return {
+        "has_attachment": True,
+        "name": attachment.get("name"),
+        "mime_type": attachment.get("mime_type"),
+        "kind": attachment.get("kind"),
+        "page_count": attachment.get("page_count") or len(pages),
+        "has_data": bool(attachment.get("data")),
+        "has_pages": bool(pages),
+    }
+
+
+def get_cli_tool_schemas() -> Dict[str, Dict[str, Any]]:
+    return {
+        "pdf_ocr_pipeline": {
+            "requires_attachment": True,
+            "allowed_attachment_kinds": {"pdf_pages", "file"},
+            "accepted_mime_keywords": {"pdf"},
+        },
+        "claims_excel_pipeline": {
+            "requires_attachment": True,
+            "allowed_attachment_kinds": {"file"},
+            "accepted_name_suffixes": {".xlsx", ".xls"},
+            "accepted_mime_keywords": {"spreadsheet", "excel"},
+        },
+        "ipc_lookup": {
+            "requires_attachment": False,
+            "requires_flow_input": True,
+        },
+        "ipc_predict": {
+            "requires_attachment": False,
+            "requires_flow_input": True,
+        },
+        "patent_family_compare": {
+            "requires_attachment": False,
+            "requires_flow_input": True,
+        },
+        "patent_lookup": {
+            "requires_attachment": False,
+            "requires_flow_input": True,
+        },
+        "claims_pipeline": {
+            "requires_attachment": False,
+            "requires_flow_input": True,
+        },
+    }
+
+
+def validate_llm_route(
+    route: Dict[str, Any],
+    user_input: str,
+    attachment: Optional[Dict[str, Any]],
+    ocr_engine: Optional[str] = None,
+) -> Dict[str, Any]:
+    route_type = route.get("route_type")
+    if route_type == "orchestrator":
+        route["flow_id"] = None
+        route["flow_input"] = None
+        return route
+
+    if route_type != "flow":
+        raise ValueError(f"Unsupported route_type: {route_type}")
+
+    flow_id = route.get("flow_id")
+    schemas = get_cli_tool_schemas()
+    schema = schemas.get(flow_id)
+    if not schema:
+        raise ValueError(f"Unknown flow_id from LLM router: {flow_id}")
+
+    flow_input = (route.get("flow_input") or user_input or "").strip()
+    if schema.get("requires_flow_input") and not flow_input:
+        raise ValueError(f"Flow {flow_id} requires flow_input")
+
+    if schema.get("requires_attachment"):
+        if not attachment:
+            raise ValueError(f"Flow {flow_id} requires attachment")
+        name = (attachment.get("name") or "").lower()
+        mime_type = (attachment.get("mime_type") or "").lower()
+        kind = (attachment.get("kind") or "").lower()
+        pages = attachment.get("pages") or []
+
+        allowed_kinds = schema.get("allowed_attachment_kinds") or set()
+        accepted_suffixes = schema.get("accepted_name_suffixes") or set()
+        accepted_mime_keywords = schema.get("accepted_mime_keywords") or set()
+
+        kind_ok = not allowed_kinds or kind in allowed_kinds or (pages and "pdf_pages" in allowed_kinds)
+        suffix_ok = not accepted_suffixes or any(name.endswith(suffix) for suffix in accepted_suffixes)
+        mime_ok = not accepted_mime_keywords or any(keyword in mime_type for keyword in accepted_mime_keywords)
+
+        if flow_id == "pdf_ocr_pipeline":
+            if not (attachment.get("data") or pages or name.endswith(".pdf") or "pdf" in mime_type):
+                raise ValueError("pdf_ocr_pipeline requires PDF attachment payload")
+        elif not (kind_ok and (suffix_ok or mime_ok or attachment.get("data"))):
+            raise ValueError(f"Attachment is not valid for flow {flow_id}")
+
+    route["flow_input"] = flow_input
+    route["ocr_engine"] = route.get("ocr_engine") or ocr_engine
+    return route
+
+
+def llm_route_cli_request(
+    user_input: str,
+    attachment: Optional[Dict[str, Any]],
+    provider: Optional[str],
+    model: Optional[str],
+    ocr_engine: Optional[str] = None,
+) -> Dict[str, Any]:
+    provider_name, model_name = resolve_model_choice(model)
+    if provider:
+        provider_name = provider
+        model_name = model or get_default_model(provider_name)
+
+    api_key, error_response = get_api_key(provider_name)
+    if error_response:
+        raise ValueError(response_error_message(error_response, f"{provider_name} API key unavailable"))
+
+    flow_catalog = list_flows_data().get("data", {}).get("flows", [])
+    router_messages = [
+        {
+            "role": "system",
+            "content": (
+                "你是 CLI 路由器。"
+                "你的任务是根据用户输入、附件摘要和可用工具，输出严格 JSON。"
+                "不要回答用户问题，不要输出解释，不要输出 markdown。"
+                "只允许输出以下 route_type: flow, orchestrator。"
+                "当用户请求解析/识别/总结已上传 PDF 时，优先 route_type=flow 且 flow_id=pdf_ocr_pipeline。"
+                "当用户请求处理 claims Excel 时，优先 route_type=flow 且 flow_id=claims_excel_pipeline。"
+                "当用户请求 IPC 查询或 IPC 预测时，选择 ipc_lookup 或 ipc_predict。"
+                "当用户请求同族/专利对比时，可选择 patent_family_compare。"
+                "当用户是开放式追问、专利问答、上下文问答、普通咨询时，选择 orchestrator。"
+                "输出格式必须是 JSON: "
+                '{"route_type":"flow|orchestrator","flow_id":null,"flow_input":null,"reason":"...",'
+                '"confidence":0.0,"ocr_engine":null}'
+            ),
+        },
+        {
+            "role": "user",
+            "content": json.dumps(
+                {
+                    "user_input": user_input,
+                    "attachment": build_attachment_router_summary(attachment),
+                    "selected_provider": provider_name,
+                    "selected_model": model_name,
+                    "selected_ocr_engine": ocr_engine,
+                    "available_flows": [
+                        {
+                            "id": flow.get("id"),
+                            "description": flow.get("description"),
+                            "status": flow.get("status"),
+                        }
+                        for flow in flow_catalog
+                    ],
+                },
+                ensure_ascii=False,
+            ),
+        },
+    ]
+
+    service = create_service(api_key=api_key, provider=provider_name, model=model_name)
+    response = service.complete(
+        messages=router_messages,
+        provider=provider_name,
+        model=model_name,
+        temperature=0.1,
+        enable_search=False,
+        response_format={"type": "json_object"},
+    )
+    parsed = parse_possible_json(response.content or "")
+    route_type = parsed.get("route_type")
+    if route_type not in {"flow", "orchestrator"}:
+        raise ValueError(f"Invalid CLI route_type: {route_type}")
+
+    return {
+        "route_type": route_type,
+        "flow_id": parsed.get("flow_id"),
+        "flow_input": parsed.get("flow_input"),
+        "reason": parsed.get("reason") or "LLM router decision",
+        "confidence": parsed.get("confidence"),
+        "ocr_engine": parsed.get("ocr_engine") or ocr_engine,
+        "provider": provider_name,
+        "model": model_name,
+        "usage": getattr(response, "usage", None),
+        "raw": parsed,
+    }
 
 
 def resolve_model_choice(model: Optional[str]) -> Tuple[str, str]:
@@ -1111,12 +1301,16 @@ def list_models_data() -> Dict[str, Any]:
     for provider in enabled_providers:
         provider_id = provider.get("id")
         config = factory.get_provider_config(provider_id) or {}
+        all_models = config.get("models", [])
+        chat_models = [m for m in all_models if m.get("type", "chat") != "ocr"]
+        if not chat_models:
+            continue
         providers.append(
             {
                 "id": provider_id,
                 "name": provider.get("name", provider_id),
                 "default_model": config.get("default_model"),
-                "models": config.get("models", []),
+                "models": chat_models,
                 "features": provider.get("features", {}),
             }
         )
@@ -1144,16 +1338,7 @@ def execute_command():
 
         request_context = get_request_context()
 
-        auto_flow = detect_auto_flow_command(user_input, attachment, provider, model, ocr_engine)
-        if auto_flow:
-            parsed = auto_flow
-            result = executor.execute(parsed, request_context)
-            return create_response(
-                data={"success": result.get("success", False), "mode": "legacy_cli_command", "parsed": parsed, "result": result},
-                status_code=200 if result.get("success", False) else 400,
-            )
-
-        if mode == "orchestrate" or (mode == "auto" and not orchestrator.is_builtin_or_command_style(user_input)):
+        if mode == "orchestrate":
             result = orchestrator.execute(
                 user_input=user_input,
                 session_key=str(request_context["session_id"]),
@@ -1162,6 +1347,65 @@ def execute_command():
                 model=model,
             )
             return create_response(data=result, status_code=200 if result.get("success", False) else 400)
+
+        if mode == "auto" and not orchestrator.is_builtin_or_command_style(user_input):
+            try:
+                llm_route = llm_route_cli_request(user_input, attachment, provider, model, ocr_engine)
+                llm_route = validate_llm_route(llm_route, user_input, attachment, ocr_engine)
+                if llm_route.get("route_type") == "flow":
+                    parsed = {
+                        "command": "flow",
+                        "subcommand": "launch",
+                        "params": {
+                            "flow_id": llm_route.get("flow_id"),
+                            "flow_input": llm_route.get("flow_input") or user_input,
+                            "provider": llm_route.get("provider") or provider,
+                            "model": llm_route.get("model") or model,
+                            "attachment": attachment,
+                            "ocr_engine": llm_route.get("ocr_engine") or ocr_engine,
+                        },
+                        "confidence": llm_route.get("confidence") or 0.0,
+                    }
+                    result = executor.execute(parsed, request_context)
+                    return create_response(
+                        data={
+                            "success": result.get("success", False),
+                            "mode": "llm_routed_flow",
+                            "route": llm_route,
+                            "parsed": parsed,
+                            "result": result,
+                        },
+                        status_code=200 if result.get("success", False) else 400,
+                    )
+
+                result = orchestrator.execute(
+                    user_input=user_input,
+                    session_key=str(request_context["session_id"]),
+                    user_id=str(request_context["user_id"]),
+                    provider=llm_route.get("provider") or provider,
+                    model=llm_route.get("model") or model,
+                )
+                result["route"] = llm_route
+                result["mode"] = "llm_routed_orchestrator"
+                return create_response(data=result, status_code=200 if result.get("success", False) else 400)
+            except Exception:
+                auto_flow = detect_auto_flow_command(user_input, attachment, provider, model, ocr_engine)
+                if auto_flow:
+                    parsed = auto_flow
+                    result = executor.execute(parsed, request_context)
+                    return create_response(
+                        data={"success": result.get("success", False), "mode": "legacy_cli_command", "parsed": parsed, "result": result},
+                        status_code=200 if result.get("success", False) else 400,
+                    )
+
+                result = orchestrator.execute(
+                    user_input=user_input,
+                    session_key=str(request_context["session_id"]),
+                    user_id=str(request_context["user_id"]),
+                    provider=provider,
+                    model=model,
+                )
+                return create_response(data=result, status_code=200 if result.get("success", False) else 400)
 
         parsed = parse_legacy_command(user_input, provider=provider, model=model)
         if attachment:
@@ -1202,6 +1446,32 @@ def stream_execute_command():
 
     def generate():
         try:
+            if not orchestrator.is_builtin_or_command_style(user_input):
+                try:
+                    llm_route = llm_route_cli_request(user_input, attachment, provider, model, ocr_engine)
+                    llm_route = validate_llm_route(llm_route, user_input, attachment, ocr_engine)
+                    yield f"data: {json.dumps({'type': 'trace', 'stage': 'llm_router', 'message': llm_route.get('reason') or 'LLM 已完成路由决策', 'route': llm_route}, ensure_ascii=False)}\n\n"
+                    if llm_route.get("route_type") == "flow":
+                        parsed = {
+                            "command": "flow",
+                            "subcommand": "launch",
+                            "params": {
+                                "flow_id": llm_route.get("flow_id"),
+                                "flow_input": llm_route.get("flow_input") or user_input,
+                                "provider": llm_route.get("provider") or provider,
+                                "model": llm_route.get("model") or model,
+                                "attachment": attachment,
+                                "ocr_engine": llm_route.get("ocr_engine") or ocr_engine,
+                            },
+                            "confidence": llm_route.get("confidence") or 0.0,
+                        }
+                        result = executor.execute(parsed, request_context)
+                        yield f"data: {json.dumps({'type': 'final', 'data': result}, ensure_ascii=False)}\n\n"
+                        yield "data: [DONE]\n\n"
+                        return
+                except Exception as exc:
+                    yield f"data: {json.dumps({'type': 'trace', 'stage': 'llm_router_fallback', 'message': f'LLM 路由失败，回退规则模式: {str(exc)}'}, ensure_ascii=False)}\n\n"
+
             auto_flow = detect_auto_flow_command(user_input, attachment, provider, model, ocr_engine)
             if auto_flow:
                 parsed = auto_flow
@@ -1229,12 +1499,14 @@ def stream_execute_command():
                 yield "data: [DONE]\n\n"
                 return
 
+            routed_provider = llm_route.get("provider") if "llm_route" in locals() and isinstance(llm_route, dict) else None
+            routed_model = llm_route.get("model") if "llm_route" in locals() and isinstance(llm_route, dict) else None
             for event in orchestrator.stream_execute(
                 user_input=user_input,
                 session_key=str(request_context["session_id"]),
                 user_id=str(request_context["user_id"]),
-                provider=provider,
-                model=model,
+                provider=routed_provider or provider,
+                model=routed_model or model,
             ):
                 yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
             yield "data: [DONE]\n\n"
@@ -1260,21 +1532,72 @@ def parse_command():
         user_input = (req_data.get("input") or "").strip()
         provider = req_data.get("provider")
         model = req_data.get("model")
+        attachment = req_data.get("attachment")
+        ocr_engine = req_data.get("ocr_engine")
         if not user_input:
             return create_response(error="请输入命令")
 
         if orchestrator.is_builtin_or_command_style(user_input):
             parsed = parse_legacy_command(user_input, provider=provider, model=model)
+            if attachment:
+                parsed.setdefault("params", {})["attachment"] = attachment
+            if ocr_engine:
+                parsed.setdefault("params", {})["ocr_engine"] = ocr_engine
             help_text = registry.get_help_text(parsed.get("command"))
         else:
-            parsed = {
-                "mode": "orchestrated_cli",
-                "intent": orchestrator.detect_intent(user_input, orchestrator.extract_patent_numbers(user_input)),
-                "patent_numbers": orchestrator.extract_patent_numbers(user_input),
-                "provider": provider,
-                "model": model,
-            }
+            patent_numbers = orchestrator.extract_patent_numbers(user_input)
+            available_routes = list(get_cli_tool_schemas().keys())
+            attachment_summary = build_attachment_router_summary(attachment)
+            try:
+                llm_route = llm_route_cli_request(user_input, attachment, provider, model, ocr_engine)
+                llm_route = validate_llm_route(llm_route, user_input, attachment, ocr_engine)
+                parsed = {
+                    "mode": "llm_routed_cli",
+                    "route": llm_route,
+                    "intent": "flow" if llm_route.get("route_type") == "flow" else orchestrator.detect_intent(user_input, patent_numbers),
+                    "patent_numbers": patent_numbers,
+                    "provider": llm_route.get("provider") or provider,
+                    "model": llm_route.get("model") or model,
+                    "attachment_summary": attachment_summary,
+                    "available_routes": available_routes,
+                }
+                if llm_route.get("route_type") == "flow":
+                    parsed["flow_preview"] = {
+                        "command": "flow",
+                        "subcommand": "launch",
+                        "params": {
+                            "flow_id": llm_route.get("flow_id"),
+                            "flow_input": llm_route.get("flow_input") or user_input,
+                            "provider": llm_route.get("provider") or provider,
+                            "model": llm_route.get("model") or model,
+                            "attachment": attachment,
+                            "ocr_engine": llm_route.get("ocr_engine") or ocr_engine,
+                        },
+                    }
+                    help_text = f"LLM routed to flow {llm_route.get('flow_id')}"
+                else:
+                    help_text = "LLM routed to orchestrator mode for flexible service selection"
+            except Exception as exc:
+                parsed = {
+                    "mode": "orchestrated_cli",
+                    "intent": orchestrator.detect_intent(user_input, patent_numbers),
+                    "patent_numbers": patent_numbers,
+                    "provider": provider,
+                    "model": model,
+                    "attachment_summary": attachment_summary,
+                    "available_routes": available_routes,
+                    "router_fallback": str(exc),
+                }
             help_text = "将自动执行: 专利识别 -> 抓取 -> 上下文注入 -> 模型问答"
+
+        if parsed.get("mode") == "llm_routed_cli":
+            route = parsed.get("route") or {}
+            if route.get("route_type") == "flow":
+                help_text = f"LLM routed to flow {route.get('flow_id')}"
+            else:
+                help_text = "LLM routed to orchestrator mode for flexible service selection"
+        elif parsed.get("router_fallback"):
+            help_text = "Fallback to orchestrator preview mode"
 
         return create_response(data={"parsed": parsed, "help": help_text})
     except Exception as exc:
