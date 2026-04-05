@@ -1,21 +1,21 @@
-<div id="cli-agent-container" class="cli-shell hidden">
+﻿<div id="cli-agent-container" class="cli-shell hidden">
     <div class="cli-shell__header">
         <div>
             <div class="cli-shell__title">Patent CLI</div>
-            <div class="cli-shell__subtitle">自然语言 -> 服务流程 -> 上下文问答</div>
+            <div class="cli-shell__subtitle">鑷劧璇█ -> 鏈嶅姟娴佺▼ -> 涓婁笅鏂囬棶绛?/div>
         </div>
         <div class="cli-shell__actions">
-            <button id="cli-btn-minimize" class="cli-shell__icon-btn cli-shell__icon-btn--minimize" title="最小化">
+            <button id="cli-btn-minimize" class="cli-shell__icon-btn cli-shell__icon-btn--minimize" title="鏈€灏忓寲">
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                     <path d="M2 6h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
             </button>
-            <button id="cli-btn-expand" class="cli-shell__icon-btn cli-shell__icon-btn--expand" title="全屏">
+            <button id="cli-btn-expand" class="cli-shell__icon-btn cli-shell__icon-btn--expand" title="鍏ㄥ睆">
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                     <path d="M2 2h8v8H2V2z" stroke="currentColor" stroke-width="2" fill="none"/>
                 </svg>
             </button>
-            <button id="cli-btn-close" class="cli-shell__icon-btn cli-shell__icon-btn--close" title="关闭">
+            <button id="cli-btn-close" class="cli-shell__icon-btn cli-shell__icon-btn--close" title="鍏抽棴">
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                     <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
@@ -32,16 +32,16 @@
             <span>Model</span>
             <select id="cli-model-select"></select>
         </label>
-        <div id="cli-status-provider" class="cli-badge">AI: 初始化中</div>
+        <div id="cli-status-provider" class="cli-badge">AI: 鍒濆鍖栦腑</div>
     </div>
 
     <div id="cli-output" class="cli-shell__output">
         <div class="cli-block cli-block--welcome">
-            <div class="cli-block__title">CLI 已就绪</div>
-            <div class="cli-block__text">示例: 查询 CN104154208B 专利详情</div>
-            <div class="cli-block__text">示例: 基于刚才专利结果分析创新点和保护范围</div>
-            <div class="cli-block__text">示例: flow list</div>
-            <div class="cli-block__text">上传文件后可直接输入：请解析这个文件 / 帮我识别这份 PDF / 总结这个文档</div>
+            <div class="cli-block__title">CLI 宸插氨缁?/div>
+            <div class="cli-block__text">绀轰緥: 鏌ヨ CN104154208B 涓撳埄璇︽儏</div>
+            <div class="cli-block__text">绀轰緥: 鍩轰簬鍒氭墠涓撳埄缁撴灉鍒嗘瀽鍒涙柊鐐瑰拰淇濇姢鑼冨洿</div>
+            <div class="cli-block__text">绀轰緥: flow list</div>
+            <div class="cli-block__text">涓婁紶鏂囦欢鍚庡彲鐩存帴杈撳叆锛氳瑙ｆ瀽杩欎釜鏂囦欢 / 甯垜璇嗗埆杩欎唤 PDF / 鎬荤粨杩欎釜鏂囨。</div>
         </div>
     </div>
 
@@ -49,7 +49,7 @@
 
     <div class="cli-shell__inputbar">
         <span class="cli-shell__prompt">&gt;</span>
-        <button id="cli-file-btn" class="cli-shell__attach" type="button" title="选择文件">
+        <button id="cli-file-btn" class="cli-shell__attach" type="button" title="閫夋嫨鏂囦欢">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" 
                       stroke="currentColor" 
@@ -70,40 +70,40 @@
             data-lpignore="true"
             data-1p-ignore="true"
             spellcheck="false"
-            placeholder="输入命令或自然语言，例如：查询 CNXXXXXXA 专利详情"
+            placeholder="杈撳叆鍛戒护鎴栬嚜鐒惰瑷€锛屼緥濡傦細鏌ヨ CNXXXXXXA 涓撳埄璇︽儏"
         />
         <select id="cli-ocr-engine" class="cli-shell__engine">
             <option value="paddle_ocr_vl">Paddle OCR</option>
             <option value="glm_ocr">GLM OCR</option>
         </select>
-        <button id="cli-send-btn" class="cli-shell__send">发送</button>
+        <button id="cli-send-btn" class="cli-shell__send">鍙戦€?/button>
         <button id="cli-stop-btn" class="cli-shell__stop" style="display: none;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                 <rect x="6" y="6" width="12" height="12" rx="2"/>
             </svg>
-            <span>停止</span>
+            <span>鍋滄</span>
         </button>
     </div>
 
     <div id="cli-page-picker" class="cli-page-picker hidden">
         <div class="cli-page-picker__dialog">
-            <div class="cli-page-picker__title">选择 PDF 解析页数</div>
-            <div class="cli-page-picker__desc" id="cli-page-picker-desc">默认解析整份 PDF。</div>
+            <div class="cli-page-picker__title">閫夋嫨 PDF 瑙ｆ瀽椤垫暟</div>
+            <div class="cli-page-picker__desc" id="cli-page-picker-desc">榛樿瑙ｆ瀽鏁翠唤 PDF銆?/div>
             <label class="cli-field">
-                <span>解析范围</span>
+                <span>瑙ｆ瀽鑼冨洿</span>
                 <select id="cli-page-picker-mode">
-                    <option value="all">全部页</option>
-                    <option value="custom">自定义页码</option>
+                    <option value="all">鍏ㄩ儴椤?/option>
+                    <option value="custom">鑷畾涔夐〉鐮?/option>
                 </select>
             </label>
             <label class="cli-field cli-field--wide" id="cli-page-picker-input-wrap">
-                <span>页码范围</span>
-                <input id="cli-page-picker-input" class="cli-page-picker__input" type="text" placeholder="如: 1,3,5-8" />
+                <span>椤电爜鑼冨洿</span>
+                <input id="cli-page-picker-input" class="cli-page-picker__input" type="text" placeholder="濡? 1,3,5-8" />
             </label>
-            <div class="cli-page-picker__hint">支持单页 `5`、范围 `5-8`、组合 `1,3,5-8`。</div>
+            <div class="cli-page-picker__hint">鏀寔鍗曢〉 `5`銆佽寖鍥?`5-8`銆佺粍鍚?`1,3,5-8`銆?/div>
             <div class="cli-page-picker__actions">
-                <button id="cli-page-picker-cancel" type="button" class="cli-page-picker__btn cli-page-picker__btn--ghost">取消</button>
-                <button id="cli-page-picker-apply" type="button" class="cli-page-picker__btn">应用</button>
+                <button id="cli-page-picker-cancel" type="button" class="cli-page-picker__btn cli-page-picker__btn--ghost">鍙栨秷</button>
+                <button id="cli-page-picker-apply" type="button" class="cli-page-picker__btn">搴旂敤</button>
             </div>
         </div>
     </div>
@@ -111,7 +111,7 @@
 
 <button id="cli-launcher" class="cli-launcher" type="button">
     <svg class="cli-launcher__icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <!-- 像素风格机器人头部 -->
+        <!-- 鍍忕礌椋庢牸鏈哄櫒浜哄ご閮?-->
         <rect x="6" y="4" width="12" height="2" fill="currentColor"/>
         <rect x="4" y="6" width="16" height="2" fill="currentColor"/>
         <rect x="4" y="8" width="4" height="4" fill="currentColor"/>
@@ -122,7 +122,7 @@
         <rect x="10" y="16" width="4" height="2" fill="currentColor"/>
         <rect x="2" y="8" width="2" height="2" fill="currentColor"/>
         <rect x="20" y="8" width="2" height="2" fill="currentColor"/>
-        <!-- 眼睛 -->
+        <!-- 鐪肩潧 -->
         <rect x="6" y="10" width="2" height="2" fill="#101521"/>
         <rect x="16" y="10" width="2" height="2" fill="#101521"/>
     </svg>
@@ -991,13 +991,13 @@
             this.progressStartedAt = 0;
             this.progressTimer = null;
             this.suggestionDefaults = [
-                '查询 CN104154208B 专利详情',
-                '查询 US12390907B2 专利详情',
-                '基于刚才专利结果总结创新点',
-                '对比 CN104154208B 和 US12390907B2 的保护范围',
+                '?? CN104154208B ????',
+                '?? US12390907B2 ????',
+                '??????????????',
+                '?? CN104154208B ? US12390907B2 ?????',
                 'flow list',
-                '请解析这个文件',
-                '处理这个Excel'
+                '???????',
+                '???? Excel'
             ];
         }
 
@@ -1093,9 +1093,9 @@
                 this.modelData = payload?.data || { providers: [], default_provider: null };
                 this.populateProviderOptions();
                 this.refreshModelOptions();
-                this.providerStatus.textContent = 'AI: 可用';
+                this.providerStatus.textContent = 'AI: 鍙敤';
             } catch (error) {
-                this.providerStatus.textContent = 'AI: 模型列表加载失败';
+                this.providerStatus.textContent = 'AI: 妯″瀷鍒楄〃鍔犺浇澶辫触';
             }
         }
 
@@ -1183,36 +1183,21 @@
             }
             return this.escapeHtml(content);
         }
-
         async handleFileSelect(event) {
             const file = event?.target?.files?.[0];
             if (!file) return;
 
             this.pendingAttachment = await this.buildAttachmentPayload(file);
             this.renderAttachmentChip();
-            this.printTrace(`已选择附件: ${file.name}`);
-            const isExcel = /\.(xlsx|xls)$/i.test(file.name || '');
-            const hint = isExcel
-                ? '现在可以直接输入：处理这个Excel、分析这个表格、识别其中的权利要求。也可以使用 flow launch claims_excel_pipeline。'
-                : '现在可以直接输入自然语言，例如：请解析这个文件、帮我识别这份 PDF、总结这个文档。也可以继续使用 flow launch pdf_ocr_pipeline。';
-            this.printBlock('文件工作流提示', hint);
-        }
-
-        async handleFileSelect(event) {
-            const file = event?.target?.files?.[0];
-            if (!file) return;
-
-            this.pendingAttachment = await this.buildAttachmentPayload(file);
-            this.renderAttachmentChip();
-            this.printTrace(`已选择附件: ${file.name}`);
+            this.printTrace(`宸查€夋嫨闄勪欢: ${file.name}`);
             if (this.pendingAttachment?.kind === 'pdf_pages') {
                 this.openPagePicker();
             }
             const isExcel = /\.(xlsx|xls)$/i.test(file.name || '');
             const hint = isExcel
-                ? '现在可以直接输入：处理这个 Excel、分析这个表格、识别其中的权利要求。也可以使用 flow launch claims_excel_pipeline。'
-                : '现在可以直接输入自然语言，例如：请解析这个文件、帮我识别这份 PDF、总结这个文档。也可以继续使用 flow launch pdf_ocr_pipeline。';
-            this.printBlock('文件工作流提示', hint);
+                ? '????????????? Excel??????????????????????? flow launch claims_excel_pipeline?'
+                : '?????????????????????????????? PDF??????????????? flow launch pdf_ocr_pipeline?';
+            this.printBlock('???????', hint);
         }
 
         async buildAttachmentPayload(file) {
@@ -1248,7 +1233,7 @@
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = () => resolve(reader.result);
-                reader.onerror = () => reject(new Error('文件读取失败'));
+                reader.onerror = () => reject(new Error('鏂囦欢璇诲彇澶辫触'));
                 reader.readAsDataURL(file);
             });
         }
@@ -1262,7 +1247,7 @@
                 const existing = document.querySelector('script[data-cli-pdfjs]');
                 if (existing) {
                     existing.addEventListener('load', () => resolve(), { once: true });
-                    existing.addEventListener('error', () => reject(new Error('PDF.js 加载失败')), { once: true });
+                    existing.addEventListener('error', () => reject(new Error('PDF.js 鍔犺浇澶辫触')), { once: true });
                     return;
                 }
 
@@ -1270,7 +1255,7 @@
                 script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
                 script.dataset.cliPdfjs = 'true';
                 script.onload = resolve;
-                script.onerror = () => reject(new Error('PDF.js 加载失败'));
+                script.onerror = () => reject(new Error('PDF.js 鍔犺浇澶辫触'));
                 document.head.appendChild(script);
             });
 
@@ -1307,12 +1292,13 @@
         }
 
         formatPageSelectionLabel(selectedPages, totalPages) {
-            if (!totalPages) return '未选择页数';
+            if (!totalPages) return '?????';
             if (!Array.isArray(selectedPages) || !selectedPages.length || selectedPages.length >= totalPages) {
-                return `全部 ${totalPages} 页`;
+                return `?? ${totalPages} ?`;
             }
-            return `${selectedPages.length}/${totalPages} 页: ${selectedPages.join(', ')}`;
+            return `${selectedPages.length}/${totalPages} ?: ${selectedPages.join(", ")}`;
         }
+
 
         parsePageRangeInput(rawValue, totalPages) {
             const values = [];
@@ -1324,7 +1310,7 @@
                     const start = Number.parseInt(startRaw, 10);
                     const end = Number.parseInt(endRaw, 10);
                     if (!Number.isInteger(start) || !Number.isInteger(end) || start < 1 || end < start || end > totalPages) {
-                        throw new Error(`无效页码范围: ${segment}`);
+                        throw new Error(`??????: ${segment}`);
                     }
                     for (let page = start; page <= end; page += 1) {
                         if (!seen.has(page)) {
@@ -1337,7 +1323,7 @@
 
                 const page = Number.parseInt(segment, 10);
                 if (!Number.isInteger(page) || page < 1 || page > totalPages) {
-                    throw new Error(`无效页码: ${segment}`);
+                    throw new Error(`????: ${segment}`);
                 }
                 if (!seen.has(page)) {
                     seen.add(page);
@@ -1346,7 +1332,7 @@
             }
 
             if (!values.length) {
-                throw new Error('请输入至少一个页码');
+                throw new Error('?????????');
             }
             return values;
         }
@@ -1357,7 +1343,7 @@
             const selectedPages = this.pendingAttachment.selected_pages || [];
             const isAllPages = !selectedPages.length || selectedPages.length >= totalPages;
             if (this.pagePickerDesc) {
-                this.pagePickerDesc.textContent = `当前文件共 ${totalPages} 页，可选择全部或自定义页码范围。`;
+                this.pagePickerDesc.textContent = `????? ${totalPages} ????????????????`;
             }
             if (this.pagePickerMode) {
                 this.pagePickerMode.value = isAllPages ? 'all' : 'custom';
@@ -1379,26 +1365,6 @@
                 this.pagePickerInputWrap.style.display = isCustom ? 'flex' : 'none';
             }
         }
-
-        applyPageSelection() {
-            if (!this.pendingAttachment || this.pendingAttachment.kind !== 'pdf_pages') {
-                this.closePagePicker();
-                return;
-            }
-
-            const totalPages = this.pendingAttachment.page_count || (this.pendingAttachment.pages || []).length || 0;
-            let selectedPages = Array.from({ length: totalPages }, (_, index) => index + 1);
-            if (this.pagePickerMode?.value === 'custom') {
-                selectedPages = this.parsePageRangeInput(this.pagePickerInput?.value || '', totalPages);
-            }
-
-            this.pendingAttachment.selected_pages = selectedPages;
-            this.pendingAttachment.selected_page_label = this.formatPageSelectionLabel(selectedPages, totalPages);
-            this.renderAttachmentChip();
-            this.closePagePicker();
-            this.printTrace(`PDF 解析范围已更新: ${this.pendingAttachment.selected_page_label}`);
-        }
-
         applyPageSelection() {
             if (!this.pendingAttachment || this.pendingAttachment.kind !== 'pdf_pages') {
                 this.closePagePicker();
@@ -1416,9 +1382,9 @@
                 this.pendingAttachment.selected_page_label = this.formatPageSelectionLabel(selectedPages, totalPages);
                 this.renderAttachmentChip();
                 this.closePagePicker();
-                this.printTrace(`PDF 解析范围已更新: ${this.pendingAttachment.selected_page_label}`);
+                this.printTrace(`PDF ???????: ${this.pendingAttachment.selected_page_label}`);
             } catch (error) {
-                this.printError(error.message || '页码范围无效');
+                this.printError(error.message || '椤电爜鑼冨洿鏃犳晥');
             }
         }
 
@@ -1430,7 +1396,6 @@
                 selected_page_label: this.pendingAttachment.selected_page_label || null
             };
         }
-
         renderAttachmentChip() {
             document.getElementById('cli-file-chip')?.remove();
             if (!this.pendingAttachment) return;
@@ -1438,37 +1403,13 @@
             const chip = document.createElement('div');
             chip.id = 'cli-file-chip';
             chip.className = 'cli-file-chip';
-            const pageInfo = this.pendingAttachment?.page_count ? ` (${this.pendingAttachment.page_count} 页)` : '';
-            chip.innerHTML = `
-                <span>附件: ${this.escapeHtml(this.pendingAttachment.name || 'file')}${this.escapeHtml(pageInfo)}</span>
-                <button type="button" data-clear-file>移除</button>
-            `;
-            this.output.appendChild(chip);
-            chip.querySelector('[data-clear-file]')?.addEventListener('click', () => {
-                this.pendingAttachment = null;
-                if (this.fileInput) {
-                    this.fileInput.value = '';
-                }
-                chip.remove();
-                this.printTrace('已移除附件');
-            });
-            this.scrollToBottom();
-        }
-
-        renderAttachmentChip() {
-            document.getElementById('cli-file-chip')?.remove();
-            if (!this.pendingAttachment) return;
-
-            const chip = document.createElement('div');
-            chip.id = 'cli-file-chip';
-            chip.className = 'cli-file-chip';
-            const pageInfo = this.pendingAttachment?.page_count ? ` (${this.pendingAttachment.page_count} 页)` : '';
+            const pageInfo = this.pendingAttachment?.page_count ? ` (${this.pendingAttachment.page_count} ?)` : '';
             const selectionLabel = this.pendingAttachment?.selected_page_label || '';
             chip.innerHTML = `
-                <span>附件: ${this.escapeHtml(this.pendingAttachment.name || 'file')}${this.escapeHtml(pageInfo)}</span>
-                ${selectionLabel ? `<span class="cli-file-chip__meta">范围: ${this.escapeHtml(selectionLabel)}</span>` : ''}
-                ${this.pendingAttachment?.kind === 'pdf_pages' ? '<button type="button" data-pick-pages>页数</button>' : ''}
-                <button type="button" data-clear-file>移除</button>
+                <span>??: ${this.escapeHtml(this.pendingAttachment.name || 'file')}${this.escapeHtml(pageInfo)}</span>
+                ${selectionLabel ? `<span class="cli-file-chip__meta">??: ${this.escapeHtml(selectionLabel)}</span>` : ''}
+                ${this.pendingAttachment?.kind === 'pdf_pages' ? '<button type="button" data-pick-pages>??</button>' : ''}
+                <button type="button" data-clear-file>??</button>
             `;
             this.output.appendChild(chip);
             chip.querySelector('[data-pick-pages]')?.addEventListener('click', () => this.openPagePicker());
@@ -1479,7 +1420,7 @@
                 }
                 chip.remove();
                 this.closePagePicker();
-                this.printTrace('已移除附件');
+                this.printTrace('?????');
             });
             this.scrollToBottom();
         }
@@ -1489,8 +1430,8 @@
             
             const rawValue = (this.input?.value || '').trim();
             const defaultAttachmentCommand = this.pendingAttachment?.name && /\.(xlsx|xls)$/i.test(this.pendingAttachment.name)
-                ? '处理这个Excel'
-                : '请解析这个文件';
+                ? '???? Excel'
+                : '???????';
             const value = rawValue || (this.pendingAttachment ? defaultAttachmentCommand : '');
             if (!value) return;
 
@@ -1509,7 +1450,7 @@
             } catch (error) {
                 this.hideLoading();
                 this.setStreamingState(false);
-                this.printError(`网络错误: ${error.message}`);
+                this.printError(`缃戠粶閿欒: ${error.message}`);
             }
         }
 
@@ -1585,7 +1526,7 @@
             this.hideLoading();
 
             if (!payload.success) {
-                this.printError(payload.error || '执行失败');
+                this.printError(payload.error || '鎵ц澶辫触');
                 return;
             }
 
@@ -1605,38 +1546,38 @@
             try {
                 this.handleStreamEvent(JSON.parse(data));
             } catch (error) {
-                this.printError('流式响应解析失败');
+                this.printError('娴佸紡鍝嶅簲瑙ｆ瀽澶辫触');
             }
         }
-
         handleStreamEvent(event) {
             if (!event?.type) return;
 
             if (event.type === 'trace') {
-                this.hideLoading();
-                this.printTrace(event.message || event.stage || '处理中');
+                this.updateProgress(event.progress || null, event.message || event.stage || '???');
+                this.printTrace(event.message || event.stage || '???');
                 return;
             }
 
             if (event.type === 'context') {
-                this.hideLoading();
-                this.printTrace(event.message || '上下文已更新');
+                this.updateProgress({ percent: 72, label: 'Context updated' }, event.message || '??????');
+                this.printTrace(event.message || '??????');
                 if (Array.isArray(event.scraped_patents) && event.scraped_patents.length) {
                     this.renderPatentContext(event.scraped_patents);
                 }
                 if (Array.isArray(event.scrape_errors) && event.scrape_errors.length) {
-                    this.printBlock('抓取异常', event.scrape_errors.map((item) => `${item.patent_number || 'unknown'}: ${item.error || '抓取失败'}`).join('\n'));
+                    this.printBlock('鎶撳彇寮傚父', event.scrape_errors.map((item) => `${item.patent_number || 'unknown'}: ${item.error || '鎶撳彇澶辫触'}`).join('\n'));
                 }
                 return;
             }
 
             if (event.type === 'content') {
-                this.hideLoading();
+                this.updateProgress({ percent: 88, label: 'Generating answer' }, '????????');
                 this.appendStreamAnswer(event.delta || '');
                 return;
             }
 
             if (event.type === 'final') {
+                this.updateProgress({ percent: 100, label: 'Completed' }, '????');
                 this.hideLoading();
                 this.renderPayload(event.data || {});
                 return;
@@ -1644,47 +1585,7 @@
 
             if (event.type === 'error') {
                 this.hideLoading();
-                this.printError(event.error || '执行失败');
-            }
-        }
-
-        handleStreamEvent(event) {
-            if (!event?.type) return;
-
-            if (event.type === 'trace') {
-                this.updateProgress(event.progress || null, event.message || event.stage || '处理中');
-                this.printTrace(event.message || event.stage || '处理中');
-                return;
-            }
-
-            if (event.type === 'context') {
-                this.updateProgress({ percent: 72, label: 'Context updated' }, event.message || '上下文已更新');
-                this.printTrace(event.message || '上下文已更新');
-                if (Array.isArray(event.scraped_patents) && event.scraped_patents.length) {
-                    this.renderPatentContext(event.scraped_patents);
-                }
-                if (Array.isArray(event.scrape_errors) && event.scrape_errors.length) {
-                    this.printBlock('抓取异常', event.scrape_errors.map((item) => `${item.patent_number || 'unknown'}: ${item.error || '抓取失败'}`).join('\n'));
-                }
-                return;
-            }
-
-            if (event.type === 'content') {
-                this.updateProgress({ percent: 88, label: 'Generating answer' }, '模型正在生成回答');
-                this.appendStreamAnswer(event.delta || '');
-                return;
-            }
-
-            if (event.type === 'final') {
-                this.updateProgress({ percent: 100, label: 'Completed' }, '执行完成');
-                this.hideLoading();
-                this.renderPayload(event.data || {});
-                return;
-            }
-
-            if (event.type === 'error') {
-                this.hideLoading();
-                this.printError(event.error || '执行失败');
+                this.printError(event.error || '鎵ц澶辫触');
             }
         }
 
@@ -1717,16 +1618,16 @@
                 return;
             }
 
-            this.printBlock('返回结果', JSON.stringify(payload, null, 2));
+            this.printBlock('杩斿洖缁撴灉', JSON.stringify(payload, null, 2));
         }
 
         renderLegacyResult(result) {
-            if (result.message) this.printBlock('执行结果', result.message);
+            if (result.message) this.printBlock('鎵ц缁撴灉', result.message);
             if (result.data) {
                 if (result.type === 'embedded_flow' || result.data?.flow_id) {
                     this.renderFlowCard(result.data || result);
                 } else {
-                    this.printBlock('数据', JSON.stringify(result.data, null, 2));
+                    this.printBlock('鏁版嵁', JSON.stringify(result.data, null, 2));
                 }
             }
             if (result.error) this.printError(result.error);
@@ -1737,19 +1638,19 @@
 
         renderOrchestration(data) {
             if (data.summary) {
-                this.printBlock(data.summary.title || '执行摘要', (data.summary.lines || []).join('\n'));
+                this.printBlock(data.summary.title || '鎵ц鎽樿', (data.summary.lines || []).join('\n'));
             }
 
             if (data.routing) {
-                this.printBlock('模型路由', `Provider: ${data.routing.provider || '-'}\nModel: ${data.routing.model || '-'}`);
+                this.printBlock('妯″瀷璺敱', `Provider: ${data.routing.provider || '-'}\nModel: ${data.routing.model || '-'}`);
             }
 
             if (Array.isArray(data.detected_patents) && data.detected_patents.length) {
-                this.printBlock('识别到的专利号', data.detected_patents.join('\n'));
+                this.printBlock('???????', data.detected_patents.join('\\n'));
             }
 
             if (Array.isArray(data.trace) && data.trace.length) {
-                this.printBlock('执行轨迹', data.trace.join('\n'));
+                this.printBlock('鎵ц杞ㄨ抗', data.trace.join('\n'));
             }
 
             if (Array.isArray(data.scraped_patents) && data.scraped_patents.length) {
@@ -1757,30 +1658,30 @@
             }
 
             if (Array.isArray(data.scrape_errors) && data.scrape_errors.length) {
-                this.printBlock('抓取异常', data.scrape_errors.map((item) => `${item.patent_number || 'unknown'}: ${item.error || '抓取失败'}`).join('\n'));
+                this.printBlock('鎶撳彇寮傚父', data.scrape_errors.map((item) => `${item.patent_number || 'unknown'}: ${item.error || '鎶撳彇澶辫触'}`).join('\n'));
             }
 
             if (data.stats && Object.keys(data.stats).length) {
                 const usage = data.stats.usage || {};
                 const lines = [
-                    `总耗时: ${this.formatDuration(data.stats.duration_ms)}`,
-                    `上下文专利数: ${data.stats.context_patents ?? 0}`,
-                    `抓取失败数: ${data.stats.scrape_error_count ?? 0}`,
+                    `鎬昏€楁椂: ${this.formatDuration(data.stats.duration_ms)}`,
+                    `涓婁笅鏂囦笓鍒╂暟: ${data.stats.context_patents ?? 0}`,
+                    `鎶撳彇澶辫触鏁? ${data.stats.scrape_error_count ?? 0}`,
                     `Prompt Tokens: ${usage.prompt_tokens ?? 0}`,
                     `Completion Tokens: ${usage.completion_tokens ?? 0}`,
                     `Total Tokens: ${usage.total_tokens ?? 0}`
                 ];
                 if (data.stats.fallback_used) {
-                    lines.push('自动回退: 是');
+                    lines.push('????: ?');
                     if (data.stats.fallback_reason) {
-                        lines.push(`回退原因: ${data.stats.fallback_reason}`);
+                        lines.push(`鍥為€€鍘熷洜: ${data.stats.fallback_reason}`);
                     }
                 }
-                this.printBlock('执行统计', lines.join('\n'));
+                this.printBlock('鎵ц缁熻', lines.join('\n'));
             }
 
             if (data.qa?.answer) {
-                this.printBlock('AI 解答', data.qa.answer);
+                this.printBlock('AI 瑙ｇ瓟', data.qa.answer);
             }
 
             if (data.qa?.error) {
@@ -1792,7 +1693,7 @@
             const wrapper = document.createElement('details');
             wrapper.className = 'cli-details';
             wrapper.open = true;
-            wrapper.innerHTML = '<summary>专利上下文</summary><div class="cli-details__body"></div>';
+            wrapper.innerHTML = '<summary>涓撳埄涓婁笅鏂?/summary><div class="cli-details__body"></div>';
             const body = wrapper.querySelector('.cli-details__body');
             patents.forEach((patent) => body?.appendChild(this.createPatentCard(patent)));
             this.output.appendChild(wrapper);
@@ -1806,15 +1707,15 @@
             const steps = Array.isArray(data.steps) ? data.steps.join('\n') : '';
             const outputs = Array.isArray(data.outputs)
                 ? data.outputs.map((item) => (
-                    `<div class="cli-divider"></div><div class="cli-kv"><strong>${this.escapeHtml(item.title || '结果')}:</strong><div class="cli-markdown">${this.renderRichText(item.text || '')}</div></div>`
+                    `<div class="cli-divider"></div><div class="cli-kv"><strong>${this.escapeHtml(item.title || '缁撴灉')}:</strong><div class="cli-markdown">${this.renderRichText(item.text || '')}</div></div>`
                 )).join('')
                 : '';
             card.innerHTML = `
-                <div class="cli-flow-card__title">${this.escapeHtml(data.title || data.flow_id || '服务流程')}</div>
+                <div class="cli-flow-card__title">${this.escapeHtml(data.title || data.flow_id || '鏈嶅姟娴佺▼')}</div>
                 <div class="cli-flow-card__meta">${this.escapeHtml(data.flow_id || '')}</div>
-                <div class="cli-kv"><strong>说明:</strong> ${this.escapeHtml(data.description || '-')}</div>
-                ${data.api_endpoint ? `<div class="cli-kv"><strong>端点:</strong> ${this.escapeHtml(data.api_endpoint)}</div>` : ''}
-                ${steps ? `<div class="cli-divider"></div><div class="cli-kv"><strong>步骤:</strong>\n${this.escapeHtml(steps)}</div>` : ''}
+                <div class="cli-kv"><strong>璇存槑:</strong> ${this.escapeHtml(data.description || '-')}</div>
+                ${data.api_endpoint ? `<div class="cli-kv"><strong>绔偣:</strong> ${this.escapeHtml(data.api_endpoint)}</div>` : ''}
+                ${steps ? `<div class="cli-divider"></div><div class="cli-kv"><strong>姝ラ:</strong>\n${this.escapeHtml(steps)}</div>` : ''}
                 ${outputs}
             `;
             this.output.appendChild(card);
@@ -1828,7 +1729,7 @@
                 block = document.createElement('div');
                 block.id = 'cli-stream-answer';
                 block.className = 'cli-block';
-                block.innerHTML = '<div class="cli-block__title">AI 解答生成中</div><div class="cli-block__text cli-markdown" data-stream-text></div>';
+                block.innerHTML = '<div class="cli-block__title">AI 瑙ｇ瓟鐢熸垚涓?/div><div class="cli-block__text cli-markdown" data-stream-text></div>';
                 this.output.appendChild(block);
             }
 
@@ -1865,26 +1766,12 @@
 
         showLoading() {
             this.hideLoading();
-            const wrapper = document.createElement('div');
-            wrapper.id = 'cli-loading';
-            wrapper.className = 'cli-block';
-            wrapper.innerHTML = '<div class="cli-block__title">处理中</div><div class="cli-loading"><span></span><span></span><span></span></div>';
-            this.output.appendChild(wrapper);
-            this.scrollToBottom();
-        }
-
-        hideLoading() {
-            document.getElementById('cli-loading')?.remove();
-        }
-
-        showLoading() {
-            this.hideLoading();
             this.progressStartedAt = Date.now();
             const wrapper = document.createElement('div');
             wrapper.id = 'cli-loading';
             wrapper.className = 'cli-block';
             wrapper.innerHTML = `
-                <div class="cli-block__title">处理中</div>
+                <div class="cli-block__title">???</div>
                 <div class="cli-progress">
                     <div class="cli-progress__meta">
                         <span data-progress-label>Preparing request</span>
@@ -1893,7 +1780,7 @@
                     <div class="cli-progress__bar">
                         <div class="cli-progress__fill indeterminate" data-progress-fill></div>
                     </div>
-                    <div class="cli-progress__hint" data-progress-hint>请求已发送，后台正在执行。</div>
+                    <div class="cli-progress__hint" data-progress-hint>?????????????</div>
                 </div>
             `;
             this.output.appendChild(wrapper);
@@ -1960,7 +1847,7 @@
             }
             this.setStreamingState(false);
             this.hideLoading();
-            this.printLine('[已停止]', 'muted');
+            this.printLine('[宸插仠姝', 'muted');
         }
 
         renderSuggestions(custom) {
@@ -2052,7 +1939,7 @@
             document.body.style.overflow = shouldOpen ? 'hidden' : '';
             const expandBtn = document.getElementById('cli-btn-expand');
             if (expandBtn) {
-                expandBtn.title = shouldOpen ? '退出全屏' : '全屏';
+                expandBtn.title = shouldOpen ? '????' : '??';
                 if (shouldOpen) {
                     expandBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                         <path d="M4 2v3H2v5h5V8h3V2H4z" stroke="currentColor" stroke-width="1.5" fill="none"/>
@@ -2062,8 +1949,8 @@
                         <path d="M2 2h8v8H2V2z" stroke="currentColor" stroke-width="2" fill="none"/>
                     </svg>`;
                 }
-                expandBtn.setAttribute('title', shouldOpen ? '退出全屏' : '全屏');
-                expandBtn.setAttribute('aria-label', shouldOpen ? '退出全屏' : '全屏');
+                expandBtn.setAttribute('title', shouldOpen ? '????' : '??');
+                expandBtn.setAttribute('aria-label', shouldOpen ? '????' : '??');
             }
             this.scrollToBottom();
         }
@@ -2076,16 +1963,16 @@
                 <div class="cli-patent-card__head">
                     <div>
                         <div class="cli-patent-card__title">${this.escapeHtml(patent.patent_number || '')}</div>
-                        <div class="cli-patent-card__meta">${this.escapeHtml(patent.title || '未抓取到标题')}</div>
+                        <div class="cli-patent-card__meta">${this.escapeHtml(patent.title || '鏈姄鍙栧埌鏍囬')}</div>
                     </div>
                     <div class="cli-patent-card__meta">${this.escapeHtml(patent.publication_date || '-')}</div>
                 </div>
-                <div class="cli-kv"><strong>申请日:</strong> ${this.escapeHtml(patent.application_date || '-')}</div>
-                <div class="cli-kv"><strong>申请人:</strong> ${this.escapeHtml((patent.assignees || []).join(', ') || '-')}</div>
-                <div class="cli-kv"><strong>发明人:</strong> ${this.escapeHtml((patent.inventors || []).join(', ') || '-')}</div>
-                <div class="cli-kv"><strong>摘要:</strong> ${this.escapeHtml(patent.abstract || '-')}</div>
-                <div class="cli-kv"><strong>权利要求数量:</strong> ${this.escapeHtml(String(patent.claims_count || 0))}</div>
-                ${claimsPreview ? `<div class="cli-divider"></div><div class="cli-kv"><strong>权利要求预览:</strong>\n${this.escapeHtml(claimsPreview)}</div>` : ''}
+                <div class="cli-kv"><strong>鐢宠鏃?</strong> ${this.escapeHtml(patent.application_date || '-')}</div>
+                <div class="cli-kv"><strong>鐢宠浜?</strong> ${this.escapeHtml((patent.assignees || []).join(', ') || '-')}</div>
+                <div class="cli-kv"><strong>鍙戞槑浜?</strong> ${this.escapeHtml((patent.inventors || []).join(', ') || '-')}</div>
+                <div class="cli-kv"><strong>鎽樿:</strong> ${this.escapeHtml(patent.abstract || '-')}</div>
+                <div class="cli-kv"><strong>鏉冨埄瑕佹眰鏁伴噺:</strong> ${this.escapeHtml(String(patent.claims_count || 0))}</div>
+                ${claimsPreview ? `<div class="cli-divider"></div><div class="cli-kv"><strong>鏉冨埄瑕佹眰棰勮:</strong>\n${this.escapeHtml(claimsPreview)}</div>` : ''}
             `;
             return card;
         }
@@ -2113,3 +2000,5 @@
     setTimeout(() => window.cliAgent.init(), 100);
 })();
 </script>
+
+
