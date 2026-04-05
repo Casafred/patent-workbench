@@ -994,7 +994,7 @@
                 '查询 CN104154208B 专利详情',
                 '查询 US12390907B2 专利详情',
                 '基于刚才专利结果分析创新点',
-                '文件 CN104154208B ? US12390907B2 加载中文件',
+                '查询 CN104154208B 与 US12390907B2 对比分析',
                 'flow list',
                 '预测IPC分类',
                 '处理 Excel'
@@ -1195,9 +1195,9 @@
             }
             const isExcel = /\.(xlsx|xls)$/i.test(file.name || '');
             const hint = isExcel
-                ? '预测IPC分类文件处理 Excel基于刚才专利结果分析创新点预测IPC分类文件 flow launch claims_excel_pipeline?'
-                : '基于刚才专利结果分析创新点基于刚才专利结果分析创新点文件 PDF基于刚才专利结果分析创新点? flow launch pdf_ocr_pipeline?';
-            this.printBlock('预测IPC分类', hint);
+                ? '处理 Excel 文件后可使用 flow launch claims_excel_pipeline'
+                : '解析 PDF 文件后可使用 flow launch pdf_ocr_pipeline';
+            this.printBlock('处理文件', hint);
         }
 
         async buildAttachmentPayload(file) {
@@ -1292,11 +1292,11 @@
         }
 
         formatPageSelectionLabel(selectedPages, totalPages) {
-            if (!totalPages) return '加载中文件';
+            if (!totalPages) return '加载中...';
             if (!Array.isArray(selectedPages) || !selectedPages.length || selectedPages.length >= totalPages) {
-                return `文件 ${totalPages} ?`;
+                return `共 ${totalPages} 页`;
             }
-            return `${selectedPages.length}/${totalPages} ?: ${selectedPages.join(", ")}`;
+            return `${selectedPages.length}/${totalPages} 页: ${selectedPages.join(", ")}`;
         }
 
 
@@ -1310,7 +1310,7 @@
                     const start = Number.parseInt(startRaw, 10);
                     const end = Number.parseInt(endRaw, 10);
                     if (!Number.isInteger(start) || !Number.isInteger(end) || start < 1 || end < start || end > totalPages) {
-                        throw new Error(`加载中加载中: ${segment}`);
+                        throw new Error(`页码无效: ${segment}`);
                     }
                     for (let page = start; page <= end; page += 1) {
                         if (!seen.has(page)) {
@@ -1323,7 +1323,7 @@
 
                 const page = Number.parseInt(segment, 10);
                 if (!Number.isInteger(page) || page < 1 || page > totalPages) {
-                    throw new Error(`加载中?: ${segment}`);
+                        throw new Error(`无效页码: ${segment}`);
                 }
                 if (!seen.has(page)) {
                     seen.add(page);
@@ -1403,7 +1403,7 @@
             const chip = document.createElement('div');
             chip.id = 'cli-file-chip';
             chip.className = 'cli-file-chip';
-            const pageInfo = this.pendingAttachment?.page_count ? ` (${this.pendingAttachment.page_count} ?)` : '';
+            const pageInfo = this.pendingAttachment?.page_count ? ` (${this.pendingAttachment.page_count} 页)` : '';
             const selectionLabel = this.pendingAttachment?.selected_page_label || '';
             chip.innerHTML = `
                 <span>文件: ${this.escapeHtml(this.pendingAttachment.name || 'file')}${this.escapeHtml(pageInfo)}</span>
@@ -1420,7 +1420,7 @@
                 }
                 chip.remove();
                 this.closePagePicker();
-                this.printTrace('加载中文件');
+                this.printTrace('已清除附件');
             });
             this.scrollToBottom();
         }
@@ -1431,7 +1431,7 @@
             const rawValue = (this.input?.value || '').trim();
             const defaultAttachmentCommand = this.pendingAttachment?.name && /\.(xlsx|xls)$/i.test(this.pendingAttachment.name)
                 ? '处理 Excel'
-                : '预测IPC分类';
+                : '解析文档';
             const value = rawValue || (this.pendingAttachment ? defaultAttachmentCommand : '');
             if (!value) return;
 
@@ -1571,13 +1571,13 @@
             }
 
             if (event.type === 'content') {
-                this.updateProgress({ percent: 88, label: 'Generating answer' }, '预测IPC分类?');
+                this.updateProgress({ percent: 88, label: 'Generating answer' }, '预测IPC分类');
                 this.appendStreamAnswer(event.delta || '');
                 return;
             }
 
             if (event.type === 'final') {
-                this.updateProgress({ percent: 100, label: 'Completed' }, '加载中?');
+                this.updateProgress({ percent: 100, label: 'Completed' }, '处理完成');
                 this.hideLoading();
                 this.renderPayload(event.data || {});
                 return;
@@ -1664,15 +1664,15 @@
             if (data.stats && Object.keys(data.stats).length) {
                 const usage = data.stats.usage || {};
                 const lines = [
-                    `鎬昏€楁椂: ${this.formatDuration(data.stats.duration_ms)}`,
-                    `上下文专利数: ${data.stats.context_patents 文件 0}`,
-                    `抓取失败鏁? ${data.stats.scrape_error_count 文件 0}`,
-                    `Prompt Tokens: ${usage.prompt_tokens 文件 0}`,
-                    `Completion Tokens: ${usage.completion_tokens 文件 0}`,
-                    `Total Tokens: ${usage.total_tokens 文件 0}`
+                    `总耗时: ${this.formatDuration(data.stats.duration_ms)}`,
+                    `上下文专利数: ${data.stats.context_patents || 0}`,
+                    `抓取失败数: ${data.stats.scrape_error_count || 0}`,
+                    `Prompt Tokens: ${usage.prompt_tokens || 0}`,
+                    `Completion Tokens: ${usage.completion_tokens || 0}`,
+                    `Total Tokens: ${usage.total_tokens || 0}`
                 ];
                 if (data.stats.fallback_used) {
-                    lines.push('加载中?: ?');
+                    lines.push('回退: 是');
                     if (data.stats.fallback_reason) {
                         lines.push(`回退原因: ${data.stats.fallback_reason}`);
                     }
@@ -1693,7 +1693,7 @@
             const wrapper = document.createElement('details');
             wrapper.className = 'cli-details';
             wrapper.open = true;
-            wrapper.innerHTML = '<summary>涓撳埄涓婁笅鏂?/summary><div class="cli-details__body"></div>';
+            wrapper.innerHTML = '<summary>专利上下文</summary><div class="cli-details__body"></div>';
             const body = wrapper.querySelector('.cli-details__body');
             patents.forEach((patent) => body?.appendChild(this.createPatentCard(patent)));
             this.output.appendChild(wrapper);
@@ -1729,7 +1729,7 @@
                 block = document.createElement('div');
                 block.id = 'cli-stream-answer';
                 block.className = 'cli-block';
-                block.innerHTML = '<div class="cli-block__title">AI 解答鐢熸垚涓?/div><div class="cli-block__text cli-markdown" data-stream-text></div>';
+                block.innerHTML = '<div class="cli-block__title">AI 解答生成中</div><div class="cli-block__text cli-markdown" data-stream-text></div>';
                 this.output.appendChild(block);
             }
 
@@ -1939,7 +1939,7 @@
             document.body.style.overflow = shouldOpen ? 'hidden' : '';
             const expandBtn = document.getElementById('cli-btn-expand');
             if (expandBtn) {
-                expandBtn.title = shouldOpen ? '加载中?' : '文件';
+                expandBtn.title = shouldOpen ? '收起' : '展开';
                 if (shouldOpen) {
                     expandBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                         <path d="M4 2v3H2v5h5V8h3V2H4z" stroke="currentColor" stroke-width="1.5" fill="none"/>
@@ -1949,8 +1949,8 @@
                         <path d="M2 2h8v8H2V2z" stroke="currentColor" stroke-width="2" fill="none"/>
                     </svg>`;
                 }
-                expandBtn.setAttribute('title', shouldOpen ? '加载中?' : '文件');
-                expandBtn.setAttribute('aria-label', shouldOpen ? '加载中?' : '文件');
+                expandBtn.setAttribute('title', shouldOpen ? '收起' : '展开');
+                expandBtn.setAttribute('aria-label', shouldOpen ? '收起' : '展开');
             }
             this.scrollToBottom();
         }
