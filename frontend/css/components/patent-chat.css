@@ -547,14 +547,14 @@
     align-items: center;
     justify-content: center;
     padding: 8px 12px;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border: 1.5px solid #dee2e6;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border: 1.5px solid #86efac;
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    color: #6b7280;
+    color: #166534;
     overflow: visible;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 4px rgba(34, 197, 94, 0.1);
 }
 
 .thinking-btn::before {
@@ -562,7 +562,7 @@
     position: absolute;
     inset: -2px;
     border-radius: 12px;
-    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6366f1 100%);
+    background: linear-gradient(135deg, #22C55E 0%, #16A34A 50%, #4ADE80 100%);
     opacity: 0;
     z-index: -1;
     transition: opacity 0.3s ease;
@@ -573,7 +573,7 @@
     position: absolute;
     inset: -4px;
     border-radius: 14px;
-    background: radial-gradient(circle, rgba(139, 92, 246, 0.4) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(34, 197, 94, 0.4) 0%, transparent 70%);
     opacity: 0;
     z-index: -2;
     filter: blur(8px);
@@ -581,26 +581,26 @@
 }
 
 .thinking-btn:hover {
-    background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
-    border-color: #8b5cf6;
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    border-color: #22C55E;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
 }
 
 .thinking-btn:hover::before {
-    opacity: 0.1;
+    opacity: 0.15;
 }
 
 .thinking-btn:active {
     transform: translateY(0) scale(0.98);
-    box-shadow: 0 2px 6px rgba(139, 92, 246, 0.2);
+    box-shadow: 0 2px 6px rgba(34, 197, 94, 0.2);
 }
 
 .thinking-btn.active {
-    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
     color: white;
-    border-color: #7c3aed;
-    box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3);
+    border-color: #16A34A;
+    box-shadow: 0 4px 16px rgba(34, 197, 94, 0.3);
 }
 
 .thinking-btn.active::before {
@@ -613,8 +613,8 @@
 }
 
 .thinking-btn.active:hover {
-    background: linear-gradient(135deg, #9333ea 0%, #8b5cf6 100%);
-    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+    background: linear-gradient(135deg, #16A34A 0%, #22C55E 100%);
+    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
 }
 
 .thinking-btn.active:active {
@@ -622,15 +622,15 @@
 }
 
 .thinking-btn.thinking-only {
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
     color: white;
-    border-color: #d97706;
+    border-color: #D97706;
     cursor: default;
     box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
 }
 
 .thinking-btn.thinking-only::before {
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #fbbf24 100%);
+    background: linear-gradient(135deg, #F59E0B 0%, #D97706 50%, #FBBF24 100%);
     opacity: 1;
 }
 
@@ -740,7 +740,7 @@
 /* 深度思考内容容器 */
 .thinking-container {
     margin-bottom: 10px;
-    border: 1px solid #e9ecef;
+    border: 1px solid #bbf7d0;
     border-radius: 8px;
     overflow: hidden;
 }
@@ -750,21 +750,21 @@
     align-items: center;
     gap: 6px;
     padding: 8px 12px;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
     cursor: pointer;
     font-size: 0.85em;
-    color: #6b7280;
+    color: #166534;
     transition: all 0.3s;
 }
 
 .thinking-header:hover {
-    background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
 }
 
 .thinking-header svg {
     width: 14px;
     height: 14px;
-    color: #8b5cf6;
+    color: #22C55E;
 }
 
 .thinking-title {
@@ -779,10 +779,10 @@
 
 .thinking-content {
     padding: 12px;
-    background: #fafafa;
-    border-top: 1px solid #e9ecef;
+    background: #f0fdf4;
+    border-top: 1px solid #bbf7d0;
     font-size: 0.9em;
-    color: #6b7280;
+    color: #166534;
     line-height: 1.6;
     max-height: 200px;
     overflow-y: auto;
