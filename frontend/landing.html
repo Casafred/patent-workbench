@@ -1299,6 +1299,479 @@
         }
 
         /* ============================================
+           CLI智能助手专区
+           ============================================ */
+        .cli-section {
+            padding: 120px 60px;
+            background: linear-gradient(180deg, #0a0a0a 0%, #0d1a0f 50%, #0a0a0a 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cli-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(34, 197, 94, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(234, 112, 72, 0.06) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .cli-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cli-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .cli-header .section-tag {
+            display: inline-block;
+            padding: 8px 20px;
+            background: linear-gradient(135deg, rgba(234, 112, 72, 0.2) 0%, rgba(34, 197, 94, 0.2) 100%);
+            border: 1px solid rgba(234, 112, 72, 0.3);
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #ea7048;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+        }
+
+        .cli-header .section-title {
+            font-size: 3rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #ffffff 0%, #ea7048 50%, #22c55e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 16px;
+        }
+
+        .cli-header .section-subtitle {
+            font-size: 1.2rem;
+            color: var(--text-color-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .cli-showcase {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 60px;
+        }
+
+        .cli-preview {
+            position: relative;
+        }
+
+        .cli-window {
+            background: linear-gradient(135deg, rgba(20, 30, 25, 0.95) 0%, rgba(10, 20, 15, 0.98) 100%);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 
+                0 25px 80px rgba(0, 0, 0, 0.5),
+                0 0 60px rgba(34, 197, 94, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        .cli-window-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid rgba(34, 197, 94, 0.1);
+        }
+
+        .cli-window-dots {
+            display: flex;
+            gap: 8px;
+        }
+
+        .cli-window-dots .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .cli-window-dots .dot.red { background: #ff5f56; }
+        .cli-window-dots .dot.yellow { background: #ffbd2e; }
+        .cli-window-dots .dot.green { background: #27ca40; }
+
+        .cli-window-title {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.6);
+            font-family: 'Consolas', monospace;
+        }
+
+        .cli-window-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .cli-window-actions .action-btn {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.9rem;
+        }
+
+        .cli-window-actions .action-btn.close:hover {
+            color: #ff5f56;
+        }
+
+        .cli-window-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(34, 197, 94, 0.1);
+        }
+
+        .cli-window-toolbar .cli-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .cli-window-toolbar .cli-field span {
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .cli-window-toolbar .cli-field select {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            border-radius: 6px;
+            padding: 6px 12px;
+            color: #22c55e;
+            font-size: 0.8rem;
+            font-family: 'Consolas', monospace;
+        }
+
+        .cli-status-badge {
+            padding: 6px 14px;
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: #22c55e;
+            font-weight: 500;
+        }
+
+        .cli-window-body {
+            display: flex;
+            min-height: 300px;
+        }
+
+        .cli-sidebar {
+            width: 160px;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border-right: 1px solid rgba(34, 197, 94, 0.1);
+        }
+
+        .cli-task {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .cli-task:hover {
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        .cli-task.active {
+            background: rgba(234, 112, 72, 0.15);
+            border: 1px solid rgba(234, 112, 72, 0.3);
+        }
+
+        .cli-task .task-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ea7048;
+        }
+
+        .cli-task .task-name {
+            flex: 1;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .cli-task .task-tag {
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            background: rgba(234, 112, 72, 0.2);
+            border-radius: 4px;
+            color: #ea7048;
+        }
+
+        .cli-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .cli-output {
+            flex: 1;
+            padding: 16px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
+            overflow-y: auto;
+        }
+
+        .cli-line {
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+
+        .cli-line.command {
+            color: #ea7048;
+        }
+
+        .cli-line.trace {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.8rem;
+        }
+
+        .cli-line.answer {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .cli-patent-card {
+            background: rgba(34, 197, 94, 0.05);
+            border: 1px solid rgba(34, 197, 94, 0.15);
+            border-radius: 8px;
+            padding: 12px;
+            margin: 12px 0;
+        }
+
+        .cli-patent-card .patent-title {
+            font-size: 0.9rem;
+            color: #22c55e;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .cli-patent-card .patent-meta {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 8px;
+        }
+
+        .cli-patent-card .patent-abstract {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.5;
+        }
+
+        .cli-input-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border-top: 1px solid rgba(34, 197, 94, 0.1);
+        }
+
+        .cli-input-bar .cli-prompt {
+            color: #ea7048;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .cli-input-bar input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.9);
+            font-family: 'Consolas', monospace;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .cli-input-bar input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .cli-send-btn {
+            padding: 8px 20px;
+            background: linear-gradient(135deg, #ea7048 0%, #c74635 100%);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .cli-send-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(234, 112, 72, 0.4);
+        }
+
+        .cli-features {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .cli-feature-card {
+            background: rgba(20, 30, 25, 0.6);
+            border: 1px solid rgba(34, 197, 94, 0.15);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .cli-feature-card:hover {
+            border-color: rgba(234, 112, 72, 0.4);
+            transform: translateY(-4px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .cli-feature-card .feature-icon {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(234, 112, 72, 0.2) 0%, rgba(34, 197, 94, 0.2) 100%);
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+
+        .cli-feature-card .feature-icon svg {
+            width: 24px;
+            height: 24px;
+            stroke: #ea7048;
+        }
+
+        .cli-feature-card h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .cli-feature-card p {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            line-height: 1.6;
+        }
+
+        .cli-commands {
+            background: rgba(20, 30, 25, 0.4);
+            border: 1px solid rgba(34, 197, 94, 0.15);
+            border-radius: 16px;
+            padding: 40px;
+        }
+
+        .cli-commands .commands-title {
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 30px;
+        }
+
+        .cli-commands .commands-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .cli-commands .command-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(34, 197, 94, 0.1);
+            border-radius: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .cli-commands .command-item:hover {
+            border-color: rgba(234, 112, 72, 0.3);
+            background: rgba(234, 112, 72, 0.05);
+        }
+
+        .cli-commands .command-item code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
+            color: #22c55e;
+            background: rgba(34, 197, 94, 0.1);
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+
+        .cli-commands .command-item span {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        @media (max-width: 1024px) {
+            .cli-showcase {
+                grid-template-columns: 1fr;
+            }
+
+            .cli-features {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .cli-commands .commands-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .cli-section {
+                padding: 80px 20px;
+            }
+
+            .cli-header .section-title {
+                font-size: 2rem;
+            }
+
+            .cli-sidebar {
+                display: none;
+            }
+
+            .cli-features {
+                grid-template-columns: 1fr;
+            }
+
+            .cli-commands .commands-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ============================================
            模型列表区域
            ============================================ */
         .models-section {
@@ -4103,6 +4576,178 @@
                         <span class="highlight-tag">自然语言</span>
                         <span class="highlight-tag">多任务</span>
                         <span class="highlight-tag">智能路由</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CLI智能助手专区 -->
+    <section class="cli-section" id="cli">
+        <div class="cli-container">
+            <div class="cli-header">
+                <span class="section-tag">ALFRED CLI</span>
+                <h2 class="section-title">新一代智能命令行交互</h2>
+                <p class="section-subtitle">自然语言驱动，多任务并行，重新定义专利分析工作流</p>
+            </div>
+
+            <div class="cli-showcase">
+                <div class="cli-preview">
+                    <div class="cli-window">
+                        <div class="cli-window-header">
+                            <div class="cli-window-dots">
+                                <span class="dot red"></span>
+                                <span class="dot yellow"></span>
+                                <span class="dot green"></span>
+                            </div>
+                            <div class="cli-window-title">Patent CLI — 自然语言 → 服务流程 → 上下文问答</div>
+                            <div class="cli-window-actions">
+                                <span class="action-btn">─</span>
+                                <span class="action-btn">□</span>
+                                <span class="action-btn close">×</span>
+                            </div>
+                        </div>
+                        <div class="cli-window-toolbar">
+                            <div class="cli-field">
+                                <span>Provider</span>
+                                <select><option>zhipu</option></select>
+                            </div>
+                            <div class="cli-field">
+                                <span>Model</span>
+                                <select><option>GLM-4-Flash</option></select>
+                            </div>
+                            <div class="cli-status-badge">AI: 可用</div>
+                        </div>
+                        <div class="cli-window-body">
+                            <div class="cli-sidebar">
+                                <div class="cli-task active">
+                                    <div class="task-dot"></div>
+                                    <span class="task-name">专利查询</span>
+                                    <span class="task-tag">DETAIL</span>
+                                </div>
+                                <div class="cli-task">
+                                    <div class="task-dot"></div>
+                                    <span class="task-name">上下文追问</span>
+                                    <span class="task-tag">FOLLOW</span>
+                                </div>
+                                <div class="cli-task">
+                                    <div class="task-dot"></div>
+                                    <span class="task-name">自由对话</span>
+                                    <span class="task-tag">CHAT</span>
+                                </div>
+                            </div>
+                            <div class="cli-main">
+                                <div class="cli-output">
+                                    <div class="cli-line command">> 查询 CN104154208B 专利详情</div>
+                                    <div class="cli-line trace">[trace] 正在抓取专利数据...</div>
+                                    <div class="cli-patent-card">
+                                        <div class="patent-title">CN104154208B 一种图像处理方法及装置</div>
+                                        <div class="patent-meta">申请日: 2014-11-28 | 申请人: 华为技术有限公司</div>
+                                        <div class="patent-abstract">本发明公开了一种图像处理方法，涉及图像处理技术领域...</div>
+                                    </div>
+                                    <div class="cli-line answer">基于该专利，您可以继续追问创新点、保护范围等问题。</div>
+                                </div>
+                                <div class="cli-input-bar">
+                                    <span class="cli-prompt">></span>
+                                    <input type="text" placeholder="输入命令或自然语言..." value="基于刚才专利结果分析创新点" readonly>
+                                    <button class="cli-send-btn">发送</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cli-features">
+                    <div class="cli-feature-card">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M12 6v6l4 2"/>
+                            </svg>
+                        </div>
+                        <h3>自然语言驱动</h3>
+                        <p>无需记忆复杂命令，直接用自然语言描述需求，AI自动理解意图并路由到相应服务流程</p>
+                    </div>
+                    <div class="cli-feature-card">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="7" height="7"/>
+                                <rect x="14" y="3" width="7" height="7"/>
+                                <rect x="14" y="14" width="7" height="7"/>
+                                <rect x="3" y="14" width="7" height="7"/>
+                            </svg>
+                        </div>
+                        <h3>多任务并行</h3>
+                        <p>独立任务节点管理，每个任务拥有独立上下文，轻松切换不同分析主题</p>
+                    </div>
+                    <div class="cli-feature-card">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                            </svg>
+                        </div>
+                        <h3>流式响应</h3>
+                        <p>实时流式输出，进度可视化追踪，随时中断或调整任务方向</p>
+                    </div>
+                    <div class="cli-feature-card">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+                            </svg>
+                        </div>
+                        <h3>智能服务编排</h3>
+                        <p>自动识别专利号、技术内容，智能路由到专利查询、IPC预测、对比分析等服务</p>
+                    </div>
+                    <div class="cli-feature-card">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                        </div>
+                        <h3>文件智能处理</h3>
+                        <p>支持PDF、Excel、图片上传，自动OCR识别，智能解析文档内容</p>
+                    </div>
+                    <div class="cli-feature-card">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2a10 10 0 1 0 10 10H12V2z"/>
+                                <path d="M12 2a10 10 0 0 1 10 10"/>
+                            </svg>
+                        </div>
+                        <h3>上下文记忆</h3>
+                        <p>智能记忆对话历史，支持基于前文追问，连续深入分析专利细节</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="cli-commands">
+                <h3 class="commands-title">支持的智能命令</h3>
+                <div class="commands-grid">
+                    <div class="command-item">
+                        <code>查询 CN104154208B 专利详情</code>
+                        <span>专利信息检索</span>
+                    </div>
+                    <div class="command-item">
+                        <code>基于刚才专利结果分析创新点</code>
+                        <span>上下文追问</span>
+                    </div>
+                    <div class="command-item">
+                        <code>预测IPC分类 技术内容描述</code>
+                        <span>IPC分类预测</span>
+                    </div>
+                    <div class="command-item">
+                        <code>查询 CN... 与 US... 对比分析</code>
+                        <span>专利对比</span>
+                    </div>
+                    <div class="command-item">
+                        <code>flow list</code>
+                        <span>服务流程列表</span>
+                    </div>
+                    <div class="command-item">
+                        <code>处理 Excel</code>
+                        <span>文件处理</span>
                     </div>
                 </div>
             </div>
