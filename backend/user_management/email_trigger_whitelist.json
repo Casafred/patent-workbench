@@ -5,13 +5,7 @@
     "check_interval_seconds": 60,
     "max_commands_per_day": 50,
     "require_subject_prefix": "[CLI]",
-    "allowed_commands": [
-      "flow",
-      "patent",
-      "ai",
-      "status",
-      "help"
-    ]
+    "allowed_commands": []
   },
   "metadata": {
     "created_at": null,

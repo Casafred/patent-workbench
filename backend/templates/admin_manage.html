@@ -2108,18 +2108,14 @@
             html += '<input type="text" id="et-prefix" value="' + escapeHtml(settings.require_subject_prefix || '[CLI]') + '" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" placeholder="[CLI]">';
             html += '</div>';
             
-            html += '<div style="margin-bottom: 16px;">';
-            html += '<label style="display: block; font-size: 13px; color: #666; margin-bottom: 6px;">允许的命令（逗号分隔）</label>';
-            html += '<input type="text" id="et-commands" value="' + escapeHtml((settings.allowed_commands || []).join(', ')) + '" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" placeholder="flow, patent, ai, status, help">';
-            html += '</div>';
-            
             html += '<div style="background: #F3F4F6; border-radius: 8px; padding: 16px; margin-bottom: 16px;">';
             html += '<h4 style="margin: 0 0 12px 0; color: #374151;">📧 使用说明</h4>';
+            html += '<p style="margin: 0 0 12px 0; color: #6B7280; font-size: 14px;">CLI系统是<strong>自然语言驱动</strong>的，用户直接用自然语言描述需求即可，无需特定命令格式。</p>';
             html += '<ol style="margin: 0; padding-left: 20px; color: #6B7280; font-size: 14px;">';
             html += '<li style="margin-bottom: 8px;">添加用户邮箱到白名单</li>';
             html += '<li style="margin-bottom: 8px;">用户发送邮件至系统邮箱，主题需包含前缀（如 [CLI]）</li>';
-            html += '<li style="margin-bottom: 8px;">邮件正文写入CLI命令（如 <code style="background: white; padding: 2px 6px; border-radius: 4px;">flow launch</code>）</li>';
-            html += '<li style="margin-bottom: 8px;">系统自动执行命令并将结果回复到发送邮箱</li>';
+            html += '<li style="margin-bottom: 8px;">邮件正文用自然语言描述需求（如"查询CN104154208B专利详情"）</li>';
+            html += '<li style="margin-bottom: 8px;">系统自动执行并将结果回复到发送邮箱</li>';
             html += '</ol>';
             html += '</div>';
             
@@ -2134,8 +2130,6 @@
             const interval = parseInt(document.getElementById('et-interval').value) || 60;
             const maxCommands = parseInt(document.getElementById('et-max-commands').value) || 50;
             const prefix = document.getElementById('et-prefix').value.trim() || '[CLI]';
-            const commandsStr = document.getElementById('et-commands').value.trim();
-            const commands = commandsStr.split(',').map(c => c.trim()).filter(c => c);
             
             fetch('/api/email-trigger/settings', {
                 method: 'POST',
@@ -2144,8 +2138,7 @@
                     enabled,
                     check_interval_seconds: interval,
                     max_commands_per_day: maxCommands,
-                    require_subject_prefix: prefix,
-                    allowed_commands: commands
+                    require_subject_prefix: prefix
                 })
             })
             .then(r => r.json())

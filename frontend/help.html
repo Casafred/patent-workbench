@@ -3122,11 +3122,15 @@ flow launch pdf_ocr_pipeline # 启动PDF OCR流程</code></pre>
                 <h4>功能概述</h4>
                 <p>邮件触发功能允许您通过发送邮件来执行CLI命令，系统会自动处理并将结果回复到您的邮箱。这使您可以在不登录系统的情况下完成专利分析任务。</p>
 
+                <div class="note">
+                    <strong>重要说明：</strong>CLI系统是<strong>自然语言驱动</strong>的，您不需要记忆特定命令格式，直接用自然语言描述您的需求即可。系统会自动识别专利号、理解意图并执行相应操作。
+                </div>
+
                 <h4>使用条件</h4>
                 <ul>
                     <li>您的邮箱必须在管理员的白名单中</li>
                     <li>您需要知道系统配置的接收邮箱地址</li>
-                    <li>每日有命令执行次数限制（由管理员配置）</li>
+                    <li>每日有执行次数限制（由管理员配置）</li>
                 </ul>
 
                 <h4>操作步骤</h4>
@@ -3140,47 +3144,50 @@ flow launch pdf_ocr_pipeline # 启动PDF OCR流程</code></pre>
                         </tr>
                         <tr>
                             <td style="padding: 8px; font-weight: bold;">邮件主题：</td>
-                            <td style="padding: 8px;"><code style="background-color: var(--bg-color); padding: 2px 6px; border-radius: 4px;">[CLI] 您的命令</code></td>
+                            <td style="padding: 8px;"><code style="background-color: var(--bg-color); padding: 2px 6px; border-radius: 4px;">[CLI] 您的问题或需求</code></td>
                         </tr>
                         <tr>
                             <td style="padding: 8px; font-weight: bold;">邮件正文：</td>
-                            <td style="padding: 8px;">CLI命令内容</td>
+                            <td style="padding: 8px;">您的自然语言问题或需求描述</td>
                         </tr>
                     </table>
                     <p style="margin-top: 10px; font-size: 0.9em; color: #666;"><strong>注意：</strong>邮件主题必须包含 <code>[CLI]</code> 前缀才会触发执行</p>
                 </div>
 
-                <h4>命令格式示例</h4>
-                <pre style="background-color: var(--bg-color); padding: 15px; border-radius: 8px; overflow-x: auto;"><code>主题: [CLI] flow launch patent_lookup CN104154208B
-正文: flow launch patent_lookup CN104154208B
+                <h4>自然语言输入示例</h4>
+                <p>您可以直接用自然语言描述需求，系统会自动理解并处理：</p>
+                <pre style="background-color: var(--bg-color); padding: 15px; border-radius: 8px; overflow-x: auto;"><code>主题: [CLI] 查询专利详情
+正文: 请帮我查看CN104154208B这个专利的详细信息
 
-主题: [CLI] ai chat 分析人工智能在专利领域的应用
-正文: ai chat 请分析一下人工智能在专利领域的应用趋势
+主题: [CLI] 专利分析
+正文: 分析一下US1234567专利的技术方案和创新点
 
-主题: [CLI] status
-正文: status</code></pre>
+主题: [CLI] 专利对比
+正文: 对比CN104154208B和CN104154209B这两个专利的技术差异
 
-                <h4>支持的命令</h4>
-                <p>邮件触发支持以下命令类型：</p>
+主题: [CLI] 一般问题
+正文: 人工智能在专利分析领域有哪些应用？</code></pre>
+
+                <h4>系统自动识别的能力</h4>
+                <p>CLI系统会自动识别以下内容并执行相应操作：</p>
                 <ul>
-                    <li><code>flow</code> - 启动工作流</li>
-                    <li><code>patent</code> - 专利查询</li>
-                    <li><code>ai</code> - AI对话</li>
-                    <li><code>status</code> - 查看状态</li>
-                    <li><code>help</code> - 获取帮助</li>
+                    <li><strong>专利号识别：</strong>自动识别CN、US、EP、WO、JP等专利号并抓取数据</li>
+                    <li><strong>意图理解：</strong>识别"详情"、"分析"、"对比"、"总结"等关键词</li>
+                    <li><strong>上下文关联：</strong>支持"这个专利"、"上述专利"等上下文引用</li>
+                    <li><strong>模型查询：</strong>输入"ai models"可查看可用的AI模型列表</li>
                 </ul>
 
                 <h4>接收结果</h4>
                 <p>系统执行完命令后，会自动将执行结果发送到您的邮箱：</p>
                 <ul>
-                    <li><strong>执行成功：</strong>返回命令输出结果</li>
+                    <li><strong>执行成功：</strong>返回AI生成的回答或专利数据</li>
                     <li><strong>执行失败：</strong>返回错误信息和失败原因</li>
                     <li><strong>权限不足：</strong>返回无权限提示</li>
                     <li><strong>超出限制：</strong>返回每日次数超限提示</li>
                 </ul>
 
                 <div class="warning">
-                    <strong>安全提示：</strong>危险命令（如 rm、sudo、chmod 等）会被系统自动过滤，无法通过邮件触发执行。这是为了保护系统安全和数据完整性。
+                    <strong>安全提示：</strong>危险字符和命令（如 shell 元字符、rm、sudo 等）会被系统自动过滤，这是为了保护系统安全和数据完整性。
                 </div>
 
                 <div class="note">

@@ -274,34 +274,12 @@ class CommandParser:
             if re.search(pattern, user_input, re.IGNORECASE):
                 return ParsedCommand(
                     command='', args=[], raw_input=user_input,
-                    is_valid=False, error_message='命令包含危险字符或模式'
+                    is_valid=False, error_message='输入包含危险字符或模式'
                 )
         
-        try:
-            parts = shlex.split(user_input)
-        except ValueError as e:
-            return ParsedCommand(
-                command='', args=[], raw_input=user_input,
-                is_valid=False, error_message=f'命令解析失败: {e}'
-            )
-        
-        if not parts:
-            return ParsedCommand(
-                command='', args=[], raw_input=user_input,
-                is_valid=False, error_message='空命令'
-            )
-        
-        command = parts[0].lower()
-        
-        if allowed_commands and command not in allowed_commands:
-            return ParsedCommand(
-                command=command, args=parts[1:], raw_input=user_input,
-                is_valid=False, error_message=f'命令 "{command}" 不在允许列表中'
-            )
-        
         return ParsedCommand(
-            command=command,
-            args=parts[1:],
+            command='natural_language',
+            args=[],
             raw_input=user_input,
             is_valid=True
         )
