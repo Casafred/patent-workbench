@@ -25,59 +25,21 @@
 .logo-container {
     display: flex;
     align-items: center;
-    gap: 18px;
+    gap: 35px;
 }
 
 .image-logo {
     height: 80px;
-    width: auto;
-    flex: 0 0 auto;
-}
-
-.brand-wordmark {
-    position: relative;
-    display: flex;
-    align-items: center;
-    min-height: auto;
-    padding: 6px 0;
-    isolation: isolate;
-}
-
-.brand-wordmark::before {
-    content: none;
 }
 
 .banner-text-logo {
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    line-height: 1;
-    position: relative;
-    z-index: 3;
-}
-
-.wordmark-main {
     font-family: 'Orbitron', sans-serif;
-    font-size: clamp(2.3rem, 3.4vw, 3.5rem);
-    letter-spacing: 0.16em;
-    padding-left: 4px;
-    background: linear-gradient(135deg, var(--primary-color-dark), var(--primary-color) 54%, #7ef7a9 100%);
+    font-size: 2.5rem;
+    margin: 0;
+    background: linear-gradient(45deg, var(--primary-color-dark), var(--primary-color));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    text-shadow: 0 10px 30px rgba(34, 197, 94, 0.2);
-    white-space: nowrap;
-}
-
-.wordmark-sub {
-    font-family: 'Consolas', 'SFMono-Regular', monospace;
-    font-size: 0.72rem;
-    letter-spacing: 0.34em;
-    color: var(--text-color-secondary);
-    opacity: 0.8;
-    padding-left: 8px;
-    white-space: nowrap;
 }
 
 .version-number {
@@ -317,13 +279,6 @@
     transform: translateX(0);
 }
 
-[data-theme="dark"] .brand-wordmark::before {
-    background:
-        radial-gradient(circle at 18% 48%, rgba(74, 222, 128, 0.24), transparent 34%),
-        linear-gradient(135deg, rgba(30, 41, 59, 0.92), rgba(15, 23, 42, 0.74));
-    border-color: rgba(74, 222, 128, 0.18);
-}
-
 [data-theme="dark"] .robot-shadow {
     fill: rgba(2, 6, 23, 0.4);
 }
@@ -349,15 +304,6 @@
         align-items: flex-start;
         gap: 8px;
     }
-
-    .brand-wordmark {
-        min-height: auto;
-        padding-left: 0;
-    }
-
-    .wordmark-main {
-        letter-spacing: 0.12em;
-    }
 }
 
 @media (max-width: 768px) {
@@ -367,22 +313,6 @@
 
     .logo-container {
         width: 100%;
-    }
-
-    .brand-wordmark {
-        width: 100%;
-        min-height: auto;
-        padding: 6px 0;
-    }
-
-    .wordmark-main {
-        font-size: clamp(1.7rem, 8vw, 2.4rem);
-        letter-spacing: 0.1em;
-    }
-
-    .wordmark-sub {
-        font-size: 0.62rem;
-        letter-spacing: 0.2em;
     }
 
     .alfred-robot-container {
@@ -412,21 +342,6 @@
 
     .app-branding {
         width: 100%;
-    }
-
-    .brand-wordmark {
-        min-height: auto;
-        padding-left: 0;
-    }
-
-    .wordmark-main {
-        font-size: clamp(1.45rem, 8vw, 2rem);
-        letter-spacing: 0.08em;
-    }
-
-    .wordmark-sub {
-        letter-spacing: 0.12em;
-        padding-left: 4px;
     }
 
     .image-logo {
