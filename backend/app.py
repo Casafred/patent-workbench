@@ -46,26 +46,32 @@ def execute_email_command(parsed: ParsedCommand, user_info: dict) -> tuple:
         
         command_str = parsed.raw_input
         
-        result_generator = cli_orchestrator.execute(
+        result_dict = cli_orchestrator.execute(
             user_input=command_str,
             session_key=session_key,
             user_id=username
         )
         
-        result_parts = []
-        for chunk in result_generator:
-            if isinstance(chunk, dict):
-                if 'content' in chunk:
-                    result_parts.append(chunk['content'])
-                elif 'result' in chunk:
-                    result_parts.append(str(chunk['result']))
-            elif isinstance(chunk, str):
-                result_parts.append(chunk)
+        if isinstance(result_dict, dict):
+            if result_dict.get('success'):
+                data = result_dict.get('data', {})
+                if isinstance(data, dict):
+                    summary = data.get('summary', {})
+                    if summary:
+                        title = summary.get('title', '')
+                        answer = data.get('answer', '')
+                        result = f"{title}\n\n{answer}" if title else answer
+                    else:
+                        result = result_dict.get('message', str(data))
+                else:
+                    result = str(data)
+            else:
+                result = f"执行失败: {result_dict.get('error', '未知错误')}"
+        else:
+            result = str(result_dict)
         
-        result = ''.join(result_parts)
-        
-        if not result:
-            result = f"命令 {parsed.command} 执行完成，无输出"
+        if not result or result == '{}' or result == 'None':
+            result = f"命令执行完成，无输出内容"
         
         return result, True
         

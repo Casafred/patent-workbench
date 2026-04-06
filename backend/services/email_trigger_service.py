@@ -314,11 +314,11 @@ class EmailReceiver:
             traceback.print_exc()
             return None
     
-    def fetch_unread_emails(self, folder: str = 'INBOX') -> List[Dict[str, Any]]:
+    def fetch_unread_emails(self, folder: str = 'INBOX') -> Tuple[List[Dict[str, Any]], Any]:
         mail = self.connect()
         if not mail:
             print("[EmailTrigger] 无法连接到IMAP服务器")
-            return []
+            return [], None
         
         try:
             print(f"[EmailTrigger] 选择文件夹: {folder}")
@@ -339,18 +339,41 @@ class EmailReceiver:
                     msg = email.message_from_bytes(msg_data[0][1])
                     parsed = self._parse_email(msg)
                     if parsed:
+                        parsed['_mail_id'] = num
                         emails.append(parsed)
                         print(f"[EmailTrigger] 解析邮件成功: {parsed.get('subject', 'No Subject')}")
             
-            mail.close()
-            mail.logout()
             print(f"[EmailTrigger] 成功获取 {len(emails)} 封邮件")
-            return emails
+            return emails, mail
         except Exception as e:
             print(f"[EmailTrigger] 获取邮件失败: {e}")
             import traceback
             traceback.print_exc()
-            return []
+            try:
+                mail.close()
+                mail.logout()
+            except:
+                pass
+            return [], None
+    
+    def mark_as_read(self, mail_conn, mail_id: bytes) -> bool:
+        try:
+            mail_conn.store(mail_id, '+FLAGS', '\\Seen')
+            print(f"[EmailTrigger] 邮件 {mail_id} 已标记为已读")
+            return True
+        except Exception as e:
+            print(f"[EmailTrigger] 标记邮件已读失败: {e}")
+            return False
+    
+    def close_connection(self, mail_conn) -> bool:
+        try:
+            mail_conn.close()
+            mail_conn.logout()
+            print(f"[EmailTrigger] IMAP连接已关闭")
+            return True
+        except Exception as e:
+            print(f"[EmailTrigger] 关闭连接失败: {e}")
+            return False
     
     def _parse_email(self, msg: email.message.Message) -> Optional[Dict[str, Any]]:
         try:
@@ -625,13 +648,15 @@ class EmailTriggerScheduler:
         require_prefix = settings.get('require_subject_prefix', '[CLI]')
         print(f"[EmailTrigger] 要求的主题前缀: {require_prefix}")
         
-        emails = self.email_receiver.fetch_unread_emails()
+        emails, mail_conn = self.email_receiver.fetch_unread_emails()
         print(f"[EmailTrigger] 获取到 {len(emails)} 封未读邮件")
         
+        processed_count = 0
         for email_data in emails:
             subject = email_data.get('subject', '')
             sender_email = email_data.get('sender_email', '')
             body = email_data.get('body', '')
+            mail_id = email_data.get('_mail_id')
             
             print(f"[EmailTrigger] 处理邮件 - 发送者: {sender_email}, 主题: {subject}")
             
@@ -644,6 +669,8 @@ class EmailTriggerScheduler:
             
             if not is_allowed:
                 print(f"[EmailTrigger] 拒绝来自 {sender_email} 的邮件触发请求")
+                if mail_conn and mail_id:
+                    self.email_receiver.mark_as_read(mail_conn, mail_id)
                 continue
             
             command_text = body.strip()
@@ -671,6 +698,8 @@ class EmailTriggerScheduler:
                     result='',
                     error=parsed.error_message
                 ))
+                if mail_conn and mail_id:
+                    self.email_receiver.mark_as_read(mail_conn, mail_id)
                 continue
             
             print(f"[EmailTrigger] 开始执行命令...")
@@ -682,6 +711,9 @@ class EmailTriggerScheduler:
             EmailSender.send_result_email(sender_email, command_text, result, success)
             print(f"[EmailTrigger] 结果邮件已发送至 {sender_email}")
             
+            if mail_conn and mail_id:
+                self.email_receiver.mark_as_read(mail_conn, mail_id)
+            
             EmailTriggerLogger.add_log(EmailTriggerLog(
                 timestamp=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                 sender=sender_email,
@@ -690,6 +722,12 @@ class EmailTriggerScheduler:
                 success=success,
                 result=result
             ))
+            processed_count += 1
+        
+        if mail_conn:
+            self.email_receiver.close_connection(mail_conn)
+        
+        print(f"[EmailTrigger] 本次处理完成，共处理 {processed_count} 封CLI邮件")
     
     def _execute_command(self, parsed: ParsedCommand, user_info: Dict[str, Any]) -> Tuple[str, bool]:
         if self._executor_callback:
