@@ -69,21 +69,58 @@
 .banner-subtitle {
     font-family: 'Consolas', 'SFMono-Regular', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
     font-size: 0.85rem;
-    font-weight: 500;
+    font-weight: 600;
     margin: 0;
-    letter-spacing: 0.18em;
+    letter-spacing: 0.22em;
     text-transform: uppercase;
+    color: #16a34a;
+    position: relative;
+    display: inline-block;
+    padding-left: 2px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-shadow: 
+        0 0 1px rgba(22, 163, 74, 0.8),
+        0 0 2px rgba(22, 163, 74, 0.6),
+        0 0 4px rgba(22, 163, 74, 0.4);
+}
+
+.banner-subtitle::before {
+    content: attr(data-text);
+    position: absolute;
+    left: 2px;
+    top: 0;
+    color: transparent;
     background: linear-gradient(90deg, 
-        rgba(34, 197, 94, 0.7) 0%, 
-        rgba(74, 222, 128, 0.85) 40%,
-        rgba(134, 239, 172, 0.9) 70%,
-        rgba(34, 197, 94, 0.7) 100%
+        transparent 0%,
+        transparent 40%,
+        rgba(134, 239, 172, 0.95) 50%,
+        transparent 60%,
+        transparent 100%
     );
+    background-size: 200% 100%;
     -webkit-background-clip: text;
     background-clip: text;
-    color: transparent;
-    text-shadow: 0 0 20px rgba(34, 197, 94, 0.15);
-    padding-left: 2px;
+    animation: subtitleShine 3.5s ease-in-out infinite;
+    text-shadow: 
+        0 0 8px rgba(134, 239, 172, 0.9),
+        0 0 16px rgba(134, 239, 172, 0.6),
+        0 0 24px rgba(134, 239, 172, 0.4);
+}
+
+@keyframes subtitleShine {
+    0% {
+        background-position: -200% 0;
+    }
+    40% {
+        background-position: -200% 0;
+    }
+    90% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
 }
 
 .version-number {
@@ -328,15 +365,19 @@
 }
 
 [data-theme="dark"] .banner-subtitle {
-    background: linear-gradient(90deg, 
-        rgba(74, 222, 128, 0.75) 0%, 
-        rgba(134, 239, 172, 0.9) 40%,
-        rgba(187, 247, 208, 0.95) 70%,
-        rgba(74, 222, 128, 0.75) 100%
-    );
-    -webkit-background-clip: text;
-    background-clip: text;
-    text-shadow: 0 0 25px rgba(74, 222, 128, 0.25);
+    color: #4ade80;
+    text-shadow: 
+        0 0 2px rgba(74, 222, 128, 0.9),
+        0 0 4px rgba(74, 222, 128, 0.7),
+        0 0 8px rgba(74, 222, 128, 0.5);
+}
+
+[data-theme="dark"] .banner-subtitle::before {
+    text-shadow: 
+        0 0 10px rgba(134, 239, 172, 1),
+        0 0 20px rgba(134, 239, 172, 0.8),
+        0 0 30px rgba(134, 239, 172, 0.6),
+        0 0 40px rgba(134, 239, 172, 0.4);
 }
 
 [data-theme="dark"] .brand-title-group::after {
