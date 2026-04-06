@@ -921,12 +921,20 @@
 .thinking-btn {
     position: relative;
     transition: all 0.3s ease;
+    background: transparent;
+    border: none;
+    color: var(--text-color-secondary);
+}
+
+.thinking-btn:hover {
+    background: var(--primary-color-hover-bg);
+    color: var(--primary-color);
 }
 
 .thinking-btn.active {
-    background-color: rgba(147, 51, 234, 0.15);
-    border-color: #9333ea;
-    color: #9333ea;
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
 }
 
 .thinking-btn.active svg {
@@ -934,34 +942,38 @@
 }
 
 .thinking-btn.thinking-only {
-    background-color: rgba(234, 179, 8, 0.15);
-    border-color: #eab308;
-    color: #eab308;
+    background-color: var(--warning-color);
+    color: white;
+    border-color: var(--warning-color);
 }
 
 .thinking-indicator {
     font-size: 10px;
     margin-left: 4px;
-    color: #9333ea;
+    color: inherit;
     font-weight: 600;
+}
+
+.thinking-btn.active .thinking-indicator {
+    color: white;
 }
 
 @keyframes pulse-glow {
     0%, 100% {
-        box-shadow: 0 0 4px rgba(147, 51, 234, 0.5);
+        box-shadow: 0 0 4px rgba(34, 197, 94, 0.5);
     }
     50% {
-        box-shadow: 0 0 12px rgba(147, 51, 234, 0.8);
+        box-shadow: 0 0 12px rgba(34, 197, 94, 0.8);
     }
 }
 
 /* Thinking Container in Messages */
 .thinking-container {
     margin-bottom: 16px;
-    border: 1px solid #e9d5ff;
+    border: 1px solid #bbf7d0;
     border-radius: 8px;
     overflow: hidden;
-    background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
 }
 
 .thinking-header {
@@ -969,38 +981,38 @@
     align-items: center;
     gap: 8px;
     padding: 10px 14px;
-    background: linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 100%);
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
     cursor: pointer;
     user-select: none;
     transition: all 0.2s ease;
 }
 
 .thinking-header:hover {
-    background: linear-gradient(135deg, #d8b4fe 0%, #c084fc 100%);
+    background: linear-gradient(135deg, #bbf7d0 0%, #86efac 100%);
 }
 
 .thinking-header svg {
     flex-shrink: 0;
-    color: #7c3aed;
+    color: var(--primary-color);
 }
 
 .thinking-title {
     flex: 1;
     font-weight: 600;
     font-size: 13px;
-    color: #5b21b6;
+    color: #166534;
 }
 
 .thinking-toggle-icon {
     font-size: 10px;
-    color: #7c3aed;
+    color: var(--primary-color);
     transition: transform 0.2s ease;
 }
 
 .thinking-content {
     padding: 14px;
-    background: #faf5ff;
-    border-top: 1px solid #e9d5ff;
+    background: #f0fdf4;
+    border-top: 1px solid #bbf7d0;
     max-height: 300px;
     overflow-y: auto;
 }
@@ -1008,7 +1020,7 @@
 .thinking-text {
     font-size: 13px;
     line-height: 1.6;
-    color: #6b7280;
+    color: #166534;
     white-space: pre-wrap;
     word-break: break-word;
 }
@@ -1020,45 +1032,45 @@
 /* Dark mode thinking styles */
 @media (prefers-color-scheme: dark) {
     .thinking-btn.active {
-        background-color: rgba(167, 139, 250, 0.2);
-        border-color: #a78bfa;
-        color: #a78bfa;
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        color: white;
     }
     
     .thinking-btn.thinking-only {
-        background-color: rgba(250, 204, 21, 0.2);
-        border-color: #facc15;
-        color: #facc15;
+        background-color: var(--warning-color);
+        border-color: var(--warning-color);
+        color: white;
     }
     
     .thinking-container {
-        border-color: #4c1d95;
-        background: linear-gradient(135deg, #2e1065 0%, #1e1b4b 100%);
+        border-color: #166534;
+        background: linear-gradient(135deg, #14532d 0%, #052e16 100%);
     }
     
     .thinking-header {
-        background: linear-gradient(135deg, #4c1d95 0%, #5b21b6 100%);
+        background: linear-gradient(135deg, #166534 0%, #15803d 100%);
     }
     
     .thinking-header:hover {
-        background: linear-gradient(135deg, #5b21b6 0%, #6d28d9 100%);
+        background: linear-gradient(135deg, #15803d 0%, #22c55e 100%);
     }
     
     .thinking-header svg {
-        color: #a78bfa;
+        color: #4ade80;
     }
     
     .thinking-title {
-        color: #c4b5fd;
+        color: #bbf7d0;
     }
     
     .thinking-toggle-icon {
-        color: #a78bfa;
+        color: #4ade80;
     }
     
     .thinking-content {
-        background: #1e1b4b;
-        border-top-color: #4c1d95;
+        background: #052e16;
+        border-top-color: #166534;
     }
     
     .thinking-text {
