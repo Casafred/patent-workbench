@@ -44,9 +44,7 @@ def execute_email_command(parsed: ParsedCommand, user_info: dict) -> tuple:
         username = user_info.get('username', 'email_trigger')
         session_key = f"email_{username}_{int(datetime.now().timestamp())}"
         
-        command_str = parsed.command
-        if parsed.args:
-            command_str += ' ' + ' '.join(parsed.args)
+        command_str = parsed.raw_input
         
         result_generator = cli_orchestrator.execute(
             user_input=command_str,
