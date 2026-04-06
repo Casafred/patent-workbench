@@ -3115,6 +3115,77 @@ flow launch pdf_ocr_pipeline # 启动PDF OCR流程</code></pre>
                 <div class="warning">
                     <strong>注意：</strong>流式输出过程中，可以点击"停止"按钮中断当前任务。任务上下文会保存在对应的任务节点中，切换节点可继续之前的对话。
                 </div>
+
+                <h3>九、邮件触发CLI命令</h3>
+                <p>除了在网页界面中使用CLI，您还可以通过发送邮件的方式远程触发CLI命令执行，实现离线自动化工作流。</p>
+
+                <h4>功能概述</h4>
+                <p>邮件触发功能允许您通过发送邮件来执行CLI命令，系统会自动处理并将结果回复到您的邮箱。这使您可以在不登录系统的情况下完成专利分析任务。</p>
+
+                <h4>使用条件</h4>
+                <ul>
+                    <li>您的邮箱必须在管理员的白名单中</li>
+                    <li>您需要知道系统配置的接收邮箱地址</li>
+                    <li>每日有命令执行次数限制（由管理员配置）</li>
+                </ul>
+
+                <h4>操作步骤</h4>
+                
+                <div style="background-color: rgba(34, 197, 94, 0.1); border-left: 4px solid var(--primary-color); padding: 15px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+                    <strong style="color: var(--primary-color);">第一步：发送邮件</strong>
+                    <table style="width: 100%; margin-top: 10px; font-size: 0.95em;">
+                        <tr>
+                            <td style="padding: 8px; font-weight: bold; width: 120px;">收件人：</td>
+                            <td style="padding: 8px;">系统配置的邮箱地址（即您注册服务使用的邮箱）</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; font-weight: bold;">邮件主题：</td>
+                            <td style="padding: 8px;"><code style="background-color: var(--bg-color); padding: 2px 6px; border-radius: 4px;">[CLI] 您的命令</code></td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; font-weight: bold;">邮件正文：</td>
+                            <td style="padding: 8px;">CLI命令内容</td>
+                        </tr>
+                    </table>
+                    <p style="margin-top: 10px; font-size: 0.9em; color: #666;"><strong>注意：</strong>邮件主题必须包含 <code>[CLI]</code> 前缀才会触发执行</p>
+                </div>
+
+                <h4>命令格式示例</h4>
+                <pre style="background-color: var(--bg-color); padding: 15px; border-radius: 8px; overflow-x: auto;"><code>主题: [CLI] flow launch patent_lookup CN104154208B
+正文: flow launch patent_lookup CN104154208B
+
+主题: [CLI] ai chat 分析人工智能在专利领域的应用
+正文: ai chat 请分析一下人工智能在专利领域的应用趋势
+
+主题: [CLI] status
+正文: status</code></pre>
+
+                <h4>支持的命令</h4>
+                <p>邮件触发支持以下命令类型：</p>
+                <ul>
+                    <li><code>flow</code> - 启动工作流</li>
+                    <li><code>patent</code> - 专利查询</li>
+                    <li><code>ai</code> - AI对话</li>
+                    <li><code>status</code> - 查看状态</li>
+                    <li><code>help</code> - 获取帮助</li>
+                </ul>
+
+                <h4>接收结果</h4>
+                <p>系统执行完命令后，会自动将执行结果发送到您的邮箱：</p>
+                <ul>
+                    <li><strong>执行成功：</strong>返回命令输出结果</li>
+                    <li><strong>执行失败：</strong>返回错误信息和失败原因</li>
+                    <li><strong>权限不足：</strong>返回无权限提示</li>
+                    <li><strong>超出限制：</strong>返回每日次数超限提示</li>
+                </ul>
+
+                <div class="warning">
+                    <strong>安全提示：</strong>危险命令（如 rm、sudo、chmod 等）会被系统自动过滤，无法通过邮件触发执行。这是为了保护系统安全和数据完整性。
+                </div>
+
+                <div class="note">
+                    <strong>提示：</strong>如果您需要开通邮件触发功能，请联系管理员将您的邮箱添加到白名单。管理员可以在用户管理界面的"邮件触发"模块中进行配置。
+                </div>
             </div>
         </div>
 
