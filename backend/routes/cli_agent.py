@@ -1615,7 +1615,7 @@ def stream_execute_command():
                     parsed.setdefault("params", {})["ocr_engine"] = ocr_engine
                 result = executor.execute(parsed, request_context)
                 yield f"data: {json.dumps({'type': 'trace', 'stage': 'command', 'message': '执行命令模式'}, ensure_ascii=False)}\n\n"
-                yield f"data: {json.dumps({'type': 'final', 'data': result}, ensure_ascii=False)}\n\n"
+                yield f"data: {json.dumps({'type': 'final', 'data': {'success': result.get('success', False), 'mode': 'legacy_cli_command', 'parsed': parsed, 'result': result}}, ensure_ascii=False)}\n\n"
                 yield "data: [DONE]\n\n"
                 return
 
