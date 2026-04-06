@@ -1062,6 +1062,111 @@
     background: var(--cli-divider);
 }
 
+.cli-flow-list {
+    margin-bottom: 14px;
+}
+
+.cli-flow-list__header {
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--cli-divider);
+}
+
+.cli-flow-list__title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--cli-block-title);
+    margin-bottom: 4px;
+}
+
+.cli-flow-list__subtitle {
+    font-size: 12px;
+    color: var(--cli-shell-muted);
+}
+
+.cli-flow-list__item {
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    border: 1px solid var(--cli-block-border);
+    border-radius: 12px;
+    background: var(--cli-block-bg);
+    transition: all 0.2s ease;
+}
+
+.cli-flow-list__item:hover {
+    border-color: rgba(234, 112, 72, 0.3);
+    background: rgba(234, 112, 72, 0.04);
+}
+
+.cli-flow-item__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.cli-flow-item__name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--cli-shell-text);
+}
+
+.cli-flow-status {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 500;
+}
+
+.cli-flow-status--ready {
+    background: rgba(76, 175, 80, 0.12);
+    color: #2E7D32;
+}
+
+.cli-flow-status--pending {
+    background: rgba(255, 152, 0, 0.12);
+    color: #E65100;
+}
+
+.cli-flow-item__id {
+    font-size: 11px;
+    color: var(--cli-shell-muted);
+    font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+    margin-bottom: 6px;
+}
+
+.cli-flow-item__desc {
+    font-size: 12px;
+    color: var(--cli-block-text);
+    line-height: 1.5;
+    margin-bottom: 8px;
+}
+
+.cli-flow-item__examples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.cli-flow-example {
+    display: inline-block;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+    background: var(--cli-code-bg);
+    border: 1px solid var(--cli-select-border);
+    border-radius: 6px;
+    color: var(--cli-line-command);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cli-flow-example:hover {
+    border-color: rgba(234, 112, 72, 0.5);
+    background: rgba(234, 112, 72, 0.08);
+}
+
 .cli-loading {
     display: inline-flex;
     gap: 6px;
@@ -2407,6 +2512,8 @@
             if (result.data) {
                 if (result.type === 'embedded_flow' || result.data?.flow_id) {
                     this.renderFlowCard(result.data || result);
+                } else if (Array.isArray(result.data.flows)) {
+                    this.renderFlowList(result.data.flows);
                 } else {
                     this.printBlock('数据', JSON.stringify(result.data, null, 2));
                 }
@@ -2415,6 +2522,54 @@
             if (Array.isArray(result.suggestions) && result.suggestions.length) {
                 this.renderSuggestions(result.suggestions);
             }
+        }
+
+        renderFlowList(flows) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'cli-flow-list';
+            
+            const header = document.createElement('div');
+            header.className = 'cli-flow-list__header';
+            header.innerHTML = `
+                <div class="cli-flow-list__title">可用服务流程</div>
+                <div class="cli-flow-list__subtitle">共 ${flows.length} 个流程可用</div>
+            `;
+            wrapper.appendChild(header);
+            
+            flows.forEach((flow) => {
+                const card = document.createElement('div');
+                card.className = 'cli-flow-list__item';
+                
+                const statusClass = flow.status === 'ready' ? 'cli-flow-status--ready' : 'cli-flow-status--pending';
+                const statusText = flow.status === 'ready' ? '就绪' : '需输入';
+                
+                card.innerHTML = `
+                    <div class="cli-flow-item__header">
+                        <div class="cli-flow-item__name">${this.escapeHtml(flow.name || flow.id)}</div>
+                        <span class="cli-flow-status ${statusClass}">${statusText}</span>
+                    </div>
+                    <div class="cli-flow-item__id">ID: ${this.escapeHtml(flow.id)}</div>
+                    <div class="cli-flow-item__desc">${this.escapeHtml(flow.description || '-')}</div>
+                    <div class="cli-flow-item__examples">
+                        ${((flow.entry_examples || []).slice(0, 2).map((ex) => 
+                            `<code class="cli-flow-example" data-flow-example="${this.escapeHtml(ex)}">${this.escapeHtml(ex)}</code>`
+                        ).join(''))}
+                    </div>
+                `;
+                
+                wrapper.appendChild(card);
+            });
+            
+            this.output.appendChild(wrapper);
+            
+            wrapper.querySelectorAll('[data-flow-example]').forEach((el) => {
+                el.addEventListener('click', () => {
+                    this.input.value = el.getAttribute('data-flow-example') || '';
+                    this.input.focus();
+                });
+            });
+            
+            this.scrollToBottom();
         }
 
         renderOrchestration(data) {
