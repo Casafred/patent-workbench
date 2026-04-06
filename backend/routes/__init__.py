@@ -36,6 +36,7 @@ def register_blueprints(app: Flask):
     from .notification import notification_bp
     from .cli_agent import cli_agent_bp
     from .email_trigger import email_trigger_bp
+    from .wecom import wecom_bp
     from backend.user_management.user_management import user_management_bp
 
     app.register_blueprint(auth_bp)
@@ -61,6 +62,7 @@ def register_blueprints(app: Flask):
     app.register_blueprint(pdf_ocr_bp, url_prefix='/api')
     app.register_blueprint(notification_bp)
     app.register_blueprint(email_trigger_bp)
+    app.register_blueprint(wecom_bp)
 
     print("✓ All blueprints registered successfully")
 

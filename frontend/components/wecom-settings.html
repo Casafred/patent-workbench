@@ -1,0 +1,922 @@
+<!-- 企业微信绑定设置组件 -->
+<div class="wecom-settings-container" id="wecom-settings-container">
+    <div class="wecom-settings-header">
+        <div class="wecom-settings-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+            </svg>
+        </div>
+        <div class="wecom-settings-title">
+            <h3>企业微信通知</h3>
+            <p class="wecom-settings-desc">绑定企业微信后，任务完成将自动推送到您的企业微信</p>
+        </div>
+    </div>
+
+    <div class="wecom-settings-content" id="wecom-settings-content">
+        <!-- 加载状态 -->
+        <div class="wecom-loading" id="wecom-loading">
+            <div class="wecom-spinner"></div>
+            <span>加载中...</span>
+        </div>
+
+        <!-- 服务未配置 -->
+        <div class="wecom-not-configured" id="wecom-not-configured" style="display: none;">
+            <div class="wecom-warning-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+            </div>
+            <p>企业微信服务未开启</p>
+            <span class="wecom-hint">请联系管理员配置企业微信服务</span>
+        </div>
+
+        <!-- 未绑定状态 -->
+        <div class="wecom-unbound" id="wecom-unbound" style="display: none;">
+            <div class="wecom-bind-methods">
+                <div class="wecom-bind-method">
+                    <div class="method-header">
+                        <span class="method-icon">📱</span>
+                        <span class="method-title">方式一：扫码绑定</span>
+                        <span class="method-badge recommended">推荐</span>
+                    </div>
+                    <p class="method-desc">使用企业微信App扫描二维码即可绑定</p>
+                    <button class="wecom-btn wecom-btn-primary" id="wecom-show-qrcode-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                        </svg>
+                        显示绑定二维码
+                    </button>
+                </div>
+
+                <div class="wecom-bind-divider">
+                    <span>或者</span>
+                </div>
+
+                <div class="wecom-bind-method">
+                    <div class="method-header">
+                        <span class="method-icon">✏️</span>
+                        <span class="method-title">方式二：手动输入</span>
+                    </div>
+                    <p class="method-desc">输入您在企业微信通讯录中的账号</p>
+                    <div class="manual-bind-form">
+                        <input type="text" id="wecom-userid-input" placeholder="请输入企业微信账号" class="wecom-input">
+                        <button class="wecom-btn wecom-btn-secondary" id="wecom-manual-bind-btn">
+                            绑定
+                        </button>
+                    </div>
+                    <span class="wecom-hint">账号可在企业微信通讯录中查看</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 已绑定状态 -->
+        <div class="wecom-bound" id="wecom-bound" style="display: none;">
+            <div class="wecom-bound-info">
+                <div class="bound-status">
+                    <span class="status-icon">✅</span>
+                    <span class="status-text">已绑定企业微信</span>
+                </div>
+                <div class="bound-details">
+                    <div class="bound-detail-item">
+                        <span class="detail-label">企业微信账号：</span>
+                        <span class="detail-value" id="wecom-bound-userid">-</span>
+                    </div>
+                    <div class="bound-detail-item">
+                        <span class="detail-label">绑定时间：</span>
+                        <span class="detail-value" id="wecom-bound-time">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="wecom-notification-toggle">
+                <div class="toggle-label">
+                    <span class="toggle-icon">🔔</span>
+                    <span>接收推送通知</span>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="wecom-notification-toggle" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="wecom-bound-actions">
+                <button class="wecom-btn wecom-btn-outline" id="wecom-test-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 2L11 13"/>
+                        <path d="M22 2L15 22L11 13L2 9L22 2Z"/>
+                    </svg>
+                    发送测试消息
+                </button>
+                <button class="wecom-btn wecom-btn-danger" id="wecom-unbind-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18"/>
+                        <path d="M6 6L18 18"/>
+                    </svg>
+                    解除绑定
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 二维码弹窗 -->
+    <div class="wecom-modal" id="wecom-qrcode-modal" style="display: none;">
+        <div class="wecom-modal-overlay"></div>
+        <div class="wecom-modal-content">
+            <div class="modal-header">
+                <h3>扫码绑定企业微信</h3>
+                <button class="modal-close" id="wecom-modal-close">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18"/>
+                        <path d="M6 6L18 18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="qrcode-container" id="wecom-qrcode-container">
+                    <div class="qrcode-placeholder">
+                        <div class="wecom-spinner"></div>
+                        <span>正在生成二维码...</span>
+                    </div>
+                </div>
+                <div class="qrcode-tips">
+                    <p>1. 打开企业微信App</p>
+                    <p>2. 扫描上方二维码</p>
+                    <p>3. 确认绑定即可完成</p>
+                </div>
+                <div class="qrcode-countdown" id="wecom-qrcode-countdown">
+                    二维码有效期：<span id="wecom-countdown-time">5:00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.wecom-settings-container {
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.wecom-settings-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.wecom-settings-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #07c160 0%, #00a854 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wecom-settings-icon svg {
+    width: 28px;
+    height: 28px;
+    color: white;
+}
+
+.wecom-settings-title h3 {
+    margin: 0 0 4px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}
+
+.wecom-settings-desc {
+    margin: 0;
+    font-size: 14px;
+    color: #666;
+}
+
+.wecom-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 40px;
+    color: #666;
+}
+
+.wecom-spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid #f0f0f0;
+    border-top-color: #07c160;
+    border-radius: 50%;
+    animation: wecom-spin 1s linear infinite;
+}
+
+@keyframes wecom-spin {
+    to { transform: rotate(360deg); }
+}
+
+.wecom-not-configured {
+    text-align: center;
+    padding: 40px;
+}
+
+.wecom-warning-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+    background: #fff7e6;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wecom-warning-icon svg {
+    width: 32px;
+    height: 32px;
+    color: #fa8c16;
+}
+
+.wecom-not-configured p {
+    margin: 0 0 8px;
+    font-size: 16px;
+    color: #333;
+}
+
+.wecom-hint {
+    font-size: 13px;
+    color: #999;
+}
+
+.wecom-bind-methods {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.wecom-bind-method {
+    background: #fafafa;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.method-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.method-icon {
+    font-size: 20px;
+}
+
+.method-title {
+    font-weight: 500;
+    color: #333;
+}
+
+.method-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #e6f7ff;
+    color: #1890ff;
+}
+
+.method-badge.recommended {
+    background: #f6ffed;
+    color: #52c41a;
+}
+
+.method-desc {
+    margin: 0 0 16px;
+    font-size: 13px;
+    color: #666;
+}
+
+.wecom-bind-divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    color: #999;
+    font-size: 13px;
+}
+
+.wecom-bind-divider::before,
+.wecom-bind-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #e8e8e8;
+}
+
+.wecom-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+}
+
+.wecom-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.wecom-btn-primary {
+    background: #07c160;
+    color: white;
+}
+
+.wecom-btn-primary:hover {
+    background: #06ad56;
+}
+
+.wecom-btn-secondary {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.wecom-btn-secondary:hover {
+    background: #e0e0e0;
+}
+
+.wecom-btn-outline {
+    background: white;
+    border: 1px solid #d9d9d9;
+    color: #333;
+}
+
+.wecom-btn-outline:hover {
+    border-color: #07c160;
+    color: #07c160;
+}
+
+.wecom-btn-danger {
+    background: white;
+    border: 1px solid #ff4d4f;
+    color: #ff4d4f;
+}
+
+.wecom-btn-danger:hover {
+    background: #fff1f0;
+}
+
+.manual-bind-form {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.wecom-input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.wecom-input:focus {
+    outline: none;
+    border-color: #07c160;
+    box-shadow: 0 0 0 2px rgba(7, 193, 96, 0.1);
+}
+
+.wecom-bound-info {
+    background: #f6ffed;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.bound-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.status-icon {
+    font-size: 18px;
+}
+
+.status-text {
+    font-weight: 500;
+    color: #52c41a;
+}
+
+.bound-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.bound-detail-item {
+    display: flex;
+    font-size: 13px;
+}
+
+.detail-label {
+    color: #666;
+    width: 100px;
+}
+
+.detail-value {
+    color: #333;
+}
+
+.wecom-notification-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    background: #fafafa;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #333;
+}
+
+.toggle-icon {
+    font-size: 18px;
+}
+
+.toggle-switch {
+    position: relative;
+    width: 44px;
+    height: 22px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.3s;
+    border-radius: 22px;
+}
+
+.toggle-slider::before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background-color: #07c160;
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(22px);
+}
+
+.wecom-bound-actions {
+    display: flex;
+    gap: 12px;
+}
+
+/* 弹窗样式 */
+.wecom-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wecom-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.wecom-modal-content {
+    position: relative;
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    overflow: hidden;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.modal-close {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+}
+
+.modal-close:hover {
+    background: #f5f5f5;
+}
+
+.modal-close svg {
+    width: 20px;
+    height: 20px;
+    color: #999;
+}
+
+.modal-body {
+    padding: 24px;
+    text-align: center;
+}
+
+.qrcode-container {
+    width: 200px;
+    height: 200px;
+    margin: 0 auto 20px;
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fafafa;
+}
+
+.qrcode-container img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.qrcode-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    color: #999;
+}
+
+.qrcode-tips {
+    text-align: left;
+    margin-bottom: 16px;
+}
+
+.qrcode-tips p {
+    margin: 0 0 4px;
+    font-size: 13px;
+    color: #666;
+}
+
+.qrcode-countdown {
+    font-size: 13px;
+    color: #999;
+}
+
+.qrcode-countdown span {
+    color: #ff4d4f;
+    font-weight: 500;
+}
+</style>
+
+<script>
+class WecomSettings {
+    constructor() {
+        this.container = document.getElementById('wecom-settings-container');
+        if (!this.container) return;
+        
+        this.bindStatus = null;
+        this.countdownTimer = null;
+        
+        this.init();
+    }
+    
+    async init() {
+        await this.loadStatus();
+        this.bindEvents();
+    }
+    
+    async loadStatus() {
+        try {
+            const response = await fetch('/api/wecom/bind/status');
+            const result = await response.json();
+            
+            if (result.success) {
+                this.bindStatus = result.data;
+                this.render();
+            }
+        } catch (error) {
+            console.error('加载企业微信状态失败:', error);
+            this.showNotConfigured();
+        }
+    }
+    
+    render() {
+        document.getElementById('wecom-loading').style.display = 'none';
+        
+        if (!this.bindStatus.service_available) {
+            this.showNotConfigured();
+            return;
+        }
+        
+        if (this.bindStatus.bound) {
+            this.showBound();
+        } else {
+            this.showUnbound();
+        }
+    }
+    
+    showNotConfigured() {
+        document.getElementById('wecom-loading').style.display = 'none';
+        document.getElementById('wecom-not-configured').style.display = 'block';
+    }
+    
+    showUnbound() {
+        document.getElementById('wecom-unbound').style.display = 'block';
+    }
+    
+    showBound() {
+        document.getElementById('wecom-bound').style.display = 'block';
+        document.getElementById('wecom-bound-userid').textContent = this.bindStatus.wecom_userid;
+        document.getElementById('wecom-bound-time').textContent = this.bindStatus.bound_at || '-';
+        document.getElementById('wecom-notification-toggle').checked = this.bindStatus.enabled;
+    }
+    
+    bindEvents() {
+        document.getElementById('wecom-show-qrcode-btn')?.addEventListener('click', () => {
+            this.showQrcodeModal();
+        });
+        
+        document.getElementById('wecom-manual-bind-btn')?.addEventListener('click', () => {
+            this.manualBind();
+        });
+        
+        document.getElementById('wecom-notification-toggle')?.addEventListener('change', (e) => {
+            this.updateSettings(e.target.checked);
+        });
+        
+        document.getElementById('wecom-test-btn')?.addEventListener('click', () => {
+            this.sendTestMessage();
+        });
+        
+        document.getElementById('wecom-unbind-btn')?.addEventListener('click', () => {
+            this.unbind();
+        });
+        
+        document.getElementById('wecom-modal-close')?.addEventListener('click', () => {
+            this.closeQrcodeModal();
+        });
+        
+        document.querySelector('.wecom-modal-overlay')?.addEventListener('click', () => {
+            this.closeQrcodeModal();
+        });
+    }
+    
+    async showQrcodeModal() {
+        const modal = document.getElementById('wecom-qrcode-modal');
+        const container = document.getElementById('wecom-qrcode-container');
+        
+        modal.style.display = 'flex';
+        container.innerHTML = `
+            <div class="qrcode-placeholder">
+                <div class="wecom-spinner"></div>
+                <span>正在生成二维码...</span>
+            </div>
+        `;
+        
+        try {
+            const response = await fetch('/api/wecom/bind/qrcode');
+            const result = await response.json();
+            
+            if (result.success) {
+                const qrcodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(result.data.qrcode_url)}`;
+                container.innerHTML = `<img src="${qrcodeUrl}" alt="绑定二维码">`;
+                
+                this.startCountdown(result.data.expires_in);
+            } else {
+                container.innerHTML = `
+                    <div class="qrcode-placeholder">
+                        <span style="color: #ff4d4f;">${result.error || '生成二维码失败'}</span>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            container.innerHTML = `
+                <div class="qrcode-placeholder">
+                    <span style="color: #ff4d4f;">网络错误，请重试</span>
+                </div>
+            `;
+        }
+    }
+    
+    closeQrcodeModal() {
+        const modal = document.getElementById('wecom-qrcode-modal');
+        modal.style.display = 'none';
+        
+        if (this.countdownTimer) {
+            clearInterval(this.countdownTimer);
+            this.countdownTimer = null;
+        }
+    }
+    
+    startCountdown(seconds) {
+        let remaining = seconds;
+        const display = document.getElementById('wecom-countdown-time');
+        
+        const update = () => {
+            const mins = Math.floor(remaining / 60);
+            const secs = remaining % 60;
+            display.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+            
+            if (remaining <= 0) {
+                clearInterval(this.countdownTimer);
+                this.closeQrcodeModal();
+                alert('二维码已过期，请重新获取');
+            }
+            remaining--;
+        };
+        
+        update();
+        this.countdownTimer = setInterval(update, 1000);
+    }
+    
+    async manualBind() {
+        const input = document.getElementById('wecom-userid-input');
+        const wecomUserid = input.value.trim();
+        
+        if (!wecomUserid) {
+            alert('请输入企业微信账号');
+            return;
+        }
+        
+        const btn = document.getElementById('wecom-manual-bind-btn');
+        btn.disabled = true;
+        btn.textContent = '绑定中...';
+        
+        try {
+            const response = await fetch('/api/wecom/bind/manual', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ wecom_userid: wecomUserid })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('绑定成功！');
+                location.reload();
+            } else {
+                alert(result.error || '绑定失败');
+            }
+        } catch (error) {
+            alert('网络错误，请重试');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '绑定';
+        }
+    }
+    
+    async updateSettings(enabled) {
+        try {
+            const response = await fetch('/api/wecom/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled })
+            });
+            
+            const result = await response.json();
+            
+            if (!result.success) {
+                alert(result.error || '设置失败');
+                document.getElementById('wecom-notification-toggle').checked = !enabled;
+            }
+        } catch (error) {
+            alert('网络错误');
+            document.getElementById('wecom-notification-toggle').checked = !enabled;
+        }
+    }
+    
+    async sendTestMessage() {
+        const btn = document.getElementById('wecom-test-btn');
+        btn.disabled = true;
+        btn.textContent = '发送中...';
+        
+        try {
+            const response = await fetch('/api/wecom/test', {
+                method: 'POST'
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('测试消息已发送，请查看企业微信');
+            } else {
+                alert(result.error || '发送失败');
+            }
+        } catch (error) {
+            alert('网络错误');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 2L11 13"/>
+                    <path d="M22 2L15 22L11 13L2 9L22 2Z"/>
+                </svg>
+                发送测试消息
+            `;
+        }
+    }
+    
+    async unbind() {
+        if (!confirm('确定要解除企业微信绑定吗？解除后将不再收到推送通知。')) {
+            return;
+        }
+        
+        const btn = document.getElementById('wecom-unbind-btn');
+        btn.disabled = true;
+        btn.textContent = '解绑中...';
+        
+        try {
+            const response = await fetch('/api/wecom/unbind', {
+                method: 'POST'
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('解绑成功');
+                location.reload();
+            } else {
+                alert(result.error || '解绑失败');
+            }
+        } catch (error) {
+            alert('网络错误');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 6L6 18"/>
+                    <path d="M6 6L18 18"/>
+                </svg>
+                解除绑定
+            `;
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    new WecomSettings();
+});
+</script>
