@@ -1307,35 +1307,39 @@
 
 .cli-guide__btn {
     height: 36px;
-    padding: 0 16px;
-    border: 0;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #ea7048 0%, #c74635 100%);
-    color: #fff;
+    padding: 0 20px;
+    border: 1px solid var(--cli-chip-border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--cli-chip-color);
     cursor: pointer;
     font-size: 13px;
     font-weight: 500;
-    transition: all 0.2s ease;
+    font-family: inherit;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
 }
 
 .cli-guide__btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(234, 112, 72, 0.3);
+    border-color: rgba(76, 175, 80, 0.8);
+    background: rgba(76, 175, 80, 0.06);
 }
 
 .cli-guide__btn:active {
-    transform: translateY(0);
+    transform: scale(0.98);
 }
 
 .cli-guide__btn--ghost {
-    border: 1px solid var(--cli-select-border);
-    background: transparent;
-    color: var(--cli-shell-text);
+    border-color: var(--cli-select-border);
+    color: var(--cli-shell-muted);
 }
 
 .cli-guide__btn--ghost:hover {
-    background: rgba(234, 112, 72, 0.08);
-    box-shadow: none;
+    border-color: var(--cli-shell-muted);
+    background: rgba(0, 0, 0, 0.04);
 }
 
 @keyframes cliPulse {
