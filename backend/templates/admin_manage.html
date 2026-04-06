@@ -512,6 +512,7 @@
                 <div class="tab" data-tab="prompt-forum" onclick="switchTab('prompt-forum')" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: white; border-color: #059669;">💡 提示词审核</div>
                 <div class="tab lock-tab" data-tab="feature-lock" onclick="switchTab('feature-lock')">🔒 功能锁定</div>
                 <div class="tab" data-tab="notifications" onclick="switchTab('notifications')" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); color: white; border-color: #F59E0B;">🔔 通知管理</div>
+                <div class="tab" data-tab="email-trigger" onclick="switchTab('email-trigger')" style="background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%); color: white; border-color: #8B5CF6;">📧 邮件触发</div>
             </div>
             
             <div id="tab-content"></div>
@@ -631,6 +632,9 @@
             }
             if (currentTab === 'notifications') {
                 loadNotifications();
+            }
+            if (currentTab === 'email-trigger') {
+                loadEmailTrigger();
             }
         }
 
@@ -1780,6 +1784,319 @@
                     alert(data.error || '删除失败');
                 }
             });
+        }
+
+        // ===== 邮件触发管理功能 =====
+        let emailTriggerSettings = {};
+        let emailTriggerWhitelist = [];
+        let emailTriggerLogs = [];
+        let currentEmailTriggerTab = 'whitelist';
+
+        function loadEmailTrigger() {
+            if (currentEmailTriggerTab === 'whitelist') {
+                loadEmailTriggerWhitelist();
+            } else if (currentEmailTriggerTab === 'settings') {
+                loadEmailTriggerSettingsTab();
+            } else {
+                loadEmailTriggerLogsTab();
+            }
+        }
+
+        function switchEmailTriggerTab(tab) {
+            currentEmailTriggerTab = tab;
+            document.querySelectorAll('.email-trigger-tab').forEach(t => {
+                t.classList.toggle('active', t.dataset.emailTriggerTab === tab);
+            });
+            loadEmailTrigger();
+        }
+
+        function loadEmailTriggerWhitelist() {
+            fetch('/api/email-trigger/whitelist')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        emailTriggerWhitelist = data.whitelist;
+                        emailTriggerSettings = data.settings;
+                        renderEmailTriggerWhitelist();
+                    }
+                });
+        }
+
+        function renderEmailTriggerWhitelist() {
+            const container = document.getElementById('tab-content');
+            const enabled = emailTriggerSettings.enabled;
+            
+            let html = '<div class="prompt-tabs" style="display: flex; gap: 8px; margin-bottom: 16px;">';
+            html += '<button class="prompt-tab active email-trigger-tab" data-email-trigger-tab="whitelist" onclick="switchEmailTriggerTab(\'whitelist\')">白名单管理 (' + emailTriggerWhitelist.length + ')</button>';
+            html += '<button class="prompt-tab email-trigger-tab" data-email-trigger-tab="settings" onclick="switchEmailTriggerTab(\'settings\')">系统设置</button>';
+            html += '<button class="prompt-tab email-trigger-tab" data-email-trigger-tab="logs" onclick="switchEmailTriggerTab(\'logs\')">执行日志</button>';
+            html += '</div>';
+            
+            if (!enabled) {
+                html += '<div style="background: #FEF3C7; border: 1px solid #FCD34D; border-radius: 8px; padding: 16px; margin-bottom: 20px;">';
+                html += '<strong style="color: #92400E;">⚠️ 邮件触发服务未启用</strong>';
+                html += '<p style="color: #92400E; margin: 8px 0 0 0; font-size: 14px;">请在"系统设置"中启用服务后使用</p>';
+                html += '</div>';
+            }
+            
+            html += '<div class="card" style="margin-bottom: 20px;">';
+            html += '<div class="card-header"><span class="card-title">添加白名单</span></div>';
+            html += '<div style="padding: 20px;">';
+            html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">';
+            html += '<div><label style="display: block; font-size: 13px; color: #666; margin-bottom: 6px;">邮箱地址 *</label>';
+            html += '<input type="email" id="et-email" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" placeholder="user@example.com"></div>';
+            html += '<div><label style="display: block; font-size: 13px; color: #666; margin-bottom: 6px;">关联用户名 *</label>';
+            html += '<input type="text" id="et-username" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" placeholder="用户名"></div>';
+            html += '</div>';
+            html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">';
+            html += '<div><label style="display: block; font-size: 13px; color: #666; margin-bottom: 6px;">每日命令上限</label>';
+            html += '<input type="number" id="et-max-daily" value="20" min="1" max="100" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;"></div>';
+            html += '<div><label style="display: block; font-size: 13px; color: #666; margin-bottom: 6px;">备注</label>';
+            html += '<input type="text" id="et-notes" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" placeholder="备注信息"></div>';
+            html += '</div>';
+            html += '<button class="btn btn-primary" onclick="addToEmailTriggerWhitelist()">添加到白名单</button>';
+            html += '</div></div>';
+            
+            html += '<div class="card">';
+            html += '<div class="card-header"><span class="card-title">白名单列表</span></div>';
+            
+            if (emailTriggerWhitelist.length === 0) {
+                html += '<div class="empty-state">暂无白名单数据</div></div>';
+            } else {
+                html += '<table class="user-table"><thead><tr>';
+                html += '<th>邮箱</th><th>用户名</th><th>状态</th><th>今日使用</th><th>每日上限</th><th>创建时间</th><th>操作</th>';
+                html += '</tr></thead><tbody>';
+                
+                emailTriggerWhitelist.forEach(item => {
+                    const statusClass = item.enabled ? 'status-active' : 'status-disabled';
+                    const statusText = item.enabled ? '启用' : '禁用';
+                    const today = new Date().toISOString().split('T')[0];
+                    const dailyCount = item.last_reset === today ? (item.daily_count || 0) : 0;
+                    
+                    html += '<tr>';
+                    html += '<td>' + escapeHtml(item.email) + '</td>';
+                    html += '<td>' + escapeHtml(item.username) + '</td>';
+                    html += '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>';
+                    html += '<td>' + dailyCount + '</td>';
+                    html += '<td>' + (item.max_daily_commands || 20) + '</td>';
+                    html += '<td>' + (item.created_at || '-') + '</td>';
+                    html += '<td>';
+                    html += '<button class="btn btn-sm ' + (item.enabled ? 'btn-warning' : 'btn-primary') + '" onclick="toggleEmailTriggerWhitelist(\'' + escapeHtml(item.email) + '\', ' + !item.enabled + ')">' + (item.enabled ? '禁用' : '启用') + '</button> ';
+                    html += '<button class="btn btn-sm btn-danger" onclick="removeFromEmailTriggerWhitelist(\'' + escapeHtml(item.email) + '\')">删除</button>';
+                    html += '</td></tr>';
+                });
+                
+                html += '</tbody></table></div>';
+            }
+            
+            container.innerHTML = html;
+        }
+
+        function addToEmailTriggerWhitelist() {
+            const email = document.getElementById('et-email').value.trim();
+            const username = document.getElementById('et-username').value.trim();
+            const maxDaily = parseInt(document.getElementById('et-max-daily').value) || 20;
+            const notes = document.getElementById('et-notes').value.trim();
+            
+            if (!email || !username) {
+                alert('请填写邮箱和用户名');
+                return;
+            }
+            
+            fetch('/api/email-trigger/whitelist/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, username, max_daily_commands: maxDaily, notes })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('添加成功');
+                    loadEmailTriggerWhitelist();
+                } else {
+                    alert(data.message || '添加失败');
+                }
+            });
+        }
+
+        function toggleEmailTriggerWhitelist(email, enabled) {
+            fetch('/api/email-trigger/whitelist/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, enabled })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    loadEmailTriggerWhitelist();
+                } else {
+                    alert(data.message || '操作失败');
+                }
+            });
+        }
+
+        function removeFromEmailTriggerWhitelist(email) {
+            if (!confirm('确定要删除该白名单项吗？')) return;
+            
+            fetch('/api/email-trigger/whitelist/remove', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('已删除');
+                    loadEmailTriggerWhitelist();
+                } else {
+                    alert(data.message || '删除失败');
+                }
+            });
+        }
+
+        function loadEmailTriggerSettingsTab() {
+            fetch('/api/email-trigger/settings')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        emailTriggerSettings = data.settings;
+                        renderEmailTriggerSettings();
+                    }
+                });
+        }
+
+        function renderEmailTriggerSettings() {
+            const container = document.getElementById('tab-content');
+            const settings = emailTriggerSettings;
+            
+            let html = '<div class="prompt-tabs" style="display: flex; gap: 8px; margin-bottom: 16px;">';
+            html += '<button class="prompt-tab email-trigger-tab" data-email-trigger-tab="whitelist" onclick="switchEmailTriggerTab(\'whitelist\')">白名单管理</button>';
+            html += '<button class="prompt-tab active email-trigger-tab" data-email-trigger-tab="settings" onclick="switchEmailTriggerTab(\'settings\')">系统设置</button>';
+            html += '<button class="prompt-tab email-trigger-tab" data-email-trigger-tab="logs" onclick="switchEmailTriggerTab(\'logs\')">执行日志</button>';
+            html += '</div>';
+            
+            html += '<div class="card">';
+            html += '<div class="card-header"><span class="card-title">邮件触发服务设置</span></div>';
+            html += '<div style="padding: 20px;">';
+            
+            html += '<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding: 16px; background: ' + (settings.enabled ? '#DCFCE7' : '#FEE2E2') + '; border-radius: 8px;">';
+            html += '<input type="checkbox" id="et-enabled" ' + (settings.enabled ? 'checked' : '') + '>';
+            html += '<label for="et-enabled" style="font-weight: 500; color: ' + (settings.enabled ? '#166534' : '#991B1B') + ';">';
+            html += settings.enabled ? '✅ 服务已启用' : '❌ 服务未启用';
+            html += '</label>';
+            html += '</div>';
+            
+            html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">';
+            html += '<div><label style="display: block; font-size: 13px; color: #666; margin-bottom: 6px;">邮件检查间隔（秒）</label>';
+            html += '<input type="number" id="et-interval" value="' + (settings.check_interval_seconds || 60) + '" min="30" max="600" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;"></div>';
+            html += '<div><label style="display: block; font-size: 13px; color: #666; margin-bottom: 6px;">全局每日命令上限</label>';
+            html += '<input type="number" id="et-max-commands" value="' + (settings.max_commands_per_day || 50) + '" min="1" max="500" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;"></div>';
+            html += '</div>';
+            
+            html += '<div style="margin-bottom: 16px;">';
+            html += '<label style="display: block; font-size: 13px; color: #666; margin-bottom: 6px;">邮件主题前缀（必须包含此前缀才触发）</label>';
+            html += '<input type="text" id="et-prefix" value="' + escapeHtml(settings.require_subject_prefix || '[CLI]') + '" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" placeholder="[CLI]">';
+            html += '</div>';
+            
+            html += '<div style="margin-bottom: 16px;">';
+            html += '<label style="display: block; font-size: 13px; color: #666; margin-bottom: 6px;">允许的命令（逗号分隔）</label>';
+            html += '<input type="text" id="et-commands" value="' + escapeHtml((settings.allowed_commands || []).join(', ')) + '" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" placeholder="flow, patent, ai, status, help">';
+            html += '</div>';
+            
+            html += '<div style="background: #F3F4F6; border-radius: 8px; padding: 16px; margin-bottom: 16px;">';
+            html += '<h4 style="margin: 0 0 12px 0; color: #374151;">📧 使用说明</h4>';
+            html += '<ol style="margin: 0; padding-left: 20px; color: #6B7280; font-size: 14px;">';
+            html += '<li style="margin-bottom: 8px;">添加用户邮箱到白名单</li>';
+            html += '<li style="margin-bottom: 8px;">用户发送邮件至系统邮箱，主题需包含前缀（如 [CLI]）</li>';
+            html += '<li style="margin-bottom: 8px;">邮件正文写入CLI命令（如 <code style="background: white; padding: 2px 6px; border-radius: 4px;">flow launch</code>）</li>';
+            html += '<li style="margin-bottom: 8px;">系统自动执行命令并将结果回复到发送邮箱</li>';
+            html += '</ol>';
+            html += '</div>';
+            
+            html += '<button class="btn btn-primary" onclick="saveEmailTriggerSettings()">保存设置</button>';
+            html += '</div></div>';
+            
+            container.innerHTML = html;
+        }
+
+        function saveEmailTriggerSettings() {
+            const enabled = document.getElementById('et-enabled').checked;
+            const interval = parseInt(document.getElementById('et-interval').value) || 60;
+            const maxCommands = parseInt(document.getElementById('et-max-commands').value) || 50;
+            const prefix = document.getElementById('et-prefix').value.trim() || '[CLI]';
+            const commandsStr = document.getElementById('et-commands').value.trim();
+            const commands = commandsStr.split(',').map(c => c.trim()).filter(c => c);
+            
+            fetch('/api/email-trigger/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    enabled,
+                    check_interval_seconds: interval,
+                    max_commands_per_day: maxCommands,
+                    require_subject_prefix: prefix,
+                    allowed_commands: commands
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('设置已保存');
+                    loadEmailTriggerSettingsTab();
+                } else {
+                    alert(data.message || '保存失败');
+                }
+            });
+        }
+
+        function loadEmailTriggerLogsTab() {
+            fetch('/api/email-trigger/logs?limit=50')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        emailTriggerLogs = data.logs;
+                        renderEmailTriggerLogs();
+                    }
+                });
+        }
+
+        function renderEmailTriggerLogs() {
+            const container = document.getElementById('tab-content');
+            
+            let html = '<div class="prompt-tabs" style="display: flex; gap: 8px; margin-bottom: 16px;">';
+            html += '<button class="prompt-tab email-trigger-tab" data-email-trigger-tab="whitelist" onclick="switchEmailTriggerTab(\'whitelist\')">白名单管理</button>';
+            html += '<button class="prompt-tab email-trigger-tab" data-email-trigger-tab="settings" onclick="switchEmailTriggerTab(\'settings\')">系统设置</button>';
+            html += '<button class="prompt-tab active email-trigger-tab" data-email-trigger-tab="logs" onclick="switchEmailTriggerTab(\'logs\')">执行日志</button>';
+            html += '</div>';
+            
+            html += '<div class="card">';
+            html += '<div class="card-header"><span class="card-title">最近执行日志</span></div>';
+            
+            if (emailTriggerLogs.length === 0) {
+                html += '<div class="empty-state">暂无执行日志</div></div>';
+            } else {
+                html += '<table class="user-table"><thead><tr>';
+                html += '<th>时间</th><th>发送者</th><th>用户名</th><th>命令</th><th>状态</th><th>结果</th>';
+                html += '</tr></thead><tbody>';
+                
+                emailTriggerLogs.forEach(log => {
+                    const statusClass = log.success ? 'status-active' : 'status-disabled';
+                    const statusText = log.success ? '成功' : '失败';
+                    
+                    html += '<tr>';
+                    html += '<td>' + (log.timestamp || '-') + '</td>';
+                    html += '<td>' + escapeHtml(log.sender || '-') + '</td>';
+                    html += '<td>' + escapeHtml(log.username || '-') + '</td>';
+                    html += '<td><code style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 12px;">' + escapeHtml(log.command || '-') + '</code></td>';
+                    html += '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>';
+                    html += '<td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="' + escapeHtml(log.result || '') + '">' + escapeHtml((log.result || '-').substring(0, 50)) + '</td>';
+                    html += '</tr>';
+                });
+                
+                html += '</tbody></table></div>';
+            }
+            
+            container.innerHTML = html;
         }
     </script>
 </body>

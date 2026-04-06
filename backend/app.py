@@ -7,6 +7,7 @@ application factory pattern.
 
 import sys
 import os
+from datetime import datetime
 
 # Add parent directory to path so Python can find the backend module
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -17,6 +18,61 @@ from backend.extensions import init_extensions
 from backend.routes import register_blueprints
 from backend.services.auth_service import AuthService
 from backend.services.prompt_forum_service import PromptForumService
+from backend.services.email_trigger_service import (
+    email_trigger_scheduler, 
+    EmailTriggerWhitelist,
+    ParsedCommand
+)
+from backend.services.cli_orchestrator import CLIOrchestrator
+
+
+cli_orchestrator = CLIOrchestrator()
+
+
+def execute_email_command(parsed: ParsedCommand, user_info: dict) -> tuple:
+    """
+    Execute CLI command from email trigger.
+    
+    Args:
+        parsed: Parsed command object
+        user_info: User information from whitelist
+    
+    Returns:
+        tuple: (result_string, success_bool)
+    """
+    try:
+        username = user_info.get('username', 'email_trigger')
+        session_key = f"email_{username}_{int(datetime.now().timestamp())}"
+        
+        command_str = parsed.command
+        if parsed.args:
+            command_str += ' ' + ' '.join(parsed.args)
+        
+        result_generator = cli_orchestrator.execute(
+            user_input=command_str,
+            session_key=session_key,
+            user_id=username
+        )
+        
+        result_parts = []
+        for chunk in result_generator:
+            if isinstance(chunk, dict):
+                if 'content' in chunk:
+                    result_parts.append(chunk['content'])
+                elif 'result' in chunk:
+                    result_parts.append(str(chunk['result']))
+            elif isinstance(chunk, str):
+                result_parts.append(chunk)
+        
+        result = ''.join(result_parts)
+        
+        if not result:
+            result = f"命令 {parsed.command} 执行完成，无输出"
+        
+        return result, True
+        
+    except Exception as e:
+        return f"执行失败: {str(e)}", False
 
 
 def create_app(config_class=Config):
@@ -65,6 +121,13 @@ def create_app(config_class=Config):
     # Initialize prompt forum tables
     PromptForumService.init_tables()
     print("✓ Forum tables initialized")
+    
+    # Initialize email trigger service if enabled
+    settings = EmailTriggerWhitelist.get_settings()
+    if settings.get('enabled', False):
+        email_trigger_scheduler.set_executor(execute_email_command)
+        email_trigger_scheduler.start()
+        print("✓ Email trigger service started")
     
     print("\n" + "="*50)
     print("🚀 Application created successfully!")
