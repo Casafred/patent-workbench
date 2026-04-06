@@ -10,7 +10,7 @@ from backend.routes.wecom import get_user_wecom_settings
 
 
 def notify_user(username: str, title: str, description: str, 
-                url: str = "") -> bool:
+                url: str = "", notify_type: str = None) -> bool:
     """
     向用户发送通知
     
@@ -19,6 +19,7 @@ def notify_user(username: str, title: str, description: str,
         title: 通知标题
         description: 通知描述
         url: 跳转链接（可选）
+        notify_type: 通知类型 (batch/ocr/system)
     
     Returns:
         bool: 是否发送成功
@@ -27,6 +28,11 @@ def notify_user(username: str, title: str, description: str,
     
     if not settings.get('wecom_userid') or not settings.get('wecom_enabled'):
         return False
+    
+    if notify_type:
+        notify_key = f'notify_{notify_type}'
+        if not settings.get(notify_key, True):
+            return False
     
     result = wecom_service.send_textcard(
         user_id=settings['wecom_userid'],
@@ -39,7 +45,8 @@ def notify_user(username: str, title: str, description: str,
     return result.get('success', False)
 
 
-def notify_current_user(title: str, description: str, url: str = "") -> bool:
+def notify_current_user(title: str, description: str, url: str = "", 
+                        notify_type: str = None) -> bool:
     """
     向当前登录用户发送通知
     
@@ -47,6 +54,7 @@ def notify_current_user(title: str, description: str, url: str = "") -> bool:
         title: 通知标题
         description: 通知描述
         url: 跳转链接（可选）
+        notify_type: 通知类型 (batch/ocr/system)
     
     Returns:
         bool: 是否发送成功
@@ -55,7 +63,7 @@ def notify_current_user(title: str, description: str, url: str = "") -> bool:
     if not username:
         return False
     
-    return notify_user(username, title, description, url)
+    return notify_user(username, title, description, url, notify_type)
 
 
 def notify_batch_complete(username: str, task_type: str, 
@@ -78,6 +86,9 @@ def notify_batch_complete(username: str, task_type: str,
     settings = get_user_wecom_settings(username)
     
     if not settings.get('wecom_userid') or not settings.get('wecom_enabled'):
+        return False
+    
+    if not settings.get('notify_batch', True):
         return False
     
     result = wecom_service.send_batch_complete_notification(
@@ -111,6 +122,9 @@ def notify_ocr_complete(username: str, file_name: str, page_count: int,
     if not settings.get('wecom_userid') or not settings.get('wecom_enabled'):
         return False
     
+    if not settings.get('notify_ocr', True):
+        return False
+    
     result = wecom_service.send_textcard(
         user_id=settings['wecom_userid'],
         title="✅ OCR解析完成",
@@ -138,6 +152,9 @@ def notify_patent_analysis_complete(username: str, patent_count: int,
     settings = get_user_wecom_settings(username)
     
     if not settings.get('wecom_userid') or not settings.get('wecom_enabled'):
+        return False
+    
+    if not settings.get('notify_batch', True):
         return False
     
     result = wecom_service.send_textcard(
@@ -174,6 +191,39 @@ def notify_error(username: str, task_name: str, error_message: str) -> bool:
         description=f'<div class="highlight">{task_name}</div>\n错误：{error_message}',
         url="",
         btn_text="知道了"
+    )
+    
+    return result.get('success', False)
+
+
+def notify_system_announcement(username: str, title: str, content: str,
+                               url: str = "") -> bool:
+    """
+    发送系统公告通知
+    
+    Args:
+        username: 用户名
+        title: 公告标题
+        content: 公告内容
+        url: 跳转链接（可选）
+    
+    Returns:
+        bool: 是否发送成功
+    """
+    settings = get_user_wecom_settings(username)
+    
+    if not settings.get('wecom_userid') or not settings.get('wecom_enabled'):
+        return False
+    
+    if not settings.get('notify_system', True):
+        return False
+    
+    result = wecom_service.send_textcard(
+        user_id=settings['wecom_userid'],
+        title=f"📢 {title}",
+        description=content,
+        url=url,
+        btn_text="查看详情" if url else "知道了"
     )
     
     return result.get('success', False)
