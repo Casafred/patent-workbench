@@ -1189,6 +1189,155 @@
     color: var(--cli-shell-text);
 }
 
+.cli-block--guide {
+    background: linear-gradient(135deg, rgba(234, 112, 72, 0.08) 0%, rgba(255, 157, 108, 0.05) 100%);
+    border-color: rgba(234, 112, 72, 0.2);
+}
+
+.cli-guide {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.cli-guide__header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.cli-guide__icon {
+    color: var(--cli-block-title);
+}
+
+.cli-guide__title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--cli-block-title);
+}
+
+.cli-guide__desc {
+    font-size: 13px;
+    color: var(--cli-block-text);
+    line-height: 1.6;
+}
+
+.cli-guide__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.cli-guide__label {
+    font-size: 12px;
+    color: var(--cli-shell-muted);
+    font-weight: 500;
+}
+
+.cli-guide__input {
+    height: 38px;
+    border: 1px solid var(--cli-select-border);
+    border-radius: 10px;
+    background: var(--cli-select-bg);
+    color: var(--cli-shell-text);
+    padding: 0 12px;
+    font: inherit;
+    font-size: 13px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cli-guide__input:hover {
+    border-color: var(--cli-select-hover-border);
+}
+
+.cli-guide__input:focus {
+    outline: none;
+    border-color: rgba(234, 112, 72, 0.8);
+    box-shadow: 0 0 0 3px rgba(234, 112, 72, 0.3);
+}
+
+.cli-guide__input::placeholder {
+    color: var(--cli-placeholder-color);
+}
+
+.cli-guide__file-hint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: rgba(59, 130, 246, 0.08);
+    border-radius: 8px;
+    color: var(--cli-shell-muted);
+    font-size: 12px;
+}
+
+.cli-guide__file-hint svg {
+    color: #3b82f6;
+    flex-shrink: 0;
+}
+
+.cli-guide__example {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 12px;
+    background: var(--cli-code-bg);
+    border-radius: 8px;
+    font-size: 12px;
+}
+
+.cli-guide__example-label {
+    color: var(--cli-shell-muted);
+    flex-shrink: 0;
+}
+
+.cli-guide__example-code {
+    color: var(--cli-block-title);
+    font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+    word-break: break-all;
+}
+
+.cli-guide__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.cli-guide__btn {
+    height: 36px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #ea7048 0%, #c74635 100%);
+    color: #fff;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.cli-guide__btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(234, 112, 72, 0.3);
+}
+
+.cli-guide__btn:active {
+    transform: translateY(0);
+}
+
+.cli-guide__btn--ghost {
+    border: 1px solid var(--cli-select-border);
+    background: transparent;
+    color: var(--cli-shell-text);
+}
+
+.cli-guide__btn--ghost:hover {
+    background: rgba(234, 112, 72, 0.08);
+    box-shadow: none;
+}
+
 @keyframes cliPulse {
     0%, 100% { opacity: 0.25; transform: translateY(0); }
     50% { opacity: 1; transform: translateY(-2px); }
@@ -2491,12 +2640,233 @@
 
             this.suggestions.querySelectorAll('[data-suggestion]').forEach((node) => {
                 node.addEventListener('click', () => {
-                    this.input.value = node.getAttribute('data-suggestion') || '';
+                    const suggestion = node.getAttribute('data-suggestion') || '';
+                    this.input.value = suggestion;
                     this.input.focus();
                     this.renderSuggestions([]);
-                    this.executeCommand();
+                    this.showSuggestionGuide(suggestion);
                 });
             });
+        }
+
+        showSuggestionGuide(suggestion) {
+            const guideConfig = this.getGuideConfig(suggestion);
+            if (!guideConfig) {
+                return;
+            }
+            if (guideConfig.autoExecute) {
+                this.executeCommand();
+                return;
+            }
+            this.printGuideBlock(guideConfig);
+        }
+
+        getGuideConfig(suggestion) {
+            const lowerSuggestion = (suggestion || '').toLowerCase();
+            
+            if (lowerSuggestion.includes('预测ipc') || lowerSuggestion.includes('ipc分类')) {
+                return {
+                    title: '预测IPC分类',
+                    description: '请输入您需要预测IPC分类的技术内容，系统将为您分析并预测合适的IPC分类号。',
+                    placeholder: '例如：一种基于深度学习的图像识别方法',
+                    inputHint: '请输入技术内容描述：',
+                    example: '预测IPC分类 一种基于深度学习的图像识别方法',
+                    requiresInput: true
+                };
+            }
+            
+            if (lowerSuggestion.includes('对比分析') || lowerSuggestion.includes('与') && lowerSuggestion.includes('专利')) {
+                return {
+                    title: '专利对比分析',
+                    description: '请输入两个需要对比分析的专利号，系统将为您分析两件专利的差异和关联。',
+                    placeholder: 'CN104154208B US12390907B2',
+                    inputHint: '请输入专利号A和专利号B（用空格分隔）：',
+                    example: '查询 CN104154208B 与 US12390907B2 对比分析',
+                    requiresInput: true,
+                    multiParam: true,
+                    paramLabels: ['专利号A', '专利号B']
+                };
+            }
+            
+            if (lowerSuggestion.includes('专利详情') || lowerSuggestion.includes('查询') && /[A-Z]{2}\d+/i.test(suggestion)) {
+                return {
+                    title: '查询专利详情',
+                    description: '请输入或修改需要查询的专利号，系统将为您获取专利的详细信息。',
+                    placeholder: 'CN104154208B',
+                    inputHint: '请输入专利号：',
+                    example: '查询 CN104154208B 专利详情',
+                    requiresInput: true,
+                    patentNumber: suggestion.match(/[A-Z]{2}\d+[A-Z]?/i)?.[0] || ''
+                };
+            }
+            
+            if (lowerSuggestion.includes('处理 excel') || lowerSuggestion.includes('excel')) {
+                return {
+                    title: '处理Excel文件',
+                    description: '请先上传Excel文件，然后输入处理指令。支持权利要求分析、数据提取等操作。',
+                    placeholder: '处理 Excel',
+                    inputHint: '请先上传Excel文件，然后输入处理需求：',
+                    example: '处理 Excel',
+                    requiresInput: true,
+                    requiresFile: true
+                };
+            }
+            
+            if (lowerSuggestion.includes('创新点') || lowerSuggestion.includes('保护范围')) {
+                return {
+                    title: '专利分析',
+                    description: '请先查询专利详情，然后可以基于查询结果分析创新点和保护范围。',
+                    placeholder: '基于刚才专利结果分析创新点',
+                    inputHint: '请确保已查询专利，然后输入分析需求：',
+                    example: '基于刚才专利结果分析创新点',
+                    requiresInput: false
+                };
+            }
+            
+            if (lowerSuggestion === 'flow list' || lowerSuggestion.includes('flow')) {
+                return {
+                    autoExecute: true
+                };
+            }
+            
+            return {
+                title: '快捷指令',
+                description: '您可以直接修改输入框中的内容，然后按回车或点击发送按钮执行。',
+                requiresInput: false
+            };
+        }
+
+        printGuideBlock(config) {
+            document.getElementById('cli-guide-block')?.remove();
+            
+            const block = document.createElement('div');
+            block.id = 'cli-guide-block';
+            block.className = 'cli-block cli-block--guide';
+            
+            let paramInputsHtml = '';
+            if (config.multiParam && config.paramLabels) {
+                paramInputsHtml = config.paramLabels.map((label, index) => `
+                    <div class="cli-guide__field">
+                        <label class="cli-guide__label">${this.escapeHtml(label)}:</label>
+                        <input type="text" class="cli-guide__input" data-param-index="${index}" placeholder="${index === 0 ? 'CN104154208B' : 'US12390907B2'}" />
+                    </div>
+                `).join('');
+            } else if (config.requiresInput) {
+                const inputValue = config.patentNumber || '';
+                const placeholder = config.placeholder || '';
+                paramInputsHtml = `
+                    <div class="cli-guide__field">
+                        <label class="cli-guide__label">${this.escapeHtml(config.inputHint || '请输入：')}</label>
+                        <input type="text" class="cli-guide__input" data-single-param value="${this.escapeHtml(inputValue)}" placeholder="${this.escapeHtml(placeholder)}" />
+                    </div>
+                `;
+            }
+            
+            const fileHint = config.requiresFile ? `
+                <div class="cli-guide__file-hint">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" 
+                              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>请先点击左侧附件按钮上传Excel文件</span>
+                </div>
+            ` : '';
+            
+            block.innerHTML = `
+                <div class="cli-guide">
+                    <div class="cli-guide__header">
+                        <div class="cli-guide__icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                                <path d="M12 16v-4M12 8h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <div class="cli-guide__title">${this.escapeHtml(config.title || '快捷指令')}</div>
+                    </div>
+                    <div class="cli-guide__desc">${this.escapeHtml(config.description || '')}</div>
+                    ${fileHint}
+                    ${paramInputsHtml}
+                    <div class="cli-guide__example">
+                        <span class="cli-guide__example-label">示例：</span>
+                        <code class="cli-guide__example-code">${this.escapeHtml(config.example || '')}</code>
+                    </div>
+                    <div class="cli-guide__actions">
+                        <button type="button" class="cli-guide__btn cli-guide__btn--ghost" data-guide-action="cancel">取消</button>
+                        <button type="button" class="cli-guide__btn" data-guide-action="apply">确认执行</button>
+                    </div>
+                </div>
+            `;
+            
+            this.output.appendChild(block);
+            this.scrollToBottom();
+            
+            block.querySelector('[data-guide-action="cancel"]')?.addEventListener('click', () => {
+                block.remove();
+                this.input.value = '';
+            });
+            
+            block.querySelector('[data-guide-action="apply"]')?.addEventListener('click', () => {
+                this.applyGuideInput(block, config);
+            });
+            
+            block.querySelectorAll('.cli-guide__input').forEach((input) => {
+                input.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        this.applyGuideInput(block, config);
+                    }
+                });
+            });
+            
+            const firstInput = block.querySelector('.cli-guide__input');
+            if (firstInput) {
+                firstInput.focus();
+            }
+        }
+
+        applyGuideInput(block, config) {
+            let finalCommand = '';
+            
+            if (config.multiParam && config.paramLabels) {
+                const inputs = block.querySelectorAll('.cli-guide__input');
+                const values = Array.from(inputs).map((input) => (input.value || '').trim()).filter(Boolean);
+                
+                if (values.length < 2) {
+                    this.printError('请填写所有必填参数');
+                    return;
+                }
+                
+                finalCommand = `查询 ${values[0]} 与 ${values[1]} 对比分析`;
+            } else if (config.patentNumber) {
+                const patentInput = block.querySelector('.cli-guide__input');
+                const patentNumber = (patentInput?.value || config.patentNumber).trim();
+                if (!patentNumber) {
+                    this.printError('请输入专利号');
+                    return;
+                }
+                finalCommand = `查询 ${patentNumber} 专利详情`;
+            } else if (config.requiresInput) {
+                const singleInput = block.querySelector('[data-single-param]');
+                const userInput = (singleInput?.value || '').trim();
+                if (!userInput) {
+                    this.printError('请输入必要的内容');
+                    return;
+                }
+                if (config.title === '预测IPC分类') {
+                    finalCommand = `预测IPC分类 ${userInput}`;
+                } else {
+                    finalCommand = userInput;
+                }
+            } else {
+                finalCommand = this.input.value || config.example || '';
+            }
+            
+            block.remove();
+            
+            if (finalCommand) {
+                this.input.value = finalCommand;
+                this.executeCommand();
+            }
         }
 
         pushHistory(value) {
