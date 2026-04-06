@@ -39,16 +39,29 @@ def get_user_wecom_settings(username: str) -> dict:
             return {
                 'wecom_userid': metadata.get('wecom_userid'),
                 'wecom_enabled': metadata.get('wecom_enabled', False),
-                'wecom_bound_at': metadata.get('wecom_bound_at')
+                'wecom_bound_at': metadata.get('wecom_bound_at'),
+                'notify_batch': metadata.get('notify_batch', True),
+                'notify_ocr': metadata.get('notify_ocr', True),
+                'notify_system': metadata.get('notify_system', True)
             }
     except Exception as e:
         print(f"获取用户企业微信设置失败: {e}")
     
-    return {'wecom_userid': None, 'wecom_enabled': False, 'wecom_bound_at': None}
+    return {
+        'wecom_userid': None, 
+        'wecom_enabled': False, 
+        'wecom_bound_at': None,
+        'notify_batch': True,
+        'notify_ocr': True,
+        'notify_system': True
+    }
 
 
 def save_user_wecom_settings(username: str, wecom_userid: str = None, 
-                              wecom_enabled: bool = None) -> bool:
+                              wecom_enabled: bool = None,
+                              notify_batch: bool = None,
+                              notify_ocr: bool = None,
+                              notify_system: bool = None) -> bool:
     """
     保存用户的企业微信设置
     
@@ -56,6 +69,9 @@ def save_user_wecom_settings(username: str, wecom_userid: str = None,
         username: 用户名
         wecom_userid: 企业微信用户ID
         wecom_enabled: 是否启用推送
+        notify_batch: 是否接收批量任务通知
+        notify_ocr: 是否接收OCR通知
+        notify_system: 是否接收系统公告通知
     
     Returns:
         bool: 是否成功
@@ -77,6 +93,15 @@ def save_user_wecom_settings(username: str, wecom_userid: str = None,
             
             if wecom_enabled is not None:
                 data['metadata'][username]['wecom_enabled'] = wecom_enabled
+            
+            if notify_batch is not None:
+                data['metadata'][username]['notify_batch'] = notify_batch
+            
+            if notify_ocr is not None:
+                data['metadata'][username]['notify_ocr'] = notify_ocr
+            
+            if notify_system is not None:
+                data['metadata'][username]['notify_system'] = notify_system
             
             with open(USERS_FILE, 'w', encoding='utf-8') as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
@@ -359,7 +384,10 @@ def update_wecom_settings():
     
     请求体:
         {
-            "enabled": true/false
+            "enabled": true/false,
+            "notify_batch": true/false,
+            "notify_ocr": true/false,
+            "notify_system": true/false
         }
     
     Returns:
@@ -374,12 +402,9 @@ def update_wecom_settings():
     
     data = request.get_json() or {}
     enabled = data.get('enabled')
-    
-    if enabled is None:
-        return jsonify({
-            'success': False,
-            'error': '缺少参数'
-        }), 400
+    notify_batch = data.get('notify_batch')
+    notify_ocr = data.get('notify_ocr')
+    notify_system = data.get('notify_system')
     
     settings = get_user_wecom_settings(username)
     
@@ -389,7 +414,13 @@ def update_wecom_settings():
             'error': '请先绑定企业微信'
         }), 400
     
-    if save_user_wecom_settings(username, wecom_enabled=enabled):
+    if save_user_wecom_settings(
+        username, 
+        wecom_enabled=enabled,
+        notify_batch=notify_batch,
+        notify_ocr=notify_ocr,
+        notify_system=notify_system
+    ):
         return jsonify({
             'success': True,
             'message': '设置已更新'

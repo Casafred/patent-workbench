@@ -295,43 +295,61 @@ class EmailReceiver:
         self.email_password = EMAIL_PASSWORD
     
     def connect(self) -> Optional[imaplib.IMAP4_SSL]:
+        print(f"[EmailTrigger] 尝试连接IMAP服务器: {self.imap_server}:{self.imap_port}")
+        print(f"[EmailTrigger] 邮箱账号: {self.email_account}")
+        print(f"[EmailTrigger] 密码已配置: {'是' if self.email_password else '否'}")
+        
         if not self.email_account or not self.email_password:
-            print("邮件接收服务未配置")
+            print("[EmailTrigger] 邮件接收服务未配置")
             return None
         
         try:
             mail = imaplib.IMAP4_SSL(self.imap_server, self.imap_port)
             mail.login(self.email_account, self.email_password)
+            print("[EmailTrigger] IMAP连接成功")
             return mail
         except Exception as e:
-            print(f"IMAP连接失败: {e}")
+            print(f"[EmailTrigger] IMAP连接失败: {e}")
+            import traceback
+            traceback.print_exc()
             return None
     
     def fetch_unread_emails(self, folder: str = 'INBOX') -> List[Dict[str, Any]]:
         mail = self.connect()
         if not mail:
+            print("[EmailTrigger] 无法连接到IMAP服务器")
             return []
         
         try:
+            print(f"[EmailTrigger] 选择文件夹: {folder}")
             mail.select(folder)
             typ, msg_ids = mail.search(None, 'UNSEEN')
+            print(f"[EmailTrigger] 搜索未读邮件，返回类型: {typ}, 消息ID: {msg_ids}")
             
             emails = []
-            for num in msg_ids[0].split():
+            id_list = msg_ids[0].split()
+            print(f"[EmailTrigger] 找到 {len(id_list)} 封未读邮件")
+            
+            for num in id_list:
                 if not num:
                     continue
+                print(f"[EmailTrigger] 获取邮件ID: {num}")
                 typ, msg_data = mail.fetch(num, '(RFC822)')
                 if msg_data and msg_data[0]:
                     msg = email.message_from_bytes(msg_data[0][1])
                     parsed = self._parse_email(msg)
                     if parsed:
                         emails.append(parsed)
+                        print(f"[EmailTrigger] 解析邮件成功: {parsed.get('subject', 'No Subject')}")
             
             mail.close()
             mail.logout()
+            print(f"[EmailTrigger] 成功获取 {len(emails)} 封邮件")
             return emails
         except Exception as e:
-            print(f"获取邮件失败: {e}")
+            print(f"[EmailTrigger] 获取邮件失败: {e}")
+            import traceback
+            traceback.print_exc()
             return []
     
     def _parse_email(self, msg: email.message.Message) -> Optional[Dict[str, Any]]:
@@ -586,43 +604,58 @@ class EmailTriggerScheduler:
         print("邮件触发调度器已停止")
     
     def _run_scheduler(self):
+        print(f"[EmailTrigger] 调度器开始运行，检查间隔: {self.check_interval}秒")
         while self.running:
             try:
+                print(f"[EmailTrigger] 开始检查邮件... {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
                 self._process_emails()
             except Exception as e:
-                print(f"处理邮件时出错: {e}")
+                print(f"[EmailTrigger] 处理邮件时出错: {e}")
+                import traceback
+                traceback.print_exc()
             
             time.sleep(self.check_interval)
     
     def _process_emails(self):
         settings = EmailTriggerWhitelist.get_settings()
         if not settings.get('enabled', False):
+            print("[EmailTrigger] 服务未启用，跳过检查")
             return
         
         require_prefix = settings.get('require_subject_prefix', '[CLI]')
+        print(f"[EmailTrigger] 要求的主题前缀: {require_prefix}")
         
         emails = self.email_receiver.fetch_unread_emails()
+        print(f"[EmailTrigger] 获取到 {len(emails)} 封未读邮件")
         
         for email_data in emails:
             subject = email_data.get('subject', '')
             sender_email = email_data.get('sender_email', '')
             body = email_data.get('body', '')
             
+            print(f"[EmailTrigger] 处理邮件 - 发送者: {sender_email}, 主题: {subject}")
+            
             if require_prefix and require_prefix not in subject:
+                print(f"[EmailTrigger] 主题不包含前缀 '{require_prefix}'，跳过")
                 continue
             
             is_allowed, user_info = EmailTriggerWhitelist.is_email_allowed(sender_email)
+            print(f"[EmailTrigger] 白名单验证结果: {is_allowed}, 用户信息: {user_info}")
             
             if not is_allowed:
-                print(f"拒绝来自 {sender_email} 的邮件触发请求")
+                print(f"[EmailTrigger] 拒绝来自 {sender_email} 的邮件触发请求")
                 continue
             
             command_text = body.strip()
             if not command_text:
                 command_text = subject.replace(require_prefix, '').strip()
             
+            print(f"[EmailTrigger] 提取的命令: {command_text}")
+            
             allowed_commands = user_info.get('allowed_commands', settings.get('allowed_commands', []))
             parsed = CommandParser.parse(command_text, allowed_commands)
+            
+            print(f"[EmailTrigger] 命令解析结果: is_valid={parsed.is_valid}, error={parsed.error_message}")
             
             if not parsed.is_valid:
                 EmailSender.send_result_email(
@@ -640,11 +673,14 @@ class EmailTriggerScheduler:
                 ))
                 continue
             
+            print(f"[EmailTrigger] 开始执行命令...")
             result, success = self._execute_command(parsed, user_info)
+            print(f"[EmailTrigger] 命令执行完成, success={success}")
             
             EmailTriggerWhitelist.increment_daily_count(sender_email)
             
             EmailSender.send_result_email(sender_email, command_text, result, success)
+            print(f"[EmailTrigger] 结果邮件已发送至 {sender_email}")
             
             EmailTriggerLogger.add_log(EmailTriggerLog(
                 timestamp=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
