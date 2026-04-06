@@ -540,28 +540,85 @@
     background: #fff3cd;
 }
 
-/* 深度思考按钮 */
+/* 深度思考按钮 - 现代UI设计 */
 .thinking-btn {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 6px 10px;
-    background: #f0f0f0;
-    border: 1px solid #ddd;
-    border-radius: 5px;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1.5px solid #dee2e6;
+    border-radius: 10px;
     cursor: pointer;
-    transition: all 0.3s;
-    color: #666;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    color: #6b7280;
+    overflow: visible;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.thinking-btn::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6366f1 100%);
+    opacity: 0;
+    z-index: -1;
+    transition: opacity 0.3s ease;
+}
+
+.thinking-btn::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 14px;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.4) 0%, transparent 70%);
+    opacity: 0;
+    z-index: -2;
+    filter: blur(8px);
+    transition: opacity 0.3s ease;
 }
 
 .thinking-btn:hover {
-    background: #e0e0e0;
+    background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+    border-color: #8b5cf6;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+}
+
+.thinking-btn:hover::before {
+    opacity: 0.1;
+}
+
+.thinking-btn:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 2px 6px rgba(139, 92, 246, 0.2);
 }
 
 .thinking-btn.active {
     background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
     color: white;
     border-color: #7c3aed;
+    box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3);
+}
+
+.thinking-btn.active::before {
+    opacity: 1;
+}
+
+.thinking-btn.active::after {
+    opacity: 1;
+    animation: glowPulse 2s ease-in-out infinite;
+}
+
+.thinking-btn.active:hover {
+    background: linear-gradient(135deg, #9333ea 0%, #8b5cf6 100%);
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+}
+
+.thinking-btn.active:active {
+    transform: translateY(0) scale(0.98);
 }
 
 .thinking-btn.thinking-only {
@@ -569,11 +626,115 @@
     color: white;
     border-color: #d97706;
     cursor: default;
+    box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
+}
+
+.thinking-btn.thinking-only::before {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #fbbf24 100%);
+    opacity: 1;
+}
+
+.thinking-btn.thinking-only::after {
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.4) 0%, transparent 70%);
+    opacity: 1;
+    animation: glowPulse 2s ease-in-out infinite;
+}
+
+.thinking-btn.thinking-only:hover {
+    transform: none;
+    box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
 }
 
 .thinking-btn svg {
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
+    transition: all 0.3s ease;
+}
+
+.thinking-btn:hover svg {
+    transform: scale(1.05);
+}
+
+.thinking-btn.active svg {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.5));
+}
+
+.thinking-btn .brain-icon {
+    position: relative;
+}
+
+.thinking-btn .brain-glow {
+    transition: all 0.3s ease;
+}
+
+.thinking-btn.active .brain-glow {
+    opacity: 1;
+    animation: brainGlow 1.5s ease-in-out infinite;
+}
+
+.thinking-btn.active .brain-left,
+.thinking-btn.active .brain-detail {
+    stroke: white;
+    filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.6));
+}
+
+.thinking-btn.thinking-only .brain-glow {
+    opacity: 1;
+    animation: brainGlow 1.5s ease-in-out infinite;
+}
+
+.thinking-btn.thinking-only .brain-left,
+.thinking-btn.thinking-only .brain-detail {
+    stroke: white;
+    filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.6));
+}
+
+@keyframes glowPulse {
+    0%, 100% {
+        opacity: 0.6;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+}
+
+@keyframes brainGlow {
+    0%, 100% {
+        opacity: 0.4;
+        r: 2;
+    }
+    50% {
+        opacity: 0.8;
+        r: 3;
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -100% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.thinking-btn.active .brain-icon::after,
+.thinking-btn.thinking-only .brain-icon::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.3) 50%,
+        transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+    border-radius: 50%;
 }
 
 /* 深度思考内容容器 */
@@ -724,6 +885,74 @@
     .ask-patent-btn {
         font-size: 0.8em;
         padding: 5px 10px;
+    }
+    
+    .thinking-btn {
+        padding: 6px 10px;
+        border-radius: 8px;
+    }
+    
+    .thinking-btn svg {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .thinking-btn::before {
+        inset: -1.5px;
+        border-radius: 10px;
+    }
+    
+    .thinking-btn::after {
+        inset: -3px;
+        border-radius: 11px;
+    }
+}
+
+@media (max-width: 480px) {
+    .thinking-btn {
+        padding: 5px 8px;
+        border-radius: 6px;
+    }
+    
+    .thinking-btn svg {
+        width: 16px;
+        height: 16px;
+    }
+    
+    .thinking-btn::before {
+        inset: -1px;
+        border-radius: 8px;
+    }
+    
+    .thinking-btn::after {
+        inset: -2px;
+        border-radius: 9px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .thinking-btn,
+    .thinking-btn::before,
+    .thinking-btn::after,
+    .thinking-btn svg,
+    .thinking-btn .brain-glow {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+@media (hover: none) {
+    .thinking-btn:hover {
+        transform: none;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    
+    .thinking-btn:hover::before {
+        opacity: 0;
+    }
+    
+    .thinking-btn:hover svg {
+        transform: none;
     }
 }
 
