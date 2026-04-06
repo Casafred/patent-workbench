@@ -12,12 +12,17 @@
 import json
 import os
 import time
+import hashlib
+import xml.etree.ElementTree as ET
 from flask import Blueprint, request, jsonify, session
 from backend.services.wecom_service import wecom_service
 from backend.services.auth_service import AuthService
 from backend.config import BASE_DIR, USERS_FILE
 
 wecom_bp = Blueprint('wecom', __name__)
+
+WECOM_TOKEN = os.environ.get('WECOM_TOKEN', 'patent2024wecom')
+WECOM_ENCODING_AES_KEY = os.environ.get('WECOM_ENCODING_AES_KEY', '')
 
 
 def get_user_wecom_settings(username: str) -> dict:
@@ -576,6 +581,158 @@ def send_notification_to_user(username: str, title: str, description: str,
     )
     
     return result.get('success', False)
+
+
+@wecom_bp.route('/api/wecom/callback', methods=['GET', 'POST'])
+def wecom_callback():
+    """
+    企业微信回调接口
+    
+    GET: 验证URL有效性
+    POST: 接收企业微信消息
+    """
+    msg_signature = request.args.get('msg_signature', '')
+    timestamp = request.args.get('timestamp', '')
+    nonce = request.args.get('nonce', '')
+    
+    if request.method == 'GET':
+        echostr = request.args.get('echostr', '')
+        
+        if not all([msg_signature, timestamp, nonce, echostr]):
+            return 'Invalid parameters', 400
+        
+        try:
+            from backend.utils.wecom_crypto import WecomCrypto
+            
+            if not WECOM_ENCODING_AES_KEY:
+                return echostr
+            
+            crypto = WecomCrypto(WECOM_TOKEN, WECOM_ENCODING_AES_KEY, wecom_service.corp_id)
+            
+            sort_list = [WECOM_TOKEN, timestamp, nonce, echostr]
+            sort_list.sort()
+            calc_signature = hashlib.sha1(''.join(sort_list).encode()).hexdigest()
+            
+            if calc_signature != msg_signature:
+                return 'Signature verification failed', 403
+            
+            decrypted = crypto.decrypt(echostr)
+            return decrypted
+            
+        except Exception as e:
+            print(f"[WecomCallback] 验证失败: {e}")
+            return str(e), 500
+    
+    else:
+        try:
+            post_data = request.data.decode('utf-8')
+            
+            xml_tree = ET.fromstring(post_data)
+            encrypt = xml_tree.find('Encrypt').text
+            
+            from backend.utils.wecom_crypto import WecomCrypto
+            
+            if not WECOM_ENCODING_AES_KEY:
+                return 'success'
+            
+            crypto = WecomCrypto(WECOM_TOKEN, WECOM_ENCODING_AES_KEY, wecom_service.corp_id)
+            
+            if not crypto.verify_signature(msg_signature, timestamp, nonce, encrypt):
+                return 'Signature verification failed', 403
+            
+            message = crypto.parse_message(post_data, msg_signature, timestamp, nonce)
+            
+            msg_type = message.get('MsgType', '')
+            from_user = message.get('FromUserName', '')
+            
+            print(f"[WecomCallback] 收到消息: type={msg_type}, from={from_user}")
+            
+            if msg_type == 'text':
+                content = message.get('Content', '').strip()
+                handle_wecom_message(from_user, content)
+            
+            return 'success'
+            
+        except Exception as e:
+            print(f"[WecomCallback] 处理失败: {e}")
+            return 'success'
+
+
+def handle_wecom_message(wecom_userid: str, content: str):
+    """
+    处理企业微信用户消息
+    
+    Args:
+        wecom_userid: 企业微信用户ID
+        content: 消息内容
+    """
+    content_lower = content.lower().strip()
+    
+    if content_lower in ['绑定', 'bind']:
+        bind_data_file = os.path.join(BASE_DIR, 'backend', 'data', 'wecom_bind_tokens.json')
+        
+        try:
+            if os.path.exists(bind_data_file):
+                with open(bind_data_file, 'r', encoding='utf-8') as f:
+                    bind_data = json.load(f)
+                
+                for token, info in bind_data.items():
+                    if time.time() < info.get('expires_at', 0):
+                        username = info.get('username')
+                        if save_user_wecom_settings(username, wecom_userid=wecom_userid, wecom_enabled=True):
+                            wecom_service.send_text(
+                                wecom_userid,
+                                f"✅ 绑定成功！\n\n您已成功绑定专利工作台账号：{username}\n\n后续任务完成将自动推送到此企业微信。"
+                            )
+                            return
+        except Exception as e:
+            print(f"[WecomCallback] 绑定处理失败: {e}")
+        
+        wecom_service.send_text(
+            wecom_userid,
+            "❌ 绑定失败\n\n请先在网站的「通知设置」中点击「显示绑定二维码」后再发送「绑定」。"
+        )
+    
+    elif content_lower in ['解绑', 'unbind']:
+        try:
+            with open(USERS_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            metadata = data.get('metadata', {})
+            for username, meta in metadata.items():
+                if meta.get('wecom_userid') == wecom_userid:
+                    unbind_user_wecom(username)
+                    wecom_service.send_text(
+                        wecom_userid,
+                        f"📢 已解绑\n\n您已解除专利工作台账号 {username} 的绑定。"
+                    )
+                    return
+        except Exception as e:
+            print(f"[WecomCallback] 解绑处理失败: {e}")
+        
+        wecom_service.send_text(
+            wecom_userid,
+            "❌ 解绑失败\n\n您还未绑定任何账号。"
+        )
+    
+    elif content_lower in ['帮助', 'help', '?']:
+        wecom_service.send_text(
+            wecom_userid,
+            """📖 专利工作台企业微信助手
+
+可用命令：
+• 绑定 - 绑定网站账号
+• 解绑 - 解除账号绑定
+• 帮助 - 显示此帮助
+
+更多功能请访问网站：https://ipx.asia"""
+        )
+    
+    else:
+        wecom_service.send_text(
+            wecom_userid,
+            f"收到您的消息：{content}\n\n发送「帮助」查看可用命令。"
+        )
 
 
 def send_batch_complete_to_user(username: str, task_type: str, 

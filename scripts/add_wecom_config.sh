@@ -53,6 +53,12 @@ if [ -z "$SECRET" ]; then
     exit 1
 fi
 
+read -p "回调Token (默认 patent2024wecom): " TOKEN
+TOKEN=${TOKEN:-patent2024wecom}
+
+read -p "EncodingAESKey (企业微信后台随机获取，留空则跳过加密): " AES_KEY
+AES_KEY=${AES_KEY:-}
+
 read -p "是否启用推送? [Y/n]: " ENABLED
 ENABLED=${ENABLED:-Y}
 if [[ "$ENABLED" =~ ^[Yy]$ ]]; then
@@ -67,6 +73,10 @@ echo "# 企业微信推送配置" >> "$ENV_FILE"
 echo "WECOM_CORP_ID=$CORP_ID" >> "$ENV_FILE"
 echo "WECOM_AGENT_ID=$AGENT_ID" >> "$ENV_FILE"
 echo "WECOM_SECRET=$SECRET" >> "$ENV_FILE"
+echo "WECOM_TOKEN=$TOKEN" >> "$ENV_FILE"
+if [ -n "$AES_KEY" ]; then
+    echo "WECOM_ENCODING_AES_KEY=$AES_KEY" >> "$ENV_FILE"
+fi
 echo "WECOM_ENABLED=$ENABLED_VALUE" >> "$ENV_FILE"
 
 echo ""
@@ -77,5 +87,16 @@ echo ""
 echo "当前企业微信配置："
 grep "WECOM_" "$ENV_FILE"
 echo ""
-echo "请重启服务使配置生效："
-echo "  systemctl restart patent-app"
+echo "=========================================="
+echo "下一步操作："
+echo "=========================================="
+echo ""
+echo "1. 在企业微信后台配置回调URL："
+echo "   URL: https://ipx.asia/api/wecom/callback"
+echo "   Token: $TOKEN"
+if [ -n "$AES_KEY" ]; then
+    echo "   EncodingAESKey: $AES_KEY"
+fi
+echo ""
+echo "2. 重启服务："
+echo "   systemctl restart patent-app"
