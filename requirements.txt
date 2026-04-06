@@ -12,6 +12,7 @@ python-dotenv>=1.0.0
 sniffio
 anyio
 httpx
+pycryptodome>=3.19.0
 
 # Database
 psycopg2-binary
