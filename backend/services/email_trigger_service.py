@@ -324,19 +324,15 @@ class EmailReceiver:
             print(f"[EmailTrigger] 选择文件夹: {folder}")
             mail.select(folder)
             
-            # 如果指定了主题前缀，直接搜索包含该前缀的未读邮件
-            if subject_prefix:
-                print(f"[EmailTrigger] 搜索主题包含 '{subject_prefix}' 的未读邮件")
-                typ, msg_ids = mail.search(None, 'UNSEEN', 'SUBJECT', subject_prefix)
-            else:
-                print(f"[EmailTrigger] 搜索所有未读邮件")
-                typ, msg_ids = mail.search(None, 'UNSEEN')
+            # 搜索所有未读邮件
+            print(f"[EmailTrigger] 搜索未读邮件...")
+            typ, msg_ids = mail.search(None, 'UNSEEN')
             
-            print(f"[EmailTrigger] 搜索结果: {typ}, 消息ID数量: {len(msg_ids[0].split())}")
+            print(f"[EmailTrigger] 搜索结果: {typ}")
             
             emails = []
             id_list = msg_ids[0].split()
-            print(f"[EmailTrigger] 找到 {len(id_list)} 封匹配的未读邮件")
+            print(f"[EmailTrigger] 找到 {len(id_list)} 封未读邮件")
             
             # 只获取最新的max_count封邮件（倒序获取）
             id_list = id_list[-max_count:] if len(id_list) > max_count else id_list
@@ -345,17 +341,22 @@ class EmailReceiver:
             for num in id_list:
                 if not num:
                     continue
-                print(f"[EmailTrigger] 获取邮件ID: {num}")
                 typ, msg_data = mail.fetch(num, '(RFC822)')
                 if msg_data and msg_data[0]:
                     msg = email.message_from_bytes(msg_data[0][1])
                     parsed = self._parse_email(msg)
                     if parsed:
                         parsed['_mail_id'] = num
-                        emails.append(parsed)
-                        print(f"[EmailTrigger] 解析邮件成功: {parsed.get('subject', 'No Subject')}")
+                        # 如果指定了主题前缀，在代码中过滤
+                        if subject_prefix:
+                            if subject_prefix in parsed.get('subject', ''):
+                                emails.append(parsed)
+                                print(f"[EmailTrigger] 匹配CLI邮件: {parsed.get('subject', 'No Subject')}")
+                        else:
+                            emails.append(parsed)
+                            print(f"[EmailTrigger] 解析邮件成功: {parsed.get('subject', 'No Subject')}")
             
-            print(f"[EmailTrigger] 成功获取 {len(emails)} 封邮件")
+            print(f"[EmailTrigger] 成功获取 {len(emails)} 封CLI邮件")
             return emails, mail
         except Exception as e:
             print(f"[EmailTrigger] 获取邮件失败: {e}")
