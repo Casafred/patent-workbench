@@ -602,22 +602,24 @@ def wecom_callback():
             return 'Invalid parameters', 400
         
         try:
-            from backend.utils.wecom_crypto import WecomCrypto
-            
-            if not WECOM_ENCODING_AES_KEY:
-                return echostr
-            
-            crypto = WecomCrypto(WECOM_TOKEN, WECOM_ENCODING_AES_KEY, wecom_service.corp_id)
-            
+            # 验证签名（无论是否配置EncodingAESKey都需要验证）
             sort_list = [WECOM_TOKEN, timestamp, nonce, echostr]
             sort_list.sort()
             calc_signature = hashlib.sha1(''.join(sort_list).encode()).hexdigest()
             
             if calc_signature != msg_signature:
+                print(f"[WecomCallback] 签名验证失败: calc={calc_signature}, recv={msg_signature}")
                 return 'Signature verification failed', 403
             
-            decrypted = crypto.decrypt(echostr)
-            return decrypted
+            # 如果有EncodingAESKey，需要解密echostr
+            if WECOM_ENCODING_AES_KEY:
+                from backend.utils.wecom_crypto import WecomCrypto
+                crypto = WecomCrypto(WECOM_TOKEN, WECOM_ENCODING_AES_KEY, wecom_service.corp_id)
+                decrypted = crypto.decrypt(echostr)
+                return decrypted
+            else:
+                # 没有配置加密，直接返回echostr
+                return echostr
             
         except Exception as e:
             print(f"[WecomCallback] 验证失败: {e}")
