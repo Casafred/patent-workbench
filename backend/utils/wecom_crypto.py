@@ -9,30 +9,8 @@ import hashlib
 import random
 import socket
 import struct
-import time
 import xml.etree.ElementTree as ET
 from Crypto.Cipher import AES
-
-
-class PKCS7Encoder:
-    """PKCS7编码器"""
-    block_size = 32
-
-    @classmethod
-    def encode(cls, text):
-        text_length = len(text)
-        amount_to_pad = cls.block_size - (text_length % cls.block_size)
-        if amount_to_pad == 0:
-            amount_to_pad = cls.block_size
-        pad = chr(amount_to_pad)
-        return text + pad * amount_to_pad
-
-    @classmethod
-    def decode(cls, decrypted):
-        pad = ord(decrypted[-1])
-        if pad < 1 or pad > 32:
-            pad = 0
-        return decrypted[:-pad]
 
 
 class WecomCrypto:
@@ -42,8 +20,10 @@ class WecomCrypto:
         self.token = token
         self.encoding_aes_key = encoding_aes_key
         self.corp_id = corp_id
+        # EncodingAESKey 需要补 = 号
         self.key = base64.b64decode(encoding_aes_key + "=")
-        assert len(self.key) == 32
+        if len(self.key) != 32:
+            raise ValueError("EncodingAESKey decoded length must be 32")
 
     def get_signature(self, timestamp, nonce, encrypt):
         """计算签名"""
@@ -57,33 +37,24 @@ class WecomCrypto:
         """验证签名"""
         return signature == self.get_signature(timestamp, nonce, encrypt)
 
-    def encrypt(self, text):
-        """加密消息"""
-        text = text.encode('utf-8')
-        text = PKCS7Encoder.encode(text)
-        
-        random_str = ''.join(random.choice('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789') for _ in range(16))
-        text = random_str.encode() + struct.pack("I", socket.htonl(len(text))) + text + self.corp_id.encode()
-        
-        cipher = AES.new(self.key, AES.MODE_CBC, self.key[:16])
-        encrypted = cipher.encrypt(text)
-        return base64.b64encode(encrypted).decode()
-
     def decrypt(self, encrypt):
         """解密消息"""
         cipher = AES.new(self.key, AES.MODE_CBC, self.key[:16])
         decrypted = cipher.decrypt(base64.b64decode(encrypt))
         
-        decrypted = PKCS7Encoder.decode(decrypted)
+        # 去除补位
+        pad_len = decrypted[-1]
+        decrypted = decrypted[:-pad_len]
         
+        # 解析内容：16字节随机字符串 + 4字节消息长度 + 消息内容 + corp_id
         content_len = socket.ntohl(struct.unpack("I", decrypted[16:20])[0])
-        content = decrypted[20:20 + content_len].decode('utf-8')
+        content = decrypted[20:20 + content_len]
         from_corp_id = decrypted[20 + content_len:].decode('utf-8')
         
         if from_corp_id != self.corp_id:
-            raise Exception("Corp ID mismatch")
+            raise Exception(f"Corp ID mismatch: {from_corp_id} != {self.corp_id}")
         
-        return content
+        return content.decode('utf-8')
 
     def parse_message(self, post_data, msg_signature, timestamp, nonce):
         """解析消息"""
@@ -106,16 +77,3 @@ class WecomCrypto:
             return message
         except Exception:
             raise Exception("Invalid decrypted content")
-
-    def encrypt_response(self, reply, nonce, timestamp):
-        """加密回复消息"""
-        encrypt = self.encrypt(reply)
-        signature = self.get_signature(timestamp, nonce, encrypt)
-        
-        response = f"""<xml>
-<Encrypt><![CDATA[{encrypt}]]></Encrypt>
-<MsgSignature><![CDATA[{signature}]]></MsgSignature>
-<TimeStamp>{timestamp}</TimeStamp>
-<Nonce><![CDATA[{nonce}]]></Nonce>
-</xml>"""
-        return response
