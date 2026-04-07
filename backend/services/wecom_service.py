@@ -363,8 +363,9 @@ class WecomService:
             with open(bind_data_file, 'w', encoding='utf-8') as f:
                 json.dump(bind_data, f, ensure_ascii=False, indent=2)
             
-            # 使用回调URL作为redirect_uri
-            redirect_uri = f"https://ipx.asia/api/wecom/callback"
+            # 使用回调URL作为redirect_uri（需要URL编码）
+            from urllib.parse import quote
+            redirect_uri = quote(f"https://ipx.asia/api/wecom/callback", safe='')
             qrcode_url = f"https://open.work.weixin.qq.com/wwopen/sso/qrConnect?appid={self.corp_id}&agentid={self.agent_id}&redirect_uri={redirect_uri}&state={bind_token}"
             
             return {
