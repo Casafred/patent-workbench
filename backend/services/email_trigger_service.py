@@ -314,7 +314,7 @@ class EmailReceiver:
             traceback.print_exc()
             return None
     
-    def fetch_unread_emails(self, folder: str = 'INBOX') -> Tuple[List[Dict[str, Any]], Any]:
+    def fetch_unread_emails(self, folder: str = 'INBOX', max_count: int = 10) -> Tuple[List[Dict[str, Any]], Any]:
         mail = self.connect()
         if not mail:
             print("[EmailTrigger] 无法连接到IMAP服务器")
@@ -329,6 +329,10 @@ class EmailReceiver:
             emails = []
             id_list = msg_ids[0].split()
             print(f"[EmailTrigger] 找到 {len(id_list)} 封未读邮件")
+            
+            # 只获取最新的max_count封邮件（倒序获取）
+            id_list = id_list[-max_count:] if len(id_list) > max_count else id_list
+            print(f"[EmailTrigger] 将处理最新 {len(id_list)} 封邮件")
             
             for num in id_list:
                 if not num:
@@ -648,7 +652,7 @@ class EmailTriggerScheduler:
         require_prefix = settings.get('require_subject_prefix', '[CLI]')
         print(f"[EmailTrigger] 要求的主题前缀: {require_prefix}")
         
-        emails, mail_conn = self.email_receiver.fetch_unread_emails()
+        emails, mail_conn = self.email_receiver.fetch_unread_emails(max_count=10)
         print(f"[EmailTrigger] 获取到 {len(emails)} 封未读邮件")
         
         processed_count = 0
@@ -660,12 +664,16 @@ class EmailTriggerScheduler:
             
             print(f"[EmailTrigger] 处理邮件 - 发送者: {sender_email}, 主题: {subject}")
             
+            # 检查主题前缀
             if require_prefix and require_prefix not in subject:
-                print(f"[EmailTrigger] 主题不包含前缀 '{require_prefix}'，跳过")
+                print(f"[EmailTrigger] 主题不包含前缀 '{require_prefix}'，标记已读并跳过")
+                if mail_conn and mail_id:
+                    self.email_receiver.mark_as_read(mail_conn, mail_id)
                 continue
             
+            # 检查白名单
             is_allowed, user_info = EmailTriggerWhitelist.is_email_allowed(sender_email)
-            print(f"[EmailTrigger] 白名单验证结果: {is_allowed}, 用户信息: {user_info}")
+            print(f"[EmailTrigger] 白名单验证结果: {is_allowed}")
             
             if not is_allowed:
                 print(f"[EmailTrigger] 拒绝来自 {sender_email} 的邮件触发请求")
@@ -673,16 +681,18 @@ class EmailTriggerScheduler:
                     self.email_receiver.mark_as_read(mail_conn, mail_id)
                 continue
             
+            # 提取命令
             command_text = body.strip()
             if not command_text:
                 command_text = subject.replace(require_prefix, '').strip()
             
             print(f"[EmailTrigger] 提取的命令: {command_text}")
             
+            # 解析命令
             allowed_commands = user_info.get('allowed_commands', settings.get('allowed_commands', []))
             parsed = CommandParser.parse(command_text, allowed_commands)
             
-            print(f"[EmailTrigger] 命令解析结果: is_valid={parsed.is_valid}, error={parsed.error_message}")
+            print(f"[EmailTrigger] 命令解析结果: is_valid={parsed.is_valid}")
             
             if not parsed.is_valid:
                 EmailSender.send_result_email(
@@ -702,18 +712,23 @@ class EmailTriggerScheduler:
                     self.email_receiver.mark_as_read(mail_conn, mail_id)
                 continue
             
+            # 执行命令
             print(f"[EmailTrigger] 开始执行命令...")
             result, success = self._execute_command(parsed, user_info)
             print(f"[EmailTrigger] 命令执行完成, success={success}")
             
+            # 更新计数
             EmailTriggerWhitelist.increment_daily_count(sender_email)
             
+            # 发送结果邮件
             EmailSender.send_result_email(sender_email, command_text, result, success)
             print(f"[EmailTrigger] 结果邮件已发送至 {sender_email}")
             
+            # 标记邮件已读
             if mail_conn and mail_id:
                 self.email_receiver.mark_as_read(mail_conn, mail_id)
             
+            # 记录日志
             EmailTriggerLogger.add_log(EmailTriggerLog(
                 timestamp=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                 sender=sender_email,
@@ -724,6 +739,7 @@ class EmailTriggerScheduler:
             ))
             processed_count += 1
         
+        # 关闭连接
         if mail_conn:
             self.email_receiver.close_connection(mail_conn)
         
