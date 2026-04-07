@@ -314,7 +314,7 @@ class EmailReceiver:
             traceback.print_exc()
             return None
     
-    def fetch_unread_emails(self, folder: str = 'INBOX', max_count: int = 10) -> Tuple[List[Dict[str, Any]], Any]:
+    def fetch_unread_emails(self, folder: str = 'INBOX', subject_prefix: str = None, max_count: int = 10) -> Tuple[List[Dict[str, Any]], Any]:
         mail = self.connect()
         if not mail:
             print("[EmailTrigger] 无法连接到IMAP服务器")
@@ -323,12 +323,20 @@ class EmailReceiver:
         try:
             print(f"[EmailTrigger] 选择文件夹: {folder}")
             mail.select(folder)
-            typ, msg_ids = mail.search(None, 'UNSEEN')
-            print(f"[EmailTrigger] 搜索未读邮件，返回类型: {typ}, 消息ID: {msg_ids}")
+            
+            # 如果指定了主题前缀，直接搜索包含该前缀的未读邮件
+            if subject_prefix:
+                print(f"[EmailTrigger] 搜索主题包含 '{subject_prefix}' 的未读邮件")
+                typ, msg_ids = mail.search(None, 'UNSEEN', 'SUBJECT', subject_prefix)
+            else:
+                print(f"[EmailTrigger] 搜索所有未读邮件")
+                typ, msg_ids = mail.search(None, 'UNSEEN')
+            
+            print(f"[EmailTrigger] 搜索结果: {typ}, 消息ID数量: {len(msg_ids[0].split())}")
             
             emails = []
             id_list = msg_ids[0].split()
-            print(f"[EmailTrigger] 找到 {len(id_list)} 封未读邮件")
+            print(f"[EmailTrigger] 找到 {len(id_list)} 封匹配的未读邮件")
             
             # 只获取最新的max_count封邮件（倒序获取）
             id_list = id_list[-max_count:] if len(id_list) > max_count else id_list
@@ -652,8 +660,12 @@ class EmailTriggerScheduler:
         require_prefix = settings.get('require_subject_prefix', '[CLI]')
         print(f"[EmailTrigger] 要求的主题前缀: {require_prefix}")
         
-        emails, mail_conn = self.email_receiver.fetch_unread_emails(max_count=10)
-        print(f"[EmailTrigger] 获取到 {len(emails)} 封未读邮件")
+        # 直接搜索包含CLI前缀的未读邮件
+        emails, mail_conn = self.email_receiver.fetch_unread_emails(
+            subject_prefix=require_prefix,
+            max_count=10
+        )
+        print(f"[EmailTrigger] 获取到 {len(emails)} 封CLI邮件")
         
         processed_count = 0
         for email_data in emails:
@@ -663,13 +675,6 @@ class EmailTriggerScheduler:
             mail_id = email_data.get('_mail_id')
             
             print(f"[EmailTrigger] 处理邮件 - 发送者: {sender_email}, 主题: {subject}")
-            
-            # 检查主题前缀
-            if require_prefix and require_prefix not in subject:
-                print(f"[EmailTrigger] 主题不包含前缀 '{require_prefix}'，标记已读并跳过")
-                if mail_conn and mail_id:
-                    self.email_receiver.mark_as_read(mail_conn, mail_id)
-                continue
             
             # 检查白名单
             is_allowed, user_info = EmailTriggerWhitelist.is_email_allowed(sender_email)
