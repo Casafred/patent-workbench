@@ -9,7 +9,6 @@ import sys
 import os
 from datetime import datetime
 
-# Add parent directory to path so Python can find the backend module
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from flask import Flask
@@ -29,56 +28,6 @@ from backend.services.cli_orchestrator import CLIOrchestrator
 cli_orchestrator = CLIOrchestrator()
 
 
-def execute_email_command(parsed: ParsedCommand, user_info: dict) -> tuple:
-    """
-    Execute CLI command from email trigger.
-    
-    Args:
-        parsed: Parsed command object
-        user_info: User information from whitelist
-    
-    Returns:
-        tuple: (result_string, success_bool)
-    """
-    try:
-        username = user_info.get('username', 'email_trigger')
-        session_key = f"email_{username}_{int(datetime.now().timestamp())}"
-        
-        command_str = parsed.raw_input
-        
-        result_dict = cli_orchestrator.execute(
-            user_input=command_str,
-            session_key=session_key,
-            user_id=username
-        )
-        
-        if isinstance(result_dict, dict):
-            if result_dict.get('success'):
-                data = result_dict.get('data', {})
-                if isinstance(data, dict):
-                    summary = data.get('summary', {})
-                    if summary:
-                        title = summary.get('title', '')
-                        answer = data.get('answer', '')
-                        result = f"{title}\n\n{answer}" if title else answer
-                    else:
-                        result = result_dict.get('message', str(data))
-                else:
-                    result = str(data)
-            else:
-                result = f"执行失败: {result_dict.get('error', '未知错误')}"
-        else:
-            result = str(result_dict)
-        
-        if not result or result == '{}' or result == 'None':
-            result = f"命令执行完成，无输出内容"
-        
-        return result, True
-        
-    except Exception as e:
-        return f"执行失败: {str(e)}", False
-
-
 def create_app(config_class=Config):
     """
     Application factory pattern.
@@ -92,44 +41,38 @@ def create_app(config_class=Config):
     Returns:
         Flask application instance
     """
-    # Create Flask app
     app = Flask(__name__, 
                 static_folder=Config.STATIC_FOLDER,
                 static_url_path=Config.STATIC_URL_PATH,
                 template_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates'))
     
-    # Load configuration
     app.config.from_object(config_class)
     config_class.init_app(app)
     
-    # 配置 Session Cookie - 关键！
-    # 在阿里云/生产环境下，必须正确配置这些参数
-    app.config['SESSION_COOKIE_SECURE'] = False  # 如果是 HTTPS 则设为 True
-    app.config['SESSION_COOKIE_HTTPONLY'] = True  # 防止 XSS 攻击
-    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # 允许跨域携带 Cookie
-    app.config['SESSION_COOKIE_PATH'] = '/'  # Cookie 路径
+    app.config['SESSION_COOKIE_SECURE'] = False
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    app.config['SESSION_COOKIE_PATH'] = '/'
     
     print("✓ Configuration loaded")
     
-    # Initialize extensions (CORS, database pool, etc.)
     init_extensions(app)
     print("✓ Extensions initialized")
     
-    # Register all blueprints
     register_blueprints(app)
     
-    # Initialize database tables
     AuthService.init_database()
     print("✓ Database initialized")
     
-    # Initialize prompt forum tables
     PromptForumService.init_tables()
     print("✓ Forum tables initialized")
     
-    # Initialize email trigger service if enabled
     settings = EmailTriggerWhitelist.get_settings()
     if settings.get('enabled', False):
-        email_trigger_scheduler.set_executor(execute_email_command)
+        def email_executor(parsed: ParsedCommand, user_info: dict):
+            return execute_email_command(app, parsed, user_info)
+        
+        email_trigger_scheduler.set_executor(email_executor)
         email_trigger_scheduler.start()
         print("✓ Email trigger service started")
     
@@ -140,7 +83,60 @@ def create_app(config_class=Config):
     return app
 
 
-# For development/testing
+def execute_email_command(app: Flask, parsed: ParsedCommand, user_info: dict) -> tuple:
+    """
+    Execute CLI command from email trigger with Flask app context.
+    
+    Args:
+        app: Flask application instance
+        parsed: Parsed command object
+        user_info: User information from whitelist
+    
+    Returns:
+        tuple: (result_string, success_bool)
+    """
+    try:
+        with app.app_context():
+            username = user_info.get('username', 'email_trigger')
+            session_key = f"email_{username}_{int(datetime.now().timestamp())}"
+            
+            command_str = parsed.raw_input
+            
+            result_dict = cli_orchestrator.execute(
+                user_input=command_str,
+                session_key=session_key,
+                user_id=username
+            )
+            
+            if isinstance(result_dict, dict):
+                if result_dict.get('success'):
+                    data = result_dict.get('data', {})
+                    if isinstance(data, dict):
+                        summary = data.get('summary', {})
+                        if summary:
+                            title = summary.get('title', '')
+                            answer = data.get('answer', '')
+                            result = f"{title}\n\n{answer}" if title else answer
+                        else:
+                            result = result_dict.get('message', str(data))
+                    else:
+                        result = str(data)
+                else:
+                    result = f"执行失败: {result_dict.get('error', '未知错误')}"
+            else:
+                result = str(result_dict)
+            
+            if not result or result == '{}' or result == 'None':
+                result = f"命令执行完成，无输出内容"
+            
+            return result, True
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return f"执行失败: {str(e)}", False
+
+
 if __name__ == '__main__':
     app = create_app()
     app.run(
