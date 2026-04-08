@@ -9,12 +9,62 @@ import json
 import logging
 import random
 import requests
+import re
 from bs4 import BeautifulSoup
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, asdict
 from backend.scraper.rate_limiter import get_rate_limiter, get_request_queue
 
 logger = logging.getLogger(__name__)
+
+
+def normalize_patent_number(patent_number: str) -> Tuple[str, List[str]]:
+    """
+    Normalize patent number and generate variants for fallback queries.
+    
+    Google Patents can find patents even with incomplete patent numbers.
+    For example, US12390907B2 can be found with US12390907 or US12390907B.
+    
+    Args:
+        patent_number: Original patent number input
+        
+    Returns:
+        Tuple of (normalized_number, list_of_variants_to_try)
+    """
+    if not patent_number:
+        return patent_number, []
+    
+    normalized = patent_number.upper().replace(" ", "").replace("/", "")
+    
+    country_match = re.match(r'^([A-Z]{2})(\d+[A-Z]?\d*)', normalized)
+    if not country_match:
+        return normalized, []
+    
+    country_code = country_match.group(1)
+    rest = country_match.group(2)
+    
+    number_match = re.match(r'^(\d+)([A-Z]+\d*)?$', rest)
+    if not number_match:
+        return normalized, []
+    
+    base_number = number_match.group(1)
+    suffix = number_match.group(2) or ""
+    
+    variants = []
+    
+    base_patent = f"{country_code}{base_number}"
+    if base_patent != normalized:
+        variants.append(base_patent)
+    
+    if suffix:
+        letter_only_match = re.match(r'^([A-Z]+)', suffix)
+        if letter_only_match:
+            letter_suffix = letter_only_match.group(1)
+            variant_with_letter = f"{country_code}{base_number}{letter_suffix}"
+            if variant_with_letter != normalized and variant_with_letter not in variants:
+                variants.append(variant_with_letter)
+    
+    return normalized, variants
 
 
 @dataclass
@@ -243,63 +293,70 @@ class SimplePatentScraper:
             SimplePatentResult with scraped data
         """
         start_time = time.time()
-        logger.info(f"开始爬取专利: {patent_number}, crawl_specification={crawl_specification}, crawl_full_drawings={crawl_full_drawings}, selected_fields={selected_fields}")
         
-        try:
-            url = f'https://patents.google.com/patent/{patent_number}'
-            
-            response, error_msg = self._make_request_with_retry(url, user_id)
-            
-            if error_msg:
-                processing_time = time.time() - start_time
-                return SimplePatentResult(
-                    patent_number=patent_number,
-                    success=False,
-                    error=error_msg,
-                    processing_time=processing_time
-                )
-            
-            response.encoding = 'utf-8'
-            
-            soup = BeautifulSoup(response.text, 'lxml')
-            
-            patent_data = self._extract_patent_data(soup, patent_number, url, crawl_specification=crawl_specification, crawl_full_drawings=crawl_full_drawings, selected_fields=selected_fields)
-            
-            logger.info(f"专利 {patent_number} 提取结果:")
-            logger.info(f"  - 标题: {patent_data.title[:50] if patent_data.title else 'None'}...")
-            logger.info(f"  - 权利要求数量: {len(patent_data.claims)}")
-            logger.info(f"  - 附图数量: {len(patent_data.drawings)}")
-            logger.info(f"  - 引用专利数量: {len(patent_data.patent_citations)}")
-            logger.info(f"  - 被引用专利数量: {len(patent_data.cited_by)}")
-            logger.info(f"  - 事件时间轴数量: {len(patent_data.events_timeline)}")
-            logger.info(f"  - 法律事件数量: {len(patent_data.legal_events)}")
-            
-            processing_time = time.time() - start_time
-            
-            if patent_data and patent_data.is_valid():
-                return SimplePatentResult(
-                    patent_number=patent_number,
-                    success=True,
-                    data=patent_data,
-                    processing_time=processing_time
-                )
-            else:
-                return SimplePatentResult(
-                    patent_number=patent_number,
-                    success=False,
-                    error="Failed to extract valid patent data",
-                    processing_time=processing_time
-                )
+        normalized_number, variants = normalize_patent_number(patent_number)
+        all_numbers_to_try = [normalized_number] + variants
         
-        except Exception as e:
-            processing_time = time.time() - start_time
-            logger.error(f"Error scraping {patent_number}: {e}")
-            return SimplePatentResult(
-                patent_number=patent_number,
-                success=False,
-                error=str(e),
-                processing_time=processing_time
-            )
+        logger.info(f"开始爬取专利: {patent_number} (规范化: {normalized_number}), 变体: {variants}")
+        logger.info(f"crawl_specification={crawl_specification}, crawl_full_drawings={crawl_full_drawings}, selected_fields={selected_fields}")
+        
+        last_error = None
+        for try_number in all_numbers_to_try:
+            try:
+                url = f'https://patents.google.com/patent/{try_number}'
+                logger.info(f"尝试查询专利号: {try_number}")
+                
+                response, error_msg = self._make_request_with_retry(url, user_id)
+                
+                if error_msg:
+                    last_error = error_msg
+                    logger.warning(f"专利号 {try_number} 查询失败: {error_msg}")
+                    continue
+                
+                response.encoding = 'utf-8'
+                
+                soup = BeautifulSoup(response.text, 'lxml')
+                
+                patent_data = self._extract_patent_data(soup, try_number, url, crawl_specification=crawl_specification, crawl_full_drawings=crawl_full_drawings, selected_fields=selected_fields)
+                
+                if patent_data and patent_data.is_valid():
+                    logger.info(f"专利 {try_number} 提取成功:")
+                    logger.info(f"  - 标题: {patent_data.title[:50] if patent_data.title else 'None'}...")
+                    logger.info(f"  - 权利要求数量: {len(patent_data.claims)}")
+                    logger.info(f"  - 附图数量: {len(patent_data.drawings)}")
+                    logger.info(f"  - 引用专利数量: {len(patent_data.patent_citations)}")
+                    logger.info(f"  - 被引用专利数量: {len(patent_data.cited_by)}")
+                    logger.info(f"  - 事件时间轴数量: {len(patent_data.events_timeline)}")
+                    logger.info(f"  - 法律事件数量: {len(patent_data.legal_events)}")
+                    
+                    processing_time = time.time() - start_time
+                    
+                    patent_data.patent_number = normalized_number
+                    
+                    return SimplePatentResult(
+                        patent_number=normalized_number,
+                        success=True,
+                        data=patent_data,
+                        processing_time=processing_time
+                    )
+                else:
+                    last_error = "Failed to extract valid patent data"
+                    logger.warning(f"专利号 {try_number} 数据提取失败")
+                    continue
+            
+            except Exception as e:
+                last_error = str(e)
+                logger.warning(f"专利号 {try_number} 处理异常: {e}")
+                continue
+        
+        processing_time = time.time() - start_time
+        logger.error(f"所有专利号变体尝试失败: {patent_number}")
+        return SimplePatentResult(
+            patent_number=patent_number,
+            success=False,
+            error=last_error or "所有专利号变体查询均失败",
+            processing_time=processing_time
+        )
     
     def _extract_patent_data(self, soup: BeautifulSoup, patent_number: str, url: str, crawl_specification: bool = False, crawl_full_drawings: bool = False, selected_fields: List[str] = None) -> Optional[SimplePatentData]:
         """Extract patent data from HTML.

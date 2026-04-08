@@ -1560,7 +1560,8 @@ def stream_execute_command():
                 try:
                     llm_route = llm_route_cli_request(user_input, attachment, provider, model, ocr_engine)
                     llm_route = validate_llm_route(llm_route, user_input, attachment, ocr_engine)
-                    yield f"data: {json.dumps({'type': 'trace', 'stage': 'llm_router', 'message': llm_route.get('reason') or 'LLM 已完成路由决策', 'route': llm_route}, ensure_ascii=False)}\n\n"
+                    flow_id = llm_route.get("flow_id") if llm_route.get("route_type") == "flow" else None
+                    yield f"data: {json.dumps({'type': 'trace', 'stage': 'llm_router', 'message': llm_route.get('reason') or 'LLM 已完成路由决策', 'route': llm_route, 'flow_id': flow_id}, ensure_ascii=False)}\n\n"
                     if llm_route.get("route_type") == "flow":
                         parsed = {
                             "command": "flow",
@@ -1577,11 +1578,13 @@ def stream_execute_command():
                         }
                         if parsed.get("params", {}).get("flow_id") == "pdf_ocr_pipeline":
                             for event in stream_pdf_ocr_flow_events(parsed.get("params", {})):
+                                if event.get('type') == 'trace' and 'flow_id' not in event:
+                                    event['flow_id'] = flow_id
                                 yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
                             yield "data: [DONE]\n\n"
                             return
                         result = executor.execute(parsed, request_context)
-                        yield f"data: {json.dumps({'type': 'final', 'data': result}, ensure_ascii=False)}\n\n"
+                        yield f"data: {json.dumps({'type': 'final', 'data': result, 'flow_id': flow_id}, ensure_ascii=False)}\n\n"
                         yield "data: [DONE]\n\n"
                         return
                 except Exception as exc:
@@ -1596,14 +1599,16 @@ def stream_execute_command():
                     "pdf_ocr_pipeline": "检测到附件，自动进入 PDF OCR 工作流",
                     "ipc_lookup": "识别到 IPC/分类号查询，自动进入 IPC 工作流",
                 }.get(flow_id, f"自动进入 {flow_id} 工作流")
-                yield f"data: {json.dumps({'type': 'trace', 'stage': 'auto_flow', 'message': trace_message}, ensure_ascii=False)}\n\n"
+                yield f"data: {json.dumps({'type': 'trace', 'stage': 'auto_flow', 'message': trace_message, 'flow_id': flow_id}, ensure_ascii=False)}\n\n"
                 if flow_id == "pdf_ocr_pipeline":
                     for event in stream_pdf_ocr_flow_events(parsed.get("params", {})):
+                        if event.get('type') == 'trace' and 'flow_id' not in event:
+                            event['flow_id'] = flow_id
                         yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
                     yield "data: [DONE]\n\n"
                     return
                 result = executor.execute(parsed, request_context)
-                yield f"data: {json.dumps({'type': 'final', 'data': result}, ensure_ascii=False)}\n\n"
+                yield f"data: {json.dumps({'type': 'final', 'data': result, 'flow_id': flow_id}, ensure_ascii=False)}\n\n"
                 yield "data: [DONE]\n\n"
                 return
 

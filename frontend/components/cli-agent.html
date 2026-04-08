@@ -1,4 +1,4 @@
-﻿<div id="cli-agent-container" class="cli-shell hidden">
+<div id="cli-agent-container" class="cli-shell hidden">
     <div class="cli-shell__header">
         <div>
             <div class="cli-shell__title">Patent CLI</div>
@@ -2416,15 +2416,21 @@
         handleStreamEvent(event) {
             if (!event?.type) return;
 
+            const workflowName = event.flow_id ? this.getWorkflowDisplayName(event.flow_id) : (this.currentWorkflowName || '处理中');
+
             if (event.type === 'trace') {
-                this.updateProgress(event.progress || null, event.message || event.stage || '加载中');
+                const displayMessage = event.flow_id ? this.getWorkflowDisplayName(event.flow_id) : (event.message || event.stage || '加载中');
+                this.updateProgress(event.progress || null, displayMessage);
                 this.printTrace(event.message || event.stage || '加载中');
+                if (event.flow_id) {
+                    this.currentWorkflowName = this.getWorkflowDisplayName(event.flow_id);
+                }
                 return;
             }
 
             if (event.type === 'context') {
-                this.updateProgress({ percent: 72, label: 'Context updated' }, event.message || '加载中加载中');
-                this.printTrace(event.message || '加载中加载中');
+                this.updateProgress({ percent: 72, label: 'Context updated' }, workflowName + ' - 数据抓取完成');
+                this.printTrace(event.message || '加载中');
                 if (Array.isArray(event.scraped_patents) && event.scraped_patents.length) {
                     this.renderPatentContext(event.scraped_patents);
                 }
@@ -2435,13 +2441,13 @@
             }
 
             if (event.type === 'content') {
-                this.updateProgress({ percent: 88, label: 'Generating answer' }, '预测IPC分类');
+                this.updateProgress({ percent: 88, label: 'Generating answer' }, workflowName + ' - 生成回答中');
                 this.appendStreamAnswer(event.delta || '');
                 return;
             }
 
             if (event.type === 'final') {
-                this.updateProgress({ percent: 100, label: 'Completed' }, '处理完成');
+                this.updateProgress({ percent: 100, label: 'Completed' }, workflowName + ' - 处理完成');
                 this.hideLoading();
                 this.renderPayload(event.data || {});
                 return;
@@ -2922,9 +2928,24 @@
             this.printLine(text, 'error');
         }
 
-        showLoading() {
+        getWorkflowDisplayName(flowId) {
+            const flowNames = {
+                'patent_lookup': '专利详情抓取问答',
+                'patent_family_compare': '同族专利对比',
+                'claims_pipeline': '权利要求文本分析',
+                'claims_excel_pipeline': 'Claims Excel 处理',
+                'pdf_ocr_pipeline': 'PDF OCR 阅读流程',
+                'ipc_lookup': 'IPC 检索流程',
+                'ipc_predict': 'IPC 分类预测',
+                'default': '处理中'
+            };
+            return flowNames[flowId] || flowNames['default'];
+        }
+
+        showLoading(workflowName) {
             this.hideLoading();
             this.progressStartedAt = Date.now();
+            this.currentWorkflowName = workflowName || '处理中';
             const wrapper = document.createElement('div');
             wrapper.id = 'cli-loading';
             wrapper.className = 'cli-block';
@@ -2938,7 +2959,7 @@
                     <div class="cli-progress__bar">
                         <div class="cli-progress__fill indeterminate" data-progress-fill></div>
                     </div>
-                    <div class="cli-progress__hint" data-progress-hint>预测IPC分类加载中加载中</div>
+                    <div class="cli-progress__hint" data-progress-hint>${this.currentWorkflowName}加载中</div>
                 </div>
             `;
             this.output.appendChild(wrapper);
