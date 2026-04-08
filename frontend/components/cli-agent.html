@@ -1060,6 +1060,176 @@
     background: var(--cli-divider);
 }
 
+.cli-details--inline {
+    margin: 8px 0;
+    border: 1px solid var(--cli-card-border);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.cli-details--inline summary {
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--cli-shell-muted);
+    cursor: pointer;
+    user-select: none;
+}
+
+.cli-details--inline summary:hover {
+    color: var(--cli-block-title);
+}
+
+.cli-details--inline .cli-details__body {
+    padding: 10px 12px;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.cli-claim-item {
+    padding: 6px 0;
+    border-bottom: 1px dashed var(--cli-divider);
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.cli-claim-item:last-child {
+    border-bottom: none;
+}
+
+.cli-claim-num {
+    color: var(--primary-color);
+    font-weight: 600;
+    margin-right: 4px;
+}
+
+.cli-citation-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.cli-citation-item {
+    display: inline-block;
+    padding: 2px 8px;
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    border-radius: 4px;
+    font-size: 11px;
+    font-family: Consolas, monospace;
+}
+
+.cli-drawings-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.cli-drawing-thumb {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    border-radius: 6px;
+    border: 1px solid var(--cli-card-border);
+    background: #fff;
+}
+
+.cli-patent-card__actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--cli-divider);
+}
+
+.cli-patent-card__btn {
+    padding: 6px 14px;
+    border: 1px solid var(--primary-color);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--primary-color);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.cli-patent-card__btn:hover {
+    background: var(--primary-color);
+    color: #fff;
+}
+
+.cli-patent-card__link {
+    padding: 6px 14px;
+    border: 1px solid var(--cli-card-border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--cli-shell-muted);
+    font-size: 12px;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.cli-patent-card__link:hover {
+    color: var(--cli-block-title);
+    border-color: var(--cli-block-title);
+}
+
+.cli-patent-card--expanded {
+    border-color: var(--primary-color);
+}
+
+.cli-patent-expanded {
+    margin-top: 12px;
+}
+
+.cli-text-preview {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.cli-text-full {
+    font-size: 12px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.cli-text-scroll {
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+.cli-claims-full {
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+.cli-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.cli-timeline-item {
+    display: flex;
+    gap: 12px;
+    font-size: 12px;
+    padding: 4px 0;
+}
+
+.cli-timeline-date {
+    color: var(--cli-shell-muted);
+    min-width: 90px;
+    font-family: Consolas, monospace;
+}
+
+.cli-timeline-event {
+    color: var(--cli-block-text);
+}
+
 .cli-flow-list {
     margin-bottom: 14px;
 }
@@ -1652,6 +1822,8 @@
             this.nodeColorIndex = 0;
             this.commandSnapshot = null;
             this.defaultWelcomeHtml = '';
+            this.reasoningBuffer = '';
+            this.reasoningTimer = null;
             this.suggestionDefaults = [
                 '查询 CN104154208B 专利详情',
                 '查询 US12390907B2 专利详情',
@@ -2419,6 +2591,11 @@
             const workflowName = event.flow_id ? this.getWorkflowDisplayName(event.flow_id) : (this.currentWorkflowName || '处理中');
 
             if (event.type === 'trace') {
+                if (event.stage === 'reasoning') {
+                    this.bufferReasoning(event.message || '');
+                    return;
+                }
+                this.flushReasoning();
                 const displayMessage = event.flow_id ? this.getWorkflowDisplayName(event.flow_id) : (event.message || event.stage || '加载中');
                 this.updateProgress(event.progress || null, displayMessage);
                 this.printTrace(event.message || event.stage || '加载中');
@@ -2427,6 +2604,8 @@
                 }
                 return;
             }
+
+            this.flushReasoning();
 
             if (event.type === 'context') {
                 this.updateProgress({ percent: 72, label: 'Context updated' }, workflowName + ' - 数据抓取完成');
@@ -2457,6 +2636,27 @@
                 this.hideLoading();
                 this.printError(event.error || '执行失败');
                 this.commandSnapshot = null;
+            }
+        }
+
+        bufferReasoning(delta) {
+            this.reasoningBuffer += delta;
+            if (this.reasoningTimer) {
+                clearTimeout(this.reasoningTimer);
+            }
+            this.reasoningTimer = setTimeout(() => {
+                this.flushReasoning();
+            }, 100);
+        }
+
+        flushReasoning() {
+            if (this.reasoningTimer) {
+                clearTimeout(this.reasoningTimer);
+                this.reasoningTimer = null;
+            }
+            if (this.reasoningBuffer.trim()) {
+                this.printTrace(this.reasoningBuffer.trim());
+                this.reasoningBuffer = '';
             }
         }
 
@@ -3364,7 +3564,20 @@
         createPatentCard(patent) {
             const card = document.createElement('div');
             card.className = 'cli-patent-card';
-            const claimsPreview = Array.isArray(patent.claims_preview) ? patent.claims_preview.join('\n\n') : '';
+            card.dataset.patentNumber = patent.patent_number || '';
+            
+            const claimsPreview = Array.isArray(patent.claims_preview) ? patent.claims_preview.slice(0, 5) : [];
+            const claimsFull = Array.isArray(patent.claims) ? patent.claims : claimsPreview;
+            const claimsCount = patent.claims_count || claimsFull.length;
+            
+            const citations = Array.isArray(patent.patent_citations) ? patent.patent_citations.slice(0, 5) : [];
+            const citedBy = Array.isArray(patent.cited_by) ? patent.cited_by.slice(0, 5) : [];
+            const classifications = Array.isArray(patent.classifications) ? patent.classifications.slice(0, 4) : [];
+            const drawings = Array.isArray(patent.drawings) ? patent.drawings.slice(0, 3) : [];
+            
+            const abstractText = (patent.abstract || '-').slice(0, 800);
+            const descPreview = (patent.description_preview || patent.description || '').slice(0, 500);
+            
             card.innerHTML = `
                 <div class="cli-patent-card__head">
                     <div>
@@ -3374,13 +3587,111 @@
                     <div class="cli-patent-card__meta">${this.escapeHtml(patent.publication_date || '-')}</div>
                 </div>
                 <div class="cli-kv"><strong>申请日</strong> ${this.escapeHtml(patent.application_date || '-')}</div>
-                <div class="cli-kv"><strong>申请人</strong> ${this.escapeHtml((patent.assignees || []).join(', ') || '-')}</div>
+                <div class="cli-kv"><strong>申请人</strong> ${this.escapeHtml((patent.assignees || patent.assignee || []).join(', ') || '-')}</div>
                 <div class="cli-kv"><strong>发明人</strong> ${this.escapeHtml((patent.inventors || []).join(', ') || '-')}</div>
-                <div class="cli-kv"><strong>摘要</strong> ${this.escapeHtml(patent.abstract || '-')}</div>
-                <div class="cli-kv"><strong>权利要求数量:</strong> ${this.escapeHtml(String(patent.claims_count || 0))}</div>
-                ${claimsPreview ? `<div class="cli-divider"></div><div class="cli-kv"><strong>权利要求预览</strong>\n${this.escapeHtml(claimsPreview)}</div>` : ''}
+                <div class="cli-kv"><strong>摘要</strong> <span class="cli-text-preview">${this.escapeHtml(abstractText)}</span></div>
+                ${classifications.length ? `<div class="cli-kv"><strong>分类号</strong> ${classifications.map(c => this.escapeHtml(c.code || c.classification || c)).join(', ')}</div>` : ''}
+                <div class="cli-kv"><strong>权利要求数量:</strong> ${claimsCount} 条</div>
+                ${claimsPreview.length ? `
+                    <details class="cli-details cli-details--inline">
+                        <summary>查看前 ${claimsPreview.length} 条权利要求</summary>
+                        <div class="cli-details__body">
+                            ${claimsPreview.map((c, i) => `<div class="cli-claim-item">${this.escapeHtml(c)}</div>`).join('')}
+                        </div>
+                    </details>
+                ` : ''}
+                ${citations.length ? `
+                    <details class="cli-details cli-details--inline">
+                        <summary>引用专利 (${patent.patent_citations?.length || citations.length})</summary>
+                        <div class="cli-details__body cli-citation-list">
+                            ${citations.map(c => `<span class="cli-citation-item">${this.escapeHtml(c.patent_number || c)}</span>`).join('')}
+                        </div>
+                    </details>
+                ` : ''}
+                ${citedBy.length ? `
+                    <details class="cli-details cli-details--inline">
+                        <summary>被引用 (${patent.cited_by?.length || citedBy.length})</summary>
+                        <div class="cli-details__body cli-citation-list">
+                            ${citedBy.map(c => `<span class="cli-citation-item">${this.escapeHtml(c.patent_number || c)}</span>`).join('')}
+                        </div>
+                    </details>
+                ` : ''}
+                ${drawings.length ? `
+                    <details class="cli-details cli-details--inline">
+                        <summary>附图 (${patent.drawings?.length || drawings.length})</summary>
+                        <div class="cli-details__body cli-drawings-preview">
+                            ${drawings.map(d => `<img src="${this.escapeHtml(d)}" alt="附图" class="cli-drawing-thumb" onerror="this.style.display='none'">`).join('')}
+                        </div>
+                    </details>
+                ` : ''}
+                <div class="cli-patent-card__actions">
+                    <button type="button" class="cli-patent-card__btn" data-action="expand" data-patent="${this.escapeHtml(patent.patent_number || '')}">展开完整数据</button>
+                    <a href="${this.escapeHtml(patent.url || `https://patents.google.com/patent/${patent.patent_number}`)}" target="_blank" class="cli-patent-card__link">Google Patents</a>
+                </div>
             `;
+            
+            card.querySelector('[data-action="expand"]')?.addEventListener('click', (e) => {
+                this.togglePatentExpand(card, patent);
+            });
+            
             return card;
+        }
+        
+        togglePatentExpand(card, patent) {
+            const btn = card.querySelector('[data-action="expand"]');
+            const isExpanded = card.classList.contains('cli-patent-card--expanded');
+            
+            if (isExpanded) {
+                card.classList.remove('cli-patent-card--expanded');
+                const expandedContent = card.querySelector('.cli-patent-expanded');
+                if (expandedContent) expandedContent.remove();
+                btn.textContent = '展开完整数据';
+            } else {
+                card.classList.add('cli-patent-card--expanded');
+                const expandedDiv = document.createElement('div');
+                expandedDiv.className = 'cli-patent-expanded';
+                
+                const claimsFull = Array.isArray(patent.claims) ? patent.claims : [];
+                const descFull = patent.description || patent.description_preview || '';
+                
+                expandedDiv.innerHTML = `
+                    <div class="cli-divider"></div>
+                    <div class="cli-kv"><strong>完整摘要</strong>
+                        <div class="cli-text-full">${this.escapeHtml(patent.abstract || '-')}</div>
+                    </div>
+                    ${claimsFull.length ? `
+                        <div class="cli-divider"></div>
+                        <div class="cli-kv"><strong>全部权利要求 (${claimsFull.length} 条)</strong>
+                            <div class="cli-claims-full">
+                                ${claimsFull.map((c, i) => `<div class="cli-claim-item"><span class="cli-claim-num">${i + 1}.</span> ${this.escapeHtml(c)}</div>`).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                    ${descFull ? `
+                        <div class="cli-divider"></div>
+                        <details class="cli-details">
+                            <summary>说明书 (${descFull.length} 字符)</summary>
+                            <div class="cli-text-full cli-text-scroll">${this.escapeHtml(descFull)}</div>
+                        </details>
+                    ` : ''}
+                    ${Array.isArray(patent.events_timeline) && patent.events_timeline.length ? `
+                        <div class="cli-divider"></div>
+                        <div class="cli-kv"><strong>事件时间轴</strong>
+                            <div class="cli-timeline">
+                                ${patent.events_timeline.slice(0, 10).map(e => `
+                                    <div class="cli-timeline-item">
+                                        <span class="cli-timeline-date">${this.escapeHtml(e.date || '')}</span>
+                                        <span class="cli-timeline-event">${this.escapeHtml(e.event || e.description || '')}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                `;
+                
+                card.querySelector('.cli-patent-card__actions').before(expandedDiv);
+                btn.textContent = '收起';
+            }
         }
 
         formatDuration(durationMs) {

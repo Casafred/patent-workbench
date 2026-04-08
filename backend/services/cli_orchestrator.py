@@ -542,7 +542,7 @@ class CLIOrchestrator:
     def compact_patent_context(self, patent_data: Dict[str, Any]) -> Dict[str, Any]:
         claims = patent_data.get("claims") or []
         if isinstance(claims, list):
-            claims_preview = claims[:3]
+            claims_preview = claims[:5]
         else:
             claims_preview = [str(claims)[:500]]
 
@@ -555,9 +555,17 @@ class CLIOrchestrator:
             "assignees": patent_data.get("assignees", [])[:8],
             "application_date": patent_data.get("application_date", ""),
             "publication_date": patent_data.get("publication_date", ""),
+            "claims": claims,
             "claims_preview": claims_preview,
+            "description": description,
             "description_preview": description[:1500],
             "classifications": patent_data.get("classifications", [])[:6],
+            "patent_citations": patent_data.get("patent_citations", [])[:10],
+            "cited_by": patent_data.get("cited_by", [])[:10],
+            "events_timeline": patent_data.get("events_timeline", [])[:10],
+            "legal_events": patent_data.get("legal_events", [])[:10],
+            "drawings": patent_data.get("drawings", [])[:5],
+            "pdf_link": patent_data.get("pdf_link", ""),
             "url": patent_data.get("url", ""),
         }
 
@@ -609,7 +617,7 @@ class CLIOrchestrator:
         claims = patent_data.get("claims") or []
         if isinstance(claims, list):
             claims_count = len(claims)
-            claims_preview = claims[:2]
+            claims_preview = claims[:5]
         else:
             claims_count = 1 if claims else 0
             claims_preview = [str(claims)[:400]] if claims else []
@@ -624,7 +632,16 @@ class CLIOrchestrator:
             "publication_date": patent_data.get("publication_date", ""),
             "claims_count": claims_count,
             "claims_preview": claims_preview,
+            "claims": claims,
             "description_preview": (patent_data.get("description") or "")[:700],
+            "description": patent_data.get("description", ""),
+            "classifications": patent_data.get("classifications", [])[:6],
+            "patent_citations": patent_data.get("patent_citations", [])[:10],
+            "cited_by": patent_data.get("cited_by", [])[:10],
+            "events_timeline": patent_data.get("events_timeline", [])[:10],
+            "legal_events": patent_data.get("legal_events", [])[:10],
+            "drawings": patent_data.get("drawings", [])[:5],
+            "pdf_link": patent_data.get("pdf_link", ""),
             "url": patent_data.get("url") or f"https://patents.google.com/patent/{patent_data.get('patent_number', '')}",
         }
 

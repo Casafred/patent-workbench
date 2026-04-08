@@ -118,8 +118,11 @@ def get_request_context() -> Dict[str, Any]:
     override_session = req_data.get("session_id") or req_data.get("cli_session_id")
     if override_session:
         session_id = str(override_session)
+    flask_user_id = session.get("user_id", "anonymous")
+    cli_user_id = req_data.get("user_id") or req_data.get("cli_user_id")
+    user_id = cli_user_id if cli_user_id else flask_user_id
     return {
-        "user_id": session.get("user_id", "anonymous"),
+        "user_id": user_id,
         "session_id": session_id,
     }
 
